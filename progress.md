@@ -296,4 +296,17 @@ _(Previously completed — not detailed here)_
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `feat(react): rewrite SalesInboxScreen — connect to Supabase Realtime`
 
-## Task 21: Pending
+## Task 21: WhatsappAiScreen — connect to Supabase — DONE (2026-05-31)
+
+- Replaced `DEFAULT_WA_NUMBERS` constant and localStorage-based state init with Supabase fetch from `whatsapp_numbers` table
+- Added `loading` state with spinner shown while Supabase fetch is in flight
+- Added Realtime `UPDATE` subscription on `whatsapp_numbers` via `supabase.channel('wa-numbers-update')` — live status updates without page reload
+- Removed all sandbox simulator state and handlers: `sandboxSelectedId`, `sandboxText`, `sandboxMessages`, `isSandboxAiTyping`, `handleSendSandboxSim`, `generateSmartStockResponse`, `sandboxScrollRef`
+- Removed the entire "Sandbox Chat Pelanggan" JSX section (was right column second card)
+- Replaced fake QR/pairing simulation with instructional log-output versions pointing users to Go daemon terminal
+- Added `handleCheckConnection(numberId)` — calls `http://localhost:8080/api/wa/status`, alerts on connected/disconnected/daemon-not-running
+- Added "Cek" status button next to each number in the list
+- Toggle handlers now show informational toast pointing to Supabase dashboard (DB is source of truth)
+- Removed localStorage save `useEffect`; removed `DEFAULT_WA_NUMBERS` constant; cleaned up unused imports
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `feat(react): connect WhatsappAiScreen to Supabase — remove sandbox, add Realtime status`
