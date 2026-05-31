@@ -28,6 +28,24 @@ func (s ConversationState) IsTerminal() bool {
 	return false
 }
 
+type OrderStatus string
+
+const (
+	OrderStatusPending   OrderStatus = "PENDING"
+	OrderStatusApproved  OrderStatus = "APPROVED"
+	OrderStatusCancelled OrderStatus = "CANCELLED"
+	OrderStatusCompleted OrderStatus = "COMPLETED"
+)
+
+type MessageSender string
+
+const (
+	SenderCustomer MessageSender = "customer"
+	SenderAI       MessageSender = "ai"
+	SenderAdmin    MessageSender = "admin"
+	SenderSystem   MessageSender = "system"
+)
+
 type CollectedData struct {
 	Name     string    `json:"name,omitempty"`
 	Company  string    `json:"company,omitempty"`
@@ -60,13 +78,13 @@ type Conversation struct {
 }
 
 type Message struct {
-	ID             string    `json:"id"`
-	ConversationID string    `json:"conversation_id"`
-	Sender         string    `json:"sender"`
-	Text           string    `json:"text"`
-	MediaURL       string    `json:"media_url,omitempty"`
-	MediaType      string    `json:"media_type,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID             string        `json:"id"`
+	ConversationID string        `json:"conversation_id"`
+	Sender         MessageSender `json:"sender"`
+	Text           string        `json:"text"`
+	MediaURL       string        `json:"media_url,omitempty"`
+	MediaType      string        `json:"media_type,omitempty"`
+	CreatedAt      time.Time     `json:"created_at"`
 }
 
 type Order struct {
@@ -80,11 +98,12 @@ type Order struct {
 	Subtotal        float64     `json:"subtotal"`
 	ShippingFee     *float64    `json:"shipping_fee,omitempty"`
 	Total           float64     `json:"total"`
-	Status          string      `json:"status"`
+	Status          OrderStatus `json:"status"`
 	BookingExpiresAt time.Time  `json:"booking_expires_at"`
 	ReminderSentAt  *time.Time  `json:"reminder_sent_at,omitempty"`
 	ApprovedAt      *time.Time  `json:"approved_at,omitempty"`
 	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
 type OrderItem struct {
