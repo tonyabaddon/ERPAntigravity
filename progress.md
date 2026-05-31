@@ -132,4 +132,36 @@ _(Previously completed — not detailed here)_
 - `CGO_ENABLED=1 go build ./internal/engine/...` passes cleanly (no errors)
 - Committed: `feat(go): add engine prompts — system prompts per conversation state`
 
-## Tasks 11–21: Pending
+## Task 11: Gemini API client wrapper — DONE (2026-05-31)
+
+- Created `backend-go/internal/gemini/client.go`
+- `Client` struct wraps `*genai.Client` and `*genai.GenerativeModel`
+- `NewClient(ctx, apiKey)` initializes Gemini client with `gemini-1.5-flash` model and `ResponseMIMEType = "application/json"` (forces valid JSON output)
+- `GenerateReply(ctx, fullPrompt)` sends prompt to Gemini, extracts text from response candidates, returns raw JSON string
+- `Close()` releases underlying client connection
+- Method signatures match `GeminiClient` interface contract defined in `internal/engine/machine.go`
+- Added `github.com/google/generative-ai-go@v0.19.0` and transitive deps to `go.mod` and `go.sum` (53 entries total)
+- `CGO_ENABLED=1 go build ./internal/gemini/...` passes cleanly
+- Committed: `feat(go): add Gemini client wrapper with JSON response mode`
+
+## Task 12: State machine for Go WhatsApp AI daemon — DONE (2026-05-31)
+
+- Created `backend-go/internal/engine/machine.go`
+  - `GeminiClient` interface: `GenerateReply(ctx, fullPrompt) (string, error)` — allows mock injection in tests
+  - `Machine` struct wrapping a `GeminiClient`; `NewMachine(g)` constructor
+  - `ProcessResult` struct: Reply, NextState, NewData, ClarificationRound, Language, CreateOrder
+  - `Process(ctx, conv, incomingText, history, stockContext)` — full state machine dispatch:
+    - GREETING → parses language, always advances to COLLECTING
+    - COLLECTING → merges partial fields; advances to CLARIFYING when AllCoreFieldsFilled(); ESCALATE → ESCALATED_ADMIN
+    - CLARIFYING → accumulates specs; READY or round ≥ 3 → STOCK_CHECK; ESCALATE → ESCALATED_ADMIN
+    - STOCK_CHECK → CONFIRM → CONFIRMING; ESCALATE → ESCALATED_ADMIN
+    - CONFIRMING → confirmed=true → BOOKED (CreateOrder=true); modification_requested=true → back to CLARIFYING round 0
+  - Parse failures or Gemini errors return a safe FallbackReply with state unchanged; function never returns a non-nil error
+- Created `backend-go/internal/engine/machine_test.go`
+  - `mockGemini` struct satisfies `GeminiClient` for test isolation
+  - 5 tests: `TestProcessGreeting`, `TestProcessCollectingMovesToClarifying`, `TestProcessEscalate`, `TestProcessConfirmingBooked`, `TestProcessGeminiFallback`
+  - TDD workflow: test file written and confirmed failing (undefined: Machine), then implementation written, all 10 engine tests PASS
+- `go test ./internal/engine/... -v` — 10/10 PASS
+- Committed: `feat(go): add conversation state machine with Gemini integration`
+
+## Tasks 13–21: Pending
