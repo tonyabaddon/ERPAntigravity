@@ -3,16 +3,30 @@
 -- After applying this migration, create a Supabase Storage bucket named
 -- 'chat-media' with Public access enabled.
 
--- Enums
-CREATE TYPE conversation_state AS ENUM (
-  'GREETING','COLLECTING','CLARIFYING','STOCK_CHECK','CONFIRMING',
-  'BOOKED','TIMEOUT_REMINDER','CANCELLED','APPROVED','COMPLETED',
-  'ESCALATED_ADMIN','ESCALATED_WIRING'
-);
+-- Enums (idempotent)
+DO $$ BEGIN
+  CREATE TYPE conversation_state AS ENUM (
+    'GREETING','COLLECTING','CLARIFYING','STOCK_CHECK','CONFIRMING',
+    'BOOKED','TIMEOUT_REMINDER','CANCELLED','APPROVED','COMPLETED',
+    'ESCALATED_ADMIN','ESCALATED_WIRING'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE message_sender AS ENUM ('customer','ai','admin','system');
-CREATE TYPE order_status AS ENUM ('PENDING','APPROVED','CANCELLED','COMPLETED');
-CREATE TYPE wa_number_status AS ENUM ('CONNECTED','DISCONNECTED','PAIRING');
+DO $$ BEGIN
+  CREATE TYPE message_sender AS ENUM ('customer','ai','admin','system');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE order_status AS ENUM ('PENDING','APPROVED','CANCELLED','COMPLETED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE wa_number_status AS ENUM ('CONNECTED','DISCONNECTED','PAIRING');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- whatsapp_numbers
 CREATE TABLE IF NOT EXISTS whatsapp_numbers (
@@ -24,6 +38,8 @@ CREATE TABLE IF NOT EXISTS whatsapp_numbers (
   is_ai_enabled boolean NOT NULL DEFAULT true,
   created_at    timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE whatsapp_numbers ADD CONSTRAINT uq_wa_phone UNIQUE (phone_number);
 
 -- conversations
 CREATE TABLE IF NOT EXISTS conversations (
@@ -70,11 +86,29 @@ CREATE TABLE IF NOT EXISTS orders (
   booking_expires_at timestamptz NOT NULL,
   reminder_sent_at   timestamptz,
   approved_at        timestamptz,
-  created_at         timestamptz NOT NULL DEFAULT now()
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  updated_at         timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_expires ON orders(booking_expires_at) WHERE status = 'PENDING';
+
+-- updated_at trigger function (shared)
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_conversations_updated_at
+  BEFORE UPDATE ON conversations
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER trg_orders_updated_at
+  BEFORE UPDATE ON orders
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- RLS: enable on all tables
 ALTER TABLE whatsapp_numbers ENABLE ROW LEVEL SECURITY;
@@ -112,6 +146,10 @@ CREATE POLICY "anon_approve_orders" ON orders
   USING (true)
   WITH CHECK (status IN ('APPROVED'));
 
+-- Column-level grants: restrict anon UPDATE to only the columns they need
+GRANT UPDATE (state) ON conversations TO anon;
+GRANT UPDATE (status, shipping_fee) ON orders TO anon;
+
 -- NOTIFY trigger: fires when React inserts an admin message
 CREATE OR REPLACE FUNCTION notify_admin_message()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
@@ -120,7 +158,7 @@ BEGIN
     'admin_messages',
     json_build_object(
       'conversation_id', NEW.conversation_id,
-      'text', NEW.text,
+      'message_id', NEW.id,
       'media_url', NEW.media_url
     )::text
   );
@@ -157,8 +195,24 @@ CREATE TRIGGER trg_order_approved
   FOR EACH ROW
   EXECUTE FUNCTION notify_order_approved();
 
--- Supabase Realtime: enable for all four tables
-ALTER PUBLICATION supabase_realtime ADD TABLE whatsapp_numbers;
-ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
-ALTER PUBLICATION supabase_realtime ADD TABLE messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+-- Supabase Realtime: enable for all four tables (idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'whatsapp_numbers') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE whatsapp_numbers;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'conversations') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE conversations;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'messages') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND tablename = 'orders') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+  END IF;
+END $$;
