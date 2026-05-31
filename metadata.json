@@ -1,0 +1,6 @@
+{
+  "name": "Sinar Elektrik MSME ERP",
+  "description": "An interactive MSME ERP and smart WhatsApp selling system with AI stock management, administrative controls, and sales optimization tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

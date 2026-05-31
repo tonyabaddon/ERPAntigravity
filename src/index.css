@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-primary: #1e3d60;
+  --color-secondary: #2d8a4e;
+  --color-on-surface: #0b1c30;
+  --color-background-soft: #f8f9ff;
+  
+  --radius-default: 1rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --radius-signature: 2rem;
+}
+
+@layer utilities {
+  /* Hide scrollbars but keep functionality */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  
+  .orb-effect {
+    filter: blur(80px);
+    opacity: 0.35;
+    animation: orb-flow 16s infinite alternate ease-in-out;
+  }
+}
+
+@keyframes orb-flow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, -60px) scale(1.15); }
+}
