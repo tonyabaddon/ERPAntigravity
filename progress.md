@@ -164,4 +164,21 @@ _(Previously completed — not detailed here)_
 - `go test ./internal/engine/... -v` — 10/10 PASS
 - Committed: `feat(go): add conversation state machine with Gemini integration`
 
-## Tasks 13–21: Pending
+## Task 13: Booking timeout scheduler — DONE (2026-05-31)
+
+- Created `backend-go/internal/scheduler/timeout.go`
+  - `BookingEntry` struct: ID (string) and ExpiresAt (time.Time)
+  - `Scheduler` struct with two maps for tracking reminder and cancellation timers, plus onReminder and onCancel callbacks
+  - `NewScheduler(onReminder, onCancel)` constructor returns initialized scheduler
+  - `Schedule(orderID, expiresAt)` registers two timers: reminder fires at (expiresAt - 24hr), cancellation fires at expiresAt
+  - `Cancel(orderID)` stops both timers for an order and removes them from maps
+  - `RestoreOnBoot(entries)` re-registers timers for all active bookings after daemon restart (filters out expired entries)
+  - All timer operations are guarded by mutex to ensure thread-safe concurrent access
+- Created `backend-go/internal/scheduler/timeout_test.go`
+  - 3 tests covering core scenarios: `TestSchedulerFiresReminder`, `TestSchedulerCancel`, `TestRestoreOnBoot`
+  - TDD workflow: tests written and confirmed failing, then implementation written
+  - All 3 tests PASS
+- `CGO_ENABLED=1 go build ./...` passes cleanly
+- Committed: `feat(go): add booking timeout scheduler with restore-on-boot`
+
+## Tasks 14–21: Pending
