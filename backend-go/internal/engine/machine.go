@@ -8,6 +8,8 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
+const maxClarificationRounds = 3
+
 // GeminiClient is the interface the machine depends on — allows mocking in tests.
 type GeminiClient interface {
 	GenerateReply(ctx context.Context, fullPrompt string) (string, error)
@@ -117,7 +119,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		switch {
 		case resp.NextAction == "ESCALATE":
 			result.NextState = models.StateEscalatedAdmin
-		case resp.NextAction == "READY" || newRound >= 3:
+		case resp.NextAction == "READY" || newRound >= maxClarificationRounds:
 			result.NextState = models.StateStockCheck
 		}
 
