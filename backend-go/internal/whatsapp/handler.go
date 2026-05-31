@@ -142,6 +142,9 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation) 
 		})
 		subtotal = sub
 	}
+	if len(items) == 0 {
+		log.Printf("[HANDLER] Warning: no stock found for product %q, order will have empty items", conv.CollectedData.Product)
+	}
 	order, err := h.db.CreateOrder(conv, orderItems, subtotal)
 	if err != nil {
 		log.Printf("[HANDLER] CreateOrder error: %v", err)
@@ -203,8 +206,11 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 	}
 	h.scheduler.Cancel(orderID)
 
+	lang := "id"
+	h.db.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, conversationID).Scan(&lang)
+
 	total := order.Subtotal + shippingFee
-	invoice := buildInvoiceMessage(order, shippingFee, total, "id")
+	invoice := buildInvoiceMessage(order, shippingFee, total, lang)
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "ORDER_APPROVED: invoice sent")
 	if err := h.sender.SendText(ctx, order.CustomerPhone, invoice); err != nil {
