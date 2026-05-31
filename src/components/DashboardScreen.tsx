@@ -3,17 +3,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
-import { 
-  TrendingUp, 
-  ShoppingBag, 
-  Zap, 
-  AlertTriangle, 
-  ArrowUpRight, 
-  Clock, 
-  MessageSquare, 
-  CheckCircle2 
+import React, { useState } from 'react';
+import {
+  TrendingUp,
+  ShoppingBag,
+  Zap,
+  AlertTriangle,
+  ArrowUpRight,
+  Clock,
+  MessageSquare,
+  CheckCircle2
 } from 'lucide-react';
+import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { 
   AreaChart, 
   Area, 
@@ -62,6 +63,20 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
       currency: 'IDR',
       maximumFractionDigits: 0
     }).format(val);
+  };
+
+  const { orders, approveOrder } = useRealtimeConversations();
+  const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const handleApprove = async (orderId: string) => {
+    const fee = parseFloat(shippingFees[orderId] ?? '0');
+    setApprovingId(orderId);
+    try {
+      await approveOrder(orderId, fee);
+    } finally {
+      setApprovingId(null);
+    }
   };
 
   return (
@@ -268,6 +283,62 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
           </div>
         </div>
       </div>
+
+      {/* Pending Orders Panel */}
+      {orders.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-500" />
+            Pesanan Menunggu Persetujuan ({orders.length})
+          </h2>
+          <div className="space-y-3">
+            {orders.map(order => (
+              <div key={order.id} className="bg-white rounded-xl border border-amber-200 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-800">{order.customer_name}</p>
+                    <p className="text-sm text-gray-500">{order.customer_company} · {order.customer_address}</p>
+                    <p className="text-sm text-gray-500">{order.customer_phone}</p>
+                    <div className="mt-2 space-y-0.5">
+                      {order.items.map((item, i) => (
+                        <p key={i} className="text-sm text-gray-700">
+                          {item.name} × {item.qty} @ Rp {item.unit_price.toLocaleString('id-ID')} = Rp {item.subtotal.toLocaleString('id-ID')}
+                        </p>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-gray-800">
+                      Subtotal: Rp {order.subtotal.toLocaleString('id-ID')}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Berakhir: {new Date(order.booking_expires_at).toLocaleString('id-ID')}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Ongkir (Rp):</span>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-28 border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="0"
+                        value={shippingFees[order.id] ?? ''}
+                        onChange={e => setShippingFees(prev => ({ ...prev, [order.id]: e.target.value }))}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleApprove(order.id)}
+                      disabled={approvingId === order.id || !shippingFees[order.id]}
+                      className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-40"
+                    >
+                      {approvingId === order.id ? 'Memproses...' : '✓ Setujui'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

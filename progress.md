@@ -267,4 +267,16 @@ _(Previously completed — not detailed here)_
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `feat(react): add useRealtimeConversations hook with Supabase Realtime`
 
-## Tasks 19–21: Pending
+## Task 20: DashboardScreen — add orders panel — DONE (2026-05-31)
+
+- Added `useState` to existing React import in `src/components/DashboardScreen.tsx`
+- Added `useRealtimeConversations` import from `../hooks/useRealtimeConversations`
+- `Clock` from lucide-react was already imported — no change needed
+- Added hook invocation: `const { orders, approveOrder } = useRealtimeConversations()`
+- Added `shippingFees` and `approvingId` state, plus `handleApprove` async handler
+- Added pending orders panel JSX rendered conditionally when `orders.length > 0`
+- Panel shows customer info, itemized order lines, subtotal, expiry, shipping fee input, and approve button
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `feat(react): add pending orders panel to DashboardScreen`
+
+## Tasks 19, 21: Pending
