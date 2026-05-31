@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { DbConversation, DbMessage, DbOrder } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -79,4 +80,90 @@ export const supabaseService = {
     }
     return true;
   }
+};
+
+export const conversationService = {
+  async fetchConversations(): Promise<DbConversation[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('conversations')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async fetchMessages(conversationId: string): Promise<DbMessage[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async insertAdminMessage(conversationId: string, text: string): Promise<DbMessage> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({ conversation_id: conversationId, sender: 'admin', text })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async toggleAiControl(conversationId: string, handOver: boolean): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const newState = handOver ? 'ESCALATED_ADMIN' : 'COLLECTING';
+    const { error } = await supabase
+      .from('conversations')
+      .update({ state: newState })
+      .eq('id', conversationId);
+    if (error) throw error;
+  },
+
+  async uploadChatMedia(file: File): Promise<string> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const path = `${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from('chat-media').upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from('chat-media').getPublicUrl(path);
+    return data.publicUrl;
+  },
+
+  async insertAdminMediaMessage(conversationId: string, mediaUrl: string, mediaType: string): Promise<DbMessage> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({ conversation_id: conversationId, sender: 'admin', text: '', media_url: mediaUrl, media_type: mediaType })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+};
+
+export const orderService = {
+  async fetchPendingOrders(): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('status', 'PENDING')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async approveOrder(orderId: string, shippingFee: number): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ shipping_fee: shippingFee, status: 'APPROVED' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
 };

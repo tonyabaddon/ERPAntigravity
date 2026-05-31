@@ -77,4 +77,62 @@ export interface WhatsappAiNumber {
   createdAt: string;
 }
 
+// --- Supabase DB-aligned types (used by useRealtimeConversations hook) ---
+
+export type ConversationState =
+  | 'GREETING' | 'COLLECTING' | 'CLARIFYING' | 'STOCK_CHECK' | 'CONFIRMING'
+  | 'BOOKED' | 'TIMEOUT_REMINDER' | 'CANCELLED' | 'APPROVED' | 'COMPLETED'
+  | 'ESCALATED_ADMIN' | 'ESCALATED_WIRING';
+
+export interface DbConversation {
+  id: string;
+  wa_number_id: string;
+  customer_phone: string;
+  state: ConversationState;
+  language: string;
+  collected_data: {
+    name?: string;
+    company?: string;
+    address?: string;
+    product?: string;
+    quantity?: number;
+    specs?: { size?: string; color?: string; notes?: string };
+  };
+  clarification_round: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbMessage {
+  id: string;
+  conversation_id: string;
+  sender: 'customer' | 'ai' | 'admin' | 'system';
+  text: string;
+  media_url?: string;
+  media_type?: string;
+  created_at: string;
+}
+
+export interface DbOrder {
+  id: string;
+  conversation_id: string;
+  customer_name: string;
+  customer_company: string;
+  customer_address: string;
+  customer_phone: string;
+  items: Array<{
+    sku: string;
+    name: string;
+    qty: number;
+    unit_price: number;
+    subtotal: number;
+  }>;
+  subtotal: number;
+  shipping_fee?: number;
+  total: number;
+  status: 'PENDING' | 'APPROVED' | 'CANCELLED' | 'COMPLETED';
+  booking_expires_at: string;
+  created_at: string;
+}
+
 export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai';
