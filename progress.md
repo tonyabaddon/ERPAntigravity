@@ -102,4 +102,17 @@ _(Previously completed — not detailed here)_
 - This rules engine is the first thing checked when a WhatsApp message arrives, before any LLM call — fast keyword scan
 - Committed: `feat(go): add rules engine with keyword escalation detection`
 
-## Tasks 9–21: Pending
+## Task 9: Engine parser (Gemini JSON → typed structs) — DONE (2026-05-31)
+
+- Created `backend-go/internal/engine/parser.go`
+  - Defines typed response structs for all 6 states: `GreetingResponse`, `CollectingResponse`, `ClarifyingResponse`, `StockCheckResponse`, `ConfirmingResponse`
+  - Support structs: `CollectedFields` (name, company, address, product), `ClarifyingSpecs` (qty, size, color, notes)
+  - Parse functions: `ParseGreeting`, `ParseCollecting`, `ParseClarifying`, `ParseStockCheck`, `ParseConfirming` — all return `(*T, error)`
+  - `FallbackReply(language string)` — language-aware safe fallback when JSON parse fails (Indonesian for "id", English otherwise)
+- Created `backend-go/internal/engine/parser_test.go`
+  - 5 tests: `TestParseGreeting`, `TestParseGreetingInvalidJSON`, `TestParseCollecting`, `TestParseConfirming`, `TestFallbackReply`
+  - All 5 tests PASS
+- TDD workflow: tests written first and confirmed failing, then implementation written, tests confirmed passing
+- Committed: `feat(go): add engine parser — Gemini JSON to typed structs with tests`
+
+## Tasks 10–21: Pending
