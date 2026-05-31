@@ -241,4 +241,30 @@ _(Previously completed — not detailed here)_
 - `CGO_ENABLED=1 go build ./...` passes cleanly
 - Committed: `feat(go): rewrite main.go — wire daemon: WA + Gemini + state machine + scheduler`
 
-## Tasks 17–21: Pending
+## Task 17: React types and supabaseClient additions — DONE (2026-05-31)
+
+- Added `ConversationState` union type (12 values matching Supabase enum) to `src/types.ts`
+- Added `DbConversation`, `DbMessage`, `DbOrder` interfaces to `src/types.ts` (DB-aligned, used by Realtime hook)
+- Added `import type { DbConversation, DbMessage, DbOrder }` to `src/lib/supabaseClient.ts`
+- Added `conversationService` with 6 methods: `fetchConversations`, `fetchMessages`, `insertAdminMessage`, `toggleAiControl`, `uploadChatMedia`, `insertAdminMediaMessage`
+- Added `orderService` with 2 methods: `fetchPendingOrders`, `approveOrder`
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `feat(react): add DB-aligned types and conversation/order service methods`
+
+## Task 18: useRealtimeConversations hook — DONE (2026-05-31)
+
+- Created `src/hooks/useRealtimeConversations.ts`
+- `ConversationWithMessages` interface extends `DbConversation` with a `messages: DbMessage[]` field
+- Hook loads top 20 conversations with messages + pending orders on mount via `Promise.all`
+- Subscribes to 4 Supabase Realtime channels:
+  - `messages-insert`: appends new messages to the correct conversation in state
+  - `conversations-update`: merges updated conversation fields into state
+  - `conversations-insert`: fetches messages for new conversation and prepends to state
+  - `orders-changes`: handles INSERT (PENDING only) and UPDATE (filter out non-PENDING from state)
+- Cleanup function removes all channels on unmount
+- Exposes: `conversations`, `orders`, `loading`, `sendAdminMessage`, `sendAdminMedia`, `toggleAiControl`, `approveOrder`
+- `sendAdminMedia` maps file extensions to mediaType strings (pdf, image, excel, word, file)
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `feat(react): add useRealtimeConversations hook with Supabase Realtime`
+
+## Tasks 19–21: Pending
