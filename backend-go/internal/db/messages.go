@@ -30,7 +30,8 @@ func (c *Client) InsertMediaMessage(conversationID string, sender models.Message
 func (c *Client) GetMessageByID(messageID string) (*models.Message, error) {
 	var msg models.Message
 	err := c.DB.QueryRow(`
-		SELECT id, conversation_id, sender, text, media_url, media_type, created_at
+		SELECT id, conversation_id, sender, text,
+		       COALESCE(media_url,''), COALESCE(media_type,''), created_at
 		FROM messages WHERE id = $1
 	`, messageID).Scan(
 		&msg.ID, &msg.ConversationID, &msg.Sender, &msg.Text,

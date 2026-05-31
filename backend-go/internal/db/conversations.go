@@ -24,7 +24,7 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 		       collected_data, clarification_round, created_at, updated_at
 		FROM conversations
 		WHERE customer_phone = $1 AND wa_number_id = $2
-		  AND state NOT IN ('CANCELLED','COMPLETED')
+		  AND state NOT IN ('CANCELLED','COMPLETED','ESCALATED_ADMIN','ESCALATED_WIRING')
 		ORDER BY created_at DESC LIMIT 1
 	`, phone, waNumberID).Scan(
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,

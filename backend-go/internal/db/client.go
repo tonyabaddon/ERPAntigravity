@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 type NotifyHandlers struct {
