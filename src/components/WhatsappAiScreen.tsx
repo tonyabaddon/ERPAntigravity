@@ -93,7 +93,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   // Check real Go daemon connection status
   const handleCheckConnection = async (_numberId: string) => {
     try {
-      const res = await fetch('http://localhost:8080/api/wa/status');
+      const res = await fetch('http://localhost:8090/api/wa/status');
       const { connected } = await res.json();
       if (connected) {
         alert('WhatsApp terhubung. Status akan diperbarui otomatis.');
@@ -101,7 +101,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
         alert('WhatsApp belum terhubung. Jalankan Go daemon dan scan QR di terminal.');
       }
     } catch {
-      alert('Go daemon tidak berjalan di localhost:8080. Jalankan backend terlebih dahulu.');
+      alert('Go daemon tidak berjalan di localhost:8090. Jalankan backend terlebih dahulu.');
     }
   };
 
