@@ -181,4 +181,49 @@ _(Previously completed — not detailed here)_
 - `CGO_ENABLED=1 go build ./...` passes cleanly
 - Committed: `feat(go): add booking timeout scheduler with restore-on-boot`
 
-## Tasks 14–21: Pending
+## Task 14: WhatsApp client and sender — DONE (2026-05-31)
+
+- Created `backend-go/internal/whatsapp/client.go`
+  - `Client` struct wrapping `*whatsmeow.Client`
+  - `NewClient(ctx, dbPath)` opens SQLite store via `sqlstore.New` (ctx required by this version), calls `GetFirstDevice(ctx)`, constructs WA client
+  - `Connect(ctx)` handles two cases: new device (QR flow, logs QR code) and reconnect (existing session)
+  - `AddEventHandler(handler)` wraps raw WA events and filters to `*events.Message` only
+  - `Disconnect()` for clean shutdown
+- Created `backend-go/internal/whatsapp/sender.go`
+  - `Sender` struct wrapping `*whatsmeow.Client`
+  - `SendText(ctx, toPhone, text)` constructs a JID and sends `*waE2E.Message{Conversation: proto.String(text)}`
+- API fixes applied vs. plan template:
+  - `sqlstore.New` requires `ctx context.Context` as first arg (plan had 3-arg form)
+  - `GetFirstDevice` requires `ctx context.Context` (plan had no arg)
+  - Proto import changed from `go.mau.fi/whatsmeow/binary/proto` to `go.mau.fi/whatsmeow/proto/waE2E` (moved in newer whatsmeow)
+  - `SendMessage` uses `*waE2E.Message` not `*waProto.Message`
+- Added `go.mau.fi/whatsmeow v0.0.0-20260529101937-a7ea56383ec4` and `github.com/mattn/go-sqlite3 v1.14.44` as direct deps; added `petermattis/goid` and `golang.org/x/exp` as indirect deps
+- `CGO_ENABLED=1 go build ./internal/whatsapp/...` passes cleanly
+- Committed: `feat(go): add whatsmeow client and text sender`
+
+## Task 15: WhatsApp handler — DONE (2026-05-31)
+
+- Created `backend-go/internal/whatsapp/handler.go`
+  - `Handler` struct: references db.Client, engine.Machine, Sender, scheduler.Scheduler, waNumberID
+  - `Handle(rawEvt)` — entry point called by WA event loop; ignores outbound messages; routes text vs media; spawns goroutine
+  - `processMessage` — main dispatch pipeline:
+    1. `rules.CheckEscalation` for keyword fast-path (wiring/admin/none)
+    2. `GetOrCreateConversation`
+    3. Skip if `conv.State.IsTerminal()`
+    4. `InsertMessage(conv.ID, models.SenderCustomer, text)` — triggers Realtime to Sales Inbox
+    5. `ListLast10Messages` for history context
+    6. `SearchStockByName` for stock context (in STOCK_CHECK or CLARIFYING states)
+    7. `machine.Process` — Gemini-backed state machine
+    8. Persist: `UpdateCollectedData`, `UpdateLanguage`, `UpdateConversationState`
+    9. `handleBooking` if `result.CreateOrder` — creates DB order row, schedules timeout timers
+    10. `InsertMessage(models.SenderAI, reply)` + `SendText`
+  - `handleWiringEscalation` — escalates to ESCALATED_WIRING state, sends bilingual reply
+  - `handleAdminEscalation` — escalates to ESCALATED_ADMIN state, sends bilingual reply
+  - `handleMediaMessage` — auto-escalates to ESCALATED_ADMIN for any non-text message
+  - `HandleApprovedOrder(ctx, orderID, conversationID, shippingFee)` — called from LISTEN/NOTIFY dispatcher; cancels timer, builds invoice, sends to customer, marks COMPLETED
+  - `buildInvoiceMessage` — bilingual (id/en) invoice with itemized list, subtotal, shipping, total, bank transfer details
+- All InsertMessage calls use typed `models.MessageSender` enum constants (not string literals)
+- `CGO_ENABLED=1 go build ./...` passes cleanly
+- Committed: `feat(go): add WA event handler — wires rules, state machine, DB, scheduler`
+
+## Tasks 16–21: Pending
