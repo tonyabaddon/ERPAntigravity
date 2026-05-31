@@ -279,4 +279,21 @@ _(Previously completed — not detailed here)_
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `feat(react): add pending orders panel to DashboardScreen`
 
-## Tasks 19, 21: Pending
+## Task 19: SalesInboxScreen — connect to real data — DONE (2026-05-31)
+
+- Rewrote `src/components/SalesInboxScreen.tsx` to use `useRealtimeConversations` hook instead of mock `chats` prop
+- Removed `SalesInboxScreenProps` fields (`chats`, `onChatsUpdate`) — component is now self-contained
+- Updated `src/App.tsx`: `<SalesInboxScreen />` rendered with no props; `chats` state retained for `DashboardScreen.chatsCount`
+- New component features:
+  - Auto-selects first conversation on load
+  - Filters: Semua / Butuh Admin / Dikelola AI (maps `conv.state` to status via `stateToStatus`)
+  - Search by `customer_phone` or `collected_data.name`
+  - `ChatBubble` renders customer / ai / admin / system messages with distinct styles
+  - Media attachments rendered as clickable links
+  - `handleToggleAi` calls `toggleAiControl` based on current conversation state
+  - File upload via hidden `<input type="file">` feeds `sendAdminMedia`
+  - Loading state renders "Memuat percakapan..." while hook fetches data
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `feat(react): rewrite SalesInboxScreen — connect to Supabase Realtime`
+
+## Task 21: Pending

@@ -189,10 +189,7 @@ export default function App() {
         );
       case 'sales-inbox':
         return (
-          <SalesInboxScreen 
-            chats={chats} 
-            onChatsUpdate={setChats} 
-          />
+          <SalesInboxScreen />
         );
       case 'ai-stock':
         return (
