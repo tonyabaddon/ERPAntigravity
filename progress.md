@@ -41,4 +41,14 @@
 - Fix 7 (Minor): All 4 `CREATE TYPE` statements wrapped in idempotent DO/EXCEPTION blocks
 - Committed: `fix(db): idempotent migration, column-level grants, updated_at triggers, pg_notify fix`
 
-## Tasks 3–21: Pending
+## Task 3: Go shared models — DONE (2026-05-31)
+
+- Created `backend-go/internal/models/types.go`
+- Defines `ConversationState` type with 12 constants (exactly matching Supabase `conversation_state` enum)
+- `IsTerminal()` method identifies states where incoming messages should be ignored: `CANCELLED`, `COMPLETED`, `ESCALATED_ADMIN`, `ESCALATED_WIRING`
+- Defines `CollectedData` struct with `AllCoreFieldsFilled()` validation method
+- Defines `Conversation`, `Message`, `Order`, `OrderItem`, `StockItem` structs with JSON tags
+- `CGO_ENABLED=1 go build ./internal/models/...` passes cleanly
+- Committed: `feat(go): add shared models package`
+
+## Tasks 4–21: Pending
