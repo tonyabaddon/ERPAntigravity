@@ -51,4 +51,55 @@
 - `CGO_ENABLED=1 go build ./internal/models/...` passes cleanly
 - Committed: `feat(go): add shared models package`
 
-## Tasks 4–21: Pending
+## Task 4: Config loader — DONE (2026-05-31)
+
+_(Previously completed — not detailed here)_
+
+## Task 5: DB client with LISTEN/NOTIFY — DONE (2026-05-31)
+
+- Created `backend-go/internal/db/client.go`
+- `Client` struct wraps `*sql.DB` and `*pq.Listener`
+- `NewClient(connStr)` opens a pooled connection (max 10 open / 5 idle / 5 min lifetime) and a `pq.Listener` with 10s min reconnect, 1 min max
+- `StartListening(NotifyHandlers)` subscribes to `admin_messages` and `order_approved` channels; dispatches each notification to the appropriate handler in its own goroutine
+- `NotifyHandlers.OnAdminMessage` signature is `func(conversationID, messageID string)` — receives `message_id` from payload (not text), matching the updated `notify_admin_message` trigger
+- `Close()` shuts down both listener and DB pool cleanly
+- `CGO_ENABLED=1 go build ./internal/db/...` passes cleanly
+
+## Task 6: DB conversations — DONE (2026-05-31)
+
+- Created `backend-go/internal/db/conversations.go`
+- `GetOrCreateConversation` returns the most recent active conversation or creates a new `GREETING` one
+- `UpdateConversationState`, `UpdateCollectedData`, `UpdateLanguage` — targeted UPDATE helpers
+- `ListConversationsByPhone` — returns all conversations for a phone number DESC
+- `CGO_ENABLED=1 go build ./internal/db/...` passes cleanly
+
+## Task 7: DB messages, orders, stock — DONE (2026-05-31)
+
+- Created `backend-go/internal/db/messages.go`
+  - `InsertMessage`, `InsertMediaMessage`, `GetMessageByID`, `ListLast10Messages`
+  - `GetMessageByID` needed by main.go to look up full message text from the `admin_messages` LISTEN payload (which sends `message_id` not text)
+- Created `backend-go/internal/db/orders.go`
+  - `CreateOrder` — inserts with 48 h booking expiry; RETURNING includes `updated_at`
+  - `UpdateOrderStatus` — sets `approved_at = now()` for non-CANCELLED statuses
+  - `MarkReminderSent`, `ListActiveBookings`, `GetOrderByConversation`, `GetOrderByID`
+  - `PendingOrder` helper struct for the scheduler
+- Created `backend-go/internal/db/stock.go`
+  - `SearchStockByName` — case-insensitive LIKE search on `stocks` table, returns up to 10 in-stock results
+- `CGO_ENABLED=1 go build ./internal/db/...` passes cleanly
+- Committed: `feat(go): add DB layer — client, conversations, messages, orders, stock`
+
+## Task 8: Rules engine for keyword escalation — DONE (2026-05-31)
+
+- Created `backend-go/internal/rules/escalation.go`
+  - `EscalationType` string type with three constants: `EscalationNone` (""), `EscalationWiring` ("WIRING"), `EscalationAdmin` ("ADMIN")
+  - `wiringKeywords` array: instalasi, grounding, panel custom, wiring, proyek besar, diagram, installation, custom panel
+  - `adminKeywords` array: diskon, discount, harga khusus, special price, potongan harga, price cut
+  - `CheckEscalation(text string)` scans message for keywords (case-insensitive); WIRING takes priority over ADMIN
+- Created `backend-go/internal/rules/escalation_test.go`
+  - `TestWiringKeywords` covers 5 positive cases and 2 negative cases
+  - `TestAdminKeywords` covers 3 positive cases and 1 negative case
+  - All 2 tests PASS
+- This rules engine is the first thing checked when a WhatsApp message arrives, before any LLM call — fast keyword scan
+- Committed: `feat(go): add rules engine with keyword escalation detection`
+
+## Tasks 9–21: Pending
