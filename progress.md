@@ -115,4 +115,21 @@ _(Previously completed — not detailed here)_
 - TDD workflow: tests written first and confirmed failing, then implementation written, tests confirmed passing
 - Committed: `feat(go): add engine parser — Gemini JSON to typed structs with tests`
 
-## Tasks 10–21: Pending
+## Task 10: Engine prompts for conversation states — DONE (2026-05-31)
+
+- Created `backend-go/internal/engine/prompts.go`
+  - `BuildPrompt(state, language, data, history, stockContext)` — constructs full system+context prompt for Gemini API calls
+  - Includes collected data (name, company, address, product, qty), stock context, and conversation history
+  - `systemPromptForState(state, language)` — returns state-specific system prompt for all 5 active states:
+    - `StateGreeting`: greet warmly, detect language, respond with JSON containing reply + detected_language
+    - `StateCollecting`: ask for ONE missing field at a time (name, company, address, product); escalate on discount/special price requests
+    - `StateClarifying`: ask about quantity, size, color, notes; move to READY or ESCALATE
+    - `StateStockCheck`: present available stock from DB with prices; CONFIRM or ESCALATE
+    - `StateConfirming`: present full order summary, await "OK"/"BENAR" confirmation
+  - `StockContextString(items)` — formats `[]models.StockItem` as compact stock display for prompt (name, SKU, price in Rupiah, stock quantity)
+  - `formatHistory(msgs)` — converts message slice to readable conversation history with sender role + message text
+  - All prompts include language selector (Bahasa Indonesia / English) and JSON response format constraints
+- `CGO_ENABLED=1 go build ./internal/engine/...` passes cleanly (no errors)
+- Committed: `feat(go): add engine prompts — system prompts per conversation state`
+
+## Tasks 11–21: Pending
