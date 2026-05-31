@@ -30,4 +30,15 @@
 - Apply via: `supabase db push` or paste into Supabase Dashboard SQL editor
 - Committed: `feat(db): add core AI engine schema — conversations, messages, orders, RLS, triggers`
 
+### Migration fixes (2026-05-31): 7 issues patched
+
+- Fix 1 (Critical): 4 bare `ALTER PUBLICATION` lines replaced with idempotent DO blocks checking `pg_publication_tables`
+- Fix 2 (Critical): Column-level `GRANT UPDATE (state) ON conversations TO anon` and `GRANT UPDATE (status, shipping_fee) ON orders TO anon` added after RLS policies
+- Fix 3 (Important): `set_updated_at()` trigger function + `trg_conversations_updated_at` trigger added
+- Fix 4 (Important): `updated_at timestamptz NOT NULL DEFAULT now()` column added to `orders` table + `trg_orders_updated_at` trigger added (shares `set_updated_at()` function)
+- Fix 5 (Important): `ALTER TABLE whatsapp_numbers ADD CONSTRAINT uq_wa_phone UNIQUE (phone_number)` added
+- Fix 6 (Important): `notify_admin_message()` payload changed from `'text', NEW.text` to `'message_id', NEW.id` to avoid 8000-byte pg_notify truncation
+- Fix 7 (Minor): All 4 `CREATE TYPE` statements wrapped in idempotent DO/EXCEPTION blocks
+- Committed: `fix(db): idempotent migration, column-level grants, updated_at triggers, pg_notify fix`
+
 ## Tasks 3–21: Pending
