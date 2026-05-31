@@ -226,4 +226,19 @@ _(Previously completed — not detailed here)_
 - `CGO_ENABLED=1 go build ./...` passes cleanly
 - Committed: `feat(go): add WA event handler — wires rules, state machine, DB, scheduler`
 
-## Tasks 16–21: Pending
+## Task 16: Rewrite main.go — full daemon — DONE (2026-05-31)
+
+- Overwrote `backend-go/main.go` with full daemon wire-up replacing the flat HTTP stock server
+- Initializes in order: DB client, Gemini client, state machine, WhatsApp client + sender, scheduler, WA handler
+- Scheduler callbacks look up orders from DB; send WA reminder text; call `MarkReminderSent` and `UpdateConversationState`
+- Restores active booking timers on boot via `ListActiveBookings` + `sched.RestoreOnBoot`
+- `StartListening` wires two NOTIFY handlers:
+  - `OnAdminMessage(conversationID, messageID)` — calls `GetMessageByID` to get full message text, looks up `customer_phone`, forwards via `sender.SendText`
+  - `OnOrderApproved` — delegates to `waHandler.HandleApprovedOrder`
+- HTTP endpoints: `/api/health`, `/api/wa/status`, `/api/stocks` (GET/POST), `/api/stocks/{sku}` (PUT/DELETE)
+- Stock CRUD functions refactored to accept `*db.Client` parameter (was global `*sql.DB`)
+- Graceful shutdown on SIGINT/SIGTERM: waits on signal channel, disconnects WA
+- `CGO_ENABLED=1 go build ./...` passes cleanly
+- Committed: `feat(go): rewrite main.go — wire daemon: WA + Gemini + state machine + scheduler`
+
+## Tasks 17–21: Pending

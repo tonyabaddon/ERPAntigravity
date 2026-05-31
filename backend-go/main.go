@@ -1,19 +1,219 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/username/sinar-elektrik-backend/config"
+	"github.com/username/sinar-elektrik-backend/internal/db"
+	"github.com/username/sinar-elektrik-backend/internal/engine"
+	"github.com/username/sinar-elektrik-backend/internal/gemini"
+	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/scheduler"
+	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
 
-// StockItem represents the database table structure for stocks
+func main() {
+	cfg := config.Load()
+	ctx := context.Background()
+
+	// DB
+	dbClient, err := db.NewClient(cfg.SupabaseDBConn)
+	if err != nil {
+		log.Fatalf("[MAIN] DB connect failed: %v", err)
+	}
+	defer dbClient.Close()
+
+	// Gemini
+	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey)
+	if err != nil {
+		log.Fatalf("[MAIN] Gemini init failed: %v", err)
+	}
+	defer geminiClient.Close()
+
+	// State machine
+	machine := engine.NewMachine(geminiClient)
+
+	// WhatsApp client (ctx required by new sqlstore.New API)
+	waClient, err := whatsapp.NewClient(ctx, cfg.WAStorePath)
+	if err != nil {
+		log.Fatalf("[MAIN] WA client init failed: %v", err)
+	}
+	sender := whatsapp.NewSender(waClient.WA)
+
+	// Scheduler
+	var waHandler *whatsapp.Handler
+	sched := scheduler.NewScheduler(
+		func(orderID string) {
+			order, err := dbClient.GetOrderByID(orderID)
+			if err != nil {
+				log.Printf("[MAIN] Reminder: lookup failed for order %s: %v", orderID, err)
+				return
+			}
+			var lang string
+			dbClient.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, order.ConversationID).Scan(&lang)
+			reminderText := "Pesanan Anda akan kadaluarsa dalam 24 jam. Harap segera konfirmasi atau pesanan dibatalkan otomatis."
+			if lang == "en" {
+				reminderText = "Your order will expire in 24 hours. Please confirm payment or it will be automatically cancelled."
+			}
+			if err := sender.SendText(ctx, order.CustomerPhone, reminderText); err != nil {
+				log.Printf("[MAIN] Reminder: WA send failed: %v", err)
+			}
+			dbClient.MarkReminderSent(orderID)
+			dbClient.UpdateConversationState(order.ConversationID, models.StateTimeoutReminder)
+		},
+		func(orderID string) {
+			log.Printf("[MAIN] Auto-cancelling order %s", orderID)
+			dbClient.UpdateOrderStatus(orderID, "CANCELLED")
+		},
+	)
+
+	waNumberID := os.Getenv("WA_NUMBER_ID")
+	if waNumberID == "" {
+		waNumberID = "wa_1"
+	}
+	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID)
+	waClient.AddEventHandler(waHandler.Handle)
+
+	// Restore booking timers after restart
+	bookings, err := dbClient.ListActiveBookings()
+	if err != nil {
+		log.Printf("[MAIN] RestoreOnBoot: list bookings error: %v", err)
+	} else {
+		entries := make([]scheduler.BookingEntry, len(bookings))
+		for i, b := range bookings {
+			entries[i] = scheduler.BookingEntry{ID: b.ID, ExpiresAt: b.ExpiresAt}
+		}
+		sched.RestoreOnBoot(entries)
+	}
+
+	// LISTEN/NOTIFY handlers
+	if err := dbClient.StartListening(db.NotifyHandlers{
+		OnAdminMessage: func(conversationID, messageID string) {
+			log.Printf("[MAIN] Admin message in conversation %s", conversationID)
+			msg, err := dbClient.GetMessageByID(messageID)
+			if err != nil {
+				log.Printf("[MAIN] GetMessageByID failed for %s: %v", messageID, err)
+				return
+			}
+			var customerPhone string
+			dbClient.DB.QueryRow(`SELECT customer_phone FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone)
+			if customerPhone != "" && msg.Text != "" {
+				if err := sender.SendText(ctx, customerPhone, msg.Text); err != nil {
+					log.Printf("[MAIN] Admin forward WA send failed: %v", err)
+				}
+			}
+		},
+		OnOrderApproved: func(orderID, conversationID string, shippingFee float64) {
+			waHandler.HandleApprovedOrder(ctx, orderID, conversationID, shippingFee)
+		},
+	}); err != nil {
+		log.Fatalf("[MAIN] StartListening failed: %v", err)
+	}
+
+	// Connect WhatsApp
+	if err := waClient.Connect(ctx); err != nil {
+		log.Fatalf("[MAIN] WA connect failed: %v", err)
+	}
+
+	// HTTP server
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": "online",
+			"time":   time.Now().Format(time.RFC3339),
+		})
+	})
+	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		if waClient.WA.IsConnected() {
+			w.Write([]byte(`{"connected":true}`))
+		} else {
+			w.Write([]byte(`{"connected":false}`))
+		}
+	})
+	mux.HandleFunc("/api/stocks", handleStocksRoute(dbClient))
+	mux.HandleFunc("/api/stocks/", handleSingleStockRoute(dbClient))
+
+	go func() {
+		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
+		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
+			log.Printf("[MAIN] HTTP error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("[MAIN] Shutting down...")
+	waClient.Disconnect()
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+}
+
+func handleStocksRoute(dbClient *db.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		switch r.Method {
+		case "GET":
+			getStocks(w, r, dbClient)
+		case "POST":
+			upsertStock(w, r, dbClient)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+		}
+	}
+}
+
+func handleSingleStockRoute(dbClient *db.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) < 4 {
+			http.Error(w, `{"error": "invalid path"}`, http.StatusBadRequest)
+			return
+		}
+		sku := parts[3]
+		switch r.Method {
+		case "PUT":
+			updateStockPriceAndVolume(w, r, sku, dbClient)
+		case "DELETE":
+			deleteStock(w, r, sku, dbClient)
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
+		}
+	}
+}
+
 type StockItem struct {
 	Sku       string    `json:"sku"`
 	Name      string    `json:"name"`
@@ -24,284 +224,101 @@ type StockItem struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-var db *sql.DB
-
-func initDB() {
-	// ConnString can be retrieved from environment config inside Supabase dashboard:
-	// Example: postgres://postgres.[your-supabase-project]:[password]@aws-0-us-east-1.pooler.supabase.com:5432/postgres
-	connStr := os.Getenv("SUPABASE_DB_CONNECTION")
-	if connStr == "" {
-		log.Println("[WARN] SUPABASE_DB_CONNECTION env not specified. Defaulting to local postgres connection string...")
-		connStr = "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"
-	}
-
-	var err error
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatalf("Error opening connection to database: %v", err)
-	}
-
-	// Double-check active database ping
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(time.Minute * 5)
-
-	err = db.Ping()
-	if err != nil {
-		log.Printf("[WARN] Failed to ping Supabase/Postgre SQL server: %v. Please make sure the credentials are correct.", err)
-	} else {
-		log.Println("[INFO] Successfully established Postgres tunnel connection to Supabase.")
-		createTableIfNotExists()
-	}
-}
-
-func createTableIfNotExists() {
-	query := `
-	CREATE TABLE IF NOT EXISTS stocks (
-		sku VARCHAR(50) PRIMARY KEY,
-		name TEXT NOT NULL,
-		category VARCHAR(100) NOT NULL,
-		price NUMERIC NOT NULL,
-		stock INT NOT NULL,
-		status VARCHAR(50) NOT NULL,
-		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-	);`
-	_, err := db.Exec(query)
-	if err != nil {
-		log.Printf("[ERROR] Failed to run automated migration boilerplate: %v", err)
-	} else {
-		log.Println("[MIGRATION] Table 'stocks' verified/initialized.")
-	}
-}
-
-// enableCors adds headers allowing connection from arbitrary client origins
-func enableCors(w *http.ResponseWriter) {
-	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
-	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-}
-
-func main() {
-	initDB()
-	defer db.Close()
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	mux := http.NewServeMux()
-
-	// Base API check
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": "online",
-			"time":   time.Now().Format(time.RFC3339),
-			"engine": "Go net/http + github.com/lib/pq",
-		})
-	})
-
-	// /api/stocks controller handler
-	mux.HandleFunc("/api/stocks", handleStocksRoute)
-	mux.HandleFunc("/api/stocks/", handleSingleStockRoute)
-
-	log.Printf("[SERVER] Sinar Elektrik Go Backend starting on port %s...", port)
-	if err := http.ListenAndServe("0.0.0.0:"+port, mux); err != nil {
-		log.Fatalf("Server aborted: %v", err)
-	}
-}
-
-// Handle dual routes for collection level
-func handleStocksRoute(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	switch r.Method {
-	case "GET":
-		getStocks(w, r)
-	case "POST":
-		upsertStock(w, r)
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-	}
-}
-
-// Handle single items path (e.g., PUT or DELETE /api/stocks/{sku})
-func handleSingleStockRoute(w http.ResponseWriter, r *http.Request) {
-	enableCors(&w)
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 4 {
-		http.Error(w, `{"error": "invalid path parameters"}`, http.StatusBadRequest)
-		return
-	}
-	sku := parts[3]
-
-	switch r.Method {
-	case "PUT":
-		updateStockPriceAndVolume(w, r, sku)
-	case "DELETE":
-		deleteStock(w, r, sku)
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-	}
-}
-
-func getStocks(w http.ResponseWriter, r *http.Request) {
+func getStocks(w http.ResponseWriter, r *http.Request, dbClient *db.Client) {
 	w.Header().Set("Content-Type", "application/json")
-
-	rows, err := db.Query("SELECT sku, name, category, price, stock, status, updated_at FROM stocks ORDER BY sku ASC")
+	rows, err := dbClient.DB.Query("SELECT sku, name, category, price, stock, status, updated_at FROM stocks ORDER BY sku ASC")
 	if err != nil {
-		log.Printf("Query error: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Database retrieval failed", "details": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
-
 	items := []StockItem{}
 	for rows.Next() {
 		var item StockItem
-		err := rows.Scan(&item.Sku, &item.Name, &item.Category, &item.Price, &item.Stock, &item.Status, &item.UpdatedAt)
-		if err != nil {
-			log.Printf("Row scan error: %v", err)
-			continue
-		}
+		rows.Scan(&item.Sku, &item.Name, &item.Category, &item.Price, &item.Stock, &item.Status, &item.UpdatedAt)
 		items = append(items, item)
 	}
-
 	json.NewEncoder(w).Encode(items)
 }
 
-func upsertStock(w http.ResponseWriter, r *http.Request) {
+func upsertStock(w http.ResponseWriter, r *http.Request, dbClient *db.Client) {
 	w.Header().Set("Content-Type", "application/json")
-
 	var item StockItem
-	err := json.NewDecoder(r.Body).Decode(&item)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload format"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
 		return
 	}
-
 	if item.Sku == "" || item.Name == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Fields SKU and Name are mandatory"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "SKU and Name are required"})
 		return
 	}
-
-	// Capitalize SKU code format
 	item.Sku = strings.ToUpper(item.Sku)
 	item.UpdatedAt = time.Now()
-
-	// PostgreSQL / Supabase UPSERT syntax
-	query := `
-		INSERT INTO stocks (sku, name, category, price, stock, status, updated_at) 
+	query := `INSERT INTO stocks (sku, name, category, price, stock, status, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (sku) 
-		DO UPDATE SET name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price, stock = EXCLUDED.stock, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at
+		ON CONFLICT (sku) DO UPDATE SET
+			name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price,
+			stock = EXCLUDED.stock, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at
 		RETURNING sku, name, category, price, stock, status, updated_at`
-
-	err = db.QueryRow(query, item.Sku, item.Name, item.Category, item.Price, item.Stock, item.Status, item.UpdatedAt).
+	err := dbClient.DB.QueryRow(query, item.Sku, item.Name, item.Category, item.Price, item.Stock, item.Status, item.UpdatedAt).
 		Scan(&item.Sku, &item.Name, &item.Category, &item.Price, &item.Stock, &item.Status, &item.UpdatedAt)
-
 	if err != nil {
-		log.Printf("Upsert Error: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to upsert cloud row", "details": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
-
-	log.Printf("[SUCCESS] Upserted SKU: %s", item.Sku)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": "Stock record successfully synchronised with Supabase Cloud DB",
-		"data":    item,
-	})
+	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "data": item})
 }
 
-func updateStockPriceAndVolume(w http.ResponseWriter, r *http.Request, sku string) {
+func updateStockPriceAndVolume(w http.ResponseWriter, r *http.Request, sku string, dbClient *db.Client) {
 	w.Header().Set("Content-Type", "application/json")
 	sku = strings.ToUpper(sku)
-
-	type UpdateBody struct {
+	var payload struct {
 		Price int64 `json:"price"`
 		Stock int   `json:"stock"`
 	}
-
-	var payload UpdateBody
-	err := json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON body format"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON"})
 		return
 	}
-
 	status := "Sinkron"
 	if payload.Stock < 10 {
 		status = "Stok Tipis"
 	}
-
-	query := `UPDATE stocks SET price = $1, stock = $2, status = $3, updated_at = $4 WHERE sku = $5`
-	res, err := db.Exec(query, payload.Price, payload.Stock, status, time.Now(), sku)
+	res, err := dbClient.DB.Exec(`UPDATE stocks SET price = $1, stock = $2, status = $3, updated_at = $4 WHERE sku = $5`,
+		payload.Price, payload.Stock, status, time.Now(), sku)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SQL update failed", "details": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
-
 	affected, _ := res.RowsAffected()
 	if affected == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SKU not found to update"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "SKU not found"})
 		return
 	}
-
-	log.Printf("[SUCCESS] Updated pricing/stock details for SKU: %s", sku)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"sku":     sku,
-		"price":   payload.Price,
-		"stock":   payload.Stock,
-		"status":  status,
-	})
+	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "sku": sku, "price": payload.Price, "stock": payload.Stock})
 }
 
-func deleteStock(w http.ResponseWriter, r *http.Request, sku string) {
+func deleteStock(w http.ResponseWriter, r *http.Request, sku string, dbClient *db.Client) {
 	w.Header().Set("Content-Type", "application/json")
 	sku = strings.ToUpper(sku)
-
-	query := `DELETE FROM stocks WHERE sku = $1`
-	res, err := db.Exec(query, sku)
+	res, err := dbClient.DB.Exec(`DELETE FROM stocks WHERE sku = $1`, sku)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SQL Delete execution failed", "details": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
-
 	affected, _ := res.RowsAffected()
 	if affected == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Target SKU does not exist"})
+		json.NewEncoder(w).Encode(map[string]string{"error": "SKU not found"})
 		return
 	}
-
-	log.Printf("[DELETED] SKU: %s removed from live cloud stocks index", sku)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"message": fmt.Sprintf("SKU %s successfully deleted on Supabase", sku),
-	})
+	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "message": fmt.Sprintf("SKU %s deleted", sku)})
 }
