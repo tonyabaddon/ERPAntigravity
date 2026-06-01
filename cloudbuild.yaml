@@ -1,4 +1,8 @@
 steps:
+  - name: 'alpine'
+    id: 'diagnostic'
+    args: ['echo', 'READING_CUSTOM_CLOUDBUILD_YAML']
+
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
