@@ -310,3 +310,16 @@ _(Previously completed — not detailed here)_
 - Removed localStorage save `useEffect`; removed `DEFAULT_WA_NUMBERS` constant; cleaned up unused imports
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `feat(react): connect WhatsappAiScreen to Supabase — remove sandbox, add Realtime status`
+
+## Task 2: Update Gemini client to accept system prompt — DONE (2026-06-01)
+
+- Updated `backend-go/internal/gemini/client.go`:
+  - Changed `NewClient` signature from `NewClient(ctx, apiKey)` to `NewClient(ctx, apiKey, systemPrompt)`
+  - Set `model.SystemInstruction = &genai.Content{Parts: []genai.Part{genai.Text(systemPrompt)}}` at client construction time
+  - No changes to `GenerateReply` or `Close` methods
+- Updated `backend-go/main.go`:
+  - Added `"github.com/username/sinar-elektrik-backend/internal/assets"` import
+  - Changed `gemini.NewClient(ctx, cfg.GeminiAPIKey)` to `gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)`
+- Verified build: `CGO_ENABLED=1 go build ./...` passes with no errors
+- Verified tests: `CGO_ENABLED=1 go test ./...` — all pass; `machine_test.go` mockGemini unaffected by interface-compatible change
+- Committed: `feat(go): wire Calista system prompt into Gemini client via SystemInstruction`
