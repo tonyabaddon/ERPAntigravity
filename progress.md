@@ -342,3 +342,18 @@ _(Previously completed — not detailed here)_
 - Verified build: `CGO_ENABLED=1 go build ./...` passes with no errors
 - Verified tests: `CGO_ENABLED=1 go test ./...` — all pass; `machine_test.go` mockGemini unaffected by interface-compatible change
 - Committed: `feat(go): wire Calista system prompt into Gemini client via SystemInstruction`
+
+## Task 1 (schema ID system migration): SQL migration file created — DONE (2026-06-01)
+
+- Created `supabase/migrations/20260601000001_schema_id_system.sql`
+- Expands `order_status` enum with 8 new spec-compliant business statuses
+- Adds `ai_active boolean` column to `conversations` table (with anon GRANT)
+- Creates 3 sequences: `gjp_cust_seq`, `gjp_lead_seq`, `gjp_ord_seq` for GJP ID generation
+- Creates `customers` table (id, wa_number, name, company) with RLS + unique constraint
+- Creates `leads` table (id, customer_id, conversation_id, wa_number, status) with RLS, indexes, `trg_leads_updated_at` trigger
+- Creates `bank_config` table (bank_name, account_number, account_name, is_active) with RLS + `trg_bank_config_updated_at` trigger
+- Adds 8 new columns to `orders` table (gjp_order_id, order_type, leads_id, customer_id, delivery_type, payment_proof_url, payment_verified_at, verified_by)
+- Enables Supabase Realtime for `customers` and `leads` tables
+- All DDL is idempotent (IF NOT EXISTS / DO $$ BEGIN ... END $$)
+- Migration NOT applied to Supabase — user applies manually
+- Committed: `feat(sql): add schema migration — customers, leads, bank_config, ai_active, order status expansion` (d7c7257)
