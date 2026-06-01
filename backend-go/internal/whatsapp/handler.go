@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"go.mau.fi/whatsmeow/types/events"
 
@@ -20,10 +21,11 @@ type Handler struct {
 	sender     *Sender
 	scheduler  *scheduler.Scheduler
 	waNumberID string
+	startedAt  time.Time
 }
 
 func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID string) *Handler {
-	return &Handler{db: d, machine: m, sender: s, scheduler: sc, waNumberID: waNumberID}
+	return &Handler{db: d, machine: m, sender: s, scheduler: sc, waNumberID: waNumberID, startedAt: time.Now()}
 }
 
 func (h *Handler) Handle(rawEvt interface{}) {
@@ -32,6 +34,11 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		return
 	}
 	if evt.Info.IsFromMe {
+		return
+	}
+	// Skip messages sent before the daemon started — these are WhatsApp's
+	// queued backlog delivered on first connect, not live customer messages.
+	if evt.Info.Timestamp.Before(h.startedAt) {
 		return
 	}
 
@@ -59,46 +66,64 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 	}
 
 	// 2. Get or create conversation
-	conv, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		log.Printf("[HANDLER] GetOrCreateConversation error for %s: %v", senderPhone, err)
 		return
 	}
 
-	// 3. Admin escalation keyword
+	// 3. Ensure customer record exists; create lead on new conversations.
+	//    Errors here are non-fatal — log and continue so the message is never dropped.
+	var leadsID, customerID string
+	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	if err != nil {
+		log.Printf("[HANDLER] GetOrCreateCustomer error for %s: %v", senderPhone, err)
+	} else {
+		customerID = customer.ID
+		if created {
+			lead, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone)
+			if err != nil {
+				log.Printf("[HANDLER] CreateLead error for conv %s: %v", conv.ID, err)
+			} else {
+				leadsID = lead.ID
+			}
+		}
+	}
+
+	// 4. Admin escalation keyword
 	if esc == rules.EscalationAdmin {
 		h.handleAdminEscalation(ctx, conv, text)
 		return
 	}
 
-	// 4. Terminal state — ignore further messages
+	// 5. Terminal state — ignore further messages
 	if conv.State.IsTerminal() {
 		return
 	}
 
-	// 5. Insert customer message → Realtime pushes to Sales Inbox
+	// 6. Insert customer message → Realtime pushes to Sales Inbox
 	if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, text); err != nil {
 		log.Printf("[HANDLER] InsertMessage error: %v", err)
 	}
 
-	// 6. Load history
+	// 7. Load history
 	history, _ := h.db.ListLast10Messages(conv.ID)
 
-	// 7. Build stock context if needed
+	// 8. Build stock context if needed
 	stockContext := ""
 	if conv.State == models.StateStockCheck || conv.State == models.StateClarifying {
 		items, _ := h.db.SearchStockByName(conv.CollectedData.Product)
 		stockContext = engine.StockContextString(items)
 	}
 
-	// 8. Run state machine
+	// 9. Run state machine
 	result, err := h.machine.Process(ctx, conv, text, history, stockContext)
 	if err != nil {
 		log.Printf("[HANDLER] Machine.Process error: %v", err)
 		return
 	}
 
-	// 9. Persist state + data before sending reply
+	// 10. Persist state + data before sending reply
 	if result.NewData != nil {
 		if err := h.db.UpdateCollectedData(conv.ID, *result.NewData, result.ClarificationRound); err != nil {
 			log.Printf("[HANDLER] UpdateCollectedData error: %v", err)
@@ -113,12 +138,12 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		}
 	}
 
-	// 10. If order just booked, create order row and start timer
+	// 11. If order just booked, create order row and start timer
 	if result.CreateOrder {
-		h.handleBooking(ctx, conv)
+		h.handleBooking(ctx, conv, leadsID, customerID)
 	}
 
-	// 11. Insert AI reply + send to WA
+	// 12. Insert AI reply + send to WA
 	if result.Reply != "" {
 		h.db.InsertMessage(conv.ID, models.SenderAI, result.Reply)
 		if err := h.sender.SendText(ctx, senderPhone, result.Reply); err != nil {
@@ -127,7 +152,7 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 	}
 }
 
-func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation) {
+func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, leadsID, customerID string) {
 	items, _ := h.db.SearchStockByName(conv.CollectedData.Product)
 	var orderItems []models.OrderItem
 	var subtotal float64
@@ -147,7 +172,7 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation) 
 	if len(items) == 0 {
 		log.Printf("[HANDLER] Warning: no stock found for product %q, order will have empty items", conv.CollectedData.Product)
 	}
-	order, err := h.db.CreateOrder(conv, orderItems, subtotal)
+	order, err := h.db.CreateOrder(conv, orderItems, subtotal, leadsID, customerID, models.OrderTypeStandard, "")
 	if err != nil {
 		log.Printf("[HANDLER] CreateOrder error: %v", err)
 		return
@@ -157,7 +182,7 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation) 
 }
 
 func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text string) {
-	conv, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		return
 	}
@@ -188,7 +213,7 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conver
 
 func (h *Handler) handleMediaMessage(evt *events.Message) {
 	senderPhone := evt.Info.Sender.ToNonAD().String()
-	conv, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		return
 	}
