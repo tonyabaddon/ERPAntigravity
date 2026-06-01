@@ -55,8 +55,8 @@ func TestBuildPromptClarifyingIncludesProductAndSpecs(t *testing.T) {
 	if !strings.Contains(result, "MCB Schneider 16A") {
 		t.Error("clarifying prompt must include product name in context")
 	}
-	if !strings.Contains(result, "clarification_round") {
-		t.Error("clarifying prompt must include clarification_round in JSON format")
+	if !strings.Contains(result, `"specs"`) {
+		t.Error("clarifying prompt must include specs in JSON format")
 	}
 }
 

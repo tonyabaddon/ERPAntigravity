@@ -33,7 +33,7 @@ Sambut pelanggan sebagai Calista dari Garindo Jaya Panel (ikuti SOP Fase 1).
 Deteksi bahasa: "id" untuk Bahasa Indonesia, "en" untuk English.
 
 Balas HANYA JSON (tidak ada teks lain):
-{"reply":"<pesan sambutan WA>","detected_language":"id"}`
+{"reply":"<pesan sambutan WA>","detected_language":"<id|en>"}`
 
 	case models.StateCollecting:
 		missing := missingFields(c)
@@ -69,7 +69,7 @@ Jika spesifikasi sudah cukup → next_action: READY
 Jika perlu eskalasi (custom ukuran, IP rating, wiring, dll) → next_action: ESCALATE
 
 Balas HANYA JSON (tidak ada teks lain):
-{"reply":"<pesan WA>","specs":{"product":"<isi>","qty":<angka>,"size":"<isi>","color":"<isi>","notes":"<isi>"},"next_action":"CONTINUE","clarification_round":<angka>}`,
+{"reply":"<pesan WA>","specs":{"qty":<angka>,"size":"<isi>","color":"<isi>","notes":"<isi>"},"next_action":"CONTINUE"}`,
 			orBelum(c.Product), c.Quantity,
 			orBelum(c.Specs.Size), orBelum(c.Specs.Color), orBelum(c.Specs.Notes))
 
