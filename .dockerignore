@@ -1,0 +1,8 @@
+node_modules
+dist
+backend-go
+.env
+.env.*
+!.env.example
+*.log
+.git

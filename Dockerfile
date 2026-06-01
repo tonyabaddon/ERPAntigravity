@@ -18,12 +18,15 @@ ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 RUN npm run build
 
-# Serve stage
-FROM nginx:alpine
+# Serve stage — Node reads $PORT from Cloud Run
+FROM node:20-alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+RUN npm install -g serve
+
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD sh -c "serve -s dist -l ${PORT:-8080}"
