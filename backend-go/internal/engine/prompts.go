@@ -7,7 +7,10 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
-// BuildPrompt constructs the full system+context prompt for a given conversation state.
+// BuildPrompt returns the state-specific JSON format instruction for Gemini.
+// Calista's persona and product knowledge are already set as the model's
+// SystemInstruction — this prompt only provides current state context and
+// the required JSON output shape.
 func BuildPrompt(
 	state models.ConversationState,
 	language string,
@@ -15,87 +18,160 @@ func BuildPrompt(
 	history []models.Message,
 	stockContext string,
 ) string {
-	system := systemPromptForState(state, language)
+	statePrompt := stateInstructions(state, data, stockContext)
 	hist := formatHistory(history)
-	ctx := ""
-	if stockContext != "" {
-		ctx = "\n\n## Stock Context\n" + stockContext
-	}
-	collected := fmt.Sprintf("\n\n## Collected So Far\nname: %q\ncompany: %q\naddress: %q\nproduct: %q\nqty: %d",
-		data.Name, data.Company, data.Address, data.Product, data.Quantity)
-	return system + collected + ctx + "\n\n## Conversation History\n" + hist
+	return statePrompt + "\n\n## Riwayat percakapan:\n" + hist
 }
 
-func systemPromptForState(state models.ConversationState, language string) string {
-	lang := "Bahasa Indonesia"
-	if language == "en" {
-		lang = "English"
-	}
-
+func stateInstructions(state models.ConversationState, c models.CollectedData, stockCtx string) string {
 	switch state {
 	case models.StateGreeting:
-		return fmt.Sprintf(`You are Sari, the AI sales assistant for Garindo Jaya Panel, an electrical components wholesaler in Indonesia.
-Greet the customer warmly in %s. Ask how you can help.
-Respond ONLY with valid JSON: {"reply": "<your greeting>", "detected_language": "<id or en>"}`, lang)
+		return `FASE: GREETING
+Pelanggan baru mengirim pesan pertama.
+
+Sambut pelanggan sebagai Calista dari Garindo Jaya Panel (ikuti SOP Fase 1).
+Deteksi bahasa: "id" untuk Bahasa Indonesia, "en" untuk English.
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan sambutan WA>","detected_language":"id"}`
 
 	case models.StateCollecting:
-		return fmt.Sprintf(`You are Sari, collecting order details for Garindo Jaya Panel.
-Language: %s. You need: customer name, company name, delivery address, and product they want to order.
-Ask for ONE missing field at a time. Be friendly and professional.
-If the customer mentions a discount, special price, or something you cannot handle, set next_action to "ESCALATE".
-Respond ONLY with valid JSON:
-{"reply": "<your message>", "collected": {"name": "", "company": "", "address": "", "product": ""}, "next_action": "CONTINUE|ESCALATE"}`, lang)
+		missing := missingFields(c)
+		return fmt.Sprintf(`FASE: PENGUMPULAN DATA (COLLECTING)
+Data terkumpul sejauh ini:
+- Nama       : %s
+- Perusahaan : %s
+- Alamat     : %s
+- Produk     : %s
+
+Data masih dibutuhkan: %s
+
+Ikuti SOP Fase 1 & 1.5. Tanyakan SATU data yang masih kurang dalam 1 pesan.
+Jika customer sebut wiring/instalasi/custom/IP rating → next_action: ESCALATE_WIRING
+Jika customer minta diskon/harga khusus → next_action: ESCALATE
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan WA>","collected":{"name":"<isi atau kosong>","company":"<isi atau kosong>","address":"<isi atau kosong>","product":"<isi atau kosong>"},"next_action":"CONTINUE"}`,
+			orBelum(c.Name), orBelum(c.Company), orBelum(c.Address), orBelum(c.Product), missing)
 
 	case models.StateClarifying:
-		return fmt.Sprintf(`You are Sari, clarifying product specifications for Garindo Jaya Panel.
-Language: %s. Ask about quantity, size, color, and any special requirements for the product.
-If all specs are clear or customer says they are ready, set next_action to "READY".
-If you cannot handle the request (e.g., custom wiring), set next_action to "ESCALATE".
-Respond ONLY with valid JSON:
-{"reply": "<your message>", "specs": {"qty": 0, "size": "", "color": "", "notes": ""}, "next_action": "CONTINUE|READY|ESCALATE"}`, lang)
+		return fmt.Sprintf(`FASE: KLARIFIKASI SPESIFIKASI (CLARIFYING)
+Produk yang diminta: %s
+Spesifikasi terkumpul sejauh ini:
+- Qty    : %d
+- Ukuran : %s
+- Warna  : %s
+- Catatan: %s
+
+Ikuti SOP Fase 1.5 (checklist klarifikasi sesuai material/tipe produk).
+Tanyakan SATU spesifikasi yang masih kurang dalam 1 pesan.
+Jika spesifikasi sudah cukup → next_action: READY
+Jika perlu eskalasi (custom ukuran, IP rating, wiring, dll) → next_action: ESCALATE
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan WA>","specs":{"product":"<isi>","qty":<angka>,"size":"<isi>","color":"<isi>","notes":"<isi>"},"next_action":"CONTINUE","clarification_round":<angka>}`,
+			orBelum(c.Product), c.Quantity,
+			orBelum(c.Specs.Size), orBelum(c.Specs.Color), orBelum(c.Specs.Notes))
 
 	case models.StateStockCheck:
-		return fmt.Sprintf(`You are Sari, presenting stock and pricing to a customer at Garindo Jaya Panel.
-Language: %s. Present the available products from the Stock Context. If product is available, move to confirmation.
-If out of stock or unclear, escalate to admin.
-Respond ONLY with valid JSON:
-{"reply": "<your message presenting stock/price>", "next_action": "CONFIRM|ESCALATE"}`, lang)
+		qty := c.Quantity
+		if qty == 0 {
+			qty = 1
+		}
+		return fmt.Sprintf(`FASE: CEK STOK & PENAWARAN HARGA (STOCK_CHECK)
+Produk yang diminta: %s
+Qty yang dibutuhkan: %d
+
+Data stok dari sistem:
+%s
+
+Ikuti SOP Fase 2 Kategori 1 Skenario 1a/1c. Tampilkan nama produk, harga satuan (Rupiah), qty, subtotal.
+Format pesan sesuai template ringkasan pesanan di system prompt.
+Jika produk tersedia → next_action: CONFIRM
+Jika produk tidak ditemukan atau stok 0 → next_action: ESCALATE
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan WA ringkasan harga>","next_action":"CONFIRM"}`,
+			orBelum(c.Product), qty, stockCtx)
 
 	case models.StateConfirming:
-		return fmt.Sprintf(`You are Sari, confirming the order summary for Garindo Jaya Panel.
-Language: %s. Present the full order summary and ask the customer to confirm with "OK" or "BENAR".
-If they confirm, set confirmed to true. If they want changes, set modification_requested to true.
-Respond ONLY with valid JSON:
-{"reply": "<order summary + confirmation request>", "confirmed": false, "modification_requested": false}`, lang)
+		qty := c.Quantity
+		if qty == 0 {
+			qty = 1
+		}
+		return fmt.Sprintf(`FASE: KONFIRMASI PESANAN (CONFIRMING)
+Ringkasan pesanan untuk dikonfirmasi:
+- Nama       : %s
+- Perusahaan : %s
+- Produk     : %s
+- Qty        : %d
+- Ukuran     : %s
+- Catatan    : %s
+
+Ikuti SOP Skenario 1a. Tunggu konfirmasi pelanggan.
+Jika customer balas OK/Oke/BENAR/Yes/Confirm/setuju/iya → confirmed: true
+Jika customer minta ubah/ganti/revisi → modification_requested: true
+Jika tidak jelas → minta konfirmasi ulang dengan sopan
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan WA>","confirmed":false,"modification_requested":false}`,
+			orBelum(c.Name), orBelum(c.Company), orBelum(c.Product),
+			qty, orBelum(c.Specs.Size), orBelum(c.Specs.Notes))
 
 	default:
-		return fmt.Sprintf(`You are Sari, the AI sales assistant for Garindo Jaya Panel. Language: %s.
-Respond helpfully to the customer's message.
-Respond ONLY with valid JSON: {"reply": "<your message>"}`, lang)
+		return `FASE: TIDAK DIKETAHUI
+Balas HANYA JSON: {"reply":"<pesan WA>"}`
 	}
 }
 
-// StockContextString formats stock items into a compact string for the Gemini prompt.
-func StockContextString(items []models.StockItem) string {
-	if len(items) == 0 {
-		return "No matching products found in stock."
+func orBelum(s string) string {
+	if s == "" {
+		return "belum diketahui"
 	}
-	var sb strings.Builder
-	for _, item := range items {
-		sb.WriteString(fmt.Sprintf("- %s (%s): Rp %.0f, stock: %d\n", item.Name, item.SKU, item.Price, item.Stock))
+	return s
+}
+
+func missingFields(c models.CollectedData) string {
+	var m []string
+	if c.Name == "" {
+		m = append(m, "nama lengkap")
 	}
-	return sb.String()
+	if c.Company == "" {
+		m = append(m, "nama perusahaan/instansi")
+	}
+	if c.Address == "" {
+		m = append(m, "alamat pengiriman")
+	}
+	if c.Product == "" {
+		m = append(m, "produk yang dicari")
+	}
+	if len(m) == 0 {
+		return "tidak ada (semua sudah terkumpul)"
+	}
+	return strings.Join(m, ", ")
 }
 
 // formatHistory converts message history to a readable string for the Gemini prompt.
 func formatHistory(msgs []models.Message) string {
 	if len(msgs) == 0 {
-		return "(no history)"
+		return "(belum ada pesan)"
 	}
 	var sb strings.Builder
 	for _, m := range msgs {
-		role := string(m.Sender)
-		sb.WriteString(fmt.Sprintf("[%s]: %s\n", strings.ToUpper(role), m.Text))
+		sb.WriteString(fmt.Sprintf("[%s]: %s\n", strings.ToUpper(string(m.Sender)), m.Text))
+	}
+	return sb.String()
+}
+
+// StockContextString formats stock items into a compact string for the Gemini prompt.
+func StockContextString(items []models.StockItem) string {
+	if len(items) == 0 {
+		return "(tidak ada produk yang cocok ditemukan di database)"
+	}
+	var sb strings.Builder
+	for _, item := range items {
+		sb.WriteString(fmt.Sprintf("- %s (SKU: %s): Rp %.0f/unit, stok: %d\n",
+			item.Name, item.SKU, item.Price, item.Stock))
 	}
 	return sb.String()
 }
