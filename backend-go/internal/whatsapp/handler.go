@@ -237,6 +237,9 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 	h.db.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, conversationID).Scan(&lang)
 
 	total := order.Subtotal + shippingFee
+	if err := h.db.UpdateOrderTotal(orderID, total); err != nil {
+		log.Printf("[HANDLER] UpdateOrderTotal error: %v", err)
+	}
 	invoice := buildInvoiceMessage(order, shippingFee, total, lang)
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "ORDER_APPROVED: invoice sent")

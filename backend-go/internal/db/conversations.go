@@ -103,13 +103,18 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 	for rows.Next() {
 		var conv models.Conversation
 		var dataJSON []byte
-		rows.Scan(
+		if err := rows.Scan(
 			&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 			&conv.Language, &dataJSON, &conv.ClarificationRound,
 			&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
-		)
+		); err != nil {
+			return nil, err
+		}
 		json.Unmarshal(dataJSON, &conv.CollectedData)
 		result = append(result, &conv)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return result, nil
 }

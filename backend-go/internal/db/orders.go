@@ -116,10 +116,20 @@ func (c *Client) ListActiveBookings() ([]PendingOrder, error) {
 	var orders []PendingOrder
 	for rows.Next() {
 		var o PendingOrder
-		rows.Scan(&o.ID, &o.ConversationID, &o.CustomerPhone, &o.ExpiresAt)
+		if err := rows.Scan(&o.ID, &o.ConversationID, &o.CustomerPhone, &o.ExpiresAt); err != nil {
+			return nil, err
+		}
 		orders = append(orders, o)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return orders, nil
+}
+
+func (c *Client) UpdateOrderTotal(orderID string, total float64) error {
+	_, err := c.DB.Exec(`UPDATE orders SET total = $1 WHERE id = $2`, total, orderID)
+	return err
 }
 
 func (c *Client) GetOrderByConversation(conversationID string) (*models.Order, error) {
