@@ -18,26 +18,19 @@ steps:
       - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - run
-      - services
-      - update
-      - '$_SERVICE_NAME'
-      - '--remove-annotations=run.googleapis.com/sources'
-      - '--region=$_DEPLOY_REGION'
-      - '--platform=$_PLATFORM'
-
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - run
-      - deploy
-      - '$_SERVICE_NAME'
-      - '--image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
-      - '--region=$_DEPLOY_REGION'
-      - '--platform=$_PLATFORM'
-      - '--allow-unauthenticated'
+      - -c
+      - |
+        gcloud run services update $_SERVICE_NAME \
+          --region=$_DEPLOY_REGION \
+          --update-annotations=run.googleapis.com/sources=null \
+          --quiet || true
+        gcloud run deploy $_SERVICE_NAME \
+          --image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA \
+          --region=$_DEPLOY_REGION \
+          --platform=$_PLATFORM \
+          --allow-unauthenticated
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
