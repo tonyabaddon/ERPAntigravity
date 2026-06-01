@@ -19,7 +19,6 @@ const (
 	StateEscalatedWiring ConversationState = "ESCALATED_WIRING"
 )
 
-// IsTerminal returns true for states where new customer messages should be ignored by the AI.
 func (s ConversationState) IsTerminal() bool {
 	switch s {
 	case StateCancelled, StateCompleted, StateEscalatedAdmin, StateEscalatedWiring:
@@ -31,10 +30,41 @@ func (s ConversationState) IsTerminal() bool {
 type OrderStatus string
 
 const (
-	OrderStatusPending   OrderStatus = "PENDING"
-	OrderStatusApproved  OrderStatus = "APPROVED"
-	OrderStatusCancelled OrderStatus = "CANCELLED"
-	OrderStatusCompleted OrderStatus = "COMPLETED"
+	OrderStatusPendingAdminConfirmation OrderStatus = "PENDING_ADMIN_CONFIRMATION"
+	OrderStatusPendingPriceNego         OrderStatus = "PENDING_PRICE_NEGO"
+	OrderStatusPendingStockCheck        OrderStatus = "PENDING_STOCK_CHECK"
+	OrderStatusPendingCustomQuote       OrderStatus = "PENDING_CUSTOM_QUOTE"
+	OrderStatusPendingWiringQuote       OrderStatus = "PENDING_WIRING_QUOTE"
+	OrderStatusWaitingPayment           OrderStatus = "WAITING_PAYMENT"
+	OrderStatusPaymentUploaded          OrderStatus = "PAYMENT_UPLOADED"
+	OrderStatusPaymentVerified          OrderStatus = "PAYMENT_VERIFIED"
+	OrderStatusCancelled                OrderStatus = "CANCELLED"
+	OrderStatusCompleted                OrderStatus = "COMPLETED"
+)
+
+type OrderType string
+
+const (
+	OrderTypeStandard    OrderType = "STANDARD"
+	OrderTypeCustomPanel OrderType = "CUSTOM_PANEL"
+	OrderTypeWiring      OrderType = "WIRING_PANEL"
+)
+
+type DeliveryType string
+
+const (
+	DeliveryTypePickup   DeliveryType = "PICKUP"
+	DeliveryTypeDelivery DeliveryType = "DELIVERY"
+)
+
+type LeadStatus string
+
+const (
+	LeadStatusNew        LeadStatus = "NEW"
+	LeadStatusInProgress LeadStatus = "IN_PROGRESS"
+	LeadStatusEscalated  LeadStatus = "ESCALATED"
+	LeadStatusOrdered    LeadStatus = "ORDERED"
+	LeadStatusDropped    LeadStatus = "DROPPED"
 )
 
 type MessageSender string
@@ -73,6 +103,7 @@ type Conversation struct {
 	Language           string            `json:"language"`
 	CollectedData      CollectedData     `json:"collected_data"`
 	ClarificationRound int               `json:"clarification_round"`
+	AIActive           bool              `json:"ai_active"`
 	CreatedAt          time.Time         `json:"created_at"`
 	UpdatedAt          time.Time         `json:"updated_at"`
 }
@@ -88,22 +119,30 @@ type Message struct {
 }
 
 type Order struct {
-	ID              string      `json:"id"`
-	ConversationID  string      `json:"conversation_id"`
-	CustomerName    string      `json:"customer_name"`
-	CustomerCompany string      `json:"customer_company"`
-	CustomerAddress string      `json:"customer_address"`
-	CustomerPhone   string      `json:"customer_phone"`
-	Items           []OrderItem `json:"items"`
-	Subtotal        float64     `json:"subtotal"`
-	ShippingFee     *float64    `json:"shipping_fee,omitempty"`
-	Total           float64     `json:"total"`
-	Status          OrderStatus `json:"status"`
-	BookingExpiresAt time.Time  `json:"booking_expires_at"`
-	ReminderSentAt  *time.Time  `json:"reminder_sent_at,omitempty"`
-	ApprovedAt      *time.Time  `json:"approved_at,omitempty"`
-	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	ID               string       `json:"id"`
+	ConversationID   string       `json:"conversation_id"`
+	GJPOrderID       string       `json:"gjp_order_id,omitempty"`
+	OrderType        OrderType    `json:"order_type"`
+	LeadsID          string       `json:"leads_id,omitempty"`
+	CustomerID       string       `json:"customer_id,omitempty"`
+	CustomerName     string       `json:"customer_name"`
+	CustomerCompany  string       `json:"customer_company"`
+	CustomerAddress  string       `json:"customer_address"`
+	CustomerPhone    string       `json:"customer_phone"`
+	DeliveryType     DeliveryType `json:"delivery_type,omitempty"`
+	Items            []OrderItem  `json:"items"`
+	Subtotal         float64      `json:"subtotal"`
+	ShippingFee      *float64     `json:"shipping_fee,omitempty"`
+	Total            float64      `json:"total"`
+	Status           OrderStatus  `json:"status"`
+	BookingExpiresAt time.Time    `json:"booking_expires_at"`
+	ReminderSentAt   *time.Time   `json:"reminder_sent_at,omitempty"`
+	ApprovedAt       *time.Time   `json:"approved_at,omitempty"`
+	PaymentProofURL  string       `json:"payment_proof_url,omitempty"`
+	PaymentVerifiedAt *time.Time  `json:"payment_verified_at,omitempty"`
+	VerifiedBy       string       `json:"verified_by,omitempty"`
+	CreatedAt        time.Time    `json:"created_at"`
+	UpdatedAt        time.Time    `json:"updated_at"`
 }
 
 type OrderItem struct {
@@ -121,4 +160,32 @@ type StockItem struct {
 	Price    float64 `json:"price"`
 	Stock    int     `json:"stock"`
 	Status   string  `json:"status"`
+}
+
+type Customer struct {
+	ID        string    `json:"id"`
+	WANumber  string    `json:"wa_number"`
+	Name      string    `json:"name"`
+	Company   string    `json:"company"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Lead struct {
+	ID               string     `json:"id"`
+	CustomerID       string     `json:"customer_id"`
+	ConversationID   string     `json:"conversation_id"`
+	WANumber         string     `json:"wa_number"`
+	Status           LeadStatus `json:"status"`
+	ConfirmedOrderID string     `json:"confirmed_order_id,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+type BankConfig struct {
+	ID            int       `json:"id"`
+	BankName      string    `json:"bank_name"`
+	AccountNumber string    `json:"account_number"`
+	AccountName   string    `json:"account_name"`
+	IsActive      bool      `json:"is_active"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
