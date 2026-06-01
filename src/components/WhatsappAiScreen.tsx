@@ -83,7 +83,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   // Poll /api/wa/qr while not connected
   const fetchQR = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:8090/api/wa/qr');
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wa/qr`);
       const data = await res.json();
       setWaConnected(data.connected);
       setQrCode(data.qr || '');
@@ -279,7 +279,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
                       </div>
                     )}
                     <p className="text-xs text-slate-500 font-bold">Menunggu QR dari daemon...</p>
-                    <p className="text-[10px] text-gray-400">Pastikan Go daemon berjalan di port 8090</p>
+                    <p className="text-[10px] text-gray-400">Menghubungkan ke backend Cloud Run...</p>
                     <button
                       onClick={() => handleCheckConnection('')}
                       className="bg-[#012749] hover:bg-[#2d8a4e] text-white px-5 py-2 rounded-full text-[10px] font-bold transition-all cursor-pointer shadow-md"
