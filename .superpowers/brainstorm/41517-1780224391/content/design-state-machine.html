@@ -1,0 +1,162 @@
+<h2>Design Section 2 of 5: Conversation State Machine</h2>
+<p class="subtitle">Every WhatsApp conversation passes through these states in order</p>
+
+<div class="section">
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:16px;padding:24px;">
+
+    <!-- Main flow: vertical spine -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+
+      <!-- GREETING -->
+      <div style="background:#012749;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:220px;">
+        1. GREETING
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;margin-top:3px;">AI sends welcome message</div>
+      </div>
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓</div>
+
+      <!-- COLLECTING -->
+      <div style="background:#1e3d60;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:280px;">
+        2. COLLECTING
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;margin-top:3px;">Collect: Name · Company · Address · Product</div>
+        <div style="font-size:10px;font-weight:700;color:#fbbf24;margin-top:4px;">⚠ Rules engine runs on every message</div>
+      </div>
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ all 4 fields collected</div>
+
+      <!-- CLARIFYING -->
+      <div style="background:#1e3d60;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:280px;">
+        3. CLARIFYING
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;margin-top:3px;">Ask about ambiguous specs: color, size, qty, location</div>
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;">Max 3 clarification rounds, then proceed</div>
+      </div>
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ specs clear</div>
+
+      <!-- STOCK_CHECK -->
+      <div style="background:#2d4a6e;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:280px;">
+        4. STOCK_CHECK
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;margin-top:3px;">Query stock_items in DB · check price · check availability</div>
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;">AI presents: items, price, total</div>
+      </div>
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ customer reviews summary</div>
+
+      <!-- CONFIRMING -->
+      <div style="background:#2d4a6e;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:280px;">
+        5. CONFIRMING
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;margin-top:3px;">Awaiting customer reply: <strong style="color:#34d399;">"OK" / "BENAR"</strong></div>
+        <div style="font-size:10px;font-weight:500;color:#abc9f3;">Any other reply → AI re-explains or goes back to CLARIFYING</div>
+      </div>
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ "OK" / "BENAR" detected</div>
+
+      <!-- BOOKED -->
+      <div style="background:#065f46;color:#fff;border-radius:12px;padding:12px 32px;font-weight:800;font-size:13px;text-align:center;width:280px;">
+        6. BOOKED ✓
+        <div style="font-size:10px;font-weight:500;color:#6ee7b7;margin-top:3px;">Order locked · stock reserved · 2×24hr timer starts</div>
+        <div style="font-size:10px;font-weight:700;color:#fbbf24;margin-top:3px;">→ order row pushed to Dashboard as PENDING</div>
+      </div>
+
+      <!-- Timer fork -->
+      <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ timer running</div>
+
+      <div style="display:flex;gap:24px;justify-content:center;width:100%;">
+        <!-- Timeout path -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div style="background:#92400e;color:#fff;border-radius:12px;padding:10px 20px;font-weight:800;font-size:12px;text-align:center;width:200px;">
+            7a. TIMEOUT_REMINDER
+            <div style="font-size:10px;font-weight:500;color:#fde68a;margin-top:3px;">At 44 hrs · WA reminder sent<br/>in customer's language</div>
+          </div>
+          <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓ no reply by 48 hrs</div>
+          <div style="background:#7f1d1d;color:#fff;border-radius:12px;padding:10px 20px;font-weight:800;font-size:12px;text-align:center;width:200px;">
+            8a. CANCELLED
+            <div style="font-size:10px;font-weight:500;color:#fca5a5;margin-top:3px;">Stock released · admin notified</div>
+          </div>
+        </div>
+
+        <!-- Approved path -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div style="background:#065f46;color:#fff;border-radius:12px;padding:10px 20px;font-weight:800;font-size:12px;text-align:center;width:200px;">
+            7b. APPROVED
+            <div style="font-size:10px;font-weight:500;color:#6ee7b7;margin-top:3px;">Admin inputs shipping fee<br/>clicks Approve in Dashboard</div>
+          </div>
+          <div style="color:#abc9f3;font-size:12px;padding:4px 0;">↓</div>
+          <div style="background:#1c4532;color:#fff;border-radius:12px;padding:10px 20px;font-weight:800;font-size:12px;text-align:center;width:200px;">
+            8b. COMPLETED ✓
+            <div style="font-size:10px;font-weight:500;color:#6ee7b7;margin-top:3px;">WA invoice blast sent<br/>with bank transfer details</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Escalation exits -->
+<div class="section">
+  <p class="label">Escalation exits — can fire from COLLECTING, CLARIFYING, or STOCK_CHECK</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+    <div style="background:#fff;border:2px solid #f59e0b;border-radius:12px;padding:14px;">
+      <div style="font-weight:800;font-size:12px;color:#92400e;margin-bottom:8px;">⚡ ESCALATED_WIRING</div>
+      <div style="font-size:11px;color:#43474e;line-height:1.7;">
+        <strong>Triggered by keywords (rules engine):</strong><br/>
+        "instalasi", "grounding", "panel custom", "wiring", "proyek besar", "diagram"<br/><br/>
+        <strong>Action:</strong> AI sends: <em>"Permintaan ini membutuhkan tim teknis kami. Staf kami akan segera menghubungi Anda."</em> → chat appears in Sales Inbox as WIRING_CUSTOM
+      </div>
+    </div>
+
+    <div style="background:#fff;border:2px solid #ef4444;border-radius:12px;padding:14px;">
+      <div style="font-weight:800;font-size:12px;color:#7f1d1d;margin-bottom:8px;">🚨 ESCALATED_ADMIN</div>
+      <div style="font-size:11px;color:#43474e;line-height:1.7;">
+        <strong>Triggered by rules:</strong><br/>
+        Product not in DB after 2 attempts · customer requests discount · offensive language<br/><br/>
+        <strong>Triggered by LLM:</strong><br/>
+        Returns <code>next_action: "ESCALATE"</code> when it can't resolve ambiguity<br/><br/>
+        <strong>Action:</strong> AI sends polite handover message → chat flagged BUTUH_ADMIN in Sales Inbox
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Gemini role per state -->
+<div class="section">
+  <p class="label">What Gemini does at each state</p>
+  <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="background:#012749;color:#fff;">
+          <th style="padding:10px 14px;text-align:left;font-weight:700;">State</th>
+          <th style="padding:10px 14px;text-align:left;font-weight:700;">Gemini's job</th>
+          <th style="padding:10px 14px;text-align:left;font-weight:700;">Structured output fields</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #e5eeff;">
+          <td style="padding:10px 14px;font-weight:700;">GREETING</td>
+          <td style="padding:10px 14px;color:#43474e;">Detect language · generate warm greeting</td>
+          <td style="padding:10px 14px;color:#43474e;font-family:monospace;font-size:10px;">reply, detected_language</td>
+        </tr>
+        <tr style="border-bottom:1px solid #e5eeff;background:#f8f9ff;">
+          <td style="padding:10px 14px;font-weight:700;">COLLECTING</td>
+          <td style="padding:10px 14px;color:#43474e;">Extract fields from message · ask for next missing field</td>
+          <td style="padding:10px 14px;color:#43474e;font-family:monospace;font-size:10px;">reply, collected{name,company,address,product}, next_action</td>
+        </tr>
+        <tr style="border-bottom:1px solid #e5eeff;">
+          <td style="padding:10px 14px;font-weight:700;">CLARIFYING</td>
+          <td style="padding:10px 14px;color:#43474e;">Ask one clarifying question · extract specs from answer</td>
+          <td style="padding:10px 14px;color:#43474e;font-family:monospace;font-size:10px;">reply, specs{qty,size,color,notes}, next_action, clarification_round</td>
+        </tr>
+        <tr style="border-bottom:1px solid #e5eeff;background:#f8f9ff;">
+          <td style="padding:10px 14px;font-weight:700;">STOCK_CHECK</td>
+          <td style="padding:10px 14px;color:#43474e;">Format order summary with DB data · present price</td>
+          <td style="padding:10px 14px;color:#43474e;font-family:monospace;font-size:10px;">reply (includes price/stock), next_action</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;font-weight:700;">CONFIRMING</td>
+          <td style="padding:10px 14px;color:#43474e;">Detect OK/BENAR · handle modifications · re-explain if needed</td>
+          <td style="padding:10px 14px;color:#43474e;font-family:monospace;font-size:10px;">reply, confirmed: bool, modification_requested: bool</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Does this state machine look right? Any states missing or flows to adjust? Reply in terminal to continue to Section 3 (Data Model).</p>

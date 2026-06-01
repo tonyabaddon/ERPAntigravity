@@ -19,8 +19,13 @@ func NewSender(client *whatsmeow.Client) *Sender {
 }
 
 func (s *Sender) SendText(ctx context.Context, toPhone, text string) error {
-	jid := types.NewJID(toPhone, types.DefaultUserServer)
-	_, err := s.client.SendMessage(ctx, jid, &waProto.Message{
+	// toPhone may be a full JID string (e.g. "628xx@s.whatsapp.net" or "120363xx@lid")
+	// or a bare phone number from legacy callers. Preserve the server suffix.
+	jid, err := types.ParseJID(toPhone)
+	if err != nil {
+		jid = types.NewJID(toPhone, types.DefaultUserServer)
+	}
+	_, err = s.client.SendMessage(ctx, jid, &waProto.Message{
 		Conversation: proto.String(text),
 	})
 	if err != nil {

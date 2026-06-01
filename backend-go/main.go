@@ -120,12 +120,7 @@ func main() {
 		log.Fatalf("[MAIN] StartListening failed: %v", err)
 	}
 
-	// Connect WhatsApp
-	if err := waClient.Connect(ctx); err != nil {
-		log.Fatalf("[MAIN] WA connect failed: %v", err)
-	}
-
-	// HTTP server
+	// HTTP server (start before WA connect so /api/wa/qr is available during pairing)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
@@ -138,11 +133,22 @@ func main() {
 	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
-		if waClient.WA.IsConnected() {
+		paired := waClient.WA.Store.ID != nil
+		if paired {
 			w.Write([]byte(`{"connected":true}`))
 		} else {
 			w.Write([]byte(`{"connected":false}`))
 		}
+	})
+	mux.HandleFunc("/api/wa/qr", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		qr := waClient.GetQR()
+		paired := waClient.WA.Store.ID != nil
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"qr":        qr,
+			"connected": paired,
+		})
 	})
 	mux.HandleFunc("/api/stocks", handleStocksRoute(dbClient))
 	mux.HandleFunc("/api/stocks/", handleSingleStockRoute(dbClient))
@@ -153,6 +159,11 @@ func main() {
 			log.Printf("[MAIN] HTTP error: %v", err)
 		}
 	}()
+
+	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
+	if err := waClient.Connect(ctx); err != nil {
+		log.Fatalf("[MAIN] WA connect failed: %v", err)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

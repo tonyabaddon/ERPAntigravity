@@ -1,0 +1,140 @@
+<h2>Design Section 4 of 5: Go Daemon Structure</h2>
+<p class="subtitle">Package layout, responsibilities, and message processing flow</p>
+
+<div class="section">
+  <p class="label">Package layout inside backend-go/</p>
+  <div style="background:#0c1015;border-radius:16px;padding:24px;font-family:monospace;font-size:11px;color:#e1e4e8;line-height:2;">
+
+    <span style="color:#8b949e;">backend-go/</span><br/>
+    <span style="color:#79c0ff;">├── main.go</span> <span style="color:#8b949e;">// entry point: init all services, wire dependencies, block on signal</span><br/>
+    <span style="color:#79c0ff;">├── go.mod</span><br/>
+    <br/>
+    <span style="color:#8b949e;">├── internal/</span><br/>
+
+    <span style="color:#8b949e;">│   ├── whatsapp/</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── client.go</span> <span style="color:#8b949e;">// whatsmeow setup: QR, pairing code, connect/disconnect</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── handler.go</span> <span style="color:#8b949e;">// event handler: receives incoming WA messages, dispatches to engine</span><br/>
+    <span style="color:#79c0ff;">│   │   └── sender.go</span> <span style="color:#8b949e;">// sends text replies + media via whatsmeow client</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">│   ├── engine/</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── machine.go</span> <span style="color:#8b949e;">// state machine: Process(conversation, incomingMsg) → reply, nextState</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── prompts.go</span> <span style="color:#8b949e;">// system prompt per state (GREETING, COLLECTING, etc.)</span><br/>
+    <span style="color:#79c0ff;">│   │   └── parser.go</span> <span style="color:#8b949e;">// parse Gemini JSON output → typed struct, validate fields</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">│   ├── rules/</span><br/>
+    <span style="color:#79c0ff;">│   │   └── escalation.go</span> <span style="color:#8b949e;">// keyword rules → EscalationType (WIRING / ADMIN)</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">│   ├── gemini/</span><br/>
+    <span style="color:#79c0ff;">│   │   └── client.go</span> <span style="color:#8b949e;">// thin wrapper: GenerateReply(state, history, context) → raw JSON</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">│   ├── db/</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── client.go</span> <span style="color:#8b949e;">// Supabase REST client: init with URL + service key</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── conversations.go</span> <span style="color:#8b949e;">// GetOrCreate, UpdateState, UpdateCollectedData</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── messages.go</span> <span style="color:#8b949e;">// InsertMessage (customer, ai, admin, system)</span><br/>
+    <span style="color:#79c0ff;">│   │   ├── orders.go</span> <span style="color:#8b949e;">// CreateOrder, UpdateStatus, SetShippingFee</span><br/>
+    <span style="color:#79c0ff;">│   │   └── stock.go</span> <span style="color:#8b949e;">// QueryByName, QueryBySKU — read-only stock lookups</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">│   └── scheduler/</span><br/>
+    <span style="color:#79c0ff;">│       └── timeout.go</span> <span style="color:#8b949e;">// booking timeout goroutines: Schedule, Cancel, RestoreOnBoot</span><br/>
+
+    <br/>
+    <span style="color:#8b949e;">└── config/</span><br/>
+    <span style="color:#79c0ff;">    └── config.go</span> <span style="color:#8b949e;">// load env vars: SUPABASE_URL, SUPABASE_KEY, GEMINI_API_KEY</span><br/>
+
+  </div>
+</div>
+
+<!-- Message processing flow -->
+<div class="section">
+  <p class="label">Single message processing flow — what happens in Go when a customer sends "halo"</p>
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:16px;padding:20px;">
+    <div style="display:flex;flex-direction:column;gap:0;">
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;shrink:0;flex-shrink:0;">1</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">whatsapp/handler.go</strong> receives WA event → extracts <code>senderPhone</code>, <code>text</code>, <code>waNumberId</code>. Skips if <code>IsFromMe</code> or empty text. Runs <strong>rules engine first</strong> (fast, zero LLM cost).
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">2</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">rules/escalation.go</strong> checks for wiring/custom keywords. If matched → immediately insert <code>ESCALATED_WIRING</code> system message, update conversation state, send WA handover reply. <strong>Stop here.</strong>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">3</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">db/conversations.go</strong> GetOrCreate conversation row for <code>senderPhone + waNumberId</code>. Load <code>collected_data</code>, <code>state</code>, <code>language</code>. Insert incoming message into <code>messages</code> table → <strong>Realtime pushes it to Sales Inbox instantly.</strong>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">4</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">engine/machine.go</strong> selects system prompt for current state from <code>prompts.go</code>. Passes prompt + last 10 messages + collected_data + relevant stock context to Gemini.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">5</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">gemini/client.go</strong> calls Gemini API with <code>response_mime_type: "application/json"</code>. Returns structured JSON. <strong>engine/parser.go</strong> unmarshals + validates: if parse fails → fallback reply + log error (no crash).
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">6</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">engine/machine.go</strong> transitions state: merges new fields into <code>collected_data</code>, determines <code>nextState</code>. If <code>next_action: "ESCALATE"</code> → override nextState to <code>ESCALATED_ADMIN</code>.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#012749;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">7</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">db/conversations.go</strong> UpdateState + UpdateCollectedData. <strong>db/messages.go</strong> InsertMessage (sender: "ai"). <strong>State is persisted before sending WA reply</strong> — daemon restart safe.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px dashed #e5eeff;">
+        <div style="background:#2d8a4e;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">8</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          If state just became <code>BOOKED</code>: <strong>db/orders.go</strong> CreateOrder → <strong>scheduler/timeout.go</strong> Schedule(orderId, 48hrs). Order appears in Dashboard as PENDING via Realtime.
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;">
+        <div style="background:#2d8a4e;color:#fff;border-radius:20px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;flex-shrink:0;">9</div>
+        <div style="font-size:11px;line-height:1.7;color:#43474e;">
+          <strong style="color:#012749;">whatsapp/sender.go</strong> sends AI reply text via whatsmeow. Done. Total latency target: <strong style="color:#2d8a4e;">&lt; 3 seconds</strong> end-to-end.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Daemon restart safety -->
+<div class="section">
+  <p class="label">Daemon restart safety — what happens if the server reboots</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">Conversation state</strong><br/>
+      State is written to Supabase before every WA reply. On boot, <code>conversations.go</code> loads all non-terminal conversations from DB. The state machine resumes exactly where it left off.
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">Timeout goroutines</strong><br/>
+      On boot, <code>scheduler/timeout.go RestoreOnBoot()</code> queries all BOOKED orders where <code>booking_expires_at</code> is in the future and re-schedules their goroutines. No bookings are lost on restart.
+    </div>
+  </div>
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Does this Go structure look right? Reply in terminal to continue to Section 5 (React integration + Sales Inbox wiring).</p>

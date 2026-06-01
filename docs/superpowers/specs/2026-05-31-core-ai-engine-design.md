@@ -1,6 +1,6 @@
 # Core AI Engine — Design Spec
 **Date:** 2026-05-31  
-**Project:** Sinar Elektrik MSME ERP  
+**Project:** Garindo Jaya Panel MSME ERP  
 **Subsystem:** Core AI Engine (WhatsApp Bot) — Subsystem 1 of 3  
 **Status:** Approved for implementation planning
 
@@ -86,7 +86,7 @@ React Frontend
 
 ```
 GREETING → COLLECTING → CLARIFYING → STOCK_CHECK → CONFIRMING → BOOKED
-  → (44hr) TIMEOUT_REMINDER
+  → (24hr) TIMEOUT_REMINDER
   → (48hr, no response) CANCELLED
   → (admin approves) APPROVED → COMPLETED
 ```
@@ -116,13 +116,13 @@ Gemini handles **language generation only** within each state. The Go state mach
 
 Each Gemini call uses `response_mime_type: "application/json"`. Go's `engine/parser.go` unmarshals the response into a typed struct. If parsing fails, Go falls back to a safe generic reply and logs the error — the daemon never crashes on a bad LLM response.
 
-| State | Gemini output fields |
-|---|---|
-| `GREETING` | `reply`, `detected_language` |
-| `COLLECTING` | `reply`, `collected{name,company,address,product}`, `next_action` |
-| `CLARIFYING` | `reply`, `specs{qty,size,color,notes}`, `next_action`, `clarification_round` |
-| `STOCK_CHECK` | `reply` (includes price/stock from DB context), `next_action` |
-| `CONFIRMING` | `reply`, `confirmed: bool`, `modification_requested: bool` |
+| State | Gemini output fields                                                                 |
+|---|--------------------------------------------------------------------------------------|
+| `GREETING` | `reply`, `detected_language`                                                         |
+| `COLLECTING` | `reply`, `collected{name,company,address,product}`, `next_action`                    |
+| `CLARIFYING` | `reply`, `specs{product,qty,size,color,notes}`, `next_action`, `clarification_round` |
+| `STOCK_CHECK` | `reply` (includes price/stock from DB context), `next_action`                        |
+| `CONFIRMING` | `reply`, `confirmed: bool`, `modification_requested: bool`                           |
 
 ### Context passed to Gemini on every call
 

@@ -44,8 +44,10 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		return
 	}
 
-	senderPhone := evt.Info.Sender.User
-	go h.processMessage(context.Background(), senderPhone, text)
+	// Preserve the full JID string (including @lid server for LID-based senders)
+	// so sender.go can route it correctly.
+	senderJID := evt.Info.Sender.ToNonAD().String()
+	go h.processMessage(context.Background(), senderJID, text)
 }
 
 func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) {
@@ -185,7 +187,7 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conver
 }
 
 func (h *Handler) handleMediaMessage(evt *events.Message) {
-	senderPhone := evt.Info.Sender.User
+	senderPhone := evt.Info.Sender.ToNonAD().String()
 	conv, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		return

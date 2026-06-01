@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   Bot,
   Smartphone,
@@ -38,9 +39,11 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   const [newName, setNewName] = useState('');
   const [newAiEnabled, setNewAiEnabled] = useState(true);
 
-  // States for whatsmeow Setup Simulator (UI feedback only — real status from Go daemon)
-  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
-  const [qrState, setQrState] = useState<'IDLE' | 'SCANNING' | 'SUCCESS'>('IDLE');
+  // Real QR state from Go daemon
+  const [qrCode, setQrCode] = useState<string>('');
+  const [waConnected, setWaConnected] = useState(false);
+  const [qrLoading, setQrLoading] = useState(false);
+  const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [pairingPhone, setPairingPhone] = useState('');
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     '[SYSTEM] Initializing whatsmeow framework package... READY',
@@ -77,6 +80,28 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
     return () => { supabase?.removeChannel(sub); };
   }, []);
 
+  // Poll /api/wa/qr while not connected
+  const fetchQR = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:8090/api/wa/qr');
+      const data = await res.json();
+      setWaConnected(data.connected);
+      setQrCode(data.qr || '');
+      if (data.connected) {
+        if (qrPollRef.current) clearInterval(qrPollRef.current);
+        pushTerminalLog('WhatsApp terhubung! Session tersimpan di wa_store.db.');
+      }
+    } catch {
+      setQrCode('');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQR();
+    qrPollRef.current = setInterval(fetchQR, 5000);
+    return () => { if (qrPollRef.current) clearInterval(qrPollRef.current); };
+  }, [fetchQR]);
+
   // Scroll logging terminal automatically
   useEffect(() => {
     if (logTerminalRef.current) {
@@ -92,32 +117,10 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
 
   // Check real Go daemon connection status
   const handleCheckConnection = async (_numberId: string) => {
-    try {
-      const res = await fetch('http://localhost:8090/api/wa/status');
-      const { connected } = await res.json();
-      if (connected) {
-        alert('WhatsApp terhubung. Status akan diperbarui otomatis.');
-      } else {
-        alert('WhatsApp belum terhubung. Jalankan Go daemon dan scan QR di terminal.');
-      }
-    } catch {
-      alert('Go daemon tidak berjalan di localhost:8090. Jalankan backend terlebih dahulu.');
-    }
-  };
-
-  // Trigger QR UI flow (instructional — real QR shown in Go daemon terminal)
-  const handleTriggerQrGeneration = () => {
-    if (isGeneratingQr) return;
-    setIsGeneratingQr(true);
-    setQrState('IDLE');
-    pushTerminalLog('Hubungkan Go daemon dan scan QR yang muncul di terminal daemon...');
-
-    setTimeout(() => {
-      setIsGeneratingQr(false);
-      setQrState('SCANNING');
-      pushTerminalLog('Menunggu scan QR di terminal Go daemon...');
-      pushTerminalLog('Setelah scan berhasil, status nomor akan diperbarui otomatis via Realtime.');
-    }, 1500);
+    setQrLoading(true);
+    await fetchQR();
+    setQrLoading(false);
+    pushTerminalLog(waConnected ? 'Status: TERHUBUNG' : 'Status: BELUM TERHUBUNG — scan QR di atas.');
   };
 
   // Generate pairing code (instructional — real pairing done in Go daemon)
@@ -246,59 +249,42 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
 
               {/* QR Code visual box */}
               <div className="flex flex-col items-center justify-center bg-white border border-[#abc9f3]/40 p-6 rounded-2xl relative min-h-[220px]">
-                {qrState === 'IDLE' && !isGeneratingQr && (
-                  <div className="text-center space-y-3">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
-                      <QrCode className="w-8 h-8" />
-                    </div>
-                    <button
-                      onClick={handleTriggerQrGeneration}
-                      className="bg-[#012749] hover:bg-[#2d8a4e] text-white px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-md inline-flex items-center gap-1"
-                    >
-                      Mulai scan QR
-                    </button>
-                    <p className="text-[10px] text-gray-400">QR Code tampil di terminal Go daemon</p>
-                  </div>
-                )}
-
-                {isGeneratingQr && (
-                  <div className="text-center space-y-3">
-                    <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
-                    <p className="text-xs text-[#012749] font-bold">Menghubungi Go daemon...</p>
-                  </div>
-                )}
-
-                {qrState === 'SCANNING' && (
-                  <div className="text-center space-y-4">
-                    <div className="w-36 h-36 bg-[#eff4ff] border border-blue-100 rounded-xl flex items-center justify-center p-3 mx-auto">
-                      <p className="text-[10px] text-slate-500 font-bold text-center leading-relaxed">
-                        Scan QR di terminal Go daemon dengan aplikasi WhatsApp Anda
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] block font-black text-amber-600 bg-amber-50 rounded-full px-4 py-1 animate-pulse border border-amber-100">
-                        Lihat QR di terminal daemon
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleCheckConnection('')}
-                      className="text-[10px] text-[#2d8a4e] font-black underline hover:text-emerald-700"
-                    >
-                      Cek status koneksi
-                    </button>
-                  </div>
-                )}
-
-                {qrState === 'SUCCESS' && (
+                {waConnected && (
                   <div className="text-center space-y-3">
                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto animate-bounce shrink-0" />
                     <h4 className="font-extrabold text-[#012749] text-xs">BERHASIL TERSAMBUNG</h4>
-                    <p className="text-[10px] text-gray-400">whatsmeow session SQLite DB has saved credentials.</p>
+                    <p className="text-[10px] text-gray-400">whatsmeow session tersimpan di wa_store.db</p>
+                  </div>
+                )}
+
+                {!waConnected && qrCode && (
+                  <div className="text-center space-y-3">
+                    <div className="p-2 bg-white rounded-xl inline-block border border-slate-100 shadow">
+                      <QRCodeSVG value={qrCode} size={160} />
+                    </div>
+                    <p className="text-[10px] text-slate-500 font-bold">Scan dengan WhatsApp → Perangkat Tertaut</p>
+                    <span className="text-[9px] font-black text-amber-600 bg-amber-50 rounded-full px-3 py-1 animate-pulse border border-amber-100 inline-block">
+                      QR diperbarui otomatis setiap 20 detik
+                    </span>
+                  </div>
+                )}
+
+                {!waConnected && !qrCode && (
+                  <div className="text-center space-y-3">
+                    {qrLoading ? (
+                      <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+                    ) : (
+                      <div className="w-16 h-16 mx-auto rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
+                        <QrCode className="w-8 h-8" />
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-500 font-bold">Menunggu QR dari daemon...</p>
+                    <p className="text-[10px] text-gray-400">Pastikan Go daemon berjalan di port 8090</p>
                     <button
-                      onClick={() => setQrState('IDLE')}
-                      className="text-[10px] text-[#2d8a4e] font-black underline hover:text-emerald-700"
+                      onClick={() => handleCheckConnection('')}
+                      className="bg-[#012749] hover:bg-[#2d8a4e] text-white px-5 py-2 rounded-full text-[10px] font-bold transition-all cursor-pointer shadow-md"
                     >
-                      Koneksikan baru
+                      Refresh Status
                     </button>
                   </div>
                 )}

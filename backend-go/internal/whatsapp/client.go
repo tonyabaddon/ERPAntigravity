@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
@@ -13,7 +15,21 @@ import (
 )
 
 type Client struct {
-	WA *whatsmeow.Client
+	WA        *whatsmeow.Client
+	mu        sync.Mutex
+	currentQR string
+}
+
+func (c *Client) GetQR() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.currentQR
+}
+
+func (c *Client) setQR(qr string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.currentQR = qr
 }
 
 func NewClient(ctx context.Context, dbPath string) (*Client, error) {
@@ -37,21 +53,51 @@ func (c *Client) Connect(ctx context.Context) error {
 		if err := c.WA.Connect(); err != nil {
 			return fmt.Errorf("whatsapp: connect: %w", err)
 		}
-		for evt := range qrChan {
-			if evt.Event == "code" {
-				log.Printf("[WA] QR Code (scan with WhatsApp): %s", evt.Code)
-			} else {
-				log.Printf("[WA] QR channel event: %s", evt.Event)
-				break
-			}
-		}
+		go c.runQRLoop(ctx, qrChan)
 	} else {
 		if err := c.WA.Connect(); err != nil {
 			return fmt.Errorf("whatsapp: reconnect: %w", err)
 		}
+		log.Println("[WA] Connected")
 	}
-	log.Println("[WA] Connected")
 	return nil
+}
+
+func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelItem) {
+	for {
+		for evt := range ch {
+			if evt.Event == "code" {
+				log.Printf("[WA] QR Code ready for scanning")
+				c.setQR(evt.Code)
+			} else {
+				log.Printf("[WA] QR channel event: %s", evt.Event)
+				c.setQR("")
+				if evt.Event == "success" {
+					log.Println("[WA] Connected")
+					return
+				}
+				break // timeout — fall through to reconnect
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		log.Println("[WA] QR timed out — reconnecting for new QR")
+		c.WA.Disconnect()
+		time.Sleep(2 * time.Second)
+		var err error
+		ch, err = c.WA.GetQRChannel(ctx)
+		if err != nil {
+			log.Printf("[WA] GetQRChannel error: %v", err)
+			return
+		}
+		if err := c.WA.Connect(); err != nil {
+			log.Printf("[WA] Reconnect error: %v", err)
+			return
+		}
+	}
 }
 
 func (c *Client) AddEventHandler(handler func(evt interface{})) {

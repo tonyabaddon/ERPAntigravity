@@ -1,0 +1,97 @@
+<h2>Scope Assessment: Three Interconnected Subsystems</h2>
+<p class="subtitle">Before writing a spec, let's align on what we're building and in what order.</p>
+
+<div class="section">
+  <p class="label">System Architecture Overview</p>
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:16px;padding:24px;margin-bottom:24px;">
+    <div style="display:flex;flex-direction:column;gap:16px;align-items:center;">
+
+      <!-- WA Customer -->
+      <div style="background:#fff;border:1.5px solid #abc9f3;border-radius:12px;padding:12px 24px;font-weight:700;font-size:13px;color:#012749;text-align:center;width:200px;">
+        📱 WhatsApp Customer
+      </div>
+
+      <div style="color:#abc9f3;font-size:20px;">↓</div>
+
+      <!-- Subsystem 1 -->
+      <div style="background:#eff4ff;border:2px solid #012749;border-radius:12px;padding:16px 24px;width:100%;max-width:560px;text-align:center;">
+        <div style="font-weight:900;color:#012749;font-size:14px;margin-bottom:6px;">① Core AI Engine (whatsmeow + LLM)</div>
+        <div style="font-size:11px;color:#43474e;line-height:1.6;">
+          Greet → Collect (Name, Company, Address, Product) → Clarify ambiguities → Check stock/price in DB → Lock order on <strong>"OK/BENAR"</strong> (24hr booking timeout) → Escalate to Sales Inbox if stuck
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+          <span style="background:#012749;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">Go whatsmeow daemon</span>
+          <span style="background:#012749;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">LLM (Gemini)</span>
+          <span style="background:#012749;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">Supabase DB</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:40px;align-items:flex-start;width:100%;max-width:560px;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;">
+          <div style="color:#abc9f3;font-size:14px;">↓ order confirmed</div>
+
+          <!-- Subsystem 2 -->
+          <div style="background:#f0fff4;border:2px solid #2d8a4e;border-radius:12px;padding:16px;width:100%;text-align:center;">
+            <div style="font-weight:900;color:#2d8a4e;font-size:14px;margin-bottom:6px;">② Dashboard Automation</div>
+            <div style="font-size:11px;color:#43474e;line-height:1.6;">
+              Confirmed order → pushed as <strong>Pending</strong> → Admin inputs shipping fee + clicks Approve → System auto-sends WhatsApp invoice blast (with bank transfer instructions)
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+              <span style="background:#2d8a4e;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">Orders Table UI</span>
+              <span style="background:#2d8a4e;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">WA Blast Trigger</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;">
+          <div style="color:#abc9f3;font-size:14px;">↓ if AI stuck</div>
+
+          <!-- Subsystem 3 -->
+          <div style="background:#fff8f0;border:2px solid #f59e0b;border-radius:12px;padding:16px;width:100%;text-align:center;">
+            <div style="font-weight:900;color:#b45309;font-size:14px;margin-bottom:6px;">③ Sales Inbox Enhancement</div>
+            <div style="font-size:11px;color:#43474e;line-height:1.6;">
+              Admin monitoring hub: Needs Admin / Wiring-Custom handover, unread flags, AI re-handoff button, <strong>rich media uploads</strong> (PDF, Images, Excel, Word)
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+              <span style="background:#b45309;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">Chat UI</span>
+              <span style="background:#b45309;color:#fff;border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;">File Upload</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Proposed build order — pick what to spec first</p>
+  <div class="options">
+    <div class="option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>① Core AI Engine first</h3>
+        <p>Build the brain: whatsmeow daemon + LLM conversation flow + order locking. Everything else feeds off this. Highest complexity, most value.</p>
+        <div style="margin-top:8px;font-size:11px;color:#2d8a4e;font-weight:700;">Recommended — unblocks ② and ③</div>
+      </div>
+    </div>
+    <div class="option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>③ Sales Inbox first</h3>
+        <p>Pure frontend work — extend existing SalesInboxScreen with media uploads and richer status management. Delivers visible value immediately with no backend dependency.</p>
+        <div style="margin-top:8px;font-size:11px;color:#b45309;font-weight:700;">Quickest win, but doesn't move the backend forward</div>
+      </div>
+    </div>
+    <div class="option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>All three in one spec</h3>
+        <p>Write a single comprehensive spec covering all three subsystems end-to-end. Bigger planning upfront, but gives a complete picture before any code is written.</p>
+        <div style="margin-top:8px;font-size:11px;color:#9b1c1c;font-weight:700;">Risk: spec becomes too large to execute cleanly</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Click your preferred option, then respond in the terminal.</p>

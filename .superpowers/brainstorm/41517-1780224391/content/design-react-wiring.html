@@ -1,0 +1,140 @@
+<h2>Design Section 5 of 5: React Integration & Sales Inbox Wiring</h2>
+<p class="subtitle">How the existing React screens connect to real Supabase data and live updates</p>
+
+<div class="section">
+  <p class="label">What changes in each existing screen</p>
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Sales Inbox -->
+    <div style="background:#fff;border:2px solid #012749;border-radius:16px;overflow:hidden;">
+      <div style="background:#012749;color:#fff;padding:12px 20px;font-weight:800;font-size:13px;display:flex;align-items:center;gap-8px;">
+        💬 SalesInboxScreen.tsx — biggest change
+      </div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:11px;">
+        <div>
+          <div style="font-weight:700;color:#9b1c1c;margin-bottom:6px;">❌ Currently (simulated)</div>
+          <ul style="line-height:2;color:#43474e;padding-left:16px;margin:0;">
+            <li>Static <code>INITIAL_CHATS</code> from initialData.ts</li>
+            <li>No connection to WhatsApp numbers</li>
+            <li>No real-time updates</li>
+            <li>Admin messages don't go to WhatsApp</li>
+            <li>No media upload support</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#065f46;margin-bottom:6px;">✅ After wiring</div>
+          <ul style="line-height:2;color:#43474e;padding-left:16px;margin:0;">
+            <li>Loads from <code>conversations</code> + <code>messages</code> tables</li>
+            <li>Realtime subscription: new messages append live</li>
+            <li>Admin reply → INSERT to <code>messages</code> → Go daemon detects change → sends via WA</li>
+            <li>AI↔Admin toggle → UPDATE <code>conversations.state</code></li>
+            <li>Media upload → Supabase Storage → <code>messages.media_url</code></li>
+          </ul>
+        </div>
+      </div>
+      <div style="padding:0 20px 16px;font-size:11px;">
+        <div style="background:#eff4ff;border-radius:10px;padding:12px 14px;line-height:1.8;">
+          <strong style="color:#012749;">How admin reply reaches WhatsApp:</strong><br/>
+          Admin types in Sales Inbox → React INSERTs row into <code>messages</code> (sender: "admin") → Supabase fires Realtime event → Go daemon has a <strong>separate DB listener</strong> subscribed to <code>messages</code> INSERT where sender="admin" → Go picks it up → <code>whatsapp/sender.go</code> sends the text to the customer's phone via whatsmeow.
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div style="background:#fff;border:2px solid #2d8a4e;border-radius:16px;overflow:hidden;">
+      <div style="background:#2d8a4e;color:#fff;padding:12px 20px;font-weight:800;font-size:13px;">
+        📊 DashboardScreen.tsx — new orders panel added
+      </div>
+      <div style="padding:16px 20px;font-size:11px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div style="background:#f0fff4;border:1px solid #6ee7b7;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-weight:800;color:#065f46;margin-bottom:4px;">PENDING queue</div>
+            <div style="color:#43474e;line-height:1.6;">Live list of BOOKED orders waiting for admin to input shipping fee + approve</div>
+          </div>
+          <div style="background:#eff4ff;border:1px solid #abc9f3;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-weight:800;color:#012749;margin-bottom:4px;">Approve flow</div>
+            <div style="color:#43474e;line-height:1.6;">Admin inputs shipping fee → clicks Approve → React UPDATEs <code>orders.status</code> + <code>shipping_fee</code></div>
+          </div>
+          <div style="background:#f0fff4;border:1px solid #6ee7b7;border-radius:10px;padding:12px;text-align:center;">
+            <div style="font-weight:800;color:#065f46;margin-bottom:4px;">Invoice blast</div>
+            <div style="color:#43474e;line-height:1.6;">Go daemon detects APPROVED status → generates invoice → sends WA message to customer automatically</div>
+          </div>
+        </div>
+        <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:10px 14px;font-size:11px;color:#92400e;line-height:1.7;">
+          <strong>Invoice WA message includes:</strong> customer name, order items, subtotal, shipping fee, total, bank account details, payment deadline (2×24 hours from approval).
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp AI Screen -->
+    <div style="background:#fff;border:2px solid #f59e0b;border-radius:16px;overflow:hidden;">
+      <div style="background:#f59e0b;color:#fff;padding:12px 20px;font-weight:800;font-size:13px;">
+        🤖 WhatsappAiScreen.tsx — smaller changes
+      </div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:11px;">
+        <div>
+          <div style="font-weight:700;color:#9b1c1c;margin-bottom:6px;">❌ Currently</div>
+          <ul style="line-height:2;color:#43474e;padding-left:16px;margin:0;">
+            <li>Numbers stored in localStorage only</li>
+            <li>QR/pairing is fake simulation</li>
+            <li>Sandbox uses local keyword matching</li>
+            <li>Connection status is static</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#065f46;margin-bottom:6px;">✅ After wiring</div>
+          <ul style="line-height:2;color:#43474e;padding-left:16px;margin:0;">
+            <li>Numbers loaded from <code>whatsapp_numbers</code> table</li>
+            <li>QR/pairing triggers real whatsmeow flow via Go</li>
+            <li>Sandbox removed — real conversations in Sales Inbox</li>
+            <li>Connection status live via Realtime</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Media upload -->
+<div class="section">
+  <p class="label">Rich media uploads in Sales Inbox (PDF, Images, Excel, Word)</p>
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:12px;padding:16px 20px;font-size:11px;line-height:1.8;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <strong style="color:#012749;">Upload flow (admin sends media to customer):</strong><br/>
+        Admin clicks paperclip → file picker → React uploads file to <strong>Supabase Storage</strong> bucket <code>chat-media</code> → gets public URL → INSERTs <code>messages</code> row with <code>media_url</code> + <code>media_type</code> → Go daemon detects INSERT → downloads file from Storage URL → sends via whatsmeow <code>SendMedia()</code> to customer WA.
+      </div>
+      <div>
+        <strong style="color:#012749;">Receive flow (customer sends media to AI):</strong><br/>
+        Customer sends image/doc → whatsmeow receives media event → Go downloads media → uploads to Supabase Storage → INSERTs <code>messages</code> row with <code>media_url</code> → Sales Inbox shows media preview via Realtime → AI sends acknowledgement text: <em>"Dokumen Anda telah kami terima. Tim teknis akan meninjau dan menghubungi Anda."</em> → auto-escalates to <code>BUTUH_ADMIN</code>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New React hook -->
+<div class="section">
+  <p class="label">New shared hook: useRealtimeConversations()</p>
+  <div style="background:#0c1015;border-radius:12px;padding:16px 20px;font-family:monospace;font-size:11px;color:#e1e4e8;line-height:2;">
+    <span style="color:#8b949e;">// src/hooks/useRealtimeConversations.ts</span><br/>
+    <span style="color:#8b949e;">// Single hook used by SalesInboxScreen + DashboardScreen</span><br/>
+    <br/>
+    <span style="color:#ff7b72;">export function</span> <span style="color:#d2a8ff;">useRealtimeConversations</span>() {<br/>
+    &nbsp;&nbsp;<span style="color:#8b949e;">// 1. initial load from Supabase</span><br/>
+    &nbsp;&nbsp;<span style="color:#8b949e;">// 2. subscribe: messages INSERT → append to correct conversation</span><br/>
+    &nbsp;&nbsp;<span style="color:#8b949e;">// 3. subscribe: conversations UPDATE → update state/status badge</span><br/>
+    &nbsp;&nbsp;<span style="color:#8b949e;">// 4. subscribe: orders INSERT/UPDATE → update dashboard queue</span><br/>
+    &nbsp;&nbsp;<span style="color:#8b949e;">// 5. cleanup subscriptions on unmount</span><br/>
+    &nbsp;&nbsp;<span style="color:#ff7b72;">return</span> { conversations, orders, sendAdminMessage, toggleAiControl }<br/>
+    }
+  </div>
+</div>
+
+<!-- What stays the same -->
+<div style="background:#f0fff4;border:1px solid #6ee7b7;border-radius:12px;padding:14px 18px;font-size:11px;color:#065f46;line-height:1.8;">
+  <strong>What stays exactly the same in React (no changes needed):</strong><br/>
+  StockManagerScreen · UserManagementScreen · NotificationSettingsScreen · AuthScreen · Sidebar · App.tsx routing · all existing UI styles and components
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">That's all 5 sections. Does everything look right? Reply in terminal — if approved, I'll write the spec document.</p>

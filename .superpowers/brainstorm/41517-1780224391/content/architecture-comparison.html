@@ -1,0 +1,120 @@
+<h2>Communication Architecture: Pros & Cons</h2>
+<p class="subtitle">How the Go daemon, React frontend, and Supabase talk to each other</p>
+
+<div class="section">
+  <div class="options">
+
+    <div class="option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Go → Supabase directly + React Realtime</h3>
+        <div style="margin:8px 0;font-size:11px;background:#f0f4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.7;">
+          Go daemon writes chats/orders to Supabase → React subscribes via Supabase Realtime websocket
+        </div>
+        <div class="pros-cons" style="margin-top:10px;">
+          <div class="pros">
+            <h4>Pros</h4>
+            <ul>
+              <li>No extra server to maintain — Supabase IS the backend</li>
+              <li>Realtime push to frontend is built-in (no polling)</li>
+              <li>Single source of truth for all data</li>
+              <li>Supabase Auth + RLS handles access control for free</li>
+              <li>Go only needs 1 credential (Supabase service key)</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <h4>Cons</h4>
+            <ul>
+              <li>Go daemon needs Supabase SDK or raw REST calls (small overhead)</li>
+              <li>Business logic split across Go + Supabase functions — harder to test end-to-end</li>
+              <li>Supabase Realtime has message size limits (~1MB) — fine for chat, bad for large file blobs</li>
+              <li>If Supabase goes down, everything stops (single point of failure)</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:#f0fff4;border-radius:8px;padding:8px 12px;font-size:11px;color:#2d8a4e;font-weight:700;">
+          ✓ Best fit if you want minimal ops and your team already knows Supabase
+        </div>
+      </div>
+    </div>
+
+    <div class="option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Go exposes its own REST API</h3>
+        <div style="margin:8px 0;font-size:11px;background:#f0f4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.7;">
+          Go daemon runs HTTP server → React calls Go's endpoints directly → Go writes to Supabase
+        </div>
+        <div class="pros-cons" style="margin-top:10px;">
+          <div class="pros">
+            <h4>Pros</h4>
+            <ul>
+              <li>All business logic lives in one place (Go) — easy to test and reason about</li>
+              <li>Go controls exactly what data is exposed to the frontend</li>
+              <li>No dependency on Supabase Realtime — Go pushes via SSE or websocket</li>
+              <li>Easier to add rate limiting, auth middleware in Go</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <h4>Cons</h4>
+            <ul>
+              <li>Go daemon must stay running 24/7 and be network-accessible to the frontend</li>
+              <li>React needs to know the Go server's URL — complicates deployment</li>
+              <li>You build your own WebSocket or SSE for live updates (not free like Supabase Realtime)</li>
+              <li>CORS, auth, TLS — more infrastructure to configure</li>
+              <li>Two things to deploy and monitor (Go server + frontend)</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:#fff8f0;border-radius:8px;padding:8px 12px;font-size:11px;color:#b45309;font-weight:700;">
+          ✓ Best fit if you want Go to be the authoritative backend and plan to grow beyond Supabase
+        </div>
+      </div>
+    </div>
+
+    <div class="option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>Node.js API layer in the middle</h3>
+        <div style="margin:8px 0;font-size:11px;background:#f0f4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.7;">
+          Go daemon POSTs webhook events → Node.js/Express handles logic + Supabase writes → React calls Node API
+        </div>
+        <div class="pros-cons" style="margin-top:10px;">
+          <div class="pros">
+            <h4>Pros</h4>
+            <ul>
+              <li>Matches the <code>codeSnippetNode</code> already in your codebase — familiar pattern</li>
+              <li>Node.js is easier to modify quickly than Go (JS ecosystem, npm packages)</li>
+              <li>Good separation: Go = WA I/O only, Node = business logic, React = UI</li>
+              <li>Easy to add third-party integrations (payment gateways, shipping APIs) in Node</li>
+            </ul>
+          </div>
+          <div class="cons">
+            <h4>Cons</h4>
+            <ul>
+              <li>Three things to deploy and keep running: Go daemon + Node server + React frontend</li>
+              <li>Data passes through two hops before reaching the DB — more latency, more failure points</li>
+              <li>Two languages to maintain (Go + JS) for what is essentially a data pipeline</li>
+              <li>Webhook between Go and Node must be secured (shared secret, firewall rules)</li>
+            </ul>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:#fff1f2;border-radius:8px;padding:8px 12px;font-size:11px;color:#9b1c1c;font-weight:700;">
+          ✓ Best fit if you already have a Node.js team and want to keep Go responsibilities minimal
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:12px;padding:16px 20px;margin-top:8px;">
+  <p style="font-size:12px;color:#012749;font-weight:700;margin:0 0 8px;">Quick decision guide:</p>
+  <ul style="font-size:12px;color:#43474e;line-height:1.8;margin:0;padding-left:18px;">
+    <li><strong>Smallest ops footprint, fastest to ship → A</strong></li>
+    <li><strong>Most control over business logic, production-grade → B</strong></li>
+    <li><strong>Already have Node.js, plan to add payment/shipping integrations soon → C</strong></li>
+  </ul>
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Click your preferred option, then confirm in the terminal.</p>

@@ -1,0 +1,166 @@
+<h2>Design Section 3 of 5: Data Model</h2>
+<p class="subtitle">Supabase (PostgreSQL) tables — what gets stored and how tables relate</p>
+
+<div class="section">
+  <p class="label">Table relationship overview</p>
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:16px;padding:20px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
+
+    <!-- whatsapp_numbers -->
+    <div style="background:#012749;color:#fff;border-radius:12px;padding:14px;min-width:160px;font-size:11px;">
+      <div style="font-weight:900;font-size:12px;margin-bottom:8px;color:#abc9f3;">whatsapp_numbers</div>
+      <div style="line-height:2;font-family:monospace;">
+        <span style="color:#fbbf24;">id</span> text PK<br/>
+        phone_number text<br/>
+        name text<br/>
+        status enum<br/>
+        is_enabled bool<br/>
+        is_ai_enabled bool<br/>
+        created_at timestamp
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;color:#abc9f3;font-size:18px;padding-top:20px;">→</div>
+
+    <!-- conversations -->
+    <div style="background:#1e3d60;color:#fff;border-radius:12px;padding:14px;min-width:200px;font-size:11px;">
+      <div style="font-weight:900;font-size:12px;margin-bottom:8px;color:#abc9f3;">conversations</div>
+      <div style="line-height:2;font-family:monospace;">
+        <span style="color:#fbbf24;">id</span> uuid PK<br/>
+        wa_number_id text FK<br/>
+        customer_phone text<br/>
+        state enum<br/>
+        language text<br/>
+        <span style="color:#34d399;">collected_data</span> jsonb<br/>
+        clarification_round int<br/>
+        created_at timestamp<br/>
+        updated_at timestamp
+      </div>
+      <div style="margin-top:8px;background:#012749;border-radius:6px;padding:6px 8px;font-size:10px;color:#abc9f3;">
+        state enum values:<br/>
+        GREETING · COLLECTING<br/>
+        CLARIFYING · STOCK_CHECK<br/>
+        CONFIRMING · BOOKED<br/>
+        TIMEOUT_REMINDER · CANCELLED<br/>
+        ESCALATED_ADMIN · ESCALATED_WIRING<br/>
+        APPROVED · COMPLETED
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:20px;">
+      <div style="color:#abc9f3;font-size:18px;">→</div>
+      <div style="color:#abc9f3;font-size:18px;">→</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+
+      <!-- messages -->
+      <div style="background:#2d4a6e;color:#fff;border-radius:12px;padding:14px;min-width:200px;font-size:11px;">
+        <div style="font-weight:900;font-size:12px;margin-bottom:8px;color:#abc9f3;">messages</div>
+        <div style="line-height:2;font-family:monospace;">
+          <span style="color:#fbbf24;">id</span> uuid PK<br/>
+          conversation_id uuid FK<br/>
+          sender enum<br/>
+          text text<br/>
+          media_url text nullable<br/>
+          media_type text nullable<br/>
+          created_at timestamp
+        </div>
+        <div style="margin-top:8px;background:#1e3d60;border-radius:6px;padding:6px 8px;font-size:10px;color:#abc9f3;">
+          sender: customer · ai · admin · system
+        </div>
+      </div>
+
+      <!-- orders -->
+      <div style="background:#065f46;color:#fff;border-radius:12px;padding:14px;min-width:200px;font-size:11px;">
+        <div style="font-weight:900;font-size:12px;margin-bottom:8px;color:#6ee7b7;">orders</div>
+        <div style="line-height:2;font-family:monospace;">
+          <span style="color:#fbbf24;">id</span> uuid PK<br/>
+          conversation_id uuid FK<br/>
+          customer_name text<br/>
+          customer_company text<br/>
+          customer_address text<br/>
+          customer_phone text<br/>
+          <span style="color:#34d399;">items</span> jsonb<br/>
+          subtotal numeric<br/>
+          shipping_fee numeric nullable<br/>
+          total numeric<br/>
+          status enum<br/>
+          booking_expires_at timestamp<br/>
+          reminder_sent_at timestamp nullable<br/>
+          approved_at timestamp nullable<br/>
+          created_at timestamp
+        </div>
+        <div style="margin-top:8px;background:#1c4532;border-radius:6px;padding:6px 8px;font-size:10px;color:#6ee7b7;">
+          status: PENDING · APPROVED<br/>
+          CANCELLED · COMPLETED<br/><br/>
+          items jsonb example:<br/>
+          [{"sku":"SKU-40A-01",<br/>
+          "name":"Kabel Tembaga 40A",<br/>
+          "qty":5,"unit_price":120000,<br/>
+          "subtotal":600000}]
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- collected_data jsonb -->
+<div class="section">
+  <p class="label">collected_data jsonb structure (on conversations table)</p>
+  <div style="background:#0c1015;border-radius:12px;padding:16px 20px;font-family:monospace;font-size:11px;color:#e1e4e8;line-height:1.9;">
+    <span style="color:#8b949e">// Built up incrementally during COLLECTING + CLARIFYING states</span><br/>
+    {<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"name"</span>: <span style="color:#a5d6ff">"Budi Santoso"</span>,<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"company"</span>: <span style="color:#a5d6ff">"CV Maju Jaya"</span>,<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"address"</span>: <span style="color:#a5d6ff">"Jl. Raya Darmo 12, Surabaya"</span>,<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"product"</span>: <span style="color:#a5d6ff">"Kabel Tembaga 40A"</span>,<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"quantity"</span>: <span style="color:#f8c555">5</span>,<br/>
+    &nbsp;&nbsp;<span style="color:#79c0ff">"specs"</span>: {<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#79c0ff">"size"</span>: <span style="color:#a5d6ff">"3 meter per potong"</span>,<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#79c0ff">"notes"</span>: <span style="color:#a5d6ff">"untuk instalasi panel gedung 3 lantai"</span><br/>
+    &nbsp;&nbsp;}<br/>
+    }
+  </div>
+</div>
+
+<!-- Supabase Realtime subscriptions -->
+<div class="section">
+  <p class="label">Supabase Realtime — what React subscribes to</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;">
+      <strong style="color:#012749;">Sales Inbox</strong><br/>
+      <div style="margin-top:6px;color:#43474e;line-height:1.7;">
+        Subscribes to <code>messages</code> INSERT<br/>
+        Subscribes to <code>conversations</code> UPDATE (state changes)<br/>
+        → Live chat bubbles + status badge updates
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;">
+      <strong style="color:#012749;">Dashboard / Orders</strong><br/>
+      <div style="margin-top:6px;color:#43474e;line-height:1.7;">
+        Subscribes to <code>orders</code> INSERT + UPDATE<br/>
+        → New PENDING orders appear instantly<br/>
+        → Status changes reflect in real time
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;">
+      <strong style="color:#012749;">WhatsApp AI Screen</strong><br/>
+      <div style="margin-top:6px;color:#43474e;line-height:1.7;">
+        Subscribes to <code>whatsapp_numbers</code> UPDATE<br/>
+        → Connection status badge goes live<br/>
+        → No more manual refresh needed
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RLS note -->
+<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:14px 18px;font-size:11px;color:#92400e;line-height:1.7;">
+  <strong>Row-Level Security (RLS) policy summary:</strong><br/>
+  • <code>messages</code>, <code>conversations</code>, <code>orders</code>: Go daemon has INSERT/UPDATE via service key (bypasses RLS). React reads via anon key — SELECT only, scoped to authenticated admin session.<br/>
+  • <code>orders</code>: React can UPDATE <code>shipping_fee</code> and <code>status</code> (for admin approval) only — all other fields are read-only from frontend.<br/>
+  • <code>stock_items</code>: existing table, unchanged — React has full CRUD as today.
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Does the data model look right? Reply in terminal to continue to Section 4 (Go Daemon Structure).</p>

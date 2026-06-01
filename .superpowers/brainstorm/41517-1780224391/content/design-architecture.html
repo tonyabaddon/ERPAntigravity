@@ -1,0 +1,124 @@
+<h2>Design Section 1 of 5: System Architecture</h2>
+<p class="subtitle">Core AI Engine — full-stack overview of how every component connects</p>
+
+<div class="section">
+  <div style="background:#f8f9ff;border:1px solid #e5eeff;border-radius:16px;padding:28px;">
+
+    <!-- Row 1: WhatsApp -->
+    <div style="display:flex;justify-content:center;margin-bottom:8px;">
+      <div style="background:#fff;border:2px solid #25d366;border-radius:12px;padding:10px 28px;font-weight:800;font-size:13px;color:#075e54;text-align:center;">
+        📱 Customer WhatsApp
+      </div>
+    </div>
+
+    <div style="text-align:center;color:#abc9f3;font-size:13px;margin-bottom:8px;">↕ WhatsApp Web Protocol (WebSocket)</div>
+
+    <!-- Row 2: Go Daemon -->
+    <div style="background:#012749;border-radius:16px;padding:20px 24px;margin-bottom:16px;color:#fff;">
+      <div style="font-weight:900;font-size:14px;margin-bottom:12px;text-align:center;letter-spacing:0.5px;">
+        ⚙️ Go Daemon (whatsmeow)
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+        <div style="background:#1e3d60;border-radius:10px;padding:10px;text-align:center;font-size:11px;font-weight:700;">
+          <div style="font-size:16px;margin-bottom:4px;">🔌</div>
+          WA Client<br/><span style="color:#abc9f3;font-weight:500;font-size:10px;">whatsmeow<br/>QR / Pairing</span>
+        </div>
+        <div style="background:#1e3d60;border-radius:10px;padding:10px;text-align:center;font-size:11px;font-weight:700;">
+          <div style="font-size:16px;margin-bottom:4px;">🧠</div>
+          State Machine<br/><span style="color:#abc9f3;font-weight:500;font-size:10px;">Conversation<br/>transitions</span>
+        </div>
+        <div style="background:#1e3d60;border-radius:10px;padding:10px;text-align:center;font-size:11px;font-weight:700;">
+          <div style="font-size:16px;margin-bottom:4px;">📋</div>
+          Rules Engine<br/><span style="color:#abc9f3;font-weight:500;font-size:10px;">Escalation<br/>detection</span>
+        </div>
+        <div style="background:#1e3d60;border-radius:10px;padding:10px;text-align:center;font-size:11px;font-weight:700;">
+          <div style="font-size:16px;margin-bottom:4px;">⏱️</div>
+          Scheduler<br/><span style="color:#abc9f3;font-weight:500;font-size:10px;">2×24hr timeout<br/>goroutines</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: External APIs + Supabase side by side -->
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:16px;">
+
+      <!-- Gemini -->
+      <div style="background:#fff;border:2px solid #4285f4;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:20px;margin-bottom:6px;">✨</div>
+        <div style="font-weight:800;font-size:12px;color:#1a73e8;">Gemini API</div>
+        <div style="font-size:10px;color:#6b7280;margin-top:4px;line-height:1.6;">
+          Natural language<br/>generation per state<br/>+ structured JSON output
+        </div>
+        <div style="margin-top:8px;font-size:10px;background:#eff4ff;border-radius:6px;padding:4px 8px;color:#012749;font-weight:700;">
+          Called by Go daemon only
+        </div>
+      </div>
+
+      <!-- Supabase -->
+      <div style="background:#fff;border:2px solid #3ecf8e;border-radius:12px;padding:16px;">
+        <div style="font-weight:800;font-size:12px;color:#1c7c4a;text-align:center;margin-bottom:10px;">🗄️ Supabase (PostgreSQL)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center;font-size:10px;font-weight:700;color:#065f46;">
+            conversations
+          </div>
+          <div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center;font-size:10px;font-weight:700;color:#065f46;">
+            messages
+          </div>
+          <div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center;font-size:10px;font-weight:700;color:#065f46;">
+            orders
+          </div>
+          <div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center;font-size:10px;font-weight:700;color:#065f46;">
+            stock_items<br/><span style="font-weight:500;color:#6b7280;">(existing)</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;background:#eff4ff;border-radius:8px;padding:8px 12px;">
+          <div style="font-size:11px;font-weight:700;color:#012749;">📡 Realtime</div>
+          <div style="font-size:10px;color:#6b7280;">WebSocket pushes table changes to React instantly</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow down -->
+    <div style="text-align:center;color:#abc9f3;font-size:13px;margin-bottom:8px;">↓ Supabase Realtime WebSocket</div>
+
+    <!-- Row 4: React Frontend -->
+    <div style="background:#fff;border:2px solid #abc9f3;border-radius:12px;padding:16px;">
+      <div style="font-weight:800;font-size:12px;color:#012749;text-align:center;margin-bottom:10px;">⚛️ React Frontend (existing app)</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        <div style="background:#eff4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:#012749;">
+          💬 Sales Inbox<br/><span style="font-size:10px;color:#6b7280;font-weight:500;">Live chat monitor<br/>AI ↔ Admin handover</span>
+        </div>
+        <div style="background:#eff4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:#012749;">
+          📊 Dashboard<br/><span style="font-size:10px;color:#6b7280;font-weight:500;">Pending orders queue<br/>Approve + invoice blast</span>
+        </div>
+        <div style="background:#eff4ff;border-radius:8px;padding:10px;text-align:center;font-size:11px;font-weight:700;color:#012749;">
+          🤖 WhatsApp AI Screen<br/><span style="font-size:10px;color:#6b7280;font-weight:500;">Number management<br/>Connection status</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Key design decisions baked in</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">Go daemon is the only writer</strong><br/>
+      Only the Go daemon writes to <code>conversations</code>, <code>messages</code>, and <code>orders</code>. React is read-only on these tables (via RLS policies). Prevents data conflicts.
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">State persisted after every transition</strong><br/>
+      Every state machine step writes to Supabase before replying to WhatsApp. If the daemon restarts, it reads conversation state from DB and resumes — no lost orders.
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">Admin writes go through React → Supabase</strong><br/>
+      When an admin types in Sales Inbox or approves an order, React writes directly to Supabase. The Go daemon detects the change via a DB subscription and resumes sending on WhatsApp.
+    </div>
+    <div style="background:#fff;border:1px solid #e5eeff;border-radius:12px;padding:14px;font-size:11px;line-height:1.7;">
+      <strong style="color:#012749;">Gemini never called from React</strong><br/>
+      All LLM calls go through the Go daemon — the Gemini API key is server-side only. React never touches Gemini directly.
+    </div>
+  </div>
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Does this architecture look right? Reply in the terminal to move to Section 2 (State Machine).</p>

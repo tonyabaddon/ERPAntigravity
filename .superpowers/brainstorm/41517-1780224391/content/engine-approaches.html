@@ -1,0 +1,123 @@
+<h2>Core AI Engine: 3 Architecture Approaches</h2>
+<p class="subtitle">How to structure the Go daemon, state machine, and Supabase together</p>
+
+<div class="options">
+
+  <!-- Approach A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Go-centric state machine (Recommended)</h3>
+      <div style="margin:8px 0;font-size:11px;background:#eff4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.8;">
+        <strong>Flow:</strong> WhatsApp → Go daemon (state machine + Gemini calls) → writes to Supabase → React subscribes via Supabase Realtime
+      </div>
+
+      <div style="margin:10px 0;font-size:11px;line-height:1.8;color:#43474e;">
+        The Go daemon owns the full conversation state machine:
+        <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:10px;">GREETING → COLLECTING → CLARIFYING → STOCK_CHECK → CONFIRMING → BOOKED → ESCALATED</code><br/>
+        It calls Gemini for natural language, checks Supabase stock table, writes conversation + order rows directly to Supabase using the service key. React gets live updates via Supabase Realtime websocket.
+      </div>
+
+      <div style="display:flex;gap:16px;margin-top:8px;">
+        <div style="flex:1;background:#f0fff4;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#2d8a4e;">Pros</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>All logic in one language (Go) — easy to debug</li>
+            <li>React Realtime is free — Sales Inbox goes live with no extra work</li>
+            <li>Daemon is already running — no extra server</li>
+            <li>Timeout jobs run natively in Go goroutines</li>
+          </ul>
+        </div>
+        <div style="flex:1;background:#fff1f2;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#9b1c1c;">Cons</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>Go daemon crash loses in-memory state (mitigated by persisting state to Supabase after every step)</li>
+            <li>Go team needed for changes to conversation logic</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#eff4ff;border-radius:8px;padding:8px 12px;font-size:11px;color:#012749;font-weight:700;">
+        ✓ Best fit: single Go developer, want to ship fast, already using Supabase
+      </div>
+    </div>
+  </div>
+
+  <!-- Approach B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Supabase Edge Functions as the brain</h3>
+      <div style="margin:8px 0;font-size:11px;background:#eff4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.8;">
+        <strong>Flow:</strong> WhatsApp → Go daemon (thin WA layer only) → POST to Supabase Edge Function → Edge Function runs state machine + Gemini → writes to DB → React Realtime
+      </div>
+
+      <div style="margin:10px 0;font-size:11px;line-height:1.8;color:#43474e;">
+        Go daemon is kept minimal: receive WA message → POST payload to a Supabase Edge Function URL → return. The Edge Function (TypeScript/Deno) handles the state machine, calls Gemini, updates the DB, and triggers the WA reply back via a Go webhook endpoint. Go only handles WA I/O.
+      </div>
+
+      <div style="display:flex;gap:16px;margin-top:8px;">
+        <div style="flex:1;background:#f0fff4;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#2d8a4e;">Pros</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>Business logic in TypeScript — easier to iterate on conversation flow</li>
+            <li>Edge Functions scale automatically, no memory concerns</li>
+            <li>No state in Go — daemon crash has zero effect on conversation state</li>
+          </ul>
+        </div>
+        <div style="flex:1;background:#fff1f2;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#9b1c1c;">Cons</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>Two languages: Go (WA I/O) + TypeScript (logic) — split mental model</li>
+            <li>Edge Functions have 150s timeout — fine for chat, watch timeouts</li>
+            <li>Go daemon still needs an HTTP endpoint for Edge Function to send reply back</li>
+            <li>Supabase Edge Function cold starts add latency (~200-500ms)</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#fff8f0;border-radius:8px;padding:8px 12px;font-size:11px;color:#b45309;font-weight:700;">
+        ✓ Best fit: want to avoid Go complexity for business logic, comfortable with TypeScript
+      </div>
+    </div>
+  </div>
+
+  <!-- Approach C -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Go daemon + lightweight REST API (self-contained)</h3>
+      <div style="margin:8px 0;font-size:11px;background:#eff4ff;border-radius:8px;padding:10px 14px;color:#012749;font-weight:600;line-height:1.8;">
+        <strong>Flow:</strong> WhatsApp → Go daemon (state machine + Gemini + HTTP server) → React polls/websocket Go API → Go writes to Supabase for persistence only
+      </div>
+
+      <div style="margin:10px 0;font-size:11px;line-height:1.8;color:#43474e;">
+        Go daemon runs everything: state machine, Gemini calls, <em>and</em> serves a REST/WebSocket API that the React frontend connects to. Supabase is used only as a database (no Realtime, no Edge Functions). Go is the single backend.
+      </div>
+
+      <div style="display:flex;gap:16px;margin-top:8px;">
+        <div style="flex:1;background:#f0fff4;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#2d8a4e;">Pros</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>Truly self-contained — one binary does everything</li>
+            <li>No Supabase Realtime dependency — Go WebSocket is faster</li>
+            <li>Full control over API contract between frontend and backend</li>
+          </ul>
+        </div>
+        <div style="flex:1;background:#fff1f2;border-radius:8px;padding:10px;font-size:11px;">
+          <strong style="color:#9b1c1c;">Cons</strong>
+          <ul style="margin:6px 0 0;padding-left:16px;line-height:1.8;color:#374151;">
+            <li>Must build WebSocket/SSE server in Go — significant extra work</li>
+            <li>CORS, TLS, auth middleware all need implementing</li>
+            <li>React must know Go server's IP/domain — complicates deployment</li>
+            <li>More moving parts to secure and maintain</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:#fff1f2;border-radius:8px;padding:8px 12px;font-size:11px;color:#9b1c1c;font-weight:700;">
+        ✓ Best fit: want Go to be the complete backend long-term, willing to invest in infrastructure
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:12px;color:#6b7280;text-align:center;margin-top:16px;">Click your preferred approach, then confirm in the terminal.</p>

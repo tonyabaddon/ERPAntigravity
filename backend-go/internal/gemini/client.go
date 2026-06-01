@@ -19,7 +19,7 @@ func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("gemini: new client: %w", err)
 	}
-	model := gc.GenerativeModel("gemini-1.5-flash")
+	model := gc.GenerativeModel("gemini-3.5-flash")
 	model.ResponseMIMEType = "application/json"
 	return &Client{model: model, gc: gc}, nil
 }
