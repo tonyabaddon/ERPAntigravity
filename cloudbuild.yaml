@@ -1,0 +1,29 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - 'gcr.io/gen-lang-client-0410251117/sinar-elektrik-msme-erp:$COMMIT_SHA'
+      - './backend-go'
+
+  # Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'gcr.io/gen-lang-client-0410251117/sinar-elektrik-msme-erp:$COMMIT_SHA'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sinar-elektrik-msme-erp
+      - '--image=gcr.io/gen-lang-client-0410251117/sinar-elektrik-msme-erp:$COMMIT_SHA'
+      - '--region=asia-southeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'gcr.io/gen-lang-client-0410251117/sinar-elektrik-msme-erp:$COMMIT_SHA'
