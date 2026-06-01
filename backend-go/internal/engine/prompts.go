@@ -47,7 +47,7 @@ Data terkumpul sejauh ini:
 Data masih dibutuhkan: %s
 
 Ikuti SOP Fase 1 & 1.5. Tanyakan SATU data yang masih kurang dalam 1 pesan.
-Jika customer sebut wiring/instalasi/custom/IP rating → next_action: ESCALATE_WIRING
+Jika customer sebut wiring/instalasi/custom/IP rating → next_action: ESCALATE
 Jika customer minta diskon/harga khusus → next_action: ESCALATE
 
 Balas HANYA JSON (tidak ada teks lain):
@@ -91,7 +91,7 @@ Jika produk tersedia → next_action: CONFIRM
 Jika produk tidak ditemukan atau stok 0 → next_action: ESCALATE
 
 Balas HANYA JSON (tidak ada teks lain):
-{"reply":"<pesan WA ringkasan harga>","next_action":"CONFIRM"}`,
+{"reply":"<pesan WA ringkasan harga>","next_action":"<CONFIRM atau ESCALATE>"}`,
 			orBelum(c.Product), qty, stockCtx)
 
 	case models.StateConfirming:
