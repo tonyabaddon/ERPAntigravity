@@ -21,6 +21,17 @@ steps:
     entrypoint: gcloud
     args:
       - run
+      - services
+      - update
+      - '$_SERVICE_NAME'
+      - '--remove-annotations=run.googleapis.com/sources'
+      - '--region=$_DEPLOY_REGION'
+      - '--platform=$_PLATFORM'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
       - deploy
       - '$_SERVICE_NAME'
       - '--image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
