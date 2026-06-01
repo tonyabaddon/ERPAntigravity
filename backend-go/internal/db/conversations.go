@@ -8,12 +8,18 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
-func (c *Client) GetOrCreateConversation(customerPhone, waNumberID string) (*models.Conversation, error) {
+// GetOrCreateConversation returns (conversation, created, error).
+// created=true means a new conversation row was just inserted.
+func (c *Client) GetOrCreateConversation(customerPhone, waNumberID string) (*models.Conversation, bool, error) {
 	conv, err := c.findActiveConversation(customerPhone, waNumberID)
 	if err == sql.ErrNoRows {
-		return c.createConversation(customerPhone, waNumberID)
+		conv, err = c.createConversation(customerPhone, waNumberID)
+		return conv, true, err
 	}
-	return conv, err
+	if err != nil {
+		return nil, false, err
+	}
+	return conv, false, nil
 }
 
 func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conversation, error) {
@@ -21,15 +27,15 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 	var dataJSON []byte
 	err := c.DB.QueryRow(`
 		SELECT id, wa_number_id, customer_phone, state, language,
-		       collected_data, clarification_round, created_at, updated_at
+		       collected_data, clarification_round, ai_active, created_at, updated_at
 		FROM conversations
 		WHERE customer_phone = $1 AND wa_number_id = $2
-		  AND state NOT IN ('CANCELLED','COMPLETED','ESCALATED_ADMIN','ESCALATED_WIRING')
+		  AND state NOT IN ('CANCELLED','COMPLETED')
 		ORDER BY created_at DESC LIMIT 1
 	`, phone, waNumberID).Scan(
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
-		&conv.CreatedAt, &conv.UpdatedAt,
+		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -45,11 +51,11 @@ func (c *Client) createConversation(phone, waNumberID string) (*models.Conversat
 		INSERT INTO conversations (wa_number_id, customer_phone, state, language, collected_data, clarification_round)
 		VALUES ($1, $2, 'GREETING', 'id', '{}', 0)
 		RETURNING id, wa_number_id, customer_phone, state, language,
-		          collected_data, clarification_round, created_at, updated_at
+		          collected_data, clarification_round, ai_active, created_at, updated_at
 	`, waNumberID, phone).Scan(
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
-		&conv.CreatedAt, &conv.UpdatedAt,
+		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -86,7 +92,7 @@ func (c *Client) UpdateLanguage(id, language string) error {
 func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation, error) {
 	rows, err := c.DB.Query(`
 		SELECT id, wa_number_id, customer_phone, state, language,
-		       collected_data, clarification_round, created_at, updated_at
+		       collected_data, clarification_round, ai_active, created_at, updated_at
 		FROM conversations WHERE customer_phone = $1 ORDER BY created_at DESC
 	`, phone)
 	if err != nil {
@@ -100,7 +106,7 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 		rows.Scan(
 			&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 			&conv.Language, &dataJSON, &conv.ClarificationRound,
-			&conv.CreatedAt, &conv.UpdatedAt,
+			&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 		)
 		json.Unmarshal(dataJSON, &conv.CollectedData)
 		result = append(result, &conv)
