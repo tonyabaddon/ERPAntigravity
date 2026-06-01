@@ -311,6 +311,25 @@ _(Previously completed — not detailed here)_
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `feat(react): connect WhatsappAiScreen to Supabase — remove sandbox, add Realtime status`
 
+## Task 3: TDD rewrite of engine/prompts.go — DONE (2026-06-01)
+
+- Created `backend-go/internal/engine/prompts_test.go` (11 tests)
+  - TDD workflow: test file written and confirmed failing (undefined: orBelum, missingFields), then prompts.go rewritten
+  - Tests cover: `TestBuildPromptGreeting`, `TestBuildPromptCollectingIncludesCollectedData`, `TestBuildPromptCollectingListsMissingFields`, `TestBuildPromptClarifyingIncludesProductAndSpecs`, `TestBuildPromptStockCheckIncludesStockContext`, `TestBuildPromptConfirmingIncludesOrderSummaryAndBothBoolFields`, `TestStockContextStringEmpty`, `TestStockContextStringWithItems`, `TestOrBelum`, `TestMissingFieldsAllMissing`, `TestMissingFieldsNoneMissing`
+  - All 11 tests PASS
+- Rewrote `backend-go/internal/engine/prompts.go`:
+  - Replaced "Sari" persona English prompts with Calista-branded Indonesian SOP references
+  - `BuildPrompt` now returns state-specific JSON format instruction; Calista persona lives in `SystemInstruction` (set in gemini.NewClient), not here
+  - State instructions reference SOP Fase 1, Fase 1.5, Fase 2 for consistency with garindo_jaya_panel_AI_prompt.md
+  - Added `orBelum(s)` helper — returns "belum diketahui" for empty strings (Indonesian UX)
+  - Added `missingFields(c)` helper — lists unfilled `CollectedData` fields in Indonesian labels (nama, perusahaan, alamat, produk)
+  - `StockContextString` updated: fallback message in Indonesian, format now includes `(SKU: ...)` and `stok:` labels
+  - `formatHistory` updated: fallback message in Indonesian "(belum ada pesan)"
+  - `language` parameter retained for API compatibility (used by machine.go caller); not used in body — valid in Go
+- `CGO_ENABLED=1 go test ./...` — all tests pass, no regressions
+- `CGO_ENABLED=1 go build ./...` — clean build
+- Committed: `feat(go): rewrite engine prompts — state-specific JSON format, Calista SOP references`
+
 ## Task 2: Update Gemini client to accept system prompt — DONE (2026-06-01)
 
 - Updated `backend-go/internal/gemini/client.go`:
