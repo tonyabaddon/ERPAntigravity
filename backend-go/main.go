@@ -14,6 +14,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/username/sinar-elektrik-backend/config"
+	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
@@ -34,7 +35,7 @@ func main() {
 	defer dbClient.Close()
 
 	// Gemini
-	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey)
+	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)
 	if err != nil {
 		log.Fatalf("[MAIN] Gemini init failed: %v", err)
 	}

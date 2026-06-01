@@ -13,14 +13,17 @@ type Client struct {
 	gc    *genai.Client
 }
 
-// NewClient creates a Gemini client using the provided API key.
-func NewClient(ctx context.Context, apiKey string) (*Client, error) {
+// NewClient creates a Gemini client using the provided API key and system prompt.
+func NewClient(ctx context.Context, apiKey, systemPrompt string) (*Client, error) {
 	gc, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("gemini: new client: %w", err)
 	}
 	model := gc.GenerativeModel("gemini-3.5-flash")
 	model.ResponseMIMEType = "application/json"
+	model.SystemInstruction = &genai.Content{
+		Parts: []genai.Part{genai.Text(systemPrompt)},
+	}
 	return &Client{model: model, gc: gc}, nil
 }
 
