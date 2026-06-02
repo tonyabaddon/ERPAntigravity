@@ -67,7 +67,13 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
     }).format(val);
   };
 
-  const { orders, approveOrder } = useRealtimeConversations();
+  const { orders, paymentUploadedOrders: rawPaymentOrders, approveOrder, verifyPayment: verifyPaymentFn, rejectPayment: rejectPaymentFn } = useRealtimeConversations();
+  const [paymentUploadedOrders, setPaymentUploadedOrders] = React.useState<typeof rawPaymentOrders>([]);
+
+  React.useEffect(() => {
+    setPaymentUploadedOrders(rawPaymentOrders);
+  }, [rawPaymentOrders]);
+
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
@@ -89,6 +95,26 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
       await approveOrder(orderId, fee);
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleVerify = async (orderId: string) => {
+    setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
+    try {
+      await verifyPaymentFn(orderId);
+    } catch (err) {
+      console.error('verifyPayment failed:', err);
+      setPaymentUploadedOrders(rawPaymentOrders);
+    }
+  };
+
+  const handleReject = async (orderId: string) => {
+    setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
+    try {
+      await rejectPaymentFn(orderId);
+    } catch (err) {
+      console.error('rejectPayment failed:', err);
+      setPaymentUploadedOrders(rawPaymentOrders);
     }
   };
 
@@ -366,6 +392,26 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
                   </div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Payment Verification Panel */}
+      {paymentUploadedOrders.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <Image className="w-5 h-5 text-emerald-600" />
+            Bukti Pembayaran Menunggu Verifikasi ({paymentUploadedOrders.length})
+          </h2>
+          <div className="space-y-3">
+            {paymentUploadedOrders.map(order => (
+              <PaymentVerificationCard
+                key={order.id}
+                order={order}
+                onVerify={() => handleVerify(order.id)}
+                onReject={() => handleReject(order.id)}
+              />
             ))}
           </div>
         </div>
