@@ -10,8 +10,10 @@ import (
 )
 
 type NotifyHandlers struct {
-	OnAdminMessage  func(conversationID, messageID string)
-	OnOrderApproved func(orderID, conversationID string, shippingFee float64)
+	OnAdminMessage    func(conversationID, messageID string)
+	OnOrderApproved   func(orderID, conversationID string, shippingFee float64)
+	OnPaymentVerified func(orderID, conversationID string)
+	OnPaymentRejected func(orderID, conversationID string)
 }
 
 type Client struct {
@@ -45,11 +47,11 @@ func NewClient(connStr string) (*Client, error) {
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
 func (c *Client) StartListening(h NotifyHandlers) error {
-	if err := c.listener.Listen("admin_messages"); err != nil {
-		return err
-	}
-	if err := c.listener.Listen("order_approved"); err != nil {
-		return err
+	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected"}
+	for _, ch := range channels {
+		if err := c.listener.Listen(ch); err != nil {
+			return err
+		}
 	}
 
 	go func() {
@@ -84,11 +86,37 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 				if h.OnOrderApproved != nil {
 					go h.OnOrderApproved(p.OrderID, p.ConversationID, p.ShippingFee)
 				}
+
+			case "payment_verified":
+				var p struct {
+					OrderID        string `json:"order_id"`
+					ConversationID string `json:"conversation_id"`
+				}
+				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
+					log.Printf("[DB] payment_verified parse error: %v", err)
+					continue
+				}
+				if h.OnPaymentVerified != nil {
+					go h.OnPaymentVerified(p.OrderID, p.ConversationID)
+				}
+
+			case "payment_rejected":
+				var p struct {
+					OrderID        string `json:"order_id"`
+					ConversationID string `json:"conversation_id"`
+				}
+				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
+					log.Printf("[DB] payment_rejected parse error: %v", err)
+					continue
+				}
+				if h.OnPaymentRejected != nil {
+					go h.OnPaymentRejected(p.OrderID, p.ConversationID)
+				}
 			}
 		}
 	}()
 
-	log.Println("[DB] LISTEN/NOTIFY active on admin_messages, order_approved")
+	log.Println("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected")
 	return nil
 }
 
