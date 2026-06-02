@@ -143,7 +143,14 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-medium text-sm truncate">{getDisplayName(conv)}</span>
-                  {statusBadge(conv)}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {statusBadge(conv)}
+                    {conv.followup_count_today > 0 && (
+                      <span className="text-xs text-gray-400" title={`${conv.followup_count_today} follow-up otomatis terkirim hari ini`}>
+                        ↩{conv.followup_count_today}/2
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-gray-500 truncate mt-0.5">{getLastMessage(conv)}</p>
               </div>
@@ -171,6 +178,11 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
             </div>
             <div className="flex items-center gap-2">
               {statusBadge(activeChat)}
+              {activeChat.followup_count_today > 0 && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  Follow-up: {activeChat.followup_count_today}/2 terkirim
+                </span>
+              )}
               <button
                 onClick={() => handleToggleAi(activeChat)}
                 title={activeChat.ai_active ? 'Alihkan ke Admin (Nonaktifkan AI)' : 'Aktifkan AI kembali'}
