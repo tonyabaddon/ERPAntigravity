@@ -25,9 +25,12 @@ func (c *Client) GetOrCreateConversation(customerPhone, waNumberID string) (*mod
 func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conversation, error) {
 	var conv models.Conversation
 	var dataJSON []byte
+	var lastAIAt sql.NullTime
+	var lastFollowupDate sql.NullTime
 	err := c.DB.QueryRow(`
 		SELECT id, wa_number_id, customer_phone, state, language,
-		       collected_data, clarification_round, ai_active, created_at, updated_at
+		       collected_data, clarification_round, ai_active, created_at, updated_at,
+		       last_ai_message_at, followup_count_today, last_followup_date
 		FROM conversations
 		WHERE customer_phone = $1 AND wa_number_id = $2
 		  AND state NOT IN ('CANCELLED','COMPLETED')
@@ -36,31 +39,48 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
+		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
 	)
 	if err != nil {
 		return nil, err
 	}
 	json.Unmarshal(dataJSON, &conv.CollectedData)
+	if lastAIAt.Valid {
+		conv.LastAIMessageAt = &lastAIAt.Time
+	}
+	if lastFollowupDate.Valid {
+		conv.LastFollowupDate = &lastFollowupDate.Time
+	}
 	return &conv, nil
 }
 
 func (c *Client) createConversation(phone, waNumberID string) (*models.Conversation, error) {
 	var conv models.Conversation
 	var dataJSON []byte
+	var lastAIAt sql.NullTime
+	var lastFollowupDate sql.NullTime
 	err := c.DB.QueryRow(`
 		INSERT INTO conversations (wa_number_id, customer_phone, state, language, collected_data, clarification_round)
 		VALUES ($1, $2, 'GREETING', 'id', '{}', 0)
 		RETURNING id, wa_number_id, customer_phone, state, language,
-		          collected_data, clarification_round, ai_active, created_at, updated_at
+		          collected_data, clarification_round, ai_active, created_at, updated_at,
+		          last_ai_message_at, followup_count_today, last_followup_date
 	`, waNumberID, phone).Scan(
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
+		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
 	)
 	if err != nil {
 		return nil, err
 	}
 	json.Unmarshal(dataJSON, &conv.CollectedData)
+	if lastAIAt.Valid {
+		conv.LastAIMessageAt = &lastAIAt.Time
+	}
+	if lastFollowupDate.Valid {
+		conv.LastFollowupDate = &lastFollowupDate.Time
+	}
 	return &conv, nil
 }
 
