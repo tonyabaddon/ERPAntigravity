@@ -176,4 +176,24 @@ export interface DbWaRecipient {
   created_at: string;
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings';
+export interface DbCustomer {
+  id: string;
+  wa_number: string;
+  name: string;
+  company: string;
+  created_at: string;
+}
+
+export interface DbLead {
+  id: string;
+  customer_id: string;
+  conversation_id: string;
+  wa_number: string;
+  status: 'NEW' | 'IN_PROGRESS' | 'ESCALATED' | 'ORDERED' | 'DROPPED';
+  confirmed_order_id: string | null;
+  created_at: string;
+  updated_at: string;
+  customers: DbCustomer | null;
+}
+
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline';
