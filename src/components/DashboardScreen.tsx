@@ -16,6 +16,7 @@ import {
   Image,
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
+import { DbOrder } from '../types';
 import { 
   AreaChart, 
   Area, 
@@ -374,7 +375,7 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
 }
 
 interface PaymentVerificationCardProps {
-  order: import('../types').DbOrder;
+  order: DbOrder;
   onVerify: () => Promise<void>;
   onReject: () => Promise<void>;
 }
