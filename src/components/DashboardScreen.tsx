@@ -99,22 +99,24 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
   };
 
   const handleVerify = async (orderId: string) => {
+    const order = paymentUploadedOrders.find(o => o.id === orderId);
     setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
     try {
       await verifyPaymentFn(orderId);
     } catch (err) {
       console.error('verifyPayment failed:', err);
-      setPaymentUploadedOrders(rawPaymentOrders);
+      if (order) setPaymentUploadedOrders(prev => [...prev, order]);
     }
   };
 
   const handleReject = async (orderId: string) => {
+    const order = paymentUploadedOrders.find(o => o.id === orderId);
     setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
     try {
       await rejectPaymentFn(orderId);
     } catch (err) {
       console.error('rejectPayment failed:', err);
-      setPaymentUploadedOrders(rawPaymentOrders);
+      if (order) setPaymentUploadedOrders(prev => [...prev, order]);
     }
   };
 
