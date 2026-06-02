@@ -62,12 +62,13 @@ func (p *Poller) poll(ctx context.Context) {
 			// Do NOT update DB on send failure — avoid phantom follow-up count.
 			continue
 		}
-		if _, err := p.db.InsertMessage(conv.ID, models.SenderAI, msg); err != nil {
-			log.Printf("[FOLLOWUP] InsertMessage error for conv %s: %v", conv.ID, err)
-		}
 		if err := p.db.IncrementFollowup(conv.ID); err != nil {
 			log.Printf("[FOLLOWUP] IncrementFollowup error for conv %s: %v", conv.ID, err)
 		}
+		if _, err := p.db.InsertMessage(conv.ID, models.SenderAI, msg); err != nil {
+			log.Printf("[FOLLOWUP] InsertMessage error for conv %s: %v", conv.ID, err)
+		}
+		log.Printf("[FOLLOWUP] sent follow-up %d for conv %s", effectiveCount+1, conv.ID)
 	}
 }
 
