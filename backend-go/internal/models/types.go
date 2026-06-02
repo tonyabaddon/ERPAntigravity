@@ -107,6 +107,9 @@ type Conversation struct {
 	AIActive           bool              `json:"ai_active"`
 	CreatedAt          time.Time         `json:"created_at"`
 	UpdatedAt          time.Time         `json:"updated_at"`
+	LastAIMessageAt    *time.Time        `json:"last_ai_message_at,omitempty"`
+	FollowupCountToday int               `json:"followup_count_today"`
+	LastFollowupDate   *time.Time        `json:"last_followup_date,omitempty"`
 }
 
 type Message struct {
