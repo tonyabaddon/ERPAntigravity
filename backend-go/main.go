@@ -82,7 +82,7 @@ func main() {
 	if waNumberID == "" {
 		waNumberID = "wa_1"
 	}
-	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID)
+	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey)
 	waClient.AddEventHandler(waHandler.Handle)
 
 	// Restore booking timers after restart
@@ -116,6 +116,12 @@ func main() {
 		},
 		OnOrderApproved: func(orderID, conversationID string, shippingFee float64) {
 			waHandler.HandleApprovedOrder(ctx, orderID, conversationID, shippingFee)
+		},
+		OnPaymentVerified: func(orderID, conversationID string) {
+			waHandler.HandlePaymentVerified(ctx, orderID, conversationID)
+		},
+		OnPaymentRejected: func(orderID, conversationID string) {
+			waHandler.HandlePaymentRejected(ctx, orderID, conversationID)
 		},
 	}); err != nil {
 		log.Fatalf("[MAIN] StartListening failed: %v", err)

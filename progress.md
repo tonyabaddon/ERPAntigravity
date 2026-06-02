@@ -505,3 +505,24 @@ _(Previously completed — details in task tracking)_
 - Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
 - Test check: `CGO_ENABLED=1 go test ./...` — all PASS (11 tests in internal/engine, internal/rules, internal/storage)
 - Committed: `feat(go): sender — add DownloadMedia for WA image download` (9af70ca)
+
+## Task 8 (C1 Payment Lifecycle plan): Update handler.go and main.go — DONE (2026-06-02)
+
+- Rewrote `backend-go/internal/whatsapp/handler.go` (full replacement):
+  - Added `supabaseURL` and `supabaseServiceKey` fields to `Handler` struct
+  - Updated `NewHandler` signature to accept `supabaseURL, supabaseServiceKey string` params
+  - Added `"github.com/username/sinar-elektrik-backend/internal/storage"` import
+  - `handleMediaMessage` now checks if a `WAITING_PAYMENT` order exists for the conversation before deciding the path:
+    - If yes: payment proof flow — calls `DownloadMedia`, `UploadPaymentProof`, `UpdatePaymentProof`, sends ack to customer, sends notification to all active recipients
+    - If no: falls through to admin escalation (unchanged previous behavior)
+  - `HandleApprovedOrder` rewritten: calls `GetActiveBankConfig` for live bank details, calls `GetActiveRecipients` to notify all admin WA numbers, sets status to `WAITING_PAYMENT` (not `COMPLETED`), sets conversation to `BOOKED` state
+  - Added `HandlePaymentVerified(ctx, orderID, conversationID)` — sends confirmation WA to customer, marks order `COMPLETED`, marks conversation `COMPLETED`, updates lead status to `ORDERED`
+  - Added `HandlePaymentRejected(ctx, orderID, conversationID)` — sends rejection WA to customer, calls `RejectPayment` (resets order back to `WAITING_PAYMENT` for re-upload)
+  - `buildInvoiceMessage` now accepts `*models.BankConfig` param and uses live bank data (with fallback to BCA hardcoded values)
+  - `UpdateLanguage` call now checks and logs error (was previously fire-and-forget)
+- Updated `backend-go/main.go` (two targeted edits):
+  - Edit A: `NewHandler` call updated to pass `cfg.SupabaseURL, cfg.SupabaseServiceKey`
+  - Edit B: `StartListening` call extended with `OnPaymentVerified` and `OnPaymentRejected` handler functions
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules, internal/storage all pass)
+- Committed: `feat(go): payment lifecycle — proof upload, HandlePaymentVerified, HandlePaymentRejected, fix HandleApprovedOrder`
