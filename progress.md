@@ -583,6 +583,20 @@ All 6 tasks complete. Feature is fully implemented:
 - Handler: ResetFollowupCounter on every customer reply
 - Main: poller started on boot
 
+## D1-T1: Fix types.ts — expand DbOrder.status and add missing fields — DONE (2026-06-02)
+
+- Replaced `DbConversation` interface: added `ai_active: boolean`, `last_ai_message_at?: string`, `followup_count_today: number`, `last_followup_date?: string`
+- Replaced `DbOrder` interface: expanded status union from 4 values to 12 (full business lifecycle), added `gjp_order_id?`, `order_type?`, `delivery_type?`, `payment_proof_url?`, `payment_verified_at?`, `verified_by?`, `created_at: string`, `updated_at: string`
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `fix(types): expand DbOrder.status and add missing fields to DbOrder and DbConversation` (092c838, e9d2d34)
+
+## D1-T2: Fix supabaseClient.ts — toggleAiControl and fetchPendingOrders — DONE (2026-06-02)
+
+- Fixed `toggleAiControl`: now `(conversationId, makeActive: boolean)` — updates `{ ai_active: makeActive }` column instead of incorrectly setting `state`
+- Fixed `fetchPendingOrders`: changed `.eq('status', 'PENDING')` to `.eq('status', 'PENDING_ADMIN_CONFIRMATION')` to match actual DB enum value
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `fix(supabase): correct fetchPendingOrders status filter and toggleAiControl to use ai_active` (04e5a36)
+
 ## D1-T3: Add payment functions to supabaseClient.ts — DONE (2026-06-02)
 
 - Added 3 methods to `orderService` in `src/lib/supabaseClient.ts`:
@@ -688,6 +702,15 @@ _(Previously completed — details in task tracking)_
 - **Step 5**: Committed: `feat(inbox): add order context bar showing gjp_order_id and status for active conversation` (83769b2)
 - Bar correctly appears only when activeChat is selected (inside the truthy activeChat branch) and when the conversation has an associated order
 
+## D4-T1: Add statsService to supabaseClient.ts — DONE (2026-06-02)
+
+- Added `statsService` export to `src/lib/supabaseClient.ts` with two methods:
+  - `fetchTodayStats()` — returns `{ verifiedOrdersTotal, verifiedOrdersCount, totalConversationsToday, aiConversationsToday }` by querying orders (PAYMENT_VERIFIED status, today's date) and conversations (today's WIB date) from Supabase
+  - `fetchRecentActivity()` — returns last 10 AI/admin messages from today as `{ text, sender, created_at }[]` for the dashboard activity log
+- Also added `isSupabaseConfigured` export (boolean) so UI can gracefully skip data fetches when Supabase is not configured
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(supabase): add statsService with fetchTodayStats and fetchRecentActivity` (752e119)
+
 ## D4-T2: Wire real KPI stats to DashboardScreen.tsx — DONE (2026-06-02)
 
 - Modified `src/components/DashboardScreen.tsx`
@@ -716,3 +739,17 @@ _(Previously completed — details in task tracking)_
   - Each item displays: emerald CheckCircle2 icon, "Pesan AI"/"Sistem" label, message text (2-line clamp), formatted date/time in Indonesian locale
 - **Step 3**: Verified build: `npm run build` — 2378 modules transformed, zero errors
 - **Step 4**: Committed: `feat(dashboard): replace hardcoded activity log with real messages from Supabase` (18db476)
+
+## TypeScript Strict-Mode Fixes — DONE (2026-06-02)
+
+- Fixed `src/components/SalesInboxScreen.tsx`:
+  - Removed `WAITING_PAYMENT`, `PAYMENT_UPLOADED`, `PAYMENT_VERIFIED` from `getStatusInfo` — these are `DbOrder.status` (OrderStatus) values, not `ConversationState` values; `conv.state` never holds them
+  - Now only `'BOOKED'` maps to "Menunggu Bayar" and only `'COMPLETED'` maps to "Selesai"
+  - Converted `ChatBubble` from function declaration with inline type to `const ChatBubble: React.FC<ChatBubbleProps>` to fix React 19 key prop type checking
+- Fixed `src/components/DashboardScreen.tsx`:
+  - Changed `React.useState<typeof rawPaymentOrders>([])` to explicit `React.useState<DbOrder[]>([])`
+  - Converted `PaymentVerificationCard` from function declaration to `const PaymentVerificationCard: React.FC<PaymentVerificationCardProps>` to fix key prop type error
+- Added `src/vite-env.d.ts` with `/// <reference types="vite/client" />` to resolve `import.meta.env` TypeScript error in WhatsappAiScreen.tsx
+- `npx tsc --noEmit` — zero errors (was 6 errors before fixes)
+- `npm run build` — 2378 modules transformed, zero errors
+- Committed: `fix: resolve TypeScript strict-mode errors in getStatusInfo and DbOrder state typing` (04a77d8)
