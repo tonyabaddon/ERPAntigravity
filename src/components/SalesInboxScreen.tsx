@@ -53,10 +53,12 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
         !(conv.collected_data.name ?? '').toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-    const s = conv.state;
     if (activeFilter === 'Semua') return true;
-    if (activeFilter === 'Butuh Admin') return s === 'ESCALATED_ADMIN' || s === 'ESCALATED_WIRING';
-    if (activeFilter === 'Dikelola AI') return s !== 'ESCALATED_ADMIN' && s !== 'ESCALATED_WIRING';
+    if (activeFilter === 'Butuh Admin') {
+      return conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING' || !conv.ai_active;
+    }
+    if (activeFilter === 'Dikelola AI') return conv.ai_active &&
+      conv.state !== 'ESCALATED_ADMIN' && conv.state !== 'ESCALATED_WIRING';
     return true;
   });
 
@@ -74,9 +76,8 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
     e.target.value = '';
   };
 
-  const handleToggleAi = async (convId: string, currentState: string) => {
-    const isAdminControlled = currentState === 'ESCALATED_ADMIN' || currentState === 'ESCALATED_WIRING';
-    await toggleAiControl(convId, !isAdminControlled);
+  const handleToggleAi = async (conv: ConversationWithMessages) => {
+    await toggleAiControl(conv.id, !conv.ai_active);
   };
 
   const getDisplayName = (conv: ConversationWithMessages) =>
@@ -171,8 +172,8 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
             <div className="flex items-center gap-2">
               {statusBadge(activeChat)}
               <button
-                onClick={() => handleToggleAi(activeChat.id, activeChat.state)}
-                title={activeChat.state === 'ESCALATED_ADMIN' ? 'Kembalikan ke AI' : 'Alihkan ke Admin'}
+                onClick={() => handleToggleAi(activeChat)}
+                title={activeChat.ai_active ? 'Alihkan ke Admin (Nonaktifkan AI)' : 'Aktifkan AI kembali'}
                 className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
               >
                 <ArrowLeftRight className="w-4 h-4" />
