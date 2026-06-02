@@ -181,9 +181,8 @@ export default function App() {
     switch (activePage) {
       case 'dashboard':
         return (
-          <DashboardScreen 
-            onPageChange={setActivePage} 
-            chatsCount={chats.length}
+          <DashboardScreen
+            onPageChange={setActivePage}
             lowStockCount={lowStockCount}
           />
         );

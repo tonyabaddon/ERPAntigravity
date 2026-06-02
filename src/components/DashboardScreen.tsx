@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { DbOrder } from '../types';
+import { statsService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { 
   AreaChart, 
   Area, 
@@ -32,7 +33,6 @@ import {
 
 interface DashboardScreenProps {
   onPageChange: (page: any) => void;
-  chatsCount: number;
   lowStockCount: number;
 }
 
@@ -56,7 +56,7 @@ const BOT_PERFORMANCE_DATA = [
   { Day: 'Min', 'Dijawab AI': 105, 'Respon Manual': 5 },
 ];
 
-export default function DashboardScreen({ onPageChange, chatsCount, lowStockCount }: DashboardScreenProps) {
+export default function DashboardScreen({ onPageChange, lowStockCount }: DashboardScreenProps) {
   
   // Format numeric Rupiah
   const formatRupiah = (val: number) => {
@@ -76,6 +76,19 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
 
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const [stats, setStats] = useState<{
+    verifiedOrdersTotal: number;
+    verifiedOrdersCount: number;
+    totalConversationsToday: number;
+    aiConversationsToday: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      statsService.fetchTodayStats().then(setStats).catch(console.error);
+    }
+  }, []);
 
   useEffect(() => {
     orders.forEach(order => {
@@ -155,14 +168,14 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
               <TrendingUp className="w-6 h-6" />
             </div>
             <span className="text-xs font-bold text-[#2d8a4e] bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-0.5">
-              +14.2% <ArrowUpRight className="w-3.5 h-3.5" />
+              {stats ? 'Live' : '...'} <ArrowUpRight className="w-3.5 h-3.5" />
             </span>
           </div>
           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Total Omset (Hari Ini)</span>
           <h3 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-1">
-            {formatRupiah(3840000)}
+            {formatRupiah(stats?.verifiedOrdersTotal ?? 0)}
           </h3>
-          <p className="text-xs text-[#43474e] mt-2">Rp 3.100.000 pada hari kemarin</p>
+          <p className="text-xs text-[#43474e] mt-2">Pesanan PAYMENT_VERIFIED hari ini</p>
         </div>
 
         {/* Stat 2: Orders */}
@@ -177,7 +190,7 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
           </div>
           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Pesanan Terproses</span>
           <h3 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-1">
-            18 Transaksi
+            {(stats?.verifiedOrdersCount ?? 0)} Transaksi
           </h3>
           <p className="text-xs text-[#43474e] mt-2">Diverifikasi &amp; dipack otomatis oleh AI</p>
         </div>
@@ -194,9 +207,15 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
           </div>
           <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Otomasi Balasan AI</span>
           <h3 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-1">
-            94.2% Efisiensi
+            {stats
+              ? Math.round((stats.aiConversationsToday / Math.max(stats.totalConversationsToday, 1)) * 100) + '% Efisiensi'
+              : '... Efisiensi'}
           </h3>
-          <p className="text-xs text-[#43474e] mt-2">Menghemat ~4.8 jam kerja admin toko</p>
+          <p className="text-xs text-[#43474e] mt-2">
+            {stats
+              ? `${stats.aiConversationsToday} dari ${stats.totalConversationsToday} chat ditangani AI hari ini`
+              : 'Memuat data...'}
+          </p>
         </div>
 
         {/* Stat 4: Low Stock Warnings */}
