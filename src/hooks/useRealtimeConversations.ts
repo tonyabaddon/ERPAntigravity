@@ -10,6 +10,7 @@ export interface ConversationWithMessages extends DbConversation {
 export function useRealtimeConversations() {
   const [conversations, setConversations] = useState<ConversationWithMessages[]>([]);
   const [orders, setOrders] = useState<DbOrder[]>([]);
+  const [paymentUploadedOrders, setPaymentUploadedOrders] = useState<DbOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadedConvIds = useRef<Set<string>>(new Set());
@@ -20,9 +21,10 @@ export function useRealtimeConversations() {
     let mounted = true;
 
     async function load() {
-      const [convs, pendingOrders] = await Promise.all([
+      const [convs, pendingOrders, paymentOrders] = await Promise.all([
         conversationService.fetchConversations(),
         orderService.fetchPendingOrders(),
+        orderService.fetchPaymentUploadedOrders(),
       ]);
       if (!mounted) return;
 
@@ -36,6 +38,7 @@ export function useRealtimeConversations() {
 
       setConversations(withMessages);
       setOrders(pendingOrders);
+      setPaymentUploadedOrders(paymentOrders);
       setLoading(false);
     }
 
@@ -91,18 +94,31 @@ export function useRealtimeConversations() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
         (payload) => {
           const newOrder = payload.new as DbOrder;
-          if (newOrder.status === 'PENDING') {
+          if (newOrder.status === 'PENDING_ADMIN_CONFIRMATION') {
             setOrders(prev => [...prev, newOrder]);
+          } else if (newOrder.status === 'PAYMENT_UPLOADED') {
+            setPaymentUploadedOrders(prev => [...prev, newOrder]);
           }
         })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' },
         (payload) => {
           const updatedOrder = payload.new as DbOrder;
-          setOrders(prev =>
-            updatedOrder.status === 'PENDING'
-              ? prev.map(o => o.id === updatedOrder.id ? updatedOrder : o)
-              : prev.filter(o => o.id !== updatedOrder.id)
-          );
+          // Manage pending-approval list
+          if (updatedOrder.status === 'PENDING_ADMIN_CONFIRMATION') {
+            setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+          } else {
+            setOrders(prev => prev.filter(o => o.id !== updatedOrder.id));
+          }
+          // Manage payment-uploaded list
+          if (updatedOrder.status === 'PAYMENT_UPLOADED') {
+            setPaymentUploadedOrders(prev =>
+              prev.some(o => o.id === updatedOrder.id)
+                ? prev.map(o => o.id === updatedOrder.id ? updatedOrder : o)
+                : [...prev, updatedOrder]
+            );
+          } else {
+            setPaymentUploadedOrders(prev => prev.filter(o => o.id !== updatedOrder.id));
+          }
         })
       .subscribe();
 
@@ -130,21 +146,32 @@ export function useRealtimeConversations() {
     await conversationService.insertAdminMediaMessage(conversationId, url, mediaType);
   };
 
-  const toggleAiControl = async (conversationId: string, handOver: boolean) => {
-    await conversationService.toggleAiControl(conversationId, handOver);
+  const toggleAiControl = async (conversationId: string, makeActive: boolean): Promise<void> => {
+    await conversationService.toggleAiControl(conversationId, makeActive);
   };
 
   const approveOrder = async (orderId: string, shippingFee: number) => {
     await orderService.approveOrder(orderId, shippingFee);
   };
 
+  const verifyPayment = async (orderId: string): Promise<void> => {
+    await orderService.verifyPayment(orderId);
+  };
+
+  const rejectPayment = async (orderId: string): Promise<void> => {
+    await orderService.rejectPayment(orderId);
+  };
+
   return {
     conversations,
     orders,
+    paymentUploadedOrders,
     loading,
     sendAdminMessage,
     sendAdminMedia,
     toggleAiControl,
     approveOrder,
+    verifyPayment,
+    rejectPayment,
   };
 }
