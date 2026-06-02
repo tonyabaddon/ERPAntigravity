@@ -154,6 +154,7 @@ export interface DbOrder {
   payment_proof_url?: string;
   payment_verified_at?: string;
   verified_by?: string;
+  created_at: string;
   updated_at: string;
 }
 
