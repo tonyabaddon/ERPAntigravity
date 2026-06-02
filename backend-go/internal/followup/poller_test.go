@@ -80,11 +80,22 @@ func TestBuildFollowupMessage_BookedEN(t *testing.T) {
 		CollectedData: models.CollectedData{Name: "Alice"},
 	}
 	msg1 := buildFollowupMessage(conv, 1)
+	msg2 := buildFollowupMessage(conv, 2)
+
 	if !containsString(msg1, "Alice") {
-		t.Errorf("BOOKED EN message should contain name, got: %s", msg1)
+		t.Errorf("BOOKED EN message 1 should contain name, got: %s", msg1)
 	}
 	if !containsString(msg1, "payment") && !containsString(msg1, "confirmed") {
-		t.Errorf("BOOKED EN message should reference payment, got: %s", msg1)
+		t.Errorf("BOOKED EN message 1 should reference payment, got: %s", msg1)
+	}
+	if !containsString(msg2, "Alice") {
+		t.Errorf("BOOKED EN message 2 should contain name, got: %s", msg2)
+	}
+	if !containsString(msg2, "payment") && !containsString(msg2, "reminder") {
+		t.Errorf("BOOKED EN message 2 should reference payment/reminder, got: %s", msg2)
+	}
+	if msg1 == msg2 {
+		t.Error("BOOKED EN count=1 and count=2 messages should differ")
 	}
 }
 
