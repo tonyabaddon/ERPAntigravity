@@ -204,7 +204,9 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 		reply = "Your request requires our technical team. Our staff will contact you shortly."
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
-	h.sender.SendText(ctx, senderPhone, reply)
+	if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
+		log.Printf("[HANDLER] handleWiringEscalation: SendText error: %v", err)
+	}
 }
 
 func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conversation, text string) {
@@ -217,7 +219,9 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conver
 		reply = "Your request will be handled by our team. Please wait a moment."
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
-	h.sender.SendText(ctx, conv.CustomerPhone, reply)
+	if err := h.sender.SendText(ctx, conv.CustomerPhone, reply); err != nil {
+		log.Printf("[HANDLER] handleAdminEscalation: SendText error: %v", err)
+	}
 }
 
 func (h *Handler) handleMediaMessage(evt *events.Message) {
@@ -228,7 +232,8 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	}
 
 	order, orderErr := h.db.GetOrderByConversation(conv.ID)
-	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment {
+	img := evt.Message.GetImageMessage()
+	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment || img == nil {
 		// Not a payment proof context — fall through to admin escalation.
 		h.db.InsertMessage(conv.ID, models.SenderSystem, "[Media received from customer]")
 		h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
@@ -241,19 +246,17 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		return
 	}
 
-	// Payment proof flow.
+	// Payment proof flow — image message from customer with WAITING_PAYMENT order.
 	var proofURL string
-	if img := evt.Message.GetImageMessage(); img != nil {
-		data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
-		if dlErr != nil {
-			log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
+	data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
+	if dlErr != nil {
+		log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
+	} else {
+		url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
+		if upErr != nil {
+			log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
 		} else {
-			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
-			if upErr != nil {
-				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
-			} else {
-				proofURL = url
-			}
+			proofURL = url
 		}
 	}
 
@@ -294,7 +297,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 // Sets order status to WAITING_PAYMENT (not COMPLETED — payment is still pending).
 func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversationID string, shippingFee float64) {
 	order, err := h.db.GetOrderByConversation(conversationID)
-	if err != nil {
+	if err != nil || order == nil {
 		log.Printf("[HANDLER] GetOrderByConversation error for %s: %v", conversationID, err)
 		return
 	}
@@ -343,7 +346,7 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 // HandlePaymentVerified is called by the LISTEN/NOTIFY dispatcher when admin verifies payment.
 func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversationID string) {
 	order, err := h.db.GetOrderByConversation(conversationID)
-	if err != nil {
+	if err != nil || order == nil {
 		log.Printf("[HANDLER] HandlePaymentVerified: GetOrderByConversation error for %s: %v", conversationID, err)
 		return
 	}
@@ -374,7 +377,7 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 // Sends rejection WA to customer and resets order status to WAITING_PAYMENT for re-upload.
 func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversationID string) {
 	order, err := h.db.GetOrderByConversation(conversationID)
-	if err != nil {
+	if err != nil || order == nil {
 		log.Printf("[HANDLER] HandlePaymentRejected: GetOrderByConversation error for %s: %v", conversationID, err)
 		return
 	}
