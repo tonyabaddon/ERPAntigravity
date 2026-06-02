@@ -740,6 +740,40 @@ _(Previously completed — details in task tracking)_
 - **Step 3**: Verified build: `npm run build` — 2378 modules transformed, zero errors
 - **Step 4**: Committed: `feat(dashboard): replace hardcoded activity log with real messages from Supabase` (18db476)
 
+## E1-T1: SQL migration — anon write grants — DONE (2026-06-02)
+
+- Created `supabase/migrations/20260602000003_admin_write_grants.sql`
+- Grants `INSERT, UPDATE` on `bank_config` + sequence usage to anon role
+- Grants `INSERT, UPDATE, DELETE` on `wa_recipients` + sequence usage to anon role
+- Grants column-level `UPDATE (is_enabled, is_ai_enabled)` on `whatsapp_numbers` to anon role
+- All RLS policies added as idempotent DO blocks (6 policies total)
+- Migration must be applied manually in Supabase SQL Editor before frontend writes work
+- Committed: `feat(db): grant anon write access to bank_config, wa_recipients, whatsapp_numbers` (a98c7cf)
+
+## E1-T2: Add DbBankConfig, DbWaRecipient, and 'settings' to types.ts — DONE (2026-06-02)
+
+- Added `| 'settings'` to `ActivePage` union type
+- Added `DbBankConfig` interface (id, bank_name, account_number, account_name, is_active, updated_at)
+- Added `DbWaRecipient` interface (id, role: 'admin'|'owner', name, wa_number, is_active, created_at)
+- Both interfaces placed immediately after `DbOrder` interface
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(types): add DbBankConfig, DbWaRecipient, and 'settings' to ActivePage` (e028c99)
+
+## E1-T3: Add bankConfigService and waRecipientsService to supabaseClient.ts — DONE (2026-06-02)
+
+- Updated `src/lib/supabaseClient.ts`
+- Extended import line to include `DbBankConfig` and `DbWaRecipient` from `../types`
+- Added `bankConfigService` export with two methods:
+  - `fetch()` — returns the active `DbBankConfig` row (using `maybeSingle()`) or null
+  - `save(values, existingId?)` — UPSERTs by UPDATE when existingId given, INSERT otherwise
+- Added `waRecipientsService` export with four methods:
+  - `fetchAll()` — returns all `DbWaRecipient` rows ordered by `created_at` ASC
+  - `add(values)` — inserts new recipient with `is_active: true`
+  - `toggleActive(id, isActive)` — flips `is_active` flag for a given recipient
+  - `remove(id)` — deletes recipient by id
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(supabase): add bankConfigService and waRecipientsService`
+
 ## TypeScript Strict-Mode Fixes — DONE (2026-06-02)
 
 - Fixed `src/components/SalesInboxScreen.tsx`:
@@ -753,3 +787,34 @@ _(Previously completed — details in task tracking)_
 - `npx tsc --noEmit` — zero errors (was 6 errors before fixes)
 - `npm run build` — 2378 modules transformed, zero errors
 - Committed: `fix: resolve TypeScript strict-mode errors in getStatusInfo and DbOrder state typing` (04a77d8)
+
+## E1-T4: Create PengaturanScreen.tsx component — DONE (2026-06-02)
+
+_(Previously completed — details in task tracking)_
+
+## E1-T5: Wire Sidebar and App.tsx to add Pengaturan route — DONE (2026-06-02)
+
+- Added `settings` entry to `menuItems` array in `src/components/Sidebar.tsx` (after `whatsapp-ai`): id='settings', label='Pengaturan', icon=Settings (already imported), description='Konfigurasi Sistem'
+- Added `import PengaturanScreen from './components/PengaturanScreen'` to `src/App.tsx` after `WhatsappAiScreen` import
+- Added `case 'settings': return <PengaturanScreen showToast={triggerToast} />` to `renderPage()` switch in `src/App.tsx`
+- `npm run build` passes cleanly — zero TypeScript errors (2379 modules transformed)
+- Committed: `feat(nav): add Pengaturan to sidebar and App.tsx routing` (0a11650)
+
+## E1-T6: Fix WhatsappAiScreen field mapping and toggle handlers — DONE (2026-06-02)
+
+- Fixed **Bug 1** (load mapping): `useEffect` Supabase fetch now maps snake_case DB columns to camelCase `WhatsappAiNumber` fields (`phone_number → phoneNumber`, `is_enabled → isEnabled`, `is_ai_enabled → isAiEnabled`, `created_at → createdAt`)
+- Fixed **Bug 2** (Realtime UPDATE handler): channel callback now maps `row.is_enabled`, `row.is_ai_enabled`, `row.status` instead of spreading raw `payload.new` (which is snake_case and would never match camelCase fields)
+- Fixed **Bug 3** (`handleToggleEnable`): converted from no-op to real async function — does optimistic UI update, calls `supabase.from('whatsapp_numbers').update({ is_enabled: newValue })`, reverts on error
+- Fixed **Bug 4** (`handleToggleAiEnabled`): identical pattern — optimistic update, persists `{ is_ai_enabled: newValue }` to DB, reverts on error with warning toast
+- `npm run build` passes cleanly — zero TypeScript errors (2379 modules transformed)
+- Committed: `fix(whatsapp): fix field mapping bug and persist is_enabled/is_ai_enabled toggles to DB` (6dcf8b9)
+
+## E1 Admin Configuration — COMPLETE (2026-06-02)
+
+All 6 tasks complete. Feature is fully implemented:
+- SQL migration: anon write grants on bank_config, wa_recipients, whatsapp_numbers (apply manually)
+- Types: DbBankConfig, DbWaRecipient, 'settings' added to ActivePage
+- Services: bankConfigService and waRecipientsService added to supabaseClient.ts
+- UI: PengaturanScreen.tsx with bank config card (read/edit/create) and WA recipients card (list/toggle/add/delete)
+- Navigation: "Pengaturan" entry in Sidebar, App.tsx case 'settings' route
+- Bug fix: WhatsappAiScreen snake_case→camelCase mapping + real Supabase toggle handlers
