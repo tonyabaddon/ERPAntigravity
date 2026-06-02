@@ -99,6 +99,10 @@ export interface DbConversation {
     specs?: { size?: string; color?: string; notes?: string };
   };
   clarification_round: number;
+  ai_active: boolean;
+  last_ai_message_at?: string;
+  followup_count_today: number;
+  last_followup_date?: string;
   created_at: string;
   updated_at: string;
 }
@@ -130,9 +134,27 @@ export interface DbOrder {
   subtotal: number;
   shipping_fee?: number;
   total: number;
-  status: 'PENDING' | 'APPROVED' | 'CANCELLED' | 'COMPLETED';
+  status:
+    | 'PENDING_ADMIN_CONFIRMATION'
+    | 'PENDING_PRICE_NEGO'
+    | 'PENDING_STOCK_CHECK'
+    | 'PENDING_CUSTOM_QUOTE'
+    | 'PENDING_WIRING_QUOTE'
+    | 'APPROVED'
+    | 'WAITING_PAYMENT'
+    | 'PAYMENT_UPLOADED'
+    | 'PAYMENT_VERIFIED'
+    | 'PAYMENT_REJECTED'
+    | 'CANCELLED'
+    | 'COMPLETED';
   booking_expires_at: string;
-  created_at: string;
+  gjp_order_id?: string;
+  order_type?: 'STANDARD' | 'CUSTOM_PANEL' | 'WIRING_PANEL';
+  delivery_type?: 'PICKUP' | 'DELIVERY';
+  payment_proof_url?: string;
+  payment_verified_at?: string;
+  verified_by?: string;
+  updated_at: string;
 }
 
 export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai';
