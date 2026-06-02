@@ -25,7 +25,7 @@ function getStatusInfo(conv: ConversationWithMessages): { label: string; classNa
 }
 
 export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
-  const { conversations, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } = useRealtimeConversations();
+  const { conversations, orders, paymentUploadedOrders, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } = useRealtimeConversations();
 
   const [activeFilter, setActiveFilter] = useState<'Semua' | 'Butuh Admin' | 'Dikelola AI'>('Semua');
   const [activeChatId, setActiveChatId] = useState<string>('');
@@ -35,6 +35,8 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const activeChat = conversations.find(c => c.id === activeChatId);
+  const allOrders = [...orders, ...paymentUploadedOrders];
+  const activeOrder = allOrders.find(o => o.conversation_id === activeChatId);
 
   // Auto-select first conversation
   useEffect(() => {
@@ -192,6 +194,22 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
               </button>
             </div>
           </div>
+
+          {/* Order context bar */}
+          {activeOrder && (
+            <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs">
+              <span className="font-semibold text-amber-800">
+                {activeOrder.gjp_order_id ?? 'Pesanan'} · Rp {activeOrder.total.toLocaleString('id-ID')}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full font-bold ${
+                activeOrder.status === 'PAYMENT_UPLOADED'
+                  ? 'bg-amber-200 text-amber-900'
+                  : 'bg-blue-100 text-blue-800'
+              }`}>
+                {activeOrder.status.replace(/_/g, ' ')}
+              </span>
+            </div>
+          )}
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
