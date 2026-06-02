@@ -38,6 +38,7 @@ const (
 	OrderStatusWaitingPayment           OrderStatus = "WAITING_PAYMENT"
 	OrderStatusPaymentUploaded          OrderStatus = "PAYMENT_UPLOADED"
 	OrderStatusPaymentVerified          OrderStatus = "PAYMENT_VERIFIED"
+	OrderStatusPaymentRejected          OrderStatus = "PAYMENT_REJECTED"
 	OrderStatusCancelled                OrderStatus = "CANCELLED"
 	OrderStatusCompleted                OrderStatus = "COMPLETED"
 )
@@ -188,4 +189,13 @@ type BankConfig struct {
 	AccountName   string    `json:"account_name"`
 	IsActive      bool      `json:"is_active"`
 	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+type WaRecipient struct {
+	ID        int       `json:"id"`
+	Role      string    `json:"role"`
+	Name      string    `json:"name"`
+	WANumber  string    `json:"wa_number"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 }
