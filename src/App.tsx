@@ -18,7 +18,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-import { ActivePage, ChatItem, StockItem, AdminUser, NotificationConfig } from './types';
+import { ActivePage, StockItem, AdminUser, NotificationConfig } from './types';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -28,11 +28,10 @@ import UserManagementScreen from './components/UserManagementScreen';
 import NotificationSettingsScreen from './components/NotificationSettingsScreen';
 import WhatsappAiScreen from './components/WhatsappAiScreen';
 
-import { 
-  INITIAL_CHATS, 
-  INITIAL_STOCK, 
-  INITIAL_ADMINS, 
-  INITIAL_CONFIG 
+import {
+  INITIAL_STOCK,
+  INITIAL_ADMINS,
+  INITIAL_CONFIG
 } from './initialData';
 
 import { isSupabaseConfigured, supabaseService } from './lib/supabaseClient';
@@ -44,11 +43,6 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<{ name: string; role: string; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
-  const [chats, setChats] = useState<ChatItem[]>(() => {
-    const saved = localStorage.getItem('sinar_elektrik_chats');
-    return saved ? JSON.parse(saved) : INITIAL_CHATS;
-  });
-
   const [stockList, setStockList] = useState<StockItem[]>(() => {
     const saved = localStorage.getItem('sinar_elektrik_stocks');
     return saved ? JSON.parse(saved) : INITIAL_STOCK;
@@ -70,10 +64,6 @@ export default function App() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // Sync state modifications to localStorage
-  useEffect(() => {
-    localStorage.setItem('sinar_elektrik_chats', JSON.stringify(chats));
-  }, [chats]);
-
   useEffect(() => {
     localStorage.setItem('sinar_elektrik_stocks', JSON.stringify(stockList));
   }, [stockList]);
