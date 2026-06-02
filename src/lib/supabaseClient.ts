@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -243,5 +243,72 @@ export const statsService = {
       .order('created_at', { ascending: false })
       .limit(5);
     return data ?? [];
+  },
+};
+
+export const bankConfigService = {
+  async fetch(): Promise<DbBankConfig | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('bank_config')
+      .select('*')
+      .eq('is_active', true)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  },
+
+  async save(values: { bank_name: string; account_number: string; account_name: string }, existingId?: number): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (existingId !== undefined) {
+      const { error } = await supabase
+        .from('bank_config')
+        .update({ ...values, updated_at: new Date().toISOString() })
+        .eq('id', existingId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('bank_config')
+        .insert({ ...values, is_active: true });
+      if (error) throw error;
+    }
+  },
+};
+
+export const waRecipientsService = {
+  async fetchAll(): Promise<DbWaRecipient[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('wa_recipients')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async add(values: { role: 'admin' | 'owner'; name: string; wa_number: string }): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('wa_recipients')
+      .insert({ ...values, is_active: true });
+    if (error) throw error;
+  },
+
+  async toggleActive(id: number, isActive: boolean): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('wa_recipients')
+      .update({ is_active: isActive })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async remove(id: number): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('wa_recipients')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
   },
 };
