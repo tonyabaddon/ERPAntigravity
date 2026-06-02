@@ -63,7 +63,15 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
     if (!supabase) { setLoading(false); return; }
 
     supabase.from('whatsapp_numbers').select('*').order('created_at').then(({ data }) => {
-      if (data) setWaNumbers(data as WhatsappAiNumber[]);
+      if (data) setWaNumbers(data.map(row => ({
+        id: row.id,
+        phoneNumber: row.phone_number,
+        name: row.name,
+        status: row.status,
+        isEnabled: row.is_enabled,
+        isAiEnabled: row.is_ai_enabled,
+        createdAt: row.created_at,
+      } as WhatsappAiNumber)));
       setLoading(false);
     });
 
@@ -71,9 +79,13 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
       .channel('wa-numbers-update')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'whatsapp_numbers' },
         (payload) => {
-          setWaNumbers(prev =>
-            prev.map(n => n.id === payload.new.id ? { ...n, ...payload.new } as WhatsappAiNumber : n)
-          );
+          const row = payload.new;
+          setWaNumbers(prev => prev.map(n => n.id === row.id ? {
+            ...n,
+            isEnabled: row.is_enabled,
+            isAiEnabled: row.is_ai_enabled,
+            status: row.status,
+          } : n));
         })
       .subscribe();
 
@@ -158,19 +170,41 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   };
 
   // Toggle Is Enabled
-  const handleToggleEnable = (id: string) => {
+  const handleToggleEnable = async (id: string): Promise<void> => {
     const num = waNumbers.find(n => n.id === id);
     if (!num) return;
-    pushTerminalLog(`Number ${num.phoneNumber} toggle isEnabled — update via Go daemon or Supabase dashboard.`);
-    showToast('Perubahan status harus dilakukan melalui Go daemon atau Supabase dashboard.', 'info');
+    const newValue = !num.isEnabled;
+    setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isEnabled: newValue } : n));
+    try {
+      const { error } = await supabase!.from('whatsapp_numbers')
+        .update({ is_enabled: newValue })
+        .eq('id', id);
+      if (error) throw error;
+      showToast(`Nomor ${num.phoneNumber} ${newValue ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
+    } catch (err) {
+      console.error('handleToggleEnable error:', err);
+      setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isEnabled: !newValue } : n));
+      showToast('Gagal mengubah status nomor.', 'warning');
+    }
   };
 
   // Toggle Is AI Auto-Reply Enabled
-  const handleToggleAiEnabled = (id: string) => {
+  const handleToggleAiEnabled = async (id: string): Promise<void> => {
     const num = waNumbers.find(n => n.id === id);
     if (!num) return;
-    pushTerminalLog(`State Auto-Reply AI untuk ${num.phoneNumber} — update via Supabase dashboard.`);
-    showToast('Perubahan AI toggle harus dilakukan melalui Supabase dashboard.', 'info');
+    const newValue = !num.isAiEnabled;
+    setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isAiEnabled: newValue } : n));
+    try {
+      const { error } = await supabase!.from('whatsapp_numbers')
+        .update({ is_ai_enabled: newValue })
+        .eq('id', id);
+      if (error) throw error;
+      showToast(`Auto-reply AI untuk ${num.phoneNumber} ${newValue ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
+    } catch (err) {
+      console.error('handleToggleAiEnabled error:', err);
+      setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isAiEnabled: !newValue } : n));
+      showToast('Gagal mengubah status AI.', 'warning');
+    }
   };
 
   // Delete/Unregister WA Number
