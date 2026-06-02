@@ -439,3 +439,69 @@ _(Previously completed — details in task tracking)_
 - Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
 - Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules tests unaffected)
 - Committed: `feat(go): add OrderStatusPaymentRejected and WaRecipient model` (d274412)
+
+## Task 3 (C1 Payment Lifecycle plan): Create storage package with tests — DONE (2026-06-02)
+
+- Created `backend-go/internal/storage/supabase_storage_test.go` (TDD: tests first)
+  - 3 tests: `TestUploadPaymentProof_Success`, `TestUploadPaymentProof_ServerError`, `TestUploadPaymentProof_DefaultContentType`
+  - Test setup: `httptest.NewServer` mocks Supabase Storage API
+  - Tests verify: PUT method, Authorization header format, Content-Type header, public URL construction, error handling for 5xx responses
+  - All 3 tests PASS
+- Created `backend-go/internal/storage/supabase_storage.go` (implementation)
+  - `UploadPaymentProof(ctx, supabaseURL, serviceKey, orderID, data, contentType)` — uploads image bytes to Supabase Storage bucket `payment-proofs`
+  - Defaults `contentType` to `"image/jpeg"` if empty
+  - Constructs filename as `orderID/unixMilliseconds` (unique per upload)
+  - Sends PUT request with Bearer token and Content-Type headers
+  - Returns permanent public URL on HTTP 2xx, error on 3xx+ or request failure
+  - Caller should log error and continue — failed upload must not drop payment flow
+  - Error messages wrapped with `storage:` prefix for diagnostic clarity
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./internal/storage/... -v` — **3/3 PASS** (0.538s)
+- Committed: `feat(go): add storage package — UploadPaymentProof to Supabase Storage` (f25b3fa)
+
+## Task 4 (C1 Payment Lifecycle plan): Create DB files — wa_recipients and payment — DONE (2026-06-02)
+
+- Created `backend-go/internal/db/wa_recipients.go`
+  - `GetActiveRecipients()` — returns all active wa_recipients rows scanned into `[]*models.WaRecipient`
+  - Called when sending payment notifications and order approval notifications
+- Created `backend-go/internal/db/payment.go`
+  - `UpdatePaymentProof(orderID, url)` — stores proof URL and advances status to `'PAYMENT_UPLOADED'`
+  - `RejectPayment(orderID)` — resets status from `'PAYMENT_REJECTED'` back to `'WAITING_PAYMENT'`
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/storage, internal/rules, internal/engine all pass)
+- Committed: `feat(go): add db layer for wa_recipients, payment proof, and payment rejection` (cbf7fb0)
+
+## Task 5 (C1 Payment Lifecycle plan): Update DB client — new LISTEN/NOTIFY channels — DONE (2026-06-02)
+
+- Updated `backend-go/internal/db/client.go`
+- Modified `NotifyHandlers` struct: added `OnPaymentVerified func(orderID, conversationID string)` and `OnPaymentRejected func(orderID, conversationID string)` handlers
+- Modified `StartListening` method:
+  - Changed from individual `c.listener.Listen` calls to loop: `["admin_messages", "order_approved", "payment_verified", "payment_rejected"]`
+  - Added two new case clauses in notification switch: `"payment_verified"` and `"payment_rejected"` with payload unmarshaling and handler dispatch (matching `order_approved` pattern)
+  - Updated log message from `"[DB] LISTEN/NOTIFY active on admin_messages, order_approved"` to include all four channels
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (11 tests in internal/engine, internal/rules, internal/storage all pass)
+- Committed: `feat(go): db client — add payment_verified and payment_rejected LISTEN channels` (a666e4a)
+
+## Task 6 (C1 Payment Lifecycle plan): Update config — add SUPABASE_URL and SUPABASE_SERVICE_KEY — DONE (2026-06-02)
+
+- Updated `backend-go/config/config.go`
+- Added two new fields to `Config` struct: `SupabaseURL string` and `SupabaseServiceKey string` (after `WAStorePath`)
+- Added two new entries to `Load()` function:
+  - `SupabaseURL:        getEnv("SUPABASE_URL", "")`
+  - `SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", "")`
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (11 tests in internal/engine, internal/rules, internal/storage; all test files pass)
+- Committed: `feat(go): config — add SUPABASE_URL and SUPABASE_SERVICE_KEY` (8310766)
+
+## Task 7 (C1 Payment Lifecycle plan): Update sender — add DownloadMedia — DONE (2026-06-02)
+
+- Updated `backend-go/internal/whatsapp/sender.go`
+- Added `DownloadMedia(ctx context.Context, img *waProto.ImageMessage) ([]byte, string, error)` method to Sender struct
+- Method calls `s.client.Download(ctx, img)` to fetch image bytes from WhatsApp servers
+- Returns raw bytes, MIME type (defaults to "image/jpeg" if missing), and error
+- Error wrapping follows package convention: `fmt.Errorf("sender: download media: %w", err)`
+- Import `waProto "go.mau.fi/whatsmeow/proto/waE2E"` was already present — no changes needed
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (11 tests in internal/engine, internal/rules, internal/storage)
+- Committed: `feat(go): sender — add DownloadMedia for WA image download` (9af70ca)
