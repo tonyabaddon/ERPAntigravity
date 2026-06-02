@@ -818,3 +818,47 @@ All 6 tasks complete. Feature is fully implemented:
 - UI: PengaturanScreen.tsx with bank config card (read/edit/create) and WA recipients card (list/toggle/add/delete)
 - Navigation: "Pengaturan" entry in Sidebar, App.tsx case 'settings' route
 - Bug fix: WhatsappAiScreen snake_case→camelCase mapping + real Supabase toggle handlers
+
+## E2-T1: Add DbCustomer, DbLead, 'pipeline' to types.ts — DONE (2026-06-02)
+
+- Added `DbCustomer` interface (id, wa_number, name, company, created_at)
+- Added `DbLead` interface with embedded `customers: DbCustomer | null` for Supabase join results
+- Added `| 'pipeline'` to `ActivePage` union
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(types): add DbCustomer, DbLead, and 'pipeline' to ActivePage` (8d7f723)
+
+## E2-T2: Add leadsService to supabaseClient.ts — DONE (2026-06-02)
+
+- Extended import line to include `DbCustomer` and `DbLead` from `../types`
+- Added `leadsService` export with one method:
+  - `fetchAll()` — returns `DbLead[]` from `leads` table with a `customers(*)` join, ordered by `updated_at` DESC
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(supabase): add leadsService with fetchAll join query` (caed203)
+
+## E2-T3: Create PipelineScreen.tsx — DONE (2026-06-02)
+
+- Created `src/components/PipelineScreen.tsx` (160 lines, read-only)
+- Filter tabs: Semua / Aktif (NEW+IN_PROGRESS) / Eskalasi / Selesai / Gugur — with live counts
+- Each row: customer name + company, WA number (mono), Lead ID (mono, md+ only), color-coded status badge, relative timestamp ("2 jam lalu")
+- Status badge colors: NEW=gray, IN_PROGRESS=blue, ESCALATED=amber, ORDERED=green, DROPPED=red
+- Empty states: no leads at all vs no leads for current filter
+- Supabase-not-configured fallback (yellow banner)
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(ui): add read-only PipelineScreen with lead status filter tabs` (8d1f335)
+
+## E2-T4: Wire Sidebar and App.tsx for Pipeline route — DONE (2026-06-02)
+
+- Added `TrendingUp` to lucide-react imports in `src/components/Sidebar.tsx`
+- Added `'pipeline'` menu item (label: "Pipeline", icon: TrendingUp, description: "Leads & Prospek") after 'settings' entry
+- Added `import PipelineScreen from './components/PipelineScreen'` to `src/App.tsx`
+- Added `case 'pipeline': return <PipelineScreen showToast={triggerToast} />` to renderPage() switch
+- `npm run build` passes cleanly — zero TypeScript errors (2380 modules)
+- Committed: `feat(nav): add Pipeline to sidebar and App.tsx routing` (5e8d515)
+
+## E2 Sales Pipeline — COMPLETE (2026-06-02)
+
+All 4 tasks complete. Feature is fully implemented:
+- Types: DbCustomer, DbLead with embedded join field, 'pipeline' in ActivePage
+- Service: leadsService.fetchAll() with customers(*) join
+- UI: Read-only PipelineScreen with 5 filter tabs and color-coded status badges
+- Navigation: "Pipeline" entry in Sidebar, App.tsx case 'pipeline' route
