@@ -12,7 +12,8 @@ import {
   ArrowUpRight,
   Clock,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
+  Image,
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { 
@@ -368,6 +369,85 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface PaymentVerificationCardProps {
+  order: import('../types').DbOrder;
+  onVerify: () => Promise<void>;
+  onReject: () => Promise<void>;
+}
+
+function PaymentVerificationCard({ order, onVerify, onReject }: PaymentVerificationCardProps) {
+  const [verifying, setVerifying] = React.useState(false);
+  const [rejecting, setRejecting] = React.useState(false);
+
+  const handleVerify = async () => {
+    setVerifying(true);
+    try { await onVerify(); } finally { setVerifying(false); }
+  };
+
+  const handleReject = async () => {
+    setRejecting(true);
+    try { await onReject(); } finally { setRejecting(false); }
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-emerald-200 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-gray-800">{order.customer_name}</p>
+            <p className="text-xs font-mono text-gray-400">{order.gjp_order_id ?? order.id.slice(0, 8)}</p>
+          </div>
+          <p className="text-sm text-gray-500">{order.customer_company} · {order.customer_phone}</p>
+          <p className="mt-1 text-sm font-semibold text-gray-800">
+            Total: Rp {order.total.toLocaleString('id-ID')}
+          </p>
+
+          {/* Payment proof */}
+          <div className="mt-3">
+            {order.payment_proof_url ? (
+              <div className="space-y-1">
+                <a
+                  href={order.payment_proof_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-blue-600 underline font-medium"
+                >
+                  Lihat Bukti Transfer ↗
+                </a>
+                <img
+                  src={order.payment_proof_url}
+                  alt="Bukti pembayaran"
+                  className="max-h-32 rounded object-contain border border-gray-100"
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 italic">Belum ada foto bukti transfer</p>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex flex-col gap-2 shrink-0">
+          <button
+            onClick={handleVerify}
+            disabled={verifying || rejecting}
+            className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-40"
+          >
+            {verifying ? 'Memproses...' : '✓ Verifikasi'}
+          </button>
+          <button
+            onClick={handleReject}
+            disabled={verifying || rejecting}
+            className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 disabled:opacity-40"
+          >
+            {rejecting ? 'Memproses...' : '✕ Tolak'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
