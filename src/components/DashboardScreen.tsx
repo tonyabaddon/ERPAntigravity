@@ -90,6 +90,14 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
     }
   }, []);
 
+  const [recentActivity, setRecentActivity] = useState<Array<{ text: string; sender: string; created_at: string }>>([]);
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      statsService.fetchRecentActivity().then(setRecentActivity).catch(console.error);
+    }
+  }, []);
+
   useEffect(() => {
     orders.forEach(order => {
       if (order.delivery_type === 'PICKUP') {
@@ -309,38 +317,26 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded-2xl transition-colors border border-transparent hover:border-blue-100">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-[#2d8a4e]">
-              <CheckCircle2 className="w-5 h-5" />
+          {recentActivity.length === 0 ? (
+            <div className="flex items-center gap-4 p-4 text-sm text-gray-400 italic">
+              Belum ada aktivitas hari ini.
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-[#012749]">Draft Pembayaran Terbuat</p>
-              <p className="text-xs text-[#43474e]">Bot berhasil mencetak Link Pembayaran QRIS Rp 237.500 untuk customer Andi Saputra.</p>
+          ) : recentActivity.map((item, i) => (
+            <div key={i} className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded-2xl transition-colors border border-transparent hover:border-blue-100">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-[#2d8a4e]">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-[#012749]">
+                  {item.sender === 'ai' ? 'Pesan AI' : 'Sistem'}
+                </p>
+                <p className="text-xs text-[#43474e] line-clamp-2">{item.text}</p>
+              </div>
+              <span className="text-xs text-slate-400 font-medium shrink-0">
+                {new Date(item.created_at).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+              </span>
             </div>
-            <span className="text-xs text-slate-400 font-medium">Hari ini, 14:26 PM</span>
-          </div>
-
-          <div className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded-2xl transition-colors border border-transparent hover:border-blue-100">
-            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-[#012749]">Kasus Wiring Alihkan ke Admin</p>
-              <p className="text-xs text-[#43474e]">Pesanan custom Siti Nurbaya dipindahkan dari otomatisasi AI ke penanganan manual.</p>
-            </div>
-            <span className="text-xs text-slate-400 font-medium">Hari ini, 11:16 AM</span>
-          </div>
-
-          <div className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded-2xl transition-colors border border-transparent hover:border-blue-100">
-            <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0 text-rose-700">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-[#012749]">Peringatan Ambang Batas Minimum Stok</p>
-              <p className="text-xs text-[#43474e]">Peringatan otomatis: Sisa stok Sakelar Broco Modern sisa 8 Pcs (di bawah ambang batas 10 Pcs).</p>
-            </div>
-            <span className="text-xs text-slate-400 font-medium">Kemarin, 09:33 AM</span>
-          </div>
+          ))}
         </div>
       </div>
 
