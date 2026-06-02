@@ -165,4 +165,33 @@ export const orderService = {
       .eq('id', orderId);
     if (error) throw error;
   },
+
+  async fetchPaymentUploadedOrders(): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('status', 'PAYMENT_UPLOADED')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async verifyPayment(orderId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'PAYMENT_VERIFIED', payment_verified_at: new Date().toISOString() })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async rejectPayment(orderId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'PAYMENT_REJECTED' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
 };
