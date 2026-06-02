@@ -158,4 +158,22 @@ export interface DbOrder {
   updated_at: string;
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai';
+export interface DbBankConfig {
+  id: number;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  is_active: boolean;
+  updated_at: string;
+}
+
+export interface DbWaRecipient {
+  id: number;
+  role: 'admin' | 'owner';
+  name: string;
+  wa_number: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings';
