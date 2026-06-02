@@ -343,6 +343,22 @@ _(Previously completed — not detailed here)_
 - Verified tests: `CGO_ENABLED=1 go test ./...` — all pass; `machine_test.go` mockGemini unaffected by interface-compatible change
 - Committed: `feat(go): wire Calista system prompt into Gemini client via SystemInstruction`
 
+## Task 2 (schema migration plan): Expand Go models (types.go) — DONE (2026-06-01)
+
+- Replaced `backend-go/internal/models/types.go` with expanded model definitions
+- Removed old `OrderStatusPending` and `OrderStatusApproved` constants; replaced with 10 fine-grained statuses: `PENDING_ADMIN_CONFIRMATION`, `PENDING_PRICE_NEGO`, `PENDING_STOCK_CHECK`, `PENDING_CUSTOM_QUOTE`, `PENDING_WIRING_QUOTE`, `WAITING_PAYMENT`, `PAYMENT_UPLOADED`, `PAYMENT_VERIFIED`, `CANCELLED`, `COMPLETED`
+- Added `OrderType` type with 3 constants: `STANDARD`, `CUSTOM_PANEL`, `WIRING_PANEL`
+- Added `DeliveryType` type with 2 constants: `PICKUP`, `DELIVERY`
+- Added `LeadStatus` type with 5 constants: `NEW`, `IN_PROGRESS`, `ESCALATED`, `ORDERED`, `DROPPED`
+- Added `AIActive bool` field to `Conversation` struct
+- Expanded `Order` struct with new fields: `GJPOrderID`, `OrderType`, `LeadsID`, `CustomerID`, `DeliveryType`, `PaymentProofURL`, `PaymentVerifiedAt`, `VerifiedBy`
+- Added `Customer` struct (id, wa_number, name, company)
+- Added `Lead` struct (id, customer_id, conversation_id, wa_number, status, confirmed_order_id)
+- Added `BankConfig` struct (id, bank_name, account_number, account_name, is_active)
+- `CGO_ENABLED=1 go build ./...` — clean build (no errors)
+- `CGO_ENABLED=1 go test ./internal/engine/... ./internal/rules/...` — all tests PASS
+- Committed: `feat(go): expand models — new order statuses, order/delivery types, lead status, customer/lead/bankconfig structs` (72837ec)
+
 ## Task 1 (schema ID system migration): SQL migration file created — DONE (2026-06-01)
 
 - Created `supabase/migrations/20260601000001_schema_id_system.sql`
@@ -357,3 +373,69 @@ _(Previously completed — not detailed here)_
 - All DDL is idempotent (IF NOT EXISTS / DO $$ BEGIN ... END $$)
 - Migration NOT applied to Supabase — user applies manually
 - Committed: `feat(sql): add schema migration — customers, leads, bank_config, ai_active, order status expansion` (d7c7257)
+
+## Task 3 (schema migration plan): Create DB files — customers, leads, bank_config — DONE (2026-06-01)
+
+- Created `backend-go/internal/db/customers.go`
+  - `GetOrCreateCustomer(waNumber)` — INSERT ... ON CONFLICT DO UPDATE so RETURNING always returns a row; ID format: `GJP-CUST-XXXX` (sequence `gjp_cust_seq`)
+- Created `backend-go/internal/db/leads.go`
+  - `CreateLead(customerID, conversationID, waNumber)` — ID format: `GJP-LEAD-YYYYMMDD-XXXX` (date from DB clock, sequence `gjp_lead_seq`); COALESCE on nullable `confirmed_order_id`
+  - `UpdateLeadStatus(leadID, status)` — targeted UPDATE with `updated_at = time.Now()`
+- Created `backend-go/internal/db/bank_config.go`
+  - `GetActiveBankConfig()` — returns first active row or nil (handles `sql.ErrNoRows` cleanly)
+- `CGO_ENABLED=1 go build ./...` — clean build (no errors)
+- `CGO_ENABLED=1 go test ./internal/engine/... ./internal/rules/...` — all tests PASS
+- Committed: `feat(go): add db layer for customers, leads, bank_config tables` (9d2fbb3)
+
+## Task 4 (schema migration plan): Update conversations.go — DONE (2026-06-01)
+
+_(Previously completed — details in task tracking)_
+
+## Task 5 (schema migration plan): Rewrite orders.go — new columns and PENDING_ADMIN_CONFIRMATION — DONE (2026-06-01)
+
+- Rewrote `backend-go/internal/db/orders.go` (full replacement)
+- `CreateOrder` gains 4 new parameters: `leadsID, customerID string, orderType models.OrderType, deliveryType models.DeliveryType`
+- Empty string params converted to `nil` for nullable FK columns (leadsID, customerID, deliveryType)
+- Default status changed from `'PENDING'` to `'PENDING_ADMIN_CONFIRMATION'`
+- INSERT now populates `leads_id`, `customer_id`, `order_type`, `delivery_type` columns
+- RETURNING clause expanded to include `gjp_order_id`, `order_type`, `leads_id`, `customer_id`, `delivery_type` (with COALESCE for nullable fields)
+- All SELECT queries in `GetOrderByConversation`, `GetOrderByID` updated to include new columns
+- `ListActiveBookings` status filter updated from `'PENDING'` to `'PENDING_ADMIN_CONFIRMATION'`
+- Added `GetOrderByIDWithPayment` — returns full order including `payment_proof_url`, `payment_verified_at`, `verified_by` for payment verification flow (sub-project C)
+- Added `database/sql` import for `sql.NullTime` handling of nullable `payment_verified_at`
+- Build check: `CGO_ENABLED=1 go build ./...` — fails only in `handler.go` (CreateOrder arity mismatch, GetOrCreateConversation return mismatch) as expected; no errors in orders.go
+- Engine/rules tests: `CGO_ENABLED=1 go test ./internal/engine/... ./internal/rules/...` — all PASS
+- Committed: `feat(go): orders.go — new columns, PENDING_ADMIN_CONFIRMATION default, GetOrderByIDWithPayment` (1b3843d)
+
+## Code Review Fix: rows.Scan/rows.Err error handling + UpdateOrderTotal — DONE (2026-06-01)
+
+- Fixed `backend-go/internal/db/conversations.go`: `ListConversationsByPhone` now checks `rows.Scan` error and calls `rows.Err()` after the loop; both return early with the error
+- Fixed `backend-go/internal/db/orders.go`: `ListActiveBookings` now checks `rows.Scan` error and calls `rows.Err()` after the loop; both return early with the error
+- Added `UpdateOrderTotal(orderID string, total float64) error` to `backend-go/internal/db/orders.go` to write the correct total (subtotal + shipping) back to DB when an order is approved
+- Fixed `backend-go/internal/whatsapp/handler.go`: `HandleApprovedOrder` now calls `h.db.UpdateOrderTotal(orderID, total)` immediately after computing `total := order.Subtotal + shippingFee`, before building the invoice message
+- `CGO_ENABLED=1 go build ./...` — clean build (no errors)
+- `CGO_ENABLED=1 go test ./...` — all tests PASS
+- Committed: `fix(go): add rows.Scan/rows.Err error handling; add UpdateOrderTotal for correct invoice total` (881e749)
+
+## Task 1 (C1 Payment Lifecycle plan): Payment flow migration file created — DONE (2026-06-02)
+
+- Created `supabase/migrations/20260602000001_payment_flow.sql`
+- Adds `PAYMENT_REJECTED` enum value to `order_status` type
+- Creates `wa_recipients` table (id, role, name, wa_number, is_active, created_at) with RLS policy for anon SELECT
+- Adds `notify_payment_verified()` trigger function that fires on `orders.status = 'PAYMENT_VERIFIED'` — sends pg_notify payload with order_id and conversation_id to `payment_verified` channel
+- Adds `notify_payment_rejected()` trigger function that fires on `orders.status = 'PAYMENT_REJECTED'` — sends pg_notify payload with order_id and conversation_id to `payment_rejected` channel
+- All DDL is idempotent (IF NOT EXISTS / DO $$ BEGIN ... END $$)
+- Committed: `feat(sql): add payment flow migration — wa_recipients, PAYMENT_REJECTED, payment triggers` (4b39770)
+- MANUAL: User must apply this migration in Supabase dashboard SQL Editor
+- MANUAL: User must create `payment-proofs` Storage bucket (public) in Supabase dashboard
+
+## Task 2 (C1 Payment Lifecycle plan): Update Go models (types.go) — DONE (2026-06-02)
+
+- Updated `backend-go/internal/models/types.go`
+- Added `OrderStatusPaymentRejected OrderStatus = "PAYMENT_REJECTED"` constant to the OrderStatus const block (after `OrderStatusPaymentVerified`)
+- Added `WaRecipient` struct at the end of the file (after `BankConfig` struct):
+  - Fields: `ID int`, `Role string`, `Name string`, `WANumber string`, `IsActive bool`, `CreatedAt time.Time`
+  - All fields have JSON tags matching Supabase `wa_recipients` table column names
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules tests unaffected)
+- Committed: `feat(go): add OrderStatusPaymentRejected and WaRecipient model` (d274412)
