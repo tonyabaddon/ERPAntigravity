@@ -33,3 +33,17 @@ func (s *Sender) SendText(ctx context.Context, toPhone, text string) error {
 	}
 	return nil
 }
+
+// DownloadMedia downloads an image message's bytes from WhatsApp servers.
+// Returns the raw bytes and MIME type. Defaults to "image/jpeg" if MIME type is missing.
+func (s *Sender) DownloadMedia(ctx context.Context, img *waProto.ImageMessage) ([]byte, string, error) {
+	data, err := s.client.Download(ctx, img)
+	if err != nil {
+		return nil, "", fmt.Errorf("sender: download media: %w", err)
+	}
+	contentType := img.GetMimetype()
+	if contentType == "" {
+		contentType = "image/jpeg"
+	}
+	return data, contentType, nil
+}
