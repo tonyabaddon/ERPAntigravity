@@ -526,3 +526,59 @@ _(Previously completed — details in task tracking)_
 - Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
 - Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules, internal/storage all pass)
 - Committed: `feat(go): payment lifecycle — proof upload, HandlePaymentVerified, HandlePaymentRejected, fix HandleApprovedOrder`
+
+## Task 4 (C2 Follow-up Scheduler plan): Create db/followup.go — DONE (2026-06-02)
+
+- Created `backend-go/internal/db/followup.go`
+- Three DB functions implemented:
+  - `GetEligibleForFollowup() ([]*models.Conversation, error)` — returns conversations where Calista has sent >= 1 msg, customer has not replied in 4+ hours, and daily WIB quota (max 2 follow-ups) is not exhausted; filtered by `ai_active = true` and non-terminal states; uses WIB timezone (Asia/Jakarta) for date boundary checks
+  - `IncrementFollowup(convID string) error` — records a follow-up send; uses SQL CASE to atomically reset count to 1 if it's a new WIB day, otherwise increment; updates `last_followup_date` to current WIB date
+  - `ResetFollowupCounter(convID string) error` — clears follow-up tracking when customer replies; sets `followup_count_today = 0` and `last_followup_date = NULL`
+- Build check: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Test check: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules, internal/storage, internal/scheduler all pass)
+- Committed: `feat(go): add db followup layer — GetEligibleForFollowup, IncrementFollowup, ResetFollowupCounter`
+
+## Task 5 (C2 Follow-up Scheduler plan): Create followup/poller.go with TDD — DONE (2026-06-02)
+
+- Created `backend-go/internal/followup/poller_test.go` (test first, TDD)
+  - 7 tests: `TestBuildFollowupMessage_StandardID`, `TestBuildFollowupMessage_StandardEN`, `TestBuildFollowupMessage_BookedID`, `TestBuildFollowupMessage_BookedEN`, `TestIsNewWIBDay_NilIsNewDay`, `TestIsNewWIBDay_YesterdayIsNewDay`, `TestIsNewWIBDay_FarFutureIsNotNewDay`
+  - Tests confirmed failing before implementation (build error: undefined symbols)
+  - All 7 tests PASS after implementation
+- Created `backend-go/internal/followup/poller.go` (implementation)
+  - `Poller` struct wraps `*db.Client` and `*whatsapp.Sender`
+  - `NewPoller(d, s)` constructor; `Start(ctx)` launches background goroutine ticking every minute
+  - `poll(ctx)` fetches eligible conversations, skips those at daily quota (2/day), builds message, calls `SendText`, `InsertMessage`, `IncrementFollowup`
+  - Skips DB update on `SendText` failure (no phantom count increment)
+  - `isNewWIBDay(t *time.Time)` — returns true if nil or date is before today in WIB; computes today's UTC midnight from WIB now
+  - `buildFollowupMessage` dispatches to `standardMessage` or `bookedMessage` by state
+  - 4 message variants: standard/booked × id/en, each with 2 counts (total 8 templates)
+  - WIB timezone: `time.FixedZone("WIB", 7*3600)` (UTC+7)
+- `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- `CGO_ENABLED=1 go test ./...` — all PASS (7 new followup tests + all previous tests)
+- Committed: `feat(go): add followup poller — polling goroutine and WA message builder`
+
+## Task 6 (C2 Follow-up Scheduler plan): Wire handler.go and main.go — DONE (2026-06-02)
+
+- Updated `backend-go/internal/whatsapp/handler.go`
+  - Added `ResetFollowupCounter(conv.ID)` call in `processMessage` immediately after `GetOrCreateConversation` success, before customer record logic
+  - Non-fatal: logs error and continues so customer message is never dropped
+- Updated `backend-go/main.go`
+  - Added import: `"github.com/username/sinar-elektrik-backend/internal/followup"`
+  - Added `followup.NewPoller(dbClient, sender).Start(ctx)` after `waClient.AddEventHandler`, before booking timer restore
+  - Added `log.Println("[MAIN] Follow-up poller started (1-minute tick)")`
+- Bug fix from final review: `GetEligibleForFollowup` was scanning `last_followup_date` into `interface{}` (discarded), causing `conv.LastFollowupDate` to always be nil and `isNewWIBDay` to always return true → always used count=1 messages. Fixed by using `sql.NullTime` with `.Valid` guard (matching pattern in conversations.go).
+- Additional fix: in `poll()`, swapped order to `IncrementFollowup` before `InsertMessage` so a failed message log does not allow duplicate sends on next tick.
+- `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- `CGO_ENABLED=1 go test ./...` — all PASS (7 followup tests + all previous tests)
+- Committed: `feat(go): wire follow-up poller — ResetFollowupCounter on reply, start poller in main`
+- Committed: `fix(followup): scan last_followup_date as sql.NullTime in GetEligibleForFollowup`
+
+## C2 Follow-up Scheduler — COMPLETE (2026-06-02)
+
+All 6 tasks complete. Feature is fully implemented:
+- SQL migration: 3 columns + last_ai_message_at trigger
+- Go models: 3 new Conversation fields
+- DB layer: conversations.go scan updated; followup.go with 3 functions
+- Poller: polling goroutine with WIB quota, 8 message templates (standard/BOOKED × count1/2 × id/en)
+- Handler: ResetFollowupCounter on every customer reply
+- Main: poller started on boot
