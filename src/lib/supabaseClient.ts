@@ -115,12 +115,11 @@ export const conversationService = {
     return data;
   },
 
-  async toggleAiControl(conversationId: string, handOver: boolean): Promise<void> {
+  async toggleAiControl(conversationId: string, makeActive: boolean): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const newState = handOver ? 'ESCALATED_ADMIN' : 'COLLECTING';
     const { error } = await supabase
       .from('conversations')
-      .update({ state: newState })
+      .update({ ai_active: makeActive })
       .eq('id', conversationId);
     if (error) throw error;
   },
@@ -152,7 +151,7 @@ export const orderService = {
     const { data, error } = await supabase
       .from('orders')
       .select('*')
-      .eq('status', 'PENDING')
+      .eq('status', 'PENDING_ADMIN_CONFIRMATION')
       .order('created_at', { ascending: true });
     if (error) throw error;
     return data ?? [];
