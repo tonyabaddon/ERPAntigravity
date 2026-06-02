@@ -195,3 +195,53 @@ export const orderService = {
     if (error) throw error;
   },
 };
+
+export const statsService = {
+  async fetchTodayStats(): Promise<{
+    verifiedOrdersTotal: number;
+    verifiedOrdersCount: number;
+    totalConversationsToday: number;
+    aiConversationsToday: number;
+  }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const iso = todayStart.toISOString();
+
+    const [ordersRes, convsRes, aiConvsRes] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('total')
+        .eq('status', 'PAYMENT_VERIFIED')
+        .gte('created_at', iso),
+      supabase
+        .from('conversations')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', iso),
+      supabase
+        .from('conversations')
+        .select('id', { count: 'exact', head: true })
+        .eq('ai_active', true)
+        .gte('created_at', iso),
+    ]);
+
+    const verifiedTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + (o.total ?? 0), 0);
+    return {
+      verifiedOrdersTotal: verifiedTotal,
+      verifiedOrdersCount: ordersRes.data?.length ?? 0,
+      totalConversationsToday: convsRes.count ?? 0,
+      aiConversationsToday: aiConvsRes.count ?? 0,
+    };
+  },
+
+  async fetchRecentActivity(): Promise<Array<{ text: string; sender: string; created_at: string }>> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data } = await supabase
+      .from('messages')
+      .select('text, sender, created_at')
+      .in('sender', ['system', 'ai'])
+      .order('created_at', { ascending: false })
+      .limit(5);
+    return data ?? [];
+  },
+};
