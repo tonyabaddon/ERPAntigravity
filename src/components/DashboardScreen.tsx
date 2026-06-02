@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   ShoppingBag,
@@ -68,6 +68,17 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
   const { orders, approveOrder } = useRealtimeConversations();
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    orders.forEach(order => {
+      if (order.delivery_type === 'PICKUP') {
+        setShippingFees(prev => {
+          if (prev[order.id] !== undefined) return prev;
+          return { ...prev, [order.id]: '0' };
+        });
+      }
+    });
+  }, [orders]);
 
   const handleApprove = async (orderId: string) => {
     const fee = parseFloat(shippingFees[orderId] ?? '0');
@@ -297,6 +308,20 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800">{order.customer_name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs font-mono text-gray-400">
+                        {order.gjp_order_id ?? order.id.slice(0, 8)}
+                      </p>
+                      {order.delivery_type && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          order.delivery_type === 'PICKUP'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          {order.delivery_type === 'PICKUP' ? 'Ambil Sendiri' : 'Pengiriman'}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">{order.customer_company} · {order.customer_address}</p>
                     <p className="text-sm text-gray-500">{order.customer_phone}</p>
                     <div className="mt-2 space-y-0.5">
@@ -316,18 +341,22 @@ export default function DashboardScreen({ onPageChange, chatsCount, lowStockCoun
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Ongkir (Rp):</span>
-                      <input
-                        type="number"
-                        min="0"
-                        className="w-28 border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                        placeholder="0"
-                        value={shippingFees[order.id] ?? ''}
-                        onChange={e => setShippingFees(prev => ({ ...prev, [order.id]: e.target.value }))}
-                      />
+                      {order.delivery_type === 'PICKUP' ? (
+                        <span className="w-28 text-sm font-semibold text-gray-500 px-2 py-1">Rp 0 (Pickup)</span>
+                      ) : (
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-28 border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="0"
+                          value={shippingFees[order.id] ?? ''}
+                          onChange={e => setShippingFees(prev => ({ ...prev, [order.id]: e.target.value }))}
+                        />
+                      )}
                     </div>
                     <button
                       onClick={() => handleApprove(order.id)}
-                      disabled={approvingId === order.id || !shippingFees[order.id]}
+                      disabled={approvingId === order.id || shippingFees[order.id] === undefined || shippingFees[order.id] === ''}
                       className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-40"
                     >
                       {approvingId === order.id ? 'Memproses...' : '✓ Setujui'}
