@@ -27,6 +27,7 @@ import StockManagerScreen from './components/StockManagerScreen';
 import UserManagementScreen from './components/UserManagementScreen';
 import NotificationSettingsScreen from './components/NotificationSettingsScreen';
 import WhatsappAiScreen from './components/WhatsappAiScreen';
+import PengaturanScreen from './components/PengaturanScreen';
 
 import {
   INITIAL_STOCK,
@@ -206,10 +207,14 @@ export default function App() {
         );
       case 'whatsapp-ai':
         return (
-          <WhatsappAiScreen 
+          <WhatsappAiScreen
             stockList={stockList}
             showToast={triggerToast}
           />
+        );
+      case 'settings':
+        return (
+          <PengaturanScreen showToast={triggerToast} />
         );
       default:
         return null;

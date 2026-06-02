@@ -62,11 +62,17 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       icon: Bell,
       description: 'Detak Jantung WA' 
     },
-    { 
-      id: 'whatsapp-ai' as ActivePage, 
-      label: 'WhatsApp AI', 
+    {
+      id: 'whatsapp-ai' as ActivePage,
+      label: 'WhatsApp AI',
       icon: Bot,
-      description: 'whatsmeow & Gemini' 
+      description: 'whatsmeow & Gemini'
+    },
+    {
+      id: 'settings' as ActivePage,
+      label: 'Pengaturan',
+      icon: Settings,
+      description: 'Konfigurasi Sistem',
     },
   ];
 
