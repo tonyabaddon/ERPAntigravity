@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -310,5 +310,17 @@ export const waRecipientsService = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+  },
+};
+
+export const leadsService = {
+  async fetchAll(): Promise<DbLead[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('leads')
+      .select('*, customers(*)')
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as DbLead[];
   },
 };
