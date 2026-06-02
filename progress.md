@@ -624,3 +624,95 @@ All 6 tasks complete. Feature is fully implemented:
 - Replaced dynamic type import with static import for cleaner type checking
 - `npm run build` passes cleanly — zero TypeScript errors, successful production build
 - Committed: `fix(dashboard): use static DbOrder import in PaymentVerificationCard props` (9274785)
+
+## D2-T3: Add PAYMENT_UPLOADED panel to DashboardScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/DashboardScreen.tsx`
+- Destructured `paymentUploadedOrders`, `verifyPayment`, `rejectPayment` from `useRealtimeConversations()` hook
+- Added local state `paymentUploadedOrders` with `React.useEffect` sync from raw hook value
+- Added `handleVerify` and `handleReject` with optimistic removal (card disappears immediately, rolls back on error)
+- Rendered `PaymentVerificationCard` list inside new "Bukti Pembayaran Menunggu Verifikasi" panel below Pending Orders panel
+- `npm run build` passes cleanly — zero TypeScript errors, successful production build
+- Committed: `feat(dashboard): add PAYMENT_UPLOADED panel with verify/reject and optimistic removal` (33ce5c6)
+
+## D2-T4: Fix optimistic removal race condition in handleVerify and handleReject — DONE (2026-06-02)
+
+- Fixed `src/components/DashboardScreen.tsx` — `handleVerify` and `handleReject` functions
+- **Problem**: Rolling back to stale `rawPaymentOrders` on API failure would drop new orders arrived via Realtime during the call
+- **Solution**: Capture the specific order before removing it, then re-insert only that order on failure
+- Updated `handleVerify`: captures `order = paymentUploadedOrders.find(o => o.id === orderId)` before removal, re-inserts with `setPaymentUploadedOrders(prev => [...prev, order])` on catch
+- Updated `handleReject`: identical logic for reject flow
+- Build: `npm run build` passes — 2378 modules transformed, dist built in 1.64s
+- Committed: `fix(dashboard): fix optimistic removal race condition - re-insert specific order on failure` (e52fad4)
+
+## D3-T2: Fix filteredChats filter and handleToggleAi in SalesInboxScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/SalesInboxScreen.tsx`
+- Fixed `filteredChats` "Butuh Admin" filter: now also catches conversations where `ai_active = false` (admin took manual control without ESCALATED state). Added `!conv.ai_active` to ESCALATED_ADMIN/WIRING check.
+- Fixed "Dikelola AI" filter: now requires `conv.ai_active === true` AND not escalated (was missing the `ai_active` check).
+- Replaced `handleToggleAi(convId: string, currentState: string)` with `handleToggleAi(conv: ConversationWithMessages)` that calls `toggleAiControl(conv.id, !conv.ai_active)` directly.
+- Updated toggle button `onClick` from `handleToggleAi(activeChat.id, activeChat.state)` to `handleToggleAi(activeChat)`.
+- Updated toggle button `title` from state-based label to `ai_active`-based label: "Alihkan ke Admin (Nonaktifkan AI)" / "Aktifkan AI kembali".
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `fix(inbox): correct Butuh Admin filter to include ai_active=false, fix handleToggleAi signature` (2c9d4cf)
+
+## D3-T1: Replace stateToStatus with getStatusInfo in SalesInboxScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/SalesInboxScreen.tsx`
+- Removed `stateToStatus(state: string)` function from inside the component
+- Added `getStatusInfo(conv: ConversationWithMessages)` module-level function (before `export default`) that:
+  - Returns `{ label, className }` directly for all 7 states: ESCALATED_ADMIN, ESCALATED_WIRING, BOOKED/WAITING_PAYMENT/PAYMENT_UPLOADED, PAYMENT_VERIFIED/COMPLETED, CANCELLED, manual (ai_active=false), and AI (default)
+  - Checks `conv.ai_active` field (available via D1 fix) for the "Manual" case
+- Replaced `statusBadge(state: string)` with `statusBadge(conv: ConversationWithMessages)` calling `getStatusInfo(conv)`
+- Updated both `statusBadge` call sites: `statusBadge(conv.state)` → `statusBadge(conv)` and `statusBadge(activeChat.state)` → `statusBadge(activeChat)`
+- Updated `filteredChats` filter to check `conv.state` directly (removed dependency on removed `stateToStatus`)
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `fix(inbox): replace stateToStatus with getStatusInfo for accurate conversation state badges` (2924841)
+
+## D3-T3: Add followup_count_today indicator in SalesInboxScreen.tsx — DONE (2026-06-02)
+
+_(Previously completed — details in task tracking)_
+
+## D3-T4: Add order context bar in SalesInboxScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/SalesInboxScreen.tsx`
+- **Step 1**: Destructured `orders` and `paymentUploadedOrders` from `useRealtimeConversations()` hook (added to existing destructure at line 28)
+- **Step 2**: Computed `activeOrder` by combining both order arrays and finding the order matching `activeChatId` (added at lines 38-39)
+- **Step 3**: Added order context bar JSX below chat header (lines 198-212):
+  - Conditionally rendered when `activeOrder` exists
+  - Shows `gjp_order_id` (fallback to "Pesanan") and `total` in rupiah format
+  - Shows status badge with conditional styling: amber for `PAYMENT_UPLOADED`, blue for other statuses
+  - Status label uses `.replace(/_/g, ' ')` for display (e.g., "PENDING_ADMIN_CONFIRMATION" → "PENDING ADMIN CONFIRMATION")
+  - Styled with amber background (bg-amber-50/border-amber-100) to distinguish from chat header
+- **Step 4**: Verified build: `npm run build` — 2378 modules transformed, zero TypeScript errors
+- **Step 5**: Committed: `feat(inbox): add order context bar showing gjp_order_id and status for active conversation` (83769b2)
+- Bar correctly appears only when activeChat is selected (inside the truthy activeChat branch) and when the conversation has an associated order
+
+## D4-T2: Wire real KPI stats to DashboardScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/DashboardScreen.tsx`
+- Removed `chatsCount` from function signature destructure (was not in interface, now removed from function params too)
+- Added `stats` state (`useState<{verifiedOrdersTotal, verifiedOrdersCount, totalConversationsToday, aiConversationsToday} | null>(null)`)
+- Added `useEffect` to call `statsService.fetchTodayStats()` on mount when `isSupabaseConfigured`
+- Stat 1 badge: changed from hardcoded `+14.2%` to `{stats ? 'Live' : '...'}`
+- Stat 1 h3: changed from hardcoded `{formatRupiah(3840000)}` to `{formatRupiah(stats?.verifiedOrdersTotal ?? 0)}`
+- Stat 1 p: changed from hardcoded "Rp 3.100.000 pada hari kemarin" to "Pesanan PAYMENT_VERIFIED hari ini"
+- Stat 2 h3: changed from hardcoded `18 Transaksi` to `{(stats?.verifiedOrdersCount ?? 0)} Transaksi`
+- Stat 3 h3: changed from hardcoded `94.2% Efisiensi` to computed AI efficiency percentage
+- Stat 3 p: changed from hardcoded "Menghemat ~4.8 jam" to live `${aiConversationsToday} dari ${totalConversationsToday} chat ditangani AI hari ini`
+- Modified `src/App.tsx`: removed `chatsCount={chats.length}` prop from `<DashboardScreen>`
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(dashboard): wire real KPI stats from statsService, remove chatsCount prop` (bb4f5c0)
+
+## D4-T3: Wire real activity log in DashboardScreen.tsx — DONE (2026-06-02)
+
+- Modified `src/components/DashboardScreen.tsx`
+- **Step 1**: Added `recentActivity` state and useEffect after the existing stats useEffect (line 93-100):
+  - `const [recentActivity, setRecentActivity] = useState<Array<{ text: string; sender: string; created_at: string }>>([])` — typed array with text, sender, created_at fields
+  - `useEffect` calls `statsService.fetchRecentActivity().then(setRecentActivity)` on mount when `isSupabaseConfigured`
+- **Step 2**: Replaced hardcoded activity items in "Detak Jantung Log Aktivitas AI" section (line 311-343):
+  - Old: 3 hardcoded divs with CheckCircle2/Clock/AlertTriangle icons and fixed dates
+  - New: Conditional rendering with empty state ("Belum ada aktivitas hari ini.") and `.map()` over recentActivity array
+  - Each item displays: emerald CheckCircle2 icon, "Pesan AI"/"Sistem" label, message text (2-line clamp), formatted date/time in Indonesian locale
+- **Step 3**: Verified build: `npm run build` — 2378 modules transformed, zero errors
+- **Step 4**: Committed: `feat(dashboard): replace hardcoded activity log with real messages from Supabase` (18db476)
