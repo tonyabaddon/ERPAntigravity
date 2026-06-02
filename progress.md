@@ -582,3 +582,45 @@ All 6 tasks complete. Feature is fully implemented:
 - Poller: polling goroutine with WIB quota, 8 message templates (standard/BOOKED × count1/2 × id/en)
 - Handler: ResetFollowupCounter on every customer reply
 - Main: poller started on boot
+
+## D1-T3: Add payment functions to supabaseClient.ts — DONE (2026-06-02)
+
+- Added 3 methods to `orderService` in `src/lib/supabaseClient.ts`:
+  - `fetchPaymentUploadedOrders()` — returns `DbOrder[]` with status = 'PAYMENT_UPLOADED'
+  - `verifyPayment(orderId)` — sets status to 'PAYMENT_VERIFIED' and timestamps `payment_verified_at`
+  - `rejectPayment(orderId)` — sets status to 'PAYMENT_REJECTED'
+- All methods follow existing pattern: check supabase configured, update orders table, throw on error
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `feat(supabase): add fetchPaymentUploadedOrders, verifyPayment, rejectPayment to orderService` (a50be86)
+
+## D2-T1: Fix pending orders panel in DashboardScreen.tsx — DONE (2026-06-02)
+
+- Added `useEffect` to import in `src/components/DashboardScreen.tsx`
+- Added `useEffect` that auto-fills `shippingFees[order.id] = '0'` for PICKUP orders when `orders` array changes (prevents falsy-0 blocking approve button)
+- Fixed approve button `disabled` condition: replaced `!shippingFees[order.id]` with `shippingFees[order.id] === undefined || shippingFees[order.id] === ''` (correctly allows fee of 0 for pickup)
+- Added order ID row under customer name: shows `order.gjp_order_id ?? order.id.slice(0, 8)` in monospace + delivery_type badge (blue "Ambil Sendiri" for PICKUP, amber "Pengiriman" for DELIVERY)
+- Made shipping fee input read-only for PICKUP orders: shows static "Rp 0 (Pickup)" text, hides editable input
+- `npm run build` — zero TypeScript errors
+- Committed: `fix(dashboard): fix pickup approve button, show delivery_type and gjp_order_id on order cards` (a125791)
+
+## D1-T4: Fix useRealtimeConversations hook — DONE (2026-06-02)
+
+- Added `paymentUploadedOrders` state (`useState<DbOrder[]>([])`) alongside `orders`
+- Extended `Promise.all` in `load()` to also call `orderService.fetchPaymentUploadedOrders()` and call `setPaymentUploadedOrders(paymentOrders)` after fetch
+- Fixed INSERT Realtime handler: now checks `'PENDING_ADMIN_CONFIRMATION'` (adds to `orders`) and `'PAYMENT_UPLOADED'` (adds to `paymentUploadedOrders`); was checking wrong `'PENDING'` status
+- Fixed UPDATE Realtime handler: manages both `orders` and `paymentUploadedOrders` lists independently using correct status values (`'PENDING_ADMIN_CONFIRMATION'`, `'PAYMENT_UPLOADED'`)
+- Updated `toggleAiControl` wrapper: renamed param from `handOver` to `makeActive` and added explicit `Promise<void>` return type
+- Added `verifyPayment(orderId)` wrapper calling `orderService.verifyPayment`
+- Added `rejectPayment(orderId)` wrapper calling `orderService.rejectPayment`
+- Updated return object to expose `paymentUploadedOrders`, `verifyPayment`, `rejectPayment`
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `fix(hook): add paymentUploadedOrders, fix realtime listeners, expose verifyPayment/rejectPayment` (be7e780)
+
+## D2-T2: Fix DbOrder import in DashboardScreen.tsx — DONE (2026-06-02)
+
+- Fixed `src/components/DashboardScreen.tsx`
+- Added static import at top: `import { DbOrder } from '../types';`
+- Changed `PaymentVerificationCardProps` interface: `order: import('../types').DbOrder` → `order: DbOrder`
+- Replaced dynamic type import with static import for cleaner type checking
+- `npm run build` passes cleanly — zero TypeScript errors, successful production build
+- Committed: `fix(dashboard): use static DbOrder import in PaymentVerificationCard props` (9274785)
