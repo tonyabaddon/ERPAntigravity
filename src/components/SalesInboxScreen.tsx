@@ -13,9 +13,9 @@ function getStatusInfo(conv: ConversationWithMessages): { label: string; classNa
   const s = conv.state;
   if (s === 'ESCALATED_ADMIN') return { label: 'Butuh Admin', className: 'bg-red-100 text-red-700' };
   if (s === 'ESCALATED_WIRING') return { label: 'Wiring', className: 'bg-yellow-100 text-yellow-700' };
-  if (s === 'BOOKED' || s === 'WAITING_PAYMENT' || s === 'PAYMENT_UPLOADED')
+  if (s === 'BOOKED')
     return { label: 'Menunggu Bayar', className: 'bg-amber-100 text-amber-700' };
-  if (s === 'PAYMENT_VERIFIED' || s === 'COMPLETED')
+  if (s === 'COMPLETED')
     return { label: 'Selesai', className: 'bg-emerald-100 text-emerald-700' };
   if (s === 'CANCELLED')
     return { label: 'Batal', className: 'bg-gray-100 text-gray-500' };
@@ -256,7 +256,8 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
   );
 }
 
-function ChatBubble({ msg }: { msg: DbMessage }) {
+interface ChatBubbleProps { msg: DbMessage; }
+const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   const isCustomer = msg.sender === 'customer';
   const isSystem = msg.sender === 'system';
 

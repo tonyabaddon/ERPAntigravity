@@ -68,7 +68,7 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
   };
 
   const { orders, paymentUploadedOrders: rawPaymentOrders, approveOrder, verifyPayment: verifyPaymentFn, rejectPayment: rejectPaymentFn } = useRealtimeConversations();
-  const [paymentUploadedOrders, setPaymentUploadedOrders] = React.useState<typeof rawPaymentOrders>([]);
+  const [paymentUploadedOrders, setPaymentUploadedOrders] = React.useState<DbOrder[]>([]);
 
   React.useEffect(() => {
     setPaymentUploadedOrders(rawPaymentOrders);
@@ -443,7 +443,7 @@ interface PaymentVerificationCardProps {
   onReject: () => Promise<void>;
 }
 
-function PaymentVerificationCard({ order, onVerify, onReject }: PaymentVerificationCardProps) {
+const PaymentVerificationCard: React.FC<PaymentVerificationCardProps> = ({ order, onVerify, onReject }) => {
   const [verifying, setVerifying] = React.useState(false);
   const [rejecting, setRejecting] = React.useState(false);
 
