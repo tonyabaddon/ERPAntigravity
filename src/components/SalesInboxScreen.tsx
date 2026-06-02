@@ -9,6 +9,21 @@ interface SalesInboxScreenProps {
   // Props are now empty — all data comes from the hook.
 }
 
+function getStatusInfo(conv: ConversationWithMessages): { label: string; className: string } {
+  const s = conv.state;
+  if (s === 'ESCALATED_ADMIN') return { label: 'Butuh Admin', className: 'bg-red-100 text-red-700' };
+  if (s === 'ESCALATED_WIRING') return { label: 'Wiring', className: 'bg-yellow-100 text-yellow-700' };
+  if (s === 'BOOKED' || s === 'WAITING_PAYMENT' || s === 'PAYMENT_UPLOADED')
+    return { label: 'Menunggu Bayar', className: 'bg-amber-100 text-amber-700' };
+  if (s === 'PAYMENT_VERIFIED' || s === 'COMPLETED')
+    return { label: 'Selesai', className: 'bg-emerald-100 text-emerald-700' };
+  if (s === 'CANCELLED')
+    return { label: 'Batal', className: 'bg-gray-100 text-gray-500' };
+  if (!conv.ai_active)
+    return { label: 'Manual', className: 'bg-orange-100 text-orange-700' };
+  return { label: 'AI', className: 'bg-blue-100 text-blue-700' };
+}
+
 export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
   const { conversations, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } = useRealtimeConversations();
 
@@ -33,21 +48,15 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages.length, activeChatId]);
 
-  const stateToStatus = (state: string) => {
-    if (state === 'ESCALATED_ADMIN') return 'BUTUH_ADMIN';
-    if (state === 'ESCALATED_WIRING') return 'WIRING_CUSTOM';
-    return 'DIKELOLA_AI';
-  };
-
   const filteredChats = conversations.filter(conv => {
     if (searchQuery && !conv.customer_phone.includes(searchQuery) &&
         !(conv.collected_data.name ?? '').toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
-    const status = stateToStatus(conv.state);
+    const s = conv.state;
     if (activeFilter === 'Semua') return true;
-    if (activeFilter === 'Butuh Admin') return status === 'BUTUH_ADMIN' || status === 'WIRING_CUSTOM';
-    if (activeFilter === 'Dikelola AI') return status === 'DIKELOLA_AI';
+    if (activeFilter === 'Butuh Admin') return s === 'ESCALATED_ADMIN' || s === 'ESCALATED_WIRING';
+    if (activeFilter === 'Dikelola AI') return s !== 'ESCALATED_ADMIN' && s !== 'ESCALATED_WIRING';
     return true;
   });
 
@@ -81,21 +90,11 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
   const getLastMessage = (conv: ConversationWithMessages) =>
     conv.messages.at(-1)?.text || '...';
 
-  const statusBadge = (state: string) => {
-    const status = stateToStatus(state);
-    const styles: Record<string, string> = {
-      BUTUH_ADMIN: 'bg-red-100 text-red-700',
-      WIRING_CUSTOM: 'bg-yellow-100 text-yellow-700',
-      DIKELOLA_AI: 'bg-blue-100 text-blue-700',
-    };
-    const labels: Record<string, string> = {
-      BUTUH_ADMIN: 'Butuh Admin',
-      WIRING_CUSTOM: 'Wiring',
-      DIKELOLA_AI: 'AI',
-    };
+  const statusBadge = (conv: ConversationWithMessages) => {
+    const { label, className } = getStatusInfo(conv);
     return (
-      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${styles[status]}`}>
-        {labels[status]}
+      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${className}`}>
+        {label}
       </span>
     );
   };
@@ -143,7 +142,7 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-1">
                   <span className="font-medium text-sm truncate">{getDisplayName(conv)}</span>
-                  {statusBadge(conv.state)}
+                  {statusBadge(conv)}
                 </div>
                 <p className="text-xs text-gray-500 truncate mt-0.5">{getLastMessage(conv)}</p>
               </div>
@@ -170,7 +169,7 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {statusBadge(activeChat.state)}
+              {statusBadge(activeChat)}
               <button
                 onClick={() => handleToggleAi(activeChat.id, activeChat.state)}
                 title={activeChat.state === 'ESCALATED_ADMIN' ? 'Kembalikan ke AI' : 'Alihkan ke Admin'}
