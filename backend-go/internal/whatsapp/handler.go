@@ -79,6 +79,11 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		return
 	}
 
+	// Reset follow-up counter — customer has replied.
+	if err := h.db.ResetFollowupCounter(conv.ID); err != nil {
+		log.Printf("[HANDLER] ResetFollowupCounter error for conv %s: %v", conv.ID, err)
+	}
+
 	// 3. Ensure customer record exists; create lead on new conversations.
 	//    Errors here are non-fatal — log and continue so the message is never dropped.
 	var leadsID, customerID string

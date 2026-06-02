@@ -19,6 +19,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
@@ -84,6 +85,8 @@ func main() {
 	}
 	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey)
 	waClient.AddEventHandler(waHandler.Handle)
+	followup.NewPoller(dbClient, sender).Start(ctx)
+	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
 
 	// Restore booking timers after restart
 	bookings, err := dbClient.ListActiveBookings()
