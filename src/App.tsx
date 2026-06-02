@@ -28,6 +28,7 @@ import UserManagementScreen from './components/UserManagementScreen';
 import NotificationSettingsScreen from './components/NotificationSettingsScreen';
 import WhatsappAiScreen from './components/WhatsappAiScreen';
 import PengaturanScreen from './components/PengaturanScreen';
+import PipelineScreen from './components/PipelineScreen';
 
 import {
   INITIAL_STOCK,
@@ -215,6 +216,10 @@ export default function App() {
       case 'settings':
         return (
           <PengaturanScreen showToast={triggerToast} />
+        );
+      case 'pipeline':
+        return (
+          <PipelineScreen showToast={triggerToast} />
         );
       default:
         return null;

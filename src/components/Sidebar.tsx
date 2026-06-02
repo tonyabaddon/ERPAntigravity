@@ -4,17 +4,18 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, 
-  Inbox, 
-  Package, 
-  Users, 
-  Bell, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Inbox,
+  Package,
+  Users,
+  Bell,
+  Settings,
+  LogOut,
   Zap,
   UserCheck,
-  Bot
+  Bot,
+  TrendingUp
 } from 'lucide-react';
 import { ActivePage } from '../types';
 
@@ -73,6 +74,12 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       label: 'Pengaturan',
       icon: Settings,
       description: 'Konfigurasi Sistem',
+    },
+    {
+      id: 'pipeline' as ActivePage,
+      label: 'Pipeline',
+      icon: TrendingUp,
+      description: 'Leads & Prospek',
     },
   ];
 
