@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"encoding/json"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -33,7 +34,7 @@ func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 	for rows.Next() {
 		var conv models.Conversation
 		var dataJSON []byte
-		var lastAIAt, lastFollowupDate interface{}
+		var lastAIAt, lastFollowupDate sql.NullTime
 		if err := rows.Scan(
 			&conv.ID, &conv.CustomerPhone, &conv.Language, &conv.State,
 			&dataJSON, &conv.ClarificationRound, &conv.AIActive,
@@ -42,6 +43,12 @@ func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 			return nil, err
 		}
 		json.Unmarshal(dataJSON, &conv.CollectedData)
+		if lastAIAt.Valid {
+			conv.LastAIMessageAt = &lastAIAt.Time
+		}
+		if lastFollowupDate.Valid {
+			conv.LastFollowupDate = &lastFollowupDate.Time
+		}
 		result = append(result, &conv)
 	}
 	if err := rows.Err(); err != nil {
