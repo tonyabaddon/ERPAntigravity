@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -160,9 +158,6 @@ func main() {
 			"connected": paired,
 		})
 	})
-	mux.HandleFunc("/api/stocks", handleStocksRoute(dbClient))
-	mux.HandleFunc("/api/stocks/", handleSingleStockRoute(dbClient))
-
 	go func() {
 		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
 		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
@@ -189,157 +184,3 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
 
-func handleStocksRoute(dbClient *db.Client) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		switch r.Method {
-		case "GET":
-			getStocks(w, r, dbClient)
-		case "POST":
-			upsertStock(w, r, dbClient)
-		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-		}
-	}
-}
-
-func handleSingleStockRoute(dbClient *db.Client) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 4 {
-			http.Error(w, `{"error": "invalid path"}`, http.StatusBadRequest)
-			return
-		}
-		sku := parts[3]
-		switch r.Method {
-		case "PUT":
-			updateStockPriceAndVolume(w, r, sku, dbClient)
-		case "DELETE":
-			deleteStock(w, r, sku, dbClient)
-		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Method not allowed"})
-		}
-	}
-}
-
-type StockItem struct {
-	Sku       string    `json:"sku"`
-	Name      string    `json:"name"`
-	Category  string    `json:"category"`
-	Price     int64     `json:"price"`
-	Stock     int       `json:"stock"`
-	Status    string    `json:"status"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func getStocks(w http.ResponseWriter, r *http.Request, dbClient *db.Client) {
-	w.Header().Set("Content-Type", "application/json")
-	rows, err := dbClient.DB.Query("SELECT sku, name, category, price, stock, status, updated_at FROM stocks ORDER BY sku ASC")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-		return
-	}
-	defer rows.Close()
-	items := []StockItem{}
-	for rows.Next() {
-		var item StockItem
-		rows.Scan(&item.Sku, &item.Name, &item.Category, &item.Price, &item.Stock, &item.Status, &item.UpdatedAt)
-		items = append(items, item)
-	}
-	json.NewEncoder(w).Encode(items)
-}
-
-func upsertStock(w http.ResponseWriter, r *http.Request, dbClient *db.Client) {
-	w.Header().Set("Content-Type", "application/json")
-	var item StockItem
-	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request payload"})
-		return
-	}
-	if item.Sku == "" || item.Name == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SKU and Name are required"})
-		return
-	}
-	item.Sku = strings.ToUpper(item.Sku)
-	item.UpdatedAt = time.Now()
-	query := `INSERT INTO stocks (sku, name, category, price, stock, status, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		ON CONFLICT (sku) DO UPDATE SET
-			name = EXCLUDED.name, category = EXCLUDED.category, price = EXCLUDED.price,
-			stock = EXCLUDED.stock, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at
-		RETURNING sku, name, category, price, stock, status, updated_at`
-	err := dbClient.DB.QueryRow(query, item.Sku, item.Name, item.Category, item.Price, item.Stock, item.Status, item.UpdatedAt).
-		Scan(&item.Sku, &item.Name, &item.Category, &item.Price, &item.Stock, &item.Status, &item.UpdatedAt)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-		return
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "data": item})
-}
-
-func updateStockPriceAndVolume(w http.ResponseWriter, r *http.Request, sku string, dbClient *db.Client) {
-	w.Header().Set("Content-Type", "application/json")
-	sku = strings.ToUpper(sku)
-	var payload struct {
-		Price int64 `json:"price"`
-		Stock int   `json:"stock"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON"})
-		return
-	}
-	status := "Sinkron"
-	if payload.Stock < 10 {
-		status = "Stok Tipis"
-	}
-	res, err := dbClient.DB.Exec(`UPDATE stocks SET price = $1, stock = $2, status = $3, updated_at = $4 WHERE sku = $5`,
-		payload.Price, payload.Stock, status, time.Now(), sku)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-		return
-	}
-	affected, _ := res.RowsAffected()
-	if affected == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SKU not found"})
-		return
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "sku": sku, "price": payload.Price, "stock": payload.Stock})
-}
-
-func deleteStock(w http.ResponseWriter, r *http.Request, sku string, dbClient *db.Client) {
-	w.Header().Set("Content-Type", "application/json")
-	sku = strings.ToUpper(sku)
-	res, err := dbClient.DB.Exec(`DELETE FROM stocks WHERE sku = $1`, sku)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-		return
-	}
-	affected, _ := res.RowsAffected()
-	if affected == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{"error": "SKU not found"})
-		return
-	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"success": true, "message": fmt.Sprintf("SKU %s deleted", sku)})
-}
