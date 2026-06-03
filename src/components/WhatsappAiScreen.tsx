@@ -45,6 +45,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   // Real QR state from Go daemon
   const [qrCode, setQrCode] = useState<string>('');
   const [waConnected, setWaConnected] = useState(false);
+  const [waPhone, setWaPhone] = useState<string>('');
   const [daemonOnline, setDaemonOnline] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -102,6 +103,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       const data = await res.json();
       setDaemonOnline(true);
       setWaConnected(data.connected);
+      setWaPhone(data.phone || '');
       setQrCode(data.qr || '');
       if (data.connected) {
         if (qrPollRef.current) clearInterval(qrPollRef.current);
@@ -314,6 +316,9 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                   <div className="text-center space-y-3">
                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto animate-bounce shrink-0" />
                     <h4 className="font-extrabold text-[#012749] text-xs">BERHASIL TERSAMBUNG</h4>
+                    {waPhone && (
+                      <p className="text-xs font-black text-emerald-600 tracking-tight">+{waPhone}</p>
+                    )}
                     <p className="text-[10px] text-gray-400">whatsmeow session tersimpan di wa_store.db</p>
                     <button
                       onClick={handleLogout}
