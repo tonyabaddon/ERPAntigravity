@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { 
-  BellRing, 
-  Clock, 
-  PhoneCall, 
-  CheckSquare, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  BellRing,
+  Clock,
+  PhoneCall,
+  CheckSquare,
   Square,
   TrendingUp,
   AlertTriangle,
@@ -17,6 +17,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { NotificationConfig } from '../types';
+import { notificationConfigService, isSupabaseConfigured } from '../lib/supabaseClient';
 
 interface NotificationSettingsScreenProps {
   config: NotificationConfig;
@@ -38,7 +39,25 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
   const [lowStockLimit, setLowStockLimit] = useState(config.lowStockAlert);
   const [delayLimit, setDelayLimit] = useState(config.delayAlert);
 
-  const handleSave = () => {
+  const dbConfigIdRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    notificationConfigService.fetch().then(row => {
+      if (!row) return;
+      dbConfigIdRef.current = row.id;
+      setEnabled(row.enabled);
+      setIntervalVal(row.interval_label);
+      setRevenueChecked(row.report_revenue);
+      setQueueChecked(row.report_queue);
+      setActivityChecked(row.report_activity);
+      setStatusChecked(row.report_status);
+      setLowStockLimit(row.low_stock_alert);
+      setDelayLimit(row.delay_alert);
+    }).catch(err => console.error('notificationConfig load error:', err));
+  }, []);
+
+  const handleSave = async () => {
     const updated: NotificationConfig = {
       enabled,
       interval,
@@ -46,14 +65,37 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         revenue: revenueChecked,
         queue: queueChecked,
         activity: activityChecked,
-        status: statusChecked
+        status: statusChecked,
       },
       lowStockAlert: lowStockLimit,
-      delayAlert: delayLimit
+      delayAlert: delayLimit,
     };
+
+    if (isSupabaseConfigured) {
+      try {
+        await notificationConfigService.save({
+          enabled,
+          interval_label: interval,
+          report_revenue: revenueChecked,
+          report_queue: queueChecked,
+          report_activity: activityChecked,
+          report_status: statusChecked,
+          low_stock_alert: lowStockLimit,
+          delay_alert: delayLimit,
+        }, dbConfigIdRef.current);
+        if (dbConfigIdRef.current === undefined) {
+          const row = await notificationConfigService.fetch();
+          if (row) dbConfigIdRef.current = row.id;
+        }
+      } catch (err) {
+        console.error('notificationConfig save error:', err);
+        showToast("⚠️ Gagal menyimpan ke cloud. Tersimpan lokal.");
+        onConfigChange(updated);
+        return;
+      }
+    }
+
     onConfigChange(updated);
-    
-    // Display the success banner as shown in screen 5
     showToast("✅ Pengaturan Berhasil Disimpan! Sistem 'Detak Jantung' otomatis aktif.");
   };
 
@@ -82,7 +124,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
             </p>
 
             {/* Config controls Grid matching screen 5 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Box 1: Status */}
               <div className="bg-[#eff4ff]/60 p-6 rounded-3xl flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group select-none">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">Status Layanan</span>
@@ -117,7 +159,6 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                 </div>
               </div>
 
-              {/* Box 3: Target number — removed (managed via DbWaRecipient) */}
             </div>
 
             {/* Checklists for report segments components */}
