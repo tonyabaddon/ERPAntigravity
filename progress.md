@@ -1222,6 +1222,54 @@ All 5 tasks shipped across 5 commits (d9619d2 → 33c752e):
 - Rebuilt Go backend binary to embed updated prompt
 - Committed: `feat(calista): add 1mm ketebalan to Panel Besi spec`
 
+## E2E Full Frontend–Backend Integration Audit — DONE (2026-06-03)
+
+### Schema Fix: Drop legacy tables + apply 8 pending migrations to correct Supabase project
+
+**Root cause**: Supabase project `zocefskkwykivbxhruoy` had legacy tables from a prior ERP version (`whatsapp_conversations`, `products`, `customers` with UUID PK, etc.) that conflicted with all 8 pending migrations. All conflicting tables had 0 rows — safe to drop.
+
+**Actions taken**:
+1. Dropped all 16 legacy tables with CASCADE via `apply_migration` (name: `drop_legacy_tables`)
+2. Applied migrations in order:
+   - `core_ai_engine` — whatsapp_numbers, conversations, messages, orders + RLS + pg_notify triggers
+   - `schema_id_system` — order_status enum expansion, customers, leads, bank_config, gjp sequences
+   - `payment_flow` — wa_recipients, payment_verified/rejected triggers
+   - `followup_scheduler` — followup columns on conversations + trigger
+   - `admin_write_grants` — anon write grants for bank_config, wa_recipients, whatsapp_numbers
+   - `notification_config` — notification_config table
+   - `company_settings` — company_settings table (seeded row id=1: "Garindo Jaya Panel")
+   - `stocks_table` — stocks table with public RLS
+
+**Final schema**: 12 tables, all with RLS enabled. `company_settings` has 1 seeded row.
+
+### Bug Fix: `useRealtimeConversations` loading state when Supabase is null
+
+- Added `setLoading(false)` to the `if (!supabase) return` guard in `src/hooks/useRealtimeConversations.ts`
+- Without this fix, `SalesInboxScreen` shows "Memuat percakapan..." forever when Supabase is not configured
+
+### E2E Screen Audit Results
+
+All 14 screens reviewed against the Supabase schema and service implementations:
+
+| Screen | Status | Notes |
+|---|---|---|
+| AuthScreen | ✅ OK | OTP → `supabase.auth.signInWithOtp` + `verifyOtp` |
+| DashboardScreen | ✅ OK | statsService queries orders + conversations |
+| SalesInboxScreen | ✅ OK | useRealtimeConversations + 4 Realtime channels |
+| StockManagerScreen | ✅ OK | Props-based; App.tsx handles Supabase upsert/delete |
+| WhatsappAiScreen | ✅ OK | Reads whatsapp_numbers from Supabase; polls daemon for QR |
+| PipelineScreen | ✅ OK | leadsService with customers + orders FK joins |
+| OrderHistoryScreen | ✅ OK | Full order lifecycle with PAYMENT_VERIFIED/REJECTED flows |
+| PelangganScreen | ✅ OK | customersService with FK joins to orders + leads |
+| LaporanScreen | ✅ OK | reportsService queries orders + conversations |
+| NotificationSettingsScreen | ✅ OK | notificationConfigService reads/writes |
+| PengaturanScreen | ✅ OK | bankConfig + waRecipients + companySettings all wired |
+| UserManagementScreen | ✅ OK | adminUsersService fetchAll/upsert/remove |
+| InvoiceModal | ✅ OK | Reads company_settings + bank_config for invoice rendering |
+| Sidebar | ✅ OK | All 11 ActivePage nav items present |
+
+No code gaps found beyond the one bug above.
+
 ## P5 — Real-time daemon online/offline health badge in WhatsappAiScreen — DONE (2026-06-03)
 
 - Added `daemonOnline` boolean state (line 45) next to existing `waConnected` state

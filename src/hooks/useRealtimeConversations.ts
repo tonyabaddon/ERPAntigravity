@@ -16,7 +16,7 @@ export function useRealtimeConversations() {
   const loadedConvIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase) { setLoading(false); return; }
 
     let mounted = true;
 
