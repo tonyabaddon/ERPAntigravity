@@ -239,30 +239,7 @@
   .tl-tm  { font-size:11px; color:rgba(255,255,255,.5); }
   .tl-note { margin-top:28px; padding:14px 18px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:14px; font-size:13px; color:rgba(255,255,255,.7); font-weight:500; display:flex; gap:10px; align-items:flex-start; line-height:1.6; }
 
-  /* ════════════════════════════════
-     PRICING PLACEHOLDER
-  ════════════════════════════════ */
-  #harga { background: #fff; }
-  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 720px; margin: 0 auto; }
-  .price-card { border-radius: 24px; border: 1.5px solid; padding: 32px; position: relative; overflow: hidden; transition: transform .2s; }
-  .price-card:hover { transform: translateY(-4px); }
-  .price-card.standard { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 20px rgba(11,28,48,0.06); }
-  .price-card.featured { border-color: rgba(45,138,78,0.35); background: #fff; box-shadow: 0 8px 40px rgba(45,138,78,0.12); }
-  .price-card.featured::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#1e3d60,#2d8a4e); }
-  .popular-badge { position:absolute; top:20px; right:20px; background:#2d8a4e; color:#fff; font-size:10px; font-weight:800; padding:4px 12px; border-radius:9999px; letter-spacing:.3px; }
-  .price-plan { font-size:13px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
-  .price-amount { font-size:36px; font-weight:900; color:#0b1c30; letter-spacing:-1.5px; margin-bottom:4px; }
-  .price-amount span { font-size:16px; font-weight:600; color:#64748b; letter-spacing:0; }
-  .price-setup { font-size:12px; color:#94a3b8; margin-bottom:24px; }
-  .price-divider { border:none; border-top:1px solid #f1f5f9; margin-bottom:20px; }
-  .price-feats { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
-  .pfeat { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:#475569; font-weight:500; }
-  .pfeat-ck { width:18px; height:18px; border-radius:9999px; background:#2d8a4e; color:#fff; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
-  .price-cta { width:100%; padding:13px; border-radius:9999px; font-size:14px; font-weight:700; cursor:pointer; border:none; transition:all .2s; }
-  .price-card.standard .price-cta { background:#f1f5f9; color:#0b1c30; }
-  .price-card.standard .price-cta:hover { background:#e2e8f0; }
-  .price-card.featured .price-cta { background:#2d8a4e; color:#fff; box-shadow:0 4px 16px rgba(45,138,78,.3); }
-  .price-card.featured .price-cta:hover { background:#236b3d; transform:translateY(-1px); }
+  .kons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 860px; margin: 0 auto 48px; }
 
   /* ════════════════════════════════
      FINAL CTA
@@ -377,6 +354,8 @@
     .tl-steps::before { display: none; }
     .tl-step { flex-direction: row; text-align: left; gap: 16px; }
     .tl-circ { margin-bottom: 0; flex-shrink: 0; }
+
+    .kons-grid { grid-template-columns: 1fr; }
 
     .faq-list { padding: 0; }
 
@@ -548,7 +527,7 @@
       <h3>Vosi membaca konteks, bukan sekadar menu</h3>
       <p>Didukung AI generatif yang memahami bahasa natural Indonesia — termasuk singkatan, typo, dan cara bicara customer sehari-hari.</p>
     </div>
-    <button type="button" class="ccta">Jadwalkan Konsultasi →</button>
+    <button type="button" class="ccta" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi →</button>
   </div>
 </section>
 
@@ -604,7 +583,7 @@
   <h2 class="stitle">Cocok untuk Bisnis Kamu?<br>Mari Kita Diskusi.</h2>
   <p class="ssub">Ceritakan bisnis kamu, tim Vosi bantu analisa apakah Vosi tepat — tanpa tekanan, tanpa komitmen.</p>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;margin:0 auto 48px;">
+  <div class="kons-grid">
 
     <!-- WHAT YOU GET -->
     <div style="background:#fff;border-radius:24px;border:1px solid rgba(0,0,0,0.07);padding:32px;box-shadow:0 4px 20px rgba(11,28,48,0.06);">
@@ -733,7 +712,7 @@
 <div class="final-cta">
   <h2>Bisnis Kamu Layak<br>Punya <em>Asisten AI</em>.</h2>
   <p>Ribuan customer menunggu dibalas. Vosi bisa mulai bekerja untuk kamu dalam 3 hari.</p>
-  <button type="button" class="btn-primary" style="margin:0 auto;">Jadwalkan Konsultasi Sekarang →</button>
+  <button type="button" class="btn-primary" style="margin:0 auto;" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Sekarang →</button>
 </div>
 
 <!-- ══════════ FOOTER ══════════ -->
