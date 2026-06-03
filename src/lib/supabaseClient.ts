@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead, DbNotificationConfig } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead, DbNotificationConfig, DbCompanySettings } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -177,11 +177,15 @@ export const orderService = {
     return data ?? [];
   },
 
-  async verifyPayment(orderId: string): Promise<void> {
+  async verifyPayment(orderId: string, adminName = ''): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('orders')
-      .update({ status: 'PAYMENT_VERIFIED', payment_verified_at: new Date().toISOString() })
+      .update({
+        status: 'PAYMENT_VERIFIED',
+        payment_verified_at: new Date().toISOString(),
+        verified_by: adminName,
+      })
       .eq('id', orderId);
     if (error) throw error;
   },
@@ -191,6 +195,25 @@ export const orderService = {
     const { error } = await supabase
       .from('orders')
       .update({ status: 'PAYMENT_REJECTED' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async fetchAll(): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async rejectOrder(orderId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'CANCELLED' })
       .eq('id', orderId);
     if (error) throw error;
   },
@@ -353,5 +376,26 @@ export const notificationConfigService = {
         .insert(values);
       if (error) throw error;
     }
+  },
+};
+
+export const companySettingsService = {
+  async fetch(): Promise<DbCompanySettings> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('company_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async save(values: Omit<DbCompanySettings, 'id' | 'updated_at'>): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('company_settings')
+      .upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
+    if (error) throw error;
   },
 };
