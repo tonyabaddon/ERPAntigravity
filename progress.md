@@ -1056,6 +1056,15 @@ All 10 tasks shipped across 13 commits (2cec3a1 → bbc766d):
 - **PengaturanScreen**: Profil Perusahaan card (company_name, address, phone, email)
 - **DashboardScreen**: removed approval + payment verification panels; replaced with two alert badge buttons linking to Riwayat Pesanan
 
+## G2: Reports & Analytics — COMPLETE (2026-06-03)
+
+Commits: 611cf75
+
+- **Data layer** (`src/lib/supabaseClient.ts`): added `groupByDay<T>` helper (builds day-keyed buckets so charts always show all N days, even zero-data days); added `statsService.fetchWeeklyRevenue()` + `statsService.fetchWeeklyConversations()` for Dashboard; added `reportsService` with `fetchSummary`, `fetchDailyRevenue`, `fetchDailyConversations`, `fetchTopProducts` (top 5 by unit qty, computed by flattening `orders[].items` JSON client-side)
+- **Dashboard fix** (`DashboardScreen.tsx`): removed 14-line hardcoded `WEEKLY_REVENUE_DATA` and `BOT_PERFORMANCE_DATA` constants; wired both charts to real Supabase data via `useEffect` on mount; chart JSX unchanged
+- **LaporanScreen** (`src/components/LaporanScreen.tsx`): new screen — period selector (7 hari / 30 hari / 90 hari), 4 KPI cards (omset, pesanan, avg nilai, tingkat AI), revenue area chart, AI vs manual bar chart, top-5 products table; all data refetched when period changes; graceful empty/unconfigured states
+- **Routing**: `'laporan'` added to `ActivePage`; Sidebar gains BarChart2 nav item between Sales Inbox and AI Stock; App.tsx routes to `<LaporanScreen />`
+
 ## H1: Inbox AI UI/UX Revamp — COMPLETE (2026-06-03)
 
 Full rewrite of `SalesInboxScreen.tsx` per approved spec. Commit: d5064fe
