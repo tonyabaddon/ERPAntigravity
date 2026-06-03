@@ -261,8 +261,18 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	}
 
 	order, orderErr := h.db.GetOrderByConversation(conv.ID)
+
+	// Resolve image through wrapper types WhatsApp uses on newer clients.
 	img := evt.Message.GetImageMessage()
-	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment || img == nil {
+	if img == nil && evt.Message.GetViewOnceMessage() != nil {
+		img = evt.Message.GetViewOnceMessage().GetMessage().GetImageMessage()
+	}
+	if img == nil && evt.Message.GetEphemeralMessage() != nil {
+		img = evt.Message.GetEphemeralMessage().GetMessage().GetImageMessage()
+	}
+	doc := evt.Message.GetDocumentMessage()
+
+	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment || (img == nil && doc == nil) {
 		// Not a payment proof context — fall through to admin escalation.
 		h.db.InsertMessage(conv.ID, models.SenderSystem, "[Media received from customer]")
 		h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
@@ -275,17 +285,31 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		return
 	}
 
-	// Payment proof flow — image message from customer with WAITING_PAYMENT order.
+	// Payment proof flow — image or document (PDF) from customer with WAITING_PAYMENT order.
 	var proofURL string
-	data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
-	if dlErr != nil {
-		log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
-	} else {
-		url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
-		if upErr != nil {
-			log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
+	if img != nil {
+		data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
+		if dlErr != nil {
+			log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
 		} else {
-			proofURL = url
+			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
+			if upErr != nil {
+				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
+			} else {
+				proofURL = url
+			}
+		}
+	} else {
+		data, contentType, dlErr := h.sender.DownloadDocument(context.Background(), doc)
+		if dlErr != nil {
+			log.Printf("[HANDLER] DownloadDocument error for order %s: %v", order.ID, dlErr)
+		} else {
+			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
+			if upErr != nil {
+				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
+			} else {
+				proofURL = url
+			}
 		}
 	}
 
