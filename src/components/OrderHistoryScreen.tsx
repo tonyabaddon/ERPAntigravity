@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ClipboardList, Search, ChevronDown } from 'lucide-react';
 import { DbOrder } from '../types';
 import { orderService, isSupabaseConfigured } from '../lib/supabaseClient';
+import InvoiceModal from './InvoiceModal';
 
 interface OrderHistoryScreenProps {
   currentUser: { name: string; role: string; avatarUrl: string; storeName: string } | null;
@@ -504,9 +505,8 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
         </div>
       )}
 
-      {/* Invoice modal — wired in Task 8 */}
       {invoiceOrder && (
-        <div className="text-xs text-gray-400 p-4">Invoice modal coming soon for {invoiceOrder.gjp_order_id}</div>
+        <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
       )}
     </div>
   );
