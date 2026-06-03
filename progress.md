@@ -891,6 +891,44 @@ All 4 tasks complete. Feature is fully implemented:
 - `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
 - Committed: `feat(supabase): add notificationConfigService with fetch and save` (b146a8d)
 
+## F1-T2: Service Layer — companySettingsService + ordersService updates — DONE (2026-06-03)
+
+- Added `DbCompanySettings` to the import line in `src/lib/supabaseClient.ts`
+- Added `companySettingsService` export with two methods:
+  - `fetch()` — queries `company_settings` with `.eq('id', 1).single()`, returns `DbCompanySettings`
+  - `save(values)` — upserts `{ id: 1, ...values, updated_at: ... }` to `company_settings` table
+- Extended `orderService` with two new methods:
+  - `fetchAll()` — returns all `DbOrder[]` ordered by `created_at` DESC (for Order History screen)
+  - `rejectOrder(orderId)` — sets order `status` to `'CANCELLED'` (admin-side reject)
+- Updated `verifyPayment` signature: now accepts `adminName = ''` param and writes `verified_by: adminName` alongside existing `status` + `payment_verified_at` fields
+- `npm run build` passes cleanly — zero TypeScript errors (2380 modules)
+- Committed: `feat(service): add companySettingsService, ordersService.fetchAll/rejectOrder, verifyPayment adminName` (0e9d867)
+
+## F1-T3: Sidebar Nav + App.tsx Routing (stub) — DONE (2026-06-03)
+
+- Added `ClipboardList` to lucide-react imports in `src/components/Sidebar.tsx`
+- Added `'order-history'` menu item (label: "Riwayat Pesanan", icon: ClipboardList, description: "Semua Pesanan") after 'pipeline' entry
+- Created `src/components/OrderHistoryScreen.tsx` stub — accepts `currentUser` and `showToast` props, renders "Riwayat Pesanan" heading and "Coming soon..." placeholder
+- Added `import OrderHistoryScreen` to `src/App.tsx` and `case 'order-history'` route passing `currentUser` and `showToast={triggerToast}`
+- `npm run build` passes cleanly — zero TypeScript errors (2381 modules transformed)
+- Committed: `feat(nav): add Riwayat Pesanan to sidebar and App routing` (cc5c2f0)
+
+## F1-T4: OrderHistoryScreen scaffold — header, tabs, search, collapsed rows — DONE (2026-06-03)
+
+- Replaced stub `src/components/OrderHistoryScreen.tsx` with full 234-line implementation
+- Header: ClipboardList icon, title, action badges (pending confirmations count, uploaded payment proofs count)
+- 6 filter tabs: Semua / Perlu Konfirmasi / Menunggu Bayar / Bukti Dikirim / Selesai / Dibatalkan — with live counts and amber "!" dot on Bukti Dikirim when > 0
+- Search: filters by customer_name, gjp_order_id, customer_phone (case-insensitive)
+- Collapsed row list: shows customer name, order ID (gjp_order_id or UUID prefix), formatted date, item pill (first item + overflow count), total in status-themed color, status badge, expand chevron
+- Left border accent: purple for PENDING_ADMIN_CONFIRMATION, blue for PAYMENT_UPLOADED
+- Dimmed rows (opacity-55) for CANCELLED and PAYMENT_REJECTED
+- Expanded row placeholder "[expanded row — {status}]" — to be filled in Tasks 5–7
+- Supabase-not-configured fallback (yellow banner)
+- Loading state and per-tab empty states
+- Pre-type-verified: all DbOrder field names confirmed against src/types.ts before writing (no adjustments needed)
+- `npm run build` passes cleanly — zero TypeScript errors (2381 modules transformed)
+- Committed: `feat(order-history): scaffold with filter tabs, search, collapsed rows` (b022a1f)
+
 ## E3-T4: Update NotificationSettingsScreen.tsx — DONE (2026-06-03)
 
 - Added `useEffect`, `useRef` to React imports; added `notificationConfigService`, `isSupabaseConfigured` from supabaseClient
@@ -900,3 +938,66 @@ All 4 tasks complete. Feature is fully implemented:
 - Removed "Nomor WhatsApp Tujuan" comment placeholder from JSX; grid changed from `md:grid-cols-3` to `md:grid-cols-2`
 - `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
 - Committed: `feat(notifications): sync config with Supabase on load/save; remove targetNumber field` (50fa798)
+
+## F1-T5: Expanded Row — PENDING_ADMIN_CONFIRMATION (Approve / Reject) — DONE (2026-06-03)
+
+- Added 3 new state variables: `shippingFees`, `approvingId`, `rejectingId` after `expandedId`
+- Added `handleApprove` async handler: resolves fee (0 for PICKUP, parsed input for DELIVERY), calls `orderService.approveOrder`, updates order status optimistically, collapses row, shows toast
+- Added `handleRejectOrder` async handler: window.confirm gate, calls `orderService.rejectOrder`, updates order status to CANCELLED optimistically, collapses row, shows toast
+- Added `ItemsTable` component before `export default`: renders 4-column product grid (name+SKU, qty, harga, subtotal) with footer showing subtotal/ongkir/total summary row
+- Replaced expanded body placeholder with two conditional branches:
+  - `PENDING_ADMIN_CONFIRMATION`: purple-themed expanded panel with 3-column customer details grid, ItemsTable, booking expiry timestamp, and right-side action column with shipping fee input (static for PICKUP, numeric input for DELIVERY), Approve and Tolak buttons with loading states and disabled logic
+  - All other statuses: unchanged placeholder `[expanded row — {status}]`
+- `booking_expires_at` field confirmed present in `DbOrder` interface (line 149 of types.ts) — used directly with `formatDate()` helper
+- `npm run build` passes cleanly — zero TypeScript errors (2381 modules transformed, 976.79 kB bundle)
+- Committed: `feat(order-history): add PENDING_ADMIN_CONFIRMATION expanded row with approve/reject` (e180260)
+
+## F1-T6: Expanded Row — PAYMENT_UPLOADED (Verify / Reject Payment) — DONE (2026-06-03)
+
+_(Previously completed — details in task tracking)_
+
+## F1-T7: Expanded Rows — WAITING_PAYMENT, COMPLETED/PAYMENT_VERIFIED, CANCELLED — DONE (2026-06-03)
+
+- Added `invoiceOrder` state (`useState<DbOrder | null>(null)`) after `rejectingPaymentId` state
+- Replaced `[expanded row — {order.status}]` placeholder with 3 conditional expanded panels:
+  - `WAITING_PAYMENT`: gray-themed panel, 4-column grid (Pelanggan, No. WA, Pengiriman, Total), ItemsTable
+  - `PAYMENT_VERIFIED` / `COMPLETED`: gray-themed panel, 4-column grid (last col = Diverifikasi Oleh with name + date), ItemsTable, footer row with verified-by label and "📄 Lihat Invoice" button (calls `setInvoiceOrder(order)`)
+  - `CANCELLED` / `PAYMENT_REJECTED`: gray-themed panel, 3-column grid (Pelanggan, No. WA, Total in gray), ItemsTable
+- Added invoice modal stub below order list: renders placeholder text when `invoiceOrder` is set; wired in Task 8
+- `npm run build` passes cleanly — zero TypeScript errors (2381 modules transformed)
+- Committed: `feat(order-history): add expanded rows for WAITING_PAYMENT, COMPLETED, CANCELLED` (b647ee0)
+
+## F1-T8: InvoiceModal component with PDF print — DONE (2026-06-03)
+
+- Created `src/components/InvoiceModal.tsx` (190 lines)
+- Fetches `companySettingsService.fetch()` and `bankConfigService.fetch()` in parallel on mount; guarded by `isSupabaseConfigured`
+- Toolbar: dark-navy header with order ID and "Download PDF" (green) + close (×) buttons — both `print:hidden`
+- Invoice body sections:
+  - Header: company name, address, phone/email (with `⚙ config` badge, `print:hidden`), Invoice title, order ID (gjp_order_id or UUID prefix), creation date
+  - Bill To: customer name, address, WA number, delivery type, LUNAS badge
+  - Line items table: navy thead, rows with product name + SKU, qty, unit price, subtotal
+  - Totals block: subtotal, shipping fee (defaults to 0 if null), TOTAL in navy bold
+  - Bank info box: fetched live from `bankConfigService`; `⚙ config` badge (`print:hidden`); shows verification details if `payment_verified_at` is set
+  - No-refund notice: orange-themed callout
+  - Footer: thank-you text with company name
+- Modal footer: Tutup + Download PDF buttons — both `print:hidden`
+- Print CSS: `@media print` hides all body children except `#invoice-print-root`; `.print:hidden` class hidden during print
+- Field verification: all DbOrder, DbBankConfig, DbCompanySettings field names confirmed against src/types.ts — no adjustments needed
+- `npm run build` passes cleanly — zero TypeScript errors (993.53 kB bundle, 2382 modules)
+- Wired InvoiceModal in `src/components/OrderHistoryScreen.tsx`: replaced stub div with `<InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />`
+- Committed: `feat(invoice): add InvoiceModal with PDF print, company settings, no-refund notice` (ec63ccc)
+
+## F1-T9: Company Settings in PengaturanScreen — DONE (2026-06-03)
+
+- Modified `src/components/PengaturanScreen.tsx`
+- Added `MapPin` to lucide-react imports; `DbCompanySettings` to types import; `companySettingsService` to service import
+- Added 5 company state variables: `company`, `companyLoading`, `companyEditing`, `companyForm`, `companySaving`
+- Extended `useEffect` `Promise.all` to fetch `companySettingsService.fetch()` as third item; `setCompanyLoading(false)` in `finally` block; `setCompanyLoading(false)` also guarded in not-configured early-return
+- Added `startCompanyEdit`, `cancelCompanyEdit`, `saveCompany` handlers after existing `cancelEdit`
+- Added "Profil Perusahaan" card between Rekening Bank and Penerima Notifikasi WA cards
+  - Read-only view: displays company_name, address, phone, email as label-value rows
+  - Edit mode: renders fields via `.map()` for company_name / address / phone / email inputs
+  - Empty state: "Profil perusahaan belum diisi" with "Isi Profil" button
+  - `save()` calls `companySettingsService.save(companyForm)` then re-fetches to refresh UI
+- `npm run build` passes — zero TypeScript errors (997.40 kB bundle, 2382 modules)
+- Committed: `feat(settings): add Profil Perusahaan section for invoice company details` (1e607e7)
