@@ -83,6 +83,12 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       description: 'Leads & Prospek',
     },
     {
+      id: 'pelanggan' as ActivePage,
+      label: 'Pelanggan',
+      icon: Users,
+      description: 'Profil & Riwayat',
+    },
+    {
       id: 'order-history' as ActivePage,
       label: 'Riwayat Pesanan',
       icon: ClipboardList,

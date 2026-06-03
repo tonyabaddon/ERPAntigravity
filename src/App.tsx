@@ -30,6 +30,7 @@ import WhatsappAiScreen from './components/WhatsappAiScreen';
 import PengaturanScreen from './components/PengaturanScreen';
 import PipelineScreen from './components/PipelineScreen';
 import OrderHistoryScreen from './components/OrderHistoryScreen';
+import PelangganScreen from './components/PelangganScreen';
 
 import {
   INITIAL_STOCK,
@@ -43,6 +44,7 @@ import { isSupabaseConfigured, supabaseService } from './lib/supabaseClient';
 export default function App() {
   // Gating system: start at 'auth' or direct bypass for immediate interaction 
   const [activePage, setActivePage] = useState<ActivePage>('auth');
+  const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{ name: string; role: string; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
@@ -152,6 +154,11 @@ export default function App() {
     setActivePage('dashboard');
   };
 
+  const handleOpenCustomer = (customerId: string) => {
+    setOpenCustomerId(customerId);
+    setActivePage('pelanggan');
+  };
+
   // Handle logout
   const handleLogout = () => {
     setCurrentUser(null);
@@ -221,12 +228,25 @@ export default function App() {
         );
       case 'pipeline':
         return (
-          <PipelineScreen showToast={triggerToast} />
+          <PipelineScreen
+            onOpenCustomer={handleOpenCustomer}
+            onNavigate={setActivePage}
+            showToast={triggerToast}
+          />
         );
       case 'order-history':
         return (
           <OrderHistoryScreen
             currentUser={currentUser}
+            onOpenCustomer={handleOpenCustomer}
+            showToast={triggerToast}
+          />
+        );
+      case 'pelanggan':
+        return (
+          <PelangganScreen
+            openCustomerId={openCustomerId}
+            onNavigate={setActivePage}
             showToast={triggerToast}
           />
         );
@@ -258,10 +278,13 @@ export default function App() {
       )}
 
       {/* Global Collapsible Sidebar Menu */}
-      <Sidebar 
-        activePage={activePage} 
-        onPageChange={setActivePage} 
-        currentUser={currentUser} 
+      <Sidebar
+        activePage={activePage}
+        onPageChange={(page) => {
+          if (page !== 'pelanggan') setOpenCustomerId(null);
+          setActivePage(page);
+        }}
+        currentUser={currentUser}
         onLogout={handleLogout}
       />
 
