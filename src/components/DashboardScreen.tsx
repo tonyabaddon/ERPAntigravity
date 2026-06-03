@@ -34,25 +34,6 @@ interface DashboardScreenProps {
   lowStockCount: number;
 }
 
-const WEEKLY_REVENUE_DATA = [
-  { Day: 'Sen', Revenue: 1850000, Orders: 8 },
-  { Day: 'Sel', Revenue: 2100000, Orders: 11 },
-  { Day: 'Rab', Revenue: 2450000, Orders: 14 },
-  { Day: 'Kam', Revenue: 1950000, Orders: 9 },
-  { Day: 'Jum', Revenue: 3100000, Orders: 15 },
-  { Day: 'Sab', Revenue: 3840000, Orders: 18 },
-  { Day: 'Min', Revenue: 4200000, Orders: 22 },
-];
-
-const BOT_PERFORMANCE_DATA = [
-  { Day: 'Sen', 'Dijawab AI': 45, 'Respon Manual': 12 },
-  { Day: 'Sel', 'Dijawab AI': 58, 'Respon Manual': 8 },
-  { Day: 'Rab', 'Dijawab AI': 62, 'Respon Manual': 15 },
-  { Day: 'Kam', 'Dijawab AI': 49, 'Respon Manual': 10 },
-  { Day: 'Jum', 'Dijawab AI': 78, 'Respon Manual': 22 },
-  { Day: 'Sab', 'Dijawab AI': 92, 'Respon Manual': 16 },
-  { Day: 'Min', 'Dijawab AI': 105, 'Respon Manual': 5 },
-];
 
 export default function DashboardScreen({ showToast, onNavigate, lowStockCount }: DashboardScreenProps) {
   
@@ -85,6 +66,16 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
   useEffect(() => {
     if (isSupabaseConfigured) {
       statsService.fetchRecentActivity().then(setRecentActivity).catch(console.error);
+    }
+  }, []);
+
+  const [weeklyRevenue, setWeeklyRevenue] = useState<Array<{ Day: string; Revenue: number; Orders: number }>>([]);
+  const [weeklyConvs, setWeeklyConvs] = useState<Array<{ Day: string; 'Dijawab AI': number; 'Respon Manual': number }>>([]);
+
+  useEffect(() => {
+    if (isSupabaseConfigured) {
+      statsService.fetchWeeklyRevenue().then(setWeeklyRevenue).catch(console.error);
+      statsService.fetchWeeklyConversations().then(setWeeklyConvs).catch(console.error);
     }
   }, []);
 
@@ -211,7 +202,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
           </div>
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={WEEKLY_REVENUE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={weeklyRevenue} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#1e3d60" stopOpacity={0.4}/>
@@ -236,7 +227,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
           </div>
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={BOT_PERFORMANCE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={weeklyConvs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="Day" stroke="#94a3b8" fontSize={11} />
                 <YAxis stroke="#94a3b8" fontSize={11} />

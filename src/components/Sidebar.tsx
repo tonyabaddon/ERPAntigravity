@@ -16,7 +16,8 @@ import {
   UserCheck,
   Bot,
   TrendingUp,
-  ClipboardList
+  ClipboardList,
+  BarChart2
 } from 'lucide-react';
 import { ActivePage } from '../types';
 
@@ -40,11 +41,17 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       icon: LayoutDashboard,
       description: 'Ringkasan Toko' 
     },
-    { 
-      id: 'sales-inbox' as ActivePage, 
-      label: 'Sales Inbox', 
+    {
+      id: 'sales-inbox' as ActivePage,
+      label: 'Sales Inbox',
       icon: Inbox,
-      description: 'Percakapan WA' 
+      description: 'Percakapan WA'
+    },
+    {
+      id: 'laporan' as ActivePage,
+      label: 'Laporan',
+      icon: BarChart2,
+      description: 'Analitik & Tren',
     },
     { 
       id: 'ai-stock' as ActivePage, 

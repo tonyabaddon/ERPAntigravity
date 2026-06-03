@@ -219,6 +219,38 @@ export const orderService = {
   },
 };
 
+type Period = '7d' | '30d' | '90d';
+
+function periodStart(p: Period): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - (p === '7d' ? 6 : p === '30d' ? 29 : 89));
+  return d.toISOString();
+}
+
+function groupByDay<T extends { created_at: string }>(
+  rows: T[],
+  days: number
+): Array<{ label: string; rows: T[] }> {
+  const buckets: Record<string, T[]> = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    buckets[key] = [];
+  }
+  for (const row of rows) {
+    const key = row.created_at.slice(0, 10);
+    if (key in buckets) buckets[key].push(row);
+  }
+  return Object.entries(buckets).map(([key, rowsInDay]) => ({
+    label: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+    rows: rowsInDay,
+  }));
+}
+
 export const statsService = {
   async fetchTodayStats(): Promise<{
     verifiedOrdersTotal: number;
@@ -266,6 +298,111 @@ export const statsService = {
       .order('created_at', { ascending: false })
       .limit(5);
     return data ?? [];
+  },
+
+  async fetchWeeklyRevenue(): Promise<Array<{ Day: string; Revenue: number; Orders: number }>> {
+    if (!supabase) return [];
+    const since = periodStart('7d');
+    const { data } = await supabase
+      .from('orders')
+      .select('total, created_at')
+      .eq('status', 'PAYMENT_VERIFIED')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true });
+    return groupByDay(data ?? [], 7).map(({ label, rows }) => ({
+      Day: label,
+      Revenue: rows.reduce((s, r) => s + ((r as any).total ?? 0), 0),
+      Orders: rows.length,
+    }));
+  },
+
+  async fetchWeeklyConversations(): Promise<Array<{ Day: string; 'Dijawab AI': number; 'Respon Manual': number }>> {
+    if (!supabase) return [];
+    const since = periodStart('7d');
+    const { data } = await supabase
+      .from('conversations')
+      .select('ai_active, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true });
+    return groupByDay(data ?? [], 7).map(({ label, rows }) => ({
+      Day: label,
+      'Dijawab AI': rows.filter(r => (r as any).ai_active).length,
+      'Respon Manual': rows.filter(r => !(r as any).ai_active).length,
+    }));
+  },
+};
+
+export const reportsService = {
+  async fetchSummary(since: string): Promise<{
+    revenue: number; orderCount: number; avgOrderValue: number;
+    convCount: number; aiConvCount: number;
+  }> {
+    if (!supabase) return { revenue: 0, orderCount: 0, avgOrderValue: 0, convCount: 0, aiConvCount: 0 };
+    const [ordersRes, convsRes] = await Promise.all([
+      supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
+      supabase.from('conversations').select('ai_active').gte('created_at', since),
+    ]);
+    const orders = ordersRes.data ?? [];
+    const convs = convsRes.data ?? [];
+    const revenue = orders.reduce((s, o) => s + ((o as any).total ?? 0), 0);
+    return {
+      revenue,
+      orderCount: orders.length,
+      avgOrderValue: orders.length > 0 ? Math.round(revenue / orders.length) : 0,
+      convCount: convs.length,
+      aiConvCount: convs.filter(c => (c as any).ai_active).length,
+    };
+  },
+
+  async fetchDailyRevenue(since: string, days: number): Promise<Array<{ Day: string; Revenue: number; Orders: number }>> {
+    if (!supabase) return [];
+    const { data } = await supabase
+      .from('orders')
+      .select('total, created_at')
+      .eq('status', 'PAYMENT_VERIFIED')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true });
+    return groupByDay(data ?? [], days).map(({ label, rows }) => ({
+      Day: label,
+      Revenue: rows.reduce((s, r) => s + ((r as any).total ?? 0), 0),
+      Orders: rows.length,
+    }));
+  },
+
+  async fetchDailyConversations(since: string, days: number): Promise<Array<{ Day: string; 'Dijawab AI': number; 'Respon Manual': number }>> {
+    if (!supabase) return [];
+    const { data } = await supabase
+      .from('conversations')
+      .select('ai_active, created_at')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true });
+    return groupByDay(data ?? [], days).map(({ label, rows }) => ({
+      Day: label,
+      'Dijawab AI': rows.filter(r => (r as any).ai_active).length,
+      'Respon Manual': rows.filter(r => !(r as any).ai_active).length,
+    }));
+  },
+
+  async fetchTopProducts(since: string): Promise<Array<{ name: string; qty: number; revenue: number }>> {
+    if (!supabase) return [];
+    const { data } = await supabase
+      .from('orders')
+      .select('items')
+      .eq('status', 'PAYMENT_VERIFIED')
+      .gte('created_at', since);
+    const tally: Record<string, { qty: number; revenue: number }> = {};
+    for (const order of (data ?? [])) {
+      for (const item of ((order as any).items ?? [])) {
+        if (!item.name) continue;
+        if (!tally[item.name]) tally[item.name] = { qty: 0, revenue: 0 };
+        tally[item.name].qty += item.qty ?? 0;
+        tally[item.name].revenue += item.subtotal ?? 0;
+      }
+    }
+    return Object.entries(tally)
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5);
   },
 };
 
