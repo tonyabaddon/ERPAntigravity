@@ -862,3 +862,41 @@ All 4 tasks complete. Feature is fully implemented:
 - Service: leadsService.fetchAll() with customers(*) join
 - UI: Read-only PipelineScreen with 5 filter tabs and color-coded status badges
 - Navigation: "Pipeline" entry in Sidebar, App.tsx case 'pipeline' route
+
+## E3-T1: SQL migration — notification_config table — DONE (2026-06-03)
+
+- Created `supabase/migrations/20260602000004_notification_config.sql`
+- Table: `notification_config` with serial PK; columns for enabled flag, interval_label, 5 report booleans, low_stock_alert int, delay_alert int, updated_at timestamptz
+- RLS enabled; idempotent DO blocks for 3 policies: anon_select, anon_insert, anon_update (all using `true` predicate)
+- `GRANT INSERT, UPDATE ON notification_config TO anon` + `GRANT USAGE ON SEQUENCE notification_config_id_seq TO anon`
+- `trg_notification_config_updated_at` trigger wired to existing `set_updated_at()` function
+- Migration applied via Supabase MCP (`apply_migration`) — confirmed `set_updated_at` function exists before applying
+- Committed: `feat(db): add notification_config table with RLS and anon grants` (d9cf04f)
+
+## E3-T2: Update types.ts and initialData.ts — DONE (2026-06-03)
+
+- Removed `targetNumber: string` field from `NotificationConfig` interface in `src/types.ts`
+- Added `DbNotificationConfig` interface in `src/types.ts` after `DbLead` — mirrors `notification_config` table columns
+- Removed `targetNumber: '81234567890'` from `INITIAL_CONFIG` in `src/initialData.ts`
+- Removed `targetNumber` state, handleSave field, and JSX input block from `src/components/NotificationSettingsScreen.tsx` (minimal fix to unblock build; full rewrite deferred to Task 4)
+- `npm run build` passes with zero TypeScript errors
+- Committed: `feat(types): remove targetNumber from NotificationConfig; add DbNotificationConfig` (fdfa73c)
+
+## E3-T3: Add notificationConfigService to supabaseClient.ts — DONE (2026-06-03)
+
+- Added `DbNotificationConfig` to the import line in `src/lib/supabaseClient.ts`
+- Added `notificationConfigService` export after `leadsService` with two methods:
+  - `fetch()` — queries `notification_config` table with `maybeSingle()`, returns `DbNotificationConfig | null`
+  - `save(values, existingId?)` — UPDATE with `updated_at` timestamp when `existingId` given, INSERT otherwise
+- `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
+- Committed: `feat(supabase): add notificationConfigService with fetch and save` (b146a8d)
+
+## E3-T4: Update NotificationSettingsScreen.tsx — DONE (2026-06-03)
+
+- Added `useEffect`, `useRef` to React imports; added `notificationConfigService`, `isSupabaseConfigured` from supabaseClient
+- Added `dbConfigIdRef` (useRef) to track the row id across saves without triggering re-render
+- `useEffect` on mount: loads config from Supabase (if configured) and hydrates all state fields
+- `handleSave` made async: persists to Supabase before calling `onConfigChange`; on error shows local-only toast
+- Removed "Nomor WhatsApp Tujuan" comment placeholder from JSX; grid changed from `md:grid-cols-3` to `md:grid-cols-2`
+- `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
+- Committed: `feat(notifications): sync config with Supabase on load/save; remove targetNumber field` (50fa798)
