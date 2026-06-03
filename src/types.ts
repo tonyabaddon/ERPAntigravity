@@ -208,4 +208,13 @@ export interface DbNotificationConfig {
   updated_at: string;
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline';
+export interface DbCompanySettings {
+  id: number;
+  company_name: string;
+  address: string;
+  phone: string;
+  email: string;
+  updated_at: string;
+}
+
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history';
