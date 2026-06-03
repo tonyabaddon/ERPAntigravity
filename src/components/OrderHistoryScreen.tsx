@@ -92,12 +92,79 @@ const EMPTY_MESSAGES: Record<FilterTab, string> = {
   cancelled: 'Tidak ada pesanan yang dibatalkan.',
 };
 
+function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerClass: string }) {
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden text-xs mb-3">
+      <div className={`grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-[10px] ${headerClass}`}>
+        <span>Produk</span>
+        <span className="text-center">Qty</span>
+        <span className="text-right">Harga</span>
+        <span className="text-right">Subtotal</span>
+      </div>
+      {items.map((item, i) => (
+        <div key={i} className="grid grid-cols-4 px-3 py-2 border-t border-gray-100 bg-white">
+          <div>
+            <div className="font-semibold text-gray-800">{item.name}</div>
+            <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+          </div>
+          <div className="text-center font-semibold">{item.qty}</div>
+          <div className="text-right text-gray-500">Rp {item.unit_price.toLocaleString('id-ID')}</div>
+          <div className="text-right font-bold text-gray-800">Rp {item.subtotal.toLocaleString('id-ID')}</div>
+        </div>
+      ))}
+      <div className="flex justify-end gap-6 px-3 py-2 border-t-2 border-gray-200 bg-gray-50 text-[11px]">
+        <div className="text-right text-gray-400 leading-relaxed">
+          Subtotal<br />Ongkir<br /><strong className="text-gray-700">Total</strong>
+        </div>
+        <div className="text-right text-gray-600 leading-relaxed min-w-[90px]">
+          Rp {items.reduce((s, i) => s + i.subtotal, 0).toLocaleString('id-ID')}
+          <br />—
+          <br /><strong className="text-gray-800">Rp {items.reduce((s, i) => s + i.subtotal, 0).toLocaleString('id-ID')} + ongkir</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OrderHistoryScreen({ currentUser, showToast }: OrderHistoryScreenProps) {
   const [orders, setOrders] = useState<DbOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+
+  const handleApprove = async (orderId: string, deliveryType: string | undefined) => {
+    const fee = deliveryType === 'PICKUP' ? 0 : parseFloat(shippingFees[orderId] ?? '0');
+    setApprovingId(orderId);
+    try {
+      await orderService.approveOrder(orderId, fee);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'APPROVED', shipping_fee: fee } : o));
+      setExpandedId(null);
+      showToast('Pesanan berhasil disetujui.', 'success');
+    } catch {
+      showToast('Gagal menyetujui pesanan.', 'warning');
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string) => {
+    if (!window.confirm('Yakin tolak pesanan ini?')) return;
+    setRejectingId(orderId);
+    try {
+      await orderService.rejectOrder(orderId);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
+      setExpandedId(null);
+      showToast('Pesanan ditolak.', 'info');
+    } catch {
+      showToast('Gagal menolak pesanan.', 'warning');
+    } finally {
+      setRejectingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -229,8 +296,59 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
                   <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
 
-                {/* Expanded body placeholder — filled in Tasks 5–7 */}
-                {isExpanded && (
+                {isExpanded && order.status === 'PENDING_ADMIN_CONFIRMATION' && (
+                  <div className="px-5 py-4 border-t border-purple-200 bg-purple-50">
+                    <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
+                      {/* Left: detail */}
+                      <div>
+                        <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                        </div>
+                        <ItemsTable items={order.items} headerClass="bg-purple-100 text-purple-700" />
+                        <div className="text-[10px] text-gray-400">⏱ Booking berakhir: {formatDate(order.booking_expires_at)}</div>
+                      </div>
+                      {/* Right: action */}
+                      <div className="flex flex-col gap-2 min-w-[140px]">
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tetapkan Ongkir</div>
+                        {order.delivery_type === 'PICKUP' ? (
+                          <div className="text-xs text-gray-500 bg-gray-100 rounded-lg px-3 py-2 text-center">Rp 0 (Pickup)</div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-gray-50 border border-purple-200 rounded-lg px-3 py-2">
+                            <span className="text-gray-400 text-xs">Rp</span>
+                            <input
+                              type="number"
+                              min="0"
+                              className="flex-1 bg-transparent text-sm font-bold text-gray-700 outline-none w-20"
+                              placeholder="0"
+                              value={shippingFees[order.id] ?? ''}
+                              onChange={e => setShippingFees(prev => ({ ...prev, [order.id]: e.target.value }))}
+                            />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleApprove(order.id, order.delivery_type)}
+                          disabled={
+                            approvingId === order.id ||
+                            (order.delivery_type !== 'PICKUP' && (!shippingFees[order.id] || shippingFees[order.id] === ''))
+                          }
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 disabled:opacity-40"
+                        >
+                          {approvingId === order.id ? 'Memproses...' : '✓ Approve'}
+                        </button>
+                        <button
+                          onClick={() => handleRejectOrder(order.id)}
+                          disabled={rejectingId === order.id}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                        >
+                          ✕ Tolak
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {isExpanded && order.status !== 'PENDING_ADMIN_CONFIRMATION' && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 text-xs text-gray-400">
                     [expanded row — {order.status}]
                   </div>
