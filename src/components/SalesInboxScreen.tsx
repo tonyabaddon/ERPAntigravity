@@ -1,66 +1,111 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Search, ArrowLeftRight, Send, PlusCircle
-} from 'lucide-react';
+import { MessageSquare, Search, Send, PlusCircle } from 'lucide-react';
 import { useRealtimeConversations, ConversationWithMessages } from '../hooks/useRealtimeConversations';
 import type { DbMessage } from '../types';
 
-interface SalesInboxScreenProps {
-  // Props are now empty — all data comes from the hook.
+const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
+  GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
+  COLLECTING:       { label: 'Kumpul Data',       badgeClass: 'bg-blue-100 text-blue-700' },
+  CLARIFYING:       { label: 'Klarifikasi',       badgeClass: 'bg-sky-100 text-sky-700' },
+  STOCK_CHECK:      { label: 'Cek Stok',          badgeClass: 'bg-cyan-100 text-cyan-700' },
+  CONFIRMING:       { label: 'Konfirmasi',         badgeClass: 'bg-amber-100 text-amber-700' },
+  BOOKED:           { label: 'Menunggu Bayar',     badgeClass: 'bg-yellow-100 text-yellow-800' },
+  TIMEOUT_REMINDER: { label: 'Follow-up',          badgeClass: 'bg-violet-100 text-violet-700' },
+  APPROVED:         { label: 'Disetujui',          badgeClass: 'bg-teal-100 text-teal-700' },
+  COMPLETED:        { label: 'Selesai',            badgeClass: 'bg-emerald-100 text-emerald-700' },
+  CANCELLED:        { label: 'Dibatalkan',         badgeClass: 'bg-gray-100 text-gray-500' },
+  ESCALATED_ADMIN:  { label: 'Butuh Admin',        badgeClass: 'bg-red-100 text-red-700' },
+  ESCALATED_WIRING: { label: 'Eskalasi Wiring',    badgeClass: 'bg-orange-100 text-orange-700' },
+};
+
+const STEPPER_STEPS = [
+  { label: 'Sapa',           states: ['GREETING'] },
+  { label: 'Kumpul Data',    states: ['COLLECTING', 'CLARIFYING'] },
+  { label: 'Cek Stok',       states: ['STOCK_CHECK'] },
+  { label: 'Konfirmasi',     states: ['CONFIRMING'] },
+  { label: 'Menunggu Bayar', states: ['BOOKED', 'TIMEOUT_REMINDER', 'APPROVED'] },
+  { label: 'Selesai',        states: ['COMPLETED'] },
+];
+
+const OFF_PATH_STATES = new Set(['ESCALATED_ADMIN', 'ESCALATED_WIRING', 'CANCELLED']);
+
+function getModeBanner(conv: ConversationWithMessages): {
+  bg: string; text: string; btnLabel: string; makeActive: boolean;
+} {
+  if (conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING') {
+    return {
+      bg: 'bg-red-700',
+      text: `🚨 ${CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state} — AI dijeda otomatis`,
+      btnLabel: 'Ambil Alih',
+      makeActive: false,
+    };
+  }
+  if (!conv.ai_active) {
+    return { bg: 'bg-emerald-700', text: '👤 Mode Admin — AI dinonaktifkan', btnLabel: 'Aktifkan AI', makeActive: true };
+  }
+  return {
+    bg: 'bg-blue-700',
+    text: `🤖 Dikelola AI · ${CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state}`,
+    btnLabel: 'Ambil Alih',
+    makeActive: false,
+  };
 }
 
-function getStatusInfo(conv: ConversationWithMessages): { label: string; className: string } {
-  const s = conv.state;
-  if (s === 'ESCALATED_ADMIN') return { label: 'Butuh Admin', className: 'bg-red-100 text-red-700' };
-  if (s === 'ESCALATED_WIRING') return { label: 'Wiring', className: 'bg-yellow-100 text-yellow-700' };
-  if (s === 'BOOKED')
-    return { label: 'Menunggu Bayar', className: 'bg-amber-100 text-amber-700' };
-  if (s === 'COMPLETED')
-    return { label: 'Selesai', className: 'bg-emerald-100 text-emerald-700' };
-  if (s === 'CANCELLED')
-    return { label: 'Batal', className: 'bg-gray-100 text-gray-500' };
-  if (!conv.ai_active)
-    return { label: 'Manual', className: 'bg-orange-100 text-orange-700' };
-  return { label: 'AI', className: 'bg-blue-100 text-blue-700' };
+function getAvatarColor(conv: ConversationWithMessages): string {
+  if (conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING') return 'bg-red-600';
+  if (conv.state === 'COMPLETED' || conv.state === 'CANCELLED') return 'bg-gray-400';
+  if (conv.ai_active) return 'bg-[#012749]';
+  return 'bg-[#2d8a4e]';
 }
 
-export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
-  const { conversations, orders, paymentUploadedOrders, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } = useRealtimeConversations();
+function getDisplayName(conv: ConversationWithMessages): string {
+  return conv.collected_data.name || conv.customer_phone;
+}
 
-  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Butuh Admin' | 'Dikelola AI'>('Semua');
-  const [activeChatId, setActiveChatId] = useState<string>('');
+function getInitials(conv: ConversationWithMessages): string {
+  return getDisplayName(conv).slice(0, 2).toUpperCase();
+}
+
+export default function SalesInboxScreen() {
+  const { conversations, orders, paymentUploadedOrders, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } =
+    useRealtimeConversations();
+
+  const [activeChatId, setActiveChatId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Admin' | 'AI'>('Semua');
   const [inputText, setInputText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const activeChat = conversations.find(c => c.id === activeChatId);
+  const activeChat = conversations.find(c => c.id === activeChatId) ?? null;
   const allOrders = [...orders, ...paymentUploadedOrders];
-  const activeOrder = allOrders.find(o => o.conversation_id === activeChatId);
+  const activeOrder = activeChat ? allOrders.find(o => o.conversation_id === activeChat.id) : null;
 
-  // Auto-select first conversation
   useEffect(() => {
     if (!activeChatId && conversations.length > 0) {
       setActiveChatId(conversations[0].id);
     }
   }, [conversations, activeChatId]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages.length, activeChatId]);
 
-  const filteredChats = conversations.filter(conv => {
-    if (searchQuery && !conv.customer_phone.includes(searchQuery) &&
-        !(conv.collected_data.name ?? '').toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    if (activeFilter === 'Semua') return true;
-    if (activeFilter === 'Butuh Admin') {
+  const adminCount = conversations.filter(
+    c => c.state === 'ESCALATED_ADMIN' || c.state === 'ESCALATED_WIRING' || !c.ai_active
+  ).length;
+  const aiCount = conversations.filter(
+    c => c.ai_active && c.state !== 'ESCALATED_ADMIN' && c.state !== 'ESCALATED_WIRING'
+  ).length;
+
+  const filteredConvs = conversations.filter(conv => {
+    const name = (conv.collected_data.name ?? '').toLowerCase();
+    const q = searchQuery.toLowerCase();
+    if (q && !conv.customer_phone.includes(q) && !name.includes(q)) return false;
+    if (activeFilter === 'Admin')
       return conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING' || !conv.ai_active;
-    }
-    if (activeFilter === 'Dikelola AI') return conv.ai_active &&
-      conv.state !== 'ESCALATED_ADMIN' && conv.state !== 'ESCALATED_WIRING';
+    if (activeFilter === 'AI')
+      return conv.ai_active && conv.state !== 'ESCALATED_ADMIN' && conv.state !== 'ESCALATED_WIRING';
     return true;
   });
 
@@ -78,218 +123,349 @@ export default function SalesInboxScreen(_props: SalesInboxScreenProps) {
     e.target.value = '';
   };
 
-  const handleToggleAi = async (conv: ConversationWithMessages) => {
-    await toggleAiControl(conv.id, !conv.ai_active);
-  };
-
-  const getDisplayName = (conv: ConversationWithMessages) =>
-    conv.collected_data.name || conv.customer_phone;
-
-  const getInitials = (conv: ConversationWithMessages) => {
-    const name = getDisplayName(conv);
-    return name.slice(0, 2).toUpperCase();
-  };
-
-  const getLastMessage = (conv: ConversationWithMessages) =>
-    conv.messages.at(-1)?.text || '...';
-
-  const statusBadge = (conv: ConversationWithMessages) => {
-    const { label, className } = getStatusInfo(conv);
-    return (
-      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${className}`}>
-        {label}
-      </span>
-    );
-  };
-
   if (loading) {
-    return <div className="flex items-center justify-center h-full text-gray-500">Memuat percakapan...</div>;
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+        Memuat percakapan...
+      </div>
+    );
   }
 
   return (
     <div className="flex h-full">
-      {/* Sidebar: conversation list */}
-      <div className="w-80 border-r flex flex-col bg-white">
-        <div className="p-4 border-b">
+      {/* LEFT PANEL */}
+      <div className="w-56 shrink-0 flex flex-col border-r border-gray-200 bg-gray-50">
+        {/* Header */}
+        <div className="bg-[#012749] text-white px-3 py-3 flex items-center gap-2 shrink-0">
+          <MessageSquare className="w-4 h-4" />
+          <span className="font-bold text-sm">Inbox AI</span>
+          <span className="ml-auto bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">
+            {conversations.length}
+          </span>
+        </div>
+
+        {/* Search */}
+        <div className="p-2 border-b border-gray-100 shrink-0">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
             <input
-              className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Cari percakapan..."
+              className="w-full bg-white border border-gray-200 rounded-lg pl-7 pr-2 py-1.5 text-xs outline-none focus:border-[#012749]"
+              placeholder="Cari..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <div className="flex gap-1 px-3 py-2 border-b overflow-x-auto">
-          {(['Semua', 'Butuh Admin', 'Dikelola AI'] as const).map(f => (
+
+        {/* Filter tabs */}
+        <div className="flex gap-1 px-2 py-2 border-b border-gray-100 shrink-0">
+          {([
+            { key: 'Semua', label: 'Semua' },
+            { key: 'Admin', label: `Admin (${adminCount})` },
+            { key: 'AI', label: `AI (${aiCount})` },
+          ] as const).map(({ key, label }) => (
             <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${activeFilter === f ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              key={key}
+              onClick={() => setActiveFilter(key)}
+              className={`flex-1 text-[10px] font-bold px-1.5 py-1 rounded-full whitespace-nowrap ${
+                activeFilter === key
+                  ? 'bg-[#012749] text-white'
+                  : 'bg-white border border-gray-200 text-gray-500'
+              }`}
             >
-              {f}
+              {label}
             </button>
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto">
-          {filteredChats.map(conv => (
-            <div
-              key={conv.id}
-              onClick={() => setActiveChatId(conv.id)}
-              className={`flex items-start gap-3 p-3 cursor-pointer hover:bg-gray-50 ${activeChatId === conv.id ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
-            >
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                {getInitials(conv)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="font-medium text-sm truncate">{getDisplayName(conv)}</span>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {statusBadge(conv)}
-                    {conv.followup_count_today > 0 && (
-                      <span className="text-xs text-gray-400" title={`${conv.followup_count_today} follow-up otomatis terkirim hari ini`}>
-                        ↩{conv.followup_count_today}/2
+
+        {/* Conversation list */}
+        <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+          {filteredConvs.length === 0 ? (
+            <p className="text-center text-xs text-gray-400 mt-8 px-3">
+              {searchQuery ? 'Tidak ada percakapan yang cocok.' : 'Belum ada percakapan.'}
+            </p>
+          ) : (
+            filteredConvs.map(conv => {
+              const isSelected = conv.id === activeChatId;
+              const stateInfo = CONV_STATE_DISPLAY[conv.state];
+              const lastMsg = conv.messages.at(-1);
+              const lastTime = lastMsg
+                ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '';
+              return (
+                <div
+                  key={conv.id}
+                  onClick={() => setActiveChatId(conv.id)}
+                  className={`px-3 py-2.5 cursor-pointer hover:bg-gray-50 flex items-start gap-2 border-l-[3px] ${
+                    isSelected ? 'bg-indigo-50 border-l-[#012749]' : 'border-l-transparent'
+                  }`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${getAvatarColor(conv)}`}
+                  >
+                    {getInitials(conv)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-bold text-xs text-gray-800 truncate">{getDisplayName(conv)}</span>
+                      <span className="text-[8px] text-gray-300 shrink-0">{lastTime}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                      {lastMsg?.text || '...'}
+                    </p>
+                    {stateInfo && (
+                      <span className={`inline-block mt-1 text-[8px] font-bold px-1.5 py-0.5 rounded-full ${stateInfo.badgeClass}`}>
+                        {stateInfo.label}
                       </span>
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 truncate mt-0.5">{getLastMessage(conv)}</p>
-              </div>
-            </div>
-          ))}
-          {filteredChats.length === 0 && (
-            <p className="text-center text-sm text-gray-400 mt-8">Tidak ada percakapan</p>
+              );
+            })
           )}
         </div>
       </div>
 
-      {/* Chat panel */}
+      {/* CENTER + RIGHT PANELS */}
       {activeChat ? (
-        <div className="flex-1 flex flex-col">
-          {/* Chat header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b bg-white">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-bold">
+        <>
+          {/* CENTER PANEL */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Chat header */}
+            <div className="bg-[#012749] text-white px-4 py-2.5 flex items-center gap-2.5 shrink-0">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${getAvatarColor(activeChat)}`}
+              >
                 {getInitials(activeChat)}
               </div>
-              <div>
-                <p className="font-semibold text-sm">{getDisplayName(activeChat)}</p>
-                <p className="text-xs text-gray-500">{activeChat.customer_phone}</p>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{getDisplayName(activeChat)}</div>
+                <div className="text-[10px] opacity-60">{activeChat.customer_phone}</div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {statusBadge(activeChat)}
-              {activeChat.followup_count_today > 0 && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                  Follow-up: {activeChat.followup_count_today}/2 terkirim
-                </span>
-              )}
+
+            {/* Mode banner */}
+            {(() => {
+              const banner = getModeBanner(activeChat);
+              return (
+                <div className={`${banner.bg} text-white px-4 py-1.5 flex items-center justify-between text-xs shrink-0`}>
+                  <span>{banner.text}</span>
+                  <button
+                    onClick={() => toggleAiControl(activeChat.id, banner.makeActive)}
+                    className="bg-white/20 hover:bg-white/30 rounded-md px-2 py-1 text-[10px] font-bold"
+                  >
+                    {banner.btnLabel}
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-3 bg-[#f8f9ff] flex flex-col gap-2">
+              {activeChat.messages.map(msg => (
+                <ChatBubble key={msg.id} msg={msg} />
+              ))}
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input bar */}
+            <div className="bg-white border-t border-gray-200 px-3 py-2 flex items-center gap-2 shrink-0">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.doc,.docx"
+                onChange={handleFileChange}
+              />
               <button
-                onClick={() => handleToggleAi(activeChat)}
-                title={activeChat.ai_active ? 'Alihkan ke Admin (Nonaktifkan AI)' : 'Aktifkan AI kembali'}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-gray-400 hover:text-gray-600"
               >
-                <ArrowLeftRight className="w-4 h-4" />
+                <PlusCircle className="w-4 h-4" />
+              </button>
+              <input
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#012749]"
+                placeholder="Ketik pesan admin..."
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!inputText.trim()}
+                className="bg-[#012749] text-white rounded-lg p-1.5 disabled:opacity-40"
+              >
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Order context bar */}
-          {activeOrder && (
-            <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs">
-              <span className="font-semibold text-amber-800">
-                {activeOrder.gjp_order_id ?? 'Pesanan'} · Rp {activeOrder.total.toLocaleString('id-ID')}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full font-bold ${
-                activeOrder.status === 'PAYMENT_UPLOADED'
-                  ? 'bg-amber-200 text-amber-900'
-                  : 'bg-blue-100 text-blue-800'
-              }`}>
-                {activeOrder.status.replace(/_/g, ' ')}
-              </span>
-            </div>
-          )}
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
-            {activeChat.messages.map(msg => (
-              <ChatBubble key={msg.id} msg={msg} />
-            ))}
-            <div ref={bottomRef} />
-          </div>
-
-          {/* Input bar */}
-          <div className="border-t bg-white px-4 py-3 flex items-end gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept=".pdf,.png,.jpg,.jpeg,.gif,.xlsx,.xls,.doc,.docx"
-              onChange={handleFileChange}
-            />
-            <button onClick={() => fileInputRef.current?.click()} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
-              <PlusCircle className="w-5 h-5" />
-            </button>
-            <input
-              className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Ketik pesan admin..."
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!inputText.trim()}
-              className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+          {/* RIGHT PANEL */}
+          <RightPanel conv={activeChat} order={activeOrder} />
+        </>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-gray-400">
-          Pilih percakapan untuk mulai
+        <div className="flex-1 flex items-center justify-center text-gray-300">
+          <div className="text-center">
+            <MessageSquare className="w-10 h-10 mx-auto mb-2" />
+            <p className="text-sm font-semibold text-gray-400">Pilih percakapan untuk mulai</p>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-interface ChatBubbleProps { msg: DbMessage; }
-const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
-  const isCustomer = msg.sender === 'customer';
-  const isSystem = msg.sender === 'system';
+// ─── Chat Bubble ─────────────────────────────────────────────────────────────
 
-  if (isSystem) {
+interface ChatBubbleProps { msg: DbMessage; }
+function ChatBubble({ msg }: ChatBubbleProps) {
+  const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  if (msg.sender === 'system') {
     return (
-      <div className="text-center text-xs text-gray-400 py-1">
-        — {msg.text} —
+      <div className="text-center text-[9px] text-gray-400 italic py-1">
+        {msg.text}
       </div>
     );
   }
 
+  const isCustomer = msg.sender === 'customer';
+  const isAdmin = msg.sender === 'admin';
+
+  const bubbleClass = isCustomer
+    ? 'bg-white border border-gray-200 rounded-2xl rounded-tl-none text-gray-800'
+    : isAdmin
+      ? 'bg-[#2d8a4e] text-white rounded-2xl rounded-tr-none'
+      : 'bg-[#012749] text-white rounded-2xl rounded-tr-none';
+
+  const senderLabel = isCustomer ? 'Pelanggan' : isAdmin ? '👤 Admin' : '🤖 AI';
+
   return (
     <div className={`flex ${isCustomer ? 'justify-start' : 'justify-end'}`}>
-      <div
-        className={`max-w-xs lg:max-w-md px-3 py-2 rounded-2xl text-sm ${
-          isCustomer
-            ? 'bg-white border text-gray-800 rounded-tl-none'
-            : msg.sender === 'admin'
-              ? 'bg-green-600 text-white rounded-tr-none'
-              : 'bg-blue-600 text-white rounded-tr-none'
-        }`}
-      >
-        {msg.media_url ? (
-          <a href={msg.media_url} target="_blank" rel="noreferrer" className="underline">
-            [{msg.media_type?.toUpperCase()} attachment]
-          </a>
-        ) : (
-          msg.text
+      <div className="flex flex-col" style={{ maxWidth: '68%' }}>
+        <span className="text-[9px] text-gray-400 mb-0.5 px-1">{senderLabel}</span>
+        <div className={`px-3 py-2 text-xs leading-relaxed ${bubbleClass}`}>
+          {msg.media_url ? (
+            <a href={msg.media_url} target="_blank" rel="noreferrer" className="underline opacity-80">
+              [{msg.media_type?.toUpperCase() ?? 'FILE'} attachment]
+            </a>
+          ) : (
+            msg.text
+          )}
+          <p className="text-[8px] opacity-60 mt-1 text-right">{time}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Right Panel ──────────────────────────────────────────────────────────────
+
+import type { DbOrder } from '../types';
+
+interface RightPanelProps {
+  conv: ConversationWithMessages;
+  order: DbOrder | null | undefined;
+}
+function RightPanel({ conv, order }: RightPanelProps) {
+  const isOffPath = OFF_PATH_STATES.has(conv.state);
+  const activeStep = isOffPath ? -1 : STEPPER_STEPS.findIndex(s => s.states.includes(conv.state));
+  const cd = conv.collected_data;
+
+  const dataFields: { icon: string; value: string }[] = [];
+  if (cd.name) dataFields.push({ icon: '👤', value: cd.name });
+  if (cd.company) dataFields.push({ icon: '🏢', value: cd.company });
+  if (cd.product) {
+    const qty = cd.quantity ? ` × ${cd.quantity}` : '';
+    dataFields.push({ icon: '📦', value: `${cd.product}${qty}` });
+  }
+  if (cd.address) dataFields.push({ icon: '📍', value: cd.address });
+  const specs = cd.specs;
+  if (specs) {
+    const parts = [specs.size, specs.color, specs.notes].filter(Boolean);
+    if (parts.length > 0) dataFields.push({ icon: '📐', value: parts.join(', ') });
+  }
+
+  return (
+    <div className="w-48 shrink-0 flex flex-col border-l border-gray-200 bg-white overflow-y-auto">
+      {/* Header */}
+      <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 shrink-0">
+        📋 Konteks Percakapan
+      </div>
+
+      {/* Section: Alur */}
+      <div className="px-3 py-2.5 border-b border-gray-100">
+        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Alur Percakapan</div>
+        {isOffPath && (
+          <div className={`text-[9px] font-bold px-2 py-0.5 rounded-full mb-2 inline-block ${CONV_STATE_DISPLAY[conv.state]?.badgeClass ?? ''}`}>
+            {CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state}
+          </div>
         )}
-        <p className="text-xs opacity-60 mt-1 text-right">
-          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </p>
+        <div>
+          {STEPPER_STEPS.map((step, i) => {
+            const isDone = activeStep > i;
+            const isActive = activeStep === i;
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <div className="flex flex-col items-center">
+                  <div className={`w-2 h-2 rounded-full mt-0.5 shrink-0 ${
+                    isDone ? 'bg-[#2d8a4e]' : isActive ? 'bg-amber-500 ring-2 ring-amber-200' : 'bg-gray-200'
+                  }`} />
+                  {i < STEPPER_STEPS.length - 1 && (
+                    <div className={`w-px flex-1 min-h-[10px] ${isDone ? 'bg-[#2d8a4e]' : 'bg-gray-200'}`} />
+                  )}
+                </div>
+                <div className={`text-[9px] pb-2 ${
+                  isDone ? 'text-gray-400' : isActive ? 'font-bold text-amber-700' : 'text-gray-300'
+                }`}>
+                  {step.label}{isActive && ' ◀'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Section: Data Terkumpul */}
+      <div className="px-3 py-2.5 border-b border-gray-100">
+        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Data Terkumpul</div>
+        {dataFields.length === 0 ? (
+          <p className="text-[9px] text-gray-400 italic">Data belum terkumpul.</p>
+        ) : (
+          dataFields.map((f, i) => (
+            <div key={i} className="flex items-start gap-1.5 mb-1">
+              <span className="text-[10px] shrink-0">{f.icon}</span>
+              <span className="text-[9px] text-gray-700 font-medium leading-snug">{f.value}</span>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Section: Pesanan Terkait */}
+      <div className="px-3 py-2.5 border-b border-gray-100">
+        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Pesanan Terkait</div>
+        {order ? (
+          <div>
+            <div className="font-mono text-[10px] font-bold text-[#012749]">
+              {order.gjp_order_id ?? order.id.slice(0, 8)}
+            </div>
+            <div className="text-sm font-extrabold text-[#2d8a4e]">
+              Rp {order.total.toLocaleString('id-ID')}
+            </div>
+            <div className="text-[9px] text-gray-400 mt-0.5">
+              {order.status.replace(/_/g, ' ')}
+            </div>
+          </div>
+        ) : (
+          <p className="text-[9px] text-gray-400 italic">Belum ada pesanan.</p>
+        )}
+      </div>
+
+      {/* Section: Follow-up */}
+      <div className="px-3 py-2.5">
+        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Follow-up Otomatis</div>
+        <div className="text-xs font-bold text-gray-700">{conv.followup_count_today} / 2</div>
+        <div className="text-[9px] text-gray-400 mt-0.5">terkirim hari ini</div>
       </div>
     </div>
   );
