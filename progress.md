@@ -1119,6 +1119,19 @@ All 7 tasks shipped across 7 commits (28686b9 → ff5a805):
 - `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors)
 - Committed: `feat(auth): wire AuthScreen to Supabase Auth OTP — remove simulated code and 123456 backdoor` (fbb64e3)
 
+## Frontend/Backend Gap Fix — Task 4: Add admin_users migration, DbAdminUser type, adminUsersService — DONE (2026-06-03)
+
+- Created `supabase/migrations/20260603000003_admin_users.sql`
+  - `admin_users` table: id (uuid PK), name (text NOT NULL), email (text nullable), whatsapp (text nullable), role (text, default 'Staff Admin Toko'), permissions (jsonb), status (text, default 'Aktif'), created_at (timestamptz)
+  - RLS enabled; idempotent policy "anon full access admin_users" (FOR ALL TO anon)
+  - GRANT SELECT, INSERT, UPDATE, DELETE to anon
+- Applied migration via Supabase MCP to project `zocefskkwykivbxhruoy` (ERP MSME) — `admin_users` confirmed present in `list_tables`
+- Added `DbAdminUser` interface to `src/types.ts` (after existing `AdminUser`): nullable email/whatsapp, string status, string created_at
+- Added `DbAdminUser` to import in `src/lib/supabaseClient.ts`
+- Added `adminUsersService` to `src/lib/supabaseClient.ts`: `fetchAll()`, `upsert(user)`, `remove(id)`
+- `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors) — both before and after service addition
+- Committed: `feat(db): add admin_users migration, DbAdminUser type, and adminUsersService` (6751e59)
+
 ## Auth Bug Fixes (Code Quality Review) — DONE (2026-06-03)
 
 Three targeted fixes to the Supabase Auth implementation:
