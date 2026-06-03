@@ -39,10 +39,11 @@ export function useRealtimeConversations() {
       setConversations(withMessages);
       setOrders(pendingOrders);
       setPaymentUploadedOrders(paymentOrders);
-      setLoading(false);
     }
 
-    load().catch(console.error);
+    load()
+      .catch(console.error)
+      .finally(() => { if (mounted) setLoading(false); });
 
     // Realtime: messages INSERT
     const msgSub = supabase

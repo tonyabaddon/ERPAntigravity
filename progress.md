@@ -1467,3 +1467,11 @@ No code gaps found beyond the one bug above.
   - Per instructions: "warnings about inline styles...are acceptable — do not fix warnings"
 
 - Committed: `fix(vosi-landing): HTML validation fixes - add button type attributes, encode ampersands, fix self-closing input tags` (e4394df)
+
+## Bug Fix: Sales Inbox conversations not loading — DONE (2026-06-04)
+
+**Root cause (1 — operational)**: The backend deployment via `cloudbuild.yaml` overwrote the production frontend at `https://sinar-elektrik-msme-erp-422860632808.asia-southeast1.run.app`. The production URL now serves the Go API, not the React app. To restore: trigger `cloudbuild.frontend.yaml` or run `npm run dev` locally.
+
+**Root cause (2 — code bug)**: `useRealtimeConversations.ts` never called `setLoading(false)` when any fetch in `load()` failed (e.g., transient Supabase error). UI would hang at "Memuat percakapan..." indefinitely instead of showing the empty state.
+
+**Fix**: Added `.finally(() => { if (mounted) setLoading(false); })` to the `load()` call chain. Moved `setLoading(false)` out of the `load()` function body so it always fires exactly once regardless of success or failure.
