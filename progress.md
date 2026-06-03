@@ -1141,3 +1141,24 @@ Three targeted fixes to the Supabase Auth implementation:
 - **Fix 3 — Silent failure on signOut in handleLogout (App.tsx line 189):** Wrapped `supabase.auth.signOut()` in a try/catch. A network-level sign-out failure no longer blocks local state cleanup — local state is always cleared regardless of server response (best-effort pattern).
 - `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors)
 - Committed: `fix(auth): fix stale closure in onAuthStateChange, add error handling for updateUser and signOut` (11da57a)
+
+## Frontend/Backend Gap Fix — Task 5: Make UserManagementScreen self-contained — DONE (2026-06-03)
+
+- Rewrote `src/components/UserManagementScreen.tsx` — component is now fully self-contained:
+  - Removed `admins` and `onAdminsUpdate` props from interface; only `showToast` remains
+  - Added `loading` state with spinner while Supabase fetch is in flight
+  - `useEffect` on mount: if `isSupabaseConfigured`, calls `adminUsersService.fetchAll()` and hydrates state; falls back to `INITIAL_ADMINS` if Supabase is off or table is empty
+  - `handleTogglePermission` made async: calls `adminUsersService.upsert()` after local state update when Supabase configured
+  - `handleCreateAdminSubmit` made async: uses `crypto.randomUUID()` for new id; calls `adminUsersService.upsert()` when Supabase configured
+  - `handleRemoveAdmin` made async: calls `adminUsersService.remove()` when Supabase configured
+  - Info banner updated: shows Supabase-connected vs local-only message
+  - Preserved original floating "SIMPAN PERUBAHAN TIM" button at bottom
+  - Added `dbToAdminUser` and `adminUserToDb` mapper functions for `DbAdminUser ↔ AdminUser` conversion
+- Updated `src/App.tsx` with four targeted removals:
+  - Removed `AdminUser` from the types import line
+  - Removed `INITIAL_ADMINS` from the initialData import
+  - Removed `admins` useState (was reading from `localStorage.getItem('sinar_elektrik_admins')`)
+  - Removed `useEffect` that persisted `admins` to localStorage
+  - Updated `case 'user-management'` render: removed `admins` and `onAdminsUpdate` props
+- `npm run build` passes cleanly — zero TypeScript errors (2384 modules transformed)
+- Committed: `feat(admin-users): make UserManagementScreen self-contained with Supabase — remove localStorage` (5213282)
