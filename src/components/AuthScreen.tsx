@@ -173,9 +173,14 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       return;
     }
     // Save name and store to user metadata
-    await supabase.auth.updateUser({
+    const { error: updateError } = await supabase.auth.updateUser({
       data: { full_name: signUpName, store_name: signUpStore },
     });
+    if (updateError) {
+      setSignUpLoading(false);
+      showToast(`❌ Gagal simpan profil: ${updateError.message}`);
+      return;
+    }
     setSignUpLoading(false);
     showToast(`🎉 Toko "${signUpStore}" sukses terdaftar! Mengalihkan ke Dashboard.`);
     setTimeout(() => {

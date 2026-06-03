@@ -85,7 +85,7 @@ export default function App() {
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session && currentUser) {
+      if (!session) {
         setCurrentUser(null);
         setActivePage('auth');
       }
@@ -187,7 +187,11 @@ export default function App() {
   // Handle logout
   const handleLogout = async () => {
     if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // best-effort sign-out; clear local state regardless
+      }
     }
     setCurrentUser(null);
     setActivePage('auth');
