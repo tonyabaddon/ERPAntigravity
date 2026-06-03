@@ -4,9 +4,9 @@
 
 **Goal:** Turn the approved HTML prototype into a production-ready standalone landing page, deployed on its own domain.
 
-**Architecture:** Single-file static HTML site (`index.html`) — no framework, no build step. The prototype at `.superpowers/brainstorm/19476-1780503711/content/landing-final.html` is ~95% complete. Production work covers: extracting to a clean project folder, filling placeholders, adding SEO meta tags, adding analytics, and deploying to Vercel/Netlify.
+**Architecture:** Single-file static HTML site (`index.html`) — no framework, no build step. The prototype at `.superpowers/brainstorm/19476-1780503711/content/landing-final.html` is ~95% complete. Production work covers: extracting to a clean project folder, filling placeholders, adding SEO meta tags, adding analytics, and deploying to Firebase Hosting (Google Cloud). Future backend API (lead capture, notifications) akan di Cloud Run sebagai service terpisah — landing page tetap di Firebase Hosting.
 
-**Tech Stack:** Vanilla HTML5 + CSS3 + JavaScript (no framework — YAGNI for a marketing page). Google Fonts (Inter). Hosted on Vercel or Netlify (static).
+**Tech Stack:** Vanilla HTML5 + CSS3 + JavaScript (no framework — YAGNI for a marketing page). Google Fonts (Inter). Hosted on **Firebase Hosting** (Google Cloud ecosystem, global CDN, HTTPS otomatis).
 
 **Design spec:** `docs/vosi-landing/2026-06-04-vosi-landing-page-design.md`
 
@@ -409,80 +409,150 @@ git commit -m "chore(vosi-landing): pre-launch review and fixes"
 
 ---
 
-## Task 7: Deploy to Vercel
+## Task 7: Deploy ke Firebase Hosting (Google Cloud)
 
 **Files:**
-- Create: `vosi-landing/vercel.json`
+- Create: `vosi-landing/.firebaserc`
+- Create: `vosi-landing/firebase.json`
 
-Vercel is recommended — free tier, instant deploys, automatic HTTPS, easy custom domain.
+Firebase Hosting dipilih karena: bagian dari Google Cloud ecosystem, global CDN, HTTPS + custom domain otomatis, dan upgrade path bersih ke Cloud Functions/Cloud Run saat backend dibutuhkan nanti.
 
-- [ ] **Step 7.1: Install Vercel CLI**
+- [ ] **Step 7.1: Install Firebase CLI**
 
 ```bash
-npm i -g vercel
+npm install -g firebase-tools
 ```
 
-- [ ] **Step 7.2: Create vercel.json**
+- [ ] **Step 7.2: Login ke Google Cloud**
 
-Create `vosi-landing/vercel.json`:
+```bash
+firebase login
+```
+
+Browser akan terbuka untuk autentikasi Google account yang punya akses ke GCloud project kamu.
+
+- [ ] **Step 7.3: Buat Firebase project**
+
+Jika belum ada Firebase project:
+```bash
+firebase projects:create vosi-landing --display-name "Vosi Landing Page"
+```
+
+Atau pakai project yang sudah ada:
+```bash
+firebase projects:list  # lihat project yang tersedia
+```
+
+- [ ] **Step 7.4: Buat `.firebaserc`**
+
+Create `vosi-landing/.firebaserc` (ganti `vosi-landing` dengan Firebase project ID kamu):
 
 ```json
 {
-  "cleanUrls": true,
-  "trailingSlash": false
+  "projects": {
+    "default": "vosi-landing"
+  }
 }
 ```
 
-- [ ] **Step 7.3: Deploy preview**
+- [ ] **Step 7.5: Buat `firebase.json`**
+
+Create `vosi-landing/firebase.json`:
+
+```json
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".gitignore",
+      "**/.*"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|ico)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=604800" }]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=300" }]
+      }
+    ]
+  }
+}
+```
+
+- [ ] **Step 7.6: Deploy preview channel**
 
 ```bash
 cd vosi-landing
-vercel
+firebase hosting:channel:deploy preview --expires 7d
 ```
 
-Follow prompts:
-- Set up and deploy → Yes
-- Which scope → your account
-- Link to existing project → No
-- Project name → `vosi-landing`
-- Directory → `.` (current)
+Output akan berikan URL preview seperti `https://vosi-landing--preview-abc123.web.app`. Buka dan ulangi checklist Step 6.2 (semua CTA, form → WA redirect, mobile).
 
-Copy the preview URL (e.g. `https://vosi-landing-xyz.vercel.app`).
+- [ ] **Step 7.7: Verify OG image di preview URL**
 
-- [ ] **Step 7.4: Verify deployed preview**
+Paste preview URL ke `https://metatags.io` dan pastikan OG title, description, dan image muncul dengan benar.
 
-Open the preview URL and repeat the Step 6.2 CTA checklist. Also verify OG image loads by pasting URL into `https://metatags.io`.
-
-- [ ] **Step 7.5: Deploy to production**
+- [ ] **Step 7.8: Deploy ke production**
 
 ```bash
-vercel --prod
+firebase deploy --only hosting
 ```
 
-- [ ] **Step 7.6: Connect custom domain**
+Output:
+```
+✔  Deploy complete!
+Project Console: https://console.firebase.google.com/project/vosi-landing/overview
+Hosting URL: https://vosi-landing.web.app
+```
 
-In Vercel dashboard → your project → Settings → Domains:
-1. Add your domain (e.g. `vosi.id`)
-2. Follow DNS instructions (add A record or CNAME at your registrar)
-3. Wait for DNS propagation (5–60 minutes)
-4. Verify HTTPS works: `https://vosi.id`
+- [ ] **Step 7.9: Connect custom domain**
 
-- [ ] **Step 7.7: Update domain in meta tags and sitemap**
+Di Firebase Console → Hosting → Add custom domain:
+1. Masukkan domain kamu (e.g. `vosi.id`)
+2. Ikuti instruksi verifikasi domain (tambah TXT record di DNS registrar)
+3. Setelah verified, tambah A records yang diberikan Firebase ke DNS:
+   ```
+   A    @    151.101.1.195
+   A    @    151.101.65.195
+   ```
+4. Tunggu propagasi DNS (5–60 menit)
+5. Firebase otomatis provision SSL certificate — HTTPS aktif tanpa konfigurasi tambahan
 
-In `vosi-landing/index.html`, replace all `https://vosi.id` (if you used placeholder) with actual domain. Same in `sitemap.xml`.
+- [ ] **Step 7.10: Update domain di meta tags dan sitemap**
+
+Setelah domain aktif, replace placeholder domain di `vosi-landing/index.html` dan `sitemap.xml`:
 
 ```bash
-# Check for any remaining placeholder domains
+# Cek semua occurrence domain placeholder
 grep -n "vosi.id\|DOMAIN" vosi-landing/index.html vosi-landing/sitemap.xml
 ```
 
-- [ ] **Step 7.8: Final production deploy**
+Ganti semua `https://vosi.id` dengan domain aktual, lalu redeploy:
 
 ```bash
-vercel --prod
-git add vosi-landing/
-git commit -m "feat(vosi-landing): deploy to production at [domain]"
+firebase deploy --only hosting
 ```
+
+- [ ] **Step 7.11: Commit konfigurasi**
+
+```bash
+git add vosi-landing/
+git commit -m "feat(vosi-landing): deploy to Firebase Hosting on Google Cloud"
+```
+
+---
+
+> **Upgrade path ke Cloud Run (masa depan):** Jika nanti butuh backend API (misal endpoint untuk simpan leads ke Supabase atau kirim notifikasi WA), buat Cloud Run service terpisah. Landing page tetap di Firebase Hosting — hanya `VOSI_WA_NUMBER` atau endpoint URL yang perlu diupdate di `index.html`. Tidak perlu migrate hosting.
 
 ---
 
