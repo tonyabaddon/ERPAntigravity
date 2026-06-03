@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -567,6 +567,43 @@ export const companySettingsService = {
     const { error } = await supabase
       .from('company_settings')
       .upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
+    if (error) throw error;
+  },
+};
+
+export const adminUsersService = {
+  async fetchAll(): Promise<DbAdminUser[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as DbAdminUser[];
+  },
+
+  async upsert(user: DbAdminUser): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('admin_users')
+      .upsert({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        whatsapp: user.whatsapp,
+        role: user.role,
+        permissions: user.permissions,
+        status: user.status,
+      });
+    if (error) throw error;
+  },
+
+  async remove(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('admin_users')
+      .delete()
+      .eq('id', id);
     if (error) throw error;
   },
 };

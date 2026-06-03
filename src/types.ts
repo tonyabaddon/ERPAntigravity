@@ -22,6 +22,17 @@ export interface AdminUser {
   status: AdminStatus;
 }
 
+export interface DbAdminUser {
+  id: string;
+  name: string;
+  email: string | null;
+  whatsapp: string | null;
+  role: string;
+  permissions: PermissionSet;
+  status: string;
+  created_at: string;
+}
+
 export type ChatStatusType = 'BUTUH_ADMIN' | 'WIRING_CUSTOM' | 'DIKELOLA_AI';
 
 export interface Message {
