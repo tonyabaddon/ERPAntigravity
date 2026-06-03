@@ -582,7 +582,7 @@ export const adminUsersService = {
     return (data ?? []) as DbAdminUser[];
   },
 
-  async upsert(user: DbAdminUser): Promise<void> {
+  async upsert(user: Omit<DbAdminUser, 'created_at'>): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('admin_users')
