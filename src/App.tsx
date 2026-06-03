@@ -18,7 +18,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-import { ActivePage, StockItem, AdminUser, NotificationConfig } from './types';
+import { ActivePage, StockItem, NotificationConfig } from './types';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -35,7 +35,6 @@ import LaporanScreen from './components/LaporanScreen';
 
 import {
   INITIAL_STOCK,
-  INITIAL_ADMINS,
   INITIAL_CONFIG
 } from './initialData';
 
@@ -52,11 +51,6 @@ export default function App() {
   const [stockList, setStockList] = useState<StockItem[]>(() => {
     const saved = localStorage.getItem('sinar_elektrik_stocks');
     return saved ? JSON.parse(saved) : INITIAL_STOCK;
-  });
-
-  const [admins, setAdmins] = useState<AdminUser[]>(() => {
-    const saved = localStorage.getItem('sinar_elektrik_admins');
-    return saved ? JSON.parse(saved) : INITIAL_ADMINS;
   });
 
   const [config, setConfig] = useState<NotificationConfig>(() => {
@@ -97,10 +91,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('sinar_elektrik_stocks', JSON.stringify(stockList));
   }, [stockList]);
-
-  useEffect(() => {
-    localStorage.setItem('sinar_elektrik_admins', JSON.stringify(admins));
-  }, [admins]);
 
   useEffect(() => {
     localStorage.setItem('sinar_elektrik_config', JSON.stringify(config));
@@ -233,9 +223,7 @@ export default function App() {
         );
       case 'user-management':
         return (
-          <UserManagementScreen 
-            admins={admins} 
-            onAdminsUpdate={setAdmins} 
+          <UserManagementScreen
             showToast={triggerToast}
           />
         );
