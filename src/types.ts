@@ -119,6 +119,7 @@ export interface DbMessage {
 export interface DbOrder {
   id: string;
   conversation_id: string;
+  customer_id?: string;
   customer_name: string;
   customer_company: string;
   customer_address: string;
@@ -193,6 +194,17 @@ export interface DbLead {
   created_at: string;
   updated_at: string;
   customers: DbCustomer | null;
+  orders?: DbOrder[];
+}
+
+export interface DbCustomerWithStats extends DbCustomer {
+  order_count: number;
+  total_spend: number;
+}
+
+export interface DbCustomerProfile extends DbCustomer {
+  orders: DbOrder[];
+  leads: DbLead[];
 }
 
 export interface DbNotificationConfig {
@@ -217,4 +229,4 @@ export interface DbCompanySettings {
   updated_at: string;
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan';
