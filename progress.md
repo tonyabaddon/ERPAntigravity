@@ -1055,3 +1055,14 @@ All 10 tasks shipped across 13 commits (2cec3a1 → bbc766d):
 - **InvoiceModal**: PDF-style invoice preview with company settings + bank config, no-refund notice, `window.print()` with visibility-based print CSS fix
 - **PengaturanScreen**: Profil Perusahaan card (company_name, address, phone, email)
 - **DashboardScreen**: removed approval + payment verification panels; replaced with two alert badge buttons linking to Riwayat Pesanan
+
+## G1: Customer Intelligence — COMPLETE (2026-06-03)
+
+All 7 tasks shipped across 7 commits (28686b9 → ff5a805):
+
+- **Types** (`src/types.ts`): added `'pelanggan'` to `ActivePage`; added `DbCustomerWithStats`, `DbCustomerProfile` interfaces; added `orders?: DbOrder[]` to `DbLead`; added `customer_id?: string` to `DbOrder`
+- **Service layer** (`src/lib/supabaseClient.ts`): added `customersService.fetchAll()` (customer list with order_count + total_spend computed client-side from FK join); added `customersService.fetchProfile(id)` (full customer with orders + leads sorted by date); extended `leadsService.fetchAll()` to join linked orders via `orders!orders_leads_id_fkey`
+- **Sidebar + routing**: added "Pelanggan" nav item (`Users` icon) between Pipeline and Riwayat Pesanan; added `'pelanggan'` route in App.tsx; added `openCustomerId` state + `handleOpenCustomer` handler; `onPageChange` resets `openCustomerId` when navigating away from pelanggan
+- **PelangganScreen** (`src/components/PelangganScreen.tsx`): split-view layout — fixed 288px left panel (customer list + search filtering by name/WA/company, selected state with navy accent), dynamic right panel (empty state, loading state, full profile with navy header + initials avatar + total spend, 3-stat row with conversion rate, order cards with status badge, lead cards with Pipeline link)
+- **PipelineScreen** (`src/components/PipelineScreen.tsx`): full rewrite — added search bar (name/WA/company), collapsible rows with ChevronDown rotation, `PipelineItemsTable` for ORDERED leads (product table + subtotal/ongkir/total footer), non-ORDERED expanded state with info box, "Buka Percakapan" quick link, customer name as clickable link → `onOpenCustomer`; renamed interface from `PengaturanScreenProps` to `PipelineScreenProps`
+- **OrderHistoryScreen** (`src/components/OrderHistoryScreen.tsx`): customer name in collapsed row changed from plain text to clickable link (`text-[#012749] underline`) → `onOpenCustomer(order.customer_id)` for cross-screen navigation to Pelanggan profile
