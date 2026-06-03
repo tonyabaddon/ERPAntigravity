@@ -27,8 +27,7 @@ interface NotificationSettingsScreenProps {
 export default function NotificationSettingsScreen({ config, onConfigChange, showToast }: NotificationSettingsScreenProps) {
   const [enabled, setEnabled] = useState(config.enabled);
   const [interval, setIntervalVal] = useState(config.interval);
-  const [targetNumber, setTargetNumber] = useState(config.targetNumber);
-  
+
   // Checkboxes
   const [revenueChecked, setRevenueChecked] = useState(config.reportComponents.revenue);
   const [queueChecked, setQueueChecked] = useState(config.reportComponents.queue);
@@ -43,7 +42,6 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
     const updated: NotificationConfig = {
       enabled,
       interval,
-      targetNumber,
       reportComponents: {
         revenue: revenueChecked,
         queue: queueChecked,
@@ -119,20 +117,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                 </div>
               </div>
 
-              {/* Box 3: Target number */}
-              <div className="bg-[#eff4ff]/60 p-6 rounded-3xl flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group">
-                <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">Nomor WhatsApp Tujuan</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-[#012749]/40 select-none">+62</span>
-                  <input 
-                    type="text" 
-                    value={targetNumber}
-                    onChange={(e) => setTargetNumber(e.target.value)}
-                    className="w-full bg-transparent border-none text-sm font-extrabold text-[#012749] p-0 focus:ring-0 outline-none"
-                    placeholder="81234567890"
-                  />
-                </div>
-              </div>
+              {/* Box 3: Target number — removed (managed via DbWaRecipient) */}
             </div>
 
             {/* Checklists for report segments components */}

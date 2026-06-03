@@ -56,7 +56,6 @@ export interface StockItem {
 export interface NotificationConfig {
   enabled: boolean;
   interval: string;
-  targetNumber: string;
   reportComponents: {
     revenue: boolean;
     queue: boolean;
@@ -194,6 +193,19 @@ export interface DbLead {
   created_at: string;
   updated_at: string;
   customers: DbCustomer | null;
+}
+
+export interface DbNotificationConfig {
+  id: number;
+  enabled: boolean;
+  interval_label: string;
+  report_revenue: boolean;
+  report_queue: boolean;
+  report_activity: boolean;
+  report_status: boolean;
+  low_stock_alert: number;
+  delay_alert: number;
+  updated_at: string;
 }
 
 export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline';

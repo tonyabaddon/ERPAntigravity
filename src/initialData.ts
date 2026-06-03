@@ -66,7 +66,6 @@ export const INITIAL_STOCK: StockItem[] = [
 export const INITIAL_CONFIG: NotificationConfig = {
   enabled: true,
   interval: 'Setiap 4 Jam',
-  targetNumber: '81234567890',
   reportComponents: {
     revenue: true,
     queue: true,
