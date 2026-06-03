@@ -161,12 +161,13 @@ type OrderItem struct {
 }
 
 type StockItem struct {
-	SKU      string  `json:"sku"`
-	Name     string  `json:"name"`
-	Category string  `json:"category"`
-	Price    float64 `json:"price"`
-	Stock    int     `json:"stock"`
-	Status   string  `json:"status"`
+	SKU      string                 `json:"sku"`
+	Name     string                 `json:"name"`
+	Category string                 `json:"category"`
+	Price    float64                `json:"price"`
+	Stock    int                    `json:"stock"`
+	Status   string                 `json:"status"`
+	Specs    map[string]interface{} `json:"specs"`
 }
 
 type Customer struct {

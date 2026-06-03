@@ -184,8 +184,16 @@ func StockContextString(items []models.StockItem) string {
 	}
 	var sb strings.Builder
 	for _, item := range items {
-		sb.WriteString(fmt.Sprintf("- %s (SKU: %s): Rp %.0f/unit, stok: %d\n",
-			item.Name, item.SKU, item.Price, item.Stock))
+		specs := ""
+		if len(item.Specs) > 0 {
+			var parts []string
+			for k, v := range item.Specs {
+				parts = append(parts, fmt.Sprintf("%s=%v", k, v))
+			}
+			specs = " [" + strings.Join(parts, ", ") + "]"
+		}
+		sb.WriteString(fmt.Sprintf("- %s (SKU: %s): Rp %.0f/unit, stok: %d%s\n",
+			item.Name, item.SKU, item.Price, item.Stock, specs))
 	}
 	return sb.String()
 }
