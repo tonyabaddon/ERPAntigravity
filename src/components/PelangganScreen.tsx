@@ -156,6 +156,11 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       <div className={`font-bold text-sm truncate ${isSelected ? 'text-[#012749]' : 'text-gray-800'}`}>
                         {c.name}
                       </div>
+                      {c.company && (
+                        <div className={`text-[10px] font-semibold truncate ${isSelected ? 'text-[#012749]/70' : 'text-gray-500'}`}>
+                          {c.company}
+                        </div>
+                      )}
                       <div className="font-mono text-[10px] text-gray-400 truncate">{c.wa_number}</div>
                     </div>
                     <div className={`text-xs font-bold shrink-0 ${isSelected ? 'text-[#012749]' : 'text-gray-500'}`}>

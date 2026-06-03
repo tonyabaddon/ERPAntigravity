@@ -14,10 +14,13 @@ import {
   AlertTriangle,
   Flame,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  Trash2,
+  Smartphone,
 } from 'lucide-react';
-import { NotificationConfig } from '../types';
-import { notificationConfigService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { NotificationConfig, DbWaRecipient } from '../types';
+import { notificationConfigService, waRecipientsService, isSupabaseConfigured } from '../lib/supabaseClient';
 
 interface NotificationSettingsScreenProps {
   config: NotificationConfig;
@@ -39,10 +42,18 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
   const [lowStockLimit, setLowStockLimit] = useState(config.lowStockAlert);
   const [delayLimit, setDelayLimit] = useState(config.delayAlert);
 
+  // WA Recipients state
+  const [recipients, setRecipients] = useState<DbWaRecipient[]>([]);
+  const [newName, setNewName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newRole, setNewRole] = useState<'admin' | 'owner'>('admin');
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+
   const dbConfigIdRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
+    waRecipientsService.fetchAll().then(setRecipients).catch(console.error);
     notificationConfigService.fetch().then(row => {
       if (!row) return;
       dbConfigIdRef.current = row.id;
@@ -56,6 +67,49 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
       setDelayLimit(row.delay_alert);
     }).catch(err => console.error('notificationConfig load error:', err));
   }, []);
+
+  const handleAddRecipient = async () => {
+    if (!newName.trim() || !newPhone.trim()) {
+      showToast('⚠️ Lengkapi nama dan nomor WA penerima.');
+      return;
+    }
+    const formatted = newPhone.startsWith('+') ? newPhone.replace('+', '') : newPhone.startsWith('0') ? '62' + newPhone.slice(1) : newPhone;
+    setRecipientsLoading(true);
+    try {
+      await waRecipientsService.add({ role: newRole, name: newName.trim(), wa_number: formatted });
+      const updated = await waRecipientsService.fetchAll();
+      setRecipients(updated);
+      setNewName('');
+      setNewPhone('');
+      showToast('✅ Nomor WA penerima berhasil ditambahkan.');
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ Gagal menambahkan nomor WA penerima.');
+    } finally {
+      setRecipientsLoading(false);
+    }
+  };
+
+  const handleRemoveRecipient = async (id: number) => {
+    try {
+      await waRecipientsService.remove(id);
+      setRecipients(prev => prev.filter(r => r.id !== id));
+      showToast('✅ Nomor WA penerima dihapus.');
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ Gagal menghapus nomor WA penerima.');
+    }
+  };
+
+  const handleToggleRecipient = async (id: number, current: boolean) => {
+    try {
+      await waRecipientsService.toggleActive(id, !current);
+      setRecipients(prev => prev.map(r => r.id === id ? { ...r, is_active: !current } : r));
+    } catch (err) {
+      console.error(err);
+      showToast('⚠️ Gagal mengubah status penerima.');
+    }
+  };
 
   const handleSave = async () => {
     const updated: NotificationConfig = {
@@ -277,6 +331,91 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Menit</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* WA Recipients card */}
+      <section className="bg-white border border-[#e5eeff] rounded-[2.5rem] p-8 shadow-xl">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-100">
+            <Smartphone className="w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-[#012749]">Nomor WA Penerima Notifikasi</h3>
+            <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mt-0.5">
+              Laporan & eskalasi dikirim ke nomor-nomor berikut via WhatsApp
+            </p>
+          </div>
+        </div>
+
+        {/* Existing recipients list */}
+        <div className="space-y-3 mb-6">
+          {recipients.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">
+              Belum ada nomor penerima. Tambahkan di bawah.
+            </p>
+          ) : (
+            recipients.map(r => (
+              <div key={r.id} className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl border transition-all ${r.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm text-[#012749] truncate">{r.name}</span>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${r.role === 'owner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {r.role}
+                    </span>
+                  </div>
+                  <p className="font-mono text-[11px] text-gray-400 mt-0.5">+{r.wa_number}</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input type="checkbox" className="sr-only peer" checked={r.is_active} onChange={() => handleToggleRecipient(r.id, r.is_active)} />
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2d8a4e]" />
+                </label>
+                <button onClick={() => handleRemoveRecipient(r.id)} className="text-gray-300 hover:text-red-500 transition-colors shrink-0 cursor-pointer">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Add new recipient form */}
+        <div className="bg-[#f8f9ff] rounded-3xl p-5 border border-blue-50/50 space-y-4">
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Tambah Nomor Penerima</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              type="text"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Nama (cth: Pak Budi)"
+              className="bg-white rounded-2xl px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
+            />
+            <div className="bg-white border border-slate-200/60 rounded-2xl flex items-center px-3 gap-1.5">
+              <span className="text-[#012749]/40 text-xs font-black shrink-0">+62</span>
+              <input
+                type="text"
+                value={newPhone}
+                onChange={e => setNewPhone(e.target.value)}
+                placeholder="8123456789"
+                className="w-full bg-transparent border-none focus:ring-0 font-bold text-xs py-2.5 outline-none"
+              />
+            </div>
+            <select
+              value={newRole}
+              onChange={e => setNewRole(e.target.value as 'admin' | 'owner')}
+              className="bg-white rounded-2xl px-4 py-2.5 border border-slate-200/60 font-bold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
+            >
+              <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
+            </select>
+          </div>
+          <button
+            onClick={handleAddRecipient}
+            disabled={recipientsLoading}
+            className="bg-[#012749] hover:bg-[#2d8a4e] text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" />
+            {recipientsLoading ? 'Menyimpan...' : 'Tambah Nomor'}
+          </button>
         </div>
       </section>
 

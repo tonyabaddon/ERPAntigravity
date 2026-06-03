@@ -114,7 +114,12 @@ func (c *Client) Disconnect() {
 	c.WA.Disconnect()
 }
 
-// Logout clears the WhatsApp session so the next Connect triggers a fresh QR scan.
-func (c *Client) Logout() error {
-	return c.WA.Logout(context.Background())
+// Logout clears the WhatsApp session and restarts the QR pairing loop so
+// the frontend can immediately scan a fresh QR code.
+func (c *Client) Logout(ctx context.Context) error {
+	if err := c.WA.Logout(ctx); err != nil {
+		return err
+	}
+	// runQRLoop exits on "success"; after logout we must restart it.
+	return c.Connect(ctx)
 }

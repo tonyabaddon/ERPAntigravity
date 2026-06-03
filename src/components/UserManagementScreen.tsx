@@ -59,9 +59,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
     }
     adminUsersService.fetchAll()
       .then(rows => {
-        if (rows.length > 0) {
-          setAdmins(rows.map(dbToAdminUser));
-        }
+        setAdmins(rows.map(dbToAdminUser));
       })
       .catch(err => {
         console.error('Failed to load admin users:', err);

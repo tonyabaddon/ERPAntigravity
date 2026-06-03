@@ -80,19 +80,24 @@ Balas HANYA JSON (tidak ada teks lain):
 		}
 		return fmt.Sprintf(`FASE: CEK STOK & PENAWARAN HARGA (STOCK_CHECK)
 Produk yang diminta: %s
-Qty yang dibutuhkan: %d
+Qty yang dibutuhkan: %d unit
 
 Data stok dari sistem:
 %s
 
 Ikuti SOP Fase 2 Kategori 1 Skenario 1a/1c. Tampilkan nama produk, harga satuan (Rupiah), qty, subtotal.
 Format pesan sesuai template ringkasan pesanan di system prompt.
-Jika produk tersedia → next_action: CONFIRM
-Jika produk tidak ditemukan atau stok 0 → next_action: ESCALATE
+
+ATURAN STOK — WAJIB DIPATUHI, TIDAK BOLEH DILANGGAR:
+- next_action: CONFIRM  → HANYA jika produk ditemukan di sistem DAN stok >= %d unit
+- next_action: ESCALATE → jika produk tidak ditemukan di sistem
+- next_action: ESCALATE → jika stok ada tapi jumlahnya KURANG dari %d unit yang diminta
+- next_action: ESCALATE → jika stok = 0
+DILARANG KERAS memberikan konfirmasi CONFIRM jika stok kurang dari qty yang dibutuhkan pelanggan.
 
 Balas HANYA JSON (tidak ada teks lain):
 {"reply":"<pesan WA ringkasan harga>","next_action":"<CONFIRM atau ESCALATE>"}`,
-			orBelum(c.Product), qty, stockCtx)
+			orBelum(c.Product), qty, stockCtx, qty, qty)
 
 	case models.StateConfirming:
 		qty := c.Quantity

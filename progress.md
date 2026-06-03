@@ -1475,3 +1475,22 @@ No code gaps found beyond the one bug above.
 **Root cause (2 — code bug)**: `useRealtimeConversations.ts` never called `setLoading(false)` when any fetch in `load()` failed (e.g., transient Supabase error). UI would hang at "Memuat percakapan..." indefinitely instead of showing the empty state.
 
 **Fix**: Added `.finally(() => { if (mounted) setLoading(false); })` to the `load()` call chain. Moved `setLoading(false)` out of the `load()` function body so it always fires exactly once regardless of success or failure.
+
+## Bug Fix: User Management cannot add users — DONE (2026-06-04)
+
+**Root cause**: `admin_users` table only had an `anon` RLS policy. After OTP login, users hold the `authenticated` role, which had no matching policy — all reads/writes silently failed. `adminUsersService.upsert()` threw an error, triggering the optimistic-add rollback.
+
+**Fix**: Applied Supabase migration `add_authenticated_policies_admin_users`:
+```sql
+CREATE POLICY "auth_all_admin_users" ON admin_users
+  FOR ALL TO authenticated
+  USING (true)
+  WITH CHECK (true);
+```
+
+**Secondary fix**: Removed the `if (rows.length > 0)` guard in `UserManagementScreen.tsx` `fetchAll()` handler. Previously, an empty DB table caused `INITIAL_ADMINS` (hardcoded demo data) to remain in state — deleting them locally wouldn't persist, and they'd reappear on refresh. Now the UI always reflects the real DB state (empty table → empty list).
+
+**Verification**:
+- Confirmed migration applied: both `auth_all_admin_users` and `auth full access admin_users` (FOR ALL TO authenticated) policies present on `admin_users` table
+- Schema confirmed compatible: `created_at` has `DEFAULT now()` so upsert omitting it works correctly
+- `admin_users` table is currently empty; adding a new user will persist to DB; subsequent loads will show only DB rows

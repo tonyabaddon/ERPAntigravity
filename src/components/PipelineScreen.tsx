@@ -191,7 +191,7 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
                         {customer?.name || lead.wa_number}
                       </span>
                       {customer?.company && (
-                        <span className="text-xs text-gray-400 truncate hidden sm:block">· {customer.company}</span>
+                        <span className="text-xs text-gray-400 truncate">· {customer.company}</span>
                       )}
                     </div>
                     <p className="text-xs font-mono text-gray-400">{lead.wa_number}</p>

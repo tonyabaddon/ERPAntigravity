@@ -170,7 +170,7 @@ func main() {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		if err := waClient.Logout(); err != nil {
+		if err := waClient.Logout(ctx); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
