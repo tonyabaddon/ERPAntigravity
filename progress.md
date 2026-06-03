@@ -1340,3 +1340,48 @@ No code gaps found beyond the one bug above.
   - Clicking navigates directly to `sales-inbox`
 - Wired `onNavigate={setActivePage}` in `App.tsx` `case 'whatsapp-ai'`
 - `npx tsc --noEmit` — only pre-existing React 19 `key` prop error in `SalesInboxScreen.tsx`, no new errors
+
+## Bug Fix Task 2: Display WhatsApp phone number when connected — DONE (2026-06-04)
+
+**Root cause**: Backend `/api/wa/qr` endpoint now returns `{ qr, connected, phone }` but frontend was not reading or displaying the phone number.
+
+**Fix** — 4 targeted edits to `src/components/WhatsappAiScreen.tsx`:
+
+1. **Add state variable** (line 48): Inserted `const [waPhone, setWaPhone] = useState<string>('');` between `waConnected` and `daemonOnline` state declarations
+2. **Read phone in fetchQR** (line 105): Added `setWaPhone(data.phone || '');` right after `setWaConnected(data.connected);` in the fetch success block
+3. **Display phone in UI** (lines 316-318): Inside the connected state block (`{waConnected && (`), added conditional rendering:
+   ```tsx
+   {waPhone && (
+     <p className="text-xs font-black text-emerald-600 tracking-tight">+{waPhone}</p>
+   )}
+   ```
+   Placed between the `<h4>BERHASIL TERSAMBUNG</h4>` and the session saved message
+4. **Build verification** (2378 modules transformed): `npm run build 2>&1 | tail -20` shows zero TypeScript errors; build completes successfully (1,022.32 kB → dist/index.html)
+
+**Result**: When WhatsApp is connected, the phone number appears in green below the "BERHASIL TERSAMBUNG" heading in the format `+62123456789`
+
+- Committed: `feat(ui): show connected WhatsApp phone number in WhatsApp AI screen` (145ae45)
+
+## Task 3 (Bug Fix): Backend — fix kendala teknis for BOOKED state — DONE (2026-06-04)
+
+**Root Cause**: Customers who message after booking (state = BOOKED) caused the state machine to be called with an unknown-state prompt, resulting in Gemini returning an empty response and FallbackReply firing ("kendala teknis" error).
+
+**Fix**: Intercept BOOKED and TIMEOUT_REMINDER states in `processMessage()` before the state machine is called, send a static holding message, and return.
+
+- Created regression test `TestProcessBookedStateReturnsEmptyReply` in `backend-go/internal/engine/machine_test.go`:
+  - Documents that BOOKED state produces no reply from the machine (confirming handler-level intercept is correct fix)
+  - Test verifies: machine returns empty reply, state remains BOOKED
+  - Test PASSES
+
+- Added intercept in `backend-go/internal/whatsapp/handler.go` at line 105 (before terminal state check):
+  - Checks `conv.State == models.StateBooked || conv.State == models.StateTimeoutReminder`
+  - Sends bilingual holding message (Indonesian / English) without invoking Gemini
+  - Inserts message to DB and sends to WhatsApp; logs error if send fails (non-fatal)
+  - Returns early to prevent machine.Process() call
+
+- Build and test verification:
+  - `CGO_ENABLED=1 go build ./...` — clean build (no errors)
+  - New test `TestProcessBookedStateReturnsEmptyReply` PASSES
+  - All engine/rules tests still PASS (pre-existing failure in TestProcessConfirmingBooked unrelated to this task)
+
+- Committed: `fix(wa): intercept BOOKED state in handler to prevent kendala teknis error` (96f398d)
