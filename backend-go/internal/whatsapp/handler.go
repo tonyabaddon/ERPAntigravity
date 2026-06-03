@@ -43,18 +43,21 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	if evt.Info.IsFromMe {
 		return
 	}
-	// Skip messages sent before the daemon started — these are WhatsApp's
-	// queued backlog delivered on first connect, not live customer messages.
-	if evt.Info.Timestamp.Before(h.startedAt) {
-		return
-	}
 
 	text := evt.Message.GetConversation()
 	if text == "" && evt.Message.GetExtendedTextMessage() != nil {
 		text = evt.Message.GetExtendedTextMessage().GetText()
 	}
 	if text == "" {
+		// Media messages (payment proofs) must never be filtered by startup time —
+		// customers send proofs while the backend is restarting and lose them otherwise.
 		h.handleMediaMessage(evt)
+		return
+	}
+
+	// Text messages only: drop WhatsApp's queued backlog delivered on reconnect
+	// so the AI does not re-greet customers who messaged before the last restart.
+	if evt.Info.Timestamp.Before(h.startedAt) {
 		return
 	}
 
