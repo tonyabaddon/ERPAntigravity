@@ -304,17 +304,17 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                     <Lock className="w-5 h-5 text-gray-400 mr-3 shrink-0" />
                     <input
                       type="text"
-                      maxLength={6}
+                      maxLength={8}
                       value={signInOtp}
                       onChange={(e) => setSignInOtp(e.target.value)}
-                      placeholder={signInSent ? 'Masukkan 6 digit kode OTP' : 'Kirim OTP terlebih dahulu'}
+                      placeholder={signInSent ? 'Masukkan kode OTP dari email' : 'Kirim OTP terlebih dahulu'}
                       disabled={!signInSent}
                       className="bg-transparent border-none focus:ring-0 w-full text-sm font-semibold outline-none py-1 text-[#0b1c30]"
                     />
                   </div>
                   {signInSent && (
                     <p className="text-[11px] text-gray-500 italic px-2">
-                      Cek email Anda untuk kode OTP 6 digit dari Supabase.
+                      Cek email Anda untuk kode OTP dari Supabase.
                     </p>
                   )}
                 </div>
@@ -413,11 +413,11 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                     <ShieldCheck className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
                     <input
                       type="text"
-                      maxLength={6}
+                      maxLength={8}
                       required
                       value={signUpOtp}
                       onChange={(e) => setSignUpOtp(e.target.value)}
-                      placeholder={signUpSent ? 'Masukkan 6 digit kode OTP' : 'Klik Kirim OTP dlu'}
+                      placeholder={signUpSent ? 'Masukkan kode OTP dari email' : 'Klik Kirim OTP dulu'}
                       disabled={!signUpSent}
                       className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                     />
