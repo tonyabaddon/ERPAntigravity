@@ -1198,3 +1198,36 @@ All 5 tasks shipped across 5 commits (d9619d2 → 33c752e):
 - Removed now-unused imports: `"fmt"` and `"strings"`
 - `go build ./...` passes with zero errors
 - Frontend talks directly to Supabase for stock data; Go daemon no longer exposes stock endpoints
+
+## Bug Fixes & Knowledge Update — DONE (2026-06-03)
+
+### Auth Bug Fix: Wrong Supabase project in .env
+- Root cause: `.env` pointed to `ekhhojaezdfjfwuxyjkl` ("ERP MSME AI Studio", Japan) — a different project
+- All migrations were applied to `zocefskkwykivbxhruoy` ("ERP MSME", Singapore)
+- Fixed `.env`: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` now point to the correct project
+- This fixes: "No API key found in request" error on OTP send (client was hitting wrong project)
+- This fixes: Sales Inbox showing empty (conversations table was in different project)
+- Note: `.env` is gitignored; this fix is local-only — Cloud Build substitution vars also need updating
+
+### Auth Bug 2: Magic link instead of 6-digit OTP — Dashboard config required
+- `signInWithOtp` sends email with magic link by default; Supabase email template controls what user sees
+- Fix: Go to Supabase Dashboard → Authentication → Email Templates → "Magic Link"
+- Edit template to include the 6-digit token: add `Your OTP code: <strong>{{ .Token }}</strong>` before the link
+- No code change needed — this is a Supabase project configuration
+
+### Calista Knowledge Update: Add 1mm ketebalan for Panel Besi
+- Added `1 mm` to Besi (iron) material thickness options in `calista_system_prompt.txt`
+- Line 106: `1.2 mm / 1.5 mm / 1.8 mm / 2 mm / 3 mm` → `1 mm / 1.2 mm / 1.5 mm / 1.8 mm / 2 mm / 3 mm`
+- Checklist updated: `1.2 / 1.5 / 1.8 / 2 / 3 mm` → `1 / 1.2 / 1.5 / 1.8 / 2 / 3 mm`
+- Rebuilt Go backend binary to embed updated prompt
+- Committed: `feat(calista): add 1mm ketebalan to Panel Besi spec`
+
+## P5 — Real-time daemon online/offline health badge in WhatsappAiScreen — DONE (2026-06-03)
+
+- Added `daemonOnline` boolean state (line 45) next to existing `waConnected` state
+- Updated `fetchQR` (lines 97-110): `setDaemonOnline(true)` at top of try block; `setDaemonOnline(false)` in catch — piggybacking on the existing 5-second poll that already runs
+- Replaced static "Active daemon (whatsmeow)" badge (line 257-261) with dynamic conditional rendering:
+  - Online: emerald text + animated ping dot, "Daemon online"
+  - Offline: rose-500 text + static rose-400 dot, "Daemon offline"
+- `npm run build` passes — zero TypeScript errors (2384 modules transformed)
+- Committed: `feat(ui): add real-time daemon online/offline health badge to WhatsappAiScreen` (7e27bf2)

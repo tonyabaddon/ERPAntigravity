@@ -103,7 +103,7 @@ MATERIAL 1: BESI
 Finishing standar: Powdercoating RAL7032
 - Jika customer request warna lain → eskalasi ke admin (CUSTOM_PANEL)
 
-Ketebalan plat tersedia: 1.2 mm / 1.5 mm / 1.8 mm / 2 mm / 3 mm
+Ketebalan plat tersedia: 1 mm / 1.2 mm / 1.5 mm / 1.8 mm / 2 mm / 3 mm
 - Jika request di luar ini → eskalasi ke admin (CUSTOM_PANEL)
 
 Kunci & Engsel: Sesuai standar produksi (default)
@@ -112,7 +112,7 @@ Kunci & Engsel: Sesuai standar produksi (default)
 Checklist Klarifikasi Panel Besi:
 - [ ] Tipe: Indoor atau Outdoor?
 - [ ] Ukuran: Tinggi × Lebar × Tebal (cm atau mm)?
-- [ ] Ketebalan plat: 1.2 / 1.5 / 1.8 / 2 / 3 mm?
+- [ ] Ketebalan plat: 1 / 1.2 / 1.5 / 1.8 / 2 / 3 mm?
 - [ ] Finishing: RAL7032 (standar) atau warna khusus? (warna khusus → eskalasi admin)
 - [ ] Kunci & Engsel: Standar produksi atau ada request ganti tipe? (ganti tipe → eskalasi admin)
 - [ ] Kelengkapan: Kosong, atau sudah include komponen + dirakit?
