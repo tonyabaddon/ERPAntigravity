@@ -40,21 +40,27 @@ export default function PengaturanScreen({ showToast }: PengaturanScreenProps) {
       setCompanyLoading(false);
       return;
     }
-    Promise.all([bankConfigService.fetch(), waRecipientsService.fetchAll(), companySettingsService.fetch()])
-      .then(([bank, recips, co]) => {
-        setBankConfig(bank);
-        setRecipients(recips);
-        setCompany(co);
-      })
-      .catch(err => {
-        console.error('PengaturanScreen load error:', err);
-        showToast('Gagal memuat data pengaturan.', 'warning');
-      })
-      .finally(() => {
-        setBankLoading(false);
-        setRecipientsLoading(false);
-        setCompanyLoading(false);
-      });
+    Promise.allSettled([
+      bankConfigService.fetch(),
+      waRecipientsService.fetchAll(),
+      companySettingsService.fetch(),
+    ]).then(([bankResult, recipsResult, coResult]) => {
+      if (bankResult.status === 'fulfilled') setBankConfig(bankResult.value);
+      else console.error('bank_config load error:', bankResult.reason);
+
+      if (recipsResult.status === 'fulfilled') setRecipients(recipsResult.value);
+      else console.error('wa_recipients load error:', recipsResult.reason);
+
+      if (coResult.status === 'fulfilled') setCompany(coResult.value);
+      else {
+        console.error('company_settings load error:', coResult.reason);
+        showToast('Gagal memuat sebagian pengaturan. Coba refresh.', 'warning');
+      }
+    }).finally(() => {
+      setBankLoading(false);
+      setRecipientsLoading(false);
+      setCompanyLoading(false);
+    });
   }, []);
 
   // Bank config handlers

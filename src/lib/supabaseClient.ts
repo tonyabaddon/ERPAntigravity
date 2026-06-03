@@ -553,15 +553,15 @@ export const notificationConfigService = {
 };
 
 export const companySettingsService = {
-  async fetch(): Promise<DbCompanySettings> {
+  async fetch(): Promise<DbCompanySettings | null> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
       .from('company_settings')
       .select('*')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
     if (error) throw error;
-    return data;
+    return data ?? null;
   },
 
   async save(values: Omit<DbCompanySettings, 'id' | 'updated_at'>): Promise<void> {
