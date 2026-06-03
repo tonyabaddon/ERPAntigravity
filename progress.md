@@ -951,6 +951,15 @@ All 4 tasks complete. Feature is fully implemented:
 - `useEffect` on mount: loads config from Supabase (if configured) and hydrates all state fields
 - `handleSave` made async: persists to Supabase before calling `onConfigChange`; on error shows local-only toast
 - Removed "Nomor WhatsApp Tujuan" comment placeholder from JSX; grid changed from `md:grid-cols-3` to `md:grid-cols-2`
+
+## Bug Fix: Log InsertMessage error in BOOKED holding reply — DONE (2026-06-04)
+
+- Fixed `backend-go/internal/whatsapp/handler.go` in `processMessage()` BOOKED/TIMEOUT_REMINDER intercept block (lines 114-124)
+- Changed line 119 from fire-and-forget `h.db.InsertMessage(conv.ID, models.SenderAI, reply)` to error-checked pattern: `if _, err := h.db.InsertMessage(...) { log.Printf("[HANDLER] BOOKED InsertMessage error: %v", err) }`
+- Consistent with error-checking pattern used at line 132 for customer message insertion
+- Build: `CGO_ENABLED=1 go build ./...` — clean (no errors)
+- Tests: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules, internal/storage, internal/scheduler)
+- Committed: `fix(wa): log InsertMessage error in BOOKED holding reply` (8854932)
 - `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
 - Committed: `feat(notifications): sync config with Supabase on load/save; remove targetNumber field` (50fa798)
 
@@ -1385,3 +1394,33 @@ No code gaps found beyond the one bug above.
   - All engine/rules tests still PASS (pre-existing failure in TestProcessConfirmingBooked unrelated to this task)
 
 - Committed: `fix(wa): intercept BOOKED state in handler to prevent kendala teknis error` (96f398d)
+
+## Vosi Landing Page — Task 1: Scaffold vosi-landing project folder — DONE (2026-06-04)
+
+- Created `/vosi-landing/` project directory
+- Copied `landing-final.html` (832 lines) to `vosi-landing/index.html` from `.superpowers/brainstorm/19476-1780503711/content/` prototype
+- Created `vosi-landing/.gitignore` with: `.DS_Store`, `node_modules/`, `*.log`
+- Created `vosi-landing/robots.txt` with standard Allow: / directive
+- Created `vosi-landing/sitemap.xml` with single URL entry for https://vosi.id/ (monthly changefreq, priority 1.0)
+- Verification:
+  - `ls -la vosi-landing/` shows 4 files: `.gitignore`, `index.html`, `robots.txt`, `sitemap.xml`
+  - `wc -l vosi-landing/index.html` shows 832 lines (> 800 ✓)
+  - `grep -c "konsultasi|hero|faq|sp-wrap"` returns 87 matches (> 4 ✓)
+- Committed: `feat(vosi-landing): scaffold production project from prototype` (47b7dc8)
+
+## Vosi Landing Page — Task 3: SEO meta tags, Open Graph, and favicon — DONE (2026-06-04)
+
+- Added SEO meta tags to `vosi-landing/index.html` after `<title>` line:
+  - `meta name="description"`: "Vosi otomasi balasan WhatsApp bisnis kamu 24 jam — terima order, cek stok, dan kirim invoice secara otomatis. Aktif dalam 3 hari kerja."
+  - `meta name="keywords"`: "whatsapp bot bisnis, ai whatsapp indonesia, otomasi whatsapp, chatbot toko, vosi"
+  - `link rel="canonical"`: https://vosi.id/
+- Added Open Graph tags for social media preview (WhatsApp, Facebook, LinkedIn):
+  - `og:type` → website, `og:url` → https://vosi.id/, `og:locale` → id_ID
+  - `og:title`, `og:description`, `og:image` → https://vosi.id/og-image.png
+- Added Twitter Card meta tags (summary_large_image format)
+- Added favicon link: `<link rel="icon" type="image/svg+xml" href="/favicon.svg">`
+- Created `vosi-landing/favicon.svg` (376 bytes) with lightning bolt icon inside rounded square with blue-to-green gradient
+- Verification:
+  - `grep -n "og:title\|og:image\|description\|favicon"` returns 6 matches at lines 9, 16–18, 24, 28 ✓
+  - `ls -la vosi-landing/favicon.svg` shows file exists, 376 bytes ✓
+- Committed: `feat(vosi-landing): add SEO meta tags, Open Graph, and favicon` (5de43de)
