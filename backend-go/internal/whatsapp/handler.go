@@ -116,7 +116,9 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		if conv.Language == "en" {
 			reply = "Your order is awaiting confirmation from our admin team. Please wait a moment 🙏"
 		}
-		h.db.InsertMessage(conv.ID, models.SenderAI, reply)
+		if _, err := h.db.InsertMessage(conv.ID, models.SenderAI, reply); err != nil {
+			log.Printf("[HANDLER] BOOKED InsertMessage error: %v", err)
+		}
 		if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
 			log.Printf("[HANDLER] BOOKED holding reply send error: %v", err)
 		}
