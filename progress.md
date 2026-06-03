@@ -740,6 +740,21 @@ _(Previously completed — details in task tracking)_
 - **Step 3**: Verified build: `npm run build` — 2378 modules transformed, zero errors
 - **Step 4**: Committed: `feat(dashboard): replace hardcoded activity log with real messages from Supabase` (18db476)
 
+## D4-T4: Remove stale chats state from App.tsx and INITIAL_CHATS from initialData.ts — DONE (2026-06-02)
+
+- Removed `chats` useState and `INITIAL_CHATS` import from `src/App.tsx` (inbox now reads from Supabase realtime)
+- Removed `INITIAL_CHATS` array (141 lines of hardcoded chat data) from `src/initialData.ts`
+- `npm run build` passes cleanly — zero TypeScript errors
+- Committed: `refactor(app): remove stale chats state and INITIAL_CHATS now that inbox uses Supabase realtime` (2390602)
+
+## D4 Dashboard & UX Polish — COMPLETE (2026-06-02)
+
+All 4 tasks complete:
+- T1: `statsService` (fetchTodayStats + fetchRecentActivity) added to supabaseClient.ts
+- T2: Dashboard KPI stats wired to live Supabase data, chatsCount prop removed
+- T3: Activity log wired to real messages from Supabase
+- T4: Removed stale `chats` state and `INITIAL_CHATS` hardcoded data
+
 ## E1-T1: SQL migration — anon write grants — DONE (2026-06-02)
 
 - Created `supabase/migrations/20260602000003_admin_write_grants.sql`
@@ -938,6 +953,14 @@ All 4 tasks complete. Feature is fully implemented:
 - Removed "Nomor WhatsApp Tujuan" comment placeholder from JSX; grid changed from `md:grid-cols-3` to `md:grid-cols-2`
 - `npm run build` passes cleanly — zero TypeScript errors (2380 modules transformed)
 - Committed: `feat(notifications): sync config with Supabase on load/save; remove targetNumber field` (50fa798)
+
+## E3 Notification Config Persistence — COMPLETE (2026-06-03)
+
+All 4 tasks complete:
+- T1: `notification_config` table created in Supabase with RLS + anon grants
+- T2: `targetNumber` removed from `NotificationConfig` and `INITIAL_CONFIG`; `DbNotificationConfig` type added
+- T3: `notificationConfigService` (fetch/save) added to supabaseClient.ts
+- T4: `NotificationSettingsScreen` now loads from and saves to Supabase
 
 ## F1-T5: Expanded Row — PENDING_ADMIN_CONFIRMATION (Approve / Reject) — DONE (2026-06-03)
 
