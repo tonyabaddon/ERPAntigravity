@@ -1,5 +1,26 @@
 # Vosi Landing Page — Deployment Guide
 
+## Pre-launch Checklist
+
+Complete all items before running `firebase deploy`.
+
+### Content (required)
+- [ ] **WA number** — replace `62812XXXXXXXX` and `0812-XXXX-XXXX` in `index.html` with your real Vosi WhatsApp number (E.164 format for the URL, readable format for the display text)
+- [ ] **Social proof** — replace the 3 placeholder testimonials in `index.html` (search for "Budi S.", "Rina A.", "Hendra W.") with real beta client names, business types, and quotes
+
+### Analytics
+- [ ] **GA4 Measurement ID** — create a property at analytics.google.com, then replace `G-XXXXXXXXXX` (2 occurrences) in `index.html` with your real ID (format: `G-XXXXXXXXXX`)
+
+### SEO / Social sharing
+- [ ] **og-image.png** — design a 1200×630px social share image (use Figma or Canva), save it as `vosi-landing/og-image.png`. This shows up when the link is shared on WhatsApp/Twitter/LinkedIn.
+- [ ] **Domain** — replace `https://vosi.id` with your actual domain in `index.html` meta tags and `sitemap.xml`
+
+### Firebase
+- [ ] **Firebase project** — create project at console.firebase.google.com, update `.firebaserc` with your actual project ID
+- [ ] **Custom domain** — point your domain to Firebase Hosting (Firebase Console → Hosting → Add custom domain)
+
+---
+
 ## Prerequisites
 - Node.js installed
 - Google account with access to Firebase/GCloud
