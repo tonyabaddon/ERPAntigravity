@@ -175,7 +175,8 @@ export default function App() {
       case 'dashboard':
         return (
           <DashboardScreen
-            onPageChange={setActivePage}
+            showToast={triggerToast}
+            onNavigate={(page) => setActivePage(page)}
             lowStockCount={lowStockCount}
           />
         );

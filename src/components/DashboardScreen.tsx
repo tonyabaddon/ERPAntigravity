@@ -10,13 +10,10 @@ import {
   Zap,
   AlertTriangle,
   ArrowUpRight,
-  Clock,
   MessageSquare,
   CheckCircle2,
-  Image,
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
-import { DbOrder } from '../types';
 import { statsService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { 
   AreaChart, 
@@ -32,7 +29,8 @@ import {
 } from 'recharts';
 
 interface DashboardScreenProps {
-  onPageChange: (page: any) => void;
+  showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onNavigate: (page: import('../types').ActivePage) => void;
   lowStockCount: number;
 }
 
@@ -56,7 +54,7 @@ const BOT_PERFORMANCE_DATA = [
   { Day: 'Min', 'Dijawab AI': 105, 'Respon Manual': 5 },
 ];
 
-export default function DashboardScreen({ onPageChange, lowStockCount }: DashboardScreenProps) {
+export default function DashboardScreen({ showToast, onNavigate, lowStockCount }: DashboardScreenProps) {
   
   // Format numeric Rupiah
   const formatRupiah = (val: number) => {
@@ -67,15 +65,7 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
     }).format(val);
   };
 
-  const { orders, paymentUploadedOrders: rawPaymentOrders, approveOrder, verifyPayment: verifyPaymentFn, rejectPayment: rejectPaymentFn } = useRealtimeConversations();
-  const [paymentUploadedOrders, setPaymentUploadedOrders] = React.useState<DbOrder[]>([]);
-
-  React.useEffect(() => {
-    setPaymentUploadedOrders(rawPaymentOrders);
-  }, [rawPaymentOrders]);
-
-  const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
-  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const { orders, paymentUploadedOrders } = useRealtimeConversations();
 
   const [stats, setStats] = useState<{
     verifiedOrdersTotal: number;
@@ -98,49 +88,6 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
     }
   }, []);
 
-  useEffect(() => {
-    orders.forEach(order => {
-      if (order.delivery_type === 'PICKUP') {
-        setShippingFees(prev => {
-          if (prev[order.id] !== undefined) return prev;
-          return { ...prev, [order.id]: '0' };
-        });
-      }
-    });
-  }, [orders]);
-
-  const handleApprove = async (orderId: string) => {
-    const fee = parseFloat(shippingFees[orderId] ?? '0');
-    setApprovingId(orderId);
-    try {
-      await approveOrder(orderId, fee);
-    } finally {
-      setApprovingId(null);
-    }
-  };
-
-  const handleVerify = async (orderId: string) => {
-    const order = paymentUploadedOrders.find(o => o.id === orderId);
-    setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
-    try {
-      await verifyPaymentFn(orderId);
-    } catch (err) {
-      console.error('verifyPayment failed:', err);
-      if (order) setPaymentUploadedOrders(prev => [...prev, order]);
-    }
-  };
-
-  const handleReject = async (orderId: string) => {
-    const order = paymentUploadedOrders.find(o => o.id === orderId);
-    setPaymentUploadedOrders(prev => prev.filter(o => o.id !== orderId));
-    try {
-      await rejectPaymentFn(orderId);
-    } catch (err) {
-      console.error('rejectPayment failed:', err);
-      if (order) setPaymentUploadedOrders(prev => [...prev, order]);
-    }
-  };
-
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Top Welcome Action Bar */}
@@ -158,8 +105,8 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
         </div>
 
         <div className="flex gap-3">
-          <button 
-            onClick={() => onPageChange('sales-inbox')}
+          <button
+            onClick={() => onNavigate('sales-inbox')}
             className="px-6 py-3 bg-[#2d8a4e] text-white rounded-full text-xs font-bold shadow-lg shadow-[#2d8a4e]/20 hover:scale-105 transition-all cursor-pointer flex items-center gap-2"
           >
             <MessageSquare className="w-4 h-4" /> Buka Inbox Chat
@@ -340,178 +287,28 @@ export default function DashboardScreen({ onPageChange, lowStockCount }: Dashboa
         </div>
       </div>
 
-      {/* Pending Orders Panel */}
-      {orders.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-500" />
-            Pesanan Menunggu Persetujuan ({orders.length})
-          </h2>
-          <div className="space-y-3">
-            {orders.map(order => (
-              <div key={order.id} className="bg-white rounded-xl border border-amber-200 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800">{order.customer_name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs font-mono text-gray-400">
-                        {order.gjp_order_id ?? order.id.slice(0, 8)}
-                      </p>
-                      {order.delivery_type && (
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          order.delivery_type === 'PICKUP'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'bg-amber-50 text-amber-700'
-                        }`}>
-                          {order.delivery_type === 'PICKUP' ? 'Ambil Sendiri' : 'Pengiriman'}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">{order.customer_company} · {order.customer_address}</p>
-                    <p className="text-sm text-gray-500">{order.customer_phone}</p>
-                    <div className="mt-2 space-y-0.5">
-                      {order.items.map((item, i) => (
-                        <p key={i} className="text-sm text-gray-700">
-                          {item.name} × {item.qty} @ Rp {item.unit_price.toLocaleString('id-ID')} = Rp {item.subtotal.toLocaleString('id-ID')}
-                        </p>
-                      ))}
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-gray-800">
-                      Subtotal: Rp {order.subtotal.toLocaleString('id-ID')}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Berakhir: {new Date(order.booking_expires_at).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Ongkir (Rp):</span>
-                      {order.delivery_type === 'PICKUP' ? (
-                        <span className="w-28 text-sm font-semibold text-gray-500 px-2 py-1">Rp 0 (Pickup)</span>
-                      ) : (
-                        <input
-                          type="number"
-                          min="0"
-                          className="w-28 border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                          placeholder="0"
-                          value={shippingFees[order.id] ?? ''}
-                          onChange={e => setShippingFees(prev => ({ ...prev, [order.id]: e.target.value }))}
-                        />
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleApprove(order.id)}
-                      disabled={approvingId === order.id || shippingFees[order.id] === undefined || shippingFees[order.id] === ''}
-                      className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-40"
-                    >
-                      {approvingId === order.id ? 'Memproses...' : '✓ Setujui'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {(orders.length > 0 || paymentUploadedOrders.length > 0) && (
+        <div className="flex gap-3 flex-wrap">
+          {orders.length > 0 && (
+            <button
+              onClick={() => onNavigate('order-history')}
+              className="flex items-center gap-2 bg-purple-100 text-purple-800 border border-purple-200 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-purple-200 transition-colors"
+            >
+              🔔 {orders.length} pesanan perlu konfirmasi
+              <span className="text-purple-400 text-xs">→ Riwayat Pesanan</span>
+            </button>
+          )}
+          {paymentUploadedOrders.length > 0 && (
+            <button
+              onClick={() => onNavigate('order-history')}
+              className="flex items-center gap-2 bg-blue-100 text-blue-800 border border-blue-200 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-200 transition-colors"
+            >
+              📎 {paymentUploadedOrders.length} bukti bayar menunggu verifikasi
+              <span className="text-blue-400 text-xs">→ Riwayat Pesanan</span>
+            </button>
+          )}
         </div>
       )}
-
-      {/* Payment Verification Panel */}
-      {paymentUploadedOrders.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Image className="w-5 h-5 text-emerald-600" />
-            Bukti Pembayaran Menunggu Verifikasi ({paymentUploadedOrders.length})
-          </h2>
-          <div className="space-y-3">
-            {paymentUploadedOrders.map(order => (
-              <PaymentVerificationCard
-                key={order.id}
-                order={order}
-                onVerify={() => handleVerify(order.id)}
-                onReject={() => handleReject(order.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface PaymentVerificationCardProps {
-  order: DbOrder;
-  onVerify: () => Promise<void>;
-  onReject: () => Promise<void>;
-}
-
-const PaymentVerificationCard: React.FC<PaymentVerificationCardProps> = ({ order, onVerify, onReject }) => {
-  const [verifying, setVerifying] = React.useState(false);
-  const [rejecting, setRejecting] = React.useState(false);
-
-  const handleVerify = async () => {
-    setVerifying(true);
-    try { await onVerify(); } finally { setVerifying(false); }
-  };
-
-  const handleReject = async () => {
-    setRejecting(true);
-    try { await onReject(); } finally { setRejecting(false); }
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-emerald-200 p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-gray-800">{order.customer_name}</p>
-            <p className="text-xs font-mono text-gray-400">{order.gjp_order_id ?? order.id.slice(0, 8)}</p>
-          </div>
-          <p className="text-sm text-gray-500">{order.customer_company} · {order.customer_phone}</p>
-          <p className="mt-1 text-sm font-semibold text-gray-800">
-            Total: Rp {order.total.toLocaleString('id-ID')}
-          </p>
-
-          {/* Payment proof */}
-          <div className="mt-3">
-            {order.payment_proof_url ? (
-              <div className="space-y-1">
-                <a
-                  href={order.payment_proof_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-blue-600 underline font-medium"
-                >
-                  Lihat Bukti Transfer ↗
-                </a>
-                <img
-                  src={order.payment_proof_url}
-                  alt="Bukti pembayaran"
-                  className="max-h-32 rounded object-contain border border-gray-100"
-                />
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400 italic">Belum ada foto bukti transfer</p>
-            )}
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex flex-col gap-2 shrink-0">
-          <button
-            onClick={handleVerify}
-            disabled={verifying || rejecting}
-            className="px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-40"
-          >
-            {verifying ? 'Memproses...' : '✓ Verifikasi'}
-          </button>
-          <button
-            onClick={handleReject}
-            disabled={verifying || rejecting}
-            className="px-4 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 disabled:opacity-40"
-          >
-            {rejecting ? 'Memproses...' : '✕ Tolak'}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
