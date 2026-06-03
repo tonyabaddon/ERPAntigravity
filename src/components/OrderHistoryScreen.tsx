@@ -135,6 +135,8 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [rejectingPaymentId, setRejectingPaymentId] = useState<string | null>(null);
 
   const handleApprove = async (orderId: string, deliveryType: string | undefined) => {
     const fee = deliveryType === 'PICKUP' ? 0 : parseFloat(shippingFees[orderId] ?? '0');
@@ -163,6 +165,39 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
       showToast('Gagal menolak pesanan.', 'warning');
     } finally {
       setRejectingId(null);
+    }
+  };
+
+  const handleVerifyPayment = async (orderId: string) => {
+    setVerifyingId(orderId);
+    try {
+      await orderService.verifyPayment(orderId, currentUser?.name ?? '');
+      setOrders(prev => prev.map(o =>
+        o.id === orderId
+          ? { ...o, status: 'PAYMENT_VERIFIED', verified_by: currentUser?.name ?? '', payment_verified_at: new Date().toISOString() }
+          : o
+      ));
+      setExpandedId(null);
+      showToast('Pembayaran berhasil diverifikasi.', 'success');
+    } catch {
+      showToast('Gagal memverifikasi pembayaran.', 'warning');
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleRejectPayment = async (orderId: string) => {
+    if (!window.confirm('Yakin tolak bukti bayar ini?')) return;
+    setRejectingPaymentId(orderId);
+    try {
+      await orderService.rejectPayment(orderId);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'PAYMENT_REJECTED' } : o));
+      setExpandedId(null);
+      showToast('Bukti bayar ditolak.', 'info');
+    } catch {
+      showToast('Gagal menolak bukti bayar.', 'warning');
+    } finally {
+      setRejectingPaymentId(null);
     }
   };
 
@@ -348,7 +383,73 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status !== 'PENDING_ADMIN_CONFIRMATION' && (
+                {isExpanded && order.status === 'PAYMENT_UPLOADED' && (
+                  <div className="px-5 py-4 border-t border-blue-200 bg-blue-50">
+                    <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
+                      <div>
+                        <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                          <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                        </div>
+                        <ItemsTable items={order.items} headerClass="bg-blue-100 text-blue-700" />
+                        {/* Payment proof */}
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">Bukti Transfer</div>
+                          <div className="flex items-start gap-3">
+                            {order.payment_proof_url ? (
+                              <img
+                                src={order.payment_proof_url}
+                                alt="Bukti bayar"
+                                className="w-16 h-20 object-cover rounded-lg border-2 border-blue-200 cursor-pointer"
+                                onClick={() => window.open(order.payment_proof_url!, '_blank')}
+                              />
+                            ) : (
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                                <span className="text-indigo-400 text-lg">🖼</span>
+                                <span className="text-[9px] text-indigo-400 font-semibold">Foto Bukti</span>
+                              </div>
+                            )}
+                            <div>
+                              {order.payment_proof_url && (
+                                <a
+                                  href={order.payment_proof_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-blue-600 font-semibold underline"
+                                >
+                                  Lihat Ukuran Penuh ↗
+                                </a>
+                              )}
+                              <p className="text-[10px] text-gray-400 mt-1">
+                                Dikirim {formatDate(order.updated_at)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Action */}
+                      <div className="flex flex-col gap-2 min-w-[120px]">
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
+                        <button
+                          onClick={() => handleVerifyPayment(order.id)}
+                          disabled={verifyingId === order.id}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 disabled:opacity-40"
+                        >
+                          {verifyingId === order.id ? 'Memproses...' : '✓ Verifikasi'}
+                        </button>
+                        <button
+                          onClick={() => handleRejectPayment(order.id)}
+                          disabled={rejectingPaymentId === order.id}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                        >
+                          ✕ Tolak
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {isExpanded && order.status !== 'PENDING_ADMIN_CONFIRMATION' && order.status !== 'PAYMENT_UPLOADED' && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 text-xs text-gray-400">
                     [expanded row — {order.status}]
                   </div>
