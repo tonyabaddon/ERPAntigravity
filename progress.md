@@ -1118,3 +1118,13 @@ All 7 tasks shipped across 7 commits (28686b9 → ff5a805):
   - **Edit C**: made `handleLogout` async; calls `supabase.auth.signOut()` before clearing local state
 - `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors)
 - Committed: `feat(auth): wire AuthScreen to Supabase Auth OTP — remove simulated code and 123456 backdoor` (fbb64e3)
+
+## Auth Bug Fixes (Code Quality Review) — DONE (2026-06-03)
+
+Three targeted fixes to the Supabase Auth implementation:
+
+- **Fix 1 — Stale closure in onAuthStateChange (App.tsx line 88):** Removed the `&& currentUser` guard from `onAuthStateChange` callback. Because the effect has `[]` deps, `currentUser` was always captured as `null` at mount, making the condition always-false. Now resets to auth screen whenever `!session`, so sign-out from another tab or session expiry is handled correctly.
+- **Fix 2 — Silent failure on updateUser in sign-up flow (AuthScreen.tsx line 176):** Destructured the error from `supabase.auth.updateUser(...)`. If it fails, `setSignUpLoading(false)` is called, a toast is shown (`❌ Gagal simpan profil: ...`), and the flow returns early — preventing the user from entering the dashboard with empty name/store_name.
+- **Fix 3 — Silent failure on signOut in handleLogout (App.tsx line 189):** Wrapped `supabase.auth.signOut()` in a try/catch. A network-level sign-out failure no longer blocks local state cleanup — local state is always cleared regardless of server response (best-effort pattern).
+- `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors)
+- Committed: `fix(auth): fix stale closure in onAuthStateChange, add error handling for updateUser and signOut` (11da57a)
