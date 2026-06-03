@@ -1089,3 +1089,32 @@ All 7 tasks shipped across 7 commits (28686b9 → ff5a805):
 - **PelangganScreen** (`src/components/PelangganScreen.tsx`): split-view layout — fixed 288px left panel (customer list + search filtering by name/WA/company, selected state with navy accent), dynamic right panel (empty state, loading state, full profile with navy header + initials avatar + total spend, 3-stat row with conversion rate, order cards with status badge, lead cards with Pipeline link)
 - **PipelineScreen** (`src/components/PipelineScreen.tsx`): full rewrite — added search bar (name/WA/company), collapsible rows with ChevronDown rotation, `PipelineItemsTable` for ORDERED leads (product table + subtotal/ongkir/total footer), non-ORDERED expanded state with info box, "Buka Percakapan" quick link, customer name as clickable link → `onOpenCustomer`; renamed interface from `PengaturanScreenProps` to `PipelineScreenProps`
 - **OrderHistoryScreen** (`src/components/OrderHistoryScreen.tsx`): customer name in collapsed row changed from plain text to clickable link (`text-[#012749] underline`) → `onOpenCustomer(order.customer_id)` for cross-screen navigation to Pelanggan profile
+
+## Frontend/Backend Gap Fix — Task 1: Add company_settings migration file — DONE (2026-06-03)
+
+- Created `supabase/migrations/20260603000001_company_settings.sql`
+- Versioned DDL for `company_settings` table (was previously applied via MCP, now has a migration file for fresh deployments)
+- Table structure: id (PRIMARY KEY DEFAULT 1), company_name, address, phone, email, updated_at (DEFAULT now() DEFAULT now())
+- RLS enabled with two policies: public read (anon SELECT), anon write (anon ALL with CHECK)
+- Grants anon role SELECT, INSERT, UPDATE
+- Seed query: INSERT default row (id=1, company_name='Garindo Jaya Panel') with ON CONFLICT DO NOTHING
+- `npm run build` passes cleanly — zero TypeScript errors (2378 modules transformed)
+- Committed: `feat(db): add company_settings migration file (was applied via MCP, now versioned)` (d9619d2)
+
+## Frontend/Backend Gap Fix — Task 3: Wire AuthScreen to Supabase Auth OTP — DONE (2026-06-03)
+
+- Replaced `src/components/AuthScreen.tsx` with Supabase Auth magic-link OTP flow
+  - Removed all simulated random OTP generation and the `123456` hardcoded backdoor
+  - `handleSendSignInOtp` / `handleSendSignUpOtp` now call `supabase.auth.signInWithOtp({ email })` when Supabase is configured
+  - `handleSignInSubmit` / `handleSignUpSubmit` now call `supabase.auth.verifyOtp({ email, token, type: 'email' })` to verify the real OTP
+  - Sign-up flow calls `supabase.auth.updateUser({ data: { full_name, store_name } })` to persist metadata after OTP verify
+  - `deriveDisplayName()` helper extracts a display name from `user_metadata.full_name` or falls back to the email prefix
+  - Dev-mode bypass: when `isSupabaseConfigured` is false, OTP send is skipped and `123456` is accepted only locally (not in production)
+  - Dev-mode amber banner shown at bottom of screen when Supabase is unconfigured
+  - Added `signInLoading` / `signUpLoading` boolean states; buttons disabled during async operations
+- Updated `src/App.tsx` with three targeted edits:
+  - **Edit A**: added `supabase` to the import from `./lib/supabaseClient`
+  - **Edit B**: added session-restore `useEffect` — calls `supabase.auth.getSession()` on mount to auto-login users with an existing session; subscribes to `onAuthStateChange` to log out if session is revoked externally
+  - **Edit C**: made `handleLogout` async; calls `supabase.auth.signOut()` before clearing local state
+- `npm run build` passes cleanly (2384 modules transformed, zero TypeScript errors)
+- Committed: `feat(auth): wire AuthScreen to Supabase Auth OTP — remove simulated code and 123456 backdoor` (fbb64e3)
