@@ -12,7 +12,7 @@ import {
   Settings,
   UserCheck
 } from 'lucide-react';
-import { AdminUser, PermissionSet } from '../types';
+import { AdminUser, PermissionSet, DbAdminUser } from '../types';
 import { adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
 
@@ -20,7 +20,7 @@ interface UserManagementScreenProps {
   showToast: (msg: string) => void;
 }
 
-function dbToAdminUser(db: import('../types').DbAdminUser): AdminUser {
+function dbToAdminUser(db: DbAdminUser): AdminUser {
   return {
     id: db.id,
     name: db.name,
@@ -28,11 +28,11 @@ function dbToAdminUser(db: import('../types').DbAdminUser): AdminUser {
     whatsapp: db.whatsapp ?? '',
     role: db.role,
     permissions: db.permissions as PermissionSet,
-    status: (db.status === 'Aktif' ? 'Aktif' : 'Nonaktif') as import('../types').AdminStatus,
+    status: (db.status === 'Aktif' ? 'Aktif' : 'Nonaktif') as AdminUser['status'],
   };
 }
 
-function adminUserToDb(u: AdminUser): Omit<import('../types').DbAdminUser, 'created_at'> {
+function adminUserToDb(u: AdminUser): Omit<DbAdminUser, 'created_at'> {
   return {
     id: u.id,
     name: u.name,
@@ -71,6 +71,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
   }, []);
 
   const handleTogglePermission = async (adminId: string, permissionKey: keyof PermissionSet) => {
+    const prev = admins;
     const updated = admins.map(adm => {
       if (adm.id === adminId) {
         return { ...adm, permissions: { ...adm.permissions, [permissionKey]: !adm.permissions[permissionKey] } };
@@ -80,12 +81,17 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
     setAdmins(updated);
     if (isSupabaseConfigured) {
       const changed = updated.find(a => a.id === adminId)!;
-      await adminUsersService.upsert(adminUserToDb(changed)).catch(err => {
+      try {
+        await adminUsersService.upsert(adminUserToDb(changed));
+        showToast('🛡️ Keamanan Diperbarui! Hak akses berhasil disesuaikan.');
+      } catch (err) {
         console.error('upsert permission failed:', err);
+        setAdmins(prev);
         showToast('⚠️ Gagal menyimpan perubahan hak akses.');
-      });
+      }
+    } else {
+      showToast('🛡️ Keamanan Diperbarui! Hak akses berhasil disesuaikan.');
     }
-    showToast('🛡️ Keamanan Diperbarui! Hak akses berhasil disesuaikan.');
   };
 
   const handleCreateAdminSubmit = async (e: React.FormEvent) => {
@@ -118,10 +124,15 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
     setAdmins(prev => [...prev, newAdmin]);
 
     if (isSupabaseConfigured) {
-      await adminUsersService.upsert(adminUserToDb(newAdmin)).catch(err => {
+      try {
+        await adminUsersService.upsert(adminUserToDb(newAdmin));
+      } catch (err) {
         console.error('upsert new admin failed:', err);
+        // Revert optimistic add on failure
+        setAdmins(prev => prev.filter(a => a.id !== newAdmin.id));
         showToast('⚠️ Gagal menyimpan admin baru ke Supabase.');
-      });
+        return;
+      }
     }
 
     setNewName('');
@@ -131,12 +142,17 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
   };
 
   const handleRemoveAdmin = async (id: string) => {
+    const removedAdmin = admins.find(a => a.id === id);
     setAdmins(prev => prev.filter(a => a.id !== id));
     if (isSupabaseConfigured) {
-      await adminUsersService.remove(id).catch(err => {
+      try {
+        await adminUsersService.remove(id);
+      } catch (err) {
         console.error('delete admin failed:', err);
+        if (removedAdmin) setAdmins(prev => [...prev, removedAdmin]);
         showToast('⚠️ Gagal menghapus admin dari Supabase.');
-      });
+        return;
+      }
     }
     showToast('🗑️ Akun pengurus berhasil dihapus dari database.');
   };
@@ -335,15 +351,6 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
           </div>
         </section>
       </div>
-
-      {/* Primary Floating Action: Save Team permissions */}
-      <button
-        onClick={() => showToast('💾 Perubahan Hak Akses Seluruh Tim Sinar Elektrik Berhasil Disimpan!')}
-        className="fixed bottom-10 right-10 bg-[#2d8a4e] text-white px-10 py-5 rounded-full shadow-[0_20px_50px_rgba(45,138,78,0.3)] hover:shadow-[0_25px_60px_rgba(45,138,78,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex items-center gap-2.5 z-50 cursor-pointer text-sm font-extrabold uppercase tracking-wide"
-      >
-        <UserPlus className="w-5 h-5 text-emerald-200" />
-        SIMPAN PERUBAHAN TIM
-      </button>
 
     </div>
   );
