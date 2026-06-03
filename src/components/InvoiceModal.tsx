@@ -42,8 +42,9 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
     <>
       <style>{`
         @media print {
-          body > *:not(#invoice-print-root) { display: none !important; }
-          #invoice-print-root { position: fixed; inset: 0; z-index: 9999; background: white; }
+          body * { visibility: hidden; }
+          #invoice-print-root, #invoice-print-root * { visibility: visible; }
+          #invoice-print-root { position: fixed; top: 0; left: 0; width: 100%; background: white; z-index: 9999; }
           .print\\:hidden { display: none !important; }
         }
       `}</style>
