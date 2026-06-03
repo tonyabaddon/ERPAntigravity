@@ -987,6 +987,24 @@ _(Previously completed — details in task tracking)_
 - Wired InvoiceModal in `src/components/OrderHistoryScreen.tsx`: replaced stub div with `<InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />`
 - Committed: `feat(invoice): add InvoiceModal with PDF print, company settings, no-refund notice` (ec63ccc)
 
+## F1-T10: Dashboard Cleanup — DONE (2026-06-03)
+
+- Modified `src/components/DashboardScreen.tsx` and `src/App.tsx`
+- Removed inline `PaymentVerificationCard` component definition (58 lines)
+- Removed pending-order approval panel (shipping fee inputs, Setujui buttons, per-order detail cards)
+- Removed payment verification panel (verify/reject buttons, payment proof image)
+- Removed associated state: `shippingFees`, `approvingId`, `paymentUploadedOrders` local state + its `useEffect`
+- Removed handlers: `handleApprove`, `handleVerify`, `handleReject`
+- Removed `approveOrder`, `verifyPayment`, `rejectPayment` from `useRealtimeConversations` destructure
+- Removed `Clock`, `Image` from lucide-react imports; removed `DbOrder` type import
+- Added compact alert-badge buttons: purple "X pesanan perlu konfirmasi" and blue "X bukti bayar menunggu verifikasi" — both navigate to `order-history`
+- Updated `DashboardScreenProps`: replaced `onPageChange` with `onNavigate: (page: ActivePage) => void`; added `showToast`; kept `lowStockCount` (still used by KPI card)
+- Updated "Buka Inbox Chat" button to use `onNavigate('sales-inbox')`
+- Updated App.tsx `case 'dashboard'` to pass `showToast={triggerToast}` and `onNavigate={(page) => setActivePage(page)}`
+- Note: spec interface omitted `lowStockCount` but it's still consumed by the Low Stock KPI card; kept intentionally
+- `npm run build` passes — zero TypeScript errors (992.16 kB bundle, 2382 modules)
+- Committed: `feat(dashboard): replace order panels with alert links to Order History` (4e7b14f)
+
 ## F1-T9: Company Settings in PengaturanScreen — DONE (2026-06-03)
 
 - Modified `src/components/PengaturanScreen.tsx`
