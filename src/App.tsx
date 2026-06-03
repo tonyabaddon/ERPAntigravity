@@ -29,6 +29,7 @@ import NotificationSettingsScreen from './components/NotificationSettingsScreen'
 import WhatsappAiScreen from './components/WhatsappAiScreen';
 import PengaturanScreen from './components/PengaturanScreen';
 import PipelineScreen from './components/PipelineScreen';
+import OrderHistoryScreen from './components/OrderHistoryScreen';
 
 import {
   INITIAL_STOCK,
@@ -220,6 +221,13 @@ export default function App() {
       case 'pipeline':
         return (
           <PipelineScreen showToast={triggerToast} />
+        );
+      case 'order-history':
+        return (
+          <OrderHistoryScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
         );
       default:
         return null;

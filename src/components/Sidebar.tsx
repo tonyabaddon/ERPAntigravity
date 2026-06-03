@@ -15,7 +15,8 @@ import {
   Zap,
   UserCheck,
   Bot,
-  TrendingUp
+  TrendingUp,
+  ClipboardList
 } from 'lucide-react';
 import { ActivePage } from '../types';
 
@@ -80,6 +81,12 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       label: 'Pipeline',
       icon: TrendingUp,
       description: 'Leads & Prospek',
+    },
+    {
+      id: 'order-history' as ActivePage,
+      label: 'Riwayat Pesanan',
+      icon: ClipboardList,
+      description: 'Semua Pesanan',
     },
   ];
 
