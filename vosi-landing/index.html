@@ -393,6 +393,15 @@
     .sp-stats { flex-wrap: wrap; }
   }
 </style>
+
+<!-- Google Analytics 4 — replace G-XXXXXXXXXX with real Measurement ID from analytics.google.com -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 </head>
 <body>
 
@@ -796,6 +805,13 @@
     if (!nama || !bisnis || !wa || !jenis) {
       alert('Mohon lengkapi semua isian sebelum mengirim.');
       return;
+    }
+
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'konsultasi_submit', {
+        'event_category': 'lead',
+        'event_label': jenis,
+      });
     }
 
     const pesan =
