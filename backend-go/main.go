@@ -153,9 +153,14 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		qr := waClient.GetQR()
 		paired := waClient.WA.Store.ID != nil
+		phone := ""
+		if paired {
+			phone = waClient.WA.Store.ID.User
+		}
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"qr":        qr,
 			"connected": paired,
+			"phone":     phone,
 		})
 	})
 	mux.HandleFunc("/api/wa/logout", func(w http.ResponseWriter, r *http.Request) {
