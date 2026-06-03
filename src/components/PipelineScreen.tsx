@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp } from 'lucide-react';
-import { DbLead } from '../types';
+import { TrendingUp, Search, ChevronDown } from 'lucide-react';
+import { ActivePage, DbLead } from '../types';
 import { leadsService, isSupabaseConfigured } from '../lib/supabaseClient';
 
-interface PengaturanScreenProps {
+interface PipelineScreenProps {
+  onOpenCustomer: (customerId: string) => void;
+  onNavigate: (page: ActivePage) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
@@ -27,32 +29,71 @@ function relativeTime(iso: string): string {
   return rtf.format(Math.round(diff / 86400), 'day');
 }
 
-function filterLeads(leads: DbLead[], tab: FilterTab): DbLead[] {
+function filterLeads(leads: DbLead[], tab: FilterTab, search: string): DbLead[] {
+  let result = leads;
   switch (tab) {
-    case 'active':    return leads.filter(l => l.status === 'NEW' || l.status === 'IN_PROGRESS');
-    case 'escalated': return leads.filter(l => l.status === 'ESCALATED');
-    case 'ordered':   return leads.filter(l => l.status === 'ORDERED');
-    case 'dropped':   return leads.filter(l => l.status === 'DROPPED');
-    default:          return leads;
+    case 'active':    result = leads.filter(l => l.status === 'NEW' || l.status === 'IN_PROGRESS'); break;
+    case 'escalated': result = leads.filter(l => l.status === 'ESCALATED'); break;
+    case 'ordered':   result = leads.filter(l => l.status === 'ORDERED'); break;
+    case 'dropped':   result = leads.filter(l => l.status === 'DROPPED'); break;
   }
+  if (search.trim()) {
+    const q = search.toLowerCase();
+    result = result.filter(l =>
+      (l.customers?.name ?? '').toLowerCase().includes(q) ||
+      l.wa_number.includes(q) ||
+      (l.customers?.company ?? '').toLowerCase().includes(q)
+    );
+  }
+  return result;
 }
 
-export default function PipelineScreen({ showToast }: PengaturanScreenProps) {
+function PipelineItemsTable({ order }: { order: NonNullable<DbLead['orders']>[0] }) {
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden text-xs mb-3">
+      <div className="grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-[10px] bg-green-100 text-green-700">
+        <span>Produk</span>
+        <span className="text-center">Qty</span>
+        <span className="text-right">Harga</span>
+        <span className="text-right">Subtotal</span>
+      </div>
+      {order.items.map((item, i) => (
+        <div key={i} className="grid grid-cols-4 px-3 py-2 border-t border-gray-100 bg-white">
+          <div>
+            <div className="font-semibold text-gray-800">{item.name}</div>
+            <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+          </div>
+          <div className="text-center font-semibold">{item.qty}</div>
+          <div className="text-right text-gray-500">Rp {item.unit_price.toLocaleString('id-ID')}</div>
+          <div className="text-right font-bold text-gray-800">Rp {item.subtotal.toLocaleString('id-ID')}</div>
+        </div>
+      ))}
+      <div className="flex justify-end gap-6 px-3 py-2 border-t-2 border-gray-200 bg-gray-50 text-[11px]">
+        <div className="text-right text-gray-400 leading-relaxed">
+          Subtotal<br />Ongkir<br /><strong className="text-gray-700">Total</strong>
+        </div>
+        <div className="text-right text-gray-600 leading-relaxed min-w-[100px]">
+          Rp {order.subtotal.toLocaleString('id-ID')}<br />
+          Rp {(order.shipping_fee ?? 0).toLocaleString('id-ID')}<br />
+          <strong className="text-gray-800">Rp {order.total.toLocaleString('id-ID')}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }: PipelineScreenProps) {
   const [leads, setLeads] = useState<DbLead[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      return;
-    }
+    if (!isSupabaseConfigured) { setLoading(false); return; }
     leadsService.fetchAll()
       .then(setLeads)
-      .catch(err => {
-        console.error('PipelineScreen load error:', err);
-        showToast('Gagal memuat data pipeline.', 'warning');
-      })
+      .catch(() => showToast('Gagal memuat data pipeline.', 'warning'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -78,11 +119,10 @@ export default function PipelineScreen({ showToast }: PengaturanScreenProps) {
     { id: 'dropped',   label: `Gugur (${leads.filter(l => l.status === 'DROPPED').length})` },
   ];
 
-  const visible = filterLeads(leads, activeTab);
+  const visible = filterLeads(leads, activeTab, search);
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <TrendingUp className="w-6 h-6 text-gray-700" />
         <h1 className="text-2xl font-bold text-gray-800">Pipeline Penjualan</h1>
@@ -105,56 +145,135 @@ export default function PipelineScreen({ showToast }: PengaturanScreenProps) {
         ))}
       </div>
 
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
+        <Search className="w-4 h-4 shrink-0" />
+        <input
+          className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
+          placeholder="Cari nama, nomor WA, perusahaan..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+
       {/* List */}
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-        {loading ? (
-          <div className="p-8 text-center text-sm text-gray-400">Memuat pipeline...</div>
-        ) : visible.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            {leads.length === 0
-              ? 'Belum ada lead. Lead dibuat otomatis saat percakapan WhatsApp baru masuk.'
-              : 'Tidak ada lead dengan status ini.'}
-          </div>
-        ) : (
-          visible.map(lead => {
+      {loading ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat pipeline...</div>
+      ) : visible.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-500">
+          {leads.length === 0
+            ? 'Belum ada lead. Lead dibuat otomatis saat percakapan WhatsApp baru masuk.'
+            : search.trim()
+            ? 'Tidak ada lead yang cocok dengan pencarian.'
+            : 'Tidak ada lead dengan status ini.'}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {visible.map(lead => {
             const badge = STATUS_BADGE[lead.status] ?? STATUS_BADGE.NEW;
             const customer = lead.customers;
+            const isExpanded = expandedId === lead.id;
+            const linkedOrder = lead.orders?.[0] ?? null;
+
             return (
-              <div key={lead.id} className="flex items-center gap-4 px-6 py-4">
-                {/* Customer info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-semibold text-sm text-gray-800 truncate">
-                      {customer?.name || lead.wa_number}
-                    </span>
-                    {customer?.company && (
-                      <span className="text-xs text-gray-400 truncate hidden sm:block">
-                        · {customer.company}
+              <div key={lead.id} className="border-b border-gray-100 last:border-0">
+                {/* Collapsed row */}
+                <div
+                  className={`flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
+                  onClick={() => setExpandedId(isExpanded ? null : lead.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <span
+                        className="font-semibold text-sm text-[#012749] underline underline-offset-2 cursor-pointer hover:opacity-80"
+                        onClick={e => { e.stopPropagation(); if (customer?.id) onOpenCustomer(customer.id); }}
+                      >
+                        {customer?.name || lead.wa_number}
                       </span>
-                    )}
+                      {customer?.company && (
+                        <span className="text-xs text-gray-400 truncate hidden sm:block">· {customer.company}</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-mono text-gray-400">{lead.wa_number}</p>
                   </div>
-                  <p className="text-xs font-mono text-gray-400">{lead.wa_number}</p>
+                  <div className="hidden md:block shrink-0">
+                    <p className="text-xs font-mono text-gray-400">{lead.id.slice(0, 12)}...</p>
+                  </div>
+                  <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${badge.className}`}>
+                    {badge.label}
+                  </span>
+                  <span className="shrink-0 text-xs text-gray-400 hidden sm:block">{relativeTime(lead.updated_at)}</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
 
-                {/* Lead ID */}
-                <div className="hidden md:block shrink-0">
-                  <p className="text-xs font-mono text-gray-400">{lead.id}</p>
-                </div>
-
-                {/* Status badge */}
-                <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${badge.className}`}>
-                  {badge.label}
-                </span>
-
-                {/* Updated time */}
-                <span className="shrink-0 text-xs text-gray-400 hidden sm:block">
-                  {relativeTime(lead.updated_at)}
-                </span>
+                {/* Expanded row */}
+                {isExpanded && (
+                  lead.status === 'ORDERED' && linkedOrder ? (
+                    <div className="px-6 py-4 border-t border-green-200 bg-green-50">
+                      <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                          <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                          <div className="font-mono font-semibold text-gray-700">{lead.wa_number}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pesanan Terkait</div>
+                          <span
+                            className="font-semibold text-[#012749] underline underline-offset-2 cursor-pointer text-xs"
+                            onClick={() => onNavigate('order-history')}
+                          >
+                            {linkedOrder.gjp_order_id ?? linkedOrder.id.slice(0, 8)} ↗
+                          </span>
+                        </div>
+                      </div>
+                      <PipelineItemsTable order={linkedOrder} />
+                      <div className="flex gap-3 mt-1">
+                        <button
+                          onClick={() => onNavigate('sales-inbox')}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2"
+                        >
+                          → Buka Percakapan
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                          <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                          <div className="font-mono font-semibold text-gray-700">{lead.wa_number}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Status</div>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                        </div>
+                      </div>
+                      <div className="bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-500 text-center mb-3">
+                        Lead ini belum memiliki pesanan terkonfirmasi.
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => onNavigate('sales-inbox')}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline underline-offset-2"
+                        >
+                          → Buka Percakapan
+                        </button>
+                      </div>
+                    </div>
+                  )
+                )}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }
