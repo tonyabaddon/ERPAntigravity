@@ -6,6 +6,7 @@ import InvoiceModal from './InvoiceModal';
 
 interface OrderHistoryScreenProps {
   currentUser: { name: string; role: string; avatarUrl: string; storeName: string } | null;
+  onOpenCustomer: (customerId: string) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
@@ -127,7 +128,7 @@ function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerCla
   );
 }
 
-export default function OrderHistoryScreen({ currentUser, showToast }: OrderHistoryScreenProps) {
+export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showToast }: OrderHistoryScreenProps) {
   const [orders, setOrders] = useState<DbOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>('all');
@@ -315,7 +316,12 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
                   onClick={() => setExpandedId(isExpanded ? null : order.id)}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-sm text-gray-800">{order.customer_name}</div>
+                    <div
+                      className="font-bold text-sm text-[#012749] underline underline-offset-2 cursor-pointer hover:opacity-80 inline-block"
+                      onClick={e => { e.stopPropagation(); if (order.customer_id) onOpenCustomer(order.customer_id); }}
+                    >
+                      {order.customer_name}
+                    </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                       <span className="text-xs text-gray-400 font-mono">{order.gjp_order_id ?? order.id.slice(0, 8)}</span>
                       <span className="text-gray-300 text-xs">·</span>
