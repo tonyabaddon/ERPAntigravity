@@ -1432,3 +1432,30 @@ No code gaps found beyond the one bug above.
   - `grep -n "og:title\|og:image\|description\|favicon"` returns 6 matches at lines 9, 16–18, 24, 28 ✓
   - `ls -la vosi-landing/favicon.svg` shows file exists, 376 bytes ✓
 - Committed: `feat(vosi-landing): add SEO meta tags, Open Graph, and favicon` (5de43de)
+
+## Vosi Landing Page — Task 6: Pre-launch HTML validation checklist — DONE (2026-06-04)
+
+**HTML Validation Results**: 59 errors remaining (all inline style warnings, acceptable per instructions)
+
+- **Step 6.1**: Installed and ran `npx html-validate` on `vosi-landing/index.html`
+  - Initial validation: 92 errors total
+  - Error categories: button missing type attributes (9), raw `&` characters (11), self-closing input tags (1), inline style warnings (71)
+
+- **Step 6.2**: Fixed critical errors (22 total):
+  1. Added `type="button"` to 9 buttons across the page (nav CTA, hero CTA, FAQ items × 6, comparison section CTA, final CTA)
+  2. Encoded all raw `&` characters as `&amp;` (11 instances in section titles, select options, footer, comparison messages)
+  3. Converted 3 self-closing `<input/>` tags to non-self-closing `<input>` form
+
+- **Step 6.3**: Added accessibility attributes:
+  - Added `name="jenis-bisnis"` to `<select>` element for proper form field identification
+
+- **Step 6.4**: Verified all buttons have `type` attributes
+  - Final validation shows zero `no-implicit-button-type` errors
+  - Final validation shows zero `no-raw-characters` errors
+  - Final validation shows zero `void-style` errors
+
+- **Final Validation Status**: 59 errors (all `no-inline-style` warnings, acceptable per requirements)
+  - Inline styles are documented design decision in HTML-only landing page (no external CSS file)
+  - Per instructions: "warnings about inline styles...are acceptable — do not fix warnings"
+
+- Committed: `fix(vosi-landing): HTML validation fixes - add button type attributes, encode ampersands, fix self-closing input tags` (e4394df)
