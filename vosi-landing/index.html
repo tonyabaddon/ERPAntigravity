@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vosi — AI WhatsApp untuk Bisnis Indonesia</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background: #fff; color: #0b1c30; -webkit-font-smoothing: antialiased; }
+
+  /* ════════════════════════════════
+     NAV
+  ════════════════════════════════ */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    padding: 0 72px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .logo { font-size: 20px; font-weight: 900; color: #0b1c30; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .logo-mark { width: 30px; height: 30px; background: linear-gradient(135deg,#1e3d60,#2d8a4e); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+  .logo-mark svg { width: 15px; height: 15px; fill: white; }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a { font-size: 14px; font-weight: 500; color: #64748b; text-decoration: none; transition: color .15s; }
+  .nav-links a:hover { color: #0b1c30; }
+  .nav-cta { background: #0b1c30; color: #fff; border: none; padding: 10px 22px; border-radius: 9999px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(11,28,48,0.15); transition: all .2s; }
+  .nav-cta:hover { background: #1e3d60; transform: translateY(-1px); }
+
+  /* ════════════════════════════════
+     SHARED
+  ════════════════════════════════ */
+  .sec { padding: 88px 72px; }
+  .sec-alt { background: #f8fafc; }
+  hr.div { border: none; border-top: 1px solid #f1f5f9; margin: 0 72px; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; text-align: center; margin-bottom: 12px; }
+  .stitle { font-size: 38px; font-weight: 900; letter-spacing: -1.2px; color: #0b1c30; text-align: center; margin-bottom: 12px; }
+  .ssub { font-size: 16px; color: #64748b; text-align: center; margin-bottom: 52px; font-weight: 400; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+  /* ════════════════════════════════
+     HERO
+  ════════════════════════════════ */
+  #hero {
+    position: relative; overflow: hidden;
+    padding: 100px 72px 0;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #hero::before {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% -5%, rgba(45,138,78,0.11) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 85% 35%, rgba(30,61,96,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 45% 35% at 10% 65%, rgba(99,102,241,0.05) 0%, transparent 60%);
+  }
+  .hero-content { position: relative; z-index: 10; text-align: center; max-width: 720px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(45,138,78,0.25); background: rgba(45,138,78,0.07); color: #2d8a4e; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: .3px; margin-bottom: 28px; }
+  .bpulse { width: 6px; height: 6px; background: #2d8a4e; border-radius: 9999px; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+
+  #hero h1 { font-size: 54px; font-weight: 900; color: #0b1c30; line-height: 1.08; letter-spacing: -2.5px; margin-bottom: 22px; }
+  #hero h1 em { font-style: normal; color: #2d8a4e; }
+  .hero-sub { font-size: 17px; color: #64748b; line-height: 1.75; max-width: 480px; margin: 0 auto 36px; }
+
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { background: #2d8a4e; color: #fff; border: none; padding: 14px 28px; border-radius: 9999px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(45,138,78,0.28); transition: all .2s; display: flex; align-items: center; gap: 8px; }
+  .btn-primary:hover { background: #236b3d; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(45,138,78,0.38); }
+  .btn-ghost { background: transparent; color: #0b1c30; border: 1.5px solid rgba(11,28,48,0.14); padding: 14px 28px; border-radius: 9999px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ghost:hover { border-color: rgba(11,28,48,.3); background: rgba(11,28,48,.03); }
+
+  .micro { margin-top: 16px; font-size: 12.5px; color: #94a3b8; font-weight: 500; display: flex; gap: 18px; justify-content: center; }
+  .micro span { display: flex; align-items: center; gap: 5px; }
+  .micro .tick { color: #2d8a4e; font-weight: 900; }
+
+  .hero-visual { position: relative; z-index: 10; margin-top: 52px; width: 100%; max-width: 860px; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 16px; transform: translateY(52px); }
+
+  /* shared card */
+  .card { background: #fff; border-radius: 24px; border: 1px solid rgba(0,0,0,0.08); padding: 22px; box-shadow: 0 2px 4px rgba(0,0,0,0.02), 0 20px 48px rgba(11,28,48,0.09); }
+  .chead { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #94a3b8; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
+  .ldot { width: 7px; height: 7px; border-radius: 9999px; background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,.2); }
+
+  /* chat bubbles */
+  .msg { margin-bottom: 8px; }
+  .msg-in .bub { background: #f1f5f9; color: #0b1c30; border-radius: 16px 16px 16px 4px; padding: 9px 13px; font-size: 13px; font-weight: 500; display: inline-block; max-width: 85%; line-height: 1.5; }
+  .msg-out { text-align: right; }
+  .msg-out .bub { background: #1e3d60; color: #fff; border-radius: 16px 16px 4px 16px; padding: 9px 13px; font-size: 13px; font-weight: 500; display: inline-block; max-width: 90%; line-height: 1.5; text-align: left; }
+  .btag { font-size: 10px; font-weight: 800; color: #6ee7a0; display: block; margin-bottom: 3px; }
+  .ts { font-size: 10px; color: #94a3b8; margin-top: 3px; padding: 0 4px; }
+
+  /* stats */
+  .srow { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f8fafc; font-size: 13px; }
+  .srow:last-child { border-bottom: none; }
+  .sl { color: #64748b; font-weight: 500; } .sv { font-weight: 800; font-size: 14px; }
+  .cg { color: #2d8a4e; } .ca { color: #d97706; } .cr { color: #dc2626; }
+  .mchart { height: 36px; margin: 10px 0 4px; display: flex; align-items: flex-end; gap: 4px; }
+  .mbar { flex: 1; border-radius: 4px 4px 0 0; background: linear-gradient(to top,#2d8a4e,#4ade80); opacity: .65; }
+
+  /* ════════════════════════════════
+     TRUST STRIP
+  ════════════════════════════════ */
+  .trust { background: #fff; padding-top: 100px; padding-bottom: 48px; display: flex; justify-content: center; }
+  .trust-pill { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; padding: 18px 36px; border-radius: 9999px; background: #f8fafc; border: 1px solid #e2e8f0; }
+  .ti { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569; }
+  .ck { width: 20px; height: 20px; border-radius: 9999px; background: #2d8a4e; color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* ════════════════════════════════
+     COMPARISON — BUKAN CHATBOT BIASA
+  ════════════════════════════════ */
+  .cmp-grid { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .ccrd { border-radius: 24px; border: 1.5px solid; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 16px 40px rgba(11,28,48,0.08); }
+  .ccrd.bad  { border-color: rgba(239,68,68,0.2); }
+  .ccrd.good { border-color: rgba(45,138,78,0.25); box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 20px 56px rgba(45,138,78,0.12); }
+
+  .cchdr { padding: 16px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid; }
+  .bad  .cchdr { background: #fef2f2; border-color: rgba(239,68,68,0.12); }
+  .good .cchdr { background: linear-gradient(135deg,#1e3d60,#134e2a); border-color: transparent; }
+
+  .cbadge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800; }
+  .bad  .cbadge { background: rgba(239,68,68,0.12); color: #dc2626; }
+  .good .cbadge { background: rgba(255,255,255,0.15); color: #fff; }
+  .cstatus { margin-left: auto; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+  .bad  .cstatus { color: #f87171; }
+  .good .cstatus { color: rgba(255,255,255,0.7); }
+  .csdot { width: 6px; height: 6px; border-radius: 9999px; }
+  .bad  .csdot { background: #f87171; }
+  .good .csdot { background: #4ade80; animation: blink 2s infinite; }
+
+  .cbody { padding: 20px; display: flex; flex-direction: column; gap: 10px; min-height: 360px; }
+  .cmsg { display: flex; flex-direction: column; }
+  .cmsg.fc { align-items: flex-start; }
+  .cmsg.fb { align-items: flex-end; }
+
+  .cbub { max-width: 82%; padding: 9px 13px; font-size: 13px; line-height: 1.55; font-weight: 500; border-radius: 16px; }
+  .fc .cbub { background: #f1f5f9; color: #0b1c30; border-radius: 4px 16px 16px 16px; }
+  .bad  .fb .cbub { background: #fee2e2; color: #7f1d1d; border-radius: 16px 4px 16px 16px; font-family: monospace; font-size: 12px; }
+  .good .fb .cbub { background: #1e3d60; color: #fff; border-radius: 16px 4px 16px 16px; }
+  .bname { font-size: 10px; font-weight: 800; color: #6ee7a0; display: block; margin-bottom: 3px; }
+
+  .ann { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; margin-top: 2px; align-self: flex-start; }
+  .fb .ann { align-self: flex-end; }
+  .ann-bad  { background: rgba(239,68,68,0.10); color: #dc2626; }
+  .ann-good { background: rgba(45,138,78,0.12); color: #2d8a4e; }
+
+  .cfoot { padding: 14px 20px; border-top: 1px solid; display: flex; align-items: center; gap: 8px; }
+  .bad  .cfoot { background: #fef2f2; border-color: rgba(239,68,68,0.10); }
+  .good .cfoot { background: #f0fdf4; border-color: rgba(45,138,78,0.12); }
+  .cfoot-icon { font-size: 14px; }
+  .cfoot-text { font-size: 12px; font-weight: 700; }
+  .bad  .cfoot-text { color: #dc2626; }
+  .good .cfoot-text { color: #2d8a4e; }
+
+  .cmp-callout { max-width: 980px; margin: 24px auto 0; background: linear-gradient(135deg,#1e3d60,#102a43); border-radius: 20px; padding: 28px 36px; display: flex; align-items: center; gap: 24px; box-shadow: 0 8px 32px rgba(11,28,48,0.15); position: relative; overflow: hidden; }
+  .cmp-callout::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:#2d8a4e; border-radius:9999px; filter:blur(60px); opacity:.25; }
+  .cmp-callout-icon { font-size: 34px; flex-shrink: 0; }
+  .cmp-callout h3 { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -.3px; margin-bottom: 4px; }
+  .cmp-callout p  { font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.6; }
+  .cmp-callout .ccta { margin-left: auto; flex-shrink: 0; background: #2d8a4e; color: #fff; border: none; padding: 12px 24px; border-radius: 9999px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(45,138,78,.35); white-space: nowrap; transition: all .2s; }
+  .cmp-callout .ccta:hover { background: #236b3d; transform: translateY(-1px); }
+
+  /* ════════════════════════════════
+     USE CASES
+  ════════════════════════════════ */
+  .uc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; max-width: 1000px; margin: 0 auto; }
+  .uc-card { background: #fff; border-radius: 20px; border: 1px solid rgba(0,0,0,0.07); padding: 28px 24px; box-shadow: 0 2px 8px rgba(11,28,48,0.03), 0 8px 20px rgba(11,28,48,0.05); cursor: pointer; transition: all .2s; position: relative; overflow: hidden; }
+  .uc-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(11,28,48,0.08), 0 20px 48px rgba(11,28,48,0.10); border-color: rgba(45,138,78,0.25); }
+  .uc-card:hover .ucarrow { opacity: 1; transform: translate(0,0); }
+  .uctop { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .ucemoji { font-size: 32px; line-height: 1; }
+  .ucarrow { font-size: 16px; color: #2d8a4e; opacity: 0; transform: translate(-4px,4px); transition: all .2s; }
+  .ucind { font-size: 17px; font-weight: 800; color: #0b1c30; margin-bottom: 6px; letter-spacing: -.3px; }
+  .uctag2 { font-size: 13px; color: #64748b; font-weight: 500; margin-bottom: 16px; line-height: 1.5; }
+  .ucfeats { display: flex; flex-direction: column; gap: 6px; }
+  .ucfeat { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #475569; }
+  .ucfeat::before { content:''; width: 6px; height: 6px; border-radius: 9999px; background: #2d8a4e; flex-shrink: 0; }
+  .uctag { position: absolute; top: 20px; right: 20px; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; letter-spacing: .3px; }
+  .tag-pop { background: rgba(30,61,96,0.10); color: #1e3d60; }
+  .tag-new { background: rgba(45,138,78,0.12); color: #2d8a4e; }
+
+  /* ════════════════════════════════
+     MANFAAT
+  ════════════════════════════════ */
+  .ben-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; max-width: 1000px; margin: 0 auto 72px; }
+  .ben-card { background: #fff; border-radius: 22px; border: 1px solid rgba(0,0,0,0.07); padding: 28px 22px; box-shadow: 0 2px 8px rgba(11,28,48,0.03), 0 8px 24px rgba(11,28,48,0.06); display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+  .ben-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(11,28,48,0.06), 0 16px 40px rgba(11,28,48,0.1); }
+  .ben-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:22px 22px 0 0; }
+  .bc-g::before { background: linear-gradient(90deg,#2d8a4e,#4ade80); }
+  .bc-b::before { background: linear-gradient(90deg,#1e3d60,#3b82f6); }
+  .bc-a::before { background: linear-gradient(90deg,#d97706,#fbbf24); }
+  .bc-p::before { background: linear-gradient(90deg,#7c3aed,#a78bfa); }
+  .bicon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; }
+  .bi-g{background:rgba(45,138,78,.10);} .bi-b{background:rgba(30,61,96,.10);} .bi-a{background:rgba(217,119,6,.10);} .bi-p{background:rgba(124,58,237,.10);}
+  .bnum { font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#94a3b8; }
+  .btitle { font-size:16px; font-weight:800; color:#0b1c30; line-height:1.3; }
+  .bdesc  { font-size:13px; color:#64748b; line-height:1.65; flex:1; }
+  .bstat  { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; padding:5px 12px; border-radius:9999px; margin-top:auto; }
+  .bs-g{background:rgba(45,138,78,.10);color:#2d8a4e;} .bs-b{background:rgba(30,61,96,.10);color:#1e3d60;} .bs-a{background:rgba(217,119,6,.10);color:#d97706;} .bs-p{background:rgba(124,58,237,.10);color:#7c3aed;}
+
+  /* ════════════════════════════════
+     SETUP TIMELINE
+  ════════════════════════════════ */
+  .tl-wrap { max-width:760px; margin:0 auto; background:linear-gradient(135deg,#1e3d60,#102a43); border-radius:28px; padding:44px 48px; box-shadow:0 20px 60px rgba(11,28,48,0.18); position:relative; overflow:hidden; }
+  .tl-wrap::before { content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px; background:#2d8a4e; border-radius:9999px; filter:blur(80px); opacity:.25; }
+  .tl-hdr { display:flex; align-items:center; gap:12px; margin-bottom:36px; }
+  .tl-ico { width:44px; height:44px; background:rgba(45,138,78,.25); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .tl-ttl { font-size:20px; font-weight:900; color:#fff; letter-spacing:-.4px; }
+  .tl-sub { font-size:13px; color:rgba(255,255,255,.55); margin-top:3px; }
+  .tl-steps { display:flex; position:relative; }
+  .tl-steps::before { content:''; position:absolute; top:22px; left:22px; right:22px; height:2px; background:rgba(45,138,78,.4); }
+  .tl-step { flex:1; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; z-index:1; }
+  .tl-circ { width:44px; height:44px; border-radius:9999px; background:#2d8a4e; color:#fff; font-size:16px; font-weight:900; display:flex; align-items:center; justify-content:center; margin-bottom:14px; box-shadow:0 4px 14px rgba(45,138,78,.45); }
+  .tl-step.done .tl-circ { background:#fff; color:#2d8a4e; }
+  .tl-lbl { font-size:12px; font-weight:700; color:#fff; margin-bottom:4px; }
+  .tl-tm  { font-size:11px; color:rgba(255,255,255,.5); }
+  .tl-note { margin-top:28px; padding:14px 18px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:14px; font-size:13px; color:rgba(255,255,255,.7); font-weight:500; display:flex; gap:10px; align-items:flex-start; line-height:1.6; }
+
+  /* ════════════════════════════════
+     PRICING PLACEHOLDER
+  ════════════════════════════════ */
+  #harga { background: #fff; }
+  .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 720px; margin: 0 auto; }
+  .price-card { border-radius: 24px; border: 1.5px solid; padding: 32px; position: relative; overflow: hidden; transition: transform .2s; }
+  .price-card:hover { transform: translateY(-4px); }
+  .price-card.standard { border-color: #e2e8f0; background: #fff; box-shadow: 0 4px 20px rgba(11,28,48,0.06); }
+  .price-card.featured { border-color: rgba(45,138,78,0.35); background: #fff; box-shadow: 0 8px 40px rgba(45,138,78,0.12); }
+  .price-card.featured::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#1e3d60,#2d8a4e); }
+  .popular-badge { position:absolute; top:20px; right:20px; background:#2d8a4e; color:#fff; font-size:10px; font-weight:800; padding:4px 12px; border-radius:9999px; letter-spacing:.3px; }
+  .price-plan { font-size:13px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
+  .price-amount { font-size:36px; font-weight:900; color:#0b1c30; letter-spacing:-1.5px; margin-bottom:4px; }
+  .price-amount span { font-size:16px; font-weight:600; color:#64748b; letter-spacing:0; }
+  .price-setup { font-size:12px; color:#94a3b8; margin-bottom:24px; }
+  .price-divider { border:none; border-top:1px solid #f1f5f9; margin-bottom:20px; }
+  .price-feats { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+  .pfeat { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:#475569; font-weight:500; }
+  .pfeat-ck { width:18px; height:18px; border-radius:9999px; background:#2d8a4e; color:#fff; font-size:9px; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .price-cta { width:100%; padding:13px; border-radius:9999px; font-size:14px; font-weight:700; cursor:pointer; border:none; transition:all .2s; }
+  .price-card.standard .price-cta { background:#f1f5f9; color:#0b1c30; }
+  .price-card.standard .price-cta:hover { background:#e2e8f0; }
+  .price-card.featured .price-cta { background:#2d8a4e; color:#fff; box-shadow:0 4px 16px rgba(45,138,78,.3); }
+  .price-card.featured .price-cta:hover { background:#236b3d; transform:translateY(-1px); }
+
+  /* ════════════════════════════════
+     FINAL CTA
+  ════════════════════════════════ */
+  .final-cta {
+    margin: 0 72px 80px;
+    background: linear-gradient(135deg,#1e3d60,#0f2035);
+    border-radius: 28px; padding: 72px 80px;
+    text-align: center; position: relative; overflow: hidden;
+    box-shadow: 0 24px 80px rgba(11,28,48,0.2);
+  }
+  .final-cta::before { content:''; position:absolute; top:-80px; left:-80px; width:300px; height:300px; background:#2d8a4e; border-radius:9999px; filter:blur(100px); opacity:.2; }
+  .final-cta::after  { content:''; position:absolute; bottom:-60px; right:-60px; width:240px; height:240px; background:#3b82f6; border-radius:9999px; filter:blur(80px); opacity:.15; }
+  .final-cta h2 { font-size:40px; font-weight:900; color:#fff; letter-spacing:-1.5px; margin-bottom:16px; position:relative; z-index:1; }
+  .final-cta h2 em { font-style:normal; color:#6ee7a0; }
+  .final-cta p { font-size:16px; color:rgba(255,255,255,.65); margin-bottom:36px; position:relative; z-index:1; }
+  .final-cta .btn-primary { margin:0 auto; position:relative; z-index:1; font-size:16px; padding:16px 36px; }
+
+  /* ════════════════════════════════
+     HERO CHAT ANIMATION
+  ════════════════════════════════ */
+  .hero-chat-msg {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 420ms ease, transform 420ms cubic-bezier(.22,.68,0,1.15);
+  }
+  .hero-chat-msg.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ════════════════════════════════
+     FOOTER
+  ════════════════════════════════ */
+  footer { padding: 32px 72px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+  .foot-logo { font-size: 16px; font-weight: 900; color: #0b1c30; display: flex; align-items: center; gap: 7px; }
+  .foot-copy { font-size: 12px; color: #94a3b8; }
+  .foot-links { display: flex; gap: 24px; }
+  .foot-links a { font-size: 12px; color: #94a3b8; text-decoration: none; }
+  .foot-links a:hover { color: #0b1c30; }
+
+  /* ════════════════════════════════
+     SOCIAL PROOF
+  ════════════════════════════════ */
+  .sp-wrap { padding: 0 72px 64px; }
+  .sp-inner { max-width: 980px; margin: 0 auto; background: #f8fafc; border-radius: 24px; padding: 36px 40px; border: 1px solid #e2e8f0; }
+  .sp-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+  .sp-badge { display: inline-flex; align-items: center; gap: 7px; background: rgba(45,138,78,0.08); border: 1px solid rgba(45,138,78,0.2); color: #2d8a4e; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+  .sp-stats { display: flex; gap: 32px; }
+  .sp-stat { text-align: center; }
+  .sp-num { font-size: 24px; font-weight: 900; color: #0b1c30; letter-spacing: -1px; }
+  .sp-lbl { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+  .sp-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+  .sp-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 20px; }
+  .sp-quote { font-size: 13px; color: #475569; line-height: 1.65; font-style: italic; margin-bottom: 14px; }
+  .sp-person { display: flex; align-items: center; gap: 10px; }
+  .sp-avatar { width: 36px; height: 36px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #fff; flex-shrink: 0; }
+  .sp-name { font-size: 13px; font-weight: 700; color: #0b1c30; }
+  .sp-biz  { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+
+  /* ════════════════════════════════
+     FAQ
+  ════════════════════════════════ */
+  .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+  .faq-item { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 16px; overflow: hidden; transition: box-shadow .2s; }
+  .faq-item:hover { box-shadow: 0 4px 16px rgba(11,28,48,0.06); }
+  .faq-q { width: 100%; background: none; border: none; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; text-align: left; font-family: Inter,sans-serif; }
+  .faq-q-text { font-size: 15px; font-weight: 700; color: #0b1c30; line-height: 1.4; }
+  .faq-icon { width: 24px; height: 24px; border-radius: 9999px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; color: #64748b; transition: transform .25s, background .2s; }
+  .faq-item.open .faq-icon { transform: rotate(45deg); background: #1e3d60; color: #fff; }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height .3s ease, padding .3s ease; padding: 0 22px; }
+  .faq-item.open .faq-a { max-height: 200px; padding: 0 22px 18px; }
+  .faq-a p { font-size: 14px; color: #64748b; line-height: 1.7; }
+
+  /* ════════════════════════════════
+     MOBILE RESPONSIVE
+  ════════════════════════════════ */
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+
+    .sec { padding: 64px 20px; }
+    hr.div { margin: 0 20px; }
+
+    #hero { padding: 72px 20px 0; }
+    #hero h1 { font-size: 36px; letter-spacing: -1.5px; }
+    .hero-sub { font-size: 15px; }
+    .cta-row { flex-direction: column; align-items: center; }
+    .btn-primary, .btn-ghost { width: 100%; justify-content: center; }
+    .hero-visual { grid-template-columns: 1fr; transform: translateY(32px); }
+    .hero-visual .card:last-child { display: none; } /* hide dashboard on mobile, show chat only */
+
+    .trust { padding-top: 72px; padding-bottom: 32px; padding-left: 20px; padding-right: 20px; }
+    .trust-pill { gap: 16px; padding: 16px 20px; border-radius: 20px; }
+
+    .sp-wrap { padding: 0 20px 48px; }
+    .sp-inner { padding: 24px 20px; }
+    .sp-top { flex-direction: column; align-items: flex-start; }
+    .sp-stats { gap: 20px; }
+    .sp-cards { grid-template-columns: 1fr; }
+
+    .cmp-grid { grid-template-columns: 1fr; }
+    .cmp-callout { flex-direction: column; gap: 16px; }
+    .cmp-callout .ccta { width: 100%; text-align: center; }
+
+    .uc-grid { grid-template-columns: 1fr 1fr; }
+
+    .ben-grid { grid-template-columns: 1fr 1fr; }
+
+    .tl-wrap { padding: 32px 24px; }
+    .tl-steps { flex-direction: column; gap: 24px; }
+    .tl-steps::before { display: none; }
+    .tl-step { flex-direction: row; text-align: left; gap: 16px; }
+    .tl-circ { margin-bottom: 0; flex-shrink: 0; }
+
+    .faq-list { padding: 0; }
+
+    .final-cta { margin: 0 20px 60px; padding: 48px 24px; }
+    .final-cta h2 { font-size: 28px; }
+
+    footer { padding: 24px 20px; flex-direction: column; gap: 16px; text-align: center; }
+    .foot-links { justify-content: center; }
+  }
+
+  @media (max-width: 480px) {
+    .uc-grid { grid-template-columns: 1fr; }
+    .ben-grid { grid-template-columns: 1fr; }
+    .sp-stats { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ NAV ══════════ -->
+<nav>
+  <a href="#hero" class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    Vosi
+  </a>
+  <div class="nav-links">
+    <a href="#chatbot">Keunggulan</a>
+    <a href="#use-cases">Use Cases</a>
+    <a href="#cara-kerja">Cara Kerja</a>
+    <a href="#konsultasi">Konsultasi</a>
+  </div>
+  <button class="nav-cta" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Gratis</button>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<section id="hero">
+  <div class="hero-content">
+    <div class="badge"><div class="bpulse"></div>AI WhatsApp untuk Bisnis Indonesia</div>
+    <h1>Setiap Chat Jadi Peluang.<br>Bukan <em>Beban</em>.</h1>
+    <p class="hero-sub">Vosi otomasi balasan WhatsApp 24 jam — terima order, cek stok, dan kirim invoice secara otomatis. Kamu fokus tumbuhkan bisnis, Vosi yang jaga customer.</p>
+    <div class="cta-row">
+      <button class="btn-primary" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Gratis <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="micro">
+      <span><span class="tick">✓</span>Konsultasi 30 menit</span>
+      <span><span class="tick">✓</span>Gratis</span>
+      <span><span class="tick">✓</span>Tanpa komitmen</span>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="card">
+      <div class="chead"><div class="ldot"></div>WhatsApp · Vosi aktif 24 jam</div>
+      <div class="msg msg-in hero-chat-msg" id="hm1"><div class="bub">Kak, plafon PVC 3m ada stok?</div><div class="ts">22:14</div></div>
+      <div class="msg msg-out hero-chat-msg" id="hm2"><div class="bub"><span class="btag">🤖 Vosi — otomatis</span>Ada kak! Stok masih 24 pcs. Mau pesan berapa? 😊</div><div class="ts" style="text-align:right">22:14</div></div>
+      <div class="msg msg-in hero-chat-msg" id="hm3"><div class="bub">Pesan 6, dikirim ke Bekasi ya</div><div class="ts">22:15</div></div>
+      <div class="msg msg-out hero-chat-msg" id="hm4"><div class="bub"><span class="btag">🤖 Vosi — otomatis</span>Siap! Invoice sudah dikirim.<br><strong style="color:#6ee7a0">Total Rp 850.000 ✅</strong></div><div class="ts" style="text-align:right">22:15</div></div>
+    </div>
+    <div class="card">
+      <div class="chead"><div class="ldot"></div>Dashboard · Hari ini</div>
+      <div class="mchart">
+        <div class="mbar" style="height:35%"></div><div class="mbar" style="height:55%"></div><div class="mbar" style="height:45%"></div><div class="mbar" style="height:72%"></div><div class="mbar" style="height:60%"></div><div class="mbar" style="height:88%"></div><div class="mbar" style="height:100%;opacity:1"></div>
+      </div>
+      <div class="srow"><span class="sl">Order masuk</span><span class="sv cg">12 order</span></div>
+      <div class="srow"><span class="sl">Dibalas otomatis</span><span class="sv cg">12 / 12</span></div>
+      <div class="srow"><span class="sl">Omzet hari ini</span><span class="sv ca">Rp 6,8 jt</span></div>
+      <div class="srow"><span class="sl">Stok hampir habis</span><span class="sv cr">3 produk ⚠</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<div class="trust">
+  <div class="trust-pill">
+    <div class="ti"><div class="ck">✓</div>Aktif dalam 3 hari kerja</div>
+    <div class="ti"><div class="ck">✓</div>Tidak perlu karyawan extra</div>
+    <div class="ti"><div class="ck">✓</div>Balas customer 24 jam</div>
+    <div class="ti"><div class="ck">✓</div>Stok update otomatis</div>
+  </div>
+</div>
+
+<!-- ══════════ SOCIAL PROOF ══════════ -->
+<div class="sp-wrap">
+  <div class="sp-inner">
+    <div class="sp-top">
+      <div>
+        <div class="sp-badge"><div class="bpulse"></div>Beta Program · Terbatas</div>
+        <div style="margin-top:10px;font-size:14px;color:#64748b;font-weight:500;">Bergabung bersama bisnis yang sudah merasakan manfaat Vosi</div>
+      </div>
+      <div class="sp-stats">
+        <div class="sp-stat"><div class="sp-num">3+</div><div class="sp-lbl">Bisnis aktif</div></div>
+        <div class="sp-stat"><div class="sp-num">98%</div><div class="sp-lbl">Chat terbalas otomatis</div></div>
+        <div class="sp-stat"><div class="sp-num">&lt;5 dtk</div><div class="sp-lbl">Rata-rata respon</div></div>
+      </div>
+    </div>
+    <div class="sp-cards">
+      <div class="sp-card">
+        <div class="sp-quote">"Sebelumnya saya harus balas WA customer sendiri sampai malam. Sekarang Vosi yang handle, saya bisa fokus ke operasional."</div>
+        <div class="sp-person">
+          <div class="sp-avatar" style="background:linear-gradient(135deg,#1e3d60,#2d8a4e)">B</div>
+          <div><div class="sp-name">Budi S.</div><div class="sp-biz">Toko Material Bangunan · Jakarta</div></div>
+        </div>
+      </div>
+      <div class="sp-card">
+        <div class="sp-quote">"Booking salon kami naik karena customer bisa langsung pilih jadwal kapan saja lewat WA, tanpa harus telepon dulu."</div>
+        <div class="sp-person">
+          <div class="sp-avatar" style="background:linear-gradient(135deg,#7c3aed,#a78bfa)">R</div>
+          <div><div class="sp-name">Rina A.</div><div class="sp-biz">Salon Kecantikan · Surabaya</div></div>
+        </div>
+      </div>
+      <div class="sp-card">
+        <div class="sp-quote">"Sekarang customer WA saya langsung dapat info stok dan harga tanpa saya harus standby. Order dari berbagai platform bisa saya kelola dari satu tempat."</div>
+        <div class="sp-person">
+          <div class="sp-avatar" style="background:linear-gradient(135deg,#d97706,#fbbf24)">H</div>
+          <div><div class="sp-name">Hendra W.</div><div class="sp-biz">Online Seller · Bandung</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ BUKAN CHATBOT BIASA ══════════ -->
+<section class="sec" id="chatbot">
+  <div class="label">Perbedaan Nyata</div>
+  <h2 class="stitle">Bukan Chatbot Biasa</h2>
+  <p class="ssub">Chatbot lama buat customer frustrasi. Vosi baca konteks, jawab natural, dan tutup order — seperti sales terbaik kamu.</p>
+
+  <div class="cmp-grid">
+    <div class="ccrd bad">
+      <div class="cchdr"><div class="cbadge">❌ Chatbot Biasa</div><div class="cstatus"><div class="csdot"></div>Menu-based</div></div>
+      <div class="cbody">
+        <div class="cmsg fc"><div class="cbub">Halo, ada diskon gak buat order banyak?</div><div class="ts">10:02</div></div>
+        <div class="cmsg fb"><div class="cbub">Selamat datang! Silakan pilih menu:<br>1️⃣ Lihat Produk<br>2️⃣ Cek Harga<br>3️⃣ Status Order<br>4️⃣ Hubungi CS</div><div class="ts">10:02</div><div class="ann ann-bad">🔴 Tidak baca pertanyaan customer</div></div>
+        <div class="cmsg fc"><div class="cbub">Saya mau tanya soal diskon dulu</div><div class="ts">10:03</div></div>
+        <div class="cmsg fb"><div class="cbub">Maaf, input tidak dikenali.<br>Ketik angka 1–4 untuk memilih menu.</div><div class="ts">10:03</div><div class="ann ann-bad">🔴 Kaku — tidak bisa keluar dari alur</div></div>
+        <div class="cmsg fc"><div class="cbub">Ah sudahlah, saya order di tempat lain aja</div><div class="ts">10:04</div></div>
+        <div class="cmsg fb"><div class="cbub">Terima kasih! Ketik MENU untuk kembali.</div><div class="ts">10:04</div><div class="ann ann-bad">🔴 Customer pergi, sales hilang</div></div>
+      </div>
+      <div class="cfoot"><div class="cfoot-icon">😤</div><div class="cfoot-text">Customer frustrasi & kabur — sales hilang</div></div>
+    </div>
+
+    <div class="ccrd good">
+      <div class="cchdr"><div class="cbadge">✅ Vosi AI</div><div class="cstatus"><div class="csdot"></div>Aktif 24 jam</div></div>
+      <div class="cbody">
+        <div class="cmsg fc hero-chat-msg" id="vm1"><div class="cbub">Halo, ada diskon gak buat order banyak?</div><div class="ts">10:02</div></div>
+        <div class="cmsg fb hero-chat-msg" id="vm2"><div class="cbub"><span class="bname">🤖 Vosi</span>Ada kak! Order di atas 20 pcs kena diskon 10% 😊 Mau lihat produk apa?</div><div class="ts">10:02</div><div class="ann ann-good">🟢 Baca konteks, jawab langsung ke inti</div></div>
+        <div class="cmsg fc hero-chat-msg" id="vm3"><div class="cbub">Plafon PVC 3m, mau 30 pcs. Bisa kirim ke Surabaya?</div><div class="ts">10:03</div></div>
+        <div class="cmsg fb hero-chat-msg" id="vm4"><div class="cbub"><span class="bname">🤖 Vosi</span>Bisa kak! Stok ready ✅<br>30 pcs × Rp 95.000 − 10% + ongkir Sby<br><strong style="color:#6ee7a0">Total: Rp 2.685.000 🎉</strong></div><div class="ts">10:03</div><div class="ann ann-good">🟢 Kalkulasi otomatis sesuai konteks</div></div>
+        <div class="cmsg fc hero-chat-msg" id="vm5"><div class="cbub">Oke deal! Lanjut order ya</div><div class="ts">10:04</div></div>
+        <div class="cmsg fb hero-chat-msg" id="vm6"><div class="cbub"><span class="bname">🤖 Vosi</span>Mantap! Invoice dikirim ke WA kamu ✅<br>Stok diupdate otomatis. Terima kasih! 🙏</div><div class="ts">10:04</div><div class="ann ann-good">🟢 Closed — invoice & stok otomatis</div></div>
+      </div>
+      <div class="cfoot"><div class="cfoot-icon">🎉</div><div class="cfoot-text">Order closed Rp 2.685.000 — tanpa intervensi manual</div></div>
+    </div>
+  </div>
+
+  <div class="cmp-callout">
+    <div class="cmp-callout-icon">💡</div>
+    <div>
+      <h3>Vosi membaca konteks, bukan sekadar menu</h3>
+      <p>Didukung AI generatif yang memahami bahasa natural Indonesia — termasuk singkatan, typo, dan cara bicara customer sehari-hari.</p>
+    </div>
+    <button class="ccta">Jadwalkan Konsultasi →</button>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ USE CASES ══════════ -->
+<section class="sec sec-alt" id="use-cases">
+  <div class="label">Untuk Siapa</div>
+  <h2 class="stitle">Vosi Cocok untuk Bisnis Kamu</h2>
+  <p class="ssub">Apapun jenis bisnismu, kalau ada WhatsApp — Vosi bisa bantu.</p>
+  <div class="uc-grid">
+    <div class="uc-card"><div class="uctag tag-pop">Paling Populer</div><div class="uctop"><div class="ucemoji">🏪</div><div class="ucarrow">↗</div></div><div class="ucind">Toko & Distributor</div><div class="uctag2">Material bangunan, spare part, elektronik — Vosi terima order dan update stok otomatis.</div><div class="ucfeats"><div class="ucfeat">Cek stok realtime via WA</div><div class="ucfeat">Order masuk → stok berkurang otomatis</div><div class="ucfeat">Invoice langsung ke WA customer</div></div></div>
+    <div class="uc-card"><div class="uctop"><div class="ucemoji">💇</div><div class="ucarrow">↗</div></div><div class="ucind">Salon & Kecantikan</div><div class="uctag2">Barbershop, salon, spa — Vosi atur jadwal booking dan reminder otomatis.</div><div class="ucfeats"><div class="ucfeat">Booking jadwal via WA 24 jam</div><div class="ucfeat">Reminder H-1 otomatis ke customer</div><div class="ucfeat">Kelola jadwal tanpa telepon bolak-balik</div></div></div>
+    <div class="uc-card"><div class="uctop"><div class="ucemoji">🔧</div><div class="ucarrow">↗</div></div><div class="ucind">Bengkel & Servis</div><div class="uctag2">Bengkel motor, AC, elektronik — Vosi terima order servis dan update status pekerjaan.</div><div class="ucfeats"><div class="ucfeat">Antrian servis via WA</div><div class="ucfeat">Update status "sudah selesai" otomatis</div><div class="ucfeat">Estimasi harga langsung di chat</div></div></div>
+    <div class="uc-card"><div class="uctop"><div class="ucemoji">🍱</div><div class="ucarrow">↗</div></div><div class="ucind">Kuliner & Catering</div><div class="uctag2">Warung, catering, cloud kitchen — Vosi terima pesanan dan konfirmasi otomatis.</div><div class="ucfeats"><div class="ucfeat">Terima pesanan & konfirmasi otomatis</div><div class="ucfeat">Menu digital interaktif di WA</div><div class="ucfeat">Estimasi waktu siap otomatis</div></div></div>
+    <div class="uc-card"><div class="uctag tag-new">Baru</div><div class="uctop"><div class="ucemoji">🏥</div><div class="ucarrow">↗</div></div><div class="ucind">Klinik & Apotek</div><div class="uctag2">Klinik umum, dokter praktek, apotek — Vosi atur jadwal konsultasi dan cek stok obat.</div><div class="ucfeats"><div class="ucfeat">Booking konsultasi via WA</div><div class="ucfeat">Cek stok obat realtime</div><div class="ucfeat">Reminder jadwal kontrol</div></div></div>
+    <div class="uc-card"><div class="uctop"><div class="ucemoji">🏗️</div><div class="ucarrow">↗</div></div><div class="ucind">Jasa & Kontraktor</div><div class="uctag2">Instalasi, kontraktor, cleaning — Vosi terima request, kirim estimasi, atur jadwal survei.</div><div class="ucfeats"><div class="ucfeat">Intake permintaan jasa via WA</div><div class="ucfeat">Kirim penawaran harga otomatis</div><div class="ucfeat">Jadwalkan survei dari chat</div></div></div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ MANFAAT ══════════ -->
+<section class="sec" id="manfaat">
+  <div class="label">Keunggulan</div>
+  <h2 class="stitle">Kenapa Bisnis Pilih Vosi?</h2>
+  <p class="ssub">Satu platform, empat keunggulan yang langsung terasa hari pertama.</p>
+  <div class="ben-grid">
+    <div class="ben-card bc-g"><div class="bicon bi-g">🤖</div><div><div class="bnum">01</div><div class="btitle">Balas Customer Otomatis 24 Jam</div></div><div class="bdesc">Bot AI aktif saat kamu tidur, libur, atau jam sibuk. Tidak ada customer yang nunggu lama.</div><div class="bstat bs-g">⚡ Respon &lt;5 detik</div></div>
+    <div class="ben-card bc-b"><div class="bicon bi-b">📦</div><div><div class="bnum">02</div><div class="btitle">Stok Update Otomatis Setiap Order</div></div><div class="bdesc">Setiap order masuk, stok langsung berkurang. Tidak ada lagi jual barang yang sudah habis.</div><div class="bstat bs-b">📊 Real-time tracking</div></div>
+    <div class="ben-card bc-a"><div class="bicon bi-a">🧾</div><div><div class="bnum">03</div><div class="btitle">Invoice Terkirim Langsung ke WA</div></div><div class="bdesc">Selesai order, invoice otomatis dikirim ke customer. Proses pembayaran jadi lebih cepat.</div><div class="bstat bs-a">💸 Bayar lebih cepat</div></div>
+    <div class="ben-card bc-p"><div class="bicon bi-p">📈</div><div><div class="bnum">04</div><div class="btitle">Laporan Bisnis di Ujung Jari</div></div><div class="bdesc">Dashboard real-time: omzet, order, stok hampir habis — semua dalam satu layar.</div><div class="bstat bs-p">🎯 Keputusan lebih tepat</div></div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="tl-wrap" id="cara-kerja">
+    <div class="tl-hdr"><div class="tl-ico">🚀</div><div><div class="tl-ttl">Bisnis Kamu Aktif dalam 3 Hari Kerja</div><div class="tl-sub">Tim Vosi yang urus semua setup — kamu tinggal terima beres</div></div></div>
+    <div class="tl-steps">
+      <div class="tl-step"><div class="tl-circ">1</div><div class="tl-lbl">Konsultasi</div><div class="tl-tm">Hari 1 · 30 menit</div></div>
+      <div class="tl-step"><div class="tl-circ">2</div><div class="tl-lbl">Setup & Config</div><div class="tl-tm">Hari 2 · Tim Vosi</div></div>
+      <div class="tl-step"><div class="tl-circ">3</div><div class="tl-lbl">Testing Bersama</div><div class="tl-tm">Hari 3 · Review</div></div>
+      <div class="tl-step done"><div class="tl-circ">✓</div><div class="tl-lbl">Go Live!</div><div class="tl-tm">Bot aktif 24 jam</div></div>
+    </div>
+    <div class="tl-note">💡 Cukup siapkan nomor WhatsApp bisnis dan daftar produk atau layanan — tim Vosi yang handle sisanya.</div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ KONSULTASI ══════════ -->
+<section class="sec" id="konsultasi">
+  <div class="label">Mulai Sekarang</div>
+  <h2 class="stitle">Cocok untuk Bisnis Kamu?<br>Mari Kita Diskusi.</h2>
+  <p class="ssub">Ceritakan bisnis kamu, tim Vosi bantu analisa apakah Vosi tepat — tanpa tekanan, tanpa komitmen.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;margin:0 auto 48px;">
+
+    <!-- WHAT YOU GET -->
+    <div style="background:#fff;border-radius:24px;border:1px solid rgba(0,0,0,0.07);padding:32px;box-shadow:0 4px 20px rgba(11,28,48,0.06);">
+      <div style="font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;margin-bottom:20px;">Apa yang kamu dapat di konsultasi</div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(45,138,78,0.10);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🔍</div>
+          <div><div style="font-size:14px;font-weight:700;color:#0b1c30;margin-bottom:3px;">Analisa kebutuhan bisnis kamu</div><div style="font-size:13px;color:#64748b;line-height:1.5;">Kami pahami dulu model bisnis, pain point, dan customer journey kamu.</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(30,61,96,0.10);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🤖</div>
+          <div><div style="font-size:14px;font-weight:700;color:#0b1c30;margin-bottom:3px;">Demo Vosi langsung di WA kamu</div><div style="font-size:13px;color:#64748b;line-height:1.5;">Lihat sendiri bagaimana bot Vosi menjawab customer bisnis kamu secara real.</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(217,119,6,0.10);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📋</div>
+          <div><div style="font-size:14px;font-weight:700;color:#0b1c30;margin-bottom:3px;">Rencana implementasi khusus</div><div style="font-size:13px;color:#64748b;line-height:1.5;">Kami buat roadmap setup yang disesuaikan dengan jenis bisnis kamu.</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,58,237,0.10);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">💬</div>
+          <div><div style="font-size:14px;font-weight:700;color:#0b1c30;margin-bottom:3px;">Jawaban semua pertanyaanmu</div><div style="font-size:13px;color:#64748b;line-height:1.5;">Tidak ada yang tersembunyi — tanya apapun soal cara kerja, biaya, dan proses setup.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM CTA -->
+    <div style="background:linear-gradient(135deg,#1e3d60,#102a43);border-radius:24px;padding:32px;box-shadow:0 8px 40px rgba(11,28,48,0.15);position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:#2d8a4e;border-radius:9999px;filter:blur(60px);opacity:.25;"></div>
+      <div style="position:relative;z-index:1;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(45,138,78,0.2);border:1px solid rgba(45,138,78,0.3);color:#6ee7a0;padding:4px 12px;border-radius:9999px;font-size:11px;font-weight:700;margin-bottom:20px;">⏱ 30 menit · Gratis · Tanpa komitmen</div>
+        <h3 style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Jadwalkan Konsultasi<br>Gratis Sekarang</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6;">Tim Vosi siap membantu — respons dalam 1×24 jam.</p>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+          <input id="f-nama"   type="text" placeholder="Nama kamu"       style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;" />
+          <input id="f-bisnis" type="text" placeholder="Nama bisnis"      style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;" />
+          <input id="f-wa"     type="text" placeholder="Nomor WhatsApp"   style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;" />
+          <select id="f-jenis" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:rgba(255,255,255,.7);outline:none;font-family:Inter,sans-serif;">
+            <option value="" disabled selected>Jenis bisnis kamu</option>
+            <option>Toko & Distributor</option>
+            <option>Salon & Kecantikan</option>
+            <option>Bengkel & Servis</option>
+            <option>Kuliner & Catering</option>
+            <option>Klinik & Apotek</option>
+            <option>Jasa & Kontraktor</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+
+        <button onclick="submitKonsultasi()" style="width:100%;background:#2d8a4e;color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(45,138,78,.35);transition:all .2s;font-family:Inter,sans-serif;">
+          Kirim & Jadwalkan Konsultasi →
+        </button>
+        <p style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-top:12px;">Atau langsung WA kami di <strong style="color:rgba(255,255,255,.7)">0812-XXXX-XXXX</strong></p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TRUST ROW -->
+  <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Tidak ada paksaan untuk berlangganan</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Harga disesuaikan kebutuhan bisnis kamu</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Respons dalam 1×24 jam</div>
+  </div>
+</section>
+
+<!-- ══════════ FAQ ══════════ -->
+<section class="sec sec-alt" id="faq">
+  <div class="label">Pertanyaan Umum</div>
+  <h2 class="stitle">Ada yang Ingin Ditanyakan?</h2>
+  <p class="ssub">Jawaban untuk pertanyaan yang paling sering kami terima dari pemilik bisnis.</p>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Apakah saya perlu ganti nomor WhatsApp bisnis saya?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Tidak perlu. Vosi terhubung ke nomor WA bisnis yang sudah kamu pakai sekarang. Customer tetap chat ke nomor yang sama, hanya balasannya yang dijawab otomatis oleh Vosi.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Bagaimana kalau internet saya mati atau server down?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Vosi berjalan di server kami — bukan di komputer atau HP kamu. Jadi meskipun internet tokomu mati atau HP kamu mati, bot tetap merespons customer selama server kami aktif. Jika ada gangguan, kami akan notifikasi kamu secepat mungkin.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Data customer saya aman? Siapa yang bisa akses?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Data bisnis dan customer kamu hanya bisa diakses oleh kamu. Kami tidak menjual atau membagikan data ke pihak ketiga manapun. Semua data disimpan secara terenkripsi di server yang aman.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Apakah bisa pakai WhatsApp biasa, bukan WA Business?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Bisa. Vosi bisa terhubung ke WhatsApp biasa maupun WhatsApp Business. Untuk fitur lengkap seperti katalog produk dan label chat, WhatsApp Business lebih direkomendasikan — tapi bukan keharusan untuk mulai.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Bagaimana jika bot salah jawab atau ada pertanyaan yang tidak bisa dijawab?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Vosi tahu batasnya. Jika ada pertanyaan di luar konteks bisnis kamu, bot akan minta maaf dan menawarkan untuk diteruskan ke kamu secara manual. Kamu juga bisa kapan saja take over percakapan dari dashboard.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Berapa lama proses setup sampai bot aktif?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>3 hari kerja. Hari pertama konsultasi dan pengumpulan info bisnis, hari kedua tim kami setup dan konfigurasi bot sesuai produk/layanan kamu, hari ketiga testing bersama sebelum go live. Kamu tidak perlu install atau coding apapun.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ FINAL CTA ══════════ -->
+<div class="final-cta">
+  <h2>Bisnis Kamu Layak<br>Punya <em>Asisten AI</em>.</h2>
+  <p>Ribuan customer menunggu dibalas. Vosi bisa mulai bekerja untuk kamu dalam 3 hari.</p>
+  <button class="btn-primary" style="margin:0 auto;">Jadwalkan Konsultasi Sekarang →</button>
+</div>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+  <div class="foot-logo">
+    <div class="logo-mark" style="width:24px;height:24px;border-radius:7px"><svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:white"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    Vosi
+  </div>
+  <div class="foot-copy">© 2026 Vosi. Seluruh hak cipta dilindungi.</div>
+  <div class="foot-links">
+    <a href="#">Kebijakan Privasi</a>
+    <a href="#">Syarat & Ketentuan</a>
+    <a href="#">Kontak</a>
+  </div>
+</footer>
+
+<script>
+  // ── Hero chat slide-up animation (Option B) ──
+  const heroChatIds = ['hm1','hm2','hm3','hm4'];
+  const staggerDelays = [400, 1300, 2300, 3300];
+  const pauseAfterLast = 2800;
+
+  function resetInstant() {
+    heroChatIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.transition = 'none';
+      el.classList.remove('visible');
+      el.getBoundingClientRect(); // force reflow
+      el.style.transition = '';
+    });
+  }
+
+  function revealAll() {
+    staggerDelays.forEach((delay, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(heroChatIds[i]);
+        if (el) el.classList.add('visible');
+      }, delay);
+    });
+  }
+
+  function runHeroChat() {
+    resetInstant();
+    revealAll();
+    setTimeout(runHeroChat, staggerDelays[staggerDelays.length - 1] + pauseAfterLast);
+  }
+
+  document.addEventListener('DOMContentLoaded', runHeroChat);
+
+  // ── FAQ accordion ──
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    // close all
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // ── Konsultasi form → WhatsApp redirect ──
+  const VOSI_WA_NUMBER = '62812XXXXXXXX'; // ganti dengan nomor WA Vosi yang aktif
+
+  function submitKonsultasi() {
+    const nama   = document.getElementById('f-nama').value.trim();
+    const bisnis = document.getElementById('f-bisnis').value.trim();
+    const wa     = document.getElementById('f-wa').value.trim();
+    const jenis  = document.getElementById('f-jenis').value;
+
+    if (!nama || !bisnis || !wa || !jenis) {
+      alert('Mohon lengkapi semua isian sebelum mengirim.');
+      return;
+    }
+
+    const pesan =
+      `Halo Vosi! Saya ingin jadwalkan konsultasi gratis 🙏\n\n` +
+      `Nama: ${nama}\n` +
+      `Bisnis: ${bisnis}\n` +
+      `WA saya: ${wa}\n` +
+      `Jenis bisnis: ${jenis}`;
+
+    const url = `https://wa.me/${VOSI_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
+    window.open(url, '_blank');
+  }
+
+  // ── Comparison section: Vosi AI chat slide-up (triggered on scroll into view) ──
+  const vosicIds    = ['vm1','vm2','vm3','vm4','vm5','vm6'];
+  const vosicDelays = [200, 900, 1700, 2400, 3400, 4100];
+  const vosicPause  = 2600;
+  let vosicTimer    = null;
+
+  function resetInstantIds(ids) {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.transition = 'none';
+      el.classList.remove('visible');
+      el.getBoundingClientRect();
+      el.style.transition = '';
+    });
+  }
+
+  function runVosiChat() {
+    resetInstantIds(vosicIds);
+    vosicDelays.forEach((delay, i) => {
+      setTimeout(() => {
+        const el = document.getElementById(vosicIds[i]);
+        if (el) el.classList.add('visible');
+      }, delay);
+    });
+    vosicTimer = setTimeout(runVosiChat, vosicDelays[vosicDelays.length - 1] + vosicPause);
+  }
+
+  // Start animation when comparison section scrolls into view
+  const cmpSection = document.getElementById('chatbot');
+  if (cmpSection) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          runVosiChat();
+          observer.disconnect(); // run once, then the loop handles itself
+        }
+      });
+    }, { threshold: 0.2 });
+    observer.observe(cmpSection);
+  }
+</script>
+</body>
+</html>
