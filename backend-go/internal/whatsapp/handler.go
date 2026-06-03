@@ -108,6 +108,21 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		return
 	}
 
+	// 5a. Post-booking holding states — send static status message, never invoke Gemini.
+	//     Without this, the machine is called with an unknown-state prompt, Gemini returns
+	//     an empty response, and FallbackReply fires ("kendala teknis").
+	if conv.State == models.StateBooked || conv.State == models.StateTimeoutReminder {
+		reply := "Pesanan Anda sedang menunggu konfirmasi dari tim admin kami. Mohon ditunggu sebentar ya 🙏"
+		if conv.Language == "en" {
+			reply = "Your order is awaiting confirmation from our admin team. Please wait a moment 🙏"
+		}
+		h.db.InsertMessage(conv.ID, models.SenderAI, reply)
+		if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
+			log.Printf("[HANDLER] BOOKED holding reply send error: %v", err)
+		}
+		return
+	}
+
 	// 5. Terminal state — ignore further messages
 	if conv.State.IsTerminal() {
 		return

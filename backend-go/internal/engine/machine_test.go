@@ -97,3 +97,22 @@ func TestProcessGeminiFallback(t *testing.T) {
 		t.Error("fallback reply should not be empty")
 	}
 }
+
+func TestProcessBookedStateReturnsEmptyReply(t *testing.T) {
+	// BOOKED state has no case in the machine switch — it must never reach
+	// machine.Process() in production. This test documents that if it does,
+	// the machine returns an empty reply (not a fallback error), confirming
+	// the handler-level intercept in processMessage() is the correct fix.
+	m := newTestMachine(`{"reply":"some response"}`)
+	conv := &models.Conversation{State: models.StateBooked, Language: "id"}
+	result, err := m.Process(context.Background(), conv, "halo", nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Reply != "" {
+		t.Errorf("BOOKED state should produce no reply from machine, got: %s", result.Reply)
+	}
+	if result.NextState != models.StateBooked {
+		t.Errorf("BOOKED state should remain BOOKED, got %s", result.NextState)
+	}
+}
