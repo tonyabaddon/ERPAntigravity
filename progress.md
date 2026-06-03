@@ -1302,3 +1302,28 @@ No code gaps found beyond the one bug above.
 ### Fix: approved_at data quality
 - `UpdateOrderStatus` was setting `approved_at = now()` for all non-CANCELLED status changes
 - Fixed to only set `approved_at` when status becomes `WAITING_PAYMENT` (actual admin approval)
+
+### Fix: WhatsApp logout endpoint added
+- Added `/api/wa/logout` HTTP endpoint to Go backend (`backend-go/main.go`)
+- Added `Logout()` method to `whatsapp.Client` (calls `c.WA.Logout(context.Background())`)
+- Added "Putuskan Koneksi" button in `WhatsappAiScreen` connected state UI
+
+### Fix: WhatsApp AI screen UI improvements
+- Removed redundant phone number input form for pairing (was asking for phone after QR scan — redundant)
+- Replaced with clear scan QR instructions and "Cara Scan QR" steps
+
+### Fix: RLS enabled on all whatsmeow tables
+- Enabled RLS on all 16 whatsmeow tables + added UPDATE/INSERT policies for company_settings
+
+## WhatsApp AI Screen — Inbox Navigation Shortcut — DONE (2026-06-04)
+
+**Root cause**: User couldn't find ongoing customer conversations because they were looking in the "WhatsApp AI" screen (daemon control panel) instead of "Sales Inbox". DB confirmed 6 conversations exist, RLS permits access.
+
+**Fix**:
+- Added `onNavigate: (page: ActivePage) => void` prop to `WhatsappAiScreenProps`
+- Added clickable "Lihat Percakapan Customer" shortcut card between the daemon status section and the main grid in `WhatsappAiScreen.tsx`
+  - Navy Inbox icon, explanatory text pointing to "Sales Inbox"
+  - Arrow icon with hover animation
+  - Clicking navigates directly to `sales-inbox`
+- Wired `onNavigate={setActivePage}` in `App.tsx` `case 'whatsapp-ai'`
+- `npx tsc --noEmit` — only pre-existing React 19 `key` prop error in `SalesInboxScreen.tsx`, no new errors

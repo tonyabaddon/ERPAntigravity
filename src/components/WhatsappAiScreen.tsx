@@ -20,16 +20,19 @@ import {
   RefreshCw,
   Copy,
   Check,
+  Inbox,
+  ArrowRight,
 } from 'lucide-react';
-import { WhatsappAiNumber, StockItem } from '../types';
+import { WhatsappAiNumber, StockItem, ActivePage } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 interface WhatsappAiScreenProps {
   stockList: StockItem[];
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onNavigate: (page: ActivePage) => void;
 }
 
-export default function WhatsappAiScreen({ stockList: _stockList, showToast }: WhatsappAiScreenProps) {
+export default function WhatsappAiScreen({ stockList: _stockList, showToast, onNavigate }: WhatsappAiScreenProps) {
   // State for WhatsApp Numbers — loaded from Supabase
   const [waNumbers, setWaNumbers] = useState<WhatsappAiNumber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,6 +269,25 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Sales Inbox shortcut */}
+      <section
+        onClick={() => onNavigate('sales-inbox')}
+        className="bg-white rounded-[2rem] px-8 py-5 border border-[#e5eeff] shadow-md flex items-center justify-between cursor-pointer hover:border-[#012749]/30 hover:shadow-lg transition-all group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 bg-[#012749] text-white rounded-xl flex items-center justify-center shadow-md shrink-0">
+            <Inbox className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-[#012749] text-sm">Lihat Percakapan Customer</h3>
+            <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+              Chat masuk dari WhatsApp diproses AI dan bisa di-monitor di <strong className="text-[#012749]">Sales Inbox</strong>
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-[#012749] group-hover:translate-x-1 transition-all shrink-0" />
       </section>
 
       {/* Main Core Columns */}

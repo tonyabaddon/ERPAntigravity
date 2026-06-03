@@ -240,6 +240,7 @@ export default function App() {
           <WhatsappAiScreen
             stockList={stockList}
             showToast={triggerToast}
+            onNavigate={setActivePage}
           />
         );
       case 'settings':
