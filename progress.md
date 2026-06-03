@@ -1056,6 +1056,20 @@ All 10 tasks shipped across 13 commits (2cec3a1 → bbc766d):
 - **PengaturanScreen**: Profil Perusahaan card (company_name, address, phone, email)
 - **DashboardScreen**: removed approval + payment verification panels; replaced with two alert badge buttons linking to Riwayat Pesanan
 
+## H1: Inbox AI UI/UX Revamp — COMPLETE (2026-06-03)
+
+Full rewrite of `SalesInboxScreen.tsx` per approved spec. Commit: d5064fe
+
+- **Layout**: 3-panel `flex h-full` — left `w-56` (navy header, search, filter tabs, conversation list), center `flex-1` (chat panel), right `w-48` (context panel)
+- **Navy design system**: `bg-[#012749]` headers on both left and center panels; `bg-[#f8f9ff]` message background; `bg-[#2d8a4e]` admin bubbles; left-border selection accent on conversation rows
+- **State display**: all 12 `ConversationState` values mapped to Indonesian labels + color badges in `CONV_STATE_DISPLAY`
+- **Mode banner**: full-width bar below chat header — red for escalated states, emerald for admin mode, blue for AI mode — with action button toggling `ai_active` via `toggleAiControl`
+- **Filter tabs**: Semua / Admin (N) / AI (N) with live counts; filter logic matches spec exactly
+- **Right panel stepper**: 6-step vertical stepper (Sapa → Kumpul Data → Cek Stok → Konfirmasi → Menunggu Bayar → Selesai); off-path states (ESCALATED_ADMIN, ESCALATED_WIRING, CANCELLED) shown as badge above stepper with all steps gray
+- **Right panel data**: adaptive "Data Terkumpul" (only non-empty fields with emoji icons), related order (gjp_order_id, total, status), follow-up count
+- **Empty state**: centered MessageSquare icon when no conversation selected
+- **Build**: `npm run build` passes with zero TypeScript errors
+
 ## G1: Customer Intelligence — COMPLETE (2026-06-03)
 
 All 7 tasks shipped across 7 commits (28686b9 → ff5a805):
