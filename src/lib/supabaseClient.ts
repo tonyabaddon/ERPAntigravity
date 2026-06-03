@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead, DbNotificationConfig, DbCompanySettings } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -341,10 +341,44 @@ export const leadsService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
       .from('leads')
-      .select('*, customers(*)')
+      .select('*, customers(*), orders!orders_leads_id_fkey(id, gjp_order_id, items, subtotal, shipping_fee, total, status, created_at, delivery_type)')
       .order('updated_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as DbLead[];
+  },
+};
+
+export const customersService = {
+  async fetchAll(): Promise<DbCustomerWithStats[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*, orders!orders_customer_id_fkey(id, total)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(({ orders, ...customer }: any) => ({
+      ...customer,
+      order_count: orders?.length ?? 0,
+      total_spend: (orders ?? []).reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
+    }));
+  },
+
+  async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*, orders!orders_customer_id_fkey(*), leads!leads_customer_id_fkey(*)')
+      .eq('id', customerId)
+      .single();
+    if (error) throw error;
+    const profile = data as any;
+    profile.orders = (profile.orders ?? []).sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    profile.leads = (profile.leads ?? []).sort(
+      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    return profile as DbCustomerProfile;
   },
 };
 
