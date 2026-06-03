@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Search, Send, PlusCircle } from 'lucide-react';
 import { useRealtimeConversations, ConversationWithMessages } from '../hooks/useRealtimeConversations';
 import type { DbMessage } from '../types';
+import type { ActivePage } from '../types';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -9,7 +10,7 @@ const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> 
   CLARIFYING:       { label: 'Klarifikasi',       badgeClass: 'bg-sky-100 text-sky-700' },
   STOCK_CHECK:      { label: 'Cek Stok',          badgeClass: 'bg-cyan-100 text-cyan-700' },
   CONFIRMING:       { label: 'Konfirmasi',         badgeClass: 'bg-amber-100 text-amber-700' },
-  BOOKED:           { label: 'Menunggu Bayar',     badgeClass: 'bg-yellow-100 text-yellow-800' },
+  BOOKED:           { label: 'Perlu Konfirmasi Admin', badgeClass: 'bg-purple-100 text-purple-800' },
   TIMEOUT_REMINDER: { label: 'Follow-up',          badgeClass: 'bg-violet-100 text-violet-700' },
   APPROVED:         { label: 'Disetujui',          badgeClass: 'bg-teal-100 text-teal-700' },
   COMPLETED:        { label: 'Selesai',            badgeClass: 'bg-emerald-100 text-emerald-700' },
@@ -23,7 +24,7 @@ const STEPPER_STEPS = [
   { label: 'Kumpul Data',    states: ['COLLECTING', 'CLARIFYING'] },
   { label: 'Cek Stok',       states: ['STOCK_CHECK'] },
   { label: 'Konfirmasi',     states: ['CONFIRMING'] },
-  { label: 'Menunggu Bayar', states: ['BOOKED', 'TIMEOUT_REMINDER', 'APPROVED'] },
+  { label: 'Konfirmasi Admin', states: ['BOOKED', 'TIMEOUT_REMINDER', 'APPROVED'] },
   { label: 'Selesai',        states: ['COMPLETED'] },
 ];
 
@@ -66,7 +67,7 @@ function getInitials(conv: ConversationWithMessages): string {
   return getDisplayName(conv).slice(0, 2).toUpperCase();
 }
 
-export default function SalesInboxScreen() {
+export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: ActivePage) => void }) {
   const { conversations, orders, paymentUploadedOrders, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } =
     useRealtimeConversations();
 
@@ -301,7 +302,7 @@ export default function SalesInboxScreen() {
           </div>
 
           {/* RIGHT PANEL */}
-          <RightPanel conv={activeChat} order={activeOrder} />
+          <RightPanel conv={activeChat} order={activeOrder} onNavigate={onNavigate ?? (() => {})} />
         </>
       ) : (
         <div className="flex-1 flex items-center justify-center text-gray-300">
@@ -366,8 +367,9 @@ import type { DbOrder } from '../types';
 interface RightPanelProps {
   conv: ConversationWithMessages;
   order: DbOrder | null | undefined;
+  onNavigate: (page: string) => void;
 }
-function RightPanel({ conv, order }: RightPanelProps) {
+function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
   const isOffPath = OFF_PATH_STATES.has(conv.state);
   const activeStep = isOffPath ? -1 : STEPPER_STEPS.findIndex(s => s.states.includes(conv.state));
   const cd = conv.collected_data;
@@ -455,6 +457,14 @@ function RightPanel({ conv, order }: RightPanelProps) {
             <div className="text-[9px] text-gray-400 mt-0.5">
               {order.status.replace(/_/g, ' ')}
             </div>
+            {order.status === 'PENDING_ADMIN_CONFIRMATION' && (
+              <button
+                onClick={() => onNavigate('order-history')}
+                className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-1.5 rounded-lg"
+              >
+                🔔 Konfirmasi Pesanan
+              </button>
+            )}
           </div>
         ) : (
           <p className="text-[9px] text-gray-400 italic">Belum ada pesanan.</p>

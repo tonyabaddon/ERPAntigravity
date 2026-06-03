@@ -212,7 +212,7 @@ export default function App() {
         );
       case 'sales-inbox':
         return (
-          <SalesInboxScreen />
+          <SalesInboxScreen onNavigate={setActivePage} />
         );
       case 'ai-stock':
         return (

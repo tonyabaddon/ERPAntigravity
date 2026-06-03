@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, Search, ChevronDown } from 'lucide-react';
 import { DbOrder } from '../types';
-import { orderService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { orderService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import InvoiceModal from './InvoiceModal';
 
 interface OrderHistoryScreenProps {
@@ -210,6 +210,20 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       .then(setOrders)
       .catch(() => showToast('Gagal memuat pesanan.', 'warning'))
       .finally(() => setLoading(false));
+
+    if (!supabase) return;
+    const sub = supabase
+      .channel('order-history-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          setOrders(prev => [payload.new as DbOrder, ...prev]);
+        })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' },
+        (payload) => {
+          setOrders(prev => prev.map(o => o.id === (payload.new as DbOrder).id ? payload.new as DbOrder : o));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(sub); };
   }, []);
 
   const pendingCount   = orders.filter(o => o.status === 'PENDING_ADMIN_CONFIRMATION').length;
