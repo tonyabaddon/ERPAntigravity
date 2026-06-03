@@ -42,6 +42,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   // Real QR state from Go daemon
   const [qrCode, setQrCode] = useState<string>('');
   const [waConnected, setWaConnected] = useState(false);
+  const [daemonOnline, setDaemonOnline] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [pairingPhone, setPairingPhone] = useState('');
@@ -97,6 +98,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
     try {
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wa/qr`);
       const data = await res.json();
+      setDaemonOnline(true);
       setWaConnected(data.connected);
       setQrCode(data.qr || '');
       if (data.connected) {
@@ -104,6 +106,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
         pushTerminalLog('WhatsApp terhubung! Session tersimpan di wa_store.db.');
       }
     } catch {
+      setDaemonOnline(false);
       setQrCode('');
     }
   }, []);
@@ -254,9 +257,9 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
             <Cpu className="text-[#012749] w-8 h-8 animate-spin" style={{ animationDuration: '6s' }} />
             <div>
               <span className="text-[9px] font-black text-slate-400 block tracking-widest uppercase">Koneksi Gateway</span>
-              <span className="text-xs font-extrabold text-[#012749] flex items-center gap-1 mt-0.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                Active daemon (whatsmeow)
+              <span className={`text-xs font-extrabold flex items-center gap-1 mt-0.5 ${daemonOnline ? 'text-[#012749]' : 'text-rose-500'}`}>
+                <span className={`h-2 w-2 rounded-full ${daemonOnline ? 'bg-emerald-500 animate-ping' : 'bg-rose-400'}`} />
+                {daemonOnline ? 'Daemon online' : 'Daemon offline'}
               </span>
             </div>
           </div>
