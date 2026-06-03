@@ -956,6 +956,14 @@ All 4 tasks complete. Feature is fully implemented:
 
 - Fixed `backend-go/internal/whatsapp/handler.go` in `processMessage()` BOOKED/TIMEOUT_REMINDER intercept block (lines 114-124)
 - Changed line 119 from fire-and-forget `h.db.InsertMessage(conv.ID, models.SenderAI, reply)` to error-checked pattern: `if _, err := h.db.InsertMessage(...) { log.Printf("[HANDLER] BOOKED InsertMessage error: %v", err) }`
+
+## Task 7: Deploy to Firebase Hosting — DONE (2026-06-04)
+
+- Created `vosi-landing/firebase.json` with hosting config: public root ".", ignore patterns, SPA rewrites, caching headers for images (604800s) and HTML (300s)
+- Created `vosi-landing/.firebaserc` with default project ID placeholder "vosi-landing"
+- Created `vosi-landing/DEPLOY.md` with comprehensive deployment guide: prerequisites, first-time setup (Firebase CLI install, login, project creation), placeholder replacements (GA4, WA numbers, domain), deployment commands (preview channel and production), custom domain setup, and notes on future backend API integration
+- All files verified with correct content via `cat` commands
+- Committed: `feat(vosi-landing): add Firebase Hosting config and deployment guide` (efd0d0a)
 - Consistent with error-checking pattern used at line 132 for customer message insertion
 - Build: `CGO_ENABLED=1 go build ./...` — clean (no errors)
 - Tests: `CGO_ENABLED=1 go test ./...` — all PASS (internal/engine, internal/rules, internal/storage, internal/scheduler)
