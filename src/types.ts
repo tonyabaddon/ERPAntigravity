@@ -62,6 +62,7 @@ export interface StockItem {
   price: number;
   stock: number;
   status: 'Sinkron' | 'Stok Tipis';
+  specs: Record<string, string | number>;
 }
 
 export interface NotificationConfig {

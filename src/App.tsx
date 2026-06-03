@@ -107,7 +107,8 @@ export default function App() {
             category: item.category,
             price: Number(item.price),
             stock: Number(item.stock),
-            status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis'
+            status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
+            specs: (item.specs as Record<string, string | number>) ?? {},
           }));
           setStockList(mapped);
           triggerToast('🌐 Database Supabase Sinkron! Ketersediaan stok live dimuat.', 'success');

@@ -39,19 +39,21 @@ export const INITIAL_ADMINS: AdminUser[] = [
 export const INITIAL_STOCK: StockItem[] = [
   {
     sku: 'SKU-40A-01',
-    name: 'Kabel Tembaga 40A',
+    name: 'Kabel NYM 2.5mm² 100m/Rol',
     category: 'Kabel',
     price: 120000,
     stock: 150,
     status: 'Sinkron',
+    specs: { kabel_tipe: 'NYM', kabel_mm2: 2.5, kabel_panjang: '100m/Rol' },
   },
   {
     sku: 'SKU-BX-SM',
-    name: 'Box Panel - Ukuran Kecil',
+    name: 'Panel Besi Indoor 60×40×20cm 1.5mm RAL7032 Kosong',
     category: 'Panel',
     price: 650000,
     stock: 12,
     status: 'Sinkron',
+    specs: { material: 'Besi', tipe_pasang: 'Indoor', tinggi_cm: 60, lebar_cm: 40, tebal_cm: 20, ketebalan_mm: 1.5, finishing: 'RAL7032', kelengkapan: 'Kosong' },
   },
   {
     sku: 'SKU-WR-05',
@@ -60,6 +62,7 @@ export const INITIAL_STOCK: StockItem[] = [
     price: 25000,
     stock: 8,
     status: 'Stok Tipis',
+    specs: { deskripsi: 'Sakelar Broco Modern' },
   },
 ];
 

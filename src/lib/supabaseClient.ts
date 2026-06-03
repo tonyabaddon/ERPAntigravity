@@ -23,6 +23,7 @@ export interface SupabaseStockItem {
   price: number;
   stock: number;
   status: string;
+  specs: Record<string, string | number>;
   updated_at?: string;
 }
 
@@ -56,6 +57,7 @@ export const supabaseService = {
         price: item.price,
         stock: item.stock,
         status: item.status,
+        specs: item.specs,
         updated_at: new Date().toISOString()
       })
       .select();
