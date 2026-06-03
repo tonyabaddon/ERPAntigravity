@@ -47,3 +47,17 @@ func (s *Sender) DownloadMedia(ctx context.Context, img *waProto.ImageMessage) (
 	}
 	return data, contentType, nil
 }
+
+// DownloadDocument downloads a document message's bytes from WhatsApp servers.
+// Returns the raw bytes and MIME type. Defaults to "application/octet-stream" if MIME type is missing.
+func (s *Sender) DownloadDocument(ctx context.Context, doc *waProto.DocumentMessage) ([]byte, string, error) {
+	data, err := s.client.Download(ctx, doc)
+	if err != nil {
+		return nil, "", fmt.Errorf("sender: download document: %w", err)
+	}
+	ct := doc.GetMimetype()
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
+	return data, ct, nil
+}
