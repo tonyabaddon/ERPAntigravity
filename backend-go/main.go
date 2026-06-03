@@ -43,8 +43,8 @@ func main() {
 	// State machine
 	machine := engine.NewMachine(geminiClient)
 
-	// WhatsApp client (ctx required by new sqlstore.New API)
-	waClient, err := whatsapp.NewClient(ctx, cfg.WAStorePath)
+	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys)
+	waClient, err := whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
 	if err != nil {
 		log.Fatalf("[MAIN] WA client init failed: %v", err)
 	}

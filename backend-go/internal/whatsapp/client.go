@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types/events"
@@ -32,9 +31,11 @@ func (c *Client) setQR(qr string) {
 	c.currentQR = qr
 }
 
-func NewClient(ctx context.Context, dbPath string) (*Client, error) {
+// NewClient creates a WhatsApp client backed by PostgreSQL so the session
+// persists across Cloud Run restarts and redeploys.
+func NewClient(ctx context.Context, pgConnStr string) (*Client, error) {
 	dbLog := waLog.Stdout("WAStore", "WARN", true)
-	container, err := sqlstore.New(ctx, "sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbPath), dbLog)
+	container, err := sqlstore.New(ctx, "postgres", pgConnStr, dbLog)
 	if err != nil {
 		return nil, fmt.Errorf("whatsapp: open store: %w", err)
 	}

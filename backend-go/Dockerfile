@@ -2,15 +2,12 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-# gcc and musl-dev required for go-sqlite3 (CGO)
-RUN apk add --no-cache gcc musl-dev
-
 COPY go.mod* go.sum* ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 GOOS=linux go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 FROM alpine:latest
 

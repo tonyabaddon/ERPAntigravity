@@ -82,10 +82,11 @@ func (c *Client) CreateOrder(
 
 func (c *Client) UpdateOrderStatus(orderID, status string) error {
 	var query string
-	if status == "CANCELLED" {
-		query = `UPDATE orders SET status = $1 WHERE id = $2`
-	} else {
+	if status == "WAITING_PAYMENT" {
+		// Only set approved_at when admin actually approves the order.
 		query = `UPDATE orders SET status = $1, approved_at = now() WHERE id = $2`
+	} else {
+		query = `UPDATE orders SET status = $1 WHERE id = $2`
 	}
 	_, err := c.DB.Exec(query, status, orderID)
 	return err
