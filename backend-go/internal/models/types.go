@@ -30,6 +30,8 @@ func (s ConversationState) IsTerminal() bool {
 type OrderStatus string
 
 const (
+	OrderStatusPending                  OrderStatus = "PENDING"
+	OrderStatusApproved                 OrderStatus = "APPROVED"
 	OrderStatusPendingAdminConfirmation OrderStatus = "PENDING_ADMIN_CONFIRMATION"
 	OrderStatusPendingPriceNego         OrderStatus = "PENDING_PRICE_NEGO"
 	OrderStatusPendingStockCheck        OrderStatus = "PENDING_STOCK_CHECK"

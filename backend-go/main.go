@@ -158,6 +158,20 @@ func main() {
 			"connected": paired,
 		})
 	})
+	mux.HandleFunc("/api/wa/logout", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := waClient.Logout(); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "logged_out"})
+	})
 	go func() {
 		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
 		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {

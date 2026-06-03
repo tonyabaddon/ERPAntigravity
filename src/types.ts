@@ -146,6 +146,7 @@ export interface DbOrder {
   shipping_fee?: number;
   total: number;
   status:
+    | 'PENDING'
     | 'PENDING_ADMIN_CONFIRMATION'
     | 'PENDING_PRICE_NEGO'
     | 'PENDING_STOCK_CHECK'
@@ -158,6 +159,7 @@ export interface DbOrder {
     | 'PAYMENT_REJECTED'
     | 'CANCELLED'
     | 'COMPLETED';
+  leads_id?: string;
   booking_expires_at: string;
   gjp_order_id?: string;
   order_type?: 'STANDARD' | 'CUSTOM_PANEL' | 'WIRING_PANEL';

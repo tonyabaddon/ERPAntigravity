@@ -113,3 +113,8 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 func (c *Client) Disconnect() {
 	c.WA.Disconnect()
 }
+
+// Logout clears the WhatsApp session so the next Connect triggers a fresh QR scan.
+func (c *Client) Logout() error {
+	return c.WA.Logout(context.Background())
+}

@@ -45,7 +45,6 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
   const [daemonOnline, setDaemonOnline] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [pairingPhone, setPairingPhone] = useState('');
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     '[SYSTEM] Initializing whatsmeow framework package... READY',
     '[SYSTEM] Client logged out. Secure session SQLite DB detected.',
@@ -138,17 +137,20 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
     pushTerminalLog(waConnected ? 'Status: TERHUBUNG' : 'Status: BELUM TERHUBUNG — scan QR di atas.');
   };
 
-  // Generate pairing code (instructional — real pairing done in Go daemon)
-  const handleGeneratePairingCode = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pairingPhone.trim()) {
-      showToast('Masukkan nomor telepon terlebih dahulu!', 'warning');
-      return;
+  // Logout / disconnect WhatsApp session
+  const handleLogout = async () => {
+    try {
+      pushTerminalLog('Memutus sesi WhatsApp...');
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wa/logout`, { method: 'POST' });
+      if (!res.ok) throw new Error('Logout gagal');
+      setWaConnected(false);
+      setQrCode('');
+      pushTerminalLog('Sesi WhatsApp berhasil diputus. Scan QR baru untuk menghubungkan kembali.');
+      showToast('WhatsApp berhasil di-logout.', 'success');
+      qrPollRef.current = setInterval(fetchQR, 5000);
+    } catch (err) {
+      showToast('Gagal logout WhatsApp.', 'warning');
     }
-    const cleanNo = pairingPhone.startsWith('+62') ? pairingPhone : '+62' + pairingPhone.replace(/^0+/, '');
-    pushTerminalLog(`Jalankan: go run main.go --pairing-phone=${cleanNo}`);
-    pushTerminalLog(`Masukkan kode yang muncul di terminal daemon ke aplikasi WhatsApp Anda.`);
-    handleCheckConnection('');
   };
 
   // Add new WA manual number
@@ -291,6 +293,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
                     <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto animate-bounce shrink-0" />
                     <h4 className="font-extrabold text-[#012749] text-xs">BERHASIL TERSAMBUNG</h4>
                     <p className="text-[10px] text-gray-400">whatsmeow session tersimpan di wa_store.db</p>
+                    <button
+                      onClick={handleLogout}
+                      className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-full text-[10px] font-extrabold transition-all cursor-pointer shadow-md"
+                    >
+                      Putuskan Koneksi
+                    </button>
                   </div>
                 )}
 
@@ -327,33 +335,18 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast }: W
                 )}
               </div>
 
-              {/* Pairing code container form */}
-              <div className="flex flex-col justify-between py-1">
-                <div>
-                  <h4 className="text-xs font-black text-[#012749] mb-1">Cara Cepat Pairing Code:</h4>
-                  <p className="text-[10px] text-gray-400 font-semibold leading-relaxed mb-4">
-                    Masukkan nomor telepon Anda di bawah ini. Perintah pairing akan ditampilkan di log Go daemon terminal. Masukkan PIN yang muncul di terminal ke aplikasi WhatsApp Anda.
-                  </p>
-                </div>
-
-                <form onSubmit={handleGeneratePairingCode} className="space-y-3">
-                  <div className="bg-white border border-[#abc9f3]/40 rounded-full flex items-center p-1.5 pl-4 gap-3">
-                    <span className="text-[#012749]/40 text-xs font-black">+62</span>
-                    <input
-                      type="text"
-                      value={pairingPhone}
-                      onChange={(e) => setPairingPhone(e.target.value)}
-                      placeholder="8123456789"
-                      className="flex-1 bg-transparent border-none focus:ring-0 text-slate-850 font-bold text-xs py-1.5 outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="bg-[#012749] text-white px-4 py-2 rounded-full text-[10px] font-extrabold hover:bg-[#2d8a4e] cursor-pointer shrink-0"
-                    >
-                      Log Perintah
-                    </button>
-                  </div>
-                </form>
+              {/* Pairing instructions */}
+              <div className="flex flex-col justify-center py-1 space-y-3">
+                <h4 className="text-xs font-black text-[#012749]">Cara Scan QR:</h4>
+                <ol className="text-[10px] text-gray-500 font-semibold leading-relaxed space-y-2 list-decimal list-inside">
+                  <li>Buka WhatsApp di HP Anda</li>
+                  <li>Tap <strong>Perangkat Tertaut</strong> → <strong>Tautkan Perangkat</strong></li>
+                  <li>Arahkan kamera ke QR Code di kiri</li>
+                  <li>Tunggu hingga status berubah ke <span className="text-emerald-600 font-black">TERHUBUNG</span></li>
+                </ol>
+                <p className="text-[9px] text-amber-600 bg-amber-50 rounded-xl px-3 py-2 border border-amber-100 font-semibold">
+                  QR berlaku ~20 detik dan diperbarui otomatis. Pastikan daemon sedang berjalan.
+                </p>
               </div>
             </div>
 

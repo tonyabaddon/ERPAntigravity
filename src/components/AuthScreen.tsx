@@ -80,7 +80,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       return;
     }
     if (!signInOtp) {
-      showToast('⚠️ Tolong masukkan kode OTP 6-Digit!');
+      showToast('⚠️ Tolong masukkan kode OTP!');
       return;
     }
     // Dev bypass
