@@ -1191,3 +1191,10 @@ All 5 tasks shipped across 5 commits (d9619d2 → 33c752e):
 - Added `adminUsersService` (fetchAll, upsert, remove) to `src/lib/supabaseClient.ts`
 - Rewrote `UserManagementScreen` to be self-contained: fetches from Supabase on mount, saves/deletes in real-time, optimistic updates with rollback on failure
 - Removed `admins` localStorage state from App.tsx; component no longer receives data props
+
+**P4 — Remove dead `/api/stocks` REST routes from Go daemon** (commit 12b82dd)
+- Removed `mux.HandleFunc("/api/stocks", ...)` and `mux.HandleFunc("/api/stocks/", ...)` route registrations
+- Removed all dead-code functions and struct: `handleStocksRoute`, `handleSingleStockRoute`, `StockItem`, `getStocks`, `upsertStock`, `updateStockPriceAndVolume`, `deleteStock` (lines 192–345, 154 lines removed)
+- Removed now-unused imports: `"fmt"` and `"strings"`
+- `go build ./...` passes with zero errors
+- Frontend talks directly to Supabase for stock data; Go daemon no longer exposes stock endpoints
