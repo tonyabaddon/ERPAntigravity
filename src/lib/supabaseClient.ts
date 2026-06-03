@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbLead, DbNotificationConfig } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -322,5 +322,36 @@ export const leadsService = {
       .order('updated_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as DbLead[];
+  },
+};
+
+export const notificationConfigService = {
+  async fetch(): Promise<DbNotificationConfig | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('notification_config')
+      .select('*')
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  },
+
+  async save(
+    values: Omit<DbNotificationConfig, 'id' | 'updated_at'>,
+    existingId?: number
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (existingId !== undefined) {
+      const { error } = await supabase
+        .from('notification_config')
+        .update({ ...values, updated_at: new Date().toISOString() })
+        .eq('id', existingId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('notification_config')
+        .insert(values);
+      if (error) throw error;
+    }
   },
 };
