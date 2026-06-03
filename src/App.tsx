@@ -39,7 +39,7 @@ import {
   INITIAL_CONFIG
 } from './initialData';
 
-import { isSupabaseConfigured, supabaseService } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase, supabaseService } from './lib/supabaseClient';
 
 
 export default function App() {
@@ -68,6 +68,30 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Restore Supabase auth session on page refresh
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !currentUser) {
+        const user = session.user;
+        setCurrentUser({
+          name: user.user_metadata?.full_name ?? (user.email?.split('@')[0] ?? 'User'),
+          role: 'Owner',
+          avatarUrl: user.user_metadata?.avatar_url ?? '',
+          storeName: user.user_metadata?.store_name ?? '',
+        });
+        setActivePage('dashboard');
+      }
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && currentUser) {
+        setCurrentUser(null);
+        setActivePage('auth');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Sync state modifications to localStorage
   useEffect(() => {
@@ -161,7 +185,10 @@ export default function App() {
   };
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.auth.signOut();
+    }
     setCurrentUser(null);
     setActivePage('auth');
   };
