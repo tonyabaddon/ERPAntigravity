@@ -41,18 +41,18 @@ Balas HANYA JSON (tidak ada teks lain):
 Data terkumpul sejauh ini:
 - Nama       : %s
 - Perusahaan : %s
-- Alamat     : %s
 - Produk     : %s
 
 Data masih dibutuhkan: %s
 
 Ikuti SOP Fase 1 & 1.5. Tanyakan SATU data yang masih kurang dalam 1 pesan.
+JANGAN tanyakan alamat pengiriman di fase ini — alamat hanya dikumpulkan SETELAH customer konfirmasi pesanan.
 Jika customer sebut wiring/instalasi/custom/IP rating → next_action: ESCALATE
 Jika customer minta diskon/harga khusus → next_action: ESCALATE
 
 Balas HANYA JSON (tidak ada teks lain):
-{"reply":"<pesan WA>","collected":{"name":"<isi atau kosong>","company":"<isi atau kosong>","address":"<isi atau kosong>","product":"<isi atau kosong>"},"next_action":"CONTINUE"}`,
-			orBelum(c.Name), orBelum(c.Company), orBelum(c.Address), orBelum(c.Product), missing)
+{"reply":"<pesan WA>","collected":{"name":"<isi atau kosong>","company":"<isi atau kosong>","product":"<isi atau kosong>"},"next_action":"CONTINUE"}`,
+			orBelum(c.Name), orBelum(c.Company), orBelum(c.Product), missing)
 
 	case models.StateClarifying:
 		return fmt.Sprintf(`FASE: KLARIFIKASI SPESIFIKASI (CLARIFYING)
@@ -118,6 +118,23 @@ Balas HANYA JSON (tidak ada teks lain):
 			orBelum(c.Name), orBelum(c.Company), orBelum(c.Product),
 			qty, orBelum(c.Specs.Size), orBelum(c.Specs.Notes))
 
+	case models.StateDelivery:
+		return fmt.Sprintf(`FASE: PILIHAN PENGIRIMAN (DELIVERY)
+Pelanggan telah konfirmasi pesanan mereka. Sekarang tanyakan metode pengambilan.
+Data pelanggan:
+- Nama       : %s
+- Perusahaan : %s
+
+Tanyakan: "Apakah Anda akan ambil langsung di toko kami (ketik 1) atau minta dikirim ke alamat Anda (ketik 2)?"
+Jika customer pilih AMBIL DI TOKO (1/ambil/pickup) → next_action: PICKUP
+Jika customer pilih DIKIRIM (2/kirim/delivery/antar) DAN sudah menyebutkan alamat lengkap → next_action: DELIVERY, isi address
+Jika customer pilih DIKIRIM tapi belum ada alamat → minta alamat lengkap, next_action: CONTINUE
+Jika ada alamat dalam jawaban → tangkap dan isi di field address
+
+Balas HANYA JSON (tidak ada teks lain):
+{"reply":"<pesan WA>","next_action":"PICKUP|DELIVERY|CONTINUE","address":"<alamat lengkap jika delivery, kosong jika pickup atau belum ada>"}`,
+			orBelum(c.Name), orBelum(c.Company))
+
 	default:
 		return `FASE: TIDAK DIKETAHUI
 Balas HANYA JSON: {"reply":"<pesan WA>"}`
@@ -138,9 +155,6 @@ func missingFields(c models.CollectedData) string {
 	}
 	if c.Company == "" {
 		m = append(m, "nama perusahaan/instansi")
-	}
-	if c.Address == "" {
-		m = append(m, "alamat pengiriman")
 	}
 	if c.Product == "" {
 		m = append(m, "produk yang dicari")

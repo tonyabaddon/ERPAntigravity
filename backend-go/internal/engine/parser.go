@@ -12,7 +12,6 @@ type GreetingResponse struct {
 type CollectedFields struct {
 	Name    string `json:"name"`
 	Company string `json:"company"`
-	Address string `json:"address"`
 	Product string `json:"product"`
 }
 
@@ -85,6 +84,21 @@ func ParseStockCheck(raw string) (*StockCheckResponse, error) {
 
 func ParseConfirming(raw string) (*ConfirmingResponse, error) {
 	var r ConfirmingResponse
+	if err := json.Unmarshal([]byte(raw), &r); err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+// DeliveryResponse is the JSON shape Gemini returns in DELIVERY state.
+type DeliveryResponse struct {
+	Reply      string `json:"reply"`
+	NextAction string `json:"next_action"` // PICKUP | DELIVERY | CONTINUE
+	Address    string `json:"address"`
+}
+
+func ParseDelivery(raw string) (*DeliveryResponse, error) {
+	var r DeliveryResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
 	}

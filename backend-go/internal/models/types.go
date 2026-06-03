@@ -10,6 +10,7 @@ const (
 	StateClarifying      ConversationState = "CLARIFYING"
 	StateStockCheck      ConversationState = "STOCK_CHECK"
 	StateConfirming      ConversationState = "CONFIRMING"
+	StateDelivery        ConversationState = "DELIVERY"
 	StateBooked          ConversationState = "BOOKED"
 	StateTimeoutReminder ConversationState = "TIMEOUT_REMINDER"
 	StateCancelled       ConversationState = "CANCELLED"
@@ -89,7 +90,7 @@ type CollectedData struct {
 }
 
 func (d CollectedData) AllCoreFieldsFilled() bool {
-	return d.Name != "" && d.Company != "" && d.Address != "" && d.Product != ""
+	return d.Name != "" && d.Company != "" && d.Product != ""
 }
 
 type SpecsData struct {

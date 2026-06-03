@@ -30,6 +30,7 @@ type ProcessResult struct {
 	ClarificationRound int
 	Language           string
 	CreateOrder        bool
+	DeliveryType       models.DeliveryType
 }
 
 // Process runs the state machine for one incoming customer message.
@@ -77,9 +78,6 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		}
 		if resp.Collected.Company != "" {
 			newData.Company = resp.Collected.Company
-		}
-		if resp.Collected.Address != "" {
-			newData.Address = resp.Collected.Address
 		}
 		if resp.Collected.Product != "" {
 			newData.Product = resp.Collected.Product
@@ -146,11 +144,34 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		}
 		result.Reply = resp.Reply
 		if resp.Confirmed {
-			result.NextState = models.StateBooked
-			result.CreateOrder = true
+			result.NextState = models.StateDelivery
 		} else if resp.ModificationRequested {
 			result.NextState = models.StateClarifying
 			result.ClarificationRound = 0
+		}
+
+	case models.StateDelivery:
+		resp, err := ParseDelivery(rawJSON)
+		if err != nil {
+			log.Printf("[ENGINE] Parse delivery error: %v — raw: %s", err, rawJSON)
+			result.Reply = FallbackReply(conv.Language)
+			return result, nil
+		}
+		result.Reply = resp.Reply
+		switch resp.NextAction {
+		case "PICKUP":
+			result.DeliveryType = models.DeliveryTypePickup
+			result.NextState = models.StateBooked
+			result.CreateOrder = true
+		case "DELIVERY":
+			newData := conv.CollectedData
+			if resp.Address != "" {
+				newData.Address = resp.Address
+			}
+			result.NewData = &newData
+			result.DeliveryType = models.DeliveryTypeDelivery
+			result.NextState = models.StateBooked
+			result.CreateOrder = true
 		}
 	}
 

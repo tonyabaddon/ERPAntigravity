@@ -154,7 +154,11 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 
 	// 11. If order just booked, create order row and start timer
 	if result.CreateOrder {
-		h.handleBooking(ctx, conv, leadsID, customerID)
+		// Apply any updated collected data (e.g. address) to conv before creating order
+		if result.NewData != nil {
+			conv.CollectedData = *result.NewData
+		}
+		h.handleBooking(ctx, conv, leadsID, customerID, result.DeliveryType)
 	}
 
 	// 12. Insert AI reply + send to WA
@@ -166,7 +170,7 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 	}
 }
 
-func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, leadsID, customerID string) {
+func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, leadsID, customerID string, deliveryType models.DeliveryType) {
 	items, _ := h.db.SearchStockByName(conv.CollectedData.Product)
 	var orderItems []models.OrderItem
 	var subtotal float64
@@ -186,7 +190,7 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, 
 	if len(items) == 0 {
 		log.Printf("[HANDLER] Warning: no stock found for product %q, order will have empty items", conv.CollectedData.Product)
 	}
-	order, err := h.db.CreateOrder(conv, orderItems, subtotal, leadsID, customerID, models.OrderTypeStandard, "")
+	order, err := h.db.CreateOrder(conv, orderItems, subtotal, leadsID, customerID, models.OrderTypeStandard, deliveryType)
 	if err != nil {
 		log.Printf("[HANDLER] CreateOrder error: %v", err)
 		return

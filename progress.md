@@ -1315,6 +1315,19 @@ No code gaps found beyond the one bug above.
 ### Fix: RLS enabled on all whatsmeow tables
 - Enabled RLS on all 16 whatsmeow tables + added UPDATE/INSERT policies for company_settings
 
+## Fix: Address asked too early in AI conversation flow — DONE (2026-06-04)
+
+**Root cause**: `AllCoreFieldsFilled()` required `Address`, `missingFields()` listed "alamat pengiriman", and the COLLECTING prompt included Address as a required field — causing Calista to ask for address upfront, violating the system prompt's hard rule #15.
+
+**Fix** (across 5 files, clean build confirmed):
+- `models/types.go`: Added `StateDelivery ConversationState = "DELIVERY"`. Removed `d.Address != ""` from `AllCoreFieldsFilled()`.
+- `engine/prompts.go`: Removed Address from COLLECTING prompt template and JSON format. Added explicit instruction "JANGAN tanyakan alamat di fase ini". Removed "alamat pengiriman" from `missingFields()`. Added new `StateDelivery` prompt that asks pickup-vs-delivery and collects address only if customer chooses delivery.
+- `engine/parser.go`: Removed `Address` from `CollectedFields`. Added `DeliveryResponse` struct (`reply`, `next_action: PICKUP|DELIVERY|CONTINUE`, `address`) and `ParseDelivery()`.
+- `engine/machine.go`: Added `DeliveryType models.DeliveryType` to `ProcessResult`. Removed address merge in COLLECTING case. Changed CONFIRMING `confirmed=true` → `StateDelivery` (no longer creates order immediately). Added `StateDelivery` case: PICKUP → `CreateOrder=true, DeliveryType=PICKUP`; DELIVERY+address → update address in NewData, `CreateOrder=true, DeliveryType=DELIVERY`.
+- `internal/whatsapp/handler.go`: Before `handleBooking`, apply `result.NewData` to `conv.CollectedData` so delivery address is present when order is created. Updated `handleBooking` signature to accept `deliveryType models.DeliveryType`. Pass `deliveryType` to `CreateOrder` instead of hardcoded `""`.
+
+**New flow**: GREETING → COLLECTING (name/company/product only) → CLARIFYING → STOCK_CHECK → CONFIRMING → **DELIVERY** (pickup/delivery choice + address if delivery) → BOOKED
+
 ## WhatsApp AI Screen — Inbox Navigation Shortcut — DONE (2026-06-04)
 
 **Root cause**: User couldn't find ongoing customer conversations because they were looking in the "WhatsApp AI" screen (daemon control panel) instead of "Sales Inbox". DB confirmed 6 conversations exist, RLS permits access.
