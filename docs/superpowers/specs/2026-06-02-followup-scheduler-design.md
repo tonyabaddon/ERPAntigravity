@@ -1,4 +1,3 @@
-# Follow-up Scheduler Design Spec
 
 **Date:** 2026-06-02
 **Sub-project:** C2 of C (Follow-up Scheduler)
