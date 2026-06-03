@@ -137,6 +137,7 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [rejectingPaymentId, setRejectingPaymentId] = useState<string | null>(null);
+  const [invoiceOrder, setInvoiceOrder] = useState<DbOrder | null>(null);
 
   const handleApprove = async (orderId: string, deliveryType: string | undefined) => {
     const fee = deliveryType === 'PICKUP' ? 0 : parseFloat(shippingFees[orderId] ?? '0');
@@ -449,15 +450,63 @@ export default function OrderHistoryScreen({ currentUser, showToast }: OrderHist
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status !== 'PENDING_ADMIN_CONFIRMATION' && order.status !== 'PAYMENT_UPLOADED' && (
-                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 text-xs text-gray-400">
-                    [expanded row — {order.status}]
+                {isExpanded && order.status === 'WAITING_PAYMENT' && (
+                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                    <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-800">Rp {order.total.toLocaleString('id-ID')}</div></div>
+                    </div>
+                    <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
+                  </div>
+                )}
+                {isExpanded && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
+                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                    <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Diverifikasi Oleh</div>
+                        <div className="font-semibold text-gray-700">
+                          {order.verified_by ?? '—'}{order.payment_verified_at ? ` · ${formatDate(order.payment_verified_at)}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <span className="text-xs text-gray-500">
+                        ✅ Diverifikasi oleh {order.verified_by ?? '—'} · {order.payment_verified_at ? formatDate(order.payment_verified_at) : '—'}
+                      </span>
+                      <button
+                        onClick={() => setInvoiceOrder(order)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[#012749] text-xs font-bold rounded-lg border border-[#c7d7f5] hover:bg-blue-50"
+                      >
+                        📄 Lihat Invoice
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {isExpanded && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED') && (
+                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                    <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
+                      <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-400">Rp {order.total.toLocaleString('id-ID')}</div></div>
+                    </div>
+                    <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
                   </div>
                 )}
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Invoice modal — wired in Task 8 */}
+      {invoiceOrder && (
+        <div className="text-xs text-gray-400 p-4">Invoice modal coming soon for {invoiceOrder.gjp_order_id}</div>
       )}
     </div>
   );
