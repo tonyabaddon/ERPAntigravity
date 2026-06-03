@@ -1279,3 +1279,26 @@ No code gaps found beyond the one bug above.
   - Offline: rose-500 text + static rose-400 dot, "Daemon offline"
 - `npm run build` passes — zero TypeScript errors (2384 modules transformed)
 - Committed: `feat(ui): add real-time daemon online/offline health badge to WhatsappAiScreen` (7e27bf2)
+
+## Production Fixes — DONE (2026-06-04)
+
+### Fix: .env reverted to correct Supabase project
+- `.env` was pointing to `zocefskkwykivbxhruoy` (wrong project) — reverted to `ekhhojaezdfjfwuxyjkl` (production)
+- Applied `admin_users` migration to `ekhhojaezdfjfwuxyjkl` (was missing from production, all other 11 tables already present)
+- All 12 tables now live in production with real data
+
+### Fix: OTP maxLength 6 → 8
+- Supabase generates 8-digit OTP codes via `{{ .Token }}` in Magic Link email template
+- Both Sign In and Sign Up OTP inputs had `maxLength={6}` — users could not enter the last 2 digits
+- Changed to `maxLength={8}` and updated placeholder text
+
+### Fix: WhatsApp session persistence (SQLite → PostgreSQL)
+- `wa_store.db` (SQLite) lived on Cloud Run's ephemeral filesystem — lost on every redeploy or scale-to-zero
+- Switched whatsmeow store from `sqlite3` to `postgres` (Supabase DB connection string)
+- Session now persists permanently across deploys; QR scan required only once
+- Removed `go-sqlite3` dependency and CGO requirement → simpler Dockerfile, smaller image
+- Removed unused `WAStorePath` config field
+
+### Fix: approved_at data quality
+- `UpdateOrderStatus` was setting `approved_at = now()` for all non-CANCELLED status changes
+- Fixed to only set `approved_at` when status becomes `WAITING_PAYMENT` (actual admin approval)
