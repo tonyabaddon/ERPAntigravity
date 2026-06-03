@@ -62,7 +62,7 @@ func TestProcessEscalate(t *testing.T) {
 	}
 }
 
-func TestProcessConfirmingBooked(t *testing.T) {
+func TestProcessConfirmingMovesToDelivery(t *testing.T) {
 	m := newTestMachine(`{"reply":"Pesanan dikonfirmasi!","confirmed":true,"modification_requested":false}`)
 	conv := &models.Conversation{
 		State:    models.StateConfirming,
@@ -75,11 +75,8 @@ func TestProcessConfirmingBooked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.NextState != models.StateBooked {
-		t.Errorf("confirmed → expected BOOKED, got %s", result.NextState)
-	}
-	if !result.CreateOrder {
-		t.Error("CreateOrder should be true on BOOKED")
+	if result.NextState != models.StateDelivery {
+		t.Errorf("confirmed → expected DELIVERY, got %s", result.NextState)
 	}
 }
 
