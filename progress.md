@@ -1019,3 +1019,16 @@ _(Previously completed — details in task tracking)_
   - `save()` calls `companySettingsService.save(companyForm)` then re-fetches to refresh UI
 - `npm run build` passes — zero TypeScript errors (997.40 kB bundle, 2382 modules)
 - Committed: `feat(settings): add Profil Perusahaan section for invoice company details` (1e607e7)
+
+## F1: Order History — COMPLETE (2026-06-03)
+
+All 10 tasks shipped across 13 commits (2cec3a1 → bbc766d):
+
+- **Types**: `DbCompanySettings`, `'order-history'` in ActivePage
+- **Service layer**: `companySettingsService.fetch/save`, `orderService.fetchAll`, `rejectOrder`, `verifyPayment(adminName)`
+- **Supabase**: `company_settings` table + RLS + seed row
+- **Sidebar + routing**: Riwayat Pesanan nav item, App.tsx route
+- **OrderHistoryScreen**: header with alert badges, 6 filter tabs, search, collapsed rows with status colors and left-border accents, 5 expanded row designs (PENDING_ADMIN_CONFIRMATION with ongkir+approve/reject, PAYMENT_UPLOADED with verify/reject, WAITING_PAYMENT read-only, COMPLETED/PAYMENT_VERIFIED with Lihat Invoice, CANCELLED/PAYMENT_REJECTED read-only)
+- **InvoiceModal**: PDF-style invoice preview with company settings + bank config, no-refund notice, `window.print()` with visibility-based print CSS fix
+- **PengaturanScreen**: Profil Perusahaan card (company_name, address, phone, email)
+- **DashboardScreen**: removed approval + payment verification panels; replaced with two alert badge buttons linking to Riwayat Pesanan
