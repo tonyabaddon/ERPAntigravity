@@ -1350,6 +1350,14 @@ No code gaps found beyond the one bug above.
 - Wired `onNavigate={setActivePage}` in `App.tsx` `case 'whatsapp-ai'`
 - `npx tsc --noEmit` — only pre-existing React 19 `key` prop error in `SalesInboxScreen.tsx`, no new errors
 
+## Bug Fix Task 1: Expose connected phone number in /api/wa/qr — DONE (2026-06-04)
+
+- Modified `backend-go/main.go` `/api/wa/qr` handler to add `phone` field
+- When paired: `phone = waClient.WA.Store.ID.User` (e.g. `6281234567890`); when not paired: `phone = ""`
+- Response is now `{ qr, connected, phone }`
+- `go build ./...` passes cleanly
+- Committed: `feat(api): expose connected phone number in /api/wa/qr response` (ebc2c20)
+
 ## Bug Fix Task 2: Display WhatsApp phone number when connected — DONE (2026-06-04)
 
 **Root cause**: Backend `/api/wa/qr` endpoint now returns `{ qr, connected, phone }` but frontend was not reading or displaying the phone number.
