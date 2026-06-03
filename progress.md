@@ -1162,3 +1162,32 @@ Three targeted fixes to the Supabase Auth implementation:
   - Updated `case 'user-management'` render: removed `admins` and `onAdminsUpdate` props
 - `npm run build` passes cleanly — zero TypeScript errors (2384 modules transformed)
 - Committed: `feat(admin-users): make UserManagementScreen self-contained with Supabase — remove localStorage` (5213282)
+
+## Frontend ↔ Backend Gap Fixes — COMPLETE (2026-06-03)
+
+All 5 tasks shipped across 5 commits (d9619d2 → 33c752e):
+
+**P1a — `company_settings` migration file** (commit d9619d2)
+- Created `supabase/migrations/20260603000001_company_settings.sql`
+- Versioned the DDL for the `company_settings` table that was previously applied via MCP only
+- Idempotent: `CREATE TABLE IF NOT EXISTS`, policy guards via `DO $$ BEGIN IF NOT EXISTS ... END $$`
+
+**P1b — `stocks` migration file** (commit f4ab2de)
+- Created `supabase/migrations/20260603000002_stocks_table.sql`
+- Versioned the DDL previously documented only as manual SQL in `backend-go/README.md`
+
+**P2 — Wire AuthScreen to Supabase Auth OTP** (commits fbb64e3, 11da57a)
+- Replaced simulated OTP (Math.random, 123456 backdoor) with real `supabase.auth.signInWithOtp` + `verifyOtp`
+- Sign-up flow stores `full_name` and `store_name` in Supabase user metadata via `updateUser`
+- App.tsx: session restore on page refresh via `getSession`, auth state listener via `onAuthStateChange`
+- App.tsx: `handleLogout` is now async, calls `supabase.auth.signOut()`
+- Dev bypass retained: when Supabase is not configured, `123456` is accepted as OTP with amber warning banner
+- Fixed stale closure in `onAuthStateChange` (currentUser guard removed)
+- Added error handling for `updateUser` and `signOut` with try/catch and toast feedback
+
+**P3 — `admin_users` table + UserManagementScreen Supabase wiring** (commits 6751e59, 697bca7, 5213282, 33c752e)
+- Created `supabase/migrations/20260603000003_admin_users.sql` and applied to Supabase
+- Added `DbAdminUser` interface to `src/types.ts`
+- Added `adminUsersService` (fetchAll, upsert, remove) to `src/lib/supabaseClient.ts`
+- Rewrote `UserManagementScreen` to be self-contained: fetches from Supabase on mount, saves/deletes in real-time, optimistic updates with rollback on failure
+- Removed `admins` localStorage state from App.tsx; component no longer receives data props
