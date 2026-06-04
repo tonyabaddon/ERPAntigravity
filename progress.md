@@ -2285,3 +2285,24 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - 4 legitimate `@lid` rows with real customer activity unchanged (`COMPLETED`, `ESCALATED_ADMIN`) ✓
 - Committed: `fix(db): add followup_sends_total column and cancel stale @lid conversations` (f9810e1)
 - Committed: `feat(types): add stock_atas/stock_bawah to SupabaseStockItem and StockItem` (e7fe1f1)
+
+## Calista Bug Fix Task 2: Filter group/broadcast messages in handler.go — DONE (2026-06-05)
+
+- Edited `backend-go/internal/whatsapp/handler.go` — `Handle()` function (line 38)
+- Added group/broadcast filter after the `IsFromMe` check and before `text := evt.Message.GetConversation()`:
+  ```go
+  // Only process direct messages. Skip group chats (g.us), broadcast lists,
+  // and WhatsApp Status updates (broadcast server). These are not customer DMs.
+  if evt.Info.IsGroup || evt.Info.Chat.Server == "g.us" || evt.Info.Chat.Server == "broadcast" {
+      log.Printf("[HANDLER] Skipping non-DM message from chat %s sender %s", evt.Info.Chat, evt.Info.Sender)
+      return
+  }
+  ```
+- This prevents Calista from processing:
+  - Group chat messages from any participant
+  - Broadcast list messages
+  - WhatsApp Status updates (internal broadcast messages)
+- Root cause: These message types have `evt.Info.IsGroup = true` or `evt.Info.Chat.Server = "broadcast"`, and were previously being processed as if they were customer DMs, creating unwanted conversations
+- Build verification: `CGO_ENABLED=1 go build ./...` — clean build (no errors)
+- Test verification: `go test ./...` tail output shows 6 test suites; pre-existing storage test failure unrelated to this change
+- Committed: `fix(handler): skip group, broadcast, and WhatsApp Status messages` (5c56f6f)
