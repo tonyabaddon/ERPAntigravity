@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Inbox,
@@ -19,12 +19,12 @@ import {
   ClipboardList,
   BarChart2
 } from 'lucide-react';
-import { ActivePage } from '../types';
+import { ActivePage, PermissionSet } from '../types';
 
 interface SidebarProps {
   activePage: ActivePage;
   onPageChange: (page: ActivePage) => void;
-  currentUser: { name: string; role: string; avatarUrl: string } | null;
+  currentUser: { name: string; role: string; permissions: PermissionSet; avatarUrl: string } | null;
   onLogout: () => void;
 }
 
@@ -34,74 +34,32 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   // If user is not logged in / is on auth screen, we don't render standard sidebar
   if (activePage === 'auth' || !currentUser) return null;
 
-  const menuItems = [
-    { 
-      id: 'dashboard' as ActivePage, 
-      label: 'Dashboard', 
-      icon: LayoutDashboard,
-      description: 'Ringkasan Toko' 
-    },
-    {
-      id: 'sales-inbox' as ActivePage,
-      label: 'Sales Inbox',
-      icon: Inbox,
-      description: 'Percakapan WA'
-    },
-    {
-      id: 'laporan' as ActivePage,
-      label: 'Laporan',
-      icon: BarChart2,
-      description: 'Analitik & Tren',
-    },
-    { 
-      id: 'ai-stock' as ActivePage, 
-      label: 'AI Stock Manager', 
-      icon: Package,
-      description: 'Stok & Harga' 
-    },
-    { 
-      id: 'user-management' as ActivePage, 
-      label: 'User Management', 
-      icon: Users,
-      description: 'Akses Admin' 
-    },
-    { 
-      id: 'notifications' as ActivePage, 
-      label: 'Notification Settings', 
-      icon: Bell,
-      description: 'Detak Jantung WA' 
-    },
-    {
-      id: 'whatsapp-ai' as ActivePage,
-      label: 'WhatsApp AI',
-      icon: Bot,
-      description: 'whatsmeow & Gemini'
-    },
-    {
-      id: 'settings' as ActivePage,
-      label: 'Pengaturan',
-      icon: Settings,
-      description: 'Konfigurasi Sistem',
-    },
-    {
-      id: 'pipeline' as ActivePage,
-      label: 'Pipeline',
-      icon: TrendingUp,
-      description: 'Leads & Prospek',
-    },
-    {
-      id: 'pelanggan' as ActivePage,
-      label: 'Pelanggan',
-      icon: Users,
-      description: 'Profil & Riwayat',
-    },
-    {
-      id: 'order-history' as ActivePage,
-      label: 'Riwayat Pesanan',
-      icon: ClipboardList,
-      description: 'Semua Pesanan',
-    },
+  const menuItems: Array<{ id: ActivePage; label: string; icon: React.ElementType; description: string; permKey: keyof PermissionSet }> = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Ringkasan Toko', permKey: 'dashboard' },
+    { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, description: 'Percakapan WA', permKey: 'salesInbox' },
+    { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
+    { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
+    { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, description: 'Leads & Prospek', permKey: 'pipeline' },
+    { id: 'pelanggan', label: 'Pelanggan', icon: Users, description: 'Profil & Riwayat', permKey: 'pelanggan' },
+    { id: 'order-history', label: 'Riwayat Pesanan', icon: ClipboardList, description: 'Semua Pesanan', permKey: 'orderHistory' },
+    { id: 'user-management', label: 'User Management', icon: UserCheck, description: 'Akses Admin', permKey: 'userManagement' },
+    { id: 'notifications', label: 'Notification Settings', icon: Bell, description: 'Detak Jantung WA', permKey: 'notifications' },
+    { id: 'whatsapp-ai', label: 'WhatsApp AI', icon: Bot, description: 'whatsmeow & Gemini', permKey: 'whatsappAi' },
+    { id: 'settings', label: 'Pengaturan', icon: Settings, description: 'Konfigurasi Sistem', permKey: 'settings' },
   ];
+
+  const visibleItems = currentUser?.permissions
+    ? menuItems.filter(item => currentUser.permissions[item.permKey] !== false)
+    : menuItems;
+
+  useEffect(() => {
+    if (currentUser?.permissions && activePage !== 'auth') {
+      const isVisible = visibleItems.some(item => item.id === activePage);
+      if (!isVisible) {
+        onPageChange('dashboard');
+      }
+    }
+  }, [currentUser?.permissions]);
 
   return (
     <aside 
@@ -126,7 +84,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
 
       {/* Navigation Links */}
       <nav className="flex-1 space-y-1.5 px-3">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const IconComponent = item.icon;
           const isActive = activePage === item.id;
           return (
