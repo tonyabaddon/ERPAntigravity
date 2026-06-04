@@ -90,6 +90,8 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     { key: 'whatsappAi', label: 'WhatsApp AI' },
     { key: 'notifications', label: 'Notifikasi' },
     { key: 'settings', label: 'Pengaturan' },
+    { key: 'pembelian', label: 'Pembelian' },
+    { key: 'kasir', label: 'Kasir' },
   ];
 
   useEffect(() => {
@@ -361,7 +363,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                       <span className={`text-[10px] font-black px-2.5 py-1 rounded-full shrink-0 ${
                         isOwner ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
                       }`}>
-                        {isOwner ? 'Semua akses' : `${activeCount}/11 aktif`}
+                        {isOwner ? 'Semua akses' : `${activeCount}/13 aktif`}
                       </span>
                       <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-100 shrink-0">
                         {adm.status}
