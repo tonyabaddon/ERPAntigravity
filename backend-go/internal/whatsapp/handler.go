@@ -55,11 +55,15 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		return
 	}
 
-	// Text messages only: drop WhatsApp's queued backlog delivered on reconnect
-	// so the AI does not re-greet customers who messaged before the last restart.
-	if evt.Info.Timestamp.Before(h.startedAt) {
+	// Text messages only: drop stale backlog delivered on reconnect (messages older
+	// than 5 minutes before daemon start). Messages sent during a brief restart
+	// window (≤5 min) pass through so new customers are never silently dropped.
+	if evt.Info.Timestamp.Before(h.startedAt.Add(-5 * time.Minute)) {
+		log.Printf("[HANDLER] Dropping stale backlog from %s (msg=%v started=%v)", evt.Info.Sender, evt.Info.Timestamp, h.startedAt)
 		return
 	}
+
+	log.Printf("[HANDLER] Processing text from %s: %q", evt.Info.Sender, text)
 
 	// Preserve the full JID string (including @lid server for LID-based senders)
 	// so sender.go can route it correctly.

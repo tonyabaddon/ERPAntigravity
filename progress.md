@@ -2150,3 +2150,17 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Used for `sinceDate = since.slice(0,10)` extraction for DATE comparisons (still extracts correct `YYYY-MM-DD`)
 - Build verification: `npm run build` passes with zero TypeScript errors (2395 modules transformed, built in 2.37s)
 - Committed: `fix(metrics): use WIB midnight ISO in LaporanScreen periodStart` (979a2a8)
+
+## Investigation: Dashboard/Laporan metrics still showing zero — DONE (2026-06-05)
+
+**Root cause found and fixed:**
+1. **Missing anon SELECT policy on `kasir_transactions`**: The table only had `authenticated_kasir_all` — the frontend uses Supabase anon key by default, so all kasir queries returned 0 rows silently. `orders` and `conversations` both have `anon_select_*` policies; kasir was missing one.
+2. **NUMERIC → string coercion**: PostgreSQL `NUMERIC` columns (`subtotal`, `total`) are returned as JavaScript strings by Supabase. All `reduce` accumulations and bucket additions were doing string concatenation (`0 + "120000.00"` = `"0120000.00"`) instead of numeric addition. This causes silent NaN or incorrect values when multiple transactions exist.
+
+**Fixes applied:**
+- Added migration `supabase/migrations/20260605000001_kasir_anon_select.sql` with `CREATE POLICY "anon_select_kasir" ON kasir_transactions FOR SELECT TO anon USING (true)`
+- Applied directly to ERP MSME AI Studio project via Supabase MCP (confirmed success)
+- Wrapped all `(x as any).subtotal ?? 0` and `(x as any).total ?? 0` reads with `Number()` in `supabaseClient.ts` — affects `fetchTodayStats`, `fetchWeeklyRevenueByChannel`, `fetchWeeklyRevenue`, `reportsService.fetchSummary`, `reportsService.fetchDailyRevenue`, `reportsService.fetchDailyRevenueByChannel`, `reportsService.fetchChannelTotals`, `reportsService.fetchTopProducts`
+- Build: `npm run build` passes, 2395 modules, zero TypeScript errors
+- Committed: `fix(metrics): add kasir anon SELECT policy + fix numeric string coercion` (edd33a6)
+- Deployed: `git push origin main` → Cloud Build triggered
