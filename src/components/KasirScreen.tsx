@@ -614,9 +614,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
 
     setSaving(true);
     try {
-      const existing = await kasirService.fetchTransactions(selectedDate);
-      const counter = existing.filter(t => t.channel === channel).length + 1;
-      const invoiceNumber = kasirService.generateInvoiceNumber(channel, counter);
+      const invoiceNumber = await kasirService.nextInvoiceNumber(channel, selectedDate);
 
       // Resolve true COGS via FIFO before recording the transaction.
       // NOTE: non-atomic — deductFifo cannot be rolled back if insertSaleTransaction fails.
