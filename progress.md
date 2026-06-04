@@ -2474,3 +2474,23 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - `ReceiveGoodsModal`: warehouse selector (Gudang Atas / Gudang Bawah)
 - `KasirScreen SaleModal`: warehouse selector passed to `decrementStock`
 - `App.tsx`: stock mapping now includes `stock_atas` and `stock_bawah`
+
+## Calista Enhancement — DONE (2026-06-05)
+
+### Part A: Conversation Reset
+- `handler.go processMessage`: COMPLETED/CANCELLED conversations are reset to GREETING before the terminal-state gate
+- Returning customers get a fresh start; ESCALATED_ADMIN/ESCALATED_WIRING stay untouched (admin handling)
+
+### Part B: Multi-Product Orders
+- `models/types.go`: Added `CartItem` struct; `Cart []CartItem` field in `CollectedData`; `StateAddMore` constant
+- `engine/parser.go`: Added `AddMoreResponse` + `ParseAddMore` (defaults add_another=false on bad JSON)
+- `engine/prompts.go`: Added `ADD_MORE` state prompt; `AddMoreContextString(cart)` helper
+- `engine/machine.go`: CONFIRMING confirmed=true now pushes item to Cart, clears Product/Qty/Specs, goes to ADD_MORE
+- `engine/machine.go`: New ADD_MORE case — add_another=true → COLLECTING; add_another=false → DELIVERY
+- `handler.go handleBooking`: Iterates Cart to build order items; fallback to single-item legacy path if Cart empty
+- `handler.go buildOrderItems`: Pure helper function for cart→order-items conversion (enables unit testing)
+- Tests: 4 machine tests, 3 parser tests, 3 handler buildOrderItems tests
+
+### Build & Tests
+- `go build ./...`: Clean build, no errors
+- `go test ./internal/...`: All new tests pass; pre-existing `TestUploadPaymentProof_Success` failure in storage package unchanged
