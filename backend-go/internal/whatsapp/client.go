@@ -106,6 +106,22 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 		switch evt := rawEvt.(type) {
 		case *events.Message:
 			handler(evt)
+		case *events.Disconnected:
+			_ = evt
+			// whatsmeow has EnableAutoReconnect=true by default, but add an
+			// explicit fallback in case the internal reconnect loop gives up.
+			if c.WA.Store.ID != nil {
+				log.Println("[WA] Disconnected — triggering reconnect in 10s")
+				go func() {
+					time.Sleep(10 * time.Second)
+					if !c.WA.IsConnected() {
+						log.Println("[WA] Still disconnected — reconnecting")
+						if err := c.WA.Connect(); err != nil {
+							log.Printf("[WA] Reconnect error: %v", err)
+						}
+					}
+				}()
+			}
 		}
 	})
 }
@@ -116,10 +132,25 @@ func (c *Client) Disconnect() {
 
 // Logout clears the WhatsApp session and restarts the QR pairing loop so
 // the frontend can immediately scan a fresh QR code.
+// If the WebSocket is already dead, it falls back to force-clearing the local
+// session so the user can always disconnect even when offline.
 func (c *Client) Logout(ctx context.Context) error {
 	if err := c.WA.Logout(ctx); err != nil {
-		return err
+		// Graceful logout failed (WA WebSocket not connected).
+		// Force-clear the local session so the user can re-pair.
+		log.Printf("[WA] Graceful logout failed (%v) — forcing local session clear", err)
+		c.WA.Disconnect()
+		if err2 := c.WA.Store.Delete(ctx); err2 != nil {
+			return fmt.Errorf("whatsapp: clear session: %w", err2)
+		}
 	}
-	// runQRLoop exits on "success"; after logout we must restart it.
-	return c.Connect(ctx)
+	c.setQR("")
+	// Restart QR loop in background; don't block the HTTP response.
+	go func() {
+		time.Sleep(time.Second)
+		if err := c.Connect(context.Background()); err != nil {
+			log.Printf("[WA] post-logout reconnect: %v", err)
+		}
+	}()
+	return nil
 }
