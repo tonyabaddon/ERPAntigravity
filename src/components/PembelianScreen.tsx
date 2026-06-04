@@ -5,6 +5,7 @@ import { purchaseOrderService, supplierService } from '../lib/pembelianService';
 import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import SupplierModal from './pembelian/SupplierModal';
+import PurchaseOrderModal from './pembelian/PurchaseOrderModal';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -258,9 +259,14 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
 
       {/* Modals — wired in Tasks 8-11 */}
       {(showCreateModal || editPo) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl p-6 text-sm text-gray-500">PurchaseOrderModal — Task 8</div>
-        </div>
+        <PurchaseOrderModal
+          po={editPo ?? undefined}
+          suppliers={suppliers}
+          stockList={stockList}
+          onClose={() => { setShowCreateModal(false); setEditPo(null); }}
+          onSaved={onRefresh}
+          showToast={showToast}
+        />
       )}
     </>
   );
