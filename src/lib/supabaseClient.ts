@@ -59,6 +59,7 @@ export const supabaseService = {
         stock: item.stock,
         status: item.status,
         specs: item.specs,
+        harga_modal: item.harga_modal ?? null,
         updated_at: new Date().toISOString()
       })
       .select();

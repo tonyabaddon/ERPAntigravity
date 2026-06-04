@@ -90,7 +90,7 @@ const CSV_SPEC_COLS = [
   'kabel_tipe', 'kabel_mm2', 'kabel_panjang',
   'deskripsi',
 ];
-const CSV_HEADER = ['kategori', 'harga', 'stok', ...CSV_SPEC_COLS].join(',');
+const CSV_HEADER = ['kategori', 'harga', 'harga_modal', 'stok', ...CSV_SPEC_COLS].join(',');
 
 function generateSkuId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -152,7 +152,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [newSpecs, setNewSpecs] = useState<Record<string, string>>({});
 
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; specs: Record<string, string> }>>({});
+  const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; harga_modal: number | null; specs: Record<string, string> }>>({});
 
   const uniqueCategories = ['Semua Produk', 'Panel', 'MCB', 'Kabel', 'Aksesori'];
 
@@ -211,6 +211,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       [item.sku]: {
         price: String(item.price),
         stock: String(item.stock),
+        harga_modal: item.harga_modal ?? null,
         specs: Object.fromEntries(
           Object.entries(item.specs ?? {}).map(([k, v]) => [k, String(v)])
         ),
@@ -236,7 +237,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     }
     const updated = stockList.map(i =>
       i.sku === sku
-        ? { ...i, price, stock, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
+        ? { ...i, price, stock, harga_modal: vals.harga_modal ?? null, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
         : i
     );
     onStockUpdate(updated);
@@ -247,10 +248,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const handleDownloadTemplate = () => {
     const rows = [
       CSV_HEADER,
-      'Panel,850000,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,,',
-      'MCB,45000,200,,,,,,,,,Schneider,16,1P,,,,',
-      'Kabel,380000,50,,,,,,,,,,,,NYM,2.5,100m/Rol,',
-      'Aksesori,25000,10,,,,,,,,,,,,,,,Klem Kabel 16mm',
+      'Panel,850000,,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,,',
+      'MCB,45000,,200,,,,,,,,,Schneider,16,1P,,,,',
+      'Kabel,380000,,50,,,,,,,,,,,,NYM,2.5,100m/Rol,',
+      'Aksesori,25000,,10,,,,,,,,,,,,,,,Klem Kabel 16mm',
     ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -274,6 +275,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       header.forEach((h, idx) => { row[h] = cols[idx] || ''; });
       const category = row['kategori'] || 'Aksesori';
       const price = parseInt(row['harga']) || 0;
+      const harga_modal = row['harga_modal'] ? parseFloat(row['harga_modal']) : null;
       const stock = parseInt(row['stok']) || 0;
       const specs: Record<string, string> = {};
       CSV_SPEC_COLS.forEach(col => {
@@ -283,7 +285,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       });
       const sku = generateSkuId();
       const name = generateName(category, specs);
-      newItems.push({ sku, name, category, price, stock, status: stock < 10 ? 'Stok Tipis' : 'Sinkron', specs });
+      newItems.push({ sku, name, category, price, harga_modal, stock, status: stock < 10 ? 'Stok Tipis' : 'Sinkron', specs });
     }
     onStockUpdate([...newItems, ...stockList]);
     showToast(`✅ ${newItems.length} produk berhasil diimport dari CSV.`);
@@ -609,6 +611,13 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                         className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#2d8a4e] text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
+                    <div className="mt-1 text-[10px] font-semibold text-gray-400 text-right pr-1">
+                      Modal:{' '}
+                      {item.harga_modal != null
+                        ? <span className="text-gray-600">Rp {item.harga_modal.toLocaleString('id-ID')}</span>
+                        : <span className="text-amber-500 font-bold" title="Belum diisi — P&L tidak akurat">—</span>
+                      }
+                    </div>
                   </div>
 
                   <div className="w-full md:w-28 shrink-0 flex items-center gap-2">
@@ -652,13 +661,26 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
 
                 {isEditing && vals && (
                   <div className="bg-blue-50 border border-blue-200 border-t-0 rounded-b-2xl p-5">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga (Rp)</label>
                         <input
                           type="text"
                           value={vals.price}
                           onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price: e.target.value } }))}
+                          className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                          Harga Modal (HPP)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={vals.harga_modal ?? ''}
+                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], harga_modal: e.target.value ? Number(e.target.value) : null } }))}
+                          placeholder="Harga beli / modal"
                           className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                         />
                       </div>

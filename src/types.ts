@@ -88,6 +88,7 @@ export interface StockItem {
   stock: number;
   status: 'Sinkron' | 'Stok Tipis';
   specs: Record<string, string | number>;
+  harga_modal?: number | null;
 }
 
 export interface NotificationConfig {
