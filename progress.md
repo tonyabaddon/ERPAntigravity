@@ -1697,3 +1697,17 @@ Three bugs fixed that prevented PDF payment proofs from appearing correctly in t
 4. **Admin UI PDF rendering**: `OrderHistoryScreen` shows a red PDF card (clickable link + 📄 icon) for `.pdf` URLs instead of a broken `<img>` tag. Images still use `<img>`.
 
 Root cause of the original "stuck at WAITING_PAYMENT" report: the daemon binary was compiled at 02:50 on 2026-06-04, before the WhatsApp handler fixes were committed at 03:06. The binary was rebuilt and restarted via `deploy.sh`.
+
+## Pembelian Module — Task 1: Database Migration — DONE (2026-06-04)
+
+- Created `supabase/migrations/20260604000005_pembelian_module.sql`
+  - **`suppliers`** table: id (uuid PK), name, contact_name, phone, payment_term_days, created_at; RLS enabled; anon full access policy
+  - **`purchase_orders`** table: id, po_number (unique), supplier_id (FK→suppliers), status (default DRAFT), notes, ordered_at, received_at, payment_due_at, paid_at, invoice_url, payment_proof_url, tax_rate, tax_amount, subtotal, total, created_at; RLS enabled; anon full access policy
+  - **`purchase_order_items`** table: id, po_id (FK→purchase_orders, CASCADE DELETE), sku (FK→stocks), product_name, qty, unit_cost, subtotal, qty_received, qty_damaged, damage_notes, damage_status (default NONE); RLS enabled; anon full access policy
+  - **`generate_po_number()`** RPC: generates sequential PO numbers in `PO-YYYY-MM-NNN` format using Asia/Jakarta timezone
+  - **`receive_purchase_order(p_po_id, p_received_at, p_conditions)`** RPC: validates ORDERED status, updates item quantities and damage status, increments stock for received items, advances PO to RECEIVED
+  - **`receive_replacement(p_item_id)`** RPC: validates RETURNED damage status, increments stock by damaged qty, advances damage_status to REPLACED
+- Applied migration to project `ekhhojaezdfjfwuxyjkl` via Supabase MCP — success
+- Created `purchase-documents` storage bucket (public) and anon full access policy on `storage.objects`
+- Verification passed: 3 tables exist, 3 RPCs exist, `generate_po_number()` returns `PO-2026-06-001`
+- Note: migration file numbered `000005` (not `000004` as in task spec) because `20260604000004_add_authenticated_update_customers.sql` already existed
