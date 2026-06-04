@@ -897,6 +897,16 @@ All 4 tasks complete. Feature is fully implemented:
 - `npm run build` passes with zero TypeScript errors
 - Committed: `feat(types): remove targetNumber from NotificationConfig; add DbNotificationConfig` (fdfa73c)
 
+## Code Quality Fix: WIB midnight ISO timestamp for range filters — DONE (2026-06-05)
+
+- Fixed critical bug in `src/lib/supabaseClient.ts` where `periodStart()` returned bare date string `"YYYY-MM-DD"` (interpreted as UTC midnight by PostgreSQL)
+- Changed `periodStart()` to return full ISO timestamp with WIB offset: `wibDateString(d) + 'T00:00:00+07:00'`
+- Fixed `fetchTodayStats()` to split date variables: `todayDate` (YYYY-MM-DD for kasir DATE filter) and `todayISO` (ISO timestamp for created_at timestamptz filters)
+- Impact: Period range queries now correctly use WIB midnight boundary, no longer exclude first 7 hours of WIB days
+- Note: Existing `sinceDate = since.slice(0, 10)` calls throughout file continue to extract correct YYYY-MM-DD from the ISO timestamp
+- `npm run build` passes with zero TypeScript errors
+- Committed: `fix(metrics): use WIB midnight ISO timestamp for created_at range filters` (13552a3)
+
 ## E3-T3: Add notificationConfigService to supabaseClient.ts — DONE (2026-06-03)
 
 - Added `DbNotificationConfig` to the import line in `src/lib/supabaseClient.ts`
@@ -2115,3 +2125,28 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - DRAFT POs: added "Hapus" button (rose) calling `handleDelete` — `confirm()` dialog → `purchaseOrderService.delete(po.id)` → success toast + refresh
 - TypeScript compiled clean; Vite build succeeded in 2.67s
 - Committed: `feat(pembelian): overdue indicator + sort-to-top, delete DRAFT PO, Terlambat Bayar summary card` (f8f8e11)
+
+## Task 1: Fix supabaseClient.ts — add wibDateString helper + fix all date calculations — DONE (2026-06-05)
+
+- Added `wibDateString(date = new Date()): string` helper function using Intl API with Asia/Jakarta timezone
+  - Returns date string in `YYYY-MM-DD` format using `toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })`
+  - Used by all 6 affected date calculation functions to ensure consistent WIB (UTC+7) timezone handling
+- Fixed `periodStart(p: Period)`: removed `setHours(0,0,0,0)` and `toISOString()` calls; now returns `wibDateString(d)` directly
+- Fixed `groupByDay<T>()`: removed `setHours(0,0,0,0)` from today init; now uses `wibDateString(d)` for bucket keys and `wibDateString(new Date(row.created_at))` for row keys
+- Fixed `fetchTodayStats()`: replaced `setHours(0,0,0,0).toISOString()` pattern with single `wibDateString()` call; uses same `todayDate` for all 4 concurrent queries (orders, conversations, kasir_transactions)
+- Fixed `statsService.fetchWeeklyRevenueByChannel()`: removed `setHours(0,0,0,0)` from today init; bucket keys now use `wibDateString(d)` and order row keys use `wibDateString(new Date((o as any).created_at))`
+- Fixed `reportsService.fetchDailyRevenueByChannel()`: identical pattern — bucket keys and order row keys now use `wibDateString()`
+- Build verification: `npm run build` passes with zero TypeScript errors (2395 modules transformed, built in 3.26s)
+- Committed: `fix(metrics): use WIB timezone for all date calculations in supabaseClient` (12e0ce8)
+- Impact: Dashboard and laporan metrics now correctly show kasir walk-in transactions when Indonesian users (WIB = UTC+7) enter transactions during business hours
+
+## Task 2: Fix LaporanScreen.tsx — local periodStart timezone — DONE (2026-06-05)
+
+- Fixed local `periodStart` function in `src/components/LaporanScreen.tsx` (lines 13–17)
+- **Change**: Removed `d.setHours(0, 0, 0, 0)` and `d.toISOString()` calls; replaced with `d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) + 'T00:00:00+07:00'`
+- **Why**: Matches the fix applied to `supabaseClient.ts` in Task 1; returns full WIB midnight ISO timestamp instead of UTC-based string
+- **Impact**: `since` parameter passed to all `reportsService` methods now correctly represents WIB midnight:
+  - Used for `gte('created_at', since)` filter on timestamptz columns (now gets correct WIB midnight)
+  - Used for `sinceDate = since.slice(0,10)` extraction for DATE comparisons (still extracts correct `YYYY-MM-DD`)
+- Build verification: `npm run build` passes with zero TypeScript errors (2395 modules transformed, built in 2.37s)
+- Committed: `fix(metrics): use WIB midnight ISO in LaporanScreen periodStart` (979a2a8)
