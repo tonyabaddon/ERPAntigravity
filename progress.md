@@ -1591,6 +1591,15 @@ Full rewrite of `src/components/StockManagerScreen.tsx` (commit 2ee4314):
 - **TypeScript compile**: `npx tsc --noEmit` — only the 2 pre-existing errors in SalesInboxScreen.tsx and Sidebar.tsx; no new errors from this file.
 - Committed: `feat(app): map specs field from Supabase stock data, fix dirty-check to include specs` (7533622)
 
+## Admin Invitation Email — DONE (2026-06-04)
+
+- New Supabase Edge Function `send-admin-invite` sends branded HTML invitation email via Gmail SMTP (denomailer 1.6.0, port 465 TLS)
+- JWT-authenticated endpoint — only logged-in app users can trigger it (verified via `supabase.auth.getUser`)
+- HTML-escaped template, appUrl validation, safe SMTP error logging
+- Frontend calls via `supabase.functions.invoke()` after successful admin_users upsert; failure is non-fatal (warning toast only)
+- Secrets required in Supabase project `ekhhojaezdfjfwuxyjkl`: `GMAIL_USER`, `GMAIL_APP_PASSWORD`
+- Deployed to project `ekhhojaezdfjfwuxyjkl` — status: ACTIVE
+
 ## Hotfix: admin_users RLS — DONE (2026-06-04)
 
 **Root cause:** The `admin_users` table had a single RLS policy granting `anon` full access. After Supabase OTP verification, the client switches from the `anon` role to `authenticated`, so all post-login queries (sign-up upsert, sign-in email lookup) were silently blocked — leaving the table empty and blocking login.
