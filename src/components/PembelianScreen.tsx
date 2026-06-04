@@ -14,6 +14,7 @@ import ReceiveReplacementModal from './pembelian/ReceiveReplacementModal';
 interface PembelianScreenProps {
   stockList: StockItem[];
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onStockRefresh: () => void;
 }
 
 type Tab = 'orders' | 'suppliers';
@@ -32,13 +33,14 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 const LEFT_BORDER: Record<string, string> = {
   ORDERED:  'border-l-4 border-l-blue-400',
   RECEIVED: 'border-l-4 border-l-amber-400',
+  OVERDUE:  'border-l-4 border-l-rose-500',
 };
 
-export default function PembelianScreen({ stockList, showToast }: PembelianScreenProps) {
+export default function PembelianScreen({ stockList, showToast, onStockRefresh }: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('orders');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
-  const [summary, setSummary] = useState({ totalMtd: 0, dueMtd: 0, totalUnpaid: 0, countMtd: 0 });
+  const [summary, setSummary] = useState({ totalMtd: 0, dueMtd: 0, overdueAmount: 0, countMtd: 0 });
   const [loading, setLoading] = useState(true);
 
   async function reload() {
@@ -89,9 +91,9 @@ export default function PembelianScreen({ stockList, showToast }: PembelianScree
             <p className="text-xs text-amber-400 mt-1">belum dibayar, jatuh tempo bulan ini</p>
           </div>
           <div className="bg-white rounded-xl border border-rose-200 p-4">
-            <p className="text-xs text-rose-600 font-medium uppercase tracking-wide">Total Belum Dibayar</p>
-            <p className="text-2xl font-bold text-rose-700 mt-1">{formatRupiah(summary.totalUnpaid)}</p>
-            <p className="text-xs text-rose-400 mt-1">semua PO outstanding</p>
+            <p className="text-xs text-rose-600 font-medium uppercase tracking-wide">Terlambat Bayar</p>
+            <p className="text-2xl font-bold text-rose-700 mt-1">{formatRupiah(summary.overdueAmount)}</p>
+            <p className="text-xs text-rose-400 mt-1">melewati jatuh tempo, belum lunas</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Jumlah PO Bulan Ini</p>
@@ -125,6 +127,7 @@ export default function PembelianScreen({ stockList, showToast }: PembelianScree
             stockList={stockList}
             showToast={showToast}
             onRefresh={reload}
+            onStockRefresh={onStockRefresh}
           />
         ) : (
           <SuppliersTab
@@ -145,9 +148,10 @@ interface OrdersTabProps {
   stockList: StockItem[];
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onRefresh: () => void;
+  onStockRefresh: () => void;
 }
 
-function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: OrdersTabProps) {
+function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStockRefresh }: OrdersTabProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -157,12 +161,24 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
   const [detailPo, setDetailPo] = useState<DbPurchaseOrder | null>(null);
   const [replaceItem, setReplaceItem] = useState<DbPurchaseOrderItem | null>(null);
 
-  const filtered = orders.filter(o => {
-    const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
-      (o.supplier?.name ?? '').toLowerCase().includes(search.toLowerCase());
-    const matchStatus = !statusFilter || o.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const today = new Date().toISOString().slice(0, 10);
+
+  function isOverdue(po: DbPurchaseOrder): boolean {
+    return po.status === 'RECEIVED' && !!po.payment_due_at && po.payment_due_at < today;
+  }
+
+  const filtered = orders
+    .filter(o => {
+      const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
+        (o.supplier?.name ?? '').toLowerCase().includes(search.toLowerCase());
+      const matchStatus = !statusFilter || o.status === statusFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => {
+      if (isOverdue(a) && !isOverdue(b)) return -1;
+      if (!isOverdue(a) && isOverdue(b)) return 1;
+      return 0;
+    });
 
   async function handleMarkOrdered(po: DbPurchaseOrder) {
     try {
@@ -172,6 +188,18 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
     } catch (e: any) {
       console.error('Mark ordered error:', e);
       showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
+    }
+  }
+
+  async function handleDelete(po: DbPurchaseOrder) {
+    if (!confirm(`Hapus PO "${po.po_number}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+    try {
+      await purchaseOrderService.delete(po.id);
+      showToast(`${po.po_number} dihapus.`, 'success');
+      onRefresh();
+    } catch (e: any) {
+      console.error('Delete PO error:', e);
+      showToast(e?.message ?? 'Gagal menghapus PO.', 'warning');
     }
   }
 
@@ -224,16 +252,21 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
             <div className="py-12 text-center text-sm text-gray-400">Belum ada purchase order.</div>
           ) : (
             filtered.map(po => (
-              <div key={po.id} className={`grid grid-cols-7 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${LEFT_BORDER[po.status] ?? ''}`}>
+              <div key={po.id} className={`grid grid-cols-7 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${isOverdue(po) ? LEFT_BORDER.OVERDUE : (LEFT_BORDER[po.status] ?? '')}`}>
                 <span className="col-span-1 text-xs font-mono font-semibold text-gray-800">{po.po_number}</span>
                 <div className="col-span-1">
                   <div className="text-sm font-semibold text-gray-800 truncate">{po.supplier?.name ?? '—'}</div>
                   <div className="text-[10px] text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
                 </div>
                 <span className="col-span-1 text-xs text-gray-500 text-center">{formatDate(po.ordered_at)}</span>
-                <span className={`col-span-1 text-xs text-center font-semibold ${po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
-                  {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
-                </span>
+                <div className="col-span-1 flex flex-col items-center gap-0.5">
+                  <span className={`text-xs font-semibold ${isOverdue(po) ? 'text-rose-600' : po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
+                    {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
+                  </span>
+                  {isOverdue(po) && (
+                    <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">Terlambat</span>
+                  )}
+                </div>
                 <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-green-700' : 'text-gray-800'}`}>
                   {formatRupiah(po.total)}
                 </span>
@@ -248,6 +281,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
                     <>
                       <button onClick={() => setEditPo(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
                       <button onClick={() => handleMarkOrdered(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Pesan</button>
+                      <button onClick={() => handleDelete(po)} className="text-xs text-rose-600 px-2 py-1 rounded border border-rose-200 hover:bg-rose-50">Hapus</button>
                     </>
                   )}
                   {po.status === 'ORDERED' && (
@@ -278,7 +312,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
         <ReceiveGoodsModal
           po={receivePo}
           onClose={() => setReceivePo(null)}
-          onReceived={onRefresh}
+          onReceived={() => { onRefresh(); onStockRefresh(); }}
           showToast={showToast}
         />
       )}

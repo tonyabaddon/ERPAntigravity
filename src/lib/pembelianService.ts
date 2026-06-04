@@ -197,13 +197,14 @@ export const purchaseOrderService = {
     return Number(data ?? 0);
   },
 
-  async fetchSummary(): Promise<{ totalMtd: number; dueMtd: number; totalUnpaid: number; countMtd: number }> {
-    if (!supabase) return { totalMtd: 0, dueMtd: 0, totalUnpaid: 0, countMtd: 0 };
+  async fetchSummary(): Promise<{ totalMtd: number; dueMtd: number; overdueAmount: number; countMtd: number }> {
+    if (!supabase) return { totalMtd: 0, dueMtd: 0, overdueAmount: 0, countMtd: 0 };
     const { data } = await supabase
       .from('purchase_orders')
       .select('total, status, payment_due_at, created_at');
     const rows = (data ?? []) as Array<{ total: number; status: string; payment_due_at?: string; created_at: string }>;
     const now = new Date();
+    const todayDate = now.toISOString().slice(0, 10);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const monthEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
     const monthStartDate = monthStart.slice(0, 10);
@@ -212,9 +213,9 @@ export const purchaseOrderService = {
     const dueMtd = rows
       .filter(r => r.status === 'RECEIVED' && r.payment_due_at && r.payment_due_at >= monthStartDate && r.payment_due_at <= monthEndDate)
       .reduce((s, r) => s + Number(r.total), 0);
-    const totalUnpaid = rows
-      .filter(r => r.status === 'RECEIVED')
+    const overdueAmount = rows
+      .filter(r => r.status === 'RECEIVED' && r.payment_due_at && r.payment_due_at < todayDate)
       .reduce((s, r) => s + Number(r.total), 0);
-    return { totalMtd, dueMtd, totalUnpaid, countMtd };
+    return { totalMtd, dueMtd, overdueAmount, countMtd };
   },
 };
