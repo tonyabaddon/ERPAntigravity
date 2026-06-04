@@ -141,7 +141,7 @@ Used for create and edit (DRAFT only). Contains:
 Triggered from "Terima" action on ORDERED PO:
 - Tanggal Terima (date picker, defaults today)
 - Jatuh Tempo Pembayaran (date, pre-filled from `ordered_at + payment_term_days`, editable)
-- Invoice upload (PDF/JPG → Supabase Storage)
+- Invoice upload (PDF/JPG → Supabase Storage) — **optional**; some suppliers don't send digital invoices at delivery
 - **Per-item condition inputs:** for each line item, two fields: Qty Baik + Qty Rusak (must sum to ordered qty). If Qty Rusak > 0, a damage notes field appears.
 - Info banner: "Stok akan bertambah sesuai Qty Baik yang diterima."
 - Confirm button → calls `receive_purchase_order(po_id, item_conditions[])` RPC
@@ -158,6 +158,16 @@ In the PO detail view, a **"Barang Rusak"** section appears when any item has `q
 ### Mark as Paid Modal
 - Payment proof upload (PDF/JPG → Supabase Storage)
 - Confirm button → sets status = PAID, paid_at = now()
+
+### `PODetailModal.tsx`
+Read-only view triggered by the "Detail" button on ORDERED / RECEIVED / PAID POs. Contains:
+- PO header: po_number, supplier, dates, status badge
+- Line items table with qty, unit_cost, subtotal, and margin columns (selling price − unit_cost)
+- Damaged items section (visible only when any item has `qty_damaged > 0`) — same tracking UI as described above
+- Invoice link: "Lihat Invoice ↗" button shown when `invoice_url` is set
+- Payment proof link: "Lihat Bukti Bayar ↗" button shown when `payment_proof_url` is set
+- Print button → triggers print view
+- Totals: subtotal · tax · total
 
 ### Print View
 - Route: rendered conditionally when print mode is active (e.g., `isPrinting` state)
@@ -192,6 +202,8 @@ A Supabase database function called by the Kasir transaction flow when recording
 3. For each lot consumed: decrements `qty_remaining`, accumulates `cost += deducted_qty × unit_cost`
 4. Returns `total_cost` (the true COGS for that line item)
 
+**Edge case:** If no lots have remaining stock (stock_lots is empty or fully depleted), the function falls back to `stocks.hpp_per_unit × qty` and logs a warning. This prevents COGS from silently recording as zero.
+
 The Kasir sale flow uses this return value to populate `hpp_per_unit = total_cost / qty` and `hpp_subtotal = total_cost` in the `kasir_transactions.items` JSONB. This replaces the previous static `stocks.hpp_per_unit` lookup.
 
 ### Kasir Expense on PO Payment
@@ -208,7 +220,8 @@ This ensures PO payments appear in Kasir reconciliation and Laporan expense tota
 A Supabase database function called when admin confirms replacement goods have arrived:
 1. Validates `damage_status = 'RETURNED'` on the item
 2. Increments `stocks.stock += qty_damaged` for the item's SKU
-3. Sets `damage_status = 'REPLACED'`
+3. Creates a `stock_lots` row for the replacement units: `unit_cost` = item's original `unit_cost`, `qty_received` = `qty_damaged`, `qty_remaining` = `qty_damaged`, `po_id` = item's original `po_id`, `received_at` = now()
+4. Sets `damage_status = 'REPLACED'`
 
 Called via `supabase.rpc('receive_replacement', { item_id })`. Atomic.
 
@@ -225,9 +238,9 @@ Generated at PO creation time:
 - `stock_lots`: anon full access
 
 ### Supabase Storage
-- Bucket: `purchase-documents` (private or public depending on existing storage setup)
+- Bucket: `purchase-documents` — **public** (consistent with existing `payment-proofs` bucket; access is controlled at the app level by admin-only permissions, not bucket-level auth)
 - Invoice path: `invoices/{po_id}.{ext}`
-- Payment proof path: `payment-proofs/{po_id}.{ext}`
+- Payment proof path: `proofs/{po_id}.{ext}`
 
 ---
 
