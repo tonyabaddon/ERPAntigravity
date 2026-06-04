@@ -119,10 +119,32 @@ Jika customer balas OK/Oke/BENAR/Yes/Confirm/setuju/iya → confirmed: true
 Jika customer minta ubah/ganti/revisi → modification_requested: true
 Jika tidak jelas → minta konfirmasi ulang dengan sopan
 
+Jika customer mengkonfirmasi (confirmed: true), tambahkan kalimat di akhir reply: 'Mau tambah produk lain? Ketik nama produk berikutnya, atau balas "selesai" untuk lanjut ke pengiriman.'
+
 Balas HANYA JSON (tidak ada teks lain):
 {"reply":"<pesan WA>","confirmed":false,"modification_requested":false}`,
 			orBelum(c.Name), orBelum(c.Company), orBelum(c.Product),
 			qty, orBelum(c.Specs.Size), orBelum(c.Specs.Notes))
+
+	case models.StateAddMore:
+		cartStr := AddMoreContextString(c.Cart)
+		return fmt.Sprintf(`FASE: TAMBAH PRODUK (ADD_MORE)
+Keranjang saat ini:
+%s
+
+Customer baru saja membalas. Tentukan apakah mereka ingin tambah produk lain atau sudah selesai.
+
+Format respons JSON:
+{
+  "reply": "string — respons ke customer dalam bahasa yang sama",
+  "add_another": true/false,
+  "language": "id" atau "en"
+}
+
+Jika add_another=true: sambut produk berikutnya dan minta nama produk.
+Jika add_another=false: konfirmasi isi keranjang dan informasikan langkah pengiriman.
+
+Balas HANYA JSON (tidak ada teks lain).`, cartStr)
 
 	case models.StateDelivery:
 		return fmt.Sprintf(`FASE: PILIHAN PENGIRIMAN (DELIVERY)
@@ -181,6 +203,22 @@ func formatHistory(msgs []models.Message) string {
 		sb.WriteString(fmt.Sprintf("[%s]: %s\n", strings.ToUpper(string(m.Sender)), m.Text))
 	}
 	return sb.String()
+}
+
+// AddMoreContextString formats the current cart for the ADD_MORE prompt.
+func AddMoreContextString(cart []models.CartItem) string {
+	if len(cart) == 0 {
+		return "(keranjang kosong)"
+	}
+	var sb strings.Builder
+	for i, item := range cart {
+		specs := item.Specs
+		if specs == "" {
+			specs = "-"
+		}
+		sb.WriteString(fmt.Sprintf("%d. %s — qty: %d, spek: %s\n", i+1, item.Product, item.Quantity, specs))
+	}
+	return strings.TrimSpace(sb.String())
 }
 
 // StockContextString formats stock items into a compact string for the Gemini prompt.
