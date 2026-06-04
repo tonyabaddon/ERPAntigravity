@@ -190,13 +190,18 @@ func (c *Client) Disconnect() {
 // deleted and WA.Connect() would then return ErrDeviceDeleted, we restart the
 // process so Cloud Run creates a fresh client ready for QR pairing.
 func (c *Client) Logout(ctx context.Context) error {
-	if err := c.WA.Logout(ctx); err != nil {
-		// Graceful logout failed (WA WebSocket not connected).
-		// Force-clear the local session so the user can re-pair.
-		log.Printf("[WA] Graceful logout failed (%v) — forcing local session clear", err)
-		c.WA.Disconnect()
-		if err2 := c.WA.Store.Delete(ctx); err2 != nil {
-			return fmt.Errorf("whatsapp: clear session: %w", err2)
+	if c.WA.Store.ID == nil {
+		// No stored session — nothing to delete, just restart for QR pairing.
+		log.Println("[WA] Logout called with no stored session — restarting for QR pairing")
+	} else {
+		if err := c.WA.Logout(ctx); err != nil {
+			// Graceful logout failed (WA WebSocket not connected).
+			// Force-clear the local session so the user can re-pair.
+			log.Printf("[WA] Graceful logout failed (%v) — forcing local session clear", err)
+			c.WA.Disconnect()
+			if err2 := c.WA.Store.Delete(ctx); err2 != nil {
+				return fmt.Errorf("whatsapp: clear session: %w", err2)
+			}
 		}
 	}
 	c.setQR("")
