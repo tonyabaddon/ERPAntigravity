@@ -141,8 +141,7 @@ func main() {
 	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
-		paired := waClient.WA.Store.ID != nil
-		if paired {
+		if waClient.WA.IsConnected() {
 			w.Write([]byte(`{"connected":true}`))
 		} else {
 			w.Write([]byte(`{"connected":false}`))
@@ -152,14 +151,14 @@ func main() {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
 		qr := waClient.GetQR()
-		paired := waClient.WA.Store.ID != nil
+		connected := waClient.WA.IsConnected()
 		phone := ""
-		if paired {
+		if connected && waClient.WA.Store.ID != nil {
 			phone = waClient.WA.Store.ID.User
 		}
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"qr":        qr,
-			"connected": paired,
+			"connected": connected,
 			"phone":     phone,
 		})
 	})

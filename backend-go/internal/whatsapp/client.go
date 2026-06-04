@@ -43,14 +43,18 @@ func NewClient(ctx context.Context, pgConnStr string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("whatsapp: get device: %w", err)
 	}
-	clientLog := waLog.Stdout("WAClient", "WARN", true)
+	clientLog := waLog.Stdout("WAClient", "INFO", true)
 	wa := whatsmeow.NewClient(deviceStore, clientLog)
 	return &Client{WA: wa}, nil
 }
 
 func (c *Client) Connect(ctx context.Context) error {
+	log.Printf("[WA] Connect called — Store.ID=%v", c.WA.Store.ID)
 	if c.WA.Store.ID == nil {
-		qrChan, _ := c.WA.GetQRChannel(ctx)
+		qrChan, err := c.WA.GetQRChannel(ctx)
+		if err != nil {
+			return fmt.Errorf("whatsapp: get QR channel: %w", err)
+		}
 		if err := c.WA.Connect(); err != nil {
 			return fmt.Errorf("whatsapp: connect: %w", err)
 		}
@@ -59,12 +63,13 @@ func (c *Client) Connect(ctx context.Context) error {
 		if err := c.WA.Connect(); err != nil {
 			return fmt.Errorf("whatsapp: reconnect: %w", err)
 		}
-		log.Println("[WA] Connected")
+		log.Println("[WA] Connected (resuming stored session)")
 	}
 	return nil
 }
 
 func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelItem) {
+	log.Println("[WA] QR loop started — waiting for QR code events")
 	for {
 		for evt := range ch {
 			if evt.Event == "code" {
@@ -74,7 +79,7 @@ func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelIte
 				log.Printf("[WA] QR channel event: %s", evt.Event)
 				c.setQR("")
 				if evt.Event == "success" {
-					log.Println("[WA] Connected")
+					log.Println("[WA] Pairing successful — connected")
 					return
 				}
 				break // timeout — fall through to reconnect
@@ -106,6 +111,20 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 		switch evt := rawEvt.(type) {
 		case *events.Message:
 			handler(evt)
+		case *events.LoggedOut:
+			// Fired when WhatsApp server rejects our stored session (expired / revoked).
+			log.Printf("[WA] Session invalidated by server (on_connect=%v) — clearing and restarting QR pairing", evt.OnConnect)
+			c.setQR("")
+			c.WA.Disconnect()
+			if err := c.WA.Store.Delete(context.Background()); err != nil {
+				log.Printf("[WA] Store.Delete error: %v", err)
+			}
+			go func() {
+				time.Sleep(2 * time.Second)
+				if err := c.Connect(context.Background()); err != nil {
+					log.Printf("[WA] post-expiry reconnect: %v", err)
+				}
+			}()
 		case *events.Disconnected:
 			_ = evt
 			// whatsmeow has EnableAutoReconnect=true by default, but add an
