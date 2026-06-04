@@ -109,6 +109,9 @@ CREATE TABLE IF NOT EXISTS public.kasir_transactions (
   expense_category kasir_expense_category,
   description      TEXT,
 
+  -- PO integration
+  po_id            UUID,  -- references purchase_orders.id (nullable, set by PO module)
+
   created_by       UUID,  -- references admin_users.id
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -304,6 +307,26 @@ Tidak ada chart/trend di Kasir screen — itu tetap di LaporanScreen yang sudah 
 - **HPP null**: transaksi tetap tersimpan, P&L owner menampilkan warning "⚠️ X item tanpa harga modal"
 - **Supabase offline**: kasirService mengembalikan error, screen menampilkan toast warning, tidak crash
 - **Cetak invoice gagal**: `window.print()` tidak punya callback error — tampilkan modal print preview saja
+
+---
+
+## Integration: PO Module
+
+Modul PO sedang dibangun secara terpisah. Coordination point:
+
+- `kasir_transactions` menyediakan kolom `po_id UUID` (nullable) untuk di-populate oleh PO module
+- Ketika PO ditandai "sudah dibayar", PO module **insert** satu record ke `kasir_transactions`:
+  ```
+  type             = 'expense'
+  expense_category = 'Pembelian Stok'
+  subtotal         = total pembayaran PO
+  po_id            = id PO
+  description      = 'Pembayaran PO #XXX — Supplier Y'
+  date             = tanggal bayar
+  ```
+- Rekomendasi mekanisme: **Supabase Postgres trigger** pada tabel `purchase_orders` saat `status` berubah ke `'PAID'` — paling bersih, tidak ada coupling frontend
+- Record yang di-insert PO module **tidak bisa diedit/dihapus** dari Kasir screen (karena `po_id IS NOT NULL` = managed by PO module). Tampilkan badge "🔗 dari PO #XXX" di log transaksi
+- Admin manual tidak bisa pilih kategori "Pembelian Stok" bebas jika PO module aktif — cegah double-entry
 
 ---
 
