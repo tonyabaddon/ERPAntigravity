@@ -1812,6 +1812,17 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - `StockItem` confirmed to have `sku`, `name`, and `price` fields (src/types.ts line 81–89)
 - `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
 
+## Kasir Task 2: DB — kasir_transactions table — DONE (2026-06-04)
+
+- Created `supabase/migrations/20260604000008_kasir_transactions.sql`
+- Defines 3 enums: `kasir_channel` ('walkin','tokopedia','grosir'), `kasir_payment_method` ('cash','transfer','qris'), `kasir_expense_category` (6 values)
+- Creates `kasir_transactions` table with 15 columns: id, date, type, channel, items (JSONB), subtotal, hpp_total, payment_method, customer_name, invoice_number, expense_category, description, po_id, created_by, created_at
+- Indexes: `idx_kasir_date` (date), `idx_kasir_type_date` (type, date)
+- RLS enabled; `anon_all_kasir` policy grants anon full access
+- Applied via Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` (ERP MSME AI Studio)
+- Verified: 15 columns confirmed via `information_schema.columns` query
+- Committed: `feat(db): add kasir_transactions table with enums and RLS` (SHA: b873a72)
+
 ## Kasir Task 1: DB — harga_modal column on stocks — DONE (2026-06-04)
 
 - Created `supabase/migrations/20260604000007_stocks_add_harga_modal.sql`
