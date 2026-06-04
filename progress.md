@@ -2417,3 +2417,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Step 3 — warehouse selector UI**: Added small warehouse `<select>` (Gudang Atas / Gudang Bawah) in the modal header after the subtitle `<p>` tag
 - `npm run build` passes cleanly (no TS errors, chunk size warning is pre-existing and acceptable)
 - Committed: `feat(kasir): add warehouse selector to SaleModal, pass to decrementStock` (3cbedb2)
+
+## Warehouse Management — DONE (2026-06-05)
+
+- Added `stock_atas` and `stock_bawah` columns to `stocks` table
+- Created `sync_stock_total` BEFORE trigger — keeps `stock = stock_atas + stock_bawah` automatically
+- Created `decrement_stock(p_sku, p_qty, p_warehouse DEFAULT 'atas')` RPC — warehouse-aware stock decrement
+- Created `transfer_warehouse(p_sku, p_from, p_to, p_qty)` RPC — atomic transfer between warehouses
+- Updated `receive_purchase_order` with `p_warehouse DEFAULT 'atas'` — receiving into correct warehouse
+- `stockService.decrementStock` gains `warehouse` param; fallback path updated to use `stock_atas`/`stock_bawah`
+- `supabaseService.upsertStock` now sends `stock_atas`/`stock_bawah` (trigger computes `stock`)
+- `pembelianService.receiveGoods` gains `warehouse` param; `transferWarehouse` added
+- `StockManagerScreen`: row shows "Atas: X | Bawah: Y"; edit panel has 2 warehouse inputs; Transfer button
+- New `WarehouseTransferModal` — from/to cards, qty input, calls `transfer_warehouse` RPC
+- `ReceiveGoodsModal`: warehouse selector (Gudang Atas / Gudang Bawah)
+- `KasirScreen SaleModal`: warehouse selector passed to `decrementStock`
+- `App.tsx`: stock mapping now includes `stock_atas` and `stock_bawah`
