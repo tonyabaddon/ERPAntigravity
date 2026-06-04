@@ -2207,3 +2207,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - `next_kasir_number('tokopedia', today)` → 1 (separate per-channel counter)
   - `kasir_counters` table has correct rows for both channels
 - Committed: `feat(db): add kasir_counters table and next_kasir_number RPC` (59b3f74)
+
+## KC-2: Replace generateInvoiceNumber with async nextInvoiceNumber — DONE (2026-06-05)
+
+- Modified `src/lib/supabaseClient.ts`: replaced synchronous `generateInvoiceNumber(channel, counter)` with async `nextInvoiceNumber(channel, date)` in `kasirService`
+- New method calls Supabase RPC `next_kasir_number(p_channel, p_date)` to get an atomic counter; constructs invoice number as `{prefix}-{dateCompact}-{counter padded to 3 digits}`
+- `KasirChannel` type not defined in file — used inline literal union `'walkin' | 'tokopedia' | 'grosir'`
+- `npm run build` passes cleanly (no TypeScript errors; expected `generateInvoiceNumber` error in KasirScreen.tsx not present yet — to be fixed in KC-3)
+- Committed: `feat(kasir): replace generateInvoiceNumber with async nextInvoiceNumber RPC` (94378e3)
+
+## KC-2 quality fix: null guard + KasirChannel type in nextInvoiceNumber — DONE (2026-06-05)
+
+- Added `KasirChannel` to the import from `'../types'` in `src/lib/supabaseClient.ts`
+- Updated `nextInvoiceNumber` parameter from inline union `'walkin' | 'tokopedia' | 'grosir'` to `KasirChannel`
+- Added `if (data == null) throw new Error('next_kasir_number returned null');` before `String(data)` to prevent silent `"null"` in invoice numbers
+- `npm run build` passes cleanly — no TypeScript errors
+- Committed: `fix(kasir): add null guard and use KasirChannel type in nextInvoiceNumber` (4340c73)
