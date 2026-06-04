@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { Rocket, Mail, Lock, Heart, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, adminUsersService } from '../lib/supabaseClient';
+import { PermissionSet, ALL_PERMISSIONS } from '../types';
 
 interface AuthScreenProps {
-  onLoginSuccess: (userData: { name: string; role: string; avatarUrl: string; storeName: string }) => void;
+  onLoginSuccess: (userData: { name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => void;
 }
 
 function deriveDisplayName(email: string, fullName?: string): string {
@@ -47,6 +48,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     onLoginSuccess({
       name: name ?? deriveDisplayName(email),
       role: 'Owner',
+      permissions: ALL_PERMISSIONS,
       avatarUrl: '',
       storeName: storeName ?? 'Dev Store',
     });
@@ -109,11 +111,25 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       showToast('❌ Gagal mendapatkan data pengguna.');
       return;
     }
+    let adminRow = null;
+    try {
+      adminRow = await adminUsersService.fetchByEmail(signInEmail);
+    } catch (err) {
+      setSignInLoading(false);
+      showToast('❌ Gagal memuat data akses. Coba lagi.');
+      return;
+    }
+    if (!adminRow) {
+      setSignInLoading(false);
+      showToast('❌ Email belum terdaftar sebagai admin. Minta owner untuk menambahkan akun Anda.');
+      return;
+    }
     showToast('🎉 Masuk sukses! Memuat sistem ERP...');
     setTimeout(() => {
       onLoginSuccess({
-        name: deriveDisplayName(user.email ?? '', user.user_metadata?.full_name),
-        role: 'Owner',
+        name: deriveDisplayName(user.email ?? '', adminRow!.name),
+        role: adminRow!.role,
+        permissions: adminRow!.permissions as PermissionSet,
         avatarUrl: user.user_metadata?.avatar_url ?? '',
         storeName: user.user_metadata?.store_name ?? '',
       });
@@ -181,12 +197,30 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       showToast(`❌ Gagal simpan profil: ${updateError.message}`);
       return;
     }
+    // Auto-create Owner row in admin_users
+    if (isSupabaseConfigured && data.user) {
+      try {
+        await adminUsersService.upsert({
+          id: data.user.id,
+          name: signUpName,
+          email: signUpEmail,
+          whatsapp: null,
+          role: 'Owner',
+          permissions: ALL_PERMISSIONS,
+          status: 'Aktif',
+        });
+      } catch (err) {
+        console.error('Failed to create owner row in admin_users:', err);
+        // Non-fatal: continue login with all permissions
+      }
+    }
     setSignUpLoading(false);
     showToast(`🎉 Toko "${signUpStore}" sukses terdaftar! Mengalihkan ke Dashboard.`);
     setTimeout(() => {
       onLoginSuccess({
         name: signUpName,
         role: 'Owner',
+        permissions: ALL_PERMISSIONS,
         avatarUrl: '',
         storeName: signUpStore,
       });
