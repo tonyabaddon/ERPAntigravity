@@ -53,7 +53,15 @@ func (c *Client) Connect(ctx context.Context) error {
 	if c.WA.Store.ID == nil {
 		qrChan, err := c.WA.GetQRChannel(ctx)
 		if err != nil {
-			return fmt.Errorf("whatsapp: get QR channel: %w", err)
+			// Don't crash the daemon — schedule a retry so the HTTP server stays up.
+			log.Printf("[WA] GetQRChannel error: %v — retrying in 5s", err)
+			go func() {
+				time.Sleep(5 * time.Second)
+				if err2 := c.Connect(context.Background()); err2 != nil {
+					log.Printf("[WA] Retry connect error: %v", err2)
+				}
+			}()
+			return nil
 		}
 		if err := c.WA.Connect(); err != nil {
 			return fmt.Errorf("whatsapp: connect: %w", err)
