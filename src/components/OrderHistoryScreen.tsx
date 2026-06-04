@@ -420,12 +420,24 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">Bukti Transfer</div>
                           <div className="flex items-start gap-3">
                             {order.payment_proof_url ? (
-                              <img
-                                src={order.payment_proof_url}
-                                alt="Bukti bayar"
-                                className="w-16 h-20 object-cover rounded-lg border-2 border-blue-200 cursor-pointer"
-                                onClick={() => window.open(order.payment_proof_url!, '_blank')}
-                              />
+                              order.payment_proof_url.endsWith('.pdf') ? (
+                                <a
+                                  href={order.payment_proof_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="w-16 h-20 bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-red-100 transition-colors"
+                                >
+                                  <span className="text-red-500 text-2xl">📄</span>
+                                  <span className="text-[9px] text-red-500 font-semibold">PDF</span>
+                                </a>
+                              ) : (
+                                <img
+                                  src={order.payment_proof_url}
+                                  alt="Bukti bayar"
+                                  className="w-16 h-20 object-cover rounded-lg border-2 border-blue-200 cursor-pointer"
+                                  onClick={() => window.open(order.payment_proof_url!, '_blank')}
+                                />
+                              )
                             ) : (
                               <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
                                 <span className="text-indigo-400 text-lg">🖼</span>
