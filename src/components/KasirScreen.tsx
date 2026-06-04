@@ -5,9 +5,8 @@ import {
 } from 'lucide-react';
 import {
   KasirTransaction, KasirChannel, KasirPaymentMethod, KasirExpenseCategory,
-  KasirItem, NewSaleTransaction, DailySummary, PermissionSet
+  KasirItem, NewSaleTransaction, DailySummary, PermissionSet, DbOrder
 } from '../types';
-import { DbOrder } from '../types';
 import {
   kasirService, stockService, isSupabaseConfigured
 } from '../lib/supabaseClient';
@@ -38,7 +37,8 @@ const EXPENSE_CATEGORIES: KasirExpenseCategory[] = [
 ];
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function formatRp(val: number): string {
@@ -113,6 +113,8 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
 
 // ─── Main component ──────────────────────────────────────────
 
+type Entry = { _src: 'kasir'; tx: KasirTransaction; order: null } | { _src: 'wa'; tx: null; order: DbOrder };
+
 export default function KasirScreen({ currentUser, showToast }: KasirScreenProps) {
   const isOwner = currentUser?.role?.toLowerCase() === 'owner';
 
@@ -154,13 +156,11 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, showToast]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   // ── Filtered log ──
-  type Entry = { _src: 'kasir'; tx: KasirTransaction; order: null } | { _src: 'wa'; tx: null; order: DbOrder };
-
   const allEntries: Entry[] = [
     ...transactions.map(tx => ({ _src: 'kasir' as const, tx, order: null })),
     ...waOrders.map(o => ({ _src: 'wa' as const, tx: null, order: o })),
@@ -511,6 +511,8 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
 
 // ─── SaleModal ───────────────────────────────────────────────
 
+let _itemSeq = 0;
+
 interface SaleModalProps {
   channel: KasirChannel;
   stocks: SupabaseStockItem[];
@@ -535,7 +537,7 @@ function SaleModal({ channel, stocks, selectedDate, isOwner, onClose, onSaved, s
 
   function addItem(stock: SupabaseStockItem) {
     setItems(prev => [...prev, {
-      _key: Date.now(),
+      _key: ++_itemSeq,
       sku: stock.sku,
       name: stock.name,
       qty: 1,
