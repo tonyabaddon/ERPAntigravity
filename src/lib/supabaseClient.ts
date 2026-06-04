@@ -25,6 +25,7 @@ export interface SupabaseStockItem {
   status: string;
   specs: Record<string, string | number>;
   updated_at?: string;
+  harga_modal?: number | null;
 }
 
 // Resilient API services with local fallback

@@ -16,6 +16,7 @@ export interface PermissionSet {
   notifications: boolean;
   settings: boolean;
   pembelian: boolean;
+  kasir: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -31,6 +32,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   notifications: true,
   settings: true,
   pembelian: true,
+  kasir: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -313,4 +315,67 @@ export interface DbPurchaseOrder {
   items?: DbPurchaseOrderItem[];
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir';
+
+// ─── Kasir types ────────────────────────────────────────────
+
+export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir';
+export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris';
+export type KasirExpenseCategory =
+  | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
+
+export interface KasirItem {
+  sku: string;
+  name: string;
+  qty: number;
+  unit_price: number;
+  hpp_per_unit: number;
+  subtotal: number;
+  hpp_subtotal: number;
+}
+
+export interface KasirTransaction {
+  id: string;
+  date: string;
+  type: 'income' | 'expense';
+  channel?: KasirChannel | null;
+  items: KasirItem[];
+  subtotal: number;
+  hpp_total: number;
+  payment_method?: KasirPaymentMethod | null;
+  customer_name?: string | null;
+  invoice_number?: string | null;
+  expense_category?: KasirExpenseCategory | null;
+  description?: string | null;
+  po_id?: string | null;
+  created_by?: string | null;
+  created_at: string;
+}
+
+export interface DailySummary {
+  totalIncome: number;
+  totalExpense: number;
+  totalHpp: number;
+  labaKotor: number;
+  labaBersih: number;
+  itemsSold: number;
+  byChannel: Record<string, number>;
+}
+
+export interface NewSaleTransaction {
+  date: string;
+  channel: KasirChannel;
+  items: KasirItem[];
+  subtotal: number;
+  hpp_total: number;
+  payment_method: KasirPaymentMethod;
+  customer_name?: string;
+  invoice_number: string;
+}
+
+export interface NewExpense {
+  date: string;
+  expense_category: KasirExpenseCategory;
+  description: string;
+  subtotal: number;
+}
