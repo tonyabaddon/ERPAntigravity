@@ -39,6 +39,10 @@ const (
 	OrderStatusPendingCustomQuote       OrderStatus = "PENDING_CUSTOM_QUOTE"
 	OrderStatusPendingWiringQuote       OrderStatus = "PENDING_WIRING_QUOTE"
 	OrderStatusWaitingPayment           OrderStatus = "WAITING_PAYMENT"
+	OrderStatusWaitingDP                OrderStatus = "WAITING_DP"
+	OrderStatusDPUploaded               OrderStatus = "DP_UPLOADED"
+	OrderStatusDPVerified               OrderStatus = "DP_VERIFIED"
+	OrderStatusDPProofRejected          OrderStatus = "DP_PROOF_REJECTED"
 	OrderStatusPaymentUploaded          OrderStatus = "PAYMENT_UPLOADED"
 	OrderStatusPaymentVerified          OrderStatus = "PAYMENT_VERIFIED"
 	OrderStatusPaymentRejected          OrderStatus = "PAYMENT_REJECTED"
@@ -145,7 +149,11 @@ type Order struct {
 	BookingExpiresAt time.Time    `json:"booking_expires_at"`
 	ReminderSentAt   *time.Time   `json:"reminder_sent_at,omitempty"`
 	ApprovedAt       *time.Time   `json:"approved_at,omitempty"`
-	PaymentProofURL  string       `json:"payment_proof_url,omitempty"`
+	FullProofURL     string       `json:"full_proof_url,omitempty"`
+	DPProofURL       string       `json:"dp_proof_url,omitempty"`
+	PaymentType      string       `json:"payment_type,omitempty"`
+	DPAmount         float64      `json:"dp_amount,omitempty"`
+	RejectionReason  string       `json:"rejection_reason,omitempty"`
 	PaymentVerifiedAt *time.Time  `json:"payment_verified_at,omitempty"`
 	VerifiedBy       string       `json:"verified_by,omitempty"`
 	CreatedAt        time.Time    `json:"created_at"`

@@ -143,6 +143,8 @@ func (c *Client) GetOrderByConversation(conversationID string) (*models.Order, e
 		       customer_name, customer_company, customer_address, customer_phone,
 		       COALESCE(delivery_type,''),
 		       items, subtotal, total, status, booking_expires_at,
+		       COALESCE(payment_type,'FULL'), COALESCE(dp_amount,0),
+		       COALESCE(dp_proof_url,''), COALESCE(full_proof_url,''),
 		       created_at, updated_at
 		FROM orders WHERE conversation_id = $1 ORDER BY created_at DESC LIMIT 1
 	`, conversationID).Scan(
@@ -152,7 +154,10 @@ func (c *Client) GetOrderByConversation(conversationID string) (*models.Order, e
 		&order.CustomerName, &order.CustomerCompany, &order.CustomerAddress, &order.CustomerPhone,
 		&order.DeliveryType,
 		&itemsJSON, &order.Subtotal, &order.Total, &order.Status,
-		&order.BookingExpiresAt, &order.CreatedAt, &order.UpdatedAt,
+		&order.BookingExpiresAt,
+		&order.PaymentType, &order.DPAmount,
+		&order.DPProofURL, &order.FullProofURL,
+		&order.CreatedAt, &order.UpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -202,7 +207,7 @@ func (c *Client) GetOrderByIDWithPayment(orderID string) (*models.Order, error) 
 		       customer_name, customer_company, customer_address, customer_phone,
 		       COALESCE(delivery_type,''),
 		       items, subtotal, total, status, booking_expires_at,
-		       COALESCE(payment_proof_url,''), payment_verified_at,
+		       COALESCE(full_proof_url,''), payment_verified_at,
 		       COALESCE(verified_by,''),
 		       created_at, updated_at
 		FROM orders WHERE id = $1
@@ -214,7 +219,7 @@ func (c *Client) GetOrderByIDWithPayment(orderID string) (*models.Order, error) 
 		&order.DeliveryType,
 		&itemsJSON, &order.Subtotal, &order.Total, &order.Status,
 		&order.BookingExpiresAt,
-		&order.PaymentProofURL, &paymentVerifiedAt,
+		&order.FullProofURL, &paymentVerifiedAt,
 		&order.VerifiedBy,
 		&order.CreatedAt, &order.UpdatedAt,
 	)
