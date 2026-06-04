@@ -134,8 +134,10 @@ Triggered from "Terima" action on ORDERED PO:
 In the PO detail view, a **"Barang Rusak"** section appears when any item has `qty_damaged > 0`. Each damaged line shows:
 - Product name · SKU · Qty rusak · Damage notes
 - Damage status badge: `PENDING_RETURN` → `RETURNED` → `REPLACED`
-- Admin can update damage status manually via dropdown
-- When status → `REPLACED`, admin creates a new PO or manually adjusts stock (no automatic flow)
+- Admin updates damage status via dropdown
+- When status changes to `RETURNED`, a **"Terima Pengganti"** button appears on that row
+- Clicking "Terima Pengganti" opens a small confirmation modal showing qty to receive; on confirm, calls `receive_replacement(item_id)` RPC which increments `stocks.stock += qty_damaged` and sets `damage_status = 'REPLACED'`
+- Full audit trail: damaged qty → returned → replacement received → stock restored, all linked to the original PO
 
 ### Mark as Paid Modal
 - Payment proof upload (PDF/JPG → Supabase Storage)
@@ -165,6 +167,14 @@ A Supabase database function that runs inside a single transaction:
 4. Updates `purchase_orders.status = 'RECEIVED'`, sets `received_at = now()`
 
 Called from the frontend via `supabase.rpc('receive_purchase_order', { po_id, conditions })`. Atomic — no partial stock updates on failure.
+
+### Replacement Receipt — `receive_replacement(item_id uuid)`
+A Supabase database function called when admin confirms replacement goods have arrived:
+1. Validates `damage_status = 'RETURNED'` on the item
+2. Increments `stocks.stock += qty_damaged` for the item's SKU
+3. Sets `damage_status = 'REPLACED'`
+
+Called via `supabase.rpc('receive_replacement', { item_id })`. Atomic.
 
 ### PO Reference Number — `PO-YYYY-MM-NNN`
 Generated at PO creation time:
