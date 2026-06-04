@@ -88,7 +88,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
             ⚡ Sistem Integrasi Aktif
           </span>
           <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-2">
-            Selamat Datang di Hub Kendali Sinar Elektrik
+            Selamat Datang di Hub Kendali Garindo Jaya Panel
           </h2>
           <p className="text-[#43474e] text-sm mt-1">
             Pantau ringkasan performa penjualan, otomasi chatbot WhatsApp, dan status inventaris Anda secara real-time.

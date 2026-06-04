@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search } from 'lucide-react';
+import { Users, Search, Pencil, Check, X } from 'lucide-react';
 import { ActivePage, DbCustomerWithStats, DbCustomerProfile } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -56,6 +56,10 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [selectedId, setSelectedId] = useState<string | null>(openCustomerId ?? null);
   const [profile, setProfile] = useState<DbCustomerProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editCompany, setEditCompany] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -71,12 +75,30 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
   useEffect(() => {
     if (!selectedId || !isSupabaseConfigured) { setProfile(null); return; }
+    setEditing(false);
     setLoadingProfile(true);
     customersService.fetchProfile(selectedId)
       .then(setProfile)
       .catch(() => showToast('Gagal memuat profil pelanggan.', 'warning'))
       .finally(() => setLoadingProfile(false));
   }, [selectedId]);
+
+  async function handleSaveCustomer() {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      await customersService.updateNameCompany(profile.id, editName.trim(), editCompany.trim());
+      const updated = { ...profile, name: editName.trim(), company: editCompany.trim() };
+      setProfile(updated);
+      setCustomers(prev => prev.map(c => c.id === profile.id ? { ...c, name: editName.trim(), company: editCompany.trim() } : c));
+      setEditing(false);
+      showToast('Profil pelanggan diperbarui.', 'success');
+    } catch {
+      showToast('Gagal menyimpan perubahan.', 'warning');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const filtered = customers.filter(c => {
     if (!search.trim()) return true;
@@ -189,22 +211,68 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               {/* Profile header */}
               <div className="bg-[#012749] text-white p-4 flex items-center gap-3 shrink-0">
                 <div className="w-11 h-11 rounded-xl bg-[#2d8a4e] flex items-center justify-center text-lg font-extrabold shrink-0">
-                  {initials(profile.name)}
+                  {initials(editing ? editName : profile.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-extrabold text-[15px] truncate">{profile.name}</div>
-                  <div className="text-[11px] opacity-60 mt-0.5">
-                    {profile.wa_number}
-                    {profile.company && ` · ${profile.company}`}
-                  </div>
-                  <div className="text-[11px] opacity-60">Pelanggan sejak {formatDate(profile.created_at)}</div>
+                  {editing ? (
+                    <div className="space-y-1">
+                      <input
+                        autoFocus
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        placeholder="Nama pelanggan"
+                        className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-sm font-bold text-white placeholder:text-white/40 outline-none focus:border-white/60"
+                      />
+                      <input
+                        value={editCompany}
+                        onChange={e => setEditCompany(e.target.value)}
+                        placeholder="Nama perusahaan (opsional)"
+                        className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white placeholder:text-white/40 outline-none focus:border-white/60"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="font-extrabold text-[15px] truncate">{profile.name || <span className="opacity-40 italic">Nama belum diisi</span>}</div>
+                      <div className="text-[11px] opacity-60 mt-0.5">
+                        {profile.wa_number}
+                        {profile.company && ` · ${profile.company}`}
+                      </div>
+                      <div className="text-[11px] opacity-60">Pelanggan sejak {formatDate(profile.created_at)}</div>
+                    </>
+                  )}
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-lg font-extrabold text-emerald-300">
-                    {formatRupiah(profile.orders.reduce((s, o) => s + o.total, 0))}
+                {editing ? (
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={handleSaveCustomer}
+                      disabled={saving}
+                      className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" />{saving ? '...' : 'Simpan'}
+                    </button>
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <div className="text-[9px] opacity-55">total belanja</div>
-                </div>
+                ) : (
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-lg font-extrabold text-emerald-300">
+                        {formatRupiah(profile.orders.reduce((s, o) => s + o.total, 0))}
+                      </div>
+                      <div className="text-[9px] opacity-55">total belanja</div>
+                    </div>
+                    <button
+                      onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditing(true); }}
+                      className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
+                    >
+                      <Pencil className="w-3 h-3" /> Edit
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Stats row */}

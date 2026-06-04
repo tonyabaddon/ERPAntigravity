@@ -256,7 +256,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
               </div>
             </div>
             <p className="text-sm text-[#43474e] leading-relaxed font-semibold">
-              Gunakan framework Go-bahasa <strong className="text-emerald-600 font-black">whatsmeow</strong> yang tangguh untuk menjembatani nomor WhatsApp bisnis dengan ERP Sinar Elektrik. Pelanggan yang mengirimkan pesan ke nomor di bawah ini akan direspon otomatis menggunakan model Gemini AI yang terhubung secara real-time dengan inventaris harga SKU toko kelistrikan Anda.
+              Gunakan framework Go-bahasa <strong className="text-emerald-600 font-black">whatsmeow</strong> yang tangguh untuk menjembatani nomor WhatsApp bisnis dengan ERP Garindo Jaya Panel. Pelanggan yang mengirimkan pesan ke nomor di bawah ini akan direspon otomatis menggunakan model Gemini AI yang terhubung secara real-time dengan inventaris harga SKU toko kelistrikan Anda.
             </p>
           </div>
 
@@ -425,7 +425,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[#eff4ff] text-emerald-600 px-1.5 py-0.5 rounded text-[10px]">whatsmeow</code> dan menyalurkan request pesan ke API AI Sinar Elektrik.
+              Gunakan script backend template berikut untuk diletakkan di server internal produksi Anda. Script ini menginisialisasi client <code className="font-mono bg-[#eff4ff] text-emerald-600 px-1.5 py-0.5 rounded text-[10px]">whatsmeow</code> dan menyalurkan request pesan ke API AI Garindo Jaya Panel.
             </p>
 
             <div className="relative">
@@ -677,9 +677,9 @@ func handleWhatsAppEvent(evt interface{}) {
 func respondWithGemini(sender types.JID, prompt string) {
 	ctx := context.Background()
 
-	// Create inference query with system role and live Sinar Elektrik inventory instructions
+	// Create inference query with system role and live Garindo Jaya Panel inventory instructions
 	promptPayload := fmt.Sprintf(
-		"Sinar Elektrik MSME ERP Live Context. Chat query received: %s. Please generate a polite brief Indonesian reply.",
+		"Garindo Jaya Panel MSME ERP Live Context. Chat query received: %s. Please generate a polite brief Indonesian reply.",
 		prompt,
 	)
 
@@ -784,12 +784,12 @@ app.post('/api/whatsapp/webhook', async (req, res) => {
   console.log(\`[WA Webhook] Teriman pesan dari \${sender}: "\${message}" pada \${receiverNumber}\`);
 
   try {
-    // Generate Sinar Elektrik smart answering utilizing Gemini 3.5
+    // Generate Garindo Jaya Panel smart answering utilizing Gemini 3.5
     const response = await ai.models.generateContent({
       model: 'gemini-3.5-flash',
       contents: message,
       config: {
-        systemInstruction: "Anda adalah sales asisten Sinar Elektrik. Jawab pertanyaan seputar stok kelistrikan dengan ramah dan ringkas dalam Bahasa Indonesia."
+        systemInstruction: "Anda adalah sales asisten Garindo Jaya Panel. Jawab pertanyaan seputar stok kelistrikan dengan ramah dan ringkas dalam Bahasa Indonesia."
       }
     });
 

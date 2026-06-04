@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Search, ChevronDown } from 'lucide-react';
+import { TrendingUp, Search, ChevronDown, Pencil, Check, X } from 'lucide-react';
 import { ActivePage, DbLead } from '../types';
-import { leadsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { leadsService, customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 
 interface PipelineScreenProps {
   onOpenCustomer: (customerId: string) => void;
@@ -88,6 +88,10 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCompany, setEditCompany] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -96,6 +100,24 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
       .catch(() => showToast('Gagal memuat data pipeline.', 'warning'))
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleSaveCustomer(customerId: string) {
+    setSaving(true);
+    try {
+      await customersService.updateNameCompany(customerId, editName.trim(), editCompany.trim());
+      setLeads(prev => prev.map(l =>
+        l.customers?.id === customerId
+          ? { ...l, customers: { ...l.customers!, name: editName.trim(), company: editCompany.trim() } }
+          : l
+      ));
+      setEditingCustomerId(null);
+      showToast('Profil pelanggan diperbarui.', 'success');
+    } catch {
+      showToast('Gagal menyimpan perubahan.', 'warning');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (!isSupabaseConfigured) {
     return (
@@ -212,8 +234,30 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
                     <div className="px-6 py-4 border-t border-green-200 bg-green-50">
                       <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                         <div>
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
-                          <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1 flex items-center gap-1">
+                            Pelanggan
+                            {customer?.id && editingCustomerId !== customer.id && (
+                              <button
+                                onClick={e => { e.stopPropagation(); setEditingCustomerId(customer!.id); setEditName(customer!.name); setEditCompany(customer!.company); }}
+                                className="text-gray-400 hover:text-gray-600 ml-1"
+                              ><Pencil className="w-2.5 h-2.5" /></button>
+                            )}
+                          </div>
+                          {editingCustomerId === customer?.id ? (
+                            <div className="space-y-1" onClick={e => e.stopPropagation()}>
+                              <input autoFocus value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nama" className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none focus:border-indigo-400" />
+                              <input value={editCompany} onChange={e => setEditCompany(e.target.value)} placeholder="Perusahaan" className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none focus:border-indigo-400" />
+                              <div className="flex gap-1 mt-1">
+                                <button onClick={e => { e.stopPropagation(); handleSaveCustomer(customer!.id); }} disabled={saving} className="flex items-center gap-0.5 bg-emerald-500 hover:bg-emerald-400 text-white text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50"><Check className="w-2.5 h-2.5" />{saving ? '...' : 'Simpan'}</button>
+                                <button onClick={e => { e.stopPropagation(); setEditingCustomerId(null); }} className="flex items-center gap-0.5 bg-gray-200 hover:bg-gray-300 text-gray-600 text-[10px] px-2 py-0.5 rounded transition-colors"><X className="w-2.5 h-2.5" /></button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                              {customer?.company && <div className="text-gray-400 text-[10px]">{customer.company}</div>}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
@@ -243,8 +287,30 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
                     <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
                       <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                         <div>
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
-                          <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1 flex items-center gap-1">
+                            Pelanggan
+                            {customer?.id && editingCustomerId !== customer.id && (
+                              <button
+                                onClick={e => { e.stopPropagation(); setEditingCustomerId(customer!.id); setEditName(customer!.name); setEditCompany(customer!.company); }}
+                                className="text-gray-400 hover:text-gray-600 ml-1"
+                              ><Pencil className="w-2.5 h-2.5" /></button>
+                            )}
+                          </div>
+                          {editingCustomerId === customer?.id ? (
+                            <div className="space-y-1" onClick={e => e.stopPropagation()}>
+                              <input autoFocus value={editName} onChange={e => setEditName(e.target.value)} placeholder="Nama" className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none focus:border-indigo-400" />
+                              <input value={editCompany} onChange={e => setEditCompany(e.target.value)} placeholder="Perusahaan" className="w-full border border-gray-300 rounded px-1.5 py-0.5 text-xs outline-none focus:border-indigo-400" />
+                              <div className="flex gap-1 mt-1">
+                                <button onClick={e => { e.stopPropagation(); handleSaveCustomer(customer!.id); }} disabled={saving} className="flex items-center gap-0.5 bg-emerald-500 hover:bg-emerald-400 text-white text-[10px] font-bold px-2 py-0.5 rounded transition-colors disabled:opacity-50"><Check className="w-2.5 h-2.5" />{saving ? '...' : 'Simpan'}</button>
+                                <button onClick={e => { e.stopPropagation(); setEditingCustomerId(null); }} className="flex items-center gap-0.5 bg-gray-200 hover:bg-gray-300 text-gray-600 text-[10px] px-2 py-0.5 rounded transition-colors"><X className="w-2.5 h-2.5" /></button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div className="font-semibold text-gray-700">{customer?.name || lead.wa_number}</div>
+                              {customer?.company && <div className="text-gray-400 text-[10px]">{customer.company}</div>}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>

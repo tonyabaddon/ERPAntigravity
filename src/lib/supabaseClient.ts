@@ -502,6 +502,15 @@ export const customersService = {
     }));
   },
 
+  async updateNameCompany(id: string, name: string, company: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('customers')
+      .update({ name, company })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
