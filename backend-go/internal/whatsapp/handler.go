@@ -139,6 +139,16 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		return
 	}
 
+	// Reset completed/cancelled conversations so returning customers can reorder.
+	// ESCALATED states stay as-is (admin is handling them).
+	if conv.State == models.StateCompleted || conv.State == models.StateCancelled {
+		if err := h.db.UpdateConversationState(conv.ID, models.StateGreeting); err != nil {
+			log.Printf("[HANDLER] Reset conv state error for %s: %v", conv.ID, err)
+			return
+		}
+		conv.State = models.StateGreeting
+	}
+
 	// 5. Terminal state — ignore further messages
 	if conv.State.IsTerminal() {
 		return
