@@ -1711,3 +1711,83 @@ Root cause of the original "stuck at WAITING_PAYMENT" report: the daemon binary 
 - Created `purchase-documents` storage bucket (public) and anon full access policy on `storage.objects`
 - Verification passed: 3 tables exist, 3 RPCs exist, `generate_po_number()` returns `PO-2026-06-001`
 - Note: migration file numbered `000005` (not `000004` as in task spec) because `20260604000004_add_authenticated_update_customers.sql` already existed
+
+## Pembelian Module — Task 2: TypeScript Types — DONE (2026-06-04)
+
+_(Previously completed — wired `pembelian` into `ActivePage` union and `PermissionSet` interface in `src/types.ts`)_
+
+## Pembelian Module — Task 3: Navigation Wiring — DONE (2026-06-04)
+
+- `src/initialData.ts`: added `pembelian: false` to the `permissions` object in both INITIAL_ADMINS entries (Admin Rini and Admin Agus)
+- `src/components/Sidebar.tsx`: added `ShoppingCart` to lucide-react import; added `{ id: 'pembelian', label: 'Pembelian', icon: ShoppingCart, description: 'PO & Supplier', permKey: 'pembelian' }` menu item after `ai-stock` entry
+- `src/App.tsx`: added `import PembelianScreen from './components/PembelianScreen'` (expected module-not-found TS error until Task 5); added `case 'pembelian'` to `renderPage()` switch rendering `<PembelianScreen stockList={stockList} showToast={triggerToast} />`
+- TypeScript check confirms only expected errors: PembelianScreen not found (Task 5), UserManagementScreen missing `pembelian` (expected), pre-existing Sidebar auth comparison
+- Committed: `feat(nav): add Pembelian page to sidebar and navigation routing` (50a3786)
+
+## Pembelian Module — Task 4: Service Layer — DONE (2026-06-04)
+
+- Created `src/lib/pembelianService.ts`
+- `supplierService`: `fetchAll` (ordered by name), `upsert` (update by id or insert), `remove`
+- `PoItemDraft` type exported for use in modal components
+- `purchaseOrderService`: full CRUD + lifecycle methods:
+  - `fetchAll` — joins suppliers and purchase_order_items, maps to `DbPurchaseOrder` shape
+  - `generatePoNumber` — calls `generate_po_number()` Supabase RPC
+  - `create` — generates PO number, inserts PO + items in sequence; sets `ordered_at` when status is ORDERED
+  - `update` — updates PO fields, delete-and-reinsert items
+  - `markOrdered`, `markPaid`, `receiveGoods`, `updateDamageStatus`, `receiveReplacement`
+  - `uploadDocument` — uploads to `purchase-documents` storage bucket, returns public URL
+  - `fetchSummary` — computes month-to-date totals, due-MTD, and unpaid totals in-memory
+- All methods guard `if (!supabase)` per existing pattern
+- `tsc --noEmit` confirms no errors in `pembelianService.ts`; only expected PembelianScreen module-not-found remains
+- Note: `isSupabaseConfigured` is exported from `supabaseClient.ts` as a **boolean constant** (not a function): `export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)`
+- Committed: `feat(service): add pembelianService and supplierService` (4035477)
+
+## Pembelian Module — Task 5: PembelianScreen Shell — DONE (2026-06-04)
+
+- Created `src/components/PembelianScreen.tsx`
+- Props: `stockList: StockItem[]`, `showToast: (msg, type?) => void`
+- Page header with ShoppingCart icon and title "Pembelian"
+- 4 summary cards: Total PO Bulan Ini, Jatuh Tempo Bulan Ini (amber), Total Belum Dibayar (rose), Jumlah PO Bulan Ini
+- `reload()` calls `purchaseOrderService.fetchAll()`, `supplierService.fetchAll()`, `purchaseOrderService.fetchSummary()` in parallel; guards with `isSupabaseConfigured` boolean
+- Tab navigation: "Purchase Orders" and "Supplier" with indigo active indicator
+- Placeholder `OrdersTab` and `SuppliersTab` sub-components (implemented in Tasks 7 and 6 respectively)
+- Created `src/components/pembelian/` directory for future sub-components
+- `tsc --noEmit`: no new errors introduced; PembelianScreen module-not-found error is now gone; all remaining errors are pre-existing
+- Committed: `feat(ui): add PembelianScreen shell with summary cards and tab navigation` (ddf6a05)
+
+## Pembelian Module — Task 6: Supplier Tab — DONE (2026-06-04)
+
+- Created `src/components/pembelian/SupplierModal.tsx`
+  - Modal for add/edit supplier with fields: Nama Supplier (required), Nama Kontak, Nomor HP, Term Pembayaran (days)
+  - Calls `supplierService.upsert()` for both create and update paths
+  - Validation: name field required; shows warning toast on empty
+  - Shows appropriate toast on save success/failure; closes modal on success
+- Replaced placeholder `SuppliersTab` in `src/components/PembelianScreen.tsx`
+  - Added `import SupplierModal from './pembelian/SupplierModal'` at top of file
+  - Full `SuppliersTabProps` interface: `suppliers`, `showToast`, `onRefresh`
+  - Search by supplier name or contact name (case-insensitive client-side filter)
+  - "Tambah Supplier" button opens modal with `modalSupplier = null` (create mode)
+  - Table with 5 columns: Nama Supplier, Kontak, Nomor HP, Term Bayar badge, Aksi (Edit/Hapus)
+  - `termLabel(days)`: 0 → "Cash"; N → "Net N" displayed as blue pill badge
+  - Delete calls `supplierService.remove()` with `confirm()` guard; refreshes on success
+  - Modal shown when `modalSupplier !== undefined`; edit passes `DbSupplier`, create passes `null → undefined`
+- `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
+- Committed: `feat(ui): add Supplier tab with add/edit/delete supplier` (73cf3ee)
+
+## Pembelian Module — Task 7: PO List Tab — DONE (2026-06-04)
+
+- Added `STATUS_BADGE` and `LEFT_BORDER` constants to `src/components/PembelianScreen.tsx` after `formatRupiah`
+  - `STATUS_BADGE`: maps DRAFT/ORDERED/RECEIVED/PAID to Indonesian labels and Tailwind badge classes
+  - `LEFT_BORDER`: maps ORDERED (blue) and RECEIVED (amber) to left-border accent classes
+- Replaced placeholder `OrdersTab` with full implementation
+  - `OrdersTabProps` interface: `orders`, `suppliers`, `stockList`, `showToast`, `onRefresh`
+  - Local state: `search`, `statusFilter`, `showCreateModal`, `editPo`, `receivePo`, `payPo`, `detailPo`, `replaceItem`
+  - Client-side filter by PO number / supplier name and status dropdown (Semua Status / Draft / Dipesan / Diterima / Lunas)
+  - "Buat PO Baru" button opens create modal placeholder
+  - 7-column table: No. PO, Supplier (name + payment term), Tgl Pesan, Jatuh Tempo (amber if set), Total (green if PAID), Status badge, Aksi
+  - Left border accent for ORDERED (blue) and RECEIVED (amber) rows
+  - Action buttons: Detail (all rows); Edit + Pesan (DRAFT); Terima (ORDERED); Bayar (RECEIVED)
+  - `handleMarkOrdered` calls `purchaseOrderService.markOrdered(po.id)` and refreshes
+  - Modal placeholder for Tasks 8–11 (PurchaseOrderModal) shown when `showCreateModal || editPo`
+- `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
+- Committed: `feat(ui): add PO list tab with status badges and action buttons` (3b50f74)
