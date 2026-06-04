@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from '../lib/supabaseClient';
 import SupplierModal from './pembelian/SupplierModal';
 import PurchaseOrderModal from './pembelian/PurchaseOrderModal';
 import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
+import PoDetailView from './pembelian/PoDetailView';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -275,6 +276,16 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
           onClose={() => setReceivePo(null)}
           onReceived={onRefresh}
           showToast={showToast}
+        />
+      )}
+      {detailPo && (
+        <PoDetailView
+          po={detailPo}
+          stockList={stockList}
+          onClose={() => setDetailPo(null)}
+          onRefresh={() => { onRefresh(); setDetailPo(null); }}
+          showToast={showToast}
+          onReceiveReplacement={item => setReplaceItem(item)}
         />
       )}
     </>
