@@ -113,3 +113,18 @@ func FallbackReply(language string) string {
 	}
 	return "Sorry, I encountered a technical issue. Please try again or type 'hello' to restart."
 }
+
+// AddMoreResponse is the JSON shape Gemini returns in ADD_MORE state.
+type AddMoreResponse struct {
+	Reply      string `json:"reply"`
+	AddAnother bool   `json:"add_another"`
+	Language   string `json:"language"`
+}
+
+func ParseAddMore(raw string) AddMoreResponse {
+	var r AddMoreResponse
+	if err := json.Unmarshal([]byte(raw), &r); err != nil {
+		return AddMoreResponse{AddAnother: false}
+	}
+	return r
+}

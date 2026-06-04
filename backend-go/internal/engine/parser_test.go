@@ -56,3 +56,32 @@ func TestFallbackReply(t *testing.T) {
 		t.Error("id and en fallback replies should differ")
 	}
 }
+
+func TestParseAddMore_AddAnother(t *testing.T) {
+	raw := `{"reply":"Oke, silakan sebutkan produk berikutnya.","add_another":true,"language":"id"}`
+	got := ParseAddMore(raw)
+	if !got.AddAnother {
+		t.Error("expected add_another=true")
+	}
+	if got.Reply == "" {
+		t.Error("expected non-empty reply")
+	}
+	if got.Language != "id" {
+		t.Errorf("expected language id, got %s", got.Language)
+	}
+}
+
+func TestParseAddMore_Done(t *testing.T) {
+	raw := `{"reply":"Oke, lanjut ke pengiriman.","add_another":false,"language":"id"}`
+	got := ParseAddMore(raw)
+	if got.AddAnother {
+		t.Error("expected add_another=false")
+	}
+}
+
+func TestParseAddMore_BadJSON(t *testing.T) {
+	got := ParseAddMore("not-json")
+	if got.AddAnother {
+		t.Error("bad JSON should default to add_another=false")
+	}
+}
