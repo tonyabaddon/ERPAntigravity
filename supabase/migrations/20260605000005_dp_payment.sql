@@ -1,8 +1,24 @@
 -- Migration: DP payment support
 -- Renames payment_proof_url → full_proof_url, adds DP columns, adds 2 NOTIFY triggers.
 
--- 1. Rename existing proof URL column
-ALTER TABLE orders RENAME COLUMN payment_proof_url TO full_proof_url;
+-- 0. Add new DP status values to the order_status enum
+-- NOTE: ALTER TYPE ADD VALUE cannot run inside a transaction block
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'WAITING_DP';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'DP_UPLOADED';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'DP_VERIFIED';
+ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'DP_PROOF_REJECTED';
+
+-- 1. Rename existing proof URL column (idempotent)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'orders' AND column_name = 'payment_proof_url'
+    AND table_schema = 'public'
+  ) THEN
+    ALTER TABLE orders RENAME COLUMN payment_proof_url TO full_proof_url;
+  END IF;
+END $$;
 
 -- 2. Add new columns
 ALTER TABLE orders
@@ -38,7 +54,7 @@ $$ LANGUAGE plpgsql;
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.triggers
-    WHERE trigger_name = 'trg_dp_verified' AND event_object_table = 'orders'
+    WHERE trigger_name = 'trg_dp_verified' AND event_object_table = 'orders' AND event_object_schema = 'public'
   ) THEN
     CREATE TRIGGER trg_dp_verified
       AFTER UPDATE ON orders
@@ -64,7 +80,7 @@ $$ LANGUAGE plpgsql;
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.triggers
-    WHERE trigger_name = 'trg_dp_proof_rejected' AND event_object_table = 'orders'
+    WHERE trigger_name = 'trg_dp_proof_rejected' AND event_object_table = 'orders' AND event_object_schema = 'public'
   ) THEN
     CREATE TRIGGER trg_dp_proof_rejected
       AFTER UPDATE ON orders
