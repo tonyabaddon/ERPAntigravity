@@ -2034,3 +2034,15 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Build verification**: `npm run build` — ✓ built in 3.11s, no TypeScript errors
 - **File modified**: `src/components/StockManagerScreen.tsx` (+113/-20 lines)
 - **Committed**: `feat(stock): CSV upsert — add/update by SKU or name, Export Stok button, Supabase persist` (b9e86dc)
+
+## Important Fix: Spec merge in CSV update path — DONE (2026-06-04)
+
+- **Problem**: In `parseAndUploadCSV`, the update branch used `...existing` which preserved `existing.specs`, but never applied spec changes from the CSV row. If a user exported stock, edited a spec column (e.g. changed `mcb_ampere` from 16 to 25), and re-imported, the spec change was silently ignored.
+- **Solution**: Merge non-empty CSV spec values over existing specs in the update path
+- **Implementation**: In `parseAndUploadCSV`, found the update branch where `updatedItem` is built (line 337-346):
+  - Added `const mergedSpecs = { ...existing.specs };` before building updatedItem
+  - Added loop to merge spec cols: `CSV_SPEC_COLS.forEach(col => { if (row[col] && row[col] !== '—' && row[col] !== '-') mergedSpecs[col] = row[col]; })`
+  - Updated `updatedItem` to include `specs: mergedSpecs` (was missing entirely)
+- **Build verification**: `npm run build` — ✓ built in 1.92s, no TypeScript errors
+- **File modified**: `src/components/StockManagerScreen.tsx` (lines 337-349)
+- **Committed**: `fix(stock): merge CSV spec values in update path` (5555b8d)
