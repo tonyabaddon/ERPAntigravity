@@ -1847,3 +1847,21 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Added `<PoDetailView>` block after `<ReceiveGoodsModal>`, wired to `detailPo`, `setDetailPo`, `setReplaceItem`
 - `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
 - Committed: `feat(ui): add PoDetailView with margin visibility and Barang Rusak damage tracking` (df6a4cd)
+
+## Pembelian Module — Task 11: MarkAsPaidModal + ReceiveReplacementModal — DONE (2026-06-04)
+
+- Created `src/components/pembelian/MarkAsPaidModal.tsx`
+  - Renders PO summary (supplier, total, jatuh tempo) in a confirmation modal
+  - Optional payment proof file upload (PDF/JPG) via `purchaseOrderService.uploadDocument`
+  - Calls `purchaseOrderService.markPaid(po.id, proofUrl)` on confirm
+  - Shows success/warning toast; calls `onPaid()` + `onClose()` on success
+- Created `src/components/pembelian/ReceiveReplacementModal.tsx`
+  - Confirms receipt of replacement goods for a damaged item
+  - Shows product name, SKU, and qty_damaged from the `DbPurchaseOrderItem`
+  - Calls `purchaseOrderService.receiveReplacement(item.id)` on confirm
+  - Clears `replaceItem` and `detailPo` state, then calls `onRefresh()` via `onReplaced` callback
+- Updated `src/components/PembelianScreen.tsx`
+  - Added imports for both new modals
+  - Added `{payPo && <MarkAsPaidModal>}` and `{replaceItem && <ReceiveReplacementModal>}` blocks after the existing `PoDetailView` block in `OrdersTab`
+- `tsc --noEmit`: no new errors introduced in any pembelian file; all remaining errors are pre-existing (SalesInboxScreen key prop, Sidebar type comparison, UserManagementScreen PermissionSet, Deno Edge Functions)
+- Full Pembelian module (all 11 tasks) complete: DB → types → navigation → service → UI shell → supplier tab → PO list → PurchaseOrderModal → ReceiveGoodsModal → PoDetailView → MarkAsPaidModal + ReceiveReplacementModal

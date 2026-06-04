@@ -8,6 +8,8 @@ import SupplierModal from './pembelian/SupplierModal';
 import PurchaseOrderModal from './pembelian/PurchaseOrderModal';
 import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 import PoDetailView from './pembelian/PoDetailView';
+import MarkAsPaidModal from './pembelian/MarkAsPaidModal';
+import ReceiveReplacementModal from './pembelian/ReceiveReplacementModal';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -286,6 +288,22 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
           onRefresh={() => { onRefresh(); setDetailPo(null); }}
           showToast={showToast}
           onReceiveReplacement={item => setReplaceItem(item)}
+        />
+      )}
+      {payPo && (
+        <MarkAsPaidModal
+          po={payPo}
+          onClose={() => setPayPo(null)}
+          onPaid={onRefresh}
+          showToast={showToast}
+        />
+      )}
+      {replaceItem && (
+        <ReceiveReplacementModal
+          item={replaceItem}
+          onClose={() => setReplaceItem(null)}
+          onReplaced={() => { setReplaceItem(null); setDetailPo(null); onRefresh(); }}
+          showToast={showToast}
         />
       )}
     </>
