@@ -17,6 +17,18 @@ function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
+const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+  DRAFT:    { label: 'Draft',    className: 'bg-gray-100 text-gray-600' },
+  ORDERED:  { label: 'Dipesan',  className: 'bg-blue-100 text-blue-800' },
+  RECEIVED: { label: 'Diterima', className: 'bg-amber-100 text-amber-800' },
+  PAID:     { label: 'Lunas',    className: 'bg-green-100 text-green-800' },
+};
+
+const LEFT_BORDER: Record<string, string> = {
+  ORDERED:  'border-l-4 border-l-blue-400',
+  RECEIVED: 'border-l-4 border-l-amber-400',
+};
+
 export default function PembelianScreen({ stockList, showToast }: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('orders');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
@@ -121,7 +133,138 @@ export default function PembelianScreen({ stockList, showToast }: PembelianScree
 }
 
 // Placeholder sub-components — implemented in Tasks 6 and 7
-function OrdersTab(_props: any) { return <div className="text-sm text-gray-400">Orders tab — coming in Task 7</div>; }
+interface OrdersTabProps {
+  orders: DbPurchaseOrder[];
+  suppliers: DbSupplier[];
+  stockList: StockItem[];
+  showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onRefresh: () => void;
+}
+
+function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: OrdersTabProps) {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editPo, setEditPo] = useState<DbPurchaseOrder | null>(null);
+  const [receivePo, setReceivePo] = useState<DbPurchaseOrder | null>(null);
+  const [payPo, setPayPo] = useState<DbPurchaseOrder | null>(null);
+  const [detailPo, setDetailPo] = useState<DbPurchaseOrder | null>(null);
+  const [replaceItem, setReplaceItem] = useState<DbPurchaseOrderItem | null>(null);
+
+  const filtered = orders.filter(o => {
+    const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
+      (o.supplier?.name ?? '').toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !statusFilter || o.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  async function handleMarkOrdered(po: DbPurchaseOrder) {
+    try {
+      await purchaseOrderService.markOrdered(po.id);
+      showToast(`${po.po_number} ditandai Dipesan.`, 'success');
+      onRefresh();
+    } catch {
+      showToast('Gagal mengubah status PO.', 'warning');
+    }
+  }
+
+  function formatDate(iso?: string): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  return (
+    <>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1">
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="flex-1 max-w-sm text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              placeholder="Cari no. PO atau supplier..."
+            />
+            <select
+              value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+              <option value="">Semua Status</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ORDERED">Dipesan</option>
+              <option value="RECEIVED">Diterima</option>
+              <option value="PAID">Lunas</option>
+            </select>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Buat PO Baru
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="grid grid-cols-7 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+            <span className="col-span-1">No. PO</span>
+            <span className="col-span-1">Supplier</span>
+            <span className="col-span-1 text-center">Tgl Pesan</span>
+            <span className="col-span-1 text-center">Jatuh Tempo</span>
+            <span className="col-span-1 text-right">Total</span>
+            <span className="col-span-1 text-center">Status</span>
+            <span className="col-span-1 text-center">Aksi</span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-sm text-gray-400">Belum ada purchase order.</div>
+          ) : (
+            filtered.map(po => (
+              <div key={po.id} className={`grid grid-cols-7 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${LEFT_BORDER[po.status] ?? ''}`}>
+                <span className="col-span-1 text-xs font-mono font-semibold text-gray-800">{po.po_number}</span>
+                <div className="col-span-1">
+                  <div className="text-sm font-semibold text-gray-800 truncate">{po.supplier?.name ?? '—'}</div>
+                  <div className="text-[10px] text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
+                </div>
+                <span className="col-span-1 text-xs text-gray-500 text-center">{formatDate(po.ordered_at)}</span>
+                <span className={`col-span-1 text-xs text-center font-semibold ${po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
+                  {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
+                </span>
+                <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-green-700' : 'text-gray-800'}`}>
+                  {formatRupiah(po.total)}
+                </span>
+                <div className="col-span-1 flex justify-center">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[po.status]?.className}`}>
+                    {STATUS_BADGE[po.status]?.label}
+                  </span>
+                </div>
+                <div className="col-span-1 flex justify-center gap-1">
+                  <button onClick={() => setDetailPo(po)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Detail</button>
+                  {po.status === 'DRAFT' && (
+                    <>
+                      <button onClick={() => setEditPo(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
+                      <button onClick={() => handleMarkOrdered(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Pesan</button>
+                    </>
+                  )}
+                  {po.status === 'ORDERED' && (
+                    <button onClick={() => setReceivePo(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Terima</button>
+                  )}
+                  {po.status === 'RECEIVED' && (
+                    <button onClick={() => setPayPo(po)} className="text-xs text-green-700 px-2 py-1 rounded border border-green-200 bg-green-50 hover:bg-green-100 font-semibold">Bayar</button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Modals — wired in Tasks 8-11 */}
+      {(showCreateModal || editPo) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 text-sm text-gray-500">PurchaseOrderModal — Task 8</div>
+        </div>
+      )}
+    </>
+  );
+}
 
 interface SuppliersTabProps {
   suppliers: DbSupplier[];
