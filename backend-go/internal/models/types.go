@@ -153,6 +153,8 @@ type Order struct {
 	DPProofURL       string       `json:"dp_proof_url,omitempty"`
 	PaymentType      string       `json:"payment_type,omitempty"`
 	DPAmount         float64      `json:"dp_amount,omitempty"`
+	DPInputType      string       `json:"dp_input_type,omitempty"`
+	DPValue          float64      `json:"dp_value,omitempty"`
 	RejectionReason  string       `json:"rejection_reason,omitempty"`
 	PaymentVerifiedAt *time.Time  `json:"payment_verified_at,omitempty"`
 	VerifiedBy       string       `json:"verified_by,omitempty"`

@@ -27,6 +27,12 @@ func (c *Client) VerifyDPPayment(orderID string) error {
 // RejectDPProof sets status to DP_PROOF_REJECTED with optional reason.
 // Postgres trigger fires dp_proof_rejected NOTIFY; handler resets to WAITING_DP.
 func (c *Client) RejectDPProof(orderID, reason string) error {
+	if reason == "" {
+		_, err := c.DB.Exec(`
+			UPDATE orders SET status = 'DP_PROOF_REJECTED', rejection_reason = NULL, dp_proof_url = NULL WHERE id = $1
+		`, orderID)
+		return err
+	}
 	_, err := c.DB.Exec(`
 		UPDATE orders SET status = 'DP_PROOF_REJECTED', rejection_reason = $1, dp_proof_url = NULL WHERE id = $2
 	`, reason, orderID)
