@@ -1865,3 +1865,16 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Added `{payPo && <MarkAsPaidModal>}` and `{replaceItem && <ReceiveReplacementModal>}` blocks after the existing `PoDetailView` block in `OrdersTab`
 - `tsc --noEmit`: no new errors introduced in any pembelian file; all remaining errors are pre-existing (SalesInboxScreen key prop, Sidebar type comparison, UserManagementScreen PermissionSet, Deno Edge Functions)
 - Full Pembelian module (all 11 tasks) complete: DB → types → navigation → service → UI shell → supplier tab → PO list → PurchaseOrderModal → ReceiveGoodsModal → PoDetailView → MarkAsPaidModal + ReceiveReplacementModal
+
+## Kasir Module — Task 3: TypeScript types — DONE (2026-06-04)
+
+- Modified `src/types.ts`
+  - Added `kasir: boolean` to `PermissionSet` interface (line 19)
+  - Added `kasir: true` to `ALL_PERMISSIONS` object (line 35)
+  - Added `| 'kasir'` to `ActivePage` union type (line 318)
+  - Appended full Kasir type block at end of file: `KasirChannel`, `KasirPaymentMethod`, `KasirExpenseCategory`, `KasirItem`, `KasirTransaction`, `DailySummary`, `NewSaleTransaction`, `NewExpense`
+- Modified `src/lib/supabaseClient.ts`
+  - Added `harga_modal?: number | null` to `SupabaseStockItem` interface
+- Fixed collateral PermissionSet conformance breakage in `src/initialData.ts` and `src/components/UserManagementScreen.tsx` (both were already missing `pembelian`; added `pembelian: false, kasir: false` to all partial objects)
+- `tsc --noEmit`: no errors in `types.ts` or `supabaseClient.ts`; remaining errors are pre-existing (SalesInboxScreen key prop, Sidebar type comparison, Deno Edge Functions)
+- Committed: `feat(types): add KasirTransaction, DailySummary, kasir permission and ActivePage` (a0dc7f6)
