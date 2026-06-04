@@ -147,11 +147,12 @@ export default function App() {
         const itemsToUpsert = updatedStocks.filter(newItem => {
           const oldItem = stockList.find(o => o.sku === newItem.sku);
           if (!oldItem) return true; // Added
-          return oldItem.name !== newItem.name || 
-                 oldItem.category !== newItem.category || 
-                 oldItem.price !== newItem.price || 
-                 oldItem.stock !== newItem.stock || 
-                 oldItem.status !== newItem.status; // Modified
+          return oldItem.name !== newItem.name ||
+                 oldItem.category !== newItem.category ||
+                 oldItem.price !== newItem.price ||
+                 oldItem.stock !== newItem.stock ||
+                 oldItem.status !== newItem.status ||
+                 JSON.stringify(oldItem.specs) !== JSON.stringify(newItem.specs); // Modified
         });
 
         for (const item of itemsToUpsert) {
