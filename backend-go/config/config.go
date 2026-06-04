@@ -23,7 +23,7 @@ func Load() *Config {
 		SupabaseDBConn:     getEnv("SUPABASE_DB_CONNECTION", "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
 		GeminiAPIKey:       getEnv("GEMINI_API_KEY", ""),
 		Port:               getEnv("PORT", "8080"),
-		SupabaseURL:        getEnv("SUPABASE_URL", ""),
+		SupabaseURL:        getEnv("SUPABASE_URL", "https://ekhhojaezdfjfwuxyjkl.supabase.co"),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),
 	}
 }
