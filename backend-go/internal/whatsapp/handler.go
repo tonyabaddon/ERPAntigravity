@@ -161,7 +161,7 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 	})
 
 	if result.GeminiError != nil {
-		log.Printf("[HANDLER] Gemini failed after 10 retries for %s: %v", senderPhone, result.GeminiError)
+		log.Printf("[HANDLER] Gemini failed after all retries for %s: %v", senderPhone, result.GeminiError)
 		h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED: Gemini failed after 10 retries")
 		if dbErr := h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin); dbErr != nil {
 			log.Printf("[HANDLER] UpdateConversationState (escalation) error: %v", dbErr)

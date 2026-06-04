@@ -24,7 +24,7 @@ func RetryProcess(
 ) *ProcessResult {
 	var result *ProcessResult
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		result, _ = machine.Process(ctx, conv, text, history, stockContext)
+		result, _ = machine.Process(ctx, conv, text, history, stockContext) // Process never returns non-nil error
 		if result.GeminiError == nil {
 			return result
 		}
