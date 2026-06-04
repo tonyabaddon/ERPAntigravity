@@ -1878,3 +1878,35 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Fixed collateral PermissionSet conformance breakage in `src/initialData.ts` and `src/components/UserManagementScreen.tsx` (both were already missing `pembelian`; added `pembelian: false, kasir: false` to all partial objects)
 - `tsc --noEmit`: no errors in `types.ts` or `supabaseClient.ts`; remaining errors are pre-existing (SalesInboxScreen key prop, Sidebar type comparison, Deno Edge Functions)
 - Committed: `feat(types): add KasirTransaction, DailySummary, kasir permission and ActivePage` (a0dc7f6)
+
+## Pembelian Bug Fixes — DONE (2026-06-04)
+
+### Bug 1: damage_status NONE missing from select dropdown (UI bug)
+
+- **File**: `src/components/pembelian/PoDetailView.tsx`
+- **Root cause**: `DAMAGE_STATUS_OPTIONS` only had `PENDING_RETURN`, `RETURNED`, `REPLACED`. The DB defaults `damage_status` to `'NONE'` and the RPC sets it to `NONE` when `qty_damaged = 0`. With no matching option, React raised a controlled-component warning and the select showed a blank/undefined selected item.
+- **Fix**: Added `{ value: 'NONE', label: 'None' }` as the first entry in `DAMAGE_STATUS_OPTIONS`.
+
+### Bug 2: Non-transactional receiveGoods (data integrity bug)
+
+- **Files**: `src/lib/pembelianService.ts`, `supabase/migrations/20260604000010_receive_po_add_payment_fields.sql`
+- **Root cause**: `receiveGoods` performed a separate `UPDATE purchase_orders SET payment_due_at/invoice_url` before calling the `receive_purchase_order` RPC. If the RPC failed, the PO would have `payment_due_at` set while still in `ORDERED` status.
+- **Fix**:
+  - Created migration `20260604000010_receive_po_add_payment_fields.sql` with `CREATE OR REPLACE FUNCTION public.receive_purchase_order(...)` accepting `p_payment_due_at date` and `p_invoice_url text` as new parameters — all fields updated atomically in a single transaction.
+  - Applied migration to Supabase project `ekhhojaezdfjfwuxyjkl` via MCP.
+  - Updated `receiveGoods` in `pembelianService.ts`: removed the separate `UPDATE purchase_orders` call; `payment_due_at` and `invoice_url` now passed directly to the RPC.
+
+- Committed: `fix: make receiveGoods atomic and fix damage_status NONE in select` (ce83e0c)
+
+## UserManagement Permission Labels Fix — DONE (2026-06-04)
+
+### Bug: Missing `kasir` and `pembelian` in PERM_LABELS array
+
+- **File**: `src/components/UserManagementScreen.tsx`
+- **Root cause**: Two new permission keys were added to `PermissionSet` in types.ts (`kasir` and `pembelian`), but the `PERM_LABELS` array used in the UserManagementScreen UI was not updated. Admin users could not toggle these permissions in the UI.
+- **Fix**:
+  - Added `{ key: 'pembelian', label: 'Pembelian' }` to PERM_LABELS array (line 92)
+  - Added `{ key: 'kasir', label: 'Kasir' }` to PERM_LABELS array (line 93)
+  - Updated permission count display from `${activeCount}/11 aktif` to `${activeCount}/13 aktif` (line 364)
+- **Verification**: `npx tsc --noEmit` — zero TypeScript errors for UserManagementScreen
+- Committed: `fix(ui): add kasir and pembelian to UserManagement permission labels` (57f2cfd)
