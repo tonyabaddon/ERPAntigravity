@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -894,7 +894,7 @@ export const kasirService = {
     return data as KasirTransaction;
   },
 
-  async nextInvoiceNumber(channel: 'walkin' | 'tokopedia' | 'grosir', date: string): Promise<string> {
+  async nextInvoiceNumber(channel: KasirChannel, date: string): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const prefix = channel === 'walkin' ? 'WLK' : channel === 'tokopedia' ? 'TPD' : 'GRS';
     const dateCompact = date.replace(/-/g, '');
@@ -903,6 +903,7 @@ export const kasirService = {
       p_date: date,
     });
     if (error) throw error;
+    if (data == null) throw new Error('next_kasir_number returned null');
     const counter = String(data).padStart(3, '0');
     return `${prefix}-${dateCompact}-${counter}`;
   },
