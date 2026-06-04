@@ -59,6 +59,8 @@ func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 
 // IncrementFollowup records a follow-up send. If it is a new WIB day since the
 // last follow-up, the count resets to 1 rather than incrementing.
+// After 6 cumulative sends (3 days × 2/day) with no customer reply,
+// ai_active is set to false to stop further follow-ups automatically.
 func (c *Client) IncrementFollowup(convID string) error {
 	_, err := c.DB.Exec(`
 		UPDATE conversations SET
@@ -68,18 +70,26 @@ func (c *Client) IncrementFollowup(convID string) error {
 		    THEN 1
 		    ELSE followup_count_today + 1
 		  END,
-		  last_followup_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date
+		  last_followup_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date,
+		  followup_sends_total = followup_sends_total + 1,
+		  ai_active = CASE
+		    WHEN followup_sends_total + 1 >= 6 THEN false
+		    ELSE ai_active
+		  END
 		WHERE id = $1
 	`, convID)
 	return err
 }
 
 // ResetFollowupCounter clears follow-up tracking when the customer replies.
-// Called at the start of processMessage so any customer reply resets the state.
+// Called at the start of processMessage so any customer reply resets the state,
+// including the cumulative sends counter so the 3-day auto-disable window restarts.
 func (c *Client) ResetFollowupCounter(convID string) error {
 	_, err := c.DB.Exec(`
 		UPDATE conversations
-		SET followup_count_today = 0, last_followup_date = NULL
+		SET followup_count_today = 0,
+		    last_followup_date = NULL,
+		    followup_sends_total = 0
 		WHERE id = $1
 	`, convID)
 	return err
