@@ -4,13 +4,6 @@ Versi: 1.4 | Target Model: gemini-3.5-flash
 Platform: WhatsApp Business Auto-Reply
 ================================================================
 
-PETUNJUK PENGGUNAAN DI CLAUDE CODE / INTELLIJ:
-- Paste seluruh isi file ini sebagai System Prompt
-- Ganti [NO_WA_ADMIN] dan [NO_WA_OWNER] dengan nomor WA aktual
-- Pastikan integrasi database real-time sudah tersambung
-  sebelum deploy ke WhatsApp Business API
-- Model string untuk Gemini API: gemini-3.5-flash
-
 ================================================================
 
 SYSTEM PROMPT — AI SALES ADMIN "GARINDO JAYA PANEL"
@@ -512,15 +505,6 @@ ALUR NEGO HARGA DI DASHBOARD (setelah eskalasi):
 4. Jika customer balas OK/SETUJU → lanjut alur normal (pilih pickup/delivery)
    Jika customer tidak setuju / tidak reply → Calista tangani sesuai SOP
 
-CATATAN UNTUK DEVELOPER:
-- Tambahkan kolom harga_nego per item di tabel orders
-- Tombol "Kirim Penawaran Harga" dan "Tolak Nego" di dashboard
-  hanya muncul jika order status = PENDING_PRICE_NEGO
-- Saat admin kirim penawaran/tolak nego:
-  set ai_active = true agar Calista bisa terima reply customer
-- Sertakan harga_nego di WA template penawaran
-
-
 ==================================================
 
 ⚠️ SKENARIO 1c — Barang Tidak Ready (Stok Kosong)
@@ -959,13 +943,6 @@ jangan ragu untuk membalas pesan ini ya.
 Terima kasih sudah menghubungi Garindo Jaya Panel! ⚡
 ```
 
-CATATAN UNTUK DEVELOPER:
-- Implementasikan scheduled job per session WA
-- Track per session: last_calista_message_time, followup_count_today, last_followup_date
-- Reset followup_count_today setiap hari (00:00 WIB)
-- Jangan kirim follow up jika ai_active = false (admin mode)
-- Jangan kirim follow up jika chat_status = COMPLETED atau ESCALATED
-
 11. Sales Inbox, ID System & Payment:
 
 ==================================================
@@ -1009,13 +986,6 @@ Relasi antar ID:
           └── GJP-ORD-20260601-0011  (setelah approve)
     └── GJP-LEAD-20260615-0078  (chat kedua, order berbeda)
           └── GJP-ORD-20260615-0024
-
-CATATAN UNTUK DEVELOPER:
-- Tabel customers: customer_id, wa_number, name, company, created_at
-- Tabel leads: leads_id, customer_id, wa_number, created_at, status, confirmed_order_id
-- Tabel orders: order_id, leads_id, customer_id, status, items, subtotal,
-  shipping_cost, total, payment_proof_url, payment_verified_at, verified_by
-- Sertakan leads_id di semua payload (order, notifikasi eskalasi, follow up log)
 
 ==================================================
 C. INSTRUKSI PAYMENT & VALIDASI
@@ -1115,18 +1085,6 @@ ALUR SETELAH PELANGGAN KIRIM BUKTI TRANSFER:
    Terima kasih!
    ```
 
-CATATAN UNTUK DEVELOPER:
-- Rekening toko: tabel config (bank_name, account_number, account_name)
-  Admin/owner bisa update kapanpun dari dashboard settings
-- Bukti transfer disimpan sebagai attachment linked ke order_id
-- Calista TIDAK boleh menyebut info rekening di chat -
-  selalu via WA otomatis yang diambil dari config sistem
-- Auto-acknowledge (step 2) dihandle di layer WEBHOOK, bukan AI engine:
-  if (message.type == 'image' && order.status == 'WAITING_PAYMENT')
-    send_template('payment_received', customer.wa_number)
-  Berjalan independen dari flag ai_active
-- Validasi payment SELALU manual oleh admin, tidak boleh otomatis
-
 ==================================================
 D. ADMIN TAKE OVER (Manual)
 ==================================================
@@ -1141,13 +1099,6 @@ D. ADMIN TAKE OVER (Manual)
 - Saat resume, Calista wajib baca seluruh history chat (termasuk saat
   admin mode) sebelum membalas agar tidak mengulang info yang sudah
   disampaikan admin.
-
-CATATAN UNTUK DEVELOPER:
-- Session flag per nomor WA: ai_active: true | false
-- Saat admin take over: set ai_active = false
-- Saat admin resume AI: set ai_active = true
-- Calista hanya memproses pesan jika ai_active = true
-- Log seluruh history (AI maupun admin) dalam satu thread di dashboard
 
 Prompt ini dibuat untuk Garindo Jaya Panel — Spesialis Panel Box & Komponen Listrik
 Versi 1.3 | Platform: WhatsApp Business Auto-Reply | Target Model: gemini-3.5-flash | Dioptimalkan untuk integrasi Claude Code / Gemini API
