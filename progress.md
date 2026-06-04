@@ -2174,3 +2174,18 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Build: `npm run build` passes, 2395 modules, zero TypeScript errors
 - Committed: `fix(metrics): add kasir anon SELECT policy + fix numeric string coercion` (edd33a6)
 - Deployed: `git push origin main` → Cloud Build triggered
+
+## Hotfix: payment_proof_url empty + ItemsTable clipping — DONE (2026-06-05)
+
+**Root cause 1 — empty payment_proof_url**: `handler.go` called `UpdatePaymentProof(order.ID, proofURL)` regardless of whether the upload succeeded. When `UploadPaymentProof` failed (root cause: `SUPABASE_SERVICE_KEY` missing from Cloud Run env vars), `proofURL` stayed `""` and was written to the DB. Order advanced to `PAYMENT_UPLOADED` but admin saw a placeholder instead of the photo.
+
+**Fix**: Guard in `handler.go` — if `proofURL == ""` after the download+upload attempt, reply to the customer asking them to resend and `return` early; the order stays at `WAITING_PAYMENT`. `UpdatePaymentProof` is only called when a valid URL was obtained.
+
+**DB recovery**: Jenny's order `5dbc37e4` was reset to `WAITING_PAYMENT` / NULL proof URL so she can resend once `SUPABASE_SERVICE_KEY` is added to Cloud Run.
+
+**Action required**: Add `SUPABASE_SERVICE_KEY` (Supabase project service role key) to Cloud Run env vars for the WhatsApp daemon, then redeploy. Get it from Supabase Dashboard → Project Settings → API → service_role key.
+
+**Root cause 2 — ItemsTable header clipping**: `rounded-xl overflow-hidden` on the outer container clipped column header text at the rounded corners. Reduced to `rounded-lg`.
+
+- Files: `backend-go/internal/whatsapp/handler.go`, `src/components/OrderHistoryScreen.tsx`
+- Committed: `b9ffb3f`
