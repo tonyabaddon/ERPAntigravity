@@ -1493,4 +1493,25 @@ CREATE POLICY "auth_all_admin_users" ON admin_users
 **Verification**:
 - Confirmed migration applied: both `auth_all_admin_users` and `auth full access admin_users` (FOR ALL TO authenticated) policies present on `admin_users` table
 - Schema confirmed compatible: `created_at` has `DEFAULT now()` so upsert omitting it works correctly
+
+## Payment Proof Fix — DONE (2026-06-04)
+
+Fixed three bugs that prevented customer payment proofs (images and PDFs) from being processed:
+
+**Bug 1 fixed: Timestamp filter dropped queued media during redeploys**
+- `Handle()` previously filtered ALL messages (including media) with `Timestamp.Before(startedAt)`, dropping payment proofs sent while the backend was restarting
+- Fix: moved timestamp filter inside the text-message branch only — media messages now bypass the filter entirely
+- Commits: `fix(wa): apply timestamp filter to text messages only, not media`
+
+**Bug 2 fixed: viewOnce and ephemeral image wrappers not unwrapped**
+- `GetImageMessage()` only checked the top-level proto field; newer WhatsApp clients wrap images in `viewOnceMessage` or `ephemeralMessage`
+- Fix: added two unwrapping blocks in `handleMediaMessage()` that resolve through `GetViewOnceMessage().GetMessage()` and `GetEphemeralMessage().GetMessage()`
+- Commits: `fix(wa): accept viewOnce/ephemeral images and PDF documents as payment proofs`
+
+**Bug 3 fixed: PDF documents not accepted as payment proofs**
+- Only `GetImageMessage()` was checked; customers sending PDF payment proofs fell into admin escalation
+- Fix: added `DownloadDocument(*waProto.DocumentMessage)` to `sender.go`; `handleMediaMessage()` now checks `GetDocumentMessage()` and routes to `DownloadDocument` when no image is found
+- Commits: `feat(wa): add DownloadDocument to sender for PDF payment proofs`
+
+**Files changed**: `backend-go/internal/whatsapp/sender.go`, `backend-go/internal/whatsapp/handler.go`
 - `admin_users` table is currently empty; adding a new user will persist to DB; subsequent loads will show only DB rows
