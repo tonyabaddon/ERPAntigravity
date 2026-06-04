@@ -32,6 +32,7 @@ import PipelineScreen from './components/PipelineScreen';
 import OrderHistoryScreen from './components/OrderHistoryScreen';
 import PelangganScreen from './components/PelangganScreen';
 import LaporanScreen from './components/LaporanScreen';
+import PembelianScreen from './components/PembelianScreen';
 
 import {
   INITIAL_STOCK,
@@ -277,6 +278,13 @@ export default function App() {
         );
       case 'laporan':
         return <LaporanScreen />;
+      case 'pembelian':
+        return (
+          <PembelianScreen
+            stockList={stockList}
+            showToast={triggerToast}
+          />
+        );
       default:
         return null;
     }

@@ -17,7 +17,8 @@ import {
   Bot,
   TrendingUp,
   ClipboardList,
-  BarChart2
+  BarChart2,
+  ShoppingCart
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 
@@ -39,6 +40,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, description: 'Percakapan WA', permKey: 'salesInbox' },
     { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
     { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
+    { id: 'pembelian', label: 'Pembelian', icon: ShoppingCart, description: 'PO & Supplier', permKey: 'pembelian' },
     { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, description: 'Leads & Prospek', permKey: 'pipeline' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, description: 'Profil & Riwayat', permKey: 'pelanggan' },
     { id: 'order-history', label: 'Riwayat Pesanan', icon: ClipboardList, description: 'Semua Pesanan', permKey: 'orderHistory' },
