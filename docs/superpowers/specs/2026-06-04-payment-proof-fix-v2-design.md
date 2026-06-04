@@ -50,11 +50,17 @@ if strings.HasPrefix(contentType, "application/") {
 }
 ```
 
-Import `strings` if not already imported.
+`strings` is not currently imported in this file — add it to the import block.
 
 ### Change 3 — Supabase Storage bucket config
 
-Remove `allowed_mime_types` restriction from the `payment-proofs` bucket via the Supabase MCP `update_bucket` call (no migration file — this is bucket config, not schema). The bucket remains public. MIME validation is not needed here; the backend controls what gets uploaded.
+Remove `allowed_mime_types` restriction from the `payment-proofs` bucket by running:
+
+```sql
+UPDATE storage.buckets SET allowed_mime_types = NULL WHERE id = 'payment-proofs';
+```
+
+Applied via `mcp__plugin_supabase_supabase__execute_sql` (not a schema migration — this is bucket metadata stored in `storage.buckets`). The bucket remains public. MIME validation is not needed here; the backend controls what gets uploaded.
 
 ### Change 4 — `src/components/OrderHistoryScreen.tsx`
 
