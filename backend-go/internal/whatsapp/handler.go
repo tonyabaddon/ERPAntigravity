@@ -148,10 +148,35 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		stockContext = engine.StockContextString(items)
 	}
 
-	// 9. Run state machine
-	result, err := h.machine.Process(ctx, conv, text, history, stockContext)
-	if err != nil {
-		log.Printf("[HANDLER] Machine.Process error: %v", err)
+	// 9. Run state machine with retry (10 attempts × 10s timeout each)
+	holdingMsg := "Mohon maaf, sistem kami sedang sibuk. Kami akan segera membalas 🙏"
+	if conv.Language == "en" {
+		holdingMsg = "Sorry, our system is currently busy. We'll reply to you shortly 🙏"
+	}
+	result := engine.RetryProcess(ctx, h.machine, conv, text, history, stockContext, 10, func() {
+		h.db.InsertMessage(conv.ID, models.SenderAI, holdingMsg)
+		if sendErr := h.sender.SendText(ctx, senderPhone, holdingMsg); sendErr != nil {
+			log.Printf("[HANDLER] holding message send error: %v", sendErr)
+		}
+	})
+
+	if result.GeminiError != nil {
+		log.Printf("[HANDLER] Gemini failed after 10 retries for %s: %v", senderPhone, result.GeminiError)
+		h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED: Gemini failed after 10 retries")
+		if dbErr := h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin); dbErr != nil {
+			log.Printf("[HANDLER] UpdateConversationState (escalation) error: %v", dbErr)
+		}
+		recipients, recErr := h.db.GetActiveRecipients()
+		if recErr != nil {
+			log.Printf("[HANDLER] GetActiveRecipients error during escalation: %v", recErr)
+			return
+		}
+		notif := fmt.Sprintf("⚠️ *Calista Gagal*\n\nSistem tidak dapat memproses pesan dari %s setelah 10x percobaan.\n\nPesan pelanggan: %s\n\nMohon tangani secara manual.", senderPhone, text)
+		for _, r := range recipients {
+			if notifErr := h.sender.SendText(ctx, r.WANumber, notif); notifErr != nil {
+				log.Printf("[HANDLER] escalation notify error (%s): %v", r.WANumber, notifErr)
+			}
+		}
 		return
 	}
 
