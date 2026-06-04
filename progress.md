@@ -2232,3 +2232,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - `channel` and `selectedDate` already in scope; `handleSave` was already async
 - `npm run build` passes cleanly — ✓ built in 2.11s, zero TypeScript errors
 - Committed: `fix(kasir): use DB-backed invoice counter, drop expensive prefetch` (16b1ade)
+
+## Kasir Invoice Counter — DONE (2026-06-05)
+
+- Created `kasir_counters` table with `(channel, date)` primary key
+- Created `next_kasir_number(p_channel, p_date)` RPC — atomic INSERT ON CONFLICT DO UPDATE — SECURITY DEFINER with GRANT EXECUTE to anon/authenticated
+- `kasirService.generateInvoiceNumber` replaced with async `nextInvoiceNumber` calling the RPC
+- `KasirScreen.tsx handleSave`: removed expensive `fetchTransactions` prefetch (was only used for counter); now calls `nextInvoiceNumber` directly
+- Invoice numbers are now unique and sequential even across simultaneous saves and page refreshes
+- Committed: feat(db), feat(kasir), fix(kasir)
