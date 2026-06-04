@@ -9,7 +9,8 @@ import {
   PlusCircle, Save, Trash2, FileCheck, ChevronUp
 } from 'lucide-react';
 import { StockItem } from '../types';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { isSupabaseConfigured, stockService } from '../lib/supabaseClient';
+import type { SupabaseStockItem } from '../lib/supabaseClient';
 
 interface StockManagerScreenProps {
   stockList: StockItem[];
@@ -90,7 +91,7 @@ const CSV_SPEC_COLS = [
   'kabel_tipe', 'kabel_mm2', 'kabel_panjang',
   'deskripsi',
 ];
-const CSV_HEADER = ['kategori', 'harga', 'harga_modal', 'stok', ...CSV_SPEC_COLS].join(',');
+const CSV_HEADER = ['sku', 'nama', 'kategori', 'harga', 'harga_modal', 'stok', ...CSV_SPEC_COLS].join(',');
 
 function generateSkuId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(4)))
@@ -248,10 +249,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const handleDownloadTemplate = () => {
     const rows = [
       CSV_HEADER,
-      'Panel,850000,,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,,',
-      'MCB,45000,,200,,,,,,,,,Schneider,16,1P,,,,',
-      'Kabel,380000,,50,,,,,,,,,,,,NYM,2.5,100m/Rol,',
-      'Aksesori,25000,,10,,,,,,,,,,,,,,,Klem Kabel 16mm',
+      ',,Panel,850000,,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,,',
+      ',,MCB,45000,,200,,,,,,,,,,Schneider,16,1P,,,',
+      ',,Kabel,380000,,50,,,,,,,,,,,,NYM,2.5,100m/Rol,',
+      ',,Aksesori,25000,,10,,,,,,,,,,,,,,,Klem Kabel 16mm',
     ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -265,30 +266,111 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     showToast('📥 Template CSV berhasil diunduh.');
   };
 
-  const parseAndUploadCSV = (text: string) => {
+  const handleExportStock = () => {
+    if (stockList.length === 0) {
+      showToast('Belum ada produk untuk diekspor.', 'warning');
+      return;
+    }
+    const rows = [
+      CSV_HEADER,
+      ...stockList.map(item => {
+        const specVals = CSV_SPEC_COLS.map(col => item.specs?.[col] ?? '');
+        return [
+          item.sku,
+          item.name,
+          item.category,
+          item.price,
+          item.harga_modal ?? '',
+          item.stock,
+          ...specVals,
+        ].join(',');
+      }),
+    ];
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Stok_Sinar_Elektrik.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('📤 Data stok berhasil diekspor.');
+  };
+
+  const parseAndUploadCSV = async (text: string) => {
     const lines = text.trim().split('\n');
     const header = lines[0].split(',').map(h => h.trim());
-    const newItems: StockItem[] = [];
+    const updatedStock = [...stockList];
+    let addCount = 0;
+    let updateCount = 0;
+    const changedItems: SupabaseStockItem[] = [];
+
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(',').map(c => c.trim());
       const row: Record<string, string> = {};
       header.forEach((h, idx) => { row[h] = cols[idx] || ''; });
+
+      const skuFromCsv = row['sku']?.trim() ?? '';
+      const namaFromCsv = row['nama']?.trim() ?? '';
       const category = row['kategori'] || 'Aksesori';
       const price = parseInt(row['harga']) || 0;
       const harga_modal = row['harga_modal'] ? parseFloat(row['harga_modal']) : null;
       const stock = parseInt(row['stok']) || 0;
       const specs: Record<string, string> = {};
       CSV_SPEC_COLS.forEach(col => {
-        if (row[col] && row[col] !== '—' && row[col] !== '-') {
-          specs[col] = row[col];
-        }
+        if (row[col] && row[col] !== '—' && row[col] !== '-') specs[col] = row[col];
       });
-      const sku = generateSkuId();
-      const name = generateName(category, specs);
-      newItems.push({ sku, name, category, price, harga_modal, stock, status: stock < 10 ? 'Stok Tipis' : 'Sinkron', specs });
+
+      // Level 1: match by SKU
+      let existingIdx = skuFromCsv
+        ? updatedStock.findIndex(s => s.sku === skuFromCsv)
+        : -1;
+
+      // Level 2: fallback match by name (case-insensitive)
+      if (existingIdx === -1 && namaFromCsv) {
+        existingIdx = updatedStock.findIndex(
+          s => s.name.toLowerCase() === namaFromCsv.toLowerCase()
+        );
+      }
+
+      if (existingIdx >= 0) {
+        const existing = updatedStock[existingIdx];
+        const updatedItem = {
+          ...existing,
+          price: row['harga'] ? price : existing.price,
+          stock: row['stok'] ? stock : existing.stock,
+          harga_modal: row['harga_modal'] ? harga_modal : existing.harga_modal,
+          name: namaFromCsv || existing.name,
+          status: ((row['stok'] ? stock : existing.stock) < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron',
+        };
+        updatedStock[existingIdx] = updatedItem;
+        changedItems.push(updatedItem as SupabaseStockItem);
+        updateCount++;
+      } else {
+        const sku = skuFromCsv || generateSkuId();
+        const name = namaFromCsv || generateName(category, specs);
+        const newItem = {
+          sku, name, category, price, harga_modal, stock,
+          status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron',
+          specs,
+        };
+        updatedStock.push(newItem);
+        changedItems.push(newItem as SupabaseStockItem);
+        addCount++;
+      }
     }
-    onStockUpdate([...newItems, ...stockList]);
-    showToast(`✅ ${newItems.length} produk berhasil diimport dari CSV.`);
+
+    onStockUpdate(updatedStock);
+    showToast(`✅ ${addCount} produk ditambah, ${updateCount} produk diperbarui.`);
+
+    if (isSupabaseConfigured && changedItems.length > 0) {
+      try {
+        await stockService.bulkUpsert(changedItems);
+      } catch {
+        showToast('Data diimport tapi gagal disimpan ke server. Coba refresh.', 'warning');
+      }
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -307,7 +389,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
         if (progress >= 100) {
           clearInterval(timer);
           setIsUploading(false);
-          parseAndUploadCSV(text);
+          void parseAndUploadCSV(text);
         }
       }, 150);
     };
@@ -390,7 +472,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           <div
             onClick={handleDownloadTemplate}
             className="bg-[#eff4ff] rounded-3xl p-8 border border-transparent hover:border-[#1e3d60]/20 hover:bg-blue-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
@@ -398,8 +480,19 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
             <div className="w-16 h-16 rounded-full bg-[#1e3d60] text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
               <Download className="w-6 h-6" />
             </div>
-            <h4 className="font-extrabold text-[#012749] text-xs uppercase tracking-wider">UNDUH TEMPLATE EXCEL (*.CSV)</h4>
-            <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Kolom spek Panel, MCB, Kabel &amp; Aksesori. SKU &amp; nama auto.</p>
+            <h4 className="font-extrabold text-[#012749] text-xs uppercase tracking-wider">DOWNLOAD TEMPLATE</h4>
+            <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Template kosong untuk input produk baru. SKU &amp; nama auto.</p>
+          </div>
+
+          <div
+            onClick={handleExportStock}
+            className="bg-violet-50 rounded-3xl p-8 border border-transparent hover:border-violet-300 hover:bg-violet-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
+          >
+            <div className="w-16 h-16 rounded-full bg-violet-700 text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
+              <Download className="w-6 h-6" />
+            </div>
+            <h4 className="font-extrabold text-[#012749] text-xs uppercase tracking-wider">EXPORT STOK</h4>
+            <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Export semua produk aktif dengan SKU. Edit lalu re-import untuk update.</p>
           </div>
 
           <label
