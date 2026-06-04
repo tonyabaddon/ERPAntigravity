@@ -237,25 +237,22 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 }
 
 func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, leadsID, customerID string, deliveryType models.DeliveryType) {
-	items, _ := h.db.SearchStockByName(conv.CollectedData.Product)
-	var orderItems []models.OrderItem
-	var subtotal float64
-	if len(items) > 0 {
-		item := items[0]
-		qty := conv.CollectedData.Quantity
-		if qty == 0 {
-			qty = 1
-		}
-		sub := item.Price * float64(qty)
-		orderItems = append(orderItems, models.OrderItem{
-			SKU: item.SKU, Name: item.Name, Qty: qty,
-			UnitPrice: item.Price, Subtotal: sub,
-		})
-		subtotal = sub
+	cart := conv.CollectedData.Cart
+	// Fallback: if Cart is empty, use legacy single-item fields
+	if len(cart) == 0 && conv.CollectedData.Product != "" {
+		cart = []models.CartItem{{
+			Product:  conv.CollectedData.Product,
+			Quantity: conv.CollectedData.Quantity,
+		}}
 	}
-	if len(items) == 0 {
-		log.Printf("[HANDLER] Warning: no stock found for product %q, order will have empty items", conv.CollectedData.Product)
+	if len(cart) == 0 {
+		log.Printf("[HANDLER] Warning: no cart items for conv %s, order will be empty", conv.ID)
 	}
+
+	orderItems, subtotal := buildOrderItems(cart, func(product string) ([]models.StockItem, error) {
+		return h.db.SearchStockByName(product)
+	})
+
 	order, err := h.db.CreateOrder(conv, orderItems, subtotal, leadsID, customerID, models.OrderTypeStandard, deliveryType)
 	if err != nil {
 		log.Printf("[HANDLER] CreateOrder error: %v", err)
@@ -263,6 +260,32 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, 
 	}
 	h.scheduler.Schedule(order.ID, order.BookingExpiresAt)
 	log.Printf("[HANDLER] Order %s created, timer scheduled until %v", order.ID, order.BookingExpiresAt)
+}
+
+// buildOrderItems constructs OrderItems from a cart, using lookup to resolve stock data.
+// Returns empty slice and zero subtotal if lookup returns no results for a cart item.
+func buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.StockItem, error)) ([]models.OrderItem, float64) {
+	var items []models.OrderItem
+	var subtotal float64
+	for _, cartItem := range cart {
+		stockItems, _ := lookup(cartItem.Product)
+		if len(stockItems) == 0 {
+			log.Printf("[HANDLER] buildOrderItems: no stock found for %q", cartItem.Product)
+			continue
+		}
+		stock := stockItems[0]
+		qty := cartItem.Quantity
+		if qty == 0 {
+			qty = 1
+		}
+		sub := stock.Price * float64(qty)
+		items = append(items, models.OrderItem{
+			SKU: stock.SKU, Name: stock.Name, Qty: qty,
+			UnitPrice: stock.Price, Subtotal: sub,
+		})
+		subtotal += sub
+	}
+	return items, subtotal
 }
 
 func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text string) {
