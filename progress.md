@@ -1990,3 +1990,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Problem**: All bare `} catch {` blocks in pembelian components discarded the actual Supabase error, showing only a generic Indonesian toast with no diagnostic info
 - **Files fixed**: `SupplierModal.tsx`, `MarkAsPaidModal.tsx`, `PoDetailView.tsx`, `ReceiveReplacementModal.tsx`, `PembelianScreen.tsx` (3 catch blocks)
 - **Fix**: Changed to `} catch (e: any) {` with `console.error(...)` and `showToast(e?.message ?? '...', 'warning')` so the actual error appears both in the toast and browser console
+
+## KasirScreen KPI Grid Layout Fix — DONE (2026-06-04)
+
+- **Problem**: KPI strip grid had `grid-cols-3` for non-owner users but renders 4 KpiCards (Pemasukan, Pengeluaran, Item Terjual, Laba Bersih locked), causing the 4th card to wrap to a second row
+- **Root cause**: Grid was conditional: `${isOwner ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-3'}` — owner gets 4-column layout, non-owner gets 3-column, but both render 4 cards
+- **Fix**: Changed line 235 to use unified grid class `grid gap-4 grid-cols-2 lg:grid-cols-4` for both owner and non-owner; removes conditional entirely since both branches now use the same layout
+- **File**: `src/components/KasirScreen.tsx` line 235
+- **TypeScript check**: zero errors; `npx tsc --noEmit` passes cleanly
+- **Committed**: `fix(kasir): fix KPI grid layout for non-owner view (grid-cols-4)` (746851a)
