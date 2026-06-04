@@ -11,6 +11,7 @@ import {
 import { StockItem } from '../types';
 import { isSupabaseConfigured, stockService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
+import WarehouseTransferModal from './WarehouseTransferModal';
 
 interface StockManagerScreenProps {
   stockList: StockItem[];
@@ -153,7 +154,8 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [newSpecs, setNewSpecs] = useState<Record<string, string>>({});
 
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; harga_modal: number | null; specs: Record<string, string> }>>({});
+  const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; stock_atas: string; stock_bawah: string; harga_modal: number | null; specs: Record<string, string> }>>({});
+  const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
   const uniqueCategories = ['Semua Produk', 'Panel', 'MCB', 'Kabel', 'Aksesori'];
 
@@ -212,6 +214,8 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       [item.sku]: {
         price: String(item.price),
         stock: String(item.stock),
+        stock_atas: String(item.stock_atas ?? item.stock),
+        stock_bawah: String(item.stock_bawah ?? 0),
         harga_modal: item.harga_modal ?? null,
         specs: Object.fromEntries(
           Object.entries(item.specs ?? {}).map(([k, v]) => [k, String(v)])
@@ -230,7 +234,9 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     const item = stockList.find(i => i.sku === sku);
     if (!item) return;
     const price = parseInt(vals.price.replace(/\D/g, '')) || 0;
-    const stock = parseInt(vals.stock) || 0;
+    const stock_atas = parseInt(vals.stock_atas) || 0;
+    const stock_bawah = parseInt(vals.stock_bawah) || 0;
+    const stock = stock_atas + stock_bawah;
     const name = generateName(item.category, vals.specs);
     if (!name) {
       showToast('⚠️ Mohon lengkapi spesifikasi produk!', 'warning');
@@ -238,7 +244,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     }
     const updated = stockList.map(i =>
       i.sku === sku
-        ? { ...i, price, stock, harga_modal: vals.harga_modal ?? null, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
+        ? { ...i, price, stock, stock_atas, stock_bawah, harga_modal: vals.harga_modal ?? null, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
         : i
     );
     onStockUpdate(updated);
@@ -718,15 +724,18 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                     </div>
                   </div>
 
-                  <div className="w-full md:w-28 shrink-0 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={item.stock}
-                      onChange={e => handleCellEdit(item.sku, 'stock', e.target.value)}
-                      disabled={isEditing}
-                      className={`w-full px-3 py-2.5 bg-white rounded-xl focus:ring-1 text-center text-xs font-extrabold shadow-sm outline-none disabled:opacity-50 disabled:cursor-not-allowed ${isWarning ? 'border-rose-400 focus:ring-rose-500 text-rose-600 border-2' : 'border-slate-200 focus:ring-[#2d8a4e] text-slate-800'}`}
-                    />
-                    <span className="text-xs font-extrabold text-slate-400 shrink-0">Pcs</span>
+                  <div className="w-full md:w-36 shrink-0">
+                    <div className="flex gap-1 text-[10px] font-bold">
+                      <span className="bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700">
+                        Atas: {item.stock_atas ?? item.stock}
+                      </span>
+                      <span className="bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700">
+                        Bawah: {item.stock_bawah ?? 0}
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-slate-400 mt-0.5 font-semibold">
+                      Total: {item.stock} pcs
+                    </div>
                   </div>
 
                   <div className="w-full md:w-28 shrink-0">
@@ -750,6 +759,12 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                         ? <span className="flex items-center gap-1"><ChevronUp className="w-3 h-3" />Tutup</span>
                         : '✏ Edit'
                       }
+                    </button>
+                    <button
+                      onClick={() => setTransferItem(item)}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
+                    >
+                      ⇄ Transfer
                     </button>
                     <button onClick={() => handleDeleteItem(item.sku)} className="p-1.5 text-rose-400 hover:text-rose-600 rounded-full hover:bg-rose-50 cursor-pointer transition-all">
                       <Trash2 className="w-4 h-4" />
@@ -783,12 +798,23 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Stok (Pcs)</label>
+                        <label className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest pl-1">Stok Gudang Atas</label>
                         <input
                           type="number"
-                          value={vals.stock}
-                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], stock: e.target.value } }))}
-                          className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                          min="0"
+                          value={vals.stock_atas}
+                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], stock_atas: e.target.value } }))}
+                          className="w-full bg-blue-50 rounded-xl px-3 py-2 border border-blue-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest pl-1">Stok Gudang Bawah</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={vals.stock_bawah}
+                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], stock_bawah: e.target.value } }))}
+                          className="w-full bg-amber-50 rounded-xl px-3 py-2 border border-amber-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-amber-400"
                         />
                       </div>
                     </div>
@@ -844,6 +870,18 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
         <Save className="w-5 h-5 text-emerald-200" />
         Simpan Semua Perubahan
       </button>
+
+      {transferItem && (
+        <WarehouseTransferModal
+          item={transferItem}
+          onClose={() => setTransferItem(null)}
+          onTransferred={() => {
+            setTransferItem(null);
+            showToast('✅ Transfer stok berhasil.');
+          }}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }
