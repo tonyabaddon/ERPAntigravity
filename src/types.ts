@@ -15,6 +15,7 @@ export interface PermissionSet {
   whatsappAi: boolean;
   notifications: boolean;
   settings: boolean;
+  pembelian: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -29,6 +30,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   whatsappAi: true,
   notifications: true,
   settings: true,
+  pembelian: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -264,4 +266,51 @@ export interface DbCompanySettings {
   updated_at: string;
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan';
+export interface DbSupplier {
+  id: string;
+  name: string;
+  contact_name?: string;
+  phone?: string;
+  payment_term_days: number;
+  created_at: string;
+}
+
+export type PurchaseOrderStatus = 'DRAFT' | 'ORDERED' | 'RECEIVED' | 'PAID';
+export type DamageStatus = 'NONE' | 'PENDING_RETURN' | 'RETURNED' | 'REPLACED';
+
+export interface DbPurchaseOrderItem {
+  id: string;
+  po_id: string;
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  subtotal: number;
+  qty_received: number;
+  qty_damaged: number;
+  damage_notes?: string;
+  damage_status: DamageStatus;
+}
+
+export interface DbPurchaseOrder {
+  id: string;
+  po_number: string;
+  supplier_id: string;
+  supplier?: DbSupplier;
+  status: PurchaseOrderStatus;
+  notes?: string;
+  ordered_at?: string;
+  received_at?: string;
+  payment_due_at?: string;
+  paid_at?: string;
+  invoice_url?: string;
+  payment_proof_url?: string;
+  tax_rate: number;
+  tax_amount: number;
+  subtotal: number;
+  total: number;
+  created_at: string;
+  items?: DbPurchaseOrderItem[];
+}
+
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian';
