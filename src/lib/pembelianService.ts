@@ -151,7 +151,8 @@ export const purchaseOrderService = {
   },
 
   async transferWarehouse(sku: string, from: 'atas' | 'bawah', to: 'atas' | 'bawah', qty: number): Promise<void> {
-    const { error } = await supabase!.rpc('transfer_warehouse', {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('transfer_warehouse', {
       p_sku: sku, p_from: from, p_to: to, p_qty: qty,
     });
     if (error) throw error;
