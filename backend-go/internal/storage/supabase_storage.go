@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -17,7 +16,7 @@ func UploadPaymentProof(ctx context.Context, supabaseURL, serviceKey, orderID st
 		contentType = "image/jpeg"
 	}
 	filename := fmt.Sprintf("%s/%d", orderID, time.Now().UnixMilli())
-	if strings.HasPrefix(contentType, "application/") {
+	if contentType == "application/pdf" {
 		filename += ".pdf"
 	}
 	uploadURL := fmt.Sprintf("%s/storage/v1/object/payment-proofs/%s", supabaseURL, filename)

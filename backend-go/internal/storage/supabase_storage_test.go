@@ -98,3 +98,18 @@ func TestUploadPaymentProof_ImageNoSuffix(t *testing.T) {
 		t.Errorf("image URL should not have .pdf suffix, got: %s", url)
 	}
 }
+
+func TestUploadPaymentProof_OctetStreamNoSuffix(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	url, err := UploadPaymentProof(context.Background(), srv.URL, "key", "order-oct", []byte("binary-bytes"), "application/octet-stream")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if strings.HasSuffix(url, ".pdf") {
+		t.Errorf("application/octet-stream must not get .pdf suffix, got: %s", url)
+	}
+}
