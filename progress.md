@@ -2364,3 +2364,16 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Build verification: `CGO_ENABLED=1 go build ./internal/db` — clean build (no errors)
 - Test verification: No test files in `internal/db` package; db tests covered by integration tests
 - Committed: `fix(followup): auto-disable ai_active after 6 follow-up sends (3 days no reply)` (9eac829)
+
+## WH-4: StockManagerScreen — warehouse display, edit inputs, Transfer button — DONE (2026-06-05)
+
+- Modified `src/components/StockManagerScreen.tsx`
+- **Step 1 — editValues type**: Added `stock_atas: string` and `stock_bawah: string` to the `editValues` state Record type
+- **Step 2 — startEdit**: Added `stock_atas: String(item.stock_atas ?? item.stock)` and `stock_bawah: String(item.stock_bawah ?? 0)` to the values object
+- **Step 3 — saveEdit**: Replaced single `parseInt(vals.stock)` with `stock_atas + stock_bawah` computation; all three fields (`stock`, `stock_atas`, `stock_bawah`) written to the updated item
+- **Step 4 — stock column display**: Replaced single stock input with dual pill badges ("Atas: X" in blue, "Bawah: Y" in amber) + "Total: X pcs" subtext
+- **Step 5 — Transfer button**: Added "⇄ Transfer" button between Edit and Delete in row action buttons
+- **Step 6 — transferItem state + WarehouseTransferModal**: Added `const [transferItem, setTransferItem] = useState<StockItem | null>(null)` state; added `import WarehouseTransferModal from './WarehouseTransferModal'`; added modal JSX at bottom of return (before outermost closing tag)
+- **Step 7 — warehouse edit inputs**: Replaced single "Stok (Pcs)" input in edit panel with two inputs — "Stok Gudang Atas" (blue theme) and "Stok Gudang Bawah" (amber theme)
+- Build check: `npm run build` — expected single error `Cannot find module './WarehouseTransferModal'` (WH-5 creates this file); no other errors
+- Committed: `feat(stock): show per-warehouse breakdown, add Transfer button, warehouse edit inputs` (e0b1577)
