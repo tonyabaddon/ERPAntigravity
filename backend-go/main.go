@@ -183,9 +183,25 @@ func main() {
 		}
 	}()
 
+	// Debug endpoint — exposes raw WA client state for diagnosing QR issues.
+	mux.HandleFunc("/api/wa/debug", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		storeID := ""
+		if waClient.WA.Store.ID != nil {
+			storeID = waClient.WA.Store.ID.String()
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"store_id":      storeID,
+			"store_deleted": waClient.WA.Store.Deleted,
+			"is_connected":  waClient.WA.IsConnected(),
+			"has_qr":        waClient.GetQR() != "",
+		})
+	})
+
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
 	if err := waClient.Connect(ctx); err != nil {
-		log.Fatalf("[MAIN] WA connect failed: %v", err)
+		log.Printf("[MAIN] WA connect failed: %v — daemon will keep running with HTTP only", err)
 	}
 
 	quit := make(chan os.Signal, 1)
