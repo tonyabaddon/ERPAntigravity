@@ -110,6 +110,8 @@ export default function App() {
             category: item.category,
             price: Number(item.price),
             stock: Number(item.stock),
+            stock_atas: Number(item.stock_atas ?? item.stock),
+            stock_bawah: Number(item.stock_bawah ?? 0),
             status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
             specs: (item.specs as Record<string, string | number>) ?? {},
           }));
@@ -132,6 +134,29 @@ export default function App() {
       });
     }
   }, []);
+
+  const handleStockRefresh = async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      const data = await supabaseService.fetchStocks();
+      if (data && data.length > 0) {
+        const mapped: StockItem[] = data.map(item => ({
+          sku: item.sku,
+          name: item.name,
+          category: item.category,
+          price: Number(item.price),
+          stock: Number(item.stock),
+          stock_atas: Number(item.stock_atas ?? item.stock),
+          stock_bawah: Number(item.stock_bawah ?? 0),
+          status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
+          specs: (item.specs as Record<string, string | number>) ?? {},
+        }));
+        setStockList(mapped);
+      }
+    } catch (err) {
+      console.error('Stock refresh failed:', err);
+    }
+  };
 
   const handleStockUpdate = async (updatedStocks: StockItem[]) => {
     // Save to local state and localStorage
@@ -284,6 +309,7 @@ export default function App() {
           <PembelianScreen
             stockList={stockList}
             showToast={triggerToast}
+            onStockRefresh={handleStockRefresh}
           />
         );
       case 'kasir':
