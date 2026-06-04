@@ -44,6 +44,13 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		return
 	}
 
+	// Only process direct messages. Skip group chats (g.us), broadcast lists,
+	// and WhatsApp Status updates (broadcast server). These are not customer DMs.
+	if evt.Info.IsGroup || evt.Info.Chat.Server == "g.us" || evt.Info.Chat.Server == "broadcast" {
+		log.Printf("[HANDLER] Skipping non-DM message from chat %s sender %s", evt.Info.Chat, evt.Info.Sender)
+		return
+	}
+
 	text := evt.Message.GetConversation()
 	if text == "" && evt.Message.GetExtendedTextMessage() != nil {
 		text = evt.Message.GetExtendedTextMessage().GetText()
