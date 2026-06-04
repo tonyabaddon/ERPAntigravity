@@ -52,8 +52,9 @@ export default function PembelianScreen({ stockList, showToast }: PembelianScree
       setOrders(ords);
       setSuppliers(sups);
       setSummary(sum);
-    } catch {
-      showToast('Gagal memuat data pembelian.', 'warning');
+    } catch (e: any) {
+      console.error('Load pembelian error:', e);
+      showToast(e?.message ?? 'Gagal memuat data pembelian.', 'warning');
     } finally {
       setLoading(false);
     }
@@ -168,8 +169,9 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
       await purchaseOrderService.markOrdered(po.id);
       showToast(`${po.po_number} ditandai Dipesan.`, 'success');
       onRefresh();
-    } catch {
-      showToast('Gagal mengubah status PO.', 'warning');
+    } catch (e: any) {
+      console.error('Mark ordered error:', e);
+      showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
     }
   }
 
@@ -331,8 +333,9 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
       await supplierService.remove(s.id);
       showToast('Supplier dihapus.', 'success');
       onRefresh();
-    } catch {
-      showToast('Gagal menghapus supplier.', 'warning');
+    } catch (e: any) {
+      console.error('Delete supplier error:', e);
+      showToast(e?.message ?? 'Gagal menghapus supplier.', 'warning');
     }
   }
 

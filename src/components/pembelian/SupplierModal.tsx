@@ -31,8 +31,9 @@ export default function SupplierModal({ supplier, onClose, onSaved, showToast }:
       showToast(supplier ? 'Supplier diperbarui.' : 'Supplier ditambahkan.', 'success');
       onSaved();
       onClose();
-    } catch {
-      showToast('Gagal menyimpan supplier.', 'warning');
+    } catch (e: any) {
+      console.error('Supplier save error:', e);
+      showToast(e?.message ?? 'Gagal menyimpan supplier.', 'warning');
     } finally {
       setSaving(false);
     }

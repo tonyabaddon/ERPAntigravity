@@ -29,8 +29,9 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
       showToast(`${po.po_number} ditandai Lunas.`, 'success');
       onPaid();
       onClose();
-    } catch {
-      showToast('Gagal menandai PO sebagai lunas.', 'warning');
+    } catch (e: any) {
+      console.error('Mark paid error:', e);
+      showToast(e?.message ?? 'Gagal menandai PO sebagai lunas.', 'warning');
     } finally {
       setSaving(false);
     }

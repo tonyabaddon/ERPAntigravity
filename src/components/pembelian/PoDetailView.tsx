@@ -41,8 +41,9 @@ export default function PoDetailView({ po, stockList, onClose, onRefresh, showTo
       await purchaseOrderService.updateDamageStatus(item.id, newStatus);
       showToast('Status kerusakan diperbarui.', 'success');
       onRefresh();
-    } catch {
-      showToast('Gagal memperbarui status.', 'warning');
+    } catch (e: any) {
+      console.error('Damage status update error:', e);
+      showToast(e?.message ?? 'Gagal memperbarui status.', 'warning');
     } finally {
       setUpdatingItemId(null);
     }

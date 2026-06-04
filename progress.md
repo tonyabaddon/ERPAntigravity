@@ -1966,3 +1966,9 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Types already in place**: `kasir: boolean` in `PermissionSet` interface and `ALL_PERMISSIONS` (src/types.ts lines 19, 35), and `| 'kasir'` in `ActivePage` type (line 319)
 - TypeScript check: expected error `Cannot find module './components/KasirScreen'` (will resolve when Task 8 creates the file); no other errors introduced
 - Committed: `feat(nav): add Kasir to sidebar and app router` (852eefc)
+
+## Pembelian Bug Fix — Error surfacing in catch blocks — DONE (2026-06-04)
+
+- **Problem**: All bare `} catch {` blocks in pembelian components discarded the actual Supabase error, showing only a generic Indonesian toast with no diagnostic info
+- **Files fixed**: `SupplierModal.tsx`, `MarkAsPaidModal.tsx`, `PoDetailView.tsx`, `ReceiveReplacementModal.tsx`, `PembelianScreen.tsx` (3 catch blocks)
+- **Fix**: Changed to `} catch (e: any) {` with `console.error(...)` and `showToast(e?.message ?? '...', 'warning')` so the actual error appears both in the toast and browser console
