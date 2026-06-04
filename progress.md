@@ -2286,6 +2286,15 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Committed: `fix(db): add followup_sends_total column and cancel stale @lid conversations` (f9810e1)
 - Committed: `feat(types): add stock_atas/stock_bawah to SupabaseStockItem and StockItem` (e7fe1f1)
 
+## WH-3: Service methods — decrementStock, receiveGoods, transferWarehouse — DONE (2026-06-05)
+
+- `src/lib/supabaseClient.ts` — `upsertStock`: replaced `stock: item.stock` with `stock_atas: item.stock_atas ?? item.stock` and `stock_bawah: item.stock_bawah ?? 0`; trigger computes `stock` automatically
+- `src/lib/supabaseClient.ts` — `stockService.decrementStock`: added `warehouse: 'atas' | 'bawah' = 'atas'` param; passes `p_warehouse` to RPC; fallback path now selects/updates correct `stock_atas`/`stock_bawah` column
+- `src/lib/pembelianService.ts` — `receiveGoods`: added `warehouse: 'atas' | 'bawah'` to params; passes `p_warehouse` to `receive_purchase_order` RPC
+- `src/lib/pembelianService.ts` — added `transferWarehouse(sku, from, to, qty)` method calling `transfer_warehouse` RPC
+- `npm run build` passes cleanly (no TS errors; ReceiveGoodsModal.tsx caller update deferred to WH-6)
+- Committed: `feat(service): add warehouse param to decrementStock, receiveGoods; add transferWarehouse` (9aaeb0e)
+
 ## Calista Bug Fix Task 2: Filter group/broadcast messages in handler.go — DONE (2026-06-05)
 
 - Edited `backend-go/internal/whatsapp/handler.go` — `Handle()` function (line 38)
