@@ -1514,4 +1514,13 @@ Fixed three bugs that prevented customer payment proofs (images and PDFs) from b
 - Commits: `feat(wa): add DownloadDocument to sender for PDF payment proofs`
 
 **Files changed**: `backend-go/internal/whatsapp/sender.go`, `backend-go/internal/whatsapp/handler.go`
-- `admin_users` table is currently empty; adding a new user will persist to DB; subsequent loads will show only DB rows
+
+## Feature: Add real email field to UserManagementScreen — DONE (2026-06-04)
+
+**Reason**: OTP login requires a real email address; the form previously auto-generated fake `name@sinarelektrik.com` emails that could never receive OTP codes.
+
+**Changes to `src/components/UserManagementScreen.tsx`**:
+- Added email `<input type="email">` field between "Nama Lengkap" and "No. WhatsApp" in the "Tambah Admin Baru" form
+- Updated validation: now checks `newEmail.trim()` before checking WhatsApp/role — shows toast if email is blank
+- Updated `newAdmin` object: replaced auto-generated `${prefix}@sinarelektrik.com` with `newEmail` (real user input)
+- Added `setNewEmail('')` to form reset block so field clears after successful submit

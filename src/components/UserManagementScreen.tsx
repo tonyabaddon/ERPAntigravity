@@ -48,6 +48,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [newWhatsapp, setNewWhatsapp] = useState('');
   const [newRole, setNewRole] = useState('Pilih Peran...');
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,16 +99,19 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
       showToast('⚠️ Mohon isi nama lengkap staf!');
       return;
     }
+    if (!newEmail.trim()) {
+      showToast('⚠️ Mohon isi alamat email aktif untuk login OTP!');
+      return;
+    }
     if (!newWhatsapp.trim() || newRole === 'Pilih Peran...') {
       showToast('⚠️ Mohon tentukan nomor WhatsApp aktif serta peran tugas admin!');
       return;
     }
 
-    const prefix = newName.toLowerCase().replace(/\s+/g, '');
     const newAdmin: AdminUser = {
       id: crypto.randomUUID(),
       name: newName,
-      email: `${prefix}@sinarelektrik.com`,
+      email: newEmail,
       whatsapp: newWhatsapp,
       role: newRole,
       permissions: {
@@ -134,6 +138,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
     }
 
     setNewName('');
+    setNewEmail('');
     setNewWhatsapp('');
     setNewRole('Pilih Peran...');
     showToast(`🎉 Akun baru created! ${newAdmin.name} terdaftar.`);
@@ -200,6 +205,18 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Contoh: Budi Santoso"
+                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#43474e] block px-3">Email (untuk OTP Login)</label>
+              <input
+                type="email"
+                required
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="staff@email.com"
                 className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
