@@ -682,6 +682,27 @@ export const stockService = {
     if (error) throw error;
     return (data ?? []) as SupabaseStockItem[];
   },
+
+  async bulkUpsert(items: SupabaseStockItem[]): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('stocks')
+      .upsert(
+        items.map(item => ({
+          sku: item.sku,
+          name: item.name,
+          category: item.category,
+          price: item.price,
+          stock: item.stock,
+          status: item.status,
+          specs: item.specs,
+          harga_modal: item.harga_modal ?? null,
+          updated_at: new Date().toISOString(),
+        })),
+        { onConflict: 'sku' }
+      );
+    if (error) throw error;
+  },
 };
 
 export const kasirService = {
