@@ -564,6 +564,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
   const [items, setItems] = useState<(KasirItem & { _key: number })[]>([]);
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [warehouse, setWarehouse] = useState<'atas' | 'bawah'>('atas');
 
   const filteredCustomers = customerSearch.trim().length > 0
     ? customers.filter(c =>
@@ -668,7 +669,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
 
       for (const item of items) {
         try {
-          await stockService.decrementStock(item.sku, item.qty);
+          await stockService.decrementStock(item.sku, item.qty, warehouse);
         } catch {
           showToast(`Gagal kurangi stok ${item.name}.`, 'warning');
         }
@@ -695,6 +696,17 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
               Catat Penjualan — {channel === 'walkin' ? 'Walk-in' : channel === 'tokopedia' ? 'Tokopedia' : 'Grosir'}
             </h3>
             <p className="text-xs text-gray-400">Pilih item dari stok</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs font-bold text-gray-500">Gudang:</span>
+              <select
+                value={warehouse}
+                onChange={e => setWarehouse(e.target.value as 'atas' | 'bawah')}
+                className="text-xs font-bold border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              >
+                <option value="atas">Gudang Atas</option>
+                <option value="bawah">Gudang Bawah</option>
+              </select>
+            </div>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
         </div>
