@@ -894,9 +894,16 @@ export const kasirService = {
     return data as KasirTransaction;
   },
 
-  generateInvoiceNumber(channel: 'walkin' | 'tokopedia' | 'grosir', counter: number): string {
-    const prefix = { walkin: 'WLK', tokopedia: 'TPD', grosir: 'GRS' }[channel];
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return `${prefix}-${date}-${String(counter).padStart(3, '0')}`;
+  async nextInvoiceNumber(channel: 'walkin' | 'tokopedia' | 'grosir', date: string): Promise<string> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const prefix = channel === 'walkin' ? 'WLK' : channel === 'tokopedia' ? 'TPD' : 'GRS';
+    const dateCompact = date.replace(/-/g, '');
+    const { data, error } = await supabase.rpc('next_kasir_number', {
+      p_channel: channel,
+      p_date: date,
+    });
+    if (error) throw error;
+    const counter = String(data).padStart(3, '0');
+    return `${prefix}-${dateCompact}-${counter}`;
   },
 };
