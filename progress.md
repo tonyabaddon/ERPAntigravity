@@ -2189,3 +2189,21 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 
 - Files: `backend-go/internal/whatsapp/handler.go`, `src/components/OrderHistoryScreen.tsx`
 - Committed: `b9ffb3f`
+
+**Follow-up fix 1**: Added `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` to `backend-go/.env` (local dev). Both vars were missing — without `SUPABASE_URL` the upload URL is empty string.
+
+**Follow-up fix 2**: `supabase_storage.go` was using `PUT` instead of `POST` for new file uploads. Supabase Storage REST API requires `POST /object/{bucket}/{path}` to create new objects; `PUT` is for updating existing ones and returns HTTP 400 on non-existent paths.
+- Committed: `daaa96a`
+- Action required: also add `SUPABASE_URL=https://ekhhojaezdfjfwuxyjkl.supabase.co` to Cloud Run env vars alongside `SUPABASE_SERVICE_KEY`.
+
+## KC-1: kasir_counters table and next_kasir_number RPC — DONE (2026-06-05)
+
+- Created `supabase/migrations/20260605000003_kasir_counters.sql`
+- `kasir_counters` table: `(channel TEXT, date DATE, counter INT)` with `PRIMARY KEY (channel, date)`; RLS enabled with anon + authenticated ALL policies
+- `next_kasir_number(p_channel text, p_date date)` PL/pgSQL function: atomic `INSERT ... ON CONFLICT DO UPDATE counter+1 RETURNING counter` — first call for a new channel+date inserts counter=1, subsequent calls increment
+- Migration applied via Supabase MCP to project `ekhhojaezdfjfwuxyjkl` (success)
+- Smoke test verified:
+  - `next_kasir_number('walkin', today)` → 1, then 2 (atomically incrementing)
+  - `next_kasir_number('tokopedia', today)` → 1 (separate per-channel counter)
+  - `kasir_counters` table has correct rows for both channels
+- Committed: `feat(db): add kasir_counters table and next_kasir_number RPC` (59b3f74)
