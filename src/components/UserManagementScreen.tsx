@@ -13,11 +13,12 @@ import {
   Crown,
 } from 'lucide-react';
 import { AdminUser, PermissionSet, DbAdminUser, ALL_PERMISSIONS } from '../types';
-import { adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
 
 interface UserManagementScreenProps {
   showToast: (msg: string) => void;
+  currentUser: { name: string } | null;
 }
 
 function dbToAdminUser(db: DbAdminUser): AdminUser {
@@ -64,7 +65,7 @@ function defaultPermissions(role: string): PermissionSet {
   };
 }
 
-export default function UserManagementScreen({ showToast }: UserManagementScreenProps) {
+export default function UserManagementScreen({ showToast, currentUser }: UserManagementScreenProps) {
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -167,11 +168,28 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
       }
     }
 
+    // Send invitation email (best-effort — failure does not block user creation)
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.functions.invoke('send-admin-invite', {
+          body: {
+            email: newAdmin.email,
+            name: newAdmin.name,
+            role: newAdmin.role,
+            addedByName: currentUser?.name ?? 'Admin',
+            appUrl: window.location.origin,
+          },
+        });
+      } catch {
+        showToast('⚠️ Admin dibuat tapi gagal kirim email undangan.');
+      }
+    }
+
     setNewName('');
     setNewEmail('');
     setNewWhatsapp('');
     setNewRole('Pilih Peran...');
-    showToast(`🎉 Akun baru created! ${newAdmin.name} terdaftar.`);
+    showToast(`🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`);
   };
 
   const handleRemoveAdmin = async (id: string) => {

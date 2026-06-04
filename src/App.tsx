@@ -228,6 +228,7 @@ export default function App() {
         return (
           <UserManagementScreen
             showToast={triggerToast}
+            currentUser={currentUser}
           />
         );
       case 'notifications':
