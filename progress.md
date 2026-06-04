@@ -2385,3 +2385,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Imports verified: `purchaseOrderService` confirmed as the correct named export in `src/lib/pembelianService.ts`; `StockItem` confirmed in `src/types.ts`
 - `npm run build` passes cleanly (no TS errors, no type errors)
 - Committed: `feat(ui): add WarehouseTransferModal for moving stock between warehouses` (3009779)
+
+## WH-6: Add warehouse selector to ReceiveGoodsModal — DONE (2026-06-05)
+
+- Modified `src/components/pembelian/ReceiveGoodsModal.tsx`
+- **Step 1 — warehouse state**: Added `const [warehouse, setWarehouse] = useState<'atas' | 'bawah'>('atas')` after existing `saving` state
+- **Step 2 — warehouse selector**: Changed date grid from `grid-cols-2` to `grid-cols-3`; added "Gudang Tujuan" select (options: Gudang Atas / Gudang Bawah) as third column
+- **Step 3 — pass to receiveGoods**: Added `warehouse` field to the `purchaseOrderService.receiveGoods` params object in `handleConfirm`
+- `npm run build` passes cleanly (no TS errors)
+- Committed: `feat(pembelian): add warehouse selector to ReceiveGoodsModal` (450935c)
