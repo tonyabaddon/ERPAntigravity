@@ -225,11 +225,14 @@ export const orderService = {
 
 type Period = '7d' | '30d' | '90d';
 
+function wibDateString(date = new Date()): string {
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+}
+
 function periodStart(p: Period): string {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - (p === '7d' ? 6 : p === '30d' ? 29 : 89));
-  return d.toISOString();
+  return wibDateString(d);
 }
 
 function groupByDay<T extends { created_at: string }>(
@@ -238,15 +241,14 @@ function groupByDay<T extends { created_at: string }>(
 ): Array<{ label: string; rows: T[] }> {
   const buckets: Record<string, T[]> = {};
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = wibDateString(d);
     buckets[key] = [];
   }
   for (const row of rows) {
-    const key = row.created_at.slice(0, 10);
+    const key = wibDateString(new Date(row.created_at));
     if (key in buckets) buckets[key].push(row);
   }
   return Object.entries(buckets).map(([key, rowsInDay]) => ({
@@ -263,31 +265,19 @@ export const statsService = {
     aiConversationsToday: number;
   }> {
     if (!supabase) throw new Error('Supabase not configured');
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const iso = todayStart.toISOString();
-
-    const [ordersRes, convsRes, aiConvsRes] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('total')
-        .eq('status', 'PAYMENT_VERIFIED')
-        .gte('created_at', iso),
-      supabase
-        .from('conversations')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', iso),
-      supabase
-        .from('conversations')
-        .select('id', { count: 'exact', head: true })
-        .eq('ai_active', true)
-        .gte('created_at', iso),
+    const todayDate = wibDateString();
+    const [ordersRes, convsRes, aiConvsRes, kasirRes] = await Promise.all([
+      supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', todayDate),
+      supabase.from('conversations').select('id', { count: 'exact', head: true }).gte('created_at', todayDate),
+      supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('ai_active', true).gte('created_at', todayDate),
+      supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').eq('date', todayDate),
     ]);
 
-    const verifiedTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + (o.total ?? 0), 0);
+    const waTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + ((o as any).total ?? 0), 0);
+    const kasirTotal = (kasirRes.data ?? []).reduce((sum, t) => sum + ((t as any).subtotal ?? 0), 0);
     return {
-      verifiedOrdersTotal: verifiedTotal,
-      verifiedOrdersCount: ordersRes.data?.length ?? 0,
+      verifiedOrdersTotal: waTotal + kasirTotal,
+      verifiedOrdersCount: (ordersRes.data?.length ?? 0) + (kasirRes.data?.length ?? 0),
       totalConversationsToday: convsRes.count ?? 0,
       aiConversationsToday: aiConvsRes.count ?? 0,
     };
@@ -334,6 +324,45 @@ export const statsService = {
       'Respon Manual': rows.filter(r => !(r as any).ai_active).length,
     }));
   },
+
+  async fetchWeeklyRevenueByChannel(): Promise<Array<{
+    Day: string; 'Walk-in': number; Tokopedia: number; Grosir: number; 'WA AI': number;
+  }>> {
+    if (!supabase) return [];
+    const since = periodStart('7d');
+    const sinceDate = since.slice(0, 10);
+    const [kasirRes, ordersRes] = await Promise.all([
+      supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
+      supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
+    ]);
+    const buckets: Record<string, { walkin: number; tokopedia: number; grosir: number; waai: number }> = {};
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      buckets[wibDateString(d)] = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
+    }
+    for (const tx of (kasirRes.data ?? [])) {
+      const key = (tx as any).date as string;
+      if (!(key in buckets)) continue;
+      const ch = (tx as any).channel as string;
+      const amt = (tx as any).subtotal ?? 0;
+      if (ch === 'walkin') buckets[key].walkin += amt;
+      else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
+      else if (ch === 'grosir') buckets[key].grosir += amt;
+    }
+    for (const o of (ordersRes.data ?? [])) {
+      const key = wibDateString(new Date((o as any).created_at));
+      if (!(key in buckets)) continue;
+      buckets[key].waai += (o as any).total ?? 0;
+    }
+    return Object.entries(buckets).map(([key, v]) => ({
+      Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+      'Walk-in': v.walkin,
+      'Tokopedia': v.tokopedia,
+      'Grosir': v.grosir,
+      'WA AI': v.waai,
+    }));
+  },
 };
 
 export const reportsService = {
@@ -342,17 +371,23 @@ export const reportsService = {
     convCount: number; aiConvCount: number;
   }> {
     if (!supabase) return { revenue: 0, orderCount: 0, avgOrderValue: 0, convCount: 0, aiConvCount: 0 };
-    const [ordersRes, convsRes] = await Promise.all([
+    const sinceDate = since.slice(0, 10);
+    const [ordersRes, convsRes, kasirRes] = await Promise.all([
       supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
       supabase.from('conversations').select('ai_active').gte('created_at', since),
+      supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').gte('date', sinceDate),
     ]);
     const orders = ordersRes.data ?? [];
+    const kasirTxs = kasirRes.data ?? [];
     const convs = convsRes.data ?? [];
-    const revenue = orders.reduce((s, o) => s + ((o as any).total ?? 0), 0);
+    const waRevenue = orders.reduce((s, o) => s + ((o as any).total ?? 0), 0);
+    const kasirRevenue = kasirTxs.reduce((s, t) => s + ((t as any).subtotal ?? 0), 0);
+    const revenue = waRevenue + kasirRevenue;
+    const totalCount = orders.length + kasirTxs.length;
     return {
       revenue,
-      orderCount: orders.length,
-      avgOrderValue: orders.length > 0 ? Math.round(revenue / orders.length) : 0,
+      orderCount: totalCount,
+      avgOrderValue: totalCount > 0 ? Math.round(revenue / totalCount) : 0,
       convCount: convs.length,
       aiConvCount: convs.filter(c => (c as any).ai_active).length,
     };
@@ -389,24 +424,88 @@ export const reportsService = {
 
   async fetchTopProducts(since: string): Promise<Array<{ name: string; qty: number; revenue: number }>> {
     if (!supabase) return [];
-    const { data } = await supabase
-      .from('orders')
-      .select('items')
-      .eq('status', 'PAYMENT_VERIFIED')
-      .gte('created_at', since);
+    const sinceDate = since.slice(0, 10);
+    const [ordersRes, kasirRes] = await Promise.all([
+      supabase.from('orders').select('items').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
+      supabase.from('kasir_transactions').select('items').eq('type', 'income').gte('date', sinceDate),
+    ]);
     const tally: Record<string, { qty: number; revenue: number }> = {};
-    for (const order of (data ?? [])) {
-      for (const item of ((order as any).items ?? [])) {
+    const tallyItems = (items: any[]) => {
+      for (const item of items) {
         if (!item.name) continue;
         if (!tally[item.name]) tally[item.name] = { qty: 0, revenue: 0 };
         tally[item.name].qty += item.qty ?? 0;
         tally[item.name].revenue += item.subtotal ?? 0;
       }
-    }
+    };
+    for (const order of (ordersRes.data ?? [])) tallyItems((order as any).items ?? []);
+    for (const tx of (kasirRes.data ?? [])) tallyItems((tx as any).items ?? []);
     return Object.entries(tally)
       .map(([name, v]) => ({ name, ...v }))
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 5);
+  },
+
+  async fetchDailyRevenueByChannel(since: string, days: number): Promise<Array<{
+    Day: string; 'Walk-in': number; Tokopedia: number; Grosir: number; 'WA AI': number;
+  }>> {
+    if (!supabase) return [];
+    const sinceDate = since.slice(0, 10);
+    const [kasirRes, ordersRes] = await Promise.all([
+      supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
+      supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
+    ]);
+    const buckets: Record<string, { walkin: number; tokopedia: number; grosir: number; waai: number }> = {};
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      buckets[wibDateString(d)] = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
+    }
+    for (const tx of (kasirRes.data ?? [])) {
+      const key = (tx as any).date as string;
+      if (!(key in buckets)) continue;
+      const ch = (tx as any).channel as string;
+      const amt = (tx as any).subtotal ?? 0;
+      if (ch === 'walkin') buckets[key].walkin += amt;
+      else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
+      else if (ch === 'grosir') buckets[key].grosir += amt;
+    }
+    for (const o of (ordersRes.data ?? [])) {
+      const key = wibDateString(new Date((o as any).created_at));
+      if (!(key in buckets)) continue;
+      buckets[key].waai += (o as any).total ?? 0;
+    }
+    return Object.entries(buckets).map(([key, v]) => ({
+      Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+      'Walk-in': v.walkin,
+      'Tokopedia': v.tokopedia,
+      'Grosir': v.grosir,
+      'WA AI': v.waai,
+    }));
+  },
+
+  async fetchChannelTotals(since: string): Promise<Array<{ name: string; value: number }>> {
+    if (!supabase) return [];
+    const sinceDate = since.slice(0, 10);
+    const [kasirRes, ordersRes] = await Promise.all([
+      supabase.from('kasir_transactions').select('subtotal, channel').eq('type', 'income').gte('date', sinceDate),
+      supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
+    ]);
+    const totals = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
+    for (const tx of (kasirRes.data ?? [])) {
+      const ch = (tx as any).channel as string;
+      const amt = (tx as any).subtotal ?? 0;
+      if (ch === 'walkin') totals.walkin += amt;
+      else if (ch === 'tokopedia') totals.tokopedia += amt;
+      else if (ch === 'grosir') totals.grosir += amt;
+    }
+    for (const o of (ordersRes.data ?? [])) totals.waai += (o as any).total ?? 0;
+    return [
+      { name: 'Walk-in', value: totals.walkin },
+      { name: 'Tokopedia', value: totals.tokopedia },
+      { name: 'Grosir', value: totals.grosir },
+      { name: 'WA AI', value: totals.waai },
+    ].filter(c => c.value > 0);
   },
 };
 
