@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
 import { DbPurchaseOrder, DbPurchaseOrderItem, StockItem } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
+import { companySettingsService } from '../../lib/supabaseClient';
 
 interface PoDetailViewProps {
   po: DbPurchaseOrder;
@@ -34,6 +35,11 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function PoDetailView({ po, stockList, onClose, onRefresh, showToast, onReceiveReplacement }: PoDetailViewProps) {
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState('');
+
+  useEffect(() => {
+    companySettingsService.fetch().then(s => { if (s?.company_name) setStoreName(s.company_name); }).catch(() => {});
+  }, []);
 
   async function handleDamageStatusChange(item: DbPurchaseOrderItem, newStatus: string) {
     setUpdatingItemId(item.id);
@@ -73,6 +79,7 @@ export default function PoDetailView({ po, stockList, onClose, onRefresh, showTo
 
         {/* Print header */}
         <div className="hidden print:block px-5 py-4 border-b border-gray-200">
+          {storeName && <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{storeName}</p>}
           <h1 className="text-lg font-bold text-gray-900">Purchase Order</h1>
           <p className="text-sm text-gray-600">{po.po_number} · {formatDate(po.ordered_at ?? po.created_at)}</p>
           <p className="text-sm text-gray-600">Supplier: {po.supplier?.name}</p>
