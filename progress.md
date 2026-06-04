@@ -2377,3 +2377,11 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Step 7 — warehouse edit inputs**: Replaced single "Stok (Pcs)" input in edit panel with two inputs — "Stok Gudang Atas" (blue theme) and "Stok Gudang Bawah" (amber theme)
 - Build check: `npm run build` — expected single error `Cannot find module './WarehouseTransferModal'` (WH-5 creates this file); no other errors
 - Committed: `feat(stock): show per-warehouse breakdown, add Transfer button, warehouse edit inputs` (e0b1577)
+
+## WH-5: Create WarehouseTransferModal.tsx — DONE (2026-06-05)
+
+- Created `src/components/WarehouseTransferModal.tsx`
+- Modal allows selecting direction (atas → bawah or bawah → atas) via swap button; shows current stock in each warehouse; validates qty before calling `purchaseOrderService.transferWarehouse`
+- Imports verified: `purchaseOrderService` confirmed as the correct named export in `src/lib/pembelianService.ts`; `StockItem` confirmed in `src/types.ts`
+- `npm run build` passes cleanly (no TS errors, no type errors)
+- Committed: `feat(ui): add WarehouseTransferModal for moving stock between warehouses` (3009779)
