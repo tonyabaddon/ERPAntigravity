@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -628,5 +628,139 @@ export const adminUsersService = {
       .maybeSingle();
     if (error) throw error;
     return data ?? null;
+  },
+};
+
+export const stockService = {
+  async updateHargaModal(sku: string, hargaModal: number | null): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('stocks')
+      .update({ harga_modal: hargaModal, updated_at: new Date().toISOString() })
+      .eq('sku', sku);
+    if (error) throw error;
+  },
+
+  async decrementStock(sku: string, qty: number): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty });
+    if (error) {
+      // Fallback: fetch current stock, then update
+      const { data, error: fetchErr } = await supabase
+        .from('stocks')
+        .select('stock')
+        .eq('sku', sku)
+        .single();
+      if (fetchErr) throw fetchErr;
+      const newStock = Math.max(0, (data.stock as number) - qty);
+      const { error: updateErr } = await supabase
+        .from('stocks')
+        .update({ stock: newStock, updated_at: new Date().toISOString() })
+        .eq('sku', sku);
+      if (updateErr) throw updateErr;
+    }
+  },
+
+  async fetchAll(): Promise<SupabaseStockItem[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('stocks')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as SupabaseStockItem[];
+  },
+};
+
+export const kasirService = {
+  async fetchTransactions(date: string): Promise<KasirTransaction[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('kasir_transactions')
+      .select('*')
+      .eq('date', date)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as KasirTransaction[];
+  },
+
+  async fetchWaOrdersForDate(date: string): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const start = `${date}T00:00:00.000Z`;
+    const end   = `${date}T23:59:59.999Z`;
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('status', 'PAYMENT_VERIFIED')
+      .gte('updated_at', start)
+      .lte('updated_at', end)
+      .order('updated_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as DbOrder[];
+  },
+
+  computeDailySummary(
+    transactions: KasirTransaction[],
+    waOrders: DbOrder[],
+    stockMap: Record<string, number | null>
+  ): DailySummary {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let totalHpp = 0;
+    let itemsSold = 0;
+    const byChannel: Record<string, number> = { walkin: 0, tokopedia: 0, grosir: 0, wa_order: 0 };
+
+    for (const tx of transactions) {
+      if (tx.type === 'income') {
+        totalIncome += tx.subtotal;
+        totalHpp += tx.hpp_total;
+        itemsSold += tx.items.reduce((s, i) => s + i.qty, 0);
+        if (tx.channel) byChannel[tx.channel] = (byChannel[tx.channel] ?? 0) + tx.subtotal;
+      } else {
+        totalExpense += tx.subtotal;
+      }
+    }
+
+    for (const order of waOrders) {
+      totalIncome += order.total;
+      byChannel.wa_order = (byChannel.wa_order ?? 0) + order.total;
+      itemsSold += order.items.reduce((s: number, i: { qty: number }) => s + i.qty, 0);
+      for (const item of order.items) {
+        const hpp = stockMap[item.sku] ?? 0;
+        totalHpp += hpp * item.qty;
+      }
+    }
+
+    const labaKotor = totalIncome - totalHpp;
+    const labaBersih = labaKotor - totalExpense;
+    return { totalIncome, totalExpense, totalHpp, labaKotor, labaBersih, itemsSold, byChannel };
+  },
+
+  async insertSaleTransaction(tx: NewSaleTransaction): Promise<KasirTransaction> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('kasir_transactions')
+      .insert({ ...tx, type: 'income' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as KasirTransaction;
+  },
+
+  async insertExpense(tx: NewExpense): Promise<KasirTransaction> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('kasir_transactions')
+      .insert({ ...tx, type: 'expense' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as KasirTransaction;
+  },
+
+  generateInvoiceNumber(channel: 'walkin' | 'tokopedia' | 'grosir', counter: number): string {
+    const prefix = { walkin: 'WLK', tokopedia: 'TPD', grosir: 'GRS' }[channel];
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return `${prefix}-${date}-${String(counter).padStart(3, '0')}`;
   },
 };
