@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingBag, Receipt, Zap } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar,
+  BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import { reportsService, isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -11,9 +12,8 @@ type Period = '7d' | '30d' | '90d';
 
 function periodStart(p: Period): string {
   const d = new Date();
-  d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - (p === '7d' ? 6 : p === '30d' ? 29 : 89));
-  return d.toISOString();
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }) + 'T00:00:00+07:00';
 }
 
 function periodDays(p: Period): number {
@@ -37,7 +37,10 @@ interface Summary {
 export default function LaporanScreen() {
   const [period, setPeriod] = useState<Period>('30d');
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [dailyRevenue, setDailyRevenue] = useState<Array<{ Day: string; Revenue: number; Orders: number }>>([]);
+  const [dailyRevenueByChannel, setDailyRevenueByChannel] = useState<Array<{
+    Day: string; 'Walk-in': number; Tokopedia: number; Grosir: number; 'WA AI': number;
+  }>>([]);
+  const [channelTotals, setChannelTotals] = useState<Array<{ name: string; value: number }>>([]);
   const [dailyConvs, setDailyConvs] = useState<Array<{ Day: string; 'Dijawab AI': number; 'Respon Manual': number }>>([]);
   const [topProducts, setTopProducts] = useState<Array<{ name: string; qty: number; revenue: number }>>([]);
 
@@ -46,17 +49,24 @@ export default function LaporanScreen() {
     const since = periodStart(period);
     const days = periodDays(period);
     setSummary(null);
-    Promise.all([
+    Promise.allSettled([
       reportsService.fetchSummary(since),
-      reportsService.fetchDailyRevenue(since, days),
+      reportsService.fetchDailyRevenueByChannel(since, days),
+      reportsService.fetchChannelTotals(since),
       reportsService.fetchDailyConversations(since, days),
       reportsService.fetchTopProducts(since),
-    ]).then(([s, rev, convs, prods]) => {
-      setSummary(s);
-      setDailyRevenue(rev);
-      setDailyConvs(convs);
-      setTopProducts(prods);
-    }).catch(console.error);
+    ]).then(([sRes, revRes, chRes, convsRes, prodsRes]) => {
+      if (sRes.status === 'fulfilled') setSummary(sRes.value);
+      else console.error('fetchSummary failed:', sRes.reason);
+      if (revRes.status === 'fulfilled') setDailyRevenueByChannel(revRes.value);
+      else console.error('fetchDailyRevenueByChannel failed:', revRes.reason);
+      if (chRes.status === 'fulfilled') setChannelTotals(chRes.value);
+      else console.error('fetchChannelTotals failed:', chRes.reason);
+      if (convsRes.status === 'fulfilled') setDailyConvs(convsRes.value);
+      else console.error('fetchDailyConversations failed:', convsRes.reason);
+      if (prodsRes.status === 'fulfilled') setTopProducts(prodsRes.value);
+      else console.error('fetchTopProducts failed:', prodsRes.reason);
+    });
   }, [period]);
 
   const aiRate = summary
@@ -134,52 +144,78 @@ export default function LaporanScreen() {
         />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue area chart */}
-        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
-          <div className="mb-6">
-            <h4 className="text-lg font-bold text-[#012749]">Tren Omset & Jumlah Pesanan</h4>
-            <p className="text-xs text-gray-400 mt-0.5">Pendapatan harian dari pesanan terverifikasi</p>
-          </div>
-          <div className="h-[280px]">
+      {/* Revenue by channel: stacked bar (left) + donut (right) */}
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
+        <h4 className="text-lg font-bold text-[#012749] mb-1">Revenue per Channel</h4>
+        <p className="text-xs text-gray-400 mb-6">Breakdown harian dan proporsi total periode</p>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Stacked bar — daily trend */}
+          <div className="flex-1 h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyRevenue} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRevLap" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1e3d60" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#1e3d60" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
+              <BarChart data={dailyRevenueByChannel} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="Day" stroke="#94a3b8" fontSize={11} />
-                <YAxis stroke="#94a3b8" fontSize={11} />
-                <Tooltip formatter={(value: any) => [formatRupiah(Number(value)), 'Omset']} />
-                <Area type="monotone" dataKey="Revenue" stroke="#1e3d60" strokeWidth={3} fillOpacity={1} fill="url(#colorRevLap)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Conversations bar chart */}
-        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
-          <div className="mb-6">
-            <h4 className="text-lg font-bold text-[#012749]">Interaksi Chat — AI vs Manual</h4>
-            <p className="text-xs text-gray-400 mt-0.5">Volume percakapan harian berdasarkan mode penanganan</p>
-          </div>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyConvs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="Day" stroke="#94a3b8" fontSize={11} />
-                <YAxis stroke="#94a3b8" fontSize={11} />
-                <Tooltip />
-                <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-                <Bar dataKey="Dijawab AI" fill="#2d8a4e" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Respon Manual" fill="#abc9f3" radius={[4, 4, 0, 0]} />
+                <XAxis dataKey="Day" stroke="#94a3b8" fontSize={10} />
+                <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(0)}jt` : v >= 1000 ? `${(v/1000).toFixed(0)}rb` : v} />
+                <Tooltip formatter={(value: any, name: string) => [formatRupiah(Number(value)), name]} />
+                <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                <Bar dataKey="Walk-in" stackId="a" fill="#2d8a4e" />
+                <Bar dataKey="Tokopedia" stackId="a" fill="#f97316" />
+                <Bar dataKey="Grosir" stackId="a" fill="#1e3d60" />
+                <Bar dataKey="WA AI" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+
+          {/* Donut — period totals */}
+          <div className="lg:w-52 flex flex-col items-center justify-center">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Total Periode</p>
+            {channelTotals.length === 0 ? (
+              <p className="text-xs text-gray-300 italic">Belum ada data</p>
+            ) : (
+              <>
+                <PieChart width={160} height={160}>
+                  <Pie data={channelTotals} cx={80} cy={80} innerRadius={48} outerRadius={72} dataKey="value" paddingAngle={3}>
+                    {channelTotals.map((_, i) => (
+                      <Cell key={i} fill={['#2d8a4e', '#f97316', '#1e3d60', '#8b5cf6'][i % 4]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => formatRupiah(Number(value))} />
+                </PieChart>
+                <div className="space-y-1.5 mt-2 w-full">
+                  {channelTotals.map((c, i) => (
+                    <div key={c.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ['#2d8a4e', '#f97316', '#1e3d60', '#8b5cf6'][i % 4] }} />
+                        <span className="text-gray-600 font-medium">{c.name}</span>
+                      </div>
+                      <span className="font-bold text-gray-800">{formatRupiah(c.value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* AI Chat chart */}
+      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
+        <div className="mb-6">
+          <h4 className="text-lg font-bold text-[#012749]">Interaksi Chat — AI vs Manual</h4>
+          <p className="text-xs text-gray-400 mt-0.5">Volume percakapan harian berdasarkan mode penanganan</p>
+        </div>
+        <div className="h-[280px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dailyConvs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="Day" stroke="#94a3b8" fontSize={11} />
+              <YAxis stroke="#94a3b8" fontSize={11} />
+              <Tooltip />
+              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+              <Bar dataKey="Dijawab AI" fill="#2d8a4e" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Respon Manual" fill="#abc9f3" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
