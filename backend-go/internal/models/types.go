@@ -10,6 +10,7 @@ const (
 	StateClarifying      ConversationState = "CLARIFYING"
 	StateStockCheck      ConversationState = "STOCK_CHECK"
 	StateConfirming      ConversationState = "CONFIRMING"
+	StateAddMore         ConversationState = "ADD_MORE"
 	StateDelivery        ConversationState = "DELIVERY"
 	StateBooked          ConversationState = "BOOKED"
 	StateTimeoutReminder ConversationState = "TIMEOUT_REMINDER"
@@ -84,13 +85,20 @@ const (
 	SenderSystem   MessageSender = "system"
 )
 
+type CartItem struct {
+	Product  string `json:"product"`
+	Quantity int    `json:"quantity"`
+	Specs    string `json:"specs"`
+}
+
 type CollectedData struct {
-	Name     string    `json:"name,omitempty"`
-	Company  string    `json:"company,omitempty"`
-	Address  string    `json:"address,omitempty"`
-	Product  string    `json:"product,omitempty"`
-	Quantity int       `json:"quantity,omitempty"`
-	Specs    SpecsData `json:"specs,omitempty"`
+	Name     string     `json:"name,omitempty"`
+	Company  string     `json:"company,omitempty"`
+	Address  string     `json:"address,omitempty"`
+	Product  string     `json:"product,omitempty"`
+	Quantity int        `json:"quantity,omitempty"`
+	Specs    SpecsData  `json:"specs,omitempty"`
+	Cart     []CartItem `json:"cart,omitempty"`
 }
 
 func (d CollectedData) AllCoreFieldsFilled() bool {
