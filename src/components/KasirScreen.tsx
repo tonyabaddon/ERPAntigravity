@@ -11,6 +11,7 @@ import {
   kasirService, stockService, customersService, isSupabaseConfigured,
 } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
+import { purchaseOrderService } from '../lib/pembelianService';
 import type { DbCustomerWithStats } from '../types';
 import KasirInvoiceModal from './KasirInvoiceModal';
 
@@ -617,12 +618,25 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
       const counter = existing.filter(t => t.channel === channel).length + 1;
       const invoiceNumber = kasirService.generateInvoiceNumber(channel, counter);
 
+      // Resolve true COGS via FIFO before recording the transaction.
+      // deductFifo decrements stock_lots.qty_remaining and returns total cost.
+      const itemsWithFifo = await Promise.all(
+        items.map(async (item) => {
+          const totalCost = await purchaseOrderService.deductFifo(item.sku, item.qty);
+          return {
+            ...item,
+            hpp_per_unit: item.qty > 0 ? totalCost / item.qty : 0,
+            hpp_subtotal: totalCost,
+          };
+        })
+      );
+
       const newTx: NewSaleTransaction = {
         date: selectedDate,
         channel,
-        items: items.map(({ _key, ...rest }) => rest),
+        items: itemsWithFifo.map(({ _key, ...rest }) => rest),
         subtotal,
-        hpp_total: hppTotal,
+        hpp_total: itemsWithFifo.reduce((s, i) => s + i.hpp_subtotal, 0),
         payment_method: paymentMethod,
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,

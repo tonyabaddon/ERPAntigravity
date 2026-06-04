@@ -184,6 +184,19 @@ export const purchaseOrderService = {
     return data.publicUrl;
   },
 
+  async delete(poId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('purchase_orders').delete().eq('id', poId);
+    if (error) throw error;
+  },
+
+  async deductFifo(sku: string, qty: number): Promise<number> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('deduct_stock_fifo', { p_sku: sku, p_qty: qty });
+    if (error) throw error;
+    return Number(data ?? 0);
+  },
+
   async fetchSummary(): Promise<{ totalMtd: number; dueMtd: number; totalUnpaid: number; countMtd: number }> {
     if (!supabase) return { totalMtd: 0, dueMtd: 0, totalUnpaid: 0, countMtd: 0 };
     const { data } = await supabase
