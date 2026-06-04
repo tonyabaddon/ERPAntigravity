@@ -619,17 +619,26 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
       const invoiceNumber = kasirService.generateInvoiceNumber(channel, counter);
 
       // Resolve true COGS via FIFO before recording the transaction.
-      // deductFifo decrements stock_lots.qty_remaining and returns total cost.
-      const itemsWithFifo = await Promise.all(
-        items.map(async (item) => {
-          const totalCost = await purchaseOrderService.deductFifo(item.sku, item.qty);
-          return {
-            ...item,
-            hpp_per_unit: item.qty > 0 ? totalCost / item.qty : 0,
-            hpp_subtotal: totalCost,
-          };
-        })
-      );
+      // NOTE: non-atomic — deductFifo cannot be rolled back if insertSaleTransaction fails.
+      // On partial failure, check stock_lots manually to restore qty_remaining.
+      let itemsWithFifo: typeof items;
+      try {
+        itemsWithFifo = await Promise.all(
+          items.map(async (item) => {
+            const totalCost = await purchaseOrderService.deductFifo(item.sku, item.qty);
+            return {
+              ...item,
+              hpp_per_unit: item.qty > 0 ? totalCost / item.qty : 0,
+              hpp_subtotal: totalCost,
+            };
+          })
+        );
+      } catch (fifoErr: any) {
+        console.error('deductFifo failed — some stock lots may have been partially decremented:', fifoErr);
+        showToast('Gagal menghitung HPP FIFO. Cek stock_lots jika stok tidak sesuai.', 'warning');
+        setSaving(false);
+        return;
+      }
 
       const newTx: NewSaleTransaction = {
         date: selectedDate,
