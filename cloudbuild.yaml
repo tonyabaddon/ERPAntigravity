@@ -23,6 +23,7 @@ steps:
       - '--region=$_DEPLOY_REGION'
       - '--platform=$_PLATFORM'
       - '--allow-unauthenticated'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_SERVICE_KEY=$_SUPABASE_SERVICE_KEY'
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
