@@ -2087,3 +2087,15 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Applied migration via Supabase MCP — success
 - Smoke test: called `deduct_stock_fifo('SKU-WR-05', 1)` → returned `0` (matching `unit_cost = 0` for that lot); verified `qty_remaining` decremented from `8` to `7` on the actual lot row; restored to `8`
 - Committed: `feat(db): FIFO RPCs — stock_lots on receive_purchase_order + receive_replacement, add deduct_stock_fifo`
+
+## FIFO Task 3: Kasir FIFO integration — DONE (2026-06-05)
+
+- Added `delete(poId)` and `deductFifo(sku, qty)` methods to `purchaseOrderService` in `src/lib/pembelianService.ts`
+  - `deductFifo` calls the `deduct_stock_fifo` Supabase RPC and returns the total COGS as a number
+- Updated `src/components/KasirScreen.tsx`:
+  - Added `import { purchaseOrderService } from '../lib/pembelianService'`
+  - In `handleSave`, replaced static `harga_modal`-based HPP with a `Promise.all` that calls `deductFifo` per item before building `newTx`
+  - Each item's `hpp_per_unit` and `hpp_subtotal` are computed from the actual FIFO cost returned by the RPC
+  - `hpp_total` on the transaction is now the sum of real FIFO costs, not stale `harga_modal` values
+- TypeScript compiled clean (no new errors introduced)
+- Committed: `feat(kasir): FIFO lot deduction for accurate COGS per sale transaction` (eed906f)
