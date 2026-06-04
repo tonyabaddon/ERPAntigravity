@@ -12,7 +12,7 @@ metadata:
 
 ## Overview
 
-A new "Pembelian" page in the ERP sidebar for managing suppliers and purchase orders (PO). When goods are received from a supplier, stock quantities in the `stocks` table are automatically incremented. Payment tracking (outstanding → paid) is handled inside the ERP with support for supplier invoice and payment proof uploads.
+A new "Pembelian" page in the ERP sidebar for managing suppliers and purchase orders (PO). When goods are received from a supplier, stock quantities in the `stocks` table are automatically incremented and a FIFO lot is recorded so that each unit's cost is tracked to the exact batch it came from. Payment tracking (outstanding → paid) is handled inside the ERP with support for supplier invoice and payment proof uploads. Marking a PO as paid automatically records a Kasir expense entry.
 
 ---
 
@@ -54,6 +54,22 @@ A new "Pembelian" page in the ERP sidebar for managing suppliers and purchase or
 ```
 DRAFT → ORDERED → RECEIVED → PAID
 ```
+
+### `stock_lots`
+
+Tracks each batch of stock received from a PO. Used for FIFO cost accounting — when a Kasir sale deducts stock, it deducts from the oldest lot first and uses that lot's `unit_cost` as the COGS for that unit.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK DEFAULT gen_random_uuid() | |
+| `sku` | varchar FK → stocks NOT NULL | |
+| `po_id` | uuid FK → purchase_orders | NULL for initial/manual stock entries |
+| `unit_cost` | numeric NOT NULL | Cost per unit from the PO (or manually set for initial stock) |
+| `qty_received` | int NOT NULL | Total units received in this lot |
+| `qty_remaining` | int NOT NULL | Units not yet sold; decremented by FIFO deductions |
+| `received_at` | timestamptz NOT NULL DEFAULT now() | FIFO ordering key — oldest first |
+
+**Initial stock migration:** When the Pembelian module is first deployed, a migration script creates one `stock_lots` row per SKU using `stocks.hpp_per_unit` as `unit_cost` and `stocks.stock` as `qty_received` / `qty_remaining`. This seeds FIFO with the current inventory state.
 
 ### `purchase_order_items`
 
@@ -101,7 +117,7 @@ Four stat cards:
 - PO list table: No. PO · Supplier · Tgl Pesan · Jatuh Tempo · Total · Status badge · Actions
 - Left border accent on actionable rows (RECEIVED = amber, ORDERED = blue)
 - Context-sensitive action buttons per status:
-  - DRAFT: Edit · Pesan
+  - DRAFT: Edit · Pesan · Hapus (delete with confirmation modal)
   - ORDERED: Detail · Terima
   - RECEIVED: Detail · Bayar
   - PAID: Detail (read-only)
@@ -164,11 +180,31 @@ A Supabase database function that runs inside a single transaction:
 1. Validates PO status is `ORDERED`
 2. For each entry in `conditions` (keyed by `purchase_order_item.id`): updates `qty_received`, `qty_damaged`, `damage_notes`, `damage_status` on the item
 3. Increments `stocks.stock += qty_received` for each SKU (damaged qty excluded)
-4. Updates `purchase_orders.status = 'RECEIVED'`, sets `received_at = now()`
+4. Creates a `stock_lots` row for each SKU: `unit_cost` = item's `unit_cost`, `qty_received` = qty_received, `qty_remaining` = qty_received, `po_id` = this PO, `received_at` = now()
+5. Updates `purchase_orders.status = 'RECEIVED'`, sets `received_at = now()`
 
 Called from the frontend via `supabase.rpc('receive_purchase_order', { po_id, conditions })`. Atomic — no partial stock updates on failure.
 
+### FIFO Cost Deduction — `deduct_stock_fifo(sku text, qty int)`
+A Supabase database function called by the Kasir transaction flow when recording a sale:
+1. Queries `stock_lots` WHERE `sku = ?` AND `qty_remaining > 0` ORDER BY `received_at ASC` (oldest first)
+2. Walks through lots, deducting qty from each until the total sold qty is satisfied
+3. For each lot consumed: decrements `qty_remaining`, accumulates `cost += deducted_qty × unit_cost`
+4. Returns `total_cost` (the true COGS for that line item)
+
+The Kasir sale flow uses this return value to populate `hpp_per_unit = total_cost / qty` and `hpp_subtotal = total_cost` in the `kasir_transactions.items` JSONB. This replaces the previous static `stocks.hpp_per_unit` lookup.
+
+### Kasir Expense on PO Payment
+When admin marks a PO as PAID (frontend `MarkAsPaidModal`), after updating PO status the frontend calls `kasirService.insertExpense()` to record a matching expense in `kasir_transactions`:
+- `type = 'expense'`
+- `description = 'Bayar PO {po_number} — {supplier_name}'`
+- `subtotal = purchase_orders.total`
+- `date = today`
+
+This ensures PO payments appear in Kasir reconciliation and Laporan expense totals.
+
 ### Replacement Receipt — `receive_replacement(item_id uuid)`
+
 A Supabase database function called when admin confirms replacement goods have arrived:
 1. Validates `damage_status = 'RETURNED'` on the item
 2. Increments `stocks.stock += qty_damaged` for the item's SKU
@@ -186,6 +222,7 @@ Generated at PO creation time:
 - `suppliers`: anon full access (consistent with existing pattern)
 - `purchase_orders`: anon full access
 - `purchase_order_items`: anon full access
+- `stock_lots`: anon full access
 
 ### Supabase Storage
 - Bucket: `purchase-documents` (private or public depending on existing storage setup)
@@ -199,10 +236,12 @@ Generated at PO creation time:
 | Step | Who | Action | Result |
 |---|---|---|---|
 | 1 | Admin | Create PO, pick supplier, add items | Status: DRAFT, po_number assigned |
+| 1a | Admin | Click "Hapus" on DRAFT | PO deleted with confirmation |
 | 2 | Admin | Click "Pesan" | Status: ORDERED, ordered_at set |
-| 3 | Admin | Click "Terima", fill qty baik/rusak per item, upload invoice, confirm due date | Status: RECEIVED, stock incremented by qty_received only |
+| 3 | Admin | Click "Terima", fill qty baik/rusak per item, upload invoice, confirm due date | Status: RECEIVED, stock incremented by qty_received; FIFO lot created per SKU |
 | 3a | Admin | Update damage status on damaged items (Pending → Returned → Replaced) | Damage tracked; replacement handled via new PO or manual stock adjust |
-| 4 | Admin | Click "Bayar", upload proof | Status: PAID, paid_at set |
+| 4 | Admin | Click "Bayar", upload proof | Status: PAID, paid_at set; Kasir expense recorded automatically |
+| — | System (Kasir sale) | Customer buys items | FIFO lots deducted oldest-first; true COGS written to kasir_transactions.items |
 
 ---
 
@@ -225,3 +264,4 @@ Covers:
 - Automatic selling price updates from PO cost (selling price managed separately)
 - WhatsApp / email notifications for PO events
 - Stock alert → auto-suggest PO creation
+- Multi-currency support (all amounts in IDR)
