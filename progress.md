@@ -1568,3 +1568,43 @@ Full rewrite of the permissions section in `src/components/UserManagementScreen.
   - Expanded panel: 2–3 column grid of toggle labels; Owner rows locked (`disabled`, `opacity-60`, `cursor-not-allowed`) with amber Crown warning message
   - Permission toggles: `w-9 h-5` sliding toggle with `peer-checked:bg-[#2d8a4e]`
 - **Build**: `npm run build` — zero TypeScript errors (`✓ built in 1.75s`)
+
+## Task 3: App.tsx — Include specs in stock data mapping — DONE (2026-06-04)
+
+- **Step 1 (mapping)**: Already done in a prior session — `specs: (item.specs as Record<string, string | number>) ?? {}` was present in the `data.map()` block (line 112)
+- **Step 2 (dirty-check)**: Added `|| JSON.stringify(oldItem.specs) !== JSON.stringify(newItem.specs)` to the `itemsToUpsert` filter predicate in `handleStockUpdate`. Without this, spec-only edits updated local state but silently skipped Supabase persistence — a data-loss bug.
+- **TypeScript compile**: `npx tsc --noEmit` — only the 2 pre-existing errors in SalesInboxScreen.tsx and Sidebar.tsx; no new errors
+- Committed: `feat(app): map specs field from Supabase stock data, fix dirty-check to include specs` (7533622)
+
+## Task 4: StockManagerScreen.tsx — Full Redesign — DONE (2026-06-04)
+
+Full rewrite of `src/components/StockManagerScreen.tsx` (commit 2ee4314):
+
+- **`CATEGORY_SPECS`**: Record mapping 4 categories to typed `SpecFieldDef[]` arrays — Panel (8 fields), MCB (3 fields), Kabel (3 fields), Aksesori (1 field). Each field has `key`, `label`, `type` (`select|number|text`), optional `options[]`, and `required` flag.
+- **`generateName(category, specs)`**: Pure function that auto-builds the product display name from specs (e.g., `"Panel Besi Indoor 60×40×20cm 1.5mm RAL7032 Kosong"` for Panel; `"MCB Schneider 16A 1P"` for MCB).
+- **`renderSpecForm(category, specs, onChange)`**: Shared form renderer used in both Add and Edit panels. Renders a responsive grid of `<select>` or `<input>` elements based on `CATEGORY_SPECS[category]`, with required asterisks.
+- **`editingSkus` / `editValues` state**: Inline edit panel expands below each stock row on "Edit" click, showing price + stock inputs plus the full spec form; closing without Save discards changes.
+- **Add form**: Collapsible form at bottom of table with SKU (read-only "auto"), category selector, price, stock, live name preview from specs, and full spec form. Submit generates a `crypto.getRandomValues` 8-hex SKU.
+- **CSV Template**: Download generates a header-only CSV with `kategori,harga,stok` + all spec columns. SKU and name columns intentionally omitted (auto-generated on upload).
+- **CSV Upload**: File picker with `FileReader`, 4-step progress bar animation (25% per 150ms), then `parseAndUploadCSV` parses rows, builds `StockItem[]` with auto SKU+name, and prepends to stock list.
+- **Inline price/stock edit**: Both the price and stock cells in each row remain directly editable without entering edit mode; changes propagate via `handleCellEdit` and update status badge automatically.
+- **TypeScript compile**: `npx tsc --noEmit` — only the 2 pre-existing errors in SalesInboxScreen.tsx and Sidebar.tsx; no new errors from this file.
+- Committed: `feat(app): map specs field from Supabase stock data, fix dirty-check to include specs` (7533622)
+
+## Hotfix: admin_users RLS — DONE (2026-06-04)
+
+**Root cause:** The `admin_users` table had a single RLS policy granting `anon` full access. After Supabase OTP verification, the client switches from the `anon` role to `authenticated`, so all post-login queries (sign-up upsert, sign-in email lookup) were silently blocked — leaving the table empty and blocking login.
+
+**Fixes applied:**
+- Migration `20260604000002_fix_admin_users_rls.sql`: dropped `anon full access admin_users`; added four authenticated policies — SELECT (any authenticated user, for email lookup at login), INSERT (own row on sign-up OR Owner/userManagement admin), UPDATE (same), DELETE (Owner/userManagement admin only).
+- Manually inserted Owner row for `tonywei.office@gmail.com` with id matching `auth.users` and all permissions enabled.
+
+## Task 5: Go backend — StockItem model, SearchStockByName, StockContextString — DONE (2026-06-04)
+
+All three changes were already applied in a prior session (commit e6fb1b7):
+
+- **`backend-go/internal/models/types.go`**: `StockItem` struct already had `Specs map[string]interface{}` field with `json:"specs"` tag
+- **`backend-go/internal/db/stock.go`**: `SearchStockByName` already selects `specs` column, searches `LOWER(specs::text) LIKE $1`, and JSON-unmarshals the raw bytes into `item.Specs`
+- **`backend-go/internal/engine/prompts.go`**: `StockContextString` already formats spec key-value pairs as `[k=v, ...]` suffix on each stock line
+
+Verified: `go build ./...` — clean (no output). `go test ./...` — all pass (internal/engine, internal/rules, internal/scheduler, internal/storage; internal/db has no test files). Commit SHA: e6fb1b7.
