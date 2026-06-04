@@ -1991,6 +1991,14 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Files fixed**: `SupplierModal.tsx`, `MarkAsPaidModal.tsx`, `PoDetailView.tsx`, `ReceiveReplacementModal.tsx`, `PembelianScreen.tsx` (3 catch blocks)
 - **Fix**: Changed to `} catch (e: any) {` with `console.error(...)` and `showToast(e?.message ?? '...', 'warning')` so the actual error appears both in the toast and browser console
 
+## Dashboard & Laporan: Multi-channel Revenue Charts — DONE (2026-06-04)
+
+- **Problem**: Dashboard and Laporan only showed revenue from WA AI orders, ignoring Kasir walk-in/Tokopedia/Grosir sales
+- **Dashboard**: Replaced AreaChart with stacked BarChart by channel (Walk-in, Tokopedia, Grosir, WA AI) for 7 days; KPI "Total Omset" now sums all channels
+- **Laporan**: Replaced revenue chart with stacked BarChart (daily trend) + donut PieChart (period totals) side by side; all KPIs updated to combined revenue; Produk Terlaris now includes kasir items
+- **Data layer**: Added `fetchWeeklyRevenueByChannel`, `fetchDailyRevenueByChannel`, `fetchChannelTotals`; updated `fetchTodayStats`, `fetchSummary`, `fetchTopProducts`
+- Deployed: image tag `9352806`
+
 ## Pembelian: Stock Refresh + Kasir Expense Error Surface — DONE (2026-06-04)
 
 - **Problem 1**: Stock count in StockManagerScreen didn't update after "Terima Barang" in PO module — `App.tsx` loads `stockList` once at startup and never refreshes it after a PO receive
@@ -2034,6 +2042,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Build verification**: `npm run build` — ✓ built in 3.11s, no TypeScript errors
 - **File modified**: `src/components/StockManagerScreen.tsx` (+113/-20 lines)
 - **Committed**: `feat(stock): CSV upsert — add/update by SKU or name, Export Stok button, Supabase persist` (b9e86dc)
+
+## WhatsApp QR Code Daemon Fix — DONE (2026-06-04)
+
+- **Problem**: QR code never appeared in the WhatsApp AI screen. Daemon logs showed only repeated FOLLOWUP send errors with "the store doesn't contain a device JID", and no QR generation logs.
+- **Root cause (diagnosed)**: `GetQRChannel` error was silently discarded (`_`), so if it failed the `qrChan` would be nil and `runQRLoop` would block forever. Additionally, `/api/wa/qr` used `Store.ID != nil` for the `connected` field — which returned `connected: true` for stale sessions even when the daemon wasn't actually connected to WhatsApp servers.
+- **Changes**:
+  - `client.go`: `GetQRChannel` error now returned as fatal (won't silently start broken QR loop)
+  - `client.go`: Log `Store.ID` value at `Connect()` entry to distinguish QR vs reconnect path
+  - `client.go`: Log "QR loop started" entry in `runQRLoop`
+  - `client.go`: `AddEventHandler` now handles `*events.LoggedOut` — clears stale PostgreSQL session and restarts QR pairing loop when WhatsApp server rejects stored credentials
+  - `client.go`: Client log level raised from WARN to INFO to surface whatsmeow auth logs
+  - `main.go`: `/api/wa/qr` and `/api/wa/status` now use `IsConnected()` instead of `Store.ID != nil` — frontend correctly shows "waiting for QR" when daemon has stored JID but no active WebSocket
+- **Committed + deployed**: `fix(daemon): surface QR errors, add LoggedOut recovery, fix connected status` (ffb4155)
 
 ## Important Fix: Spec merge in CSV update path — DONE (2026-06-04)
 
