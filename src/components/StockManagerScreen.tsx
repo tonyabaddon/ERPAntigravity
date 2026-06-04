@@ -336,12 +336,17 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
 
       if (existingIdx >= 0) {
         const existing = updatedStock[existingIdx];
+        const mergedSpecs = { ...existing.specs };
+        CSV_SPEC_COLS.forEach(col => {
+          if (row[col] && row[col] !== '—' && row[col] !== '-') mergedSpecs[col] = row[col];
+        });
         const updatedItem = {
           ...existing,
           price: row['harga'] ? price : existing.price,
           stock: row['stok'] ? stock : existing.stock,
           harga_modal: row['harga_modal'] ? harga_modal : existing.harga_modal,
           name: namaFromCsv || existing.name,
+          specs: mergedSpecs,
           status: ((row['stok'] ? stock : existing.stock) < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron',
         };
         updatedStock[existingIdx] = updatedItem;
