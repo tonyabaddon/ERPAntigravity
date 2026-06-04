@@ -5,10 +5,31 @@
 
 export interface PermissionSet {
   dashboard: boolean;
-  sales: boolean;
-  stokAi: boolean;
-  konfig: boolean;
+  salesInbox: boolean;
+  laporan: boolean;
+  aiStock: boolean;
+  pipeline: boolean;
+  pelanggan: boolean;
+  orderHistory: boolean;
+  userManagement: boolean;
+  whatsappAi: boolean;
+  notifications: boolean;
+  settings: boolean;
 }
+
+export const ALL_PERMISSIONS: PermissionSet = {
+  dashboard: true,
+  salesInbox: true,
+  laporan: true,
+  aiStock: true,
+  pipeline: true,
+  pelanggan: true,
+  orderHistory: true,
+  userManagement: true,
+  whatsappAi: true,
+  notifications: true,
+  settings: true,
+};
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
 
