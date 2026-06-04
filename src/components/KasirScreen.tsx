@@ -232,7 +232,7 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
 
       {/* KPI strip */}
       {!loading && summary && (
-        <div className={`grid gap-4 ${isOwner ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-3'}`}>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <KpiCard
             label="Total Pemasukan" color="green" icon={<TrendingUp className="w-5 h-5 text-emerald-600" />}
             value={formatRp(summary.totalIncome)}
