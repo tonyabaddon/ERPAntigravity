@@ -274,8 +274,8 @@ export const statsService = {
       supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').eq('date', todayDate),
     ]);
 
-    const waTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + ((o as any).total ?? 0), 0);
-    const kasirTotal = (kasirRes.data ?? []).reduce((sum, t) => sum + ((t as any).subtotal ?? 0), 0);
+    const waTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + Number((o as any).total ?? 0), 0);
+    const kasirTotal = (kasirRes.data ?? []).reduce((sum, t) => sum + Number((t as any).subtotal ?? 0), 0);
     return {
       verifiedOrdersTotal: waTotal + kasirTotal,
       verifiedOrdersCount: (ordersRes.data?.length ?? 0) + (kasirRes.data?.length ?? 0),
@@ -306,7 +306,7 @@ export const statsService = {
       .order('created_at', { ascending: true });
     return groupByDay(data ?? [], 7).map(({ label, rows }) => ({
       Day: label,
-      Revenue: rows.reduce((s, r) => s + ((r as any).total ?? 0), 0),
+      Revenue: rows.reduce((s, r) => s + Number((r as any).total ?? 0), 0),
       Orders: rows.length,
     }));
   },
@@ -346,7 +346,7 @@ export const statsService = {
       const key = (tx as any).date as string;
       if (!(key in buckets)) continue;
       const ch = (tx as any).channel as string;
-      const amt = (tx as any).subtotal ?? 0;
+      const amt = Number((tx as any).subtotal ?? 0);
       if (ch === 'walkin') buckets[key].walkin += amt;
       else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
       else if (ch === 'grosir') buckets[key].grosir += amt;
@@ -354,7 +354,7 @@ export const statsService = {
     for (const o of (ordersRes.data ?? [])) {
       const key = wibDateString(new Date((o as any).created_at));
       if (!(key in buckets)) continue;
-      buckets[key].waai += (o as any).total ?? 0;
+      buckets[key].waai += Number((o as any).total ?? 0);
     }
     return Object.entries(buckets).map(([key, v]) => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
@@ -381,8 +381,8 @@ export const reportsService = {
     const orders = ordersRes.data ?? [];
     const kasirTxs = kasirRes.data ?? [];
     const convs = convsRes.data ?? [];
-    const waRevenue = orders.reduce((s, o) => s + ((o as any).total ?? 0), 0);
-    const kasirRevenue = kasirTxs.reduce((s, t) => s + ((t as any).subtotal ?? 0), 0);
+    const waRevenue = orders.reduce((s, o) => s + Number((o as any).total ?? 0), 0);
+    const kasirRevenue = kasirTxs.reduce((s, t) => s + Number((t as any).subtotal ?? 0), 0);
     const revenue = waRevenue + kasirRevenue;
     const totalCount = orders.length + kasirTxs.length;
     return {
@@ -404,7 +404,7 @@ export const reportsService = {
       .order('created_at', { ascending: true });
     return groupByDay(data ?? [], days).map(({ label, rows }) => ({
       Day: label,
-      Revenue: rows.reduce((s, r) => s + ((r as any).total ?? 0), 0),
+      Revenue: rows.reduce((s, r) => s + Number((r as any).total ?? 0), 0),
       Orders: rows.length,
     }));
   },
@@ -436,7 +436,7 @@ export const reportsService = {
         if (!item.name) continue;
         if (!tally[item.name]) tally[item.name] = { qty: 0, revenue: 0 };
         tally[item.name].qty += item.qty ?? 0;
-        tally[item.name].revenue += item.subtotal ?? 0;
+        tally[item.name].revenue += Number(item.subtotal ?? 0);
       }
     };
     for (const order of (ordersRes.data ?? [])) tallyItems((order as any).items ?? []);
@@ -466,7 +466,7 @@ export const reportsService = {
       const key = (tx as any).date as string;
       if (!(key in buckets)) continue;
       const ch = (tx as any).channel as string;
-      const amt = (tx as any).subtotal ?? 0;
+      const amt = Number((tx as any).subtotal ?? 0);
       if (ch === 'walkin') buckets[key].walkin += amt;
       else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
       else if (ch === 'grosir') buckets[key].grosir += amt;
@@ -474,7 +474,7 @@ export const reportsService = {
     for (const o of (ordersRes.data ?? [])) {
       const key = wibDateString(new Date((o as any).created_at));
       if (!(key in buckets)) continue;
-      buckets[key].waai += (o as any).total ?? 0;
+      buckets[key].waai += Number((o as any).total ?? 0);
     }
     return Object.entries(buckets).map(([key, v]) => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
@@ -495,12 +495,12 @@ export const reportsService = {
     const totals = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
     for (const tx of (kasirRes.data ?? [])) {
       const ch = (tx as any).channel as string;
-      const amt = (tx as any).subtotal ?? 0;
+      const amt = Number((tx as any).subtotal ?? 0);
       if (ch === 'walkin') totals.walkin += amt;
       else if (ch === 'tokopedia') totals.tokopedia += amt;
       else if (ch === 'grosir') totals.grosir += amt;
     }
-    for (const o of (ordersRes.data ?? [])) totals.waai += (o as any).total ?? 0;
+    for (const o of (ordersRes.data ?? [])) totals.waai += Number((o as any).total ?? 0);
     return [
       { name: 'Walk-in', value: totals.walkin },
       { name: 'Tokopedia', value: totals.tokopedia },
