@@ -1,5 +1,10 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Calista Message Filter & Follow-up Fix
+- Fixed: Calista was sending messages to WhatsApp group members and Status viewers (group/broadcast filter added to handler.go)
+- Fixed: Stale @lid conversations from non-customers cancelled in DB
+- Fixed: Follow-up poller now auto-disables ai_active after 6 sends (3 days) with no customer reply (followup_sends_total column + IncrementFollowup logic)
+
 ## Task 1: Update Go module dependencies — DONE (2026-05-31)
 
 - Updated `backend-go/go.mod` to go 1.25.0 with all required direct dependencies
