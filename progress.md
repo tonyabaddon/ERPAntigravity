@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — CA-4: ADD_MORE state prompt + AddMoreContextString helper — DONE
+- Added `AddMoreContextString(cart []models.CartItem) string` helper to `backend-go/internal/engine/prompts.go`
+- Added `case models.StateAddMore` to `stateInstructions` switch — returns JSON prompt asking Calista to detect add_another vs. done
+- Updated `models.StateConfirming` prompt to instruct Calista to append "Mau tambah produk lain?" sentence when `confirmed: true`
+- `go build ./...` passes cleanly
+- Committed: `feat(prompts): add ADD_MORE state prompt, AddMoreContextString helper` (eb8005f)
+
 ## 2026-06-05 — CA-3: AddMoreResponse + ParseAddMore for ADD_MORE state — DONE
 - Added `AddMoreResponse` struct (Reply, AddAnother, Language) and `ParseAddMore` function to `backend-go/internal/engine/parser.go`
 - Added 3 tests (`TestParseAddMore_AddAnother`, `TestParseAddMore_Done`, `TestParseAddMore_BadJSON`) to `parser_test.go`
