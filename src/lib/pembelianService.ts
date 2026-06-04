@@ -136,6 +136,7 @@ export const purchaseOrderService = {
     payment_due_at: string;
     invoice_url?: string;
     conditions: Record<string, { qty_received: number; qty_damaged: number; damage_notes?: string }>;
+    warehouse: 'atas' | 'bawah';
   }): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase.rpc('receive_purchase_order', {
@@ -144,6 +145,14 @@ export const purchaseOrderService = {
       p_payment_due_at: params.payment_due_at,
       p_invoice_url: params.invoice_url ?? null,
       p_conditions: params.conditions,
+      p_warehouse: params.warehouse,
+    });
+    if (error) throw error;
+  },
+
+  async transferWarehouse(sku: string, from: 'atas' | 'bawah', to: 'atas' | 'bawah', qty: number): Promise<void> {
+    const { error } = await supabase!.rpc('transfer_warehouse', {
+      p_sku: sku, p_from: from, p_to: to, p_qty: qty,
     });
     if (error) throw error;
   },

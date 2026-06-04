@@ -58,7 +58,8 @@ export const supabaseService = {
         name: item.name,
         category: item.category,
         price: item.price,
-        stock: item.stock,
+        stock_atas: item.stock_atas ?? item.stock,
+        stock_bawah: item.stock_bawah ?? 0,
         status: item.status,
         specs: item.specs,
         harga_modal: item.harga_modal ?? null,
@@ -755,22 +756,18 @@ export const stockService = {
     if (error) throw error;
   },
 
-  async decrementStock(sku: string, qty: number): Promise<void> {
+  async decrementStock(sku: string, qty: number, warehouse: 'atas' | 'bawah' = 'atas'): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty });
+    const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty, p_warehouse: warehouse });
     if (error) {
-      // Fallback: fetch current stock, then update
-      const { data, error: fetchErr } = await supabase
-        .from('stocks')
-        .select('stock')
-        .eq('sku', sku)
-        .single();
+      const col = warehouse === 'atas' ? 'stock_atas' : 'stock_bawah';
+      const { data, error: fetchErr } = await supabase.from('stocks').select(col).eq('sku', sku).single();
       if (fetchErr) throw fetchErr;
-      const newStock = Math.max(0, (data.stock as number) - qty);
-      const { error: updateErr } = await supabase
-        .from('stocks')
-        .update({ stock: newStock, updated_at: new Date().toISOString() })
-        .eq('sku', sku);
+      const current = (data as Record<string, number>)[col] ?? 0;
+      const { error: updateErr } = await supabase.from('stocks').update({
+        [col]: Math.max(0, current - qty),
+        updated_at: new Date().toISOString(),
+      }).eq('sku', sku);
       if (updateErr) throw updateErr;
     }
   },
