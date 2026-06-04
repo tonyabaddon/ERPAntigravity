@@ -296,6 +296,12 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		img = evt.Message.GetEphemeralMessage().GetMessage().GetImageMessage()
 	}
 	doc := evt.Message.GetDocumentMessage()
+	if doc == nil && evt.Message.GetViewOnceMessage() != nil {
+		doc = evt.Message.GetViewOnceMessage().GetMessage().GetDocumentMessage()
+	}
+	if doc == nil && evt.Message.GetEphemeralMessage() != nil {
+		doc = evt.Message.GetEphemeralMessage().GetMessage().GetDocumentMessage()
+	}
 
 	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment || (img == nil && doc == nil) {
 		// Not a payment proof context — fall through to admin escalation.
