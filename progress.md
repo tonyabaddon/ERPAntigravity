@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — CA-5: Machine — CONFIRMING pushes to cart, ADD_MORE case — DONE
+- Updated `case models.StateConfirming` in `backend-go/internal/engine/machine.go`: `confirmed=true` now builds a `CartItem` from current Product/Quantity/Specs, appends to Cart, clears those fields, sets `result.NewData`, and transitions to `StateAddMore` (not `StateDelivery`)
+- Added `case models.StateAddMore` handler: calls `ParseAddMore`, routes `add_another=true → StateCollecting`, `add_another=false → StateDelivery`
+- Added `"strings"` import for `strings.TrimSpace` in specsStr construction
+- Replaced `TestProcessConfirmingMovesToDelivery` with `TestProcessConfirmingMovesToAddMore` (verifies cart push, field clearing, NextState=ADD_MORE) and added `TestProcessConfirmingModificationRequestedMovesClarifying`, `TestProcessAddMore_AddAnother`, `TestProcessAddMore_Done`
+- All 4 new tests pass; full engine test suite passes (`go test ./internal/engine/... -v`)
+- Committed: `feat(machine): CONFIRMING pushes to cart→ADD_MORE; add ADD_MORE state handler` (32f972f)
+
 ## 2026-06-05 — CA-4: ADD_MORE state prompt + AddMoreContextString helper — DONE
 - Added `AddMoreContextString(cart []models.CartItem) string` helper to `backend-go/internal/engine/prompts.go`
 - Added `case models.StateAddMore` to `stateInstructions` switch — returns JSON prompt asking Calista to detect add_another vs. done
