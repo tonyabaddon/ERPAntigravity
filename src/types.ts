@@ -345,6 +345,8 @@ export interface KasirTransaction {
   hpp_total: number;
   payment_method?: KasirPaymentMethod | null;
   customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_company?: string | null;
   invoice_number?: string | null;
   expense_category?: KasirExpenseCategory | null;
   description?: string | null;
@@ -361,6 +363,7 @@ export interface DailySummary {
   labaBersih: number;
   itemsSold: number;
   byChannel: Record<string, number>;
+  byPaymentMethod: Record<string, number>;
 }
 
 export interface NewSaleTransaction {
@@ -371,6 +374,8 @@ export interface NewSaleTransaction {
   hpp_total: number;
   payment_method: KasirPaymentMethod;
   customer_name?: string;
+  customer_phone?: string;
+  customer_company?: string;
   invoice_number: string;
 }
 

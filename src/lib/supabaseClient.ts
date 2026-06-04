@@ -710,6 +710,7 @@ export const kasirService = {
     let totalHpp = 0;
     let itemsSold = 0;
     const byChannel: Record<string, number> = { walkin: 0, tokopedia: 0, grosir: 0, wa_order: 0 };
+    const byPaymentMethod: Record<string, number> = { cash: 0, transfer: 0, qris: 0 };
 
     for (const tx of transactions) {
       if (tx.type === 'income') {
@@ -717,6 +718,7 @@ export const kasirService = {
         totalHpp += tx.hpp_total;
         itemsSold += tx.items.reduce((s, i) => s + i.qty, 0);
         if (tx.channel) byChannel[tx.channel] = (byChannel[tx.channel] ?? 0) + tx.subtotal;
+        if (tx.payment_method) byPaymentMethod[tx.payment_method] = (byPaymentMethod[tx.payment_method] ?? 0) + tx.subtotal;
       } else {
         totalExpense += tx.subtotal;
       }
@@ -725,6 +727,7 @@ export const kasirService = {
     for (const order of waOrders) {
       totalIncome += order.total;
       byChannel.wa_order = (byChannel.wa_order ?? 0) + order.total;
+      byPaymentMethod.transfer = (byPaymentMethod.transfer ?? 0) + order.total;
       itemsSold += (order.items ?? []).reduce((s: number, i: { qty: number }) => s + i.qty, 0);
       for (const item of (order.items ?? [])) {
         const hpp = stockMap[item.sku] ?? 0;
@@ -734,7 +737,7 @@ export const kasirService = {
 
     const labaKotor = totalIncome - totalHpp;
     const labaBersih = labaKotor - totalExpense;
-    return { totalIncome, totalExpense, totalHpp, labaKotor, labaBersih, itemsSold, byChannel };
+    return { totalIncome, totalExpense, totalHpp, labaKotor, labaBersih, itemsSold, byChannel, byPaymentMethod };
   },
 
   async insertSaleTransaction(tx: NewSaleTransaction): Promise<KasirTransaction> {

@@ -110,12 +110,14 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   </div>
 
                   {/* Bill to */}
-                  {transaction.customer_name && (
+                  {(transaction.customer_name || transaction.customer_company) && (
                     <div className="mb-5">
                       <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5 font-sans">
                         Kepada Yth.
                       </div>
-                      <div className="font-bold text-gray-800">{transaction.customer_name}</div>
+                      {transaction.customer_name && <div className="font-bold text-gray-800">{transaction.customer_name}</div>}
+                      {transaction.customer_company && <div className="text-xs text-gray-600">{transaction.customer_company}</div>}
+                      {transaction.customer_phone && <div className="text-xs text-gray-500">{transaction.customer_phone}</div>}
                     </div>
                   )}
 
