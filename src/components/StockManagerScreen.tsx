@@ -180,6 +180,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     }
     const sku = generateSkuId();
     const name = generateName(newCategory, newSpecs);
+    if (!name) {
+      showToast('⚠️ Mohon lengkapi spesifikasi produk!', 'warning');
+      return;
+    }
     const price = parseInt(newPrice.replace(/\D/g, '')) || 0;
     const stock = parseInt(newStock) || 0;
     const newItem: StockItem = {
@@ -226,6 +230,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     const price = parseInt(vals.price.replace(/\D/g, '')) || 0;
     const stock = parseInt(vals.stock) || 0;
     const name = generateName(item.category, vals.specs);
+    if (!name) {
+      showToast('⚠️ Mohon lengkapi spesifikasi produk!', 'warning');
+      return;
+    }
     const updated = stockList.map(i =>
       i.sku === sku
         ? { ...i, price, stock, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
