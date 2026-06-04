@@ -2067,3 +2067,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Build verification**: `npm run build` — ✓ built in 1.92s, no TypeScript errors
 - **File modified**: `src/components/StockManagerScreen.tsx` (lines 337-349)
 - **Committed**: `fix(stock): merge CSV spec values in update path` (5555b8d)
+
+## FIFO Task 1: stock_lots table + seed migration — DONE (2026-06-04)
+
+- Created `supabase/migrations/20260604000014_stock_lots.sql`
+- Table `public.stock_lots`: `id` (uuid PK), `sku` (FK → stocks), `po_id` (FK → purchase_orders, nullable), `unit_cost` (numeric), `qty_received` (int), `qty_remaining` (int), `received_at` (timestamptz)
+- RLS enabled; idempotent `anon full access` + `authenticated full access` policies
+- Seed INSERT: bootstraps all SKUs with `stock > 0` using current `harga_modal` as `unit_cost`; `received_at` set 10 years in the past so seed lots are consumed first in FIFO order
+- Applied via Supabase MCP; verification query returned `lot_count: 8` (8 SKUs with stock > 0 seeded)
+- Committed: `feat(db): add stock_lots table for FIFO cost accounting, seed from existing stocks`
