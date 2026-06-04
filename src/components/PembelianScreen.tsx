@@ -4,6 +4,7 @@ import { StockItem } from '../types';
 import { purchaseOrderService, supplierService } from '../lib/pembelianService';
 import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import SupplierModal from './pembelian/SupplierModal';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -121,4 +122,93 @@ export default function PembelianScreen({ stockList, showToast }: PembelianScree
 
 // Placeholder sub-components — implemented in Tasks 6 and 7
 function OrdersTab(_props: any) { return <div className="text-sm text-gray-400">Orders tab — coming in Task 7</div>; }
-function SuppliersTab(_props: any) { return <div className="text-sm text-gray-400">Suppliers tab — coming in Task 6</div>; }
+
+interface SuppliersTabProps {
+  suppliers: DbSupplier[];
+  showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onRefresh: () => void;
+}
+
+function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
+  const [search, setSearch] = useState('');
+  const [modalSupplier, setModalSupplier] = useState<DbSupplier | null | undefined>(undefined);
+
+  const filtered = suppliers.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    (s.contact_name ?? '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  async function handleDelete(s: DbSupplier) {
+    if (!confirm(`Hapus supplier "${s.name}"?`)) return;
+    try {
+      await supplierService.remove(s.id);
+      showToast('Supplier dihapus.', 'success');
+      onRefresh();
+    } catch {
+      showToast('Gagal menghapus supplier.', 'warning');
+    }
+  }
+
+  function termLabel(days: number): string {
+    if (days === 0) return 'Cash';
+    return `Net ${days}`;
+  }
+
+  return (
+    <>
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className="relative">
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              placeholder="Cari supplier..."
+            />
+          </div>
+          <button
+            onClick={() => setModalSupplier(null)}
+            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Tambah Supplier
+          </button>
+        </div>
+        {filtered.length === 0 ? (
+          <div className="py-12 text-center text-sm text-gray-400">Belum ada supplier.</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-5 px-4 py-2 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+              <span className="col-span-2">Nama Supplier</span>
+              <span className="col-span-1">Kontak</span>
+              <span className="col-span-1 text-center">Term Bayar</span>
+              <span className="col-span-1 text-center">Aksi</span>
+            </div>
+            {filtered.map(s => (
+              <div key={s.id} className="grid grid-cols-5 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50">
+                <div className="col-span-2">
+                  <div className="text-sm font-semibold text-gray-800">{s.name}</div>
+                  {s.contact_name && <div className="text-[10px] text-gray-400">{s.contact_name}</div>}
+                </div>
+                <span className="text-xs text-gray-600">{s.phone ?? '—'}</span>
+                <div className="flex justify-center">
+                  <span className="bg-blue-100 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">{termLabel(s.payment_term_days)}</span>
+                </div>
+                <div className="flex justify-center gap-1">
+                  <button onClick={() => setModalSupplier(s)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
+                  <button onClick={() => handleDelete(s)} className="text-xs text-rose-500 px-2 py-1 rounded border border-rose-100 hover:bg-rose-50">Hapus</button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+      {modalSupplier !== undefined && (
+        <SupplierModal
+          supplier={modalSupplier ?? undefined}
+          onClose={() => setModalSupplier(undefined)}
+          onSaved={onRefresh}
+          showToast={showToast}
+        />
+      )}
+    </>
+  );
+}
