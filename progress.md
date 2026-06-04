@@ -2394,3 +2394,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Step 3 — pass to receiveGoods**: Added `warehouse` field to the `purchaseOrderService.receiveGoods` params object in `handleConfirm`
 - `npm run build` passes cleanly (no TS errors)
 - Committed: `feat(pembelian): add warehouse selector to ReceiveGoodsModal` (450935c)
+
+## WH-7: Add warehouse selector to SaleModal in KasirScreen — DONE (2026-06-05)
+
+- Modified `src/components/KasirScreen.tsx`
+- **Step 1 — warehouse state**: Added `const [warehouse, setWarehouse] = useState<'atas' | 'bawah'>('atas')` after existing `saving` state in `SaleModal`
+- **Step 2 — pass to decrementStock**: Changed `stockService.decrementStock(item.sku, item.qty)` to `stockService.decrementStock(item.sku, item.qty, warehouse)` in the `handleSave` stock decrement loop
+- **Step 3 — warehouse selector UI**: Added small warehouse `<select>` (Gudang Atas / Gudang Bawah) in the modal header after the subtitle `<p>` tag
+- `npm run build` passes cleanly (no TS errors, chunk size warning is pre-existing and acceptable)
+- Committed: `feat(kasir): add warehouse selector to SaleModal, pass to decrementStock` (3cbedb2)
