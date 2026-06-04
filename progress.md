@@ -1955,6 +1955,24 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - TypeScript compile: zero errors for KasirInvoiceModal (pre-existing KasirScreen error remains until Task 8)
 - Committed: `feat(kasir): add KasirInvoiceModal for walk-in and grosir A4 invoice printing` (5c7ab84)
 
+## Task 8: KasirScreen.tsx — DONE (2026-06-04)
+
+- Created `src/components/KasirScreen.tsx` (839 lines)
+- Full daily reconciliation screen with:
+  - KPI strip: Total Pemasukan, Total Pengeluaran, HPP, Laba Bersih (owner-gated HPP + P&L)
+  - Transaction log with filter tabs: Semua, Walk-in, WA Order, Online, Pengeluaran
+  - WA Orders auto-synced from `kasirService.fetchWaOrdersForDate()`; HPP shown for owner role
+  - Catat Transaksi panel with 3 channel buttons (Walk-in, Tokopedia, Grosir) + Pengeluaran
+  - SaleModal: stock search, qty adjustment, payment method selector, Simpan / Simpan & Cetak
+  - ExpenseModal: category, description, amount
+  - Tutup Buku Harian summary card (owner only) with per-channel breakdown and print trigger
+  - Role-gating: non-owner sees "Laba Bersih" locked; owner gets HPP column and date picker
+  - Decrements stock via `stockService.decrementStock()` after each sale transaction
+  - Print invoice via `KasirInvoiceModal` after "Simpan & Cetak"
+- TypeScript compile: zero errors in KasirScreen.tsx; pre-existing errors in SalesInboxScreen, Sidebar, Deno edge functions are unrelated
+- Fixed: `Object.entries(summary.byChannel)` cast to `[string, number][]` to satisfy strict TS
+- Committed: `feat(kasir): add KasirScreen with sale/expense modals, P&L summary, and role-gated HPP` (d4dd2d7)
+
 ## Task 6: Wire Kasir into navigation — DONE (2026-06-04)
 
 - **`src/components/Sidebar.tsx`**:
