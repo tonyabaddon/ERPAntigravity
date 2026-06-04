@@ -1297,6 +1297,15 @@ All 14 screens reviewed against the Supabase schema and service implementations:
 
 No code gaps found beyond the one bug above.
 
+## Code Quality: Add null guard to transferWarehouse — DONE (2026-06-05)
+
+- Fixed `src/lib/pembelianService.ts` method `transferWarehouse` (around line 153)
+- Added null guard: `if (!supabase) throw new Error('Supabase not configured');` before using supabase
+- Changed `supabase!.rpc(...)` to `supabase.rpc(...)` (removed non-null assertion, guard handles null case)
+- Aligns with pattern used by all other methods in this file (11 other methods all include the guard)
+- `npm run build` passes cleanly — no regressions
+- Committed: `fix(service): add null guard to transferWarehouse` (afe76ef)
+
 ## P5 — Real-time daemon online/offline health badge in WhatsappAiScreen — DONE (2026-06-03)
 
 - Added `daemonOnline` boolean state (line 45) next to existing `waConnected` state
@@ -2315,3 +2324,38 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Build verification: `CGO_ENABLED=1 go build ./...` — clean build (no errors)
 - Test verification: `go test ./...` tail output shows 6 test suites; pre-existing storage test failure unrelated to this change
 - Committed: `fix(handler): skip group, broadcast, and WhatsApp Status messages` (5c56f6f)
+
+## DP Multi-Payment Task 1: Supabase Migration — DONE (2026-06-05)
+
+- Created `supabase/migrations/20260605000005_dp_payment.sql`
+  - Note: Used `000005` since `000004` was already taken by `calista_message_filter_fix.sql`
+- **Renamed** `payment_proof_url` → `full_proof_url` (existing data preserved)
+- **Added 6 new columns** to `orders` table:
+  - `payment_type text NOT NULL DEFAULT 'FULL'` — FULL or DP
+  - `dp_input_type text` — AMOUNT or PERCENTAGE (nullable)
+  - `dp_value numeric NOT NULL DEFAULT 0` — raw DP input value
+  - `dp_amount numeric NOT NULL DEFAULT 0` — computed DP amount in IDR
+  - `dp_proof_url text` — DP payment proof upload URL
+  - `rejection_reason text` — reason when admin rejects DP proof
+- **Added 2 CHECK constraints**: `chk_payment_type`, `chk_dp_input_type`
+- **Added 2 NOTIFY triggers**:
+  - `trg_dp_verified` → fires on status → `DP_VERIFIED`; sends `pg_notify('dp_verified', ...)`
+  - `trg_dp_proof_rejected` → fires on status → `DP_PROOF_REJECTED`; sends `pg_notify('dp_proof_rejected', ...)`
+- Verification: `SELECT column_name FROM information_schema.columns WHERE table_name='orders' AND column_name IN (...)` returned all 7 expected columns
+- Committed: `feat(migration): rename payment_proof_url→full_proof_url, add DP columns + NOTIFY triggers` (4e57954)
+
+## Calista Bug Fix Task 3: Update IncrementFollowup and ResetFollowupCounter SQL — DONE (2026-06-05)
+
+- Edited `backend-go/internal/db/followup.go`
+- **IncrementFollowup** function (lines 60-82):
+  - Added two new column updates to the existing CASE expression:
+    - `followup_sends_total = followup_sends_total + 1` — increments cumulative counter on every send
+    - `ai_active = CASE WHEN followup_sends_total + 1 >= 6 THEN false ELSE ai_active END` — auto-disables AI after 6 sends (3 days × 2/day) with no customer reply
+  - Updated docstring to document the auto-disable behavior
+- **ResetFollowupCounter** function (lines 84-96):
+  - Added `followup_sends_total = 0` to the SET clause alongside existing `followup_count_today = 0` and `last_followup_date = NULL`
+  - Resets cumulative counter when customer replies, so the 3-day auto-disable window restarts
+  - Updated docstring to document that cumulative counter resets
+- Build verification: `CGO_ENABLED=1 go build ./internal/db` — clean build (no errors)
+- Test verification: No test files in `internal/db` package; db tests covered by integration tests
+- Committed: `fix(followup): auto-disable ai_active after 6 follow-up sends (3 days no reply)` (9eac829)
