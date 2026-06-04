@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — CA-2: Data model — CartItem, Cart field, StateAddMore — DONE
+- Added `CartItem` struct (Product string, Quantity int, Specs string) in `backend-go/internal/models/types.go`
+- Added `Cart []CartItem` field to `CollectedData` struct
+- Added `StateAddMore ConversationState = "ADD_MORE"` constant after `StateConfirming` (not terminal)
+- `go test ./internal/...` passes (pre-existing `TestUploadPaymentProof_Success` failure unrelated)
+- Committed: `feat(models): add CartItem, Cart field in CollectedData, StateAddMore constant` (5d7c078)
+
+## 2026-06-05 — CA-1: Calista conversation reset (COMPLETED/CANCELLED → GREETING) — DONE
+- Inserted 9-line reset block in `backend-go/internal/whatsapp/handler.go` `processMessage` immediately before the `IsTerminal()` guard
+- COMPLETED and CANCELLED conversations are reset to GREETING on the next customer message so returning customers can reorder; ESCALATED states are untouched (admin is handling them)
+- `go test ./internal/...` passes (pre-existing `TestUploadPaymentProof_Success` PUT/POST failure in storage package is unrelated and pre-existing)
+- Committed: `fix(calista): reset COMPLETED/CANCELLED conv to GREETING on new message` (cb66240)
+
 ## 2026-06-05 — WH-8: App.tsx map stock_atas/stock_bawah from Supabase — DONE
 - Added `stock_atas: Number(item.stock_atas ?? item.stock)` and `stock_bawah: Number(item.stock_bawah ?? 0)` to both `StockItem` mapping locations in `src/App.tsx`
 - Covers: initial `useEffect` load on mount, and `handleStockRefresh` function
