@@ -608,4 +608,15 @@ export const adminUsersService = {
       .eq('id', id);
     if (error) throw error;
   },
+
+  async fetchByEmail(email: string): Promise<DbAdminUser | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  },
 };
