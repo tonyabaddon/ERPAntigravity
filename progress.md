@@ -1943,4 +1943,16 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Template download rows: added empty `harga_modal` placeholder column
   - CSV import parser: reads `row['harga_modal']` with `parseFloat`, passes to new item as `harga_modal`
 - TypeScript compile: zero errors in modified files (pre-existing errors in SalesInboxScreen.tsx and Deno edge functions are unrelated)
-- Committed: `feat(stock): add harga_modal column, edit field, and CSV support` (f9db6b1)
+- Committed: `feat(stock): add harga modal column, edit field, and CSV support` (f9db6b1)
+
+## Task 6: Wire Kasir into navigation — DONE (2026-06-04)
+
+- **`src/components/Sidebar.tsx`**:
+  - Added `Receipt` to lucide-react imports (line 22)
+  - Added kasir nav item to `menuItems` array after ai-stock entry: `{ id: 'kasir', label: 'Kasir', icon: Receipt, description: 'Rekonsiliasi Harian', permKey: 'kasir' }` (line 44)
+- **`src/App.tsx`**:
+  - Added `import KasirScreen from './components/KasirScreen'` after PembelianScreen import (line 36)
+  - Added routing case in `renderPage()` switch: `case 'kasir': return <KasirScreen currentUser={currentUser} showToast={triggerToast} />` (lines 288-293)
+- **Types already in place**: `kasir: boolean` in `PermissionSet` interface and `ALL_PERMISSIONS` (src/types.ts lines 19, 35), and `| 'kasir'` in `ActivePage` type (line 319)
+- TypeScript check: expected error `Cannot find module './components/KasirScreen'` (will resolve when Task 8 creates the file); no other errors introduced
+- Committed: `feat(nav): add Kasir to sidebar and app router` (852eefc)
