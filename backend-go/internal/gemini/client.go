@@ -3,6 +3,7 @@ package gemini
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
@@ -29,6 +30,9 @@ func NewClient(ctx context.Context, apiKey, systemPrompt string) (*Client, error
 
 // GenerateReply sends a prompt to Gemini and returns the raw JSON string response.
 func (c *Client) GenerateReply(ctx context.Context, fullPrompt string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	resp, err := c.model.GenerateContent(ctx, genai.Text(fullPrompt))
 	if err != nil {
 		return "", fmt.Errorf("gemini: generate: %w", err)
