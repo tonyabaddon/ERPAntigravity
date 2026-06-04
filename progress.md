@@ -2076,3 +2076,14 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Seed INSERT: bootstraps all SKUs with `stock > 0` using current `harga_modal` as `unit_cost`; `received_at` set 10 years in the past so seed lots are consumed first in FIFO order
 - Applied via Supabase MCP; verification query returned `lot_count: 8` (8 SKUs with stock > 0 seeded)
 - Committed: `feat(db): add stock_lots table for FIFO cost accounting, seed from existing stocks`
+
+## FIFO Task 2: FIFO RPCs — update receive_purchase_order + receive_replacement, add deduct_stock_fifo — DONE (2026-06-05)
+
+- Created `supabase/migrations/20260604000015_fifo_rpcs.sql`
+- Pre-flight verified: existing `receive_purchase_order` and `receive_replacement` signatures matched exactly — no DROP required before `CREATE OR REPLACE`; `stock_lots` columns confirmed correct
+- **`receive_purchase_order`**: updated RPC now also `INSERT INTO stock_lots` for each received SKU (`qty_received > 0`), recording the lot's `unit_cost`, `qty_received`, `qty_remaining`, and `received_at` atomically within the same transaction
+- **`receive_replacement`**: updated RPC now also `INSERT INTO stock_lots` for replacement units (using the item's `unit_cost` and parent `po_id`)
+- **`deduct_stock_fifo`**: new RPC — iterates lots for a SKU ordered by `received_at ASC` (oldest first), deducts `qty_remaining` from each lot, accumulates total COGS; falls back to `stocks.harga_modal` with a WARNING if lots run out before qty is satisfied; returns `numeric` total cost
+- Applied migration via Supabase MCP — success
+- Smoke test: called `deduct_stock_fifo('SKU-WR-05', 1)` → returned `0` (matching `unit_cost = 0` for that lot); verified `qty_remaining` decremented from `8` to `7` on the actual lot row; restored to `8`
+- Committed: `feat(db): FIFO RPCs — stock_lots on receive_purchase_order + receive_replacement, add deduct_stock_fifo`
