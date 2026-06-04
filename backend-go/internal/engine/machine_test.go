@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -11,6 +12,12 @@ type mockGemini struct{ response string }
 
 func (m *mockGemini) GenerateReply(_ context.Context, _ string) (string, error) {
 	return m.response, nil
+}
+
+type mockGeminiError struct{ err error }
+
+func (m *mockGeminiError) GenerateReply(_ context.Context, _ string) (string, error) {
+	return "", m.err
 }
 
 func newTestMachine(response string) *Machine {
@@ -111,5 +118,20 @@ func TestProcessBookedStateReturnsEmptyReply(t *testing.T) {
 	}
 	if result.NextState != models.StateBooked {
 		t.Errorf("BOOKED state should remain BOOKED, got %s", result.NextState)
+	}
+}
+
+func TestProcessGeminiError_SetsGeminiErrorField(t *testing.T) {
+	m := &Machine{gemini: &mockGeminiError{err: fmt.Errorf("context deadline exceeded")}}
+	conv := &models.Conversation{State: models.StateGreeting, Language: "id"}
+	result, err := m.Process(context.Background(), conv, "halo", nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.GeminiError == nil {
+		t.Error("expected GeminiError to be set when Gemini call fails")
+	}
+	if result.Reply == "" {
+		t.Error("expected fallback reply to still be populated")
 	}
 }

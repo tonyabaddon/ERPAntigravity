@@ -31,6 +31,7 @@ type ProcessResult struct {
 	Language           string
 	CreateOrder        bool
 	DeliveryType       models.DeliveryType
+	GeminiError        error
 }
 
 // Process runs the state machine for one incoming customer message.
@@ -49,6 +50,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	if err != nil {
 		log.Printf("[ENGINE] Gemini error in state %s: %v", conv.State, err)
 		result.Reply = FallbackReply(conv.Language)
+		result.GeminiError = err
 		return result, nil
 	}
 
