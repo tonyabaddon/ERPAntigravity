@@ -2241,3 +2241,47 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - `KasirScreen.tsx handleSave`: removed expensive `fetchTransactions` prefetch (was only used for counter); now calls `nextInvoiceNumber` directly
 - Invoice numbers are now unique and sequential even across simultaneous saves and page refreshes
 - Committed: feat(db), feat(kasir), fix(kasir)
+
+## WH-1: SQL migration — warehouse columns, trigger, RPCs — DONE (2026-06-05)
+
+- Created `supabase/migrations/20260605000002_warehouse_columns.sql`
+- Added `stock_atas INTEGER NOT NULL DEFAULT 0` and `stock_bawah INTEGER NOT NULL DEFAULT 0` columns to `stocks` table
+- Migrated all existing stock to `stock_atas` (Gudang Atas) via `UPDATE stocks SET stock_atas = stock WHERE stock > 0`
+- Created `sync_stock_total()` trigger function + `trg_sync_stock_total` BEFORE INSERT OR UPDATE trigger — keeps `stock = stock_atas + stock_bawah` automatically; direct updates to `stock` are overridden
+- Created `decrement_stock(p_sku, p_qty, p_warehouse DEFAULT 'atas')` RPC (SECURITY DEFINER) — decrements correct warehouse column using `GREATEST(0, col - p_qty)` guard
+- Created `transfer_warehouse(p_sku, p_from, p_to, p_qty)` RPC — atomically moves qty between warehouses using `FOR UPDATE` row-level lock; raises exception if source stock insufficient
+- Updated `receive_purchase_order(...)` via CREATE OR REPLACE — added `p_warehouse text DEFAULT 'atas'` parameter; stock increments now go to correct `stock_atas` or `stock_bawah` column
+- Migration applied via Supabase MCP to project `ekhhojaezdfjfwuxyjkl` (success)
+- Verification confirmed: 2 columns, 4 routines (decrement_stock, receive_purchase_order ×2 overloads, sync_stock_total, transfer_warehouse), 1 trigger all present
+- Smoke test passed:
+  - Existing stock correctly migrated: `stock_atas = stock`, `stock_bawah = 0` for all rows
+  - Trigger test: `UPDATE stocks SET stock_bawah = 5 WHERE sku = 'SKU-WR-05'` → `stock = 13 (8+5)` ✓
+  - Revert: `stock_bawah = 0` → `stock = 8 (8+0)` ✓
+- Committed: `feat(db): add warehouse stock columns, trigger, and RPCs` (090848a)
+
+## WH-2: TypeScript type changes — stock_atas/stock_bawah — DONE (2026-06-05)
+
+- Updated `src/lib/supabaseClient.ts` — `SupabaseStockItem` interface (line 19):
+  - Added required fields: `stock_atas: number` and `stock_bawah: number` (after `stock: number`)
+  - These reflect the DB columns that `fetchStocks()` and `fetchAll()` now return from the warehouse-enabled `stocks` table
+- Updated `src/types.ts` — `StockItem` interface (line 83):
+  - Added optional fields: `stock_atas?: number` and `stock_bawah?: number` (after `stock: number`)
+  - Optional to maintain backward compatibility with frontend components that haven't been updated yet; components unaware of warehouse fields will not error
+- Build check: `npm run build` — 2395 modules transformed, zero TypeScript errors, built in 3.74s
+
+## Calista Bug Fix Task 1: DB migration — followup_sends_total + @lid cleanup — DONE (2026-06-05)
+
+- Created `supabase/migrations/20260605000004_calista_message_filter_fix.sql`
+  - Note: filename uses 000004 (not 000002 as originally spec'd) because 000002 and 000003 were already taken by warehouse_columns and kasir_counters migrations
+- Added `followup_sends_total INT NOT NULL DEFAULT 0` column to `conversations` table via `ADD COLUMN IF NOT EXISTS`
+  - Tracks cumulative follow-ups since last customer reply; when it reaches 6 (3 days × 2/day), `ai_active` is set false by `IncrementFollowup`; resets to 0 on customer reply via `ResetFollowupCounter`
+- Cancelled stale `@lid` conversations (no customer messages): set `state = 'CANCELLED'`, `ai_active = false` for all `@lid`-format phone numbers with no `sender = 'customer'` messages in the `messages` table
+  - These were created by group/WA Status event noise (the original bug), not real customers
+  - @lid conversations WITH customer messages are left untouched (legitimate LID accounts)
+- Migration applied via Supabase MCP to project `ekhhojaezdfjfwuxyjkl` (success)
+- Verification confirmed:
+  - `followup_sends_total` column: `data_type = integer`, `column_default = 0` ✓
+  - 4 stale `@lid` rows → `CANCELLED / ai_active = false` ✓
+  - 4 legitimate `@lid` rows with real customer activity unchanged (`COMPLETED`, `ESCALATED_ADMIN`) ✓
+- Committed: `fix(db): add followup_sends_total column and cancel stale @lid conversations` (f9810e1)
+- Committed: `feat(types): add stock_atas/stock_bawah to SupabaseStockItem and StockItem` (e7fe1f1)
