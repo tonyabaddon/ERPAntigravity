@@ -1791,3 +1791,48 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Modal placeholder for Tasks 8–11 (PurchaseOrderModal) shown when `showCreateModal || editPo`
 - `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
 - Committed: `feat(ui): add PO list tab with status badges and action buttons` (3b50f74)
+
+## Pembelian Module — Task 8: PurchaseOrderModal — DONE (2026-06-04)
+
+- Created `src/components/pembelian/PurchaseOrderModal.tsx` (211 lines)
+  - Props: `po?: DbPurchaseOrder`, `suppliers: DbSupplier[]`, `stockList: StockItem[]`, `onClose`, `onSaved`, `showToast`
+  - State: `supplierId`, `notes`, `taxEnabled`, `taxRate` (default 11%), `items: PoItemDraft[]`, `skuSearch`, `saving`
+  - **SKU search**: typeahead filter on `stockList` by SKU or name; shows up to 6 suggestions in dropdown; clicking adds line item with qty=1, unit_cost=0
+  - **Line items table**: 12-column grid with editable qty and unit_cost inputs; subtotal auto-computed on change; Trash2 delete per row; empty state message
+  - **Totals footer**: subtotal, optional PPN (toggle checkbox + editable % input, defaults to 11%), total
+  - **Edit mode**: pre-populates all fields from `po.items`, `po.tax_rate`, `po.supplier_id`, `po.notes`
+  - **Validation**: supplier required, at least one item, qty > 0 and unit_cost > 0
+  - **Save paths**: "Simpan Draft" (status=DRAFT) and "Simpan & Pesan" (status=ORDERED)
+  - **Update path**: calls `purchaseOrderService.update()` + `markOrdered()` if upgrading DRAFT→ORDERED
+  - **Sticky header + footer**: modal scrolls body content while header title/close and footer buttons remain fixed
+  - Supplier payment term hint shown below dropdown when supplier is selected
+- Updated `src/components/PembelianScreen.tsx`:
+  - Added `import PurchaseOrderModal from './pembelian/PurchaseOrderModal'` after SupplierModal import
+  - Replaced Task 8 placeholder div with `<PurchaseOrderModal po={editPo ?? undefined} suppliers={suppliers} stockList={stockList} onClose={...} onSaved={onRefresh} showToast={showToast} />`
+- `StockItem` confirmed to have `sku`, `name`, and `price` fields (src/types.ts line 81–89)
+- `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
+
+## Kasir Task 1: DB — harga_modal column on stocks — DONE (2026-06-04)
+
+- Created `supabase/migrations/20260604000007_stocks_add_harga_modal.sql`
+- SQL: `ALTER TABLE public.stocks ADD COLUMN IF NOT EXISTS harga_modal NUMERIC(15,2);`
+- Applied via Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` (ERP MSME AI Studio)
+- Verified: `information_schema.columns` returns `{column_name: harga_modal, data_type: numeric, is_nullable: YES}`
+- Committed: `feat(db): add harga_modal column to stocks for HPP tracking` (SHA: 6fb1a81)
+- Committed: `feat(ui): add PurchaseOrderModal with SKU search, line items, and optional PPN` (aebfee5)
+
+## Pembelian Module — Task 10: PoDetailView — DONE (2026-06-04)
+
+- Created `src/components/pembelian/PoDetailView.tsx`
+  - Modal overlay displaying full PO detail with print support
+  - Line items table with Harga Beli, Harga Jual (from stockList), and Margin % columns
+  - PO meta: Tanggal Pesan, Tanggal Terima, Jatuh Tempo
+  - Subtotal / PPN / Total summary rows (PPN row hidden when tax_rate = 0)
+  - Barang Rusak section: shows damaged items with qty, notes, damage_status dropdown; calls `purchaseOrderService.updateDamageStatus`; "Terima Pengganti" button when status = RETURNED
+  - Invoice / payment proof links (hidden in print)
+  - Print header block visible only during `window.print()`
+- Updated `src/components/PembelianScreen.tsx`
+  - Added `import PoDetailView from './pembelian/PoDetailView'`
+  - Added `<PoDetailView>` block after `<ReceiveGoodsModal>`, wired to `detailPo`, `setDetailPo`, `setReplaceItem`
+- `tsc --noEmit`: no new errors introduced; all remaining errors are pre-existing
+- Committed: `feat(ui): add PoDetailView with margin visibility and Barang Rusak damage tracking` (df6a4cd)
