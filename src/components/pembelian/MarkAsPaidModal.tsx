@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { DbPurchaseOrder } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
+import { kasirService } from '../../lib/supabaseClient';
 
 interface MarkAsPaidModalProps {
   po: DbPurchaseOrder;
@@ -26,6 +27,16 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
         proofUrl = await purchaseOrderService.uploadDocument(proofFile, `payment-proofs/${po.id}`);
       }
       await purchaseOrderService.markPaid(po.id, proofUrl);
+      try {
+        await kasirService.insertExpense({
+          date: new Date().toISOString().slice(0, 10),
+          expense_category: 'Pembelian Stok',
+          description: `Pembayaran PO ${po.po_number} — ${po.supplier?.name ?? ''}`.trim(),
+          subtotal: po.total,
+        });
+      } catch {
+        // expense logging is best-effort; PO is already marked paid
+      }
       showToast(`${po.po_number} ditandai Lunas.`, 'success');
       onPaid();
       onClose();
