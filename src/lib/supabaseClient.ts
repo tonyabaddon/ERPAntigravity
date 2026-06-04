@@ -504,6 +504,17 @@ export const customersService = {
     }));
   },
 
+  async createCustomer(waNumber: string, name: string, company: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('customers')
+      .upsert(
+        { id: crypto.randomUUID(), wa_number: waNumber, name, company },
+        { onConflict: 'wa_number', ignoreDuplicates: true }
+      );
+    if (error) throw error;
+  },
+
   async updateNameCompany(id: string, name: string, company: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase

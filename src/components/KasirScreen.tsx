@@ -8,7 +8,7 @@ import {
   KasirItem, NewSaleTransaction, DailySummary, PermissionSet, DbOrder
 } from '../types';
 import {
-  kasirService, stockService, customersService, isSupabaseConfigured
+  kasirService, stockService, customersService, isSupabaseConfigured,
 } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import type { DbCustomerWithStats } from '../types';
@@ -558,6 +558,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
   const [customerCompany, setCustomerCompany] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDrop, setShowCustomerDrop] = useState(false);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<KasirPaymentMethod>('cash');
   const [items, setItems] = useState<(KasirItem & { _key: number })[]>([]);
   const [search, setSearch] = useState('');
@@ -630,6 +631,19 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
 
       const saved = await kasirService.insertSaleTransaction(newTx);
 
+      // Auto-save new customer if name + phone filled and not selected from existing list
+      if (customerName.trim() && customerPhone.trim() && !selectedCustomerId) {
+        try {
+          await customersService.createCustomer(
+            customerPhone.trim(),
+            customerName.trim(),
+            customerCompany.trim()
+          );
+        } catch {
+          showToast('Transaksi disimpan, tapi gagal simpan data pelanggan.', 'warning');
+        }
+      }
+
       for (const item of items) {
         try {
           await stockService.decrementStock(item.sku, item.qty);
@@ -674,7 +688,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <input
                 value={customerSearch}
-                onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDrop(true); }}
+                onChange={e => { setCustomerSearch(e.target.value); setShowCustomerDrop(true); setSelectedCustomerId(null); }}
                 onFocus={() => setShowCustomerDrop(true)}
                 placeholder="Cari pelanggan tersimpan..."
                 className="w-full bg-slate-50 rounded-xl pl-9 pr-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
@@ -690,6 +704,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
                         setCustomerName(c.name);
                         setCustomerPhone(c.wa_number ?? '');
                         setCustomerCompany(c.company ?? '');
+                        setSelectedCustomerId(c.id);
                         setCustomerSearch('');
                         setShowCustomerDrop(false);
                       }}
@@ -704,7 +719,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
             {/* Manual fields */}
             <input
               value={customerName}
-              onChange={e => setCustomerName(e.target.value)}
+              onChange={e => { setCustomerName(e.target.value); setSelectedCustomerId(null); }}
               placeholder="Nama customer..."
               className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] mb-1.5"
             />
@@ -722,6 +737,13 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
                 className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
               />
             </div>
+            {customerName.trim() && !selectedCustomerId && (
+              <p className="text-[10px] mt-1.5 pl-1 font-semibold text-emerald-600">
+                {customerPhone.trim()
+                  ? '✓ Pelanggan baru akan otomatis disimpan ke menu Pelanggan'
+                  : '💡 Isi No. HP untuk otomatis simpan ke menu Pelanggan'}
+              </p>
+            )}
           </div>
 
           {/* Item search */}
