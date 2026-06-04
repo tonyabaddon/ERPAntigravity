@@ -33,6 +33,7 @@ import OrderHistoryScreen from './components/OrderHistoryScreen';
 import PelangganScreen from './components/PelangganScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
+import KasirScreen from './components/KasirScreen';
 
 import {
   INITIAL_STOCK,
@@ -282,6 +283,13 @@ export default function App() {
         return (
           <PembelianScreen
             stockList={stockList}
+            showToast={triggerToast}
+          />
+        );
+      case 'kasir':
+        return (
+          <KasirScreen
+            currentUser={currentUser}
             showToast={triggerToast}
           />
         );
