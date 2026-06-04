@@ -1991,6 +1991,15 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **Files fixed**: `SupplierModal.tsx`, `MarkAsPaidModal.tsx`, `PoDetailView.tsx`, `ReceiveReplacementModal.tsx`, `PembelianScreen.tsx` (3 catch blocks)
 - **Fix**: Changed to `} catch (e: any) {` with `console.error(...)` and `showToast(e?.message ?? '...', 'warning')` so the actual error appears both in the toast and browser console
 
+## Pembelian: Stock Refresh + Kasir Expense Error Surface — DONE (2026-06-04)
+
+- **Problem 1**: Stock count in StockManagerScreen didn't update after "Terima Barang" in PO module — `App.tsx` loads `stockList` once at startup and never refreshes it after a PO receive
+- **Fix 1**: Added `handleStockRefresh()` to `App.tsx` that re-fetches `supabaseService.fetchStocks()` and updates `stockList` state. Passed as `onStockRefresh` prop to `PembelianScreen` → `OrdersTab` → fires after `ReceiveGoodsModal.onReceived`
+- **Problem 2**: Kasir expense not appearing after PO payment — `MarkAsPaidModal.tsx` had a bare `} catch {}` silently swallowing the `kasirService.insertExpense()` error
+- **Fix 2**: Changed bare catch to `} catch (expenseErr: any) { console.error(...); showToast(..., 'warning') }` so the actual error is visible
+- **Files changed**: `src/App.tsx`, `src/components/PembelianScreen.tsx`, `src/components/pembelian/MarkAsPaidModal.tsx`
+- **DB verified**: `kasir_transactions` has correct `authenticated_kasir_all` RLS policy; direct SQL insert works; all 29 migrations applied cleanly
+
 ## KasirScreen KPI Grid Layout Fix — DONE (2026-06-04)
 
 - **Problem**: KPI strip grid had `grid-cols-3` for non-owner users but renders 4 KpiCards (Pemasukan, Pengeluaran, Item Terjual, Laba Bersih locked), causing the 4th card to wrap to a second row
@@ -1999,3 +2008,29 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - **File**: `src/components/KasirScreen.tsx` line 235
 - **TypeScript check**: zero errors; `npx tsc --noEmit` passes cleanly
 - **Committed**: `fix(kasir): fix KPI grid layout for non-owner view (grid-cols-4)` (746851a)
+
+## Task 1: Add stockService.bulkUpsert to supabaseClient.ts — DONE (2026-06-04)
+
+- **Objective**: Implement bulk upsert method for CSV stock import (foundation for Task 2 StockManagerScreen)
+- **Implementation**:
+  - Added `bulkUpsert(items: SupabaseStockItem[]): Promise<void>` method to `stockService` in `src/lib/supabaseClient.ts` (after `fetchAll`, line 684)
+  - Maps each item to DB columns: sku, name, category, price, stock, status, specs, harga_modal (null-coalesced), updated_at (ISO timestamp)
+  - Upserts with `onConflict: 'sku'` strategy (replaces entire row if SKU exists)
+  - Throws error if Supabase not configured or DB call fails
+- **Build verification**: `npm run build` — ✓ built in 1.91s, no TypeScript errors (chunk warning is acceptable)
+- **File modified**: `src/lib/supabaseClient.ts` (added 21 lines)
+- **Committed**: `feat(stock): add stockService.bulkUpsert for CSV import` (59d5cb0)
+
+## Task 2: Update StockManagerScreen — template, export, import logic, UI — DONE (2026-06-04)
+
+- **Objective**: Upgrade StockManagerScreen CSV workflow with upsert-on-import, Export Stok button, and updated template format
+- **Step 1** — Updated import: added `stockService` and `SupabaseStockItem` from `../lib/supabaseClient`
+- **Step 2** — `CSV_HEADER` now starts with `sku,nama` before `kategori,harga,harga_modal,stok,...spec cols`
+- **Step 3** — `handleDownloadTemplate` sample rows updated to have two empty leading columns for `sku`/`nama`
+- **Step 4** — Added `handleExportStock` function: exports all `stockList` items to `Stok_Sinar_Elektrik.csv` using updated header; warns if list is empty
+- **Step 5** — Rewrote `parseAndUploadCSV` as `async`: two-level match (SKU first, then case-insensitive name fallback); updates existing items in place, adds new ones; calls `stockService.bulkUpsert(changedItems)` when Supabase is configured; reports added/updated counts
+- **Step 6** — Changed `parseAndUploadCSV(text)` call site to `void parseAndUploadCSV(text)` to handle async properly
+- **Step 7** — UI grid changed from `md:grid-cols-2` to `md:grid-cols-3`; download template card relabelled; new violet Export Stok card added between template and upload cards
+- **Build verification**: `npm run build` — ✓ built in 3.11s, no TypeScript errors
+- **File modified**: `src/components/StockManagerScreen.tsx` (+113/-20 lines)
+- **Committed**: `feat(stock): CSV upsert — add/update by SKU or name, Export Stok button, Supabase persist` (b9e86dc)
