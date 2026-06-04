@@ -68,3 +68,33 @@ func TestUploadPaymentProof_DefaultContentType(t *testing.T) {
 		t.Fatalf("expected no error with empty content type, got: %v", err)
 	}
 }
+
+func TestUploadPaymentProof_PDFGetsSuffix(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	url, err := UploadPaymentProof(context.Background(), srv.URL, "key", "order-pdf", []byte("pdf-bytes"), "application/pdf")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if !strings.HasSuffix(url, ".pdf") {
+		t.Errorf("expected URL to end in .pdf for PDF uploads, got: %s", url)
+	}
+}
+
+func TestUploadPaymentProof_ImageNoSuffix(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	url, err := UploadPaymentProof(context.Background(), srv.URL, "key", "order-img", []byte("img-bytes"), "image/jpeg")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if strings.HasSuffix(url, ".pdf") {
+		t.Errorf("image URL should not have .pdf suffix, got: %s", url)
+	}
+}
