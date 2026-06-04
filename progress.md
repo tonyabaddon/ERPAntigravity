@@ -1617,3 +1617,26 @@ All three changes were already applied in a prior session (commit e6fb1b7):
 - **`backend-go/internal/engine/prompts.go`**: `StockContextString` already formats spec key-value pairs as `[k=v, ...]` suffix on each stock line
 
 Verified: `go build ./...` — clean (no output). `go test ./...` — all pass (internal/engine, internal/rules, internal/scheduler, internal/storage; internal/db has no test files). Commit SHA: e6fb1b7.
+
+## Task 2: Expose GeminiError on ProcessResult — DONE (2026-06-04)
+
+TDD implementation in `backend-go/internal/engine/`:
+
+- **`machine_test.go`**: Added `"fmt"` to imports; added `mockGeminiError` struct (implements `GeminiClient`, always returns an error); added `TestProcessGeminiError_SetsGeminiErrorField` test — confirmed failing before implementation (build error: `result.GeminiError undefined`)
+- **`machine.go`**: Added `GeminiError error` field to `ProcessResult` struct; added `result.GeminiError = err` in the Gemini error handler (alongside existing fallback reply assignment)
+
+All 23 engine tests pass including the new test. Committed: `feat(engine): expose GeminiError on ProcessResult for retry detection` (be897f3)
+
+## Task 3: Create RetryProcess in engine/retry.go — DONE (2026-06-04)
+
+TDD implementation in `backend-go/internal/engine/`:
+
+- **`retry_test.go`**: Created with 4 tests:
+  - `TestRetryProcess_SuccessFirstAttempt` — verifies success path; onFirstFail not called
+  - `TestRetryProcess_SuccessOnRetry` — uses `mockGeminiSequence` (fails first 3 calls); verifies success on attempt 4 and exactly 4 Gemini calls
+  - `TestRetryProcess_AllFail` — verifies GeminiError set and onFirstFail called exactly once when all 10 attempts fail
+  - `TestRetryProcess_OnFirstFailCalledOnce` — verifies onFirstFail fires exactly once even with all 5 attempts failing
+  - Confirmed failing before implementation: `undefined: RetryProcess`
+- **`retry.go`**: Created with `RetryProcess` function — loops up to `maxAttempts` times, calls `machine.Process`, returns immediately on success, calls `onFirstFail()` on first failure (exactly once), returns last failed result after exhausting attempts.
+
+All 27 engine tests pass including all 4 `TestRetryProcess_*` tests. Committed: `feat(engine): add RetryProcess with 10-attempt retry loop and onFirstFail callback` (ffece3f)
