@@ -1898,6 +1898,24 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 
 - Committed: `fix: make receiveGoods atomic and fix damage_status NONE in select` (ce83e0c)
 
+## Kasir Task 4: kasirService + stockService extensions — DONE (2026-06-04)
+
+- **File**: `src/lib/supabaseClient.ts`
+- Added `KasirTransaction`, `DailySummary`, `NewSaleTransaction`, `NewExpense` to the existing `import type` from `../types` (line 7)
+- Added `export const stockService` (after `adminUsersService`):
+  - `updateHargaModal(sku, hargaModal)` — updates `harga_modal` on stocks table
+  - `decrementStock(sku, qty)` — tries `decrement_stock` RPC first; falls back to read+write with `Math.max(0, ...)`
+  - `fetchAll()` — fetches all stocks ordered by name, returns `SupabaseStockItem[]`
+- Added `export const kasirService` (after `stockService`):
+  - `fetchTransactions(date)` — queries `kasir_transactions` filtered by date
+  - `fetchWaOrdersForDate(date)` — queries `orders` with `PAYMENT_VERIFIED` status within UTC date range
+  - `computeDailySummary(transactions, waOrders, stockMap)` — pure function computing income/expense/HPP/laba totals and per-channel breakdown
+  - `insertSaleTransaction(tx)` — inserts income record, returns full `KasirTransaction`
+  - `insertExpense(tx)` — inserts expense record, returns full `KasirTransaction`
+  - `generateInvoiceNumber(channel, counter)` — generates `WLK/TPD/GRS-YYYYMMDD-NNN` format invoice number
+- TypeScript compile: zero errors in `supabaseClient.ts` (pre-existing errors in SalesInboxScreen.tsx and Deno edge functions are unrelated)
+- Committed: `feat(service): add kasirService and stockService with HPP and decrement support` (061457a)
+
 ## UserManagement Permission Labels Fix — DONE (2026-06-04)
 
 ### Bug: Missing `kasir` and `pembelian` in PERM_LABELS array
@@ -1910,3 +1928,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - Updated permission count display from `${activeCount}/11 aktif` to `${activeCount}/13 aktif` (line 364)
 - **Verification**: `npx tsc --noEmit` — zero TypeScript errors for UserManagementScreen
 - Committed: `fix(ui): add kasir and pembelian to UserManagement permission labels` (57f2cfd)
+
+## Task 5: StockManager — harga_modal column — DONE (2026-06-04)
+
+- **`src/types.ts`**: Added `harga_modal?: number | null` to `StockItem` interface
+- **`src/lib/supabaseClient.ts`**: Added `harga_modal: item.harga_modal ?? null` to `supabaseService.upsertStock` payload
+- **`src/components/StockManagerScreen.tsx`**:
+  - `editValues` state type extended with `harga_modal: number | null`
+  - `startEdit()` initializes `harga_modal: item.harga_modal ?? null` from item
+  - `saveEdit()` writes `harga_modal: vals.harga_modal ?? null` into the updated item
+  - Card view: shows "Modal: Rp X,XXX" below the Harga Jual input; amber dash with tooltip when unset
+  - Inline edit form: 3-column grid (Harga, Harga Modal HPP, Stok); HPP input is `type="number"` with null-coalescing
+  - `CSV_HEADER`: added `harga_modal` column after `harga`
+  - Template download rows: added empty `harga_modal` placeholder column
+  - CSV import parser: reads `row['harga_modal']` with `parseFloat`, passes to new item as `harga_modal`
+- TypeScript compile: zero errors in modified files (pre-existing errors in SalesInboxScreen.tsx and Deno edge functions are unrelated)
+- Committed: `feat(stock): add harga_modal column, edit field, and CSV support` (f9db6b1)
