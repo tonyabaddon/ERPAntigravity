@@ -608,7 +608,8 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
 
   async function handleSave(print: boolean) {
     if (items.length === 0) { showToast('Tambahkan minimal 1 item.', 'warning'); return; }
-    if (channel === 'grosir' && !customerName.trim()) { showToast('Nama customer wajib untuk Grosir.', 'warning'); return; }
+    if (!customerName.trim()) { showToast('Nama customer wajib diisi.', 'warning'); return; }
+    if (!customerPhone.trim()) { showToast('Nomor HP wajib diisi.', 'warning'); return; }
 
     setSaving(true);
     try {
@@ -681,7 +682,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
           {/* Customer autocomplete */}
           <div>
             <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">
-              Data Customer {channel === 'grosir' ? <span className="text-red-500">*</span> : '(opsional)'}
+              Data Customer
             </label>
             {/* Search from existing customers */}
             <div className="relative mb-2">
@@ -720,14 +721,14 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
             <input
               value={customerName}
               onChange={e => { setCustomerName(e.target.value); setSelectedCustomerId(null); }}
-              placeholder="Nama customer..."
+              placeholder="Nama customer *"
               className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] mb-1.5"
             />
             <div className="grid grid-cols-2 gap-1.5">
               <input
                 value={customerPhone}
                 onChange={e => setCustomerPhone(e.target.value)}
-                placeholder="No. HP / WA..."
+                placeholder="No. HP / WA *"
                 className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
               />
               <input
@@ -737,11 +738,9 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
                 className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
               />
             </div>
-            {customerName.trim() && !selectedCustomerId && (
+            {customerName.trim() && customerPhone.trim() && !selectedCustomerId && (
               <p className="text-[10px] mt-1.5 pl-1 font-semibold text-emerald-600">
-                {customerPhone.trim()
-                  ? '✓ Pelanggan baru akan otomatis disimpan ke menu Pelanggan'
-                  : '💡 Isi No. HP untuk otomatis simpan ke menu Pelanggan'}
+                ✓ Pelanggan baru akan otomatis disimpan ke menu Pelanggan
               </p>
             )}
           </div>
