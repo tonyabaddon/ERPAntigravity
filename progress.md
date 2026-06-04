@@ -2223,3 +2223,12 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Added `if (data == null) throw new Error('next_kasir_number returned null');` before `String(data)` to prevent silent `"null"` in invoice numbers
 - `npm run build` passes cleanly — no TypeScript errors
 - Committed: `fix(kasir): add null guard and use KasirChannel type in nextInvoiceNumber` (4340c73)
+
+## KC-3: Update KasirScreen — await nextInvoiceNumber, drop fetchTransactions prefetch — DONE (2026-06-05)
+
+- Modified `src/components/KasirScreen.tsx` in `handleSave` (SaleModal component)
+- Replaced 3 lines (fetchTransactions full-table scan, filter+count, sync generateInvoiceNumber) with single line:
+  `const invoiceNumber = await kasirService.nextInvoiceNumber(channel, selectedDate);`
+- `channel` and `selectedDate` already in scope; `handleSave` was already async
+- `npm run build` passes cleanly — ✓ built in 2.11s, zero TypeScript errors
+- Committed: `fix(kasir): use DB-backed invoice counter, drop expensive prefetch` (16b1ade)
