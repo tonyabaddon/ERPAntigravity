@@ -7,12 +7,12 @@ import React, { useState, useEffect } from 'react';
 import {
   UserPlus,
   Search,
-  ChevronLeft,
-  ChevronRight,
-  Settings,
-  UserCheck
+  ChevronDown,
+  Trash2,
+  UserCheck,
+  Crown,
 } from 'lucide-react';
-import { AdminUser, PermissionSet, DbAdminUser } from '../types';
+import { AdminUser, PermissionSet, DbAdminUser, ALL_PERMISSIONS } from '../types';
 import { adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
 
@@ -44,6 +44,26 @@ function adminUserToDb(u: AdminUser): Omit<DbAdminUser, 'created_at'> {
   };
 }
 
+function defaultPermissions(role: string): PermissionSet {
+  if (role === 'Owner') return { ...ALL_PERMISSIONS };
+  if (role === 'Supervisor Gudang') return {
+    dashboard: true, salesInbox: false, laporan: true, aiStock: true,
+    pipeline: false, pelanggan: false, orderHistory: false,
+    userManagement: false, whatsappAi: false, notifications: false, settings: false,
+  };
+  if (role === 'Staff Admin Toko') return {
+    dashboard: true, salesInbox: true, laporan: true, aiStock: false,
+    pipeline: true, pelanggan: true, orderHistory: true,
+    userManagement: false, whatsappAi: false, notifications: false, settings: false,
+  };
+  // Finance Manager
+  return {
+    dashboard: true, salesInbox: true, laporan: true, aiStock: false,
+    pipeline: true, pelanggan: true, orderHistory: true,
+    userManagement: false, whatsappAi: false, notifications: false, settings: false,
+  };
+}
+
 export default function UserManagementScreen({ showToast }: UserManagementScreenProps) {
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   const [loading, setLoading] = useState(true);
@@ -52,6 +72,21 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
   const [newWhatsapp, setNewWhatsapp] = useState('');
   const [newRole, setNewRole] = useState('Pilih Peran...');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const PERM_LABELS: { key: keyof PermissionSet; label: string }[] = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'salesInbox', label: 'Sales Inbox' },
+    { key: 'laporan', label: 'Laporan' },
+    { key: 'aiStock', label: 'AI Stock' },
+    { key: 'pipeline', label: 'Pipeline' },
+    { key: 'pelanggan', label: 'Pelanggan' },
+    { key: 'orderHistory', label: 'Riwayat Pesanan' },
+    { key: 'userManagement', label: 'User Management' },
+    { key: 'whatsappAi', label: 'WhatsApp AI' },
+    { key: 'notifications', label: 'Notifikasi' },
+    { key: 'settings', label: 'Pengaturan' },
+  ];
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -114,12 +149,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
       email: newEmail,
       whatsapp: newWhatsapp,
       role: newRole,
-      permissions: {
-        dashboard: true,
-        sales: newRole === 'Staff Admin Toko',
-        stokAi: newRole === 'Supervisor Gudang',
-        konfig: false,
-      },
+      permissions: defaultPermissions(newRole),
       status: 'Aktif',
     };
 
@@ -241,6 +271,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
                 className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
               >
                 <option value="Pilih Peran...">Pilih Peran...</option>
+                <option value="Owner">Owner</option>
                 <option value="Supervisor Gudang">Supervisor Gudang</option>
                 <option value="Staff Admin Toko">Staff Admin Toko</option>
                 <option value="Finance Manager">Finance Manager</option>
@@ -257,7 +288,7 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
           </form>
         </section>
 
-        {/* RIGHT COLUMN: Permissions Table */}
+        {/* RIGHT COLUMN: Admin List with Expandable Permission Rows */}
         <section className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
@@ -266,7 +297,6 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
               </div>
               <h3 className="text-[#012749] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
             </div>
-
             <div className="bg-[#eff4ff] px-5 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
               <Search className="w-4 h-4 text-slate-400" />
               <input
@@ -279,90 +309,95 @@ export default function UserManagementScreen({ showToast }: UserManagementScreen
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[750px]">
-              <thead>
-                <tr className="text-gray-400 text-[10px] font-extrabold uppercase tracking-widest border-b border-[#eff4ff] pb-4 select-none">
-                  <th className="pb-4 font-extrabold px-3">Profil Admin</th>
-                  <th className="pb-4 font-extrabold px-3">Peran</th>
-                  <th className="pb-4 font-extrabold text-center px-2">Dashboard</th>
-                  <th className="pb-4 font-extrabold text-center px-2">Sales</th>
-                  <th className="pb-4 font-extrabold text-center px-2">Stok AI</th>
-                  <th className="pb-4 font-extrabold text-center px-2">Konfig</th>
-                  <th className="pb-4 font-extrabold text-center px-3">Status</th>
-                  <th className="pb-4 font-extrabold text-right px-3">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#eff4ff]">
-                {filteredAdmins.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-10 text-xs font-semibold text-slate-400">
-                      Tidak ditemukan record admin.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredAdmins.map((adm) => (
-                    <tr key={adm.id} className="group hover:bg-[#eff4ff]/30 transition-colors duration-200">
-                      <td className="py-5 px-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[#012749] font-black text-sm select-none">
-                            {adm.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-extrabold text-[#012749] text-sm leading-none">{adm.name}</p>
-                            <p className="text-[10px] font-semibold text-gray-400 mt-1">{adm.email}</p>
-                          </div>
+          <div className="space-y-3">
+            {filteredAdmins.length === 0 ? (
+              <p className="text-center py-10 text-xs font-semibold text-slate-400">
+                Tidak ditemukan record admin.
+              </p>
+            ) : (
+              filteredAdmins.map((adm) => {
+                const isOwner = adm.role === 'Owner';
+                const activeCount = Object.values(adm.permissions).filter(Boolean).length;
+                const isExpanded = expandedId === adm.id;
+                return (
+                  <div key={adm.id} className="border border-[#e5eeff] rounded-2xl overflow-hidden">
+                    {/* Collapsed row */}
+                    <div
+                      className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
+                      onClick={() => setExpandedId(isExpanded ? null : adm.id)}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[#012749] font-black text-sm select-none shrink-0">
+                        {adm.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-extrabold text-[#012749] text-sm leading-none truncate">{adm.name}</p>
+                          {isOwner && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                         </div>
-                      </td>
-                      <td className="py-5 px-3 text-xs font-bold text-[#43474e]">{adm.role}</td>
-
-                      {(['dashboard', 'sales', 'stokAi', 'konfig'] as (keyof PermissionSet)[]).map(key => (
-                        <td key={key} className="py-5 px-2 text-center text-slate-400">
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={adm.permissions[key]}
-                              onChange={() => handleTogglePermission(adm.id, key)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2d8a4e]" />
-                          </label>
-                        </td>
-                      ))}
-
-                      <td className="py-5 px-3 text-center">
-                        <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-150">
-                          {adm.status}
-                        </span>
-                      </td>
-
-                      <td className="py-5 px-1 text-right">
+                        <p className="text-[10px] font-semibold text-gray-400 mt-0.5 truncate">{adm.email}</p>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#43474e] hidden sm:block shrink-0">{adm.role}</span>
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full shrink-0 ${
+                        isOwner ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
+                      }`}>
+                        {isOwner ? 'Semua akses' : `${activeCount}/11 aktif`}
+                      </span>
+                      <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-100 shrink-0">
+                        {adm.status}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                         <button
-                          onClick={() => handleRemoveAdmin(adm.id)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer text-rose-400 hover:bg-rose-50 hover:text-rose-700"
+                          onClick={(e) => { e.stopPropagation(); handleRemoveAdmin(adm.id); }}
+                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer text-rose-400 hover:bg-rose-50 hover:text-rose-700"
                         >
-                          <Settings className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+
+                    {/* Expanded permission grid */}
+                    {isExpanded && (
+                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-5 py-5">
+                        {isOwner && (
+                          <p className="text-[10px] font-bold text-amber-600 mb-3 flex items-center gap-1.5">
+                            <Crown className="w-3 h-3" /> Owner memiliki akses penuh — hak akses tidak dapat diubah.
+                          </p>
+                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {PERM_LABELS.map(({ key, label }) => (
+                            <label
+                              key={key}
+                              className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-xl px-4 py-2.5 gap-3 ${
+                                isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
+                              }`}
+                            >
+                              <span className="text-[11px] font-bold text-[#43474e] truncate">{label}</span>
+                              <div className="relative inline-flex items-center shrink-0">
+                                <input
+                                  type="checkbox"
+                                  checked={adm.permissions[key] ?? false}
+                                  onChange={() => !isOwner && handleTogglePermission(adm.id, key)}
+                                  disabled={isOwner}
+                                  className="sr-only peer"
+                                />
+                                <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2d8a4e]" />
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-[#eff4ff] flex flex-col sm:flex-row justify-between items-center gap-4 select-none">
+          <div className="mt-6 pt-6 border-t border-[#eff4ff] flex justify-between items-center select-none">
             <p className="text-xs text-gray-500 font-semibold">
               Menampilkan {filteredAdmins.length} dari total {admins.length} Admin pengurus.
             </p>
-            <div className="flex gap-1.5">
-              <button disabled className="w-8 h-8 rounded-full bg-[#eff4ff] flex items-center justify-center opacity-50 cursor-not-allowed">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button disabled className="w-8 h-8 rounded-full bg-[#eff4ff] flex items-center justify-center opacity-50 cursor-not-allowed">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </section>
       </div>
