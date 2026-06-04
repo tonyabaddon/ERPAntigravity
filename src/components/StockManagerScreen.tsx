@@ -88,6 +88,7 @@ const CSV_SPEC_COLS = [
   'ketebalan_mm', 'finishing', 'kelengkapan',
   'mcb_merek', 'mcb_ampere', 'mcb_phase',
   'kabel_tipe', 'kabel_mm2', 'kabel_panjang',
+  'deskripsi',
 ];
 const CSV_HEADER = ['kategori', 'harga', 'stok', ...CSV_SPEC_COLS].join(',');
 
@@ -238,9 +239,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const handleDownloadTemplate = () => {
     const rows = [
       CSV_HEADER,
-      'Panel,850000,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,',
-      'MCB,45000,200,,,,,,,,,Schneider,16,1P,,,',
-      'Kabel,380000,50,,,,,,,,,,,,NYM,2.5,100m/Rol',
+      'Panel,850000,24,Besi,Indoor,60,40,20,1.5,RAL7032,Kosong,,,,,,,',
+      'MCB,45000,200,,,,,,,,,Schneider,16,1P,,,,',
+      'Kabel,380000,50,,,,,,,,,,,,NYM,2.5,100m/Rol,',
+      'Aksesori,25000,10,,,,,,,,,,,,,,,Klem Kabel 16mm',
     ];
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -250,6 +252,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     showToast('📥 Template CSV berhasil diunduh.');
   };
 
@@ -297,6 +300,11 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
           parseAndUploadCSV(text);
         }
       }, 150);
+    };
+    reader.onerror = () => {
+      setIsUploading(false);
+      setUploadProgress(null);
+      showToast('❌ Gagal membaca file. Coba lagi.', 'warning');
     };
     reader.readAsText(file);
   };
@@ -477,7 +485,15 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                   </label>
                   <select
                     value={newCategory}
-                    onChange={e => { setNewCategory(e.target.value); setNewSpecs({}); }}
+                    onChange={e => {
+                    const cat = e.target.value;
+                    setNewCategory(cat);
+                    const defaultSpecs: Record<string, string> = {};
+                    (CATEGORY_SPECS[cat] || []).forEach(f => {
+                      if (f.type === 'select' && f.options?.[0]) defaultSpecs[f.key] = f.options[0];
+                    });
+                    setNewSpecs(defaultSpecs);
+                  }}
                     className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                   >
                     <option value="Panel">Panel</option>
@@ -580,7 +596,8 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                         type="text"
                         value={new Intl.NumberFormat('id-ID').format(item.price)}
                         onChange={e => handleCellEdit(item.sku, 'price', e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#2d8a4e] text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right"
+                        disabled={isEditing}
+                        className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#2d8a4e] text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -590,7 +607,8 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                       type="text"
                       value={item.stock}
                       onChange={e => handleCellEdit(item.sku, 'stock', e.target.value)}
-                      className={`w-full px-3 py-2.5 bg-white rounded-xl focus:ring-1 text-center text-xs font-extrabold shadow-sm outline-none ${isWarning ? 'border-rose-400 focus:ring-rose-500 text-rose-600 border-2' : 'border-slate-200 focus:ring-[#2d8a4e] text-slate-800'}`}
+                      disabled={isEditing}
+                      className={`w-full px-3 py-2.5 bg-white rounded-xl focus:ring-1 text-center text-xs font-extrabold shadow-sm outline-none disabled:opacity-50 disabled:cursor-not-allowed ${isWarning ? 'border-rose-400 focus:ring-rose-500 text-rose-600 border-2' : 'border-slate-200 focus:ring-[#2d8a4e] text-slate-800'}`}
                     />
                     <span className="text-xs font-extrabold text-slate-400 shrink-0">Pcs</span>
                   </div>
@@ -671,7 +689,14 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
 
         {!showAddForm && (
           <button
-            onClick={() => setShowAddForm(true)}
+            onClick={() => {
+              const defaultSpecs: Record<string, string> = {};
+              (CATEGORY_SPECS[newCategory] || []).forEach(f => {
+                if (f.type === 'select' && f.options?.[0]) defaultSpecs[f.key] = f.options[0];
+              });
+              setNewSpecs(defaultSpecs);
+              setShowAddForm(true);
+            }}
             className="mt-6 w-full py-5 border-2 border-dashed border-slate-200 hover:border-[#1e3d60]/40 rounded-2xl text-xs font-black text-[#1e3d60] hover:bg-slate-50 transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <PlusCircle className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300 text-[#2d8a4e]" />
