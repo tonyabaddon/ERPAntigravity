@@ -1515,6 +1515,16 @@ Fixed three bugs that prevented customer payment proofs (images and PDFs) from b
 
 **Files changed**: `backend-go/internal/whatsapp/sender.go`, `backend-go/internal/whatsapp/handler.go`
 
+## Admin Roles & Permissions — Task 4: Wire AuthScreen — DONE (2026-06-04)
+
+**Changes to `src/components/AuthScreen.tsx`** (commit c08157e):
+- Added `adminUsersService` import from `../lib/supabaseClient` and `PermissionSet, ALL_PERMISSIONS` from `../types`
+- Widened `onLoginSuccess` prop type to include `permissions: PermissionSet`
+- `devBypass` now passes `permissions: ALL_PERMISSIONS` to `onLoginSuccess`
+- `handleSignInSubmit`: after successful OTP verify, calls `adminUsersService.fetchByEmail(signInEmail)` — blocks login with toast if email is not in `admin_users` table; derives `name`, `role`, and `permissions` from the DB row
+- `handleSignUpSubmit`: auto-creates Owner row in `admin_users` via `adminUsersService.upsert()` after sign-up; passes `permissions: ALL_PERMISSIONS` to `onLoginSuccess`
+- Build: `npm run build` — zero TypeScript errors (`✓ built in 33.26s`)
+
 ## Feature: Add real email field to UserManagementScreen — DONE (2026-06-04)
 
 **Reason**: OTP login requires a real email address; the form previously auto-generated fake `name@sinarelektrik.com` emails that could never receive OTP codes.
@@ -1524,3 +1534,37 @@ Fixed three bugs that prevented customer payment proofs (images and PDFs) from b
 - Updated validation: now checks `newEmail.trim()` before checking WhatsApp/role — shows toast if email is blank
 - Updated `newAdmin` object: replaced auto-generated `${prefix}@sinarelektrik.com` with `newEmail` (real user input)
 - Added `setNewEmail('')` to form reset block so field clears after successful submit
+
+## Laporan RLS Fix — DONE (2026-06-04)
+
+Added `authenticated` RLS policies on `orders`, `conversations`, and `messages` tables via Supabase migration `add_authenticated_policies_orders_conversations_messages`. After OTP login the Supabase JS client uses the `authenticated` role — without these policies all four `reportsService` queries silently returned empty arrays. LaporanScreen now shows real revenue, order count, AI rate, and top products.
+
+## Admin Roles & Permissions — Tasks 1–3, 5: Types, supabaseClient, App.tsx, Sidebar — DONE (2026-06-04)
+
+**Task 1** (commit a0f3f60): Expanded `PermissionSet` in `src/types.ts` from 4 keys to 11 (one per sidebar item: dashboard, salesInbox, laporan, aiStock, pipeline, pelanggan, orderHistory, userManagement, whatsappAi, notifications, settings). Added exported `ALL_PERMISSIONS` constant (all 11 true). Updated `INITIAL_ADMINS` in `src/initialData.ts` with sensible defaults per role. Build: zero TS errors.
+
+**Task 2** (commit 730145f): Added `adminUsersService.fetchByEmail(email)` to `src/lib/supabaseClient.ts`. Queries `admin_users` by email via `.maybeSingle()`, returns `DbAdminUser | null`, throws on error.
+
+**Task 3** (commit d5c73fa): Widened `currentUser` state in `src/App.tsx` to include `permissions: PermissionSet`. Imports `PermissionSet, ALL_PERMISSIONS` from `./types`. Session-restore `getSession` block now passes `permissions: ALL_PERMISSIONS`. `handleLoginSuccess` parameter type updated.
+
+**Task 5** (commit f5adbba): Updated `src/components/Sidebar.tsx`:
+- Added `permKey: keyof PermissionSet` to each of the 11 menu items
+- Added `visibleItems` filter: hides items where `currentUser.permissions[permKey] === false`
+- Renders `visibleItems.map` instead of `menuItems.map`
+- Added `useEffect` (dep: `currentUser?.permissions`) that redirects to `'dashboard'` if active page becomes hidden
+
+## Admin Roles & Permissions — Task 6: UserManagementScreen expandable rows + Owner role — DONE (2026-06-04)
+
+Full rewrite of the permissions section in `src/components/UserManagementScreen.tsx` (commit b2fec37):
+
+- **Imports**: Replaced `ChevronLeft`, `ChevronRight`, `Settings` with `ChevronDown`, `Trash2`, `Crown`; added `ALL_PERMISSIONS` to types import
+- **`defaultPermissions(role)`**: New helper function before the component; maps Owner → ALL_PERMISSIONS, Supervisor Gudang / Staff Admin Toko / Finance Manager → role-specific 11-key PermissionSet
+- **State**: Added `expandedId` state (accordion) and `PERM_LABELS` constant (11 key→label mappings for all PermissionSet keys)
+- **`handleCreateAdminSubmit`**: Replaced hardcoded 4-key permissions object with `defaultPermissions(newRole)` call
+- **Role dropdown**: Added `<option value="Owner">Owner</option>` as first real option
+- **Right column rewrite**: Replaced `<table>` with expandable card list:
+  - Each card shows avatar initial, name, email, role, active-permission count badge (`X/11 aktif` or `Semua akses` for Owner), status badge, ChevronDown (rotates on expand), Trash2 delete button
+  - Owner rows show Crown icon next to name
+  - Expanded panel: 2–3 column grid of toggle labels; Owner rows locked (`disabled`, `opacity-60`, `cursor-not-allowed`) with amber Crown warning message
+  - Permission toggles: `w-9 h-5` sliding toggle with `peer-checked:bg-[#2d8a4e]`
+- **Build**: `npm run build` — zero TypeScript errors (`✓ built in 1.75s`)
