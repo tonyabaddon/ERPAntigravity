@@ -141,7 +141,8 @@ func main() {
 	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
-		if waClient.WA.IsConnected() {
+		paired := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
+		if paired {
 			w.Write([]byte(`{"connected":true}`))
 		} else {
 			w.Write([]byte(`{"connected":false}`))
@@ -151,9 +152,12 @@ func main() {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
 		qr := waClient.GetQR()
-		connected := waClient.WA.IsConnected()
+		// connected = WebSocket open AND pairing complete (Store.ID set after scan).
+		// IsConnected() alone is true during QR phase before pairing, which would
+		// hide the QR code in the frontend.
+		connected := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
 		phone := ""
-		if connected && waClient.WA.Store.ID != nil {
+		if connected {
 			phone = waClient.WA.Store.ID.User
 		}
 		json.NewEncoder(w).Encode(map[string]interface{}{
