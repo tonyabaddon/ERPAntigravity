@@ -1640,3 +1640,60 @@ TDD implementation in `backend-go/internal/engine/`:
 - **`retry.go`**: Created with `RetryProcess` function — loops up to `maxAttempts` times, calls `machine.Process`, returns immediately on success, calls `onFirstFail()` on first failure (exactly once), returns last failed result after exhausting attempts.
 
 All 27 engine tests pass including all 4 `TestRetryProcess_*` tests. Committed: `feat(engine): add RetryProcess with 10-attempt retry loop and onFirstFail callback` (ffece3f)
+
+## Task 4: Wire RetryProcess into whatsapp/handler.go — DONE (2026-06-04)
+
+- Modified `backend-go/internal/whatsapp/handler.go`
+- Replaced single `h.machine.Process(ctx, ...)` call (lines ~151-156) with `engine.RetryProcess` block
+- Holding message sent to customer on first failure (bilingual: Indonesian default, English for `conv.Language == "en"`)
+- On total exhaustion (all 10 retries fail, `result.GeminiError != nil`):
+  - Logs failure with senderPhone and error
+  - Inserts ESCALATED system message into conversation
+  - Updates conversation state to `StateEscalatedAdmin`
+  - Fetches active admin recipients via `h.db.GetActiveRecipients()`
+  - Sends WhatsApp escalation notification to each recipient with customer phone, message text, and retry count
+  - Returns early (no further reply processing)
+- All downstream code (state updates, booking, reply sending) unchanged — still uses `result` from the same var name
+- `go build ./...` — no errors
+- `go test ./...` — all 27 tests pass
+- Committed: `feat(handler): replace single Gemini call with 10-retry loop, holding message, and admin escalation` (18d5899)
+
+## Task 5: Trim developer sections from calista_system_prompt.txt — DONE (2026-06-04)
+
+- Removed 7 blocks from `backend-go/internal/assets/calista_system_prompt.txt` (49 lines total)
+- Removed: `PETUNJUK PENGGUNAAN DI CLAUDE CODE / INTELLIJ` header (6 lines)
+- Removed 5 `CATATAN UNTUK DEVELOPER` blocks covering: nego price DB columns, scheduled job specs, table schema definitions (customers/leads/orders), webhook payment logic, and ai_active session flag notes
+- File: 1152 lines → 1103 lines (49 lines removed, ~4% reduction)
+- All 6 behavioral sections confirmed present: FASE 1, FASE 2, LARANGAN MUTLAK, PANDUAN ESKALASI, ATURAN BAHASA, KONTEKS PRODUK (grep count: 7, with FASE 1.5 as extra match)
+- Tests: all pass (`go test ./...` — engine, rules, scheduler, storage, followup)
+- Committed: `perf(prompt): remove developer-only sections to reduce per-call token overhead` (b4c23d2)
+
+## Customer name & company edit UI — DONE (2026-06-04)
+
+- Added `customersService.updateNameCompany(id, name, company)` to `src/lib/supabaseClient.ts`
+- Applied migration `20260604000004` to live project: adds `authenticated_update_customers` UPDATE policy on `customers` table
+- `src/components/PelangganScreen.tsx`: Edit button (pencil icon) in profile header; clicking opens inline inputs for name and company with Save/Cancel; updates both the profile view and the customer list in local state
+- `src/components/PipelineScreen.tsx`: Pencil icon in the "Pelanggan" cell of expanded lead rows; inline edit form for name and company; updates leads list in local state after save
+
+## Frontend rename: "Sinar Elektrik" → "Garindo Jaya Panel" — DONE (2026-06-04)
+
+- Changed all frontend display text from "Sinar Elektrik" to "Garindo Jaya Panel"
+- `src/App.tsx`: storeName fallback (×2) + footer copyright
+- `src/components/AuthScreen.tsx`: subtitle text + store name placeholder
+- `src/components/DashboardScreen.tsx`: welcome heading
+- `src/components/Sidebar.tsx`: brand name in sidebar header
+- `src/components/WhatsappAiScreen.tsx`: 5 occurrences in display/code snippet text
+- `metadata.json`: app name
+- localStorage keys (`sinar_elektrik_stocks`, `sinar_elektrik_config`) and Go module name left unchanged per user constraint
+- No "Sinar Elektrik" remaining in any frontend file (verified with grep)
+
+## Payment Proof Fix v2 — DONE (2026-06-04)
+
+Three bugs fixed that prevented PDF payment proofs from appearing correctly in the admin dashboard:
+
+1. **Supabase bucket MIME restriction removed**: `payment-proofs` bucket `allowed_mime_types` cleared to `null` via SQL so any file type can be uploaded. Previously only image types were allowed, causing all PDF uploads to fail silently with HTTP 400.
+2. **PDF filename suffix**: `UploadPaymentProof` now appends `.pdf` to the storage path when `contentType == "application/pdf"`, letting the frontend detect PDFs by URL. `application/octet-stream` (WhatsApp's fallback) correctly does NOT get the suffix.
+3. **viewOnce/ephemeral PDF unwrapping**: `handleMediaMessage` now checks `GetViewOnceMessage().GetMessage().GetDocumentMessage()` and `GetEphemeralMessage().GetMessage().GetDocumentMessage()` so wrapped PDFs reach the payment proof flow instead of falling through to admin escalation.
+4. **Admin UI PDF rendering**: `OrderHistoryScreen` shows a red PDF card (clickable link + 📄 icon) for `.pdf` URLs instead of a broken `<img>` tag. Images still use `<img>`.
+
+Root cause of the original "stuck at WAITING_PAYMENT" report: the daemon binary was compiled at 02:50 on 2026-06-04, before the WhatsApp handler fixes were committed at 03:06. The binary was rebuilt and restarted via `deploy.sh`.
