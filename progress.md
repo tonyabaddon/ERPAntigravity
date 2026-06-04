@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — CA-6: handleBooking — cart iteration + buildOrderItems helper — DONE
+- Added pure `buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.StockItem, error)) ([]models.OrderItem, float64)` helper after `handleBooking` in `backend-go/internal/whatsapp/handler.go`
+- Replaced single-product lookup in `handleBooking` body with cart iteration via `buildOrderItems`; legacy single-item fields (Product/Quantity) used as fallback when Cart is empty
+- Created `backend-go/internal/whatsapp/handler_test.go` with 3 tests: `TestBuildOrderItems_MultipleCart`, `TestBuildOrderItems_FallbackSingleItem`, `TestBuildOrderItems_MissingStock` — all pass
+- Pre-existing `TestUploadPaymentProof_Success` failure in `internal/storage` is unrelated
+- Committed: `feat(handler): multi-product cart support in handleBooking, add buildOrderItems helper` (589bdd3)
+
 ## 2026-06-05 — CA-5: Machine — CONFIRMING pushes to cart, ADD_MORE case — DONE
 - Updated `case models.StateConfirming` in `backend-go/internal/engine/machine.go`: `confirmed=true` now builds a `CartItem` from current Product/Quantity/Specs, appends to Cart, clears those fields, sets `result.NewData`, and transitions to `StateAddMore` (not `StateDelivery`)
 - Added `case models.StateAddMore` handler: calls `ParseAddMore`, routes `add_another=true → StateCollecting`, `add_another=false → StateDelivery`
