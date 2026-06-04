@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
@@ -146,10 +147,35 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		}
 		result.Reply = resp.Reply
 		if resp.Confirmed {
-			result.NextState = models.StateDelivery
+			newData := conv.CollectedData
+			specsStr := strings.TrimSpace(
+				newData.Specs.Size + " " + newData.Specs.Color + " " + newData.Specs.Notes,
+			)
+			newData.Cart = append(newData.Cart, models.CartItem{
+				Product:  newData.Product,
+				Quantity: newData.Quantity,
+				Specs:    specsStr,
+			})
+			newData.Product = ""
+			newData.Quantity = 0
+			newData.Specs = models.SpecsData{}
+			result.NewData = &newData
+			result.NextState = models.StateAddMore
 		} else if resp.ModificationRequested {
 			result.NextState = models.StateClarifying
 			result.ClarificationRound = 0
+		}
+
+	case models.StateAddMore:
+		parsed := ParseAddMore(rawJSON)
+		result.Reply = parsed.Reply
+		if parsed.Language != "" {
+			result.Language = parsed.Language
+		}
+		if parsed.AddAnother {
+			result.NextState = models.StateCollecting
+		} else {
+			result.NextState = models.StateDelivery
 		}
 
 	case models.StateDelivery:

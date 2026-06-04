@@ -69,21 +69,87 @@ func TestProcessEscalate(t *testing.T) {
 	}
 }
 
-func TestProcessConfirmingMovesToDelivery(t *testing.T) {
-	m := newTestMachine(`{"reply":"Pesanan dikonfirmasi!","confirmed":true,"modification_requested":false}`)
+func TestProcessConfirmingMovesToAddMore(t *testing.T) {
+	m := newTestMachine(`{"reply":"Pesanan dikonfirmasi! Mau tambah produk lain?","confirmed":true,"modification_requested":false}`)
 	conv := &models.Conversation{
 		State:    models.StateConfirming,
 		Language: "id",
 		CollectedData: models.CollectedData{
-			Name: "Budi", Company: "CV Maju", Address: "Surabaya", Product: "Kabel 40A",
+			Name: "Budi", Company: "CV Maju", Product: "Kabel 40A", Quantity: 2,
 		},
 	}
 	result, err := m.Process(context.Background(), conv, "OK", nil, "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	if result.NextState != models.StateAddMore {
+		t.Errorf("confirmed → expected ADD_MORE, got %s", result.NextState)
+	}
+	if result.NewData == nil {
+		t.Fatal("NewData should not be nil after confirmation")
+	}
+	if len(result.NewData.Cart) != 1 {
+		t.Errorf("expected 1 item in cart, got %d", len(result.NewData.Cart))
+	}
+	if result.NewData.Cart[0].Product != "Kabel 40A" {
+		t.Errorf("expected cart item Product=Kabel 40A, got %s", result.NewData.Cart[0].Product)
+	}
+	if result.NewData.Product != "" {
+		t.Errorf("Product field should be cleared after push to cart, got %s", result.NewData.Product)
+	}
+}
+
+func TestProcessConfirmingModificationRequestedMovesClarifying(t *testing.T) {
+	m := newTestMachine(`{"reply":"Baik, mari perbaiki pesanan.","confirmed":false,"modification_requested":true}`)
+	conv := &models.Conversation{
+		State:    models.StateConfirming,
+		Language: "id",
+		CollectedData: models.CollectedData{
+			Name: "Budi", Company: "CV Maju", Product: "Kabel 40A",
+		},
+	}
+	result, err := m.Process(context.Background(), conv, "ganti", nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NextState != models.StateClarifying {
+		t.Errorf("modification_requested → expected CLARIFYING, got %s", result.NextState)
+	}
+}
+
+func TestProcessAddMore_AddAnother(t *testing.T) {
+	m := newTestMachine(`{"reply":"Oke, produk apa berikutnya?","add_another":true,"language":"id"}`)
+	conv := &models.Conversation{
+		State:    models.StateAddMore,
+		Language: "id",
+		CollectedData: models.CollectedData{
+			Cart: []models.CartItem{{Product: "Kabel 40A", Quantity: 2, Specs: "40A"}},
+		},
+	}
+	result, err := m.Process(context.Background(), conv, "tambah", nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NextState != models.StateCollecting {
+		t.Errorf("add_another=true → expected COLLECTING, got %s", result.NextState)
+	}
+}
+
+func TestProcessAddMore_Done(t *testing.T) {
+	m := newTestMachine(`{"reply":"Oke, lanjut ke pengiriman.","add_another":false,"language":"id"}`)
+	conv := &models.Conversation{
+		State:    models.StateAddMore,
+		Language: "id",
+		CollectedData: models.CollectedData{
+			Cart: []models.CartItem{{Product: "Kabel 40A", Quantity: 2, Specs: "40A"}},
+		},
+	}
+	result, err := m.Process(context.Background(), conv, "tidak", nil, "")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if result.NextState != models.StateDelivery {
-		t.Errorf("confirmed → expected DELIVERY, got %s", result.NextState)
+		t.Errorf("add_another=false → expected DELIVERY, got %s", result.NextState)
 	}
 }
 
