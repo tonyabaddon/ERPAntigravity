@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -195,6 +196,7 @@ func StockContextString(items []models.StockItem) string {
 			for k, v := range item.Specs {
 				parts = append(parts, fmt.Sprintf("%s=%v", k, v))
 			}
+			sort.Strings(parts)
 			specs = " [" + strings.Join(parts, ", ") + "]"
 		}
 		sb.WriteString(fmt.Sprintf("- %s (SKU: %s): Rp %.0f/unit, stok: %d%s\n",

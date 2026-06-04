@@ -28,5 +28,8 @@ func (c *Client) SearchStockByName(productName string) ([]models.StockItem, erro
 		}
 		items = append(items, item)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return items, nil
 }
