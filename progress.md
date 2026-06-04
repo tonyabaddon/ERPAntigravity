@@ -2099,3 +2099,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
   - `hpp_total` on the transaction is now the sum of real FIFO costs, not stale `harga_modal` values
 - TypeScript compiled clean (no new errors introduced)
 - Committed: `feat(kasir): FIFO lot deduction for accurate COGS per sale transaction` (eed906f)
+- Follow-up quality fix: wrapped `Promise.all(deductFifo...)` in explicit try/catch — on FIFO failure shows "Gagal menghitung HPP FIFO. Cek stock_lots jika stok tidak sesuai." toast and resets saving state; added `// NOTE: non-atomic` comment documenting that lot deductions cannot be rolled back if `insertSaleTransaction` subsequently fails
+- Committed: `fix(kasir): non-atomic FIFO deduction comment + specific error toast on fifo failure` (f19b5b7)
+
+## FIFO Task 4: PembelianScreen — Overdue Indicator + Delete DRAFT + Terlambat Bayar card — DONE (2026-06-05)
+
+- Updated `fetchSummary` in `src/lib/pembelianService.ts`: replaced `totalUnpaid` (all RECEIVED POs) with `overdueAmount` (RECEIVED POs where `payment_due_at < today`); return type and default value updated to match
+- Updated `src/components/PembelianScreen.tsx`:
+  - Summary state default: `totalUnpaid: 0` → `overdueAmount: 0`
+  - 3rd summary card: label "Total Belum Dibayar" → **"Terlambat Bayar"**; value uses `summary.overdueAmount`; subtitle: "melewati jatuh tempo, belum lunas"
+  - Added `OVERDUE: 'border-l-4 border-l-rose-500'` to `LEFT_BORDER` map
+  - Added `isOverdue(po)` helper: `po.status === 'RECEIVED' && !!po.payment_due_at && po.payment_due_at < today`
+  - Overdue POs sort to top of list regardless of other sort order
+  - Overdue PO row: rose-500 left border instead of amber; due-date text turns rose-600; red "Terlambat" pill badge appears below the date
+  - DRAFT POs: added "Hapus" button (rose) calling `handleDelete` — `confirm()` dialog → `purchaseOrderService.delete(po.id)` → success toast + refresh
+- TypeScript compiled clean; Vite build succeeded in 2.67s
+- Committed: `feat(pembelian): overdue indicator + sort-to-top, delete DRAFT PO, Terlambat Bayar summary card` (f8f8e11)
