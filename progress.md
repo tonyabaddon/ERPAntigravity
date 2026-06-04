@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — WH-8: App.tsx map stock_atas/stock_bawah from Supabase — DONE
+- Added `stock_atas: Number(item.stock_atas ?? item.stock)` and `stock_bawah: Number(item.stock_bawah ?? 0)` to both `StockItem` mapping locations in `src/App.tsx`
+- Covers: initial `useEffect` load on mount, and `handleStockRefresh` function
+- `npm run build` passes cleanly (✓ built in 2.21s)
+- Committed: `feat(app): map stock_atas/stock_bawah from Supabase into StockItem` (fa4ea77)
+
+## 2026-06-05 — DP Multi-Payment: Go Models + DB Layer Fix (Task 2 complete)
+- Added `DPInputType` (string) and `DPValue` (float64) fields to `models.Order` struct in `types.go`
+- Extended `GetOrderByConversation` SELECT + Scan to include `dp_input_type`, `dp_value`
+- Extended `GetOrderByIDWithPayment` SELECT + Scan to include full DP fields: `payment_type`, `dp_amount`, `dp_input_type`, `dp_value`, `dp_proof_url`
+- Fixed `RejectDPProof` in `payment.go`: empty `reason` string now stores NULL (not "") in `rejection_reason`
+- `go build ./...` passes cleanly
+- Committed: `fix(go): add dp_input_type/dp_value to Order struct + extend GetOrderByIDWithPayment + fix RejectDPProof null handling` (6fc5cb1)
+
 ## 2026-06-05 — Calista Message Filter & Follow-up Fix
 - Fixed: Calista was sending messages to WhatsApp group members and Status viewers (group/broadcast filter added to handler.go)
 - Fixed: Stale @lid conversations from non-customers cancelled in DB
