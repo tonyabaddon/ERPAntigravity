@@ -1945,6 +1945,16 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - TypeScript compile: zero errors in modified files (pre-existing errors in SalesInboxScreen.tsx and Deno edge functions are unrelated)
 - Committed: `feat(stock): add harga modal column, edit field, and CSV support` (f9db6b1)
 
+## Task 7: KasirInvoiceModal.tsx — DONE (2026-06-04)
+
+- Created `src/components/KasirInvoiceModal.tsx`
+- Follows the exact same pattern as `InvoiceModal.tsx` but accepts `KasirTransaction` instead of `DbOrder`
+- Invoice title is "Sales Invoice" (not "INVOICE"); no shipping/ongkos kirim row; has "Metode Bayar" row in totals
+- Fetches `DbCompanySettings` via `companySettingsService.fetch()` for company header
+- Print styles scoped to `#kasir-invoice-root` (separate from `#invoice-print-root`)
+- TypeScript compile: zero errors for KasirInvoiceModal (pre-existing KasirScreen error remains until Task 8)
+- Committed: `feat(kasir): add KasirInvoiceModal for walk-in and grosir A4 invoice printing` (5c7ab84)
+
 ## Task 6: Wire Kasir into navigation — DONE (2026-06-04)
 
 - **`src/components/Sidebar.tsx`**:
