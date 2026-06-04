@@ -33,6 +33,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
     ]))
   );
   const [saving, setSaving] = useState(false);
+  const [warehouse, setWarehouse] = useState<'atas' | 'bawah'>('atas');
 
   function updateCondition(itemId: string, field: keyof ItemCondition, value: string | number) {
     setConditions(prev => {
@@ -78,6 +79,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
             ];
           })
         ),
+        warehouse,
       });
       showToast(`${po.po_number} diterima. Stok diperbarui.`, 'success');
       onReceived();
@@ -102,7 +104,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
             Stok akan bertambah sesuai <strong>Qty Baik</strong> yang diterima. Barang rusak tidak masuk stok dan akan ditrack untuk retur.
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Tanggal Terima <span className="text-rose-500">*</span></label>
               <input type="date" value={receivedAt} onChange={e => setReceivedAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
@@ -113,6 +115,17 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
               <p className="text-[10px] text-gray-400 mt-1">
                 Pre-filled {supplierTermDays > 0 ? `Net ${supplierTermDays}` : 'Cash'}. Sesuaikan dengan invoice supplier.
               </p>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-1">Gudang Tujuan <span className="text-rose-500">*</span></label>
+              <select
+                value={warehouse}
+                onChange={e => setWarehouse(e.target.value as 'atas' | 'bawah')}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              >
+                <option value="atas">Gudang Atas</option>
+                <option value="bawah">Gudang Bawah</option>
+              </select>
             </div>
           </div>
 
