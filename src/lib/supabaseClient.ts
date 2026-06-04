@@ -724,8 +724,8 @@ export const kasirService = {
     for (const order of waOrders) {
       totalIncome += order.total;
       byChannel.wa_order = (byChannel.wa_order ?? 0) + order.total;
-      itemsSold += order.items.reduce((s: number, i: { qty: number }) => s + i.qty, 0);
-      for (const item of order.items) {
+      itemsSold += (order.items ?? []).reduce((s: number, i: { qty: number }) => s + i.qty, 0);
+      for (const item of (order.items ?? [])) {
         const hpp = stockMap[item.sku] ?? 0;
         totalHpp += hpp * item.qty;
       }
@@ -751,7 +751,7 @@ export const kasirService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
       .from('kasir_transactions')
-      .insert({ ...tx, type: 'expense' })
+      .insert({ ...tx, type: 'expense', hpp_total: 0 })
       .select()
       .single();
     if (error) throw error;
