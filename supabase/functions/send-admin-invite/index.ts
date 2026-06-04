@@ -1,4 +1,5 @@
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,11 +29,31 @@ Deno.serve(async (req) => {
     });
   }
 
+  if (!appUrl.startsWith("https://") && !appUrl.startsWith("http://")) {
+    return new Response(JSON.stringify({ error: "Invalid appUrl" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
   if (!gmailUser || !gmailPass) {
     return new Response(JSON.stringify({ error: "SMTP credentials not configured" }), {
       status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+  );
+  const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -50,7 +71,7 @@ Deno.serve(async (req) => {
 
   try {
     await client.send({
-      from: gmailUser,
+      from: `ERP Pro <${gmailUser}>`,
       to: email,
       subject: "Anda telah ditambahkan ke ERP Pro",
       html,
@@ -58,7 +79,8 @@ Deno.serve(async (req) => {
     await client.close();
   } catch (err) {
     await client.close().catch(() => {});
-    return new Response(JSON.stringify({ error: "Failed to send email", detail: String(err) }), {
+    console.error("SMTP error:", err);
+    return new Response(JSON.stringify({ error: "Failed to send email" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -69,6 +91,14 @@ Deno.serve(async (req) => {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 });
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function buildInviteEmail(p: {
   name: string;
@@ -94,23 +124,23 @@ function buildInviteEmail(p: {
         <!-- Body -->
         <tr>
           <td style="padding:40px;">
-            <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:#012749;">Halo ${p.name},</p>
+            <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:#012749;">Halo ${escapeHtml(p.name)},</p>
             <p style="margin:0 0 24px;font-size:14px;color:#43474e;line-height:1.6;">
-              <strong>${p.addedByName}</strong> telah menambahkan Anda ke sistem <strong>ERP Pro</strong> sebagai <strong>${p.role}</strong>.
+              <strong>${escapeHtml(p.addedByName)}</strong> telah menambahkan Anda ke sistem <strong>ERP Pro</strong> sebagai <strong>${escapeHtml(p.role)}</strong>.
             </p>
             <!-- CTA Button -->
             <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
               <tr>
                 <td style="background:#2d8a4e;border-radius:50px;padding:14px 32px;">
-                  <a href="${p.appUrl}" style="color:#fff;text-decoration:none;font-size:13px;font-weight:800;">MULAI LOGIN →</a>
+                  <a href="${escapeHtml(p.appUrl)}" style="color:#fff;text-decoration:none;font-size:13px;font-weight:800;">MULAI LOGIN →</a>
                 </td>
               </tr>
             </table>
             <!-- Instructions -->
             <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#012749;">Cara login:</p>
             <ol style="margin:0 0 24px;padding-left:20px;color:#43474e;font-size:13px;line-height:2;">
-              <li>Buka link di atas atau kunjungi: <a href="${p.appUrl}" style="color:#2d8a4e;">${p.appUrl}</a></li>
-              <li>Masukkan email Anda: <strong>${p.email}</strong></li>
+              <li>Buka link di atas atau kunjungi: <a href="${escapeHtml(p.appUrl)}" style="color:#2d8a4e;">${escapeHtml(p.appUrl)}</a></li>
+              <li>Masukkan email Anda: <strong>${escapeHtml(p.email)}</strong></li>
               <li>Klik <strong>Kirim OTP</strong></li>
               <li>Masukkan kode 6 digit yang dikirim ke email ini</li>
             </ol>
