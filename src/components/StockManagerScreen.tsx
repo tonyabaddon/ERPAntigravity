@@ -304,6 +304,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     reader.onerror = () => {
       setIsUploading(false);
       setUploadProgress(null);
+      e.target.value = '';
       showToast('❌ Gagal membaca file. Coba lagi.', 'warning');
     };
     reader.readAsText(file);
@@ -388,7 +389,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
               <Download className="w-6 h-6" />
             </div>
             <h4 className="font-extrabold text-[#012749] text-xs uppercase tracking-wider">UNDUH TEMPLATE EXCEL (*.CSV)</h4>
-            <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Kolom spek Panel, MCB &amp; Kabel. SKU &amp; nama auto.</p>
+            <p className="text-[11px] text-[#43474e] mt-1.5 font-medium">Kolom spek Panel, MCB, Kabel &amp; Aksesori. SKU &amp; nama auto.</p>
           </div>
 
           <label
