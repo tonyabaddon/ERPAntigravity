@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — CA-3: AddMoreResponse + ParseAddMore for ADD_MORE state — DONE
+- Added `AddMoreResponse` struct (Reply, AddAnother, Language) and `ParseAddMore` function to `backend-go/internal/engine/parser.go`
+- Added 3 tests (`TestParseAddMore_AddAnother`, `TestParseAddMore_Done`, `TestParseAddMore_BadJSON`) to `parser_test.go`
+- All 3 tests pass (`go test ./internal/engine/... -run TestParseAddMore -v`)
+- Committed: `feat(parser): add AddMoreResponse and ParseAddMore for ADD_MORE state` (e8e890e)
+
 ## 2026-06-05 — CA-2: Data model — CartItem, Cart field, StateAddMore — DONE
 - Added `CartItem` struct (Product string, Quantity int, Specs string) in `backend-go/internal/models/types.go`
 - Added `Cart []CartItem` field to `CollectedData` struct
