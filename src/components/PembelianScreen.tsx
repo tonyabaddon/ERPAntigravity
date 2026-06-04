@@ -6,6 +6,7 @@ import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types'
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import SupplierModal from './pembelian/SupplierModal';
 import PurchaseOrderModal from './pembelian/PurchaseOrderModal';
+import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -265,6 +266,14 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh }: Order
           stockList={stockList}
           onClose={() => { setShowCreateModal(false); setEditPo(null); }}
           onSaved={onRefresh}
+          showToast={showToast}
+        />
+      )}
+      {receivePo && (
+        <ReceiveGoodsModal
+          po={receivePo}
+          onClose={() => setReceivePo(null)}
+          onReceived={onRefresh}
           showToast={showToast}
         />
       )}
