@@ -96,7 +96,7 @@ const EMPTY_MESSAGES: Record<FilterTab, string> = {
 
 function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerClass: string }) {
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden text-xs mb-3">
+    <div className="border border-gray-200 rounded-lg overflow-hidden text-xs mb-3">
       <div className={`grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-[10px] ${headerClass}`}>
         <span>Produk</span>
         <span className="text-center">Qty</span>

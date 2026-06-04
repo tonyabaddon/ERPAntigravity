@@ -348,6 +348,18 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		}
 	}
 
+	if proofURL == "" {
+		// Upload failed — do not advance the order status. Ask customer to resend.
+		log.Printf("[HANDLER] Payment proof upload failed for order %s; keeping status WAITING_PAYMENT", order.ID)
+		retry := "Mohon maaf, foto bukti transfer gagal kami terima. Tolong kirim ulang foto atau dokumen PDF bukti transfernya."
+		if conv.Language == "en" {
+			retry = "Sorry, we could not receive your payment proof. Please resend the photo or PDF of your transfer receipt."
+		}
+		h.db.InsertMessage(conv.ID, models.SenderAI, retry)
+		h.sender.SendText(context.Background(), senderPhone, retry)
+		return
+	}
+
 	if err := h.db.UpdatePaymentProof(order.ID, proofURL); err != nil {
 		log.Printf("[HANDLER] UpdatePaymentProof error for order %s: %v", order.ID, err)
 	}
