@@ -86,6 +86,8 @@ export interface StockItem {
   category: string;
   price: number;
   stock: number;
+  stock_atas?: number;
+  stock_bawah?: number;
   status: 'Sinkron' | 'Stok Tipis';
   specs: Record<string, string | number>;
   harga_modal?: number | null;
