@@ -103,19 +103,20 @@ Single page with two tabs:
 
 #### Summary Bar (top of page, always visible)
 Four stat cards:
-| Card | Metric |
-|---|---|
-| Total PO Bulan Ini | Sum of `total` for all POs created this month (MTD) |
-| Jatuh Tempo Bulan Ini | Sum of `total` for RECEIVED POs where `payment_due_at` is this month and status ≠ PAID |
-| Total Belum Dibayar | Sum of `total` for all RECEIVED POs not yet PAID (any month) |
-| Jumlah PO Bulan Ini | Count of POs created this month |
+| Card | Color | Metric |
+|---|---|---|
+| Total PO Bulan Ini | Blue | Sum of `total` for all POs created this month (MTD) |
+| Jatuh Tempo Bulan Ini | Amber | Sum of `total` for RECEIVED POs where `payment_due_at` is this month and status ≠ PAID |
+| Terlambat Bayar | Red | Sum of `total` for RECEIVED POs where `payment_due_at < today` and status ≠ PAID |
+| Jumlah PO Bulan Ini | Gray | Count of POs created this month |
 
 #### Tab 1: Purchase Orders
 - Search bar (filter by PO number or supplier name)
 - Status filter dropdown (Semua / Draft / Dipesan / Diterima / Lunas)
 - **Buat PO Baru** button
 - PO list table: No. PO · Supplier · Tgl Pesan · Jatuh Tempo · Total · Status badge · Actions
-- Left border accent on actionable rows (RECEIVED = amber, ORDERED = blue)
+- Left border accent on actionable rows (RECEIVED = amber, ORDERED = blue, OVERDUE = red)
+- **Overdue:** a RECEIVED PO where `payment_due_at < today` and `status ≠ PAID` gets a red left border, a red "Terlambat" badge next to the due date, and is sorted to the top of the list regardless of filter
 - Context-sensitive action buttons per status:
   - DRAFT: Edit · Pesan · Hapus (delete with confirmation modal)
   - ORDERED: Detail · Terima
