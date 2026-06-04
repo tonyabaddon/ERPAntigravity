@@ -18,7 +18,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-import { ActivePage, StockItem, NotificationConfig } from './types';
+import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS } from './types';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -45,7 +45,7 @@ export default function App() {
   // Gating system: start at 'auth' or direct bypass for immediate interaction 
   const [activePage, setActivePage] = useState<ActivePage>('auth');
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: string; avatarUrl: string; storeName: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
   const [stockList, setStockList] = useState<StockItem[]>(() => {
@@ -72,6 +72,7 @@ export default function App() {
         setCurrentUser({
           name: user.user_metadata?.full_name ?? (user.email?.split('@')[0] ?? 'User'),
           role: 'Owner',
+          permissions: ALL_PERMISSIONS,
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
@@ -165,7 +166,7 @@ export default function App() {
 
 
   // Handle successful login
-  const handleLoginSuccess = (user: { name: string; role: string; avatarUrl: string; storeName: string }) => {
+  const handleLoginSuccess = (user: { name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
     setCurrentUser(user);
     setActivePage('dashboard');
   };
