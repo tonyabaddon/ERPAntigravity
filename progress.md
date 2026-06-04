@@ -2151,6 +2151,16 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Build verification: `npm run build` passes with zero TypeScript errors (2395 modules transformed, built in 2.37s)
 - Committed: `fix(metrics): use WIB midnight ISO in LaporanScreen periodStart` (979a2a8)
 
+## Fix: Calista not replying — startedAt filter too aggressive — DONE (2026-06-05)
+
+**Root cause**: `handler.go` dropped ALL text messages with `Timestamp.Before(startedAt)`. Since the daemon restarted multiple times during recent deploys, any customer who messaged during a restart window had their message timestamped *before* the new `startedAt` and got silently dropped. Phone `6285264787775` had zero DB records because every message was filtered out.
+
+**Fix**: Changed the filter threshold from `startedAt` (drop everything before daemon start) to `startedAt.Add(-5 * time.Minute)` (only drop messages older than 5 minutes before daemon start). Messages sent during a brief restart window (≤5 min) now pass through. Added log lines for both the drop and the process paths to make future diagnosis faster.
+
+- File: `backend-go/internal/whatsapp/handler.go` (lines 58–68)
+- Build: `go build ./...` — clean (no errors)
+- Committed in: `526d3d7`
+
 ## Investigation: Dashboard/Laporan metrics still showing zero — DONE (2026-06-05)
 
 **Root cause found and fixed:**
