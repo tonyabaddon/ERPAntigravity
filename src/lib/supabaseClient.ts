@@ -232,7 +232,7 @@ function wibDateString(date = new Date()): string {
 function periodStart(p: Period): string {
   const d = new Date();
   d.setDate(d.getDate() - (p === '7d' ? 6 : p === '30d' ? 29 : 89));
-  return wibDateString(d);
+  return wibDateString(d) + 'T00:00:00+07:00';
 }
 
 function groupByDay<T extends { created_at: string }>(
@@ -266,10 +266,11 @@ export const statsService = {
   }> {
     if (!supabase) throw new Error('Supabase not configured');
     const todayDate = wibDateString();
+    const todayISO = todayDate + 'T00:00:00+07:00';
     const [ordersRes, convsRes, aiConvsRes, kasirRes] = await Promise.all([
-      supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', todayDate),
-      supabase.from('conversations').select('id', { count: 'exact', head: true }).gte('created_at', todayDate),
-      supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('ai_active', true).gte('created_at', todayDate),
+      supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', todayISO),
+      supabase.from('conversations').select('id', { count: 'exact', head: true }).gte('created_at', todayISO),
+      supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('ai_active', true).gte('created_at', todayISO),
       supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').eq('date', todayDate),
     ]);
 
