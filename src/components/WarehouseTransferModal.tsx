@@ -12,7 +12,7 @@ interface WarehouseTransferModalProps {
 
 export default function WarehouseTransferModal({ item, onClose, onTransferred, showToast }: WarehouseTransferModalProps) {
   const [from, setFrom] = useState<'atas' | 'bawah'>('atas');
-  const [qty, setQty] = useState('');
+  const [qty, setQty] = useState<number | ''>('');
   const [saving, setSaving] = useState(false);
 
   const to: 'atas' | 'bawah' = from === 'atas' ? 'bawah' : 'atas';
@@ -24,7 +24,7 @@ export default function WarehouseTransferModal({ item, onClose, onTransferred, s
   const toColor = from === 'atas' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-blue-50 border-blue-200 text-blue-700';
 
   async function handleConfirm() {
-    const n = parseInt(qty);
+    const n = qty;
     if (!n || n <= 0) { showToast('Masukkan jumlah yang valid.', 'warning'); return; }
     if (n > fromQty) { showToast(`Stok ${fromLabel} hanya ${fromQty} pcs.`, 'warning'); return; }
     setSaving(true);
@@ -77,7 +77,7 @@ export default function WarehouseTransferModal({ item, onClose, onTransferred, s
               min="1"
               max={fromQty}
               value={qty}
-              onChange={e => setQty(e.target.value)}
+              onChange={e => setQty(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
               placeholder={`Maks ${fromQty}`}
               className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2d8a4e]"
             />
