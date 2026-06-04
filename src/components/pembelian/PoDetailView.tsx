@@ -13,6 +13,7 @@ interface PoDetailViewProps {
 }
 
 const DAMAGE_STATUS_OPTIONS = [
+  { value: 'NONE',           label: 'None' },
   { value: 'PENDING_RETURN', label: 'Pending Return' },
   { value: 'RETURNED',       label: 'Returned' },
   { value: 'REPLACED',       label: 'Replaced' },

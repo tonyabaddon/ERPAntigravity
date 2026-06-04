@@ -138,18 +138,11 @@ export const purchaseOrderService = {
     conditions: Record<string, { qty_received: number; qty_damaged: number; damage_notes?: string }>;
   }): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    if (params.invoice_url !== undefined) {
-      await supabase.from('purchase_orders')
-        .update({ invoice_url: params.invoice_url, payment_due_at: params.payment_due_at })
-        .eq('id', poId);
-    } else {
-      await supabase.from('purchase_orders')
-        .update({ payment_due_at: params.payment_due_at })
-        .eq('id', poId);
-    }
     const { error } = await supabase.rpc('receive_purchase_order', {
       p_po_id: poId,
       p_received_at: params.received_at,
+      p_payment_due_at: params.payment_due_at,
+      p_invoice_url: params.invoice_url ?? null,
       p_conditions: params.conditions,
     });
     if (error) throw error;
