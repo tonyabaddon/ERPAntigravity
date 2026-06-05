@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 7 (Heartbeat Plan): Wire heartbeat poller in main.go — DONE
+- Modified `backend-go/main.go`
+- Step 1: Added `"github.com/username/sinar-elektrik-backend/internal/heartbeat"` import (alphabetically between `gemini` and `models`)
+- Step 2: Added `heartbeat.NewPoller(dbClient, sender).Start(ctx)` after `followup.NewPoller` line
+- Step 3: Added log message: `log.Println("[MAIN] Heartbeat poller started (1-minute tick)")`
+- Build: `go build ./...` clean (no errors)
+- Committed: `feat(main): wire heartbeat poller` (c8270ad)
+
+## 2026-06-05 — Task 6 (Heartbeat Plan): Heartbeat Poller — DONE
+- Created `backend-go/internal/heartbeat/poller_test.go` with 4 tests: `TestParseInterval`, `TestIsWIBBusinessHours`, `TestBuildReport_WithLowStock`, `TestBuildReport_NoLowStock`
+- Created `backend-go/internal/heartbeat/poller.go` with: `Poller` struct, `NewPoller`, `Start` (goroutine with 1-min ticker), `tick` (checks config/hours/interval), `buildReport`, `parseInterval`, `isWIBBusinessHours`, `formatRupiah`
+- TDD: tests failed on missing package first; all 4 tests pass after implementation
+- `go build ./...` clean
+- Committed: `feat(heartbeat): implement heartbeat poller with WIB schedule and report formatting` (78fab07)
+
 ## 2026-06-05 — Task 2 (HPP Plan): Go Model — Add HppTotal to Order struct — DONE
 - Modified `backend-go/internal/models/types.go`
 - Added `HppTotal float64` field to `Order` struct after `UpdatedAt` with JSON tag `json:"hpp_total"`
@@ -2576,3 +2591,20 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 ### Build & Tests
 - `go build ./...`: Clean build, no errors
 - `go test ./internal/...`: All new tests pass; pre-existing `TestUploadPaymentProof_Success` failure in storage package unchanged
+
+## 2026-06-05 — Task 3 (HPP Plan): DB Methods — Add DeductStockAndGetHPP and UpdateOrderHpp — DONE
+- `backend-go/internal/db/stock.go`:
+  - Added `"fmt"` to imports
+  - Added `DeductStockAndGetHPP(sku string, qty int) (float64, error)` function
+  - Calls `decrement_stock` RPC to deduct stock_atas, then `deduct_stock_fifo` RPC to get FIFO cost
+  - Both operations are best-effort; errors logged but caller continues so payment confirmation never blocked
+- `backend-go/internal/db/orders.go`:
+  - Added `UpdateOrderHpp(orderID string, hpp float64) error` function to update hpp_total column
+- Build: `go build ./...` clean (no errors)
+- Committed: `feat(db): add DeductStockAndGetHPP and UpdateOrderHpp methods` (1d59edf)
+
+## 2026-06-05 — Task 8 (HPP Plan): Frontend Type Sync — Add hpp_total to DbOrder interface — DONE
+- Modified `src/types.ts`
+- Added `hpp_total?: number;` field to `DbOrder` interface after `updated_at` field (line 211)
+- TypeScript verification: existing errors unrelated to this change (pre-existing in App.tsx, SalesInboxScreen.tsx, Sidebar.tsx, Deno edge functions)
+- Committed: `feat(types): add hpp_total to DbOrder interface` (5650232)
