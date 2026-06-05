@@ -27,6 +27,111 @@ func main() {
 	cfg := config.Load()
 	ctx := context.Background()
 
+	// waClient is declared here so HTTP handler closures can reference it.
+	// It remains nil until whatsapp.NewClient completes below; handlers guard against nil.
+	var waClient *whatsapp.Client
+
+	// Start HTTP server FIRST — Cloud Run startup probe checks port 8080.
+	// If DB or WA init hangs, the probe still passes and Cloud Run marks the
+	// revision healthy. WA-dependent endpoints return safe defaults while nil.
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": "online",
+			"time":   time.Now().Format(time.RFC3339),
+		})
+	})
+	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		if waClient == nil {
+			w.Write([]byte(`{"connected":false}`))
+			return
+		}
+		paired := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
+		if paired {
+			w.Write([]byte(`{"connected":true}`))
+		} else {
+			w.Write([]byte(`{"connected":false}`))
+		}
+	})
+	mux.HandleFunc("/api/wa/qr", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		if waClient == nil {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"qr":        "",
+				"connected": false,
+				"phone":     "",
+			})
+			return
+		}
+		qr := waClient.GetQR()
+		// connected = WebSocket open AND pairing complete (Store.ID set after scan).
+		// IsConnected() alone is true during QR phase before pairing, which would
+		// hide the QR code in the frontend.
+		connected := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
+		phone := ""
+		if connected {
+			phone = waClient.WA.Store.ID.User
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"qr":        qr,
+			"connected": connected,
+			"phone":     phone,
+		})
+	})
+	mux.HandleFunc("/api/wa/logout", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if waClient == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			json.NewEncoder(w).Encode(map[string]string{"error": "not initialized"})
+			return
+		}
+		if err := waClient.Logout(ctx); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "logged_out"})
+	})
+	mux.HandleFunc("/api/wa/debug", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		w.Header().Set("Content-Type", "application/json")
+		if waClient == nil {
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"store_id":      "",
+				"store_deleted": false,
+				"is_connected":  false,
+				"has_qr":        false,
+			})
+			return
+		}
+		storeID := ""
+		if waClient.WA.Store.ID != nil {
+			storeID = waClient.WA.Store.ID.String()
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"store_id":      storeID,
+			"store_deleted": waClient.WA.Store.Deleted,
+			"is_connected":  waClient.WA.IsConnected(),
+			"has_qr":        waClient.GetQR() != "",
+		})
+	})
+	go func() {
+		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
+		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
+			log.Printf("[MAIN] HTTP error: %v", err)
+		}
+	}()
+
 	// DB
 	dbClient, err := db.NewClient(cfg.SupabaseDBConn)
 	if err != nil {
@@ -45,7 +150,7 @@ func main() {
 	machine := engine.NewMachine(geminiClient)
 
 	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys)
-	waClient, err := whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
+	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
 	if err != nil {
 		log.Fatalf("[MAIN] WA client init failed: %v", err)
 	}
@@ -137,81 +242,6 @@ func main() {
 		log.Fatalf("[MAIN] StartListening failed: %v", err)
 	}
 
-	// HTTP server (start before WA connect so /api/wa/qr is available during pairing)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status": "online",
-			"time":   time.Now().Format(time.RFC3339),
-		})
-	})
-	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		w.Header().Set("Content-Type", "application/json")
-		paired := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
-		if paired {
-			w.Write([]byte(`{"connected":true}`))
-		} else {
-			w.Write([]byte(`{"connected":false}`))
-		}
-	})
-	mux.HandleFunc("/api/wa/qr", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		w.Header().Set("Content-Type", "application/json")
-		qr := waClient.GetQR()
-		// connected = WebSocket open AND pairing complete (Store.ID set after scan).
-		// IsConnected() alone is true during QR phase before pairing, which would
-		// hide the QR code in the frontend.
-		connected := waClient.WA.IsConnected() && waClient.WA.Store.ID != nil
-		phone := ""
-		if connected {
-			phone = waClient.WA.Store.ID.User
-		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"qr":        qr,
-			"connected": connected,
-			"phone":     phone,
-		})
-	})
-	mux.HandleFunc("/api/wa/logout", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := waClient.Logout(ctx); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		json.NewEncoder(w).Encode(map[string]string{"status": "logged_out"})
-	})
-	go func() {
-		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
-		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
-			log.Printf("[MAIN] HTTP error: %v", err)
-		}
-	}()
-
-	// Debug endpoint — exposes raw WA client state for diagnosing QR issues.
-	mux.HandleFunc("/api/wa/debug", func(w http.ResponseWriter, r *http.Request) {
-		enableCors(&w)
-		w.Header().Set("Content-Type", "application/json")
-		storeID := ""
-		if waClient.WA.Store.ID != nil {
-			storeID = waClient.WA.Store.ID.String()
-		}
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"store_id":      storeID,
-			"store_deleted": waClient.WA.Store.Deleted,
-			"is_connected":  waClient.WA.IsConnected(),
-			"has_qr":        waClient.GetQR() != "",
-		})
-	})
-
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
 	if err := waClient.Connect(ctx); err != nil {
 		log.Printf("[MAIN] WA connect failed: %v — daemon will keep running with HTTP only", err)
@@ -230,4 +260,3 @@ func enableCors(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 	(*w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 }
-
