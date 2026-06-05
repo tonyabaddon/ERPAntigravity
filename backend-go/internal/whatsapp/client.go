@@ -136,9 +136,18 @@ func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelIte
 			log.Printf("[WA] GetQRChannel failed after 3 attempts: %v — exiting QR loop", err)
 			return
 		}
-		if err := c.WA.Connect(); err != nil {
-			log.Printf("[WA] Reconnect error: %v — exiting QR loop", err)
-			return
+		for attempt := 1; ; attempt++ {
+			if err := c.WA.Connect(); err == nil {
+				break
+			} else {
+				log.Printf("[WA] QR loop connect attempt %d error: %v — retrying in 5s", attempt, err)
+				time.Sleep(5 * time.Second)
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+			}
 		}
 	}
 }
