@@ -1,5 +1,10 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Code Quality: Fix interval leak in WhatsappAiScreen.tsx — DONE
+- `src/components/WhatsappAiScreen.tsx` `handleLogout` (line 155): Added `if (qrPollRef.current) clearInterval(qrPollRef.current);` before creating new interval
+- Prevents interval leak where multiple concurrent poll intervals could run simultaneously, causing double API calls and potential state flickering
+- Committed: `fix(ui): clear existing poll interval before restarting in handleLogout` (023303c)
+
 ## 2026-06-05 — Code Review Fixes: ErrNoRows + PaymentVerified orderID — DONE
 - `backend-go/internal/db/heartbeat.go`: Added `database/sql` import; `GetHeartbeatConfig` now returns `nil, nil` for `sql.ErrNoRows` and `nil, err` for real DB errors only
 - `backend-go/internal/heartbeat/poller.go`: `tick()` now logs real errors with `[HEARTBEAT] GetHeartbeatConfig error:` instead of silently swallowing them; `cfg == nil` check separated
