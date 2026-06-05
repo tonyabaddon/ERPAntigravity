@@ -14,6 +14,8 @@ type NotifyHandlers struct {
 	OnOrderApproved   func(orderID, conversationID string, shippingFee float64)
 	OnPaymentVerified func(orderID, conversationID string)
 	OnPaymentRejected func(orderID, conversationID string)
+	OnDPVerified      func(orderID, conversationID string)
+	OnDPProofRejected func(orderID, conversationID, reason string)
 }
 
 type Client struct {
@@ -47,7 +49,7 @@ func NewClient(connStr string) (*Client, error) {
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
 func (c *Client) StartListening(h NotifyHandlers) error {
-	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected"}
+	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected"}
 	for _, ch := range channels {
 		if err := c.listener.Listen(ch); err != nil {
 			return err
@@ -112,11 +114,38 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 				if h.OnPaymentRejected != nil {
 					go h.OnPaymentRejected(p.OrderID, p.ConversationID)
 				}
+
+			case "dp_verified":
+				var p struct {
+					OrderID        string `json:"order_id"`
+					ConversationID string `json:"conversation_id"`
+				}
+				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
+					log.Printf("[DB] dp_verified parse error: %v", err)
+					continue
+				}
+				if h.OnDPVerified != nil {
+					go h.OnDPVerified(p.OrderID, p.ConversationID)
+				}
+
+			case "dp_proof_rejected":
+				var p struct {
+					OrderID        string `json:"order_id"`
+					ConversationID string `json:"conversation_id"`
+					Reason         string `json:"reason"`
+				}
+				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
+					log.Printf("[DB] dp_proof_rejected parse error: %v", err)
+					continue
+				}
+				if h.OnDPProofRejected != nil {
+					go h.OnDPProofRejected(p.OrderID, p.ConversationID, p.Reason)
+				}
 			}
 		}
 	}()
 
-	log.Println("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected")
+	log.Println("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected")
 	return nil
 }
 

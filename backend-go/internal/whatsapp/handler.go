@@ -347,7 +347,14 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		doc = evt.Message.GetEphemeralMessage().GetMessage().GetDocumentMessage()
 	}
 
-	if orderErr != nil || order == nil || order.Status != models.OrderStatusWaitingPayment || (img == nil && doc == nil) {
+	isPaymentStatus := order != nil && (
+		order.Status == models.OrderStatusWaitingPayment ||
+		order.Status == models.OrderStatusPaymentUploaded ||
+		order.Status == models.OrderStatusWaitingDP ||
+		order.Status == models.OrderStatusDPUploaded ||
+		order.Status == models.OrderStatusDPVerified)
+
+	if orderErr != nil || order == nil || !isPaymentStatus || (img == nil && doc == nil) {
 		// Not a payment proof context — fall through to admin escalation.
 		h.db.InsertMessage(conv.ID, models.SenderSystem, "[Media received from customer]")
 		h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
@@ -400,8 +407,15 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		return
 	}
 
-	if err := h.db.UpdatePaymentProof(order.ID, proofURL); err != nil {
-		log.Printf("[HANDLER] UpdatePaymentProof error for order %s: %v", order.ID, err)
+	switch order.Status {
+	case models.OrderStatusWaitingDP, models.OrderStatusDPUploaded:
+		if err := h.db.UpdateDPProof(order.ID, proofURL); err != nil {
+			log.Printf("[HANDLER] UpdateDPProof error for order %s: %v", order.ID, err)
+		}
+	default: // WAITING_PAYMENT, PAYMENT_UPLOADED, DP_VERIFIED
+		if err := h.db.UpdatePaymentProof(order.ID, proofURL); err != nil {
+			log.Printf("[HANDLER] UpdatePaymentProof error for order %s: %v", order.ID, err)
+		}
 	}
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, "[Payment proof uploaded]")
 
@@ -456,10 +470,21 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 		log.Printf("[HANDLER] GetActiveBankConfig error (using fallback): %v", err)
 	}
 
-	invoice := buildInvoiceMessage(order, shippingFee, total, lang, bank)
 	h.db.InsertMessage(conversationID, models.SenderSystem, "ORDER_APPROVED: payment instructions sent")
-	if err := h.sender.SendText(ctx, order.CustomerPhone, invoice); err != nil {
-		log.Printf("[HANDLER] Invoice send error: %v", err)
+
+	if order.PaymentType == "DP" {
+		dpMsg := fmt.Sprintf("💳 *Instruksi Pembayaran DP*\n\nHalo Bapak/Ibu %s,\norder Anda telah dikonfirmasi!\n\nSilakan transfer *DP sebesar Rp %.0f* ke rekening kami dan kirim foto bukti pembayarannya di sini. 🙏",
+			order.CustomerName, order.DPAmount)
+		if err := h.sender.SendText(ctx, order.CustomerPhone, dpMsg); err != nil {
+			log.Printf("[HANDLER] DP instruction send error: %v", err)
+		}
+		h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingDP))
+	} else {
+		invoice := buildInvoiceMessage(order, shippingFee, total, lang, bank)
+		if err := h.sender.SendText(ctx, order.CustomerPhone, invoice); err != nil {
+			log.Printf("[HANDLER] Invoice send error: %v", err)
+		}
+		h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingPayment))
 	}
 
 	recipients, err := h.db.GetActiveRecipients()
@@ -479,7 +504,6 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 		}
 	}
 
-	h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingPayment))
 	h.db.UpdateConversationState(conversationID, models.StateBooked)
 }
 
@@ -536,6 +560,48 @@ func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversati
 	h.db.InsertMessage(conversationID, models.SenderSystem, "PAYMENT_REJECTED: rejected by admin")
 	if err := h.db.RejectPayment(orderID); err != nil {
 		log.Printf("[HANDLER] RejectPayment error for order %s: %v", orderID, err)
+	}
+}
+
+// HandleDPVerified is called when admin verifies the DP proof. Sends WA asking customer for full payment.
+func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID string) {
+	order, err := h.db.GetOrderByConversation(conversationID)
+	if err != nil || order == nil {
+		log.Printf("[HANDLER] HandleDPVerified: GetOrderByConversation error for %s: %v", conversationID, err)
+		return
+	}
+
+	remaining := order.Total - order.DPAmount
+	msg := fmt.Sprintf("✅ *DP Terverifikasi!*\n\nTerima kasih Bapak/Ibu %s, DP Anda sebesar Rp %.0f telah kami konfirmasi.\n\nSilakan lunasi sisa pembayaran sebesar *Rp %.0f* dan kirim bukti transfernya di sini. 🙏",
+		order.CustomerName, order.DPAmount, remaining)
+
+	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
+		log.Printf("[HANDLER] HandleDPVerified: SendText error: %v", err)
+	}
+	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_VERIFIED: customer notified to send full payment")
+}
+
+// HandleDPProofRejected is called when admin rejects the DP proof. Sends WA and resets to WAITING_DP.
+func (h *Handler) HandleDPProofRejected(ctx context.Context, orderID, conversationID, reason string) {
+	order, err := h.db.GetOrderByConversation(conversationID)
+	if err != nil || order == nil {
+		log.Printf("[HANDLER] HandleDPProofRejected: GetOrderByConversation error for %s: %v", conversationID, err)
+		return
+	}
+
+	reasonSuffix := ""
+	if reason != "" {
+		reasonSuffix = " — " + reason
+	}
+	msg := fmt.Sprintf("⚠️ *Bukti DP Ditolak*\n\nMohon maaf Bapak/Ibu %s, bukti DP Anda tidak dapat kami konfirmasi%s.\n\nTolong kirim ulang foto bukti transfer DP yang jelas. 🙏",
+		order.CustomerName, reasonSuffix)
+
+	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
+		log.Printf("[HANDLER] HandleDPProofRejected: SendText error: %v", err)
+	}
+	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_PROOF_REJECTED: customer notified")
+	if err := h.db.ResetDPToWaiting(orderID); err != nil {
+		log.Printf("[HANDLER] ResetDPToWaiting error for order %s: %v", orderID, err)
 	}
 }
 
