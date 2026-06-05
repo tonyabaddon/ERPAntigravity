@@ -432,7 +432,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
             const badge   = STATUS_BADGE[order.status] ?? { label: order.status, className: 'bg-gray-100 text-gray-600' };
             const totalCl = TOTAL_COLOR[order.status] ?? 'text-gray-700';
             const borderCl = LEFT_BORDER[order.status] ?? 'border-l-4 border-l-transparent';
-            const isDimmed = order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED';
+            const isDimmed = order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED';
             const isExpanded = expandedId === order.id;
 
             return (
@@ -808,7 +808,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED') && (
+                {isExpanded && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED') && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
