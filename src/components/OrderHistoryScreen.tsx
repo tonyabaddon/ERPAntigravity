@@ -144,9 +144,20 @@ interface RejectProofModalProps {
 }
 function RejectProofModal({ onConfirm, onCancel, loading }: RejectProofModalProps) {
   const [reason, setReason] = useState('');
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onCancel]);
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+        onClick={e => e.stopPropagation()}
+      >
         <h3 className="text-sm font-bold text-gray-800 mb-1">Tolak Bukti Transfer</h3>
         <p className="text-xs text-gray-400 mb-4">Customer akan dinotifikasi via WhatsApp untuk kirim ulang.</p>
         <textarea
@@ -280,7 +291,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const handleVerifyDP = async (orderId: string) => {
     setVerifyingDPId(orderId);
     try {
-      await orderService.verifyDPPayment(orderId);
+      await orderService.verifyDPPayment(orderId, currentUser?.name ?? '');
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'DP_VERIFIED' } : o));
       setExpandedId(null);
       showToast('DP berhasil diverifikasi. Customer dinotifikasi untuk lunasi.', 'success');
@@ -713,7 +724,8 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         </button>
                         <button
                           onClick={() => setRejectDPModalOrderId(order.id)}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border-2 border-red-200 hover:bg-red-50"
+                          disabled={rejectingDPId === order.id}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
