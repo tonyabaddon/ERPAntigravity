@@ -509,9 +509,9 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 
 // HandlePaymentVerified is called by the LISTEN/NOTIFY dispatcher when admin verifies payment.
 func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversationID string) {
-	order, err := h.db.GetOrderByConversation(conversationID)
+	order, err := h.db.GetOrderByIDWithPayment(orderID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] HandlePaymentVerified: GetOrderByConversation error for %s: %v", conversationID, err)
+		log.Printf("[HANDLER] HandlePaymentVerified: GetOrderByIDWithPayment error for %s: %v", orderID, err)
 		return
 	}
 

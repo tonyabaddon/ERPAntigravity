@@ -44,7 +44,11 @@ func (p *Poller) Start(ctx context.Context) {
 
 func (p *Poller) tick(ctx context.Context) {
 	cfg, err := p.db.GetHeartbeatConfig()
-	if err != nil || cfg == nil || !cfg.Enabled {
+	if err != nil {
+		log.Printf("[HEARTBEAT] GetHeartbeatConfig error: %v", err)
+		return
+	}
+	if cfg == nil || !cfg.Enabled {
 		return
 	}
 

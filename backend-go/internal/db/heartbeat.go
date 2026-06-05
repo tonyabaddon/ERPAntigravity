@@ -1,6 +1,10 @@
 package db
 
-import "github.com/username/sinar-elektrik-backend/internal/models"
+import (
+	"database/sql"
+
+	"github.com/username/sinar-elektrik-backend/internal/models"
+)
 
 // HeartbeatConfig holds the notification_config row (single-row table).
 type HeartbeatConfig struct {
@@ -21,7 +25,9 @@ func (c *Client) GetHeartbeatConfig() (*HeartbeatConfig, error) {
 		ORDER BY id DESC LIMIT 1
 	`).Scan(&cfg.Enabled, &cfg.IntervalLabel, &cfg.ReportRevenue, &cfg.ReportStatus, &cfg.LowStockAlert)
 	if err != nil {
-		// sql.ErrNoRows means table is empty — not configured yet.
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &cfg, nil
