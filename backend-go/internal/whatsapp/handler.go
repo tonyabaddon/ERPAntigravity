@@ -397,7 +397,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 
 	if proofURL == "" {
 		// Upload failed — do not advance the order status. Ask customer to resend.
-		log.Printf("[HANDLER] Payment proof upload failed for order %s; keeping status WAITING_PAYMENT", order.ID)
+		log.Printf("[HANDLER] Payment proof upload failed for order %s; status unchanged", order.ID)
 		retry := "Mohon maaf, foto bukti transfer gagal kami terima. Tolong kirim ulang foto atau dokumen PDF bukti transfernya."
 		if conv.Language == "en" {
 			retry = "Sorry, we could not receive your payment proof. Please resend the photo or PDF of your transfer receipt."
@@ -579,6 +579,9 @@ func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID 
 		log.Printf("[HANDLER] HandleDPVerified: SendText error: %v", err)
 	}
 	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_VERIFIED: customer notified to send full payment")
+	// Note: conversation stays in BOOKED state intentionally.
+	// handleMediaMessage routes incoming photos on order.Status (now DP_VERIFIED),
+	// not on conversation state — so no state transition is needed here.
 }
 
 // HandleDPProofRejected is called when admin rejects the DP proof. Sends WA and resets to WAITING_DP.
@@ -589,6 +592,9 @@ func (h *Handler) HandleDPProofRejected(ctx context.Context, orderID, conversati
 		return
 	}
 
+	if len(reason) > 200 {
+		reason = reason[:200] + "..."
+	}
 	reasonSuffix := ""
 	if reason != "" {
 		reasonSuffix = " — " + reason

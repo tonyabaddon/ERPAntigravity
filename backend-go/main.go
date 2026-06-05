@@ -125,10 +125,10 @@ func main() {
 			waHandler.HandlePaymentRejected(ctx, orderID, conversationID)
 		},
 		OnDPVerified: func(orderID, conversationID string) {
-			waHandler.HandleDPVerified(context.Background(), orderID, conversationID)
+			waHandler.HandleDPVerified(ctx, orderID, conversationID)
 		},
 		OnDPProofRejected: func(orderID, conversationID, reason string) {
-			waHandler.HandleDPProofRejected(context.Background(), orderID, conversationID, reason)
+			waHandler.HandleDPProofRejected(ctx, orderID, conversationID, reason)
 		},
 	}); err != nil {
 		log.Fatalf("[MAIN] StartListening failed: %v", err)
