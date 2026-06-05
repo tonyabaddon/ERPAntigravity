@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Sales Inbox: 'Aktifkan AI' tombol tidak berfungsi pada percakapan escalated — DONE
+- **Bug ditemukan via investigasi langsung**: di Sales Inbox, klik tombol toggle AI pada percakapan dengan state `ESCALATED_ADMIN` atau `ESCALATED_WIRING` tidak punya efek karena `getModeBanner` (`SalesInboxScreen.tsx:36-43`) mengembalikan `makeActive: false` dan label `'Ambil Alih'` — padahal AI memang sudah off. Tidak ada path UI untuk mengaktifkan kembali AI pada percakapan yang sudah ter-escalate.
+- **Bug kedua di backend**: walaupun `ai_active=true` di-set manual, daemon tetap skip karena `conv.State.IsTerminal()` returns true untuk ESCALATED states (`handler.go:153`). Jadi reset `state` juga wajib agar Calista mulai memproses lagi.
+- **Patch instan untuk konvensasi Tony Miracle (`9be01cdd-ce0f-4e76-8c26-d190fcf5d5cd`)**: via REST API set `ai_active=true` dan `state='COLLECTING'`. Customer kirim "Halo" lagi → Calista akan respond normal dengan context yang sudah collected (Tony / Miracle / Panel Box Besi Indoor 40x30x20 1mm).
+- **Fix UI (3 file edits)**:
+  - `src/lib/supabaseClient.ts` `toggleAiControl`: tambah optional parameter `newState`. Jika diberikan, di-include dalam UPDATE bersama `ai_active`.
+  - `src/hooks/useRealtimeConversations.ts` `toggleAiControl`: forward parameter `newState` ke service.
+  - `src/components/SalesInboxScreen.tsx`:
+    - `getModeBanner` untuk ESCALATED state: ubah `btnLabel: 'Ambil Alih'` → `'Kembalikan ke AI'`, `makeActive: false` → `true`.
+    - Banner button `onClick`: deteksi escalated state, kirim `'COLLECTING'` sebagai `newState` saat mengaktifkan AI; conv non-escalated tetap toggle tanpa ubah state.
+- **RLS check aman**: `WITH CHECK (state IN ('ESCALATED_ADMIN','COLLECTING'))` lulus karena resulting state = `'COLLECTING'`. GRANT `UPDATE (state, ai_active) ON conversations TO anon` sudah ada dari migration `20260601000001`.
+- **Build verification**: `npm run build` ✅ clean (vite v6.4.2 — 1.88s, no TypeScript errors). Bundle: `dist/assets/index-BtBBxhWq.js`.
+- Belum committed/deployed — menunggu user confirm sebelum push.
+
+## 2026-06-05 — QR Stuck Root Cause: Malformed SUPABASE_DB_CONNECTION on garindo backend — DONE
+- **Actual root cause:** Backend Cloud Build trigger substitution `_SUPABASE_DB_CONN` held a URL-format Postgres connection string (`postgresql://postgres:cgJ?mveH2%3/Z/z@db.…:5432/postgres`) where the password contains URL-reserved characters (`?`, `%`, `/`). Go's `url.Parse` aborted with `invalid port ":cgJ" after host`. The garindo daemon never connected to Postgres → never opened `wa_store` → `WA.IsConnected()=false` → `runQRLoop` never started → `/api/wa/qr` returned empty. Daemon had retried 2,873 times (~8 hours) before this session.
+- **Why earlier diagnosis went wrong:** I first probed sinar-elektrik via its project-number URL and saw QR codes being produced. Assumed that was the live backend the frontend talked to. Wrong — frontend correctly calls garindo. sinar-elektrik happens to ALSO be deployed (legacy service, not torn down) and its env var uses the libpq KVP format (`host=… password='cgJ?mveH2%3/Z/z' …`) which lib/pq parses fine. So both services run, sinar-elektrik works, garindo crashes on DB connect — but only garindo is the one the frontend hits. Three prior "QR loop" code fixes were chasing a downstream symptom; the daemon was crashing before it ever reached the QR code.
+- **Fix applied (production, via gcloud):**
+  - Updated trigger `rmgpgab-sinar-elektrik-msme-erp-asia-southeast1-tonyabaddon-anv` substitution `_SUPABASE_DB_CONN` to KVP format: `host=db.ekhhojaezdfjfwuxyjkl.supabase.co port=5432 user=postgres password='cgJ?mveH2%3/Z/z' dbname=postgres sslmode=require` (the format sinar-elektrik already used successfully).
+  - Triggered rebuild + deploy (build `22fd4b8c-696d-4c05-86ea-96f4b63f3289`, SUCCESS at 15:49 UTC).
+  - Verified: garindo `/api/wa/debug` now returns `is_connected:true, has_qr:true`; daemon logs confirm `[WA] QR loop started → QR Code ready for scanning` rotating every 20s.
+- **Defensive repo edits (kept):**
+  - `cloudbuild.frontend.yaml`: added `substitutions:` block defaulting `_VITE_BACKEND_URL` to the garindo URL.
+  - `.env.example`: kept at garindo URL.
+- **User action:** hard-refresh the WhatsApp AI page → scan QR with phone (one-time pairing; session persists in Postgres `whatsmeow_*` tables thereafter).
+- **Followups (not done):**
+  - Decide whether to keep or decommission `sinar-elektrik-msme-erp` Cloud Run service (no longer the deploy target; safe to delete after garindo runs stable for a few days).
+  - Consider quoting the password in the Cloud Build substitution permanently in `cloudbuild.yaml` so future operators don't repeat the URL-format mistake.
+
 ## 2026-06-05 — Code Quality: Fix interval leak in WhatsappAiScreen.tsx — DONE
 - `src/components/WhatsappAiScreen.tsx` `handleLogout` (line 155): Added `if (qrPollRef.current) clearInterval(qrPollRef.current);` before creating new interval
 - Prevents interval leak where multiple concurrent poll intervals could run simultaneously, causing double API calls and potential state flickering

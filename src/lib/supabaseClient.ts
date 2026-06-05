@@ -122,11 +122,13 @@ export const conversationService = {
     return data;
   },
 
-  async toggleAiControl(conversationId: string, makeActive: boolean): Promise<void> {
+  async toggleAiControl(conversationId: string, makeActive: boolean, newState?: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    const update: Record<string, unknown> = { ai_active: makeActive };
+    if (newState) update.state = newState;
     const { error } = await supabase
       .from('conversations')
-      .update({ ai_active: makeActive })
+      .update(update)
       .eq('id', conversationId);
     if (error) throw error;
   },

@@ -147,8 +147,8 @@ export function useRealtimeConversations() {
     await conversationService.insertAdminMediaMessage(conversationId, url, mediaType);
   };
 
-  const toggleAiControl = async (conversationId: string, makeActive: boolean): Promise<void> => {
-    await conversationService.toggleAiControl(conversationId, makeActive);
+  const toggleAiControl = async (conversationId: string, makeActive: boolean, newState?: string): Promise<void> => {
+    await conversationService.toggleAiControl(conversationId, makeActive, newState);
   };
 
   const approveOrder = async (orderId: string, shippingFee: number) => {

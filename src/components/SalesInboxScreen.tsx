@@ -37,8 +37,8 @@ function getModeBanner(conv: ConversationWithMessages): {
     return {
       bg: 'bg-red-700',
       text: `🚨 ${CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state} — AI dijeda otomatis`,
-      btnLabel: 'Ambil Alih',
-      makeActive: false,
+      btnLabel: 'Kembalikan ke AI',
+      makeActive: true,
     };
   }
   if (!conv.ai_active) {
@@ -252,7 +252,11 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
                 <div className={`${banner.bg} text-white px-4 py-1.5 flex items-center justify-between text-xs shrink-0`}>
                   <span>{banner.text}</span>
                   <button
-                    onClick={() => toggleAiControl(activeChat.id, banner.makeActive)}
+                    onClick={() => {
+                      const isEscalated =
+                        activeChat.state === 'ESCALATED_ADMIN' || activeChat.state === 'ESCALATED_WIRING';
+                      toggleAiControl(activeChat.id, banner.makeActive, isEscalated ? 'COLLECTING' : undefined);
+                    }}
                     className="bg-white/20 hover:bg-white/30 rounded-md px-2 py-1 text-[10px] font-bold"
                   >
                     {banner.btnLabel}
