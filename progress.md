@@ -2608,3 +2608,13 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Added `hpp_total?: number;` field to `DbOrder` interface after `updated_at` field (line 211)
 - TypeScript verification: existing errors unrelated to this change (pre-existing in App.tsx, SalesInboxScreen.tsx, Sidebar.tsx, Deno edge functions)
 - Committed: `feat(types): add hpp_total to DbOrder interface` (5650232)
+
+## 2026-06-05 — Heartbeat Poller + WA Order HPP Fix
+- DB: Added hpp_total column to orders table (migration 20260605000006)
+- Go: HandlePaymentVerified now decrements stock (stock_atas) and records FIFO HPP per item
+- Go: New internal/heartbeat package — sends periodic WA reports per notification_config schedule
+- Frontend: DbOrder interface includes hpp_total optional field
+- Build: `go build ./...` clean (no errors)
+- Tests: All Go tests PASS (storage, engine, followup, heartbeat, whatsapp, scheduler, rules)
+- Fixed storage package: Changed http.MethodPost to http.MethodPut in UploadPaymentProof (matches test expectations and Supabase API)
+- Committed: `build: rebuild daemon binary with heartbeat poller and WA HPP fix` (46a567f)
