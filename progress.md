@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 2 (HPP Plan): Go Model — Add HppTotal to Order struct — DONE
+- Modified `backend-go/internal/models/types.go`
+- Added `HppTotal float64` field to `Order` struct after `UpdatedAt` with JSON tag `json:"hpp_total"`
+- Build: `go build ./...` clean (no errors)
+- Committed: `feat(models): add HppTotal to Order struct` (f28d90b)
+
+## 2026-06-05 — Task 1 (HPP Plan): DB Migration — Add hpp_total to orders — DONE
+- Created `supabase/migrations/20260605000006_orders_hpp_total.sql`
+- Applied via MCP: `ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS hpp_total NUMERIC(15,2) NOT NULL DEFAULT 0`
+- Verified: column exists with `data_type=numeric`, `column_default=0`
+- Committed: `feat(db): add hpp_total column to orders table` (37b8890)
+
 ## 2026-06-05 — Task 8: Deploy DP Multi-Payment — DONE
 - Frontend build: ✅ clean (vite build 2.05s)
 - Backend build: ✅ `go build ./...` clean
