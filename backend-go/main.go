@@ -140,19 +140,27 @@ func main() {
 		}
 	}()
 
-	// DB
-	dbClient, err := db.NewClient(cfg.SupabaseDBConn)
-	if err != nil {
-		log.Printf("[MAIN] DB connect failed: %v — check SUPABASE_DB_CONNECTION env var. Service running in degraded mode.", err)
-		select {} // keep process alive so port stays bound and Cloud Run stays healthy
+	// DB — retry until connected so waClient can initialize even after a transient failure.
+	var dbClient *db.Client
+	for attempt := 1; ; attempt++ {
+		dbClient, err = db.NewClient(cfg.SupabaseDBConn)
+		if err == nil {
+			break
+		}
+		log.Printf("[MAIN] DB connect attempt %d failed: %v — retrying in 10s (check SUPABASE_DB_CONNECTION)", attempt, err)
+		time.Sleep(10 * time.Second)
 	}
 	defer dbClient.Close()
 
-	// Gemini
-	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)
-	if err != nil {
-		log.Printf("[MAIN] Gemini init failed: %v — check GEMINI_API_KEY env var. Service running in degraded mode.", err)
-		select {} // keep process alive
+	// Gemini — retry until connected.
+	var geminiClient *gemini.Client
+	for attempt := 1; ; attempt++ {
+		geminiClient, err = gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)
+		if err == nil {
+			break
+		}
+		log.Printf("[MAIN] Gemini init attempt %d failed: %v — retrying in 10s (check GEMINI_API_KEY)", attempt, err)
+		time.Sleep(10 * time.Second)
 	}
 	defer geminiClient.Close()
 
