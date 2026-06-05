@@ -168,6 +168,7 @@ type Order struct {
 	VerifiedBy       string       `json:"verified_by,omitempty"`
 	CreatedAt        time.Time    `json:"created_at"`
 	UpdatedAt        time.Time    `json:"updated_at"`
+	HppTotal         float64      `json:"hpp_total"`
 }
 
 type OrderItem struct {
