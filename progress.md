@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 7: Frontend — DP_VERIFIED Panel + PAYMENT_UPLOADED DP Context + Counts — DONE
+- `src/components/OrderHistoryScreen.tsx`:
+  - Step 1: Added `DP_VERIFIED` expand panel (teal theme, 3-col grid with customer/phone/DP amount, ItemsTable, waiting message banner)
+  - Step 2: Added DP context section to `PAYMENT_UPLOADED` panel: verified DP summary box (teal) above full proof; "Bukti Transfer" label conditionally becomes "Bukti Pelunasan" for DP orders
+  - Step 3: Verified — no `payment_proof_url` references remain in the file (already cleaned in Task 4)
+  - Step 4: `uploadedCount` now includes `DP_UPLOADED`; `waitingCount` includes `WAITING_DP` + `DP_VERIFIED`; `cancelledCount` includes `DP_PROOF_REJECTED`
+  - Step 5: `filterOrders` updated — `'waiting'` tab includes `WAITING_DP` + `DP_VERIFIED`; `'uploaded'` includes `DP_UPLOADED`; `'cancelled'` includes `DP_PROOF_REJECTED`
+- Tab filter decisions: `DP_VERIFIED` → `'waiting'` (customer still needs to send full proof, admin actionable watch); `DP_PROOF_REJECTED` → `'cancelled'`
+- TypeScript: no new errors; pre-existing errors in `App.tsx`, `SalesInboxScreen.tsx`, `Sidebar.tsx`, Deno edge functions unchanged
+- Committed: `feat(ui): DP_VERIFIED panel, PAYMENT_UPLOADED DP context, updated tab counts and filters` (38d7060)
+
+## 2026-06-05 — Task 6 Fixes: DP_UPLOADED Panel + RejectProofModal — DONE
+- Fix 1 (Critical): `handleVerifyDP` now passes `currentUser?.name ?? ''` to `verifyDPPayment` so `verified_by` is written to DB
+- Fix 2: "Tolak" button in DP_UPLOADED panel now has `disabled={rejectingDPId === order.id}` + `disabled:opacity-40` class
+- Fix 3: `RejectProofModal` outer backdrop div gets `onClick={onCancel}`; inner card div gets `onClick={e => e.stopPropagation()}` to prevent event bubbling
+- Fix 4: `RejectProofModal` gains `useEffect` adding `keydown` listener to close on Escape key
+- TypeScript: no new errors; pre-existing errors in `App.tsx`, `SalesInboxScreen.tsx`, `Sidebar.tsx`, Deno edge functions unchanged
+- Committed: `fix(ui): adminName in verifyDP, disable Tolak btn, backdrop+Escape close modal` (907925b)
+
 ## 2026-06-05 — Task 5: Frontend — Order Confirm Panel (Payment Type Selector) — DONE
 - `src/components/OrderHistoryScreen.tsx`: added 3 new state entries: `paymentTypes`, `dpInputTypes`, `dpValues`
 - `handleApprove`: extended signature to accept `orderTotal: number`; computes `dpAmount` from either AMOUNT or PERCENTAGE input; validates DP amount > 0 and < total; passes all DP params to `approveOrder`
