@@ -152,6 +152,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       setQrCode('');
       pushTerminalLog('Sesi WhatsApp berhasil diputus. Scan QR baru untuk menghubungkan kembali.');
       showToast('WhatsApp berhasil di-logout.', 'success');
+      if (qrPollRef.current) clearInterval(qrPollRef.current);
       qrPollRef.current = setInterval(fetchQR, 5000);
     } catch (err) {
       showToast('Gagal logout WhatsApp.', 'warning');
