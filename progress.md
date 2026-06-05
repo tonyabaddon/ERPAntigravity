@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 8: Deploy DP Multi-Payment — DONE
+- Frontend build: ✅ clean (vite build 2.05s)
+- Backend build: ✅ `go build ./...` clean
+- Pushed: `cbb94e9` → triggers Cloud Build for backend (cloudbuild.yaml) + frontend (cloudbuild.frontend.yaml)
+- Post-deploy notes to track:
+  - `approved_at` not stamped for DP orders (Go `UpdateOrderStatus` only stamps on `WAITING_PAYMENT`) — fix if `approved_at` used in analytics
+  - `orderService.rejectFullProof` is dead code — existing `rejectPayment` + Go handler handles full proof rejection; consider removing or wiring up
+  - `ConversationState` TypeScript union missing `ADD_MORE` — unrelated to DP, pre-existing debt from Calista cart feature
+
 ## 2026-06-05 — Task 7: Frontend — DP_VERIFIED Panel + PAYMENT_UPLOADED DP Context + Counts — DONE
 - `src/components/OrderHistoryScreen.tsx`:
   - Step 1: Added `DP_VERIFIED` expand panel (teal theme, 3-col grid with customer/phone/DP amount, ItemsTable, waiting message banner)
