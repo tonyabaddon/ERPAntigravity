@@ -158,6 +158,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
     const paymentType = paymentTypes[orderId] ?? 'FULL';
     const dpInputType = dpInputTypes[orderId] ?? 'AMOUNT';
     const dpVal = parseFloat(dpValues[orderId] ?? '0');
+    if (paymentType === 'DP' && isNaN(dpVal)) {
+      showToast('Masukkan nominal DP yang valid.', 'warning');
+      return;
+    }
     const dpAmount = paymentType === 'DP'
       ? (dpInputType === 'PERCENTAGE' ? (orderTotal + fee) * dpVal / 100 : dpVal)
       : 0;
@@ -172,6 +176,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       await orderService.approveOrder(orderId, fee, paymentType, dpInputType, dpVal, dpAmount);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'APPROVED', shipping_fee: fee } : o));
       setExpandedId(null);
+      setPaymentTypes(prev => { const n = { ...prev }; delete n[orderId]; return n; });
+      setDpInputTypes(prev => { const n = { ...prev }; delete n[orderId]; return n; });
+      setDpValues(prev => { const n = { ...prev }; delete n[orderId]; return n; });
       showToast('Pesanan berhasil disetujui.', 'success');
     } catch {
       showToast('Gagal menyetujui pesanan.', 'warning');
@@ -433,7 +440,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                               {(['AMOUNT', 'PERCENTAGE'] as const).map(t => (
                                 <button
                                   key={t}
-                                  onClick={() => setDpInputTypes(prev => ({ ...prev, [order.id]: t }))}
+                                  onClick={() => {
+                                    setDpInputTypes(prev => ({ ...prev, [order.id]: t }));
+                                    setDpValues(prev => ({ ...prev, [order.id]: '' }));
+                                  }}
                                   className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${
                                     (dpInputTypes[order.id] ?? 'AMOUNT') === t
                                       ? 'bg-indigo-600 text-white border-indigo-600'
@@ -457,7 +467,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                               {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && <span className="text-gray-400 text-xs">%</span>}
                             </div>
                             {/* Preview computed IDR amount when % selected */}
-                            {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && dpValues[order.id] && (
+                            {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && dpValues[order.id] && !isNaN(parseFloat(dpValues[order.id])) && (
                               <div className="text-[9px] text-indigo-600 font-semibold mt-0.5 text-center">
                                 = Rp {Math.round(
                                   ((order.total ?? 0) + (order.delivery_type === 'PICKUP' ? 0 : parseFloat(shippingFees[order.id] ?? '0')))
@@ -472,7 +482,8 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           onClick={() => handleApprove(order.id, order.delivery_type, order.total ?? 0)}
                           disabled={
                             approvingId === order.id ||
-                            (order.delivery_type !== 'PICKUP' && (!shippingFees[order.id] || shippingFees[order.id] === ''))
+                            (order.delivery_type !== 'PICKUP' && (!shippingFees[order.id] || shippingFees[order.id] === '')) ||
+                            ((paymentTypes[order.id] ?? 'FULL') === 'DP' && !dpValues[order.id])
                           }
                           className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 disabled:opacity-40"
                         >
