@@ -459,7 +459,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             {/* Preview computed IDR amount when % selected */}
                             {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && dpValues[order.id] && (
                               <div className="text-[9px] text-indigo-600 font-semibold mt-0.5 text-center">
-                                = Rp {Math.round((order.total ?? 0) * parseFloat(dpValues[order.id]) / 100).toLocaleString('id-ID')}
+                                = Rp {Math.round(
+                                  ((order.total ?? 0) + (order.delivery_type === 'PICKUP' ? 0 : parseFloat(shippingFees[order.id] ?? '0')))
+                                  * parseFloat(dpValues[order.id]) / 100
+                                ).toLocaleString('id-ID')}
                               </div>
                             )}
                           </div>
