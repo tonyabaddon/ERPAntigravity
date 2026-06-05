@@ -208,6 +208,7 @@ export interface DbOrder {
   verified_by?: string;
   created_at: string;
   updated_at: string;
+  hpp_total?: number;
 }
 
 export interface DbBankConfig {
