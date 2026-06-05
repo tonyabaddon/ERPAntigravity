@@ -169,12 +169,13 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		stockContext = engine.StockContextString(items)
 	}
 
-	// 9. Run state machine with retry (10 attempts × 10s timeout each)
+	// 9. Run state machine with retry (3 attempts × 10s timeout, exponential backoff;
+	// bails immediately on 429 rate-limit since per-minute quota won't reset within window).
 	holdingMsg := "Mohon maaf, sistem kami sedang sibuk. Kami akan segera membalas 🙏"
 	if conv.Language == "en" {
 		holdingMsg = "Sorry, our system is currently busy. We'll reply to you shortly 🙏"
 	}
-	result := engine.RetryProcess(ctx, h.machine, conv, text, history, stockContext, 10, func() {
+	result := engine.RetryProcess(ctx, h.machine, conv, text, history, stockContext, 3, func() {
 		h.db.InsertMessage(conv.ID, models.SenderAI, holdingMsg)
 		if sendErr := h.sender.SendText(ctx, senderPhone, holdingMsg); sendErr != nil {
 			log.Printf("[HANDLER] holding message send error: %v", sendErr)

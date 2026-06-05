@@ -20,7 +20,7 @@ func NewClient(ctx context.Context, apiKey, systemPrompt string) (*Client, error
 	if err != nil {
 		return nil, fmt.Errorf("gemini: new client: %w", err)
 	}
-	model := gc.GenerativeModel("gemini-3.5-flash")
+	model := gc.GenerativeModel("gemini-2.5-flash-lite")
 	model.ResponseMIMEType = "application/json"
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(systemPrompt)},

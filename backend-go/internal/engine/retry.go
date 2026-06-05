@@ -2,12 +2,21 @@ package engine
 
 import (
 	"context"
+	"strings"
+	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
-// RetryProcess calls machine.Process up to maxAttempts times (each with the
-// 10-second timeout already baked into gemini.GenerateReply).
+// retrySleep is package-level so tests can swap it for a no-op.
+var retrySleep = time.Sleep
+
+// RetryProcess calls machine.Process up to maxAttempts times. Between attempts it
+// sleeps with exponential backoff (2s, 4s, 8s, …). If the Gemini error is a
+// rate-limit (HTTP 429 / RESOURCE_EXHAUSTED), it bails out immediately —
+// per-minute quota does not reset within the retry window, so further attempts
+// would only burn budget without recovering.
+//
 // onFirstFail is called exactly once when attempt 1 fails — use it to send
 // a holding message to the customer.
 // Returns the first successful ProcessResult, or the last failed result if all
@@ -31,6 +40,26 @@ func RetryProcess(
 		if attempt == 1 {
 			onFirstFail()
 		}
+		if isRateLimitError(result.GeminiError) {
+			return result
+		}
+		if attempt < maxAttempts {
+			backoff := time.Duration(1<<attempt) * time.Second // 2s, 4s, 8s…
+			select {
+			case <-ctx.Done():
+				return result
+			default:
+				retrySleep(backoff)
+			}
+		}
 	}
 	return result
+}
+
+func isRateLimitError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "429") || strings.Contains(msg, "RESOURCE_EXHAUSTED")
 }
