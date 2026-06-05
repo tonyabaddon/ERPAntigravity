@@ -2658,3 +2658,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Tests: `go test ./internal/...` — all tests PASS (engine, followup, heartbeat, rules, scheduler, storage, whatsapp)
 - Binary verified: Updated timestamp 2026-06-05 14:00 UTC
 - Committed: `build: rebuild daemon with QR loop retry fix` (d3b8b96)
+
+## 2026-06-05 — WhatsApp QR Code Fix
+
+### Problem
+QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di response `/api/wa/qr`.
+
+### Root Cause
+- Bug 1: Stored WA session di PostgreSQL (`Store.ID != nil`) menyebabkan daemon masuk reconnect path saat restart, QR loop tidak pernah dimulai
+- Bug 2: Tidak ada tombol logout di UI saat `waConnected=false`, user tidak bisa clear session yang stuck
+- Bug 3: QR loop exit saat `c.WA.Connect()` gagal (sudah ada di client.go tapi belum di-commit/deploy)
+
+### Fix
+- `src/components/WhatsappAiScreen.tsx`: Tambah tombol "Minta QR Baru" di state `!waConnected && !qrCode && daemonOnline` — memanggil `handleLogout()` untuk force-clear session
+- `src/components/WhatsappAiScreen.tsx`: Fix interval leak di `handleLogout` — clear existing interval sebelum create yang baru
+- `backend-go/internal/whatsapp/client.go`: QR loop retry infinite saat Connect() gagal (5s delay) alih-alih exit loop
+- `backend-go/daemon`: Rebuilt binary
