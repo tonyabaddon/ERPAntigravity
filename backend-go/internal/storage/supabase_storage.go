@@ -21,7 +21,7 @@ func UploadPaymentProof(ctx context.Context, supabaseURL, serviceKey, orderID st
 	}
 	uploadURL := fmt.Sprintf("%s/storage/v1/object/payment-proofs/%s", supabaseURL, filename)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uploadURL, bytes.NewReader(data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadURL, bytes.NewReader(data))
 	if err != nil {
 		return "", fmt.Errorf("storage: build request: %w", err)
 	}
