@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -125,9 +126,16 @@ func main() {
 			"has_qr":        waClient.GetQR() != "",
 		})
 	})
+	// Bind port synchronously so Cloud Run startup probe passes even if
+	// subsequent init (DB, WA) fails or hangs. net.Listen reserves the port
+	// in the OS before we do anything else.
+	ln, err := net.Listen("tcp", ":"+cfg.Port)
+	if err != nil {
+		log.Fatalf("[MAIN] Cannot bind :%s: %v", cfg.Port, err)
+	}
 	go func() {
 		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
-		if err := http.ListenAndServe(":"+cfg.Port, mux); err != nil {
+		if err := http.Serve(ln, mux); err != nil {
 			log.Printf("[MAIN] HTTP error: %v", err)
 		}
 	}()
@@ -135,14 +143,16 @@ func main() {
 	// DB
 	dbClient, err := db.NewClient(cfg.SupabaseDBConn)
 	if err != nil {
-		log.Fatalf("[MAIN] DB connect failed: %v", err)
+		log.Printf("[MAIN] DB connect failed: %v — check SUPABASE_DB_CONNECTION env var. Service running in degraded mode.", err)
+		select {} // keep process alive so port stays bound and Cloud Run stays healthy
 	}
 	defer dbClient.Close()
 
 	// Gemini
 	geminiClient, err := gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)
 	if err != nil {
-		log.Fatalf("[MAIN] Gemini init failed: %v", err)
+		log.Printf("[MAIN] Gemini init failed: %v — check GEMINI_API_KEY env var. Service running in degraded mode.", err)
+		select {} // keep process alive
 	}
 	defer geminiClient.Close()
 
