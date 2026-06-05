@@ -137,6 +137,45 @@ function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerCla
   );
 }
 
+interface RejectProofModalProps {
+  onConfirm: (reason: string) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+function RejectProofModal({ onConfirm, onCancel, loading }: RejectProofModalProps) {
+  const [reason, setReason] = useState('');
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+        <h3 className="text-sm font-bold text-gray-800 mb-1">Tolak Bukti Transfer</h3>
+        <p className="text-xs text-gray-400 mb-4">Customer akan dinotifikasi via WhatsApp untuk kirim ulang.</p>
+        <textarea
+          className="w-full border border-gray-200 rounded-lg p-3 text-xs resize-none outline-none focus:border-red-300"
+          rows={3}
+          placeholder="Alasan penolakan (opsional)"
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+        />
+        <div className="flex gap-2 mt-4 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+          >
+            Batal
+          </button>
+          <button
+            onClick={() => onConfirm(reason)}
+            disabled={loading}
+            className="px-4 py-2 text-xs font-bold bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-40"
+          >
+            {loading ? 'Memproses...' : 'Tolak & Notifikasi'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showToast }: OrderHistoryScreenProps) {
   const [orders, setOrders] = useState<DbOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +191,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const [paymentTypes, setPaymentTypes] = useState<Record<string, 'FULL' | 'DP'>>({});
   const [dpInputTypes, setDpInputTypes] = useState<Record<string, 'AMOUNT' | 'PERCENTAGE'>>({});
   const [dpValues, setDpValues] = useState<Record<string, string>>({});
+  const [verifyingDPId, setVerifyingDPId] = useState<string | null>(null);
+  const [rejectDPModalOrderId, setRejectDPModalOrderId] = useState<string | null>(null);
+  const [rejectingDPId, setRejectingDPId] = useState<string | null>(null);
 
   const handleApprove = async (orderId: string, deliveryType: string | undefined, orderTotal: number) => {
     const fee = deliveryType === 'PICKUP' ? 0 : parseFloat(shippingFees[orderId] ?? '0');
@@ -232,6 +274,35 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       showToast('Gagal menolak bukti bayar.', 'warning');
     } finally {
       setRejectingPaymentId(null);
+    }
+  };
+
+  const handleVerifyDP = async (orderId: string) => {
+    setVerifyingDPId(orderId);
+    try {
+      await orderService.verifyDPPayment(orderId);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'DP_VERIFIED' } : o));
+      setExpandedId(null);
+      showToast('DP berhasil diverifikasi. Customer dinotifikasi untuk lunasi.', 'success');
+    } catch {
+      showToast('Gagal verifikasi DP.', 'warning');
+    } finally {
+      setVerifyingDPId(null);
+    }
+  };
+
+  const handleRejectDP = async (orderId: string, reason: string) => {
+    setRejectingDPId(orderId);
+    try {
+      await orderService.rejectDPProof(orderId, reason);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'DP_PROOF_REJECTED', dp_proof_url: null } : o));
+      setRejectDPModalOrderId(null);
+      setExpandedId(null);
+      showToast('Bukti DP ditolak. Customer dinotifikasi.', 'info');
+    } catch {
+      showToast('Gagal menolak bukti DP.', 'warning');
+    } finally {
+      setRejectingDPId(null);
     }
   };
 
@@ -578,6 +649,78 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
+                {isExpanded && order.status === 'DP_UPLOADED' && (
+                  <div className="px-5 py-4 border-t border-indigo-200 bg-indigo-50">
+                    <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
+                      <div>
+                        <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                            <div className="font-semibold text-gray-700">{order.customer_name}</div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                            <div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div>
+                          </div>
+                          <div>
+                            <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div>
+                            <div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div>
+                          </div>
+                        </div>
+                        <ItemsTable items={order.items} headerClass="bg-indigo-100 text-indigo-700" />
+                        {/* DP Proof */}
+                        <div className="mt-3">
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">
+                            Bukti DP {order.dp_amount ? `(Rp ${Number(order.dp_amount).toLocaleString('id-ID')})` : ''}
+                          </div>
+                          <div className="flex items-start gap-3">
+                            {order.dp_proof_url ? (
+                              order.dp_proof_url.endsWith('.pdf') ? (
+                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
+                                  className="w-16 h-20 bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-red-100">
+                                  <span className="text-red-500 text-2xl">📄</span>
+                                  <span className="text-[9px] text-red-500 font-semibold">PDF</span>
+                                </a>
+                              ) : (
+                                <img src={order.dp_proof_url} alt="Bukti DP"
+                                  className="w-16 h-20 object-cover rounded-lg border-2 border-indigo-200 cursor-pointer"
+                                  onClick={() => window.open(order.dp_proof_url!, '_blank')} />
+                              )
+                            ) : (
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                                <span className="text-indigo-400 text-lg">🖼</span>
+                                <span className="text-[9px] text-indigo-400 font-semibold">Foto DP</span>
+                              </div>
+                            )}
+                            <div>
+                              {order.dp_proof_url && (
+                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
+                                  className="text-xs text-blue-600 font-semibold underline">Lihat Ukuran Penuh ↗</a>
+                              )}
+                              <p className="text-[10px] text-gray-400 mt-1">Dikirim {formatDate(order.updated_at)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2 min-w-[120px]">
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tindakan</div>
+                        <button
+                          onClick={() => handleVerifyDP(order.id)}
+                          disabled={verifyingDPId === order.id}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-teal-700 disabled:opacity-40"
+                        >
+                          {verifyingDPId === order.id ? 'Memproses...' : '✓ Verifikasi DP'}
+                        </button>
+                        <button
+                          onClick={() => setRejectDPModalOrderId(order.id)}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-lg border-2 border-red-200 hover:bg-red-50"
+                        >
+                          ✕ Tolak
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {isExpanded && order.status === 'WAITING_PAYMENT' && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
@@ -634,6 +777,13 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
 
       {invoiceOrder && (
         <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />
+      )}
+      {rejectDPModalOrderId && (
+        <RejectProofModal
+          loading={rejectingDPId === rejectDPModalOrderId}
+          onConfirm={(reason) => handleRejectDP(rejectDPModalOrderId, reason)}
+          onCancel={() => setRejectDPModalOrderId(null)}
+        />
       )}
     </div>
   );
