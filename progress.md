@@ -47,6 +47,13 @@
 - `npm run build` passes cleanly (✓ built in 2.21s)
 - Committed: `feat(app): map stock_atas/stock_bawah from Supabase into StockItem` (fa4ea77)
 
+## 2026-06-05 — DP Multi-Payment: Task 3 — Go Handler + Client Wiring — DONE
+- `db/client.go`: Added `OnDPVerified` and `OnDPProofRejected` fields to `NotifyHandlers`; subscribed to `dp_verified` and `dp_proof_rejected` NOTIFY channels; added switch cases to parse and dispatch both notifications
+- `whatsapp/handler.go`: Updated `handleMediaMessage` to accept `WAITING_DP`, `DP_UPLOADED`, `DP_VERIFIED` statuses in addition to `WAITING_PAYMENT`/`PAYMENT_UPLOADED`; routes photo to `UpdateDPProof` for DP statuses vs `UpdatePaymentProof` for full payment; `HandleApprovedOrder` sends DP instructions + sets `WAITING_DP` when `PaymentType=="DP"`, existing FULL flow unchanged; added `HandleDPVerified` (sends remaining balance message to customer) and `HandleDPProofRejected` (sends rejection notice, calls `ResetDPToWaiting`)
+- `main.go`: Wired `OnDPVerified` and `OnDPProofRejected` into `StartListening` call
+- `go build ./...` passes cleanly
+- Committed: `feat(go): DP payment proof routing + HandleDPVerified + HandleDPProofRejected handlers` (39e7242)
+
 ## 2026-06-05 — DP Multi-Payment: Go Models + DB Layer Fix (Task 2 complete)
 - Added `DPInputType` (string) and `DPValue` (float64) fields to `models.Order` struct in `types.go`
 - Extended `GetOrderByConversation` SELECT + Scan to include `dp_input_type`, `dp_value`
