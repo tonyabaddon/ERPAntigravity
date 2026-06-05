@@ -183,6 +183,10 @@ export interface DbOrder {
     | 'PENDING_WIRING_QUOTE'
     | 'APPROVED'
     | 'WAITING_PAYMENT'
+    | 'WAITING_DP'
+    | 'DP_UPLOADED'
+    | 'DP_VERIFIED'
+    | 'DP_PROOF_REJECTED'
     | 'PAYMENT_UPLOADED'
     | 'PAYMENT_VERIFIED'
     | 'PAYMENT_REJECTED'
@@ -193,7 +197,13 @@ export interface DbOrder {
   gjp_order_id?: string;
   order_type?: 'STANDARD' | 'CUSTOM_PANEL' | 'WIRING_PANEL';
   delivery_type?: 'PICKUP' | 'DELIVERY';
-  payment_proof_url?: string;
+  full_proof_url?: string | null;
+  dp_proof_url?: string | null;
+  payment_type?: 'FULL' | 'DP';
+  dp_input_type?: 'AMOUNT' | 'PERCENTAGE';
+  dp_value?: number;
+  dp_amount?: number;
+  rejection_reason?: string | null;
   payment_verified_at?: string;
   verified_by?: string;
   created_at: string;

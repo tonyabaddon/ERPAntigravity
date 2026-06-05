@@ -164,11 +164,25 @@ export const orderService = {
     return data ?? [];
   },
 
-  async approveOrder(orderId: string, shippingFee: number): Promise<void> {
+  async approveOrder(
+    orderId: string,
+    shippingFee: number,
+    paymentType: 'FULL' | 'DP' = 'FULL',
+    dpInputType?: 'AMOUNT' | 'PERCENTAGE',
+    dpValue?: number,
+    dpAmount?: number,
+  ): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('orders')
-      .update({ shipping_fee: shippingFee, status: 'APPROVED' })
+      .update({
+        shipping_fee: shippingFee,
+        status: 'APPROVED',
+        payment_type: paymentType,
+        dp_input_type: paymentType === 'DP' ? dpInputType : null,
+        dp_value: paymentType === 'DP' ? (dpValue ?? 0) : 0,
+        dp_amount: paymentType === 'DP' ? (dpAmount ?? 0) : 0,
+      })
       .eq('id', orderId);
     if (error) throw error;
   },
@@ -202,6 +216,33 @@ export const orderService = {
     const { error } = await supabase
       .from('orders')
       .update({ status: 'PAYMENT_REJECTED' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async verifyDPPayment(orderId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'DP_VERIFIED' })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async rejectDPProof(orderId: string, reason: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'DP_PROOF_REJECTED', rejection_reason: reason || null, dp_proof_url: null })
+      .eq('id', orderId);
+    if (error) throw error;
+  },
+
+  async rejectFullProof(orderId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'PAYMENT_REJECTED', full_proof_url: null })
       .eq('id', orderId);
     if (error) throw error;
   },

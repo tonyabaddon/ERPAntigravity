@@ -13,6 +13,10 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   PENDING_ADMIN_CONFIRMATION: { label: '🔔 Perlu Konfirmasi', className: 'bg-purple-100 text-purple-800' },
   APPROVED:         { label: '✓ Disetujui',       className: 'bg-teal-100 text-teal-800' },
   WAITING_PAYMENT:  { label: '⏳ Menunggu Bayar',  className: 'bg-yellow-100 text-yellow-800' },
+  WAITING_DP:       { label: '⏳ Menunggu DP',     className: 'bg-yellow-100 text-yellow-800' },
+  DP_UPLOADED:      { label: '📎 Bukti DP Dikirim',className: 'bg-indigo-100 text-indigo-800' },
+  DP_VERIFIED:      { label: '✓ DP Lunas',         className: 'bg-teal-100 text-teal-800' },
+  DP_PROOF_REJECTED:{ label: '✕ DP Ditolak',       className: 'bg-red-100 text-red-800' },
   PAYMENT_UPLOADED: { label: '📎 Bukti Dikirim',   className: 'bg-blue-100 text-blue-800' },
   PAYMENT_VERIFIED: { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
   COMPLETED:        { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
@@ -21,12 +25,16 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 const TOTAL_COLOR: Record<string, string> = {
-  PAYMENT_VERIFIED: 'text-green-700',
-  COMPLETED:        'text-green-700',
-  WAITING_PAYMENT:  'text-yellow-700',
-  PAYMENT_UPLOADED: 'text-blue-700',
-  PAYMENT_REJECTED: 'text-gray-400',
-  CANCELLED:        'text-gray-400',
+  PAYMENT_VERIFIED:  'text-green-700',
+  COMPLETED:         'text-green-700',
+  WAITING_PAYMENT:   'text-yellow-700',
+  WAITING_DP:        'text-yellow-700',
+  DP_UPLOADED:       'text-indigo-700',
+  DP_VERIFIED:       'text-teal-700',
+  DP_PROOF_REJECTED: 'text-red-700',
+  PAYMENT_UPLOADED:  'text-blue-700',
+  PAYMENT_REJECTED:  'text-gray-400',
+  CANCELLED:         'text-gray-400',
 };
 
 const LEAD_BADGE: Record<string, { label: string; className: string }> = {

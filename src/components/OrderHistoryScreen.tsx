@@ -20,6 +20,10 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   PENDING_WIRING_QUOTE:       { label: '🔌 Wiring Quote',     className: 'bg-orange-100 text-orange-800' },
   APPROVED:                   { label: '✓ Disetujui',         className: 'bg-teal-100 text-teal-800' },
   WAITING_PAYMENT:            { label: '⏳ Menunggu Bayar',   className: 'bg-yellow-100 text-yellow-800' },
+  WAITING_DP:                 { label: '⏳ Menunggu DP',      className: 'bg-yellow-100 text-yellow-800' },
+  DP_UPLOADED:                { label: '📎 Bukti DP Dikirim', className: 'bg-indigo-100 text-indigo-800' },
+  DP_VERIFIED:                { label: '✓ DP Lunas',          className: 'bg-teal-100 text-teal-800' },
+  DP_PROOF_REJECTED:          { label: '✕ DP Ditolak',        className: 'bg-red-100 text-red-800' },
   PAYMENT_UPLOADED:           { label: '📎 Bukti Dikirim',    className: 'bg-blue-100 text-blue-800' },
   PAYMENT_VERIFIED:           { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
   COMPLETED:                  { label: '✓ Selesai',           className: 'bg-green-100 text-green-800' },
@@ -30,6 +34,10 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 const TOTAL_COLOR: Record<string, string> = {
   PENDING_ADMIN_CONFIRMATION: 'text-purple-700',
   WAITING_PAYMENT:            'text-yellow-700',
+  WAITING_DP:                 'text-yellow-700',
+  DP_UPLOADED:                'text-indigo-700',
+  DP_VERIFIED:                'text-teal-700',
+  DP_PROOF_REJECTED:          'text-red-700',
   PAYMENT_UPLOADED:           'text-blue-700',
   PAYMENT_VERIFIED:           'text-green-700',
   COMPLETED:                  'text-green-700',
@@ -40,6 +48,7 @@ const TOTAL_COLOR: Record<string, string> = {
 const LEFT_BORDER: Record<string, string> = {
   PENDING_ADMIN_CONFIRMATION: 'border-l-4 border-l-purple-500',
   PAYMENT_UPLOADED:           'border-l-4 border-l-blue-500',
+  DP_UPLOADED:                'border-l-4 border-l-indigo-500',
 };
 
 function filterOrders(orders: DbOrder[], tab: FilterTab, search: string): DbOrder[] {
@@ -419,10 +428,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <div>
                           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">Bukti Transfer</div>
                           <div className="flex items-start gap-3">
-                            {order.payment_proof_url ? (
-                              order.payment_proof_url.endsWith('.pdf') ? (
+                            {order.full_proof_url ? (
+                              order.full_proof_url.endsWith('.pdf') ? (
                                 <a
-                                  href={order.payment_proof_url}
+                                  href={order.full_proof_url}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="w-16 h-20 bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-red-100 transition-colors"
@@ -432,10 +441,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 </a>
                               ) : (
                                 <img
-                                  src={order.payment_proof_url}
+                                  src={order.full_proof_url}
                                   alt="Bukti bayar"
                                   className="w-16 h-20 object-cover rounded-lg border-2 border-blue-200 cursor-pointer"
-                                  onClick={() => window.open(order.payment_proof_url!, '_blank')}
+                                  onClick={() => window.open(order.full_proof_url!, '_blank')}
                                 />
                               )
                             ) : (
@@ -445,9 +454,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                               </div>
                             )}
                             <div>
-                              {order.payment_proof_url && (
+                              {order.full_proof_url && (
                                 <a
-                                  href={order.payment_proof_url}
+                                  href={order.full_proof_url}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-xs text-blue-600 font-semibold underline"
