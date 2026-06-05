@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 4: Frontend Types + Service Layer — DONE
+- `src/types.ts` `DbOrder.status`: added 4 new values `WAITING_DP | DP_UPLOADED | DP_VERIFIED | DP_PROOF_REJECTED`
+- `src/types.ts` `DbOrder`: replaced `payment_proof_url?: string` with `full_proof_url`, `dp_proof_url`, `payment_type`, `dp_input_type`, `dp_value`, `dp_amount`, `rejection_reason` fields
+- `src/lib/supabaseClient.ts` `approveOrder`: extended signature with `paymentType='FULL'`, `dpInputType`, `dpValue`, `dpAmount` params; writes new DP columns on approve
+- `src/lib/supabaseClient.ts`: added `verifyDPPayment`, `rejectDPProof`, `rejectFullProof` functions
+- `src/components/OrderHistoryScreen.tsx`: added 4 DP entries to `STATUS_BADGE`, `TOTAL_COLOR`, `LEFT_BORDER`; renamed `payment_proof_url` → `full_proof_url` in payment proof display
+- `src/components/PelangganScreen.tsx`: added 4 DP entries to `STATUS_BADGE`, `TOTAL_COLOR`
+- Note: `ORDER_STATUS_CONFIG` does not exist in `supabaseClient.ts`; status maps live in component files — updated there instead
+- Note: `payment_proof_url` in `DbPurchaseOrder`/`pembelianService`/`PoDetailView` left unchanged — purchase orders table was not renamed
+- TypeScript: no new errors introduced; pre-existing errors in `App.tsx`, `SalesInboxScreen.tsx`, `Sidebar.tsx`, `supabase/functions` remain unchanged
+- Committed: `feat(frontend): add DP types, status maps, and service functions` (ec4802e)
+
+## 2026-06-05 — Go DP Handler Fixes — DONE
+- Fix 1: Changed `context.Background()` to `ctx` in `OnDPVerified` and `OnDPProofRejected` closures in `backend-go/main.go` to match all other LISTEN/NOTIFY handlers
+- Fix 2: Added comment in `HandleDPVerified` (handler.go) after `InsertMessage` explaining why conversation stays in BOOKED state (routing on order.Status, not conv state)
+- Fix 3: Added 200-char truncation guard on `reason` in `HandleDPProofRejected` before building the WA message
+- Fix 4: Fixed stale log message in `handleMediaMessage` — "keeping status WAITING_PAYMENT" → "status unchanged" (accurate for all payment statuses, not just WAITING_PAYMENT)
+- `go build ./...` passed cleanly
+- Committed: `fix(go): use ctx in DP handlers, add state comment, sanitize rejection reason` (4d5d676)
+
 ## 2026-06-05 — CA-6: handleBooking — cart iteration + buildOrderItems helper — DONE
 - Added pure `buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.StockItem, error)) ([]models.OrderItem, float64)` helper after `handleBooking` in `backend-go/internal/whatsapp/handler.go`
 - Replaced single-product lookup in `handleBooking` body with cart iteration via `buildOrderItems`; legacy single-item fields (Product/Quantity) used as fallback when Cart is empty
