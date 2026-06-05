@@ -358,6 +358,14 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                     >
                       Refresh Status
                     </button>
+                    {daemonOnline && (
+                      <button
+                        onClick={handleLogout}
+                        className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-full text-[10px] font-extrabold transition-all cursor-pointer shadow-md"
+                      >
+                        Minta QR Baru
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
