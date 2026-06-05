@@ -535,6 +535,21 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 			log.Printf("[HANDLER] UpdateLeadStatus error for lead %s: %v", order.LeadsID, err)
 		}
 	}
+
+	// Decrement stock and record FIFO HPP for each item.
+	// Errors are logged but never block payment confirmation.
+	var totalHpp float64
+	for _, item := range order.Items {
+		cost, err := h.db.DeductStockAndGetHPP(item.SKU, item.Qty)
+		if err != nil {
+			log.Printf("[HANDLER] DeductStockAndGetHPP error for %s x%d: %v", item.SKU, item.Qty, err)
+			continue
+		}
+		totalHpp += cost
+	}
+	if err := h.db.UpdateOrderHpp(orderID, totalHpp); err != nil {
+		log.Printf("[HANDLER] UpdateOrderHpp error for order %s: %v", orderID, err)
+	}
 }
 
 // HandlePaymentRejected is called by the LISTEN/NOTIFY dispatcher when admin rejects payment.
