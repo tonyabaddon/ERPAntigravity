@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Task 5: Frontend — Order Confirm Panel (Payment Type Selector) — DONE
+- `src/components/OrderHistoryScreen.tsx`: added 3 new state entries: `paymentTypes`, `dpInputTypes`, `dpValues`
+- `handleApprove`: extended signature to accept `orderTotal: number`; computes `dpAmount` from either AMOUNT or PERCENTAGE input; validates DP amount > 0 and < total; passes all DP params to `approveOrder`
+- PENDING_ADMIN_CONFIRMATION panel: added Full/DP toggle buttons + conditional DP sub-panel (AMOUNT/PERCENTAGE sub-toggle, numeric input, percentage preview in IDR)
+- Approve button onClick updated to pass `order.total ?? 0` as third argument
+- TypeScript: no new errors introduced; pre-existing errors in `App.tsx`, `SalesInboxScreen.tsx`, `Sidebar.tsx`, Deno edge functions unchanged
+- Committed: `feat(ui): add payment type selector (Full/DP) to order confirm panel` (348027e)
+
+## 2026-06-05 — Task 4: Frontend Types + Service Layer — Fix Round 2 — DONE
+- `src/types.ts` `DbOrder`: made `dp_input_type`, `dp_value`, `dp_amount` nullable (`| null`) to match DB schema (COALESCE guards confirm nullability)
+- `src/lib/supabaseClient.ts` `rejectFullProof`: added `rejection_reason: null` to update payload to clear stale DP rejection reason on full proof reject
+- `src/lib/supabaseClient.ts` `verifyDPPayment`: added `adminName = ''` parameter, now writes `payment_verified_at` and `verified_by` audit fields matching `verifyPayment` pattern
+- TypeScript: no new errors introduced; pre-existing errors unchanged
+- Committed: `fix(frontend): nullable DP types, clear rejection_reason on full proof reject` (17863f9)
+
 ## 2026-06-05 — Task 4: Frontend Types + Service Layer — DONE
 - `src/types.ts` `DbOrder.status`: added 4 new values `WAITING_DP | DP_UPLOADED | DP_VERIFIED | DP_PROOF_REJECTED`
 - `src/types.ts` `DbOrder`: replaced `payment_proof_url?: string` with `full_proof_url`, `dp_proof_url`, `payment_type`, `dp_input_type`, `dp_value`, `dp_amount`, `rejection_reason` fields
