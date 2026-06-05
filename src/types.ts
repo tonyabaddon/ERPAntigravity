@@ -200,9 +200,9 @@ export interface DbOrder {
   full_proof_url?: string | null;
   dp_proof_url?: string | null;
   payment_type?: 'FULL' | 'DP';
-  dp_input_type?: 'AMOUNT' | 'PERCENTAGE';
-  dp_value?: number;
-  dp_amount?: number;
+  dp_input_type?: 'AMOUNT' | 'PERCENTAGE' | null;
+  dp_value?: number | null;
+  dp_amount?: number | null;
   rejection_reason?: string | null;
   payment_verified_at?: string;
   verified_by?: string;

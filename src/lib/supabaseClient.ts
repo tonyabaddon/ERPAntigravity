@@ -220,11 +220,15 @@ export const orderService = {
     if (error) throw error;
   },
 
-  async verifyDPPayment(orderId: string): Promise<void> {
+  async verifyDPPayment(orderId: string, adminName = ''): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('orders')
-      .update({ status: 'DP_VERIFIED' })
+      .update({
+        status: 'DP_VERIFIED',
+        payment_verified_at: new Date().toISOString(),
+        verified_by: adminName,
+      })
       .eq('id', orderId);
     if (error) throw error;
   },
@@ -242,7 +246,7 @@ export const orderService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('orders')
-      .update({ status: 'PAYMENT_REJECTED', full_proof_url: null })
+      .update({ status: 'PAYMENT_REJECTED', full_proof_url: null, rejection_reason: null })
       .eq('id', orderId);
     if (error) throw error;
   },
