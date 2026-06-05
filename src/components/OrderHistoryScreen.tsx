@@ -149,12 +149,27 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [rejectingPaymentId, setRejectingPaymentId] = useState<string | null>(null);
   const [invoiceOrder, setInvoiceOrder] = useState<DbOrder | null>(null);
+  const [paymentTypes, setPaymentTypes] = useState<Record<string, 'FULL' | 'DP'>>({});
+  const [dpInputTypes, setDpInputTypes] = useState<Record<string, 'AMOUNT' | 'PERCENTAGE'>>({});
+  const [dpValues, setDpValues] = useState<Record<string, string>>({});
 
-  const handleApprove = async (orderId: string, deliveryType: string | undefined) => {
+  const handleApprove = async (orderId: string, deliveryType: string | undefined, orderTotal: number) => {
     const fee = deliveryType === 'PICKUP' ? 0 : parseFloat(shippingFees[orderId] ?? '0');
+    const paymentType = paymentTypes[orderId] ?? 'FULL';
+    const dpInputType = dpInputTypes[orderId] ?? 'AMOUNT';
+    const dpVal = parseFloat(dpValues[orderId] ?? '0');
+    const dpAmount = paymentType === 'DP'
+      ? (dpInputType === 'PERCENTAGE' ? (orderTotal + fee) * dpVal / 100 : dpVal)
+      : 0;
+
+    if (paymentType === 'DP' && (dpAmount <= 0 || dpAmount >= orderTotal + fee)) {
+      showToast('Nominal DP harus lebih dari 0 dan kurang dari total order.', 'warning');
+      return;
+    }
+
     setApprovingId(orderId);
     try {
-      await orderService.approveOrder(orderId, fee);
+      await orderService.approveOrder(orderId, fee, paymentType, dpInputType, dpVal, dpAmount);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'APPROVED', shipping_fee: fee } : o));
       setExpandedId(null);
       showToast('Pesanan berhasil disetujui.', 'success');
@@ -393,8 +408,65 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             />
                           </div>
                         )}
+                        {/* Payment type selector */}
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center mt-2">Tipe Pembayaran</div>
+                        <div className="flex gap-2 justify-center">
+                          {(['FULL', 'DP'] as const).map(t => (
+                            <button
+                              key={t}
+                              onClick={() => setPaymentTypes(prev => ({ ...prev, [order.id]: t }))}
+                              className={`text-xs px-3 py-1 rounded-full border font-bold transition-all ${
+                                (paymentTypes[order.id] ?? 'FULL') === t
+                                  ? 'bg-purple-600 text-white border-purple-600'
+                                  : 'bg-white text-gray-600 border-gray-300 hover:border-purple-400'
+                              }`}
+                            >
+                              {t === 'FULL' ? 'Full' : 'DP'}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* DP input — shown only when DP selected */}
+                        {(paymentTypes[order.id] ?? 'FULL') === 'DP' && (
+                          <div className="mt-1">
+                            <div className="flex gap-1 mb-1 justify-center">
+                              {(['AMOUNT', 'PERCENTAGE'] as const).map(t => (
+                                <button
+                                  key={t}
+                                  onClick={() => setDpInputTypes(prev => ({ ...prev, [order.id]: t }))}
+                                  className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${
+                                    (dpInputTypes[order.id] ?? 'AMOUNT') === t
+                                      ? 'bg-indigo-600 text-white border-indigo-600'
+                                      : 'bg-white text-gray-500 border-gray-200'
+                                  }`}
+                                >
+                                  {t === 'AMOUNT' ? 'Nominal' : '%'}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1 bg-gray-50 border border-purple-200 rounded-lg px-2 py-1">
+                              {(dpInputTypes[order.id] ?? 'AMOUNT') === 'AMOUNT' && <span className="text-gray-400 text-xs">Rp</span>}
+                              <input
+                                type="number"
+                                min="0"
+                                className="flex-1 bg-transparent text-sm font-bold text-gray-700 outline-none w-20"
+                                placeholder={dpInputTypes[order.id] === 'PERCENTAGE' ? '50' : '500000'}
+                                value={dpValues[order.id] ?? ''}
+                                onChange={e => setDpValues(prev => ({ ...prev, [order.id]: e.target.value }))}
+                              />
+                              {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && <span className="text-gray-400 text-xs">%</span>}
+                            </div>
+                            {/* Preview computed IDR amount when % selected */}
+                            {(dpInputTypes[order.id] ?? 'AMOUNT') === 'PERCENTAGE' && dpValues[order.id] && (
+                              <div className="text-[9px] text-indigo-600 font-semibold mt-0.5 text-center">
+                                = Rp {Math.round((order.total ?? 0) * parseFloat(dpValues[order.id]) / 100).toLocaleString('id-ID')}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <button
-                          onClick={() => handleApprove(order.id, order.delivery_type)}
+                          onClick={() => handleApprove(order.id, order.delivery_type, order.total ?? 0)}
                           disabled={
                             approvingId === order.id ||
                             (order.delivery_type !== 'PICKUP' && (!shippingFees[order.id] || shippingFees[order.id] === ''))
