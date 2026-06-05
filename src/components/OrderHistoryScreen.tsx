@@ -54,10 +54,10 @@ const LEFT_BORDER: Record<string, string> = {
 function filterOrders(orders: DbOrder[], tab: FilterTab, search: string): DbOrder[] {
   let filtered = orders;
   if (tab === 'pending')   filtered = orders.filter(o => o.status === 'PENDING_ADMIN_CONFIRMATION');
-  if (tab === 'waiting')   filtered = orders.filter(o => o.status === 'WAITING_PAYMENT');
-  if (tab === 'uploaded')  filtered = orders.filter(o => o.status === 'PAYMENT_UPLOADED');
+  if (tab === 'waiting')   filtered = orders.filter(o => o.status === 'WAITING_PAYMENT' || o.status === 'WAITING_DP' || o.status === 'DP_VERIFIED');
+  if (tab === 'uploaded')  filtered = orders.filter(o => o.status === 'PAYMENT_UPLOADED' || o.status === 'DP_UPLOADED');
   if (tab === 'done')      filtered = orders.filter(o => o.status === 'PAYMENT_VERIFIED' || o.status === 'COMPLETED');
-  if (tab === 'cancelled') filtered = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED');
+  if (tab === 'cancelled') filtered = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED' || o.status === 'DP_PROOF_REJECTED');
   if (search.trim()) {
     const q = search.toLowerCase();
     filtered = filtered.filter(o =>
@@ -340,10 +340,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   }, []);
 
   const pendingCount   = orders.filter(o => o.status === 'PENDING_ADMIN_CONFIRMATION').length;
-  const uploadedCount  = orders.filter(o => o.status === 'PAYMENT_UPLOADED').length;
-  const waitingCount   = orders.filter(o => o.status === 'WAITING_PAYMENT').length;
+  const uploadedCount  = orders.filter(o => o.status === 'PAYMENT_UPLOADED' || o.status === 'DP_UPLOADED').length;
+  const waitingCount   = orders.filter(o => o.status === 'WAITING_PAYMENT' || o.status === 'WAITING_DP' || o.status === 'DP_VERIFIED').length;
   const doneCount      = orders.filter(o => o.status === 'PAYMENT_VERIFIED' || o.status === 'COMPLETED').length;
-  const cancelledCount = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED').length;
+  const cancelledCount = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED' || o.status === 'DP_PROOF_REJECTED').length;
 
   const visible = filterOrders(orders, tab, search);
 
@@ -594,7 +594,21 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <ItemsTable items={order.items} headerClass="bg-blue-100 text-blue-700" />
                         {/* Payment proof */}
                         <div>
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">Bukti Transfer</div>
+                          {/* DP proof summary — shown for DP orders above full proof */}
+                          {order.payment_type === 'DP' && (
+                            <div className="mb-4 p-3 bg-teal-50 rounded-xl border border-teal-200">
+                              <div className="text-[9px] font-bold uppercase tracking-wide text-teal-600 mb-1">
+                                ✓ DP Terverifikasi — Rp {Number(order.dp_amount ?? 0).toLocaleString('id-ID')}
+                              </div>
+                              {order.dp_proof_url && (
+                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
+                                  className="text-xs text-teal-700 underline font-semibold">Lihat Bukti DP ↗</a>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">
+                            {order.payment_type === 'DP' ? 'Bukti Pelunasan' : 'Bukti Transfer'}
+                          </div>
                           <div className="flex items-start gap-3">
                             {order.full_proof_url ? (
                               order.full_proof_url.endsWith('.pdf') ? (
@@ -730,6 +744,29 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           ✕ Tolak
                         </button>
                       </div>
+                    </div>
+                  </div>
+                )}
+                {isExpanded && order.status === 'DP_VERIFIED' && (
+                  <div className="px-5 py-4 border-t border-teal-200 bg-teal-50">
+                    <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                        <div className="font-semibold text-gray-700">{order.customer_name}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div>
+                        <div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">DP Terverifikasi</div>
+                        <div className="font-semibold text-teal-700">Rp {Number(order.dp_amount ?? 0).toLocaleString('id-ID')}</div>
+                      </div>
+                    </div>
+                    <ItemsTable items={order.items} headerClass="bg-teal-100 text-teal-700" />
+                    <div className="flex items-center gap-2 mt-2 bg-teal-100 rounded-lg px-3 py-2">
+                      <span className="text-teal-600 text-sm">⏳</span>
+                      <span className="text-xs text-teal-700 font-semibold">Menunggu bukti pelunasan dari customer</span>
                     </div>
                   </div>
                 )}
