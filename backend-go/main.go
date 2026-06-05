@@ -16,6 +16,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
+	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
@@ -85,6 +86,8 @@ func main() {
 	waClient.AddEventHandler(waHandler.Handle)
 	followup.NewPoller(dbClient, sender).Start(ctx)
 	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
+	heartbeat.NewPoller(dbClient, sender).Start(ctx)
+	log.Println("[MAIN] Heartbeat poller started (1-minute tick)")
 
 	// Restore booking timers after restart
 	bookings, err := dbClient.ListActiveBookings()
