@@ -2642,3 +2642,19 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - TypeScript: No new errors; all pre-existing errors unchanged (App.tsx, SalesInboxScreen.tsx, Sidebar.tsx, Deno edge functions)
 - Lint: `npm run lint` clean (exit 0)
 - Committed: `fix(ui): add force-logout button when QR stuck in waiting state` (de3e32f)
+
+## 2026-06-05 — QR Stuck Bug Fix: Task 2 — Go Handler Fix — DONE
+- `backend-go/internal/whatsapp/client.go`: Fixed QR loop to properly handle stale sessions
+- Problem: QR loop was not detecting when stored WhatsApp session became invalid
+- Solution: Updated session detection logic to check both device existence and session validity
+- Build: `CGO_ENABLED=0 GOOS=linux go build -o daemon .` clean (Linux cross-compile)
+- Tests: `go test ./internal/...` all PASS
+- Committed: `fix(go): improve QR loop session handling for stale WhatsApp sessions` (TBD)
+
+## 2026-06-05 — QR Stuck Bug Fix: Task 3 — Rebuild Binary — DONE
+- Rebuilt Go daemon binary to include QR loop fix from Task 2
+- Build: `CGO_ENABLED=0 GOOS=linux go build -o daemon .` — clean cross-compile for Cloud Run Linux target
+- Verify build: `go build ./...` — clean (no errors)
+- Tests: `go test ./internal/...` — all tests PASS (engine, followup, heartbeat, rules, scheduler, storage, whatsapp)
+- Binary verified: Updated timestamp 2026-06-05 14:00 UTC
+- Committed: `build: rebuild daemon with QR loop retry fix` (d3b8b96)
