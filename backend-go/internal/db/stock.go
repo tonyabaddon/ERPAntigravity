@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -32,4 +33,18 @@ func (c *Client) SearchStockByName(productName string) ([]models.StockItem, erro
 		return nil, err
 	}
 	return items, nil
+}
+
+// DeductStockAndGetHPP decrements stock_atas by qty and returns the FIFO cost via
+// the deduct_stock_fifo RPC. Both operations are best-effort; errors are returned
+// but callers should log-and-continue so payment confirmation is never blocked.
+func (c *Client) DeductStockAndGetHPP(sku string, qty int) (float64, error) {
+	if _, err := c.DB.Exec(`SELECT public.decrement_stock($1, $2, 'atas')`, sku, qty); err != nil {
+		return 0, fmt.Errorf("decrement_stock %s x%d: %w", sku, qty, err)
+	}
+	var cost float64
+	if err := c.DB.QueryRow(`SELECT public.deduct_stock_fifo($1, $2)`, sku, qty).Scan(&cost); err != nil {
+		return 0, fmt.Errorf("deduct_stock_fifo %s x%d: %w", sku, qty, err)
+	}
+	return cost, nil
 }

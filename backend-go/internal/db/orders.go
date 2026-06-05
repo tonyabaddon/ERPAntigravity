@@ -240,3 +240,8 @@ func (c *Client) GetOrderByIDWithPayment(orderID string) (*models.Order, error) 
 	json.Unmarshal(itemsJSON, &order.Items)
 	return &order, nil
 }
+
+func (c *Client) UpdateOrderHpp(orderID string, hpp float64) error {
+	_, err := c.DB.Exec(`UPDATE orders SET hpp_total = $1 WHERE id = $2`, hpp, orderID)
+	return err
+}
