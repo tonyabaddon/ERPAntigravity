@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-05 — Code Review Fixes: ErrNoRows + PaymentVerified orderID — DONE
+- `backend-go/internal/db/heartbeat.go`: Added `database/sql` import; `GetHeartbeatConfig` now returns `nil, nil` for `sql.ErrNoRows` and `nil, err` for real DB errors only
+- `backend-go/internal/heartbeat/poller.go`: `tick()` now logs real errors with `[HEARTBEAT] GetHeartbeatConfig error:` instead of silently swallowing them; `cfg == nil` check separated
+- `backend-go/internal/whatsapp/handler.go`: `HandlePaymentVerified` now fetches order by `orderID` via `GetOrderByIDWithPayment` instead of `GetOrderByConversation(conversationID)`, preventing wrong-order stock decrement edge case
+- Build: `go build ./...` clean; all tests pass
+- Committed: `fix: distinguish ErrNoRows in heartbeat config, use orderID in payment verification` (9fccc8d)
+
 ## 2026-06-05 — Task 7 (Heartbeat Plan): Wire heartbeat poller in main.go — DONE
 - Modified `backend-go/main.go`
 - Step 1: Added `"github.com/username/sinar-elektrik-backend/internal/heartbeat"` import (alphabetically between `gemini` and `models`)
@@ -2618,3 +2625,15 @@ _(Previously completed — wired `pembelian` into `ActivePage` union and `Permis
 - Tests: All Go tests PASS (storage, engine, followup, heartbeat, whatsapp, scheduler, rules)
 - Fixed storage package: Changed http.MethodPost to http.MethodPut in UploadPaymentProof (matches test expectations and Supabase API)
 - Committed: `build: rebuild daemon binary with heartbeat poller and WA HPP fix` (46a567f)
+
+## 2026-06-05 — QR Stuck Bug Fix: Task 1 — Frontend — Force Logout Button — DONE
+- `src/components/WhatsappAiScreen.tsx`: Added "Minta QR Baru" button in QR waiting state
+- Problem: QR code stuck on "Menunggu QR dari daemon..." when daemon online but stored WhatsApp session in PostgreSQL blocking QR loop
+- Solution: Added conditional button that appears only when `daemonOnline=true` (not when daemon offline)
+  - Button calls existing `handleLogout` function to clear session and retry QR generation
+  - Button appears only in `!waConnected && !qrCode` state (waiting for QR)
+  - User can now clear stuck session without requiring manual "Putuskan Koneksi" (which only appears when `waConnected=true`)
+- Styling: Rose-500 button to match warning intent ("Minta QR Baru" = force new QR)
+- TypeScript: No new errors; all pre-existing errors unchanged (App.tsx, SalesInboxScreen.tsx, Sidebar.tsx, Deno edge functions)
+- Lint: `npm run lint` clean (exit 0)
+- Committed: `fix(ui): add force-logout button when QR stuck in waiting state` (de3e32f)
