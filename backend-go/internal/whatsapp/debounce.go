@@ -122,7 +122,16 @@ func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 	pb.state = stateProcessing
 	pb.mu.Unlock()
 
+	// IMPORTANT: defer order matters. defer postFlush is registered FIRST,
+	// so it runs LAST (after recover). The defer recover() is registered
+	// SECOND, so it runs FIRST, catching any panic before postFlush.
 	defer h.postFlush(pb, phone)
+	defer func() {
+		if r := recover(); r != nil {
+			// log when logger is wired in later task
+			_ = r
+		}
+	}()
 
 	joined := joinTexts(texts)
 	if err := h.flushFn(context.Background(), phone, joined, texts); err != nil {

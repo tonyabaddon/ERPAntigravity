@@ -285,6 +285,32 @@ func TestOrphanBufferRace_TimerFlushesOriginalBuffer(t *testing.T) {
 	}
 }
 
+func TestPanicRecovery_FlushFnPanics(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	panicFn := func(ctx context.Context, phone, joined string, originalTexts []string) error {
+		panic("simulated panic")
+	}
+	d := newTestDebounce(t, fc, panicFn)
+
+	d.Push(context.Background(), "628xxx", "halo")
+	// Trigger flush via clock advance in a goroutine (in case panicFn would
+	// otherwise block fc.Advance).
+	go fc.Advance(5 * time.Second)
+
+	// Wait for goroutine + recover to finish
+	deadline := time.Now().Add(1 * time.Second)
+	for time.Now().Before(deadline) {
+		if d.getBufferUnsafe("628xxx") == nil {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	if d.getBufferUnsafe("628xxx") != nil {
+		t.Fatalf("expected buffer entry deleted after panic recovery")
+	}
+}
+
 func TestSpamCap_DropsExcess(t *testing.T) {
 	fc := newFakeClock(time.Unix(0, 0))
 	stub := &stubFlushFn{}
