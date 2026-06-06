@@ -284,3 +284,21 @@ func TestOrphanBufferRace_TimerFlushesOriginalBuffer(t *testing.T) {
 		t.Fatalf("expected second flush='second', got %q", calls[1].joined)
 	}
 }
+
+func TestSpamCap_DropsExcess(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	// Push 25 messages quickly
+	for i := 0; i < 25; i++ {
+		d.Push(context.Background(), "628xxx", "msg")
+	}
+
+	pb := d.getBufferUnsafe("628xxx")
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
+	if len(pb.texts) != maxBufferTexts {
+		t.Fatalf("expected texts capped at %d, got %d", maxBufferTexts, len(pb.texts))
+	}
+}

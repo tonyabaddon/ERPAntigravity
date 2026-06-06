@@ -14,6 +14,8 @@ const (
 	stateProcessing
 )
 
+const maxBufferTexts = 20
+
 // FlushFunc dipanggil oleh debounce saat window expire.
 type FlushFunc func(ctx context.Context, phone string, joined string, originalTexts []string) error
 
@@ -67,9 +69,18 @@ func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 		pb.texts = []string{text}
 		h.startTimers(pb, phone)
 	case stateBuffering:
+		if len(pb.texts) >= maxBufferTexts {
+			// Spam cap — drop. (Logging in later task.)
+			pb.mu.Unlock()
+			return
+		}
 		pb.texts = append(pb.texts, text)
 		h.resetSoftTimer(pb, phone)
 	case stateProcessing:
+		if len(pb.nextBuffer) >= maxBufferTexts {
+			pb.mu.Unlock()
+			return
+		}
 		pb.nextBuffer = append(pb.nextBuffer, text)
 	}
 	pb.mu.Unlock()
