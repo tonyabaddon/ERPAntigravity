@@ -411,3 +411,32 @@ func TestSpamCap_DropsExcess(t *testing.T) {
 		t.Fatalf("expected texts capped at %d, got %d", maxBufferTexts, len(pb.texts))
 	}
 }
+
+func TestConcurrentPush_NoRace(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 50; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 0; j < 10; j++ {
+				phone := "628aaa"
+				if i%2 == 0 {
+					phone = "628bbb"
+				}
+				d.Push(context.Background(), phone, "msg")
+			}
+		}(i)
+	}
+	wg.Wait()
+
+	// Each phone has < 20 (spam cap), but both should be in BUFFERING.
+	aaa := d.getBufferUnsafe("628aaa")
+	bbb := d.getBufferUnsafe("628bbb")
+	if aaa == nil || bbb == nil {
+		t.Fatalf("expected both buffers created, aaa=%v bbb=%v", aaa, bbb)
+	}
+}
