@@ -18,14 +18,14 @@ const (
 type FlushFunc func(ctx context.Context, phone string, joined string, originalTexts []string) error
 
 type phoneBuffer struct {
-	mu          sync.Mutex
-	state       bufferState
-	texts       []string
-	firstMsgAt  time.Time
-	softTimer   Timer
-	hardTimer   Timer
-	typingStop  chan struct{}
-	nextBuffer  []string
+	mu         sync.Mutex
+	state      bufferState
+	texts      []string
+	firstMsgAt time.Time
+	softTimer  Timer
+	hardTimer  Timer
+	typingStop chan struct{}
+	nextBuffer []string
 }
 
 type DebounceConfig struct {
@@ -91,7 +91,9 @@ func (h *DebounceHandler) getOrCreateBuffer(phone string) *phoneBuffer {
 	return pb
 }
 
-// getBufferUnsafe is for tests only — no locking, no creation.
+// getBufferUnsafe returns the buffer for phone without acquiring pb.mu.
+// For tests only — callers must lock pb.mu before reading/mutating fields.
+// Returns nil if no buffer exists for phone.
 func (h *DebounceHandler) getBufferUnsafe(phone string) *phoneBuffer {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

@@ -14,8 +14,8 @@ type stubFlushFn struct {
 }
 
 type stubFlushCall struct {
-	phone string
-	joined string
+	phone         string
+	joined        string
 	originalTexts []string
 }
 
