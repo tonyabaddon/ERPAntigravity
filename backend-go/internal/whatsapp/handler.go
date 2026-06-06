@@ -341,10 +341,22 @@ func buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.Stock
 }
 
 func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text string) {
-	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		return
 	}
+
+	// Ensure customer record exists; create lead on new conversations.
+	// Errors here are non-fatal — log and continue so the escalation is never dropped.
+	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	if err != nil {
+		log.Printf("[HANDLER] handleWiringEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+	} else if created {
+		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+			log.Printf("[HANDLER] handleWiringEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+		}
+	}
+
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, text)
 	h.db.UpdateConversationState(conv.ID, models.StateEscalatedWiring)
 	h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED_WIRING: keyword match")
@@ -360,11 +372,23 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 }
 
 func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text string) {
-	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateConversation error for %s: %v", senderPhone, err)
 		return
 	}
+
+	// Ensure customer record exists; create lead on new conversations.
+	// Errors here are non-fatal — log and continue so the escalation is never dropped.
+	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	if err != nil {
+		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+	} else if created {
+		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+			log.Printf("[HANDLER] handleAdminEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+		}
+	}
+
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, text)
 	h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
 	h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED_ADMIN: keyword match")
