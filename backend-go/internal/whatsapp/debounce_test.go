@@ -412,6 +412,80 @@ func TestSpamCap_DropsExcess(t *testing.T) {
 	}
 }
 
+// stubTypingNotifier records typing state changes for assertion.
+type stubTypingNotifier struct {
+	mu    sync.Mutex
+	calls []stubTypingCall
+}
+
+type stubTypingCall struct {
+	phone     string
+	composing bool
+}
+
+func (s *stubTypingNotifier) SendTyping(phone string, composing bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.calls = append(s.calls, stubTypingCall{phone, composing})
+}
+
+func (s *stubTypingNotifier) getCalls() []stubTypingCall {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]stubTypingCall{}, s.calls...)
+}
+
+func TestTypingIndicator_OnDuringBuffering(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	notifier := &stubTypingNotifier{}
+	d := NewDebounceHandler(DebounceConfig{
+		Clock:    fc,
+		FlushFn:  stub.fn,
+		SoftWait: 5 * time.Second,
+		HardWait: 12 * time.Second,
+		Typing:   notifier,
+	})
+
+	d.Push(context.Background(), "628xxx", "halo")
+
+	// Wait briefly for typing goroutine to send initial composing
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if len(notifier.getCalls()) > 0 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	calls := notifier.getCalls()
+	if len(calls) == 0 {
+		t.Fatalf("expected at least 1 composing call after push")
+	}
+	if !calls[0].composing || calls[0].phone != "628xxx" {
+		t.Fatalf("expected first call composing=true phone=628xxx, got %+v", calls[0])
+	}
+
+	// Trigger flush
+	go fc.Advance(5 * time.Second)
+
+	// Wait for goroutine to stop typing (we expect a paused=false call after flush)
+	deadline = time.Now().Add(1 * time.Second)
+	for time.Now().Before(deadline) {
+		calls = notifier.getCalls()
+		if len(calls) == 0 {
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+		last := calls[len(calls)-1]
+		if !last.composing && last.phone == "628xxx" {
+			return // saw the paused signal
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("expected paused signal after flush, got calls: %+v", notifier.getCalls())
+}
+
 func TestConcurrentPush_NoRace(t *testing.T) {
 	fc := newFakeClock(time.Unix(0, 0))
 	stub := &stubFlushFn{}

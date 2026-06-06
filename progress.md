@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-06 — T12: Typing indicator goroutine — DONE
+- Added `TypingNotifier` interface with `SendTyping(phone string, composing bool)` to `debounce.go`
+- Added `noopTypingNotifier` struct as default when `cfg.Typing` is nil
+- Added `Typing TypingNotifier` field to `DebounceConfig`; added `typing TypingNotifier` field to `DebounceHandler`
+- Updated `NewDebounceHandler` to default `Typing` to `noopTypingNotifier{}` if nil
+- Added `startTyping(pb, phone)`: launches goroutine sending initial composing signal, refreshes every 8s via real `time.NewTicker`, stops with `paused=false` signal on channel close
+- Added `stopTyping(pb)`: closes `pb.typingStop` channel and nils it
+- Wired `startTyping` into IDLE→BUFFERING transition in `Push`
+- Wired `stopTyping` into IDLE branch of `postFlush` (before map lock)
+- Added `stubTypingNotifier` + `TestTypingIndicator_OnDuringBuffering` to `debounce_test.go`
+- All 19 tests pass with `-race` flag, no data races
+- Committed: `feat(whatsapp): typing indicator goroutine via TypingNotifier interface`
+
 ## 2026-06-05 — Sales Inbox: 'Aktifkan AI' tombol tidak berfungsi pada percakapan escalated — DONE
 - **Bug ditemukan via investigasi langsung**: di Sales Inbox, klik tombol toggle AI pada percakapan dengan state `ESCALATED_ADMIN` atau `ESCALATED_WIRING` tidak punya efek karena `getModeBanner` (`SalesInboxScreen.tsx:36-43`) mengembalikan `makeActive: false` dan label `'Ambil Alih'` — padahal AI memang sudah off. Tidak ada path UI untuk mengaktifkan kembali AI pada percakapan yang sudah ter-escalate.
 - **Bug kedua di backend**: walaupun `ai_active=true` di-set manual, daemon tetap skip karena `conv.State.IsTerminal()` returns true untuk ESCALATED states (`handler.go:153`). Jadi reset `state` juga wajib agar Calista mulai memproses lagi.

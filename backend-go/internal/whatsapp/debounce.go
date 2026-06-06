@@ -19,6 +19,17 @@ const maxBufferTexts = 20
 // FlushFunc dipanggil oleh debounce saat window expire.
 type FlushFunc func(ctx context.Context, phone string, joined string, originalTexts []string) error
 
+// TypingNotifier sends WhatsApp typing presence updates.
+// Implemented by WATypingNotifier in production; stubbed in tests.
+type TypingNotifier interface {
+	SendTyping(phone string, composing bool)
+}
+
+// noopTypingNotifier is used when no notifier is configured.
+type noopTypingNotifier struct{}
+
+func (noopTypingNotifier) SendTyping(string, bool) {}
+
 type phoneBuffer struct {
 	mu         sync.Mutex
 	state      bufferState
@@ -35,6 +46,7 @@ type DebounceConfig struct {
 	FlushFn  FlushFunc
 	SoftWait time.Duration
 	HardWait time.Duration
+	Typing   TypingNotifier // optional, defaults to noop
 }
 
 type DebounceHandler struct {
@@ -44,15 +56,21 @@ type DebounceHandler struct {
 	flushFn  FlushFunc
 	softWait time.Duration
 	hardWait time.Duration
+	typing   TypingNotifier
 }
 
 func NewDebounceHandler(cfg DebounceConfig) *DebounceHandler {
+	typing := cfg.Typing
+	if typing == nil {
+		typing = noopTypingNotifier{}
+	}
 	return &DebounceHandler{
 		buffers:  make(map[string]*phoneBuffer),
 		clock:    cfg.Clock,
 		flushFn:  cfg.FlushFn,
 		softWait: cfg.SoftWait,
 		hardWait: cfg.HardWait,
+		typing:   typing,
 	}
 }
 
@@ -68,6 +86,7 @@ func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 		pb.firstMsgAt = h.clock.Now()
 		pb.texts = []string{text}
 		h.startTimers(pb, phone)
+		h.startTyping(pb, phone)
 	case stateBuffering:
 		if len(pb.texts) >= maxBufferTexts {
 			// Spam cap — drop. (Logging in later task.)
@@ -139,6 +158,37 @@ func (h *DebounceHandler) resetSoftTimer(pb *phoneBuffer, phone string) {
 	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flushBuffer(pb, phone, "soft_timer") })
 }
 
+// startTyping launches a goroutine that re-sends Composing every 8s.
+// Must be called with pb.mu held.
+func (h *DebounceHandler) startTyping(pb *phoneBuffer, phone string) {
+	pb.typingStop = make(chan struct{})
+	stop := pb.typingStop
+	notifier := h.typing
+	go func() {
+		notifier.SendTyping(phone, true) // initial composing
+		ticker := time.NewTicker(8 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-stop:
+				notifier.SendTyping(phone, false) // paused
+				return
+			case <-ticker.C:
+				notifier.SendTyping(phone, true) // refresh
+			}
+		}
+	}()
+}
+
+// stopTyping signals the typing goroutine to stop.
+// Must be called with pb.mu held.
+func (h *DebounceHandler) stopTyping(pb *phoneBuffer) {
+	if pb.typingStop != nil {
+		close(pb.typingStop)
+		pb.typingStop = nil
+	}
+}
+
 // flushBuffer drains the buffer pointed to by pb. Takes pb directly (not via
 // map lookup by phone) so timer callbacks always operate on the buffer they
 // were installed for — prevents an orphan-buffer race where a delete+recreate
@@ -190,6 +240,7 @@ func (h *DebounceHandler) postFlush(pb *phoneBuffer, phone string) {
 		h.startTimers(pb, phone)
 	} else {
 		pb.state = stateIdle
+		h.stopTyping(pb) // signal typing goroutine to stop before map lock
 		h.mu.Lock()
 		// Identity check: only delete if the map still points to OUR buffer.
 		// A concurrent Push that raced with us and created a fresh buffer
