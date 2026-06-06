@@ -98,6 +98,33 @@ func (h *DebounceHandler) Flush(phone string) {
 	h.flushBuffer(pb, phone, "force_flush")
 }
 
+// Shutdown synchronously flushes all BUFFERING phones.
+// Buffers in PROCESSING state are left to finish on their own.
+// Respects ctx cancellation — returns early if ctx expires.
+// Called from main.go on graceful shutdown (SIGTERM).
+func (h *DebounceHandler) Shutdown(ctx context.Context) {
+	h.mu.RLock()
+	phones := make([]string, 0, len(h.buffers))
+	for phone := range h.buffers {
+		phones = append(phones, phone)
+	}
+	h.mu.RUnlock()
+
+	for _, phone := range phones {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		// Look up pb again — could have been deleted by a concurrent flush
+		pb := h.getBufferUnsafe(phone)
+		if pb == nil {
+			continue
+		}
+		h.flushBuffer(pb, phone, "shutdown")
+	}
+}
+
 // startTimers must be called with pb.mu held.
 func (h *DebounceHandler) startTimers(pb *phoneBuffer, phone string) {
 	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flushBuffer(pb, phone, "soft_timer") })

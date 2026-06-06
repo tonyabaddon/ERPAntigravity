@@ -355,6 +355,45 @@ func TestForceFlush_NoOpWhenIdle(t *testing.T) {
 	}
 }
 
+func TestShutdown_DrainsAllBuffers(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	d.Push(context.Background(), "628aaa", "halo a")
+	d.Push(context.Background(), "628bbb", "halo b")
+	d.Push(context.Background(), "628ccc", "halo c")
+
+	if got := len(stub.getCalls()); got != 0 {
+		t.Fatalf("flush should not have fired before shutdown")
+	}
+
+	d.Shutdown(context.Background())
+
+	// Wait briefly in case any flush completes via goroutine
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if len(stub.getCalls()) >= 3 {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	calls := stub.getCalls()
+	if len(calls) != 3 {
+		t.Fatalf("expected 3 flush calls after shutdown, got %d", len(calls))
+	}
+	seen := map[string]bool{}
+	for _, c := range calls {
+		seen[c.phone] = true
+	}
+	for _, phone := range []string{"628aaa", "628bbb", "628ccc"} {
+		if !seen[phone] {
+			t.Fatalf("expected phone %s to be flushed, got calls: %+v", phone, calls)
+		}
+	}
+}
+
 func TestSpamCap_DropsExcess(t *testing.T) {
 	fc := newFakeClock(time.Unix(0, 0))
 	stub := &stubFlushFn{}
