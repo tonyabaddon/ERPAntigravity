@@ -22,7 +22,7 @@ Garindo Jaya Panel sudah punya `KasirScreen` untuk **rekonsiliasi harian P&L** (
 2. **Berapa cash yang sebenarnya disetor ke bank vs total kas masuk?** Owner setor bulk per hari, dan tidak ada pencatatan apakah jumlah setoran = jumlah kas masuk.
 3. **Dari yang dibeli ke supplier bulan ini, sudah laku berapa persen?** Kalau supplier kasih net-30, owner perlu tahu apakah cash dari sell-through cukup menutup utang yang jatuh tempo.
 4. **Order mana yang belum dibayar (piutang)?** Tidak ada satu tempat untuk melihat outstanding receivables.
-
+tamba
 Tanpa rekonsiliasi bulanan, owner bekerja pakai memori dan asumsi — tidak bisa mengambil keputusan berbasis data tentang kas, kredit supplier, atau follow-up piutang.
 
 ---
@@ -72,6 +72,7 @@ Bangun layar **Rekonsiliasi** baru yang mengeksekusi tutup buku bulanan dengan:
 | **Pre-migration data** | Strict cutoff per periode; periode pertama yang muncul = bulan berikutnya setelah deploy |
 | **Role permission** | `currentUser.role === 'owner'` OR `permissions.reconciliation === true` |
 | **Tally check** | `sum(transfer + edc + cash + piutang) ≡ total_sales`; mismatch → badge ❌ |
+| **Sales channel** | Setiap order ditandai channel asal: `WHATSAPP` (Calista AI), `TOKOPEDIA` (marketplace), `WALKIN` (kasir tatap muka), `GROSIR` (wholesale). Ditampilkan sebagai pill di kolom Order, bisa di-filter, dan di-breakdown di KPI. |
 
 ---
 
@@ -375,11 +376,21 @@ CREATE INDEX idx_ral_period ON reconciliation_audit_log(period_id, edited_at DES
 
 | Table | Change |
 |---|---|
-| `orders` | No column change. Trigger `trg_orders_create_slots` auto-creates `payable_slots` rows when status moves to `BOOKED` / `WAITING_PAYMENT` / `WAITING_DP`. |
+| `orders` | Add `channel sales_channel NOT NULL DEFAULT 'WHATSAPP'`. Trigger `trg_orders_create_slots` auto-creates `payable_slots` rows when status moves to `BOOKED` / `WAITING_PAYMENT` / `WAITING_DP`. |
 | `purchase_orders` | Add `paid_bank_line_id uuid REFERENCES bank_statement_lines(id)`. Auto-flip to `PAID` via trigger when a `SUPPLIER_PAYMENT` line is matched. |
-| `kasir_transactions` | No column change. Cash income txs become candidates for `cash_deposit_batches`. EDC income txs become candidates for `EDC_SETTLEMENT` mutasi line. |
+| `kasir_transactions` | No column change. Existing `channel` field (`walkin`/`tokopedia`/`grosir`) already covers non-WA. Cash income txs become candidates for `cash_deposit_batches`. EDC income txs become candidates for `EDC_SETTLEMENT` mutasi line. |
 | `stocks` | No change. |
 | `stock_lots` | No change; `qty_remaining` updates via existing FIFO logic. |
+
+```sql
+-- New enum for orders.channel (lowercase to match existing kasir_channel convention).
+-- kasir_transactions.channel keeps its existing kasir_channel enum (no WA value there).
+CREATE TYPE sales_channel AS ENUM ('whatsapp','tokopedia','walkin','grosir');
+
+ALTER TABLE orders
+  ADD COLUMN channel sales_channel NOT NULL DEFAULT 'whatsapp';
+-- All existing orders predate this column; they're all Calista-originated → 'whatsapp' is correct default.
+```
 
 ### 5.3 Order-to-Slots Migration Trigger
 
@@ -399,11 +410,11 @@ BEGIN
   THEN
     IF NEW.payment_type = 'DP' THEN
       INSERT INTO payable_slots (order_id, slot_type, expected_amount, due_date)
-      VALUES (NEW.id, 'DP', NEW.dp_amount, COALESCE(NEW.expires_at::date, NEW.created_at::date + INTERVAL '2 days')),
+      VALUES (NEW.id, 'DP', NEW.dp_amount, COALESCE(NEW.booking_expires_at::date, NEW.created_at::date + INTERVAL '2 days')),
              (NEW.id, 'BALANCE', NEW.total - NEW.dp_amount, NULL);  -- owner sets BALANCE due_date manually
     ELSE
       INSERT INTO payable_slots (order_id, slot_type, expected_amount, due_date)
-      VALUES (NEW.id, 'FULL', NEW.total, COALESCE(NEW.expires_at::date, NEW.created_at::date + INTERVAL '2 days'));
+      VALUES (NEW.id, 'FULL', NEW.total, COALESCE(NEW.booking_expires_at::date, NEW.created_at::date + INTERVAL '2 days'));
     END IF;
   END IF;
 
@@ -696,9 +707,9 @@ Show only when `currentUser.role === 'owner'` OR `currentUser.permissions.reconc
 2. **Wizard 6 steps** — Setup / Auto-Cocok / Review / Kas / Piutang / Tutup with current step highlighted
 3. **Next Action banner** — coach that adapts to state ("Review 26 baris", "Verifikasi 2 batch", "✓ Semua siap")
 4. **Multi-Account status** — 4 cards per account showing upload status + saldo
-5. **Tally bar** — 4-segment bar (Transfer / EDC / Tunai / Piutang) with live amounts; ✓ TALLY / ❌ Selisih badge
+5. **Tally bar** — 4-segment bar by payment method (Transfer / EDC / Tunai / Piutang) with live amounts; ✓ TALLY / ❌ Selisih badge. Below: small "Per Channel" strip — 4 KPI mini cards (📱 WhatsApp Rp X · N order, 🛍️ Tokopedia Rp Y · N, 🏪 Walk-in Rp Z · N, 🏭 Grosir Rp W · N) for the breakdown.
 6. **3-column matching grid**
-   - **Order Penjualan (LEFT)**: order rows with payment-method pill + slot status + link badges. Filter chips: Semua / 🏦 Transfer / 💳 EDC / 💵 Tunai / ⏳ Piutang. Progress meter in header.
+   - **Order Penjualan (LEFT)**: union view of `orders` (WHATSAPP channel) + `kasir_transactions` (WALKIN/TOKOPEDIA/GROSIR channels). Each row shows: customer name + **channel pill** (📱 WA / 🛍️ Tokopedia / 🏪 Walk-in / 🏭 Grosir, colors match existing `KasirScreen.ChannelPill`) + payment-method pill + slot status + link badges. Filter chips: Semua / 📱 WA / 🛍️ Tokopedia / 🏪 Walk-in / 🏭 Grosir / 🏦 Transfer / 💳 EDC / 💵 Tunai / ⏳ Piutang (channel filters and payment-method filters work independently). Progress meter in header.
    - **Mutasi Bank (CENTER)**: bank lines with account pill + lane badge. Account-filter chips: Semua / per-account. Progress meter in header.
    - **Kas Tunai (RIGHT)**: cash_deposit_batches with link badges or pending/variance status. Progress meter.
 7. **Pembelian Supplier section** — PO list with progress bar; click ▶ to expand drill-down showing per-SKU sold/remaining + sales order IDs as clickable pills
