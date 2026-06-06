@@ -59,19 +59,106 @@ func NewDebounceHandler(cfg DebounceConfig) *DebounceHandler {
 func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 	pb := h.getOrCreateBuffer(phone)
 	pb.mu.Lock()
-	defer pb.mu.Unlock()
 
 	switch pb.state {
 	case stateIdle:
 		pb.state = stateBuffering
 		pb.firstMsgAt = h.clock.Now()
 		pb.texts = []string{text}
-		// timer setup di task berikutnya
+		h.startTimers(pb, phone)
 	case stateBuffering:
 		pb.texts = append(pb.texts, text)
+		h.resetSoftTimer(pb, phone)
 	case stateProcessing:
 		pb.nextBuffer = append(pb.nextBuffer, text)
 	}
+	pb.mu.Unlock()
+}
+
+// startTimers must be called with pb.mu held.
+func (h *DebounceHandler) startTimers(pb *phoneBuffer, phone string) {
+	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flush(phone, "soft_timer") })
+	pb.hardTimer = h.clock.AfterFunc(h.hardWait, func() { h.flush(phone, "hard_cap") })
+}
+
+// resetSoftTimer must be called with pb.mu held.
+func (h *DebounceHandler) resetSoftTimer(pb *phoneBuffer, phone string) {
+	if pb.softTimer != nil {
+		pb.softTimer.Stop()
+	}
+	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flush(phone, "soft_timer") })
+}
+
+func (h *DebounceHandler) flush(phone, reason string) {
+	pb := h.getBufferUnsafe(phone)
+	if pb == nil {
+		return
+	}
+
+	pb.mu.Lock()
+	if pb.state != stateBuffering {
+		pb.mu.Unlock()
+		return // idempotent: already flushed by other timer or force-flush
+	}
+	texts := pb.texts
+	pb.texts = nil
+	if pb.softTimer != nil {
+		pb.softTimer.Stop()
+	}
+	if pb.hardTimer != nil {
+		pb.hardTimer.Stop()
+	}
+	pb.state = stateProcessing
+	pb.mu.Unlock()
+
+	defer h.postFlush(pb, phone)
+
+	joined := joinTexts(texts)
+	if err := h.flushFn(context.Background(), phone, joined, texts); err != nil {
+		// existing pipeline handles its own retry/error logging.
+		// Here we just log debounce-side errors. (Logger added in later task.)
+		_ = err
+	}
+}
+
+func (h *DebounceHandler) postFlush(pb *phoneBuffer, phone string) {
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
+
+	if len(pb.nextBuffer) > 0 {
+		pb.state = stateBuffering
+		pb.texts = pb.nextBuffer
+		pb.nextBuffer = nil
+		pb.firstMsgAt = h.clock.Now()
+		h.startTimers(pb, phone)
+	} else {
+		pb.state = stateIdle
+		h.mu.Lock()
+		delete(h.buffers, phone)
+		h.mu.Unlock()
+	}
+}
+
+func joinTexts(texts []string) string {
+	if len(texts) == 0 {
+		return ""
+	}
+	if len(texts) == 1 {
+		return texts[0]
+	}
+	// Manual join to avoid importing strings just for this.
+	var total int
+	for _, s := range texts {
+		total += len(s) + 1
+	}
+	buf := make([]byte, 0, total)
+	for i, s := range texts {
+		if i > 0 {
+			buf = append(buf, '\n')
+		}
+		buf = append(buf, s...)
+	}
+	return string(buf)
 }
 
 func (h *DebounceHandler) getOrCreateBuffer(phone string) *phoneBuffer {
