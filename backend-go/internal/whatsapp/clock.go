@@ -16,7 +16,8 @@ type Timer interface {
 // realClock is the production implementation.
 type realClock struct{}
 
-func newRealClock() Clock { return realClock{} }
+// NewRealClock returns the production clock used by main.go.
+func NewRealClock() Clock { return realClock{} }
 
 func (realClock) Now() time.Time { return time.Now() }
 func (realClock) AfterFunc(d time.Duration, f func()) Timer {

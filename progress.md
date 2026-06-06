@@ -1,5 +1,35 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-06 — T15: main.go DebounceHandler wire-up — DONE
+- Renamed `newRealClock` → `NewRealClock` in `internal/whatsapp/clock.go` (zero prior callers; exported for main.go)
+- Added `internal/whatsapp/typing.go` with `WATypingNotifier` adapter implementing `TypingNotifier` via `whatsmeow.Client.SendChatPresence(ctx, jid, presence, media)` — translates the boolean composing flag into ChatPresenceComposing/Paused; errors silently swallowed (presence is best-effort)
+- Added `strconv` import + `getEnvBoolDefault` / `getEnvIntDefault` helpers at bottom of `main.go`
+- Wired debounce into `main.go`:
+  - Reads `DEBOUNCE_ENABLED` (default false), `DEBOUNCE_SOFT_WAIT_MS` (5000), `DEBOUNCE_HARD_WAIT_MS` (12000)
+  - When enabled, instantiates `DebounceHandler` with real clock, `WATypingNotifier{Client: waClient.WA}`, and a forward-reference `flushFn` closure that calls `waHandler.ProcessJoinedMessage` (waHandler is declared above but assigned right after — closure captures the variable, sees value at call time)
+  - When disabled, `debounceHandler` stays nil and handler.go takes the legacy direct path
+  - Passes `debounceHandler` (nil or non-nil) as 8th arg to `NewHandler`
+- Wired graceful shutdown: on SIGTERM/SIGINT, before `waClient.Disconnect()`, calls `debounceHandler.Shutdown(ctx)` with 8s timeout to drain buffering phones
+- One adaptation from plan template: `SendChatPresence` in current whatsmeow version requires `context.Context` as first arg — used `context.Background()`
+- `CGO_ENABLED=1 go build ./...` clean; `go test ./... -race` all pass (whatsapp 2.671s)
+
+## 2026-06-06 — T14: handler.go routing refactor — DONE
+- Added `debounce *DebounceHandler` field to `Handler` struct (nil-safe — preserves legacy direct path when feature flag is off)
+- Updated `NewHandler` constructor to accept `debounce *DebounceHandler` as the 8th parameter
+- Refactored `Handle()` to route messages with bypass semantics:
+  - Media (empty text): `Flush(senderJID)` then `handleMediaMessage` as before
+  - Escalation keyword (WIRING or ADMIN): `Flush(senderJID)` then escalate immediately in goroutine
+  - Normal text: `debounce.Push(...)` when non-nil, else `go ProcessJoinedMessage(...)` legacy path
+- Renamed `processMessage` → `ProcessJoinedMessage` (exported so main.go can use it as `FlushFunc` callback in Task 15)
+- Added `originalTexts []string` parameter; loops over them to insert one customer row per original WA message (preserves Sales Inbox audit trail when debounce joined multiple texts)
+- Refactored `handleAdminEscalation(ctx, conv, text)` → `handleAdminEscalation(ctx, senderPhone, text)` to mirror `handleWiringEscalation` shape so `Handle()` can call it directly on bypass without needing a conv lookup
+- Updated `main.go:208` to pass `nil` for new debounce param (Task 15 will populate with real handler)
+- All existing filters preserved: group/broadcast skip, IsFromMe skip, stale-backlog 5-min cutoff
+- `CheckEscalation` call in `ProcessJoinedMessage` retained as defensive — `Handle()` already filters, but kept for legacy direct path and any future direct callers
+- Behavior change to flag: admin escalation on first-message-is-keyword cases now skips `GetOrCreateCustomer` + `CreateLead` (old flow ran those before calling `handleAdminEscalation`; new bypass goes straight from `Handle()`). This matches what wiring escalation already did — consistency win
+- `CGO_ENABLED=1 go build ./...` clean; `go test ./... -race` all pass (1.659s on whatsapp package)
+- Committed: `feat(whatsapp): route messages through DebounceHandler with media+escalation bypass` (30b411e)
+
 ## 2026-06-06 — T12: Typing indicator goroutine — DONE
 - Added `TypingNotifier` interface with `SendTyping(phone string, composing bool)` to `debounce.go`
 - Added `noopTypingNotifier` struct as default when `cfg.Typing` is nil
