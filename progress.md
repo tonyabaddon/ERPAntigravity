@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — T18: cloudbuild.yaml debounce env vars — DONE
+- Modified `cloudbuild.yaml` to forward three new env vars to Cloud Run via `--update-env-vars`:
+  `DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED`, `DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS`, `DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS`
+- Added `substitutions:` block at bottom of file with safe defaults: `_DEBOUNCE_ENABLED: 'false'`, `_DEBOUNCE_SOFT_WAIT_MS: '5000'`, `_DEBOUNCE_HARD_WAIT_MS: '12000'`
+- Existing SUPABASE/GEMINI vars left unchanged
+- Committed: `chore(cloudbuild): forward debounce env vars to Cloud Run deploy` (881f17e)
+
 ## 2026-06-06 — T15: main.go DebounceHandler wire-up — DONE
 - Renamed `newRealClock` → `NewRealClock` in `internal/whatsapp/clock.go` (zero prior callers; exported for main.go)
 - Added `internal/whatsapp/typing.go` with `WATypingNotifier` adapter implementing `TypingNotifier` via `whatsmeow.Client.SendChatPresence(ctx, jid, presence, media)` — translates the boolean composing flag into ChatPresenceComposing/Paused; errors silently swallowed (presence is best-effort)
