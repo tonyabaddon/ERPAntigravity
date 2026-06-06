@@ -87,6 +87,43 @@ func TestPush_IdleToBuffering(t *testing.T) {
 	}
 }
 
+func TestFlush_HardCapEnforced(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	d.Push(context.Background(), "628xxx", "m1")   // t=0
+	fc.Advance(3 * time.Second)
+	d.Push(context.Background(), "628xxx", "m2")   // t=3
+	fc.Advance(3 * time.Second)
+	d.Push(context.Background(), "628xxx", "m3")   // t=6
+	fc.Advance(3 * time.Second)
+	d.Push(context.Background(), "628xxx", "m4")   // t=9
+
+	// At t=9, soft timer would expire at t=14, hard cap at t=12.
+	fc.Advance(2*time.Second + 500*time.Millisecond) // t=11.5: still buffered
+	if got := len(stub.getCalls()); got != 0 {
+		t.Fatalf("flush fired before hard cap, got %d calls", got)
+	}
+
+	fc.Advance(1 * time.Second) // t=12.5: hard cap @ 12 has fired
+	// Allow flush goroutine to complete
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if len(stub.getCalls()) >= 1 {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if got := len(stub.getCalls()); got != 1 {
+		t.Fatalf("expected hard cap to fire 1 call, got %d", got)
+	}
+	call := stub.getCalls()[0]
+	if call.joined != "m1\nm2\nm3\nm4" {
+		t.Fatalf("expected joined='m1\\nm2\\nm3\\nm4', got %q", call.joined)
+	}
+}
+
 // TestOrphanBufferRace verifies that when a Push races with postFlush's
 // delete, the timer callback flushes the buffer it was installed for —
 // not whatever buffer the map currently holds.
