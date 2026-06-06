@@ -86,6 +86,18 @@ func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 	pb.mu.Unlock()
 }
 
+// Flush forces immediate processing of the buffered messages for phone.
+// Called from handler.go before bypass paths (escalation, media) to
+// preserve customer message order.
+// Idempotent: no-op if buffer is IDLE/PROCESSING or doesn't exist.
+func (h *DebounceHandler) Flush(phone string) {
+	pb := h.getBufferUnsafe(phone)
+	if pb == nil {
+		return
+	}
+	h.flushBuffer(pb, phone, "force_flush")
+}
+
 // startTimers must be called with pb.mu held.
 func (h *DebounceHandler) startTimers(pb *phoneBuffer, phone string) {
 	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flushBuffer(pb, phone, "soft_timer") })

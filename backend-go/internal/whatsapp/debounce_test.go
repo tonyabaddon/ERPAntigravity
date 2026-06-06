@@ -311,6 +311,50 @@ func TestPanicRecovery_FlushFnPanics(t *testing.T) {
 	}
 }
 
+func TestForceFlush_FlushesBufferSynchronously(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	d.Push(context.Background(), "628xxx", "halo")
+	d.Push(context.Background(), "628xxx", "mau panel")
+
+	if got := len(stub.getCalls()); got != 0 {
+		t.Fatalf("flush should not have fired yet")
+	}
+
+	d.Flush("628xxx")
+
+	// Wait briefly in case flush goroutine completes asynchronously
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if len(stub.getCalls()) >= 1 {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	if got := len(stub.getCalls()); got != 1 {
+		t.Fatalf("expected force-flush to fire 1 call, got %d", got)
+	}
+	if stub.getCalls()[0].joined != "halo\nmau panel" {
+		t.Fatalf("expected joined='halo\\nmau panel', got %q", stub.getCalls()[0].joined)
+	}
+}
+
+func TestForceFlush_NoOpWhenIdle(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	// No push → buffer is IDLE / nonexistent
+	d.Flush("628xxx") // should not panic, no call
+
+	if got := len(stub.getCalls()); got != 0 {
+		t.Fatalf("force-flush on idle should be no-op, got %d calls", got)
+	}
+}
+
 func TestSpamCap_DropsExcess(t *testing.T) {
 	fc := newFakeClock(time.Unix(0, 0))
 	stub := &stubFlushFn{}
