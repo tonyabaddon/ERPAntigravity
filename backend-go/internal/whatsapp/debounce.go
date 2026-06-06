@@ -77,8 +77,8 @@ func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 
 // startTimers must be called with pb.mu held.
 func (h *DebounceHandler) startTimers(pb *phoneBuffer, phone string) {
-	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flush(phone, "soft_timer") })
-	pb.hardTimer = h.clock.AfterFunc(h.hardWait, func() { h.flush(phone, "hard_cap") })
+	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flushBuffer(pb, phone, "soft_timer") })
+	pb.hardTimer = h.clock.AfterFunc(h.hardWait, func() { h.flushBuffer(pb, phone, "hard_cap") })
 }
 
 // resetSoftTimer must be called with pb.mu held.
@@ -86,15 +86,15 @@ func (h *DebounceHandler) resetSoftTimer(pb *phoneBuffer, phone string) {
 	if pb.softTimer != nil {
 		pb.softTimer.Stop()
 	}
-	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flush(phone, "soft_timer") })
+	pb.softTimer = h.clock.AfterFunc(h.softWait, func() { h.flushBuffer(pb, phone, "soft_timer") })
 }
 
-func (h *DebounceHandler) flush(phone, reason string) {
-	pb := h.getBufferUnsafe(phone)
-	if pb == nil {
-		return
-	}
-
+// flushBuffer drains the buffer pointed to by pb. Takes pb directly (not via
+// map lookup by phone) so timer callbacks always operate on the buffer they
+// were installed for — prevents an orphan-buffer race where a delete+recreate
+// of the map entry would cause timer callbacks to silently target the wrong
+// buffer.
+func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 	pb.mu.Lock()
 	if pb.state != stateBuffering {
 		pb.mu.Unlock()
@@ -115,8 +115,6 @@ func (h *DebounceHandler) flush(phone, reason string) {
 
 	joined := joinTexts(texts)
 	if err := h.flushFn(context.Background(), phone, joined, texts); err != nil {
-		// existing pipeline handles its own retry/error logging.
-		// Here we just log debounce-side errors. (Logger added in later task.)
 		_ = err
 	}
 }
@@ -134,7 +132,13 @@ func (h *DebounceHandler) postFlush(pb *phoneBuffer, phone string) {
 	} else {
 		pb.state = stateIdle
 		h.mu.Lock()
-		delete(h.buffers, phone)
+		// Identity check: only delete if the map still points to OUR buffer.
+		// A concurrent Push that raced with us and created a fresh buffer
+		// must not be evicted. Without this check, the new buffer would be
+		// silently leaked from the map.
+		if h.buffers[phone] == pb {
+			delete(h.buffers, phone)
+		}
 		h.mu.Unlock()
 	}
 }
