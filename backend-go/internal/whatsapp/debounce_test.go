@@ -196,6 +196,31 @@ func TestProcessing_NextBufferDuringFlush(t *testing.T) {
 	pb.mu.Unlock()
 }
 
+func TestPostFlush_TransitionsToIdleAndDeletesEntry(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	d := newTestDebounce(t, fc, stub.fn)
+
+	d.Push(context.Background(), "628xxx", "halo")
+	// Advance to trigger flush. Since stub returns immediately (not blocking),
+	// fc.Advance fires the timer synchronously and the flush + postFlush chain
+	// completes inline.
+	fc.Advance(5 * time.Second)
+
+	// Small spin in case flush+postFlush goroutine path is async
+	deadline := time.Now().Add(1 * time.Second)
+	for time.Now().Before(deadline) {
+		if d.getBufferUnsafe("628xxx") == nil {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	if d.getBufferUnsafe("628xxx") != nil {
+		t.Fatalf("expected buffer entry to be deleted after flush with empty nextBuffer")
+	}
+}
+
 // TestOrphanBufferRace verifies that when a Push races with postFlush's
 // delete, the timer callback flushes the buffer it was installed for —
 // not whatever buffer the map currently holds.
