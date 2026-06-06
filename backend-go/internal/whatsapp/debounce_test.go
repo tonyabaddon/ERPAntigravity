@@ -124,6 +124,78 @@ func TestFlush_HardCapEnforced(t *testing.T) {
 	}
 }
 
+// slowFlushFn blocks until release is closed. Allows asserting state during PROCESSING.
+type slowFlushFn struct {
+	stub    *stubFlushFn
+	release chan struct{}
+	entered chan struct{}
+}
+
+func (s *slowFlushFn) fn(ctx context.Context, phone, joined string, originalTexts []string) error {
+	close(s.entered)
+	<-s.release
+	return s.stub.fn(ctx, phone, joined, originalTexts)
+}
+
+func TestProcessing_NextBufferDuringFlush(t *testing.T) {
+	fc := newFakeClock(time.Unix(0, 0))
+	stub := &stubFlushFn{}
+	slow := &slowFlushFn{
+		stub:    stub,
+		release: make(chan struct{}),
+		entered: make(chan struct{}),
+	}
+	d := newTestDebounce(t, fc, slow.fn)
+
+	d.Push(context.Background(), "628xxx", "first")
+	// Trigger flush in background: fakeClock.Advance fires callbacks synchronously,
+	// so if slow.fn blocks (waiting on release), Advance would never return on the
+	// test goroutine. Run it in a goroutine so test goroutine can proceed to receive
+	// on entered.
+	go fc.Advance(5 * time.Second)
+	<-slow.entered // ensure flushFn started
+
+	// During PROCESSING, new push should go to nextBuffer
+	d.Push(context.Background(), "628xxx", "second")
+
+	pb := d.getBufferUnsafe("628xxx")
+	pb.mu.Lock()
+	if pb.state != stateProcessing {
+		pb.mu.Unlock()
+		t.Fatalf("expected state=PROCESSING during flush, got %v", pb.state)
+	}
+	if len(pb.nextBuffer) != 1 || pb.nextBuffer[0] != "second" {
+		pb.mu.Unlock()
+		t.Fatalf("expected nextBuffer=['second'], got %v", pb.nextBuffer)
+	}
+	pb.mu.Unlock()
+
+	// Release flushFn so it returns
+	close(slow.release)
+
+	// Wait for postFlush to run (state transition is sync within flush goroutine)
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		pb.mu.Lock()
+		if pb.state == stateBuffering && len(pb.texts) == 1 && pb.texts[0] == "second" {
+			pb.mu.Unlock()
+			break
+		}
+		pb.mu.Unlock()
+		time.Sleep(10 * time.Millisecond)
+	}
+	pb.mu.Lock()
+	if pb.state != stateBuffering {
+		pb.mu.Unlock()
+		t.Fatalf("expected cycle 2 to start in BUFFERING, got %v", pb.state)
+	}
+	if len(pb.texts) != 1 || pb.texts[0] != "second" {
+		pb.mu.Unlock()
+		t.Fatalf("expected cycle 2 texts=['second'], got %v", pb.texts)
+	}
+	pb.mu.Unlock()
+}
+
 // TestOrphanBufferRace verifies that when a Push races with postFlush's
 // delete, the timer callback flushes the buffer it was installed for —
 // not whatever buffer the map currently holds.
