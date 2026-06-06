@@ -25,13 +25,15 @@ type Handler struct {
 	startedAt          time.Time
 	supabaseURL        string
 	supabaseServiceKey string
+	debounce           *DebounceHandler // may be nil when feature flag is off
 }
 
-func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string) *Handler {
+func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce *DebounceHandler) *Handler {
 	return &Handler{
 		db: d, machine: m, sender: s, scheduler: sc,
 		waNumberID: waNumberID, startedAt: time.Now(),
 		supabaseURL: supabaseURL, supabaseServiceKey: supabaseServiceKey,
+		debounce: debounce,
 	}
 }
 
@@ -55,9 +57,16 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	if text == "" && evt.Message.GetExtendedTextMessage() != nil {
 		text = evt.Message.GetExtendedTextMessage().GetText()
 	}
+
+	// Media bypass: never debounce. Drain any in-flight buffer first so customer
+	// message order is preserved (text → media in the conversation log).
 	if text == "" {
 		// Media messages (payment proofs) must never be filtered by startup time —
 		// customers send proofs while the backend is restarting and lose them otherwise.
+		senderJID := evt.Info.Sender.ToNonAD().String()
+		if h.debounce != nil {
+			h.debounce.Flush(senderJID)
+		}
 		h.handleMediaMessage(evt)
 		return
 	}
@@ -75,11 +84,43 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	// Preserve the full JID string (including @lid server for LID-based senders)
 	// so sender.go can route it correctly.
 	senderJID := evt.Info.Sender.ToNonAD().String()
-	go h.processMessage(context.Background(), senderJID, text)
+
+	// Escalation keyword bypass: drain any buffered messages first, then escalate
+	// immediately so the customer's urgent request isn't held back by debounce.
+	esc := rules.CheckEscalation(text)
+	if esc != rules.EscalationNone {
+		if h.debounce != nil {
+			h.debounce.Flush(senderJID)
+		}
+		go func() {
+			ctx := context.Background()
+			switch esc {
+			case rules.EscalationWiring:
+				h.handleWiringEscalation(ctx, senderJID, text)
+			case rules.EscalationAdmin:
+				h.handleAdminEscalation(ctx, senderJID, text)
+			}
+		}()
+		return
+	}
+
+	// Normal path: route through debounce when enabled, else fall through to
+	// the legacy direct path so feature-flag-off behavior matches pre-debounce.
+	if h.debounce != nil {
+		h.debounce.Push(context.Background(), senderJID, text)
+	} else {
+		go h.ProcessJoinedMessage(context.Background(), senderJID, text, []string{text})
+	}
 }
 
-func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) {
-	// 1. Keyword rules — fast path, zero LLM cost
+// ProcessJoinedMessage is the unified pipeline used for both debounced and direct text messages.
+// originalTexts contains the customer's raw messages (one per actual WA message) for audit-trail
+// insertion in Sales Inbox; the joined `text` is the combined string sent to Gemini.
+func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text string, originalTexts []string) {
+	// 1. Keyword rules — fast path, zero LLM cost.
+	// Handle() now routes escalations directly via bypass; this remains as a
+	// defensive check for the legacy direct path (debounce==nil) and any
+	// future callers that invoke this method bypassing Handle().
 	esc := rules.CheckEscalation(text)
 	if esc == rules.EscalationWiring {
 		h.handleWiringEscalation(ctx, senderPhone, text)
@@ -116,9 +157,9 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		}
 	}
 
-	// 4. Admin escalation keyword
+	// 4. Admin escalation keyword (defensive — Handle() bypasses to handleAdminEscalation directly).
 	if esc == rules.EscalationAdmin {
-		h.handleAdminEscalation(ctx, conv, text)
+		h.handleAdminEscalation(ctx, senderPhone, text)
 		return
 	}
 
@@ -154,9 +195,19 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		return
 	}
 
-	// 6. Insert customer message → Realtime pushes to Sales Inbox
-	if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, text); err != nil {
-		log.Printf("[HANDLER] InsertMessage error: %v", err)
+	// 6. Insert one row per original customer message → Realtime pushes to Sales Inbox.
+	//    Looping over originalTexts preserves the audit trail (every WA message the
+	//    customer sent shows up as its own bubble) even when debounce joined them
+	//    into a single Gemini call.
+	texts := originalTexts
+	if len(texts) == 0 {
+		texts = []string{text}
+	}
+	for _, original := range texts {
+		if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, original); err != nil {
+			log.Printf("[HANDLER] InsertMessage error for conv %s: %v", conv.ID, err)
+			// continue — Gemini call doesn't depend on this
+		}
 	}
 
 	// 7. Load history
@@ -308,7 +359,12 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 	}
 }
 
-func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conversation, text string) {
+func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text string) {
+	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	if err != nil {
+		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateConversation error for %s: %v", senderPhone, err)
+		return
+	}
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, text)
 	h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
 	h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED_ADMIN: keyword match")
@@ -318,7 +374,7 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conver
 		reply = "Your request will be handled by our team. Please wait a moment."
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
-	if err := h.sender.SendText(ctx, conv.CustomerPhone, reply); err != nil {
+	if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
 		log.Printf("[HANDLER] handleAdminEscalation: SendText error: %v", err)
 	}
 }

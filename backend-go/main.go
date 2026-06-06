@@ -205,7 +205,8 @@ func main() {
 	if waNumberID == "" {
 		waNumberID = "wa_1"
 	}
-	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey)
+	// Task 15 will replace nil with a real DebounceHandler; nil keeps the legacy direct path.
+	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, nil)
 	waClient.AddEventHandler(waHandler.Handle)
 	followup.NewPoller(dbClient, sender).Start(ctx)
 	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
