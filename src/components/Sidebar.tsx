@@ -42,6 +42,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
     { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
     { id: 'kasir', label: 'Kasir', icon: Receipt, description: 'Rekonsiliasi Harian', permKey: 'kasir' },
+    { id: 'penjualanBaru', label: 'Catat Penjualan', icon: ShoppingCart, description: 'Input Penjualan Baru', permKey: 'kasir' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingCart, description: 'PO & Supplier', permKey: 'pembelian' },
     { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, description: 'Leads & Prospek', permKey: 'pipeline' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, description: 'Profil & Riwayat', permKey: 'pelanggan' },
