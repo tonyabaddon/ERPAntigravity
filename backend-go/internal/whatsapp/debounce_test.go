@@ -48,14 +48,14 @@ func TestPush_BufferingResetsSoftTimer(t *testing.T) {
 	d := newTestDebounce(t, fc, stub.fn)
 
 	d.Push(context.Background(), "628xxx", "halo")
-	fc.Advance(3 * time.Second)         // t=3s, dalam window
+	fc.Advance(3 * time.Second) // t=3s, dalam window
 	d.Push(context.Background(), "628xxx", "tony")
-	fc.Advance(4 * time.Second)         // t=7s — would expire if not reset (5s from t=0)
+	fc.Advance(4 * time.Second) // t=7s — would expire if not reset (5s from t=0)
 	if got := len(stub.getCalls()); got != 0 {
 		t.Fatalf("flush fired prematurely after %d calls", got)
 	}
 
-	fc.Advance(2 * time.Second)         // t=9s — past reset deadline of 8s (3+5)
+	fc.Advance(2 * time.Second) // t=9s — past reset deadline of 8s (3+5)
 	if got := len(stub.getCalls()); got != 1 {
 		t.Fatalf("expected 1 flush call, got %d", got)
 	}
@@ -92,13 +92,13 @@ func TestFlush_HardCapEnforced(t *testing.T) {
 	stub := &stubFlushFn{}
 	d := newTestDebounce(t, fc, stub.fn)
 
-	d.Push(context.Background(), "628xxx", "m1")   // t=0
+	d.Push(context.Background(), "628xxx", "m1") // t=0
 	fc.Advance(3 * time.Second)
-	d.Push(context.Background(), "628xxx", "m2")   // t=3
+	d.Push(context.Background(), "628xxx", "m2") // t=3
 	fc.Advance(3 * time.Second)
-	d.Push(context.Background(), "628xxx", "m3")   // t=6
+	d.Push(context.Background(), "628xxx", "m3") // t=6
 	fc.Advance(3 * time.Second)
-	d.Push(context.Background(), "628xxx", "m4")   // t=9
+	d.Push(context.Background(), "628xxx", "m4") // t=9
 
 	// At t=9, soft timer would expire at t=14, hard cap at t=12.
 	fc.Advance(2*time.Second + 500*time.Millisecond) // t=11.5: still buffered

@@ -452,8 +452,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		doc = evt.Message.GetEphemeralMessage().GetMessage().GetDocumentMessage()
 	}
 
-	isPaymentStatus := order != nil && (
-		order.Status == models.OrderStatusWaitingPayment ||
+	isPaymentStatus := order != nil && (order.Status == models.OrderStatusWaitingPayment ||
 		order.Status == models.OrderStatusPaymentUploaded ||
 		order.Status == models.OrderStatusWaitingDP ||
 		order.Status == models.OrderStatusDPUploaded ||

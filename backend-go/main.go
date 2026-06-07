@@ -17,10 +17,10 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
+	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/models"
-	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
