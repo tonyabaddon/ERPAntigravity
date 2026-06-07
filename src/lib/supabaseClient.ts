@@ -740,7 +740,8 @@ export const companySettingsService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('company_settings')
-      .upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
+      .update({ ...values, updated_at: new Date().toISOString() })
+      .eq('id', 1);
     if (error) throw error;
   },
 };
