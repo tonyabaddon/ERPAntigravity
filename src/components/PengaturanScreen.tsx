@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Building2, Users, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Save, X, MapPin } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, Building2, Users, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Save, X, MapPin, Upload, Image as ImageIcon } from 'lucide-react';
 import { DbBankConfig, DbWaRecipient, DbCompanySettings } from '../types';
 import { bankConfigService, waRecipientsService, companySettingsService, isSupabaseConfigured } from '../lib/supabaseClient';
 
@@ -21,6 +21,11 @@ export default function PengaturanScreen({ showToast }: PengaturanScreenProps) {
   const [companyEditing, setCompanyEditing] = useState(false);
   const [companyForm, setCompanyForm]   = useState({ company_name: '', address: '', phone: '', email: '' });
   const [companySaving, setCompanySaving] = useState(false);
+
+  // Logo state
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement | null>(null);
 
   // WA recipients state
   const [recipients, setRecipients] = useState<DbWaRecipient[]>([]);
@@ -51,8 +56,10 @@ export default function PengaturanScreen({ showToast }: PengaturanScreenProps) {
       if (recipsResult.status === 'fulfilled') setRecipients(recipsResult.value);
       else console.error('wa_recipients load error:', recipsResult.reason);
 
-      if (coResult.status === 'fulfilled') setCompany(coResult.value);
-      else {
+      if (coResult.status === 'fulfilled') {
+        setCompany(coResult.value);
+        setLogoUrl(coResult.value?.logo_url ?? null);
+      } else {
         console.error('company_settings load error:', coResult.reason);
         showToast('Gagal memuat sebagian pengaturan. Coba refresh.', 'warning');
       }
@@ -176,6 +183,41 @@ export default function PengaturanScreen({ showToast }: PengaturanScreenProps) {
       setAddSaving(false);
     }
   };
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      showToast('Logo maksimal 1 MB.', 'warning');
+      return;
+    }
+    if (!['image/png','image/jpeg','image/jpg'].includes(file.type)) {
+      showToast('Format logo harus PNG atau JPG.', 'warning');
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const url = await companySettingsService.uploadLogo(file);
+      setLogoUrl(url);
+      showToast('Logo berhasil di-upload.', 'success');
+    } catch (err: any) {
+      showToast(`Gagal upload logo: ${err.message ?? 'unknown'}`, 'warning');
+    } finally {
+      setLogoUploading(false);
+      if (logoFileRef.current) logoFileRef.current.value = '';
+    }
+  }
+
+  async function handleLogoClear() {
+    if (!confirm('Hapus logo? Ini akan menghilangkan logo dari semua invoice baru.')) return;
+    try {
+      await companySettingsService.clearLogo();
+      setLogoUrl(null);
+      showToast('Logo dihapus.', 'success');
+    } catch (err: any) {
+      showToast(`Gagal hapus logo: ${err.message ?? 'unknown'}`, 'warning');
+    }
+  }
 
   if (!isSupabaseConfigured) {
     return (
@@ -371,6 +413,50 @@ export default function PengaturanScreen({ showToast }: PengaturanScreenProps) {
             </button>
           </div>
         )}
+
+        <div className="border-t border-slate-100 pt-5 mt-5">
+          <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
+            Logo Toko (untuk invoice PDF)
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+              ) : (
+                <ImageIcon className="w-8 h-8 text-slate-300" />
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <input
+                ref={logoFileRef}
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <button
+                type="button"
+                onClick={() => logoFileRef.current?.click()}
+                disabled={logoUploading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:bg-[#01365e] disabled:opacity-60"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                {logoUploading ? 'Mengunggah...' : (logoUrl ? 'Ganti Logo' : 'Upload Logo')}
+              </button>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={handleLogoClear}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Hapus Logo
+                </button>
+              )}
+              <p className="text-[10px] text-slate-400">PNG / JPG, maks 1 MB. Rekomendasi 200×200 px (akan ter-dithered di printout dotmatrix).</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* WA recipients card */}
