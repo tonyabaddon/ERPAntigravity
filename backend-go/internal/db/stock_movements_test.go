@@ -273,3 +273,28 @@ func TestDecrementStock_WritesLedgerRow(t *testing.T) {
 		t.Fatalf("expected 1 ledger row, got %d", got-before)
 	}
 }
+
+// TestWrappedRPC_RollsBackLedgerOnFailure is a Phase 1 Task 8 regression guard:
+// when a wrapped RPC fails mid-transaction (e.g., an over-transfer that raises
+// an exception), the stock_movements ledger row written earlier in the same
+// transaction must be rolled back along with the rest. Postgres guarantees
+// this by default, but the test pins the behavior so a future refactor that
+// commits the ledger insert separately is caught immediately.
+func TestWrappedRPC_RollsBackLedgerOnFailure(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 2)
+
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+
+	// transfer_warehouse with qty > stock_atas -> RAISE EXCEPTION
+	_, err := client.DB.Exec(
+		`SELECT public.transfer_warehouse('TEST-IMM','atas','bawah', 999)`)
+	if err == nil {
+		t.Fatalf("expected over-transfer to fail, got nil")
+	}
+
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got != before {
+		t.Fatalf("ledger row written despite RPC failure: %d new rows", got-before)
+	}
+}
