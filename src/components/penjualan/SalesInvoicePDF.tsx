@@ -1,0 +1,235 @@
+import React, { useEffect, useState } from 'react';
+import { X, Printer } from 'lucide-react';
+import { KasirTransaction, DbCompanySettings } from '../../types';
+import { companySettingsService, bankConfigService, isSupabaseConfigured } from '../../lib/supabaseClient';
+import type { DbBankConfig } from '../../types';
+
+function formatRp(n: number) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
+  }).format(n);
+}
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
+}
+
+export type InvoiceVariant = 'dp' | 'lunas';
+
+export interface SalesInvoicePDFProps {
+  transaction: KasirTransaction;
+  variant: InvoiceVariant;
+  autoPrint?: boolean;
+  onClose: () => void;
+}
+
+export default function SalesInvoicePDF({ transaction, variant, autoPrint, onClose }: SalesInvoicePDFProps) {
+  const [company, setCompany] = useState<DbCompanySettings | null>(null);
+  const [bank, setBank] = useState<DbBankConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) { setLoading(false); return; }
+    Promise.all([companySettingsService.fetch(), bankConfigService.fetch()])
+      .then(([co, bk]) => { setCompany(co); setBank(bk); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (autoPrint && !loading) {
+      const timer = setTimeout(() => window.print(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint, loading]);
+
+  const channelLabel = {
+    walkin: 'Walk-in', tokopedia: 'Tokopedia', grosir: 'Grosir', whatsapp: 'WhatsApp Manual',
+  }[transaction.channel ?? 'walkin'] ?? '';
+
+  const paymentLabel = (() => {
+    if (transaction.payment_method === 'edc') {
+      return `EDC ${transaction.payment_subtype === 'qris' ? 'QRIS' : 'Debit'}`;
+    }
+    if (transaction.payment_method === 'qris') return 'QRIS';
+    if (transaction.payment_method === 'transfer') return 'Transfer';
+    return 'Cash';
+  })();
+
+  return (
+    <>
+      <style>{`
+        @media print {
+          @page { size: 9.5in 11in; margin: 0.5in 0.5in; }
+          body * { visibility: hidden; }
+          #sales-invoice-root, #sales-invoice-root * { visibility: visible; }
+          #sales-invoice-root { position: fixed; top: 0; left: 0; width: 100%; background: white; }
+          .print\\:hidden { display: none !important; }
+        }
+      `}</style>
+
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+        <div
+          id="sales-invoice-root"
+          className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-auto"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between px-4 py-2 bg-[#012749] text-white print:hidden">
+            <div className="flex items-center gap-2 font-bold text-[13px]">
+              Invoice {transaction.invoice_number}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => window.print()} className="flex items-center gap-1 px-3 py-1 bg-[#2d8a4e] rounded text-[12px] font-bold">
+                <Printer className="w-3.5 h-3.5" /> Cetak Ulang
+              </button>
+              <button onClick={onClose}><X className="w-4 h-4" /></button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">Memuat...</div>
+          ) : (
+            <InvoiceBody transaction={transaction} variant={variant} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} formatRp={formatRp} formatDateTime={formatDateTime} />
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Body extracted to its own function for clarity (still in the same file)
+function InvoiceBody({
+  transaction: t, variant, company, bank, channelLabel, paymentLabel, formatRp, formatDateTime,
+}: any) {
+  const subtotal = t.subtotal;
+  const ongkir = t.ongkir_amount ?? 0;
+  const total = t.total_amount ?? subtotal + ongkir;
+  const dp = t.dp_amount ?? 0;
+  const sisa = variant === 'dp' ? total - dp : 0;
+  const sudahDibayar = variant === 'lunas' ? total : dp;
+
+  return (
+    <div className="bg-white p-8 font-mono text-[12px] leading-[1.45] text-slate-800 relative">
+      {/* Stamp */}
+      <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
+        variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
+      }`}>
+        {variant === 'lunas' ? 'LUNAS' : 'DP'}
+      </div>
+
+      {/* Header */}
+      <div className="grid grid-cols-[auto_1fr] gap-4 pb-3 border-b-2 border-slate-900 mb-3">
+        <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-sans font-extrabold text-[10px] text-center">
+          {company?.logo_url
+            ? <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            : (company?.company_name ?? 'GARINDO').split(' ').slice(0,3).join(' ')}
+        </div>
+        <div>
+          <div className="font-extrabold font-sans text-[15px]">{company?.company_name ?? 'GARINDO JAYA PANEL'}</div>
+          <div className="text-[11px] mt-0.5">{company?.address ?? '—'}</div>
+          <div className="text-[11px]">{company?.phone && `Telp ${company.phone}`} {company?.email && `· ${company.email}`}</div>
+          {company?.npwp && <div className="text-[11px]">NPWP {company.npwp}</div>}
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="grid grid-cols-[1fr_auto] gap-3 mb-3">
+        <div>
+          <div className="font-sans font-extrabold text-[17px] tracking-wider">SALES INVOICE</div>
+          <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
+          </div>
+        </div>
+        <div className="text-right text-[11px]">
+          <div className="font-extrabold text-[13px]">{t.invoice_number}</div>
+          <div>{formatDateTime(t.created_at)}</div>
+          <div>Channel: {channelLabel.toUpperCase()}</div>
+        </div>
+      </div>
+
+      {/* Bill-to */}
+      <div className="grid grid-cols-2 gap-4 py-2 border-b border-dashed border-slate-400 mb-2 text-[11px]">
+        <div>
+          <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Pelanggan</div>
+          <div><strong>{t.customer_name ?? '—'}</strong></div>
+          {t.customer_company && <div>{t.customer_company}</div>}
+          <div>{t.customer_phone ?? '—'}</div>
+        </div>
+        <div>
+          <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
+          <div><strong>{paymentLabel}</strong></div>
+        </div>
+      </div>
+
+      {/* Items table */}
+      <table className="w-full text-[11px] my-2 border-collapse">
+        <thead>
+          <tr>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-[10px] uppercase tracking-wide">No</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-[10px] uppercase tracking-wide">Deskripsi Barang</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-center font-extrabold text-[10px] uppercase tracking-wide">Qty</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-[10px] uppercase tracking-wide">Harga</th>
+            <th className="border-t border-b border-slate-900 px-1 py-1 text-right font-extrabold text-[10px] uppercase tracking-wide">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {(t.items as any[]).map((item, idx) => (
+            <tr key={idx} className="align-top">
+              <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
+              <td className="px-1 py-1 border-b border-dotted border-slate-300">
+                <div className="font-bold">{item.name}</div>
+                <div className="text-[10px] text-slate-500">{item.sku}</div>
+              </td>
+              <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{item.qty}</td>
+              <td className="px-1 py-1 text-right border-b border-dotted border-slate-300">{formatRp(item.unit_price).replace('Rp', '').trim()}</td>
+              <td className="px-1 py-1 text-right border-b border-dotted border-slate-300">{formatRp(item.subtotal).replace('Rp', '').trim()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Notes */}
+      {t.notes && (
+        <div className="border border-dashed border-slate-400 px-2 py-1.5 my-2 text-[11px]">
+          <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">📝 Catatan</div>
+          <div className="whitespace-pre-wrap">{t.notes}</div>
+        </div>
+      )}
+
+      {/* Totals */}
+      <div className="ml-auto w-3/5 text-[12px] mt-2">
+        <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(subtotal)}</span></div>
+        {ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
+        <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-[13px]">
+          <span>TOTAL TAGIHAN</span><span>{formatRp(total)}</span>
+        </div>
+        <div className="flex justify-between py-0.5 font-bold"><span>{variant === 'lunas' ? 'Sudah Dibayar' : 'Uang Muka (DP) Diterima'}</span><span>{formatRp(sudahDibayar)}</span></div>
+        <div className={`flex justify-between py-0.5 font-extrabold ${variant === 'lunas' ? '' : ''}`}>
+          <span>{variant === 'lunas' ? 'SISA' : 'SISA PELUNASAN'}</span><span>{formatRp(sisa)}</span>
+        </div>
+      </div>
+
+      {/* Payment block */}
+      <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-[11px]">
+        <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">Rekening Pembayaran</div>
+        <div>
+          <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_name ?? '—'}</strong>
+        </div>
+        <div className="text-[10px] text-slate-500 mt-0.5">
+          {variant === 'lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="mt-3 border border-slate-900 px-2 py-1.5 text-center text-[10px] font-extrabold tracking-wide">
+        ⚠ BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN
+      </div>
+
+      {/* Footer signatures */}
+      <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-dashed border-slate-400 text-[11px]">
+        <div className="text-center"><div className="border-b border-slate-900 h-8 mx-4 mb-1"></div><div className="font-bold text-[10px]">Penerima Barang</div></div>
+        <div className="text-center"><div className="border-b border-slate-900 h-8 mx-4 mb-1"></div><div className="font-bold text-[10px]">Hormat Kami</div></div>
+      </div>
+    </div>
+  );
+}
