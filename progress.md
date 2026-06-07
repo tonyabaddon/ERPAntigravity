@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Stock Fraud Prevention: redundancy patches applied to spec + Phase 2/4 plans — DONE
+- **Konteks**: setelah audit codebase, user (`tonywei@`) flagged 3 redundancy antara plan baru vs feature existing. Saya tidak ulang bangun apa yang sudah ada. Spec + 2 plan files di-patch surgical.
+- **Patch 1 — Owner WA destination → reuse `wa_recipients`** (Phase 4 plan):
+  - Migration `…052_company_settings_owner_jid.sql` di-DROP. Heartbeat poller untuk pengawasan baca dari `wa_recipients WHERE role='owner' AND is_active=true` (pattern existing dari `p.db.GetActiveRecipients()`). Multi-Owner MSME tetap supported — iterate, no LIMIT 1.
+  - Test setup berubah dari `UPDATE company_settings SET owner_jid=...` → `INSERT INTO wa_recipients (...) ON CONFLICT DO NOTHING`. Verified: `owner_jid` 0 hits, `wa_recipients` 16 hits di Phase 4 plan.
+- **Patch 2 — Action permissions → extend existing `permissions` JSONB** (Phase 2 plan + spec):
+  - Tidak bikin kolom kedua `action_permissions`. Migration `…011_extend_permissions_and_pin.sql` (renamed) hanya menambah PIN columns (`approval_pin_hash`, `pin_failed_count`, `pin_locked_until`). Action keys (`can_approve_adjustment`, dst — 18 total per Foundational Decision #5) di-merge ke existing `admin_users.permissions` lewat `SET permissions = permissions || jsonb_build_object(...)`.
+  - TypeScript `PermissionSet` interface di-extend dengan optional action keys (bukan interface baru `ActionPermissionSet`). UserManagementScreen extend dengan 2 section dalam satu form: "Akses Menu" (11 toggle) + "Akses Aksi" (15+ toggle). Satu state, satu UI flow untuk Owner.
+  - Verified: `action_permissions` 1 hit (legitimate explanatory note), `ActionPermissionSet` 0 hits di Phase 2 plan.
+- **Patch 3 — Approval Inbox realtime fallback** (Phase 2 plan, Task 25):
+  - Realtime channel di `approval_requests` butuh Supabase Realtime feature enabled. Plan sekarang include fallback ke 30-second polling kalau realtime belum on. Untuk 4-user MSME, 30s polling acceptable UX.
+- **Patch 4 — Legacy fallback removal** (Phase 2 plan, Task 11):
+  - `src/lib/supabaseClient.ts:806-820` ada fallback direct UPDATE pada `stocks` kalau RPC `decrement_stock` fail. Setelah REVOKE column-level di Phase 2, fallback ini akan error permission-denied. Plan sekarang hapus fallback di commit yang sama dengan REVOKE migration.
+- **Spec edits** (5 file): Foundational Decision #5 wording + TypeScript example + Phase 2 migration block + types.ts note + Phase 4 Owner JID resolution. Migration filename di spec berubah dari `_action_permissions.sql` → `_extend_permissions_and_pin.sql`.
+- **Plan files final**: Phase 2 = 4073 baris (grew 38 baris setelah patches), Phase 4 = 1806 baris (no net change).
+- **Anti-fraud effectiveness**: tidak berubah. Owner tetap dapat WA approval (cuma dari sumber yang sudah ada). Permission gate di RPC layer tetap cek `permissions->>'can_approve_X'`. UX justru lebih baik karena Owner kelola WA + permissions di satu UI screen.
+- **Next**: commit semua perubahan ini (spec + 2 plan files + progress.md) → start Phase 1 build subagent-driven.
+
 ## 2026-06-07 — Vosi landing v3: MSME conversion overhaul — PARKED PENDING COMPETITOR RESEARCH
 - **Status**: Current state of `vosi-landing/index.html` locked sebagai checkpoint. Tidak ada perubahan lagi sampai Mekari Jurnal demo + Halo AI demo (di `docs/competitive-research/`) selesai. Setelah research, akan lock + build final design.
 - **Locked decisions (sudah di-apply ke index.html)**:
@@ -29,35 +47,28 @@
 - **Moved**: `vosi-landing/DEPLOY.md` → `docs/deploy/vosi-landing-deploy.md`. Added `docs/deploy/README.md` menjelaskan rasionalisasi + future content (backend deploy guide, migration runbook, incident playbook).
 - **vosi-landing/ sekarang clean** — hanya berisi 6 file yang aman publik: `index.html`, `firebase.json`, `.firebaserc`, `.gitignore`, `favicon.svg`, `robots.txt`, `sitemap.xml`. Firebase ignore rule cover `.*` (dot-files) — sisanya semua deployable dan aman jadi publik.
 
-## 2026-06-07 — Stock Fraud Phase 3b implementation plan written — PLAN DONE
-- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase3b.md` — 11 tasks (7 backend + 3 frontend + 1 manual smoke), TDD style matching Phase 1 plan.
-- **Migrations** (7, numbered `…030`–`…036`): `kasir_shifts` table + partial unique index + ALTER `kasir_transactions` (shift_id, cashier_user_id, status) (`…030`), `company_settings.kasir_min_margin_pct` + `kasir_max_variance` (`…031`), `open_kasir_shift` + `close_kasir_shift` RPCs (`…032`), `kasir_price_override_requests` + `request_kasir_price_override` + single-use partial unique index (`…033`), atomic `create_kasir_transaction` RPC subsuming the current non-atomic `insertSaleTransaction`+`deductFifo`+`decrementStock` pattern with shift+override+floor gates (`…034`), `kasir_returns` + `request_kasir_refund` + `commit_approved_kasir_refund` (`…035`), `request_kasir_void` + `commit_approved_kasir_void` (`…036`).
-- **Floor as hard stop**: floor check (`unit_price ≥ harga_modal × kasir_min_margin_pct`) fires AFTER override matching but unconditionally — even Owner-approved override cannot punch through. Test explicitly asserts this.
-- **Override single-use**: enforced via partial unique index `uniq_override_single_use ON id WHERE committed_kasir_tx_id IS NULL AND status='approved'`. Test replays same override → expects violation.
-- **Refund vs void qty math**: both write POSITIVE `qty_delta` (compensating restoration of stock). Refund source=`return_kasir`; void source=`sale_kasir` (compensating row). Differentiator made explicit in test assertions.
-- **Server-side cash math on close**: `close_kasir_shift` computes `closing_cash_expected` from `SUM(subtotal) WHERE payment_method='cash' AND status='committed'` — client-provided expected never trusted. Variance > `kasir_max_variance` (default Rp 50.000) flips status to `disputed`.
-- **Phase 2 reuse**: every approval-bearing RPC writes to `approval_requests` table (type enum already extended in Phase 2 to include `kasir_price_override` / `kasir_refund` / `kasir_void`). Frontend reuses `OwnerPinPad` component. Test helper `_test_force_approve_request` defined for integration tests (REVOKEd from `authenticated`).
-- **Frontend**: 4 new modals (`KasirShiftOpenModal`, `KasirShiftCloseModal`, `KasirPriceOverrideModal`, `KasirRefundModal`); `KasirScreen` gated behind open-shift check with shift bar + Tutup Shift; `KasirInvoiceModal` `unit_price` becomes read-only with 🔒 + "Ubah harga" button + pending/approved badges + checkout disabled while any line pending; Refund button on past `committed` transactions; sale insert path switches from three-step pattern to atomic `create_kasir_transaction` RPC.
-- **Out of scope** (locked): loss-leader override below floor (would need `floor_override:true` payload extension), multi-currency, cash drawer hardware, receipt printing, shift handover, refund warehouse choice (always restores to `'atas'`), void UI button (RPC exists; UI surface is follow-up).
+## 2026-06-07 — Stock Fraud Prevention: 6-phase implementation plans written — PLANS DONE
+- **Spec**: `docs/superpowers/specs/2026-06-07-stock-fraud-prevention-design.md` (committed `4acafce`).
+- **Mockup interactive**: `docs/superpowers/specs/2026-06-07-stock-fraud-prevention-mockups/index.html` (committed `4acafce`).
+- **Plans** (6 files, ~12.853 baris total — semua TDD style: failing test → run-fail → implement → run-pass → conventional commit):
+  - **Phase 1 — Immutable Ledger** (`…phase1.md`, ~940 baris, 10 task): `stock_movements` table + REVOKE/triggers (append-only walaupun service_role) + `_log_stock_movement` helper + wrap 4 RPC existing (`receive_purchase_order`, `deduct_stock_fifo`, `transfer_warehouse`, `decrement_stock`) + Go tests + benchmark.
+  - **Phase 2 — Adjustment + Opname + Approval Infra** (`…phase2.md`, ~4.035 baris, 31 task): `approval_requests`, `stock_adjustments`, `stock_opname_*`, `price_change_requests`, `stock_price_history`; RPC `request_*`/`commit_approved_*`/`reject_*`/`verify_owner_pin`/`decide_via_wa_button`/`expire_pending_approvals`; REVOKE column-level on `stocks.price/harga_modal/stock_atas/stock_bawah`; `admin_users.action_permissions` JSONB + bcrypt PIN + per-Owner lockout; frontend `ApprovalInboxScreen` + `OwnerPinPad` + `StockAdjustmentModal` + `PriceChangeRequestModal` + `StockOpnameScreen/SessionView`; Go `/api/approval/wa-webhook` + expiry poller.
+  - **Phase 3a — Penerimaan PO** (`…phase3a.md`, ~1.760 baris, 10 task): `purchase_order_receipts` (UNIQUE(po_id), witness ≠ receiver, ≥1 photo) + `purchase_order_receipt_lines`; extend `receive_purchase_order` dengan 3-way match (PO vs fisik vs faktur supplier) + `pg_notify` → Go LISTEN → Owner WA alert; `stock-evidence` storage bucket; extend `ReceiveGoodsModal.tsx`. *Manual edit di plan ini*: dropped unnecessary immutability trigger on `purchase_order_receipts` (bukan di list append-only spec).
+  - **Phase 3b — Kasir Controls** (`…phase3b.md`, ~2.396 baris, 11 task): `kasir_shifts` (partial unique index untuk one-open-per-user) + ALTER `kasir_transactions` (shift_id, cashier_user_id, status); `company_settings.kasir_min_margin_pct` + `kasir_max_variance`; RPC `open/close_kasir_shift`, atomic `create_kasir_transaction` dengan shift+override+floor gates, `request_kasir_price_override` (single-use via partial unique index), `request/commit_approved_kasir_refund`, `request/commit_approved_kasir_void`. Floor adalah hard stop bahkan dengan approved override. Frontend: 4 modal baru, Kasir UI gated di balik open-shift.
+  - **Phase 3d — Transfer 2-langkah** (`…phase3d.md`, ~1.919 baris, 11 task): `warehouse_transfers` + state machine `initiated/received/disputed/cancelled`; two-person rule di CHECK + RPC; `transfer_initiate`/`transfer_receive`/`transfer_dispute`; *no phantom transit warehouse* — shortfall jadi disputed sampai Owner file `stock_adjustment` (Phase 2). DROP legacy `transfer_warehouse` di Task terakhir (setelah frontend di-rewrite). New `TransferMasukScreen` + `transferService`.
+  - **Phase 4 — Pengawasan Dashboard** (`…phase4.md`, ~1.806 baris, 14 task): 5 SQL views (top_adjustments, kasir_discount_7d, outflow_outliers, transfer_aging, actor_activity_30d dengan SQL z-score + NULLIF guard); extend existing `notification_config` table (bukan bikin `heartbeat_config` baru — naming discrepancy di spec di-resolve); `company_settings.owner_jid` baru; extend `heartbeat/poller.go` reuse 1-min tick dengan `lastPengawasanFiredDate` guard; `DashboardScreen` Owner-only section + drilldown modal.
+- **Tradeoffs yang sengaja di-pilih agent**:
+  - Phase 3a: `pg_notify` daripada synchronous HTTP webhook untuk Owner alert (non-blocking RPC return).
+  - Phase 3b: `_test_force_approve_request` helper (REVOKEd dari authenticated) untuk integration test bypass Owner PIN.
+  - Phase 4: Reuse existing 1-min heartbeat tick dengan in-memory state daripada bikin daily goroutine baru.
+- **Migration numbering map** (untuk avoid collision saat apply berurutan): Phase 1 = `…001`–`…005`, Phase 2 = `…006`–`…01x`, Phase 3a = `…020`–`…02x`, Phase 3b = `…030`–`…036`, Phase 3d = `…040`–`…049` (drop legacy `…049`), Phase 4 = `…050`–`…052`.
+- **Next**: pilih execution mode — subagent-driven (1 task per fresh agent, two-stage review) atau inline (batch dengan checkpoints). Phase 1 dulu (foundation), lalu Phase 2 + Phase 4 paralel, lalu 3a/3b/3d paralel.
 
-## 2026-06-07 — Stock Fraud Phase 3d implementation plan written — PLAN DONE
-- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase3d.md` — 11 tasks (10 implementation + 1 manual smoke), TDD style matching Phase 1 plan.
-- **Migrations** (6, numbered `…040`–`…049` with headroom): `warehouse_transfers` table + `transfer_status` enum + CHECK constraints (different warehouses, two-person, ≥1 send photo) (`…040`), `transfer_initiate` RPC (`…041`), `transfer_receive` RPC (`…042`), small ALTER for `disputed_alert_sent_at` flag (`…042b`), `transfer_dispute` RPC (`…043`), `action_permissions` seed for `can_initiate_transfer` + `can_receive_transfer` (`…044`), `DROP FUNCTION transfer_warehouse` (`…049`, runs LAST after all callers migrated).
-- **No phantom transit**: receiver-side ledger row writes only `counted_qty`; shortfall stays as logical deficit on the `disputed` transfer until Owner files a Phase 2 `stock_adjustment` (reason `'hilang'`). Test explicitly asserts no row with `warehouse NOT IN ('atas','bawah')` exists for any transfer.
-- **Two-person rule**: enforced at BOTH the CHECK level (`chk_two_person_transfer`) AND inside `transfer_initiate` (early RAISE for friendly error message). `transfer_receive` and `transfer_dispute` validate caller = `intended_receiver_user_id`.
-- **State machine guards**: `transfer_receive` and `transfer_dispute` both error if `status <> 'initiated'` — prevents re-receive and double-dispute. Test included.
-- **Owner alert**: new `SendDisputedTransferAlert` (informational, no buttons — Owner reconciles via Phase 2 not via WA). Daemon polls `WHERE status='disputed' AND disputed_alert_sent_at IS NULL` to ensure exactly-once.
-- **Frontend**: new `src/lib/transferService.ts` (initiate/receive/dispute/listIncoming/countIncoming); rewrite `WarehouseTransferModal.tsx` (intended-receiver dropdown excluding self, send-photo dropzone required); new `TransferMasukScreen.tsx` + `TransferReceiveModal.tsx`; Sidebar item conditional on `incomingTransferCount > 0` (60s poll, realtime upgrade out of scope); new `ActivePage` value `'transfer-masuk'`.
-- **Legacy drop sequencing**: Task 10 (drop migration) runs only after Task 8 (frontend rewrite) removes the last caller. `pembelianService.transferWarehouse` deleted in same commit. Phase 1's wrapper migration is left untouched (migration history immutable).
-- **Out of scope locked**: aging > 24h flag UI (Phase 4 reads from `initiated_at` + `status`), multi-step routing, bulk transfers, auto-receive, initiator-side cancel, backwards-compat shim, realtime push for badge.
-
-## 2026-06-07 — Stock Fraud Phase 4 implementation plan written — PLAN DONE
-- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase4.md` — 14 tasks, TDD style matching Phase 1 plan (failing test → fail → implement → pass → commit).
-- **Migrations** (3): `…050_pengawasan_views.sql` (5 views: top_adjustments, kasir_discount_7d, outflow_outliers, transfer_aging, actor_activity_30d with SQL z-score), `…051_notification_config_pengawasan.sql` (two columns added to existing `notification_config` table — spec called it `heartbeat_config` colloquially), `…052_company_settings_owner_jid.sql` (owner_jid TEXT).
-- **Backend**: extend `internal/heartbeat/poller.go` — chose to reuse 1-min tick + in-memory `lastPengawasanFiredDate` guard rather than separate daily goroutine (one ticker, one state machine, smaller test surface). New `pengawasan.go` Go readers per view feed the daily WA payload.
-- **Frontend**: `DashboardScreen.tsx` Owner-only Pengawasan section behind `currentUser.action_permissions.can_view_pengawasan`, period filter 30d/7d/today, heatmap row → new `PengawasanDrilldownModal.tsx`; risk pill (Rendah/Sedang/Tinggi) mapped from SQL `risk_z` with cutoffs ≤0.5 / 0.5–1.5 / >1.5. `NotificationSettingsScreen.tsx` gains toggle + hour input.
-- **Z-score**: computed in SQL via `STDDEV_POP(...) OVER ()` + `NULLIF` guard so uniform activity (stddev=0) yields `risk_z=0`, not NaN. Tested explicitly.
-- **Out of scope** (locked): ML detection, configurable thresholds, multi-shop aggregation, CSV export, per-section sub-toggles in WA report, RLS hardening on views (frontend gates via permission).
+## 2026-06-07 — Sales Recording Overhaul Task 0.2: company_settings logo_url migration — DONE
+- **File created**: `supabase/migrations/20260607000002_company_settings_logo.sql` on branch `worktree-sales-recording-overhaul`
+- **Changes**: `ALTER TABLE public.company_settings ADD COLUMN IF NOT EXISTS logo_url TEXT, npwp TEXT`; `INSERT INTO storage.buckets` for `branding` (public); RLS policies `branding_public_read` (SELECT TO public) + `branding_anon_write` (ALL TO anon) via idempotent `DO $$ BEGIN ... EXCEPTION WHEN duplicate_object THEN NULL; END $$` blocks.
+- **Commit**: `15e787d` — `feat(db): add logo_url + npwp to company_settings, create branding storage bucket`
+- **Apply + verify**: out of scope (controller to arrange with user).
 
 ## 2026-06-07 — Vosi design system extracted + moved out of public deploy folder — DONE
 - **Created**: `docs/design/vosi-design-system.html` — standalone reference dengan color tokens (6 primary + 8 neutrals + 4 semantic), typography scale (8 levels), spacing scale (8 tokens), border-radius scale (5 tokens), component library (buttons, badges, section headers, module + pricing cards), 8 design principles, plus preview render Modul + Paket sections terisolasi.
@@ -2976,3 +2987,25 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - `src/components/WhatsappAiScreen.tsx`: Fix interval leak di `handleLogout` — clear existing interval sebelum create yang baru
 - `backend-go/internal/whatsapp/client.go`: QR loop retry infinite saat Connect() gagal (5s delay) alih-alih exit loop
 - `backend-go/daemon`: Rebuilt binary
+
+## 2026-06-07 — Sub-project A (Sales Recording overhaul): Design spec DONE
+
+- Brainstorming session via `/superpowers:brainstorming` — decomposed 16 user-requested items into 10 sub-projects, prioritised by impact (Tier 1: A → B → F)
+- User picked sub-project A first
+- Visual companion used for 6 iterations of layout mockups; final approved layout: single-page channel toggle (Walk-in / Tokopedia / Grosir / WhatsApp), 2-column with prominent left panel for items+cart
+- Key UX decisions:
+  - EDC = single payment method with optional sub-type (Debit / QRIS)
+  - DP applies to all channels; admin-input DP amount, no minimum rule
+  - Customer search → lock + disable new-customer block when picked
+  - Per-row warehouse selector (Atas/Bawah) in cart, no global selector
+  - Stock-per-warehouse pills shown in item search results
+  - Optional Ongkir toggle + optional Notes textarea (appears on invoice)
+  - Always print invoice (no "save without print")
+  - WhatsApp channel = manual fallback for when Calista didn't handle a WA chat
+  - Bukti pembayaran upload: skipped from scope A
+- PDF Invoice dotmatrix 9.5"×11" fanfold — 2 variants (DP stamp oranye / Lunas stamp hijau); auto-fills logo + address + bank rek from company_settings + bank_config (existing); T&C "BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN" always shown
+- Pelunasan flow: 1 kasir_transactions row + state machine (PAID → AWAITING_LUNAS → COMPLETED), "Tandai Lunas" button + MarkLunasModal
+- Data model: extend `kasir_transactions` (~13 new columns); `company_settings` gets `logo_url`; enum updates (`kasir_channel` adds 'whatsapp', `kasir_payment_method` rename 'qris' → 'edc')
+- Saved feedback memory: font sizing — base 13-14px UI, 11-12px PDF data, no <11px
+- Spec committed: `docs/superpowers/specs/2026-06-07-sales-recording-overhaul-design.md` (commit db2516b)
+- Next: invoke writing-plans skill for implementation plan
