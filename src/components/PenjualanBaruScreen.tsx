@@ -12,6 +12,7 @@ import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 import ItemSearchPanel from './penjualan/ItemSearchPanel';
 import CartRows from './penjualan/CartRows';
 import CustomerPanel from './penjualan/CustomerPanel';
+import PaymentPanel from './penjualan/PaymentPanel';
 
 let _itemSeq = 0;
 
@@ -111,6 +112,73 @@ export default function PenjualanBaruScreen({
     setCart(prev => prev.filter(i => i._key !== key));
   }
 
+  async function handleSave() {
+    // Validation
+    if (cart.length === 0) { showToast('Tambahkan minimal 1 item.', 'warning'); return; }
+    if (!customerName.trim()) { showToast('Nama pelanggan wajib diisi.', 'warning'); return; }
+    if (!customerPhone.trim()) { showToast('Nomor HP wajib diisi.', 'warning'); return; }
+    if (channel === 'tokopedia' && !tokpedOrderNo.trim()) {
+      showToast('Nomor Pesanan Tokopedia wajib diisi.', 'warning'); return;
+    }
+    if (paymentMethod === 'edc' && !paymentSubtype) {
+      showToast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning'); return;
+    }
+    // Compute effective DP amount
+    const effectiveDp = paymentType === 'DP'
+      ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
+      : 0;
+    if (paymentType === 'DP' && (effectiveDp <= 0 || effectiveDp >= totalInvoice)) {
+      showToast('Jumlah DP harus > 0 dan < Total Invoice.', 'warning'); return;
+    }
+
+    setSaving(true);
+    try {
+      const invoiceNumber = await kasirService.nextInvoiceNumber(channel, new Date().toISOString().slice(0, 10));
+
+      const newTx = {
+        date: new Date().toISOString().slice(0, 10),
+        channel,
+        items: cart.map(({ _key, ...rest }) => rest),
+        subtotal,
+        hpp_total: cart.reduce((s, i) => s + i.hpp_subtotal, 0),
+        payment_method: paymentMethod,
+        payment_subtype: paymentSubtype,
+        payment_type: paymentType,
+        dp_amount: effectiveDp,
+        dp_input_type: paymentType === 'DP' ? dpInputType : undefined,
+        ongkir_amount: ongkirOn ? ongkirAmount : 0,
+        notes: notes.trim() || undefined,
+        total_amount: totalInvoice,
+        tokped_order_no: channel === 'tokopedia' ? tokpedOrderNo : undefined,
+        wa_phone: channel === 'whatsapp' ? waPhone : undefined,
+        wa_chat_url: channel === 'whatsapp' ? waChatUrl : undefined,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        customer_company: customerCompany || undefined,
+        invoice_number: invoiceNumber,
+      };
+
+      const saved = await kasirService.insertSaleTransaction(newTx);
+
+      // Auto-create new customer if not selected
+      if (!selectedCustomerId && customerName.trim() && customerPhone.trim()) {
+        try { await customersService.createCustomer(customerPhone, customerName, customerCompany); } catch {}
+      }
+
+      // Decrement stock per-row warehouse
+      for (const item of cart) {
+        try { await stockService.decrementStock(item.sku, item.qty, item.warehouse); }
+        catch { showToast(`Gagal kurangi stok ${item.name}.`, 'warning'); }
+      }
+
+      onSaved(saved.id);
+    } catch (err: any) {
+      showToast(`Gagal menyimpan: ${err.message ?? 'unknown'}`, 'warning');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       {/* Top bar */}
@@ -197,7 +265,30 @@ export default function PenjualanBaruScreen({
                     onPhoneChange={setCustomerPhone}
                     onCompanyChange={setCustomerCompany}
                   />
-                  <div className="text-sm text-slate-400">[Payment panel coming next]</div>
+                  <PaymentPanel
+                    method={paymentMethod}
+                    subtype={paymentSubtype}
+                    onMethodChange={setPaymentMethod}
+                    onSubtypeChange={setPaymentSubtype}
+                    paymentType={paymentType}
+                    onPaymentTypeChange={setPaymentType}
+                    dpAmount={dpAmount}
+                    dpInputType={dpInputType}
+                    onDpAmountChange={setDpAmount}
+                    onDpInputTypeChange={setDpInputType}
+                    ongkirOn={ongkirOn}
+                    ongkirAmount={ongkirAmount}
+                    onOngkirToggle={setOngkirOn}
+                    onOngkirAmountChange={setOngkirAmount}
+                    notes={notes}
+                    onNotesChange={setNotes}
+                    subtotal={subtotal}
+                    totalInvoice={totalInvoice}
+                    sisaPelunasan={sisaPelunasan}
+                    saving={saving}
+                    onSave={handleSave}
+                    onCancel={onBack}
+                  />
                 </div>
               </div>
             </div>
