@@ -34,6 +34,7 @@ import PelangganScreen from './components/PelangganScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
+import PenjualanBaruScreen from './components/PenjualanBaruScreen';
 
 import {
   INITIAL_STOCK,
@@ -317,6 +318,15 @@ export default function App() {
           <KasirScreen
             currentUser={currentUser}
             showToast={triggerToast}
+          />
+        );
+      case 'penjualanBaru':
+        return (
+          <PenjualanBaruScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+            onBack={() => setActivePage('kasir')}
+            onSaved={(_txId) => setActivePage('kasir')}
           />
         );
       default:
