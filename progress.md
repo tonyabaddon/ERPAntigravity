@@ -66,6 +66,15 @@
 - **Related risk noted (not fixed)**: `vosi-landing/DEPLOY.md` juga internal docs di folder publik. Firebase ignore rule cuma cover dot-files + firebase configs. DEPLOY.md technically accessible via direct URL. Pindahkan saat next cleanup.
 - **Design system documents**: green #2d8a4e (brand/CTA), navy #1e3d60 (depth), purple #7c3aed (Premium AI only), Inter typography (400-900 ladder), pill-shape (9999px) for all interactive, card 3-tier hierarchy (white → featured → premium), hover lift 2-4px + shadow expansion.
 
+## 2026-06-07 — Sales Recording Overhaul Task 1.1: TypeScript types extended — DONE
+- **Files changed**: `src/types.ts`, `src/components/KasirScreen.tsx`
+- **Commit**: `4859521`
+- **New type aliases added**: `KasirChannel` (+whatsapp), `KasirPaymentMethod` (+edc), `KasirPaymentSubtype`, `KasirPaymentType`, `KasirDpInputType`, `KasirStatus`, `WarehouseLocation`
+- **Updated interfaces**: `KasirItem` (+warehouse), `KasirTransaction` (+14 new optional fields), `NewSaleTransaction` (+payment_type, dp_amount, dp_input_type, ongkir_amount, total_amount, payment_subtype, tokped_order_no, wa_phone, wa_chat_url), `DbCompanySettings` (+logo_url, +npwp)
+- **KasirScreen.tsx compatibility stubs**: added `whatsapp`/`edc` entries to Record maps; `NewSaleTransaction` construction default to `payment_type:'FULL'`/`dp_amount:0`/`ongkir_amount:0`/`total_amount:subtotal`; `addItem` now passes `warehouse` from state. Phase 4/7 will replace these stubs.
+- **Lint**: 11 pre-existing errors only, 0 new errors introduced.
+- **Note**: Plan's `git add src/types.ts` was too narrow — type widening unavoidably broke KasirScreen.tsx exhaustive Record maps and NewSaleTransaction literal site. KasirScreen included in same commit with minimal stubs.
+
 ## 2026-06-07 — Vosi landing page v2: ERP-first + module catalog + pricing tiers — DONE
 - **Strategic pivot**: brainstorming session lock pricing 3-tier (Starter Rp 199k / Growth Rp 599k / Premium AI Rp 1.599k). AI moved to top-tier only since "AI lumayan complex" — operational cost gating + lower support burden.
 - **Module mapping per tier locked**: Starter (Stock + Order + Customer + Kasir + Rekonsiliasi + Dashboard + WA Invoice, 1 user). Growth (+ Pembelian/FIFO/HPP + Multi-Warehouse + Laporan + Heartbeat + 5 users). Premium AI (+ Calista WA + Sales Inbox + 1500 conv/mo + unlimited users).
