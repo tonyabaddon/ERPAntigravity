@@ -88,3 +88,22 @@ func AssignLane(cands []Candidate, s Settings) Lane {
 func round2(v float64) float64 {
 	return math.Round(v*100) / 100
 }
+
+// EligibleSlots returns open slots within amount tolerance and date window of the bank line.
+func EligibleSlots(line BankLine, slots []PayableSlot, s Settings) []PayableSlot {
+	lo := line.Amount * (1 - s.AmountTolerancePct)
+	hi := line.Amount * (1 + s.AmountTolerancePct)
+	back := line.TxnDate.AddDate(0, 0, -s.DateWindowBackDays)
+	forward := line.TxnDate.AddDate(0, 0, s.DateWindowForwardDays)
+	out := make([]PayableSlot, 0, len(slots))
+	for _, sl := range slots {
+		if sl.ExpectedAmount < lo || sl.ExpectedAmount > hi {
+			continue
+		}
+		if sl.OrderCreatedAt.Before(back) || sl.OrderCreatedAt.After(forward) {
+			continue
+		}
+		out = append(out, sl)
+	}
+	return out
+}

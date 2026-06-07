@@ -82,3 +82,20 @@ func defaultSettings() Settings {
 		ThresholdGreen: 0.90, ThresholdYellow: 0.75, ThresholdOrange: 0.70,
 	}
 }
+
+func TestEligibleSlots_FiltersByAmountAndDate(t *testing.T) {
+	s := Settings{
+		ThresholdGreen: 0.90, ThresholdYellow: 0.75, ThresholdOrange: 0.70,
+		AmountTolerancePct: 0.05, DateWindowBackDays: 14, DateWindowForwardDays: 7,
+	}
+	line := BankLine{Amount: 1_000_000, TxnDate: mustDate("2026-06-10")}
+	slots := []PayableSlot{
+		{ID: "in", ExpectedAmount: 1_000_000, OrderCreatedAt: mustDate("2026-06-01")},
+		{ID: "amt", ExpectedAmount: 1_500_000, OrderCreatedAt: mustDate("2026-06-01")},
+		{ID: "old", ExpectedAmount: 1_000_000, OrderCreatedAt: mustDate("2026-05-01")},
+	}
+	out := EligibleSlots(line, slots, s)
+	if len(out) != 1 || out[0].ID != "in" {
+		t.Errorf("expected only 'in', got %+v", out)
+	}
+}
