@@ -318,6 +318,7 @@ export default function App() {
           <KasirScreen
             currentUser={currentUser}
             showToast={triggerToast}
+            onOpenPenjualanBaru={() => setActivePage('penjualanBaru')}
           />
         );
       case 'penjualanBaru':

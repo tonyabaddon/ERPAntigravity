@@ -20,6 +20,7 @@ import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
 interface KasirScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onOpenPenjualanBaru?: () => void; // NEW
 }
 
 // ─── helpers ─────────────────────────────────────────────────
@@ -122,7 +123,7 @@ function KpiCard({ label, value, sub, color, icon, locked }: KpiCardProps) {
 
 type Entry = { _src: 'kasir'; tx: KasirTransaction; order: null } | { _src: 'wa'; tx: null; order: DbOrder };
 
-export default function KasirScreen({ currentUser, showToast }: KasirScreenProps) {
+export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBaru }: KasirScreenProps) {
   const isOwner = currentUser?.role?.toLowerCase() === 'owner';
 
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -233,6 +234,13 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
               <Printer className="w-3.5 h-3.5" /> Cetak Laporan
             </button>
           )}
+          <button
+            type="button"
+            onClick={onOpenPenjualanBaru}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded-xl hover:bg-green-700"
+          >
+            📋 Catat Penjualan
+          </button>
           <button
             onClick={() => setShowSaleModal('walkin')}
             className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold bg-[#012749] text-white shadow hover:bg-[#1e3d60] transition-all"
