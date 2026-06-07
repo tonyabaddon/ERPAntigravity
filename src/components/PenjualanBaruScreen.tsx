@@ -9,6 +9,10 @@ import { stockService, customersService, kasirService } from '../lib/supabaseCli
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
+import ItemSearchPanel from './penjualan/ItemSearchPanel';
+import CartRows from './penjualan/CartRows';
+
+let _itemSeq = 0;
 
 export interface PenjualanBaruScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -69,6 +73,43 @@ export default function PenjualanBaruScreen({
   const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
   const sisaPelunasan = paymentType === 'DP' ? totalInvoice - dpAmount : 0;
 
+  // Cart handlers
+  function addItem(stock: SupabaseStockItem) {
+    const atas = stock.stock_atas ?? 0;
+    const bawah = stock.stock_bawah ?? 0;
+    const defaultWh: WarehouseLocation = atas > 0 ? 'atas' : (bawah > 0 ? 'bawah' : 'atas');
+    setCart(prev => [
+      ...prev,
+      {
+        _key: ++_itemSeq,
+        sku: stock.sku,
+        name: stock.name,
+        qty: 1,
+        unit_price: stock.price,
+        hpp_per_unit: stock.harga_modal ?? 0,
+        subtotal: stock.price,
+        hpp_subtotal: stock.harga_modal ?? 0,
+        warehouse: defaultWh,
+      },
+    ]);
+  }
+
+  function updateQty(key: number, qty: number) {
+    setCart(prev => prev.map(i =>
+      i._key === key
+        ? { ...i, qty, subtotal: i.unit_price * qty, hpp_subtotal: i.hpp_per_unit * qty }
+        : i
+    ));
+  }
+
+  function updateWarehouse(key: number, wh: WarehouseLocation) {
+    setCart(prev => prev.map(i => i._key === key ? { ...i, warehouse: wh } : i));
+  }
+
+  function removeItem(key: number) {
+    setCart(prev => prev.filter(i => i._key !== key));
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       {/* Top bar */}
@@ -114,6 +155,30 @@ export default function PenjualanBaruScreen({
                 />
               </div>
             )}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-4 mt-4">
+              <div>
+                <ItemSearchPanel
+                  stocks={stocks}
+                  cartCount={cart.length}
+                  cartSubtotal={subtotal}
+                  onAdd={addItem}
+                >
+                  <CartRows
+                    items={cart}
+                    stocks={stocks}
+                    onQtyChange={updateQty}
+                    onWarehouseChange={updateWarehouse}
+                    onRemove={removeItem}
+                  />
+                </ItemSearchPanel>
+              </div>
+              <div>
+                {/* Customer + Payment panels — wired in Phase 6+7 */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-sm text-slate-400">
+                  [Customer + Payment panels coming next]
+                </div>
+              </div>
+            </div>
           </>
         )}
       </div>
