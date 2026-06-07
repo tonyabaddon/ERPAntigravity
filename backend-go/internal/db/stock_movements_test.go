@@ -241,3 +241,35 @@ func TestTransferWarehouse_WritesOutAndInPair(t *testing.T) {
 		t.Fatalf("pair wrong: out=%d in=%d", outDelta, inDelta)
 	}
 }
+
+// TestDecrementStock_WritesLedgerRow verifies Phase 1 Task 7: the wrapped
+// decrement_stock RPC writes exactly one stock_movements ledger row per call,
+// inside the same transaction as the stocks.stock_<warehouse> UPDATE. The row
+// carries source = the p_source arg, qty_delta = -p_qty, and related_doc_{type,id}
+// from the args.
+//
+// Calls the new 6-arg signature positionally:
+//
+//	(p_sku, p_qty, p_warehouse, p_related_doc_type, p_related_doc_id, p_source)
+//
+// In the production WA flow (DeductStockAndGetHPP) decrement_stock and
+// deduct_stock_fifo are called in sequence. Per the migration header for
+// 20260607000006_wrap_decrement_stock.sql, decrement_stock is the only step
+// that actually mutates the warehouse column, so this row is the truth about
+// the column change.
+func TestDecrementStock_WritesLedgerRow(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 6)
+
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err := client.DB.Exec(
+		`SELECT public.decrement_stock('TEST-IMM', 4, 'atas',
+		         'order'::text, 'ORD-DEC-1'::text, 'sale_wa'::public.stock_movement_source)`)
+	if err != nil {
+		t.Fatalf("decrement_stock: %v", err)
+	}
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-before != 1 {
+		t.Fatalf("expected 1 ledger row, got %d", got-before)
+	}
+}
