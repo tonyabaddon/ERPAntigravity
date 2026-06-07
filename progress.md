@@ -2703,3 +2703,17 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - `src/components/WhatsappAiScreen.tsx`: Fix interval leak di `handleLogout` — clear existing interval sebelum create yang baru
 - `backend-go/internal/whatsapp/client.go`: QR loop retry infinite saat Connect() gagal (5s delay) alih-alih exit loop
 - `backend-go/daemon`: Rebuilt binary
+
+## 2026-06-07 — Monthly Reconciliation: Task 3 — payable_slots + orders.channel + allocation sync trigger — DONE
+
+- **Commit**: ee3d47b
+- **File**: `supabase/migrations/20260607000003_recon_payable_slots.sql`
+- **Schema**:
+  - New enum `sales_channel` ('whatsapp','tokopedia','walkin','grosir')
+  - `orders.channel sales_channel NOT NULL DEFAULT 'whatsapp'`
+  - `payable_slots` table with order FK, slot_type (FULL/DP/BALANCE), expected/matched amounts, status (OPEN/MATCHED/WRITTEN_OFF/EXTENDED), due_date, extension/write-off metadata
+  - Indexes: `idx_ps_order` on order_id, partial `idx_ps_open` on (status,due_date) WHERE OPEN
+  - RLS enabled with anon + authenticated full-access policies
+  - Adds FK `fk_bla_slot` from `bank_line_allocations.slot_id` to `payable_slots.id`
+  - Trigger `trg_sync_slot_after_allocation` on `bank_line_allocations` invokes `sync_slot_after_allocation()` to keep `matched_amount` and `status` in sync (sets MATCHED when total >= expected; resets to OPEN on delete-to-zero)
+- **Not applied to Supabase** — controller batches migrations later.
