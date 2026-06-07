@@ -3397,3 +3397,24 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - Saved feedback memory: font sizing — base 13-14px UI, 11-12px PDF data, no <11px
 - Spec committed: `docs/superpowers/specs/2026-06-07-sales-recording-overhaul-design.md` (commit db2516b)
 - Next: invoke writing-plans skill for implementation plan
+
+## 2026-06-08 — Sub-project B (Rakit Workflow): Design spec DONE
+
+- Brainstorming session via `/superpowers:brainstorming` — extended sub-project A's PenjualanBaruScreen with jasa rakit / jasa custom panel workflow
+- Initially misinterpreted "wiring" as English (= rakit/connect) — actual meaning is literal electrical wiring (toko material context); pivoted understanding
+- Key decisions locked:
+  - **Implicit service-type flag** per cart line (komponen / jasa_rakit / jasa_custom_panel) — derived from cart contents, no global toggle
+  - **2 separate buttons** in kasir UI: `+ Tambah Jasa Rakit` (orange) and `+ Tambah Jasa Custom Panel` (sky-blue) — direct action, no sub-toggle
+  - **Multi-rakit per order** in scope — N rakit lines per transaction, mixed komponen+rakit allowed
+  - **State machine for service-type:** WIP → PENDING_LOCK_APPROVAL → AWAITING_LUNAS/PAID → COMPLETED, plus CANCELLED. Komponen-only follows A's existing flow.
+  - **Lock Submission Modal** dengan **mode toggle**: Detail (komponen list + FIFO auto + Stock Adjustment) atau Lump-sum (single HPP manual, no auto adjustment)
+  - **Owner Approval Inbox** screen — sidebar nav baru, owner-only, filter tabs (Rakit Lock / Stock Adj / Opname — B = first-mover for approval infra)
+  - **HPP**: auto FIFO from komponen (Detail mode) or manual lump-sum, plus owner override at approval
+  - **Cancel flow**: WIP-only, owner-decided refund + forfeit (no formula), reason wajib, cash manual outside system
+  - **Edit policy**: WIP fully editable; PENDING_LOCK_APPROVAL withdraw-only (→ back to WIP); AWAITING_LUNAS cosmetic edits direct, material edits auto-revert to PENDING for re-approval; PAID/COMPLETED locked
+  - **Customer-facing invoice**: ALWAYS 1 line lump-sum per rakit line, NEVER shows komponen breakdown (komponen rakit = internal only, distinct from komponen sale which DOES show)
+- Schema: Approach 1 (extend `kasir_transactions` additively + 3 new tables: `rakit_job_lines`, `rakit_components`, `rakit_audit_log`). Sub-project A's plan unchanged.
+- Dependencies: A schema (no plan mod), Phase 2 stock-fraud approval infra (B = first-mover, Phase 2 can unify later)
+- Interactive HTML mockup: `docs/superpowers/specs/2026-06-08-rakit-workflow-mockups/index.html` (5 screens — cart, WIP list, lock modal, approval inbox, review modal, cancel modal, invoice preview with 3 scenarios)
+- Spec doc: `docs/superpowers/specs/2026-06-08-rakit-workflow-design.md`
+- Next: user reviews spec, then invoke writing-plans skill for implementation plan
