@@ -159,3 +159,50 @@ func TestStockAdjustments_EvidenceRequiredForLoss(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestRequestAdjustment_CreatesApprovalAndAdjustment(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	var approvalID int64
+	err := client.DB.QueryRow(
+		`SELECT public.request_adjustment(
+		   p_sku=>'TEST-IMM', p_warehouse=>'atas', p_qty_delta=>-3,
+		   p_reason_code=>'rusak'::public.stock_adjustment_reason,
+		   p_reason_note=>'kena air',
+		   p_evidence_urls=>ARRAY['adjustments/foo.jpg'],
+		   p_actor_user_id=>'00000000-0000-0000-0000-000000000001'::uuid)`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("request_adjustment: %v", err)
+	}
+
+	var arType, arStatus string
+	err = client.DB.QueryRow(
+		`SELECT request_type::text, status::text FROM public.approval_requests WHERE id=$1`, approvalID).
+		Scan(&arType, &arStatus)
+	if err != nil {
+		t.Fatalf("read approval_requests: %v", err)
+	}
+	if arType != "adjustment" || arStatus != "pending" {
+		t.Fatalf("approval row wrong: type=%s status=%s", arType, arStatus)
+	}
+
+	var saStatus string
+	err = client.DB.QueryRow(
+		`SELECT status FROM public.stock_adjustments WHERE approval_request_id=$1`, approvalID).Scan(&saStatus)
+	if err != nil {
+		t.Fatalf("read stock_adjustments: %v", err)
+	}
+	if saStatus != "pending_approval" {
+		t.Fatalf("adjustment status = %s, want pending_approval", saStatus)
+	}
+
+	// Stock should NOT have changed yet
+	var qty int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas FROM public.stocks WHERE sku='TEST-IMM'`).Scan(&qty)
+	if qty != 10 {
+		t.Fatalf("stock_atas changed before approval: got %d, want 10", qty)
+	}
+}
