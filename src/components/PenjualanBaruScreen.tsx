@@ -6,6 +6,7 @@ import {
 } from '../types';
 import type { DbCustomerWithStats } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
+import { purchaseOrderService } from '../lib/pembelianService';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
@@ -137,14 +138,36 @@ export default function PenjualanBaruScreen({
 
     setSaving(true);
     try {
+      // Compute true COGS via FIFO before recording the transaction.
+      // NOTE: non-atomic — deductFifo cannot be rolled back if insertSaleTransaction fails.
+      // On partial failure, check stock_lots manually to restore qty_remaining.
+      let itemsWithFifo: typeof cart;
+      try {
+        itemsWithFifo = await Promise.all(
+          cart.map(async (item) => {
+            const totalCost = await purchaseOrderService.deductFifo(item.sku, item.qty);
+            return {
+              ...item,
+              hpp_per_unit: item.qty > 0 ? totalCost / item.qty : 0,
+              hpp_subtotal: totalCost,
+            };
+          })
+        );
+      } catch (fifoErr: any) {
+        console.error('deductFifo failed — some stock lots may have been partially decremented:', fifoErr);
+        showToast('Gagal menghitung HPP FIFO. Cek stock_lots jika stok tidak sesuai.', 'warning');
+        setSaving(false);
+        return;
+      }
+
       const invoiceNumber = await kasirService.nextInvoiceNumber(channel, new Date().toISOString().slice(0, 10));
 
       const newTx = {
         date: new Date().toISOString().slice(0, 10),
         channel,
-        items: cart.map(({ _key, ...rest }) => rest),
+        items: itemsWithFifo.map(({ _key, ...rest }) => rest),
         subtotal,
-        hpp_total: cart.reduce((s, i) => s + i.hpp_subtotal, 0),
+        hpp_total: itemsWithFifo.reduce((s, i) => s + i.hpp_subtotal, 0),
         payment_method: paymentMethod,
         payment_subtype: paymentSubtype,
         payment_type: paymentType,
@@ -166,7 +189,11 @@ export default function PenjualanBaruScreen({
 
       // Auto-create new customer if not selected
       if (!selectedCustomerId && customerName.trim() && customerPhone.trim()) {
-        try { await customersService.createCustomer(customerPhone, customerName, customerCompany); } catch {}
+        try {
+          await customersService.createCustomer(customerPhone, customerName, customerCompany);
+        } catch {
+          showToast('Transaksi disimpan, tapi gagal simpan data pelanggan.', 'warning');
+        }
       }
 
       // Decrement stock per-row warehouse
