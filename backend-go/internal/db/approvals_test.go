@@ -434,3 +434,69 @@ func TestOpname_TwoPersonConstraint(t *testing.T) {
 		t.Fatalf("expected chk_two_person violation, got: %v", err)
 	}
 }
+
+// TestStartOpnameSession_SnapshotsStocks is the Task 6 happy path: the
+// start_opname_session RPC must (a) insert a stock_opname_sessions row,
+// (b) resolve in-scope SKUs from scope_payload (here: explicit
+// per_sku_list with one SKU), and (c) for each (sku, warehouse) pair INSERT
+// a stock_opname_counts row with system_qty_snapshot set to the current
+// stocks.stock_<warehouse> value taken atomically at session-start. This
+// snapshot pattern is the linchpin of the opname design: any concurrent
+// sale that fires AFTER the snapshot doesn't perturb the variance calc,
+// because the variance is measured against what the counter physically saw.
+func TestStartOpnameSession_SnapshotsStocks(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 25)
+	db.EnsureSKUStock(t, client, "TEST-IMM", "bawah", 10)
+
+	var sessionID int64
+	err := client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sessionID)
+	if err != nil {
+		t.Fatalf("start_opname_session: %v", err)
+	}
+
+	rows, err := client.DB.Query(
+		`SELECT warehouse, system_qty_snapshot
+		   FROM public.stock_opname_counts WHERE session_id=$1 ORDER BY warehouse`, sessionID)
+	if err != nil {
+		t.Fatalf("read counts: %v", err)
+	}
+	defer rows.Close()
+	snapshots := map[string]int{}
+	for rows.Next() {
+		var w string
+		var qty int
+		_ = rows.Scan(&w, &qty)
+		snapshots[w] = qty
+	}
+	if snapshots["atas"] != 25 || snapshots["bawah"] != 10 {
+		t.Fatalf("snapshots wrong: %v", snapshots)
+	}
+}
+
+// TestStartOpnameSession_WitnessSameAsCounter_Fails verifies the friendlier
+// RPC-level two-person check fires BEFORE the chk_two_person CHECK on the
+// underlying table. The RPC must reject counted_by == witnessed_by with an
+// error message containing "different" so the frontend can surface a clear
+// "counter and witness must be different users" toast instead of a raw
+// constraint violation. The CHECK on stock_opname_sessions remains the
+// backstop for direct-INSERT bypass attempts (TestOpname_TwoPersonConstraint).
+func TestStartOpnameSession_WitnessSameAsCounter_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	_, err := client.DB.Exec(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'full'::public.opname_type,
+		   p_scope_payload=>'{}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000001'::uuid)`)
+	if err == nil || !strings.Contains(err.Error(), "different") {
+		t.Fatalf("expected witness-must-differ error, got: %v", err)
+	}
+}
