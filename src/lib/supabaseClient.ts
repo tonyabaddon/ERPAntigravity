@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -952,5 +952,113 @@ export const kasirService = {
     if (data == null) throw new Error('next_kasir_number returned null');
     const counter = String(data).padStart(3, '0');
     return `${prefix}-${dateCompact}-${counter}`;
+  },
+};
+
+export const reconciliationService = {
+  async listBankAccounts(): Promise<BankAccount[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('bank_accounts').select('*').eq('is_active', true)
+      .order('account_label');
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async createBankAccount(payload: Omit<BankAccount, 'id'>): Promise<BankAccount> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('bank_accounts').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async listOrdersForPeriod(year: number, month: number) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id, customer_name, customer_phone, total, payment_type, dp_amount, channel, status, created_at, booking_expires_at')
+      .gte('created_at', start).lt('created_at', end)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listPayableSlotsForOrders(orderIds: string[]): Promise<PayableSlot[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (orderIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from('payable_slots').select('*').in('order_id', orderIds);
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listBankLinesForPeriod(year: number, month: number): Promise<BankStatementLine[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from('bank_statement_lines').select('*')
+      .gte('txn_date', start).lt('txn_date', end)
+      .order('txn_date', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listCashBatches(): Promise<CashDepositBatch[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('cash_deposit_batches').select('*').order('deposit_date', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async uploadPDF(file: File, bankAccountId: string, bankCode: string, periodStart: string, periodEnd: string) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('bank_account_id', bankAccountId);
+    fd.append('bank_code', bankCode);
+    fd.append('period_start', periodStart);
+    fd.append('period_end', periodEnd);
+    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/recon/upload';
+    const resp = await fetch(url, { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(await resp.text());
+    return resp.json() as Promise<{ import_id: string; line_count: number; matched_count: number }>;
+  },
+
+  async closeMonth(year: number, month: number) {
+    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/recon/close';
+    const resp = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, month }),
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    return resp.json() as Promise<{ ok: boolean; reason?: string }>;
+  },
+
+  async createAllocation(bankLineId: string, slotId: string, amount: number) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('bank_line_allocations').insert({ bank_line_id: bankLineId, slot_id: slotId, amount });
+    if (error) throw error;
+  },
+
+  async unmatchLine(bankLineId: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('bank_line_allocations').delete().eq('bank_line_id', bankLineId);
+    if (error) throw error;
+    await supabase.from('bank_statement_lines')
+      .update({ lane: 'RED', match_reason: 'manually unmatched', match_confidence: 0 })
+      .eq('id', bankLineId);
+  },
+
+  async classifyLine(bankLineId: string, kind: BankLineKind, notes?: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('bank_statement_lines')
+      .update({ line_kind: kind, lane: 'GRAY', match_reason: kind, notes: notes ?? null })
+      .eq('id', bankLineId);
+    if (error) throw error;
   },
 };
