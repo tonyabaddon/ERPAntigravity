@@ -17,6 +17,9 @@ export interface PermissionSet {
   settings: boolean;
   pembelian: boolean;
   kasir: boolean;
+  // Action permissions (Phase 2 anti-fraud foundation)
+  can_create_po?: boolean;
+  can_edit_po?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -33,6 +36,8 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  can_create_po: true,
+  can_edit_po: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -329,6 +334,9 @@ export interface DbPurchaseOrder {
   total: number;
   created_at: string;
   items?: DbPurchaseOrderItem[];
+  expected_receive_date?: string;   // ISO date 'YYYY-MM-DD', NULL-able
+  created_by_user_id?: string;      // UUID, FK admin_users(id)
+  updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
 export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir';
