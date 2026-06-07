@@ -1,5 +1,212 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Vosi landing page v2: ERP-first + module catalog + pricing tiers — DONE
+- **Strategic pivot**: brainstorming session lock pricing 3-tier (Starter Rp 199k / Growth Rp 599k / Premium AI Rp 1.599k). AI moved to top-tier only since "AI lumayan complex" — operational cost gating + lower support burden.
+- **Module mapping per tier locked**: Starter (Stock + Order + Customer + Kasir + Rekonsiliasi + Dashboard + WA Invoice, 1 user). Growth (+ Pembelian/FIFO/HPP + Multi-Warehouse + Laporan + Heartbeat + 5 users). Premium AI (+ Calista WA + Sales Inbox + 1500 conv/mo + unlimited users).
+- **Bank rec framing**: "Rekonsiliasi Kas & Bank" (Opsi B) — module current covers daily cashier reconciliation, framing also covers bank reconciliation as roadmap depth signal. Acknowledged real Bank Reconciliation (BCA/Mandiri API match) belum ada; honest reframe rather than rename.
+- **Landing edits in `vosi-landing/index.html`**:
+  - Nav: replace "Use Cases" with "Modul" + "Paket" links (5 nav items total)
+  - Hero subtitle: pivot from AI-only to ERP+AI framing ("Vosi adalah ERP lengkap + AI WhatsApp dalam 1 aplikasi — kelola stok, kasir, pembelian, dan laporan, plus AI yang balas customer 24 jam otomatis.")
+  - NEW section `#modul`: 12 modul dalam 5 kategori (Operasional Penjualan, Kasir & POS, Supply Chain, Insight & Reports, AI Calista Premium-tagged). Card grid 4-col with hover. Premium-tagged AI cards (purple gradient).
+  - NEW section `#paket`: 3 pricing cards — Starter (white), Growth (featured, green border, "PALING POPULER" badge, translate-y elevation), Premium AI (dark gradient, purple "AI INTEGRATED" badge). Each card has checklist (muted strikethrough for excluded), CTA scrolls to konsultasi. Annual price shown with 20% discount preview.
+  - Comparison hint: green pill below pricing — Mekari combo Rp 1,8jt vs Vosi Premium AI Rp 1.599k positioning.
+- **Mobile responsive**: mod-grid 4→2 cols at 768px, →1 at 480px. pkg-grid 3→1 at 768px, featured card transform reset.
+- **Lead form unchanged**: existing `submitKonsultasi()` JS works via WhatsApp redirect. Placeholder `62812XXXXXXXX` still needs real WA number.
+- File grew 675→1146 lines. CSS additions ~80 lines. Section additions ~210 lines. Existing sections (Hero hook, Comparison, Use Cases, Manfaat, Setup Timeline, Konsultasi, FAQ, Final CTA, Footer) untouched.
+- **Not deployed** — preview: `open vosi-landing/index.html`. Firebase deploy via `firebase deploy --only hosting` from `vosi-landing/` setelah review.
+- **Held for v3**: Vs Mekari head-to-head comparison table (wait demo data), Use Cases re-prioritize Toko material as featured (wait LTC banner test data), real `VOSI_WA_NUMBER` fill-in.
+
+## 2026-06-07 — Brainstorming: Stock Fraud Prevention spec — SPEC DONE
+- **Konteks**: MSME Garindo (4 karyawan luar, 2 gudang Atas/Bawah). Owner butuh sistem yang aman bahkan kalau 1 dari 4 karyawan curang. Tidak ada audit trail per pergerakan stok sekarang; `stocks.stock_atas/bawah/price/harga_modal` bisa di-UPDATE langsung lewat Supabase JS tanpa approval.
+- **Decisions kunci**:
+  - **No threshold** — semua adjustment, perubahan harga, override kasir, void, refund wajib approval Owner berapapun nilainya. Owner pakai PIN sync (di toko) atau WA button async (remote).
+  - **Phase 3c (Surat Jalan / Customer Receipt QR) dropped** — semua outflow sudah tercover Kasir Phase 3b + WA Orders.
+  - **Immutability bukan cuma RLS** — REVOKE UPDATE/DELETE + trigger RAISE EXCEPTION supaya service_role pun gak bisa edit/delete. Corrections = compensating row baru, never edit.
+  - **Transit loss tanpa virtual warehouse** — transfer 2-langkah shortfall masuk status `disputed`, Owner manual file stock_adjustment formal. Tidak ada phantom transit row di ledger.
+  - **Detective + Preventive co-equal** — N=4 dengan kemungkinan kolusi 2-orang bisa bypass gate. Phase 4 (anomaly dashboard) ship parallel dengan Phase 2-3, bukan polish-at-end.
+- **6 Phases (roadmap, masing-masing shippable terpisah)**:
+  - Phase 1: `stock_movements` immutable ledger + wrap semua RPC existing
+  - Phase 2: `stock_adjustments` + `stock_opname` (2-orang) + `approval_requests` (WA button + PIN pad) + `price_change_requests` + RLS REVOKE column-level
+  - Phase 3a: Penerimaan PO 2-orang + 3-way match (PO/fisik/faktur) + foto wajib
+  - Phase 3b: Kasir `kasir_shifts` + line price locked + override approval + refund approval + price floor backstop
+  - Phase 3d: Transfer 2-langkah (initiate dari pengirim → receive dari penerima, foto kedua sisi)
+  - Phase 4: Owner Anomaly Dashboard (top adjustments, diskon kasir, outflow outliers, transfer aging, heatmap aktor) + daily WA heartbeat report jam 18:00 WIB
+- **Mockup**: `docs/superpowers/specs/2026-06-07-stock-fraud-prevention-mockups/index.html` — fully interactive (modal buka/tutup, PIN pad responsif, Approval Inbox dengan animasi, opname varians live, dll). Brand palette match Garindo (#012749 navy + #2d8a4e emerald + pill buttons).
+- **Spec**: `docs/superpowers/specs/2026-06-07-stock-fraud-prevention-design.md` (~700 baris). Per-phase: Goal · Schema · RPC · Frontend · RLS/Permissions · Acceptance · Out-of-Scope.
+- **Advisor review**: 2 bug nyata (seed source contradiction, qty_math CHECK vs transit) + 2 gap (kasir_transactions.status, po_id UNIQUE) — semua di-patch inline. 1 keputusan UX (PIN lockout scope) di-surface ke user.
+- **Next**: user review spec → invoke `writing-plans` skill untuk pecah jadi implementation plans per phase.
+
+## 2026-06-07 — Competitive research docs reorganized to MECE structure — DONE
+- **Context**: brainstorming session menghasilkan 14 file demo materials (6 DOCX + 6 HTML + 2 MD) tersebar di `docs/mekari-demo/` dan `docs/haloai-demo/`. User pusing karena tidak ada entry point dan naming tidak konsisten.
+- **Reorganized to**: `docs/competitive-research/{mekari-jurnal,halo-ai}/` dengan 3 file Word ter-nomor (`1-step-by-step`, `2-probing-questions`, `3-notes-template`) + `_source/` (HTML mentah) + `results/` (subfolder untuk output user post-demo).
+- **README hierarchy** (3 level entry points):
+  - `docs/competitive-research/README.md` — top-level: kompetitor list, workflow 3-phase, tools required, FAQ
+  - `docs/competitive-research/mekari-jurnal/README.md` — positioning Mekari, KUAT vs LEMAH, pricing public, target gali
+  - `docs/competitive-research/halo-ai/README.md` — positioning Halo AI, stress test T1–T8 preview table, custom-quote intel target
+- **Path consistency**: sed-updated semua HTML sources (paths references `docs/mekari-demo/` → `docs/competitive-research/mekari-jurnal/results/`), regenerated 6 DOCX via `textutil -convert docx`.
+- **Old folders status**: `docs/mekari-demo/` dan `docs/haloai-demo/` masih ada tapi orphaned (no new writes). User perlu tutup Word lock files (`~$loai-demo-probing-questions.docx`, `~$tes-template.docx`) lalu `rm -rf` manual karena Word file mungkin terbuka.
+- **Not implementation work — competitive research artifact for Vosi packaging/pricing strategy.**
+
+## 2026-06-06 — Regression fix: restore customer+lead creation in escalation bypass paths — DONE
+- **Issue**: T14 refactor routed escalation keywords directly to `handleAdminEscalation`/`handleWiringEscalation`, bypassing the `GetOrCreateCustomer` + `CreateLead` steps in `ProcessJoinedMessage`. First-message escalations (e.g. "mau diskon") no longer created customer records or Pipeline leads.
+- **Fix**: Added `GetOrCreateCustomer` + conditional `CreateLead` block to both `handleAdminEscalation` and `handleWiringEscalation`, immediately after `GetOrCreateConversation`. Pattern mirrors `ProcessJoinedMessage` lines 143-158: errors are non-fatal (logged, never fail-fast), `CreateLead` only called when `created==true`.
+- Also fixed pre-existing gap in `handleWiringEscalation` that had the same missing steps even before T14.
+- Tests: all PASS with `-race`; build clean.
+- Committed: `93290f4` (`fix(whatsapp): restore customer+lead creation in escalation bypass paths`) on `worktree-feat-message-debouncing`.
+
+
+## 2026-06-06 — T13: COLLECTING prompt tweak for multi-field extraction (feat-message-debouncing branch) — DONE
+- Updated `stateInstructions` in `backend-go/internal/engine/prompts.go`: inserted Indonesian paragraph in the COLLECTING case instructing Calista to extract ALL fields present in a joined/coalesced message at once, then ask for all missing fields in one reply. Placed above the existing "Tanyakan SATU data" line.
+- Added `TestBuildPromptCollecting_IncludesMultiFieldInstruction` to `prompts_test.go` checking that "ekstrak SEMUA field" appears verbatim in the COLLECTING prompt. Test was written first (failed), then prompt updated (passed).
+- All 34 engine tests pass; full suite with `-race` passes clean (no data races).
+- Committed: `5a59c7c` (`feat(prompts): COLLECTING extracts multi-field from joined messages`) on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — Brainstorming: Message debouncing untuk Calista — SPEC DONE
+- **Konteks**: Calista belum dipakai produksi karena khawatir RPM/RPD free tier (15 RPM, 1000 RPD pada gemini-2.5-flash-lite). Saat ini ~7 Gemini calls/conv → capacity cap ~143 chat/hari. Customer Indonesia rapid-fire WhatsApp messages → tiap pesan = 1 Gemini call dengan konteks parsial → Calista bertanya ulang hal yang baru di-jawab customer di pesan berikutnya.
+- **Approach yang dipilih (Option B)**: debounce 5 detik (soft) / 12 detik (hard cap) per nomor customer. Gabung pesan dalam window → 1 Gemini call dengan teks gabungan. Typing indicator WA aktif selama buffer untuk mask latency.
+- **Approach yang ditolak**:
+  - Option A (deterministic shortcuts GREETING/CONFIRMING/ADD_MORE): hemat call tapi gak fix masalah konteks parsial, dan template bikin Calista terasa robotic.
+  - Option C (multi-field collect): UX risk tinggi, customer Indonesia gak suka di-tanya banyak hal sekaligus.
+  - Option D/E (slim prompt, Gemini caching): gak naikkan capacity di free tier (RPD adalah bottleneck, bukan TPM).
+  - Pay-as-you-go: ditunda sampai metric nyata mendukung.
+- **Estimasi dampak**: ~7 calls/conv → ~3.5-5 calls/conv (35-50% reduction). Daily capacity ~143 → ~285 chat/hari. Bonus: kualitas reply naik karena Calista lihat full context.
+- **Spec**: `docs/superpowers/specs/2026-06-06-message-debouncing-design.md` (530 baris) — committed b654583. Berisi arsitektur layer baru di antara WA event handler dan processMessage existing, per-phone state machine (IDLE→BUFFERING→PROCESSING), bypass paths untuk media + escalation keyword, error handling + safety nets, testing plan (unit + integration + 6 manual QA skenario), rollout langsung 100% via feature flag karena belum dipakai customer.
+- **Next**: invoke writing-plans skill untuk pecah spec jadi TDD task plan.
+
+## 2026-06-06 — T11: Concurrency safety with race detector (feat-message-debouncing branch) — DONE
+- Added `TestConcurrentPush_NoRace` to `debounce_test.go`: spawns 50 goroutines each pushing 10 messages, split between phones `628aaa` (odd-indexed goroutines) and `628bbb` (even-indexed goroutines). After all goroutines complete, asserts both buffers exist in the map.
+- Ran full suite with `CGO_ENABLED=1 go test ./internal/whatsapp/ -race -v -timeout 30s`.
+- Result: ALL 18 tests PASS, no data races detected. Production code (`debounce.go`) is correctly synchronized: all `pb.*` field access under `pb.mu`, all `h.buffers` map access under `h.mu`.
+- No race conditions found in production code — no bugs to report.
+- Committed: `fe19b09` (`test(whatsapp): add concurrent push test with race detector`) on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T10: Graceful Shutdown drains all buffers (feat-message-debouncing branch) — DONE
+- Added `Shutdown(ctx context.Context)` to `DebounceHandler` in `debounce.go`: takes an RLock snapshot of all buffered phones, iterates calling `flushBuffer(pb, phone, "shutdown")` for each; respects `ctx.Done()` for bounded shutdown timeout; PROCESSING buffers are left to finish on their own.
+- `getBufferUnsafe` re-checked per phone inside the loop to handle concurrent flush that may have already deleted the entry before `Shutdown` reaches it.
+- Added `TestShutdown_DrainsAllBuffers`: pushes to 3 phones (628aaa/628bbb/628ccc), asserts no premature flush, calls `d.Shutdown(ctx)`, waits up to 500ms, asserts all 3 phones flushed exactly once with correct phones seen.
+- All 17 whatsapp package tests pass with `-race`; no data races detected.
+- Committed: `bcf65e1` (`feat(whatsapp): add Shutdown method to drain buffers on graceful exit`) on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T8: Panic recovery in flushBuffer (feat-message-debouncing branch) — DONE
+- Added `defer recover()` inside `flushBuffer` so a panicking `flushFn` cannot leave the buffer stranded in `stateProcessing`.
+- Defer ordering is critical: `defer postFlush` registered first (runs last), `defer recover()` registered second (runs first in LIFO). When `flushFn` panics: recover catches it, then `postFlush` still runs and transitions PROCESSING → IDLE/BUFFERING cycle 2.
+- Added `TestPanicRecovery_FlushFnPanics`: uses a `panicFn` that always panics, advances clock in goroutine (to not block on `fc.Advance`), spins up to 1s asserting buffer entry is deleted (IDLE path) after recovery.
+- Step 2 confirmed binary crash before fix; Step 4 PASS after fix.
+- All 14 whatsapp package tests pass with `-race`; no data races detected.
+- Committed: `11f35f6` on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T7: Spam cap drops messages above maxBufferTexts (feat-message-debouncing branch) — DONE
+- Added `const maxBufferTexts = 20` after state constants in `debounce.go`.
+- Added spam cap guard in `stateBuffering` case: if `len(pb.texts) >= maxBufferTexts`, explicitly `pb.mu.Unlock()` and return (drop silently).
+- Added spam cap guard in `stateProcessing` case: if `len(pb.nextBuffer) >= maxBufferTexts`, explicitly `pb.mu.Unlock()` and return.
+- Both early returns explicitly unlock `pb.mu` before returning — critical because `Push` does NOT use `defer` unlock (removed in T3 to prevent timer deadlock).
+- Added `TestSpamCap_DropsExcess`: pushes 25 messages quickly, asserts `len(pb.texts) == maxBufferTexts (20)`.
+- All 13 whatsapp package tests pass with `-race`; no data races detected.
+- Committed: `903d0aa` on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T6: postFlush IDLE transition + map delete test (feat-message-debouncing branch) — DONE
+- Added `TestPostFlush_TransitionsToIdleAndDeletesEntry`: pushes one message, advances clock 5s to trigger soft timer flush (stub returns immediately), then spins up to 1s verifying the map entry is deleted.
+- Confirms T3's `postFlush` correctly deletes the `phoneBuffer` from the map when `nextBuffer` is empty (IDLE path) — prevents memory leak on quiet conversations.
+- All 12 whatsapp package tests pass with `-race`; no data races detected.
+- Committed: `9b6c2a1` on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T4: Hard cap timer test (feat-message-debouncing branch) — DONE
+- Added `TestFlush_HardCapEnforced`: pushes m1/m2/m3/m4 at t=0,3,6,9s so soft timer keeps resetting (next expiry=t=14s) while hard cap is fixed at t=12s.
+- Asserts no flush at t=11.5s (mid-window), then exactly 1 flush at t=12.5s with joined text `"m1\nm2\nm3\nm4"`.
+- Test confirmed that `resetSoftTimer` correctly only touches `pb.softTimer` — hard timer from Task 3's `startTimers` fires on schedule without interference.
+- All 10 whatsapp package tests pass; clean build.
+- Committed: `46f2f08` on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — T3: Soft timer + reset on push + flush/postFlush (feat-message-debouncing branch) — DONE
+- Replaced `defer pb.mu.Unlock()` in `Push` with explicit `pb.mu.Unlock()` at end of each branch — necessary to prevent deadlock when timer callbacks (running in goroutines via `AfterFunc`) try to acquire `pb.mu`.
+- Added `startTimers`: sets soft (5s) and hard (12s) timers on first push in IDLE.
+- Added `resetSoftTimer`: stops old soft timer, starts new one from now; called on each BUFFERING push.
+- Added `flush`: idempotent (checks `state==stateBuffering` under lock), stops both timers, transitions to PROCESSING, releases lock, calls flushFn with joined text, then `defer h.postFlush(...)`.
+- Added `postFlush`: if nextBuffer has items → cycle 2 (BUFFERING + new timers); else → IDLE + delete from map.
+- Added `joinTexts`: handles 0, 1, and N texts; avoids `strings` import via manual byte buffer.
+- New test `TestPush_BufferingResetsSoftTimer`: pushes at t=0, t=3s, advances to t=7s (no flush expected — would have fired at t=5 without reset), then t=9s (flush fires at t=8s = 3+5). Verifies joined text = `"halo\ntony"` and phone.
+- All 8 whatsapp package tests pass; build clean; no regressions.
+- Committed: `2c308df` on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — Code Quality Fix: debounce.go comment + gofmt (feat-message-debouncing branch) — DONE
+- Fixed misleading comment on `getBufferUnsafe`: replaced "no locking, no creation" → 3-line doc clarifying it acquires `h.mu.RLock` but NOT `pb.mu`, and that callers must lock `pb.mu` themselves.
+- Ran `gofmt -w` on both `debounce.go` and `debounce_test.go`: normalized double-space alignment on `phoneBuffer` struct fields (lines 21-28) and `stubFlushCall` struct fields in test file.
+- All 7 `./internal/whatsapp/` tests pass; `go build ./...` clean.
+- Committed: `fix(whatsapp): clarify getBufferUnsafe comment and run gofmt` (4d00855) on `worktree-feat-message-debouncing`.
+
+## 2026-06-06 — Phase 1: Free tier sustainability fix (model swap + smart retry) — DONE
+- **Symptom**: setelah pindah ke API key dari project free tier `garindo-gemini-free`, masih kena 429 — kali ini `Quota exceeded for metric: generate_content_free_tier_requests, limit: 5, model: gemini-3.5-flash`. Customer chat (Tony Miracle conv `9be01cdd`) langsung re-escalate.
+- **Root cause kombinasi 2 hal**: `gemini-3.5-flash` free tier hanya 5 RPM, sementara `engine/retry.go` retry 10x tanpa delay → 1 customer message hammers Gemini 10x dalam ~5s, blow past quota seketika.
+- **Fix tanpa upgrade tier (3 file Go)**:
+  - `backend-go/internal/gemini/client.go:23`: ganti model `gemini-3.5-flash` → `gemini-2.5-flash-lite` (free tier 15 RPM, 1000 RPD — 3x headroom).
+  - `backend-go/internal/engine/retry.go`: rewrite dengan exponential backoff (2s/4s/8s) antar attempt, plus `isRateLimitError` helper yang bail immediate kalau error mengandung "429" atau "RESOURCE_EXHAUSTED". Per-minute quota tidak reset dalam window retry, jadi retry pasti sia-sia. `retrySleep` jadi package var supaya tests bisa override ke no-op.
+  - `backend-go/internal/whatsapp/handler.go:177`: `maxAttempts=10` → `maxAttempts=3`. Transient error pulih dalam 3 tries; non-transient tidak akan recover.
+- **Tests baru**: `TestRetryProcess_RateLimitBailsImmediately` (assert 429 = 1 call, no retry), `TestRetryProcess_NonRateLimitRetriesAllAttempts` (assert timeout-style error = retry sampai exhaustion). Semua engine tests pass.
+- **Deploy**: commit `a4ba68d`, Cloud Build `e9558ea8` → SUCCESS jam ~00:08 UTC. Verifikasi: `/api/wa/debug` healthy (paired 6282114341213), zero 429 dalam 3 menit pasca deploy.
+- **Reset conv Tony Miracle**: state=COLLECTING, ai_active=true (kena re-escalate jam 16:40 UTC kemarin saat 5 RPM masih berlaku).
+- **Capacity analysis**: ~700 panggilan/hari estimated (100 chats × 7 calls) << 1000 RPD limit. 15 RPM cukup untuk 5+ concurrent customers dengan smart retry.
+- **Phase 2-4 ditahan**: cache shortcuts (G), Groq fallback (H), pay-as-you-go (C) ditunda sampai metric nyata (429 frequency, escalation rate, customer complaints) mendukung upgrade. Reversibility tinggi — switch ke pay-as-you-go cuma butuh 1 env var change.
+
+## 2026-06-05 — Gemini API: switched to free tier via separate project — DONE
+- **Symptom**: Calista reply ke customer dengan fallback "Mohon maaf, sistem kami sedang sibuk." Log: `googleapi: Error 429: Your prepayment credits are depleted`. Setelah 10 retry, conv di-escalate otomatis ke admin.
+- **Root cause**: Project Gemini (`gen-lang-client-0410251117`) billing-enabled (linked ke billing account IDR), jadi semua API key di project tsb otomatis paid/prepay mode. Credit promo habis → semua call ditolak 429. Test create new API key di project yang sama tetap kena error sama → konfirmasi tier per-project, bukan per-key.
+- **Constraint**: project ini tidak bisa di-disable billing-nya karena dipakai Cloud Run (daemon + frontend) dan Cloud Build yang wajib billing.
+- **Fix**: bikin Google Cloud project baru `garindo-gemini-free` (project number 414234971161) tanpa billing → otomatis free tier. Enable `generativelanguage.googleapis.com` → generate API key `AIzaSyD2Wn...`. Test panggil `gemini-3.5-flash` (model yang dipakai daemon di `internal/gemini/client.go:23`) → response sukses, no 429.
+- **Apply**: update backend Cloud Build trigger substitution `_GEMINI_API_KEY` ke key baru, run trigger (build `7dfa7a81`, SUCCESS jam 16:37 UTC). Daemon resume stored WA session (no re-pair needed): `[WA] Connected (resuming stored session)` + `Successfully authenticated`. Log clean — zero 429 setelah deploy baru.
+- **Patch conv Tony Miracle** (`9be01cdd`): state=COLLECTING, ai_active=true (kena re-escalate jam 16:16 karena 10x Gemini failure).
+- **Trade-off free tier (gemini-3.5-flash)**: 15 req/menit, 1500 req/hari, 1M token/menit. Cukup untuk volume bisnis sekarang; perlu monitoring kalau ada lonjakan customer barengan.
+- **Followup**: cleanup test API key sudah dihapus. Pertimbangkan delete old key `AQ.Ab8RN6Js...` di project lama supaya tidak ada credential bocor unused.
+
+## 2026-06-07 — T18: cloudbuild.yaml debounce env vars — DONE
+- Modified `cloudbuild.yaml` to forward three new env vars to Cloud Run via `--update-env-vars`:
+  `DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED`, `DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS`, `DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS`
+- Added `substitutions:` block at bottom of file with safe defaults: `_DEBOUNCE_ENABLED: 'false'`, `_DEBOUNCE_SOFT_WAIT_MS: '5000'`, `_DEBOUNCE_HARD_WAIT_MS: '12000'`
+- Existing SUPABASE/GEMINI vars left unchanged
+- Committed: `chore(cloudbuild): forward debounce env vars to Cloud Run deploy` (881f17e)
+
+## 2026-06-06 — T15: main.go DebounceHandler wire-up — DONE
+- Renamed `newRealClock` → `NewRealClock` in `internal/whatsapp/clock.go` (zero prior callers; exported for main.go)
+- Added `internal/whatsapp/typing.go` with `WATypingNotifier` adapter implementing `TypingNotifier` via `whatsmeow.Client.SendChatPresence(ctx, jid, presence, media)` — translates the boolean composing flag into ChatPresenceComposing/Paused; errors silently swallowed (presence is best-effort)
+- Added `strconv` import + `getEnvBoolDefault` / `getEnvIntDefault` helpers at bottom of `main.go`
+- Wired debounce into `main.go`:
+  - Reads `DEBOUNCE_ENABLED` (default false), `DEBOUNCE_SOFT_WAIT_MS` (5000), `DEBOUNCE_HARD_WAIT_MS` (12000)
+  - When enabled, instantiates `DebounceHandler` with real clock, `WATypingNotifier{Client: waClient.WA}`, and a forward-reference `flushFn` closure that calls `waHandler.ProcessJoinedMessage` (waHandler is declared above but assigned right after — closure captures the variable, sees value at call time)
+  - When disabled, `debounceHandler` stays nil and handler.go takes the legacy direct path
+  - Passes `debounceHandler` (nil or non-nil) as 8th arg to `NewHandler`
+- Wired graceful shutdown: on SIGTERM/SIGINT, before `waClient.Disconnect()`, calls `debounceHandler.Shutdown(ctx)` with 8s timeout to drain buffering phones
+- One adaptation from plan template: `SendChatPresence` in current whatsmeow version requires `context.Context` as first arg — used `context.Background()`
+- `CGO_ENABLED=1 go build ./...` clean; `go test ./... -race` all pass (whatsapp 2.671s)
+
+## 2026-06-06 — T14: handler.go routing refactor — DONE
+- Added `debounce *DebounceHandler` field to `Handler` struct (nil-safe — preserves legacy direct path when feature flag is off)
+- Updated `NewHandler` constructor to accept `debounce *DebounceHandler` as the 8th parameter
+- Refactored `Handle()` to route messages with bypass semantics:
+  - Media (empty text): `Flush(senderJID)` then `handleMediaMessage` as before
+  - Escalation keyword (WIRING or ADMIN): `Flush(senderJID)` then escalate immediately in goroutine
+  - Normal text: `debounce.Push(...)` when non-nil, else `go ProcessJoinedMessage(...)` legacy path
+- Renamed `processMessage` → `ProcessJoinedMessage` (exported so main.go can use it as `FlushFunc` callback in Task 15)
+- Added `originalTexts []string` parameter; loops over them to insert one customer row per original WA message (preserves Sales Inbox audit trail when debounce joined multiple texts)
+- Refactored `handleAdminEscalation(ctx, conv, text)` → `handleAdminEscalation(ctx, senderPhone, text)` to mirror `handleWiringEscalation` shape so `Handle()` can call it directly on bypass without needing a conv lookup
+- Updated `main.go:208` to pass `nil` for new debounce param (Task 15 will populate with real handler)
+- All existing filters preserved: group/broadcast skip, IsFromMe skip, stale-backlog 5-min cutoff
+- `CheckEscalation` call in `ProcessJoinedMessage` retained as defensive — `Handle()` already filters, but kept for legacy direct path and any future direct callers
+- Behavior change to flag: admin escalation on first-message-is-keyword cases now skips `GetOrCreateCustomer` + `CreateLead` (old flow ran those before calling `handleAdminEscalation`; new bypass goes straight from `Handle()`). This matches what wiring escalation already did — consistency win
+- `CGO_ENABLED=1 go build ./...` clean; `go test ./... -race` all pass (1.659s on whatsapp package)
+- Committed: `feat(whatsapp): route messages through DebounceHandler with media+escalation bypass` (30b411e)
+
+## 2026-06-06 — T12: Typing indicator goroutine — DONE
+- Added `TypingNotifier` interface with `SendTyping(phone string, composing bool)` to `debounce.go`
+- Added `noopTypingNotifier` struct as default when `cfg.Typing` is nil
+- Added `Typing TypingNotifier` field to `DebounceConfig`; added `typing TypingNotifier` field to `DebounceHandler`
+- Updated `NewDebounceHandler` to default `Typing` to `noopTypingNotifier{}` if nil
+- Added `startTyping(pb, phone)`: launches goroutine sending initial composing signal, refreshes every 8s via real `time.NewTicker`, stops with `paused=false` signal on channel close
+- Added `stopTyping(pb)`: closes `pb.typingStop` channel and nils it
+- Wired `startTyping` into IDLE→BUFFERING transition in `Push`
+- Wired `stopTyping` into IDLE branch of `postFlush` (before map lock)
+- Added `stubTypingNotifier` + `TestTypingIndicator_OnDuringBuffering` to `debounce_test.go`
+- All 19 tests pass with `-race` flag, no data races
+- Committed: `feat(whatsapp): typing indicator goroutine via TypingNotifier interface`
+
 ## 2026-06-05 — Sales Inbox: 'Aktifkan AI' tombol tidak berfungsi pada percakapan escalated — DONE
 - **Bug ditemukan via investigasi langsung**: di Sales Inbox, klik tombol toggle AI pada percakapan dengan state `ESCALATED_ADMIN` atau `ESCALATED_WIRING` tidak punya efek karena `getModeBanner` (`SalesInboxScreen.tsx:36-43`) mengembalikan `makeActive: false` dan label `'Ambil Alih'` — padahal AI memang sudah off. Tidak ada path UI untuk mengaktifkan kembali AI pada percakapan yang sudah ter-escalate.
 - **Bug kedua di backend**: walaupun `ai_active=true` di-set manual, daemon tetap skip karena `conv.State.IsTerminal()` returns true untuk ESCALATED states (`handler.go:153`). Jadi reset `state` juga wajib agar Calista mulai memproses lagi.

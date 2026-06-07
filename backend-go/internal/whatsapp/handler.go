@@ -16,6 +16,13 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/storage"
 )
 
+// debouncer is the minimal interface used by Handler.routeMessage.
+// Decoupled from *DebounceHandler so tests can inject a stub.
+type debouncer interface {
+	Push(ctx context.Context, phone, text string)
+	Flush(phone string)
+}
+
 type Handler struct {
 	db                 *db.Client
 	machine            *engine.Machine
@@ -25,13 +32,15 @@ type Handler struct {
 	startedAt          time.Time
 	supabaseURL        string
 	supabaseServiceKey string
+	debounce           debouncer // may be nil when feature flag is off
 }
 
-func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string) *Handler {
+func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce debouncer) *Handler {
 	return &Handler{
 		db: d, machine: m, sender: s, scheduler: sc,
 		waNumberID: waNumberID, startedAt: time.Now(),
 		supabaseURL: supabaseURL, supabaseServiceKey: supabaseServiceKey,
+		debounce: debounce,
 	}
 }
 
@@ -55,10 +64,17 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	if text == "" && evt.Message.GetExtendedTextMessage() != nil {
 		text = evt.Message.GetExtendedTextMessage().GetText()
 	}
+
+	senderJID := evt.Info.Sender.ToNonAD().String()
+
+	// Media bypass: never debounce. Drain any in-flight buffer first so customer
+	// message order is preserved (text → media in the conversation log).
+	// Media messages (payment proofs) must never be filtered by startup time —
+	// customers send proofs while the backend is restarting and lose them otherwise.
 	if text == "" {
-		// Media messages (payment proofs) must never be filtered by startup time —
-		// customers send proofs while the backend is restarting and lose them otherwise.
-		h.handleMediaMessage(evt)
+		h.routeMessage(context.Background(), senderJID, "", true, func() {
+			h.handleMediaMessage(evt)
+		})
 		return
 	}
 
@@ -72,14 +88,63 @@ func (h *Handler) Handle(rawEvt interface{}) {
 
 	log.Printf("[HANDLER] Processing text from %s: %q", evt.Info.Sender, text)
 
-	// Preserve the full JID string (including @lid server for LID-based senders)
-	// so sender.go can route it correctly.
-	senderJID := evt.Info.Sender.ToNonAD().String()
-	go h.processMessage(context.Background(), senderJID, text)
+	h.routeMessage(context.Background(), senderJID, text, false, nil)
 }
 
-func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) {
-	// 1. Keyword rules — fast path, zero LLM cost
+// routeMessage dispatches an already-parsed customer message to the appropriate
+// path: media bypass, escalation bypass, or normal text debounce.
+// Exposed at package level so it can be tested without faking
+// whatsmeow.events.Message (which has non-exported fields).
+func (h *Handler) routeMessage(ctx context.Context, senderJID string, text string, isMedia bool, mediaHandler func()) {
+	// Media bypass: never debounce. Drain any in-flight buffer first.
+	if isMedia {
+		if h.debounce != nil {
+			h.debounce.Flush(senderJID)
+		}
+		if mediaHandler != nil {
+			mediaHandler()
+		}
+		return
+	}
+
+	// Escalation keyword bypass: drain buffer, then escalate immediately.
+	esc := rules.CheckEscalation(text)
+	if esc != rules.EscalationNone {
+		if h.debounce != nil {
+			h.debounce.Flush(senderJID)
+		}
+		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[HANDLER] escalation goroutine panic for %s: %v", senderJID, r)
+				}
+			}()
+			switch esc {
+			case rules.EscalationWiring:
+				h.handleWiringEscalation(ctx, senderJID, text)
+			case rules.EscalationAdmin:
+				h.handleAdminEscalation(ctx, senderJID, text)
+			}
+		}()
+		return
+	}
+
+	// Normal path: route through debounce if enabled, else direct.
+	if h.debounce != nil {
+		h.debounce.Push(ctx, senderJID, text)
+	} else {
+		go h.ProcessJoinedMessage(ctx, senderJID, text, []string{text})
+	}
+}
+
+// ProcessJoinedMessage is the unified pipeline used for both debounced and direct text messages.
+// originalTexts contains the customer's raw messages (one per actual WA message) for audit-trail
+// insertion in Sales Inbox; the joined `text` is the combined string sent to Gemini.
+func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text string, originalTexts []string) {
+	// 1. Keyword rules — fast path, zero LLM cost.
+	// Handle() now routes escalations directly via bypass; this remains as a
+	// defensive check for the legacy direct path (debounce==nil) and any
+	// future callers that invoke this method bypassing Handle().
 	esc := rules.CheckEscalation(text)
 	if esc == rules.EscalationWiring {
 		h.handleWiringEscalation(ctx, senderPhone, text)
@@ -116,9 +181,9 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		}
 	}
 
-	// 4. Admin escalation keyword
+	// 4. Admin escalation keyword (defensive — Handle() bypasses to handleAdminEscalation directly).
 	if esc == rules.EscalationAdmin {
-		h.handleAdminEscalation(ctx, conv, text)
+		h.handleAdminEscalation(ctx, senderPhone, text)
 		return
 	}
 
@@ -154,9 +219,19 @@ func (h *Handler) processMessage(ctx context.Context, senderPhone, text string) 
 		return
 	}
 
-	// 6. Insert customer message → Realtime pushes to Sales Inbox
-	if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, text); err != nil {
-		log.Printf("[HANDLER] InsertMessage error: %v", err)
+	// 6. Insert one row per original customer message → Realtime pushes to Sales Inbox.
+	//    Looping over originalTexts preserves the audit trail (every WA message the
+	//    customer sent shows up as its own bubble) even when debounce joined them
+	//    into a single Gemini call.
+	texts := originalTexts
+	if len(texts) == 0 {
+		texts = []string{text}
+	}
+	for _, original := range texts {
+		if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, original); err != nil {
+			log.Printf("[HANDLER] InsertMessage error for conv %s: %v", conv.ID, err)
+			// continue — Gemini call doesn't depend on this
+		}
 	}
 
 	// 7. Load history
@@ -290,10 +365,22 @@ func buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.Stock
 }
 
 func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text string) {
-	conv, _, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
 		return
 	}
+
+	// Ensure customer record exists; create lead on new conversations.
+	// Errors here are non-fatal — log and continue so the escalation is never dropped.
+	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	if err != nil {
+		log.Printf("[HANDLER] handleWiringEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+	} else if created {
+		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+			log.Printf("[HANDLER] handleWiringEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+		}
+	}
+
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, text)
 	h.db.UpdateConversationState(conv.ID, models.StateEscalatedWiring)
 	h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED_WIRING: keyword match")
@@ -308,7 +395,24 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 	}
 }
 
-func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conversation, text string) {
+func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text string) {
+	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
+	if err != nil {
+		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateConversation error for %s: %v", senderPhone, err)
+		return
+	}
+
+	// Ensure customer record exists; create lead on new conversations.
+	// Errors here are non-fatal — log and continue so the escalation is never dropped.
+	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	if err != nil {
+		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+	} else if created {
+		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+			log.Printf("[HANDLER] handleAdminEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+		}
+	}
+
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, text)
 	h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin)
 	h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED_ADMIN: keyword match")
@@ -318,7 +422,7 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, conv *models.Conver
 		reply = "Your request will be handled by our team. Please wait a moment."
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
-	if err := h.sender.SendText(ctx, conv.CustomerPhone, reply); err != nil {
+	if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
 		log.Printf("[HANDLER] handleAdminEscalation: SendText error: %v", err)
 	}
 }
@@ -348,8 +452,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		doc = evt.Message.GetEphemeralMessage().GetMessage().GetDocumentMessage()
 	}
 
-	isPaymentStatus := order != nil && (
-		order.Status == models.OrderStatusWaitingPayment ||
+	isPaymentStatus := order != nil && (order.Status == models.OrderStatusWaitingPayment ||
 		order.Status == models.OrderStatusPaymentUploaded ||
 		order.Status == models.OrderStatusWaitingDP ||
 		order.Status == models.OrderStatusDPUploaded ||

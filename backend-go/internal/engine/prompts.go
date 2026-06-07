@@ -46,6 +46,12 @@ Data terkumpul sejauh ini:
 
 Data masih dibutuhkan: %s
 
+Anda mungkin menerima pesan customer yang sudah berisi beberapa field
+sekaligus (contoh: "Halo, saya Tony dari Garindo Jaya, mau panel box
+40x30 5 pcs untuk dikirim ke Jakarta Selatan") — pastikan Anda
+ekstrak SEMUA field yang terdeteksi sekaligus, lalu tanyakan SEMUA
+field yang masih kurang dalam satu pesan singkat.
+
 Ikuti SOP Fase 1 & 1.5. Tanyakan SATU data yang masih kurang dalam 1 pesan.
 JANGAN tanyakan alamat pengiriman di fase ini — alamat hanya dikumpulkan SETELAH customer konfirmasi pesanan.
 Jika customer sebut wiring/instalasi/custom/IP rating → next_action: ESCALATE

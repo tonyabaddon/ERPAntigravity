@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<title>Stock Fraud Prevention — Interactive Mockups</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#f8f9ff; color:#43474e; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+  .navy { color:#012749; } .bg-navy { background:#012749; }
+  .emerald { color:#2d8a4e; } .bg-emerald { background:#2d8a4e; }
+  .card { background:#fff; border-radius:1.5rem; border:1px solid #e5eeff; box-shadow:0 8px 24px rgba(1,39,73,0.05); }
+  .label-up { font-size:10px; font-weight:800; color:#9ca3af; letter-spacing:0.2em; text-transform:uppercase; }
+  .pill { border-radius:9999px; padding:0.25rem 0.75rem; font-size:10px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px; }
+  .btn-primary { background:#2d8a4e; color:#fff; border-radius:9999px; padding:0.65rem 1.25rem; font-weight:800; font-size:12px; box-shadow:0 8px 20px rgba(45,138,78,0.25); cursor:pointer; transition:transform .12s; }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .btn-navy { background:#012749; color:#fff; border-radius:9999px; padding:0.65rem 1.25rem; font-weight:800; font-size:12px; cursor:pointer; }
+  .btn-ghost { background:#fff; color:#012749; border:1px solid #e5eeff; border-radius:9999px; padding:0.55rem 1.1rem; font-weight:700; font-size:12px; cursor:pointer; }
+  .btn-ghost:hover { border-color:#2d8a4e; }
+  .btn-danger { background:#fff1f2; color:#be123c; border:1px solid #fecdd3; border-radius:9999px; padding:0.55rem 1.1rem; font-weight:700; font-size:12px; cursor:pointer; }
+  .field { background:#eff4ff; border:2px solid transparent; border-radius:9999px; padding:0.55rem 1rem; font-weight:700; font-size:12px; color:#0b1c30; width:100%; }
+  .field:focus { border-color:#2d8a4e; outline:none; }
+  .field-sm { padding:4px 10px; border-radius:0.75rem; text-align:right; }
+  .chip-success { background:#ecfdf5; color:#2d8a4e; }
+  .chip-warning { background:#fffbeb; color:#b45309; }
+  .chip-danger  { background:#fff1f2; color:#be123c; }
+  .chip-info    { background:#eff6ff; color:#1d4ed8; }
+  .chip-muted   { background:#f1f5f9; color:#475569; }
+  .row-pending  { background:linear-gradient(90deg, rgba(245,158,11,0.05), transparent 70%); }
+  .row-flag     { background:linear-gradient(90deg, rgba(244,63,94,0.05), transparent 70%); }
+  .lock-row     { background:#fafbff; }
+  .dot          { width:6px; height:6px; border-radius:9999px; display:inline-block; }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(11,28,48,0.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:1rem; }
+  .modal-card   { background:#fff; border-radius:1.5rem; box-shadow:0 30px 60px rgba(1,39,73,0.25); max-width:560px; width:100%; max-height:92vh; overflow:auto; }
+  .hidden-x     { display:none !important; }
+  .sidebar-mock { background:#012749; border-radius:1.5rem; color:#fff; padding:1.25rem 1rem; }
+  .sidebar-mock a { display:flex; align-items:center; gap:0.75rem; padding:0.55rem 0.85rem; border-radius:9999px; font-size:12px; font-weight:700; color:#cbd5e1; cursor:pointer; }
+  .sidebar-mock a.active { background:rgba(255,255,255,0.15); color:#6ee7b7; }
+  .sidebar-mock a:hover  { background:rgba(255,255,255,0.07); }
+  .badge-count { background:#be123c; color:#fff; border-radius:9999px; font-size:10px; font-weight:800; padding:1px 7px; margin-left:auto; min-width:1.25rem; text-align:center; }
+  .toc-sticky   { position:sticky; top:1rem; }
+  .toc-sticky a { display:block; padding:0.45rem 0.75rem; border-radius:0.75rem; font-size:12px; font-weight:700; color:#475569; cursor:pointer; }
+  .toc-sticky a:hover { background:#eff6ff; color:#012749; }
+  .toc-sticky a.active { background:#012749; color:#fff; }
+  .phase-anchor { scroll-margin-top: 1rem; }
+  .pin-key { background:#f1f5f9; border-radius:1rem; padding:1rem 0; text-align:center; font-weight:800; font-size:1.5rem; color:#012749; cursor:pointer; user-select:none; transition: background .1s; }
+  .pin-key:hover { background:#e2e8f0; }
+  .pin-key:active { background:#cbd5e1; }
+  .pin-dot { width:0.85rem; height:0.85rem; border-radius:9999px; background:#cbd5e1; transition:background .15s; }
+  .pin-dot.filled { background:#012749; }
+  .toast { position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%); background:#012749; color:#fff; padding:0.85rem 1.5rem; border-radius:9999px; font-weight:800; font-size:13px; box-shadow:0 20px 40px rgba(1,39,73,0.25); z-index:100; }
+  .pulse { animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.55 } }
+  .qr {
+    width:120px; height:120px;
+    background:
+      linear-gradient(45deg, #012749 25%, transparent 25%, transparent 75%, #012749 75%),
+      linear-gradient(45deg, #012749 25%, transparent 25%, transparent 75%, #012749 75%);
+    background-size:14px 14px;
+    background-position:0 0, 7px 7px;
+    border:8px solid #fff; box-shadow:0 0 0 2px #012749;
+  }
+  .receipt-paper {
+    background:#fff;
+    background-image: repeating-linear-gradient(0deg, #fff, #fff 22px, #f8f9ff 22px, #f8f9ff 23px);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color:#012749;
+  }
+  details > summary { cursor:pointer; list-style:none; }
+  details > summary::-webkit-details-marker { display:none; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[200px_1fr] gap-6">
+
+  <!-- STICKY TOC -->
+  <aside class="hidden lg:block">
+    <nav class="toc-sticky card p-3" id="toc">
+      <p class="label-up px-2 py-1 mb-1">Phases</p>
+      <a data-target="phase-1">1 · Ledger</a>
+      <a data-target="phase-2">2 · Adjustment+Opname</a>
+      <a data-target="phase-3a">3a · Penerimaan PO</a>
+      <a data-target="phase-3b">3b · Kasir</a>
+      <a data-target="phase-3d">3d · Transfer 2-langkah</a>
+      <a data-target="phase-4">4 · Pengawasan Owner</a>
+      <div class="border-t mt-2 pt-2">
+        <p class="label-up px-2 py-1">View as</p>
+        <div class="px-2 pb-1 flex gap-1">
+          <button id="role-karyawan" class="pill chip-muted flex-1 justify-center" style="cursor:pointer">Karyawan</button>
+          <button id="role-owner" class="pill" style="background:#012749;color:#fff;cursor:pointer" class="flex-1 justify-center">Owner</button>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- HEADER -->
+    <header class="mb-8">
+      <p class="label-up">Stock Fraud Prevention · Interactive Mockup · 2026-06-07</p>
+      <h1 class="navy font-extrabold text-3xl tracking-tight mt-1">Klik-klik dulu, review, baru build</h1>
+      <p class="text-sm mt-1">Brand palette match Garindo Jaya Panel · Owner role aktif default · semua approval tanpa threshold</p>
+    </header>
+
+    <!-- ───────────── PHASE 1 ───────────── -->
+    <section id="phase-1" class="phase-anchor mb-12">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-muted">Phase 1</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Immutable Stock Movements Ledger</h2>
+      </div>
+      <div class="card p-6">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <p class="label-up mb-2">Value / Manfaat</p>
+            <ul class="text-sm space-y-2">
+              <li>🔍 <b>Setiap pergerakan stok meninggalkan jejak permanen</b> — siapa, kapan, dari mana, kenapa.</li>
+              <li>⚖️ <b>Forensik nyata jika ada sengketa</b> — "stok hilang 12 unit minggu lalu" → query 1 menit, dapat actor + waktu + reason.</li>
+              <li>🧱 <b>Fondasi untuk semua phase lain.</b> Phase 2-4 menulis & baca dari ledger ini.</li>
+              <li>🛡️ <b>Mencegah "diam-diam UPDATE"</b> — service_role pun tidak bisa edit/delete row ledger.</li>
+            </ul>
+          </div>
+          <div>
+            <p class="label-up mb-2">Live demo: coba edit ledger</p>
+            <div class="rounded-2xl border border-dashed border-slate-300 p-4 bg-slate-50">
+              <p class="text-xs font-mono mb-2 text-slate-600">stock_movements row #4821</p>
+              <div class="bg-white rounded-xl p-3 text-xs font-mono space-y-1">
+                <div><span class="text-slate-400">id:</span> 4821</div>
+                <div><span class="text-slate-400">sku:</span> A1B2 · Panel Besi 60×40</div>
+                <div><span class="text-slate-400">qty_delta:</span> <b class="text-rose-600">-3</b></div>
+                <div><span class="text-slate-400">qty_before:</span> 15 → <span class="text-slate-400">qty_after:</span> 12</div>
+                <div><span class="text-slate-400">actor:</span> Andi (staff)</div>
+                <div><span class="text-slate-400">reason:</span> rusak · "kena air hujan"</div>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="btn-ghost" onclick="ledgerTry('update')">✎ Coba UPDATE</button>
+                <button class="btn-ghost" onclick="ledgerTry('delete')">🗑️ Coba DELETE</button>
+              </div>
+              <div id="ledger-result" class="hidden-x mt-3 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs font-mono text-rose-700"></div>
+              <p class="text-[11px] text-slate-500 mt-2">Owner perlu koreksi? → Tulis row <b>baru</b> dengan <code>reason='correction'</code> + <code>related_movement_id=4821</code>. Row asli tetap selamanya.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────── PHASE 2 ───────────── -->
+    <section id="phase-2" class="phase-anchor mb-12">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-info">Phase 2</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Adjustment · Opname · Approval Inbox</h2>
+      </div>
+
+      <!-- Value -->
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <div class="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <div>📸 <b>Foto bukti wajib</b> untuk reason "rusak" / "hilang".</div>
+          <div>🧮 <b>Stok Opname: penghitung ≠ saksi</b>, Owner sign-off untuk commit.</div>
+          <div>💯 <b>Semua adjustment butuh approval Owner</b> — tidak ada threshold auto-approve, berapapun nilainya.</div>
+          <div>📱 <b>Approval lewat WA atau PIN di toko</b> — Owner remote tetap bisa decide.</div>
+          <div>🚫 <b>Direct edit harga/HPP/stok diblokir RLS</b> — wajib lewat RPC ber-approval.</div>
+          <div>📨 <b>Satu Approval Inbox</b> — semua jenis permintaan masuk ke sini.</div>
+        </div>
+      </div>
+
+      <!-- StockManagerScreen interactive -->
+      <p class="label-up mb-2">📄 StockManagerScreen — klik 🟡 atau sel harga untuk ajukan perubahan</p>
+      <div class="card p-6 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div class="flex items-center gap-3">
+            <input class="field" style="width:280px" placeholder="Cari SKU atau nama barang..."/>
+            <button class="btn-ghost">Kategori: Semua ▾</button>
+          </div>
+          <button class="btn-primary">+ Tambah Item</button>
+        </div>
+
+        <!-- Pending banner -->
+        <div id="pending-banner" class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-extrabold text-amber-900 tracking-wider uppercase">Permintaan Anda yang menunggu (<span id="pending-count">0</span>)</p>
+          </div>
+          <ul id="pending-list" class="text-xs space-y-1.5 text-amber-900">
+            <li class="text-amber-700 italic">Belum ada permintaan. Klik sel apa pun untuk coba.</li>
+          </ul>
+        </div>
+
+        <div class="overflow-hidden border border-[#e5eeff] rounded-2xl">
+          <div class="grid grid-cols-12 px-4 py-3 bg-[#f8f9ff] label-up">
+            <div class="col-span-2">SKU</div>
+            <div class="col-span-3">Nama</div>
+            <div class="col-span-1">Kategori</div>
+            <div class="col-span-1 text-right">Atas</div>
+            <div class="col-span-1 text-right">Bawah</div>
+            <div class="col-span-2 text-right">Harga Jual</div>
+            <div class="col-span-2 text-right">HPP</div>
+          </div>
+          <!-- Row A1B2 -->
+          <div class="grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm hover:bg-blue-50/30">
+            <div class="col-span-2 font-mono text-xs text-slate-700">A1B2</div>
+            <div class="col-span-3 font-bold navy">Panel Besi 60×40 Indoor</div>
+            <div class="col-span-1"><span class="pill" style="background:#dbeafe;color:#1e3a8a">Panel</span></div>
+            <div class="col-span-1 text-right font-bold cursor-pointer hover:underline navy" onclick="openAdjustModal('A1B2','Panel Besi 60×40 Indoor','atas',12)">12</div>
+            <div class="col-span-1 text-right font-bold cursor-pointer hover:underline navy" onclick="openAdjustModal('A1B2','Panel Besi 60×40 Indoor','bawah',4)">4</div>
+            <div class="col-span-2 text-right font-bold navy cursor-pointer hover:underline" onclick="openPriceModal('A1B2','Panel Besi 60×40 Indoor','price',850000)">Rp 850.000</div>
+            <div class="col-span-2 text-right text-slate-700 cursor-pointer hover:underline" onclick="openPriceModal('A1B2','Panel Besi 60×40 Indoor','harga_modal',600000)">Rp 600.000</div>
+          </div>
+          <!-- Row C3D4 -->
+          <div class="grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm hover:bg-blue-50/30">
+            <div class="col-span-2 font-mono text-xs text-slate-700">C3D4</div>
+            <div class="col-span-3 font-bold navy">MCB Schneider 16A 1P</div>
+            <div class="col-span-1"><span class="pill" style="background:#fef3c7;color:#92400e">MCB</span></div>
+            <div class="col-span-1 text-right font-bold cursor-pointer hover:underline navy" onclick="openAdjustModal('C3D4','MCB Schneider 16A','atas',25)">25</div>
+            <div class="col-span-1 text-right text-slate-400 cursor-pointer hover:underline" onclick="openAdjustModal('C3D4','MCB Schneider 16A','bawah',0)">0</div>
+            <div class="col-span-2 text-right font-bold navy cursor-pointer hover:underline" onclick="openPriceModal('C3D4','MCB Schneider 16A','price',95000)">Rp 95.000</div>
+            <div class="col-span-2 text-right text-slate-700 cursor-pointer hover:underline" onclick="openPriceModal('C3D4','MCB Schneider 16A','harga_modal',65000)">Rp 65.000</div>
+          </div>
+          <!-- Row E5F6 -->
+          <div class="grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm hover:bg-blue-50/30">
+            <div class="col-span-2 font-mono text-xs text-slate-700">E5F6</div>
+            <div class="col-span-3 font-bold navy">Kabel NYM 2.5mm² 100m/Rol</div>
+            <div class="col-span-1"><span class="pill" style="background:#d1fae5;color:#065f46">Kabel</span></div>
+            <div class="col-span-1 text-right font-bold cursor-pointer hover:underline navy" onclick="openAdjustModal('E5F6','Kabel NYM 2.5mm² 100m/Rol','atas',8)">8</div>
+            <div class="col-span-1 text-right font-bold cursor-pointer hover:underline navy" onclick="openAdjustModal('E5F6','Kabel NYM 2.5mm² 100m/Rol','bawah',2)">2</div>
+            <div class="col-span-2 text-right font-bold navy cursor-pointer hover:underline" onclick="openPriceModal('E5F6','Kabel NYM 2.5mm² 100m/Rol','price',720000)">Rp 720.000</div>
+            <div class="col-span-2 text-right text-slate-700 cursor-pointer hover:underline" onclick="openPriceModal('E5F6','Kabel NYM 2.5mm² 100m/Rol','harga_modal',510000)">Rp 510.000</div>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-3">💡 <b>Klik nilai apa pun</b> (stok, harga, HPP) — modal ajukan perubahan akan terbuka. Tidak ada lagi free-edit di tabel.</p>
+      </div>
+
+      <!-- Approval Inbox -->
+      <p class="label-up mb-2">📄 ApprovalInboxScreen (Owner) — klik Setujui/Tolak, hitung berubah</p>
+      <div class="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 mb-6">
+        <div class="sidebar-mock">
+          <p class="text-[10px] font-extrabold text-emerald-400 tracking-widest uppercase mb-3">Garindo Jaya Panel</p>
+          <a>▣ Dashboard</a>
+          <a>📦 Stok AI</a>
+          <a>🧮 Stok Opname</a>
+          <a>↩️ Transfer Masuk <span class="badge-count">2</span></a>
+          <a class="active">✅ Persetujuan <span class="badge-count" id="approval-badge">3</span></a>
+          <a>🧾 Kasir</a>
+          <a>🛒 Pembelian</a>
+        </div>
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="navy font-extrabold text-lg">Persetujuan Menunggu</h3>
+              <p class="text-xs"><span id="approval-count">3</span> permintaan terbuka · auto-expire 30 menit</p>
+            </div>
+            <div class="flex gap-1 flex-wrap">
+              <button class="pill" style="background:#012749;color:#fff;cursor:pointer">Semua</button>
+              <button class="pill chip-muted" style="cursor:pointer">Adjustment</button>
+              <button class="pill chip-muted" style="cursor:pointer">Harga</button>
+              <button class="pill chip-muted" style="cursor:pointer">Kasir</button>
+            </div>
+          </div>
+
+          <div id="approval-list" class="space-y-3">
+            <div class="approval-row rounded-2xl border border-[#e5eeff] p-4 transition-all">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 font-extrabold">−3</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="pill chip-warning">Adjustment</span>
+                    <span class="text-xs font-bold navy">Andi</span>
+                    <span class="text-xs text-slate-500">· SKU-A1B2 · Panel Besi 60×40</span>
+                    <span class="ml-auto text-xs text-slate-500">8 menit lalu</span>
+                  </div>
+                  <p class="text-sm">Kurangi <b>3 pcs</b> dari Gudang Atas · alasan: <b>rusak</b> · Nilai: <b>Rp 1.800.000</b></p>
+                  <p class="text-xs italic text-slate-500 mt-1">"Panel kena air saat hujan kemarin, finishing rusak di pojok"</p>
+                  <div class="flex items-center gap-2 mt-3 flex-wrap">
+                    <button class="btn-ghost">📷 Lihat foto</button>
+                    <span class="flex-1"></span>
+                    <button class="btn-danger" onclick="decideApproval(this,'tolak')">Tolak</button>
+                    <button class="btn-primary" onclick="decideApproval(this,'setuju')">✓ Setujui</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="approval-row rounded-2xl border border-[#e5eeff] p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700 font-extrabold">Rp</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="pill chip-info">Harga Modal</span>
+                    <span class="text-xs font-bold navy">Citra</span>
+                    <span class="text-xs text-slate-500">· MCB Schneider 16A</span>
+                    <span class="ml-auto text-xs text-slate-500">3 menit lalu</span>
+                  </div>
+                  <p class="text-sm">HPP: <b>Rp 65.000</b> → <b>Rp 70.000</b> · Margin baru: <b>26%</b> (turun dari 32%)</p>
+                  <p class="text-xs italic text-slate-500 mt-1">"Supplier baru naikkan harga 8% bulan ini"</p>
+                  <div class="flex items-center justify-end gap-2 mt-3">
+                    <button class="btn-danger" onclick="decideApproval(this,'tolak')">Tolak</button>
+                    <button class="btn-primary" onclick="decideApproval(this,'setuju')">✓ Setujui</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="approval-row rounded-2xl border border-[#e5eeff] p-4">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-700 font-extrabold">🧾</div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="pill" style="background:#ede9fe;color:#5b21b6">Kasir Override</span>
+                    <span class="text-xs font-bold navy">Dini</span>
+                    <span class="text-xs text-slate-500">· MCB Schneider 16A</span>
+                    <span class="ml-auto text-xs text-slate-500">2 menit lalu</span>
+                  </div>
+                  <p class="text-sm">Default: <b>Rp 95.000</b> → Diminta: <b>Rp 80.000</b> · Margin: <b>19%</b> (dari 32%)</p>
+                  <p class="text-xs italic text-slate-500 mt-1">Alasan: negosiasi customer · "Pak Tono pembeli rutin"</p>
+                  <div class="flex items-center justify-end gap-2 mt-3">
+                    <button class="btn-danger" onclick="decideApproval(this,'tolak')">Tolak</button>
+                    <button class="btn-primary" onclick="decideApproval(this,'setuju')">✓ Setujui</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p id="approval-empty" class="hidden-x text-center text-sm py-6 text-slate-500">
+            🎉 Semua permintaan sudah diputuskan.
+          </p>
+        </div>
+      </div>
+
+      <!-- Opname session -->
+      <p class="label-up mb-2">📄 Stok Opname Session — ketik di kolom "Hitung", varians live</p>
+      <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <div>
+            <span class="pill chip-warning">Sesi Aktif</span>
+            <h3 class="navy font-extrabold text-lg mt-1">Opname Bulanan Juni 2026</h3>
+            <p class="text-xs">Penghitung: <b>Andi</b> · Saksi: <b>Budi</b> · Mulai 14:02 · 3 SKU dalam scope demo</p>
+          </div>
+          <div class="text-right">
+            <p class="label-up">Total Varians</p>
+            <p id="opname-total" class="navy font-extrabold text-xl">−Rp 0</p>
+          </div>
+        </div>
+        <div class="overflow-hidden border border-[#e5eeff] rounded-2xl">
+          <div class="grid grid-cols-12 px-4 py-3 bg-[#f8f9ff] label-up">
+            <div class="col-span-2">SKU</div>
+            <div class="col-span-3">Nama</div>
+            <div class="col-span-1">Gudang</div>
+            <div class="col-span-2 text-right">Sistem</div>
+            <div class="col-span-2 text-right">Hitung</div>
+            <div class="col-span-2 text-right">Varians</div>
+          </div>
+          <div class="opname-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-sistem="16" data-harga="600000">
+            <div class="col-span-2 font-mono text-xs">A1B2</div>
+            <div class="col-span-3 font-bold navy">Panel Besi 60×40</div>
+            <div class="col-span-1 text-xs">Atas</div>
+            <div class="col-span-2 text-right">16</div>
+            <div class="col-span-2 text-right"><input class="field field-sm opname-count" value="16" style="width:80px;margin-left:auto"/></div>
+            <div class="col-span-2 text-right varians-cell text-slate-500">0</div>
+          </div>
+          <div class="opname-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-sistem="25" data-harga="65000">
+            <div class="col-span-2 font-mono text-xs">C3D4</div>
+            <div class="col-span-3 font-bold navy">MCB Schneider 16A</div>
+            <div class="col-span-1 text-xs">Atas</div>
+            <div class="col-span-2 text-right">25</div>
+            <div class="col-span-2 text-right"><input class="field field-sm opname-count" value="25" style="width:80px;margin-left:auto"/></div>
+            <div class="col-span-2 text-right varians-cell text-slate-500">0</div>
+          </div>
+          <div class="opname-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-sistem="8" data-harga="510000">
+            <div class="col-span-2 font-mono text-xs">E5F6</div>
+            <div class="col-span-3 font-bold navy">Kabel NYM 2.5mm² 100m</div>
+            <div class="col-span-1 text-xs">Bawah</div>
+            <div class="col-span-2 text-right">8</div>
+            <div class="col-span-2 text-right"><input class="field field-sm opname-count" value="8" style="width:80px;margin-left:auto"/></div>
+            <div class="col-span-2 text-right varians-cell text-slate-500">0</div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 mt-5">
+          <button id="saksi-toggle" class="btn-ghost" onclick="toggleSaksi()">Saksi Budi: ⏳ menyaksikan…</button>
+          <span class="flex-1"></span>
+          <button class="btn-ghost">Simpan Draft</button>
+          <button id="opname-submit" class="btn-primary" disabled onclick="opnameSubmit()">📨 Kirim ke Owner untuk Commit</button>
+        </div>
+      </div>
+
+      <!-- Owner PIN pad -->
+      <p class="label-up mb-2">📄 Owner PIN Pad — sync approval di toko (coba ketik 6 digit)</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <div class="text-center mb-3">
+            <span class="pill chip-info">Approval Sync</span>
+            <h3 class="navy font-extrabold text-lg mt-2">Owner ketik PIN</h3>
+            <p class="text-xs">Demo PIN: <code>123456</code></p>
+          </div>
+          <div class="flex justify-center gap-2 my-4">
+            <span class="pin-dot" data-pos="0"></span>
+            <span class="pin-dot" data-pos="1"></span>
+            <span class="pin-dot" data-pos="2"></span>
+            <span class="pin-dot" data-pos="3"></span>
+            <span class="pin-dot" data-pos="4"></span>
+            <span class="pin-dot" data-pos="5"></span>
+          </div>
+          <div class="grid grid-cols-3 gap-3 max-w-xs mx-auto">
+            <div class="pin-key" onclick="pinPress('1')">1</div>
+            <div class="pin-key" onclick="pinPress('2')">2</div>
+            <div class="pin-key" onclick="pinPress('3')">3</div>
+            <div class="pin-key" onclick="pinPress('4')">4</div>
+            <div class="pin-key" onclick="pinPress('5')">5</div>
+            <div class="pin-key" onclick="pinPress('6')">6</div>
+            <div class="pin-key" onclick="pinPress('7')">7</div>
+            <div class="pin-key" onclick="pinPress('8')">8</div>
+            <div class="pin-key" onclick="pinPress('9')">9</div>
+            <div></div>
+            <div class="pin-key" onclick="pinPress('0')">0</div>
+            <div class="pin-key" onclick="pinBackspace()" style="font-size:1.25rem">⌫</div>
+          </div>
+          <div id="pin-result" class="hidden-x mt-4 text-center font-bold text-sm"></div>
+        </div>
+
+        <div class="card p-6">
+          <p class="label-up mb-2">WhatsApp Owner — async approval (mock)</p>
+          <div class="bg-[#e7ffdb] rounded-2xl p-4 max-w-sm">
+            <p class="text-xs font-bold text-emerald-800 mb-1">Calista Sistem · 14:32</p>
+            <p class="text-sm leading-snug">
+              <b>🔐 Approval — Adjustment Stok</b><br>
+              Karyawan: <b>Andi</b><br>
+              Item: Panel Besi 60×40 Indoor<br>
+              Aksi: Kurangi <b>3 pcs</b> dari Gudang Atas<br>
+              Alasan: <b>rusak</b><br>
+              Nilai: <b>Rp 1.800.000</b><br>
+              <a class="text-blue-700 underline text-xs">📷 Lihat foto bukti</a><br><br>
+              Balas dengan tombol:
+            </p>
+            <div class="flex gap-2 mt-3">
+              <button class="btn-primary" style="padding:0.4rem 0.9rem" onclick="waApprove(this,'setuju')">✓ Setujui</button>
+              <button class="btn-danger" style="padding:0.4rem 0.9rem" onclick="waApprove(this,'tolak')">✗ Tolak</button>
+            </div>
+            <p id="wa-result" class="text-[10px] text-emerald-700 mt-3">Approval ID: 4821 · auto-tolak 30 menit</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────── PHASE 3a ───────────── -->
+    <section id="phase-3a" class="phase-anchor mb-12">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-info">Phase 3a</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Penerimaan PO — 2 orang & 3-way match</h2>
+      </div>
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <ul class="text-sm grid md:grid-cols-2 gap-x-8 gap-y-2">
+          <li>👥 <b>Saksi wajib di penerimaan</b> — tidak bisa diam-diam terima 90 dari 100.</li>
+          <li>📑 <b>3-way match</b> — PO qty vs fisik terima vs faktur supplier. Selisih → Owner WA alert.</li>
+          <li>📷 <b>Foto pengiriman direkam</b> — surat jalan supplier + kondisi barang.</li>
+          <li>🔗 <b>Auto-tulis ke ledger Phase 1</b>.</li>
+        </ul>
+      </div>
+
+      <p class="label-up mb-2">📄 ReceiveGoodsModal — ubah qty, lihat selisih live</p>
+      <div class="card p-6">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h3 class="navy font-extrabold text-base">Terima Barang — PO-2026-031</h3>
+            <p class="text-xs">Supplier: <b>Sinar Mas Elektrik</b> · PO senilai Rp 14.250.000</p>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <p class="label-up mb-1">Penerima</p>
+            <input class="field" value="Andi (saya)" disabled style="opacity:0.7" />
+          </div>
+          <div>
+            <p class="label-up mb-1">Saksi*</p>
+            <select id="po-saksi" class="field" onchange="poUpdate()">
+              <option value="">Pilih saksi…</option>
+              <option value="Budi">Budi (online)</option>
+              <option value="Citra">Citra (online)</option>
+            </select>
+          </div>
+          <div>
+            <p class="label-up mb-1">Gudang tujuan</p>
+            <select class="field"><option>Gudang Atas</option><option>Gudang Bawah</option></select>
+          </div>
+        </div>
+
+        <p class="label-up mb-1">Foto pengiriman* <span class="chip-warning pill ml-1">surat jalan + fisik</span></p>
+        <div id="po-foto" onclick="poFotoToggle()" class="border-2 border-dashed border-slate-300 rounded-2xl p-5 text-center text-xs text-slate-500 mb-5 cursor-pointer hover:border-emerald-400">
+          📷 Klik untuk simulasikan upload foto
+        </div>
+
+        <div class="overflow-hidden border border-[#e5eeff] rounded-2xl mb-5">
+          <div class="grid grid-cols-12 px-4 py-3 bg-[#f8f9ff] label-up">
+            <div class="col-span-1">SKU</div>
+            <div class="col-span-3">Nama</div>
+            <div class="col-span-2 text-right">PO Qty</div>
+            <div class="col-span-2 text-right">Terima Fisik*</div>
+            <div class="col-span-2 text-right">Faktur Supp.*</div>
+            <div class="col-span-2 text-right">Selisih</div>
+          </div>
+          <div class="po-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-po="10">
+            <div class="col-span-1 font-mono text-xs">A1B2</div>
+            <div class="col-span-3 font-bold navy">Panel Besi 60×40</div>
+            <div class="col-span-2 text-right">10</div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-terima" style="width:65px;margin-left:auto" value="10"/></div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-faktur" style="width:65px;margin-left:auto" value="10"/></div>
+            <div class="col-span-2 text-right po-selisih emerald font-bold">0 ✓</div>
+          </div>
+          <div class="po-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-po="20">
+            <div class="col-span-1 font-mono text-xs">C3D4</div>
+            <div class="col-span-3 font-bold navy">MCB Schneider 16A</div>
+            <div class="col-span-2 text-right">20</div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-terima" style="width:65px;margin-left:auto" value="20"/></div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-faktur" style="width:65px;margin-left:auto" value="20"/></div>
+            <div class="col-span-2 text-right po-selisih emerald font-bold">0 ✓</div>
+          </div>
+          <div class="po-row grid grid-cols-12 px-4 py-3 items-center border-t border-[#e5eeff] text-sm" data-po="5">
+            <div class="col-span-1 font-mono text-xs">E5F6</div>
+            <div class="col-span-3 font-bold navy">Kabel NYM 2.5mm²</div>
+            <div class="col-span-2 text-right">5</div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-terima" style="width:65px;margin-left:auto" value="5"/></div>
+            <div class="col-span-2 text-right"><input class="field field-sm po-faktur" style="width:65px;margin-left:auto" value="5"/></div>
+            <div class="col-span-2 text-right po-selisih emerald font-bold">0 ✓</div>
+          </div>
+        </div>
+
+        <div id="po-warning" class="hidden-x rounded-2xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900 mb-5">
+          ⚠ <b>Ada selisih</b> antara PO, terima fisik, dan/atau faktur supplier. Owner akan diberitahu via WhatsApp.
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button class="btn-ghost">Batal</button>
+          <button id="po-submit" class="btn-primary" disabled onclick="poSubmit()">Submit Terima Barang</button>
+        </div>
+        <p id="po-hint" class="text-xs text-right mt-2 text-slate-500">⚠ Wajib: saksi + foto pengiriman.</p>
+      </div>
+    </section>
+
+    <!-- ───────────── PHASE 3b ───────────── -->
+    <section id="phase-3b" class="phase-anchor mb-12">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-info">Phase 3b</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Kasir — Shift · Override · Refund</h2>
+      </div>
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <ul class="text-sm grid md:grid-cols-2 gap-x-8 gap-y-2">
+          <li>🕐 <b>Shift buka/tutup</b> dengan kas pembuka + hitung fisik laci.</li>
+          <li>🔒 <b>Harga line item terkunci default</b> · Ubah harga → approval Owner (PIN/WA).</li>
+          <li>📉 <b>Price floor backstop</b> — bahkan approved override tidak boleh di bawah HPP.</li>
+          <li>↩️ <b>Refund selalu butuh Owner approval</b> — refund = vektor fraud tertinggi, tidak ada auto.</li>
+        </ul>
+      </div>
+
+      <p class="label-up mb-2">📄 KasirScreen — bar shift aktif</p>
+      <div class="card p-6 mb-6">
+        <div class="rounded-2xl bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 p-4 flex flex-wrap items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald flex items-center justify-center text-white font-extrabold">A</div>
+          <div>
+            <p class="label-up text-emerald-800">Shift Aktif · Andi</p>
+            <p class="navy font-extrabold">Buka 09:00 · <span class="text-emerald-700">2j 14m</span></p>
+          </div>
+          <div class="hidden md:flex items-center gap-6 ml-auto text-xs">
+            <div><p class="label-up">Kas Pembuka</p><p class="navy font-extrabold">Rp 500.000</p></div>
+            <div><p class="label-up">Tx Hari Ini</p><p class="navy font-extrabold">14</p></div>
+            <div><p class="label-up">Total Penjualan</p><p class="navy font-extrabold">Rp 3.420.000</p></div>
+          </div>
+          <button class="btn-danger" onclick="openShiftCloseModal()">⏻ Tutup Shift</button>
+        </div>
+      </div>
+
+      <p class="label-up mb-2">📄 KasirInvoiceModal — line item dengan kunci harga (klik 🔒 atau "Ubah harga")</p>
+      <div class="card p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="navy font-extrabold text-base">Transaksi Baru · Walk-in</h3>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mb-4">
+          <input class="field" placeholder="Nama pelanggan (opsional)" />
+          <input class="field" placeholder="No. HP" />
+        </div>
+
+        <div class="space-y-2 mb-4" id="cart">
+          <!-- Locked default -->
+          <div class="rounded-2xl border border-[#e5eeff] p-4 lock-row cart-row" data-status="locked" data-hpp="600000" data-default="850000">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-lg">🔒</span>
+              <div class="flex-1">
+                <p class="navy font-extrabold text-sm">Panel Besi 60×40 Indoor</p>
+                <p class="text-xs">2 pcs × <b>Rp 850.000</b> = Rp 1.700.000 <span class="text-slate-400">· terkunci</span></p>
+              </div>
+              <button class="btn-ghost" onclick="openOverrideModal(this)">✎ Ubah harga</button>
+            </div>
+          </div>
+
+          <!-- Pending -->
+          <div class="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 cart-row" data-status="pending" data-hpp="65000" data-default="95000">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-lg pulse">🟡</span>
+              <div class="flex-1">
+                <p class="navy font-extrabold text-sm">MCB Schneider 16A 1P</p>
+                <p class="text-xs">5 × Rp 80.000 = Rp 400.000 · <b class="text-amber-700">menunggu approval Owner</b></p>
+              </div>
+              <span class="pill chip-warning">Pending</span>
+              <button class="btn-danger" style="padding:0.4rem 0.9rem" onclick="cancelOverride(this)">Batal</button>
+            </div>
+          </div>
+
+          <!-- Approved -->
+          <div class="rounded-2xl border border-emerald-300 bg-emerald-50/40 p-4 cart-row" data-status="approved" data-hpp="510000" data-default="720000">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-lg">🔓</span>
+              <div class="flex-1">
+                <p class="navy font-extrabold text-sm">Kabel NYM 2.5mm² 100m/Rol</p>
+                <p class="text-xs">1 × Rp 720.000 · <b class="emerald">disetujui Owner · 14:32</b></p>
+              </div>
+              <span class="pill chip-success">✓ Approved</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-ghost mb-5">+ Tambah Item</button>
+
+        <div class="border-t border-[#e5eeff] pt-4 flex flex-wrap items-center gap-3">
+          <p class="navy font-extrabold text-lg">Total: Rp 2.820.000</p>
+          <select class="field" style="width:140px"><option>Cash</option><option>Transfer</option><option>QRIS</option></select>
+          <input class="field" style="flex:1" placeholder="Bayar Rp…" />
+          <button class="btn-ghost">Batal</button>
+          <button id="kasir-finish" class="btn-primary" disabled>Selesaikan Transaksi</button>
+        </div>
+        <p id="kasir-warn" class="text-xs text-amber-700 font-bold mt-2">⚠ Tidak bisa diselesaikan: 1 line masih 🟡 pending.</p>
+      </div>
+    </section>
+
+    <!-- ───────────── PHASE 3c — REMOVED ───────────── -->
+    <section id="phase-3c" class="phase-anchor mb-12 hidden-x">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-info">Phase 3c</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Customer Receipt — QR Verify & WA Recovery</h2>
+        <span class="pill chip-warning ml-1">Konsep baru — mohon konfirmasi</span>
+      </div>
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <ul class="text-sm grid md:grid-cols-2 gap-x-8 gap-y-2">
+          <li>📑 <b>Customer punya catatan independen</b> setiap transaksi — kasir tidak bisa void/alter diam-diam.</li>
+          <li>📲 <b>QR di setiap nota cetak</b> → resolve ke <code>garindo.id/r/&lt;id&gt;</code> read-only.</li>
+          <li>🆓 <b>Nota hilang? WA Calista gratis</b> — bot auto-lookup berdasarkan nomor HP, kirim ulang link.</li>
+          <li>🛡️ <b>Anti-fraud bonus</b>: customer-side bukti = kasir-side accountability.</li>
+          <li>🚫 <b>Surat Jalan dihilangkan</b> — outflow sudah tercover Kasir (Phase 3b) & WA Orders.</li>
+        </ul>
+      </div>
+
+      <p class="label-up mb-2">📄 Tiga layar utama Phase 3c — klik QR untuk simulasi scan</p>
+      <div class="grid md:grid-cols-3 gap-4 mb-6">
+
+        <!-- Printed receipt -->
+        <div>
+          <p class="text-xs font-bold navy mb-2">1️⃣ Nota cetak (oleh Kasir)</p>
+          <div class="receipt-paper rounded-2xl p-5 text-xs shadow-md">
+            <div class="text-center font-bold mb-2">GARINDO JAYA PANEL<br><span class="text-[10px]">Jl. Industri Raya No.12 · 0812-xxxx</span></div>
+            <div class="border-t border-dashed border-slate-400 my-2"></div>
+            <div>No: <b>KSR-2026-1483</b></div>
+            <div>2026-06-07 · 14:32 · Kasir Andi</div>
+            <div class="border-t border-dashed border-slate-400 my-2"></div>
+            <div class="space-y-1">
+              <div class="flex justify-between"><span>Panel Besi 60×40 ×2</span><span>1.700.000</span></div>
+              <div class="flex justify-between"><span>MCB Schneider 16A ×5</span><span>400.000</span></div>
+              <div class="flex justify-between"><span>Kabel NYM 2.5mm² ×1</span><span>720.000</span></div>
+            </div>
+            <div class="border-t border-dashed border-slate-400 my-2"></div>
+            <div class="flex justify-between font-bold"><span>TOTAL</span><span>2.820.000</span></div>
+            <div class="flex justify-between"><span>CASH</span><span>3.000.000</span></div>
+            <div class="flex justify-between"><span>KEMBALI</span><span>180.000</span></div>
+            <div class="border-t border-dashed border-slate-400 my-3"></div>
+            <div class="text-center">
+              <div class="qr mx-auto cursor-pointer" onclick="openCustomerView()" title="Scan / klik untuk lihat di HP customer"></div>
+              <p class="mt-2 text-[10px]">Scan untuk verifikasi · garindo.id/r/k1483</p>
+              <p class="text-[10px] mt-1">Nota hilang? WA <b>0812-xxxx</b> ketik "nota saya"</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer phone view -->
+        <div>
+          <p class="text-xs font-bold navy mb-2">2️⃣ Customer scan QR di HP</p>
+          <div class="rounded-[2rem] border-[10px] border-slate-800 bg-white shadow-xl overflow-hidden">
+            <div class="bg-slate-800 text-white text-center text-[10px] py-1">garindo.id/r/k1483</div>
+            <div id="customer-view" class="p-4 text-xs space-y-2">
+              <div class="text-center">
+                <p class="emerald font-extrabold text-sm">✓ Transaksi Diverifikasi</p>
+                <p class="text-[10px] text-slate-500">Tersimpan di server Garindo Jaya Panel</p>
+              </div>
+              <div class="rounded-xl bg-[#f8f9ff] p-2">
+                <p class="navy font-bold">KSR-2026-1483</p>
+                <p>2026-06-07 · 14:32</p>
+              </div>
+              <ul class="text-[11px] space-y-1">
+                <li class="flex justify-between"><span>Panel Besi 60×40 ×2</span><span>1.700.000</span></li>
+                <li class="flex justify-between"><span>MCB Schneider 16A ×5</span><span>400.000</span></li>
+                <li class="flex justify-between"><span>Kabel NYM 2.5mm² ×1</span><span>720.000</span></li>
+              </ul>
+              <div class="flex justify-between font-bold border-t pt-2"><span>Total</span><span>Rp 2.820.000</span></div>
+              <button class="btn-primary w-full" onclick="customerWA()">📱 Tanya / Klaim ke WA</button>
+              <p class="text-[10px] text-center text-slate-500">Dibantu Calista · gratis · 24/7</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- WA recovery -->
+        <div>
+          <p class="text-xs font-bold navy mb-2">3️⃣ WA Recovery — nota hilang</p>
+          <div class="rounded-2xl bg-[#075E54] p-3 shadow-xl">
+            <div class="bg-[#e5ddd5] rounded-xl p-3 space-y-2 max-h-[420px] overflow-auto" id="wa-thread">
+              <div class="bg-white rounded-xl p-2 max-w-[80%] text-xs shadow">
+                Halo, nota saya hilang Pak. Beli kemarin sore.
+                <div class="text-[9px] text-slate-400 mt-1 text-right">14:50</div>
+              </div>
+              <div class="bg-[#dcf8c6] rounded-xl p-2 max-w-[85%] text-xs shadow ml-auto">
+                Halo! Saya Calista 🤖. Bisa bantu cari nota Anda. Mohon konfirmasi nomor HP yang dipakai saat transaksi 🙏
+                <div class="text-[9px] text-slate-500 mt-1 text-right">14:50 ✓✓</div>
+              </div>
+              <div class="bg-white rounded-xl p-2 max-w-[80%] text-xs shadow">
+                0812-1234-5678
+                <div class="text-[9px] text-slate-400 mt-1 text-right">14:51</div>
+              </div>
+              <div id="wa-reply-final" class="hidden-x bg-[#dcf8c6] rounded-xl p-2 max-w-[85%] text-xs shadow ml-auto">
+                Ketemu 1 transaksi: <b>KSR-2026-1483</b> tanggal 2026-06-07 senilai Rp 2.820.000. Link nota:<br>
+                <a class="text-blue-700 underline">garindo.id/r/k1483</a><br>
+                Selesai 🙌
+                <div class="text-[9px] text-slate-500 mt-1 text-right">14:51 ✓✓</div>
+              </div>
+            </div>
+            <div class="bg-white rounded-full mt-2 px-3 py-1 flex items-center gap-2">
+              <input class="flex-1 text-xs outline-none" placeholder="Ketik pesan..." />
+              <button class="text-emerald-700 font-bold text-sm" onclick="customerWAReply()">➤</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <p class="text-xs text-slate-500">💡 Klik QR pada nota cetak untuk simulasikan scan customer · Klik ➤ pada WA untuk simulasi Calista cari nota.</p>
+    </section>
+
+    <!-- ───────────── PHASE 3d ───────────── -->
+    <section id="phase-3d" class="phase-anchor mb-12">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-info">Phase 3d</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Transfer 2-langkah Atas ↔ Bawah</h2>
+      </div>
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <ul class="text-sm grid md:grid-cols-2 gap-x-8 gap-y-2">
+          <li>🚧 <b>Bug fraud sekarang: transfer instan</b> — sistem trust pengirim sepenuhnya. Phase ini menutupnya.</li>
+          <li>🤝 <b>Pengirim ≠ penerima</b> (enforced RPC).</li>
+          <li>📷 <b>Foto wajib</b> di sisi kirim & terima.</li>
+          <li>⏱️ <b>Pending >24 jam masuk WA report Owner</b>.</li>
+          <li>🧮 <b>Selisih kirim vs terima</b> → bucket "Hilang Transit" sampai Owner adjust.</li>
+        </ul>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <p class="label-up mb-2">📄 WarehouseTransferModal (initiate)</p>
+          <div class="card p-6">
+            <h3 class="navy font-extrabold text-sm mb-4">Transfer Stok — Panel Besi 60×40</h3>
+            <div class="flex items-center gap-2 mb-4">
+              <div class="flex-1 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-center">
+                <p class="label-up text-blue-800">Dari</p>
+                <p class="navy font-extrabold">Gudang Atas</p>
+                <p class="text-xs font-bold">12 pcs</p>
+              </div>
+              <div class="text-xl">⇄</div>
+              <div class="flex-1 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-center">
+                <p class="label-up text-amber-800">Ke</p>
+                <p class="navy font-extrabold">Gudang Bawah</p>
+                <p class="text-xs font-bold">4 pcs</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div><p class="label-up mb-1">Jumlah*</p><input id="tr-qty" class="field" value="3"/></div>
+              <div><p class="label-up mb-1">Penerima di tujuan*</p>
+                <select id="tr-penerima" class="field"><option value="">Pilih…</option><option value="Budi">Budi</option><option value="Citra">Citra</option></select>
+              </div>
+            </div>
+            <p class="label-up mt-3 mb-1">Foto pengeluaran*</p>
+            <div id="tr-foto" onclick="trFotoToggle()" class="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center text-xs text-slate-500 cursor-pointer">
+              📷 Klik untuk simulasi upload
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+              <button class="btn-ghost">Batal</button>
+              <button id="tr-submit" class="btn-primary" disabled onclick="trSubmit()">Kirim Transfer</button>
+            </div>
+            <p class="text-xs text-amber-700 mt-2">Stok Atas berkurang instan · Bawah naik setelah penerima konfirmasi.</p>
+          </div>
+        </div>
+
+        <div>
+          <p class="label-up mb-2">📄 Sidebar item baru: "Transfer Masuk"</p>
+          <div class="card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="navy font-extrabold text-sm">Transfer Masuk (2)</h3>
+            </div>
+            <div class="space-y-3">
+              <div class="rounded-2xl border border-[#e5eeff] p-4">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <div class="w-9 h-9 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700 font-extrabold">↩</div>
+                  <div class="flex-1">
+                    <p class="navy font-extrabold text-sm">TR-027 · Panel Besi 60×40 · 3 pcs</p>
+                    <p class="text-xs">Dari Andi · Atas → Bawah · 25 menit lalu</p>
+                  </div>
+                  <button class="btn-primary" onclick="openConfirmModal('TR-027','Panel Besi 60×40',3)">Konfirmasi Terima</button>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-rose-200 bg-rose-50/40 p-4">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <div class="w-9 h-9 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-700 font-extrabold">⚠</div>
+                  <div class="flex-1">
+                    <p class="navy font-extrabold text-sm">TR-026 · MCB Schneider · 5 pcs</p>
+                    <p class="text-xs text-rose-700"><b>Aging 36 jam</b> · Owner sudah diberitahu</p>
+                  </div>
+                  <button class="btn-primary" onclick="openConfirmModal('TR-026','MCB Schneider',5)">Konfirmasi Terima</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────── PHASE 4 ───────────── -->
+    <section id="phase-4" class="phase-anchor mb-16">
+      <div class="flex items-baseline gap-3 mb-3">
+        <span class="pill chip-success">Phase 4</span>
+        <h2 class="navy font-extrabold text-2xl tracking-tight">Pengawasan Owner — Anomaly Dashboard</h2>
+      </div>
+      <div class="card p-6 mb-6">
+        <p class="label-up mb-2">Value / Manfaat</p>
+        <ul class="text-sm grid md:grid-cols-2 gap-x-8 gap-y-2">
+          <li>🔭 <b>Mata Owner di semua aktivitas mencurigakan</b> tanpa harus lihat ratusan transaksi manual.</li>
+          <li>👥 <b>Catches collusion</b> — 2 karyawan kongkalikong bisa bypass gate; dashboard tangkap pola.</li>
+          <li>📊 <b>Heatmap aktor 30 hari + skor risiko</b>.</li>
+          <li>📈 <b>Outflow outliers</b> — SKU outflow >3× rata-rata 90 hari di-flag.</li>
+          <li>📱 <b>Daily WA heartbeat report</b> jam 18:00 WIB.</li>
+        </ul>
+      </div>
+
+      <p class="label-up mb-2">📄 DashboardScreen — section "Pengawasan" (Owner only) · klik periode untuk swap demo data</p>
+      <div class="card p-6">
+        <div class="flex items-center gap-2 mb-5 flex-wrap">
+          <h3 class="navy font-extrabold text-lg">Pengawasan</h3>
+          <span class="pill chip-success">Owner only</span>
+          <span class="flex-1"></span>
+          <div class="flex gap-1" id="period-tabs">
+            <button class="pill" style="background:#012749;color:#fff;cursor:pointer" data-period="30">30 hari</button>
+            <button class="pill chip-muted" style="cursor:pointer" data-period="7">7 hari</button>
+            <button class="pill chip-muted" style="cursor:pointer" data-period="today">Hari ini</button>
+          </div>
+          <button class="btn-ghost">📥 Export CSV</button>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-5 mb-5">
+          <div class="rounded-3xl border border-[#e5eeff] p-5">
+            <p class="navy font-extrabold mb-3">Adjustment Teratas <span id="d-period-label" class="text-xs text-slate-500 font-bold">(30 hari)</span></p>
+            <ul class="text-sm space-y-2" id="d-adjust-list">
+              <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 font-extrabold text-xs">−3</span>Andi · Panel Besi · <b>rusak</b> · <b class="ml-auto">Rp 1.8jt</b><span class="pill chip-muted ml-1">📷</span></li>
+              <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 font-extrabold text-xs">−2</span>Citra · MCB Schneider · <b>hilang</b> · <b class="ml-auto">Rp 130k</b><span class="pill chip-muted ml-1">📷</span></li>
+              <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 font-extrabold text-xs">−5</span>Andi · Kabel NYM · <b>sampel</b> · <b class="ml-auto">Rp 60k</b></li>
+              <li class="flex items-center gap-3"><span class="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 font-extrabold text-xs">−1</span>Budi · Panel Besi · <b>koreksi</b> · <b class="ml-auto">Rp 600k</b></li>
+            </ul>
+          </div>
+          <div class="rounded-3xl border border-[#e5eeff] p-5">
+            <p class="navy font-extrabold mb-3">Diskon Kasir per Karyawan</p>
+            <div class="space-y-2 text-sm">
+              <div>
+                <div class="flex justify-between text-xs"><span class="font-bold navy">Andi</span><span><b>Rp 240k</b> · 3.1% omzet</span></div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-2 bg-rose-400" style="width:62%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs"><span class="font-bold navy">Citra</span><span><b>Rp 80k</b> · 1.0% omzet</span></div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-2 bg-amber-400" style="width:22%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs"><span class="font-bold navy">Budi</span><span>Rp 0 · 0%</span></div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-2 bg-emerald-400" style="width:1%"></div></div>
+              </div>
+              <div>
+                <div class="flex justify-between text-xs"><span class="font-bold navy">Dini</span><span>Rp 0 · 0%</span></div>
+                <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-2 bg-emerald-400" style="width:1%"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-3xl border border-[#e5eeff] p-5">
+            <p class="navy font-extrabold mb-3">Outflow Outliers</p>
+            <ul class="text-sm space-y-2">
+              <li class="flex items-center gap-3 rounded-xl bg-rose-50/40 px-3 py-2 border border-rose-100">
+                <span class="pill chip-danger">+350%</span><span class="font-bold navy">A1B2 Panel Besi 60×40</span><span class="ml-auto text-xs">18/7h · avg 4</span>
+              </li>
+              <li class="flex items-center gap-3 rounded-xl bg-rose-50/40 px-3 py-2 border border-rose-100">
+                <span class="pill chip-danger">+290%</span><span class="font-bold navy">E5F6 Aksesori X</span><span class="ml-auto text-xs">35/7h · avg 9</span>
+              </li>
+              <li class="flex items-center gap-3 rounded-xl bg-amber-50/40 px-3 py-2 border border-amber-100">
+                <span class="pill chip-warning">+180%</span><span class="font-bold navy">C3D4 MCB Schneider</span><span class="ml-auto text-xs">12/7h · avg 4.3</span>
+              </li>
+            </ul>
+          </div>
+          <div class="rounded-3xl border border-[#e5eeff] p-5">
+            <p class="navy font-extrabold mb-3">Transfer Aging</p>
+            <ul class="text-sm space-y-2">
+              <li class="flex items-center gap-3"><span class="dot bg-rose-500"></span> TR-026 · MCB · 36 jam ⚠⚠ <span class="ml-auto"><b>Owner notified</b></span></li>
+              <li class="flex items-center gap-3"><span class="dot bg-amber-500"></span> TR-019 · Panel · 26 jam ⚠</li>
+              <li class="flex items-center gap-3"><span class="dot bg-amber-500"></span> TR-018 · Kabel · 25 jam ⚠</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rounded-3xl border border-[#e5eeff] p-5 mb-5">
+          <p class="navy font-extrabold mb-3">Heatmap Aktivitas per Karyawan (30 hari) · klik baris → drilldown</p>
+          <div class="overflow-hidden border border-[#e5eeff] rounded-2xl">
+            <div class="grid grid-cols-7 px-4 py-2 bg-[#f8f9ff] label-up text-xs">
+              <div>Karyawan</div>
+              <div class="text-right">Adjust</div>
+              <div class="text-right">Override</div>
+              <div class="text-right">Void</div>
+              <div class="text-right">Refund</div>
+              <div class="text-right">Opname</div>
+              <div class="text-right">Skor</div>
+            </div>
+            <div class="grid grid-cols-7 px-4 py-2 border-t border-[#e5eeff] text-sm hover:bg-rose-50/40 cursor-pointer" onclick="openDrilldown('Andi')">
+              <div class="font-bold navy">Andi</div>
+              <div class="text-right">12 🔥</div><div class="text-right">8 🔥</div><div class="text-right">4</div>
+              <div class="text-right">2</div><div class="text-right">1</div>
+              <div class="text-right"><span class="pill chip-danger">Tinggi</span></div>
+            </div>
+            <div class="grid grid-cols-7 px-4 py-2 border-t border-[#e5eeff] text-sm hover:bg-amber-50/40 cursor-pointer" onclick="openDrilldown('Citra')">
+              <div class="font-bold navy">Citra</div>
+              <div class="text-right">3</div><div class="text-right">2</div><div class="text-right">1</div>
+              <div class="text-right">0</div><div class="text-right">0</div>
+              <div class="text-right"><span class="pill chip-warning">Sedang</span></div>
+            </div>
+            <div class="grid grid-cols-7 px-4 py-2 border-t border-[#e5eeff] text-sm hover:bg-emerald-50/40 cursor-pointer" onclick="openDrilldown('Budi')">
+              <div class="font-bold navy">Budi</div>
+              <div class="text-right">0</div><div class="text-right">0</div><div class="text-right">0</div>
+              <div class="text-right">0</div><div class="text-right">0</div>
+              <div class="text-right"><span class="pill chip-success">Rendah</span></div>
+            </div>
+            <div class="grid grid-cols-7 px-4 py-2 border-t border-[#e5eeff] text-sm hover:bg-emerald-50/40 cursor-pointer" onclick="openDrilldown('Dini')">
+              <div class="font-bold navy">Dini</div>
+              <div class="text-right">0</div><div class="text-right">0</div><div class="text-right">0</div>
+              <div class="text-right">0</div><div class="text-right">0</div>
+              <div class="text-right"><span class="pill chip-success">Rendah</span></div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Skor = z-score gabungan adjust+override+void+refund relatif rata-rata tim. Bukan tuduhan — hanya flag perhatian Owner.</p>
+        </div>
+
+        <p class="label-up mb-2">📱 Daily WA Heartbeat Report — preview</p>
+        <div class="bg-[#e7ffdb] rounded-2xl p-4 max-w-md">
+          <p class="text-xs font-bold text-emerald-800 mb-1">Calista Sistem · 18:00 WIB</p>
+          <p class="text-sm leading-snug">
+            <b>📊 Ringkasan Pengawasan · 2026-06-07</b><br><br>
+            <b>Adjustment teratas hari ini:</b><br>
+            • Andi · Panel Besi · rusak · Rp 1.8jt 📷<br>
+            • Citra · MCB Schneider · hilang · Rp 130k 📷<br><br>
+            <b>Diskon kasir:</b> Andi Rp 60k (1.8%), Citra Rp 20k (0.6%)<br><br>
+            <b>Transfer aging >24j:</b> 2 (TR-019, TR-026)<br><br>
+            <b>Outflow outliers 7h:</b> A1B2 (+350%), E5F6 (+290%)<br><br>
+            <b>Approval timeout:</b> 0<br><br>
+            <a class="text-blue-700 underline text-xs">Buka dashboard penuh →</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-slate-400 pb-10">
+      Stock Fraud Prevention · Interactive Mockup · Belum di-spec · 2026-06-07
+    </footer>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div id="modal-adjust" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-adjust')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="navy font-extrabold text-sm">Adjustment Stok — <span id="adj-name"></span></h3>
+      <span class="text-slate-400 cursor-pointer" onclick="closeModal('modal-adjust')">×</span>
+    </div>
+    <div class="space-y-4 text-sm">
+      <div>
+        <p class="label-up mb-1">Gudang</p>
+        <p class="text-sm font-bold navy" id="adj-gudang"></p>
+      </div>
+      <div>
+        <p class="label-up mb-1">Tipe</p>
+        <div class="flex gap-2">
+          <button class="btn-ghost adj-type" data-type="tambah" onclick="adjPickType(this)">Tambah</button>
+          <button class="btn-ghost adj-type" data-type="kurang" onclick="adjPickType(this)" style="background:#fff1f2;color:#be123c;border-color:#fecdd3">Kurang</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="label-up mb-1">Jumlah</p>
+          <input id="adj-qty" class="field" value="1"/>
+        </div>
+        <div>
+          <p class="label-up mb-1">Alasan*</p>
+          <select id="adj-reason" class="field"><option>Rusak</option><option>Hilang</option><option>Sampel</option><option>Koreksi Input</option></select>
+        </div>
+      </div>
+      <div>
+        <p class="label-up mb-1">Catatan</p>
+        <input id="adj-note" class="field" placeholder="Tambahkan konteks..." />
+      </div>
+      <div>
+        <p class="label-up mb-1">Foto bukti* <span class="chip-danger pill ml-1">wajib u/ rusak & hilang</span></p>
+        <div id="adj-foto" onclick="toggleFotoSim(this,'adj-foto-ok')" class="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center text-xs text-slate-500 cursor-pointer">
+          📷 Klik untuk simulasi upload
+        </div>
+      </div>
+      <div class="rounded-2xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
+        💯 <b>Semua adjustment butuh approval Owner</b> (tidak ada threshold auto-approve).
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button class="btn-ghost" onclick="closeModal('modal-adjust')">Batal</button>
+        <button class="btn-primary" onclick="adjSubmit()">📨 Kirim ke Owner</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-price" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-price')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="navy font-extrabold text-sm">Ubah <span id="pr-field"></span> — <span id="pr-name"></span></h3>
+      <span class="text-slate-400 cursor-pointer" onclick="closeModal('modal-price')">×</span>
+    </div>
+    <div class="space-y-4 text-sm">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <p class="label-up mb-1">Nilai sekarang</p>
+          <input id="pr-current" class="field" disabled style="opacity:0.7"/>
+        </div>
+        <div>
+          <p class="label-up mb-1">Nilai baru*</p>
+          <input id="pr-new" class="field" oninput="prPreview()"/>
+        </div>
+      </div>
+      <div>
+        <p class="label-up mb-1">Alasan*</p>
+        <input id="pr-reason" class="field" placeholder="Supplier baru naikkan harga 11% bulan ini..."/>
+      </div>
+      <div id="pr-preview" class="rounded-2xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900"></div>
+      <div class="rounded-2xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+        ⚠ <b>Semua perubahan harga butuh approval Owner</b>.
+      </div>
+      <div class="flex justify-end gap-2 pt-1">
+        <button class="btn-ghost" onclick="closeModal('modal-price')">Batal</button>
+        <button class="btn-primary" onclick="prSubmit()">📨 Kirim ke Owner</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-override" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-override')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <h3 class="navy font-extrabold text-sm mb-4">Ubah Harga · <span id="ov-name"></span></h3>
+    <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+      <div><p class="label-up mb-1">Default</p><input id="ov-default" class="field" disabled style="opacity:0.7"/></div>
+      <div><p class="label-up mb-1">Baru*</p><input id="ov-new" class="field" oninput="ovPreview()"/></div>
+    </div>
+    <div>
+      <p class="label-up mb-1">Alasan*</p>
+      <select class="field"><option>Negosiasi customer</option><option>Promo tidak terdaftar</option><option>Barang demo</option><option>Lainnya</option></select>
+    </div>
+    <div id="ov-preview" class="rounded-2xl bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900 mt-3"></div>
+    <p class="label-up mt-4 mb-2">Owner di toko sekarang?</p>
+    <div class="grid grid-cols-2 gap-2">
+      <button class="btn-navy" onclick="ovSubmit('pin')">🔢 Minta PIN Owner</button>
+      <button class="btn-primary" onclick="ovSubmit('wa')">📱 Kirim ke WA</button>
+    </div>
+    <div class="text-right mt-3"><button class="btn-ghost" onclick="closeModal('modal-override')">Batal</button></div>
+  </div>
+</div>
+
+<div id="modal-shift" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-shift')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <h3 class="navy font-extrabold text-sm mb-4">Tutup Shift · Andi</h3>
+    <div class="text-sm space-y-1 mb-4">
+      <div class="flex justify-between"><span>Kas pembuka</span><b>Rp 500.000</b></div>
+      <div class="flex justify-between"><span>+ Cash transaksi</span><b>Rp 3.420.000</b></div>
+      <div class="flex justify-between text-rose-600"><span>− Refund cash</span><b>Rp 100.000</b></div>
+      <div class="border-t pt-2 flex justify-between"><span class="font-extrabold navy">= Expected</span><b class="navy">Rp 3.820.000</b></div>
+    </div>
+    <p class="label-up mb-1">Hitung fisik laci*</p>
+    <input id="sh-actual" class="field" value="3820000" oninput="shCalc()"/>
+    <div id="sh-result" class="rounded-2xl p-3 text-xs mt-3"></div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button class="btn-ghost" onclick="closeModal('modal-shift')">Batal</button>
+      <button class="btn-primary" onclick="shSubmit()">Tutup Shift</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-confirm" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-confirm')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <h3 class="navy font-extrabold text-sm mb-3">Konfirmasi Terima · <span id="cf-id"></span></h3>
+    <p class="text-sm mb-3">Pengirim klaim <b><span id="cf-sent"></span> pcs</b> dari <span id="cf-name"></span>.</p>
+    <p class="label-up mb-1">Saya hitung*</p>
+    <input id="cf-count" class="field" oninput="cfCalc()"/>
+    <p class="label-up mt-3 mb-1">Foto barang diterima*</p>
+    <div id="cf-foto" onclick="toggleFotoSim(this,'cf-foto-ok')" class="border-2 border-dashed border-slate-300 rounded-2xl p-3 text-center text-xs text-slate-500 cursor-pointer">📷 Klik untuk simulasi upload</div>
+    <div id="cf-result" class="rounded-2xl p-3 text-xs mt-3"></div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button class="btn-ghost" onclick="closeModal('modal-confirm')">Batal</button>
+      <button class="btn-primary" onclick="cfSubmit()">Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-drilldown" class="modal-backdrop hidden-x" onclick="closeModalOnBackdrop(event,'modal-drilldown')">
+  <div class="modal-card p-6" onclick="event.stopPropagation()">
+    <h3 class="navy font-extrabold text-sm mb-3">Drilldown · <span id="dd-name"></span></h3>
+    <p class="text-xs mb-3">Aktivitas <span id="dd-name2"></span> 30 hari terakhir (demo data)</p>
+    <ul id="dd-list" class="text-sm space-y-2"></ul>
+    <div class="text-right mt-4"><button class="btn-ghost" onclick="closeModal('modal-drilldown')">Tutup</button></div>
+  </div>
+</div>
+
+<div id="toast-host"></div>
+
+<script>
+// ────────────────────────────────────────────────
+//  Helpers
+// ────────────────────────────────────────────────
+function $(id){ return document.getElementById(id); }
+function showModal(id){ $(id).classList.remove('hidden-x'); }
+function closeModal(id){ $(id).classList.add('hidden-x'); }
+function closeModalOnBackdrop(e,id){ if(e.target.id===id) closeModal(id); }
+function toast(msg){
+  const host=$('toast-host'); const el=document.createElement('div');
+  el.className='toast'; el.textContent=msg; host.appendChild(el);
+  setTimeout(()=>el.remove(), 2400);
+}
+function rp(n){ return 'Rp '+ new Intl.NumberFormat('id-ID').format(Math.abs(n)); }
+
+// ────────────────────────────────────────────────
+//  Phase 1 — ledger try
+// ────────────────────────────────────────────────
+function ledgerTry(op){
+  const r=$('ledger-result'); r.classList.remove('hidden-x');
+  r.innerHTML = op==='update'
+    ? 'ERROR: stock_movements is append-only — corrections must be a new compensating row<br><span style="opacity:.7">(trigger trg_deny_sm_update di Phase 1 migration)</span>'
+    : 'ERROR: stock_movements is append-only — corrections must be a new compensating row<br><span style="opacity:.7">(trigger trg_deny_sm_delete di Phase 1 migration)</span>';
+}
+
+// ────────────────────────────────────────────────
+//  Phase 2 — Adjustment modal
+// ────────────────────────────────────────────────
+let adjCtx=null;
+function openAdjustModal(sku,name,gudang,now){
+  adjCtx={sku,name,gudang,now};
+  $('adj-name').textContent = name;
+  $('adj-gudang').textContent = `Gudang ${gudang.charAt(0).toUpperCase()+gudang.slice(1)} (sekarang ${now} pcs)`;
+  $('adj-qty').value=1;
+  $('adj-note').value='';
+  $('adj-foto').textContent='📷 Klik untuk simulasi upload';
+  $('adj-foto').classList.remove('border-emerald-400','bg-emerald-50');
+  document.querySelectorAll('.adj-type').forEach(b=>b.classList.remove('ring','ring-emerald-500'));
+  showModal('modal-adjust');
+}
+function adjPickType(btn){
+  document.querySelectorAll('.adj-type').forEach(b=>b.classList.remove('ring','ring-emerald-500','ring-2'));
+  btn.classList.add('ring','ring-emerald-500','ring-2');
+}
+function toggleFotoSim(el,okKey){
+  el.textContent='✓ Foto ter-upload (foto-001.jpg)';
+  el.classList.add('border-emerald-400','bg-emerald-50');
+  el.dataset.ok='1';
+}
+function adjSubmit(){
+  const qty=$('adj-qty').value||'1';
+  const reason=$('adj-reason').value;
+  pendingAdd(`Adjustment ${adjCtx.sku} · ${adjCtx.name} · ${qty} pcs · ${reason}`);
+  approvalAdd({type:'Adjustment', actor:'Anda', item:`${adjCtx.sku} · ${adjCtx.name}`, detail:`${qty} pcs · ${reason}`});
+  closeModal('modal-adjust');
+  toast('Permintaan adjustment dikirim ke Owner ✓');
+}
+
+// Price modal
+let prCtx=null;
+function openPriceModal(sku,name,field,current){
+  prCtx={sku,name,field,current};
+  $('pr-name').textContent=name;
+  $('pr-field').textContent = field==='price' ? 'Harga Jual' : 'Harga Modal';
+  $('pr-current').value = rp(current);
+  $('pr-new').value=current;
+  $('pr-reason').value='';
+  prPreview();
+  showModal('modal-price');
+}
+function prPreview(){
+  if(!prCtx) return;
+  const nv=parseFloat($('pr-new').value)||0;
+  const ov=prCtx.current;
+  const diff = nv-ov;
+  const dir = diff>=0 ? 'naik' : 'turun';
+  $('pr-preview').innerHTML = `${prCtx.field==='price'?'Harga jual':'HPP'} <b>${rp(ov)}</b> → <b>${rp(nv)}</b> · selisih ${dir} <b>${rp(diff)}</b>`;
+}
+function prSubmit(){
+  const nv=parseFloat($('pr-new').value)||0;
+  pendingAdd(`${prCtx.field==='price'?'Harga Jual':'Harga Modal'} ${prCtx.sku} ${rp(prCtx.current)}→${rp(nv)}`);
+  approvalAdd({type: prCtx.field==='price'?'Harga Jual':'Harga Modal', actor:'Anda', item:`${prCtx.sku} · ${prCtx.name}`, detail:`${rp(prCtx.current)} → ${rp(nv)}`});
+  closeModal('modal-price');
+  toast('Permintaan harga dikirim ke Owner ✓');
+}
+
+// Pending banner
+let pendingItems=[];
+function pendingAdd(txt){
+  pendingItems.push(txt);
+  $('pending-count').textContent = pendingItems.length;
+  const list=$('pending-list');
+  list.innerHTML = pendingItems.map(t=>`<li class="flex items-center gap-2"><span class="dot bg-amber-500"></span>${t}<span class="ml-auto text-amber-700">baru saja</span></li>`).join('');
+}
+
+// Approval inbox
+function approvalAdd(req){
+  const list=$('approval-list'); $('approval-empty').classList.add('hidden-x');
+  const row=document.createElement('div');
+  row.className='approval-row rounded-2xl border border-[#e5eeff] p-4';
+  row.innerHTML = `
+    <div class="flex items-start gap-3">
+      <div class="w-9 h-9 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-700 font-extrabold">⏳</div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="pill chip-warning">${req.type}</span>
+          <span class="text-xs font-bold navy">${req.actor}</span>
+          <span class="text-xs text-slate-500">· ${req.item}</span>
+          <span class="ml-auto text-xs text-slate-500">baru saja</span>
+        </div>
+        <p class="text-sm">${req.detail}</p>
+        <div class="flex items-center justify-end gap-2 mt-3">
+          <button class="btn-danger" onclick="decideApproval(this,'tolak')">Tolak</button>
+          <button class="btn-primary" onclick="decideApproval(this,'setuju')">✓ Setujui</button>
+        </div>
+      </div>
+    </div>`;
+  list.appendChild(row);
+  updateApprovalCount();
+}
+function decideApproval(btn,action){
+  const row = btn.closest('.approval-row');
+  row.style.transition='opacity .25s, max-height .35s';
+  row.style.opacity='0';
+  setTimeout(()=>{ row.remove(); updateApprovalCount(); }, 260);
+  toast(action==='setuju' ? 'Permintaan disetujui & dicommit ✓' : 'Permintaan ditolak');
+}
+function updateApprovalCount(){
+  const n = document.querySelectorAll('#approval-list .approval-row').length;
+  $('approval-count').textContent = n;
+  $('approval-badge').textContent = n;
+  if(n===0) $('approval-empty').classList.remove('hidden-x');
+}
+
+// Opname
+document.querySelectorAll('.opname-count').forEach(inp=>{
+  inp.addEventListener('input', recalcOpname);
+});
+function recalcOpname(){
+  let total=0;
+  document.querySelectorAll('.opname-row').forEach(r=>{
+    const sistem=parseInt(r.dataset.sistem,10);
+    const harga=parseInt(r.dataset.harga,10);
+    const cnt=parseInt(r.querySelector('.opname-count').value,10)||0;
+    const v=cnt-sistem;
+    const vCell=r.querySelector('.varians-cell');
+    const value=v*harga;
+    total += value;
+    vCell.classList.remove('text-rose-600','text-emerald','text-slate-500','font-bold');
+    if(v===0){ vCell.classList.add('text-slate-500'); vCell.textContent='0'; }
+    else if(v<0){ vCell.classList.add('text-rose-600','font-bold'); vCell.textContent=`${v} · ${rp(value)}`; }
+    else { vCell.classList.add('emerald','font-bold'); vCell.textContent=`+${v} · ${rp(value)}`; }
+  });
+  $('opname-total').textContent = (total<0?'−':total>0?'+':'')+rp(total);
+  $('opname-total').className = 'font-extrabold text-xl ' + (total<0?'text-rose-600':total>0?'text-emerald-700':'navy');
+}
+let saksiOn=false;
+function toggleSaksi(){
+  saksiOn=!saksiOn;
+  const b=$('saksi-toggle');
+  b.textContent = saksiOn ? 'Saksi Budi: ✓ menyaksikan' : 'Saksi Budi: ⏳ menyaksikan…';
+  b.style.background = saksiOn ? '#ecfdf5' : '';
+  b.style.color = saksiOn ? '#2d8a4e' : '';
+  $('opname-submit').disabled = !saksiOn;
+}
+function opnameSubmit(){
+  approvalAdd({type:'Opname', actor:'Andi + Budi', item:'Opname Bulanan Juni', detail:`Total varians ${$('opname-total').textContent}`});
+  toast('Sesi opname dikirim ke Owner untuk commit ✓');
+}
+
+// PIN pad
+let pin='';
+function pinPress(d){
+  if(pin.length>=6) return;
+  pin+=d;
+  refreshPinDots();
+  if(pin.length===6) verifyPin();
+}
+function pinBackspace(){
+  pin=pin.slice(0,-1);
+  refreshPinDots();
+  $('pin-result').classList.add('hidden-x');
+}
+function refreshPinDots(){
+  document.querySelectorAll('.pin-dot').forEach((el,i)=>{
+    el.classList.toggle('filled', i<pin.length);
+  });
+}
+function verifyPin(){
+  const r=$('pin-result'); r.classList.remove('hidden-x');
+  if(pin==='123456'){
+    r.innerHTML='<span class="emerald">✓ PIN cocok — permintaan disetujui sync</span>';
+    toast('Owner approved via PIN ✓');
+  } else {
+    r.innerHTML='<span class="text-rose-600">✗ PIN salah — coba lagi</span>';
+  }
+  setTimeout(()=>{ pin=''; refreshPinDots(); }, 1400);
+}
+
+// WA approve
+function waApprove(btn,action){
+  $('wa-result').innerHTML = action==='setuju'
+    ? '<b style="color:#15803d">✓ Owner reply: Setujui · committed</b>'
+    : '<b style="color:#be123c">✗ Owner reply: Tolak · request closed</b>';
+  toast(action==='setuju' ? 'Approval via WA: Setujui ✓' : 'Approval via WA: Tolak');
+}
+
+// ────────────────────────────────────────────────
+//  Phase 3a — Receive PO
+// ────────────────────────────────────────────────
+function poUpdate(){
+  let mismatch=false;
+  document.querySelectorAll('.po-row').forEach(r=>{
+    const po=parseInt(r.dataset.po,10);
+    const t=parseInt(r.querySelector('.po-terima').value,10)||0;
+    const f=parseInt(r.querySelector('.po-faktur').value,10)||0;
+    const s=r.querySelector('.po-selisih');
+    if(po===t && t===f){
+      s.textContent='0 ✓'; s.className='col-span-2 text-right po-selisih emerald font-bold';
+      r.classList.remove('row-flag');
+    } else {
+      const diff = t-po;
+      s.textContent = (diff>0?`+${diff}`:`${diff}`) + ' ⚠';
+      s.className='col-span-2 text-right po-selisih text-rose-600 font-bold';
+      r.classList.add('row-flag');
+      mismatch=true;
+    }
+  });
+  $('po-warning').classList.toggle('hidden-x', !mismatch);
+
+  const saksiOk = !!$('po-saksi').value;
+  const fotoOk = $('po-foto').dataset.ok==='1';
+  const ready = saksiOk && fotoOk;
+  $('po-submit').disabled = !ready;
+  $('po-hint').textContent = ready ? '✓ Siap submit' : `Perlu: ${[!saksiOk&&'saksi', !fotoOk&&'foto'].filter(Boolean).join(' + ')}`;
+}
+document.querySelectorAll('.po-terima, .po-faktur').forEach(i=>i.addEventListener('input', poUpdate));
+function poFotoToggle(){
+  const el=$('po-foto');
+  if(el.dataset.ok==='1') return;
+  el.textContent='✓ Foto pengiriman ter-upload (po-031.jpg)';
+  el.classList.add('border-emerald-400','bg-emerald-50');
+  el.dataset.ok='1';
+  poUpdate();
+}
+function poSubmit(){
+  toast('Penerimaan barang submitted · ledger row ditulis ✓');
+}
+
+// ────────────────────────────────────────────────
+//  Phase 3b — Kasir
+// ────────────────────────────────────────────────
+let ovCtx=null;
+function openOverrideModal(btn){
+  const row=btn.closest('.cart-row');
+  const hpp=parseInt(row.dataset.hpp,10);
+  const def=parseInt(row.dataset.default,10);
+  ovCtx={row,hpp,def};
+  $('ov-name').textContent = row.querySelector('.navy').textContent;
+  $('ov-default').value = rp(def);
+  $('ov-new').value = def;
+  ovPreview();
+  showModal('modal-override');
+}
+function ovPreview(){
+  if(!ovCtx) return;
+  const nv=parseFloat($('ov-new').value)||0;
+  const margin = nv>0 ? ((nv-ovCtx.hpp)/nv*100) : 0;
+  const belowFloor = nv<ovCtx.hpp;
+  $('ov-preview').innerHTML = belowFloor
+    ? `<span style="color:#be123c">❌ <b>Di bawah price floor (HPP ${rp(ovCtx.hpp)})</b> — tidak bisa di-submit walau Owner approve.</span>`
+    : `HPP: <b>${rp(ovCtx.hpp)}</b> · Floor: <b>${rp(ovCtx.hpp)}</b> · Margin baru: <b>${margin.toFixed(0)}%</b>`;
+}
+function ovSubmit(channel){
+  if(parseFloat($('ov-new').value)<ovCtx.hpp){
+    toast('❌ Tidak bisa di bawah HPP'); return;
+  }
+  approvalAdd({type:'Kasir Override', actor:'Anda (kasir)', item:$('ov-name').textContent, detail:`${$('ov-default').value} → ${rp(parseFloat($('ov-new').value))}`});
+  closeModal('modal-override');
+  toast(channel==='pin' ? 'PIN pad terbuka untuk Owner...' : 'Permintaan dikirim ke WA Owner ✓');
+}
+function cancelOverride(btn){
+  const row=btn.closest('.cart-row');
+  row.remove();
+  kasirRecheck();
+}
+function kasirRecheck(){
+  const pending = document.querySelectorAll('.cart-row[data-status="pending"]').length;
+  $('kasir-finish').disabled = pending>0;
+  $('kasir-warn').style.display = pending>0 ? '' : 'none';
+}
+function openShiftCloseModal(){
+  shCalc();
+  showModal('modal-shift');
+}
+function shCalc(){
+  const expected=3820000;
+  const actual=parseFloat($('sh-actual').value)||0;
+  const diff = actual-expected;
+  const r=$('sh-result');
+  if(diff===0){ r.className='rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800'; r.innerHTML='✓ Cocok dengan expected.'; }
+  else { r.className='rounded-2xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700';
+    r.innerHTML=`Selisih: <b>${diff>0?'+':''}${rp(diff)}</b> · Akan diberitahu Owner.`; }
+}
+function shSubmit(){ closeModal('modal-shift'); toast('Shift ditutup ✓ · Variance recorded'); }
+
+// ────────────────────────────────────────────────
+//  Phase 3c — Customer receipt
+// ────────────────────────────────────────────────
+function openCustomerView(){ toast('Customer scan QR → halaman publik garindo.id/r/k1483 terbuka'); }
+function customerWA(){ toast('Buka WA · Calista siap bantu'); }
+function customerWAReply(){
+  $('wa-reply-final').classList.remove('hidden-x');
+  toast('Calista temukan nota berdasarkan nomor HP ✓');
+}
+
+// ────────────────────────────────────────────────
+//  Phase 3d — Transfer
+// ────────────────────────────────────────────────
+function trCheck(){
+  const qty=parseInt($('tr-qty').value,10)||0;
+  const pen=$('tr-penerima').value;
+  const foto=$('tr-foto').dataset.ok==='1';
+  $('tr-submit').disabled = !(qty>0 && pen && foto);
+}
+['tr-qty','tr-penerima'].forEach(id=>$(id).addEventListener('input',trCheck));
+function trFotoToggle(){
+  const el=$('tr-foto');
+  if(el.dataset.ok==='1') return;
+  el.textContent='✓ Foto pengeluaran ter-upload';
+  el.classList.add('border-emerald-400','bg-emerald-50');
+  el.dataset.ok='1';
+  trCheck();
+}
+function trSubmit(){ toast('Transfer initiated · menunggu konfirmasi penerima'); }
+
+let cfCtx=null;
+function openConfirmModal(id,name,sent){
+  cfCtx={id,name,sent};
+  $('cf-id').textContent=id;
+  $('cf-name').textContent=name;
+  $('cf-sent').textContent=sent;
+  $('cf-count').value=sent;
+  $('cf-foto').textContent='📷 Klik untuk simulasi upload';
+  $('cf-foto').classList.remove('border-emerald-400','bg-emerald-50');
+  delete $('cf-foto').dataset.ok;
+  cfCalc();
+  showModal('modal-confirm');
+}
+function cfCalc(){
+  const cnt=parseInt($('cf-count').value,10)||0;
+  const diff=cnt-cfCtx.sent;
+  const r=$('cf-result');
+  if(diff===0){ r.className='rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800'; r.innerHTML='✓ Cocok — transfer akan ditutup setelah submit.'; }
+  else { r.className='rounded-2xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700'; r.innerHTML=`Selisih <b>${diff>0?'+':''}${diff}</b> pcs · masuk "Hilang Transit" sampai Owner adjust.`; }
+}
+function cfSubmit(){ closeModal('modal-confirm'); toast('Transfer terima dikonfirmasi ✓'); }
+
+// ────────────────────────────────────────────────
+//  Phase 4 — period swap + drilldown
+// ────────────────────────────────────────────────
+const dataByPeriod={
+  '30':{label:'(30 hari)', list:[
+    ['−3','Andi · Panel Besi · <b>rusak</b>','Rp 1.8jt'],
+    ['−2','Citra · MCB Schneider · <b>hilang</b>','Rp 130k'],
+    ['−5','Andi · Kabel NYM · <b>sampel</b>','Rp 60k'],
+    ['−1','Budi · Panel Besi · <b>koreksi</b>','Rp 600k'],
+  ]},
+  '7':{label:'(7 hari)', list:[
+    ['−3','Andi · Panel Besi · <b>rusak</b>','Rp 1.8jt'],
+    ['−2','Citra · MCB Schneider · <b>hilang</b>','Rp 130k'],
+  ]},
+  'today':{label:'(hari ini)', list:[
+    ['−3','Andi · Panel Besi · <b>rusak</b>','Rp 1.8jt'],
+  ]},
+};
+document.querySelectorAll('#period-tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#period-tabs button').forEach(x=>{ x.className='pill chip-muted'; x.style.cssText='cursor:pointer'; });
+    b.className='pill';
+    b.style.cssText='background:#012749;color:#fff;cursor:pointer';
+    const d=dataByPeriod[b.dataset.period];
+    $('d-period-label').textContent=d.label;
+    $('d-adjust-list').innerHTML = d.list.map(([qty,desc,val])=>
+      `<li class="flex items-center gap-3"><span class="w-7 h-7 rounded-xl bg-rose-50 flex items-center justify-center text-rose-700 font-extrabold text-xs">${qty}</span>${desc}<b class="ml-auto">${val}</b></li>`
+    ).join('');
+  });
+});
+
+const drilldownData = {
+  'Andi':['Adjustment Panel · −3 · rusak · Rp 1.8jt','Override MCB · Rp 95k→80k','Adjustment Kabel · −5 · sampel','Refund KSR-1402 · Rp 250k','Adjustment Panel · −1 · hilang · Rp 600k','Override Panel · Rp 850k→780k (denied)'],
+  'Citra':['Adjustment MCB · −2 · hilang','Override MCB · Rp 95k→85k (approved)','Void KSR-1399'],
+  'Budi':['Tidak ada aktivitas mencurigakan'],
+  'Dini':['Tidak ada aktivitas mencurigakan'],
+};
+function openDrilldown(name){
+  $('dd-name').textContent=name; $('dd-name2').textContent=name;
+  $('dd-list').innerHTML = drilldownData[name].map(x=>`<li class="flex items-center gap-2"><span class="dot bg-amber-500"></span>${x}</li>`).join('');
+  showModal('modal-drilldown');
+}
+
+// ────────────────────────────────────────────────
+//  TOC scrollspy + view-as toggle
+// ────────────────────────────────────────────────
+document.querySelectorAll('#toc a').forEach(a=>{
+  a.addEventListener('click', ()=>{ $(a.dataset.target).scrollIntoView({behavior:'smooth', block:'start'}); });
+});
+const tocLinks = document.querySelectorAll('#toc a');
+const sections = ['phase-1','phase-2','phase-3a','phase-3b','phase-3d','phase-4'].map($);
+window.addEventListener('scroll', ()=>{
+  const y = window.scrollY+100;
+  let cur='phase-1';
+  sections.forEach(s=>{ if(s.offsetTop<=y) cur=s.id; });
+  tocLinks.forEach(a=>a.classList.toggle('active', a.dataset.target===cur));
+}, {passive:true});
+
+const roleK = $('role-karyawan'), roleO = $('role-owner');
+roleK.addEventListener('click', ()=>{ toast('View: Karyawan · approval buttons di Inbox akan disembunyikan (mock)'); roleK.style.cssText='background:#012749;color:#fff;cursor:pointer'; roleO.className='pill chip-muted'; roleO.style.cssText='cursor:pointer'; });
+roleO.addEventListener('click', ()=>{ toast('View: Owner · semua approval terlihat'); roleO.style.cssText='background:#012749;color:#fff;cursor:pointer'; roleK.className='pill chip-muted'; roleK.style.cssText='cursor:pointer'; });
+
+// Initial states
+updateApprovalCount();
+kasirRecheck();
+recalcOpname();
+</script>
+</body>
+</html>
