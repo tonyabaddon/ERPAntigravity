@@ -279,6 +279,8 @@ export interface DbCompanySettings {
   address: string;
   phone: string;
   email: string;
+  logo_url?: string | null;
+  npwp?: string | null;
   updated_at: string;
 }
 
@@ -333,8 +335,13 @@ export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-manage
 
 // ─── Kasir types ────────────────────────────────────────────
 
-export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir';
-export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris';
+export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir' | 'whatsapp';
+export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris' | 'edc';
+export type KasirPaymentSubtype = 'debit' | 'qris' | null;
+export type KasirPaymentType = 'FULL' | 'DP';
+export type KasirDpInputType = 'AMOUNT' | 'PERCENT' | null;
+export type KasirStatus = 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED';
+export type WarehouseLocation = 'atas' | 'bawah';
 export type KasirExpenseCategory =
   | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
 
@@ -346,6 +353,7 @@ export interface KasirItem {
   hpp_per_unit: number;
   subtotal: number;
   hpp_subtotal: number;
+  warehouse: WarehouseLocation;
 }
 
 export interface KasirTransaction {
@@ -357,6 +365,20 @@ export interface KasirTransaction {
   subtotal: number;
   hpp_total: number;
   payment_method?: KasirPaymentMethod | null;
+  payment_subtype?: KasirPaymentSubtype;
+  payment_type?: KasirPaymentType;
+  dp_amount?: number;
+  dp_input_type?: KasirDpInputType;
+  ongkir_amount?: number;
+  notes?: string | null;
+  total_amount?: number;
+  tokped_order_no?: string | null;
+  wa_phone?: string | null;
+  wa_chat_url?: string | null;
+  status?: KasirStatus;
+  lunas_at?: string | null;
+  lunas_payment_method?: KasirPaymentMethod | null;
+  lunas_payment_subtype?: KasirPaymentSubtype;
   customer_name?: string | null;
   customer_phone?: string | null;
   customer_company?: string | null;
@@ -386,6 +408,16 @@ export interface NewSaleTransaction {
   subtotal: number;
   hpp_total: number;
   payment_method: KasirPaymentMethod;
+  payment_subtype?: KasirPaymentSubtype;
+  payment_type: KasirPaymentType;
+  dp_amount: number;
+  dp_input_type?: KasirDpInputType;
+  ongkir_amount: number;
+  notes?: string;
+  total_amount: number;
+  tokped_order_no?: string;
+  wa_phone?: string;
+  wa_chat_url?: string;
   customer_name?: string;
   customer_phone?: string;
   customer_company?: string;

@@ -26,12 +26,14 @@ const CHANNEL_LABEL: Record<KasirChannel, string> = {
   walkin: '🏪 Walk-in',
   tokopedia: '🛍️ Tokopedia',
   grosir: '🏭 Grosir',
+  whatsapp: '💬 WhatsApp',
 };
 
 const PAYMENT_LABEL: Record<KasirPaymentMethod, string> = {
   cash: 'Tunai',
   transfer: 'Transfer',
   qris: 'QRIS',
+  edc: 'EDC',
 };
 
 const EXPENSE_CATEGORIES: KasirExpenseCategory[] = [
@@ -60,6 +62,7 @@ function ChannelPill({ channel }: { channel: KasirChannel }) {
     walkin: 'bg-blue-50 text-blue-700',
     tokopedia: 'bg-yellow-50 text-yellow-700',
     grosir: 'bg-violet-50 text-violet-700',
+    whatsapp: 'bg-green-50 text-green-700',
   };
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${styles[channel]}`}>
@@ -589,6 +592,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
       hpp_per_unit: stock.harga_modal ?? 0,
       subtotal: stock.price,
       hpp_subtotal: stock.harga_modal ?? 0,
+      warehouse,
     }]);
     setSearch('');
   }
@@ -646,6 +650,10 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
         subtotal,
         hpp_total: itemsWithFifo.reduce((s, i) => s + i.hpp_subtotal, 0),
         payment_method: paymentMethod,
+        payment_type: 'FULL',
+        dp_amount: 0,
+        ongkir_amount: 0,
+        total_amount: subtotal,
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,
         customer_company: customerCompany || undefined,
