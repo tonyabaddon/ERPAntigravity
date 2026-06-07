@@ -382,6 +382,7 @@ export interface KasirTransaction {
   customer_name?: string | null;
   customer_phone?: string | null;
   customer_company?: string | null;
+  delivery_address?: string | null;
   invoice_number?: string | null;
   expense_category?: KasirExpenseCategory | null;
   description?: string | null;
@@ -421,6 +422,7 @@ export interface NewSaleTransaction {
   customer_name?: string;
   customer_phone?: string;
   customer_company?: string;
+  delivery_address?: string;
   invoice_number: string;
 }
 

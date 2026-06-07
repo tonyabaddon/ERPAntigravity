@@ -580,6 +580,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
         <SalesInvoicePDF
           transaction={lunasInvoice}
           variant="lunas"
+          adminName={currentUser?.name}
           autoPrint
           onClose={() => setLunasInvoice(null)}
         />

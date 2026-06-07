@@ -19,11 +19,12 @@ export type InvoiceVariant = 'dp' | 'lunas';
 export interface SalesInvoicePDFProps {
   transaction: KasirTransaction;
   variant: InvoiceVariant;
+  adminName?: string;
   autoPrint?: boolean;
   onClose: () => void;
 }
 
-export default function SalesInvoicePDF({ transaction, variant, autoPrint, onClose }: SalesInvoicePDFProps) {
+export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, onClose }: SalesInvoicePDFProps) {
   const [company, setCompany] = useState<DbCompanySettings | null>(null);
   const [bank, setBank] = useState<DbBankConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,15 @@ export default function SalesInvoicePDF({ transaction, variant, autoPrint, onClo
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Override document.title for the duration the modal is open so the browser
+  // print header shows the invoice number (e.g. "Invoice GJP-0042") instead of
+  // the app's tab title ("Garindo Jaya Panel MSME ERP & Selling Bot").
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `Invoice ${transaction.invoice_number ?? ''}`.trim();
+    return () => { document.title = previousTitle; };
+  }, [transaction.invoice_number]);
 
   useEffect(() => {
     if (autoPrint && !loading) {
@@ -89,7 +99,7 @@ export default function SalesInvoicePDF({ transaction, variant, autoPrint, onClo
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
           ) : (
-            <InvoiceBody transaction={transaction} variant={variant} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} formatRp={formatRp} formatDateTime={formatDateTime} />
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} formatRp={formatRp} formatDateTime={formatDateTime} />
           )}
         </div>
       </div>
@@ -99,7 +109,7 @@ export default function SalesInvoicePDF({ transaction, variant, autoPrint, onClo
 
 // Body extracted to its own function for clarity (still in the same file)
 function InvoiceBody({
-  transaction: t, variant, company, bank, channelLabel, paymentLabel, formatRp, formatDateTime,
+  transaction: t, variant, adminName, company, bank, channelLabel, paymentLabel, formatRp, formatDateTime,
 }: any) {
   const subtotal = t.subtotal;
   const ongkir = t.ongkir_amount ?? 0;
@@ -154,10 +164,22 @@ function InvoiceBody({
           <div><strong>{t.customer_name ?? '—'}</strong></div>
           {t.customer_company && <div>{t.customer_company}</div>}
           <div>{t.customer_phone ?? '—'}</div>
+          {t.delivery_address && (
+            <div className="mt-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">📍 Kirim ke: </span>
+              <span className="whitespace-pre-wrap">{t.delivery_address}</span>
+            </div>
+          )}
         </div>
         <div>
           <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
           <div><strong>{paymentLabel}</strong></div>
+          {adminName && (
+            <div className="mt-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">Admin: </span>
+              <span>{adminName}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -227,8 +249,22 @@ function InvoiceBody({
 
       {/* Footer signatures */}
       <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-dashed border-slate-400 text-[11px]">
-        <div className="text-center"><div className="border-b border-slate-900 h-8 mx-4 mb-1"></div><div className="font-bold text-[10px]">Penerima Barang</div></div>
-        <div className="text-center"><div className="border-b border-slate-900 h-8 mx-4 mb-1"></div><div className="font-bold text-[10px]">Hormat Kami</div></div>
+        <div className="text-center">
+          <div className="border-b border-slate-900 h-10 mx-4 mb-1"></div>
+          <div className="font-bold text-[10px]">Penerima Barang</div>
+          <div className="text-[9px] text-slate-500 italic mt-0.5">(tanda tangan + nama jelas)</div>
+        </div>
+        <div className="text-center">
+          <div className="relative h-10 mx-4 mb-1 border-b border-slate-900">
+            {adminName && (
+              <div className="absolute inset-0 flex items-end justify-center pb-0.5 text-[11px] font-sans">
+                {adminName}
+              </div>
+            )}
+          </div>
+          <div className="font-bold text-[10px]">Hormat Kami</div>
+          <div className="text-[9px] text-slate-500 italic mt-0.5">{company?.company_name ?? 'Garindo Jaya Panel'}</div>
+        </div>
       </div>
     </div>
   );

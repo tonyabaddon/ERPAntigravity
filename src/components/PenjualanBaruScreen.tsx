@@ -56,6 +56,7 @@ export default function PenjualanBaruScreen({
   // Extras
   const [ongkirOn, setOngkirOn] = useState(false);
   const [ongkirAmount, setOngkirAmount] = useState(0);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const [notes, setNotes] = useState('');
 
   // Master data
@@ -75,10 +76,13 @@ export default function PenjualanBaruScreen({
       .finally(() => setLoading(false));
   }, []);
 
-  // Totals
+  // Totals — effectiveDp converts percent input to Rp; sisaPelunasan uses it
   const subtotal = cart.reduce((s, i) => s + i.subtotal, 0);
   const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
-  const sisaPelunasan = paymentType === 'DP' ? totalInvoice - dpAmount : 0;
+  const effectiveDp = paymentType === 'DP'
+    ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
+    : 0;
+  const sisaPelunasan = paymentType === 'DP' ? Math.max(0, totalInvoice - effectiveDp) : 0;
 
   // Cart handlers
   function addItem(stock: SupabaseStockItem) {
@@ -128,10 +132,9 @@ export default function PenjualanBaruScreen({
     if (paymentMethod === 'edc' && !paymentSubtype) {
       showToast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning'); return;
     }
-    // Compute effective DP amount
-    const effectiveDp = paymentType === 'DP'
-      ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
-      : 0;
+    if (paymentType === 'DP' && dpInputType === 'PERCENT' && (dpAmount <= 0 || dpAmount > 100)) {
+      showToast('Persen DP harus antara 1 dan 100.', 'warning'); return;
+    }
     if (paymentType === 'DP' && (effectiveDp <= 0 || effectiveDp >= totalInvoice)) {
       showToast('Jumlah DP harus > 0 dan < Total Invoice.', 'warning'); return;
     }
@@ -182,6 +185,7 @@ export default function PenjualanBaruScreen({
         customer_name: customerName,
         customer_phone: customerPhone,
         customer_company: customerCompany || undefined,
+        delivery_address: deliveryAddress.trim() || undefined,
         invoice_number: invoiceNumber,
       };
 
@@ -311,10 +315,13 @@ export default function PenjualanBaruScreen({
                     ongkirAmount={ongkirAmount}
                     onOngkirToggle={setOngkirOn}
                     onOngkirAmountChange={setOngkirAmount}
+                    deliveryAddress={deliveryAddress}
+                    onDeliveryAddressChange={setDeliveryAddress}
                     notes={notes}
                     onNotesChange={setNotes}
                     subtotal={subtotal}
                     totalInvoice={totalInvoice}
+                    effectiveDp={effectiveDp}
                     sisaPelunasan={sisaPelunasan}
                     saving={saving}
                     onSave={handleSave}
@@ -330,6 +337,7 @@ export default function PenjualanBaruScreen({
         <SalesInvoicePDF
           transaction={savedTx}
           variant={savedTx.payment_type === 'DP' ? 'dp' : 'lunas'}
+          adminName={currentUser?.name}
           autoPrint
           onClose={() => { setSavedTx(null); onSaved(savedTx.id); }}
         />

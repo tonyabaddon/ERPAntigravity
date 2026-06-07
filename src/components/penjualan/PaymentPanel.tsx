@@ -29,13 +29,18 @@ export interface PaymentPanelProps {
   onOngkirToggle: (on: boolean) => void;
   onOngkirAmountChange: (n: number) => void;
 
+  // delivery address (optional, used when goods are shipped)
+  deliveryAddress: string;
+  onDeliveryAddressChange: (v: string) => void;
+
   // notes
   notes: string;
   onNotesChange: (v: string) => void;
 
-  // computed totals
+  // computed totals (sisaPelunasan and effectiveDp computed from raw dpAmount + dpInputType)
   subtotal: number;
   totalInvoice: number;
+  effectiveDp: number;
   sisaPelunasan: number;
 
   // actions
@@ -50,8 +55,9 @@ export default function PaymentPanel(props: PaymentPanelProps) {
     paymentType, onPaymentTypeChange, dpAmount, dpInputType,
     onDpAmountChange, onDpInputTypeChange,
     ongkirOn, ongkirAmount, onOngkirToggle, onOngkirAmountChange,
+    deliveryAddress, onDeliveryAddressChange,
     notes, onNotesChange,
-    subtotal, totalInvoice, sisaPelunasan,
+    subtotal, totalInvoice, effectiveDp, sisaPelunasan,
     saving, onSave, onCancel,
   } = props;
 
@@ -84,23 +90,34 @@ export default function PaymentPanel(props: PaymentPanelProps) {
           ))}
         </div>
         {paymentType === 'DP' && (
-          <div className="grid grid-cols-2 gap-2 mt-2">
-            <input
-              type="number"
-              value={dpAmount || ''}
-              onChange={e => onDpAmountChange(Number(e.target.value || 0))}
-              placeholder="Jumlah DP"
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px]"
-            />
-            <select
-              value={dpInputType ?? 'AMOUNT'}
-              onChange={e => onDpInputTypeChange(e.target.value as KasirDpInputType)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px]"
-            >
-              <option value="AMOUNT">Nominal (Rp)</option>
-              <option value="PERCENT">Persen (%)</option>
-            </select>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <input
+                type="number"
+                value={dpAmount || ''}
+                onChange={e => onDpAmountChange(Number(e.target.value || 0))}
+                placeholder={dpInputType === 'PERCENT' ? 'Persen DP (mis. 30)' : 'Jumlah DP (Rp)'}
+                min={0}
+                max={dpInputType === 'PERCENT' ? 100 : undefined}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px]"
+              />
+              <select
+                value={dpInputType ?? 'AMOUNT'}
+                onChange={e => onDpInputTypeChange(e.target.value as KasirDpInputType)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px]"
+              >
+                <option value="AMOUNT">Nominal (Rp)</option>
+                <option value="PERCENT">Persen (%)</option>
+              </select>
+            </div>
+            {dpInputType === 'PERCENT' && dpAmount > 0 && (
+              <p className="text-[11px] mt-1 pl-1 font-semibold text-emerald-700">
+                💡 Customer bayar DP: <strong>{formatRp(effectiveDp)}</strong>
+                {dpAmount > 0 && dpAmount <= 100 && ` (${dpAmount}% dari ${formatRp(totalInvoice)})`}
+                {dpAmount > 100 && <span className="text-rose-600"> · ⚠️ Persen tidak boleh &gt; 100</span>}
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -134,6 +151,22 @@ export default function PaymentPanel(props: PaymentPanelProps) {
         )}
       </div>
 
+      {/* Delivery address */}
+      <div>
+        <div className="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5">
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-extrabold text-violet-700 text-[13px] flex items-center gap-1">📍 Alamat Pengiriman</span>
+            <span className="text-[10px] text-violet-700 font-extrabold uppercase tracking-widest">opsional · tampil di invoice</span>
+          </div>
+          <textarea
+            value={deliveryAddress}
+            onChange={e => onDeliveryAddressChange(e.target.value)}
+            placeholder="Isi jika barang dikirim. Mis. Jl. Merdeka No. 12, Jakarta Utara."
+            className="w-full min-h-[48px] bg-white border border-violet-200 rounded-lg px-3 py-2 text-[13px] text-violet-900 resize-y outline-none focus:border-violet-500"
+          />
+        </div>
+      </div>
+
       {/* Notes */}
       <div>
         <div className="bg-sky-50 border border-sky-200 rounded-xl px-3 py-2.5">
@@ -144,7 +177,7 @@ export default function PaymentPanel(props: PaymentPanelProps) {
           <textarea
             value={notes}
             onChange={e => onNotesChange(e.target.value)}
-            placeholder="Mis. Garansi 1 bulan. Antar ke alamat..."
+            placeholder="Mis. Garansi 1 bulan. Bawakan kunci pas."
             className="w-full min-h-[56px] bg-white border border-sky-200 rounded-lg px-3 py-2 text-[13px] text-sky-900 resize-y outline-none focus:border-sky-500"
           />
         </div>
@@ -163,7 +196,7 @@ export default function PaymentPanel(props: PaymentPanelProps) {
         {paymentType === 'DP' && (
           <>
             <div className="flex justify-between py-1 text-[13px] text-emerald-700 font-bold">
-              <span>↳ DP diterima</span><span>{formatRp(dpAmount)}</span>
+              <span>↳ DP diterima</span><span>{formatRp(effectiveDp)}</span>
             </div>
             <div className="flex justify-between py-1 text-[13px] text-amber-700 font-extrabold">
               <span>↳ Sisa pelunasan</span><span>{formatRp(sisaPelunasan)}</span>

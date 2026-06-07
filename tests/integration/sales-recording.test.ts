@@ -172,6 +172,25 @@ describe('Save flow — kasir_transactions inserts', () => {
     expect(Number(data!.total_amount)).toBe(75000);
   });
 
+  test('delivery_address persists when shipping', async () => {
+    const payload = {
+      ...basePayload({ suffix: 'delivery' }),
+      delivery_address: 'Jl. Merdeka No. 12, Jakarta Utara 14140',
+    };
+    const { data, error } = await supabase.from('kasir_transactions').insert(payload).select().single();
+
+    expect(error).toBeNull();
+    expect(data!.delivery_address).toBe('Jl. Merdeka No. 12, Jakarta Utara 14140');
+  });
+
+  test('delivery_address null when not shipping', async () => {
+    const payload = basePayload({ suffix: 'no-delivery' });
+    const { data, error } = await supabase.from('kasir_transactions').insert(payload).select().single();
+
+    expect(error).toBeNull();
+    expect(data!.delivery_address).toBeNull();
+  });
+
   test('per-row warehouse persists in items JSON', async () => {
     const payload = {
       ...basePayload({ suffix: 'wh-mixed' }),

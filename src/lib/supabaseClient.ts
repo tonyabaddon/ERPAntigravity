@@ -981,6 +981,7 @@ export const kasirService = {
         customer_name: tx.customer_name ?? null,
         customer_phone: tx.customer_phone ?? null,
         customer_company: tx.customer_company ?? null,
+        delivery_address: tx.delivery_address ?? null,
         invoice_number: tx.invoice_number,
       })
       .select()
