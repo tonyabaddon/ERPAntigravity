@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Search, ChevronDown, Pencil, Check, X } from 'lucide-react';
-import { ActivePage, DbLead } from '../types';
-import { leadsService, customersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { ActivePage, DbLead, DbOrder } from '../types';
+import { leadsService, customersService, orderService, salesEntriesService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 
 interface PipelineScreenProps {
   onOpenCustomer: (customerId: string) => void;
@@ -11,6 +12,10 @@ interface PipelineScreenProps {
 
 type FilterTab = 'all' | 'active' | 'escalated' | 'ordered' | 'dropped';
 
+type PipelineEntry =
+  | { kind: 'lead';         id: string; data: DbLead;  customer_name: string; updated_at: string; status: string }
+  | { kind: 'walkin_order'; id: string; data: DbOrder; customer_name: string; updated_at: string; status: string };
+
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   NEW:         { label: 'Baru',      className: 'bg-gray-100 text-gray-600' },
   IN_PROGRESS: { label: 'Proses',    className: 'bg-blue-100 text-blue-700' },
@@ -18,6 +23,29 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   ORDERED:     { label: 'Selesai',   className: 'bg-emerald-100 text-emerald-700' },
   DROPPED:     { label: 'Gugur',     className: 'bg-red-100 text-red-500' },
 };
+
+function mergeToEntries(leads: DbLead[], walkin: DbOrder[]): PipelineEntry[] {
+  return [
+    ...leads.map<PipelineEntry>(l => ({
+      kind: 'lead',
+      id:   `lead:${l.id}`,
+      data: l,
+      customer_name: l.customers?.name ?? l.wa_number,
+      updated_at: l.updated_at,
+      status: l.status,
+    })),
+    ...walkin.map<PipelineEntry>(o => ({
+      kind: 'walkin_order',
+      id:   `wo:${o.id}`,
+      data: o,
+      customer_name: o.customer_name,
+      updated_at: o.updated_at ?? o.created_at,
+      // Walk-in orders enter Pipeline as IN_PROGRESS so they slot into the
+      // existing pipeline columns (NEW/IN_PROGRESS/ESCALATED/ORDERED/DROPPED).
+      status: 'IN_PROGRESS',
+    })),
+  ].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+}
 
 function relativeTime(iso: string): string {
   const diff = (new Date(iso).getTime() - Date.now()) / 1000;
@@ -29,21 +57,30 @@ function relativeTime(iso: string): string {
   return rtf.format(Math.round(diff / 86400), 'day');
 }
 
-function filterLeads(leads: DbLead[], tab: FilterTab, search: string): DbLead[] {
-  let result = leads;
+function filterEntries(entries: PipelineEntry[], tab: FilterTab, search: string): PipelineEntry[] {
+  let result = entries;
   switch (tab) {
-    case 'active':    result = leads.filter(l => l.status === 'NEW' || l.status === 'IN_PROGRESS'); break;
-    case 'escalated': result = leads.filter(l => l.status === 'ESCALATED'); break;
-    case 'ordered':   result = leads.filter(l => l.status === 'ORDERED'); break;
-    case 'dropped':   result = leads.filter(l => l.status === 'DROPPED'); break;
+    case 'active':    result = entries.filter(e => e.status === 'NEW' || e.status === 'IN_PROGRESS'); break;
+    case 'escalated': result = entries.filter(e => e.status === 'ESCALATED'); break;
+    case 'ordered':   result = entries.filter(e => e.status === 'ORDERED'); break;
+    case 'dropped':   result = entries.filter(e => e.status === 'DROPPED'); break;
   }
   if (search.trim()) {
     const q = search.toLowerCase();
-    result = result.filter(l =>
-      (l.customers?.name ?? '').toLowerCase().includes(q) ||
-      l.wa_number.includes(q) ||
-      (l.customers?.company ?? '').toLowerCase().includes(q)
-    );
+    result = result.filter(e => {
+      if (e.kind === 'lead') {
+        const l = e.data;
+        return (l.customers?.name ?? '').toLowerCase().includes(q) ||
+          l.wa_number.includes(q) ||
+          (l.customers?.company ?? '').toLowerCase().includes(q);
+      } else {
+        const o = e.data;
+        return (o.customer_name ?? '').toLowerCase().includes(q) ||
+          (o.customer_phone ?? '').includes(q) ||
+          (o.customer_company ?? '').toLowerCase().includes(q) ||
+          (o.gjp_order_id ?? '').toLowerCase().includes(q);
+      }
+    });
   }
   return result;
 }
@@ -83,7 +120,7 @@ function PipelineItemsTable({ order }: { order: NonNullable<DbLead['orders']>[0]
 }
 
 export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }: PipelineScreenProps) {
-  const [leads, setLeads] = useState<DbLead[]>([]);
+  const [entries, setEntries] = useState<PipelineEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [search, setSearch] = useState('');
@@ -95,27 +132,68 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
-    leadsService.fetchAll()
-      .then(setLeads)
-      .catch(() => showToast('Gagal memuat data pipeline.', 'warning'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    (async () => {
+      try {
+        const [leadsRes, walkinRes] = await Promise.all([
+          leadsService.fetchAll(),
+          salesEntriesService.fetchOpenWalkinDrafts(),
+        ]);
+        if (!cancelled) setEntries(mergeToEntries(leadsRes, walkinRes));
+      } catch {
+        if (!cancelled) showToast('Gagal memuat data pipeline.', 'warning');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   async function handleSaveCustomer(customerId: string) {
     setSaving(true);
     try {
       await customersService.updateNameCompany(customerId, editName.trim(), editCompany.trim());
-      setLeads(prev => prev.map(l =>
-        l.customers?.id === customerId
-          ? { ...l, customers: { ...l.customers!, name: editName.trim(), company: editCompany.trim() } }
-          : l
-      ));
+      setEntries(prev => prev.map(e => {
+        if (e.kind !== 'lead') return e;
+        if (e.data.customers?.id !== customerId) return e;
+        return {
+          ...e,
+          customer_name: editName.trim() || e.customer_name,
+          data: { ...e.data, customers: { ...e.data.customers!, name: editName.trim(), company: editCompany.trim() } },
+        };
+      }));
       setEditingCustomerId(null);
       showToast('Profil pelanggan diperbarui.', 'success');
     } catch {
       showToast('Gagal menyimpan perubahan.', 'warning');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleMarkPaid(order: DbOrder) {
+    const method = window.prompt('Metode pembayaran: cash / transfer / qris', 'cash');
+    if (!method) return;
+    if (!['cash','transfer','qris'].includes(method)) {
+      showToast('Metode tidak valid.', 'warning');
+      return;
+    }
+    const invoice = window.prompt(
+      'Nomor invoice',
+      order.gjp_order_id ?? `INV-${order.id.slice(0,8)}`
+    );
+    if (!invoice) return;
+    try {
+      await orderService.markWalkinPaid(order.id, method as 'cash'|'transfer'|'qris', invoice);
+      showToast('Pesanan ditandai lunas.', 'success');
+      const [leadsRes, walkinRes] = await Promise.all([
+        leadsService.fetchAll(),
+        salesEntriesService.fetchOpenWalkinDrafts(),
+      ]);
+      setEntries(mergeToEntries(leadsRes, walkinRes));
+    } catch (e) {
+      console.error(e);
+      showToast('Gagal menandai lunas.', 'warning');
     }
   }
 
@@ -134,14 +212,14 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
   }
 
   const tabs: { id: FilterTab; label: string }[] = [
-    { id: 'all',       label: `Semua (${leads.length})` },
-    { id: 'active',    label: `Aktif (${leads.filter(l => l.status === 'NEW' || l.status === 'IN_PROGRESS').length})` },
-    { id: 'escalated', label: `Eskalasi (${leads.filter(l => l.status === 'ESCALATED').length})` },
-    { id: 'ordered',   label: `Selesai (${leads.filter(l => l.status === 'ORDERED').length})` },
-    { id: 'dropped',   label: `Gugur (${leads.filter(l => l.status === 'DROPPED').length})` },
+    { id: 'all',       label: `Semua (${entries.length})` },
+    { id: 'active',    label: `Aktif (${entries.filter(e => e.status === 'NEW' || e.status === 'IN_PROGRESS').length})` },
+    { id: 'escalated', label: `Eskalasi (${entries.filter(e => e.status === 'ESCALATED').length})` },
+    { id: 'ordered',   label: `Selesai (${entries.filter(e => e.status === 'ORDERED').length})` },
+    { id: 'dropped',   label: `Gugur (${entries.filter(e => e.status === 'DROPPED').length})` },
   ];
 
-  const visible = filterLeads(leads, activeTab, search);
+  const visible = filterEntries(entries, activeTab, search);
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -183,7 +261,7 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat pipeline...</div>
       ) : visible.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-500">
-          {leads.length === 0
+          {entries.length === 0
             ? 'Belum ada lead. Lead dibuat otomatis saat percakapan WhatsApp baru masuk.'
             : search.trim()
             ? 'Tidak ada lead yang cocok dengan pencarian.'
@@ -191,18 +269,84 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {visible.map(lead => {
-            const badge = STATUS_BADGE[lead.status] ?? STATUS_BADGE.NEW;
+          {visible.map(entry => {
+            const badge = STATUS_BADGE[entry.status] ?? STATUS_BADGE.NEW;
+            const isExpanded = expandedId === entry.id;
+
+            if (entry.kind === 'walkin_order') {
+              const order = entry.data;
+              return (
+                <div key={entry.id} className="border-b border-gray-100 last:border-0">
+                  <div
+                    className={`flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
+                    onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="font-semibold text-sm text-gray-800">
+                          {order.customer_name || '(Tanpa Nama)'}
+                        </span>
+                        {order.customer_company && (
+                          <span className="text-xs text-gray-400 truncate">· {order.customer_company}</span>
+                        )}
+                      </div>
+                      <p className="text-xs font-mono text-gray-400">
+                        {order.gjp_order_id ?? order.id.slice(0, 8)}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${CHANNEL_BADGE_CLASS.walkin}`}>
+                      {CHANNEL_LABEL.walkin}
+                    </span>
+                    <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${badge.className}`}>
+                      {badge.label}
+                    </span>
+                    <span className="shrink-0 text-xs text-gray-400 hidden sm:block">{relativeTime(entry.updated_at)}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </div>
+
+                  {isExpanded && (
+                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                      <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
+                          <div>
+                            <div className="font-semibold text-gray-700">{order.customer_name || '(Tanpa Nama)'}</div>
+                            {order.customer_company && <div className="text-gray-400 text-[10px]">{order.customer_company}</div>}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. Telp</div>
+                          <div className="font-mono font-semibold text-gray-700">{order.customer_phone || '-'}</div>
+                        </div>
+                        <div>
+                          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div>
+                          <div className="font-semibold text-gray-700">Rp {order.total.toLocaleString('id-ID')}</div>
+                        </div>
+                      </div>
+                      <PipelineItemsTable order={order} />
+                      <button
+                        onClick={() => handleMarkPaid(order)}
+                        className="w-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                      >
+                        Tandai Lunas
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // entry.kind === 'lead'
+            const lead = entry.data;
             const customer = lead.customers;
-            const isExpanded = expandedId === lead.id;
             const linkedOrder = lead.orders?.[0] ?? null;
 
             return (
-              <div key={lead.id} className="border-b border-gray-100 last:border-0">
+              <div key={entry.id} className="border-b border-gray-100 last:border-0">
                 {/* Collapsed row */}
                 <div
                   className={`flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
-                  onClick={() => setExpandedId(isExpanded ? null : lead.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -221,6 +365,9 @@ export default function PipelineScreen({ onOpenCustomer, onNavigate, showToast }
                   <div className="hidden md:block shrink-0">
                     <p className="text-xs font-mono text-gray-400">{lead.id.slice(0, 12)}...</p>
                   </div>
+                  <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${CHANNEL_BADGE_CLASS.whatsapp}`}>
+                    {CHANNEL_LABEL.whatsapp}
+                  </span>
                   <span className={`shrink-0 text-xs font-bold px-2.5 py-1 rounded-full ${badge.className}`}>
                     {badge.label}
                   </span>
