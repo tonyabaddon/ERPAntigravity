@@ -160,6 +160,7 @@ export interface DbOrder {
   id: string;
   conversation_id: string;
   customer_id?: string;
+  sales_channel: 'whatsapp' | 'walkin';
   customer_name: string;
   customer_company: string;
   customer_address: string;
@@ -258,6 +259,7 @@ export interface DbCustomerWithStats extends DbCustomer {
 export interface DbCustomerProfile extends DbCustomer {
   orders: DbOrder[];
   leads: DbLead[];
+  kasir_transactions: KasirTransaction[];
 }
 
 export interface DbNotificationConfig {
@@ -334,6 +336,7 @@ export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-manage
 // ─── Kasir types ────────────────────────────────────────────
 
 export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir';
+export type SalesChannel = 'whatsapp' | 'walkin' | 'tokopedia' | 'grosir';
 export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris';
 export type KasirExpenseCategory =
   | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
@@ -360,6 +363,7 @@ export interface KasirTransaction {
   customer_name?: string | null;
   customer_phone?: string | null;
   customer_company?: string | null;
+  customer_id?: string | null;
   invoice_number?: string | null;
   expense_category?: KasirExpenseCategory | null;
   description?: string | null;
@@ -389,6 +393,7 @@ export interface NewSaleTransaction {
   customer_name?: string;
   customer_phone?: string;
   customer_company?: string;
+  customer_id?: string;
   invoice_number: string;
 }
 
@@ -397,4 +402,20 @@ export interface NewExpense {
   expense_category: KasirExpenseCategory;
   description: string;
   subtotal: number;
+}
+
+export interface SalesEntry {
+  source: 'order' | 'kasir';
+  id: string;
+  display_id: string;
+  channel: SalesChannel;
+  customer_id: string | null;
+  customer_name: string;
+  customer_phone: string | null;
+  customer_company: string | null;
+  items: Array<{ name: string; qty: number; sku?: string }>;
+  total: number;
+  status: string;
+  created_at: string;
+  walkin_order_id: string | null;
 }
