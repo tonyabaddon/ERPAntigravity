@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import {
   KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType,
-  KasirDpInputType, KasirItem, WarehouseLocation, PermissionSet,
+  KasirDpInputType, KasirItem, WarehouseLocation, PermissionSet, KasirTransaction,
 } from '../types';
 import type { DbCustomerWithStats } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
@@ -13,6 +13,7 @@ import ItemSearchPanel from './penjualan/ItemSearchPanel';
 import CartRows from './penjualan/CartRows';
 import CustomerPanel from './penjualan/CustomerPanel';
 import PaymentPanel from './penjualan/PaymentPanel';
+import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
 
 let _itemSeq = 0;
 
@@ -61,6 +62,9 @@ export default function PenjualanBaruScreen({
   const [customers, setCustomers] = useState<DbCustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Invoice modal after save
+  const [savedTx, setSavedTx] = useState<KasirTransaction | null>(null);
 
   // Load master data once
   useEffect(() => {
@@ -171,7 +175,7 @@ export default function PenjualanBaruScreen({
         catch { showToast(`Gagal kurangi stok ${item.name}.`, 'warning'); }
       }
 
-      onSaved(saved.id);
+      setSavedTx(saved);
     } catch (err: any) {
       showToast(`Gagal menyimpan: ${err.message ?? 'unknown'}`, 'warning');
     } finally {
@@ -295,6 +299,14 @@ export default function PenjualanBaruScreen({
           </>
         )}
       </div>
+      {savedTx && (
+        <SalesInvoicePDF
+          transaction={savedTx}
+          variant={savedTx.payment_type === 'DP' ? 'dp' : 'lunas'}
+          autoPrint
+          onClose={() => { setSavedTx(null); onSaved(savedTx.id); }}
+        />
+      )}
     </div>
   );
 }
