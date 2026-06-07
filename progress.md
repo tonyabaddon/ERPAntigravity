@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Stock Fraud Phase 1, Task 1: Immutable `stock_movements` ledger schema — DONE
+- **Goal**: Foundation for fraud-prevention forensics — append-only ledger table that records every stock change. No RPC wraps yet (Tasks 4-7), no UI (Phase 4), no helper fn (Task 3); just the schema + immutability guards.
+- **Migration `supabase/migrations/20260607000001_stock_movements.sql`** applied to Supabase project `ekhhojaezdfjfwuxyjkl` via `psql` (Supabase CLI requires Docker which isn't running locally). All 11 statements `CREATE TYPE / TABLE / INDEX×4 / REVOKE / GRANT / CREATE FUNCTION / CREATE TRIGGER×2` returned success. Verified post-apply via `pg_trigger` + `pg_indexes` + `pg_enum` lookups: 2 triggers, 5 indexes (incl. PK), 10 enum labels — all present.
+- **Immutability guards**: `REVOKE UPDATE, DELETE ON stock_movements FROM PUBLIC, anon, authenticated` (belt) + `BEFORE UPDATE/DELETE` triggers that always `RAISE EXCEPTION` (suspenders, fires even when `service_role` bypasses RLS). Foundational Decision #1 from the spec.
+- **Schema integrity**: `CHECK (qty_before + qty_delta = qty_after)` enforces ledger math at the row level — Foundational Decision #3. SKU FK to `stocks(sku)`, self-FK on `related_movement_id` for compensating-correction chains (Foundational Decision #2).
+- **Test infra created (new)**: `backend-go/internal/db/testhelpers.go` provides `NewTestClient(t)` that walks up to find `.env`, skips if `SUPABASE_DB_CONNECTION` unset (no noisy fail on dev workstations without DB access). Plus `NewClientWithoutListener` in `client.go` so tests skip the LISTEN/NOTIFY plumbing.
+- **TDD discipline confirmed**: RED first (`stock_movements table missing: sql: no rows in result set`) → migration applied → GREEN (`--- PASS: TestStockMovements_TableExists (0.87s)`). Full backend suite (`go test ./...`) green — no regressions.
+- **Commit**: `feat(stocks): add immutable stock_movements ledger (Phase 1)` — files: migration + test + testhelpers + client.go (added `NewClientWithoutListener`).
+- **Next**: Task 2 (immutability tests) and Task 3 (`_log_stock_movement` helper RPC).
+
 ## 2026-06-07 — Stock Fraud Prevention: redundancy patches applied to spec + Phase 2/4 plans — DONE
 - **Konteks**: setelah audit codebase, user (`tonywei@`) flagged 3 redundancy antara plan baru vs feature existing. Saya tidak ulang bangun apa yang sudah ada. Spec + 2 plan files di-patch surgical.
 - **Patch 1 — Owner WA destination → reuse `wa_recipients`** (Phase 4 plan):
