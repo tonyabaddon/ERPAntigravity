@@ -743,6 +743,43 @@ export const companySettingsService = {
       .upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
     if (error) throw error;
   },
+
+  async uploadLogo(file: File): Promise<string> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = `logo_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from('branding')
+      .upload(path, file, { upsert: true, cacheControl: '3600' });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from('branding').getPublicUrl(path);
+    const url = pub.publicUrl;
+    const { error: updErr } = await supabase
+      .from('company_settings')
+      .update({ logo_url: url, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (updErr) throw updErr;
+    return url;
+  },
+
+  async clearLogo(): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data: settings, error: fetchErr } = await supabase
+      .from('company_settings')
+      .select('id, logo_url')
+      .eq('id', 1)
+      .maybeSingle();
+    if (fetchErr) throw fetchErr;
+    if (!settings?.logo_url) return;
+    const filename = settings.logo_url.split('/').pop();
+    if (filename) {
+      await supabase.storage.from('branding').remove([filename]);
+    }
+    await supabase
+      .from('company_settings')
+      .update({ logo_url: null })
+      .eq('id', 1);
+  },
 };
 
 export const adminUsersService = {
