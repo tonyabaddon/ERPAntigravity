@@ -712,3 +712,184 @@ func TestSubmitOpname_HappyPath(t *testing.T) {
 		t.Fatalf("variance_total_value = %v, want -2000", varianceTotal)
 	}
 }
+
+// TestCommitOpname_WritesOneMovementPerVariance is the Task 8 happy path:
+// after a full opname flow (start → record counts → witness ack → submit →
+// Owner approve via _transition_approval), commit_opname must:
+//   - write ONE stock_movements row per (sku, warehouse) with variance != 0
+//     using source='opname_variance' via Phase 1's _log_stock_movement helper
+//   - UPDATE stocks.stock_<warehouse> by the SIGNED variance (qty_delta)
+//   - flip session.status to 'committed' and stamp committed_at
+//
+// The bawah count matches the snapshot exactly (variance=0) so no ledger row
+// is written for it — only the varianced atas row produces a movement. This
+// is the one-row-per-variance invariant: zero-variance counts are filtered.
+func TestCommitOpname_WritesOneMovementPerVariance(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+	db.EnsureSKUStock(t, client, "TEST-IMM", "bawah", 5)
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET harga_modal=1000 WHERE sku='TEST-IMM'`); err != nil {
+		t.Fatalf("set harga_modal: %v", err)
+	}
+
+	var sid int64
+	if err := client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid); err != nil {
+		t.Fatalf("start_opname_session: %v", err)
+	}
+
+	// atas: variance = 18 - 20 = -2 (shortage)
+	if _, err := client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid); err != nil {
+		t.Fatalf("record atas: %v", err)
+	}
+	// bawah: variance = 5 - 5 = 0 (matches snapshot — should produce NO ledger row)
+	if _, err := client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'bawah', 5,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid); err != nil {
+		t.Fatalf("record bawah: %v", err)
+	}
+
+	if _, err := client.DB.Exec(
+		`SELECT public.witness_acknowledge_opname($1,
+		   '00000000-0000-0000-0000-000000000002'::uuid)`, sid); err != nil {
+		t.Fatalf("witness_acknowledge_opname: %v", err)
+	}
+
+	var aid int64
+	if err := client.DB.QueryRow(
+		`SELECT public.submit_opname_for_owner($1,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid).Scan(&aid); err != nil {
+		t.Fatalf("submit_opname_for_owner: %v", err)
+	}
+
+	// Simulate Owner approval via the canonical _transition_approval helper.
+	if _, err := client.DB.Exec(
+		`SELECT public._transition_approval($1, 'approved'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099'::uuid, 'owner_pin')`, aid); err != nil {
+		t.Fatalf("transition approval: %v", err)
+	}
+
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+	if _, err := client.DB.Exec(
+		`SELECT public.commit_opname($1)`, aid); err != nil {
+		t.Fatalf("commit_opname: %v", err)
+	}
+
+	// Exactly ONE new ledger row (only atas had a variance; bawah was a match).
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-before != 1 {
+		t.Fatalf("expected 1 new ledger row, got %d", got-before)
+	}
+
+	// Stocks updated by signed variance: atas 20 + (-2) = 18, bawah unchanged.
+	var atas, bawah int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas, stock_bawah FROM public.stocks WHERE sku='TEST-IMM'`).
+		Scan(&atas, &bawah)
+	if atas != 18 {
+		t.Fatalf("stock_atas = %d, want 18", atas)
+	}
+	if bawah != 5 {
+		t.Fatalf("stock_bawah = %d, want 5", bawah)
+	}
+
+	// The ledger row carries source='opname_variance' and qty_delta=-2 (signed).
+	var source string
+	var qtyDelta int
+	if err := client.DB.QueryRow(
+		`SELECT source::text, qty_delta FROM public.stock_movements
+		   WHERE sku='TEST-IMM' AND source='opname_variance'
+		   ORDER BY id DESC LIMIT 1`).Scan(&source, &qtyDelta); err != nil {
+		t.Fatalf("read ledger row: %v", err)
+	}
+	if source != "opname_variance" {
+		t.Fatalf("ledger source = %s, want opname_variance", source)
+	}
+	if qtyDelta != -2 {
+		t.Fatalf("ledger qty_delta = %d, want -2 (signed)", qtyDelta)
+	}
+
+	// Session flipped to committed; committed_at set; approval row stays approved.
+	var sessionStatus string
+	var committedAtNotNull bool
+	_ = client.DB.QueryRow(
+		`SELECT status::text, committed_at IS NOT NULL
+		   FROM public.stock_opname_sessions WHERE id=$1`, sid).
+		Scan(&sessionStatus, &committedAtNotNull)
+	if sessionStatus != "committed" {
+		t.Fatalf("session status = %s, want committed", sessionStatus)
+	}
+	if !committedAtNotNull {
+		t.Fatalf("session committed_at not set")
+	}
+	var arStatus string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&arStatus)
+	if arStatus != "approved" {
+		t.Fatalf("approval_requests status = %s, want approved (stays approved)", arStatus)
+	}
+}
+
+// TestCommitOpname_NotApproved_Fails pins the gating precondition: commit_opname
+// must REFUSE to write stock or ledger rows when the approval_requests row
+// is not yet in 'approved' status. This mirrors commit_approved_adjustment's
+// guard — every commit RPC is the second hop of a two-phase architecture
+// (gate → commit), and the gate must have flipped first.
+func TestCommitOpname_NotApproved_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+
+	var sid int64
+	_ = client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid)
+	_, _ = client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid)
+	_, _ = client.DB.Exec(
+		`SELECT public.witness_acknowledge_opname($1,
+		   '00000000-0000-0000-0000-000000000002'::uuid)`, sid)
+
+	var aid int64
+	_ = client.DB.QueryRow(
+		`SELECT public.submit_opname_for_owner($1,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid).Scan(&aid)
+
+	// approval_requests row is still 'pending' — commit must refuse.
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err := client.DB.Exec(`SELECT public.commit_opname($1)`, aid)
+	if err == nil {
+		t.Fatalf("expected commit_opname to refuse pending approval, got nil")
+	}
+	if !strings.Contains(err.Error(), "not approved") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// All-or-nothing: nothing was written.
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got != before {
+		t.Fatalf("ledger row written on failed commit: %d new rows", got-before)
+	}
+	var atas int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas FROM public.stocks WHERE sku='TEST-IMM'`).Scan(&atas)
+	if atas != 20 {
+		t.Fatalf("stock_atas changed after failed commit: got %d, want 20", atas)
+	}
+	var sessionStatus string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.stock_opname_sessions WHERE id=$1`, sid).Scan(&sessionStatus)
+	if sessionStatus == "committed" {
+		t.Fatalf("session flipped to committed despite failed commit")
+	}
+}
