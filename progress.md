@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Stock Fraud Phase 1, Task 2: Immutability triggers verified — DONE
+- **Goal**: Belt-and-suspenders verification — even when connected with `service_role` (which bypasses RLS and ignores REVOKE on `PUBLIC/anon/authenticated`), the `BEFORE UPDATE/DELETE` triggers must still `RAISE EXCEPTION` and block any tamper attempt on `stock_movements`. This is the live proof of Foundational Decision #1.
+- **Test file**: `backend-go/internal/db/stock_movements_immutability_test.go` — two tests (`TestStockMovements_UpdateRaises`, `TestStockMovements_DeleteRaises`) plus a shared `seedOneRow` helper that idempotently inserts SKU `TEST-IMM` into `stocks` then a ledger row, returning the new id.
+- **Pattern adapted from Task 1**: pgx-style `client.Exec(ctx, ...)` in the plan snippet swapped for the project's `database/sql` pattern (`client.DB.Exec(...)` / `client.DB.QueryRow(...)`), matching `stock_movements_test.go`.
+- **Result**: Both tests GREEN against live Supabase. Error string returned by triggers (`stock_movements is append-only — corrections must be a new compensating row`) contains `"append-only"` so the substring assertion catches the right exception (not a different SQL error pretending to pass).
+- **Test output**:
+  ```
+  === RUN   TestStockMovements_UpdateRaises
+  --- PASS: TestStockMovements_UpdateRaises (1.75s)
+  === RUN   TestStockMovements_DeleteRaises
+  --- PASS: TestStockMovements_DeleteRaises (1.19s)
+  PASS
+  ```
+- **Note on RED-then-GREEN**: Skipped here because Task 1's migration is already shipped — Task 2 tests verify an already-installed invariant, not drive new code. If either test had failed it would have meant Task 1's trigger wiring was broken.
+- **Seed leftovers**: `TEST-IMM` SKU stays in `stocks`; one stub ledger row per test run survives (the trigger blocks deletion of seeded rows too — by design). Idempotent and harmless.
+- **Next**: Task 3 — `_log_stock_movement(...)` SECURITY DEFINER helper RPC that downstream RPCs will call to write ledger rows.
+
 ## 2026-06-07 — Stock Fraud Phase 1, Task 1: Immutable `stock_movements` ledger schema — DONE
 - **Goal**: Foundation for fraud-prevention forensics — append-only ledger table that records every stock change. No RPC wraps yet (Tasks 4-7), no UI (Phase 4), no helper fn (Task 3); just the schema + immutability guards.
 - **Migration `supabase/migrations/20260607000001_stock_movements.sql`** applied to Supabase project `ekhhojaezdfjfwuxyjkl` via `psql` (Supabase CLI requires Docker which isn't running locally). All 11 statements `CREATE TYPE / TABLE / INDEX×4 / REVOKE / GRANT / CREATE FUNCTION / CREATE TRIGGER×2` returned success. Verified post-apply via `pg_trigger` + `pg_indexes` + `pg_enum` lookups: 2 triggers, 5 indexes (incl. PK), 10 enum labels — all present.
