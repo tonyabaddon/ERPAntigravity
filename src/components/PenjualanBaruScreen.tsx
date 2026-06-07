@@ -8,6 +8,7 @@ import type { DbCustomerWithStats } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import ChannelSelector from './penjualan/ChannelSelector';
+import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 
 export interface PenjualanBaruScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -98,6 +99,21 @@ export default function PenjualanBaruScreen({
           <>
             {/* Channel selector + strips go here (Task 4.x) */}
             <ChannelSelector value={channel} onChange={setChannel} />
+            {channel === 'tokopedia' && (
+              <div className="mt-4">
+                <TokpedStrip value={tokpedOrderNo} onChange={setTokpedOrderNo} />
+              </div>
+            )}
+            {channel === 'whatsapp' && (
+              <div className="mt-4">
+                <WhatsappStrip
+                  phone={waPhone}
+                  chatUrl={waChatUrl}
+                  onPhoneChange={setWaPhone}
+                  onChatUrlChange={setWaChatUrl}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
