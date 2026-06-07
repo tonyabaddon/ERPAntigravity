@@ -1041,7 +1041,10 @@ export const kasirService = {
 
   async nextInvoiceNumber(channel: KasirChannel, date: string): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
-    const prefix = channel === 'walkin' ? 'WLK' : channel === 'tokopedia' ? 'TPD' : 'GRS';
+    const prefix = channel === 'walkin' ? 'WLK'
+      : channel === 'tokopedia' ? 'TPD'
+      : channel === 'whatsapp' ? 'WAM'
+      : 'GRS';
     const dateCompact = date.replace(/-/g, '');
     const { data, error } = await supabase.rpc('next_kasir_number', {
       p_channel: channel,
