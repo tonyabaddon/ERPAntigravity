@@ -500,3 +500,215 @@ func TestStartOpnameSession_WitnessSameAsCounter_Fails(t *testing.T) {
 		t.Fatalf("expected witness-must-differ error, got: %v", err)
 	}
 }
+
+// TestRecordOpnameCount_UpsertsVariance is the Task 7 happy path: after
+// start_opname_session snapshots stock_atas=20 and harga_modal=1000, calling
+// record_opname_count with counted_qty=18 must:
+//   - update stock_opname_counts.counted_qty to 18
+//   - drive the generated variance column to (18 - 20) = -2
+//   - drive variance_value to (-2) * 1000 = -2000
+// The caller is the assigned counter (must match session.counted_by_user_id).
+func TestRecordOpnameCount_UpsertsVariance(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+	// Pin harga_modal so variance_value is deterministic.
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET harga_modal=1000 WHERE sku='TEST-IMM'`); err != nil {
+		t.Fatalf("set harga_modal: %v", err)
+	}
+
+	var sid int64
+	err := client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid)
+	if err != nil {
+		t.Fatalf("start_opname_session: %v", err)
+	}
+
+	_, err = client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid)
+	if err != nil {
+		t.Fatalf("record_opname_count: %v", err)
+	}
+
+	var variance int
+	var varianceValue float64
+	err = client.DB.QueryRow(
+		`SELECT variance, variance_value FROM public.stock_opname_counts
+		 WHERE session_id=$1 AND sku='TEST-IMM' AND warehouse='atas'`, sid).
+		Scan(&variance, &varianceValue)
+	if err != nil {
+		t.Fatalf("read count row: %v", err)
+	}
+	if variance != -2 {
+		t.Fatalf("variance = %d, want -2", variance)
+	}
+	if varianceValue != -2000 {
+		t.Fatalf("variance_value = %v, want -2000", varianceValue)
+	}
+}
+
+// TestRecordOpnameCount_NonParticipant_Fails pins the auth guard: only the
+// session's counter or witness can submit a count. A stranger caller must be
+// rejected with an error mentioning the auth violation.
+func TestRecordOpnameCount_NonParticipant_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+
+	var sid int64
+	_ = client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid)
+
+	// Caller is neither the counter nor the witness — must throw.
+	_, err := client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000099'::uuid)`, sid)
+	if err == nil {
+		t.Fatalf("expected auth error for non-participant caller, got nil")
+	}
+	if !strings.Contains(err.Error(), "counter") && !strings.Contains(err.Error(), "witness") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestSubmitOpname_WithoutWitnessAck_Fails pins the witness-ack precondition:
+// submit_opname_for_owner must refuse if witness_acknowledged_at is still NULL.
+// The error message must contain "witness" so the UI can surface a clear toast.
+func TestSubmitOpname_WithoutWitnessAck_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+
+	var sid int64
+	_ = client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid)
+	_, _ = client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid)
+
+	_, err := client.DB.Exec(
+		`SELECT public.submit_opname_for_owner($1,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid)
+	if err == nil {
+		t.Fatalf("expected witness-ack error, got nil")
+	}
+	if !strings.Contains(err.Error(), "witness") {
+		t.Fatalf("expected witness-ack error, got: %v", err)
+	}
+}
+
+// TestSubmitOpname_HappyPath drives the full Task 7 flow:
+//   counter records counts → witness acknowledges → counter submits.
+// After submit:
+//   - session.status flipped to 'pending_owner', submitted_at set
+//   - approval_requests row with type='opname' exists, linked via
+//     approval_request_id
+//   - variance_total_value computed (signed sum of variance_value across all
+//     counts in the session)
+//   - submit_opname_for_owner returns the new approval_request_id
+func TestSubmitOpname_HappyPath(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 20)
+	db.EnsureSKUStock(t, client, "TEST-IMM", "bawah", 5)
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET harga_modal=1000 WHERE sku='TEST-IMM'`); err != nil {
+		t.Fatalf("set harga_modal: %v", err)
+	}
+
+	var sid int64
+	err := client.DB.QueryRow(
+		`SELECT public.start_opname_session(
+		   p_opname_type=>'per_sku_list'::public.opname_type,
+		   p_scope_payload=>'{"skus":["TEST-IMM"]}'::jsonb,
+		   p_counted_by=>'00000000-0000-0000-0000-000000000001'::uuid,
+		   p_witnessed_by=>'00000000-0000-0000-0000-000000000002'::uuid)`).Scan(&sid)
+	if err != nil {
+		t.Fatalf("start_opname_session: %v", err)
+	}
+
+	// Counter records: atas variance = -2 (lost 2 × 1000 = -2000)
+	//                  bawah variance = 0 (matches snapshot, no contribution)
+	if _, err := client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'atas', 18,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid); err != nil {
+		t.Fatalf("record atas: %v", err)
+	}
+	if _, err := client.DB.Exec(
+		`SELECT public.record_opname_count($1, 'TEST-IMM', 'bawah', 5,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid); err != nil {
+		t.Fatalf("record bawah: %v", err)
+	}
+
+	// Witness acknowledges. Must be witness, not counter.
+	if _, err := client.DB.Exec(
+		`SELECT public.witness_acknowledge_opname($1,
+		   '00000000-0000-0000-0000-000000000002'::uuid)`, sid); err != nil {
+		t.Fatalf("witness_acknowledge_opname: %v", err)
+	}
+
+	// Counter submits.
+	var approvalID int64
+	if err := client.DB.QueryRow(
+		`SELECT public.submit_opname_for_owner($1,
+		   '00000000-0000-0000-0000-000000000001'::uuid)`, sid).Scan(&approvalID); err != nil {
+		t.Fatalf("submit_opname_for_owner: %v", err)
+	}
+	if approvalID == 0 {
+		t.Fatalf("submit returned approval_id=0")
+	}
+
+	// Approval row exists with type='opname' and status='pending'.
+	var arType, arStatus string
+	if err := client.DB.QueryRow(
+		`SELECT request_type::text, status::text FROM public.approval_requests WHERE id=$1`,
+		approvalID).Scan(&arType, &arStatus); err != nil {
+		t.Fatalf("read approval_requests: %v", err)
+	}
+	if arType != "opname" {
+		t.Fatalf("approval request_type = %s, want opname", arType)
+	}
+	if arStatus != "pending" {
+		t.Fatalf("approval status = %s, want pending", arStatus)
+	}
+
+	// Session linked + flipped to pending_owner with submitted_at populated.
+	var sessionStatus string
+	var linkedApprovalID int64
+	var submittedAtNotNull bool
+	var varianceTotal float64
+	if err := client.DB.QueryRow(
+		`SELECT status::text, approval_request_id,
+		        submitted_at IS NOT NULL, variance_total_value
+		   FROM public.stock_opname_sessions WHERE id=$1`, sid).
+		Scan(&sessionStatus, &linkedApprovalID, &submittedAtNotNull, &varianceTotal); err != nil {
+		t.Fatalf("read session: %v", err)
+	}
+	if sessionStatus != "pending_owner" {
+		t.Fatalf("session status = %s, want pending_owner", sessionStatus)
+	}
+	if linkedApprovalID != approvalID {
+		t.Fatalf("session.approval_request_id = %d, want %d", linkedApprovalID, approvalID)
+	}
+	if !submittedAtNotNull {
+		t.Fatalf("session.submitted_at not set")
+	}
+	// Signed total: atas contributes -2000, bawah contributes 0 → -2000.
+	if varianceTotal != -2000 {
+		t.Fatalf("variance_total_value = %v, want -2000", varianceTotal)
+	}
+}
