@@ -34,6 +34,7 @@ import PelangganScreen from './components/PelangganScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
+import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 
 import {
   INITIAL_STOCK,
@@ -315,6 +316,13 @@ export default function App() {
       case 'kasir':
         return (
           <KasirScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
+        );
+      case 'rekonsiliasi':
+        return (
+          <RekonsiliasiScreen
             currentUser={currentUser}
             showToast={triggerToast}
           />

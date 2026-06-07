@@ -21,6 +21,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
@@ -164,6 +165,20 @@ func main() {
 		time.Sleep(10 * time.Second)
 	}
 	defer geminiClient.Close()
+
+	// Initialize Gemini Document Client (separate from Calista's flash-lite)
+	docClient, err := gemini.NewDocumentClient(ctx, cfg.GeminiAPIKey)
+	if err != nil {
+		log.Fatalf("[MAIN] failed to init Gemini Document Client: %v", err)
+	}
+	defer docClient.Close()
+
+	// Recon endpoints (monthly bank-statement reconciliation)
+	reconHandler := &recon.Handler{DB: dbClient, Doc: docClient}
+	closerHandler := &recon.CloserHandler{DB: dbClient}
+	mux.HandleFunc("/api/recon/upload", reconHandler.Upload)
+	mux.HandleFunc("/api/recon/close", closerHandler.Close)
+	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
 
 	// State machine
 	machine := engine.NewMachine(geminiClient)
