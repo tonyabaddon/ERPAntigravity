@@ -2717,3 +2717,15 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - Adds FK `fk_bla_slot` from `bank_line_allocations.slot_id` to `payable_slots.id`
   - Trigger `trg_sync_slot_after_allocation` on `bank_line_allocations` invokes `sync_slot_after_allocation()` to keep `matched_amount` and `status` in sync (sets MATCHED when total >= expected; resets to OPEN on delete-to-zero)
 - **Not applied to Supabase** — controller batches migrations later.
+
+## 2026-06-07 — Monthly Reconciliation: Task 6 — periods + settings + audit_log + auto-create slots trigger — DONE
+
+- **Commit**: 848a631
+- **File**: `supabase/migrations/20260607000006_recon_periods_and_trigger.sql`
+- **Schema**:
+  - `reconciliation_periods` table: (year, month) unique, status enum-like check (OPEN/CLOSING/CLOSED), opened_at, closed_at, closed_by, summary jsonb, pdf_storage_path
+  - `reconciliation_settings` singleton (id='singleton'): match thresholds (green/yellow/orange), amount_tolerance_pct, date window (back/forward days), EDC MDR min/max, first_eligible_period_start (defaults to first day of next month), updated_at; seeded with one row
+  - `reconciliation_audit_log`: period_id FK, table_name, row_id, action check (INSERT/UPDATE/DELETE/MATCH/UNMATCH/WRITE_OFF/EXTEND), before/after jsonb, edited_by, edited_at; index `idx_ral_period` on (period_id, edited_at DESC)
+  - RLS enabled on all three; full-access policies for anon+authenticated on periods/settings; audit_log read-only for anon, full for authenticated
+  - Function `create_slots_for_order()` + trigger `trg_orders_create_slots` AFTER INSERT/UPDATE OF status on `orders`: skips orders created before `first_eligible_period_start`; on first transition into WAITING_PAYMENT/WAITING_DP/BOOKED, inserts payable_slots (FULL or DP+BALANCE based on `payment_type`) using `booking_expires_at` or created_at+2d for due_date
+- **Not applied to Supabase** — controller batches migrations later.
