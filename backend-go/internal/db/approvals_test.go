@@ -122,3 +122,40 @@ func TestTransitionApproval_PendingToApproved(t *testing.T) {
 		t.Fatalf("decided_at not set")
 	}
 }
+
+func TestStockAdjustments_TableExists(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	var n int
+	err := client.DB.QueryRow(
+		`SELECT 1 FROM information_schema.tables
+		 WHERE table_schema='public' AND table_name='stock_adjustments'`).Scan(&n)
+	if err != nil {
+		t.Fatalf("stock_adjustments table missing: %v", err)
+	}
+}
+
+func TestStockAdjustments_EvidenceRequiredForLoss(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	var arID int64
+	_ = client.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by)
+		 VALUES ('adjustment','{}'::jsonb,'00000000-0000-0000-0000-000000000000')
+		 RETURNING id`).Scan(&arID)
+
+	_, err := client.DB.Exec(
+		`INSERT INTO public.stock_adjustments
+		   (sku, warehouse, qty_delta, reason_code, requested_by, approval_request_id)
+		 VALUES ('TEST-IMM','atas',-2,'rusak',
+		         '00000000-0000-0000-0000-000000000000', $1)`, arID)
+	if err == nil {
+		t.Fatalf("expected CHECK chk_evidence_for_loss to fail for rusak without evidence, got nil")
+	}
+	if !strings.Contains(err.Error(), "chk_evidence_for_loss") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
