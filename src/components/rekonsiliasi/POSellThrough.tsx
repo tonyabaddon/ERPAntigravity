@@ -34,7 +34,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
       const { data: poRows } = await supabase
         .from('purchase_orders')
         .select(`id, po_number, total, status, received_at, payment_due_at, supplier:suppliers(name),
-                 purchase_order_items(sku, name:product_name, qty:qty_received, qty_remaining)`)
+                 purchase_order_items(sku, name:product_name, qty:qty_received)`)
         .gte('received_at', start).lt('received_at', end);
       const { data: consumption } = await supabase
         .from('stock_lot_consumption')
@@ -49,7 +49,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
       }
       setPos((poRows ?? []).map((p: Record<string, unknown>) => {
         const supplier = (p.supplier as { name?: string } | undefined)?.name ?? '?';
-        const items = (p.purchase_order_items as Array<{ sku: string; name: string; qty: number; qty_remaining: number }> | undefined) ?? [];
+        const items = (p.purchase_order_items as Array<{ sku: string; name: string; qty: number }> | undefined) ?? [];
         return {
           id: p.id as string,
           po_number: p.po_number as string,
@@ -60,11 +60,12 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
           status: p.status as string,
           items: items.map(it => {
             const consumed = (consBy.get(p.id as string) ?? []).filter(c => c.sku === it.sku);
+            const qtySold = consumed.reduce((a, c) => a + c.qty, 0);
             return {
               sku: it.sku,
               name: it.name,
               qty_received: it.qty,
-              qty_sold: it.qty - it.qty_remaining,
+              qty_sold: qtySold,
               consumed_by: consumed.map(c => ({ order_id: c.order_id, qty: c.qty, date: c.date })),
             };
           }),

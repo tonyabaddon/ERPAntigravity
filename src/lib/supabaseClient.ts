@@ -1012,7 +1012,10 @@ export const reconciliationService = {
     if (year && month) {
       const start = `${year}-${String(month).padStart(2, '0')}-01`;
       const end = new Date(year, month, 1).toISOString().slice(0, 10);
-      q = q.or(`deposit_date.gte.${start},deposit_date.is.null`).lt('deposit_date', end);
+      // Match rows EITHER (a) deposit_date in [start, end), OR (b) pending batches with null deposit_date.
+      // Postgres NULL semantics: `.lt()` on null returns null → would be filtered out, so we use a nested
+      // and() inside or() to bracket the range correctly.
+      q = q.or(`and(deposit_date.gte.${start},deposit_date.lt.${end}),deposit_date.is.null`);
     }
     const { data, error } = await q;
     if (error) throw error;
