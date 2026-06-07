@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Mekari Demo — Live Notes Template</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.7; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 20pt; color: #0b1c30; border-bottom: 2px solid #2d8a4e; padding-bottom: 8px; }
+  h2 { font-size: 14pt; color: #0b1c30; margin-top: 26px; border-left: 4px solid #2d8a4e; padding-left: 10px; background: #f0fdf4; padding-top: 4px; padding-bottom: 4px; }
+  h3 { font-size: 12pt; color: #1e3d60; margin-top: 18px; }
+  .fill { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 200px; margin: 0 4px; }
+  .fill-long { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 400px; margin: 0 4px; }
+  .fill-short { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 80px; margin: 0 4px; }
+  .check { font-family: monospace; font-size: 13pt; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  .blank-lines { line-height: 2.4; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<h1>Mekari Jurnal Demo — Live Notes Template</h1>
+
+<div class="meta">
+<strong>Cara pakai:</strong> Buka file ini di Word saat demo. Ketik langsung di field kosong (garis bawah <span class="fill"></span>). Centang ☐ jadi ☑ untuk pilihan.<br>
+<strong>Save sebagai:</strong> <code>notes.md</code> (atau <code>notes.docx</code>) di folder <code>docs/competitive-research/mekari-jurnal/results/</code> setelah selesai.
+</div>
+
+<p>
+<strong>Tanggal demo:</strong> <span class="fill"></span><br>
+<strong>Jam mulai:</strong> <span class="fill-short"></span> &nbsp;&nbsp;<strong>Jam selesai:</strong> <span class="fill-short"></span><br>
+<strong>Nama sales:</strong> <span class="fill"></span><br>
+<strong>Posisi sales:</strong> <span class="fill"></span> (mis. AE, Sales Manager)<br>
+<strong>Kontak sales:</strong> ☐ Email &nbsp;&nbsp;☐ WA &nbsp;&nbsp;☐ Telp &nbsp;—&nbsp; Nomor: <span class="fill"></span>
+</p>
+
+<hr>
+
+<h2>1. Pricing real (yang tidak ada di website)</h2>
+
+<table>
+<thead><tr><th>Item</th><th>Angka real</th><th>Catatan</th></tr></thead>
+<tbody>
+<tr><td>Essentials monthly (no discount)</td><td>Rp <span class="fill-short"></span></td><td></td></tr>
+<tr><td>Essentials annual (after discount)</td><td>Rp <span class="fill-short"></span> /mo</td><td>Diskon <span class="fill-short"></span>%</td></tr>
+<tr><td>Plus monthly</td><td>Rp <span class="fill-short"></span></td><td></td></tr>
+<tr><td>Plus annual after discount</td><td>Rp <span class="fill-short"></span> /mo</td><td>Diskon <span class="fill-short"></span>%</td></tr>
+<tr><td>Jurnal ERP (custom quote)</td><td>Rp <span class="fill-short"></span> /mo</td><td>User: <span class="fill-short"></span></td></tr>
+<tr><td>Mekari POS Essentials</td><td>Rp <span class="fill-short"></span> /mo</td><td></td></tr>
+<tr><td>Mekari POS Pro</td><td>Rp <span class="fill-short"></span> /mo</td><td></td></tr>
+<tr><td>Mekari Qontak per user</td><td>Rp <span class="fill-short"></span> /user/mo</td><td></td></tr>
+<tr><td>Bundle Jurnal + POS + Qontak</td><td>Rp <span class="fill-short"></span> /mo</td><td>Diskon <span class="fill-short"></span>%</td></tr>
+<tr><td>Setup fee</td><td>Rp <span class="fill-short"></span></td><td>☐ Include ☐ Berbayar</td></tr>
+<tr><td>Training fee</td><td>Rp <span class="fill-short"></span></td><td>☐ Include ☐ Berbayar</td></tr>
+<tr><td>Minimal kontrak</td><td><span class="fill-short"></span> bulan</td><td></td></tr>
+<tr><td>Refund policy</td><td colspan="2"><span class="fill-long"></span></td></tr>
+<tr><td>Multi-outlet pricing</td><td colspan="2">☐ 1× license cover all ☐ Per-outlet × Rp <span class="fill-short"></span></td></tr>
+</tbody>
+</table>
+
+<h2>2. User &amp; Permission</h2>
+<ul>
+<li>Max user Essentials: <span class="fill-short"></span></li>
+<li>Max user Plus: <span class="fill-short"></span></li>
+<li>Max user ERP: <span class="fill-short"></span></li>
+<li>Tambah user extra: Rp <span class="fill-short"></span> /user/mo &nbsp;ATAU&nbsp; ☐ Tidak bisa, harus upgrade tier</li>
+<li>Role permission granular: ☐ Modul ☐ Field ☐ Approval workflow ☐ Cuma view/edit/admin</li>
+<li>Audit log tersedia di tier: <span class="fill"></span></li>
+</ul>
+
+<h2>3. Stock / Produk</h2>
+<ul>
+<li>Max produk Essentials: <span class="fill-short"></span> &nbsp;Plus: <span class="fill-short"></span> &nbsp;ERP: <span class="fill-short"></span></li>
+<li>Variant produk (ukuran × warna): ☐ Native UI ☐ Workaround manual ☐ Tidak support</li>
+<li>Multi-UoM konversi: ☐ Otomatis ☐ Manual ☐ Tidak support</li>
+<li>Foto produk: max <span class="fill-short"></span> per produk, size limit <span class="fill-short"></span> MB</li>
+<li>Bundling/paket promo: ☐ Native ☐ Workaround ☐ Tidak ada</li>
+<li>Barcode scan mobile: ☐ Kamera HP ☐ Butuh hardware scanner</li>
+</ul>
+
+<h2>4. POS / Mekari POS</h2>
+<ul>
+<li>Sync POS → Jurnal: ☐ Real-time ☐ Batch end-of-day</li>
+<li>Offline mode POS: ☐ Ya, durasi <span class="fill"></span> ☐ Tidak</li>
+<li>Receipt printer support: <span class="fill-long"></span></li>
+<li>Cash drawer: ☐ Ya ☐ Tidak</li>
+<li>Kasir login: ☐ Akun terpisah ☐ Sama dengan Jurnal</li>
+<li>Per-shift reporting: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>5. WhatsApp &amp; AI Integration (GAP INTEL PALING PENTING)</h2>
+<ul>
+<li>Invoice via WA: ☐ Native Mekari ☐ Pakai BSP (siapa: <span class="fill"></span>)</li>
+<li>Biaya per send invoice WA: Rp <span class="fill-short"></span></li>
+<li>AI auto-reply native di Jurnal: ☐ Ya ☐ TIDAK ada → harus pakai Qontak terpisah</li>
+<li>Qontak pricing: Rp <span class="fill-short"></span> per ☐ user ☐ nomor WA</li>
+<li>Integrasi Jurnal ↔ Qontak depth: ☐ Customer sync ☐ Invoice sync ☐ Order sync ☐ Manual semua</li>
+<li>Qontak limit conversation/bulan: <span class="fill-short"></span></li>
+</ul>
+
+<h2>6. Accounting &amp; Tax</h2>
+<ul>
+<li>PPN multi-tier (11%, 12%, exempt) dalam 1 invoice: ☐ Ya ☐ Tidak</li>
+<li>e-Faktur auto-generate: ☐ Ya ☐ Tidak</li>
+<li>COGS method: ☐ FIFO ☐ Weighted Avg ☐ Pilihan ☐ Manual</li>
+<li>Period closing lock: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>7. Bank Rec &amp; Marketplace</h2>
+<ul>
+<li>Bank API support: ☐ BCA ☐ Mandiri ☐ BNI ☐ BRI ☐ CIMB ☐ Hanya upload manual</li>
+<li>Sync bank: ☐ Real-time ☐ Daily ☐ Manual upload</li>
+<li>Marketplace native: ☐ Tokopedia ☐ Shopee ☐ TikTok Shop ☐ Lazada ☐ Pakai third-party</li>
+<li>Sync stok marketplace: ☐ Real-time ☐ Batch ☐ Tidak ada</li>
+</ul>
+
+<h2>8. Reports &amp; Dashboard</h2>
+<ul>
+<li>Auto-email scheduled report: ☐ Ya, frekuensi: <span class="fill"></span> ☐ Tidak</li>
+<li>Auto-WhatsApp report: ☐ Ya ☐ Tidak ada</li>
+<li>Custom report builder: ☐ Drag-and-drop ☐ Template only ☐ Custom code</li>
+</ul>
+
+<h2>9. Mobile App</h2>
+<ul>
+<li>Input transaksi di mobile: ☐ Full feature ☐ Sebagian ☐ View-only</li>
+<li>Cetak invoice dari mobile: ☐ Ya ☐ Tidak</li>
+<li>Offline mode mobile: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>10. Migration</h2>
+<ul>
+<li>Import dari Accurate: ☐ Built-in ☐ Bantuan tim Mekari berbayar (Rp <span class="fill-short"></span>) ☐ Manual</li>
+<li>Import dari Excel: ☐ Built-in template ☐ Manual</li>
+<li>Lama proses migration: <span class="fill-short"></span> hari</li>
+</ul>
+
+<h2>11. Support &amp; Customer Reference</h2>
+<ul>
+<li>Customer di kategori toko material / LTC: ☐ Ada — nama: <span class="fill"></span> ☐ Tidak / tidak disclose</li>
+<li>Response time chat WA: <span class="fill"></span></li>
+<li>Response time email: <span class="fill"></span></li>
+<li>Telepon support: ☐ Ya, jam: <span class="fill"></span> ☐ Tidak</li>
+<li>SLA tertulis di kontrak: ☐ Ya, <span class="fill-short"></span>% ☐ Tidak</li>
+</ul>
+
+<h2>12. Pertanyaan Menyentil</h2>
+
+<p><strong>Kekuatan Jurnal vs Accurate (menurut sales):</strong></p>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<p><strong>Kelemahan Jurnal vs Accurate:</strong></p>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<p><strong>Fitur paling sering di-request customer existing tapi belum ada:</strong></p>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<hr>
+
+<h2>TOP 3 TAKEAWAY (tulis sebelum lupa, segera setelah call)</h2>
+
+<p>1. <span class="fill-long"></span><br>&nbsp;&nbsp;&nbsp;<span class="fill-long"></span></p>
+<p>2. <span class="fill-long"></span><br>&nbsp;&nbsp;&nbsp;<span class="fill-long"></span></p>
+<p>3. <span class="fill-long"></span><br>&nbsp;&nbsp;&nbsp;<span class="fill-long"></span></p>
+
+<h2>Fitur Mekari KUAT (kalau customer bilang "Mekari punya ini")</h2>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h2>Fitur Mekari LEMAH (ammunition Vosi)</h2>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h2>Quote sales notable</h2>
+<p>"<span class="fill-long"></span>"<br>(konteks: <span class="fill"></span>)</p>
+<p>"<span class="fill-long"></span>"<br>(konteks: <span class="fill"></span>)</p>
+
+<h2>Pertanyaan yang belum ter-cover (untuk follow-up email)</h2>
+<p>1. <span class="fill-long"></span></p>
+<p>2. <span class="fill-long"></span></p>
+<p>3. <span class="fill-long"></span></p>
+
+<h2>My Overall Verdict</h2>
+<p>Mekari Jurnal positioning vs Vosi:</p>
+<ul>
+<li>☐ Direct competitor — head-on overlap</li>
+<li>☐ Adjacent — accounting-centric, Vosi operations-centric</li>
+<li>☐ Complementary — Vosi punya keunggulan integrasi end-to-end</li>
+</ul>
+<p>Confidence Vosi bisa win di LTC segment vs Mekari: ☐ High ☐ Medium ☐ Low</p>
+<p>Alasan: <span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h2>Next Action (untuk Claude)</h2>
+<ul>
+<li>☐ Gap analysis per modul (gross feature set)</li>
+<li>☐ Backlog prioritas — must fix sebelum jualan</li>
+<li>☐ Landing page differentiation copy</li>
+<li>☐ Sales objection handling</li>
+<li>☐ Revisit pricing tier Vosi berdasar harga real Mekari yang baru dapat</li>
+</ul>
+
+</body>
+</html>

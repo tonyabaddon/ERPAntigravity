@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Mekari Sales Demo — Probing Questions Script</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 22pt; color: #0b1c30; border-bottom: 2px solid #2d8a4e; padding-bottom: 8px; }
+  h2 { font-size: 15pt; color: #0b1c30; margin-top: 28px; border-left: 4px solid #2d8a4e; padding-left: 10px; }
+  h3 { font-size: 12pt; color: #1e3d60; margin-top: 18px; }
+  .priority-must { color: #b91c1c; font-weight: bold; }
+  .priority-bonus { color: #d97706; font-weight: bold; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+  .question { margin: 10px 0; padding: 8px 0; }
+  .q-text { font-style: italic; padding-left: 20px; display: block; margin-top: 4px; color: #0b1c30; }
+  .legend { background: #eef2ff; padding: 10px 14px; border-radius: 4px; margin: 16px 0; font-size: 10pt; }
+  ol { margin-left: 0; padding-left: 24px; }
+  ol li { margin-bottom: 8px; }
+  ul { margin-left: 0; padding-left: 20px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; }
+  th { background: #f1f5f9; }
+  .checkbox { font-family: monospace; font-size: 12pt; margin-right: 6px; }
+  .tip { background: #fef3c7; padding: 10px 14px; border-left: 4px solid #d97706; margin: 12px 0; font-size: 10pt; }
+  .section-intro { color: #475569; font-size: 10pt; margin-bottom: 12px; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  .footer { font-size: 9pt; color: #64748b; margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Mekari Sales Demo — Probing Questions Script</h1>
+<p><strong>Tujuan:</strong> Gali gap fitur Vosi vs Mekari Jurnal + POS + Qontak — yang TIDAK terbuka di marketing material. Pakai script ini saat demo sales Mekari (45–60 menit).</p>
+
+<div class="meta">
+<strong>Persona kamu saat demo:</strong> "Saya lagi survey ERP untuk toko material istri di LTC Glodok. Budget Rp 500k–1jt/mo. Lagi compare Mekari vs Accurate vs Olsera."<br>
+<strong>Rekam meeting:</strong> ON. Disclose ke sales di awal — "Saya rekam untuk catatan internal." Sales tidak akan keberatan.<br>
+<strong>Centang</strong> ☐ tiap pertanyaan setelah ditanya. Skip yang sudah dijelaskan sales sebelum sempat ditanya.
+</div>
+
+<div class="legend">
+<strong>Legenda prioritas:</strong><br>
+<span class="priority-must">★★★ WAJIB</span> — pertanyaan inti untuk gap intel<br>
+<span class="priority-bonus">★ BONUS</span> — kalau masih ada waktu di akhir
+</div>
+
+<hr>
+
+<!-- =================== SECTION 1 =================== -->
+<h2>1. Pricing &amp; kontrak (yang tidak ada di website)</h2>
+<p class="section-intro">Goal: dapat harga riil after-discount + komitmen kontrak — info ini akan tentukan benchmark pricing Vosi.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 1.</span> Harga di website Rp 359.100/mo untuk Essentials — kalau saya ambil paket annual, diskon total berapa? Cash discount kalau bayar setahun di muka berapa?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 2.</span> Minimal kontrak berapa bulan? Kalau saya cancel di tengah kontrak, refund prorata atau hangus?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 3.</span> Setup fee atau training fee — ada tambahan biaya? Atau sudah include di subscription?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 4.</span> Saya punya 3 cabang/outlet — apakah saya bayar 1× license atau per-outlet? Mekari POS dihitung gimana untuk multi-outlet?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 5.</span> Ada paket bundle Jurnal + Mekari POS + Qontak — diskon total berapa kalau ambil ketiganya sekaligus?
+</div>
+
+<!-- =================== SECTION 2 =================== -->
+<h2>2. User &amp; Permission</h2>
+<p class="section-intro">Goal: tahu seberapa fleksibel permission system Mekari — Vosi punya granular role yang lebih simpel, ini diferensiator.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 6.</span> Tier Essentials 3 user. Bisa ditambah user tanpa upgrade tier? Berapa per user extra?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 7.</span> Role permission — seberapa granular? Bisa setting per-fitur (mis. user A bisa lihat laporan tapi tidak bisa edit harga jual)? Atau cuma view/edit/admin global?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 8.</span> Audit log siapa edit apa kapan — available di tier mana?
+</div>
+
+<!-- =================== SECTION 3 =================== -->
+<h2>3. Stock / Produk</h2>
+<p class="section-intro">Goal: cari limit tersembunyi (produk count, photo, variant) — ini sering jadi limit toko aktif yang tidak disclose.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 9.</span> Max produk per tier ada limit? Berapa untuk Essentials, Plus, dan ERP?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 10.</span> Produk dengan variant (contoh: plafon PVC ukuran 3m/4m/5m × warna putih/coklat) — ada native UI untuk variant, atau saya harus bikin produk terpisah per kombinasi?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 11.</span> Multi-UoM (Unit of Measure) — saya beli per kardus isi 50 pcs, jual per pcs. Apakah otomatis konversi atau manual?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 12.</span> Foto produk — bisa upload berapa per produk? Ada size limit atau resolution limit?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 13.</span> Bundling produk (paket promo, hampers) — ada feature built-in atau cuma workaround?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 14.</span> Barcode scan via mobile app — pakai kamera HP atau perlu hardware scanner khusus?
+</div>
+
+<!-- =================== SECTION 4 =================== -->
+<h2>4. POS / Mekari POS</h2>
+<p class="section-intro">Goal: tahu integrasi POS-Accounting realtime atau batch — Vosi native single-app, ini diferensiator besar.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 15.</span> Mekari POS data — real-time sync ke Jurnal accounting saat checkout, atau batch end-of-day?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 16.</span> Kalau internet di toko mati 30 menit, Mekari POS bisa offline mode? Bisa tetap cetak struk? Transaksi auto-sync saat online lagi?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 17.</span> Kasir login pakai akun sendiri yang terpisah dari Jurnal user, atau pakai akun Jurnal yang sama? Bisa per-shift reporting?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 18.</span> Receipt printer thermal — driver yang support apa saja? Printer Epson TM-T82 atau Bixolon SRP-350 kompatibel?
+</div>
+
+<!-- =================== SECTION 5 =================== -->
+<h2>5. WhatsApp &amp; AI Integration</h2>
+<p class="section-intro">Goal: konfirmasi Mekari TIDAK punya AI WA native (harus beli Qontak terpisah) — ini moat Vosi paling besar.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 19.</span> Invoice via WhatsApp — pakai infra Mekari sendiri atau saya konek WhatsApp Business nomor toko saya? Biaya per kirim invoice via WA berapa?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 20.</span> Apakah Jurnal punya fitur AI auto-reply chat customer? Misal customer chat "stok plafon 3m ada?" — Jurnal bisa jawab otomatis tanpa admin manual ketik?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 21.</span> Kalau saya butuh AI WhatsApp, harus beli Mekari Qontak terpisah ya? Qontak harga Rp 400k+ — itu PER USER atau PER NOMOR WA?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 22.</span> Integrasi Jurnal ↔ Qontak — kalau customer order via chat Qontak, otomatis masuk ke Jurnal sebagai sales order? Atau admin harus input manual ulang?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 23.</span> Qontak — ada limit conversation per bulan? Setelah limit, charge per conversation berapa?
+</div>
+
+<!-- =================== SECTION 6 =================== -->
+<h2>6. Accounting &amp; Tax</h2>
+<p class="section-intro">Goal: tahu seberapa dalam accounting feature Mekari — Vosi sederhana (cocok MSME), Mekari deep (cocok toko mapan).</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 24.</span> PPN — bisa handle PPN 11%, PPN 12%, dan barang tidak kena PPN dalam 1 invoice? Faktur Pajak elektronik (e-Faktur) auto-generate?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 25.</span> COGS (Harga Pokok Penjualan) calculation — FIFO, weighted average, atau bisa pilih?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 26.</span> Period closing — bisa lock periode bulan/tahun sebelumnya supaya tidak ada edit retroactive?
+</div>
+
+<!-- =================== SECTION 7 =================== -->
+<h2>7. Bank Reconciliation &amp; Marketplace</h2>
+<p class="section-intro">Goal: cek kekuatan integrasi Mekari ke bank Indonesia dan marketplace — Vosi belum punya keduanya.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 27.</span> Bank reconciliation — API connect langsung ke BCA, Mandiri, BNI, BRI atau upload statement manual? Kalau API, real-time atau daily sync?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 28.</span> Integrasi Tokopedia / Shopee / TikTok Shop — native (1-click connect) atau pakai pihak ketiga? Sync stok dan order real-time?
+</div>
+
+<!-- =================== SECTION 8 =================== -->
+<h2>8. Reports &amp; Dashboard</h2>
+<p class="section-intro">Goal: cek apakah Mekari support push-report otomatis (Vosi punya Heartbeat WA — diferensiator).</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 29.</span> Bisa schedule auto-email atau auto-WhatsApp report harian/mingguan ke owner? Atau owner harus login manual untuk lihat dashboard?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 30.</span> Custom report builder — bisa bikin laporan custom sendiri (drag-and-drop fields) atau cuma pakai template existing?
+</div>
+
+<!-- =================== SECTION 9 =================== -->
+<h2>9. Mobile App</h2>
+<p class="section-intro">Goal: cek apakah Mekari mobile app full-featured atau view-only — Vosi PWA full-feature.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 31.</span> Mobile app — bisa input transaksi penjualan + cetak invoice dari HP, atau cuma view dashboard?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 32.</span> Offline mode di mobile?
+</div>
+
+<!-- =================== SECTION 10 =================== -->
+<h2>10. Migration &amp; Data Import</h2>
+<p class="section-intro">Goal: tahu friction migration — kalau Mekari berat untuk migrate, Vosi bisa pitch "kami bantu migrate gratis."</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 33.</span> Migrate dari Excel atau Accurate ke Jurnal — ada feature import otomatis atau saya harus input ulang manual? Service ini berbayar?
+</div>
+
+<!-- =================== SECTION 11 =================== -->
+<h2>11. Support &amp; Customer Reference</h2>
+<p class="section-intro">Goal: dapat referensi customer + insight support SLA. Kalau Mekari support lambat, Vosi pitch "respon WA 1 jam."</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 34.</span> Customer di kategori toko material atau distributor elektronik di Glodok atau LTC area ada? Bisa minta 1–2 referensi yang boleh saya WA langsung untuk tanya pengalaman?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 35.</span> Response time support — chat WA, email, atau telepon? Jam berapa? Ada SLA tertulis di kontrak?
+</div>
+
+<!-- =================== SECTION 12 =================== -->
+<h2>12. Pertanyaan Menyentil (opsional — taruh di akhir)</h2>
+<p class="section-intro">Goal: gali gap intel langsung dari sales — pertanyaan ini effective karena sales suka membandingkan competitor.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 36.</span> Saya juga sedang consider Accurate Online sebagai alternatif. Menurut Mas/Mbak yang sehari-hari demo, kekuatan Jurnal vs Accurate apa? Kelemahannya di mana?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 37.</span> Apa fitur yang paling sering di-request customer existing tapi belum ada di Jurnal? (sales biasanya jawab honest karena ini sinyal mereka mau improve)
+</div>
+
+<hr>
+
+<!-- =================== TIPS =================== -->
+<h2>Tips selama demo</h2>
+
+<div class="tip">
+<strong>Pacing:</strong> Jangan tanya semua di awal. Mulai biarin sales demo dulu 10–15 menit (mereka akan auto-cover banyak item dari script). Setelah itu, kamu tinggal isi gap. Demo session paling produktif 30–45 menit dari sales + 15 menit kamu probing pertanyaan yang belum ke-cover.
+</div>
+
+<div class="tip">
+<strong>Probing follow-up:</strong> Setiap jawaban "ya bisa" dari sales, follow-up dengan "boleh saya lihat di screen sekarang?" — jawaban verbal seringkali berbeda dari realitas UI.
+</div>
+
+<div class="tip">
+<strong>Cari soal harga:</strong> Sales biasanya kasih harga setelah kamu kasih sinyal serius. Trigger: "Oke fitur sudah jelas, kalau saya ambil sekarang annual Plus + POS, harga finalnya berapa setelah semua diskon?" — mereka akan kasih angka yang TIDAK ada di website.
+</div>
+
+<div class="tip">
+<strong>Catat angka spesifik:</strong> Pas sales sebut angka (limit produk, max user, harga per modul), pause, ulangi angkanya, dan minta konfirmasi: "Jadi tier Essentials max 5.000 produk ya? Saya catat untuk perbandingan." Ini juga ngeunci komitmen sales kalau nanti ada miss-statement.
+</div>
+
+<hr>
+
+<!-- =================== POST-DEMO =================== -->
+<h2>Setelah demo — upload hasil</h2>
+
+<p><strong>Path folder:</strong> <code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/</code></p>
+
+<table>
+<thead>
+<tr><th>File</th><th>Cara generate</th><th>Save ke subfolder</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Screenshots</strong> (30–50 key moments)</td>
+  <td>Pause recording, screenshot fitur penting. Rename: <code>01-pricing-list.png</code>, <code>02-stock-create.png</code>, dst (deskriptif).</td>
+  <td><code>screenshots/</code></td>
+</tr>
+<tr>
+  <td><strong>Transcript audio</strong></td>
+  <td>Pakai <strong>MacWhisper</strong> (gratis offline, akurat untuk Bahasa Indonesia) — drag file MP4/audio, ekspor sebagai .txt. Atau Zoom auto-transcript kalau pakai Zoom.</td>
+  <td>Save sebagai <code>transcript.md</code></td>
+</tr>
+<tr>
+  <td><strong>Brochure PDF</strong> (kalau sales kirim follow-up)</td>
+  <td>Save langsung</td>
+  <td>Save sebagai <code>brochure.pdf</code></td>
+</tr>
+<tr>
+  <td><strong>Catatan kamu</strong> (highlight angka, kutipan sales)</td>
+  <td>Tulis di Markdown / text. Format bebas.</td>
+  <td>Save sebagai <code>notes.md</code></td>
+</tr>
+</tbody>
+</table>
+
+<div class="tip">
+<strong>Beritahu Claude:</strong> Setelah upload, chat ke saya: <em>"Sudah upload demo Mekari, ada di <code>docs/competitive-research/mekari-jurnal/results/</code>"</em> — saya akan baca semua file, cross-reference dengan modul Vosi, dan keluarkan:
+<ul>
+<li>Gap analysis matrix lengkap (per modul, per tier)</li>
+<li>Backlog prioritas: mana yang MUST FIX sebelum jualan vs SKIP</li>
+<li>Landing page differentiation copy</li>
+<li>Sales objection handling script</li>
+</ul>
+</div>
+
+<hr>
+
+<div class="footer">
+<strong>Estimasi waktu total:</strong> Daftar demo (5 menit) + demo session (45–60 menit) + extract screenshot (20–30 menit) + transcribe (10 menit auto) + upload (5 menit) = <strong>~2 jam total tersebar 2–3 hari</strong>.<br><br>
+Dokumen dibuat oleh Claude Code untuk Tony Wei — proyek Vosi ERP Antigravity. Tanggal: 6 Juni 2026.
+</div>
+
+</body>
+</html>

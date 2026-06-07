@@ -1,5 +1,71 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Vosi landing v3: MSME conversion overhaul — PARKED PENDING COMPETITOR RESEARCH
+- **Status**: Current state of `vosi-landing/index.html` locked sebagai checkpoint. Tidak ada perubahan lagi sampai Mekari Jurnal demo + Halo AI demo (di `docs/competitive-research/`) selesai. Setelah research, akan lock + build final design.
+- **Locked decisions (sudah di-apply ke index.html)**:
+  - **Pricing**: Starter Rp 199k / Growth Rp 599k / Premium AI Rp 1.599k (monthly). Annual diskon **15%** → Rp 169k / Rp 509k / Rp 1.359k.
+  - **Module mapping per tier** (3-tier, AI eksklusif Premium):
+    - Starter: Stock + Order + Customer + Kasir + Rekonsiliasi + Dashboard + **Laporan Harian via WA** + WA Invoice send (1 user)
+    - Growth: + Pembelian/PO + Hitung Modal HPP + Laporan Lengkap + 5 users + role permissions (TIDAK ada Multi-Cabang — pindah ke Premium)
+    - Premium AI: + **Multi-Cabang &amp; Gudang** + WhatsApp AI Calista native + Ambil-Alih Chat AI + AI auto-order + AI auto-invoice + 1.500 chat inbound/bulan + Unlimited users + Priority support
+  - **Conversion fixes ditambah** (sebelumnya gap analysis): hero ERP-first dengan price anchor, Use Cases featured Toko Material untuk LTC Glodok, form simplify 4→2 field, tier CTA langsung WA dengan pesan pre-fill, badge garansi 30 hari, final CTA rewrite, social proof "Early Access" (drop "Beta Program"), bahasa modul diganti MSME-friendly (Customer CRM→Data Pelanggan, HPP Tracking→Hitung Modal Otomatis, Multi-Warehouse→Multi-Cabang &amp; Gudang, Heartbeat WA→Laporan Harian via WA, Sales Inbox→Ambil-Alih Chat AI).
+  - **AI scope clarified**: inbound only (customer chat duluan), bukan outbound blast. CRM broadcast = roadmap fase berikutnya, paket Business di masa depan.
+  - **Overage Premium AI**: Rp 250k per 1.000 chat tambahan (margin ~83% di skenario inbound-only). Visible di pricing card + FAQ.
+- **Margin recompute** (inbound-only AI scope):
+  - Starter Rp 169k annual: COGS Rp 53k + OpEx alloc Rp 84k = net **Rp 32k/tenant/mo (19% margin)**
+  - Growth Rp 509k annual: net **Rp 354k (70% margin)**
+  - Premium AI Rp 1.359k annual: net **Rp 1.109k (82% margin)**
+- **Yang DEFERRED untuk re-evaluate setelah customer data real**:
+  - "WhatsApp Invoice send" di Starter (current keep, tapi could eat margin kalau heavy daemon usage)
+  - Bump cap Premium dari 1.500 → 2.000 chat/bulan (margin masih excellent, tunggu signal market response)
+  - Real `VOSI_WA_NUMBER` di JS (still placeholder `62812XXXXXXXX`)
+  - Vs Mekari comparison table (pending Mekari demo data)
+  - Final CTA & landing copy tweak based on demo intel
+- **Trigger untuk resume**: setelah upload Mekari demo materials di `docs/competitive-research/mekari-jurnal/results/` dan Halo AI di `docs/competitive-research/halo-ai/results/`, jalankan gap analysis lengkap, lalu lock final pricing/positioning/copy, baru build production deploy.
+- File state saat parking: `vosi-landing/index.html` 1.158 baris. Tidak committed ke git yet (waiting research before commit final).
+
+## 2026-06-07 — vosi-landing/DEPLOY.md moved to docs/deploy/ — DONE
+- **Followup ke design-system fix earlier today**: DEPLOY.md di `vosi-landing/` adalah internal runbook (Firebase deploy commands, placeholder checklist, project ID) yang ke-deploy publik bersama landing page. Kompetitor bisa akses `vosi.id/DEPLOY.md` → lihat stack + status setup beta.
+- **Moved**: `vosi-landing/DEPLOY.md` → `docs/deploy/vosi-landing-deploy.md`. Added `docs/deploy/README.md` menjelaskan rasionalisasi + future content (backend deploy guide, migration runbook, incident playbook).
+- **vosi-landing/ sekarang clean** — hanya berisi 6 file yang aman publik: `index.html`, `firebase.json`, `.firebaserc`, `.gitignore`, `favicon.svg`, `robots.txt`, `sitemap.xml`. Firebase ignore rule cover `.*` (dot-files) — sisanya semua deployable dan aman jadi publik.
+
+## 2026-06-07 — Stock Fraud Phase 3b implementation plan written — PLAN DONE
+- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase3b.md` — 11 tasks (7 backend + 3 frontend + 1 manual smoke), TDD style matching Phase 1 plan.
+- **Migrations** (7, numbered `…030`–`…036`): `kasir_shifts` table + partial unique index + ALTER `kasir_transactions` (shift_id, cashier_user_id, status) (`…030`), `company_settings.kasir_min_margin_pct` + `kasir_max_variance` (`…031`), `open_kasir_shift` + `close_kasir_shift` RPCs (`…032`), `kasir_price_override_requests` + `request_kasir_price_override` + single-use partial unique index (`…033`), atomic `create_kasir_transaction` RPC subsuming the current non-atomic `insertSaleTransaction`+`deductFifo`+`decrementStock` pattern with shift+override+floor gates (`…034`), `kasir_returns` + `request_kasir_refund` + `commit_approved_kasir_refund` (`…035`), `request_kasir_void` + `commit_approved_kasir_void` (`…036`).
+- **Floor as hard stop**: floor check (`unit_price ≥ harga_modal × kasir_min_margin_pct`) fires AFTER override matching but unconditionally — even Owner-approved override cannot punch through. Test explicitly asserts this.
+- **Override single-use**: enforced via partial unique index `uniq_override_single_use ON id WHERE committed_kasir_tx_id IS NULL AND status='approved'`. Test replays same override → expects violation.
+- **Refund vs void qty math**: both write POSITIVE `qty_delta` (compensating restoration of stock). Refund source=`return_kasir`; void source=`sale_kasir` (compensating row). Differentiator made explicit in test assertions.
+- **Server-side cash math on close**: `close_kasir_shift` computes `closing_cash_expected` from `SUM(subtotal) WHERE payment_method='cash' AND status='committed'` — client-provided expected never trusted. Variance > `kasir_max_variance` (default Rp 50.000) flips status to `disputed`.
+- **Phase 2 reuse**: every approval-bearing RPC writes to `approval_requests` table (type enum already extended in Phase 2 to include `kasir_price_override` / `kasir_refund` / `kasir_void`). Frontend reuses `OwnerPinPad` component. Test helper `_test_force_approve_request` defined for integration tests (REVOKEd from `authenticated`).
+- **Frontend**: 4 new modals (`KasirShiftOpenModal`, `KasirShiftCloseModal`, `KasirPriceOverrideModal`, `KasirRefundModal`); `KasirScreen` gated behind open-shift check with shift bar + Tutup Shift; `KasirInvoiceModal` `unit_price` becomes read-only with 🔒 + "Ubah harga" button + pending/approved badges + checkout disabled while any line pending; Refund button on past `committed` transactions; sale insert path switches from three-step pattern to atomic `create_kasir_transaction` RPC.
+- **Out of scope** (locked): loss-leader override below floor (would need `floor_override:true` payload extension), multi-currency, cash drawer hardware, receipt printing, shift handover, refund warehouse choice (always restores to `'atas'`), void UI button (RPC exists; UI surface is follow-up).
+
+## 2026-06-07 — Stock Fraud Phase 3d implementation plan written — PLAN DONE
+- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase3d.md` — 11 tasks (10 implementation + 1 manual smoke), TDD style matching Phase 1 plan.
+- **Migrations** (6, numbered `…040`–`…049` with headroom): `warehouse_transfers` table + `transfer_status` enum + CHECK constraints (different warehouses, two-person, ≥1 send photo) (`…040`), `transfer_initiate` RPC (`…041`), `transfer_receive` RPC (`…042`), small ALTER for `disputed_alert_sent_at` flag (`…042b`), `transfer_dispute` RPC (`…043`), `action_permissions` seed for `can_initiate_transfer` + `can_receive_transfer` (`…044`), `DROP FUNCTION transfer_warehouse` (`…049`, runs LAST after all callers migrated).
+- **No phantom transit**: receiver-side ledger row writes only `counted_qty`; shortfall stays as logical deficit on the `disputed` transfer until Owner files a Phase 2 `stock_adjustment` (reason `'hilang'`). Test explicitly asserts no row with `warehouse NOT IN ('atas','bawah')` exists for any transfer.
+- **Two-person rule**: enforced at BOTH the CHECK level (`chk_two_person_transfer`) AND inside `transfer_initiate` (early RAISE for friendly error message). `transfer_receive` and `transfer_dispute` validate caller = `intended_receiver_user_id`.
+- **State machine guards**: `transfer_receive` and `transfer_dispute` both error if `status <> 'initiated'` — prevents re-receive and double-dispute. Test included.
+- **Owner alert**: new `SendDisputedTransferAlert` (informational, no buttons — Owner reconciles via Phase 2 not via WA). Daemon polls `WHERE status='disputed' AND disputed_alert_sent_at IS NULL` to ensure exactly-once.
+- **Frontend**: new `src/lib/transferService.ts` (initiate/receive/dispute/listIncoming/countIncoming); rewrite `WarehouseTransferModal.tsx` (intended-receiver dropdown excluding self, send-photo dropzone required); new `TransferMasukScreen.tsx` + `TransferReceiveModal.tsx`; Sidebar item conditional on `incomingTransferCount > 0` (60s poll, realtime upgrade out of scope); new `ActivePage` value `'transfer-masuk'`.
+- **Legacy drop sequencing**: Task 10 (drop migration) runs only after Task 8 (frontend rewrite) removes the last caller. `pembelianService.transferWarehouse` deleted in same commit. Phase 1's wrapper migration is left untouched (migration history immutable).
+- **Out of scope locked**: aging > 24h flag UI (Phase 4 reads from `initiated_at` + `status`), multi-step routing, bulk transfers, auto-receive, initiator-side cancel, backwards-compat shim, realtime push for badge.
+
+## 2026-06-07 — Stock Fraud Phase 4 implementation plan written — PLAN DONE
+- **File**: `docs/superpowers/plans/2026-06-07-stock-fraud-phase4.md` — 14 tasks, TDD style matching Phase 1 plan (failing test → fail → implement → pass → commit).
+- **Migrations** (3): `…050_pengawasan_views.sql` (5 views: top_adjustments, kasir_discount_7d, outflow_outliers, transfer_aging, actor_activity_30d with SQL z-score), `…051_notification_config_pengawasan.sql` (two columns added to existing `notification_config` table — spec called it `heartbeat_config` colloquially), `…052_company_settings_owner_jid.sql` (owner_jid TEXT).
+- **Backend**: extend `internal/heartbeat/poller.go` — chose to reuse 1-min tick + in-memory `lastPengawasanFiredDate` guard rather than separate daily goroutine (one ticker, one state machine, smaller test surface). New `pengawasan.go` Go readers per view feed the daily WA payload.
+- **Frontend**: `DashboardScreen.tsx` Owner-only Pengawasan section behind `currentUser.action_permissions.can_view_pengawasan`, period filter 30d/7d/today, heatmap row → new `PengawasanDrilldownModal.tsx`; risk pill (Rendah/Sedang/Tinggi) mapped from SQL `risk_z` with cutoffs ≤0.5 / 0.5–1.5 / >1.5. `NotificationSettingsScreen.tsx` gains toggle + hour input.
+- **Z-score**: computed in SQL via `STDDEV_POP(...) OVER ()` + `NULLIF` guard so uniform activity (stddev=0) yields `risk_z=0`, not NaN. Tested explicitly.
+- **Out of scope** (locked): ML detection, configurable thresholds, multi-shop aggregation, CSV export, per-section sub-toggles in WA report, RLS hardening on views (frontend gates via permission).
+
+## 2026-06-07 — Vosi design system extracted + moved out of public deploy folder — DONE
+- **Created**: `docs/design/vosi-design-system.html` — standalone reference dengan color tokens (6 primary + 8 neutrals + 4 semantic), typography scale (8 levels), spacing scale (8 tokens), border-radius scale (5 tokens), component library (buttons, badges, section headers, module + pricing cards), 8 design principles, plus preview render Modul + Paket sections terisolasi.
+- **Originally placed in `vosi-landing/`** — user flagged risk: file akan ke-deploy ke Firebase Hosting, accessible publik di `vosi.id/design-system.html`. Brand guidelines bocor ke kompetitor + customer confusion.
+- **Moved to `docs/design/`** (internal only, not deployed). Added `docs/design/README.md` menjelaskan rasionalisasi pemisahan + future folder usage (mockup, brand assets, animation reference).
+- **Related risk noted (not fixed)**: `vosi-landing/DEPLOY.md` juga internal docs di folder publik. Firebase ignore rule cuma cover dot-files + firebase configs. DEPLOY.md technically accessible via direct URL. Pindahkan saat next cleanup.
+- **Design system documents**: green #2d8a4e (brand/CTA), navy #1e3d60 (depth), purple #7c3aed (Premium AI only), Inter typography (400-900 ladder), pill-shape (9999px) for all interactive, card 3-tier hierarchy (white → featured → premium), hover lift 2-4px + shadow expansion.
+
 ## 2026-06-07 — Vosi landing page v2: ERP-first + module catalog + pricing tiers — DONE
 - **Strategic pivot**: brainstorming session lock pricing 3-tier (Starter Rp 199k / Growth Rp 599k / Premium AI Rp 1.599k). AI moved to top-tier only since "AI lumayan complex" — operational cost gating + lower support burden.
 - **Module mapping per tier locked**: Starter (Stock + Order + Customer + Kasir + Rekonsiliasi + Dashboard + WA Invoice, 1 user). Growth (+ Pembelian/FIFO/HPP + Multi-Warehouse + Laporan + Heartbeat + 5 users). Premium AI (+ Calista WA + Sales Inbox + 1500 conv/mo + unlimited users).

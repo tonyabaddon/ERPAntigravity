@@ -315,6 +315,103 @@
   .faq-a p { font-size: 14px; color: #64748b; line-height: 1.7; }
 
   /* ════════════════════════════════
+     MODUL LENGKAP (new)
+  ════════════════════════════════ */
+  .mod-section { max-width: 1100px; margin: 0 auto; }
+  .mod-category { margin-bottom: 44px; }
+  .mod-category:last-child { margin-bottom: 0; }
+  .mod-category-header { display: flex; gap: 14px; align-items: center; font-size: 18px; font-weight: 800; color: #0b1c30; margin-bottom: 22px; letter-spacing: -0.3px; }
+  .mod-category-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(45,138,78,0.10); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .mod-category.premium-cat .mod-category-icon { background: rgba(124,58,237,0.10); }
+  .mod-premium-tag { display: inline-block; font-size: 10px; font-weight: 800; background: #7c3aed; color: white; padding: 3px 10px; border-radius: 9999px; vertical-align: middle; margin-left: 10px; letter-spacing: 0.5px; }
+  .mod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .mod-card { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 16px; padding: 22px 20px; display: flex; flex-direction: column; gap: 10px; transition: transform .2s, box-shadow .2s, border-color .2s; }
+  .mod-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(11,28,48,0.08); border-color: rgba(45,138,78,0.3); }
+  .mod-card-icon { font-size: 26px; margin-bottom: 2px; line-height: 1; }
+  .mod-card-title { font-size: 14.5px; font-weight: 800; color: #0b1c30; letter-spacing: -0.2px; }
+  .mod-card-desc { font-size: 12.5px; color: #64748b; line-height: 1.55; }
+  .mod-card.premium { border-color: rgba(124,58,237,0.25); background: linear-gradient(135deg, #faf5ff, #fff); }
+  .mod-card.premium:hover { border-color: rgba(124,58,237,0.5); box-shadow: 0 12px 28px rgba(124,58,237,0.15); }
+
+  /* ════════════════════════════════
+     PILIH PAKET (new)
+  ════════════════════════════════ */
+  .pkg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1100px; margin: 0 auto; align-items: stretch; }
+  .pkg-card { background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 24px; padding: 36px 28px 30px; display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 20px rgba(11,28,48,0.04); transition: transform .2s, box-shadow .2s; }
+  .pkg-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(11,28,48,0.1); }
+  .pkg-card.featured { border-color: #2d8a4e; border-width: 2px; box-shadow: 0 20px 60px rgba(45,138,78,0.18); transform: translateY(-12px); }
+  .pkg-card.featured:hover { transform: translateY(-16px); box-shadow: 0 24px 70px rgba(45,138,78,0.25); }
+  .pkg-card.premium { background: linear-gradient(135deg, #1e3d60, #0f2035); color: white; box-shadow: 0 20px 60px rgba(11,28,48,0.2); }
+  .pkg-card.premium::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:#7c3aed; border-radius:9999px; filter:blur(80px); opacity:.3; }
+  .pkg-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: #2d8a4e; color: white; padding: 6px 18px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; white-space: nowrap; box-shadow: 0 4px 12px rgba(45,138,78,0.3); z-index: 2; }
+  .pkg-badge.premium-badge { background: #7c3aed; box-shadow: 0 4px 12px rgba(124,58,237,0.4); }
+  .pkg-name { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #2d8a4e; margin-bottom: 10px; position: relative; z-index: 1; }
+  .pkg-card.featured .pkg-name { color: #2d8a4e; }
+  .pkg-card.premium .pkg-name { color: #6ee7a0; }
+  .pkg-target { font-size: 13.5px; color: #64748b; line-height: 1.55; margin-bottom: 26px; min-height: 44px; position: relative; z-index: 1; }
+  .pkg-card.premium .pkg-target { color: rgba(255,255,255,0.65); }
+  .pkg-price-row { display: flex; align-items: baseline; gap: 6px; position: relative; z-index: 1; }
+  .pkg-price { font-size: 40px; font-weight: 900; letter-spacing: -1.8px; color: #0b1c30; line-height: 1; }
+  .pkg-card.premium .pkg-price { color: white; }
+  .pkg-price-unit { font-size: 14px; color: #64748b; font-weight: 500; }
+  .pkg-card.premium .pkg-price-unit { color: rgba(255,255,255,0.6); }
+  .pkg-annual { font-size: 12.5px; color: #2d8a4e; font-weight: 700; margin-top: 6px; margin-bottom: 28px; position: relative; z-index: 1; }
+  .pkg-card.premium .pkg-annual { color: #6ee7a0; }
+  .pkg-features { list-style: none; padding: 0; margin: 0 0 28px; display: flex; flex-direction: column; gap: 11px; flex: 1; position: relative; z-index: 1; }
+  .pkg-feature { font-size: 13.5px; color: #334155; display: flex; gap: 9px; align-items: flex-start; line-height: 1.5; }
+  .pkg-feature::before { content: '✓'; color: #2d8a4e; font-weight: 900; flex-shrink: 0; font-size: 13px; }
+  .pkg-feature.muted { color: #cbd5e1; }
+  .pkg-feature.muted::before { content: '—'; color: #cbd5e1; }
+  .pkg-feature.section-divider { color: #94a3b8; font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px; }
+  .pkg-feature.section-divider::before { content: ''; }
+  .pkg-card.premium .pkg-feature { color: rgba(255,255,255,0.9); }
+  .pkg-card.premium .pkg-feature::before { color: #6ee7a0; }
+  .pkg-card.premium .pkg-feature.section-divider { color: rgba(110,231,160,0.7); }
+  .pkg-cta { margin-top: auto; padding: 14px 20px; border-radius: 9999px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; font-family: 'Inter', sans-serif; transition: all .2s; position: relative; z-index: 1; }
+  .pkg-cta-primary { background: #2d8a4e; color: white; box-shadow: 0 4px 16px rgba(45,138,78,.35); }
+  .pkg-cta-primary:hover { background: #236b3d; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(45,138,78,.45); }
+  .pkg-cta-secondary { background: white; color: #0b1c30; border: 1.5px solid rgba(11,28,48,0.14); }
+  .pkg-cta-secondary:hover { border-color: rgba(11,28,48,0.3); background: rgba(11,28,48,0.03); }
+  .pkg-compare { max-width: 980px; margin: 48px auto 0; text-align: center; padding: 22px 28px; background: #f0fdf4; border: 1px solid rgba(45,138,78,0.2); border-radius: 18px; }
+  .pkg-compare-label { font-size: 13px; font-weight: 700; color: #2d8a4e; margin-bottom: 6px; letter-spacing: 0.3px; }
+  .pkg-compare-text { font-size: 14px; color: #475569; line-height: 1.65; }
+  .pkg-compare-text .price-them { color: #dc2626; font-weight: 800; }
+  .pkg-compare-text .price-us { color: #2d8a4e; font-weight: 800; }
+
+  /* ════════════════════════════════
+     USE CASES — FEATURED (Toko)
+  ════════════════════════════════ */
+  .uc-featured { max-width: 1000px; margin: 0 auto 24px; background: linear-gradient(135deg, rgba(45,138,78,0.06), white); border: 2px solid rgba(45,138,78,0.25); border-radius: 24px; padding: 32px; position: relative; box-shadow: 0 12px 36px rgba(45,138,78,0.1); }
+  .uc-featured-tag { display: inline-block; background: #2d8a4e; color: white; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 9999px; letter-spacing: 0.5px; margin-bottom: 18px; }
+  .uc-featured-body { display: flex; gap: 24px; align-items: flex-start; }
+  .uc-featured-emoji { font-size: 56px; flex-shrink: 0; line-height: 1; }
+  .uc-featured-content { flex: 1; }
+  .uc-featured-title { font-size: 22px; font-weight: 900; color: #0b1c30; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .uc-featured-desc { font-size: 14px; color: #475569; line-height: 1.65; margin-bottom: 16px; }
+  .uc-featured-feats { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; font-weight: 600; color: #2d8a4e; }
+  .uc-others-label { max-width: 1000px; margin: 32px auto 14px; font-size: 12px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+  .uc-others-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .uc-mini { background: white; border: 1px solid rgba(0,0,0,0.07); border-radius: 14px; padding: 18px 12px; text-align: center; transition: transform .2s, box-shadow .2s; cursor: pointer; }
+  .uc-mini:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(11,28,48,0.06); border-color: rgba(45,138,78,0.2); }
+  .uc-mini-emoji { font-size: 28px; margin-bottom: 8px; line-height: 1; }
+  .uc-mini-name { font-size: 12px; font-weight: 700; color: #0b1c30; line-height: 1.3; }
+
+  /* ════════════════════════════════
+     GUARANTEE BADGE
+  ════════════════════════════════ */
+  .guarantee { max-width: 980px; margin: 24px auto 0; background: linear-gradient(135deg, #fef3c7, #fef9e7); border: 1px solid rgba(217,119,6,0.2); padding: 16px 22px; border-radius: 14px; display: flex; gap: 14px; align-items: center; }
+  .guarantee-icon { font-size: 26px; flex-shrink: 0; }
+  .guarantee-text { font-size: 13.5px; color: #78350f; line-height: 1.55; }
+  .guarantee-text strong { color: #5a3008; }
+
+  /* ════════════════════════════════
+     FORM v2 — WA shortcut
+  ════════════════════════════════ */
+  .form-or { text-align: center; font-size: 11px; color: rgba(255,255,255,.45); margin: 14px 0 10px; letter-spacing: 0.5px; }
+  .form-wa-btn { width: 100%; background: rgba(110,231,160,0.15); color: #6ee7a0; border: 1px solid rgba(110,231,160,0.3); padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; }
+  .form-wa-btn:hover { background: rgba(110,231,160,0.25); transform: translateY(-1px); }
+
+  /* ════════════════════════════════
      MOBILE RESPONSIVE
   ════════════════════════════════ */
   @media (max-width: 768px) {
@@ -346,8 +443,21 @@
     .cmp-callout .ccta { width: 100%; text-align: center; }
 
     .uc-grid { grid-template-columns: 1fr 1fr; }
+    .uc-featured { padding: 24px; }
+    .uc-featured-body { flex-direction: column; gap: 16px; align-items: center; text-align: center; }
+    .uc-featured-feats { justify-content: center; }
+    .uc-others-grid { grid-template-columns: repeat(3, 1fr); }
 
     .ben-grid { grid-template-columns: 1fr 1fr; }
+
+    .mod-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mod-card { padding: 16px; }
+
+    .pkg-grid { grid-template-columns: 1fr; gap: 20px; }
+    .pkg-card.featured { transform: none; }
+    .pkg-card.featured:hover { transform: translateY(-3px); }
+    .pkg-card { padding: 28px 24px; }
+    .pkg-compare { padding: 18px 20px; margin-top: 32px; }
 
     .tl-wrap { padding: 32px 24px; }
     .tl-steps { flex-direction: column; gap: 24px; }
@@ -368,7 +478,9 @@
 
   @media (max-width: 480px) {
     .uc-grid { grid-template-columns: 1fr; }
+    .uc-others-grid { grid-template-columns: repeat(2, 1fr); }
     .ben-grid { grid-template-columns: 1fr; }
+    .mod-grid { grid-template-columns: 1fr; }
     .sp-stats { flex-wrap: wrap; }
   }
 </style>
@@ -392,7 +504,8 @@
   </a>
   <div class="nav-links">
     <a href="#chatbot">Keunggulan</a>
-    <a href="#use-cases">Use Cases</a>
+    <a href="#modul">Modul</a>
+    <a href="#paket">Paket</a>
     <a href="#cara-kerja">Cara Kerja</a>
     <a href="#konsultasi">Konsultasi</a>
   </div>
@@ -402,16 +515,16 @@
 <!-- ══════════ HERO ══════════ -->
 <section id="hero">
   <div class="hero-content">
-    <div class="badge"><div class="bpulse"></div>AI WhatsApp untuk Bisnis Indonesia</div>
+    <div class="badge"><div class="bpulse"></div>Untuk Toko &amp; Bisnis Indonesia</div>
     <h1>Setiap Chat Jadi Peluang.<br>Bukan <em>Beban</em>.</h1>
-    <p class="hero-sub">Vosi otomasi balasan WhatsApp 24 jam — terima order, cek stok, dan kirim invoice secara otomatis. Kamu fokus tumbuhkan bisnis, Vosi yang jaga customer.</p>
+    <p class="hero-sub">Kelola stok, kasir, pembelian, dan balas customer otomatis di WhatsApp — semua dari 1 aplikasi. Mulai <strong style="color:#2d8a4e">Rp 199k/bulan</strong>.</p>
     <div class="cta-row">
       <button type="button" class="btn-primary" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Gratis <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
     </div>
     <div class="micro">
       <span><span class="tick">✓</span>Konsultasi 30 menit</span>
       <span><span class="tick">✓</span>Gratis</span>
-      <span><span class="tick">✓</span>Tanpa komitmen</span>
+      <span><span class="tick">✓</span>Garansi 30 hari uang kembali</span>
     </div>
   </div>
   <div class="hero-visual">
@@ -450,7 +563,7 @@
   <div class="sp-inner">
     <div class="sp-top">
       <div>
-        <div class="sp-badge"><div class="bpulse"></div>Beta Program · Terbatas</div>
+        <div class="sp-badge"><div class="bpulse"></div>Early Access · Slot Terbatas</div>
         <div style="margin-top:10px;font-size:14px;color:#64748b;font-weight:500;">Bergabung bersama bisnis yang sudah merasakan manfaat Vosi</div>
       </div>
       <div class="sp-stats">
@@ -536,15 +649,34 @@
 <!-- ══════════ USE CASES ══════════ -->
 <section class="sec sec-alt" id="use-cases">
   <div class="label">Untuk Siapa</div>
-  <h2 class="stitle">Vosi Cocok untuk Bisnis Kamu</h2>
-  <p class="ssub">Apapun jenis bisnismu, kalau ada WhatsApp — Vosi bisa bantu.</p>
-  <div class="uc-grid">
-    <div class="uc-card"><div class="uctag tag-pop">Paling Populer</div><div class="uctop"><div class="ucemoji">🏪</div><div class="ucarrow">↗</div></div><div class="ucind">Toko &amp; Distributor</div><div class="uctag2">Material bangunan, spare part, elektronik — Vosi terima order dan update stok otomatis.</div><div class="ucfeats"><div class="ucfeat">Cek stok realtime via WA</div><div class="ucfeat">Order masuk → stok berkurang otomatis</div><div class="ucfeat">Invoice langsung ke WA customer</div></div></div>
-    <div class="uc-card"><div class="uctop"><div class="ucemoji">💇</div><div class="ucarrow">↗</div></div><div class="ucind">Salon &amp; Kecantikan</div><div class="uctag2">Barbershop, salon, spa — Vosi atur jadwal booking dan reminder otomatis.</div><div class="ucfeats"><div class="ucfeat">Booking jadwal via WA 24 jam</div><div class="ucfeat">Reminder H-1 otomatis ke customer</div><div class="ucfeat">Kelola jadwal tanpa telepon bolak-balik</div></div></div>
-    <div class="uc-card"><div class="uctop"><div class="ucemoji">🔧</div><div class="ucarrow">↗</div></div><div class="ucind">Bengkel &amp; Servis</div><div class="uctag2">Bengkel motor, AC, elektronik — Vosi terima order servis dan update status pekerjaan.</div><div class="ucfeats"><div class="ucfeat">Antrian servis via WA</div><div class="ucfeat">Update status "sudah selesai" otomatis</div><div class="ucfeat">Estimasi harga langsung di chat</div></div></div>
-    <div class="uc-card"><div class="uctop"><div class="ucemoji">🍱</div><div class="ucarrow">↗</div></div><div class="ucind">Kuliner &amp; Catering</div><div class="uctag2">Warung, catering, cloud kitchen — Vosi terima pesanan dan konfirmasi otomatis.</div><div class="ucfeats"><div class="ucfeat">Terima pesanan &amp; konfirmasi otomatis</div><div class="ucfeat">Menu digital interaktif di WA</div><div class="ucfeat">Estimasi waktu siap otomatis</div></div></div>
-    <div class="uc-card"><div class="uctag tag-new">Baru</div><div class="uctop"><div class="ucemoji">🏥</div><div class="ucarrow">↗</div></div><div class="ucind">Klinik &amp; Apotek</div><div class="uctag2">Klinik umum, dokter praktek, apotek — Vosi atur jadwal konsultasi dan cek stok obat.</div><div class="ucfeats"><div class="ucfeat">Booking konsultasi via WA</div><div class="ucfeat">Cek stok obat realtime</div><div class="ucfeat">Reminder jadwal kontrol</div></div></div>
-    <div class="uc-card"><div class="uctop"><div class="ucemoji">🏗️</div><div class="ucarrow">↗</div></div><div class="ucind">Jasa &amp; Kontraktor</div><div class="uctag2">Instalasi, kontraktor, cleaning — Vosi terima request, kirim estimasi, atur jadwal survei.</div><div class="ucfeats"><div class="ucfeat">Intake permintaan jasa via WA</div><div class="ucfeat">Kirim penawaran harga otomatis</div><div class="ucfeat">Jadwalkan survei dari chat</div></div></div>
+  <h2 class="stitle">Spesialis Toko, Cocok untuk Semua Bisnis</h2>
+  <p class="ssub">Vosi paling dipakai oleh toko material dan distributor — tapi semua bisnis yang pakai WhatsApp bisa.</p>
+
+  <!-- FEATURED -->
+  <div class="uc-featured">
+    <div class="uc-featured-tag">⭐ SPESIALIS VOSI</div>
+    <div class="uc-featured-body">
+      <div class="uc-featured-emoji">🏪</div>
+      <div class="uc-featured-content">
+        <div class="uc-featured-title">Toko Material, Distributor &amp; Spare Part</div>
+        <div class="uc-featured-desc">Vosi paling banyak dipakai di Glodok, LTC, dan pasar wholesale Indonesia. Kelola ribuan produk + customer reseller dalam 1 sistem — cek stok, terima order, dan kirim invoice via WhatsApp otomatis.</div>
+        <div class="uc-featured-feats">
+          <span>✓ Cek stok realtime via WA</span>
+          <span>✓ Order masuk → stok otomatis berkurang</span>
+          <span>✓ Invoice langsung ke WA customer</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OTHERS -->
+  <div class="uc-others-label">Juga cocok untuk bisnis ini</div>
+  <div class="uc-others-grid">
+    <div class="uc-mini"><div class="uc-mini-emoji">💇</div><div class="uc-mini-name">Salon &amp; Kecantikan</div></div>
+    <div class="uc-mini"><div class="uc-mini-emoji">🔧</div><div class="uc-mini-name">Bengkel &amp; Servis</div></div>
+    <div class="uc-mini"><div class="uc-mini-emoji">🍱</div><div class="uc-mini-name">Kuliner &amp; Catering</div></div>
+    <div class="uc-mini"><div class="uc-mini-emoji">🏥</div><div class="uc-mini-name">Klinik &amp; Apotek</div></div>
+    <div class="uc-mini"><div class="uc-mini-emoji">🏗️</div><div class="uc-mini-name">Jasa &amp; Kontraktor</div></div>
   </div>
 </section>
 
@@ -572,6 +704,227 @@
       <div class="tl-step done"><div class="tl-circ">✓</div><div class="tl-lbl">Go Live!</div><div class="tl-tm">Bot aktif 24 jam</div></div>
     </div>
     <div class="tl-note">💡 Cukup siapkan nomor WhatsApp bisnis dan daftar produk atau layanan — tim Vosi yang handle sisanya.</div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ MODUL LENGKAP ══════════ -->
+<section class="sec sec-alt" id="modul">
+  <div class="label">Semua Fitur</div>
+  <h2 class="stitle">12 Modul Lengkap dalam 1 Aplikasi</h2>
+  <p class="ssub">Vosi adalah ERP terintegrasi — dari operasional toko sampai AI WhatsApp. Tidak perlu beli 3 produk terpisah seperti kompetitor.</p>
+
+  <div class="mod-section">
+
+    <!-- Operasional Penjualan -->
+    <div class="mod-category">
+      <div class="mod-category-header">
+        <div class="mod-category-icon">📦</div>
+        <div>Operasional Penjualan</div>
+      </div>
+      <div class="mod-grid">
+        <div class="mod-card">
+          <div class="mod-card-icon">📋</div>
+          <div class="mod-card-title">Stock Manager</div>
+          <div class="mod-card-desc">Kelola stok real-time, alert otomatis saat stok menipis, multi-spec produk dengan foto.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">🧾</div>
+          <div class="mod-card-title">Order History</div>
+          <div class="mod-card-desc">Track semua order, status pembayaran, bukti transfer, history transaksi per customer.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">👥</div>
+          <div class="mod-card-title">Data Pelanggan</div>
+          <div class="mod-card-desc">Database pelanggan lengkap, history transaksi per orang, kategori VIP atau reguler.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">📊</div>
+          <div class="mod-card-title">Dashboard Real-time</div>
+          <div class="mod-card-desc">Omzet hari ini, top produk, low stock, AI chat aktif — semua live di multi-device.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kasir & POS -->
+    <div class="mod-category">
+      <div class="mod-category-header">
+        <div class="mod-category-icon">💳</div>
+        <div>Kasir &amp; POS</div>
+      </div>
+      <div class="mod-grid">
+        <div class="mod-card">
+          <div class="mod-card-icon">🧮</div>
+          <div class="mod-card-title">Kasir Counter</div>
+          <div class="mod-card-desc">POS untuk transaksi langsung di toko, support multi-payment tunai, transfer, QRIS, dan kartu.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">🏦</div>
+          <div class="mod-card-title">Rekonsiliasi Kas &amp; Bank</div>
+          <div class="mod-card-desc">Tutup buku kasir harian otomatis, plus rekonsiliasi mutasi bank ke transaksi sistem.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supply Chain -->
+    <div class="mod-category">
+      <div class="mod-category-header">
+        <div class="mod-category-icon">🛒</div>
+        <div>Supply Chain</div>
+      </div>
+      <div class="mod-grid">
+        <div class="mod-card">
+          <div class="mod-card-icon">📥</div>
+          <div class="mod-card-title">Pembelian ke Supplier</div>
+          <div class="mod-card-desc">Bikin pesanan ke supplier (PO), terima barang, upload bukti bayar, track status semua dari 1 layar.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">🏭</div>
+          <div class="mod-card-title">Multi-Cabang &amp; Gudang</div>
+          <div class="mod-card-desc">Kelola stok beberapa cabang atau gudang, transfer antar lokasi tercatat semua.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">📈</div>
+          <div class="mod-card-title">Hitung Modal Otomatis</div>
+          <div class="mod-card-desc">Harga modal (HPP) per produk dihitung otomatis — tahu profit beneran per penjualan.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insight & Reports -->
+    <div class="mod-category">
+      <div class="mod-category-header">
+        <div class="mod-category-icon">📊</div>
+        <div>Insight &amp; Reports</div>
+      </div>
+      <div class="mod-grid">
+        <div class="mod-card">
+          <div class="mod-card-icon">📋</div>
+          <div class="mod-card-title">Laporan Lengkap</div>
+          <div class="mod-card-desc">Penjualan, stok, kasir, profit, HPP — auto-generated, export Excel atau PDF kapan saja.</div>
+        </div>
+        <div class="mod-card">
+          <div class="mod-card-icon">📱</div>
+          <div class="mod-card-title">Laporan Harian via WA</div>
+          <div class="mod-card-desc">Ringkasan omzet harian otomatis dikirim pagi atau sore ke WhatsApp owner — tidak perlu buka aplikasi.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Calista Premium -->
+    <div class="mod-category premium-cat">
+      <div class="mod-category-header">
+        <div class="mod-category-icon">🤖</div>
+        <div>AI Calista <span class="mod-premium-tag">PREMIUM</span></div>
+      </div>
+      <div class="mod-grid">
+        <div class="mod-card premium">
+          <div class="mod-card-icon">💬</div>
+          <div class="mod-card-title">WhatsApp AI Calista</div>
+          <div class="mod-card-desc">Balas customer yang chat ke nomor toko otomatis 24 jam — intake order, cek stok, kirim invoice. (Khusus inbound, bukan blast keluar.)</div>
+        </div>
+        <div class="mod-card premium">
+          <div class="mod-card-icon">👨‍💼</div>
+          <div class="mod-card-title">Ambil-Alih Chat AI</div>
+          <div class="mod-card-desc">Admin bisa take over chat AI kapan saja dari dashboard — AI dan manusia kolaborasi mulus.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ══════════ PILIH PAKET ══════════ -->
+<section class="sec" id="paket">
+  <div class="label">Pricing</div>
+  <h2 class="stitle">Pilih Paket yang Pas</h2>
+  <p class="ssub">Mulai dari Rp 199k per bulan. Tidak ada setup fee. Hemat 15% dengan paket tahunan.</p>
+
+  <div class="pkg-grid">
+
+    <!-- Starter -->
+    <div class="pkg-card">
+      <div class="pkg-name">Starter</div>
+      <div class="pkg-target">Untuk warung &amp; toko kecil yang baru mulai digital</div>
+      <div class="pkg-price-row">
+        <span class="pkg-price">Rp 199k</span>
+        <span class="pkg-price-unit">/bulan</span>
+      </div>
+      <div class="pkg-annual">⚡ Rp 169k/bln (annual) — hemat 15%</div>
+      <ul class="pkg-features">
+        <li class="pkg-feature">Stock Manager + Low-stock alert</li>
+        <li class="pkg-feature">Order History + Data Pelanggan</li>
+        <li class="pkg-feature">Kasir Counter</li>
+        <li class="pkg-feature">Rekonsiliasi Kas &amp; Bank</li>
+        <li class="pkg-feature">Dashboard Real-time</li>
+        <li class="pkg-feature">Laporan Harian via WA pagi/sore</li>
+        <li class="pkg-feature">WhatsApp Invoice send</li>
+        <li class="pkg-feature">1 user / login</li>
+        <li class="pkg-feature muted">Pembelian / Purchase Order</li>
+        <li class="pkg-feature muted">Hitung Modal Otomatis (HPP)</li>
+        <li class="pkg-feature muted">Multi-Cabang &amp; Gudang</li>
+        <li class="pkg-feature muted">AI Calista WhatsApp</li>
+      </ul>
+      <button type="button" class="pkg-cta pkg-cta-secondary" onclick="openWaTier('Starter', '199.000')">💬 Chat WA: "Saya Mau Starter"</button>
+    </div>
+
+    <!-- Growth (Featured) -->
+    <div class="pkg-card featured">
+      <div class="pkg-badge">PALING POPULER</div>
+      <div class="pkg-name">Growth</div>
+      <div class="pkg-target">Untuk toko mapan &amp; distributor — full ERP lengkap</div>
+      <div class="pkg-price-row">
+        <span class="pkg-price">Rp 599k</span>
+        <span class="pkg-price-unit">/bulan</span>
+      </div>
+      <div class="pkg-annual">⚡ Rp 509k/bln (annual) — hemat 15%</div>
+      <ul class="pkg-features">
+        <li class="pkg-feature section-divider">Semua di Starter, plus:</li>
+        <li class="pkg-feature">Pembelian / Purchase Order ke supplier</li>
+        <li class="pkg-feature">Hitung Modal Otomatis (HPP FIFO)</li>
+        <li class="pkg-feature">Laporan Lengkap + Export Excel/PDF</li>
+        <li class="pkg-feature">5 users + role permissions granular</li>
+        <li class="pkg-feature">Priority email support</li>
+        <li class="pkg-feature muted">Multi-Cabang &amp; Gudang</li>
+        <li class="pkg-feature muted">AI Calista WhatsApp</li>
+      </ul>
+      <button type="button" class="pkg-cta pkg-cta-primary" onclick="openWaTier('Growth', '599.000')">💬 Chat WA: "Saya Mau Growth"</button>
+    </div>
+
+    <!-- Premium AI -->
+    <div class="pkg-card premium">
+      <div class="pkg-badge premium-badge">🤖 AI INTEGRATED</div>
+      <div class="pkg-name">Premium AI</div>
+      <div class="pkg-target">Untuk distributor yang butuh otomasi AI 24 jam</div>
+      <div class="pkg-price-row">
+        <span class="pkg-price">Rp 1.599k</span>
+        <span class="pkg-price-unit">/bulan</span>
+      </div>
+      <div class="pkg-annual">⚡ Rp 1.359k/bln (annual) — hemat 15%</div>
+      <ul class="pkg-features">
+        <li class="pkg-feature section-divider">Semua di Growth, plus:</li>
+        <li class="pkg-feature">Multi-Cabang &amp; Gudang + transfer</li>
+        <li class="pkg-feature">WhatsApp AI Calista native</li>
+        <li class="pkg-feature">Ambil-Alih Chat AI kapan saja</li>
+        <li class="pkg-feature">AI auto-order taking</li>
+        <li class="pkg-feature">AI auto-invoice via WhatsApp</li>
+        <li class="pkg-feature">1.500 chat customer/bulan (inbound — customer yang chat duluan)</li>
+        <li class="pkg-feature">Extra Rp 250k per 1.000 chat tambahan kalau kelebihan</li>
+        <li class="pkg-feature">Unlimited users</li>
+        <li class="pkg-feature">Priority WA support &lt;1 jam</li>
+      </ul>
+      <button type="button" class="pkg-cta pkg-cta-primary" onclick="openWaTier('Premium AI', '1.599.000')">💬 Chat WA: "Saya Mau Premium AI"</button>
+    </div>
+
+  </div>
+
+  <!-- Guarantee badge -->
+  <div class="guarantee">
+    <div class="guarantee-icon">🛡️</div>
+    <div class="guarantee-text"><strong>Garansi 30 Hari Uang Kembali.</strong> Coba dulu — kalau dalam 30 hari Vosi tidak cocok untuk bisnismu, refund 100% tanpa pertanyaan. Tanpa risiko.</div>
   </div>
 </section>
 
@@ -612,30 +965,21 @@
     <div style="background:linear-gradient(135deg,#1e3d60,#102a43);border-radius:24px;padding:32px;box-shadow:0 8px 40px rgba(11,28,48,0.15);position:relative;overflow:hidden;">
       <div style="position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:#2d8a4e;border-radius:9999px;filter:blur(60px);opacity:.25;"></div>
       <div style="position:relative;z-index:1;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(45,138,78,0.2);border:1px solid rgba(45,138,78,0.3);color:#6ee7a0;padding:4px 12px;border-radius:9999px;font-size:11px;font-weight:700;margin-bottom:20px;">⏱ 30 menit · Gratis · Tanpa komitmen</div>
-        <h3 style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Jadwalkan Konsultasi<br>Gratis Sekarang</h3>
-        <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6;">Tim Vosi siap membantu — respons dalam 1×24 jam.</p>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(45,138,78,0.2);border:1px solid rgba(45,138,78,0.3);color:#6ee7a0;padding:4px 12px;border-radius:9999px;font-size:11px;font-weight:700;margin-bottom:20px;">⏱ 30 menit · Gratis · Garansi 30 hari</div>
+        <h3 style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;margin-bottom:8px;">Konsultasi Gratis<br>dalam 30 Menit</h3>
+        <p style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px;line-height:1.6;">Cukup isi nama + WhatsApp, tim kami yang follow-up. Respons dalam 1×24 jam.</p>
 
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-          <input id="f-nama"   type="text" placeholder="Nama kamu"       style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;">
-          <input id="f-bisnis" type="text" placeholder="Nama bisnis"      style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;">
-          <input id="f-wa"     type="text" placeholder="Nomor WhatsApp"   style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;">
-          <select id="f-jenis" name="jenis-bisnis" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:rgba(255,255,255,.7);outline:none;font-family:Inter,sans-serif;">
-            <option value="" disabled selected>Jenis bisnis kamu</option>
-            <option>Toko &amp; Distributor</option>
-            <option>Salon &amp; Kecantikan</option>
-            <option>Bengkel &amp; Servis</option>
-            <option>Kuliner &amp; Catering</option>
-            <option>Klinik &amp; Apotek</option>
-            <option>Jasa &amp; Kontraktor</option>
-            <option>Lainnya</option>
-          </select>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+          <input id="f-nama" type="text" placeholder="Nama kamu" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;">
+          <input id="f-wa" type="text" placeholder="Nomor WhatsApp" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;font-size:14px;color:#fff;outline:none;font-family:Inter,sans-serif;">
         </div>
 
         <button type="button" onclick="submitKonsultasi()" style="width:100%;background:#2d8a4e;color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(45,138,78,.35);transition:all .2s;font-family:Inter,sans-serif;">
           Kirim &amp; Jadwalkan Konsultasi →
         </button>
-        <p style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-top:12px;">Atau langsung WA kami di <strong style="color:rgba(255,255,255,.7)">0812-XXXX-XXXX</strong></p>
+
+        <div class="form-or">— atau langsung —</div>
+        <button type="button" class="form-wa-btn" onclick="openWaDirect()">💬 WhatsApp Kami Sekarang</button>
       </div>
     </div>
 
@@ -643,8 +987,8 @@
 
   <!-- TRUST ROW -->
   <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;">
-    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Tidak ada paksaan untuk berlangganan</div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Harga disesuaikan kebutuhan bisnis kamu</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Garansi 30 hari uang kembali</div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Mulai dari Rp 199k/bulan</div>
     <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#64748b;"><span style="color:#2d8a4e;font-weight:900;">✓</span> Respons dalam 1×24 jam</div>
   </div>
 </section>
@@ -703,6 +1047,22 @@
       </button>
       <div class="faq-a"><p>3 hari kerja. Hari pertama konsultasi dan pengumpulan info bisnis, hari kedua tim kami setup dan konfigurasi bot sesuai produk/layanan kamu, hari ketiga testing bersama sebelum go live. Kamu tidak perlu install atau coding apapun.</p></div>
     </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Apakah AI Calista bisa kirim broadcast / promo blast ke customer saya?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Belum, AI Calista hanya untuk balas customer yang chat duluan ke nomor toko kamu (inbound). Untuk kirim broadcast promo atau reminder massal ke list customer (outbound), itu masuk ke fitur <strong>CRM &amp; Broadcast</strong> yang sedang kami siapkan untuk fase berikutnya. Akan tersedia di paket Business yang akan datang.</p></div>
+    </div>
+
+    <div class="faq-item">
+      <button type="button" class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Apa yang terjadi kalau chat customer saya lebih dari 1.500/bulan di paket Premium AI?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-a"><p>Kalau bisnis kamu makin ramai (good problem!), kami akan kirim WA notifikasi sebelum kamu mencapai limit. Kamu bisa pilih extend kapasitas dengan biaya tambahan <strong>Rp 250k per 1.000 chat tambahan</strong>, atau upgrade ke paket Business yang akan datang. Tidak akan ada charge tambahan tanpa persetujuan kamu.</p></div>
+    </div>
   </div>
 </section>
 
@@ -710,9 +1070,9 @@
 
 <!-- ══════════ FINAL CTA ══════════ -->
 <div class="final-cta">
-  <h2>Bisnis Kamu Layak<br>Punya <em>Asisten AI</em>.</h2>
-  <p>Ribuan customer menunggu dibalas. Vosi bisa mulai bekerja untuk kamu dalam 3 hari.</p>
-  <button type="button" class="btn-primary" style="margin:0 auto;" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Sekarang →</button>
+  <h2>Tutup Penjualan<br>Lebih Banyak. <em>Mulai Hari Ini.</em></h2>
+  <p>Ribuan customer menunggu dibalas. Vosi bisa mulai bekerja untuk kamu dalam 3 hari — mulai Rp 199k/bulan, garansi 30 hari uang kembali.</p>
+  <button type="button" class="btn-primary" style="margin:0 auto;" onclick="document.getElementById('konsultasi').scrollIntoView({behavior:'smooth'})">Jadwalkan Konsultasi Gratis →</button>
 </div>
 
 <!-- ══════════ FOOTER ══════════ -->
@@ -772,36 +1132,38 @@
     if (!isOpen) item.classList.add('open');
   }
 
-  // ── Konsultasi form → WhatsApp redirect ──
+  // ── WhatsApp redirect (form + tier CTA + direct button) ──
   const VOSI_WA_NUMBER = '62812XXXXXXXX'; // ganti dengan nomor WA Vosi yang aktif
 
-  function submitKonsultasi() {
-    const nama   = document.getElementById('f-nama').value.trim();
-    const bisnis = document.getElementById('f-bisnis').value.trim();
-    const wa     = document.getElementById('f-wa').value.trim();
-    const jenis  = document.getElementById('f-jenis').value;
+  function openWa(pesan, eventLabel) {
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'wa_click', { 'event_category': 'lead', 'event_label': eventLabel });
+    }
+    const url = `https://wa.me/${VOSI_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
+    window.open(url, '_blank');
+  }
 
-    if (!nama || !bisnis || !wa || !jenis) {
-      alert('Mohon lengkapi semua isian sebelum mengirim.');
+  function submitKonsultasi() {
+    const nama = document.getElementById('f-nama').value.trim();
+    const wa   = document.getElementById('f-wa').value.trim();
+
+    if (!nama || !wa) {
+      alert('Mohon isi nama dan nomor WhatsApp.');
       return;
     }
 
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'konsultasi_submit', {
-        'event_category': 'lead',
-        'event_label': jenis,
-      });
-    }
+    const pesan = `Halo Vosi! Saya ingin jadwalkan konsultasi gratis 🙏\n\nNama: ${nama}\nWA saya: ${wa}`;
+    openWa(pesan, 'form_submit');
+  }
 
-    const pesan =
-      `Halo Vosi! Saya ingin jadwalkan konsultasi gratis 🙏\n\n` +
-      `Nama: ${nama}\n` +
-      `Bisnis: ${bisnis}\n` +
-      `WA saya: ${wa}\n` +
-      `Jenis bisnis: ${jenis}`;
+  function openWaTier(tierName, tierPrice) {
+    const pesan = `Halo Vosi! Saya tertarik dengan paket ${tierName} (Rp ${tierPrice}/bulan). Bisa info lebih lengkap?`;
+    openWa(pesan, `tier_${tierName.toLowerCase().replace(/\s+/g,'_')}`);
+  }
 
-    const url = `https://wa.me/${VOSI_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
-    window.open(url, '_blank');
+  function openWaDirect() {
+    const pesan = `Halo Vosi! Saya ingin tahu lebih lanjut tentang Vosi.`;
+    openWa(pesan, 'direct_button');
   }
 
   // ── Comparison section: Vosi AI chat slide-up (triggered on scroll into view) ──

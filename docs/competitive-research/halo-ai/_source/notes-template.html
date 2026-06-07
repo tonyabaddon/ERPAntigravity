@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Halo AI Demo — Live Notes Template</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.7; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 20pt; color: #0b1c30; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
+  h2 { font-size: 14pt; color: #0b1c30; margin-top: 26px; border-left: 4px solid #7c3aed; padding-left: 10px; background: #f3e8ff; padding-top: 4px; padding-bottom: 4px; }
+  h3 { font-size: 12pt; color: #1e3d60; margin-top: 18px; }
+  h3.stress { color: #b91c1c; background: #fef2f2; padding: 6px 10px; border-left: 4px solid #b91c1c; }
+  .fill { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 200px; margin: 0 4px; }
+  .fill-long { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 400px; margin: 0 4px; }
+  .fill-short { display: inline-block; border-bottom: 1px solid #94a3b8; min-width: 80px; margin: 0 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  .blank-lines { line-height: 2.4; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+  .prompt-box { background: #f0fdf4; padding: 8px 12px; border-left: 3px solid #2d8a4e; font-style: italic; margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<h1>Halo AI Demo — Live Notes Template</h1>
+
+<div class="meta">
+<strong>Cara pakai:</strong> Buka file ini di Word saat demo. Ketik langsung di field kosong. Centang ☐ jadi ☑. Save sebagai <code>notes.md</code> atau <code>notes.docx</code> di folder <code>docs/competitive-research/halo-ai/results/</code>.
+</div>
+
+<p>
+<strong>Tanggal demo:</strong> <span class="fill"></span><br>
+<strong>Jam mulai:</strong> <span class="fill-short"></span> &nbsp;<strong>Jam selesai:</strong> <span class="fill-short"></span><br>
+<strong>Nama sales:</strong> <span class="fill"></span><br>
+<strong>Kontak sales:</strong> ☐ Email ☐ WA ☐ Telp — Nomor: <span class="fill"></span><br>
+<strong style="color: #b91c1c;">Nomor bot demo Halo AI:</strong> <span class="fill"></span> ← CATAT untuk stress test
+</p>
+
+<hr>
+
+<h2>STRESS TEST RESULTS (paling penting — ammunition Vosi)</h2>
+
+<h3 class="stress">T1 — Multi-intent parsing</h3>
+<div class="prompt-box">"halo kak, plafon PVC 4 meter ada stok? warna marun. mau pesan 12 pcs kirim Karawang"</div>
+<ul>
+<li>Latency AI balas: <span class="fill-short"></span> detik</li>
+<li>Entitas yang ter-parse: ☐ produk ☐ ukuran ☐ warna ☐ qty ☐ lokasi</li>
+<li>AI tanya balik untuk: <span class="fill"></span></li>
+<li><strong>Verdict T1:</strong> ☐ PASS (handle multi-intent) ☐ FAIL (drop entitas) ☐ PARTIAL</li>
+</ul>
+<p>Observasi: <span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h3 class="stress">T2 — Halusinasi produk fictional</h3>
+<div class="prompt-box">"kak ada produk SLK-9999 versi 2026? mau order 50 pcs"</div>
+<ul>
+<li>AI response: ☐ Jujur "tidak ada" ☐ Ngarang detail ☐ Tanya ulang</li>
+<li><strong>Verdict T2:</strong> ☐ PASS (jujur) ☐ FAIL (halusinasi — AMMUNITION BESAR)</li>
+</ul>
+<p>Quote AI persis: "<span class="fill-long"></span>"</p>
+
+<h3 class="stress">T3 — Code-switching + multi-intent</h3>
+<div class="prompt-box">"yang ini harganya berapa sih, btw bisa nego ga kalau order banyak?"</div>
+<ul>
+<li>Intent 1 (cek harga): ☐ Dijawab ☐ Skip</li>
+<li>Intent 2 (nego harga): ☐ Dijawab ☐ Skip</li>
+<li><strong>Verdict T3:</strong> ☐ PASS ☐ FAIL</li>
+</ul>
+<p>Observasi: <span class="fill-long"></span></p>
+
+<h3 class="stress">T4 — Persuasive close (objection handling)</h3>
+<div class="prompt-box">"hmm mahal banget, di toko sebelah lebih murah"</div>
+<ul>
+<li>AI response: ☐ Counter dengan value prop ☐ Auto-kasih diskon ☐ Tidak handle</li>
+<li>AI mention diferensiator unik: ☐ Ya ☐ Tidak</li>
+<li><strong>Verdict T4:</strong> ☐ PASS (smart objection) ☐ FAIL (over-discount/generic)</li>
+</ul>
+<p>Quote AI: "<span class="fill-long"></span>"</p>
+
+<h3 class="stress">T5 — Sentiment negatif</h3>
+<div class="prompt-box">"udah 3 hari belum kirim padahal janji 1 hari, gimana sih?"</div>
+<ul>
+<li>AI response: ☐ Auto-escalate ke human ☐ Apology empati ☐ Generic scripted ☐ Tidak handle</li>
+<li>Tone empati: ☐ Real, genuine ☐ Robotic scripted</li>
+<li><strong>Verdict T5:</strong> ☐ PASS ☐ FAIL</li>
+</ul>
+<p>Observasi: <span class="fill-long"></span></p>
+
+<h3 class="stress">T6 — Vague query</h3>
+<div class="prompt-box">"kak yg bagus apa?"</div>
+<ul>
+<li>AI ask clarifying question relevan: ☐ Ya, tanya: <span class="fill"></span></li>
+<li>Atau respons generic: ☐ Ya</li>
+<li><strong>Verdict T6:</strong> ☐ PASS (smart clarify) ☐ FAIL (dumb generic)</li>
+</ul>
+
+<h3 class="stress">T7 — Pickup vs delivery</h3>
+<div class="prompt-box">"saya ke toko aja besok pagi, bisa ambil sendiri jam 9?"</div>
+<ul>
+<li>AI handle non-delivery: ☐ Ya ☐ Tidak</li>
+<li>AI tahu jam buka toko: ☐ Ya ☐ Tidak ☐ Tanya owner</li>
+<li><strong>Verdict T7:</strong> ☐ PASS ☐ FAIL</li>
+</ul>
+
+<h3 class="stress">T8 — Multi-stock query</h3>
+<div class="prompt-box">"plafon 3m sama 4m, masing-masing berapa stoknya?"</div>
+<ul>
+<li>AI cek 2 produk sekaligus: ☐ Ya, kasih kedua angka ☐ Cuma 1 produk</li>
+<li><strong>Verdict T8:</strong> ☐ PASS ☐ FAIL</li>
+</ul>
+
+<h3>STRESS TEST SUMMARY</h3>
+<p>Total PASS: <span class="fill-short"></span> / 8 &nbsp;&nbsp;&nbsp; Total FAIL: <span class="fill-short"></span> / 8</p>
+<p>Pola failure (mana yang sering fail): <span class="fill-long"></span></p>
+<p>Verdict AI capability: ☐ Strong (≥6 PASS) ☐ Average (4–5) ☐ Weak (≤3)</p>
+
+<hr>
+
+<h2>Pricing (Halo AI custom-quote)</h2>
+<table>
+<thead><tr><th>Item</th><th>Angka real</th><th>Catatan</th></tr></thead>
+<tbody>
+<tr><td>Entry tier monthly</td><td>Rp <span class="fill-short"></span></td><td>Volume <span class="fill-short"></span> chat/hari, <span class="fill-short"></span> channel</td></tr>
+<tr><td>AI Credit unit</td><td colspan="2">☐ per message ☐ per conversation ☐ per token</td></tr>
+<tr><td>Credit termasuk entry</td><td><span class="fill"></span> /bulan</td><td></td></tr>
+<tr><td>Top-up bundle terkecil</td><td>Rp <span class="fill-short"></span> dapat <span class="fill-short"></span> credit</td><td></td></tr>
+<tr><td>Setup fee</td><td>Rp <span class="fill-short"></span></td><td>☐ Include</td></tr>
+<tr><td>Training fee</td><td>Rp <span class="fill-short"></span></td><td>☐ Include</td></tr>
+<tr><td>Onboarding lama</td><td><span class="fill-short"></span> hari kerja</td><td></td></tr>
+<tr><td>Minimal kontrak</td><td><span class="fill-short"></span> bulan</td><td></td></tr>
+<tr><td>Refund policy</td><td colspan="2"><span class="fill-long"></span></td></tr>
+<tr><td>Annual discount</td><td><span class="fill-short"></span>%</td><td></td></tr>
+<tr><td>Cash discount</td><td><span class="fill-short"></span>%</td><td></td></tr>
+<tr><td>Integrasi extra (per channel)</td><td>Rp <span class="fill-short"></span></td><td></td></tr>
+</tbody>
+</table>
+
+<h2>AI Capabilities &amp; Behavior</h2>
+<ul>
+<li>LLM underlying: ☐ GPT-4 ☐ GPT-4o ☐ Gemini ☐ Llama self-hosted ☐ Custom ☐ Tidak disclose</li>
+<li>Latency rata-rata (claim sales): <span class="fill-short"></span> detik</li>
+<li>Latency real dari stress test: <span class="fill-short"></span> detik</li>
+<li>Fallback kalau AI tidak tahu: ☐ Escalate human ☐ Bilang "tidak tahu" ☐ Halusinasi</li>
+</ul>
+
+<h2>Knowledge Base &amp; Training Data</h2>
+<ul>
+<li>Format upload: ☐ PDF ☐ Word ☐ Excel ☐ Website crawl ☐ Manual entry</li>
+<li>Max ukuran per file: <span class="fill-short"></span> MB. Total storage: <span class="fill-short"></span> GB</li>
+<li>Update knowledge: ☐ Auto-detect ☐ Manual trigger ☐ Re-upload semua</li>
+<li>Bulk import 5000 SKU: ☐ Excel template ☐ API ☐ Manual</li>
+<li>AI belajar dari history: ☐ Ya ☐ Tidak (static)</li>
+<li>Custom persona: ☐ Ya, cara: <span class="fill"></span> ☐ Tidak</li>
+</ul>
+
+<h2>Channel Integration</h2>
+<ul>
+<li>WhatsApp protocol: ☐ Cloud API ☐ Business API ☐ Web (whatsmeow-style)</li>
+<li>WA messaging cost: ☐ Include ☐ Pass-through Meta rate</li>
+<li>Instagram DM: ☐ Text ☐ Image ☐ Voice note ☐ Story reply</li>
+<li>Tokopedia integration: ☐ Read chat ☐ Read order ☐ Trigger action ☐ Tidak ada</li>
+<li>Shopee integration: ☐ Read chat ☐ Read order ☐ Trigger action ☐ Tidak ada</li>
+<li>Multi-channel unified inbox: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>ERP / Backend Integration</h2>
+<ul>
+<li>Read inventory Excel/Sheets real-time: ☐ Ya ☐ Tidak (push manual)</li>
+<li>Order output dari AI: ☐ Draft di dashboard ☐ Webhook ke ERP ☐ Langsung invoice di customer</li>
+<li>UI manage produk built-in: ☐ Ya ☐ Tidak (AI layer only)</li>
+<li>Integrasi Jurnal native: ☐ Ya ☐ Tidak ☐ Via Zapier</li>
+<li>Integrasi Accurate native: ☐ Ya ☐ Tidak</li>
+<li>Payment integration: ☐ Midtrans ☐ Xendit ☐ DOKU ☐ Tidak native</li>
+</ul>
+
+<h2>Human Handover</h2>
+<ul>
+<li>Trigger handover: ☐ Keyword ☐ Sentiment ☐ Confidence rendah ☐ Customer explicit ☐ Manual admin</li>
+<li>Pause AI: ☐ Per-conversation ☐ Global only</li>
+<li>Multi-agent dashboard: ☐ Assignment ☐ Queue ☐ SLA tracking ☐ Tidak ada</li>
+<li>Audit log AI vs human: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>Scalability &amp; Limits</h2>
+<ul>
+<li>Conversation simultan entry: <span class="fill-short"></span></li>
+<li>Over-limit: ☐ Queue ☐ Drop ☐ Charge extra</li>
+<li>Uptime SLA: <span class="fill-short"></span>% ☐ Tertulis ☐ Verbal only</li>
+<li>Compensation kalau breach: <span class="fill"></span></li>
+</ul>
+
+<h2>Multi-Brand / Multi-Tenant</h2>
+<ul>
+<li>1 akun handle multi-brand: ☐ Ya, harga: <span class="fill"></span> ☐ Tidak</li>
+<li>Reporting per brand: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>Data Privacy &amp; Compliance</h2>
+<ul>
+<li>Server location: ☐ Indonesia ☐ Singapore ☐ US ☐ Tidak disclose</li>
+<li>Data train AI global: ☐ Ya ☐ Tidak (per-tenant only)</li>
+<li>Retention chat: <span class="fill-short"></span> bulan/tahun</li>
+<li>Delete on demand: ☐ Ya ☐ Tidak</li>
+<li>ISO/SOC2 cert: ☐ Ya ☐ Tidak</li>
+</ul>
+
+<h2>Customer References</h2>
+<ul>
+<li>MSME / toko material / LTC customer: ☐ Ada — nama: <span class="fill"></span> ☐ Tidak</li>
+<li>Enterprise demo-able: ☐ Halodoc ☐ Massindo ☐ Heymale ☐ IELTSpresso ☐ Lainnya: <span class="fill"></span></li>
+</ul>
+
+<hr>
+
+<h2>TOP 3 TAKEAWAY</h2>
+<p>1. <span class="fill-long"></span></p>
+<p>2. <span class="fill-long"></span></p>
+<p>3. <span class="fill-long"></span></p>
+
+<h2>Fitur Halo AI KUAT (vs Calista)</h2>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h2>Fitur Halo AI LEMAH (Vosi pitch ammunition)</h2>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<h2>Quote Sales Notable</h2>
+<p>"<span class="fill-long"></span>"<br>(konteks: <span class="fill"></span>)</p>
+<p>"<span class="fill-long"></span>"<br>(konteks: <span class="fill"></span>)</p>
+
+<h2>Pertanyaan Menyentil — Jawaban Sales</h2>
+<p><strong>Halo AI lebih unggul dari Qontak di mana:</strong><br><span class="fill-long"></span></p>
+<p><strong>Halo AI lebih lemah dari Qontak di mana:</strong><br><span class="fill-long"></span></p>
+<p><strong>Fitur paling sering di-request customer existing tapi belum ada:</strong><br><span class="fill-long"></span></p>
+<p><strong>Alasan customer churn paling umum:</strong><br><span class="fill-long"></span></p>
+
+<h2>My Overall Verdict</h2>
+<p>Halo AI sebagai competitor Calista:</p>
+<ul>
+<li>☐ Strong direct competitor — head-on, harus serious</li>
+<li>☐ Adjacent — Halo AI multi-channel, Calista WA + ERP integrated</li>
+<li>☐ Different segment — Halo AI enterprise, Vosi MSME</li>
+</ul>
+
+<p><strong>Vosi differentiation yang TERBUKTI dari stress test:</strong></p>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<p><strong>Vosi gap yang harus close ASAP berdasar demo ini:</strong></p>
+<p class="blank-lines"><span class="fill-long"></span><br><span class="fill-long"></span></p>
+
+<p>Confidence Vosi win vs Halo AI di MSME: ☐ High ☐ Medium ☐ Low</p>
+<p>Alasan: <span class="fill-long"></span></p>
+
+<h2>Next Action (untuk Claude)</h2>
+<ul>
+<li>☐ Gap analysis Calista vs Halo AI per kategori</li>
+<li>☐ Stress test ammunition matrix (untuk landing copy)</li>
+<li>☐ Roadmap improvement Calista — fitur prioritas</li>
+<li>☐ Landing differentiation copy untuk Premium tier vs Halo AI</li>
+<li>☐ Sales objection handling vs Halo AI</li>
+</ul>
+
+</body>
+</html>

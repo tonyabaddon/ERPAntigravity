@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Step-by-Step Guide — Mekari Jurnal Sales Demo</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.55; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 22pt; color: #0b1c30; border-bottom: 2px solid #2d8a4e; padding-bottom: 8px; }
+  h2 { font-size: 16pt; color: #0b1c30; margin-top: 32px; border-left: 5px solid #2d8a4e; padding-left: 12px; background: #f0fdf4; padding-top: 6px; padding-bottom: 6px; }
+  h3 { font-size: 13pt; color: #1e3d60; margin-top: 22px; }
+  h4 { font-size: 11pt; color: #475569; margin-top: 14px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-num { display: inline-block; background: #2d8a4e; color: white; border-radius: 50%; width: 28px; height: 28px; text-align: center; font-weight: bold; margin-right: 8px; line-height: 28px; font-size: 12pt; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+  .tip { background: #fef3c7; padding: 10px 14px; border-left: 4px solid #d97706; margin: 12px 0; font-size: 10pt; }
+  .warn { background: #fee2e2; padding: 10px 14px; border-left: 4px solid #b91c1c; margin: 12px 0; font-size: 10pt; }
+  .ok { background: #f0fdf4; padding: 10px 14px; border-left: 4px solid #2d8a4e; margin: 12px 0; font-size: 10pt; }
+  .cmd { background: #0b1c30; color: #6ee7a0; padding: 10px 14px; font-family: Menlo, Consolas, monospace; font-size: 10pt; border-radius: 4px; margin: 8px 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  .checklist { padding-left: 20px; }
+  .checklist li { margin-bottom: 6px; list-style: none; }
+  .checkbox { font-family: monospace; font-size: 13pt; margin-right: 8px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+  .footer { font-size: 9pt; color: #64748b; margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+  .timeline { background: #eef2ff; padding: 14px 18px; border-radius: 6px; margin: 16px 0; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-family: Menlo, Consolas, monospace; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<h1>Step-by-Step Guide<br>Mekari Jurnal Sales Demo</h1>
+
+<div class="meta">
+<strong>Tujuan dokumen:</strong> Panduan lengkap dari sebelum, selama, dan sesudah demo Mekari Jurnal sales call — siap dieksekusi tanpa support live.<br>
+<strong>Total waktu kamu:</strong> ~2 jam tersebar 2–3 hari.<br>
+<strong>Total biaya:</strong> Rp 0.<br>
+<strong>Dokumen pendamping:</strong> <code>2-probing-questions.docx</code> di folder yang sama (script pertanyaan).
+</div>
+
+<div class="timeline">
+<strong>Big picture timeline:</strong>
+<ol>
+<li><strong>Hari 1</strong> (15 menit): Setup tools, daftar demo, jadwalkan waktu</li>
+<li><strong>Hari 2</strong> (60 menit): Eksekusi demo + record</li>
+<li><strong>Hari 3</strong> (45 menit): Extract screenshot + transcribe + upload + lapor ke Claude</li>
+</ol>
+</div>
+
+<hr>
+
+<h2>PHASE 1 — Pre-Demo Setup (Hari 1, ~15 menit)</h2>
+
+<h3><span class="step-num">1</span>Install Tools yang Diperlukan</h3>
+
+<h4>1.1 — Cek tools yang sudah ada di Mac kamu</h4>
+<p>Buka <strong>Terminal</strong> (Cmd+Space → ketik "Terminal" → Enter), copy-paste perintah ini lalu Enter:</p>
+<div class="cmd">which textutil ffmpeg python3
+ls /Applications | grep -i -E "zoom|meet|quicktime|obs"</div>
+
+<p>Harusnya muncul minimal: <code>/usr/bin/textutil</code> (built-in), <code>python3</code> (built-in), dan <code>QuickTime Player.app</code> (built-in). Kalau muncul <code>ffmpeg</code> juga, bagus.</p>
+
+<h4>1.2 — Install yang belum ada</h4>
+
+<table>
+<thead>
+<tr><th>Tool</th><th>Untuk apa</th><th>Cara install</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Zoom Desktop</strong></td>
+<td>Sales Mekari biasanya kasih link Zoom. Punya built-in local recording + auto-transcript.</td>
+<td>Download di <code>zoom.us/download</code> → install. Free account cukup.</td>
+</tr>
+<tr>
+<td><strong>MacWhisper</strong> (rekomendasi untuk transcribe)</td>
+<td>Transcribe audio Indonesia dengan akurasi tinggi, offline (privacy aman). Free.</td>
+<td>Download di <code>goodsnooze.gumroad.com/l/macwhisper</code> → klik "I want this" → bayar $0 → download .dmg → drag ke Applications.</td>
+</tr>
+<tr>
+<td><strong>ffmpeg</strong> (opsional, kalau mau extract video frames)</td>
+<td>Convert video MP4 ke serangkaian PNG frame.</td>
+<td>Buka Terminal, jalankan: <code>brew install ffmpeg</code>. (Kalau brew belum ada: <code>/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"</code>)</td>
+</tr>
+</tbody>
+</table>
+
+<div class="tip">
+<strong>Tips:</strong> Kalau tidak mau install MacWhisper, pakai Zoom auto-transcript (built-in di Zoom record). Atau Otter.ai (web, free 300 menit/bulan).
+</div>
+
+<h3><span class="step-num">2</span>Siapkan Identitas untuk Daftar Demo</h3>
+
+<p>Mekari sales akan follow-up via WA + email berbulan-bulan setelah demo. Pakai akun "cadangan" supaya tidak ganggu komunikasi utama.</p>
+
+<table>
+<thead><tr><th>Item</th><th>Saran</th></tr></thead>
+<tbody>
+<tr><td>Email</td><td>Bikin Gmail baru gratis (mis. <code>vosi.research+mekari@gmail.com</code>) atau pakai Gmail alias (semua email ke <code>tonywei+mekari@gmail.com</code> tetap masuk ke inbox <code>tonywei@gmail.com</code> kamu).</td></tr>
+<tr><td>Nomor WA</td><td>Pakai nomor WA cadangan (Google Voice, Telkomsel Halo cadangan, atau nomor pribadi yang siap di-spam follow-up).</td></tr>
+<tr><td>Nama bisnis</td><td>Sebut nama toko istri di LTC ("Toko Material XYZ" — gak perlu real exact, sales tidak verifikasi).</td></tr>
+<tr><td>Budget</td><td>"Rp 500k–1jt/mo" — ini trigger sales demo Essentials + Mekari POS combo, paket paling relevan untuk benchmark.</td></tr>
+</tbody>
+</table>
+
+<h3><span class="step-num">3</span>Daftar Demo di Website Mekari Jurnal</h3>
+
+<ol>
+<li>Buka <code>www.jurnal.id</code> di browser.</li>
+<li>Cari tombol <strong>"Coba Gratis"</strong>, <strong>"Jadwalkan Demo"</strong>, atau <strong>"Hubungi Sales"</strong> — biasanya di kanan atas atau tengah hero section.</li>
+<li>Isi form dengan identitas cadangan di step 2.</li>
+<li>Pilih waktu demo: <strong>siang/sore weekday (Selasa–Kamis, jam 13:00–16:00 WIB)</strong>. Sales paling responsif dan energi terbaik di window ini.</li>
+<li>Submit. Tunggu konfirmasi WA atau email dari sales dalam 1×24 jam.</li>
+</ol>
+
+<div class="warn">
+<strong>Hati-hati:</strong> Mekari sales kadang langsung telepon dalam 30 menit dari form submission. Kalau kamu tidak siap angkat, set telepon ke silent dan biarkan voicemail — nanti follow-up via WA.
+</div>
+
+<h3><span class="step-num">4</span>Konfirmasi Slot Demo + Check Recording Setup</h3>
+
+<p>Setelah sales kasih link Zoom/Meet:</p>
+<ol>
+<li>Test buka link di hari yang sama supaya yakin tidak ada masalah akses.</li>
+<li>Cek mic + camera berfungsi.</li>
+<li>Kalau Zoom: buka Settings → Recording → toggle ON <strong>"Audio transcript"</strong> dan <strong>"Record on this computer"</strong>.</li>
+<li>Cek free disk space di Mac ≥ 5 GB (1 jam recording HD ~2 GB).</li>
+</ol>
+
+<h3><span class="step-num">5</span>Persiapan H-1</h3>
+
+<ol>
+<li>Print atau buka di tablet: <code>2-probing-questions.docx</code> (file pendamping di folder yang sama).</li>
+<li>Siapkan notepad fisik atau Notes app untuk catat angka penting yang sales sebut.</li>
+<li>Charge laptop / colok ke listrik supaya tidak mati di tengah demo.</li>
+<li>Tutup app yang berisik (notifikasi Slack, email pop-up) supaya tidak distract dan tidak terekam.</li>
+</ol>
+
+<hr>
+
+<h2>PHASE 2 — Eksekusi Demo (Hari 2, 45–60 menit)</h2>
+
+<h3><span class="step-num">6</span>Sebelum Sales Connect</h3>
+
+<ol>
+<li>Buka file <strong>probing questions DOCX</strong> di side-by-side dengan window Zoom (split screen).</li>
+<li>Buka <strong>Notes app</strong> untuk catat angka live.</li>
+<li>5 menit sebelum waktu meeting: join Zoom room, test audio.</li>
+<li><strong>Mulai recording sebelum sales join</strong> (klik tombol Record di Zoom toolbar). Lebih aman over-record daripada lupa.</li>
+</ol>
+
+<h3><span class="step-num">7</span>Sales Join → Disclose Recording</h3>
+
+<p>Setelah sales connect dan greet:</p>
+<div class="ok">
+<strong>Skrip pembuka (santai, casual):</strong><br><br>
+"Mas/Mbak, makasih ya udah luangkan waktu. Sebelum mulai, izin aku rekam meeting ini buat catatan internal — supaya nanti aku gak lupa detail fitur yang dijelasin. Boleh ya?"
+</div>
+
+<p>Sales pasti setuju. Ini standard practice dan secara legal Indonesia 1-party consent (kamu peserta, jadi sah).</p>
+
+<h3><span class="step-num">8</span>Pacing Demo (45–60 menit)</h3>
+
+<table>
+<thead><tr><th>Menit</th><th>Aktivitas</th><th>Yang kamu lakukan</th></tr></thead>
+<tbody>
+<tr><td>0–5</td><td>Intro + sales tanya bisnis kamu</td><td>Cerita persona ("toko material istri di LTC, mau digitalisasi karena chat WA banyak"). Tidak perlu detail.</td></tr>
+<tr><td>5–25</td><td>Sales screen-share demo</td><td><strong>Diam dengarkan + catat</strong>. Sales akan auto-cover banyak item dari script kamu. Centang yang sudah dijelaskan di file probing questions.</td></tr>
+<tr><td>25–45</td><td>Q&A — kamu yang drive</td><td>Buka file probing questions, tanya kategori per kategori dari pertanyaan <span style="color: #b91c1c; font-weight: bold;">★★★ WAJIB</span> yang belum di-cover. Prioritas: Pricing → User → POS integration → WhatsApp → Accounting.</td></tr>
+<tr><td>45–60</td><td>Closing + sales push closing</td><td>Tanya 2 pertanyaan menyentil (#36, #37). Sales mulai push "kapan bisa start?" — jawab "Saya pelajari dulu material yang Mas/Mbak kirim, nanti aku follow-up via email dalam 1 minggu."</td></tr>
+</tbody>
+</table>
+
+<h3><span class="step-num">9</span>Trick selama Live Demo</h3>
+
+<div class="tip">
+<strong>"Boleh saya lihat di screen?"</strong> — Setiap kali sales jawab "ya bisa" untuk fitur tertentu, follow-up dengan: <em>"Boleh saya lihat di screen sekarang?"</em> Jawaban verbal seringkali tidak match realitas UI.
+</div>
+
+<div class="tip">
+<strong>Repeat angka untuk catat:</strong> Saat sales sebut angka spesifik (max produk, harga setelah diskon, limit), <em>ulangi angkanya keras-keras</em> ke sales: <em>"Jadi tier Essentials max 5.000 produk ya? Saya catat untuk perbandingan."</em> Ini double-purpose: (a) memastikan angka kamu akurat, (b) menginformasikan sales kamu serius, dan (c) yang paling penting — kalau besok angkanya beda kamu punya bukti rekaman.
+</div>
+
+<div class="tip">
+<strong>Trigger harga real:</strong> Saat sales jelaskan fitur sudah selesai, tanya: <em>"Oke fitur jelas. Kalau saya ambil sekarang annual Plus + POS, harga finalnya berapa setelah semua diskon?"</em> — sales akan kasih angka yang tidak ada di website (biasanya 25–40% lebih murah).
+</div>
+
+<div class="warn">
+<strong>Jangan langsung commit:</strong> Sales akan push closing di akhir ("kalau ambil sekarang ada bonus X"). Selalu jawab: <em>"Saya konsultasi sama istri/partner dulu, follow-up via email dalam 3–7 hari ya."</em> Tahan diri — kamu di sini untuk intel, bukan beli.
+</div>
+
+<h3><span class="step-num">10</span>Setelah Sales Selesai</h3>
+
+<ol>
+<li><strong>Stop recording</strong> di Zoom (klik Stop Recording).</li>
+<li>Tunggu Zoom render video (sekitar 30–60 detik untuk recording 1 jam). File akan tersimpan di <code>~/Documents/Zoom/[tanggal]-[meeting-name]/</code>.</li>
+<li>Cek folder Zoom — harusnya ada minimal: <code>audio_only.m4a</code>, <code>recording.mp4</code>, dan kalau auto-transcript aktif: <code>audio_transcript.vtt</code>.</li>
+<li>Catat di Notes: 3 takeaway paling penting selagi masih segar (mis. "harga real Essentials Rp 300k after annual discount", "tidak punya AI native, harus Qontak terpisah Rp 400k/user").</li>
+</ol>
+
+<hr>
+
+<h2>PHASE 3 — Post-Demo Processing &amp; Upload (Hari 3, ~45 menit)</h2>
+
+<h3><span class="step-num">11</span>Extract Screenshot dari Recording</h3>
+
+<h4>Cara cepat (rekomendasi) — pause &amp; screenshot manual</h4>
+
+<ol>
+<li>Buka file <code>recording.mp4</code> di QuickTime Player.</li>
+<li>Putar dari awal. Setiap kali ada screen sales yang menampilkan fitur penting, <strong>pause</strong> (spacebar).</li>
+<li>Screenshot pakai <strong>Cmd+Shift+4</strong> → drag selection di area konten (skip Zoom UI).</li>
+<li>Save ke folder: <code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/screenshots/</code></li>
+<li>Rename file deskriptif, contoh:
+<ul>
+<li><code>01-pricing-essentials-list.png</code></li>
+<li><code>02-stock-create-form.png</code></li>
+<li><code>03-user-permission-matrix.png</code></li>
+<li><code>04-pos-integration-diagram.png</code></li>
+<li><code>05-whatsapp-invoice-flow.png</code></li>
+<li><code>06-laporan-list.png</code></li>
+<li><code>07-mobile-app-screenshot.png</code></li>
+<li>...</li>
+</ul>
+</li>
+</ol>
+
+<p>Target: <strong>30–50 screenshot</strong>. Setiap screen fitur yang berbeda, capture 1×. Skip screen yang cuma menu navigasi atau loading.</p>
+
+<h4>Cara alternatif — extract semua frame video (kalau mau full coverage)</h4>
+
+<p>Buka Terminal, ganti <code>recording.mp4</code> dengan path file kamu:</p>
+<div class="cmd">cd /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/frames
+
+ffmpeg -i ~/Documents/Zoom/[folder]/recording.mp4 -vf fps=1/15 frame_%04d.png</div>
+
+<p>Hasilnya: 1 frame per 15 detik = ~240 frame untuk recording 1 jam. Lebih comprehensive tapi heavy untuk processing.</p>
+
+<h3><span class="step-num">12</span>Transcribe Audio</h3>
+
+<h4>Cara A — MacWhisper (rekomendasi, gratis, offline, akurat untuk Indonesia)</h4>
+
+<ol>
+<li>Buka MacWhisper app.</li>
+<li>Klik <strong>"Drop a file here"</strong> atau drag file <code>audio_only.m4a</code> dari Zoom recording folder.</li>
+<li>Settings: pilih model <strong>"Medium"</strong> atau <strong>"Large-v3"</strong> (lebih akurat, processing lebih lama). Language: pilih <strong>Indonesian</strong>.</li>
+<li>Klik Transcribe. Tunggu 5–15 menit (tergantung CPU).</li>
+<li>Hasil transcript muncul di window. Klik <strong>Export → Plain Text (.txt)</strong>.</li>
+<li>Save sebagai: <code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/transcript.md</code></li>
+</ol>
+
+<h4>Cara B — Zoom auto-transcript</h4>
+
+<p>Kalau kamu sudah enable "Audio transcript" di Zoom settings pre-call, di folder recording akan ada file <code>audio_transcript.vtt</code>.</p>
+<ol>
+<li>Buka file <code>.vtt</code> di TextEdit (kanan-klik → Open With → TextEdit).</li>
+<li>Copy semua content.</li>
+<li>Paste di file baru <code>transcript.md</code> di folder <code>docs/competitive-research/mekari-jurnal/results/</code>.</li>
+</ol>
+
+<div class="warn">
+<strong>Catatan:</strong> Zoom auto-transcript akurasi Bahasa Indonesia kadang lemah. Kalau hasilnya banyak "[inaudible]" atau ngaco, fallback ke MacWhisper.
+</div>
+
+<h3><span class="step-num">13</span>Catat Brochure/Email Follow-up Sales</h3>
+
+<p>Sales biasanya kirim follow-up email dalam 2–24 jam berisi proposal, brochure, atau pricing detail. Save semua:</p>
+<ol>
+<li>Email body → copy paste ke file <code>follow-up-email.md</code> di folder demo.</li>
+<li>PDF attachment → save langsung sebagai <code>brochure.pdf</code>.</li>
+<li>Pricing quote screenshot → save sebagai <code>pricing-quote.png</code>.</li>
+</ol>
+
+<h3><span class="step-num">14</span>Tulis Notes Personal (highlight insight live)</h3>
+
+<p>Buka text editor, tulis catatan singkat tentang impression kamu live. Save sebagai <code>notes.md</code> di folder demo:</p>
+
+<div class="cmd">## Mekari Jurnal Demo — Notes
+Tanggal demo: [tanggal]
+Sales: [nama sales]
+
+### Top 3 takeaway
+1. ...
+2. ...
+3. ...
+
+### Angka yang penting
+- Harga Essentials after annual discount: Rp ...
+- Setup fee: Rp ...
+- Max user Essentials: ...
+- Max produk: ...
+
+### Fitur yang Mekari KUAT
+- ...
+
+### Fitur yang Mekari LEMAH (gap intel)
+- ...
+
+### Quote sales yang notable
+- "..."
+- "..."
+
+### Pertanyaan yang BELUM ditanya (followup)
+- ...</div>
+
+<h3><span class="step-num">15</span>Verifikasi Folder Structure</h3>
+
+<p>Sebelum lapor ke Claude, cek folder kamu lengkap. Buka Terminal:</p>
+
+<div class="cmd">ls -la /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/
+ls /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/screenshots/ | wc -l</div>
+
+<p>Harusnya muncul minimal:</p>
+<ul>
+<li><code>2-probing-questions.docx</code> (script kamu)</li>
+<li><code>transcript.md</code></li>
+<li><code>notes.md</code></li>
+<li><code>screenshots/</code> dengan ≥20 file PNG</li>
+<li>(Opsional) <code>brochure.pdf</code>, <code>follow-up-email.md</code>, <code>pricing-quote.png</code></li>
+</ul>
+
+<h3><span class="step-num">16</span>Lapor ke Claude</h3>
+
+<p>Buka chat dengan Claude Code (di terminal Mac, jalankan <code>claude</code>), lalu kirim pesan:</p>
+
+<div class="ok">
+<strong>Pesan ke Claude:</strong><br><br>
+"Sudah upload demo Mekari, ada di <code>docs/competitive-research/mekari-jurnal/results/</code>. Tolong baca semua screenshot dan transcript, lalu keluarkan:<br>
+1. Gap analysis Vosi vs Mekari per modul dan per tier<br>
+2. Backlog prioritas — fitur Vosi yang MUST FIX sebelum jualan ke MSME serius<br>
+3. Landing page differentiation copy<br>
+4. Sales objection handling kalau customer compare Vosi vs Mekari"
+</div>
+
+<p>Claude akan baca semua file di folder itu (image + text + PDF) dan generate gap analysis dokumen. Estimasi 5–10 menit.</p>
+
+<hr>
+
+<h2>Troubleshooting Umum</h2>
+
+<table>
+<thead><tr><th>Masalah</th><th>Solusi</th></tr></thead>
+<tbody>
+<tr>
+<td>Zoom recording corrupted / tidak bisa dibuka</td>
+<td>Buka Zoom → Settings → Recording → klik <strong>Local Recording → Open</strong>. Kalau folder ada tapi file rusak, biasanya Zoom punya fitur Convert. Atau pakai VLC untuk play file <code>.zoom</code> intermediate.</td>
+</tr>
+<tr>
+<td>MacWhisper crash / hang di file besar</td>
+<td>Pisah file audio jadi 2 part pakai QuickTime (Cmd+T untuk trim), transcribe satu-satu.</td>
+</tr>
+<tr>
+<td>Sales tidak share screen, cuma ngobrol</td>
+<td>Mintabaik-baik: <em>"Mas/Mbak, bisa demo langsung di system supaya lebih jelas?"</em> Kalau tetap tidak mau, akhiri call sopan, jadwalkan ulang dengan sales lain.</td>
+</tr>
+<tr>
+<td>Sales agresif minta closing</td>
+<td>Konsisten jawab: <em>"Saya butuh diskusi dengan istri/partner dulu, follow-up email dalam 3 hari."</em> Jangan kasih card credit / commit apapun.</td>
+</tr>
+<tr>
+<td>Lupa enable recording, sudah demo separuh jalan</td>
+<td>Start recording sekarang juga. Setengah recording lebih baik dari nol. Catat manual untuk separuh awal yang miss.</td>
+</tr>
+<tr>
+<td>Screenshot blurry karena Zoom video compression</td>
+<td>Sales pasti akan kirim brochure PDF di follow-up email. Andalkan PDF untuk detail UI yang blur di video.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Quick Reference Card</h2>
+
+<table>
+<thead><tr><th>Item</th><th>Path / Info</th></tr></thead>
+<tbody>
+<tr><td>Folder demo</td><td><code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/mekari-jurnal/results/</code></td></tr>
+<tr><td>Script pertanyaan</td><td><code>2-probing-questions.docx</code> (di folder yang sama)</td></tr>
+<tr><td>Subfolder screenshot</td><td><code>screenshots/</code></td></tr>
+<tr><td>Subfolder frame video (opsional)</td><td><code>frames/</code></td></tr>
+<tr><td>Transcript file</td><td><code>transcript.md</code></td></tr>
+<tr><td>Notes file</td><td><code>notes.md</code></td></tr>
+<tr><td>Website daftar demo</td><td><code>www.jurnal.id</code></td></tr>
+<tr><td>MacWhisper download</td><td><code>goodsnooze.gumroad.com/l/macwhisper</code></td></tr>
+<tr><td>Zoom download</td><td><code>zoom.us/download</code></td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<div class="footer">
+Dokumen dibuat oleh Claude Code untuk Tony Wei — proyek Vosi ERP Antigravity. Tanggal: 6 Juni 2026. Disimpan permanen di <code>docs/competitive-research/mekari-jurnal/results/1-step-by-step.docx</code> supaya tidak hilang bersama terminal history.
+</div>
+
+</body>
+</html>

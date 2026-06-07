@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Step-by-Step Guide — Halo AI Sales Demo</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.55; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 22pt; color: #0b1c30; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
+  h2 { font-size: 16pt; color: #0b1c30; margin-top: 32px; border-left: 5px solid #7c3aed; padding-left: 12px; background: #f3e8ff; padding-top: 6px; padding-bottom: 6px; }
+  h3 { font-size: 13pt; color: #1e3d60; margin-top: 22px; }
+  h4 { font-size: 11pt; color: #475569; margin-top: 14px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-num { display: inline-block; background: #7c3aed; color: white; border-radius: 50%; width: 28px; height: 28px; text-align: center; font-weight: bold; margin-right: 8px; line-height: 28px; font-size: 12pt; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+  .tip { background: #fef3c7; padding: 10px 14px; border-left: 4px solid #d97706; margin: 12px 0; font-size: 10pt; }
+  .warn { background: #fee2e2; padding: 10px 14px; border-left: 4px solid #b91c1c; margin: 12px 0; font-size: 10pt; }
+  .ok { background: #f0fdf4; padding: 10px 14px; border-left: 4px solid #2d8a4e; margin: 12px 0; font-size: 10pt; }
+  .stress { background: #fef2f2; padding: 12px 14px; border-left: 4px solid #b91c1c; margin: 12px 0; font-size: 10pt; }
+  .cmd { background: #0b1c30; color: #6ee7a0; padding: 10px 14px; font-family: Menlo, Consolas, monospace; font-size: 10pt; border-radius: 4px; margin: 8px 0; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+  .footer { font-size: 9pt; color: #64748b; margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+  .timeline { background: #f3e8ff; padding: 14px 18px; border-radius: 6px; margin: 16px 0; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-family: Menlo, Consolas, monospace; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<h1>Step-by-Step Guide<br>Halo AI Sales Demo</h1>
+
+<div class="meta">
+<strong>Tujuan dokumen:</strong> Panduan lengkap dari sebelum, selama, dan sesudah demo Halo AI sales call — terutama untuk eksekusi stress test live yang membedakan demo ini dari Mekari.<br>
+<strong>Beda kunci dari demo Mekari:</strong> Halo AI adalah <strong>AI competitor langsung untuk Calista</strong> (Vosi Premium tier). Fokus utama bukan sekadar tanya fitur, tapi <strong>uji AI behavior secara live</strong> via 8 stress test prompt.<br>
+<strong>Total waktu kamu:</strong> ~2 jam tersebar 2–3 hari.<br>
+<strong>Total biaya:</strong> Rp 0.<br>
+<strong>Dokumen pendamping:</strong> <code>2-probing-questions.docx</code> di folder yang sama (script pertanyaan + 8 stress test prompts).
+</div>
+
+<div class="timeline">
+<strong>Big picture timeline:</strong>
+<ol>
+<li><strong>Hari 1</strong> (15 menit): Setup tools, daftar demo, jadwalkan waktu</li>
+<li><strong>Hari 2</strong> (45–60 menit): Eksekusi demo + record + stress test live</li>
+<li><strong>Hari 3</strong> (45 menit): Extract screenshot + screenshot hasil stress test + transcribe + upload + lapor ke Claude</li>
+</ol>
+</div>
+
+<hr>
+
+<h2>PHASE 1 — Pre-Demo Setup (Hari 1, ~15 menit)</h2>
+
+<h3><span class="step-num">1</span>Install Tools yang Diperlukan</h3>
+
+<p>Sama persis seperti untuk demo Mekari. Kalau kamu sudah lakukan setup untuk demo Mekari, skip step ini.</p>
+
+<p>Yang dibutuhkan:</p>
+<ul>
+<li><strong>Zoom</strong> atau <strong>Google Meet</strong> (untuk video call dengan sales)</li>
+<li><strong>MacWhisper</strong> (untuk transcribe Bahasa Indonesia offline)</li>
+<li><strong>WhatsApp di HP</strong> — INI PENTING karena stress test akan via WA langsung</li>
+<li><strong>QuickTime / Cmd+Shift+4</strong> — built-in macOS untuk screenshot</li>
+</ul>
+
+<div class="warn">
+<strong>Beda dari Mekari:</strong> Demo Halo AI biasanya hybrid — sales screen-share di Zoom + minta kamu test bot live via nomor WA mereka. Jadi <strong>HP-mu harus standby di samping laptop</strong> untuk kirim stress test prompt dan screenshot hasilnya real-time.
+</div>
+
+<h3><span class="step-num">2</span>Siapkan Identitas untuk Daftar Demo</h3>
+
+<p>Pakai persona berbeda dari demo Mekari (supaya tidak ke-link follow-up cross-sell):</p>
+
+<table>
+<thead><tr><th>Item</th><th>Saran</th></tr></thead>
+<tbody>
+<tr><td>Email</td><td>Gmail cadangan kedua atau alias (mis. <code>tonywei+haloai@gmail.com</code>).</td></tr>
+<tr><td>Nomor WA</td><td>Nomor cadangan SAMA dengan demo Mekari OK karena beda vendor.</td></tr>
+<tr><td>Nama bisnis</td><td>"Toko Material XYZ di LTC Glodok"</td></tr>
+<tr><td>Persona</td><td>"Lagi compare 3 AI chatbot vendor untuk customer service WA, decision dalam 1 bulan." — supaya sales tidak push aggressive closing.</td></tr>
+<tr><td>Pain point yang kamu sebut</td><td>"Admin keteteran balas chat 50–80/hari, sering miss order karena lambat respons."</td></tr>
+</tbody>
+</table>
+
+<h3><span class="step-num">3</span>Daftar Demo di Website Halo AI</h3>
+
+<ol>
+<li>Buka <code>www.haloai.co.id</code> di browser.</li>
+<li>Cari tombol <strong>"Coba Sekarang"</strong>, <strong>"Schedule Demo"</strong>, atau <strong>"Hubungi Kami"</strong>.</li>
+<li>Isi form. Jenis bisnis: pilih <strong>"Retail"</strong> atau <strong>"E-commerce"</strong>.</li>
+<li>Alternatif: WA langsung ke nomor resmi <strong>+62 851-2331-3390</strong>. Tulis: <em>"Halo, saya tertarik dengan Halo AI untuk toko material di Jakarta. Mau request demo dan info pricing."</em></li>
+<li>Pilih waktu demo: <strong>Selasa–Kamis 13:00–16:00 WIB</strong> sama seperti Mekari.</li>
+</ol>
+
+<h3><span class="step-num">4</span>Persiapan Khusus untuk Stress Test</h3>
+
+<p>INI BEDA UTAMA DARI DEMO MEKARI. Kamu akan test AI Halo AI secara live dengan kirim chat ke nomor bot demo mereka.</p>
+
+<ol>
+<li>Buka dokumen <code>2-probing-questions.docx</code> → scroll ke section <strong>"Appendix: Stress test prompts (KIRIM SAAT DEMO)"</strong> — ada 8 prompt (T1–T8).</li>
+<li>Highlight atau print 8 prompt itu supaya gampang copy-paste saat demo.</li>
+<li>Siapkan WhatsApp di HP standby — jangan tutup app.</li>
+<li>Mode persiapan: practice baca 8 prompt dengan cepat (10 detik tiap prompt, total 80 detik). Tidak boleh stuck baca naskah saat live demo karena sales akan unggu lama.</li>
+</ol>
+
+<div class="ok">
+<strong>Tujuan stress test:</strong> Marketing material Halo AI claim AI mereka "smart, persuasive, handle hundreds of cases". Stress test ngeunci klaim itu dengan empiris — apakah AI mereka beneran handle multi-intent, jujur kalau tidak tahu, dan tidak halusinasi.
+</div>
+
+<hr>
+
+<h2>PHASE 2 — Eksekusi Demo + Stress Test (Hari 2, 45–60 menit)</h2>
+
+<h3><span class="step-num">5</span>Sebelum Sales Connect</h3>
+
+<ol>
+<li><strong>Layar 1 (laptop):</strong> file probing questions DOCX side-by-side dengan Zoom window.</li>
+<li><strong>Layar 2 (HP):</strong> WhatsApp app terbuka, siap kirim chat ke nomor demo Halo AI.</li>
+<li><strong>Layar 3 (laptop):</strong> Notes app untuk catat jawaban sales + observasi AI behavior.</li>
+<li>Start recording 5 menit sebelum sales join.</li>
+</ol>
+
+<h3><span class="step-num">6</span>Sales Join → Disclose + Request Demo Bot Number</h3>
+
+<div class="ok">
+<strong>Skrip pembuka:</strong><br><br>
+"Mas/Mbak, makasih udah luangkan waktu. Izin saya rekam meeting ini buat catatan internal ya. Saya juga ingin <strong>langsung test bot AI Halo AI</strong> via WhatsApp — boleh saya dikasih nomor demo bot supaya bisa kirim contoh chat customer?"
+</div>
+
+<p>Sales pasti kasih nomor demo (mereka memang menyediakan). Catat nomor di Notes.</p>
+
+<h3><span class="step-num">7</span>Pacing Demo dengan Stress Test Terintegrasi</h3>
+
+<table>
+<thead><tr><th>Menit</th><th>Aktivitas</th><th>Yang kamu lakukan</th></tr></thead>
+<tbody>
+<tr><td>0–5</td><td>Intro + sales tanya bisnis kamu</td><td>Cerita persona pain point. Bagikan: "Volume chat 50-80/hari, sering miss order."</td></tr>
+<tr><td>5–20</td><td>Sales screen-share demo Halo AI dashboard</td><td>Dengarkan + catat. Centang pertanyaan probing yang sudah auto-dijawab.</td></tr>
+<tr><td>20–35</td><td><strong>STRESS TEST LIVE</strong> — kamu drive</td><td>Bilang ke sales: <em>"Boleh saya test bot demo via WA sekarang? Saya kirim beberapa skenario customer real."</em> Kemudian kirim T1–T8 satu per satu, screenshot hasil di HP, baca observasi loud ke sales: "Hmm, AI gak parse warna marun ya."</td></tr>
+<tr><td>35–50</td><td>Q&A pricing + integrasi</td><td>Tanya kategori 1 (pricing), 4 (channel), 5 (ERP integration), 9 (data privacy) dari pertanyaan ★★★ WAJIB.</td></tr>
+<tr><td>50–60</td><td>Closing + pertanyaan menyentil</td><td>Tanya #43 (vs Qontak), #44 (fitur yang paling sering di-request). Closing dengan: "Saya pelajari dulu, follow-up via email dalam 1 minggu."</td></tr>
+</tbody>
+</table>
+
+<h3><span class="step-num">8</span>Cara Eksekusi Stress Test Live (Penting!)</h3>
+
+<p>Saat menit 20, transisikan dari "sales screen-share" ke "saya test live":</p>
+
+<div class="ok">
+<strong>Skrip transisi:</strong><br><br>
+"Oke fitur dashboard kelihatan bagus. Sekarang saya mau test langsung kemampuan AI-nya — boleh saya kirim beberapa chat customer scenario via WA sekarang? Tolong jangan intervensi dari side Anda, biar saya bisa lihat AI handle solo."
+</div>
+
+<p>Lalu kirim T1–T8 satu per satu dengan jeda 30–60 detik tiap prompt (kasih waktu AI balas). Ambil screenshot hasil di HP:</p>
+
+<table>
+<thead><tr><th>Test</th><th>Prompt</th><th>Tunggu balasan</th><th>Screenshot &amp; observasi</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>T1</strong> Multi-intent</td>
+<td>"halo kak, plafon PVC 4 meter ada stok? warna marun. mau pesan 12 pcs kirim Karawang"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI ekstrak semua entitas (produk, ukuran, warna, qty, lokasi) atau tanya satu-satu?</td>
+</tr>
+<tr>
+<td><strong>T2</strong> Halusinasi</td>
+<td>"kak ada produk SLK-9999 versi 2026? mau order 50 pcs"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI jujur "tidak ada" atau ngarang detail?</td>
+</tr>
+<tr>
+<td><strong>T3</strong> Code-switch + nego</td>
+<td>"yang ini harganya berapa sih, btw bisa nego ga kalau order banyak?"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI handle 2 intent atau drop salah satu?</td>
+</tr>
+<tr>
+<td><strong>T4</strong> Persuasive close</td>
+<td>"hmm mahal banget, di toko sebelah lebih murah"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI counter dengan value prop atau auto-kasih diskon (over-discounting)?</td>
+</tr>
+<tr>
+<td><strong>T5</strong> Sentiment negatif</td>
+<td>"udah 3 hari belum kirim padahal janji 1 hari, gimana sih?"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI escalate ke human atau respons sendiri? Tone empati real?</td>
+</tr>
+<tr>
+<td><strong>T6</strong> Vague query</td>
+<td>"kak yg bagus apa?"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI ask clarifying question yang relevan atau respons generic?</td>
+</tr>
+<tr>
+<td><strong>T7</strong> Pickup vs delivery</td>
+<td>"saya ke toko aja besok pagi, bisa ambil sendiri jam 9?"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI handle non-delivery? Tahu jam buka toko?</td>
+</tr>
+<tr>
+<td><strong>T8</strong> Multi-stock query</td>
+<td>"plafon 3m sama 4m, masing-masing berapa stoknya?"</td>
+<td>30 detik</td>
+<td>Screenshot. Cek: AI multi-query stock atau jawab 1 produk doang?</td>
+</tr>
+</tbody>
+</table>
+
+<div class="stress">
+<strong>Selama stress test, vocalize observasi ke sales:</strong><br>
+Setelah tiap test, ucap loud apa yang kamu lihat:
+<ul>
+<li><em>"Hmm, T1 AI tanya warna lagi padahal saya sudah bilang marun di chat awal. Itu kenapa ya?"</em></li>
+<li><em>"T2 AI ngarang detail produk fictional. Itu bahaya kalau customer real, dia akan ekspektasi produk yang gak ada."</em></li>
+</ul>
+Sales akan defend atau jelaskan limitasi. Itu intel berharga — catat di Notes.
+</div>
+
+<h3><span class="step-num">9</span>Trick Khusus Demo Halo AI</h3>
+
+<div class="tip">
+<strong>Pricing gali — pakai context volume:</strong> Karena Halo AI custom-quote, sales akan ngeles "tergantung". Counter dengan angka spesifik: <em>"Untuk volume 80 chat/hari, 1 nomor WA, 1 admin, no marketplace — paket entry harga berapa per bulan?"</em>
+</div>
+
+<div class="tip">
+<strong>AI Credit unit gali:</strong> Tanya berulang sampai dapat angka: <em>"1 AI Credit = 1 message AI, 1 conversation, atau 1 token? Berapa credit termasuk di paket entry?"</em>
+</div>
+
+<div class="tip">
+<strong>Knowledge base gali:</strong> Minta sales <em>live screen-share UI upload knowledge base</em>. Lihat: bisa upload PDF? Excel? Berapa max ukuran? Apakah ada UI untuk verify AI mengerti data yang di-upload?
+</div>
+
+<div class="warn">
+<strong>Bahaya: sales akan kasih diskon agresif menjelang akhir:</strong> "Kalau Mas/Mbak ambil sekarang, paket Pro dapat 50% off + free integrasi 1 marketplace." Jangan tergoda. Konsisten jawab: <em>"Tertarik banget, tapi saya butuh diskusi tim dulu. Boleh quote-nya valid 1 minggu?"</em> — kalau valid 1 minggu, kamu punya leverage.
+</div>
+
+<h3><span class="step-num">10</span>Setelah Sales Selesai</h3>
+
+<ol>
+<li>Stop recording Zoom.</li>
+<li>Transfer screenshot stress test dari HP ke Mac:
+<ul>
+<li>AirDrop dari iPhone → Mac (paling cepat), atau</li>
+<li>Email screenshot ke diri sendiri, download di Mac, atau</li>
+<li>Google Drive / Dropbox sync.</li>
+</ul>
+</li>
+<li>Catat 3 takeaway paling penting di Notes (live impression sebelum lupa).</li>
+</ol>
+
+<hr>
+
+<h2>PHASE 3 — Post-Demo Processing &amp; Upload (Hari 3, ~45 menit)</h2>
+
+<h3><span class="step-num">11</span>Organize Screenshots</h3>
+
+<p>Bedakan screenshot demo screen (sales share) dari stress test results (chat WA).</p>
+
+<div class="cmd">cd /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/screenshots/
+mkdir -p stress-test demo-ui</div>
+
+<p>Klasifikasi file:</p>
+<ul>
+<li><strong>Stress test results</strong> → folder <code>stress-test/</code>. Naming: <code>T1-multi-intent.png</code>, <code>T2-hallucination.png</code>, ..., <code>T8-multi-stock.png</code>.</li>
+<li><strong>Demo screen sales</strong> → folder <code>demo-ui/</code>. Naming: <code>01-pricing-quote.png</code>, <code>02-knowledge-base-ui.png</code>, <code>03-channel-integration.png</code>, <code>04-handover-config.png</code>, <code>05-dashboard.png</code>, dst.</li>
+</ul>
+
+<p>Target total: 8 stress test screenshot + 20–30 demo UI screenshot.</p>
+
+<h3><span class="step-num">12</span>Transcribe Audio</h3>
+
+<p>Sama persis seperti demo Mekari — pakai MacWhisper:</p>
+<ol>
+<li>Buka MacWhisper.</li>
+<li>Drop file <code>audio_only.m4a</code> dari Zoom recording.</li>
+<li>Model: Large-v3, Language: Indonesian.</li>
+<li>Transcribe → export Plain Text.</li>
+<li>Save sebagai: <code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/transcript.md</code></li>
+</ol>
+
+<h3><span class="step-num">13</span>Save Brochure + Pricing Quote</h3>
+
+<p>Sales Halo AI biasanya kirim pricing quote dalam 24 jam via email karena custom. Save:</p>
+<ul>
+<li>Email body → <code>follow-up-email.md</code></li>
+<li>PDF brochure → <code>proposal.pdf</code></li>
+<li>Pricing screenshot/PDF → <code>pricing-quote.png</code> atau <code>pricing-quote.pdf</code></li>
+</ul>
+
+<h3><span class="step-num">14</span>Tulis Notes Personal — Khusus untuk Stress Test</h3>
+
+<p>Save sebagai <code>notes.md</code> di folder demo:</p>
+
+<div class="cmd">## Halo AI Demo — Notes
+Tanggal: [tanggal]
+Sales: [nama]
+
+### Stress test results summary
+T1 Multi-intent: [pass/fail] — [observasi]
+T2 Halusinasi: [pass/fail] — [observasi]
+T3 Code-switch + nego: [pass/fail] — [observasi]
+T4 Persuasive close: [pass/fail] — [observasi]
+T5 Sentiment negatif: [pass/fail] — [observasi]
+T6 Vague query: [pass/fail] — [observasi]
+T7 Pickup vs delivery: [pass/fail] — [observasi]
+T8 Multi-stock query: [pass/fail] — [observasi]
+
+### Pricing yang dapat
+- Entry tier: Rp ... /mo
+- AI Credit unit: ...
+- Setup fee: Rp ...
+
+### Fitur yang Halo AI KUAT (vs Calista Vosi)
+- ...
+
+### Fitur yang Halo AI LEMAH (Vosi pitch ammunition)
+- ...
+
+### Quote sales notable
+- "..."
+
+### Verdict
+Halo AI [strong/weak] competitor di [dimension].
+Vosi differentiation: [...]</div>
+
+<h3><span class="step-num">15</span>Verifikasi Folder Structure</h3>
+
+<div class="cmd">ls -la /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/
+ls /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/screenshots/stress-test/ | wc -l
+ls /Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/screenshots/demo-ui/ | wc -l</div>
+
+<p>Harusnya:</p>
+<ul>
+<li><code>2-probing-questions.docx</code></li>
+<li><code>transcript.md</code></li>
+<li><code>notes.md</code></li>
+<li><code>screenshots/stress-test/</code> dengan 8 file (T1–T8)</li>
+<li><code>screenshots/demo-ui/</code> dengan ≥15 file</li>
+<li>(Opsional) <code>proposal.pdf</code>, <code>pricing-quote.png</code>, <code>follow-up-email.md</code></li>
+</ul>
+
+<h3><span class="step-num">16</span>Lapor ke Claude</h3>
+
+<div class="ok">
+<strong>Pesan ke Claude:</strong><br><br>
+"Sudah upload demo Halo AI, ada di <code>docs/competitive-research/halo-ai/results/</code>. Tolong baca semua screenshot (terutama stress test T1–T8), transcript, dan pricing quote, lalu keluarkan:<br>
+1. Gap analysis Calista (Vosi Premium tier) vs Halo AI per kategori: NLU, persuasion, knowledge base, scaling, integrasi<br>
+2. Verdict per fitur: Vosi build / skip / sudah superior<br>
+3. Landing page differentiation copy untuk positioning Vosi Premium tier vs Halo AI<br>
+4. Sales objection handling kalau customer compare Vosi dengan Halo AI<br>
+5. Roadmap improvement Calista untuk close gap penting<br>
+6. Final ammunition matrix dari hasil 8 stress test — mana yang Vosi WIN dan bisa dipakai untuk landing copy"
+</div>
+
+<p>Claude akan baca semua file (image + text + PDF) dan generate gap analysis dokumen + ammunition deck untuk sales.</p>
+
+<hr>
+
+<h2>Troubleshooting Khusus Halo AI Demo</h2>
+
+<table>
+<thead><tr><th>Masalah</th><th>Solusi</th></tr></thead>
+<tbody>
+<tr>
+<td>Sales tidak kasih nomor demo bot, bilang "demo cuma di dashboard"</td>
+<td>Push: <em>"Saya butuh real test karena keputusan ini investasi cukup besar. Boleh kasih akses sandbox/trial 1 hari untuk test bot live?"</em> Kalau tetap tidak mau, ini RED FLAG (mereka tidak yakin AI mereka perform). Catat di notes — itu sendiri jadi intel.</td>
+</tr>
+<tr>
+<td>Bot demo Halo AI balas dalam Bahasa Inggris padahal kamu chat Indonesia</td>
+<td>Itu signal language model mereka tidak fine-tuned Indonesia. Catat. Kirim ulang T1: <em>"Tolong balas dalam Bahasa Indonesia ya"</em> — lihat apakah bot adapt atau tetap English.</td>
+</tr>
+<tr>
+<td>AI Halo AI keren tampak di T1–T3, lalu fail di T4–T8</td>
+<td>Catat <strong>persis</strong> di T mana fail. Pola ini umum: vendor showcase di easy cases, fail di edge cases. Ini gold mining untuk Vosi positioning.</td>
+</tr>
+<tr>
+<td>Sales push closing dengan urgency ("promo 50% off cuma hari ini")</td>
+<td>Selalu jawab: <em>"Saya appreciate ya, tapi keputusan butuh kalkulasi business case dulu. Quote valid berapa hari?"</em> Sales jujur akan kasih 7-14 hari validity. Kalau jawab "hari ini doang", itu manipulasi — jangan terpancing.</td>
+</tr>
+<tr>
+<td>Stress test gagal kirim karena bot reply lambat</td>
+<td>Catat latency-nya (mis. "5 detik untuk T1, 15 detik untuk T5"). Itu data point penting — Calista pakai Gemini 2.5 Flash Lite, biasanya &lt;3 detik.</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Comparison Quick Card — Mekari vs Halo AI</h2>
+
+<table>
+<thead><tr><th>Aspek</th><th>Demo Mekari</th><th>Demo Halo AI</th></tr></thead>
+<tbody>
+<tr><td>Durasi</td><td>45–60 menit</td><td>45–60 menit + 15 menit stress test</td></tr>
+<tr><td>Format</td><td>Screen-share sales mostly</td><td>Hybrid: screen-share + kamu live test bot via WA</td></tr>
+<tr><td>Pricing visibility</td><td>Public tier list di website</td><td>Custom quote — wajib gali</td></tr>
+<tr><td>Output kunci</td><td>Feature gap matrix per modul ERP</td><td>AI behavior gap matrix + stress test ammunition</td></tr>
+<tr><td>Stress test?</td><td>Tidak (sistem stateful)</td><td>WAJIB — 8 prompt T1–T8</td></tr>
+<tr><td>Persona kamu</td><td>"Cari ERP untuk toko material"</td><td>"Cari AI chatbot untuk customer service WA"</td></tr>
+<tr><td>Highest-value ammunition</td><td>Tidak ada AI native (butuh Qontak terpisah)</td><td>Hasil stress test live (mungkin AI hallucinate, miss multi-intent, dll)</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>Quick Reference Card</h2>
+
+<table>
+<thead><tr><th>Item</th><th>Path / Info</th></tr></thead>
+<tbody>
+<tr><td>Folder demo</td><td><code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/</code></td></tr>
+<tr><td>Script pertanyaan + stress test</td><td><code>2-probing-questions.docx</code></td></tr>
+<tr><td>Subfolder stress test</td><td><code>screenshots/stress-test/</code> (8 file)</td></tr>
+<tr><td>Subfolder demo UI</td><td><code>screenshots/demo-ui/</code> (15–30 file)</td></tr>
+<tr><td>Transcript</td><td><code>transcript.md</code></td></tr>
+<tr><td>Notes</td><td><code>notes.md</code></td></tr>
+<tr><td>Website daftar demo</td><td><code>www.haloai.co.id</code></td></tr>
+<tr><td>WA resmi sales</td><td>+62 851-2331-3390</td></tr>
+<tr><td>MacWhisper download</td><td><code>goodsnooze.gumroad.com/l/macwhisper</code></td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<div class="footer">
+Dokumen dibuat oleh Claude Code untuk Tony Wei — proyek Vosi ERP Antigravity. Tanggal: 6 Juni 2026. Disimpan permanen di <code>docs/competitive-research/halo-ai/results/1-step-by-step.docx</code> supaya tidak hilang bersama terminal history.
+</div>
+
+</body>
+</html>

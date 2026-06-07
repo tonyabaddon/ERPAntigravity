@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Halo AI Sales Demo — Probing Questions Script</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1f2937; max-width: 900px; }
+  h1 { font-size: 22pt; color: #0b1c30; border-bottom: 2px solid #7c3aed; padding-bottom: 8px; }
+  h2 { font-size: 15pt; color: #0b1c30; margin-top: 28px; border-left: 4px solid #7c3aed; padding-left: 10px; }
+  h3 { font-size: 12pt; color: #1e3d60; margin-top: 18px; }
+  .priority-must { color: #b91c1c; font-weight: bold; }
+  .priority-bonus { color: #d97706; font-weight: bold; }
+  .meta { background: #f8fafc; padding: 12px 16px; border-left: 4px solid #1e3d60; margin: 12px 0; font-size: 10pt; }
+  .question { margin: 10px 0; padding: 8px 0; }
+  .q-text { font-style: italic; padding-left: 20px; display: block; margin-top: 4px; color: #0b1c30; }
+  .legend { background: #f3e8ff; padding: 10px 14px; border-radius: 4px; margin: 16px 0; font-size: 10pt; }
+  ol { margin-left: 0; padding-left: 24px; }
+  ol li { margin-bottom: 8px; }
+  ul { margin-left: 0; padding-left: 20px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 10pt; }
+  table, th, td { border: 1px solid #cbd5e1; }
+  th, td { padding: 8px 10px; text-align: left; }
+  th { background: #f1f5f9; }
+  .checkbox { font-family: monospace; font-size: 12pt; margin-right: 6px; }
+  .tip { background: #fef3c7; padding: 10px 14px; border-left: 4px solid #d97706; margin: 12px 0; font-size: 10pt; }
+  .stress-test { background: #fee2e2; padding: 12px 14px; border-left: 4px solid #b91c1c; margin: 12px 0; font-size: 10pt; }
+  .section-intro { color: #475569; font-size: 10pt; margin-bottom: 12px; }
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  .footer { font-size: 9pt; color: #64748b; margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Halo AI Sales Demo — Probing Questions Script</h1>
+<p><strong>Tujuan:</strong> Benchmark AI capabilities Halo AI vs Calista (Vosi Premium tier). Halo AI adalah <strong>competitor langsung</strong> di domain AI WhatsApp — fokus pertanyaan di sini bukan ERP, tapi AI behavior, training data, scalability, dan pricing tersembunyi (mereka custom-quote).</p>
+
+<div class="meta">
+<strong>Persona kamu saat demo:</strong> "Saya owner toko material di LTC Glodok. Customer mostly via WhatsApp. Lagi compare Halo AI dengan beberapa alternatif AI chatbot untuk handle order &amp; customer service. Volume chat sekitar 50–80/hari, scaling ke ratusan."<br>
+<strong>Rekam meeting:</strong> ON. Disclose di awal: "Saya rekam untuk catatan tim ya." Sales tidak akan keberatan.<br>
+<strong>Format demo Halo AI biasanya:</strong> hybrid screen-share + live demo bot di WA mereka. Kamu bisa langsung uji AI dengan kirim chat ke nomor demo mereka.
+</div>
+
+<div class="legend">
+<strong>Legenda prioritas:</strong><br>
+<span class="priority-must">★★★ WAJIB</span> — pertanyaan inti untuk gap intel<br>
+<span class="priority-bonus">★ BONUS</span> — kalau masih ada waktu<br>
+<span style="color: #b91c1c; font-weight: bold;">🧪 STRESS TEST</span> — minta sales jalankan/test live, BUKAN cukup jawaban verbal
+</div>
+
+<hr>
+
+<!-- =================== SECTION 1 =================== -->
+<h2>1. Pricing &amp; Subscription (paling tertutup — wajib gali)</h2>
+<p class="section-intro">Halo AI custom-quote semua, tidak ada tier di website. Goal: ekstrak angka real untuk benchmark Vosi Premium AI tier (Rp 1,499k).</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 1.</span> Untuk bisnis toko material dengan ~80 chat/hari, 1 nomor WhatsApp, 1 admin/agent, no marketplace integration — paket entry level Halo AI harganya berapa per bulan?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 2.</span> AI Credit itu unitnya apa — per message AI, per conversation, atau per token? Berapa credit yang termasuk di paket entry?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 3.</span> Kalau saya habis credit di tengah bulan — auto-charge top-up atau AI berhenti? Top-up bundle terkecil berapa rupiah dan dapat berapa credit?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 4.</span> Setup fee atau onboarding fee — berapa? Saya baca implementation 5–14 hari, itu termasuk free atau berbayar?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 5.</span> Minimal kontrak berapa bulan? Refund policy kalau AI gak perform sesuai expectation?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 6.</span> Annual diskon berapa % vs monthly? Bayar di muka satu tahun ada cash discount?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 7.</span> Add-on integrasi (Tokopedia, Shopee, Instagram, ERP custom) — masing-masing chargeable separate atau include?
+</div>
+
+<!-- =================== SECTION 2 =================== -->
+<h2>2. AI Capabilities &amp; Behavior</h2>
+<p class="section-intro">Goal: tahu seberapa "smart" AI mereka untuk closing dan upsell — Calista pakai state machine 5-state, kalau Halo AI lebih simple bisa Vosi pitch superior reasoning.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 8.</span> AI Persuasive — dari materi marketing, ada fitur closing dan upselling. Bisa dikasih contoh konkret? Bagaimana AI memutuskan kapan upsell vs kapan tidak?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 9.</span> Apa AI underlying — pakai LLM apa? GPT-4? Gemini? Self-hosted Llama? Pertimbangannya data privacy?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 10.</span> Latency — rata-rata berapa detik AI balas customer setelah message masuk?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 11.</span> Kalau AI tidak yakin/tidak tahu jawabannya — apa fallback behavior? Auto-escalate ke human agent? Jawab "saya tidak tahu"? Atau halusinasi (jawab ngawur)?
+</div>
+
+<div class="stress-test">
+<strong>🧪 STRESS TEST 12.</strong> Minta sales coba live demo: kirim chat ke nomor Halo AI demo: <strong>"halo kak, saya mau cari plafon yang 4 meter, ada warna marun ga ya, terus mau yang ringan-ringan aja, oh iya sekalian bareng kirim ke Karawang ya"</strong> — chat panjang penuh entitas (produk, ukuran, warna, attribute, lokasi). Lihat apakah AI bisa parse semua entitas atau bingung. Catat: berapa lama AI balas, akurasi parsing, apakah ada info missing yang AI tanya balik.
+</div>
+
+<div class="stress-test">
+<strong>🧪 STRESS TEST 13.</strong> Test hallucination — kirim chat: <strong>"kak saya cari produk X-9999 ada gak, yang model terbaru bulan ini"</strong> — produk fictional. Lihat apakah AI jujur bilang "produk tidak ditemukan" atau ngarang jawaban. Vosi Calista jujur — kalau Halo AI halusinasi, ini pukulan keras buat positioning Vosi.
+</div>
+
+<div class="stress-test">
+<strong>🧪 STRESS TEST 14.</strong> Test code-switching: <strong>"kak yang ini berapa harganya, btw bisa nego ga sih kalau order banyak?"</strong> — campur Indonesia + bahasa gaul + question stack. Lihat apakah AI handle multiple intent (tanya harga + nego) atau drop salah satu.
+</div>
+
+<!-- =================== SECTION 3 =================== -->
+<h2>3. Knowledge Base &amp; Training Data</h2>
+<p class="section-intro">Goal: tahu mekanisme upload knowledge — INI GAP BESAR DI VOSI. Calista saat ini hard-coded prompt. Kalau Halo AI bisa upload PDF/website, itu fitur yang Vosi harus rencanakan.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 15.</span> Format knowledge base — bisa upload PDF, Excel, Word, link website? Berapa max ukuran per file dan total storage?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 16.</span> Kalau saya update harga produk di Excel — apakah AI auto-update jawabannya, atau harus re-upload knowledge base manual? Berapa lama propagasi?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 17.</span> AI bisa belajar dari conversation history (improvement over time) atau static knowledge base saja?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 18.</span> Saya punya 5.000 SKU produk dengan harga, stok, dan spesifikasi — bagaimana cara terbaik input ke Halo AI? Manual atau bulk import?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 19.</span> Custom persona — AI bisa di-train pakai gaya bahasa toko saya (slang sendiri, panggilan ke customer, dll)?
+</div>
+
+<!-- =================== SECTION 4 =================== -->
+<h2>4. Channel Integration</h2>
+<p class="section-intro">Goal: Halo AI cover Instagram + Shopee + Tokopedia — Vosi cuma WhatsApp. Tahu seberapa deep integrasinya untuk roadmap.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 20.</span> WhatsApp — pakai WhatsApp Business API (BSP) atau pakai WhatsApp Web non-resmi (whatsmeow-style)? Kalau API, BSP nya siapa?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 21.</span> Biaya messaging WhatsApp — include di paket atau pass-through Meta rate (Rp 295–596/msg)?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 22.</span> Instagram DM — fitur apa yang support (text only, image, voice note)? Story reply juga?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 23.</span> Tokopedia/Shopee — apakah cuma balas chat customer, atau bisa baca order data dan trigger workflow (mis. update status, kirim resi)?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 24.</span> Multi-channel inbox unified — admin handover bisa lintas channel (mis. customer chat WA, lanjut Instagram)?
+</div>
+
+<!-- =================== SECTION 5 =================== -->
+<h2>5. Integrasi ERP / Backend (titik lemah Halo AI, kekuatan Vosi)</h2>
+<p class="section-intro">Goal: probe seberapa native Halo AI integrate dengan accounting/POS/inventory. Kalau Halo AI cuma "AI inbox" tanpa ERP, Vosi all-in-one menang.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 25.</span> Saya punya inventory di Excel/Google Sheets — AI bisa baca stok real-time dari sana? Atau saya harus push manual ke Halo AI?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 26.</span> Kalau AI menerima order dari customer, output-nya: (a) draft order tersimpan di Halo AI dashboard, (b) kirim ke ERP saya via webhook, atau (c) langsung jadi invoice di akun saya?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 27.</span> Halo AI menyediakan UI untuk manage produk/stok/order, atau cuma layer AI di atas backend saya sendiri?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 28.</span> Integrasi ERP populer Indonesia (Jurnal, Accurate, MajooKasir) — ada native integration? Atau saya harus custom build via API/webhook?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 29.</span> Payment integration — Midtrans, Xendit, DOKU — AI bisa generate payment link otomatis?
+</div>
+
+<!-- =================== SECTION 6 =================== -->
+<h2>6. Human Handover &amp; Multi-Agent</h2>
+<p class="section-intro">Goal: tahu workflow kolaborasi AI + manusia. Vosi punya Sales Inbox dengan handover sederhana — cek apakah Halo AI lebih sophisticated.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 30.</span> Trigger handover AI ke human — apa saja yang bisa di-set? Keyword? Sentiment negatif? Confidence score AI rendah? Customer request explicit?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 31.</span> Setelah human ambil alih, AI bisa di-pause untuk conversation itu saja, atau global pause? Apa yang trigger AI resume otomatis?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 32.</span> Agent dashboard — multi-agent bisa simultaneously handle conversation berbeda? Ada assign + queue + SLA tracking?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 33.</span> Audit log AI vs human reply — bisa di-export untuk training/coaching?
+</div>
+
+<!-- =================== SECTION 7 =================== -->
+<h2>7. Scalability &amp; Limits</h2>
+<p class="section-intro">Goal: konfirmasi claim 6.5M conversation dan cari limit tersembunyi.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 34.</span> Conversation simultan maksimal — di paket entry berapa? Kalau over-limit, apa terjadi (queue, drop, charge extra)?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 35.</span> Uptime SLA — ada SLA tertulis di kontrak? Berapa % dan compensation kalau breach?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 36.</span> Saya dengar claim "handle 1.000–6.5M conversation" — itu per bulan atau lifetime? Customer mana yang sampai 6.5M?
+</div>
+
+<!-- =================== SECTION 8 =================== -->
+<h2>8. Multi-Brand / Multi-Tenant</h2>
+<p class="section-intro">Goal: kalau Halo AI support 1 AI manage multi-brand, ini bisa jadi inspiration untuk Vosi multi-tenant architecture.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 37.</span> Saya punya 2 toko dengan brand berbeda — 1 akun Halo AI bisa handle keduanya (terpisah persona &amp; knowledge), atau saya harus subscribe 2 akun?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 38.</span> Reporting per brand vs aggregated?
+</div>
+
+<!-- =================== SECTION 9 =================== -->
+<h2>9. Data Privacy &amp; Compliance</h2>
+<p class="section-intro">Goal: chat customer = PII. Tahu komitmen Halo AI ke PDP Indonesia.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 39.</span> Data customer disimpan di server mana — Indonesia atau luar? Untuk compliance UU PDP (Pelindungan Data Pribadi).
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 40.</span> Data conversation customer digunakan untuk train AI model Halo AI secara global, atau strictly per-tenant?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 41.</span> Retention policy — chat history disimpan berapa lama? Bisa di-delete on demand?
+</div>
+
+<!-- =================== SECTION 10 =================== -->
+<h2>10. Customer References &amp; Pertanyaan Menyentil</h2>
+<p class="section-intro">Goal: gali honest gap dari customer existing dan sales sendiri.</p>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-must">★★★ 42.</span> Customer yang dipakai di marketing (Halodoc, Massindo, Heymale, IELTSpresso) — itu enterprise. Ada customer MSME / toko material / distributor di Glodok-LTC area yang bisa saya referensi?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 43.</span> Saya juga consider Mekari Qontak. Menurut Mas/Mbak, Halo AI lebih unggul di mana, dan Qontak unggul di mana?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 44.</span> Apa request fitur yang paling sering dari customer existing tapi belum ada di Halo AI saat ini?
+</div>
+
+<div class="question">
+<span class="checkbox">☐</span> <span class="priority-bonus">★ 45.</span> Dari customer yang churn — alasan paling umum apa?
+</div>
+
+<hr>
+
+<!-- =================== STRESS TEST APPENDIX =================== -->
+<h2>Appendix: Stress test prompts (KIRIM SAAT DEMO)</h2>
+<p class="section-intro">Kirim langsung ke nomor demo Halo AI saat sales screen-share. Catat respons AI di Notes app. Ini adalah ammunition paling powerful untuk gap analysis vs Calista.</p>
+
+<table>
+<thead>
+<tr><th>#</th><th>Test scenario</th><th>Prompt kirim ke AI</th><th>Apa yang dinilai</th></tr>
+</thead>
+<tbody>
+<tr>
+<td>T1</td><td>Multi-intent parsing</td><td>"halo kak, plafon PVC 4 meter ada stok? warna marun. mau pesan 12 pcs kirim Karawang"</td><td>AI ekstrak: produk, ukuran, warna, qty, lokasi semua dalam 1 chat? Atau tanya satu-satu?</td>
+</tr>
+<tr>
+<td>T2</td><td>Halusinasi produk fictional</td><td>"kak ada produk SLK-9999 versi 2026? mau order 50 pcs"</td><td>AI jujur "tidak ada" atau ngarang detail?</td>
+</tr>
+<tr>
+<td>T3</td><td>Code-switching + nego</td><td>"yang ini harganya berapa sih, btw bisa nego ga kalau order banyak?"</td><td>AI handle 2 intent (cek harga + bahas diskon) atau drop salah satu?</td>
+</tr>
+<tr>
+<td>T4</td><td>Persuasive close</td><td>"hmm mahal banget, di toko sebelah lebih murah"</td><td>AI counter dengan value prop atau langsung kasih diskon (over-discounting)?</td>
+</tr>
+<tr>
+<td>T5</td><td>Sentiment negatif</td><td>"udah 3 hari belum kirim padahal janji 1 hari, gimana sih?"</td><td>AI escalate ke human atau tetap respons sendiri? Tone empati real atau scripted?</td>
+</tr>
+<tr>
+<td>T6</td><td>Vague query</td><td>"kak yg bagus apa?"</td><td>AI ask clarifying question yang relevan atau response generic?</td>
+</tr>
+<tr>
+<td>T7</td><td>Lokasi pickup vs delivery</td><td>"saya ke toko aja besok pagi, bisa ambil sendiri jam 9?"</td><td>AI handle non-delivery scenario? Tahu jam buka toko?</td>
+</tr>
+<tr>
+<td>T8</td><td>Inquiry stok kompleks</td><td>"plafon 3m sama 4m, masing-masing berapa stoknya?"</td><td>AI multi-query stock lookup atau jawab 1 produk?</td>
+</tr>
+</tbody>
+</table>
+
+<hr>
+
+<!-- =================== TIPS =================== -->
+<h2>Tips selama demo Halo AI</h2>
+
+<div class="tip">
+<strong>Beda sama Mekari:</strong> Halo AI demo cenderung lebih singkat (30–45 menit) karena scope produk lebih narrow. Sisihkan minimal 10 menit untuk stress test live (Appendix di atas) — ini value tertinggi.
+</div>
+
+<div class="tip">
+<strong>Tahan jangan signal niat buy:</strong> Karena pricing custom, kalau kamu kelihatan "hot lead" mereka kasih harga premium. Posisikan "lagi compare 3 vendor, decision in 1 month" — supaya kamu dapat harga starting fair.
+</div>
+
+<div class="tip">
+<strong>Minta sample knowledge base:</strong> Sales biasanya punya template knowledge base untuk industri retail/toko. Minta sample-nya supaya kamu lihat struktur — useful untuk fitur Vosi roadmap.
+</div>
+
+<div class="tip">
+<strong>Catat angka spesifik:</strong> AI credit, conversation limit, latency claim, uptime SLA — semua angka ini akan dipakai untuk benchmark vs Calista. Repeat back ke sales untuk ngeunci komitmen.
+</div>
+
+<hr>
+
+<!-- =================== POST-DEMO =================== -->
+<h2>Setelah demo — upload hasil</h2>
+
+<p><strong>Path folder:</strong> <code>/Users/tonywei/IdeaProjects/ERPAntigravity/docs/competitive-research/halo-ai/results/</code></p>
+
+<table>
+<thead>
+<tr><th>File</th><th>Cara generate</th><th>Save sebagai</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Screenshots</strong> demo UI (20–40 key moments)</td>
+  <td>Pause recording, screenshot fitur penting. Rename deskriptif: <code>01-pricing-conv.png</code>, <code>02-knowledge-base-ui.png</code>, <code>03-handover-flow.png</code>.</td>
+  <td><code>screenshots/01-...png</code></td>
+</tr>
+<tr>
+  <td><strong>Stress test results</strong> (T1–T8)</td>
+  <td>Screenshot percakapan WA dengan bot demo Halo AI saat kirim 8 test prompt. Atau salin text reply ke notes.</td>
+  <td><code>screenshots/stress-t1.png</code> ... <code>stress-t8.png</code></td>
+</tr>
+<tr>
+  <td><strong>Transcript audio</strong></td>
+  <td><strong>MacWhisper</strong> (gratis offline, Indonesia bagus) atau Zoom auto-transcript.</td>
+  <td><code>transcript.md</code></td>
+</tr>
+<tr>
+  <td><strong>Brochure/proposal PDF</strong> (kalau sales kirim)</td>
+  <td>Save langsung.</td>
+  <td><code>proposal.pdf</code></td>
+</tr>
+<tr>
+  <td><strong>Pricing quote</strong></td>
+  <td>Salin dari email atau screenshot dokumen quote yang sales kirim.</td>
+  <td><code>pricing-quote.png</code> atau <code>pricing-quote.pdf</code></td>
+</tr>
+<tr>
+  <td><strong>Catatan kamu</strong></td>
+  <td>Highlight kutipan sales, angka, dan judgment kamu live.</td>
+  <td><code>notes.md</code></td>
+</tr>
+</tbody>
+</table>
+
+<div class="tip">
+<strong>Beritahu Claude:</strong> Setelah upload, chat ke saya: <em>"Sudah upload demo Halo AI, ada di <code>docs/competitive-research/halo-ai/results/</code>"</em> — saya akan baca semua file dan keluarkan:
+<ul>
+<li>Gap analysis matrix Calista vs Halo AI (per kategori: NLU, persuasion, knowledge base, scaling, integrasi)</li>
+<li>Verdict per fitur: Vosi build / skip / sudah superior</li>
+<li>Landing page differentiation copy (mana yang Vosi menang vs Halo AI)</li>
+<li>Sales objection handling saat customer compare kamu dengan Halo AI</li>
+<li>Roadmap improvement Calista untuk close gap penting (mis. knowledge base upload kalau itu gap)</li>
+</ul>
+</div>
+
+<hr>
+
+<div class="footer">
+<strong>Estimasi waktu total:</strong> Schedule demo (5 menit) + demo + stress test (45–60 menit) + extract screenshot &amp; stress test results (30 menit) + transcribe (10 menit auto) + upload (5 menit) = <strong>~2 jam total tersebar 2–3 hari</strong>.<br><br>
+Dokumen dibuat oleh Claude Code untuk Tony Wei — proyek Vosi ERP Antigravity. Tanggal: 6 Juni 2026.
+</div>
+
+</body>
+</html>
