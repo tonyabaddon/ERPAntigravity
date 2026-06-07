@@ -14,6 +14,8 @@ import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { purchaseOrderService } from '../lib/pembelianService';
 import type { DbCustomerWithStats } from '../types';
 import KasirInvoiceModal from './KasirInvoiceModal';
+import MarkLunasModal from './penjualan/MarkLunasModal';
+import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
 
 interface KasirScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -137,6 +139,8 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
   const [showSaleModal, setShowSaleModal] = useState<KasirChannel | null>(null);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [printTx, setPrintTx] = useState<KasirTransaction | null>(null);
+  const [markLunasTx, setMarkLunasTx] = useState<KasirTransaction | null>(null);
+  const [lunasInvoice, setLunasInvoice] = useState<KasirTransaction | null>(null);
 
   // ── Load data ──
   const loadData = useCallback(async () => {
@@ -369,6 +373,20 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
                       {tx.po_id && <span className="text-violet-500">🔗 dari PO</span>}
                       <span>· {formatTime(tx.created_at)}</span>
                     </div>
+                    {tx.status === 'AWAITING_LUNAS' && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-700 border border-amber-300">
+                          💰 Belum Lunas {formatRp((tx.total_amount ?? tx.subtotal) - (tx.dp_amount ?? 0))}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setMarkLunasTx(tx)}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-500 text-white hover:bg-amber-600"
+                        >
+                          Tandai Lunas
+                        </button>
+                      </div>
+                    )}
                   </div>
                   {isOwner && isIncome && tx.hpp_total > 0 && (
                     <span className="text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-lg flex-shrink-0">
@@ -536,6 +554,27 @@ export default function KasirScreen({ currentUser, showToast }: KasirScreenProps
       )}
       {printTx && (
         <KasirInvoiceModal transaction={printTx} onClose={() => setPrintTx(null)} />
+      )}
+      {markLunasTx && (
+        <MarkLunasModal
+          transaction={markLunasTx}
+          showToast={showToast}
+          onClose={() => setMarkLunasTx(null)}
+          onMarked={(updated) => {
+            setMarkLunasTx(null);
+            setLunasInvoice(updated);
+            // Refresh tx list
+            loadData();
+          }}
+        />
+      )}
+      {lunasInvoice && (
+        <SalesInvoicePDF
+          transaction={lunasInvoice}
+          variant="lunas"
+          autoPrint
+          onClose={() => setLunasInvoice(null)}
+        />
       )}
     </div>
   );
