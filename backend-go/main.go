@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -16,10 +17,10 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
+	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/models"
-	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
@@ -205,7 +206,36 @@ func main() {
 	if waNumberID == "" {
 		waNumberID = "wa_1"
 	}
-	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey)
+
+	// Debounce wiring — opt-in via env. When DEBOUNCE_ENABLED=false (default),
+	// debounceHandler stays nil and handler.go takes the legacy direct path.
+	debounceEnabled := getEnvBoolDefault("DEBOUNCE_ENABLED", false)
+	softWaitMs := getEnvIntDefault("DEBOUNCE_SOFT_WAIT_MS", 5000)
+	hardWaitMs := getEnvIntDefault("DEBOUNCE_HARD_WAIT_MS", 12000)
+
+	var debounceHandler *whatsapp.DebounceHandler
+	if debounceEnabled {
+		// Forward-reference closure: waHandler is declared above (line 178) but
+		// assigned below, after debounceHandler is built. The closure captures
+		// the variable, so it sees the assigned value at call time.
+		flushFn := func(ctx context.Context, phone, joined string, originalTexts []string) error {
+			if waHandler == nil {
+				return nil
+			}
+			waHandler.ProcessJoinedMessage(ctx, phone, joined, originalTexts)
+			return nil
+		}
+		debounceHandler = whatsapp.NewDebounceHandler(whatsapp.DebounceConfig{
+			Clock:    whatsapp.NewRealClock(),
+			FlushFn:  flushFn,
+			SoftWait: time.Duration(softWaitMs) * time.Millisecond,
+			HardWait: time.Duration(hardWaitMs) * time.Millisecond,
+			Typing:   &whatsapp.WATypingNotifier{Client: waClient.WA},
+		})
+		log.Printf("[MAIN] Debounce enabled soft=%dms hard=%dms", softWaitMs, hardWaitMs)
+	}
+
+	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, debounceHandler)
 	waClient.AddEventHandler(waHandler.Handle)
 	followup.NewPoller(dbClient, sender).Start(ctx)
 	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
@@ -270,7 +300,34 @@ func main() {
 	<-quit
 
 	log.Println("[MAIN] Shutting down...")
+	if debounceHandler != nil {
+		log.Println("[MAIN] draining debounce buffers...")
+		drainCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		debounceHandler.Shutdown(drainCtx)
+		cancel()
+	}
 	waClient.Disconnect()
+}
+
+func getEnvBoolDefault(key string, def bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	return v == "true" || v == "1"
+}
+
+func getEnvIntDefault(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		log.Printf("[CONFIG] bad %s=%q, using default %d: %v", key, v, def, err)
+		return def
+	}
+	return n
 }
 
 func enableCors(w *http.ResponseWriter) {

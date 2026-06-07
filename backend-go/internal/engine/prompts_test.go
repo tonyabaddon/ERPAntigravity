@@ -143,3 +143,10 @@ func TestMissingFieldsNoneMissing(t *testing.T) {
 		t.Error("must not list fields that are already filled")
 	}
 }
+
+func TestBuildPromptCollecting_IncludesMultiFieldInstruction(t *testing.T) {
+	prompt := BuildPrompt(models.StateCollecting, "id", models.CollectedData{}, nil, "")
+	if !strings.Contains(prompt, "ekstrak SEMUA field") {
+		t.Fatalf("expected multi-field instruction in COLLECTING prompt, got:\n%s", prompt)
+	}
+}
