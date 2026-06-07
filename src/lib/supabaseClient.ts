@@ -922,7 +922,30 @@ export const kasirService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
       .from('kasir_transactions')
-      .insert({ ...tx, type: 'income' })
+      .insert({
+        date: tx.date,
+        type: 'income',
+        channel: tx.channel,
+        items: tx.items,
+        subtotal: tx.subtotal,
+        hpp_total: tx.hpp_total,
+        payment_method: tx.payment_method,
+        payment_subtype: tx.payment_subtype ?? null,
+        payment_type: tx.payment_type,
+        dp_amount: tx.dp_amount,
+        dp_input_type: tx.dp_input_type ?? null,
+        ongkir_amount: tx.ongkir_amount,
+        notes: tx.notes ?? null,
+        total_amount: tx.total_amount,
+        tokped_order_no: tx.tokped_order_no ?? null,
+        wa_phone: tx.wa_phone ?? null,
+        wa_chat_url: tx.wa_chat_url ?? null,
+        status: tx.payment_type === 'DP' ? 'AWAITING_LUNAS' : 'PAID',
+        customer_name: tx.customer_name ?? null,
+        customer_phone: tx.customer_phone ?? null,
+        customer_company: tx.customer_company ?? null,
+        invoice_number: tx.invoice_number,
+      })
       .select()
       .single();
     if (error) throw error;
