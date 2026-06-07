@@ -263,6 +263,56 @@ export const orderService = {
     return data ?? [];
   },
 
+  async createWalkinDraft(input: {
+    customer_id: string | null;
+    customer_name: string;
+    customer_phone: string;
+    customer_company: string;
+    items: Array<{ sku: string; name: string; qty: number; unit_price: number; subtotal: number }>;
+    subtotal: number;
+    hpp_total: number;
+    total: number;
+  }): Promise<DbOrder> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .insert({
+        sales_channel:     'walkin',
+        status:            'WAITING_PAYMENT',
+        customer_id:       input.customer_id,
+        customer_name:     input.customer_name,
+        customer_phone:    input.customer_phone,
+        customer_company:  input.customer_company,
+        customer_address:  '',
+        items:             input.items,
+        subtotal:          input.subtotal,
+        shipping_fee:      0,
+        total:             input.total,
+        hpp_total:         input.hpp_total,
+        payment_type:      'FULL',
+        delivery_type:     'PICKUP',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as DbOrder;
+  },
+
+  async markWalkinPaid(
+    orderId: string,
+    paymentMethod: 'cash' | 'transfer' | 'qris',
+    invoiceNumber: string
+  ): Promise<KasirTransaction> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('mark_walkin_order_paid', {
+      p_order_id:       orderId,
+      p_payment_method: paymentMethod,
+      p_invoice_number: invoiceNumber,
+    });
+    if (error) throw error;
+    return data as KasirTransaction;
+  },
+
   async rejectOrder(orderId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
@@ -676,19 +726,30 @@ export const customersService = {
 
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*, orders!orders_customer_id_fkey(*), leads!leads_customer_id_fkey(*)')
-      .eq('id', customerId)
-      .single();
-    if (error) throw error;
-    const profile = data as any;
+    const [customerRes, kasirRes] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('*, orders!orders_customer_id_fkey(*), leads!leads_customer_id_fkey(*)')
+        .eq('id', customerId)
+        .single(),
+      supabase
+        .from('kasir_transactions')
+        .select('*')
+        .eq('customer_id', customerId)
+        .eq('type', 'income')
+        .order('created_at', { ascending: false }),
+    ]);
+    if (customerRes.error) throw customerRes.error;
+    if (kasirRes.error)    throw kasirRes.error;
+
+    const profile = customerRes.data as any;
     profile.orders = (profile.orders ?? []).sort(
       (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     profile.leads = (profile.leads ?? []).sort(
       (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+    profile.kasir_transactions = (kasirRes.data ?? []) as any[];
     return profile as DbCustomerProfile;
   },
 };
@@ -921,9 +982,33 @@ export const kasirService = {
 
   async insertSaleTransaction(tx: NewSaleTransaction): Promise<KasirTransaction> {
     if (!supabase) throw new Error('Supabase not configured');
+    let customer_id = tx.customer_id ?? null;
+
+    // If no customer_id provided but phone+name are, try to find or create the customer.
+    if (!customer_id && tx.customer_phone && tx.customer_name) {
+      const phone = tx.customer_phone.trim();
+      const { data: existing } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('wa_number', phone)
+        .maybeSingle();
+      if (existing) {
+        customer_id = existing.id;
+      } else {
+        const newId = crypto.randomUUID();
+        const { error: insertErr } = await supabase
+          .from('customers')
+          .upsert(
+            { id: newId, wa_number: phone, name: tx.customer_name.trim(), company: tx.customer_company?.trim() ?? '' },
+            { onConflict: 'wa_number', ignoreDuplicates: false }
+          );
+        if (!insertErr) customer_id = newId;
+      }
+    }
+
     const { data, error } = await supabase
       .from('kasir_transactions')
-      .insert({ ...tx, type: 'income' })
+      .insert({ ...tx, type: 'income', customer_id })
       .select()
       .single();
     if (error) throw error;
@@ -953,5 +1038,36 @@ export const kasirService = {
     if (data == null) throw new Error('next_kasir_number returned null');
     const counter = String(data).padStart(3, '0');
     return `${prefix}-${dateCompact}-${counter}`;
+  },
+};
+
+export const salesEntriesService = {
+  async fetchAll(): Promise<{ orders: DbOrder[]; kasir: KasirTransaction[] }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const [ordersRes, kasirRes] = await Promise.all([
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('kasir_transactions').select('*').eq('type', 'income').order('created_at', { ascending: false }),
+    ]);
+    if (ordersRes.error) throw ordersRes.error;
+    if (kasirRes.error)  throw kasirRes.error;
+    return {
+      orders: (ordersRes.data ?? []) as DbOrder[],
+      kasir:  (kasirRes.data  ?? []) as KasirTransaction[],
+    };
+  },
+
+  async fetchOpenWalkinDrafts(): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('sales_channel', 'walkin')
+      .in('status', [
+        'WAITING_PAYMENT', 'PAYMENT_UPLOADED',
+        'WAITING_DP',      'DP_UPLOADED', 'DP_VERIFIED',
+      ])
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as DbOrder[];
   },
 };
