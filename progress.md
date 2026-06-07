@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Stock Fraud Phase 1, Task 3: `_log_stock_movement` helper RPC — DONE
+- **Goal**: Single insertion point (chokepoint) that every wrapper RPC in Tasks 4-7 will call inside its transaction to write `stock_movements` rows. Centralizes `qty_after = qty_before + qty_delta` math, defaults for `actor_user_id` / `actor_role` / `evidence_urls`, and locks down EXECUTE so nothing outside SECURITY DEFINER RPCs can write to the ledger.
+- **Migration `supabase/migrations/20260607000001b_log_stock_movement.sql`** applied via `psql` to live Supabase. The `b` suffix marks it as an addendum to the prior `…001_stock_movements.sql` (which is already shipped at `9e22fd4` and therefore immutable). Output: `CREATE FUNCTION` + `REVOKE`.
+- **Function signature** (12 args, last 7 optional): `_log_stock_movement(p_sku TEXT, p_warehouse TEXT, p_qty_delta INT, p_qty_before INT, p_source stock_movement_source, p_related_doc_type TEXT=NULL, p_related_doc_id TEXT=NULL, p_reason_code TEXT=NULL, p_reason_note TEXT=NULL, p_actor_user_id UUID=NULL, p_actor_role TEXT=NULL, p_evidence_urls TEXT[]='{}') RETURNS BIGINT`. `SECURITY DEFINER`, `SET search_path = public`. `EXECUTE` REVOKEd from `PUBLIC, anon, authenticated` — only invoked from inside other SECURITY DEFINER RPCs.
+- **Tests appended** to `backend-go/internal/db/stock_movements_test.go`:
+  - `TestLogStockMovement_HappyPath` — invokes helper with `qty_before=5, qty_delta=3`, asserts ledger row has `qty_after=8`.
+  - `TestLogStockMovement_QtyMathViolation` — direct INSERT with broken math (`qty_before=5, qty_delta=3, qty_after=99`), asserts `chk_qty_math` rejects it. Guards against accidental CHECK removal.
+  - Both call `seedOneRow(t, client)` from Task 2's file (same `db_test` package) to defensively ensure SKU `TEST-IMM` exists in `stocks` — handles isolated `-run` invocations where Task 2's tests don't fire first.
+- **TDD discipline confirmed**: RED first (`pq: function public._log_stock_movement(...) does not exist`) → migration applied → GREEN (both tests pass). `go test ./...` from `backend-go/` green, no regressions.
+- **Type casts retained**: `'adjustment'::public.stock_movement_source` + `'…001'::uuid` per the plan — lib/pq won't auto-cast string literals to custom enums/UUIDs in named-arg calls.
+- **Commit**: `feat(stocks): add _log_stock_movement helper RPC` — files: migration + test file appended + progress.md.
+- **Next**: Task 4 wraps the first stock-mutating RPC (`receive_purchase_order`) to call `_log_stock_movement` inside its transaction.
+
 ## 2026-06-07 — Stock Fraud Phase 1, Task 2: Immutability triggers verified — DONE
 - **Goal**: Belt-and-suspenders verification — even when connected with `service_role` (which bypasses RLS and ignores REVOKE on `PUBLIC/anon/authenticated`), the `BEFORE UPDATE/DELETE` triggers must still `RAISE EXCEPTION` and block any tamper attempt on `stock_movements`. This is the live proof of Foundational Decision #1.
 - **Test file**: `backend-go/internal/db/stock_movements_immutability_test.go` — two tests (`TestStockMovements_UpdateRaises`, `TestStockMovements_DeleteRaises`) plus a shared `seedOneRow` helper that idempotently inserts SKU `TEST-IMM` into `stocks` then a ledger row, returning the new id.
