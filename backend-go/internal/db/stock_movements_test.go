@@ -160,3 +160,44 @@ func TestReceivePO_WritesLedgerRowPerLine(t *testing.T) {
 	}
 }
 
+// TestDeductFIFO_WritesLedgerRow verifies Phase 1 Task 5: the wrapped
+// deduct_stock_fifo RPC writes exactly one stock_movements row per call
+// (aggregate sale — NOT one row per lot consumed), inside the same
+// transaction as the FIFO walk. The row carries source = the p_source arg,
+// qty_delta = -p_qty, and related_doc_{type,id} from the args.
+//
+// Calls the new 6-arg overload positionally:
+//
+//	(p_sku, p_qty, p_warehouse, p_related_doc_type, p_related_doc_id, p_source)
+//
+// The pre-existing 2-arg overload (varchar, int) is dropped by the Task 5
+// migration so this is now the only signature.
+func TestDeductFIFO_WritesLedgerRow(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	beforeRows := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err := client.DB.Exec(
+		`SELECT public.deduct_stock_fifo('TEST-IMM', 3, 'atas',
+		         'order'::text, 'ORD-TEST'::text, 'sale_wa'::public.stock_movement_source)`)
+	if err != nil {
+		t.Fatalf("deduct_stock_fifo: %v", err)
+	}
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-beforeRows != 1 {
+		t.Fatalf("expected 1 ledger row, got %d", got-beforeRows)
+	}
+
+	var source string
+	var delta int
+	err = client.DB.QueryRow(
+		`SELECT source::text, qty_delta FROM public.stock_movements
+		 WHERE related_doc_id='ORD-TEST' ORDER BY id DESC LIMIT 1`).Scan(&source, &delta)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if source != "sale_wa" || delta != -3 {
+		t.Fatalf("ledger row wrong: source=%s delta=%d", source, delta)
+	}
+}
+

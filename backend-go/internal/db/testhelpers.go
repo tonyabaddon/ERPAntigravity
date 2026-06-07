@@ -145,6 +145,53 @@ func SeedPurchaseOrder(t testing.TB, c *Client, lines []POLine) SeededPO {
 	return SeededPO{ID: poID, ItemIDs: itemIDs}
 }
 
+// EnsureSKUStock seeds a SKU into public.stocks (if absent) and sets the
+// stock_<warehouse> column to qty. Also ensures at least one stock_lot row
+// with qty_remaining > 0 exists so the FIFO walk in deduct_stock_fifo has
+// inventory to consume.
+//
+// Idempotent: re-running with the same args is a no-op on the lots side
+// (NOT EXISTS guard) and a simple overwrite on the stocks column.
+//
+// Used by tests that need a deterministic starting stock state (e.g.
+// TestDeductFIFO_*). warehouse must be "atas" or "bawah" — anything else is
+// a test programmer error and fails fast.
+func EnsureSKUStock(t testing.TB, c *Client, sku, warehouse string, qty int) {
+	t.Helper()
+	if warehouse != "atas" && warehouse != "bawah" {
+		t.Fatalf("warehouse must be atas|bawah, got %q", warehouse)
+	}
+
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.stocks (sku, name, category, price, stock, status, specs)
+		 VALUES ($1, 'Test SKU', 'Aksesori', 1000, 0, 'Sinkron', '{}'::jsonb)
+		 ON CONFLICT (sku) DO NOTHING`, sku); err != nil {
+		t.Fatalf("seed sku %s: %v", sku, err)
+	}
+
+	col := "stock_atas"
+	if warehouse == "bawah" {
+		col = "stock_bawah"
+	}
+	if _, err := c.DB.Exec(
+		`UPDATE public.stocks SET `+col+` = $1, updated_at = now() WHERE sku=$2`,
+		qty, sku); err != nil {
+		t.Fatalf("set %s for %s: %v", col, sku, err)
+	}
+
+	// Ensure at least one stock_lot exists with qty_remaining > 0 so FIFO has
+	// something to consume. po_id is NULL (no PO context); unit_cost is a
+	// throwaway. The NOT EXISTS guard makes this idempotent across re-runs.
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.stock_lots (sku, po_id, unit_cost, qty_received, qty_remaining, received_at)
+		 SELECT $1::varchar, NULL, 1000, $2, $2, now() - INTERVAL '10 years'
+		 WHERE NOT EXISTS (
+		   SELECT 1 FROM public.stock_lots WHERE sku=$1::varchar AND qty_remaining > 0
+		 )`, sku, qty); err != nil {
+		t.Fatalf("seed stock_lot for %s: %v", sku, err)
+	}
+}
+
 // CountStockMovements returns the current number of stock_movements rows for
 // the given SKU. Used by tests to assert how many ledger rows a single RPC
 // call produced.
