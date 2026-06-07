@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-07 — Stock Fraud Phase 1, Task 4: Wrap `receive_purchase_order` to write ledger row per line — DONE
+- **Goal**: First wrapper RPC in Phase 1. Each PO line that actually moves stock now writes exactly one `stock_movements` row (`source='purchase_receive'`) in the same transaction as the `stocks.stock_atas` / `stocks.stock_bawah` increment, so a successful receive is auditable end-to-end and a failed ledger insert rolls back the warehouse update.
+- **Signature discovery** (live `pg_proc`): two overloads exist — the 5-arg legacy one from `…000010_receive_po_add_payment_fields.sql` (writes to legacy `stocks.stock`, now overwritten by the `sync_stock_total` trigger — effectively dead) and the canonical 6-arg one from `…000002_warehouse_columns.sql` with `p_warehouse`. Grep of `backend-go/`, `src/`, `supabase/functions/` shows only `src/lib/pembelianService.ts:142` calls the RPC, and it passes `p_warehouse` → the 6-arg version. Only the 6-arg overload is wrapped; the 5-arg is left untouched (dead overload — flagged for a future cleanup task; wrapping it would add risk without benefit).
+- **Migration `supabase/migrations/20260607000002_wrap_receive_po.sql`** applied via `psql` (Docker not running, Supabase CLI unusable — same pattern as prior tasks). Output: `CREATE FUNCTION`. Body is a near-verbatim copy of the 6-arg migration; the only additions are: (a) `v_qty_before int` decl, (b) `SELECT stock_atas / stock_bawah INTO v_qty_before` before each branch's UPDATE, (c) `PERFORM public._log_stock_movement(...)` after the UPDATE + lot insert. Validation, status check, PO status update — all preserved verbatim.
+- **Test infra extended (`backend-go/internal/db/testhelpers.go`)**: added `POLine` struct (SKU/OrderedQty/UnitPrice), `SeededPO` (returns PO id + per-line item ids), `SeedPurchaseOrder(t, c, lines)` (idempotently seeds `stocks` rows for FK, inserts a unique supplier + ORDERED PO + one `purchase_order_items` row per line), and `CountStockMovements(t, c, sku)`. The item ids matter — `receive_purchase_order` keys the `p_conditions` JSONB by `purchase_order_items.id::text`, so the test has to construct conditions like `{<item_id>: {"qty_received": 7, "qty_damaged": 0}}` or the loop body short-circuits with no stock movement and no ledger row.
+- **Test appended** to `backend-go/internal/db/stock_movements_test.go`: `TestReceivePO_WritesLedgerRowPerLine` seeds a 1-line PO (SKU `TEST-IMM`, qty 7), counts ledger rows, calls the 6-arg RPC with `p_warehouse='atas'` and a real conditions JSONB, then asserts `+1` row with `source='purchase_receive'`, `warehouse='atas'`, `qty_delta=7`, `related_doc_type='purchase_order'`, `related_doc_id=po.ID`.
+- **TDD discipline confirmed**: RED first (`expected 1 new ledger row, got 0` — the stock_atas update succeeded but no ledger row was written, exactly the gap the migration fills) → migration applied → GREEN. Full `go test ./...` from `backend-go/` green, no regressions.
+- **Test output (final)**:
+  ```
+  === RUN   TestReceivePO_WritesLedgerRowPerLine
+  --- PASS: TestReceivePO_WritesLedgerRowPerLine (2.59s)
+  PASS
+  ok  	github.com/username/sinar-elektrik-backend/internal/db	2.897s
+  ```
+- **Commit**: `feat(stocks): receive_purchase_order writes stock_movements ledger row per line` — files: migration + test file appended + testhelpers extended + progress.md.
+- **Next**: Task 5 wraps the next stock-mutating RPC (likely `deduct_stock_fifo` or `decrement_stock`) with the same pattern.
+
 ## 2026-06-07 — Stock Fraud Phase 1, Task 3: `_log_stock_movement` helper RPC — DONE
 - **Goal**: Single insertion point (chokepoint) that every wrapper RPC in Tasks 4-7 will call inside its transaction to write `stock_movements` rows. Centralizes `qty_after = qty_before + qty_delta` math, defaults for `actor_user_id` / `actor_role` / `evidence_urls`, and locks down EXECUTE so nothing outside SECURITY DEFINER RPCs can write to the ledger.
 - **Migration `supabase/migrations/20260607000001b_log_stock_movement.sql`** applied via `psql` to live Supabase. The `b` suffix marks it as an addendum to the prior `…001_stock_movements.sql` (which is already shipped at `9e22fd4` and therefore immutable). Output: `CREATE FUNCTION` + `REVOKE`.

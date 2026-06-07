@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -83,3 +84,79 @@ func TestLogStockMovement_QtyMathViolation(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+// TestReceivePO_WritesLedgerRowPerLine verifies Phase 1 Task 4: the wrapped
+// receive_purchase_order RPC writes exactly one stock_movements row per line
+// item that actually moves stock, inside the same transaction as the stock
+// update. The row must have source='purchase_receive', warehouse matching the
+// p_warehouse arg, and qty_delta equal to the received qty.
+//
+// Calls the canonical 6-arg overload (the one src/lib/pembelianService.ts
+// uses). The conditions JSONB is keyed by purchase_order_items.id — same
+// shape the frontend builds.
+func TestReceivePO_WritesLedgerRowPerLine(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	po := db.SeedPurchaseOrder(t, client, []db.POLine{
+		{SKU: "TEST-IMM", OrderedQty: 7, UnitPrice: 1000},
+	})
+	beforeRows := db.CountStockMovements(t, client, "TEST-IMM")
+
+	// Build conditions JSONB keyed by the item id (RPC reads
+	// p_conditions->(item.id::text); empty conditions = no-op loop).
+	conditions := map[string]map[string]any{
+		po.ItemIDs[0]: {"qty_received": 7, "qty_damaged": 0},
+	}
+	condJSON, err := json.Marshal(conditions)
+	if err != nil {
+		t.Fatalf("marshal conditions: %v", err)
+	}
+
+	// Canonical 6-arg signature: (p_po_id, p_received_at, p_payment_due_at,
+	// p_invoice_url, p_conditions, p_warehouse). See migration
+	// 20260605000002_warehouse_columns.sql lines 75-82 for the live shape.
+	_, err = client.DB.Exec(
+		`SELECT public.receive_purchase_order(
+		   p_po_id          => $1::uuid,
+		   p_received_at    => now(),
+		   p_payment_due_at => CURRENT_DATE,
+		   p_invoice_url    => NULL,
+		   p_conditions     => $2::jsonb,
+		   p_warehouse      => 'atas')`, po.ID, string(condJSON))
+	if err != nil {
+		t.Fatalf("receive_purchase_order failed: %v", err)
+	}
+
+	afterRows := db.CountStockMovements(t, client, "TEST-IMM")
+	if afterRows-beforeRows != 1 {
+		t.Fatalf("expected 1 new ledger row, got %d", afterRows-beforeRows)
+	}
+
+	var source, warehouse, relatedDocType, relatedDocID string
+	var delta int
+	err = client.DB.QueryRow(
+		`SELECT source::text, warehouse, qty_delta,
+		        related_doc_type, related_doc_id
+		 FROM public.stock_movements
+		 WHERE related_doc_type='purchase_order' AND related_doc_id=$1
+		 ORDER BY id DESC LIMIT 1`, po.ID).Scan(
+		&source, &warehouse, &delta, &relatedDocType, &relatedDocID)
+	if err != nil {
+		t.Fatalf("read ledger: %v", err)
+	}
+	if source != "purchase_receive" {
+		t.Fatalf("source = %q, want purchase_receive", source)
+	}
+	if warehouse != "atas" {
+		t.Fatalf("warehouse = %q, want atas", warehouse)
+	}
+	if delta != 7 {
+		t.Fatalf("qty_delta = %d, want 7", delta)
+	}
+	if relatedDocType != "purchase_order" || relatedDocID != po.ID {
+		t.Fatalf("related = %s/%s, want purchase_order/%s",
+			relatedDocType, relatedDocID, po.ID)
+	}
+}
+

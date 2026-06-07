@@ -1,9 +1,11 @@
 package db
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -56,4 +58,102 @@ func findEnvFile() (string, bool) {
 		}
 		dir = parent
 	}
+}
+
+// POLine is a minimal description of a purchase_order_items row used by
+// SeedPurchaseOrder. OrderedQty becomes purchase_order_items.qty; UnitPrice
+// becomes unit_cost. The SKU must already exist in stocks (the FK is enforced).
+type POLine struct {
+	SKU        string
+	OrderedQty int
+	UnitPrice  int
+}
+
+// SeededPO is the return value from SeedPurchaseOrder. It carries the PO id
+// plus the generated item ids — the latter are needed to construct the
+// p_conditions JSONB argument that receive_purchase_order expects (the RPC
+// keys conditions by purchase_order_items.id).
+type SeededPO struct {
+	ID      string
+	ItemIDs []string
+}
+
+// SeedPurchaseOrder inserts a supplier (if needed), a purchase_order in
+// ORDERED status, and one purchase_order_items row per line. Returns the PO
+// id and per-line item ids so callers can build a conditions JSONB.
+//
+// Side effects:
+//   - Ensures each line's SKU exists in public.stocks (idempotent ON CONFLICT).
+//   - Inserts a test supplier with a unique name per call.
+//   - Inserts the PO with status='ORDERED' (the only status from which
+//     receive_purchase_order accepts a transition; see migration
+//     20260605000002_warehouse_columns.sql line 94).
+func SeedPurchaseOrder(t testing.TB, c *Client, lines []POLine) SeededPO {
+	t.Helper()
+
+	// 1. Ensure every line's SKU exists in stocks (FK target).
+	for _, line := range lines {
+		if _, err := c.DB.Exec(
+			`INSERT INTO public.stocks (sku, name, category, price, stock, status, specs)
+			 VALUES ($1, $2, 'Aksesori', 1000, 0, 'Sinkron', '{}'::jsonb)
+			 ON CONFLICT (sku) DO NOTHING`,
+			line.SKU, "Test SKU "+line.SKU); err != nil {
+			t.Fatalf("seed stocks for %s failed: %v", line.SKU, err)
+		}
+	}
+
+	// 2. Insert a supplier with a unique name (no UNIQUE constraint on
+	// suppliers.name — collisions are harmless, but uniqueness keeps test
+	// state observable).
+	supplierName := fmt.Sprintf("Test Supplier %d", time.Now().UnixNano())
+	var supplierID string
+	if err := c.DB.QueryRow(
+		`INSERT INTO public.suppliers (name) VALUES ($1) RETURNING id`,
+		supplierName).Scan(&supplierID); err != nil {
+		t.Fatalf("seed supplier failed: %v", err)
+	}
+
+	// 3. Insert the PO in ORDERED status with a unique PO number.
+	poNumber := fmt.Sprintf("PO-TEST-%d", time.Now().UnixNano())
+	var poID string
+	if err := c.DB.QueryRow(
+		`INSERT INTO public.purchase_orders
+		   (po_number, supplier_id, status, ordered_at, subtotal, total)
+		 VALUES ($1, $2, 'ORDERED', now(), 0, 0)
+		 RETURNING id`,
+		poNumber, supplierID).Scan(&poID); err != nil {
+		t.Fatalf("seed PO failed: %v", err)
+	}
+
+	// 4. Insert one purchase_order_items row per line, collecting item ids.
+	itemIDs := make([]string, 0, len(lines))
+	for _, line := range lines {
+		var itemID string
+		subtotal := line.OrderedQty * line.UnitPrice
+		if err := c.DB.QueryRow(
+			`INSERT INTO public.purchase_order_items
+			   (po_id, sku, product_name, qty, unit_cost, subtotal)
+			 VALUES ($1, $2, $3, $4, $5, $6)
+			 RETURNING id`,
+			poID, line.SKU, "Item "+line.SKU,
+			line.OrderedQty, line.UnitPrice, subtotal).Scan(&itemID); err != nil {
+			t.Fatalf("seed PO line for %s failed: %v", line.SKU, err)
+		}
+		itemIDs = append(itemIDs, itemID)
+	}
+
+	return SeededPO{ID: poID, ItemIDs: itemIDs}
+}
+
+// CountStockMovements returns the current number of stock_movements rows for
+// the given SKU. Used by tests to assert how many ledger rows a single RPC
+// call produced.
+func CountStockMovements(t testing.TB, c *Client, sku string) int {
+	t.Helper()
+	var n int
+	if err := c.DB.QueryRow(
+		`SELECT COUNT(*) FROM public.stock_movements WHERE sku=$1`, sku).Scan(&n); err != nil {
+		t.Fatalf("count stock_movements for %s: %v", sku, err)
+	}
+	return n
 }
