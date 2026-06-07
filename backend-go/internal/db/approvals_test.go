@@ -1,8 +1,10 @@
 package db_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
 )
@@ -891,5 +893,140 @@ func TestCommitOpname_NotApproved_Fails(t *testing.T) {
 		`SELECT status::text FROM public.stock_opname_sessions WHERE id=$1`, sid).Scan(&sessionStatus)
 	if sessionStatus == "committed" {
 		t.Fatalf("session flipped to committed despite failed commit")
+	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 9: price_change_requests + stock_price_history schemas
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// price_change_requests is the MUTABLE workflow row (pending → approved /
+// rejected / expired). stock_price_history is the APPEND-ONLY audit log that
+// mirrors stock_movements' immutability pattern (Foundational Decision #1):
+// REVOKE UPDATE,DELETE from anon+authenticated (belt) PLUS a BEFORE UPDATE/
+// DELETE trigger that raises 'append-only' even under service_role
+// (suspenders).
+//
+// The three tests below pin the contract:
+//   1. Both tables exist after the …015 migration.
+//   2. stock_price_history rejects UPDATE and DELETE with an 'append-only'
+//      error message (covers both triggers — task description enumerates both).
+//   3. price_change_requests is mutable (UPDATE status='approved' succeeds
+//      under the service_role connection NewTestClient uses) — the audit log's
+//      immutability must NOT bleed into the workflow row.
+//
+// Unique SKU per test (T9-PRICE-<nano>) avoids the TEST-IMM test-isolation
+// pollution flagged in the T7/T8 progress entries.
+
+func TestPriceChange_TablesExist(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	for _, tbl := range []string{"price_change_requests", "stock_price_history"} {
+		var n int
+		err := client.DB.QueryRow(
+			`SELECT 1 FROM information_schema.tables
+			 WHERE table_schema='public' AND table_name=$1`, tbl).Scan(&n)
+		if err != nil {
+			t.Fatalf("%s missing: %v", tbl, err)
+		}
+		if n != 1 {
+			t.Fatalf("expected scan to yield 1 for %s, got %d", tbl, n)
+		}
+	}
+}
+
+func TestStockPriceHistory_UpdateRaises(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T9-PRICE-U-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+
+	var id int64
+	err := client.DB.QueryRow(
+		`INSERT INTO public.stock_price_history
+		   (sku, field, old_value, new_value, source, actor_user_id, actor_role)
+		 VALUES ($1,'price', 1000, 1200, 'seed',
+		         '00000000-0000-0000-0000-000000000000', 'system_test')
+		 RETURNING id`, sku).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	_, err = client.DB.Exec(
+		`UPDATE public.stock_price_history SET new_value=999 WHERE id=$1`, id)
+	if err == nil || !strings.Contains(err.Error(), "append-only") {
+		t.Fatalf("expected append-only, got: %v", err)
+	}
+}
+
+func TestStockPriceHistory_DeleteRaises(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T9-PRICE-D-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+
+	var id int64
+	err := client.DB.QueryRow(
+		`INSERT INTO public.stock_price_history
+		   (sku, field, old_value, new_value, source, actor_user_id, actor_role)
+		 VALUES ($1,'harga_modal', 500, 700, 'seed',
+		         '00000000-0000-0000-0000-000000000000', 'system_test')
+		 RETURNING id`, sku).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	_, err = client.DB.Exec(
+		`DELETE FROM public.stock_price_history WHERE id=$1`, id)
+	if err == nil || !strings.Contains(err.Error(), "append-only") {
+		t.Fatalf("expected append-only, got: %v", err)
+	}
+}
+
+// TestPriceChangeRequests_Mutable proves price_change_requests is the
+// workflow row, NOT the audit log: a service_role UPDATE flipping status from
+// 'pending' to 'approved' must succeed (the canonical commit path will do
+// exactly this in T10's commit_approved_price_change RPC). This is the
+// negative twin of the append-only tests above — if the REVOKE/trigger logic
+// were copy-pasted from stock_price_history to price_change_requests by
+// mistake, this test catches it.
+func TestPriceChangeRequests_Mutable(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T9-PRICE-M-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+
+	var arID int64
+	err := client.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by)
+		 VALUES ('price_change','{}'::jsonb,'00000000-0000-0000-0000-000000000001')
+		 RETURNING id`).Scan(&arID)
+	if err != nil {
+		t.Fatalf("seed approval_request: %v", err)
+	}
+
+	var pcrID int64
+	err = client.DB.QueryRow(
+		`INSERT INTO public.price_change_requests
+		   (sku, field, old_value, new_value, reason_note, approval_request_id, requested_by)
+		 VALUES ($1,'price',1000,1200,'kenaikan supplier',$2,
+		         '00000000-0000-0000-0000-000000000001')
+		 RETURNING id`, sku, arID).Scan(&pcrID)
+	if err != nil {
+		t.Fatalf("seed price_change_request: %v", err)
+	}
+
+	_, err = client.DB.Exec(
+		`UPDATE public.price_change_requests
+		    SET status='approved', decided_at=now(),
+		        decided_by='00000000-0000-0000-0000-000000000099'
+		  WHERE id=$1`, pcrID)
+	if err != nil {
+		t.Fatalf("UPDATE price_change_requests must succeed (mutable workflow row), got: %v", err)
+	}
+
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status FROM public.price_change_requests WHERE id=$1`, pcrID).Scan(&status)
+	if status != "approved" {
+		t.Fatalf("status = %q, want approved", status)
 	}
 }
