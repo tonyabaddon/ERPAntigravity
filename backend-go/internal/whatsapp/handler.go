@@ -16,6 +16,13 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/storage"
 )
 
+// debouncer is the minimal interface used by Handler.routeMessage.
+// Decoupled from *DebounceHandler so tests can inject a stub.
+type debouncer interface {
+	Push(ctx context.Context, phone, text string)
+	Flush(phone string)
+}
+
 type Handler struct {
 	db                 *db.Client
 	machine            *engine.Machine
@@ -25,10 +32,10 @@ type Handler struct {
 	startedAt          time.Time
 	supabaseURL        string
 	supabaseServiceKey string
-	debounce           *DebounceHandler // may be nil when feature flag is off
+	debounce           debouncer // may be nil when feature flag is off
 }
 
-func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce *DebounceHandler) *Handler {
+func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce debouncer) *Handler {
 	return &Handler{
 		db: d, machine: m, sender: s, scheduler: sc,
 		waNumberID: waNumberID, startedAt: time.Now(),
@@ -58,16 +65,16 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		text = evt.Message.GetExtendedTextMessage().GetText()
 	}
 
+	senderJID := evt.Info.Sender.ToNonAD().String()
+
 	// Media bypass: never debounce. Drain any in-flight buffer first so customer
 	// message order is preserved (text → media in the conversation log).
+	// Media messages (payment proofs) must never be filtered by startup time —
+	// customers send proofs while the backend is restarting and lose them otherwise.
 	if text == "" {
-		// Media messages (payment proofs) must never be filtered by startup time —
-		// customers send proofs while the backend is restarting and lose them otherwise.
-		senderJID := evt.Info.Sender.ToNonAD().String()
-		if h.debounce != nil {
-			h.debounce.Flush(senderJID)
-		}
-		h.handleMediaMessage(evt)
+		h.routeMessage(context.Background(), senderJID, "", true, func() {
+			h.handleMediaMessage(evt)
+		})
 		return
 	}
 
@@ -81,19 +88,37 @@ func (h *Handler) Handle(rawEvt interface{}) {
 
 	log.Printf("[HANDLER] Processing text from %s: %q", evt.Info.Sender, text)
 
-	// Preserve the full JID string (including @lid server for LID-based senders)
-	// so sender.go can route it correctly.
-	senderJID := evt.Info.Sender.ToNonAD().String()
+	h.routeMessage(context.Background(), senderJID, text, false, nil)
+}
 
-	// Escalation keyword bypass: drain any buffered messages first, then escalate
-	// immediately so the customer's urgent request isn't held back by debounce.
+// routeMessage dispatches an already-parsed customer message to the appropriate
+// path: media bypass, escalation bypass, or normal text debounce.
+// Exposed at package level so it can be tested without faking
+// whatsmeow.events.Message (which has non-exported fields).
+func (h *Handler) routeMessage(ctx context.Context, senderJID string, text string, isMedia bool, mediaHandler func()) {
+	// Media bypass: never debounce. Drain any in-flight buffer first.
+	if isMedia {
+		if h.debounce != nil {
+			h.debounce.Flush(senderJID)
+		}
+		if mediaHandler != nil {
+			mediaHandler()
+		}
+		return
+	}
+
+	// Escalation keyword bypass: drain buffer, then escalate immediately.
 	esc := rules.CheckEscalation(text)
 	if esc != rules.EscalationNone {
 		if h.debounce != nil {
 			h.debounce.Flush(senderJID)
 		}
 		go func() {
-			ctx := context.Background()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[HANDLER] escalation goroutine panic for %s: %v", senderJID, r)
+				}
+			}()
 			switch esc {
 			case rules.EscalationWiring:
 				h.handleWiringEscalation(ctx, senderJID, text)
@@ -104,12 +129,11 @@ func (h *Handler) Handle(rawEvt interface{}) {
 		return
 	}
 
-	// Normal path: route through debounce when enabled, else fall through to
-	// the legacy direct path so feature-flag-off behavior matches pre-debounce.
+	// Normal path: route through debounce if enabled, else direct.
 	if h.debounce != nil {
-		h.debounce.Push(context.Background(), senderJID, text)
+		h.debounce.Push(ctx, senderJID, text)
 	} else {
-		go h.ProcessJoinedMessage(context.Background(), senderJID, text, []string{text})
+		go h.ProcessJoinedMessage(ctx, senderJID, text, []string{text})
 	}
 }
 
