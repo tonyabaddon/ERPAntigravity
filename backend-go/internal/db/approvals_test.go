@@ -206,3 +206,183 @@ func TestRequestAdjustment_CreatesApprovalAndAdjustment(t *testing.T) {
 		t.Fatalf("stock_atas changed before approval: got %d, want 10", qty)
 	}
 }
+
+// TestCommitApprovedAdjustment_HappyPath drives the full Task 4 commit flow:
+// request_adjustment → _transition_approval (simulating the Owner PIN /
+// WA-button decision side-channel) → commit_approved_adjustment. After commit
+// we expect three things to be true atomically:
+//   1. stocks.stock_atas decremented by qty_delta (10 - 3 = 7)
+//   2. one stock_movements row with source='adjustment' written via the
+//      Phase 1 _log_stock_movement helper
+//   3. stock_adjustments row status flipped to 'approved' with
+//      committed_at + committed_movement_id populated
+func TestCommitApprovedAdjustment_HappyPath(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	var approvalID int64
+	err := client.DB.QueryRow(
+		`SELECT public.request_adjustment(
+		   p_sku=>'TEST-IMM', p_warehouse=>'atas', p_qty_delta=>-3,
+		   p_reason_code=>'rusak'::public.stock_adjustment_reason,
+		   p_evidence_urls=>ARRAY['a.jpg'],
+		   p_actor_user_id=>'00000000-0000-0000-0000-000000000001'::uuid)`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("request_adjustment: %v", err)
+	}
+
+	// Pre-approve via _transition_approval (simulating Owner PIN flow). In real
+	// life the Owner PIN RPC / WA webhook handler calls _transition_approval as
+	// its first SQL statement before invoking the commit RPC.
+	_, err = client.DB.Exec(
+		`SELECT public._transition_approval($1, 'approved'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099'::uuid, 'owner_pin')`, approvalID)
+	if err != nil {
+		t.Fatalf("transition: %v", err)
+	}
+
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err = client.DB.Exec(
+		`SELECT public.commit_approved_adjustment($1)`, approvalID)
+	if err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+
+	// Stock decremented.
+	var qty int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas FROM public.stocks WHERE sku='TEST-IMM'`).Scan(&qty)
+	if qty != 7 {
+		t.Fatalf("stock_atas = %d, want 7", qty)
+	}
+
+	// Exactly one ledger row written for this commit.
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-before != 1 {
+		t.Fatalf("expected 1 new ledger row, got %d", got-before)
+	}
+
+	// committed_movement_id populated and pointing at an 'adjustment' row.
+	var movID int64
+	_ = client.DB.QueryRow(
+		`SELECT committed_movement_id FROM public.stock_adjustments
+		 WHERE approval_request_id=$1`, approvalID).Scan(&movID)
+	if movID == 0 {
+		t.Fatalf("committed_movement_id not set")
+	}
+
+	var source, status string
+	_ = client.DB.QueryRow(
+		`SELECT source::text FROM public.stock_movements WHERE id=$1`, movID).Scan(&source)
+	if source != "adjustment" {
+		t.Fatalf("ledger source = %s, want adjustment", source)
+	}
+	_ = client.DB.QueryRow(
+		`SELECT status FROM public.stock_adjustments WHERE approval_request_id=$1`, approvalID).Scan(&status)
+	if status != "approved" {
+		t.Fatalf("adjustment status = %s, want approved", status)
+	}
+}
+
+// TestCommitApprovedAdjustment_NotApproved_Fails guards the precondition:
+// commit_approved_adjustment must REFUSE to write stock or ledger rows unless
+// the source-of-truth approval_requests row is already in 'approved' status.
+// This is the linchpin of the architecture — every commit RPC must verify the
+// gate has been passed before re-entering the ledger.
+func TestCommitApprovedAdjustment_NotApproved_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	var approvalID int64
+	err := client.DB.QueryRow(
+		`SELECT public.request_adjustment(
+		   p_sku=>'TEST-IMM', p_warehouse=>'atas', p_qty_delta=>-1,
+		   p_reason_code=>'rusak'::public.stock_adjustment_reason,
+		   p_evidence_urls=>ARRAY['a.jpg'],
+		   p_actor_user_id=>'00000000-0000-0000-0000-000000000001'::uuid)`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("request_adjustment: %v", err)
+	}
+
+	_, err = client.DB.Exec(
+		`SELECT public.commit_approved_adjustment($1)`, approvalID)
+	if err == nil {
+		t.Fatalf("expected error when committing pending request")
+	}
+	if !strings.Contains(err.Error(), "not approved") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Stock must be untouched.
+	var qty int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas FROM public.stocks WHERE sku='TEST-IMM'`).Scan(&qty)
+	if qty != 10 {
+		t.Fatalf("stock_atas changed after failed commit: got %d, want 10", qty)
+	}
+}
+
+// TestRejectAdjustment_FlipsBothSides verifies reject_adjustment closes the
+// satellite stock_adjustments row WITHOUT touching stock or writing a ledger
+// row. The approval_requests state transition is done OUT of band by the caller
+// (via _transition_approval — same pattern as the commit path); the satellite
+// RPC just flips its own status field.
+func TestRejectAdjustment_FlipsBothSides(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
+
+	var approvalID int64
+	err := client.DB.QueryRow(
+		`SELECT public.request_adjustment(
+		   p_sku=>'TEST-IMM', p_warehouse=>'atas', p_qty_delta=>-2,
+		   p_reason_code=>'rusak'::public.stock_adjustment_reason,
+		   p_evidence_urls=>ARRAY['a.jpg'],
+		   p_actor_user_id=>'00000000-0000-0000-0000-000000000001'::uuid)`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("request_adjustment: %v", err)
+	}
+
+	// The Owner rejection side-channel uses _transition_approval first…
+	_, err = client.DB.Exec(
+		`SELECT public._transition_approval($1, 'rejected'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099'::uuid, 'owner_pin')`, approvalID)
+	if err != nil {
+		t.Fatalf("transition to rejected: %v", err)
+	}
+
+	before := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err = client.DB.Exec(
+		`SELECT public.reject_adjustment($1, 'tidak valid')`, approvalID)
+	if err != nil {
+		t.Fatalf("reject_adjustment: %v", err)
+	}
+
+	// Adjustment row flipped to 'rejected'.
+	var saStatus string
+	_ = client.DB.QueryRow(
+		`SELECT status FROM public.stock_adjustments WHERE approval_request_id=$1`, approvalID).Scan(&saStatus)
+	if saStatus != "rejected" {
+		t.Fatalf("adjustment status = %s, want rejected", saStatus)
+	}
+
+	// approval_requests row reflects the rejection.
+	var arStatus string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, approvalID).Scan(&arStatus)
+	if arStatus != "rejected" {
+		t.Fatalf("approval status = %s, want rejected", arStatus)
+	}
+
+	// No ledger row written; stock untouched.
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got != before {
+		t.Fatalf("ledger row written on reject: %d new rows", got-before)
+	}
+	var qty int
+	_ = client.DB.QueryRow(
+		`SELECT stock_atas FROM public.stocks WHERE sku='TEST-IMM'`).Scan(&qty)
+	if qty != 10 {
+		t.Fatalf("stock_atas changed on reject: got %d, want 10", qty)
+	}
+}
