@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -950,6 +950,45 @@ export const kasirService = {
       .single();
     if (error) throw error;
     return data as KasirTransaction;
+  },
+
+  async markLunas(
+    id: string,
+    lunasPayment: { method: KasirPaymentMethod; subtype?: KasirPaymentSubtype; ongkirAdjust?: number }
+  ): Promise<KasirTransaction> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const updates: Record<string, unknown> = {
+      status: 'COMPLETED',
+      lunas_at: new Date().toISOString(),
+      lunas_payment_method: lunasPayment.method,
+      lunas_payment_subtype: lunasPayment.subtype ?? null,
+    };
+    if (typeof lunasPayment.ongkirAdjust === 'number') {
+      // Fetch current row to recompute total_amount
+      const { data: cur, error: e1 } = await supabase
+        .from('kasir_transactions').select('subtotal,ongkir_amount').eq('id', id).single();
+      if (e1) throw e1;
+      const newOngkir = ((cur?.ongkir_amount as number) ?? 0) + lunasPayment.ongkirAdjust;
+      updates.ongkir_amount = newOngkir;
+      updates.total_amount = ((cur?.subtotal as number) ?? 0) + newOngkir;
+    }
+    const { data, error } = await supabase
+      .from('kasir_transactions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as KasirTransaction;
+  },
+
+  async cancelTransaction(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('kasir_transactions')
+      .update({ status: 'CANCELLED' })
+      .eq('id', id);
+    if (error) throw error;
   },
 
   async insertExpense(tx: NewExpense): Promise<KasirTransaction> {
