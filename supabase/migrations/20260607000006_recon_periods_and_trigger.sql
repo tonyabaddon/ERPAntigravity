@@ -76,7 +76,7 @@ BEGIN
   IF NEW.created_at::date < cutoff THEN RETURN NEW; END IF;
 
   -- Trigger only on first transition into a payment-collection state
-  IF NEW.status IN ('WAITING_PAYMENT','WAITING_DP','BOOKED')
+  IF NEW.status IN ('WAITING_PAYMENT','WAITING_DP')
      AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM NEW.status)
      AND NOT EXISTS (SELECT 1 FROM public.payable_slots WHERE order_id = NEW.id)
   THEN

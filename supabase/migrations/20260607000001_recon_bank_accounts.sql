@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.bank_imports (
   uploaded_at           timestamptz NOT NULL DEFAULT now(),
   line_count            int NOT NULL DEFAULT 0,
   matched_count         int NOT NULL DEFAULT 0,
-  gemini_model          text NOT NULL DEFAULT 'gemini-3.5-flash',
+  gemini_model          text NOT NULL DEFAULT 'gemini-2.5-flash',
   gemini_input_tokens   int,
   gemini_output_tokens  int,
   status                text NOT NULL DEFAULT 'PROCESSING' CHECK (status IN ('PROCESSING','READY','FAILED')),

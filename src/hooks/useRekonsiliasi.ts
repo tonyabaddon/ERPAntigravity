@@ -35,7 +35,7 @@ export function useRekonsiliasi(year: number, month: number) {
       reconciliationService.listBankAccounts(),
       reconciliationService.listOrdersForPeriod(year, month),
       reconciliationService.listBankLinesForPeriod(year, month),
-      reconciliationService.listCashBatches(),
+      reconciliationService.listCashBatches(year, month),
     ]);
     const slots = await reconciliationService.listPayableSlotsForOrders(ordersRaw.map(o => o.id));
     const slotsByOrder = new Map<string, PayableSlot[]>();

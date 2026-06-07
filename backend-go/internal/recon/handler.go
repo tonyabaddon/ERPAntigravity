@@ -4,10 +4,13 @@ package recon
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -88,8 +91,15 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 			Lane:          "GRAY",
 			DedupHash:     hash,
 		})
-		if err != nil || lineID == "" {
-			// dedup conflicts return empty id with sql.ErrNoRows-like error — skip silently
+		if err != nil {
+			// Dedup conflict (ON CONFLICT DO NOTHING) yields sql.ErrNoRows — that's expected, skip.
+			// Any other error is a real DB problem — log it but continue (avoid aborting the whole batch).
+			if !errors.Is(err, sql.ErrNoRows) {
+				log.Printf("[RECON] InsertBankLine failed for %s/%s: %v", bankAccountID, e.TxnDate, err)
+			}
+			continue
+		}
+		if lineID == "" {
 			continue
 		}
 		lines = append(lines, BankLine{

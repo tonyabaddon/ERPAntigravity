@@ -34,6 +34,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  reconciliation: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';

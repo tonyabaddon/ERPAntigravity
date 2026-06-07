@@ -29,7 +29,7 @@ func NewDocumentClient(ctx context.Context, apiKey string) (*DocumentClient, err
 	if err != nil {
 		return nil, err
 	}
-	m := c.GenerativeModel("gemini-3.5-flash")
+	m := c.GenerativeModel("gemini-2.5-flash")
 	m.ResponseMIMEType = "application/json"
 	return &DocumentClient{client: c, model: m}, nil
 }

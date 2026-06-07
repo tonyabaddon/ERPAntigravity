@@ -31,7 +31,7 @@ function fmt(n: number) { return 'Rp ' + (n / 1_000_000).toFixed(1).replace('.',
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }); }
 
 export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
-  const allowed = currentUser?.role === 'owner' || !!currentUser?.permissions?.reconciliation;
+  const allowed = currentUser?.role?.toLowerCase() === 'owner' || !!currentUser?.permissions?.reconciliation;
   const [period, setPeriod] = useState(defaultPeriod());
   const { loading, accounts, orders, bankLines, cashBatches, refresh } = useRekonsiliasi(period.year, period.month);
 

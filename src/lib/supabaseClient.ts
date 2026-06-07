@@ -1006,10 +1006,15 @@ export const reconciliationService = {
     return data ?? [];
   },
 
-  async listCashBatches(): Promise<CashDepositBatch[]> {
+  async listCashBatches(year?: number, month?: number): Promise<CashDepositBatch[]> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('cash_deposit_batches').select('*').order('deposit_date', { ascending: false });
+    let q = supabase.from('cash_deposit_batches').select('*').order('deposit_date', { ascending: false });
+    if (year && month) {
+      const start = `${year}-${String(month).padStart(2, '0')}-01`;
+      const end = new Date(year, month, 1).toISOString().slice(0, 10);
+      q = q.or(`deposit_date.gte.${start},deposit_date.is.null`).lt('deposit_date', end);
+    }
+    const { data, error } = await q;
     if (error) throw error;
     return data ?? [];
   },
