@@ -386,3 +386,51 @@ func TestRejectAdjustment_FlipsBothSides(t *testing.T) {
 		t.Fatalf("stock_atas changed on reject: got %d, want 10", qty)
 	}
 }
+
+// TestOpname_TablesExist is the Task 5 schema test: both opname tables
+// (sessions + counts) must exist after migration 20260607000011_stock_opname.sql
+// is applied. The session table is the parent (one row per physical-count
+// session); the counts table is a child carrying one row per (sku, warehouse)
+// being counted in that session.
+func TestOpname_TablesExist(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	for _, tbl := range []string{"stock_opname_sessions", "stock_opname_counts"} {
+		var n int
+		err := client.DB.QueryRow(
+			`SELECT 1 FROM information_schema.tables
+			 WHERE table_schema='public' AND table_name=$1`, tbl).Scan(&n)
+		if err != nil {
+			t.Fatalf("table %s missing: %v", tbl, err)
+		}
+		if n != 1 {
+			t.Fatalf("expected scan to yield 1 for %s, got %d", tbl, n)
+		}
+	}
+}
+
+// TestOpname_TwoPersonConstraint pins the chk_two_person CHECK on
+// stock_opname_sessions: counted_by_user_id and witnessed_by_user_id MUST
+// differ. This is the table-level guarantee that an opname session always
+// involves two physical humans — the witness can't be the same person doing
+// the counting. The start_opname_session RPC (Task 6) raises a friendlier
+// "different" error before reaching the CHECK; this test verifies the
+// underlying schema-level guard is still in place even if a caller bypasses
+// the RPC and inserts directly.
+func TestOpname_TwoPersonConstraint(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	_, err := client.DB.Exec(
+		`INSERT INTO public.stock_opname_sessions
+		   (opname_type, scope_payload, counted_by_user_id, witnessed_by_user_id)
+		 VALUES ('full', '{}'::jsonb,
+		         '00000000-0000-0000-0000-000000000001',
+		         '00000000-0000-0000-0000-000000000001')`)
+	if err == nil {
+		t.Fatalf("expected chk_two_person violation, got nil")
+	}
+	if !strings.Contains(err.Error(), "chk_two_person") {
+		t.Fatalf("expected chk_two_person violation, got: %v", err)
+	}
+}
