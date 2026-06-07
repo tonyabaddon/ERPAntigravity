@@ -11,6 +11,7 @@ import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 import ItemSearchPanel from './penjualan/ItemSearchPanel';
 import CartRows from './penjualan/CartRows';
+import CustomerPanel from './penjualan/CustomerPanel';
 
 let _itemSeq = 0;
 
@@ -173,9 +174,30 @@ export default function PenjualanBaruScreen({
                 </ItemSearchPanel>
               </div>
               <div>
-                {/* Customer + Payment panels — wired in Phase 6+7 */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 text-sm text-slate-400">
-                  [Customer + Payment panels coming next]
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-4">
+                  <CustomerPanel
+                    customers={customers}
+                    selectedCustomerId={selectedCustomerId}
+                    customerName={customerName}
+                    customerPhone={customerPhone}
+                    customerCompany={customerCompany}
+                    onSelectExisting={(c) => {
+                      setSelectedCustomerId(c.id);
+                      setCustomerName(c.name);
+                      setCustomerPhone(c.wa_number ?? '');
+                      setCustomerCompany(c.company ?? '');
+                    }}
+                    onClearSelection={() => {
+                      setSelectedCustomerId(null);
+                      setCustomerName('');
+                      setCustomerPhone('');
+                      setCustomerCompany('');
+                    }}
+                    onNameChange={setCustomerName}
+                    onPhoneChange={setCustomerPhone}
+                    onCompanyChange={setCustomerCompany}
+                  />
+                  <div className="text-sm text-slate-400">[Payment panel coming next]</div>
                 </div>
               </div>
             </div>
