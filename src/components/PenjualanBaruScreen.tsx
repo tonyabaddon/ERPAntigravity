@@ -7,6 +7,7 @@ import {
 import type { DbCustomerWithStats } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
+import ChannelSelector from './penjualan/ChannelSelector';
 
 export interface PenjualanBaruScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -96,7 +97,7 @@ export default function PenjualanBaruScreen({
         ) : (
           <>
             {/* Channel selector + strips go here (Task 4.x) */}
-            <div className="text-sm text-slate-400">[Channel selector, strips, item panel, customer panel — fill in via subsequent tasks]</div>
+            <ChannelSelector value={channel} onChange={setChannel} />
           </>
         )}
       </div>
