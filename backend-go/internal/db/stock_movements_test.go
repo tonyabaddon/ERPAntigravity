@@ -201,3 +201,43 @@ func TestDeductFIFO_WritesLedgerRow(t *testing.T) {
 	}
 }
 
+// TestTransferWarehouse_WritesOutAndInPair verifies Phase 1 Task 6: the
+// wrapped transfer_warehouse RPC writes TWO stock_movements rows per call —
+// one source='transfer_out' (qty_delta = -p_qty against the source warehouse)
+// and one source='transfer_in' (qty_delta = +p_qty against the destination
+// warehouse). Both rows are written inside the same transaction as the
+// stocks UPDATE so the ledger and warehouse columns stay consistent.
+//
+// This is the interim wrap; Phase 3d will replace transfer_warehouse with a
+// two-step state machine and use proper transfer ids on related_doc_id. For
+// now, related_doc_type='transfer_legacy' and related_doc_id is NULL.
+func TestTransferWarehouse_WritesOutAndInPair(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 5)
+
+	beforeRows := db.CountStockMovements(t, client, "TEST-IMM")
+	_, err := client.DB.Exec(
+		`SELECT public.transfer_warehouse('TEST-IMM','atas','bawah', 2)`)
+	if err != nil {
+		t.Fatalf("transfer: %v", err)
+	}
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-beforeRows != 2 {
+		t.Fatalf("expected 2 ledger rows (out+in), got %d", got-beforeRows)
+	}
+
+	var outDelta, inDelta int
+	err = client.DB.QueryRow(
+		`SELECT
+		   (SELECT qty_delta FROM public.stock_movements
+		     WHERE sku='TEST-IMM' AND source='transfer_out' ORDER BY id DESC LIMIT 1),
+		   (SELECT qty_delta FROM public.stock_movements
+		     WHERE sku='TEST-IMM' AND source='transfer_in' ORDER BY id DESC LIMIT 1)`).
+		Scan(&outDelta, &inDelta)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if outDelta != -2 || inDelta != 2 {
+		t.Fatalf("pair wrong: out=%d in=%d", outDelta, inDelta)
+	}
+}
