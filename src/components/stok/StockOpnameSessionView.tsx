@@ -272,68 +272,81 @@ export default function StockOpnameSessionView({
         />
       </div>
 
-      {/* Counts table */}
-      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-        <div className="grid grid-cols-12 px-3 py-2 bg-slate-50 text-xs uppercase tracking-wide text-slate-500 font-semibold">
-          <div className="col-span-2">SKU</div>
-          <div className="col-span-4">Nama</div>
-          <div className="col-span-1">Gudang</div>
-          <div className="col-span-1 text-right">Sistem</div>
-          <div className="col-span-2 text-right">Hitung</div>
-          <div className="col-span-2 text-right">Varians</div>
+      {/* Counts cards (grouped per SKU) */}
+      {groupedBySku.size === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-lg px-3 py-6 text-sm text-slate-500 text-center">
+          {counts.length === 0
+            ? 'Sesi ini belum punya scope. Kembali ke daftar.'
+            : 'Tidak ada SKU cocok dengan pencarian.'}
         </div>
-        {filteredCounts.length === 0 ? (
-          <div className="px-3 py-6 text-sm text-slate-500 text-center">
-            {counts.length === 0
-              ? 'Sesi ini belum punya scope. Kembali ke daftar.'
-              : 'Tidak ada SKU cocok dengan pencarian.'}
-          </div>
-        ) : (
-          filteredCounts.map((c) => {
-            const key = `${c.sku}-${c.warehouse}`;
-            const draftValue = draft[key];
-            const inputValue = draftValue !== undefined
-              ? draftValue
-              : (c.countedQty !== null && c.countedQty !== undefined ? String(c.countedQty) : '');
+      ) : (
+        <div className="space-y-2">
+          {Array.from(groupedBySku).map(([sku, group]) => {
+            const bothFilled =
+              group.atas?.countedQty !== null && group.atas?.countedQty !== undefined &&
+              group.bawah?.countedQty !== null && group.bawah?.countedQty !== undefined;
             return (
               <div
-                key={key}
-                className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm"
+                key={sku}
+                className={`bg-white border border-slate-200 rounded-lg overflow-hidden ${
+                  bothFilled ? 'border-l-4 border-l-emerald-500' : ''
+                }`}
               >
-                <div className="col-span-2 font-mono text-xs">{c.sku}</div>
-                <div className="col-span-4 font-semibold text-slate-800">
-                  {skuMeta[c.sku]?.name ?? '—'}
+                <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-xs text-slate-600">{sku}</span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-semibold text-slate-800 text-sm">
+                    {skuMeta[sku]?.name ?? '—'}
+                  </span>
                 </div>
-                <div className="col-span-1 text-xs text-slate-600">
-                  {c.warehouse === 'atas' ? 'Atas' : 'Bawah'}
-                </div>
-                <div className="col-span-1 text-right">{c.systemQtySnapshot}</div>
-                <div className="col-span-2 text-right">
-                  <input
-                    type="number"
-                    value={inputValue}
-                    onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
-                    onBlur={() => onBlurCount(c)}
-                    disabled={!isEditable || busy === key}
-                    className="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm disabled:bg-slate-50"
-                  />
-                </div>
-                <div
-                  className={`col-span-2 text-right font-semibold ${
-                    c.varianceValue < 0 ? 'text-rose-600'
-                    : c.varianceValue > 0 ? 'text-emerald-700'
-                    : 'text-slate-400'
-                  }`}
-                >
-                  {c.countedQty !== null && c.countedQty !== undefined
-                    ? formatRp(c.varianceValue)
-                    : '—'}
-                </div>
+                {(['atas', 'bawah'] as const).map((wh) => {
+                  const c = group[wh];
+                  if (!c) return null;
+                  const key = `${c.sku}-${c.warehouse}`;
+                  const draftValue = draft[key];
+                  const inputValue = draftValue !== undefined
+                    ? draftValue
+                    : (c.countedQty !== null && c.countedQty !== undefined ? String(c.countedQty) : '');
+                  return (
+                    <div
+                      key={key}
+                      className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm first:border-t-0"
+                    >
+                      <div className="col-span-2 text-xs uppercase tracking-wide text-slate-500">
+                        {wh === 'atas' ? 'Atas' : 'Bawah'}
+                      </div>
+                      <div className="col-span-3 text-xs text-slate-500">
+                        Sistem <span className="text-slate-800 font-medium">{c.systemQtySnapshot}</span>
+                      </div>
+                      <div className="col-span-3 text-right">
+                        <input
+                          type="number"
+                          value={inputValue}
+                          onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                          onBlur={() => onBlurCount(c)}
+                          disabled={!isEditable || busy === key}
+                          className="border border-slate-300 rounded px-2 py-1 w-24 text-right text-sm disabled:bg-slate-50"
+                        />
+                      </div>
+                      <div
+                        className={`col-span-4 text-right font-semibold ${
+                          c.varianceValue < 0 ? 'text-rose-600'
+                          : c.varianceValue > 0 ? 'text-emerald-700'
+                          : 'text-slate-400'
+                        }`}
+                      >
+                        {c.countedQty !== null && c.countedQty !== undefined
+                          ? formatRp(c.varianceValue)
+                          : '—'}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       {/* Action bar */}
       {session.status === 'in_progress' && (
