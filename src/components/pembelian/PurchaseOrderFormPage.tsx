@@ -132,7 +132,7 @@ export default function PurchaseOrderFormPage({
       if (po) {
         await purchaseOrderService.update(po.id, {
           ...payload,
-          updated_by_user_id: currentUserId ?? null,
+          updated_by_user_id: currentUserId || null,
         });
         if (status === 'ORDERED' && po.status === 'DRAFT') {
           await purchaseOrderService.markOrdered(po.id);
@@ -141,7 +141,7 @@ export default function PurchaseOrderFormPage({
         await purchaseOrderService.create({
           ...payload,
           status,
-          created_by_user_id: currentUserId ?? null,
+          created_by_user_id: currentUserId || null,
         });
       }
       setIsDirty(false);

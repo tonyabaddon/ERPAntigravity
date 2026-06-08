@@ -91,8 +91,8 @@ export const purchaseOrderService = {
         total: po.total,
         status: po.status,
         expected_receive_date: po.expected_receive_date ?? null,
-        created_by_user_id: po.created_by_user_id ?? null,
-        updated_by_user_id: po.created_by_user_id ?? null,
+        created_by_user_id: po.created_by_user_id || null,
+        updated_by_user_id: po.created_by_user_id || null,
         ...(po.status === 'ORDERED' ? { ordered_at: new Date().toISOString() } : {}),
       })
       .select('id')
@@ -127,7 +127,7 @@ export const purchaseOrderService = {
         subtotal: po.subtotal,
         total: po.total,
         expected_receive_date: po.expected_receive_date ?? null,
-        updated_by_user_id: po.updated_by_user_id ?? null,
+        updated_by_user_id: po.updated_by_user_id || null,
       })
       .eq('id', poId);
     if (poError) throw poError;
