@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"time"
 )
@@ -115,6 +116,26 @@ func (c *Client) SetWaMessageID(id int64, waMessageID string) error {
 		`SELECT public._set_wa_message_id($1, $2)`,
 		id, waMessageID)
 	return err
+}
+
+// ExpirePendingApprovals invokes the SECURITY DEFINER RPC
+// public.expire_pending_approvals(), which flips every pending row whose
+// expires_at < now() to status='expired' with decision_channel='auto_expire'
+// and decided_by IS NULL. Returns the number of rows that were flipped on
+// this call (zero is the common case once the backlog is drained).
+//
+// Called once per minute by approvals.Poller. Returning the count to the
+// caller lets the poller log a one-line summary only when work happened, so
+// the daemon log stays quiet during steady state.
+//
+// The query is scoped via QueryRowContext so the poller's ctx cancellation
+// (clean shutdown) aborts an in-flight RPC rather than letting it run to
+// completion against a closing pool.
+func (c *Client) ExpirePendingApprovals(ctx context.Context) (int, error) {
+	var n int
+	err := c.DB.QueryRowContext(ctx,
+		`SELECT public.expire_pending_approvals()`).Scan(&n)
+	return n, err
 }
 
 // CountPendingApprovalsForOwner returns the total number of pending
