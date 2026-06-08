@@ -17,7 +17,7 @@
 - **Self-review checklist**: (a) Component signature matches the spec — 4 props in, no internal fetch beyond service calls. (b) Service workaround (upsert → fetchAll → find-by-name) implemented per spec section 6. (c) Empty optional fields sent as `undefined`, not `''`. (d) `payment_term_days` defaults to `0` on NaN. (e) `type="button"` on every interactive element. (f) `saving` flag guards double-submit and disables both action buttons. (g) Prefill UX cue (✓ Diisi dari pencarian) renders only when `prefillName` is set. (h) Indonesian copy throughout. (i) Zero new lint errors. (j) Single clean commit.
 - **Concerns**: one soft concern: the find-by-name lookup post-upsert can return the wrong row if a duplicate supplier name exists in the DB (data integrity issue pre-existing). The warning toast covers the "not found" case but not the "found wrong row" case. Mitigation: when Task 8 wires this up, consider sorting `fetchAll` by `created_at DESC` and grabbing the first match by name — that picks the just-created row even with duplicates. Or properly: fix `supplierService.upsert` to return the id in a follow-up commit. Logged here, not blocking.
 - **Files**: `src/components/pembelian/form/InlineSupplierForm.tsx` (new, 118 lines), `progress.md` (this entry).
-- **Commit**: `feat(po-page): InlineSupplierForm — create supplier without leaving PO` (SHA `ad90672`).
+- **Commit**: `feat(po-page): InlineSupplierForm — create supplier without leaving PO` (SHA `ba0c2f3`).
 - **Next**: Task 6 of the PO Create page plan — `StockPicker` component (extract the stock-search dropdown from the existing PurchaseOrderModal for reuse on the new form page).
 
 ## 2026-06-08 — Stock Fraud Phase 2, Task 10: `request_price_change` + `commit_approved_price_change` RPCs — DONE
