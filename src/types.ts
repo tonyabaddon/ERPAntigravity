@@ -166,6 +166,7 @@ export interface DbOrder {
   conversation_id: string;
   customer_id?: string;
   sales_channel: 'whatsapp' | 'walkin';
+  warehouse?: 'atas' | 'bawah' | null;
   customer_name: string;
   customer_company: string;
   customer_address: string;

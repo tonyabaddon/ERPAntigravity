@@ -328,6 +328,7 @@ export const orderService = {
     customer_name: string;
     customer_phone: string;
     customer_company: string;
+    warehouse: 'atas' | 'bawah';
     items: Array<{ sku: string; name: string; qty: number; unit_price: number; subtotal: number }>;
     subtotal: number;
     hpp_total: number;
@@ -339,6 +340,7 @@ export const orderService = {
       .insert({
         sales_channel:     'walkin',
         status:            'WAITING_PAYMENT',
+        warehouse:         input.warehouse,
         customer_id:       input.customer_id,
         customer_name:     input.customer_name,
         customer_phone:    input.customer_phone,
