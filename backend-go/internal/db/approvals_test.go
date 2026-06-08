@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -2020,4 +2021,237 @@ func TestExpirePendingApprovals_FlipsExpiredRows(t *testing.T) {
 	if freshStatus != "pending" {
 		t.Fatalf("fresh in-window row status = %q after second expire call, want pending", freshStatus)
 	}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 16: Go reader helpers for approval_requests
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// backend-go/internal/db/approvals.go exposes four helpers used by the WA
+// sender (T17), the WA webhook handler (T18), the auto-expiry poller (T19),
+// and the Phase 4 Owner dashboard:
+//
+//   1. ListPendingApprovalRequests(requestedBy string) — pending rows in
+//      requested_at ASC order, optionally filtered by requested_by UUID.
+//      Pass "" for all-tenants (used by the poller/dashboard).
+//   2. GetApprovalRequest(id int64) — single-row lookup. Returns
+//      sql.ErrNoRows when missing so the caller can map to 404.
+//   3. SetWaMessageID(id, waMessageID) — invoked by T17 after Calista posts
+//      the approval card. Uses the SECURITY DEFINER RPC _set_wa_message_id
+//      (migration 20260607000022). Idempotent via WHERE wa_message_id IS NULL.
+//   4. CountPendingApprovalsForOwner() — total pending count. Used by the
+//      heartbeat snippet to surface "X requests still need your attention".
+//
+// Test isolation: per the advisor's guidance the integration DB carries
+// pending rows leftover from T1-T14 (T14's expire test, T13's PIN tests, etc).
+// So each test below seeds with a UNIQUE requested_by UUID and either passes
+// that UUID to the helper or measures a delta — never assumes the global
+// count is zero at start.
+
+// seedT16PendingApproval inserts a pending approval_requests row tied to the
+// caller-supplied requested_by UUID. Returns the new id. The unique uuid is
+// how each test fences its rows from neighbour pollution.
+func seedT16PendingApproval(t *testing.T, c *db.Client, requestedBy string) int64 {
+	t.Helper()
+	var id int64
+	if err := c.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by)
+		 VALUES ('adjustment','{}'::jsonb, $1::uuid)
+		 RETURNING id`, requestedBy).Scan(&id); err != nil {
+		t.Fatalf("seed pending approval: %v", err)
+	}
+	return id
+}
+
+// uniqueT16UUID mints a UUID that is statistically unique for this test
+// process: zero-prefix sentinel (so a stray production scan ignores it)
+// plus a nanosecond-resolution timestamp tail. The zeros up front mean
+// "test-only — not a real user".
+func uniqueT16UUID(suffix int64) string {
+	// Format: 00000000-0000-0000-0000-XXXXXXXXXXXX where the last 12 hex
+	// digits encode the 48 low bits of `suffix`. 48 bits of UnixNano() gives
+	// us ~9 years before wraparound, plenty for this test suite's lifetime.
+	last12 := uint64(suffix) & 0xFFFFFFFFFFFF
+	return fmt.Sprintf("00000000-0000-0000-0000-%012x", last12)
+}
+
+// TestListPendingApprovalRequests proves the helper returns ONLY rows
+// matching the requested_by UUID, ordered by requested_at ASC. We seed two
+// pending + one approved row under the same UUID, then assert (a) length 2,
+// (b) ordering, (c) the approved row is filtered out.
+func TestListPendingApprovalRequests(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+
+	// Seed two pending rows. Sleep a microsecond between them so requested_at
+	// is strictly ordered (requested_at default is now() which is per-statement
+	// — two back-to-back INSERTs can land at the same timestamp).
+	id1 := seedT16PendingApproval(t, client, uid)
+	time.Sleep(2 * time.Millisecond)
+	id2 := seedT16PendingApproval(t, client, uid)
+
+	// Seed a third row and approve it via the canonical helper so the listing
+	// filter (`WHERE status='pending'`) drops it.
+	id3 := seedT16PendingApproval(t, client, uid)
+	if _, err := client.DB.Exec(
+		`SELECT public._transition_approval($1, 'approved'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099'::uuid, 'owner_pin')`, id3); err != nil {
+		t.Fatalf("transition row %d to approved: %v", id3, err)
+	}
+
+	got, err := client.ListPendingApprovalRequests(uid)
+	if err != nil {
+		t.Fatalf("ListPendingApprovalRequests: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len(got) = %d, want 2 (id3 should be filtered as approved)", len(got))
+	}
+	if got[0].ID != id1 {
+		t.Fatalf("got[0].ID = %d, want %d (requested_at ASC)", got[0].ID, id1)
+	}
+	if got[1].ID != id2 {
+		t.Fatalf("got[1].ID = %d, want %d (requested_at ASC)", got[1].ID, id2)
+	}
+	// Sanity: returned rows carry the requested_by we filtered on.
+	if got[0].RequestedBy != uid {
+		t.Fatalf("got[0].RequestedBy = %q, want %q", got[0].RequestedBy, uid)
+	}
+	if got[0].Status != "pending" {
+		t.Fatalf("got[0].Status = %q, want pending", got[0].Status)
+	}
+}
+
+// TestGetApprovalRequest pins single-row lookup semantics:
+//   - existing id → row returned, payload bytes round-trip
+//   - missing id (1 followed by 9 zeros — never assigned by BIGSERIAL in
+//     this test run) → sql.ErrNoRows so the caller can map to 404.
+func TestGetApprovalRequest(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	id := seedT16PendingApproval(t, client, uid)
+
+	row, err := client.GetApprovalRequest(id)
+	if err != nil {
+		t.Fatalf("GetApprovalRequest(%d): %v", id, err)
+	}
+	if row.ID != id {
+		t.Fatalf("row.ID = %d, want %d", row.ID, id)
+	}
+	if row.RequestType != "adjustment" {
+		t.Fatalf("row.RequestType = %q, want adjustment", row.RequestType)
+	}
+	if row.Status != "pending" {
+		t.Fatalf("row.Status = %q, want pending", row.Status)
+	}
+	if row.RequestedBy != uid {
+		t.Fatalf("row.RequestedBy = %q, want %q", row.RequestedBy, uid)
+	}
+	if len(row.Payload) == 0 {
+		t.Fatalf("row.Payload empty, want {} bytes")
+	}
+	if !row.DecidedBy.Valid == false && row.DecidedBy.String != "" {
+		t.Fatalf("pending row should have NULL decided_by, got %v", row.DecidedBy)
+	}
+	if row.DecidedAt.Valid {
+		t.Fatalf("pending row should have NULL decided_at")
+	}
+
+	// Missing id → sql.ErrNoRows. Use a large BIGINT that BIGSERIAL hasn't
+	// reached (we just inserted; the sequence is well below 9e18).
+	_, err = client.GetApprovalRequest(9_000_000_000_000_000_000)
+	if err != sql.ErrNoRows {
+		t.Fatalf("GetApprovalRequest(missing) returned %v, want sql.ErrNoRows", err)
+	}
+}
+
+// TestSetWaMessageID drives the _set_wa_message_id RPC through the helper:
+//   - call with a fresh row → wa_message_id populated
+//   - call AGAIN with a different message id → NO error AND the original
+//     value is preserved (the WHERE wa_message_id IS NULL guard in the RPC
+//     makes the second call a no-op). This is the idempotency contract:
+//     the sender may retry on transient WhatsApp errors that actually
+//     delivered; we must not overwrite the recorded id.
+func TestSetWaMessageID(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	id := seedT16PendingApproval(t, client, uid)
+
+	const firstMsgID = "wa-msg-T16-first"
+	if err := client.SetWaMessageID(id, firstMsgID); err != nil {
+		t.Fatalf("SetWaMessageID (first): %v", err)
+	}
+
+	var got sql.NullString
+	if err := client.DB.QueryRow(
+		`SELECT wa_message_id FROM public.approval_requests WHERE id=$1`, id).Scan(&got); err != nil {
+		t.Fatalf("read wa_message_id (after first): %v", err)
+	}
+	if !got.Valid || got.String != firstMsgID {
+		t.Fatalf("wa_message_id = %v, want %q", got, firstMsgID)
+	}
+
+	// Second call with a DIFFERENT id should not error and must NOT overwrite.
+	const secondMsgID = "wa-msg-T16-second"
+	if err := client.SetWaMessageID(id, secondMsgID); err != nil {
+		t.Fatalf("SetWaMessageID (second): %v", err)
+	}
+	if err := client.DB.QueryRow(
+		`SELECT wa_message_id FROM public.approval_requests WHERE id=$1`, id).Scan(&got); err != nil {
+		t.Fatalf("read wa_message_id (after second): %v", err)
+	}
+	if !got.Valid || got.String != firstMsgID {
+		t.Fatalf("wa_message_id = %v after second call, want %q unchanged",
+			got, firstMsgID)
+	}
+}
+
+// TestCountPendingApprovalsForOwner asserts the helper's count rises by the
+// number of fresh pending rows we seed and falls back by 1 when one of them
+// transitions to approved. We use a delta-from-baseline approach because
+// the DB carries pending rows from T1-T14's tests and we don't control them.
+func TestCountPendingApprovalsForOwner(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	before, err := client.CountPendingApprovalsForOwner()
+	if err != nil {
+		t.Fatalf("CountPendingApprovalsForOwner (before): %v", err)
+	}
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	id1 := seedT16PendingApproval(t, client, uid)
+	id2 := seedT16PendingApproval(t, client, uid)
+	id3 := seedT16PendingApproval(t, client, uid)
+
+	afterSeed, err := client.CountPendingApprovalsForOwner()
+	if err != nil {
+		t.Fatalf("CountPendingApprovalsForOwner (after seed): %v", err)
+	}
+	if afterSeed-before != 3 {
+		t.Fatalf("count delta after seeding 3 pending rows = %d, want 3", afterSeed-before)
+	}
+
+	// Approve one — pending count must drop by exactly 1.
+	if _, err := client.DB.Exec(
+		`SELECT public._transition_approval($1, 'approved'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099'::uuid, 'owner_pin')`, id2); err != nil {
+		t.Fatalf("approve id2: %v", err)
+	}
+	afterApprove, err := client.CountPendingApprovalsForOwner()
+	if err != nil {
+		t.Fatalf("CountPendingApprovalsForOwner (after approve): %v", err)
+	}
+	if afterApprove-before != 2 {
+		t.Fatalf("count delta after approving 1 of 3 = %d, want 2", afterApprove-before)
+	}
+
+	// Silence "unused" complaints on the other ids — we don't need them again.
+	_ = id1
+	_ = id3
 }
