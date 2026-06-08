@@ -323,7 +323,7 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
 // ─── Chat Bubble ─────────────────────────────────────────────────────────────
 
 interface ChatBubbleProps { msg: DbMessage; }
-function ChatBubble({ msg }: ChatBubbleProps) {
+const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   if (msg.sender === 'system') {
@@ -362,7 +362,7 @@ function ChatBubble({ msg }: ChatBubbleProps) {
       </div>
     </div>
   );
-}
+};
 
 // ─── Right Panel ──────────────────────────────────────────────────────────────
 

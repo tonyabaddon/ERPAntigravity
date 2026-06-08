@@ -118,7 +118,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   }, [canApproveAny]);
 
   useEffect(() => {
-    if (currentUser?.permissions && activePage !== 'auth') {
+    if (currentUser?.permissions) {
       const isVisible = visibleItems.some(item => item.id === activePage);
       if (!isVisible) {
         onPageChange('dashboard');

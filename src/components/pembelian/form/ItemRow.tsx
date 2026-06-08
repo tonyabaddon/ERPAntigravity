@@ -12,7 +12,7 @@ function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
-export default function ItemRow({ item, onChange, onRemove }: ItemRowProps) {
+const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
   function updateQty(value: string) {
     const qty = parseFloat(value) || 0;
     onChange({ qty, subtotal: qty * item.unit_cost });
@@ -63,4 +63,6 @@ export default function ItemRow({ item, onChange, onRemove }: ItemRowProps) {
       </div>
     </div>
   );
-}
+};
+
+export default ItemRow;

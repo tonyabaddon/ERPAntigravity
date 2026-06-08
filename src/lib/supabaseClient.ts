@@ -28,8 +28,8 @@ export interface SupabaseStockItem {
   category: string;
   price: number;
   stock: number;
-  stock_atas: number;
-  stock_bawah: number;
+  stock_atas?: number;
+  stock_bawah?: number;
   status: string;
   specs: Record<string, string | number>;
   updated_at?: string;
