@@ -1,13 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
-## 2026-06-08 — Stok Opname: grouped row by SKU (Atas + Bawah in one card) — SPEC APPROVED
+## 2026-06-08 — Stok Opname: grouped row by SKU (Atas + Bawah in one card) — DONE
 
-- **Goal**: Sesi opname saat ini menampilkan 1 baris tabel per `(sku, warehouse)`, jadi tiap SKU dirender sebagai 2 row terpisah (Atas + Bawah). Refactor UI: gabung jadi 1 card per SKU dengan 2 sub-row sejajar, supaya counter bisa menyelesaikan 1 SKU tanpa lompat baris.
+- **Goal**: Sesi opname dulu render 1 baris per `(sku, warehouse)` — tiap SKU jadi 2 row terpisah. Sekarang 1 SKU = 1 card dengan 2 sub-row (Atas + Bawah) sejajar, sehingga counter dapat menyelesaikan 1 SKU tanpa lompat baris.
 - **Scope**: 1 file frontend (`src/components/stok/StockOpnameSessionView.tsx`). Zero backend / migration / RPC change — schema `stock_opname_counts` PK `(session_id, sku, warehouse)` dan RPC `record_opname_count` sudah per-warehouse.
-- **Behavior decisions**: Auto-save per field on blur (mirror current), partial fill diperbolehkan (banyak SKU stoknya hanya di 1 gudang), border kiri card jadi hijau saat kedua warehouse terisi, tab order Atas → Bawah dalam card lalu lanjut SKU berikutnya.
-- **Preserved**: Header sesi, filter SKU, witness ack, submit flow, status banner, permission gate — semua tidak berubah.
-- **Spec file**: `docs/superpowers/specs/2026-06-08-stok-opname-grouped-by-sku-design.md`.
-- **Next step**: User review spec → writing-plans skill → implementation.
+- **Behavior**: Auto-save per field on blur (mirror sebelumnya), partial fill tetap valid, border kiri card berubah `border-l-emerald-500` saat kedua warehouse terisi, tab order Atas → Bawah dalam card lalu SKU berikutnya.
+- **Preserved**: Header sesi, filter SKU, witness ack, submit flow, status banner, permission gate.
+- **Files**: `src/components/stok/StockOpnameSessionView.tsx`.
+- **Verification**: `npm run lint` clean + manual browser test per plan checklist.
+- **Spec / Plan**: `docs/superpowers/specs/2026-06-08-stok-opname-grouped-by-sku-design.md`, `docs/superpowers/plans/2026-06-08-stok-opname-grouped-by-sku.md`.
 
 ---
 
