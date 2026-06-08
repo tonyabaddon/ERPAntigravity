@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — PO Create Page + PDF — DONE (Tasks 1-12 complete)
+
+- **Goal**: Ganti modal PurchaseOrderModal dengan halaman penuh sub-view di PembelianScreen. SupplierPicker dengan 4 state + inline create supplier. Field expected_receive_date untuk badge "Telat X hari". PDF generation via jsPDF dengan branding Garindo Jaya Panel + audit trail (created_by/updated_by).
+- **Migration 20260608000004**: 3 kolom baru di `purchase_orders` (semua NULL-able, no backfill) + idempotent backfill `admin_users.permissions` dengan `can_create_po=true, can_edit_po=true`.
+- **Files baru**: PurchaseOrderFormPage.tsx, form/SupplierPicker.tsx, form/InlineSupplierForm.tsx, form/StockPicker.tsx, form/ItemRow.tsx, lib/pdf/purchaseOrderPdf.ts, lib/pdf/.
+- **Files hapus**: PurchaseOrderModal.tsx.
+- **PDF teknik**: jsPDF + jspdf-autotable, branded header dengan Zap emerald box + nama company dari `company_settings`, items autotable, totals, optional notes, footer T&C 1×24 jam. Open di tab baru via `URL.createObjectURL(blob)`, fallback download link kalau popup blocked.
+- **Permission gate**: Owner bypass (selalu lulus via ALL_PERMISSIONS); Admin di-cek `permissions.can_create_po` / `can_edit_po` dengan default-true semantic (key absent → allow).
+- **List integration**: kolom Tgl Diterima + badge "Telat X hari" untuk PO ORDERED yang lewat expected date. Sort: payment-overdue → receive-overdue → normal.
+- **Plan**: `docs/superpowers/plans/2026-06-08-po-create-page.md`. **Spec**: `docs/superpowers/specs/2026-06-08-po-create-page-design.md`.
+
 ## 2026-06-08 — PO Create Page, Task 11: Download PDF button in `PoDetailView` — DONE
 - **Goal**: Eleventh task of the PO Create page plan. Hook the Task-10 `generatePoPdf()` Blob-returning library into the live `PoDetailView` modal via a "Download PDF" action button in the header action bar. Button is gated by `po.status !== 'DRAFT'` because PDF should only be issued for finalized POs (DRAFT is internal scratch state — surfacing a download for it would imply legitimacy the PO hasn't earned yet). Click flow: fetch admin name for "Dibuat oleh" line (if `created_by_user_id` set) → generate Blob via `generatePoPdf({...})` → `URL.createObjectURL(blob)` → `window.open(url, '_blank')` to preview in new tab → if popup blocker returns null, fall back to a synthetic `<a download="PO-NUMBER.pdf">` click → revoke the object URL after 60 seconds. Confirm prompt if `company_settings.address` or `.phone` are missing (gives the user a chance to bail and seed Pengaturan first rather than ship a PDF without their contact info).
 - **What — imports**: Added `FileText` to the `lucide-react` import (button icon). Added `DbCompanySettings` to the `'../../types'` import (state type). Added `adminUsersService` to the existing `companySettingsService` import from `'../../lib/supabaseClient'` (to resolve `created_by_user_id` → admin name). Added the new line `import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf'` (the Task-10 library). Five-line delta at the top of the file; merges cleanly with the pre-existing import block.

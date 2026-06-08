@@ -196,6 +196,17 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
     return po.status === 'RECEIVED' && !!po.payment_due_at && po.payment_due_at < today;
   }
 
+  function isReceiveOverdue(po: DbPurchaseOrder): boolean {
+    if (po.status !== 'ORDERED' || !po.expected_receive_date) return false;
+    return po.expected_receive_date < today;
+  }
+
+  function daysReceiveOverdue(po: DbPurchaseOrder): number {
+    if (!po.expected_receive_date) return 0;
+    const ms = new Date(today).getTime() - new Date(po.expected_receive_date).getTime();
+    return Math.floor(ms / (1000 * 60 * 60 * 24));
+  }
+
   const filtered = orders
     .filter(o => {
       const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
@@ -204,8 +215,16 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
       return matchSearch && matchStatus;
     })
     .sort((a, b) => {
-      if (isOverdue(a) && !isOverdue(b)) return -1;
-      if (!isOverdue(a) && isOverdue(b)) return 1;
+      const aReceiveLate = isReceiveOverdue(a);
+      const bReceiveLate = isReceiveOverdue(b);
+      const aPaymentLate = isOverdue(a);
+      const bPaymentLate = isOverdue(b);
+      // Payment overdue (RECEIVED + past due) bubbles to top
+      if (aPaymentLate && !bPaymentLate) return -1;
+      if (!aPaymentLate && bPaymentLate) return 1;
+      // Then receive overdue (ORDERED + past expected_receive_date)
+      if (aReceiveLate && !bReceiveLate) return -1;
+      if (!aReceiveLate && bReceiveLate) return 1;
       return 0;
     });
 
@@ -267,11 +286,12 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-7 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+          <div className="grid grid-cols-8 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
             <span className="col-span-1">No. PO</span>
             <span className="col-span-1">Supplier</span>
             <span className="col-span-1 text-center">Tgl Pesan</span>
-            <span className="col-span-1 text-center">Jatuh Tempo</span>
+            <span className="col-span-1 text-center">Tgl Diterima</span>
+            <span className="col-span-1 text-center">Jatuh Tempo Bayar</span>
             <span className="col-span-1 text-right">Total</span>
             <span className="col-span-1 text-center">Status</span>
             <span className="col-span-1 text-center">Aksi</span>
@@ -281,13 +301,33 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
             <div className="py-12 text-center text-sm text-gray-400">Belum ada purchase order.</div>
           ) : (
             filtered.map(po => (
-              <div key={po.id} className={`grid grid-cols-7 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${isOverdue(po) ? LEFT_BORDER.OVERDUE : (LEFT_BORDER[po.status] ?? '')}`}>
+              <div key={po.id} className={`grid grid-cols-8 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${
+                isOverdue(po) ? LEFT_BORDER.OVERDUE :
+                isReceiveOverdue(po) ? LEFT_BORDER.OVERDUE :
+                (LEFT_BORDER[po.status] ?? '')
+              }`}>
                 <span className="col-span-1 text-xs font-mono font-semibold text-gray-800">{po.po_number}</span>
                 <div className="col-span-1">
                   <div className="text-sm font-semibold text-gray-800 truncate">{po.supplier?.name ?? '—'}</div>
                   <div className="text-[10px] text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
                 </div>
                 <span className="col-span-1 text-xs text-gray-500 text-center">{formatDate(po.ordered_at)}</span>
+                <div className="col-span-1 flex flex-col items-center gap-0.5">
+                  {po.expected_receive_date ? (
+                    <>
+                      <span className={`text-xs font-semibold ${isReceiveOverdue(po) ? 'text-rose-600' : 'text-gray-700'}`}>
+                        {formatDate(po.expected_receive_date)}
+                      </span>
+                      {isReceiveOverdue(po) && (
+                        <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">
+                          Telat {daysReceiveOverdue(po)} hari
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
+                </div>
                 <div className="col-span-1 flex flex-col items-center gap-0.5">
                   <span className={`text-xs font-semibold ${isOverdue(po) ? 'text-rose-600' : po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
                     {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
