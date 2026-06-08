@@ -2255,3 +2255,273 @@ func TestCountPendingApprovalsForOwner(t *testing.T) {
 	_ = id1
 	_ = id3
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 20: Concrete *db.Client satisfaction of api.ApprovalStore
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// The T18 webhook handler (internal/api/approval_webhook.go) is wired through
+// a thin ApprovalStore interface so it can be tested without a DB. T20 supplies
+// the concrete implementations on *db.Client:
+//
+//   1. IsActiveOwnerWANumber(num)       — wa_recipients lookup; role='owner'
+//   2. FirstOwnerAdminUserID()          — admin_users WHERE role='Owner' LIMIT 1
+//   3. FindApprovalByWAMessageID(wamid) — approval_requests by wa_message_id
+//   4. LatestPendingApprovalID()        — most recent pending (ORDER BY requested_at DESC)
+//   5. DecideViaWAButton(id, decision, uid) — wraps the SECURITY DEFINER RPC
+//
+// Test isolation: per the T14/T16 pattern, the integration DB carries assorted
+// rows from earlier phases. Each test seeds with uniquified UUIDs or unique
+// wa_message_id strings and asserts either on rows we own or on delta-from-
+// baseline. Where ordering matters (LatestPendingApprovalID), we seed last and
+// assert "our row is returned" — safe under -parallel 1 + monotonic BIGSERIAL.
+
+// ensureT20OwnerAdmin upserts the well-known Owner admin row used by both
+// FirstOwnerAdminUserID and DecideViaWAButton tests. The well-known uuid sorts
+// first (00...099) so ORDER BY id ASC LIMIT 1 deterministically returns it
+// even when production Owner rows coexist.
+func ensureT20OwnerAdmin(t *testing.T, c *db.Client) {
+	t.Helper()
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.admin_users (id, name, email, role, permissions, status)
+		 VALUES ($1, 'T20 Owner', 'phase2-t20-owner@test.local', 'Owner',
+		         '{"dashboard":true}'::jsonb, 'Aktif')
+		 ON CONFLICT (id) DO UPDATE SET role='Owner', status='Aktif'`,
+		ownerID); err != nil {
+		t.Fatalf("seed Owner admin: %v", err)
+	}
+}
+
+// uniqueT20WANumber mints a phone-digits string statistically unique to this
+// test process. The 628... E.164-ish prefix is real-looking enough that the
+// row isn't mistaken for sentinel garbage when scanning the table by hand,
+// while the nanosecond tail keeps reruns/parallel-tests collision-free.
+func uniqueT20WANumber(suffix int64) string {
+	return fmt.Sprintf("62811%013d", uint64(suffix)&0x1FFFFFFFFFFFFF)
+}
+
+// TestIsActiveOwnerWANumber_HappyPathAndNegatives pins three cases in one test:
+//   (a) seeded active owner row → returns true
+//   (b) same number with is_active=false → returns false
+//   (c) unrelated never-seeded number → returns false
+// Negative cases share the same test so we can prove the SELECT is correctly
+// joined on (role, is_active) without spawning three trivial helpers.
+func TestIsActiveOwnerWANumber_HappyPathAndNegatives(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	now := time.Now().UnixNano()
+	activeOwnerNum := uniqueT20WANumber(now)
+	inactiveOwnerNum := uniqueT20WANumber(now + 1)
+	adminNum := uniqueT20WANumber(now + 2)
+	// neverSeededNum: a wholly different prefix tail so it cannot collide with
+	// anything seeded by this or any earlier T20 run.
+	neverSeededNum := fmt.Sprintf("9999%016d", now)
+
+	// (a) Active owner row.
+	if _, err := client.DB.Exec(
+		`INSERT INTO public.wa_recipients (role, name, wa_number, is_active)
+		 VALUES ('owner', 'T20 Active Owner', $1, true)`, activeOwnerNum); err != nil {
+		t.Fatalf("seed active owner: %v", err)
+	}
+	// (b) Inactive owner row — same role, is_active=false.
+	if _, err := client.DB.Exec(
+		`INSERT INTO public.wa_recipients (role, name, wa_number, is_active)
+		 VALUES ('owner', 'T20 Inactive Owner', $1, false)`, inactiveOwnerNum); err != nil {
+		t.Fatalf("seed inactive owner: %v", err)
+	}
+	// (c) Active row with the WRONG role (admin, not owner).
+	if _, err := client.DB.Exec(
+		`INSERT INTO public.wa_recipients (role, name, wa_number, is_active)
+		 VALUES ('admin', 'T20 Admin', $1, true)`, adminNum); err != nil {
+		t.Fatalf("seed admin row: %v", err)
+	}
+
+	ok, err := client.IsActiveOwnerWANumber(activeOwnerNum)
+	if err != nil {
+		t.Fatalf("IsActiveOwnerWANumber (active owner): %v", err)
+	}
+	if !ok {
+		t.Fatalf("IsActiveOwnerWANumber(%q) = false, want true (active owner row exists)", activeOwnerNum)
+	}
+
+	ok, err = client.IsActiveOwnerWANumber(inactiveOwnerNum)
+	if err != nil {
+		t.Fatalf("IsActiveOwnerWANumber (inactive owner): %v", err)
+	}
+	if ok {
+		t.Fatalf("IsActiveOwnerWANumber(%q) = true, want false (row is is_active=false)", inactiveOwnerNum)
+	}
+
+	ok, err = client.IsActiveOwnerWANumber(adminNum)
+	if err != nil {
+		t.Fatalf("IsActiveOwnerWANumber (admin role): %v", err)
+	}
+	if ok {
+		t.Fatalf("IsActiveOwnerWANumber(%q) = true, want false (role is 'admin', not 'owner')", adminNum)
+	}
+
+	ok, err = client.IsActiveOwnerWANumber(neverSeededNum)
+	if err != nil {
+		t.Fatalf("IsActiveOwnerWANumber (unseeded): %v", err)
+	}
+	if ok {
+		t.Fatalf("IsActiveOwnerWANumber(%q) = true, want false (number never seeded)", neverSeededNum)
+	}
+}
+
+// TestFirstOwnerAdminUserID_ReturnsKnownOwner pins the deterministic-pick
+// contract: after seeding the canonical low-uuid Owner row, the helper must
+// return that uuid even if other Owner rows exist (the migration or earlier
+// tests may have seeded them). The "00000000-…-099" id sorts first under
+// ORDER BY id ASC so it's the row the helper returns.
+//
+// We don't test the sql.ErrNoRows path here because guaranteeing zero Owner
+// rows in the shared integration DB would require deleting them — risky.
+// The error path is exercised implicitly: if NO Owner row existed, the
+// happy-path assertion would fail with sql.ErrNoRows.
+func TestFirstOwnerAdminUserID_ReturnsKnownOwner(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT20OwnerAdmin(t, client)
+
+	got, err := client.FirstOwnerAdminUserID()
+	if err != nil {
+		t.Fatalf("FirstOwnerAdminUserID: %v", err)
+	}
+	const wantOwnerID = "00000000-0000-0000-0000-000000000099"
+	if got != wantOwnerID {
+		t.Fatalf("FirstOwnerAdminUserID = %q, want %q (the canonical low-uuid Owner)", got, wantOwnerID)
+	}
+}
+
+// TestFindApprovalByWAMessageID pins both the happy path and the missing-key
+// path. The unique wa_message_id ensures the lookup is unambiguous; the
+// missing-key path returns sql.ErrNoRows (the T18 adapter in main.go will
+// translate that to api.ErrNoApproval — kept out of the db layer to preserve
+// unidirectional dependency: internal/db does not import internal/api).
+func TestFindApprovalByWAMessageID(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	id := seedT16PendingApproval(t, client, uid)
+
+	msgID := fmt.Sprintf("wa-msg-T20-find-%d", time.Now().UnixNano())
+	if err := client.SetWaMessageID(id, msgID); err != nil {
+		t.Fatalf("SetWaMessageID: %v", err)
+	}
+
+	gotID, err := client.FindApprovalByWAMessageID(msgID)
+	if err != nil {
+		t.Fatalf("FindApprovalByWAMessageID(%q): %v", msgID, err)
+	}
+	if gotID != id {
+		t.Fatalf("FindApprovalByWAMessageID = %d, want %d", gotID, id)
+	}
+
+	// Missing key → sql.ErrNoRows. Use a deliberately-unmatched string.
+	_, err = client.FindApprovalByWAMessageID(fmt.Sprintf("wa-msg-T20-missing-%d", time.Now().UnixNano()))
+	if err != sql.ErrNoRows {
+		t.Fatalf("FindApprovalByWAMessageID(missing) = %v, want sql.ErrNoRows", err)
+	}
+}
+
+// TestLatestPendingApprovalID pins the "freshest pending wins" contract. We
+// seed our own row last (with a tiny sleep to guarantee strict requested_at
+// ordering against any concurrently-running pending rows) and assert it comes
+// back. The test relies on -parallel 1 + monotonic BIGSERIAL so no other test
+// can race us between seed and lookup; the regression command in T20's plan
+// already pins those flags.
+func TestLatestPendingApprovalID(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	// Two rows so the ORDER BY requested_at DESC LIMIT 1 is actually exercised
+	// — if the SQL were missing ORDER BY, this test might pass by accident
+	// when our seeded row happens to sort first.
+	_ = seedT16PendingApproval(t, client, uid)
+	time.Sleep(2 * time.Millisecond)
+	lastID := seedT16PendingApproval(t, client, uid)
+
+	gotID, err := client.LatestPendingApprovalID()
+	if err != nil {
+		t.Fatalf("LatestPendingApprovalID: %v", err)
+	}
+	if gotID != lastID {
+		t.Fatalf("LatestPendingApprovalID = %d, want %d (most recently inserted pending row)", gotID, lastID)
+	}
+}
+
+// TestDecideViaWAButton_HappyPath drives the Go wrapper through the full RPC:
+// seed an Owner row, seed a pending approval, call DecideViaWAButton("approved",
+// ownerUUID) — assert the approval is flipped with decision_channel='wa_button'.
+// This is a thin wrapper test; the deep RPC semantics (invalid decision,
+// non-Owner caller, double-decide) are pinned in TestDecideViaWaButton_*
+// directly against the SQL (T14 tests above). Here we just prove the Go
+// wrapper passes the args through correctly.
+func TestDecideViaWAButton_HappyPath(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT20OwnerAdmin(t, client)
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	aid := seedT16PendingApproval(t, client, uid)
+
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	if err := client.DecideViaWAButton(aid, "approved", ownerID); err != nil {
+		t.Fatalf("DecideViaWAButton: %v", err)
+	}
+
+	var status, channel, decidedBy string
+	if err := client.DB.QueryRow(
+		`SELECT status::text, COALESCE(decision_channel,''), COALESCE(decided_by::text,'')
+		   FROM public.approval_requests WHERE id=$1`, aid).
+		Scan(&status, &channel, &decidedBy); err != nil {
+		t.Fatalf("read approval row: %v", err)
+	}
+	if status != "approved" {
+		t.Fatalf("status = %q, want approved", status)
+	}
+	if channel != "wa_button" {
+		t.Fatalf("decision_channel = %q, want wa_button", channel)
+	}
+	if decidedBy != ownerID {
+		t.Fatalf("decided_by = %q, want %q", decidedBy, ownerID)
+	}
+}
+
+// TestDecideViaWAButton_BadDecisionPassesErrorThrough proves the wrapper does
+// NOT swallow RPC errors: an invalid decision string ("maybe") reaches the
+// RPC's input validator and the resulting error bubbles up. The webhook
+// handler relies on substring-matching the error text ("is not pending or
+// does not exist", "not authorized") to map HTTP status codes — if the
+// wrapper trapped the error, the handler would lose its routing signal.
+func TestDecideViaWAButton_BadDecisionPassesErrorThrough(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT20OwnerAdmin(t, client)
+	uid := uniqueT16UUID(time.Now().UnixNano())
+	aid := seedT16PendingApproval(t, client, uid)
+
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	err := client.DecideViaWAButton(aid, "maybe", ownerID)
+	if err == nil {
+		t.Fatalf("expected error for invalid decision 'maybe', got nil")
+	}
+	if !strings.Contains(err.Error(), "decision") && !strings.Contains(err.Error(), "approved") {
+		t.Fatalf("unexpected error (want one mentioning decision/approved): %v", err)
+	}
+
+	// Approval must NOT have flipped — invalid decisions never advance the gate.
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&status)
+	if status != "pending" {
+		t.Fatalf("status = %q after invalid-decision call, want pending", status)
+	}
+}

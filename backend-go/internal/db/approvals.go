@@ -150,3 +150,94 @@ func (c *Client) CountPendingApprovalsForOwner() (int, error) {
 	).Scan(&n)
 	return n, err
 }
+
+// IsActiveOwnerWANumber returns true iff waNumber matches an active row in
+// public.wa_recipients with role='owner'. The caller (T18 webhook handler)
+// strips the @s.whatsapp.net suffix before invoking this so we match the
+// stored format (bare phone digits, no JID suffix).
+//
+// Note the case asymmetry vs. FirstOwnerAdminUserID: wa_recipients.role uses
+// lowercase ('owner') per migration 20260602000001, while admin_users.role
+// uses Capitalised ('Owner') per the Phase 1 admin schema. The Owner gate
+// in the webhook handler is intentionally a join across both tables — the
+// WA number identifies the device, the admin row carries the authority.
+func (c *Client) IsActiveOwnerWANumber(waNumber string) (bool, error) {
+	var n int
+	err := c.DB.QueryRow(
+		`SELECT COUNT(*) FROM public.wa_recipients
+		  WHERE wa_number = $1 AND role = 'owner' AND is_active = true`,
+		waNumber).Scan(&n)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+// FirstOwnerAdminUserID returns the id (uuid as text) of the first admin_users
+// row with role='Owner', ordered by id ASC. MSME deployments are single-Owner,
+// so LIMIT 1 with a deterministic ORDER BY is the canonical pick: even if the
+// DB carries multiple Owner rows (e.g. test seeds), the same uuid is returned
+// across calls. This is the p_decided_by_user_id passed into decide_via_wa_button.
+//
+// Returns sql.ErrNoRows when there is no Owner row at all (a deployment-
+// configuration bug — Phase 4 setup wizard inserts the first Owner).
+func (c *Client) FirstOwnerAdminUserID() (string, error) {
+	var id string
+	err := c.DB.QueryRow(
+		`SELECT id::text FROM public.admin_users
+		  WHERE role = 'Owner'
+		  ORDER BY id ASC LIMIT 1`).Scan(&id)
+	return id, err
+}
+
+// FindApprovalByWAMessageID locates an approval_requests row by its
+// wa_message_id (set via SetWaMessageID / _set_wa_message_id after Calista
+// posts the approval card). Returns sql.ErrNoRows when no row matches — the
+// T18 webhook handler's adapter wraps that into api.ErrNoApproval to keep
+// the SQL driver detail out of the HTTP layer.
+//
+// We don't filter on status here: a quoted-reply lookup against an already-
+// decided approval should still resolve so the handler can map the RPC's
+// "is not pending or does not exist" error to HTTP 409.
+func (c *Client) FindApprovalByWAMessageID(waMessageID string) (int64, error) {
+	var id int64
+	err := c.DB.QueryRow(
+		`SELECT id FROM public.approval_requests WHERE wa_message_id = $1`,
+		waMessageID).Scan(&id)
+	return id, err
+}
+
+// LatestPendingApprovalID returns the id of the most recently requested
+// pending approval (ORDER BY requested_at DESC LIMIT 1). Used by the T18
+// webhook handler when the Owner replies without quoting the card —
+// "setuju" without an in_reply_to resolves to whatever is freshest.
+//
+// Returns sql.ErrNoRows when the queue is empty (the handler maps that to
+// 404). Race note: two simultaneous owner taps can both resolve to the same
+// row; _transition_approval's `WHERE status='pending'` guard turns the
+// second tap into a 409 atomically, so this is safe by accident.
+func (c *Client) LatestPendingApprovalID() (int64, error) {
+	var id int64
+	err := c.DB.QueryRow(
+		`SELECT id FROM public.approval_requests
+		  WHERE status = 'pending'
+		  ORDER BY requested_at DESC LIMIT 1`).Scan(&id)
+	return id, err
+}
+
+// DecideViaWAButton wraps the decide_via_wa_button SECURITY DEFINER RPC.
+// decision must be "approved" or "rejected" (the RPC validates and raises
+// otherwise — error is returned verbatim so the webhook handler can map
+// the "is not pending or does not exist" substring to HTTP 409 and the
+// "not authorized" substring to HTTP 403).
+//
+// decidedByUserID is a uuid as text (matches the rest of the package's style
+// — we don't import google/uuid here). The RPC's UUID cast will raise on a
+// malformed value, but the caller should pass an id sourced from
+// FirstOwnerAdminUserID which is already known-good.
+func (c *Client) DecideViaWAButton(approvalID int64, decision, decidedByUserID string) error {
+	_, err := c.DB.Exec(
+		`SELECT public.decide_via_wa_button($1, $2, $3::uuid)`,
+		approvalID, decision, decidedByUserID)
+	return err
+}
