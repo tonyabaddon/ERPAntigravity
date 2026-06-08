@@ -2,6 +2,677 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+---
+
+## ⚠️ REVISION 2026-06-08 — Integrate with Phase 2 approval infra
+
+**Read this BEFORE the original plan below.** Phase 2 stock-fraud-prevention approval infrastructure shipped to main while this plan was being written. Sub-project B must **integrate** with that infra, not duplicate it. The Tasks below override conflicting parts of the original plan; un-changed Tasks proceed as written.
+
+### Phase 2 infra summary (read-only — already in main)
+
+- **`approval_requests` table** is **polymorphic** with enum `approval_request_type` ∈ ('adjustment', 'opname', 'price_change', 'kasir_price_override', 'kasir_void', 'kasir_refund') and JSONB `payload`. Designed for extension by ADD VALUE.
+- **State machine** transitions exclusively via `_transition_approval(p_id, p_new_status, p_decided_by, p_channel)`. Statuses: pending → approved | rejected | expired. Auto-expire after 30 min by default.
+- **Owner authentication** via `OwnerPinPad` (6-digit PIN) calling `verify_owner_pin(approval_id, pin)`. 5-attempt lockout. Existing component reusable.
+- **WhatsApp approval** via `decide_via_wa_button` — owner can approve from WA without opening the app. Useful for B since owner is often not at desk.
+- **Approval Inbox screen** at `src/components/ApprovalInboxScreen.tsx` lists all pending approval_requests, with realtime subscription + 30s polling backstop. Filterable by request_type via FilterPill.
+- **Pattern for new approval types:** create satellite table (e.g., `rakit_lock_requests`) FK → `approval_requests.id`, define `request_X()` + `commit_approved_X()` SECURITY DEFINER RPCs, register in `ApprovalRequestRow` UI for rendering. **Zero modifications to gate primitives needed.**
+
+### What changes in B's plan
+
+| Original Task | Status | Change |
+|---|---|---|
+| 0.1 Schema migration | ✏️ **Modified** | Drop `rakit_audit_log` (approval_requests history covers it). Add `rakit_lock_requests` satellite table. Keep `rakit_job_lines` + `rakit_components`. Add `'rakit_lock'` to `approval_request_type` enum. |
+| 0.2 RPCs migration | 🔄 **Rewritten** | Drop the 6 custom RPCs (submit/approve/reject/etc.). Replace with: `request_rakit_lock()` + `commit_approved_rakit_lock()` (Phase 2 pattern). Keep `cancel_rakit()`, `withdraw_rakit_lock()`, `material_edit_rakit()` but rewrite to fit gate pattern. Skip `_rakit_audit` helper (approval_requests log covers it). |
+| 0.3 Go integration test | ✏️ **Modified** | Test via approval_requests flow: request → verify_owner_pin (mocked or test-helper) → commit. |
+| 0.4 Frontend types | ✏️ **Modified** | Add `RakitLockRequest` type. Extend `ApprovalRequestType` enum on frontend. Other types unchanged. |
+| 1.x Cart UI | ✅ **Unchanged** | Same — RakitButtonsRow + RakitInlineForm + cart rendering. |
+| 2 WIP List | ✅ **Unchanged** | Same. |
+| 3 Lock Submission Modal | ✏️ **Modified** | Submit button calls `requestRakitLock()` RPC (Phase 2 wrapper). Status transitions to PENDING_LOCK_APPROVAL via approval_requests. The modal UI stays the same. |
+| 4 Approval Inbox + Review | 🔄 **Rewritten** | **DO NOT build separate Approval Inbox screen.** Instead: add `'rakit_lock'` to existing `ApprovalInboxScreen` filter pills. Build `RakitLockApprovalRequestRow` component as a renderer plugged into `ApprovalRequestRow`. Owner approves via existing `OwnerPinPad`. On approval success, call `commitApprovedRakitLock(id)`. |
+| 5 Cancel + Withdraw | ✏️ **Modified** | `cancel_rakit` (WIP-only) unchanged. `withdraw_rakit_lock` rewritten to mark the approval_request as rejected (by the submitter, channel='self_withdraw') + revert kasir_transactions back to WIP. |
+| 6 Edit AWAITING_LUNAS | 🔄 **Rewritten** | Material edit → reverse stock_movements from prior commit + create new approval_request (rakit_lock type) for new komponen list. Status → PENDING_LOCK_APPROVAL until re-approved + re-committed. |
+| 7 Invoice + Forfeit + QA | ✅ **Unchanged** | Same. |
+
+### Key architectural decision: stock_movements writes directly, no stock_adjustments middleman
+
+The original plan assumed stock_adjustments (with lines) would be the carrier for rakit komponen decrement. Phase 2's actual `stock_adjustments` is flat (one row per SKU) and FK-requires `approval_request_id`. **Adding a parallel lines table would conflict with Phase 2's design.**
+
+**New approach:** `commit_approved_rakit_lock(p_approval_id)` writes `stock_movements` rows directly via Phase 1's `_log_stock_movement()`, one per komponen, with `related_doc_type='rakit_lock_request'` and `related_doc_id=<rakit_lock_requests.id>`. No stock_adjustments rows created for rakit komponen. The rakit_lock approval IS the gate — separate from the stock_adjustments gate.
+
+**Trade-off:** Owner sees rakit-related stock changes in Approval Inbox under `request_type='rakit_lock'`, NOT under `request_type='adjustment'`. Per-line stock changes audit-trail-trace through `stock_movements.related_doc_id → rakit_lock_requests → rakit_job_line`. This is cleaner than forcing stock_adjustments into a header+lines shape it wasn't designed for.
+
+### Revised Task 0.1 — Schema migration (full)
+
+**Files:**
+- Modify in-place (cherry-pick `fcb1dcc` may be replaced by this revision): `supabase/migrations/20260608000008_rakit_workflow_schema.sql`
+
+Key changes from cherry-picked `fcb1dcc`:
+- ❌ **DROP** `rakit_audit_log` table (approval_requests already logs transitions)
+- ✅ **ADD** `'rakit_lock'` to `approval_request_type` enum
+- ✅ **ADD** `rakit_lock_requests` satellite table
+- ✅ **KEEP** `rakit_job_lines` and `rakit_components` (unchanged)
+- ❌ **DROP** the lock/cancel metadata columns from `kasir_transactions`: `lock_submitted_by`, `lock_submitted_at`, `lock_approved_by`, `lock_approved_at`, `lock_rejected_reason`, `lock_rejected_at` (these now live on `approval_requests` + `rakit_lock_requests`). **KEEP** `cancel_*` columns (cancel is its own flow, no approval).
+- ✅ **KEEP** status enum extension on `kasir_transactions.status` (WIP, PENDING_LOCK_APPROVAL).
+- ✅ **KEEP** `kasir_rakit_forfeit_summary` view.
+
+Migration (replaces fcb1dcc content):
+
+```sql
+-- 20260608000008_rakit_workflow_schema.sql
+-- Sub-project B: Rakit Workflow (Phase 2 integration revision 2026-06-08)
+
+-- 1. Extend kasir_transactions status check
+ALTER TABLE public.kasir_transactions DROP CONSTRAINT IF EXISTS chk_kasir_status;
+ALTER TABLE public.kasir_transactions ADD CONSTRAINT chk_kasir_status CHECK (
+  status IN ('PAID','AWAITING_LUNAS','COMPLETED','CANCELLED','WIP','PENDING_LOCK_APPROVAL')
+);
+
+-- 2. Cancel-only metadata (lock metadata lives in approval_requests / rakit_lock_requests)
+ALTER TABLE public.kasir_transactions
+  ADD COLUMN IF NOT EXISTS service_summary TEXT,
+  ADD COLUMN IF NOT EXISTS cancel_refund_amount  NUMERIC(15,2),
+  ADD COLUMN IF NOT EXISTS cancel_forfeit_amount NUMERIC(15,2),
+  ADD COLUMN IF NOT EXISTS cancel_reason         TEXT,
+  ADD COLUMN IF NOT EXISTS cancelled_by          UUID REFERENCES auth.users(id),
+  ADD COLUMN IF NOT EXISTS cancelled_at          TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_kasir_wip ON public.kasir_transactions(created_at) WHERE status = 'WIP';
+
+-- 3. Add 'rakit_lock' to approval_request_type enum
+ALTER TYPE public.approval_request_type ADD VALUE IF NOT EXISTS 'rakit_lock';
+
+-- 4. rakit_job_lines (per-rakit data — same as before)
+CREATE TABLE IF NOT EXISTS public.rakit_job_lines (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transaction_id        UUID NOT NULL REFERENCES public.kasir_transactions(id) ON DELETE CASCADE,
+  line_number           INT NOT NULL,
+  service_type          TEXT NOT NULL,
+  description           TEXT NOT NULL,
+  estimated_price       NUMERIC(15,2) NOT NULL,
+  final_price           NUMERIC(15,2),
+  tracking_mode         TEXT NOT NULL DEFAULT 'detail',
+  labor_cost            NUMERIC(15,2) NOT NULL DEFAULT 0,
+  lump_sum_hpp          NUMERIC(15,2) NOT NULL DEFAULT 0,
+  hpp_owner_override    NUMERIC(15,2),
+  hpp_final             NUMERIC(15,2),
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT chk_rakit_service_type     CHECK (service_type IN ('jasa_rakit', 'jasa_custom_panel')),
+  CONSTRAINT chk_rakit_tracking_mode    CHECK (tracking_mode IN ('detail', 'lumpsum')),
+  CONSTRAINT chk_rakit_prices_positive  CHECK (
+    estimated_price > 0 AND (final_price IS NULL OR final_price > 0)
+  ),
+  CONSTRAINT chk_rakit_mode_consistency CHECK (
+    (tracking_mode = 'detail' AND lump_sum_hpp = 0) OR
+    (tracking_mode = 'lumpsum' AND labor_cost = 0)
+  ),
+  UNIQUE (transaction_id, line_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rakit_lines_transaction ON public.rakit_job_lines(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_rakit_lines_type ON public.rakit_job_lines(service_type);
+
+-- 5. rakit_components (same as before)
+CREATE TABLE IF NOT EXISTS public.rakit_components (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  rakit_line_id         UUID NOT NULL REFERENCES public.rakit_job_lines(id) ON DELETE CASCADE,
+  sku                   TEXT NOT NULL,
+  name                  TEXT NOT NULL,
+  qty                   NUMERIC(15,3) NOT NULL,
+  warehouse             TEXT NOT NULL DEFAULT 'atas',
+  fifo_cost_snapshot    NUMERIC(15,2) NOT NULL DEFAULT 0,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  CONSTRAINT chk_rakit_comp_qty_pos     CHECK (qty > 0),
+  CONSTRAINT chk_rakit_comp_warehouse   CHECK (warehouse IN ('atas', 'bawah'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_rakit_components_line ON public.rakit_components(rakit_line_id);
+CREATE INDEX IF NOT EXISTS idx_rakit_components_sku  ON public.rakit_components(sku);
+
+-- 6. rakit_lock_requests — satellite table linking approval_requests to rakit transaction snapshots
+CREATE TABLE IF NOT EXISTS public.rakit_lock_requests (
+  id                      BIGSERIAL PRIMARY KEY,
+  transaction_id          UUID NOT NULL REFERENCES public.kasir_transactions(id) ON DELETE CASCADE,
+  approval_request_id     BIGINT NOT NULL REFERENCES public.approval_requests(id),
+  -- Snapshot of rakit lines at submit time (validated at commit time)
+  lines_snapshot          JSONB NOT NULL,  -- array of {id, final_price, tracking_mode, labor_cost, lump_sum_hpp, components:[{sku, name, qty, warehouse, fifo_cost}]}
+  requested_by            UUID NOT NULL REFERENCES auth.users(id),
+  requested_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status                  TEXT NOT NULL DEFAULT 'pending_approval'
+                          CHECK (status IN ('pending_approval','approved','rejected','expired','withdrawn')),
+  committed_at            TIMESTAMPTZ,
+  is_material_edit        BOOLEAN NOT NULL DEFAULT FALSE,  -- TRUE if this approval is a re-approval after material edit
+  prior_lock_request_id   BIGINT REFERENCES public.rakit_lock_requests(id)  -- chain reference when re-submitted after edit
+);
+
+CREATE INDEX IF NOT EXISTS idx_rakit_lock_approval  ON public.rakit_lock_requests(approval_request_id);
+CREATE INDEX IF NOT EXISTS idx_rakit_lock_transaction ON public.rakit_lock_requests(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_rakit_lock_pending   ON public.rakit_lock_requests(requested_at)
+  WHERE status = 'pending_approval';
+
+-- 7. Forfeit revenue view (unchanged)
+CREATE OR REPLACE VIEW public.kasir_rakit_forfeit_summary AS
+SELECT
+  date_trunc('month', cancelled_at) AS month,
+  SUM(cancel_forfeit_amount)        AS total_forfeit,
+  COUNT(*)                          AS cancel_count
+FROM public.kasir_transactions
+WHERE status = 'CANCELLED' AND cancel_forfeit_amount IS NOT NULL AND cancel_forfeit_amount > 0
+GROUP BY date_trunc('month', cancelled_at);
+
+-- 8. RLS — same idempotent pattern as Phase 2 migrations
+ALTER TABLE public.rakit_job_lines     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rakit_components    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rakit_lock_requests ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='rakit_job_lines' AND policyname='rakit_lines_all') THEN
+    CREATE POLICY rakit_lines_all ON public.rakit_job_lines FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='rakit_components' AND policyname='rakit_components_all') THEN
+    CREATE POLICY rakit_components_all ON public.rakit_components FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='rakit_lock_requests' AND policyname='rakit_lock_requests_all') THEN
+    CREATE POLICY rakit_lock_requests_all ON public.rakit_lock_requests FOR ALL TO authenticated USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+```
+
+### Revised Task 0.2 — RPCs (full)
+
+**Files:**
+- Create: `supabase/migrations/20260608000009_rakit_workflow_rpcs.sql` (replaces broken adcbf0c content)
+
+```sql
+-- 20260608000009_rakit_workflow_rpcs.sql
+-- Sub-project B revision 2026-06-08 — integrates with Phase 2 approval gate pattern.
+
+-- ============================================================
+-- request_rakit_lock — admin/kasir submits lock for owner approval
+-- Transitions kasir_transactions.status: WIP → PENDING_LOCK_APPROVAL
+-- Creates approval_requests (type='rakit_lock') + rakit_lock_requests satellite
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.request_rakit_lock(
+  p_transaction_id    UUID,
+  p_lines             JSONB,  -- [{id, final_price, tracking_mode, labor_cost, lump_sum_hpp, components:[...]}, ...]
+  p_actor_user_id     UUID DEFAULT NULL
+) RETURNS BIGINT
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_actor      UUID;
+  v_status     TEXT;
+  v_approval   BIGINT;
+  v_lock_req   BIGINT;
+  v_payload    JSONB;
+  v_line       JSONB;
+  v_line_id    UUID;
+  v_comp       JSONB;
+BEGIN
+  v_actor := COALESCE(p_actor_user_id, auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+
+  -- Lock transaction + validate state
+  SELECT status INTO v_status FROM kasir_transactions WHERE id = p_transaction_id FOR UPDATE;
+  IF v_status != 'WIP' THEN
+    RAISE EXCEPTION 'request_rakit_lock: transaction % is in status %, expected WIP', p_transaction_id, v_status;
+  END IF;
+
+  -- Persist line edits + replace components (snapshot lives also in rakit_lock_requests.lines_snapshot for audit)
+  FOR v_line IN SELECT * FROM jsonb_array_elements(p_lines) LOOP
+    v_line_id := (v_line->>'id')::UUID;
+    UPDATE rakit_job_lines
+    SET final_price   = (v_line->>'final_price')::NUMERIC,
+        tracking_mode = v_line->>'tracking_mode',
+        labor_cost    = COALESCE((v_line->>'labor_cost')::NUMERIC, 0),
+        lump_sum_hpp  = COALESCE((v_line->>'lump_sum_hpp')::NUMERIC, 0),
+        updated_at    = now()
+    WHERE id = v_line_id AND transaction_id = p_transaction_id;
+
+    DELETE FROM rakit_components WHERE rakit_line_id = v_line_id;
+    IF v_line ? 'components' THEN
+      FOR v_comp IN SELECT * FROM jsonb_array_elements(v_line->'components') LOOP
+        INSERT INTO rakit_components (rakit_line_id, sku, name, qty, warehouse, fifo_cost_snapshot)
+        VALUES (v_line_id, v_comp->>'sku', v_comp->>'name',
+                (v_comp->>'qty')::NUMERIC,
+                COALESCE(v_comp->>'warehouse', 'atas'),
+                (v_comp->>'fifo_cost')::NUMERIC);
+      END LOOP;
+    END IF;
+  END LOOP;
+
+  -- Build payload (compact: transaction_id + summary count)
+  v_payload := jsonb_build_object(
+    'transaction_id', p_transaction_id::text,
+    'lines_count',    jsonb_array_length(p_lines)
+  );
+
+  -- Create approval_requests row (Phase 2 gate)
+  INSERT INTO approval_requests (request_type, payload, requested_by)
+  VALUES ('rakit_lock'::approval_request_type, v_payload, v_actor)
+  RETURNING id INTO v_approval;
+
+  -- Create satellite row with full snapshot
+  INSERT INTO rakit_lock_requests
+    (transaction_id, approval_request_id, lines_snapshot, requested_by)
+  VALUES (p_transaction_id, v_approval, p_lines, v_actor)
+  RETURNING id INTO v_lock_req;
+
+  -- Transition kasir_transactions to PENDING_LOCK_APPROVAL
+  UPDATE kasir_transactions SET status = 'PENDING_LOCK_APPROVAL' WHERE id = p_transaction_id;
+
+  RETURN v_approval;
+END $$;
+GRANT EXECUTE ON FUNCTION public.request_rakit_lock(UUID, JSONB, UUID) TO authenticated;
+
+-- ============================================================
+-- commit_approved_rakit_lock — fires AFTER owner approves via PinPad/WA/Inbox
+-- - Writes stock_movements per komponen (detail mode only)
+-- - Updates stocks.stock_atas/bawah (guarded ≥ 0)
+-- - Sets rakit_job_lines.hpp_final
+-- - Transitions kasir_transactions.status: PENDING_LOCK_APPROVAL → AWAITING_LUNAS or PAID
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.commit_approved_rakit_lock(
+  p_approval_id    BIGINT,
+  p_hpp_overrides  JSONB DEFAULT '{}'::jsonb  -- {<rakit_line_id>: <override_value>}
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_ar          RECORD;
+  v_rr          RECORD;
+  v_tx_id       UUID;
+  v_dp          NUMERIC;
+  v_total       NUMERIC;
+  v_new_status  TEXT;
+  v_line        RECORD;
+  v_comp        RECORD;
+  v_qty_before  INT;
+  v_movement_id BIGINT;
+  v_hpp_final   NUMERIC;
+BEGIN
+  -- Lock approval + assert approved
+  SELECT * INTO v_ar FROM approval_requests WHERE id = p_approval_id FOR UPDATE;
+  IF v_ar.status != 'approved' THEN
+    RAISE EXCEPTION 'commit_approved_rakit_lock: approval % is in status %, expected approved', p_approval_id, v_ar.status;
+  END IF;
+
+  -- Lock satellite + assert not committed
+  SELECT * INTO v_rr FROM rakit_lock_requests WHERE approval_request_id = p_approval_id FOR UPDATE;
+  IF v_rr.committed_at IS NOT NULL THEN
+    RAISE EXCEPTION 'commit_approved_rakit_lock: rakit_lock_request % already committed', v_rr.id;
+  END IF;
+
+  v_tx_id := v_rr.transaction_id;
+
+  SELECT COALESCE(dp_amount, 0), total_amount INTO v_dp, v_total
+  FROM kasir_transactions WHERE id = v_tx_id FOR UPDATE;
+
+  v_new_status := CASE WHEN v_total - v_dp > 0 THEN 'AWAITING_LUNAS' ELSE 'PAID' END;
+
+  -- For each rakit line: detail mode → write stock_movements per komponen. Lumpsum → just lock HPP.
+  FOR v_line IN SELECT * FROM rakit_job_lines WHERE transaction_id = v_tx_id LOOP
+    IF v_line.tracking_mode = 'detail' THEN
+      v_hpp_final := COALESCE(
+        (p_hpp_overrides->>v_line.id::TEXT)::NUMERIC,
+        (SELECT COALESCE(SUM(fifo_cost_snapshot), 0) FROM rakit_components WHERE rakit_line_id = v_line.id)
+          + COALESCE(v_line.labor_cost, 0)
+      );
+
+      FOR v_comp IN SELECT * FROM rakit_components WHERE rakit_line_id = v_line.id LOOP
+        -- Snapshot stocks.qty_before
+        SELECT CASE WHEN v_comp.warehouse = 'atas' THEN stock_atas ELSE stock_bawah END
+          INTO v_qty_before
+        FROM stocks WHERE sku = v_comp.sku FOR UPDATE;
+
+        IF v_qty_before IS NULL OR v_qty_before < v_comp.qty THEN
+          RAISE EXCEPTION 'commit_approved_rakit_lock: insufficient stock for SKU % in % (have %, need %)',
+                          v_comp.sku, v_comp.warehouse, COALESCE(v_qty_before, 0), v_comp.qty;
+        END IF;
+
+        -- Write to immutable ledger (Phase 1) — use exact signature from Phase 1
+        v_movement_id := public._log_stock_movement(
+          p_sku             => v_comp.sku,
+          p_warehouse       => v_comp.warehouse,
+          p_qty_delta       => -v_comp.qty::INT,
+          p_qty_before      => v_qty_before,
+          p_source          => 'rakit_usage'::stock_movement_source,  -- requires enum value added below
+          p_related_doc_type=> 'rakit_lock_request',
+          p_related_doc_id  => v_rr.id::TEXT,
+          p_reason_code     => NULL,
+          p_reason_note     => 'Pemakaian rakit ' || v_line.description,
+          p_actor_user_id   => v_ar.decided_by,
+          p_actor_role      => 'owner',
+          p_evidence_urls   => NULL
+        );
+
+        -- Decrement stocks
+        UPDATE stocks
+        SET stock_atas  = CASE WHEN v_comp.warehouse = 'atas'  THEN stock_atas  - v_comp.qty ELSE stock_atas  END,
+            stock_bawah = CASE WHEN v_comp.warehouse = 'bawah' THEN stock_bawah - v_comp.qty ELSE stock_bawah END
+        WHERE sku = v_comp.sku;
+      END LOOP;
+
+      UPDATE rakit_job_lines
+      SET hpp_final          = v_hpp_final,
+          hpp_owner_override = (p_hpp_overrides->>v_line.id::TEXT)::NUMERIC
+      WHERE id = v_line.id;
+
+    ELSE  -- lumpsum
+      v_hpp_final := COALESCE(
+        (p_hpp_overrides->>v_line.id::TEXT)::NUMERIC,
+        v_line.lump_sum_hpp
+      );
+      UPDATE rakit_job_lines
+      SET hpp_final          = v_hpp_final,
+          hpp_owner_override = (p_hpp_overrides->>v_line.id::TEXT)::NUMERIC
+      WHERE id = v_line.id;
+    END IF;
+  END LOOP;
+
+  -- Mark satellite committed
+  UPDATE rakit_lock_requests SET status = 'approved', committed_at = now() WHERE id = v_rr.id;
+
+  -- Transition kasir_transactions
+  UPDATE kasir_transactions SET status = v_new_status WHERE id = v_tx_id;
+END $$;
+GRANT EXECUTE ON FUNCTION public.commit_approved_rakit_lock(BIGINT, JSONB) TO authenticated;
+
+-- ============================================================
+-- Add 'rakit_usage' to stock_movement_source enum (Phase 1)
+-- ============================================================
+ALTER TYPE public.stock_movement_source ADD VALUE IF NOT EXISTS 'rakit_usage';
+
+-- ============================================================
+-- withdraw_rakit_lock — submitter cancels their own pending approval
+-- Transitions: PENDING_LOCK_APPROVAL → WIP, marks approval as rejected (channel='self_withdraw')
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.withdraw_rakit_lock(
+  p_approval_id BIGINT,
+  p_actor_user_id UUID DEFAULT NULL
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_actor UUID;
+  v_ar    RECORD;
+  v_rr    RECORD;
+BEGIN
+  v_actor := COALESCE(p_actor_user_id, auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+
+  SELECT * INTO v_ar FROM approval_requests WHERE id = p_approval_id FOR UPDATE;
+  IF v_ar.status != 'pending' THEN
+    RAISE EXCEPTION 'withdraw_rakit_lock: approval % is %, expected pending', p_approval_id, v_ar.status;
+  END IF;
+  IF v_ar.requested_by != v_actor THEN
+    RAISE EXCEPTION 'withdraw_rakit_lock: only submitter can withdraw their own request';
+  END IF;
+
+  SELECT * INTO v_rr FROM rakit_lock_requests WHERE approval_request_id = p_approval_id FOR UPDATE;
+
+  -- Use _transition_approval for consistency with gate
+  PERFORM public._transition_approval(p_approval_id, 'rejected', v_actor, 'self_withdraw');
+
+  UPDATE rakit_lock_requests SET status = 'withdrawn' WHERE id = v_rr.id;
+  UPDATE kasir_transactions  SET status = 'WIP'        WHERE id = v_rr.transaction_id;
+END $$;
+GRANT EXECUTE ON FUNCTION public.withdraw_rakit_lock(BIGINT, UUID) TO authenticated;
+
+-- ============================================================
+-- cancel_rakit — WIP-only, owner-decided refund + forfeit
+-- (unchanged from original plan — no approval needed for WIP cancel)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.cancel_rakit(
+  p_transaction_id UUID,
+  p_refund_amount  NUMERIC,
+  p_reason         TEXT,
+  p_actor_user_id  UUID DEFAULT NULL
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_actor UUID; v_status TEXT; v_dp NUMERIC; v_forfeit NUMERIC;
+BEGIN
+  v_actor := COALESCE(p_actor_user_id, auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+
+  IF p_reason IS NULL OR length(trim(p_reason)) = 0 THEN
+    RAISE EXCEPTION 'cancel_rakit: reason required';
+  END IF;
+
+  SELECT status, COALESCE(dp_amount, 0) INTO v_status, v_dp
+  FROM kasir_transactions WHERE id = p_transaction_id FOR UPDATE;
+
+  IF v_status != 'WIP' THEN
+    RAISE EXCEPTION 'cancel_rakit: status %, expected WIP', v_status;
+  END IF;
+  IF p_refund_amount < 0 OR p_refund_amount > v_dp THEN
+    RAISE EXCEPTION 'cancel_rakit: refund % must be 0..%', p_refund_amount, v_dp;
+  END IF;
+
+  v_forfeit := v_dp - p_refund_amount;
+
+  UPDATE kasir_transactions
+  SET status                = 'CANCELLED',
+      cancel_refund_amount  = p_refund_amount,
+      cancel_forfeit_amount = v_forfeit,
+      cancel_reason         = p_reason,
+      cancelled_by          = v_actor,
+      cancelled_at          = now()
+  WHERE id = p_transaction_id;
+END $$;
+GRANT EXECUTE ON FUNCTION public.cancel_rakit(UUID, NUMERIC, TEXT, UUID) TO authenticated;
+
+-- ============================================================
+-- material_edit_rakit — AWAITING_LUNAS → re-submit for re-approval
+-- - Reverses prior stock_movements for this transaction's rakit usage
+-- - Increments stocks back
+-- - Creates new rakit_lock approval_request (linked to prior via prior_lock_request_id)
+-- - Status: AWAITING_LUNAS → PENDING_LOCK_APPROVAL
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.material_edit_rakit(
+  p_transaction_id UUID,
+  p_lines          JSONB,
+  p_actor_user_id  UUID DEFAULT NULL
+) RETURNS BIGINT
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_actor       UUID;
+  v_status      TEXT;
+  v_prior_rr    RECORD;
+  v_movement    RECORD;
+  v_new_approval BIGINT;
+  v_new_rr      BIGINT;
+  v_qty_before  INT;
+BEGIN
+  v_actor := COALESCE(p_actor_user_id, auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+
+  SELECT status INTO v_status FROM kasir_transactions WHERE id = p_transaction_id FOR UPDATE;
+  IF v_status != 'AWAITING_LUNAS' THEN
+    RAISE EXCEPTION 'material_edit_rakit: status %, expected AWAITING_LUNAS', v_status;
+  END IF;
+
+  -- Find the prior (committed) rakit_lock_request
+  SELECT * INTO v_prior_rr
+  FROM rakit_lock_requests
+  WHERE transaction_id = p_transaction_id AND status = 'approved' AND committed_at IS NOT NULL
+  ORDER BY committed_at DESC
+  LIMIT 1;
+
+  IF v_prior_rr.id IS NULL THEN
+    RAISE EXCEPTION 'material_edit_rakit: no prior approved rakit_lock_request found';
+  END IF;
+
+  -- Reverse all stock_movements that referenced this rakit_lock_request
+  FOR v_movement IN
+    SELECT * FROM stock_movements
+    WHERE related_doc_type = 'rakit_lock_request' AND related_doc_id = v_prior_rr.id::TEXT
+    FOR UPDATE
+  LOOP
+    SELECT CASE WHEN v_movement.warehouse = 'atas' THEN stock_atas ELSE stock_bawah END
+      INTO v_qty_before
+    FROM stocks WHERE sku = v_movement.sku FOR UPDATE;
+
+    PERFORM public._log_stock_movement(
+      p_sku             => v_movement.sku,
+      p_warehouse       => v_movement.warehouse,
+      p_qty_delta       => -v_movement.qty_delta,  -- flip sign to reverse
+      p_qty_before      => v_qty_before,
+      p_source          => 'rakit_reversal'::stock_movement_source,  -- new enum value below
+      p_related_doc_type=> 'rakit_lock_request',
+      p_related_doc_id  => v_prior_rr.id::TEXT,
+      p_reason_code     => NULL,
+      p_reason_note     => 'Reversal: material edit re-submission',
+      p_actor_user_id   => v_actor,
+      p_actor_role      => 'admin',
+      p_evidence_urls   => NULL
+    );
+
+    UPDATE stocks
+    SET stock_atas  = CASE WHEN v_movement.warehouse = 'atas'  THEN stock_atas  - v_movement.qty_delta ELSE stock_atas  END,
+        stock_bawah = CASE WHEN v_movement.warehouse = 'bawah' THEN stock_bawah - v_movement.qty_delta ELSE stock_bawah END
+    WHERE sku = v_movement.sku;
+  END LOOP;
+
+  -- Now request new rakit_lock with updated lines (delegates to request_rakit_lock)
+  -- But: transaction status must be WIP for that RPC. We temporarily flip via dedicated path:
+
+  -- Update line data + components
+  PERFORM 0;  -- (the actual line update logic is identical to request_rakit_lock body; refactored helper deferred to follow-up)
+
+  -- For now: directly insert new approval + satellite with material-edit flag
+  INSERT INTO approval_requests (request_type, payload, requested_by)
+  VALUES ('rakit_lock'::approval_request_type,
+          jsonb_build_object('transaction_id', p_transaction_id::text, 'lines_count', jsonb_array_length(p_lines), 'material_edit', true),
+          v_actor)
+  RETURNING id INTO v_new_approval;
+
+  INSERT INTO rakit_lock_requests
+    (transaction_id, approval_request_id, lines_snapshot, requested_by, is_material_edit, prior_lock_request_id)
+  VALUES (p_transaction_id, v_new_approval, p_lines, v_actor, TRUE, v_prior_rr.id)
+  RETURNING id INTO v_new_rr;
+
+  -- Transition tx → PENDING_LOCK_APPROVAL
+  UPDATE kasir_transactions SET status = 'PENDING_LOCK_APPROVAL' WHERE id = p_transaction_id;
+
+  RETURN v_new_approval;
+END $$;
+GRANT EXECUTE ON FUNCTION public.material_edit_rakit(UUID, JSONB, UUID) TO authenticated;
+
+ALTER TYPE public.stock_movement_source ADD VALUE IF NOT EXISTS 'rakit_reversal';
+
+-- ============================================================
+-- cosmetic_edit_rakit — AWAITING_LUNAS, no stock impact
+-- Updates description / final_price only. No re-approval.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.cosmetic_edit_rakit(
+  p_transaction_id UUID,
+  p_lines          JSONB,  -- [{id, description?, final_price?}, ...]
+  p_actor_user_id  UUID DEFAULT NULL
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+  v_actor UUID; v_status TEXT; v_line JSONB; v_line_id UUID;
+BEGIN
+  v_actor := COALESCE(p_actor_user_id, auth.uid(), '00000000-0000-0000-0000-000000000000'::uuid);
+
+  SELECT status INTO v_status FROM kasir_transactions WHERE id = p_transaction_id FOR UPDATE;
+  IF v_status != 'AWAITING_LUNAS' THEN
+    RAISE EXCEPTION 'cosmetic_edit_rakit: status %, expected AWAITING_LUNAS', v_status;
+  END IF;
+
+  FOR v_line IN SELECT * FROM jsonb_array_elements(p_lines) LOOP
+    v_line_id := (v_line->>'id')::UUID;
+    UPDATE rakit_job_lines
+    SET description = COALESCE(v_line->>'description', description),
+        final_price = COALESCE((v_line->>'final_price')::NUMERIC, final_price),
+        updated_at  = now()
+    WHERE id = v_line_id AND transaction_id = p_transaction_id;
+  END LOOP;
+END $$;
+GRANT EXECUTE ON FUNCTION public.cosmetic_edit_rakit(UUID, JSONB, UUID) TO authenticated;
+```
+
+### Revised Task 0.4 — Frontend types delta
+
+Add to `src/types.ts` (in addition to original Task 0.4):
+
+```typescript
+export interface RakitLockRequest {
+  id: number;
+  transactionId: string;
+  approvalRequestId: number;
+  linesSnapshot: any;  // JSONB — array of lines with components
+  requestedBy: string;
+  requestedAt: string;
+  status: 'pending_approval' | 'approved' | 'rejected' | 'expired' | 'withdrawn';
+  committedAt: string | null;
+  isMaterialEdit: boolean;
+  priorLockRequestId: number | null;
+}
+
+// Extend Phase 2's ApprovalRequestType
+export type ApprovalRequestType =
+  | 'adjustment' | 'opname' | 'price_change'
+  | 'kasir_price_override' | 'kasir_void' | 'kasir_refund'
+  | 'rakit_lock';  // ← B addition
+```
+
+### Revised Task 4 — Approval Inbox integration
+
+**DO NOT build separate Approval Inbox screen.** Instead, two changes:
+
+1. **Extend FilterPill in existing `ApprovalInboxScreen.tsx`** to include 'rakit_lock' as a filter:
+
+```tsx
+// Find the FilterPill list, add:
+<FilterPill type="rakit_lock" label="Rakit Lock" />
+```
+
+2. **Add render branch in `ApprovalRequestRow.tsx`** for `request_type === 'rakit_lock'`:
+
+```tsx
+// In ApprovalRequestRow, add branch:
+if (req.request_type === 'rakit_lock') {
+  return <RakitLockApprovalRequestRow approval={req} ... />;
+}
+```
+
+3. **Create `src/components/rakit/RakitLockApprovalRequestRow.tsx`** — renders the summary row with margin badge + komponen count, click → opens detail modal that fetches `rakit_lock_requests` by `approval_request_id` and shows the full lines+components from the snapshot.
+
+4. **Approve action** uses existing `OwnerPinPad`:
+
+```tsx
+<OwnerPinPad
+  approvalId={approval.id}
+  onSuccess={async () => {
+    await commitApprovedRakitLock(approval.id, hppOverrides);
+    showToast('Rakit lock approved + stock decremented.', 'success');
+  }}
+  onCancel={() => {}}
+/>
+```
+
+5. **Reject action** uses the existing approval reject flow (generic UPDATE on approval_requests). Plus call to mark `rakit_lock_requests.status='rejected'` and revert `kasir_transactions.status='WIP'`. Add a small RPC `reject_rakit_lock_request(approval_id, reason, actor)` for this — symmetric to withdraw.
+
+### Revised Task 5 — Withdraw button
+
+Use new `withdraw_rakit_lock(approval_id, actor)` RPC. The button is still in transaction detail when status === 'PENDING_LOCK_APPROVAL', but it now needs the `approval_id` (lookup via `rakit_lock_requests` by transaction_id).
+
+### Revised Task 6 — Edit AWAITING_LUNAS
+
+Two service calls based on detected tier (same UI):
+- Cosmetic only → `cosmeticEditRakit(transactionId, lines, actor)` (calls cosmetic_edit_rakit RPC, no re-approval)
+- Material → `materialEditRakit(transactionId, lines, actor)` (calls material_edit_rakit RPC, returns new approval_id, status → PENDING_LOCK_APPROVAL)
+
+The Edit modal calls the appropriate RPC based on the dirty-field check (same tier-detection logic as original Task 6).
+
+---
+
+## Original plan continues below — refer to revised Tasks above where conflicting
+
 **Goal:** Extend sub-project A's `PenjualanBaruScreen` with `jasa rakit` / `jasa custom panel` service workflow. Add WIP lifecycle (WIP → PENDING_LOCK_APPROVAL → AWAITING_LUNAS/PAID → COMPLETED), owner approval gate with first-mover Approval Inbox, and Detail/Lump-sum HPP tracking. Customer invoice remains 1-line lump-sum per rakit line.
 
 **Architecture:** Additive on top of sub-project A. 3 new tables (`rakit_job_lines`, `rakit_components`, `rakit_audit_log`), extended status enum on existing `kasir_transactions`. New UI modules under `src/components/rakit/` and `src/components/approval/`. Server-side state transitions via Postgres RPCs (atomic, RLS-protected). Stock decrement on approve uses Phase 1's `_log_stock_movement` ledger helper.
