@@ -1030,3 +1030,214 @@ func TestPriceChangeRequests_Mutable(t *testing.T) {
 		t.Fatalf("status = %q, want approved", status)
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 10: request_price_change + commit_approved_price_change RPCs
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Three tests pin the contract for the two SECURITY DEFINER RPCs that gate
+// every price/harga_modal change behind Owner approval:
+//
+//   1. TestRequestPriceChange_SnapshotsCurrentValue — request_price_change
+//      INSERTs both approval_requests (type='price_change') AND
+//      price_change_requests with old_value snapshotted from stocks at the
+//      time of request. The snapshot is critical: if stocks.price changes
+//      between request and commit (which shouldn't happen given the REVOKE,
+//      but layered guards) the audit log still records the value the Owner
+//      actually approved against.
+//
+//   2. TestCommitPriceChange_WhilePending_Fails — commit_approved_price_change
+//      called while approval_requests.status is still 'pending' must RAISE
+//      'not approved'. This proves the gate works: even with the satellite
+//      row present, the commit refuses to run until _transition_approval
+//      has flipped the gate. Mirrors T4's commit_approved_adjustment pattern.
+//
+//   3. TestCommitPriceChange_HappyPath_UpdatesStockAndWritesImmutableHistory —
+//      end-to-end: request → _transition_approval to approved → commit. Asserts
+//      (a) stocks.price flipped to new_value, (b) a stock_price_history row
+//      was written with source='approval' + correct old_value, (c) that
+//      history row inherits the schema's append-only contract — an UPDATE
+//      attempt raises 'append-only'. T9's tests proved the trigger works on
+//      arbitrary seed rows; this proves the RPC-written rows are no exception.
+//
+// Per-test unique SKUs (T10-PRICE-{R|F|H}-<nano>) prevent the TEST-IMM state
+// pollution flagged repeatedly in earlier Phase 2 progress entries.
+
+func TestRequestPriceChange_SnapshotsCurrentValue(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T10-PRICE-R-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET price=1000 WHERE sku=$1`, sku); err != nil {
+		t.Fatalf("seed price: %v", err)
+	}
+
+	var aid int64
+	if err := client.DB.QueryRow(
+		`SELECT public.request_price_change(
+		    p_sku           => $1,
+		    p_field         => 'price',
+		    p_new_value     => 1500,
+		    p_reason_note   => 'kenaikan supplier',
+		    p_actor_user_id => '00000000-0000-0000-0000-000000000001')`, sku).Scan(&aid); err != nil {
+		t.Fatalf("request_price_change: %v", err)
+	}
+	if aid == 0 {
+		t.Fatalf("expected non-zero approval_request id, got 0")
+	}
+
+	// approval_requests row exists with type='price_change' and pending.
+	var arType, arStatus string
+	if err := client.DB.QueryRow(
+		`SELECT request_type::text, status::text FROM public.approval_requests WHERE id=$1`,
+		aid).Scan(&arType, &arStatus); err != nil {
+		t.Fatalf("read approval_requests: %v", err)
+	}
+	if arType != "price_change" {
+		t.Fatalf("request_type = %q, want price_change", arType)
+	}
+	if arStatus != "pending" {
+		t.Fatalf("status = %q, want pending", arStatus)
+	}
+
+	// price_change_requests row snapshots old_value=1000 from stocks.
+	var oldVal, newVal float64
+	var field, status string
+	if err := client.DB.QueryRow(
+		`SELECT field, old_value, new_value, status
+		   FROM public.price_change_requests WHERE approval_request_id=$1`,
+		aid).Scan(&field, &oldVal, &newVal, &status); err != nil {
+		t.Fatalf("read price_change_requests: %v", err)
+	}
+	if field != "price" {
+		t.Fatalf("field = %q, want price", field)
+	}
+	if oldVal != 1000 {
+		t.Fatalf("old_value = %v, want 1000 (snapshot of stocks.price at request time)", oldVal)
+	}
+	if newVal != 1500 {
+		t.Fatalf("new_value = %v, want 1500", newVal)
+	}
+	if status != "pending" {
+		t.Fatalf("status = %q, want pending", status)
+	}
+}
+
+func TestCommitPriceChange_WhilePending_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T10-PRICE-F-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET price=2000 WHERE sku=$1`, sku); err != nil {
+		t.Fatalf("seed price: %v", err)
+	}
+
+	var aid int64
+	if err := client.DB.QueryRow(
+		`SELECT public.request_price_change(
+		    p_sku=>$1, p_field=>'price', p_new_value=>2500,
+		    p_reason_note=>'kenaikan supplier',
+		    p_actor_user_id=>'00000000-0000-0000-0000-000000000001')`, sku).Scan(&aid); err != nil {
+		t.Fatalf("request_price_change: %v", err)
+	}
+
+	// Approval is still pending — commit must refuse.
+	_, err := client.DB.Exec(
+		`SELECT public.commit_approved_price_change($1)`, aid)
+	if err == nil {
+		t.Fatalf("expected error committing while pending, got nil")
+	}
+	if !strings.Contains(err.Error(), "not approved") {
+		t.Fatalf("expected 'not approved' in error, got: %v", err)
+	}
+
+	// stocks.price must NOT have been mutated.
+	var price float64
+	_ = client.DB.QueryRow(
+		`SELECT price FROM public.stocks WHERE sku=$1`, sku).Scan(&price)
+	if price != 2000 {
+		t.Fatalf("stocks.price = %v, want 2000 (commit refused, no mutation)", price)
+	}
+}
+
+func TestCommitPriceChange_HappyPath_UpdatesStockAndWritesImmutableHistory(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+	sku := fmt.Sprintf("T10-PRICE-H-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+	if _, err := client.DB.Exec(
+		`UPDATE public.stocks SET price=1000 WHERE sku=$1`, sku); err != nil {
+		t.Fatalf("seed price: %v", err)
+	}
+
+	var aid int64
+	if err := client.DB.QueryRow(
+		`SELECT public.request_price_change(
+		    p_sku=>$1, p_field=>'price', p_new_value=>1500,
+		    p_reason_note=>'kenaikan supplier',
+		    p_actor_user_id=>'00000000-0000-0000-0000-000000000001')`, sku).Scan(&aid); err != nil {
+		t.Fatalf("request_price_change: %v", err)
+	}
+
+	// Flip the approval gate via the sanctioned helper.
+	if _, err := client.DB.Exec(
+		`SELECT public._transition_approval($1, 'approved'::public.approval_status,
+		   '00000000-0000-0000-0000-000000000099', 'owner_pin')`, aid); err != nil {
+		t.Fatalf("_transition_approval: %v", err)
+	}
+
+	// Commit must now succeed.
+	if _, err := client.DB.Exec(
+		`SELECT public.commit_approved_price_change($1)`, aid); err != nil {
+		t.Fatalf("commit_approved_price_change: %v", err)
+	}
+
+	// (a) stocks.price was updated to new_value.
+	var price float64
+	if err := client.DB.QueryRow(
+		`SELECT price FROM public.stocks WHERE sku=$1`, sku).Scan(&price); err != nil {
+		t.Fatalf("read stocks.price: %v", err)
+	}
+	if price != 1500 {
+		t.Fatalf("stocks.price = %v, want 1500", price)
+	}
+
+	// (b) One stock_price_history row with source='approval', correct values.
+	var historyID int64
+	var oldVal, newVal float64
+	var source string
+	if err := client.DB.QueryRow(
+		`SELECT sph.id, sph.old_value, sph.new_value, sph.source
+		   FROM public.stock_price_history sph
+		   JOIN public.price_change_requests pcr ON sph.related_request_id = pcr.id
+		  WHERE pcr.approval_request_id = $1`, aid).Scan(&historyID, &oldVal, &newVal, &source); err != nil {
+		t.Fatalf("read stock_price_history: %v", err)
+	}
+	if oldVal != 1000 {
+		t.Fatalf("history.old_value = %v, want 1000", oldVal)
+	}
+	if newVal != 1500 {
+		t.Fatalf("history.new_value = %v, want 1500", newVal)
+	}
+	if source != "approval" {
+		t.Fatalf("history.source = %q, want approval", source)
+	}
+
+	// (c) The RPC-written history row inherits the append-only contract.
+	_, err := client.DB.Exec(
+		`UPDATE public.stock_price_history SET new_value=999 WHERE id=$1`, historyID)
+	if err == nil || !strings.Contains(err.Error(), "append-only") {
+		t.Fatalf("expected append-only error on history UPDATE, got: %v", err)
+	}
+
+	// price_change_requests workflow row was closed out.
+	var pcrStatus string
+	_ = client.DB.QueryRow(
+		`SELECT status FROM public.price_change_requests WHERE approval_request_id=$1`,
+		aid).Scan(&pcrStatus)
+	if pcrStatus != "approved" {
+		t.Fatalf("price_change_requests.status = %q, want approved", pcrStatus)
+	}
+}
