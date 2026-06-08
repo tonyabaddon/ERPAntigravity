@@ -1,6 +1,8 @@
 package db_test
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -227,5 +229,88 @@ func TestPengawasanView_KasirDiscount_7d_FiltersOutOlder(t *testing.T) {
 	}
 	if rev != 7000 {
 		t.Fatalf("expected total_revenue_rp=7000 (only recent row), got %v", rev)
+	}
+}
+
+// TestPengawasanView_OutflowOutliers_FlagsHotSKU pins the contract of
+// v_pengawasan_outflow_outliers (Phase 4 Task 3): SKUs whose last-7-day outflow
+// exceeds 3× their 90-day daily-average × 7 surface as outliers.
+//
+// Seed strategy:
+//   - 80 historical outflows of -1 each, scheduled days_ago = 8..87 (outside the
+//     7-day window, inside the 90-day window).
+//   - 1 surge outflow of -50 today (inside the 7-day window).
+//
+// Math:
+//   - sum_7d            = 50
+//   - sum_90d           = 80 + 50 = 130
+//   - avg_daily_90d     = 130 / 90 ≈ 1.444
+//   - threshold (3×avg×7) ≈ 30.3
+//   - multiplier        = 50 / (1.444 × 7) ≈ 4.94 > 3 → flagged.
+//
+// Per-test unique SKU prevents collisions on the shared Supabase test DB
+// (stock_movements is append-only — rerunning with a fixed SKU would compound).
+func TestPengawasanView_OutflowOutliers_FlagsHotSKU(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	sku := fmt.Sprintf("T3-OUT-HOT-%d", nano)
+
+	db.SeedStockWithHPP(t, client, sku, 1000)
+
+	// 80-day baseline: -1 per day at days_ago = 8..87.
+	now := time.Now()
+	for daysAgo := 8; daysAgo <= 87; daysAgo++ {
+		db.SeedStockMovement(t, client, sku, "atas", -1,
+			now.Add(-time.Duration(daysAgo)*24*time.Hour))
+	}
+	// Surge: -50 today (well inside the 7-day window).
+	db.SeedStockMovement(t, client, sku, "atas", -50, now)
+
+	var mult float64
+	err := client.DB.QueryRow(
+		`SELECT multiplier
+		   FROM public.v_pengawasan_outflow_outliers
+		  WHERE sku = $1`, sku).Scan(&mult)
+	if err != nil {
+		t.Fatalf("query view: %v — expected %s to surface as outlier", err, sku)
+	}
+	if mult <= 3 {
+		t.Fatalf("multiplier=%v want > 3", mult)
+	}
+}
+
+// TestPengawasanView_OutflowOutliers_ExcludesNormalSKU verifies the threshold's
+// negative case: a SKU with steady, non-surging outflow must NOT appear in the
+// view. Seeding -1 per day for the last 90 days yields:
+//   - sum_7d        = 7
+//   - avg_daily_90d = 1.0
+//   - threshold     = 3 × 1.0 × 7 = 21
+//   - 7 is not > 21 → excluded.
+func TestPengawasanView_OutflowOutliers_ExcludesNormalSKU(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	sku := fmt.Sprintf("T3-OUT-NORMAL-%d", nano)
+
+	db.SeedStockWithHPP(t, client, sku, 1000)
+
+	// Steady 1/day outflow for the last 90 days (days_ago = 0..89).
+	now := time.Now()
+	for daysAgo := 0; daysAgo < 90; daysAgo++ {
+		db.SeedStockMovement(t, client, sku, "atas", -1,
+			now.Add(-time.Duration(daysAgo)*24*time.Hour))
+	}
+
+	var mult float64
+	err := client.DB.QueryRow(
+		`SELECT multiplier
+		   FROM public.v_pengawasan_outflow_outliers
+		  WHERE sku = $1`, sku).Scan(&mult)
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected %s excluded (sql.ErrNoRows), got err=%v multiplier=%v",
+			sku, err, mult)
 	}
 }

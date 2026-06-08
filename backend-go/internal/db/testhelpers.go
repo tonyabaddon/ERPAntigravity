@@ -355,6 +355,33 @@ func SeedStockWithPrice(t testing.TB, c *Client, sku string, price int) {
 	}
 }
 
+// SeedStockMovement inserts a single stock_movements row with a caller-controlled
+// created_at. Used by Phase 4 Task 3 tests for v_pengawasan_outflow_outliers, which
+// needs historical movements outside the default-now() to populate the 90-day baseline
+// vs. 7-day window comparison.
+//
+// stock_movements has REVOKE UPDATE/DELETE + an immutability trigger, but INSERT
+// is still permitted for service_role. The chk_qty_math CHECK requires
+// qty_before + qty_delta = qty_after — we use 100 as the baseline so positive and
+// negative deltas both stay non-negative. source is fixed to 'adjustment' (any
+// valid enum value works; the view only cares about qty_delta and created_at).
+func SeedStockMovement(t testing.TB, c *Client, sku, warehouse string, qtyDelta int, createdAt time.Time) {
+	t.Helper()
+	if warehouse != "atas" && warehouse != "bawah" {
+		t.Fatalf("warehouse must be atas|bawah, got %q", warehouse)
+	}
+	_, err := c.DB.Exec(
+		`INSERT INTO public.stock_movements
+		   (sku, warehouse, qty_delta, qty_before, qty_after, source,
+		    actor_user_id, actor_role, created_at)
+		 VALUES ($1, $2, $3, 100, 100 + $3, 'adjustment',
+		         '00000000-0000-0000-0000-000000000001', 'system_test', $4)`,
+		sku, warehouse, qtyDelta, createdAt)
+	if err != nil {
+		t.Fatalf("seed stock_movement for %s at %s: %v", sku, createdAt.Format(time.RFC3339), err)
+	}
+}
+
 // KasirTxItem is one element of the kasir_transactions.items JSONB array.
 // Field names must match the view's jsonb_to_recordset key list — see
 // v_pengawasan_kasir_discount_7d in migration 20260607000051.

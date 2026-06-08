@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — Stock Fraud Phase 4, Task 3: `v_pengawasan_outflow_outliers` view — DONE
+
+- **Goal**: Third Pengawasan view — flags SKUs whose last-7-day outflow exceeds 3× their 90-day daily-average × 7. Surfaces suspicious surges (a normally-quiet SKU suddenly bleeding inventory) that no single adjustment or sale row would flag in isolation. Columns: `sku`, `name`, `sum_7d`, `avg_daily_90d`, `multiplier`.
+- **Files**: `supabase/migrations/20260607000052_outflow_outliers_view.sql` (new — separate file per task brief, NOT appended to `…050`; T2 set the one-file-per-task pattern), `backend-go/internal/db/pengawasan_test.go` (appended 2 tests + `database/sql` & `errors` imports), `backend-go/internal/db/testhelpers.go` (added `SeedStockMovement`).
+- **View**: `CREATE OR REPLACE VIEW public.v_pengawasan_outflow_outliers AS WITH outflow_7 AS (SELECT sku, SUM(ABS(qty_delta))::numeric AS sum_7d FROM stock_movements WHERE qty_delta < 0 AND created_at >= now() - INTERVAL '7 days' GROUP BY sku), avg_90 AS (SELECT sku, SUM(ABS(qty_delta))::numeric / 90.0 AS avg_daily_90d FROM stock_movements WHERE qty_delta < 0 AND created_at >= now() - INTERVAL '90 days' GROUP BY sku) SELECT o.sku, s.name, o.sum_7d, a.avg_daily_90d, o.sum_7d / NULLIF(a.avg_daily_90d * 7, 0) AS multiplier FROM outflow_7 o JOIN avg_90 a USING (sku) JOIN stocks s ON s.sku = o.sku WHERE o.sum_7d > 3 * a.avg_daily_90d * 7;`. `GRANT SELECT … TO authenticated`. No `ORDER BY` in the view — consumers (dashboard, poller) sort by `multiplier DESC` at query time.
+- **Math derivation**: `multiplier = sum_7d / (avg_daily_90d × 7)`. The filter `sum_7d > 3 × avg_daily_90d × 7` is the equivalent of `multiplier > 3`. NULLIF guards the divisor in case avg_daily_90d collapses to 0 (defensive — the inner JOIN already drops SKUs with no 90d outflow).
+- **Tests (2, both PASS)**:
+  - `TestPengawasanView_OutflowOutliers_FlagsHotSKU` — seeds 80 historical outflows of `-1` at `days_ago=8..87` (outside 7d window, inside 90d window) + `-50` today. `sum_7d=50`, `sum_90d=130`, `avg_daily_90d≈1.444`, `multiplier≈4.94` → flagged. Asserts `multiplier > 3`.
+  - `TestPengawasanView_OutflowOutliers_ExcludesNormalSKU` — seeds `-1`/day for 90 consecutive days. `sum_7d=7`, `threshold=21`. Asserts `sql.ErrNoRows` (view excludes the SKU).
+- **Helper**: `SeedStockMovement(sku, warehouse, qtyDelta, createdAt)` — direct INSERT into `stock_movements` with `source='adjustment'`, `qty_before=100`, `qty_after=100+delta` to satisfy `chk_qty_math`, baseline actor UUID `00000000-…-001`, actor_role `system_test`. The crucial bit is `created_at` is explicitly passed (not defaulted to `now()`) so tests can seed historical points across the 7d/90d boundaries.
+- **Stock_movements table is append-only with REVOKE UPDATE/DELETE + immutability trigger** — direct INSERT still works for the test connection (service_role-equivalent DSN). Per-test unique SKUs (`T3-OUT-HOT-<unixnano>`, `T3-OUT-NORMAL-<unixnano>`) prevent reruns from compounding on the shared Supabase test DB (since rows can't be deleted between runs).
+- **Threshold tuning note**: The plan's math claimed `multiplier ≈ 7.1` for the positive test, but that figure ignores the today-event contribution to the 90d sum. Actual multiplier is `≈4.94` (still well above the `> 3` flag threshold). The test asserts `mult > 3`, not a specific value, so the discrepancy is moot for the assertion — but worth documenting so a future reader doesn't think the math drifted.
+- **Migration applied** via `psql` (same `/opt/homebrew/Cellar/libpq/18.4/bin/psql` + `PGPASSWORD` pattern T1/T2 used).
+- **Verification**: `go test ./internal/db/ -run TestPengawasanView -v` — all 6 pengawasan tests green (102.7s; the 2 new T3 tests dominate at ~38s + ~41s because each seeds 80–90 movement rows). `go vet ./...` clean, `go build ./...` clean.
+- **Next**: Phase 4 Task 4 — Transfer aging view.
+
+---
+
 ## 2026-06-08 — Stock Fraud Phase 4, Task 2: `v_pengawasan_kasir_discount_7d` view — DONE
 
 - **Goal**: Second Pengawasan view — per-cashier discount aggregate over the last 7 days. Surfaces cashiers giving away unusual margin via free-form unit_price entry (`discount = stocks.price - kti.unit_price`, summed across line items in committed sales). Columns: `cashier_user_id`, `cashier_name`, `total_discount_rp`, `total_revenue_rp`, `discount_pct_of_revenue`.
