@@ -1747,3 +1747,277 @@ func TestVerifyOwnerPin_WhenLocked_Rejects(t *testing.T) {
 		        pin_locked_until = NULL
 		  WHERE id = '00000000-0000-0000-0000-000000000099'`)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 14: decide_via_wa_button + expire_pending_approvals RPCs
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Migration 20260607000020_wa_button_expire.sql adds two SECURITY DEFINER RPCs:
+//
+//   1. public.decide_via_wa_button(p_approval_request_id BIGINT,
+//                                  p_decision TEXT,
+//                                  p_decided_by_user_id UUID) RETURNS BIGINT
+//      — the SQL hop behind the Owner's WhatsApp button click. Validates the
+//      decision string is in ('approved','rejected'), verifies the caller is
+//      an Owner (admin_users.role='Owner'), and flips the gate via
+//      _transition_approval with decision_channel='wa_button'. Returns the
+//      approval_request id. GRANT EXECUTE to authenticated (server-side
+//      Calista handler invokes it after WA webhook verification).
+//
+//   2. public.expire_pending_approvals() RETURNS INT — the auto-expiry
+//      sweeper called by the Go backend poller every minute. Finds all
+//      approval_requests with status='pending' AND expires_at <= now() and
+//      flips each via _transition_approval(.., 'expired', NULL, 'auto_expire').
+//      Returns the count of rows actually expired. GRANT EXECUTE to
+//      service_role only — the poller runs under service_role; client SDKs
+//      have no business invoking auto-expiry.
+//
+// Four tests pin the contract:
+//   (1) TestDecideViaWaButton_OwnerApproves — Owner decides 'approved' →
+//       approval_requests row flipped, status='approved', channel='wa_button'.
+//   (2) TestDecideViaWaButton_NonOwnerRejected — a Staff Admin caller is
+//       rejected with 'not authorized'. The row stays pending.
+//   (3) TestDecideViaWaButton_InvalidDecision — passing 'maybe' raises.
+//   (4) TestExpirePendingApprovals_FlipsExpiredRows — backdates a row's
+//       expires_at, calls expire RPC → row flipped to 'expired'; a fresh
+//       in-window row is NOT flipped by a subsequent call.
+//
+// Per-test unique payload markers (T14-{kind}-<nano>) keep test runs isolated
+// even though approval_requests has no unique business key (the BIGSERIAL id
+// suffices for identity but the payload marker makes the row observable in
+// logs / pg_stat_activity during parallel runs).
+
+// ensureT14OwnerAdmin upserts the well-known Owner admin row used by the T14
+// tests (decide_via_wa_button's Owner-role check). Idempotent across reruns
+// and across the four T14 tests that share the same actor uuid.
+func ensureT14OwnerAdmin(t *testing.T, c *db.Client) {
+	t.Helper()
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.admin_users (id, name, email, role, permissions, status)
+		 VALUES ($1, 'T14 Owner', 'phase2-t14-owner@test.local', 'Owner',
+		         '{"dashboard":true}'::jsonb, 'Aktif')
+		 ON CONFLICT (id) DO UPDATE SET role='Owner', status='Aktif'`,
+		ownerID); err != nil {
+		t.Fatalf("seed Owner admin: %v", err)
+	}
+}
+
+// ensureT14StaffAdmin upserts a non-Owner admin row used by
+// TestDecideViaWaButton_NonOwnerRejected. The 'Staff Admin Toko' role is the
+// default in the admin_users schema (…20260603000003) — using it ensures the
+// row is a real persisted non-Owner, not a phantom UUID that would pass the
+// authorization check for the wrong reason (UUID-not-found ≠ role check).
+func ensureT14StaffAdmin(t *testing.T, c *db.Client) {
+	t.Helper()
+	const staffID = "00000000-0000-0000-0000-000000000088"
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.admin_users (id, name, email, role, permissions, status)
+		 VALUES ($1, 'T14 Staff', 'phase2-t14-staff@test.local', 'Staff Admin Toko',
+		         '{"dashboard":true}'::jsonb, 'Aktif')
+		 ON CONFLICT (id) DO UPDATE SET role='Staff Admin Toko', status='Aktif'`,
+		staffID); err != nil {
+		t.Fatalf("seed Staff admin: %v", err)
+	}
+}
+
+// seedT14PendingApproval inserts a bare pending approval_requests row of type
+// 'adjustment' with a unique payload marker so each test's row is observable.
+// Returns the new id. Mirrors seedT13PendingApproval — the T14 RPC under test
+// doesn't care about satellite rows, only that the approval gate is pending.
+func seedT14PendingApproval(t *testing.T, c *db.Client, marker string) int64 {
+	t.Helper()
+	var id int64
+	if err := c.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by)
+		 VALUES ('adjustment', jsonb_build_object('marker', $1::text),
+		         '00000000-0000-0000-0000-000000000001')
+		 RETURNING id`, marker).Scan(&id); err != nil {
+		t.Fatalf("seed pending approval (%s): %v", marker, err)
+	}
+	return id
+}
+
+// TestDecideViaWaButton_OwnerApproves pins the happy path: an Owner calling
+// decide_via_wa_button with p_decision='approved' flips the approval to
+// status='approved' with decision_channel='wa_button'. The RPC returns the
+// approval_request id (BIGINT) — assert the returned value matches what we
+// passed in.
+func TestDecideViaWaButton_OwnerApproves(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT14OwnerAdmin(t, client)
+	marker := fmt.Sprintf("T14-OWNER-%d", time.Now().UnixNano())
+	aid := seedT14PendingApproval(t, client, marker)
+
+	var returnedID int64
+	if err := client.DB.QueryRow(
+		`SELECT public.decide_via_wa_button($1, 'approved',
+		   '00000000-0000-0000-0000-000000000099'::uuid)`, aid).Scan(&returnedID); err != nil {
+		t.Fatalf("decide_via_wa_button: %v", err)
+	}
+	if returnedID != aid {
+		t.Fatalf("returned id = %d, want %d", returnedID, aid)
+	}
+
+	var status, channel, decidedBy string
+	if err := client.DB.QueryRow(
+		`SELECT status::text, COALESCE(decision_channel,''), COALESCE(decided_by::text,'')
+		   FROM public.approval_requests WHERE id=$1`, aid).
+		Scan(&status, &channel, &decidedBy); err != nil {
+		t.Fatalf("read approval row: %v", err)
+	}
+	if status != "approved" {
+		t.Fatalf("status = %q, want approved", status)
+	}
+	if channel != "wa_button" {
+		t.Fatalf("decision_channel = %q, want wa_button", channel)
+	}
+	if decidedBy != "00000000-0000-0000-0000-000000000099" {
+		t.Fatalf("decided_by = %q, want Owner uuid", decidedBy)
+	}
+}
+
+// TestDecideViaWaButton_NonOwnerRejected pins the authorization guard: a Staff
+// Admin (real persisted admin_users row, NOT a phantom UUID) calling the RPC
+// must be rejected with an error containing "not authorized". The approval
+// row must stay pending — the gate cannot move under a non-Owner click.
+func TestDecideViaWaButton_NonOwnerRejected(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT14StaffAdmin(t, client)
+	marker := fmt.Sprintf("T14-NONOWNER-%d", time.Now().UnixNano())
+	aid := seedT14PendingApproval(t, client, marker)
+
+	_, err := client.DB.Exec(
+		`SELECT public.decide_via_wa_button($1, 'approved',
+		   '00000000-0000-0000-0000-000000000088'::uuid)`, aid)
+	if err == nil {
+		t.Fatalf("expected 'not authorized' error for Staff Admin caller, got nil")
+	}
+	if !strings.Contains(err.Error(), "not authorized") {
+		t.Fatalf("unexpected error (want 'not authorized'): %v", err)
+	}
+
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&status)
+	if status != "pending" {
+		t.Fatalf("status = %q after rejected non-Owner call, want pending", status)
+	}
+}
+
+// TestDecideViaWaButton_InvalidDecision pins the input validator: p_decision
+// must be in ('approved','rejected'); any other string (here 'maybe') must
+// raise BEFORE the Owner-role check or the _transition_approval call. We
+// authenticate as the Owner to prove the validator fires regardless of caller
+// authorization — i.e., even a legit Owner can't smuggle an invalid decision.
+func TestDecideViaWaButton_InvalidDecision(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT14OwnerAdmin(t, client)
+	marker := fmt.Sprintf("T14-INVALID-%d", time.Now().UnixNano())
+	aid := seedT14PendingApproval(t, client, marker)
+
+	_, err := client.DB.Exec(
+		`SELECT public.decide_via_wa_button($1, 'maybe',
+		   '00000000-0000-0000-0000-000000000099'::uuid)`, aid)
+	if err == nil {
+		t.Fatalf("expected error for invalid decision 'maybe', got nil")
+	}
+	// Error message should mention the decision being invalid; accept any of
+	// the obvious phrasings the RPC might use ("decision must be", "invalid
+	// decision", etc.).
+	if !strings.Contains(err.Error(), "decision") && !strings.Contains(err.Error(), "approved") {
+		t.Fatalf("unexpected error (want one mentioning decision): %v", err)
+	}
+
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&status)
+	if status != "pending" {
+		t.Fatalf("status = %q after invalid-decision call, want pending", status)
+	}
+}
+
+// TestExpirePendingApprovals_FlipsExpiredRows drives the auto-expiry sweeper:
+//   (1) Seed a pending approval row, then BACKDATE its expires_at to
+//       now() - INTERVAL '1 minute'. The UPDATE trigger trg_deny_ar_update is
+//       disabled at table level (Foundational Decision #1), so a service_role
+//       UPDATE for test setup succeeds — this is the only path we use it.
+//   (2) Call expire_pending_approvals(): must return ≥1, and our backdated
+//       row must flip to status='expired' with decision_channel='auto_expire'
+//       and decided_by IS NULL (no human made this decision).
+//   (3) Seed a SECOND pending row (default expires_at = now() + 30m — in
+//       window). Call expire_pending_approvals() AGAIN: the fresh row must
+//       NOT be expired (it's still in-window), and the already-expired row
+//       from step 1 must NOT be touched a second time (it's no longer
+//       pending). So the second call returns 0 from OUR seeded rows. Other
+//       in-flight pending+expired rows in the DB may contribute to the
+//       second call's count (we don't control the whole DB), so we assert
+//       on the FRESH row's status rather than the second call's total count.
+func TestExpirePendingApprovals_FlipsExpiredRows(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	markerOld := fmt.Sprintf("T14-EXPIRE-OLD-%d", time.Now().UnixNano())
+	oldID := seedT14PendingApproval(t, client, markerOld)
+
+	// Backdate via service_role (the disabled UPDATE trigger lets this through).
+	if _, err := client.DB.Exec(
+		`UPDATE public.approval_requests
+		    SET expires_at = now() - INTERVAL '1 minute'
+		  WHERE id = $1`, oldID); err != nil {
+		t.Fatalf("backdate expires_at: %v", err)
+	}
+
+	var firstCount int
+	if err := client.DB.QueryRow(
+		`SELECT public.expire_pending_approvals()`).Scan(&firstCount); err != nil {
+		t.Fatalf("expire_pending_approvals (first call): %v", err)
+	}
+	if firstCount < 1 {
+		t.Fatalf("first call expired %d rows, want >=1", firstCount)
+	}
+
+	var status, channel, decidedBy string
+	if err := client.DB.QueryRow(
+		`SELECT status::text, COALESCE(decision_channel,''),
+		        COALESCE(decided_by::text,'')
+		   FROM public.approval_requests WHERE id=$1`, oldID).
+		Scan(&status, &channel, &decidedBy); err != nil {
+		t.Fatalf("read old approval row: %v", err)
+	}
+	if status != "expired" {
+		t.Fatalf("old row status = %q, want expired", status)
+	}
+	if channel != "auto_expire" {
+		t.Fatalf("old row decision_channel = %q, want auto_expire", channel)
+	}
+	if decidedBy != "" {
+		t.Fatalf("old row decided_by = %q, want '' (NULL — no human decided)", decidedBy)
+	}
+
+	// Seed a FRESH in-window row (default expires_at = now()+30m) and call
+	// expire again. The fresh row must NOT be flipped.
+	markerFresh := fmt.Sprintf("T14-EXPIRE-FRESH-%d", time.Now().UnixNano())
+	freshID := seedT14PendingApproval(t, client, markerFresh)
+
+	if _, err := client.DB.Exec(
+		`SELECT public.expire_pending_approvals()`); err != nil {
+		t.Fatalf("expire_pending_approvals (second call): %v", err)
+	}
+
+	var freshStatus string
+	if err := client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, freshID).
+		Scan(&freshStatus); err != nil {
+		t.Fatalf("read fresh approval row: %v", err)
+	}
+	if freshStatus != "pending" {
+		t.Fatalf("fresh in-window row status = %q after second expire call, want pending", freshStatus)
+	}
+}
