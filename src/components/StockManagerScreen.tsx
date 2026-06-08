@@ -3,20 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Download, Search, ChevronDown, CheckCircle, AlertTriangle,
-  PlusCircle, Save, Trash2, FileCheck, ChevronUp
+  PlusCircle, Save, Trash2, FileCheck, ChevronUp, ClipboardCheck
 } from 'lucide-react';
-import { StockItem } from '../types';
-import { isSupabaseConfigured, stockService } from '../lib/supabaseClient';
+import { StockItem, ApprovalRequest } from '../types';
+import { isSupabaseConfigured, stockService, listPendingApprovals } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import WarehouseTransferModal from './WarehouseTransferModal';
+import StockAdjustmentModal from './stok/StockAdjustmentModal';
+import PriceChangeRequestModal from './stok/PriceChangeRequestModal';
+import PendingApprovalBadge from './approval/PendingApprovalBadge';
 
 interface StockManagerScreenProps {
   stockList: StockItem[];
   onStockUpdate: (updated: StockItem[]) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  currentUser?: { id: string; name: string; role: string } | null;
+  onNavigateToOpname?: () => void;
 }
 
 type SpecFieldDef = {
@@ -141,7 +146,7 @@ function renderSpecForm(
   );
 }
 
-export default function StockManagerScreen({ stockList, onStockUpdate, showToast }: StockManagerScreenProps) {
+export default function StockManagerScreen({ stockList, onStockUpdate, showToast, currentUser, onNavigateToOpname }: StockManagerScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua Produk');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -156,6 +161,61 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
   const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; stock_atas: string; stock_bawah: string; harga_modal: number | null; specs: Record<string, string> }>>({});
   const [transferItem, setTransferItem] = useState<StockItem | null>(null);
+
+  // Phase 2: approval-gated cell editing
+  const [adjustmentTarget, setAdjustmentTarget] = useState<{ item: StockItem; warehouse: 'atas' | 'bawah' } | null>(null);
+  const [priceTarget, setPriceTarget] = useState<{ item: StockItem; field: 'price' | 'harga_modal' } | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<ApprovalRequest[]>([]);
+  const [pendingRefreshTick, setPendingRefreshTick] = useState(0);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const rows = await listPendingApprovals();
+        if (!cancelled) setPendingApprovals(rows);
+      } catch {
+        // silent: pending badges are non-critical
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [pendingRefreshTick]);
+
+  const refreshPending = () => setPendingRefreshTick((n) => n + 1);
+
+  const myPendingCount = useMemo(() => {
+    if (!currentUser) return 0;
+    return pendingApprovals.filter((r) => r.requestedBy === currentUser.id).length;
+  }, [pendingApprovals, currentUser]);
+
+  /**
+   * Index pending approvals so cell renderers can ask in O(1) whether a
+   * specific (sku, warehouse) or (sku, field) tuple has a pending request.
+   */
+  const pendingIndex = useMemo(() => {
+    const adjMap = new Map<string, number>(); // key: `${sku}|${warehouse}`
+    const priceMap = new Map<string, number>(); // key: `${sku}|${field}`
+    for (const r of pendingApprovals) {
+      const payload = r.payload ?? {};
+      const sku = typeof payload.sku === 'string' ? payload.sku : null;
+      if (!sku) continue;
+      if (r.requestType === 'adjustment') {
+        const wh = payload.warehouse;
+        if (wh === 'atas' || wh === 'bawah') {
+          const k = `${sku}|${wh}`;
+          adjMap.set(k, (adjMap.get(k) ?? 0) + 1);
+        }
+      } else if (r.requestType === 'price_change') {
+        const f = payload.field;
+        if (f === 'price' || f === 'harga_modal') {
+          const k = `${sku}|${f}`;
+          priceMap.set(k, (priceMap.get(k) ?? 0) + 1);
+        }
+      }
+    }
+    return { adjMap, priceMap };
+  }, [pendingApprovals]);
 
   const uniqueCategories = ['Semua Produk', 'Panel', 'MCB', 'Kabel', 'Aksesori'];
 
@@ -426,6 +486,16 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   return (
     <div className="space-y-8 animate-fadeIn pb-24">
 
+      {/* Phase 2 banner: my pending requests */}
+      {myPendingCount > 0 && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 text-sm text-yellow-900 flex items-center gap-3">
+          <PendingApprovalBadge count={myPendingCount} size="md" tooltip="Permintaan Anda yang menunggu Owner" />
+          <span className="font-semibold">
+            Permintaan Anda yang menunggu: {myPendingCount} sedang menunggu persetujuan Owner.
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-[#e5eeff] shadow-lg">
         <div>
@@ -553,6 +623,16 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            {onNavigateToOpname && (
+              <button
+                type="button"
+                onClick={onNavigateToOpname}
+                className="px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-100 cursor-pointer inline-flex items-center gap-2"
+              >
+                <ClipboardCheck className="w-4 h-4" />
+                Stok Opname
+              </button>
+            )}
             <div className="relative min-w-[260px]">
               <input
                 type="text"
@@ -705,33 +785,79 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                   </div>
 
                   <div className="w-full md:w-44 shrink-0">
-                    <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setPriceTarget({ item, field: 'price' })}
+                      disabled={isEditing || !currentUser}
+                      title={currentUser ? 'Klik untuk ajukan perubahan harga jual' : 'Login diperlukan untuk ubah harga'}
+                      className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed relative cursor-pointer transition-colors"
+                    >
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#43474e]">Rp</span>
-                      <input
-                        type="text"
-                        value={new Intl.NumberFormat('id-ID').format(item.price)}
-                        onChange={e => handleCellEdit(item.sku, 'price', e.target.value)}
-                        disabled={isEditing}
-                        className="w-full pl-9 pr-3 py-2.5 bg-white rounded-xl border border-slate-200 focus:ring-1 focus:ring-[#2d8a4e] text-xs font-extrabold text-[#012749] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                    </div>
-                    <div className="mt-1 text-[10px] font-semibold text-gray-400 text-right pr-1">
-                      Modal:{' '}
-                      {item.harga_modal != null
-                        ? <span className="text-gray-600">Rp {item.harga_modal.toLocaleString('id-ID')}</span>
-                        : <span className="text-amber-500 font-bold" title="Belum diisi — P&L tidak akurat">—</span>
-                      }
+                      {new Intl.NumberFormat('id-ID').format(item.price)}
+                      {pendingIndex.priceMap.has(`${item.sku}|price`) && (
+                        <span className="absolute -top-1.5 -right-1.5">
+                          <PendingApprovalBadge
+                            count={pendingIndex.priceMap.get(`${item.sku}|price`)}
+                            tooltip="Permintaan ubah harga jual menunggu"
+                          />
+                        </span>
+                      )}
+                    </button>
+                    <div className="mt-1 text-[10px] font-semibold text-gray-400 text-right pr-1 flex items-center justify-end gap-1.5">
+                      <span>Modal:</span>
+                      <button
+                        type="button"
+                        onClick={() => setPriceTarget({ item, field: 'harga_modal' })}
+                        disabled={isEditing || !currentUser}
+                        title={currentUser ? 'Klik untuk ajukan perubahan HPP' : 'Login diperlukan untuk ubah HPP'}
+                        className="relative inline-flex items-center gap-1 hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {item.harga_modal != null
+                          ? <span className="text-gray-600">Rp {item.harga_modal.toLocaleString('id-ID')}</span>
+                          : <span className="text-amber-500 font-bold" title="Belum diisi — P&L tidak akurat">—</span>
+                        }
+                        {pendingIndex.priceMap.has(`${item.sku}|harga_modal`) && (
+                          <PendingApprovalBadge
+                            count={pendingIndex.priceMap.get(`${item.sku}|harga_modal`)}
+                            tooltip="Permintaan ubah HPP menunggu"
+                          />
+                        )}
+                      </button>
                     </div>
                   </div>
 
                   <div className="w-full md:w-36 shrink-0">
                     <div className="flex gap-1 text-[10px] font-bold">
-                      <span className="bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700">
+                      <button
+                        type="button"
+                        onClick={() => setAdjustmentTarget({ item, warehouse: 'atas' })}
+                        disabled={isEditing || !currentUser}
+                        title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Atas' : 'Login diperlukan'}
+                        className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                      >
                         Atas: {item.stock_atas ?? item.stock}
-                      </span>
-                      <span className="bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700">
+                        {pendingIndex.adjMap.has(`${item.sku}|atas`) && (
+                          <PendingApprovalBadge
+                            count={pendingIndex.adjMap.get(`${item.sku}|atas`)}
+                            tooltip="Penyesuaian Gudang Atas menunggu"
+                          />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdjustmentTarget({ item, warehouse: 'bawah' })}
+                        disabled={isEditing || !currentUser}
+                        title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Bawah' : 'Login diperlukan'}
+                        className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                      >
                         Bawah: {item.stock_bawah ?? 0}
-                      </span>
+                        {pendingIndex.adjMap.has(`${item.sku}|bawah`) && (
+                          <PendingApprovalBadge
+                            count={pendingIndex.adjMap.get(`${item.sku}|bawah`)}
+                            tooltip="Penyesuaian Gudang Bawah menunggu"
+                          />
+                        )}
+                      </button>
                     </div>
                     <div className="text-[9px] text-slate-400 mt-0.5 font-semibold">
                       Total: {item.stock} pcs
@@ -879,6 +1005,28 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
             setTransferItem(null);
             showToast('✅ Transfer stok berhasil.');
           }}
+          showToast={showToast}
+        />
+      )}
+
+      {adjustmentTarget && (
+        <StockAdjustmentModal
+          item={adjustmentTarget.item}
+          warehouse={adjustmentTarget.warehouse}
+          currentUser={currentUser ?? null}
+          onClose={() => setAdjustmentTarget(null)}
+          onSubmitted={refreshPending}
+          showToast={showToast}
+        />
+      )}
+
+      {priceTarget && (
+        <PriceChangeRequestModal
+          item={priceTarget.item}
+          field={priceTarget.field}
+          currentUser={currentUser ?? null}
+          onClose={() => setPriceTarget(null)}
+          onSubmitted={refreshPending}
           showToast={showToast}
         />
       )}
