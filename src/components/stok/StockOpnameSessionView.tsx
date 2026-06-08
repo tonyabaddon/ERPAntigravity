@@ -130,6 +130,16 @@ export default function StockOpnameSessionView({
     );
   }, [counts, filter, skuMeta]);
 
+  const groupedBySku = useMemo(() => {
+    const map = new Map<string, { atas?: OpnameCount; bawah?: OpnameCount }>();
+    for (const c of filteredCounts) {
+      const existing = map.get(c.sku) ?? {};
+      existing[c.warehouse] = c;
+      map.set(c.sku, existing);
+    }
+    return map;
+  }, [filteredCounts]);
+
   const filledCount = counts.filter((c) => c.countedQty !== null && c.countedQty !== undefined).length;
   const totalCount = counts.length;
   const totalVariance = counts.reduce((sum, c) => sum + (c.varianceValue || 0), 0);
