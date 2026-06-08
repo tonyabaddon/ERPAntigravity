@@ -1144,6 +1144,28 @@ export const salesEntriesService = {
 
 // --- Approvals ---
 
+/**
+ * Maps a raw `approval_requests` row (snake_case) into the camelCase
+ * `ApprovalRequest` shape consumed by Phase 2 UI components. The DB column
+ * names come straight from PostgREST/Supabase; the TS type adopted camelCase
+ * to match the rest of the front-end. Exported so any consumer that issues
+ * a raw `.from('approval_requests')` query can reuse the same mapper.
+ */
+export function toApprovalRequest(row: any): ApprovalRequest {
+  return {
+    id: row.id,
+    requestType: row.request_type,
+    payload: row.payload ?? {},
+    requestedBy: row.requested_by,
+    requestedAt: row.requested_at,
+    expiresAt: row.expires_at,
+    status: row.status,
+    decidedBy: row.decided_by ?? null,
+    decidedAt: row.decided_at ?? null,
+    decisionChannel: row.decision_channel ?? null,
+  };
+}
+
 export async function listPendingApprovals(): Promise<ApprovalRequest[]> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase
@@ -1152,7 +1174,18 @@ export async function listPendingApprovals(): Promise<ApprovalRequest[]> {
     .eq('status', 'pending')
     .order('requested_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as ApprovalRequest[];
+  return (data ?? []).map(toApprovalRequest);
+}
+
+export async function getApprovalRequest(approvalId: number): Promise<ApprovalRequest | null> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('approval_requests')
+    .select('*')
+    .eq('id', approvalId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toApprovalRequest(data) : null;
 }
 
 export async function verifyOwnerPin(approvalId: number, pin: string): Promise<boolean> {
@@ -1320,7 +1353,7 @@ export function subscribeApprovalRequests(
     .on(
       'postgres_changes' as any,
       { event: '*', schema: 'public', table: 'approval_requests' },
-      (payload: { new: unknown }) => onChange(payload.new as ApprovalRequest),
+      (payload: { new: unknown }) => onChange(toApprovalRequest(payload.new)),
     )
     .subscribe();
   return () => {
