@@ -725,6 +725,7 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
         customer_name:    customerName.trim(),
         customer_phone:   customerPhone.trim(),
         customer_company: customerCompany.trim(),
+        warehouse,
         items:            items.map(({ sku, name, qty, unit_price, subtotal }) => ({
           sku, name, qty, unit_price, subtotal,
         })),
