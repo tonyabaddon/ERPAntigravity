@@ -204,3 +204,114 @@ func CountStockMovements(t testing.TB, c *Client, sku string) int {
 	}
 	return n
 }
+
+// SeedStockWithHPP creates a SKU with a known harga_modal so the Phase 4
+// pengawasan views compute a deterministic value_rp (= ABS(qty_delta) *
+// harga_modal). Idempotent via ON CONFLICT — re-running with the same SKU
+// rewrites harga_modal so individual tests stay independent.
+func SeedStockWithHPP(t testing.TB, c *Client, sku string, hargaModal int) {
+	t.Helper()
+	_, err := c.DB.Exec(
+		`INSERT INTO public.stocks (sku, name, category, price, harga_modal, stock, status, specs)
+		 VALUES ($1, 'Pengawasan Test SKU', 'Aksesori', $2 * 2, $2, 0, 'Sinkron', '{}'::jsonb)
+		 ON CONFLICT (sku) DO UPDATE SET harga_modal = EXCLUDED.harga_modal`,
+		sku, hargaModal)
+	if err != nil {
+		t.Fatalf("seed sku with hpp: %v", err)
+	}
+}
+
+// SeedCommittedAdjustment creates a stock_adjustments row in 'approved' state
+// with committed_at set + a paired stock_movements row. Mimics what the
+// commit_approved_adjustment RPC would produce in production, so the Phase 4
+// v_pengawasan_top_adjustments view (which filters on committed_at IS NOT NULL)
+// returns the row.
+//
+// reason_code must be one of the stock_adjustment_reason enum values. For
+// 'rusak' or 'hilang' the chk_evidence_for_loss CHECK requires at least one
+// evidence URL, so this helper injects a placeholder for those cases.
+func SeedCommittedAdjustment(t testing.TB, c *Client, sku, warehouse string, qtyDelta int, reasonCode string) {
+	t.Helper()
+
+	// 1. Need an approval_request first (FK target on stock_adjustments). Use
+	//    'approved' status directly — we are simulating the post-commit state.
+	var approvalID int64
+	err := c.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by, status)
+		 VALUES ('adjustment', '{}'::jsonb, '00000000-0000-0000-0000-000000000001', 'approved')
+		 RETURNING id`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("seed approval: %v", err)
+	}
+
+	// 2. Insert the paired stock_movements ledger row first so we can pin
+	//    committed_movement_id on the adjustment row. chk_qty_math requires
+	//    qty_before + qty_delta = qty_after — pick 100 as the baseline so both
+	//    positive and negative deltas satisfy the constraint.
+	var moveID int64
+	err = c.DB.QueryRow(
+		`INSERT INTO public.stock_movements
+		   (sku, warehouse, qty_delta, qty_before, qty_after, source,
+		    related_doc_type, related_doc_id, reason_code,
+		    actor_user_id, actor_role)
+		 VALUES ($1, $2, $3, 100, 100 + $3, 'adjustment',
+		         'stock_adjustment', $4::text, $5,
+		         '00000000-0000-0000-0000-000000000001', 'system_test')
+		 RETURNING id`,
+		sku, warehouse, qtyDelta, approvalID, reasonCode).Scan(&moveID)
+	if err != nil {
+		t.Fatalf("seed movement: %v", err)
+	}
+
+	// 3. Insert the stock_adjustments row pinned to both the approval and the
+	//    ledger row. Evidence is required for rusak/hilang per chk_evidence_for_loss.
+	evidence := "{}"
+	if reasonCode == "rusak" || reasonCode == "hilang" {
+		evidence = `{"stock-evidence/test.jpg"}`
+	}
+
+	_, err = c.DB.Exec(
+		`INSERT INTO public.stock_adjustments
+		   (sku, warehouse, qty_delta, reason_code, evidence_urls,
+		    requested_by, approval_request_id, status,
+		    committed_at, committed_movement_id)
+		 VALUES ($1, $2, $3, $4::public.stock_adjustment_reason, $5::text[],
+		         '00000000-0000-0000-0000-000000000001', $6, 'approved',
+		         now(), $7)`,
+		sku, warehouse, qtyDelta, reasonCode, evidence, approvalID, moveID)
+	if err != nil {
+		t.Fatalf("seed adjustment: %v", err)
+	}
+}
+
+// SeedPendingAdjustment creates a stock_adjustments row in 'pending_approval'
+// state — no committed_at, no movement row. Used to verify that the Phase 4
+// v_pengawasan_top_adjustments view filters out pending rows.
+func SeedPendingAdjustment(t testing.TB, c *Client, sku, warehouse string, qtyDelta int, reasonCode string) {
+	t.Helper()
+
+	var approvalID int64
+	err := c.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by, status)
+		 VALUES ('adjustment', '{}'::jsonb, '00000000-0000-0000-0000-000000000001', 'pending')
+		 RETURNING id`).Scan(&approvalID)
+	if err != nil {
+		t.Fatalf("seed approval: %v", err)
+	}
+
+	evidence := "{}"
+	if reasonCode == "rusak" || reasonCode == "hilang" {
+		evidence = `{"stock-evidence/test.jpg"}`
+	}
+
+	_, err = c.DB.Exec(
+		`INSERT INTO public.stock_adjustments
+		   (sku, warehouse, qty_delta, reason_code, evidence_urls,
+		    requested_by, approval_request_id, status)
+		 VALUES ($1, $2, $3, $4::public.stock_adjustment_reason, $5::text[],
+		         '00000000-0000-0000-0000-000000000001', $6, 'pending_approval')`,
+		sku, warehouse, qtyDelta, reasonCode, evidence, approvalID)
+	if err != nil {
+		t.Fatalf("seed pending adjustment: %v", err)
+	}
+}

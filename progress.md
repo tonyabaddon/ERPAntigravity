@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — Stock Fraud Phase 4, Task 1: `v_pengawasan_top_adjustments` view — DONE
+
+- **Goal**: First of five read-only Pengawasan views — ranks committed `stock_adjustments` by absolute rupiah value (`ABS(qty_delta) * COALESCE(harga_modal, 0)`), filters out pending rows (no `committed_at`), joins `stocks` for `sku_name` and `admin_users` for `actor_name`.
+- **Files**: `supabase/migrations/20260607000050_pengawasan_views.sql` (new, Phase 4 starts at …050 to leave headroom for late Phase 1-3 additions), `backend-go/internal/db/pengawasan_test.go` (new), `backend-go/internal/db/testhelpers.go` (added `SeedStockWithHPP`, `SeedCommittedAdjustment`, `SeedPendingAdjustment`).
+- **View**: `CREATE OR REPLACE VIEW public.v_pengawasan_top_adjustments` with `value_rp = ABS(qty_delta)::numeric * COALESCE(s.harga_modal, 0)`, `WHERE sa.committed_at IS NOT NULL`, `ORDER BY value_rp DESC`. `GRANT SELECT … TO authenticated`. LEFT JOIN to `admin_users` so actor deletions don't drop rows.
+- **Tests (2, both PASS)**:
+  - `TestPengawasanView_TopAdjustments_OrdersByValueDesc` — seeds SKU-A (qty=-10, hpp=5000 → 50000) and SKU-B (qty=-1, hpp=100 → 100); asserts SKU-A ranks first with `value_rp=50000`.
+  - `TestPengawasanView_TopAdjustments_OnlyShowsCommitted` — seeds 1 committed + 1 pending; asserts view returns exactly 1 row (the committed one).
+- **Helpers**: `SeedStockWithHPP` does `INSERT … ON CONFLICT (sku) DO UPDATE SET harga_modal`. `SeedCommittedAdjustment` writes the `approval_requests` (status='approved') → `stock_movements` (source='adjustment', `qty_before=100`, `qty_after=100+delta`) → `stock_adjustments` (status='approved', `committed_at=now()`, `committed_movement_id` pinned) chain to mimic what `commit_approved_adjustment` would do in production. Evidence URL injected for `rusak`/`hilang` to satisfy `chk_evidence_for_loss`. `SeedPendingAdjustment` skips the movement row and leaves `committed_at` NULL.
+- **Per-test unique SKUs**: `T1-PENG-A-<unixnano>` to avoid pollution against the shared Supabase test database.
+- **Migration applied** via `psql` (used `/opt/homebrew/Cellar/libpq/18.4/bin/psql` fallback with `PGPASSWORD` env to dodge a special-character-in-password issue with the keyword=value DSN).
+- **Verification**: `go test ./internal/db/ -count=1 -p 1 -parallel 1` — all green (194s).
+- **Next**: Phase 4 Task 2 — Kasir discount 7d view (extends the same migration file).
+
+---
+
 ## 2026-06-08 — Stock Fraud Phase 2, Task 29: `StockManagerScreen` integration — DONE
 
 - **Goal**: Replace the inline free-edit affordances on `StockManagerScreen`'s price/HPP/stock cells with the new Phase 2 approval-gated modals (T26 `StockAdjustmentModal`, T27 `PriceChangeRequestModal`), show inline pending badges (T24 `PendingApprovalBadge`), and surface a top banner counting the current user's own pending requests. Adds an optional Stok Opname shortcut button (T28 entry point) ahead of T30's Sidebar wiring.
