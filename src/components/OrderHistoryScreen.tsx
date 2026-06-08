@@ -472,8 +472,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
               <div key={entry.id} className={`border-b border-gray-100 last:border-0 ${borderCl} ${isDimmed ? 'opacity-55' : ''}`}>
                 {/* Collapsed row */}
                 <div
-                  className={`flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
-                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+                  className={`flex items-center gap-3 px-5 py-3 transition-colors ${
+                    entry.source === 'order' ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
+                  } ${isExpanded ? 'bg-gray-50' : ''}`}
+                  onClick={() => { if (entry.source === 'order') setExpandedId(isExpanded ? null : entry.id); }}
                 >
                   <div className="flex-1 min-w-0">
                     <div
@@ -506,7 +508,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${badge.className}`}>
                     {badge.label}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  {entry.source === 'order' && (
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  )}
                 </div>
 
                 {isExpanded && order && order.status === 'PENDING_ADMIN_CONFIRMATION' && (
