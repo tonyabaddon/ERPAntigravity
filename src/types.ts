@@ -20,6 +20,30 @@ export interface PermissionSet {
   // Action permissions (Phase 2 anti-fraud foundation)
   can_create_po?: boolean;
   can_edit_po?: boolean;
+  // Phase 2 — stock adjustments, opname, price changes
+  can_request_adjustment?: boolean;
+  can_approve_adjustment?: boolean;
+  can_start_opname?: boolean;
+  can_witness_opname?: boolean;
+  can_commit_opname?: boolean;
+  can_request_price_change?: boolean;
+  can_approve_price_change?: boolean;
+  // Phase 3a — PO receipt witness
+  can_witness_po_receipt?: boolean;
+  // Phase 3b — kasir gates
+  can_open_kasir_shift?: boolean;
+  can_request_kasir_price_override?: boolean;
+  can_approve_kasir_price_override?: boolean;
+  can_request_kasir_void?: boolean;
+  can_approve_kasir_void?: boolean;
+  can_request_kasir_refund?: boolean;
+  can_approve_kasir_refund?: boolean;
+  can_override_price_floor?: boolean;
+  // Phase 3d — inter-warehouse transfers
+  can_initiate_transfer?: boolean;
+  can_receive_transfer?: boolean;
+  // Phase 4 — Pengawasan (immutable ledger reader)
+  can_view_pengawasan?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -38,6 +62,25 @@ export const ALL_PERMISSIONS: PermissionSet = {
   kasir: true,
   can_create_po: true,
   can_edit_po: true,
+  can_request_adjustment: true,
+  can_approve_adjustment: true,
+  can_start_opname: true,
+  can_witness_opname: true,
+  can_commit_opname: true,
+  can_request_price_change: true,
+  can_approve_price_change: true,
+  can_witness_po_receipt: true,
+  can_open_kasir_shift: true,
+  can_request_kasir_price_override: true,
+  can_approve_kasir_price_override: true,
+  can_request_kasir_void: true,
+  can_approve_kasir_void: true,
+  can_request_kasir_refund: true,
+  can_approve_kasir_refund: true,
+  can_override_price_floor: true,
+  can_initiate_transfer: true,
+  can_receive_transfer: true,
+  can_view_pengawasan: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
