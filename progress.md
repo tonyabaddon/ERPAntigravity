@@ -4055,3 +4055,17 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - Forward dependency on sub-project A's `kasir_transactions.status` column noted in commit message — correct per plan's sequencing constraint.
 - Migration NOT yet applied to DB — applies after sub-project A merges.
 - Next: Task 0.2 (RPCs migration)
+
+## 2026-06-08 — Stock Fraud Phase 2 / Task 30: Sidebar + App routing — DONE
+
+- Implementation: `src/types.ts` (extends `ActivePage` union with `'persetujuan'` + `'stok-opname'`), `src/components/Sidebar.tsx`, `src/App.tsx`.
+- `Sidebar.tsx`:
+  - Added "Stok Opname" item gated by `can_start_opname` (icon: `PackageSearch`).
+  - Added "Persetujuan" item gated by ANY of `can_approve_adjustment | can_approve_price_change | can_commit_opname` (icon: `ClipboardCheck`).
+  - Extended menu-item schema so `permKey` can be a single key OR array (OR-of-keys); `can_*` keys are opt-in (only visible when `=== true`), preserving legacy boolean defaulted-on behavior for the existing entries.
+  - Wired `listPendingApprovals()` + `subscribeApprovalRequests()` to drive a `pendingCount` state; rendered via `PendingApprovalBadge` (small dot over icon when collapsed, count pill at row-end when expanded). Subscription only attaches when the current user is actually an approver.
+- `App.tsx`:
+  - Imported + registered `ApprovalInboxScreen` (case `'persetujuan'`) and `StockOpnameScreen` (case `'stok-opname'`); session-view is owned internally by `StockOpnameScreen`, so no extra App-level state.
+  - Threaded `currentUser` + `onNavigateToOpname={() => setActivePage('stok-opname')}` into `<StockManagerScreen>` (fixes T29 follow-up note about StockManagerScreen being called without `currentUser`).
+- `tsc --noEmit`: 12 errors before / 12 errors after — same baseline; the pre-existing Sidebar TS2367 (`activePage === 'auth'` post-early-return) shifted line 60 → 119 but is unchanged in nature. No new errors introduced.
+- Next: Task 31 (manual end-to-end smoke test).

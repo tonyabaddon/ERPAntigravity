@@ -34,6 +34,8 @@ import PelangganScreen from './components/PelangganScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
+import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
+import StockOpnameScreen from './components/stok/StockOpnameScreen';
 
 import {
   INITIAL_STOCK,
@@ -246,9 +248,25 @@ export default function App() {
         );
       case 'ai-stock':
         return (
-          <StockManagerScreen 
-            stockList={stockList} 
-            onStockUpdate={handleStockUpdate} 
+          <StockManagerScreen
+            stockList={stockList}
+            onStockUpdate={handleStockUpdate}
+            showToast={triggerToast}
+            currentUser={currentUser}
+            onNavigateToOpname={() => setActivePage('stok-opname')}
+          />
+        );
+      case 'persetujuan':
+        return (
+          <ApprovalInboxScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
+        );
+      case 'stok-opname':
+        return (
+          <StockOpnameScreen
+            currentUser={currentUser}
             showToast={triggerToast}
           />
         );
