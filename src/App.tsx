@@ -47,7 +47,7 @@ export default function App() {
   // Gating system: start at 'auth' or direct bypass for immediate interaction 
   const [activePage, setActivePage] = useState<ActivePage>('auth');
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
   const [stockList, setStockList] = useState<StockItem[]>(() => {
@@ -72,6 +72,7 @@ export default function App() {
       if (session?.user && !currentUser) {
         const user = session.user;
         setCurrentUser({
+          id: user.id,
           name: user.user_metadata?.full_name ?? (user.email?.split('@')[0] ?? 'User'),
           role: 'Owner',
           permissions: ALL_PERMISSIONS,
@@ -194,7 +195,7 @@ export default function App() {
 
 
   // Handle successful login
-  const handleLoginSuccess = (user: { name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
+  const handleLoginSuccess = (user: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
     setCurrentUser(user);
     setActivePage('dashboard');
   };
@@ -310,6 +311,8 @@ export default function App() {
             stockList={stockList}
             showToast={triggerToast}
             onStockRefresh={handleStockRefresh}
+            currentUserId={currentUser?.id}
+            currentUserPermissions={currentUser?.permissions}
           />
         );
       case 'kasir':
