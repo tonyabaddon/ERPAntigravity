@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -314,4 +315,101 @@ func SeedPendingAdjustment(t testing.TB, c *Client, sku, warehouse string, qtyDe
 	if err != nil {
 		t.Fatalf("seed pending adjustment: %v", err)
 	}
+}
+
+// SeedAdminUser inserts an admin_users row and returns its UUID. Used by Phase
+// 4 Task 2 tests that need a cashier identity to attach to kasir_transactions
+// rows and have admin_users.name join back through the view.
+//
+// Tests should pass unique names (e.g. include a nanosecond suffix) so adjacent
+// runs against the shared Supabase test database stay isolated. role defaults
+// to 'Staff Admin Toko' if empty (the most common cashier role).
+func SeedAdminUser(t testing.TB, c *Client, name, role string) string {
+	t.Helper()
+	if role == "" {
+		role = "Staff Admin Toko"
+	}
+	var id string
+	err := c.DB.QueryRow(
+		`INSERT INTO public.admin_users (name, role) VALUES ($1, $2) RETURNING id`,
+		name, role).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed admin_users: %v", err)
+	}
+	return id
+}
+
+// SeedStockWithPrice creates a SKU with a known stocks.price (the "list price")
+// so the Phase 4 v_pengawasan_kasir_discount_7d view can compute
+// discount = price - unit_price deterministically. Idempotent via ON CONFLICT
+// so re-running with the same SKU rewrites price.
+func SeedStockWithPrice(t testing.TB, c *Client, sku string, price int) {
+	t.Helper()
+	_, err := c.DB.Exec(
+		`INSERT INTO public.stocks (sku, name, category, price, stock, status, specs)
+		 VALUES ($1, 'Pengawasan Kasir Test SKU', 'Aksesori', $2, 0, 'Sinkron', '{}'::jsonb)
+		 ON CONFLICT (sku) DO UPDATE SET price = EXCLUDED.price`,
+		sku, price)
+	if err != nil {
+		t.Fatalf("seed sku with price: %v", err)
+	}
+}
+
+// KasirTxItem is one element of the kasir_transactions.items JSONB array.
+// Field names must match the view's jsonb_to_recordset key list — see
+// v_pengawasan_kasir_discount_7d in migration 20260607000051.
+type KasirTxItem struct {
+	SKU       string `json:"sku"`
+	UnitPrice int    `json:"unit_price"`
+	Qty       int    `json:"qty"`
+}
+
+// KasirTxSeed describes the fields the Phase 4 pengawasan tests care about
+// when inserting a kasir_transactions row. The helper fills in safe defaults
+// for the long tail of NOT NULL columns the table now carries.
+type KasirTxSeed struct {
+	CreatedBy string        // admin_users.id of the cashier
+	Status    string        // 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED'
+	CreatedAt time.Time     // controls 7d-window inclusion
+	Items     []KasirTxItem // becomes the JSONB items column
+}
+
+// SeedKasirTransaction inserts an income kasir_transactions row with the given
+// cashier (created_by), status, created_at, and items. Subtotal/total_amount
+// are derived from items so the row stays internally consistent with the view's
+// revenue math. Used by Phase 4 Task 2 tests for v_pengawasan_kasir_discount_7d.
+//
+// Real schema note: this codebase has no `cashier_user_id` column — `created_by`
+// is the cashier identity field. The view exposes it AS cashier_user_id to
+// preserve the contract documented in the Phase 4 plan.
+func SeedKasirTransaction(t testing.TB, c *Client, seed KasirTxSeed) string {
+	t.Helper()
+
+	itemsJSON, err := json.Marshal(seed.Items)
+	if err != nil {
+		t.Fatalf("marshal items: %v", err)
+	}
+
+	// Derive subtotal/total_amount from items so the row is self-consistent.
+	var subtotal int
+	for _, it := range seed.Items {
+		subtotal += it.UnitPrice * it.Qty
+	}
+
+	var id string
+	err = c.DB.QueryRow(
+		`INSERT INTO public.kasir_transactions
+		   (type, channel, items, subtotal, total_amount, hpp_total,
+		    payment_type, payment_method,
+		    created_by, status, created_at)
+		 VALUES ('income', 'walkin', $1::jsonb, $2, $2, 0,
+		         'FULL', 'cash',
+		         $3, $4, $5)
+		 RETURNING id`,
+		string(itemsJSON), subtotal, seed.CreatedBy, seed.Status, seed.CreatedAt,
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed kasir_transactions: %v", err)
+	}
+	return id
 }

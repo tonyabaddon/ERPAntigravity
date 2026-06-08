@@ -8,6 +8,11 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/db"
 )
 
+// SKU price used by Phase 4 Task 2 tests for the kasir-discount view. Picked
+// large enough that "discount = stocks.price - unit_price" stays comfortably
+// non-zero in arithmetic without overflowing numeric.
+const kasirDiscountTestPrice = 10000
+
 // TestPengawasanView_TopAdjustments_OrdersByValueDesc pins the contract of the
 // v_pengawasan_top_adjustments view (Phase 4 Task 1): rows are ranked by
 // absolute rupiah value, defined as ABS(qty_delta) * COALESCE(harga_modal,0).
@@ -108,5 +113,119 @@ func TestPengawasanView_TopAdjustments_OnlyShowsCommitted(t *testing.T) {
 	}
 	if seenSKU != skuCommitted {
 		t.Fatalf("expected committed sku %s, got %s", skuCommitted, seenSKU)
+	}
+}
+
+// TestPengawasanView_KasirDiscount_7d_AggregatesCorrectly pins the contract of
+// v_pengawasan_kasir_discount_7d (Phase 4 Task 2). For one cashier with two
+// recent income kasir transactions:
+//   - line 1: 1× SKU at list price (10_000) → no discount.
+//   - line 2: 2× SKU at 7_000 (3_000 below list) → discount = 6_000.
+//
+// Expected aggregate:
+//   - total_revenue_rp        = 10_000 + 2*7_000 = 24_000
+//   - total_discount_rp       = 0       + 2*3_000 = 6_000
+//   - discount_pct_of_revenue = 6_000 / 24_000 = 0.25
+//
+// We use a fresh admin user per test (unique name) and unique SKU so adjacent
+// runs against the shared Supabase test DB do not contaminate each other.
+func TestPengawasanView_KasirDiscount_7d_AggregatesCorrectly(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	sku := fmt.Sprintf("T2-KD-%d", nano)
+	cashierName := fmt.Sprintf("Test Kasir %d", nano)
+
+	cashierID := db.SeedAdminUser(t, client, cashierName, "Staff Admin Toko")
+	db.SeedStockWithPrice(t, client, sku, kasirDiscountTestPrice)
+
+	// Full-price sale: 1 × 10_000.
+	db.SeedKasirTransaction(t, client, db.KasirTxSeed{
+		CreatedBy: cashierID,
+		Status:    "PAID",
+		CreatedAt: time.Now(), // recent — within 7d window
+		Items: []db.KasirTxItem{
+			{SKU: sku, UnitPrice: 10000, Qty: 1},
+		},
+	})
+	// Discounted sale: 2 × 7_000 (3_000 discount per unit).
+	db.SeedKasirTransaction(t, client, db.KasirTxSeed{
+		CreatedBy: cashierID,
+		Status:    "PAID",
+		CreatedAt: time.Now(),
+		Items: []db.KasirTxItem{
+			{SKU: sku, UnitPrice: 7000, Qty: 2},
+		},
+	})
+
+	var disc, rev, pct float64
+	err := client.DB.QueryRow(
+		`SELECT total_discount_rp, total_revenue_rp, discount_pct_of_revenue
+		   FROM public.v_pengawasan_kasir_discount_7d
+		  WHERE cashier_user_id = $1`, cashierID).Scan(&disc, &rev, &pct)
+	if err != nil {
+		t.Fatalf("query view: %v", err)
+	}
+
+	if disc != 6000 {
+		t.Fatalf("expected total_discount_rp=6000, got %v", disc)
+	}
+	if rev != 24000 {
+		t.Fatalf("expected total_revenue_rp=24000, got %v", rev)
+	}
+	if pct < 0.249 || pct > 0.251 {
+		t.Fatalf("expected discount_pct_of_revenue ~ 0.25, got %v", pct)
+	}
+}
+
+// TestPengawasanView_KasirDiscount_7d_FiltersOutOlder verifies the 7-day window
+// is enforced. We seed one recent discounted sale (in window) and one identical
+// sale dated 8 days ago (outside window). Only the recent one must contribute
+// to the cashier's totals.
+func TestPengawasanView_KasirDiscount_7d_FiltersOutOlder(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	sku := fmt.Sprintf("T2-KD-OLD-%d", nano)
+	cashierName := fmt.Sprintf("Test Kasir Old %d", nano)
+
+	cashierID := db.SeedAdminUser(t, client, cashierName, "Staff Admin Toko")
+	db.SeedStockWithPrice(t, client, sku, kasirDiscountTestPrice)
+
+	// Recent: 1 × 7000 → discount=3000, revenue=7000.
+	db.SeedKasirTransaction(t, client, db.KasirTxSeed{
+		CreatedBy: cashierID,
+		Status:    "PAID",
+		CreatedAt: time.Now(),
+		Items: []db.KasirTxItem{
+			{SKU: sku, UnitPrice: 7000, Qty: 1},
+		},
+	})
+	// Old: 1 × 7000 from 8 days ago — must be filtered out.
+	db.SeedKasirTransaction(t, client, db.KasirTxSeed{
+		CreatedBy: cashierID,
+		Status:    "PAID",
+		CreatedAt: time.Now().Add(-8 * 24 * time.Hour),
+		Items: []db.KasirTxItem{
+			{SKU: sku, UnitPrice: 7000, Qty: 1},
+		},
+	})
+
+	var disc, rev float64
+	err := client.DB.QueryRow(
+		`SELECT total_discount_rp, total_revenue_rp
+		   FROM public.v_pengawasan_kasir_discount_7d
+		  WHERE cashier_user_id = $1`, cashierID).Scan(&disc, &rev)
+	if err != nil {
+		t.Fatalf("query view: %v", err)
+	}
+
+	if disc != 3000 {
+		t.Fatalf("expected total_discount_rp=3000 (only recent row), got %v", disc)
+	}
+	if rev != 7000 {
+		t.Fatalf("expected total_revenue_rp=7000 (only recent row), got %v", rev)
 	}
 }

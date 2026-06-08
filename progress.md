@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — Stock Fraud Phase 4, Task 2: `v_pengawasan_kasir_discount_7d` view — DONE
+
+- **Goal**: Second Pengawasan view — per-cashier discount aggregate over the last 7 days. Surfaces cashiers giving away unusual margin via free-form unit_price entry (`discount = stocks.price - kti.unit_price`, summed across line items in committed sales). Columns: `cashier_user_id`, `cashier_name`, `total_discount_rp`, `total_revenue_rp`, `discount_pct_of_revenue`.
+- **Files**: `supabase/migrations/20260607000051_kasir_discount_view.sql` (new — separate file per task brief, NOT appended to `…050`), `backend-go/internal/db/pengawasan_test.go` (appended 2 tests + 1 const), `backend-go/internal/db/testhelpers.go` (added `SeedAdminUser`, `SeedStockWithPrice`, `SeedKasirTransaction` plus `KasirTxSeed` / `KasirTxItem` types and `encoding/json` import).
+- **Schema reality reconcile** (plan vs. live DB diverged — verified via `\d public.kasir_transactions`):
+  - Plan said cashier identity column is `cashier_user_id` (Phase 3b). Live schema has `created_by UUID` only — `cashier_user_id` never landed. View uses `kt.created_by AS cashier_user_id` so the contract documented in the spec (and the test's `WHERE cashier_user_id = $1`) is preserved without inventing a new physical column.
+  - Plan said `WHERE status = 'committed'`. Live CHECK constraint allows only `PAID | AWAITING_LUNAS | COMPLETED | CANCELLED`. View filters `status IN ('PAID', 'COMPLETED')` — the realized-sale set where discount is booked + revenue recognised. AWAITING_LUNAS (DP/partial — discount still mutable) and CANCELLED excluded.
+  - Added explicit `kt.type = 'income'` guard — expense rows have empty items, but filtering at kt scope is safer than relying on `jsonb_to_recordset` yielding zero rows.
+- **View**: `CREATE OR REPLACE VIEW public.v_pengawasan_kasir_discount_7d AS SELECT … FROM kasir_transactions kt JOIN LATERAL jsonb_to_recordset(kt.items) AS kti(sku TEXT, unit_price NUMERIC, qty INT) ON TRUE JOIN stocks s ON s.sku = kti.sku LEFT JOIN admin_users au ON au.id = kt.created_by WHERE kt.type='income' AND kt.status IN ('PAID','COMPLETED') AND kt.created_at >= now() - INTERVAL '7 days' GROUP BY kt.created_by, au.name`. `CASE WHEN SUM(revenue) > 0 THEN … ELSE 0 END` guards pct division. `GRANT SELECT … TO authenticated`.
+- **Tests (2, both PASS)**:
+  - `TestPengawasanView_KasirDiscount_7d_AggregatesCorrectly` — one cashier, two committed sales: `1×10000` (no discount) + `2×7000` (3000 discount each). Asserts `total_discount_rp=6000`, `total_revenue_rp=24000`, `discount_pct_of_revenue ≈ 0.25` (tolerance 0.249–0.251).
+  - `TestPengawasanView_KasirDiscount_7d_FiltersOutOlder` — recent `1×7000` + identical row dated `now() - 8 days`. Asserts totals come from the recent row only (`disc=3000`, `rev=7000`) — proves the 7d window cutoff.
+- **Helpers**:
+  - `SeedAdminUser(name, role)` — `INSERT INTO admin_users (name, role) RETURNING id`. Defaults role to `'Staff Admin Toko'` if empty.
+  - `SeedStockWithPrice(sku, price)` — `ON CONFLICT (sku) DO UPDATE SET price` so re-runs are deterministic. Distinct from `SeedStockWithHPP` (T1) which sets `harga_modal`.
+  - `SeedKasirTransaction(KasirTxSeed{CreatedBy, Status, CreatedAt, Items})` — marshals items via `encoding/json` to JSONB, derives subtotal/total_amount from items so the row is self-consistent. Hardcoded `type='income'`, `channel='walkin'`, `payment_type='FULL'`, `payment_method='cash'`, `hpp_total=0` — all valid against the live CHECK constraints. `CreatedAt` lets the second test back-date a row 8 days for the cutoff assertion.
+  - `KasirTxItem` struct tags `json:"sku"`, `json:"unit_price"`, `json:"qty"` — match the column names the view's `jsonb_to_recordset` extracts.
+- **Per-test unique fixtures**: `T2-KD-<unixnano>`, `T2-KD-OLD-<unixnano>`, plus `Test Kasir <unixnano>` names — avoid cross-test pollution against the shared Supabase test DB.
+- **Migration applied** via `psql` (same `/opt/homebrew/Cellar/libpq/18.4/bin/psql` + `PGPASSWORD` pattern T1 used).
+- **Verification**: `go test ./internal/db/ -count=1 -timeout 300s` — all green (191.7s including 4 pengawasan tests + every other db integration test). `go vet ./...` clean, `go build ./...` clean.
+- **Next**: Phase 4 Task 3 — Outflow outliers view (`v_pengawasan_outflow_outliers` — z-score over 90-day baseline).
+
+---
+
 ## 2026-06-08 — Stock Fraud Phase 4, Task 1: `v_pengawasan_top_adjustments` view — DONE
 
 - **Goal**: First of five read-only Pengawasan views — ranks committed `stock_adjustments` by absolute rupiah value (`ABS(qty_delta) * COALESCE(harga_modal, 0)`), filters out pending rows (no `committed_at`), joins `stocks` for `sku_name` and `admin_users` for `actor_name`.
