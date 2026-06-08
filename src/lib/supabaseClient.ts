@@ -1256,6 +1256,7 @@ export async function recordOpnameCount(args: {
   sku: string;
   warehouse: 'atas' | 'bawah';
   counted_qty: number;
+  actor_user_id: string;
 }): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
   const { error } = await supabase.rpc('record_opname_count', {
@@ -1263,26 +1264,31 @@ export async function recordOpnameCount(args: {
     p_sku: args.sku,
     p_warehouse: args.warehouse,
     p_counted_qty: args.counted_qty,
+    p_actor_user_id: args.actor_user_id,
   });
   if (error) throw error;
 }
 
 export async function acknowledgeOpnameWitness(
   sessionId: number,
-  witnessUserId: string,
+  actorUserId: string,
 ): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase.rpc('acknowledge_opname_witness', {
+  const { error } = await supabase.rpc('witness_acknowledge_opname', {
     p_session_id: sessionId,
-    p_witness_user_id: witnessUserId,
+    p_actor_user_id: actorUserId,
   });
   if (error) throw error;
 }
 
-export async function submitOpnameForOwner(sessionId: number): Promise<number> {
+export async function submitOpnameForOwner(
+  sessionId: number,
+  actorUserId: string,
+): Promise<number> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('submit_opname_for_owner', {
     p_session_id: sessionId,
+    p_actor_user_id: actorUserId,
   });
   if (error) throw error;
   return data as number;
@@ -1297,6 +1303,43 @@ export async function commitOpname(approvalId: number): Promise<number> {
   return data as number;
 }
 
+/**
+ * Maps a raw `stock_opname_sessions` row (snake_case) into the camelCase
+ * `OpnameSession` shape consumed by Phase 2 UI components.
+ */
+export function toOpnameSession(row: any): OpnameSession {
+  return {
+    id: row.id,
+    opnameType: row.opname_type,
+    scopePayload: row.scope_payload ?? {},
+    countedByUserId: row.counted_by_user_id,
+    witnessedByUserId: row.witnessed_by_user_id,
+    witnessAcknowledgedAt: row.witness_acknowledged_at ?? null,
+    status: row.status,
+    varianceTotalValue: Number(row.variance_total_value ?? 0),
+    approvalRequestId: row.approval_request_id ?? null,
+    startedAt: row.started_at,
+    submittedAt: row.submitted_at ?? null,
+    committedAt: row.committed_at ?? null,
+  };
+}
+
+/**
+ * Maps a raw `stock_opname_counts` row (snake_case) into the camelCase
+ * `OpnameCount` shape.
+ */
+export function toOpnameCount(row: any): OpnameCount {
+  return {
+    sessionId: row.session_id,
+    sku: row.sku,
+    warehouse: row.warehouse,
+    systemQtySnapshot: row.system_qty_snapshot,
+    countedQty: row.counted_qty ?? null,
+    variance: row.variance ?? 0,
+    varianceValue: Number(row.variance_value ?? 0),
+  };
+}
+
 export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[]> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase
@@ -1305,7 +1348,29 @@ export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[
     .eq('session_id', sessionId)
     .order('sku', { ascending: true });
   if (error) throw error;
-  return (data ?? []) as unknown as OpnameCount[];
+  return (data ?? []).map(toOpnameCount);
+}
+
+export async function listOpnameSessions(limit = 20): Promise<OpnameSession[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_sessions')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(toOpnameSession);
+}
+
+export async function getOpnameSession(sessionId: number): Promise<OpnameSession | null> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toOpnameSession(data) : null;
 }
 
 // --- Price change ---
