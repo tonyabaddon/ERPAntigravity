@@ -36,6 +36,7 @@ import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
+import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 
 import {
   INITIAL_STOCK,
@@ -336,6 +337,13 @@ export default function App() {
       case 'kasir':
         return (
           <KasirScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
+        );
+      case 'rekonsiliasi':
+        return (
+          <RekonsiliasiScreen
             currentUser={currentUser}
             showToast={triggerToast}
           />

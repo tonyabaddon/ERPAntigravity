@@ -17,6 +17,7 @@ export interface PermissionSet {
   settings: boolean;
   pembelian: boolean;
   kasir: boolean;
+  reconciliation?: boolean;
   // Action permissions (Phase 2 anti-fraud foundation)
   can_create_po?: boolean;
   can_edit_po?: boolean;
@@ -60,6 +61,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  reconciliation: true,
   can_create_po: true,
   can_edit_po: true,
   can_request_adjustment: true,
@@ -383,7 +385,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'persetujuan' | 'stok-opname';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'persetujuan' | 'stok-opname' | 'rekonsiliasi';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -555,4 +557,79 @@ export interface PriceChangeRequest {
   decidedAt?: string | null;
   decidedBy?: string | null;
   committedAt?: string | null;
+}
+
+// ─── Monthly Reconciliation Types ─────────────────────────────────────────
+
+export interface BankAccount {
+  id: string;
+  bank_code: 'BCA' | 'MANDIRI' | 'BRI' | 'BNI' | 'PERMATA' | 'CIMB' | 'OTHER';
+  account_number: string;
+  account_label: string;
+  purpose: 'OPERATIONAL' | 'OWNER_PERSONAL' | 'SAVINGS' | 'OTHER';
+  is_active: boolean;
+}
+
+export interface BankImport {
+  id: string;
+  bank_account_id: string;
+  period_start: string;
+  period_end: string;
+  filename: string;
+  line_count: number;
+  matched_count: number;
+  status: 'PROCESSING' | 'READY' | 'FAILED';
+  error_message?: string;
+}
+
+export type BankLineKind =
+  | 'CUSTOMER_PAYMENT' | 'CASH_DEPOSIT' | 'EDC_SETTLEMENT' | 'SUPPLIER_PAYMENT'
+  | 'EXPENSE' | 'BANK_FEE' | 'INTERNAL_TRANSFER' | 'CUSTOMER_TOPUP'
+  | 'OWNER_DRAWING' | 'OWNER_TOPUP' | 'REFUND' | 'OTHER_INCOME'
+  | 'LEGACY_PERIOD' | 'UNKNOWN';
+
+export type Lane = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED' | 'GRAY';
+
+export interface BankStatementLine {
+  id: string;
+  bank_account_id: string;
+  txn_date: string;
+  amount: number;
+  direction: 'IN' | 'OUT';
+  description: string;
+  counterparty?: string;
+  line_kind: BankLineKind;
+  lane: Lane;
+  match_confidence?: number;
+  match_reason?: string;
+}
+
+export interface PayableSlot {
+  id: string;
+  order_id: string;
+  slot_type: 'FULL' | 'DP' | 'BALANCE';
+  expected_amount: number;
+  matched_amount: number;
+  status: 'OPEN' | 'MATCHED' | 'WRITTEN_OFF' | 'EXTENDED';
+  due_date?: string;
+}
+
+export interface CashDepositBatch {
+  id: string;
+  deposit_date?: string;
+  bank_line_id?: string;
+  deposited_amount?: number;
+  expected_amount: number;
+  variance: number;
+  variance_reason?: 'PETTY_CASH' | 'HITUNG_KURANG' | 'HITUNG_LEBIH' | 'LAINNYA';
+  status: 'PENDING' | 'DEPOSITED' | 'CARRY_OVER';
+}
+
+export interface ReconciliationPeriod {
+  id: string;
+  year: number;
+  month: number;
+  status: 'OPEN' | 'CLOSING' | 'CLOSED';
+  closed_at?: string;
+  summary?: Record<string, unknown>;
 }
