@@ -1557,3 +1557,193 @@ func TestAdminUsers_PgcryptoAvailable(t *testing.T) {
 		t.Fatalf("crypt() output does not look like bcrypt: %q", hashed)
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 13: verify_owner_pin RPC — bcrypt + per-Owner lockout
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Migration 20260607000019_verify_owner_pin.sql adds the SECURITY DEFINER RPC
+// public.verify_owner_pin(p_approval_id BIGINT, p_pin TEXT) RETURNS BOOLEAN.
+//
+// Per Foundational Decision #6 the lockout counter lives on the ONE Owner row
+// (admin_users WHERE role='Owner' ORDER BY id LIMIT 1) — not on the requester.
+// Even if multiple staff fumble the PIN in sequence the same row increments,
+// so the Owner is locked after 5 cumulative consecutive failures regardless of
+// who entered the wrong PIN.
+//
+// Test seed Owner is the well-known id '00000000-0000-0000-0000-000000000099'
+// (sorts first under ORDER BY id, so it is the row the RPC will select even
+// when production Owner rows coexist in the DB).
+//
+// The three tests pin: (1) the happy path returns TRUE, flips the approval,
+// and zeroes the failure counter; (2) wrong PIN entries increment the
+// per-Owner counter and the row locks after 5 failures; (3) a *locked* row
+// rejects even the correct PIN — only time can unlock.
+
+// ensureT13OwnerWithPin upserts the well-known Owner admin row used by the T13
+// tests and sets a known bcrypt PIN hash (for pin "123456"), resetting the
+// lockout state. Idempotent across reruns and across the three tests.
+func ensureT13OwnerWithPin(t *testing.T, c *db.Client) {
+	t.Helper()
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.admin_users (id, name, email, role, permissions, status)
+		 VALUES ($1, 'T13 Owner', 'phase2-t13-owner@test.local', 'Owner',
+		         '{"dashboard":true}'::jsonb, 'Aktif')
+		 ON CONFLICT (id) DO UPDATE SET role='Owner', status='Aktif'`,
+		ownerID); err != nil {
+		t.Fatalf("seed Owner admin: %v", err)
+	}
+	if _, err := c.DB.Exec(
+		`UPDATE public.admin_users
+		    SET approval_pin_hash = crypt('123456', gen_salt('bf')),
+		        pin_failed_count  = 0,
+		        pin_locked_until  = NULL
+		  WHERE id = $1`, ownerID); err != nil {
+		t.Fatalf("seed Owner PIN: %v", err)
+	}
+}
+
+// seedT13PendingApproval inserts a pending approval_requests row of type
+// 'adjustment' directly (avoiding the request_adjustment RPC's stock/state
+// dependencies — the verify_owner_pin RPC doesn't care about the satellite
+// row, only that the approval is pending). Returns the new id.
+func seedT13PendingApproval(t *testing.T, c *db.Client) int64 {
+	t.Helper()
+	var id int64
+	if err := c.DB.QueryRow(
+		`INSERT INTO public.approval_requests (request_type, payload, requested_by)
+		 VALUES ('adjustment','{}'::jsonb,'00000000-0000-0000-0000-000000000001')
+		 RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("seed pending approval: %v", err)
+	}
+	return id
+}
+
+// TestVerifyOwnerPin_Success pins the happy path: a correct PIN returns TRUE,
+// the approval flips to 'approved' (via _transition_approval with channel
+// 'owner_pin'), and pin_failed_count is reset to 0.
+func TestVerifyOwnerPin_Success(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT13OwnerWithPin(t, client)
+	aid := seedT13PendingApproval(t, client)
+
+	var ok bool
+	if err := client.DB.QueryRow(
+		`SELECT public.verify_owner_pin($1, '123456')`, aid).Scan(&ok); err != nil {
+		t.Fatalf("verify_owner_pin: %v", err)
+	}
+	if !ok {
+		t.Fatalf("verify_owner_pin returned FALSE for the correct PIN")
+	}
+
+	var status, channel string
+	if err := client.DB.QueryRow(
+		`SELECT status::text, COALESCE(decision_channel,'')
+		   FROM public.approval_requests WHERE id=$1`, aid).Scan(&status, &channel); err != nil {
+		t.Fatalf("read approval row: %v", err)
+	}
+	if status != "approved" {
+		t.Fatalf("approval status = %s, want approved", status)
+	}
+	if channel != "owner_pin" {
+		t.Fatalf("decision_channel = %q, want owner_pin", channel)
+	}
+
+	var failed int
+	_ = client.DB.QueryRow(
+		`SELECT pin_failed_count FROM public.admin_users
+		  WHERE id='00000000-0000-0000-0000-000000000099'`).Scan(&failed)
+	if failed != 0 {
+		t.Fatalf("pin_failed_count = %d after success, want 0 (reset)", failed)
+	}
+}
+
+// TestVerifyOwnerPin_WrongPin_IncrementsOwnerCounter pins the per-Owner
+// lockout invariant: 5 wrong PIN attempts (against any approval, against any
+// caller) bump pin_failed_count on the Owner row to >=5 and set
+// pin_locked_until. The RPC returns FALSE on wrong PIN — it does NOT raise.
+func TestVerifyOwnerPin_WrongPin_IncrementsOwnerCounter(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT13OwnerWithPin(t, client)
+	aid := seedT13PendingApproval(t, client)
+
+	for i := 0; i < 5; i++ {
+		// Wrong PIN returns FALSE (not RAISE) — error is intentionally ignored.
+		_, _ = client.DB.Exec(
+			`SELECT public.verify_owner_pin($1, 'WRONG!')`, aid)
+	}
+
+	var failed int
+	var lockedUntil *string
+	if err := client.DB.QueryRow(
+		`SELECT pin_failed_count, pin_locked_until::text
+		   FROM public.admin_users
+		  WHERE id='00000000-0000-0000-0000-000000000099'`).Scan(&failed, &lockedUntil); err != nil {
+		t.Fatalf("read Owner row: %v", err)
+	}
+	if failed < 5 {
+		t.Fatalf("pin_failed_count = %d, want >=5", failed)
+	}
+	if lockedUntil == nil {
+		t.Fatalf("pin_locked_until should be set after 5 consecutive failures")
+	}
+
+	// The approval must NOT have flipped — wrong PIN never advances the gate.
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&status)
+	if status != "pending" {
+		t.Fatalf("approval status = %s after 5 wrong PINs, want pending", status)
+	}
+}
+
+// TestVerifyOwnerPin_WhenLocked_Rejects proves that the lockout window is
+// inviolate even for the correct PIN — only time can unlock the Owner row.
+// We seed the Owner with the lock already set (pin_locked_until = now()+1h)
+// and confirm a CORRECT PIN call raises an error mentioning "locked".
+func TestVerifyOwnerPin_WhenLocked_Rejects(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT13OwnerWithPin(t, client)
+	// Force the lockout window open with the PIN still correct.
+	if _, err := client.DB.Exec(
+		`UPDATE public.admin_users
+		    SET pin_failed_count = 5,
+		        pin_locked_until = now() + INTERVAL '1 hour'
+		  WHERE id = '00000000-0000-0000-0000-000000000099'`); err != nil {
+		t.Fatalf("seed locked Owner: %v", err)
+	}
+	aid := seedT13PendingApproval(t, client)
+
+	_, err := client.DB.Exec(
+		`SELECT public.verify_owner_pin($1, '123456')`, aid)
+	if err == nil {
+		t.Fatalf("expected locked error for correct PIN against locked Owner, got nil")
+	}
+	if !strings.Contains(err.Error(), "locked") {
+		t.Fatalf("expected error containing 'locked', got: %v", err)
+	}
+
+	// Approval still pending — even the right PIN cannot flip the gate while
+	// the Owner row is locked.
+	var status string
+	_ = client.DB.QueryRow(
+		`SELECT status::text FROM public.approval_requests WHERE id=$1`, aid).Scan(&status)
+	if status != "pending" {
+		t.Fatalf("approval status = %s during lockout, want pending", status)
+	}
+
+	// Cleanup so the lockout doesn't leak into any later test that hits the
+	// same Owner row.
+	_, _ = client.DB.Exec(
+		`UPDATE public.admin_users
+		    SET pin_failed_count = 0,
+		        pin_locked_until = NULL
+		  WHERE id = '00000000-0000-0000-0000-000000000099'`)
+}
