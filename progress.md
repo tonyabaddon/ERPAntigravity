@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — Stock Fraud Phase 2, Task 21: Frontend types — Approval DTOs — DONE
+
+- **Goal**: Land the frontend TypeScript shapes for Phase 2 approval flows (`ApprovalRequest`, `StockAdjustment`, `OpnameSession`, `OpnameCount`, `PriceChangeRequest`) plus the supporting union types so the upcoming UI tasks (T22+) have a typed contract against the backend DTOs.
+- **Files**: `src/types.ts` (appended Phase 2 DTO block — `ApprovalRequestType`, `ApprovalStatus`, `ApprovalRequest`, `StockAdjustmentReason`, `StockAdjustment`, `OpnameSession`, `OpnameCount`, `PriceChangeRequest`).
+- **Why no PermissionSet edit**: User commit `b48fbf9` already added `can_create_po`/`can_edit_po`, and T12 (commit `a63bb49`) already extended `PermissionSet` + `ALL_PERMISSIONS` with the 19 action-level keys (`can_request_adjustment` through `can_view_pengawasan`). Re-adding them would have been a no-op or a merge conflict; verified by reading the current file before editing.
+- **Verification**: `npx tsc --noEmit` reports the same 12 errors before and after (App.tsx/SupabaseStockItem mismatch x2, PurchaseOrderFormPage `key` prop, SalesInboxScreen `key` prop, Sidebar `'auth'` comparison, supabase/functions/send-admin-invite Deno imports x7). All pre-existing baseline noise per the plan's "acceptable" list. No new diagnostics traceable to the new DTOs.
+- **Concerns**: (1) IDs use `number` to match the BIGSERIAL columns in the Phase 2 migrations — the frontend currently uses `string` for most ID types (orders, leads, customers) because those are UUIDs; mixing `number` and `string` IDs across the codebase risks future confusion when wiring CRUD hooks, but matching the DB type is the correct call. (2) Field names are camelCase (`requestedAt`, `qtyDelta`) following the existing `KasirItem`/`SalesEntry` style rather than the snake_case `Db*` types — this assumes a transform layer between Supabase rows and frontend DTOs; T22+ will need to land that transform. (3) `payload` and `scopePayload` are typed `Record<string, unknown>` rather than discriminated unions — pragmatic for now but will need narrowing once T22+ render specific approval cards. (4) Did NOT touch unrelated working-tree drift (`backend-go/daemon.pid`, `cloudbuild.frontend.yaml`, `src/components/pembelian/MarkAsPaidModal.tsx`, untracked plan docs).
+- **Next**: Task 22 of Phase 2 — frontend approval inbox / pending request list UI hook.
+
+---
+
 ## 2026-06-08 — Stock Fraud Phase 2, Task 20: Wire webhook + poller into main.go — DONE
 
 - **Goal**: Glue the T18 webhook handler and T19 expiry poller into `backend-go/main.go` so the daemon actually serves the `/api/approval/wa-webhook` route and runs the per-minute auto-expiry sweep. Also land the 5 concrete `*db.Client` methods needed for the handler's `api.ApprovalStore` interface (`IsActiveOwnerWANumber`, `FirstOwnerAdminUserID`, `FindApprovalByWAMessageID`, `LatestPendingApprovalID`, `DecideViaWAButton`) plus integration tests for each.

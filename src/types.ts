@@ -471,3 +471,88 @@ export interface SalesEntry {
   created_at: string;
   walkin_order_id: string | null;
 }
+
+// Phase 2: Approval data shapes ----------------------------------------------
+
+export type ApprovalRequestType =
+  | 'adjustment'
+  | 'opname'
+  | 'price_change'
+  | 'kasir_price_override'
+  | 'kasir_void'
+  | 'kasir_refund';
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+export interface ApprovalRequest {
+  id: number;
+  requestType: ApprovalRequestType;
+  payload: Record<string, unknown>;
+  requestedBy: string;
+  requestedAt: string; // ISO timestamp
+  expiresAt: string;
+  status: ApprovalStatus;
+  decidedBy?: string | null;
+  decidedAt?: string | null;
+  decisionChannel?: 'wa_button' | 'owner_pin' | 'app_inbox' | 'auto_expire' | null;
+}
+
+export type StockAdjustmentReason =
+  | 'rusak' | 'hilang' | 'sampel' | 'koreksi_input' | 'korjual_admin';
+
+export interface StockAdjustment {
+  id: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  qtyDelta: number;
+  reasonCode: StockAdjustmentReason;
+  reasonNote?: string;
+  evidenceUrls: string[];
+  requestedBy: string;
+  requestedAt: string;
+  approvalRequestId: number;
+  status: 'pending_approval' | 'approved' | 'rejected' | 'expired';
+  committedAt?: string | null;
+  committedMovementId?: number | null;
+}
+
+export interface OpnameSession {
+  id: number;
+  opnameType: 'full' | 'per_kategori' | 'per_sku_list';
+  scopePayload: Record<string, unknown>;
+  countedByUserId: string;
+  witnessedByUserId: string;
+  witnessAcknowledgedAt?: string | null;
+  status: 'in_progress' | 'pending_owner' | 'committed' | 'rejected';
+  varianceTotalValue: number;
+  approvalRequestId?: number | null;
+  startedAt: string;
+  submittedAt?: string | null;
+  committedAt?: string | null;
+}
+
+export interface OpnameCount {
+  sessionId: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  systemQtySnapshot: number;
+  countedQty?: number | null;
+  variance: number; // generated
+  varianceValue: number;
+}
+
+export interface PriceChangeRequest {
+  id: number;
+  sku: string;
+  field: 'price' | 'harga_modal';
+  oldValue: number;
+  newValue: number;
+  reasonNote: string;
+  approvalRequestId: number;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  requestedBy: string;
+  requestedAt: string;
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  committedAt?: string | null;
+}
