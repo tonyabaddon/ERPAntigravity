@@ -51,20 +51,80 @@ export const supabaseService = {
     if (!supabase) {
       throw new Error('Supabase is not configured.');
     }
+    // Phase 2 Task 11: direct UPDATE on stocks.{price,harga_modal,stock_atas,
+    // stock_bawah} is REVOKEd for anon + authenticated. Split this call:
+    //   - new SKU       → seed_stock_row RPC (SECURITY DEFINER, Owner-gated)
+    //   - existing SKU  → UPDATE only the unrestricted columns (name, category,
+    //                     status, specs). Mutating price / qty on an existing
+    //                     row must go through the approval flow (T9/T10 for
+    //                     price, T1-T4 for qty); UI for that lands in T26+.
+    const { data: existing, error: lookupErr } = await supabase
+      .from('stocks')
+      .select('sku, price, harga_modal, stock_atas, stock_bawah')
+      .eq('sku', item.sku)
+      .maybeSingle();
+    if (lookupErr) {
+      throw lookupErr;
+    }
+
+    if (!existing) {
+      const { data: seedSku, error: seedErr } = await supabase.rpc('seed_stock_row', {
+        p_sku: item.sku,
+        p_name: item.name,
+        p_category: item.category,
+        p_price: item.price,
+        p_harga_modal: item.harga_modal ?? 0,
+        p_stock_atas: item.stock_atas ?? item.stock ?? 0,
+        p_stock_bawah: item.stock_bawah ?? 0,
+      });
+      if (seedErr) {
+        throw seedErr;
+      }
+      return [{ sku: seedSku as string }];
+    }
+
+    // Existing SKU: refuse mutations to value-bearing columns. Compare against
+    // the snapshot we just read. Changing price / harga_modal / stock_atas /
+    // stock_bawah requires the approval flow (Phase 2 T9/T10 for price,
+    // T1-T4 for qty); UI for that lands in T26+. Metadata edits (name,
+    // category, status, specs) flow through directly via the GRANT preserved
+    // in migration …017.
+    const restrictedDiffs: string[] = [];
+    if (item.price !== existing.price) restrictedDiffs.push('price');
+    if (
+      item.harga_modal !== undefined &&
+      item.harga_modal !== existing.harga_modal
+    ) {
+      restrictedDiffs.push('harga_modal');
+    }
+    if (
+      item.stock_atas !== undefined &&
+      item.stock_atas !== existing.stock_atas
+    ) {
+      restrictedDiffs.push('stock_atas');
+    }
+    if (
+      item.stock_bawah !== undefined &&
+      item.stock_bawah !== existing.stock_bawah
+    ) {
+      restrictedDiffs.push('stock_bawah');
+    }
+    if (restrictedDiffs.length > 0) {
+      throw new Error(
+        `Cannot modify ${restrictedDiffs.join(', ')} directly on existing SKU ${item.sku} — use the approval flow.`
+      );
+    }
+
     const { data, error } = await supabase
       .from('stocks')
-      .upsert({
-        sku: item.sku,
+      .update({
         name: item.name,
         category: item.category,
-        price: item.price,
-        stock_atas: item.stock_atas ?? item.stock,
-        stock_bawah: item.stock_bawah ?? 0,
         status: item.status,
         specs: item.specs,
-        harga_modal: item.harga_modal ?? null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
+      .eq('sku', item.sku)
       .select();
 
     if (error) {
@@ -867,18 +927,13 @@ export const stockService = {
 
   async decrementStock(sku: string, qty: number, warehouse: 'atas' | 'bawah' = 'atas'): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    // Phase 2 Task 11: direct UPDATE on stocks.{stock_atas,stock_bawah} is now
+    // REVOKEd for anon + authenticated, so the old fallback path that did
+    // supabase.from('stocks').update({ [col]: ... }) on RPC failure can only
+    // raise "permission denied" — masking the real RPC error. The RPC is the
+    // only sanctioned path; let its error propagate cleanly.
     const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty, p_warehouse: warehouse });
-    if (error) {
-      const col = warehouse === 'atas' ? 'stock_atas' : 'stock_bawah';
-      const { data, error: fetchErr } = await supabase.from('stocks').select(col).eq('sku', sku).single();
-      if (fetchErr) throw fetchErr;
-      const current = (data as Record<string, number>)[col] ?? 0;
-      const { error: updateErr } = await supabase.from('stocks').update({
-        [col]: Math.max(0, current - qty),
-        updated_at: new Date().toISOString(),
-      }).eq('sku', sku);
-      if (updateErr) throw updateErr;
-    }
+    if (error) throw error;
   },
 
   async fetchAll(): Promise<SupabaseStockItem[]> {

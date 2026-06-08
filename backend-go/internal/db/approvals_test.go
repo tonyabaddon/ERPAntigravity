@@ -1241,3 +1241,181 @@ func TestCommitPriceChange_HappyPath_UpdatesStockAndWritesImmutableHistory(t *te
 		t.Fatalf("price_change_requests.status = %q, want approved", pcrStatus)
 	}
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2, Task 11: REVOKE direct writes on `stocks` + `seed_stock_row` RPC.
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Migration 20260607000017_revoke_stocks_writes.sql REVOKEs column-level UPDATE
+// on `stocks.{price,harga_modal,stock_atas,stock_bawah}` from PUBLIC/anon/
+// authenticated. After this, the only path to mutate those columns from client
+// roles is via SECURITY DEFINER RPCs whose function owner (postgres) keeps the
+// privilege. service_role retains the bypass (Foundational Decision #1).
+//
+// The same migration introduces `seed_stock_row(p_sku, p_name, p_category,
+// p_price, p_harga_modal, p_stock_atas, p_stock_bawah, p_actor_user_id)
+// RETURNS TEXT` — the sanctioned path to create a BRAND-NEW SKU (CSV bulk
+// import + manual New-SKU form). Writes 1 `stock_price_history` row per
+// non-null field (price + harga_modal) and 1 `stock_movements` row per
+// warehouse with non-zero starting qty, all with source='seed'. RAISES on
+// existing SKU — the approval flow (Tasks 9/10) is the path to change an
+// existing row's price; this RPC's contract is "seed once, immutably".
+//
+// Owner-role gate: the function checks `admin_users.role = 'Owner'` for the
+// provided `p_actor_user_id`. Tests seed an Owner admin row with the well-
+// known UUID `00000000-0000-0000-0000-000000000099` (the plan's reserved test
+// actor id) before calling the RPC.
+//
+// Per-test unique SKUs (`T11-{kind}-<nano>`) follow the T9/T10 hygiene pattern
+// so reruns / parallel test runs don't collide on the stocks PK.
+
+// ensureT11OwnerAdmin upserts the well-known Owner admin row that
+// seed_stock_row's role gate looks up. Idempotent across reruns and across
+// the three Task 11 tests that share the same actor uuid.
+func ensureT11OwnerAdmin(t *testing.T, c *db.Client) {
+	t.Helper()
+	const ownerID = "00000000-0000-0000-0000-000000000099"
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.admin_users (id, name, email, role, permissions, status)
+		 VALUES ($1, 'T11 Owner', 'phase2-t11-owner@test.local', 'Owner',
+		         '{"dashboard":true}'::jsonb, 'Aktif')
+		 ON CONFLICT (id) DO UPDATE SET role='Owner', status='Aktif'`,
+		ownerID); err != nil {
+		t.Fatalf("seed Owner admin: %v", err)
+	}
+}
+
+// TestStocksDirectUpdate_AsAuthenticated_Fails proves the REVOKE landed:
+// SET LOCAL ROLE authenticated; UPDATE stocks SET price=... must raise
+// "permission denied". Wrapped in BEGIN/ROLLBACK so the role switch is
+// transaction-scoped and can't leak into the next test on this connection.
+func TestStocksDirectUpdate_AsAuthenticated_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	sku := fmt.Sprintf("T11-DENIED-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+
+	tx, err := client.DB.Begin()
+	if err != nil {
+		t.Fatalf("begin txn: %v", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`SET LOCAL ROLE authenticated`); err != nil {
+		t.Fatalf("SET LOCAL ROLE authenticated: %v", err)
+	}
+	_, err = tx.Exec(`UPDATE public.stocks SET price = 999 WHERE sku=$1`, sku)
+	if err == nil {
+		t.Fatalf("expected permission denied on direct UPDATE stocks.price, got nil")
+	}
+	if !strings.Contains(err.Error(), "permission denied") {
+		t.Fatalf("unexpected error (want permission denied): %v", err)
+	}
+}
+
+// TestSeedStockRow_HappyPath proves the sanctioned creation path works:
+// calling seed_stock_row for a new SKU inserts the stocks row with the
+// supplied values, writes stock_price_history rows for price + harga_modal
+// (source='seed'), and writes one stock_movements row per warehouse with
+// non-zero starting qty (source='seed').
+func TestSeedStockRow_HappyPath(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT11OwnerAdmin(t, client)
+
+	sku := fmt.Sprintf("T11-SEED-%d", time.Now().UnixNano())
+	// Defensive: in case a previous failed run left the row.
+	_, _ = client.DB.Exec(`DELETE FROM public.stock_price_history WHERE sku=$1`, sku)
+	_, _ = client.DB.Exec(`DELETE FROM public.stock_movements    WHERE sku=$1`, sku)
+	_, _ = client.DB.Exec(`DELETE FROM public.stocks             WHERE sku=$1`, sku)
+
+	var returnedSKU string
+	if err := client.DB.QueryRow(
+		`SELECT public.seed_stock_row(
+		   p_sku           => $1,
+		   p_name          => 'T11 Seeded',
+		   p_category      => 'Aksesori',
+		   p_price         => 5000,
+		   p_harga_modal   => 3000,
+		   p_stock_atas    => 4,
+		   p_stock_bawah   => 2,
+		   p_actor_user_id => '00000000-0000-0000-0000-000000000099'::uuid)`,
+		sku).Scan(&returnedSKU); err != nil {
+		t.Fatalf("seed_stock_row: %v", err)
+	}
+	if returnedSKU != sku {
+		t.Fatalf("seed_stock_row returned %q, want %q", returnedSKU, sku)
+	}
+
+	// (a) stocks row exists with the right values.
+	var name, category string
+	var price, hargaModal float64
+	var stockAtas, stockBawah int
+	if err := client.DB.QueryRow(
+		`SELECT name, category, price, harga_modal, stock_atas, stock_bawah
+		   FROM public.stocks WHERE sku=$1`, sku).Scan(
+		&name, &category, &price, &hargaModal, &stockAtas, &stockBawah); err != nil {
+		t.Fatalf("read stocks row: %v", err)
+	}
+	if name != "T11 Seeded" || category != "Aksesori" || price != 5000 ||
+		hargaModal != 3000 || stockAtas != 4 || stockBawah != 2 {
+		t.Fatalf("stocks row mismatch: name=%q category=%q price=%v harga_modal=%v atas=%d bawah=%d",
+			name, category, price, hargaModal, stockAtas, stockBawah)
+	}
+
+	// (b) stock_price_history: 1 row for price + 1 row for harga_modal, source='seed'.
+	var historyRows int
+	if err := client.DB.QueryRow(
+		`SELECT count(*) FROM public.stock_price_history
+		  WHERE sku=$1 AND source='seed'`, sku).Scan(&historyRows); err != nil {
+		t.Fatalf("count stock_price_history: %v", err)
+	}
+	if historyRows < 1 {
+		t.Fatalf("expected >=1 seed history row, got %d", historyRows)
+	}
+
+	// (c) stock_movements: one seed row per warehouse with non-zero qty (here both).
+	var movementRows int
+	if err := client.DB.QueryRow(
+		`SELECT count(*) FROM public.stock_movements
+		  WHERE sku=$1 AND source='seed'`, sku).Scan(&movementRows); err != nil {
+		t.Fatalf("count stock_movements: %v", err)
+	}
+	if movementRows < 1 {
+		t.Fatalf("expected >=1 seed movement row, got %d", movementRows)
+	}
+}
+
+// TestSeedStockRow_ExistingSKU_Fails proves seed_stock_row is single-shot:
+// calling it on a SKU that already exists must raise — the approval flow is
+// the only path to mutate price/qty on an existing row.
+func TestSeedStockRow_ExistingSKU_Fails(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	ensureT11OwnerAdmin(t, client)
+
+	sku := fmt.Sprintf("T11-DUP-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 1)
+
+	_, err := client.DB.Exec(
+		`SELECT public.seed_stock_row(
+		   p_sku           => $1,
+		   p_name          => 'T11 Dup',
+		   p_category      => 'Aksesori',
+		   p_price         => 5000,
+		   p_harga_modal   => 3000,
+		   p_stock_atas    => 4,
+		   p_stock_bawah   => 2,
+		   p_actor_user_id => '00000000-0000-0000-0000-000000000099'::uuid)`,
+		sku)
+	if err == nil {
+		t.Fatalf("expected seed_stock_row to fail for existing SKU, got nil")
+	}
+	if !strings.Contains(err.Error(), "already exists") &&
+		!strings.Contains(err.Error(), "exists") {
+		t.Fatalf("unexpected error message (want 'already exists'): %v", err)
+	}
+}
