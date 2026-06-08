@@ -1,5 +1,43 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-08 — Kasir: duplicate "Catat Penjualan" button bypassed new PenjualanBaruScreen — FIXED
+
+- **Symptom**: User clicked "Catat Penjualan" in the Kasir Harian header and got the old `SaleModal` instead of navigating to the new `PenjualanBaruScreen` page.
+- **Root cause**: Incomplete refactor in `src/components/KasirScreen.tsx`. The header had **two** buttons labeled "Catat Penjualan" side by side: a green 📋 button (line 237-243) correctly wired to `onOpenPenjualanBaru` (introduced by `7dcaeb5 feat(kasir): quick-action button opens PenjualanBaruScreen`), and a navy `+ Catat Penjualan` button (line 244-249) leftover from the pre-refactor code that still called `setShowSaleModal('walkin')` and opened the old modal. The user was naturally clicking the more familiar navy button.
+- **Fix**: Removed the navy duplicate button (line 244-249) and dropped the now-unused `Plus` icon from the `lucide-react` import. The green 📋 button is now the single header entry point and routes to `PenjualanBaruScreen`. The channel cards in the right-side "Catat Transaksi" panel (Walk-in / Tokopedia / Grosir → `setShowSaleModal(ch)`) were intentionally left untouched per user scope decision — keep that flow on the old modal for now.
+- **Files**: `src/components/KasirScreen.tsx`.
+- **Verification**: `npx tsc --noEmit` clean.
+
+---
+
+## 2026-06-08 — Persetujuan menu shows blank on cloud — root-caused to user's browser/network environment — RESOLVED (no code change)
+
+- **Symptom**: On the deployed Cloud Run frontend (`garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app`), clicking the Persetujuan sidebar item rendered an empty main panel. DevTools Network tab showed the request to `https://ekhhojaezdfjfwuxyjkl.supabase.co/rest/v1/approval_requests?…` returning `{"message":"No API key found in request","hint":"No \`apikey\` request header or url param was found."}`.
+- **Investigation phases**:
+  1. **Bundle code verified**: deployed `index-Wi9PYk0b.js` (revision 00013) embeds Supabase URL + anon JWT as constants and constructs the supabase-js client correctly (`fe = yq(wq, _q)`). The library's `fq` fetch wrapper sets `apikey` via `x.set("apikey", e)`.
+  2. **Library reproduction in Node**: Created supabase-js v2.106.2 client with the same URL/key and ran the same `.from('approval_requests').select('*')` query — request goes out with apikey header, server returns 94 pending approvals.
+  3. **CORS preflight verified**: Supabase's OPTIONS response on `/rest/v1/approval_requests` returns `access-control-allow-headers: apikey,authorization,x-client-info,accept-profile` and `access-control-allow-origin: *`. Preflight is correctly configured.
+  4. **End-to-end browser reproduction**: Drove the live deployed app with headless Chrome (puppeteer-core + installed Chrome 148) and captured outgoing network requests. The browser execution of the LIVE bundle DOES send the `apikey` header on Supabase REST calls (verified on the `/rest/v1/stocks` call that fires on app load):
+     ```
+     "apikey": "eyJhbGciOi…",
+     "authorization": "Bearer eyJhbGciOi…",
+     "x-client-info": "supabase-js-web/2.106.2"
+     ```
+- **Root cause**: NOT in the deployed code, bundle, library, or Supabase config — all four are correct and the apikey header IS sent by the live app when executed in a real browser. The cause is in the **user's specific browser environment** stripping the `apikey` header in flight. Likely culprits (in order of probability):
+  1. A browser extension stripping non-standard headers (possibly enabled in incognito too — some users have extensions allowed in private mode)
+  2. Antivirus / firewall with HTTPS-MITM inspection rewriting headers
+  3. Corporate proxy / VPN / network appliance filtering custom headers
+  4. A browser/version-specific quirk (less likely — supabase-js-web/2.106.2 is widely used)
+- **Why this is the right diagnosis**: The headless Chrome run executes the exact same deployed bundle (same Cloud Run URL, same hashed JS file) and produces a request with apikey present and Supabase responds 200. Therefore the bundle works. The only variable left is what's between the user's browser process and Supabase — i.e., the user's environment.
+- **Defensive fix considered and rejected**: Attempted `createClient(url, key, { global: { headers: { apikey: key } } })` to redundantly inject apikey. Local test confirmed it still produces a request with apikey, but the root cause analysis above shows the deployed app already sends apikey — so this fix would only put the same header in the same place where it's currently being stripped. Reverted to keep code clean.
+- **Action for the user**: Isolate which environment component strips the header:
+  1. Open the same URL on a **different network** (e.g., mobile hotspot instead of WiFi) — if it works, network appliance / corporate proxy
+  2. Open the URL in a **different browser** (Firefox if they were on Chrome, or vice versa) — if it works, browser-level extension/setting
+  3. Open the URL on a **different device** (phone or another laptop) — if it works, device-specific (antivirus/firewall)
+- **Verification artifact**: `/tmp/test_deployed.mjs` — puppeteer-core script that loads the live deployed app in headless Chrome and logs all supabase.co requests with full headers. Reusable for future "is this a deployment bug or a user-env bug" triage.
+
+---
+
 ## 2026-06-08 — Stock Fraud Phase 4, Task 3: `v_pengawasan_outflow_outliers` view — DONE
 
 - **Goal**: Third Pengawasan view — flags SKUs whose last-7-day outflow exceeds 3× their 90-day daily-average × 7. Surfaces suspicious surges (a normally-quiet SKU suddenly bleeding inventory) that no single adjustment or sale row would flag in isolation. Columns: `sku`, `name`, `sum_7d`, `avg_daily_90d`, `multiplier`.

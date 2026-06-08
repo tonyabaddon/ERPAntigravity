@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, TrendingDown, Package, DollarSign,
-  Plus, Printer, X, Search, Lock
+  Printer, X, Search, Lock
 } from 'lucide-react';
 import {
   KasirTransaction, KasirChannel, KasirPaymentMethod, KasirExpenseCategory,
@@ -240,12 +240,6 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded-xl hover:bg-green-700"
           >
             📋 Catat Penjualan
-          </button>
-          <button
-            onClick={() => setShowSaleModal('walkin')}
-            className="flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold bg-[#012749] text-white shadow hover:bg-[#1e3d60] transition-all"
-          >
-            <Plus className="w-3.5 h-3.5" /> Catat Penjualan
           </button>
         </div>
       </div>
