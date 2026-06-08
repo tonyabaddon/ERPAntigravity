@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net"
@@ -14,6 +15,8 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/username/sinar-elektrik-backend/config"
+	"github.com/username/sinar-elektrik-backend/internal/api"
+	"github.com/username/sinar-elektrik-backend/internal/approvals"
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
@@ -21,9 +24,50 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 )
+
+// approvalStoreAdapter bridges *db.Client (which returns sql.ErrNoRows for
+// "no row" cases) to the api.ApprovalStore interface (which the T18 handler
+// distinguishes via api.ErrNoApproval). Keeping the adapter in main.go
+// preserves the unidirectional layering: internal/db has no knowledge of the
+// HTTP layer's sentinel, and internal/api has no knowledge of database/sql.
+//
+// The lookup methods (FindApprovalByWAMessageID, LatestPendingApprovalID) are
+// the only ones that need translation — the other three (IsActiveOwnerWANumber,
+// FirstOwnerAdminUserID, DecideViaWAButton) pass straight through because the
+// handler does not depend on a sentinel value for them.
+type approvalStoreAdapter struct{ client *db.Client }
+
+func (a approvalStoreAdapter) IsActiveOwnerWANumber(num string) (bool, error) {
+	return a.client.IsActiveOwnerWANumber(num)
+}
+
+func (a approvalStoreAdapter) FirstOwnerAdminUserID() (string, error) {
+	return a.client.FirstOwnerAdminUserID()
+}
+
+func (a approvalStoreAdapter) FindApprovalByWAMessageID(wamid string) (int64, error) {
+	id, err := a.client.FindApprovalByWAMessageID(wamid)
+	if err == sql.ErrNoRows {
+		return 0, api.ErrNoApproval
+	}
+	return id, err
+}
+
+func (a approvalStoreAdapter) LatestPendingApprovalID() (int64, error) {
+	id, err := a.client.LatestPendingApprovalID()
+	if err == sql.ErrNoRows {
+		return 0, api.ErrNoApproval
+	}
+	return id, err
+}
+
+func (a approvalStoreAdapter) DecideViaWAButton(approvalID int64, decision, ownerUserID string) error {
+	return a.client.DecideViaWAButton(approvalID, decision, ownerUserID)
+}
 
 func main() {
 	cfg := config.Load()
@@ -165,6 +209,20 @@ func main() {
 	}
 	defer geminiClient.Close()
 
+	// Initialize Gemini Document Client (separate from Calista's flash-lite)
+	docClient, err := gemini.NewDocumentClient(ctx, cfg.GeminiAPIKey)
+	if err != nil {
+		log.Fatalf("[MAIN] failed to init Gemini Document Client: %v", err)
+	}
+	defer docClient.Close()
+
+	// Recon endpoints (monthly bank-statement reconciliation)
+	reconHandler := &recon.Handler{DB: dbClient, Doc: docClient}
+	closerHandler := &recon.CloserHandler{DB: dbClient}
+	mux.HandleFunc("/api/recon/upload", reconHandler.Upload)
+	mux.HandleFunc("/api/recon/close", closerHandler.Close)
+	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
+
 	// State machine
 	machine := engine.NewMachine(geminiClient)
 
@@ -241,6 +299,21 @@ func main() {
 	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, sender).Start(ctx)
 	log.Println("[MAIN] Heartbeat poller started (1-minute tick)")
+
+	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
+	// the public.expire_pending_approvals() RPC once per minute. Matches the
+	// heartbeat/follow-up Start(ctx) pattern: goroutine exits when ctx is
+	// cancelled (process shutdown).
+	approvals.NewPoller(dbClient).Start(ctx)
+	log.Println("[MAIN] Approval expiry poller started (1-minute tick)")
+
+	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
+	// button replies here. The adapter translates sql.ErrNoRows to the
+	// handler's api.ErrNoApproval sentinel so the SQL driver detail does not
+	// leak into HTTP status mapping.
+	approvalHandler := api.NewApprovalWebhookHandler(approvalStoreAdapter{client: dbClient})
+	mux.Handle("/api/approval/wa-webhook", approvalHandler)
+	log.Println("[MAIN] Approval WA webhook registered at /api/approval/wa-webhook")
 
 	// Restore booking timers after restart
 	bookings, err := dbClient.ListActiveBookings()

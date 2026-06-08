@@ -4,7 +4,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
+import type {
+  ApprovalRequest,
+  StockAdjustmentReason,
+  OpnameSession,
+  OpnameCount,
+} from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -51,20 +57,80 @@ export const supabaseService = {
     if (!supabase) {
       throw new Error('Supabase is not configured.');
     }
+    // Phase 2 Task 11: direct UPDATE on stocks.{price,harga_modal,stock_atas,
+    // stock_bawah} is REVOKEd for anon + authenticated. Split this call:
+    //   - new SKU       → seed_stock_row RPC (SECURITY DEFINER, Owner-gated)
+    //   - existing SKU  → UPDATE only the unrestricted columns (name, category,
+    //                     status, specs). Mutating price / qty on an existing
+    //                     row must go through the approval flow (T9/T10 for
+    //                     price, T1-T4 for qty); UI for that lands in T26+.
+    const { data: existing, error: lookupErr } = await supabase
+      .from('stocks')
+      .select('sku, price, harga_modal, stock_atas, stock_bawah')
+      .eq('sku', item.sku)
+      .maybeSingle();
+    if (lookupErr) {
+      throw lookupErr;
+    }
+
+    if (!existing) {
+      const { data: seedSku, error: seedErr } = await supabase.rpc('seed_stock_row', {
+        p_sku: item.sku,
+        p_name: item.name,
+        p_category: item.category,
+        p_price: item.price,
+        p_harga_modal: item.harga_modal ?? 0,
+        p_stock_atas: item.stock_atas ?? item.stock ?? 0,
+        p_stock_bawah: item.stock_bawah ?? 0,
+      });
+      if (seedErr) {
+        throw seedErr;
+      }
+      return [{ sku: seedSku as string }];
+    }
+
+    // Existing SKU: refuse mutations to value-bearing columns. Compare against
+    // the snapshot we just read. Changing price / harga_modal / stock_atas /
+    // stock_bawah requires the approval flow (Phase 2 T9/T10 for price,
+    // T1-T4 for qty); UI for that lands in T26+. Metadata edits (name,
+    // category, status, specs) flow through directly via the GRANT preserved
+    // in migration …017.
+    const restrictedDiffs: string[] = [];
+    if (item.price !== existing.price) restrictedDiffs.push('price');
+    if (
+      item.harga_modal !== undefined &&
+      item.harga_modal !== existing.harga_modal
+    ) {
+      restrictedDiffs.push('harga_modal');
+    }
+    if (
+      item.stock_atas !== undefined &&
+      item.stock_atas !== existing.stock_atas
+    ) {
+      restrictedDiffs.push('stock_atas');
+    }
+    if (
+      item.stock_bawah !== undefined &&
+      item.stock_bawah !== existing.stock_bawah
+    ) {
+      restrictedDiffs.push('stock_bawah');
+    }
+    if (restrictedDiffs.length > 0) {
+      throw new Error(
+        `Cannot modify ${restrictedDiffs.join(', ')} directly on existing SKU ${item.sku} — use the approval flow.`
+      );
+    }
+
     const { data, error } = await supabase
       .from('stocks')
-      .upsert({
-        sku: item.sku,
+      .update({
         name: item.name,
         category: item.category,
-        price: item.price,
-        stock_atas: item.stock_atas ?? item.stock,
-        stock_bawah: item.stock_bawah ?? 0,
         status: item.status,
         specs: item.specs,
-        harga_modal: item.harga_modal ?? null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
+      .eq('sku', item.sku)
       .select();
 
     if (error) {
@@ -261,6 +327,58 @@ export const orderService = {
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data ?? [];
+  },
+
+  async createWalkinDraft(input: {
+    customer_id: string | null;
+    customer_name: string;
+    customer_phone: string;
+    customer_company: string;
+    warehouse: 'atas' | 'bawah';
+    items: Array<{ sku: string; name: string; qty: number; unit_price: number; subtotal: number }>;
+    subtotal: number;
+    hpp_total: number;
+    total: number;
+  }): Promise<DbOrder> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .insert({
+        sales_channel:     'walkin',
+        status:            'WAITING_PAYMENT',
+        warehouse:         input.warehouse,
+        customer_id:       input.customer_id,
+        customer_name:     input.customer_name,
+        customer_phone:    input.customer_phone,
+        customer_company:  input.customer_company,
+        customer_address:  '',
+        items:             input.items,
+        subtotal:          input.subtotal,
+        shipping_fee:      0,
+        total:             input.total,
+        hpp_total:         input.hpp_total,
+        payment_type:      'FULL',
+        delivery_type:     'PICKUP',
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as DbOrder;
+  },
+
+  async markWalkinPaid(
+    orderId: string,
+    paymentMethod: 'cash' | 'transfer' | 'qris',
+    invoiceNumber: string
+  ): Promise<KasirTransaction> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('mark_walkin_order_paid', {
+      p_order_id:       orderId,
+      p_payment_method: paymentMethod,
+      p_invoice_number: invoiceNumber,
+    });
+    if (error) throw error;
+    return data as KasirTransaction;
   },
 
   async rejectOrder(orderId: string): Promise<void> {
@@ -676,19 +794,30 @@ export const customersService = {
 
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*, orders!orders_customer_id_fkey(*), leads!leads_customer_id_fkey(*)')
-      .eq('id', customerId)
-      .single();
-    if (error) throw error;
-    const profile = data as any;
+    const [customerRes, kasirRes] = await Promise.all([
+      supabase
+        .from('customers')
+        .select('*, orders!orders_customer_id_fkey(*), leads!leads_customer_id_fkey(*)')
+        .eq('id', customerId)
+        .single(),
+      supabase
+        .from('kasir_transactions')
+        .select('*')
+        .eq('customer_id', customerId)
+        .eq('type', 'income')
+        .order('created_at', { ascending: false }),
+    ]);
+    if (customerRes.error) throw customerRes.error;
+    if (kasirRes.error)    throw kasirRes.error;
+
+    const profile = customerRes.data as any;
     profile.orders = (profile.orders ?? []).sort(
       (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     profile.leads = (profile.leads ?? []).sort(
       (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+    profile.kasir_transactions = (kasirRes.data ?? []) as any[];
     return profile as DbCustomerProfile;
   },
 };
@@ -740,7 +869,8 @@ export const companySettingsService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('company_settings')
-      .upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
+      .update({ ...values, updated_at: new Date().toISOString() })
+      .eq('id', 1);
     if (error) throw error;
   },
 
@@ -842,18 +972,13 @@ export const stockService = {
 
   async decrementStock(sku: string, qty: number, warehouse: 'atas' | 'bawah' = 'atas'): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    // Phase 2 Task 11: direct UPDATE on stocks.{stock_atas,stock_bawah} is now
+    // REVOKEd for anon + authenticated, so the old fallback path that did
+    // supabase.from('stocks').update({ [col]: ... }) on RPC failure can only
+    // raise "permission denied" — masking the real RPC error. The RPC is the
+    // only sanctioned path; let its error propagate cleanly.
     const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty, p_warehouse: warehouse });
-    if (error) {
-      const col = warehouse === 'atas' ? 'stock_atas' : 'stock_bawah';
-      const { data, error: fetchErr } = await supabase.from('stocks').select(col).eq('sku', sku).single();
-      if (fetchErr) throw fetchErr;
-      const current = (data as Record<string, number>)[col] ?? 0;
-      const { error: updateErr } = await supabase.from('stocks').update({
-        [col]: Math.max(0, current - qty),
-        updated_at: new Date().toISOString(),
-      }).eq('sku', sku);
-      if (updateErr) throw updateErr;
-    }
+    if (error) throw error;
   },
 
   async fetchAll(): Promise<SupabaseStockItem[]> {
@@ -957,6 +1082,30 @@ export const kasirService = {
 
   async insertSaleTransaction(tx: NewSaleTransaction): Promise<KasirTransaction> {
     if (!supabase) throw new Error('Supabase not configured');
+    let customer_id = tx.customer_id ?? null;
+
+    // If no customer_id provided but phone+name are, try to find or create the customer.
+    if (!customer_id && tx.customer_phone && tx.customer_name) {
+      const phone = tx.customer_phone.trim();
+      const { data: existing } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('wa_number', phone)
+        .maybeSingle();
+      if (existing) {
+        customer_id = existing.id;
+      } else {
+        const newId = crypto.randomUUID();
+        const { error: insertErr } = await supabase
+          .from('customers')
+          .upsert(
+            { id: newId, wa_number: phone, name: tx.customer_name.trim(), company: tx.customer_company?.trim() ?? '' },
+            { onConflict: 'wa_number', ignoreDuplicates: false }
+          );
+        if (!insertErr) customer_id = newId;
+      }
+    }
+
     const { data, error } = await supabase
       .from('kasir_transactions')
       .insert({
@@ -982,6 +1131,7 @@ export const kasirService = {
         customer_phone: tx.customer_phone ?? null,
         customer_company: tx.customer_company ?? null,
         delivery_address: tx.delivery_address ?? null,
+        customer_id,
         invoice_number: tx.invoice_number,
       })
       .select()
@@ -1055,5 +1205,469 @@ export const kasirService = {
     if (data == null) throw new Error('next_kasir_number returned null');
     const counter = String(data).padStart(3, '0');
     return `${prefix}-${dateCompact}-${counter}`;
+  },
+};
+
+export const salesEntriesService = {
+  async fetchAll(): Promise<{ orders: DbOrder[]; kasir: KasirTransaction[] }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const [ordersRes, kasirRes] = await Promise.all([
+      supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase.from('kasir_transactions').select('*').eq('type', 'income').order('created_at', { ascending: false }),
+    ]);
+    if (ordersRes.error) throw ordersRes.error;
+    if (kasirRes.error)  throw kasirRes.error;
+    return {
+      orders: (ordersRes.data ?? []) as DbOrder[],
+      kasir:  (kasirRes.data  ?? []) as KasirTransaction[],
+    };
+  },
+
+  async fetchOpenWalkinDrafts(): Promise<DbOrder[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('sales_channel', 'walkin')
+      .in('status', [
+        'WAITING_PAYMENT', 'PAYMENT_UPLOADED',
+        'WAITING_DP',      'DP_UPLOADED', 'DP_VERIFIED',
+      ])
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as DbOrder[];
+  },
+};
+
+// ============================================================================
+// Phase 2 — Approval / adjustment / opname / price-change / seed RPC wrappers
+// ============================================================================
+// These standalone exports wrap the SECURITY DEFINER RPCs introduced in
+// Phase 2 (T1–T20). They are consumed by the approval inbox, stock adjustment
+// modal, opname workflow, and CSV-upsert paths in subsequent tasks (T23+).
+
+// --- Approvals ---
+
+/**
+ * Maps a raw `approval_requests` row (snake_case) into the camelCase
+ * `ApprovalRequest` shape consumed by Phase 2 UI components. The DB column
+ * names come straight from PostgREST/Supabase; the TS type adopted camelCase
+ * to match the rest of the front-end. Exported so any consumer that issues
+ * a raw `.from('approval_requests')` query can reuse the same mapper.
+ */
+export function toApprovalRequest(row: any): ApprovalRequest {
+  return {
+    id: row.id,
+    requestType: row.request_type,
+    payload: row.payload ?? {},
+    requestedBy: row.requested_by,
+    requestedAt: row.requested_at,
+    expiresAt: row.expires_at,
+    status: row.status,
+    decidedBy: row.decided_by ?? null,
+    decidedAt: row.decided_at ?? null,
+    decisionChannel: row.decision_channel ?? null,
+  };
+}
+
+export async function listPendingApprovals(): Promise<ApprovalRequest[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('approval_requests')
+    .select('*')
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(toApprovalRequest);
+}
+
+export async function getApprovalRequest(approvalId: number): Promise<ApprovalRequest | null> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('approval_requests')
+    .select('*')
+    .eq('id', approvalId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toApprovalRequest(data) : null;
+}
+
+export async function verifyOwnerPin(approvalId: number, pin: string): Promise<boolean> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('verify_owner_pin', {
+    p_approval_id: approvalId,
+    p_pin: pin,
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+// --- Adjustments ---
+
+export async function requestAdjustment(args: {
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  qty_delta: number;
+  reason_code: StockAdjustmentReason;
+  reason_note?: string;
+  evidence_urls?: string[];
+  actor_user_id: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('request_adjustment', {
+    p_sku: args.sku,
+    p_warehouse: args.warehouse,
+    p_qty_delta: args.qty_delta,
+    p_reason_code: args.reason_code,
+    p_reason_note: args.reason_note ?? null,
+    p_evidence_urls: args.evidence_urls ?? [],
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitApprovedAdjustment(approvalId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('commit_approved_adjustment', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+// --- Opname ---
+
+export async function startOpnameSession(args: {
+  opname_type: OpnameSession['opnameType'];
+  scope_payload: Record<string, unknown>;
+  counted_by: string;
+  witnessed_by: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('start_opname_session', {
+    p_opname_type: args.opname_type,
+    p_scope_payload: args.scope_payload,
+    p_counted_by: args.counted_by,
+    p_witnessed_by: args.witnessed_by,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function recordOpnameCount(args: {
+  session_id: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  counted_qty: number;
+  actor_user_id: string;
+}): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('record_opname_count', {
+    p_session_id: args.session_id,
+    p_sku: args.sku,
+    p_warehouse: args.warehouse,
+    p_counted_qty: args.counted_qty,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+}
+
+export async function acknowledgeOpnameWitness(
+  sessionId: number,
+  actorUserId: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('witness_acknowledge_opname', {
+    p_session_id: sessionId,
+    p_actor_user_id: actorUserId,
+  });
+  if (error) throw error;
+}
+
+export async function submitOpnameForOwner(
+  sessionId: number,
+  actorUserId: string,
+): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('submit_opname_for_owner', {
+    p_session_id: sessionId,
+    p_actor_user_id: actorUserId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitOpname(approvalId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('commit_opname', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+/**
+ * Maps a raw `stock_opname_sessions` row (snake_case) into the camelCase
+ * `OpnameSession` shape consumed by Phase 2 UI components.
+ */
+export function toOpnameSession(row: any): OpnameSession {
+  return {
+    id: row.id,
+    opnameType: row.opname_type,
+    scopePayload: row.scope_payload ?? {},
+    countedByUserId: row.counted_by_user_id,
+    witnessedByUserId: row.witnessed_by_user_id,
+    witnessAcknowledgedAt: row.witness_acknowledged_at ?? null,
+    status: row.status,
+    varianceTotalValue: Number(row.variance_total_value ?? 0),
+    approvalRequestId: row.approval_request_id ?? null,
+    startedAt: row.started_at,
+    submittedAt: row.submitted_at ?? null,
+    committedAt: row.committed_at ?? null,
+  };
+}
+
+/**
+ * Maps a raw `stock_opname_counts` row (snake_case) into the camelCase
+ * `OpnameCount` shape.
+ */
+export function toOpnameCount(row: any): OpnameCount {
+  return {
+    sessionId: row.session_id,
+    sku: row.sku,
+    warehouse: row.warehouse,
+    systemQtySnapshot: row.system_qty_snapshot,
+    countedQty: row.counted_qty ?? null,
+    variance: row.variance ?? 0,
+    varianceValue: Number(row.variance_value ?? 0),
+  };
+}
+
+export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_counts')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('sku', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(toOpnameCount);
+}
+
+export async function listOpnameSessions(limit = 20): Promise<OpnameSession[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_sessions')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map(toOpnameSession);
+}
+
+export async function getOpnameSession(sessionId: number): Promise<OpnameSession | null> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toOpnameSession(data) : null;
+}
+
+// --- Price change ---
+
+export async function requestPriceChange(args: {
+  sku: string;
+  field: 'price' | 'harga_modal';
+  new_value: number;
+  reason_note: string;
+  actor_user_id: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('request_price_change', {
+    p_sku: args.sku,
+    p_field: args.field,
+    p_new_value: args.new_value,
+    p_reason_note: args.reason_note,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitApprovedPriceChange(approvalId: number): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('commit_approved_price_change', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+}
+
+// --- Realtime subscription for approval inbox ---
+
+export function subscribeApprovalRequests(
+  onChange: (row: ApprovalRequest) => void,
+): () => void {
+  if (!supabase) {
+    // Realtime is a no-op when Supabase isn't configured; return an inert
+    // unsubscriber so callers don't need to special-case configuration.
+    return () => { /* no-op */ };
+  }
+  const client = supabase;
+  const channel = client
+    .channel('approval_requests_inbox')
+    .on(
+      'postgres_changes' as any,
+      { event: '*', schema: 'public', table: 'approval_requests' },
+      (payload: { new: unknown }) => onChange(toApprovalRequest(payload.new)),
+    )
+    .subscribe();
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+// --- Seed (for CSV upsert + new SKU creation) ---
+
+export async function seedStockRow(args: {
+  sku: string;
+  name: string;
+  category: string;
+  price: number;
+  harga_modal: number;
+  stock_atas?: number;
+  stock_bawah?: number;
+  actor_user_id: string;
+}): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('seed_stock_row', {
+    p_sku: args.sku,
+    p_name: args.name,
+    p_category: args.category,
+    p_price: args.price,
+    p_harga_modal: args.harga_modal,
+    p_stock_atas: args.stock_atas ?? 0,
+    p_stock_bawah: args.stock_bawah ?? 0,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+}
+
+export const reconciliationService = {
+  async listBankAccounts(): Promise<BankAccount[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('bank_accounts').select('*').eq('is_active', true)
+      .order('account_label');
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async createBankAccount(payload: Omit<BankAccount, 'id'>): Promise<BankAccount> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.from('bank_accounts').insert(payload).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async listOrdersForPeriod(year: number, month: number) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from('orders')
+      .select('id, customer_name, customer_phone, total, payment_type, dp_amount, channel, status, created_at, booking_expires_at')
+      .gte('created_at', start).lt('created_at', end)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listPayableSlotsForOrders(orderIds: string[]): Promise<PayableSlot[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    if (orderIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from('payable_slots').select('*').in('order_id', orderIds);
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listBankLinesForPeriod(year: number, month: number): Promise<BankStatementLine[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const { data, error } = await supabase
+      .from('bank_statement_lines').select('*')
+      .gte('txn_date', start).lt('txn_date', end)
+      .order('txn_date', { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async listCashBatches(year?: number, month?: number): Promise<CashDepositBatch[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    let q = supabase.from('cash_deposit_batches').select('*').order('deposit_date', { ascending: false });
+    if (year && month) {
+      const start = `${year}-${String(month).padStart(2, '0')}-01`;
+      const end = new Date(year, month, 1).toISOString().slice(0, 10);
+      // Match rows EITHER (a) deposit_date in [start, end), OR (b) pending batches with null deposit_date.
+      // Postgres NULL semantics: `.lt()` on null returns null → would be filtered out, so we use a nested
+      // and() inside or() to bracket the range correctly.
+      q = q.or(`and(deposit_date.gte.${start},deposit_date.lt.${end}),deposit_date.is.null`);
+    }
+    const { data, error } = await q;
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async uploadPDF(file: File, bankAccountId: string, bankCode: string, periodStart: string, periodEnd: string) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('bank_account_id', bankAccountId);
+    fd.append('bank_code', bankCode);
+    fd.append('period_start', periodStart);
+    fd.append('period_end', periodEnd);
+    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/recon/upload';
+    const resp = await fetch(url, { method: 'POST', body: fd });
+    if (!resp.ok) throw new Error(await resp.text());
+    return resp.json() as Promise<{ import_id: string; line_count: number; matched_count: number }>;
+  },
+
+  async closeMonth(year: number, month: number) {
+    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/recon/close';
+    const resp = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, month }),
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    return resp.json() as Promise<{ ok: boolean; reason?: string }>;
+  },
+
+  async createAllocation(bankLineId: string, slotId: string, amount: number) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('bank_line_allocations').insert({ bank_line_id: bankLineId, slot_id: slotId, amount });
+    if (error) throw error;
+  },
+
+  async unmatchLine(bankLineId: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('bank_line_allocations').delete().eq('bank_line_id', bankLineId);
+    if (error) throw error;
+    await supabase.from('bank_statement_lines')
+      .update({ lane: 'RED', match_reason: 'manually unmatched', match_confidence: 0 })
+      .eq('id', bankLineId);
+  },
+
+  async classifyLine(bankLineId: string, kind: BankLineKind, notes?: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('bank_statement_lines')
+      .update({ line_kind: kind, lane: 'GRAY', match_reason: kind, notes: notes ?? null })
+      .eq('id', bankLineId);
+    if (error) throw error;
   },
 };

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ClipboardList, Search, ChevronDown } from 'lucide-react';
-import { DbOrder } from '../types';
-import { orderService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { DbOrder, KasirTransaction, SalesEntry, SalesChannel } from '../types';
+import { orderService, salesEntriesService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 import InvoiceModal from './InvoiceModal';
 
 interface OrderHistoryScreenProps {
@@ -51,19 +52,27 @@ const LEFT_BORDER: Record<string, string> = {
   DP_UPLOADED:                'border-l-4 border-l-indigo-500',
 };
 
-function filterOrders(orders: DbOrder[], tab: FilterTab, search: string): DbOrder[] {
-  let filtered = orders;
-  if (tab === 'pending')   filtered = orders.filter(o => o.status === 'PENDING_ADMIN_CONFIRMATION');
-  if (tab === 'waiting')   filtered = orders.filter(o => o.status === 'WAITING_PAYMENT' || o.status === 'WAITING_DP' || o.status === 'DP_VERIFIED');
-  if (tab === 'uploaded')  filtered = orders.filter(o => o.status === 'PAYMENT_UPLOADED' || o.status === 'DP_UPLOADED');
-  if (tab === 'done')      filtered = orders.filter(o => o.status === 'PAYMENT_VERIFIED' || o.status === 'COMPLETED');
-  if (tab === 'cancelled') filtered = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED' || o.status === 'DP_PROOF_REJECTED');
+function filterEntries(
+  entries: SalesEntry[],
+  tab: FilterTab,
+  search: string,
+  channel: 'all' | SalesChannel,
+): SalesEntry[] {
+  let filtered = entries;
+  if (channel !== 'all') {
+    filtered = filtered.filter(e => e.channel === channel);
+  }
+  if (tab === 'pending')   filtered = filtered.filter(e => e.status === 'PENDING_ADMIN_CONFIRMATION');
+  if (tab === 'waiting')   filtered = filtered.filter(e => e.status === 'WAITING_PAYMENT' || e.status === 'WAITING_DP' || e.status === 'DP_VERIFIED');
+  if (tab === 'uploaded')  filtered = filtered.filter(e => e.status === 'PAYMENT_UPLOADED' || e.status === 'DP_UPLOADED');
+  if (tab === 'done')      filtered = filtered.filter(e => e.status === 'PAYMENT_VERIFIED' || e.status === 'COMPLETED' || e.status === 'PAID');
+  if (tab === 'cancelled') filtered = filtered.filter(e => e.status === 'CANCELLED' || e.status === 'PAYMENT_REJECTED' || e.status === 'DP_PROOF_REJECTED');
   if (search.trim()) {
     const q = search.toLowerCase();
-    filtered = filtered.filter(o =>
-      o.customer_name.toLowerCase().includes(q) ||
-      (o.gjp_order_id ?? '').toLowerCase().includes(q) ||
-      o.customer_phone.includes(q)
+    filtered = filtered.filter(e =>
+      e.customer_name.toLowerCase().includes(q) ||
+      e.display_id.toLowerCase().includes(q) ||
+      (e.customer_phone ?? '').includes(q)
     );
   }
   return filtered;
@@ -74,15 +83,6 @@ function formatDate(iso: string): string {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
-}
-
-function ItemPill({ items }: { items: DbOrder['items'] }) {
-  if (!items || items.length === 0) return null;
-  return (
-    <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
-      {items[0].name}{items.length > 1 ? <strong> +{items.length - 1}</strong> : null}
-    </span>
-  );
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -189,8 +189,10 @@ function RejectProofModal({ onConfirm, onCancel, loading }: RejectProofModalProp
 
 export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showToast }: OrderHistoryScreenProps) {
   const [orders, setOrders] = useState<DbOrder[]>([]);
+  const [kasir, setKasir] = useState<KasirTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>('all');
+  const [channelFilter, setChannelFilter] = useState<'all' | SalesChannel>('all');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
@@ -319,12 +321,17 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
-    orderService.fetchAll()
-      .then(setOrders)
-      .catch(() => showToast('Gagal memuat pesanan.', 'warning'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    salesEntriesService.fetchAll()
+      .then(({ orders: o, kasir: k }) => {
+        if (cancelled) return;
+        setOrders(o);
+        setKasir(k);
+      })
+      .catch(() => showToast('Gagal memuat riwayat pesanan.', 'warning'))
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-    if (!supabase) return;
+    if (!supabase) return () => { cancelled = true; };
     const sub = supabase
       .channel('order-history-changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
@@ -336,19 +343,24 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
           setOrders(prev => prev.map(o => o.id === (payload.new as DbOrder).id ? payload.new as DbOrder : o));
         })
       .subscribe();
-    return () => { supabase.removeChannel(sub); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(sub);
+    };
   }, []);
 
-  const pendingCount   = orders.filter(o => o.status === 'PENDING_ADMIN_CONFIRMATION').length;
-  const uploadedCount  = orders.filter(o => o.status === 'PAYMENT_UPLOADED' || o.status === 'DP_UPLOADED').length;
-  const waitingCount   = orders.filter(o => o.status === 'WAITING_PAYMENT' || o.status === 'WAITING_DP' || o.status === 'DP_VERIFIED').length;
-  const doneCount      = orders.filter(o => o.status === 'PAYMENT_VERIFIED' || o.status === 'COMPLETED').length;
-  const cancelledCount = orders.filter(o => o.status === 'CANCELLED' || o.status === 'PAYMENT_REJECTED' || o.status === 'DP_PROOF_REJECTED').length;
+  const entries = useMemo(() => mergeSalesEntries(orders, kasir), [orders, kasir]);
 
-  const visible = filterOrders(orders, tab, search);
+  const pendingCount   = entries.filter(e => e.status === 'PENDING_ADMIN_CONFIRMATION').length;
+  const uploadedCount  = entries.filter(e => e.status === 'PAYMENT_UPLOADED' || e.status === 'DP_UPLOADED').length;
+  const waitingCount   = entries.filter(e => e.status === 'WAITING_PAYMENT' || e.status === 'WAITING_DP' || e.status === 'DP_VERIFIED').length;
+  const doneCount      = entries.filter(e => e.status === 'PAYMENT_VERIFIED' || e.status === 'COMPLETED' || e.status === 'PAID').length;
+  const cancelledCount = entries.filter(e => e.status === 'CANCELLED' || e.status === 'PAYMENT_REJECTED' || e.status === 'DP_PROOF_REJECTED').length;
+
+  const visible = filterEntries(entries, tab, search, channelFilter);
 
   const tabs: { id: FilterTab; label: string; count: number; dot?: boolean }[] = [
-    { id: 'all',       label: 'Semua',            count: orders.length },
+    { id: 'all',       label: 'Semua',            count: entries.length },
     { id: 'pending',   label: 'Perlu Konfirmasi', count: pendingCount },
     { id: 'waiting',   label: 'Menunggu Bayar',   count: waitingCount },
     { id: 'uploaded',  label: 'Bukti Dikirim',    count: uploadedCount, dot: uploadedCount > 0 },
@@ -410,15 +422,28 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         ))}
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
-        <Search className="w-4 h-4 shrink-0" />
-        <input
-          className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
-          placeholder="Cari nama pelanggan, GJP Order ID, nomor WA..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      {/* Search + channel filter */}
+      <div className="flex items-stretch gap-2 flex-wrap">
+        <div className="flex-1 min-w-[240px] flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-400">
+          <Search className="w-4 h-4 shrink-0" />
+          <input
+            className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
+            placeholder="Cari nama pelanggan, ID pesanan, nomor WA..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+        <select
+          value={channelFilter}
+          onChange={e => setChannelFilter(e.target.value as 'all' | SalesChannel)}
+          className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+        >
+          <option value="all">Semua Channel</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="walkin">Walk-in</option>
+          <option value="tokopedia">Tokopedia</option>
+          <option value="grosir">Grosir</option>
+        </select>
       </div>
 
       {/* List */}
@@ -428,45 +453,67 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         <EmptyState message={EMPTY_MESSAGES[tab]} />
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {visible.map(order => {
-            const badge   = STATUS_BADGE[order.status] ?? { label: order.status, className: 'bg-gray-100 text-gray-600' };
-            const totalCl = TOTAL_COLOR[order.status] ?? 'text-gray-700';
-            const borderCl = LEFT_BORDER[order.status] ?? 'border-l-4 border-l-transparent';
-            const isDimmed = order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED';
-            const isExpanded = expandedId === order.id;
+          {visible.map(entry => {
+            // Look up the underlying DbOrder when this entry comes from `orders`;
+            // kasir entries have no order row and stay collapse-only by design.
+            const order: DbOrder | undefined = entry.source === 'order'
+              ? orders.find(o => `order:${o.id}` === entry.id)
+              : undefined;
+            const badge   = STATUS_BADGE[entry.status] ??
+              (entry.status === 'PAID'
+                ? { label: '✓ Lunas (Kasir)', className: 'bg-green-100 text-green-800' }
+                : { label: entry.status, className: 'bg-gray-100 text-gray-600' });
+            const totalCl = TOTAL_COLOR[entry.status] ?? (entry.status === 'PAID' ? 'text-green-700' : 'text-gray-700');
+            const borderCl = LEFT_BORDER[entry.status] ?? 'border-l-4 border-l-transparent';
+            const isDimmed = entry.status === 'CANCELLED' || entry.status === 'PAYMENT_REJECTED' || entry.status === 'DP_PROOF_REJECTED';
+            const isExpanded = expandedId === entry.id;
 
             return (
-              <div key={order.id} className={`border-b border-gray-100 last:border-0 ${borderCl} ${isDimmed ? 'opacity-55' : ''}`}>
+              <div key={entry.id} className={`border-b border-gray-100 last:border-0 ${borderCl} ${isDimmed ? 'opacity-55' : ''}`}>
                 {/* Collapsed row */}
                 <div
-                  className={`flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50' : ''}`}
-                  onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                  className={`flex items-center gap-3 px-5 py-3 transition-colors ${
+                    entry.source === 'order' ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
+                  } ${isExpanded ? 'bg-gray-50' : ''}`}
+                  onClick={() => { if (entry.source === 'order') setExpandedId(isExpanded ? null : entry.id); }}
                 >
                   <div className="flex-1 min-w-0">
                     <div
                       className="font-bold text-sm text-[#012749] underline underline-offset-2 cursor-pointer hover:opacity-80 inline-block"
-                      onClick={e => { e.stopPropagation(); if (order.customer_id) onOpenCustomer(order.customer_id); }}
+                      onClick={e => { e.stopPropagation(); if (entry.customer_id) onOpenCustomer(entry.customer_id); }}
                     >
-                      {order.customer_name}
+                      {entry.customer_name}
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                      <span className="text-xs text-gray-400 font-mono">{order.gjp_order_id ?? order.id.slice(0, 8)}</span>
+                      <span className="text-xs text-gray-400 font-mono">{entry.display_id}</span>
                       <span className="text-gray-300 text-xs">·</span>
-                      <span className="text-xs text-gray-400">{formatDate(order.created_at)}</span>
-                      <span className="text-gray-300 text-xs">·</span>
-                      <ItemPill items={order.items} />
+                      <span className="text-xs text-gray-400">{formatDate(entry.created_at)}</span>
+                      {entry.items && entry.items.length > 0 && (
+                        <>
+                          <span className="text-gray-300 text-xs">·</span>
+                          <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-xs">
+                            {entry.items[0].name}
+                            {entry.items.length > 1 ? <strong> +{entry.items.length - 1}</strong> : null}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className={`text-sm font-extrabold shrink-0 ${totalCl}`}>
-                    Rp {order.total.toLocaleString('id-ID')}
+                    Rp {entry.total.toLocaleString('id-ID')}
                   </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
+                    {CHANNEL_LABEL[entry.channel]}
+                  </span>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${badge.className}`}>
                     {badge.label}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  {entry.source === 'order' && (
+                    <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  )}
                 </div>
 
-                {isExpanded && order.status === 'PENDING_ADMIN_CONFIRMATION' && (
+                {isExpanded && order && order.status === 'PENDING_ADMIN_CONFIRMATION' && (
                   <div className="px-5 py-4 border-t border-purple-200 bg-purple-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       {/* Left: detail */}
@@ -582,7 +629,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status === 'PAYMENT_UPLOADED' && (
+                {isExpanded && order && order.status === 'PAYMENT_UPLOADED' && (
                   <div className="px-5 py-4 border-t border-blue-200 bg-blue-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       <div>
@@ -674,7 +721,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status === 'DP_UPLOADED' && (
+                {isExpanded && order && order.status === 'DP_UPLOADED' && (
                   <div className="px-5 py-4 border-t border-indigo-200 bg-indigo-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       <div>
@@ -747,7 +794,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status === 'DP_VERIFIED' && (
+                {isExpanded && order && order.status === 'DP_VERIFIED' && (
                   <div className="px-5 py-4 border-t border-teal-200 bg-teal-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div>
@@ -770,7 +817,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && order.status === 'WAITING_PAYMENT' && (
+                {isExpanded && order && order.status === 'WAITING_PAYMENT' && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
@@ -781,7 +828,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
                   </div>
                 )}
-                {isExpanded && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
+                {isExpanded && order && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
@@ -808,7 +855,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                   </div>
                 )}
-                {isExpanded && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED') && (
+                {isExpanded && order && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED') && (
                   <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>

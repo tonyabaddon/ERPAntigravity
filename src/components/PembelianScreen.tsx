@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { StockItem } from '../types';
+import { StockItem, PermissionSet } from '../types';
 import { purchaseOrderService, supplierService } from '../lib/pembelianService';
 import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import SupplierModal from './pembelian/SupplierModal';
-import PurchaseOrderModal from './pembelian/PurchaseOrderModal';
 import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 import PoDetailView from './pembelian/PoDetailView';
 import MarkAsPaidModal from './pembelian/MarkAsPaidModal';
 import ReceiveReplacementModal from './pembelian/ReceiveReplacementModal';
+import PurchaseOrderFormPage from './pembelian/PurchaseOrderFormPage';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onStockRefresh: () => void;
+  currentUserId?: string;
+  currentUserPermissions?: PermissionSet;
 }
 
 type Tab = 'orders' | 'suppliers';
+type ViewMode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; po: DbPurchaseOrder };
 
 function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -36,12 +39,15 @@ const LEFT_BORDER: Record<string, string> = {
   OVERDUE:  'border-l-4 border-l-rose-500',
 };
 
-export default function PembelianScreen({ stockList, showToast, onStockRefresh }: PembelianScreenProps) {
+export default function PembelianScreen({
+  stockList, showToast, onStockRefresh, currentUserId, currentUserPermissions,
+}: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('orders');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [summary, setSummary] = useState({ totalMtd: 0, dueMtd: 0, overdueAmount: 0, countMtd: 0 });
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>({ kind: 'list' });
 
   async function reload() {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -78,63 +84,86 @@ export default function PembelianScreen({ stockList, showToast, onStockRefresh }
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-        {/* Summary cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total PO Bulan Ini</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{formatRupiah(summary.totalMtd)}</p>
-            <p className="text-xs text-gray-400 mt-1">{summary.countMtd} purchase order</p>
-          </div>
-          <div className="bg-white rounded-xl border border-amber-200 p-4">
-            <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">Jatuh Tempo Bulan Ini</p>
-            <p className="text-2xl font-bold text-amber-700 mt-1">{formatRupiah(summary.dueMtd)}</p>
-            <p className="text-xs text-amber-400 mt-1">belum dibayar, jatuh tempo bulan ini</p>
-          </div>
-          <div className="bg-white rounded-xl border border-rose-200 p-4">
-            <p className="text-xs text-rose-600 font-medium uppercase tracking-wide">Terlambat Bayar</p>
-            <p className="text-2xl font-bold text-rose-700 mt-1">{formatRupiah(summary.overdueAmount)}</p>
-            <p className="text-xs text-rose-400 mt-1">melewati jatuh tempo, belum lunas</p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Jumlah PO Bulan Ini</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{summary.countMtd}</p>
-            <p className="text-xs text-gray-400 mt-1">purchase order dibuat</p>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-gray-200">
-          <button
-            onClick={() => setTab('orders')}
-            className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'orders' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Purchase Orders
-          </button>
-          <button
-            onClick={() => setTab('suppliers')}
-            className={`px-4 py-2.5 text-sm font-medium -mb-px ${tab === 'suppliers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            Supplier
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
-        ) : tab === 'orders' ? (
-          <OrdersTab
-            orders={orders}
+        {viewMode.kind !== 'list' ? (
+          <PurchaseOrderFormPage
+            po={viewMode.kind === 'edit' ? viewMode.po : undefined}
             suppliers={suppliers}
+            orders={orders}
             stockList={stockList}
+            currentUserId={currentUserId}
+            currentUserPermissions={currentUserPermissions}
+            onBack={() => setViewMode({ kind: 'list' })}
+            onSaved={(status) => {
+              reload();
+              // Draft: stay on page (allow continued editing). Ordered: back to list.
+              if (status === 'ORDERED') setViewMode({ kind: 'list' });
+            }}
+            onSupplierAdded={reload}
             showToast={showToast}
-            onRefresh={reload}
-            onStockRefresh={onStockRefresh}
           />
         ) : (
-          <SuppliersTab
-            suppliers={suppliers}
-            showToast={showToast}
-            onRefresh={reload}
-          />
+          <>
+            {/* Summary cards */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total PO Bulan Ini</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatRupiah(summary.totalMtd)}</p>
+                <p className="text-xs text-gray-400 mt-1">{summary.countMtd} purchase order</p>
+              </div>
+              <div className="bg-white rounded-xl border border-amber-200 p-4">
+                <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">Jatuh Tempo Bulan Ini</p>
+                <p className="text-2xl font-bold text-amber-700 mt-1">{formatRupiah(summary.dueMtd)}</p>
+                <p className="text-xs text-amber-400 mt-1">belum dibayar, jatuh tempo bulan ini</p>
+              </div>
+              <div className="bg-white rounded-xl border border-rose-200 p-4">
+                <p className="text-xs text-rose-600 font-medium uppercase tracking-wide">Terlambat Bayar</p>
+                <p className="text-2xl font-bold text-rose-700 mt-1">{formatRupiah(summary.overdueAmount)}</p>
+                <p className="text-xs text-rose-400 mt-1">melewati jatuh tempo, belum lunas</p>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Jumlah PO Bulan Ini</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{summary.countMtd}</p>
+                <p className="text-xs text-gray-400 mt-1">purchase order dibuat</p>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 border-b border-gray-200">
+              <button
+                onClick={() => setTab('orders')}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'orders' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Purchase Orders
+              </button>
+              <button
+                onClick={() => setTab('suppliers')}
+                className={`px-4 py-2.5 text-sm font-medium -mb-px ${tab === 'suppliers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Supplier
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
+            ) : tab === 'orders' ? (
+              <OrdersTab
+                orders={orders}
+                suppliers={suppliers}
+                stockList={stockList}
+                showToast={showToast}
+                onRefresh={reload}
+                onStockRefresh={onStockRefresh}
+                onCreate={() => setViewMode({ kind: 'create' })}
+                onEdit={(po) => setViewMode({ kind: 'edit', po })}
+              />
+            ) : (
+              <SuppliersTab
+                suppliers={suppliers}
+                showToast={showToast}
+                onRefresh={reload}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
@@ -149,13 +178,13 @@ interface OrdersTabProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onRefresh: () => void;
   onStockRefresh: () => void;
+  onCreate: () => void;
+  onEdit: (po: DbPurchaseOrder) => void;
 }
 
-function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStockRefresh }: OrdersTabProps) {
+function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStockRefresh, onCreate, onEdit }: OrdersTabProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editPo, setEditPo] = useState<DbPurchaseOrder | null>(null);
   const [receivePo, setReceivePo] = useState<DbPurchaseOrder | null>(null);
   const [payPo, setPayPo] = useState<DbPurchaseOrder | null>(null);
   const [detailPo, setDetailPo] = useState<DbPurchaseOrder | null>(null);
@@ -167,6 +196,17 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
     return po.status === 'RECEIVED' && !!po.payment_due_at && po.payment_due_at < today;
   }
 
+  function isReceiveOverdue(po: DbPurchaseOrder): boolean {
+    if (po.status !== 'ORDERED' || !po.expected_receive_date) return false;
+    return po.expected_receive_date < today;
+  }
+
+  function daysReceiveOverdue(po: DbPurchaseOrder): number {
+    if (!po.expected_receive_date) return 0;
+    const ms = new Date(today).getTime() - new Date(po.expected_receive_date).getTime();
+    return Math.floor(ms / (1000 * 60 * 60 * 24));
+  }
+
   const filtered = orders
     .filter(o => {
       const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
@@ -175,8 +215,16 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
       return matchSearch && matchStatus;
     })
     .sort((a, b) => {
-      if (isOverdue(a) && !isOverdue(b)) return -1;
-      if (!isOverdue(a) && isOverdue(b)) return 1;
+      const aReceiveLate = isReceiveOverdue(a);
+      const bReceiveLate = isReceiveOverdue(b);
+      const aPaymentLate = isOverdue(a);
+      const bPaymentLate = isOverdue(b);
+      // Payment overdue (RECEIVED + past due) bubbles to top
+      if (aPaymentLate && !bPaymentLate) return -1;
+      if (!aPaymentLate && bPaymentLate) return 1;
+      // Then receive overdue (ORDERED + past expected_receive_date)
+      if (aReceiveLate && !bReceiveLate) return -1;
+      if (!aReceiveLate && bReceiveLate) return 1;
       return 0;
     });
 
@@ -230,7 +278,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
             </select>
           </div>
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={onCreate}
             className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
           >
             Buat PO Baru
@@ -238,11 +286,12 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="grid grid-cols-7 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+          <div className="grid grid-cols-8 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
             <span className="col-span-1">No. PO</span>
             <span className="col-span-1">Supplier</span>
             <span className="col-span-1 text-center">Tgl Pesan</span>
-            <span className="col-span-1 text-center">Jatuh Tempo</span>
+            <span className="col-span-1 text-center">Tgl Diterima</span>
+            <span className="col-span-1 text-center">Jatuh Tempo Bayar</span>
             <span className="col-span-1 text-right">Total</span>
             <span className="col-span-1 text-center">Status</span>
             <span className="col-span-1 text-center">Aksi</span>
@@ -252,13 +301,33 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
             <div className="py-12 text-center text-sm text-gray-400">Belum ada purchase order.</div>
           ) : (
             filtered.map(po => (
-              <div key={po.id} className={`grid grid-cols-7 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${isOverdue(po) ? LEFT_BORDER.OVERDUE : (LEFT_BORDER[po.status] ?? '')}`}>
+              <div key={po.id} className={`grid grid-cols-8 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${
+                isOverdue(po) ? LEFT_BORDER.OVERDUE :
+                isReceiveOverdue(po) ? LEFT_BORDER.OVERDUE :
+                (LEFT_BORDER[po.status] ?? '')
+              }`}>
                 <span className="col-span-1 text-xs font-mono font-semibold text-gray-800">{po.po_number}</span>
                 <div className="col-span-1">
                   <div className="text-sm font-semibold text-gray-800 truncate">{po.supplier?.name ?? '—'}</div>
                   <div className="text-[10px] text-gray-400">{po.supplier?.payment_term_days === 0 ? 'Cash' : `Net ${po.supplier?.payment_term_days}`}</div>
                 </div>
                 <span className="col-span-1 text-xs text-gray-500 text-center">{formatDate(po.ordered_at)}</span>
+                <div className="col-span-1 flex flex-col items-center gap-0.5">
+                  {po.expected_receive_date ? (
+                    <>
+                      <span className={`text-xs font-semibold ${isReceiveOverdue(po) ? 'text-rose-600' : 'text-gray-700'}`}>
+                        {formatDate(po.expected_receive_date)}
+                      </span>
+                      {isReceiveOverdue(po) && (
+                        <span className="text-[9px] font-bold text-white bg-rose-500 px-1.5 py-0.5 rounded-full leading-tight">
+                          Telat {daysReceiveOverdue(po)} hari
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
+                </div>
                 <div className="col-span-1 flex flex-col items-center gap-0.5">
                   <span className={`text-xs font-semibold ${isOverdue(po) ? 'text-rose-600' : po.payment_due_at ? 'text-amber-600' : 'text-gray-400'}`}>
                     {po.payment_due_at ? formatDate(po.payment_due_at) : '—'}
@@ -279,7 +348,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
                   <button onClick={() => setDetailPo(po)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Detail</button>
                   {po.status === 'DRAFT' && (
                     <>
-                      <button onClick={() => setEditPo(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
+                      <button onClick={() => onEdit(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
                       <button onClick={() => handleMarkOrdered(po)} className="text-xs text-indigo-700 px-2 py-1 rounded border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 font-semibold">Pesan</button>
                       <button onClick={() => handleDelete(po)} className="text-xs text-rose-600 px-2 py-1 rounded border border-rose-200 hover:bg-rose-50">Hapus</button>
                     </>
@@ -298,16 +367,6 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
       </div>
 
       {/* Modals — wired in Tasks 8-11 */}
-      {(showCreateModal || editPo) && (
-        <PurchaseOrderModal
-          po={editPo ?? undefined}
-          suppliers={suppliers}
-          stockList={stockList}
-          onClose={() => { setShowCreateModal(false); setEditPo(null); }}
-          onSaved={onRefresh}
-          showToast={showToast}
-        />
-      )}
       {receivePo && (
         <ReceiveGoodsModal
           po={receivePo}

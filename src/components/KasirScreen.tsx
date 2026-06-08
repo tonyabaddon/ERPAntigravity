@@ -8,7 +8,7 @@ import {
   KasirItem, NewSaleTransaction, DailySummary, PermissionSet, DbOrder
 } from '../types';
 import {
-  kasirService, stockService, customersService, isSupabaseConfigured,
+  kasirService, stockService, customersService, orderService, isSupabaseConfigured,
 } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { purchaseOrderService } from '../lib/pembelianService';
@@ -691,6 +691,25 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
         return;
       }
 
+      // Resolve customer_id BEFORE inserting the kasir row.
+      let resolvedCustomerId: string | undefined = selectedCustomerId ?? undefined;
+      if (!resolvedCustomerId && customerName.trim() && customerPhone.trim()) {
+        try {
+          await customersService.createCustomer(
+            customerPhone.trim(),
+            customerName.trim(),
+            customerCompany.trim()
+          );
+          // createCustomer is upsert(ignoreDuplicates:true), so look up the id.
+          const allCustomers = await customersService.fetchAll();
+          resolvedCustomerId = allCustomers.find(
+            c => c.wa_number === customerPhone.trim()
+          )?.id;
+        } catch {
+          showToast('Transaksi disimpan, tapi gagal simpan data pelanggan.', 'warning');
+        }
+      }
+
       const newTx: NewSaleTransaction = {
         date: selectedDate,
         channel,
@@ -705,23 +724,11 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,
         customer_company: customerCompany || undefined,
+        customer_id: resolvedCustomerId,
         invoice_number: invoiceNumber,
       };
 
       const saved = await kasirService.insertSaleTransaction(newTx);
-
-      // Auto-save new customer if name + phone filled and not selected from existing list
-      if (customerName.trim() && customerPhone.trim() && !selectedCustomerId) {
-        try {
-          await customersService.createCustomer(
-            customerPhone.trim(),
-            customerName.trim(),
-            customerCompany.trim()
-          );
-        } catch {
-          showToast('Transaksi disimpan, tapi gagal simpan data pelanggan.', 'warning');
-        }
-      }
 
       for (const item of items) {
         try {
@@ -734,6 +741,60 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
       onSaved(print ? saved : { ...saved, invoice_number: null });
     } catch {
       showToast('Gagal menyimpan transaksi.', 'warning');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    if (items.length === 0) { showToast('Pilih item terlebih dahulu.', 'warning'); return; }
+    if (!customerName.trim() || !customerPhone.trim()) {
+      showToast('Nama dan nomor HP pelanggan wajib diisi untuk draft.', 'warning');
+      return;
+    }
+    setSaving(true);
+    try {
+      // Resolve customer_id (same find-or-create path as paid sale).
+      let resolvedCustomerId: string | null = selectedCustomerId ?? null;
+      if (!resolvedCustomerId) {
+        try {
+          await customersService.createCustomer(
+            customerPhone.trim(),
+            customerName.trim(),
+            customerCompany.trim()
+          );
+          const allCustomers = await customersService.fetchAll();
+          resolvedCustomerId =
+            allCustomers.find(c => c.wa_number === customerPhone.trim())?.id ?? null;
+        } catch {
+          /* tolerate — draft can still be saved without customer linkage */
+        }
+      }
+
+      // Draft uses harga_modal-based HPP snapshot already on items (no FIFO walk
+      // here: deductFifo is destructive and the paid-time mark_walkin_order_paid
+      // RPC doesn't yet re-deduct stock; see progress.md for the known gap).
+      const hppTotalDraft = items.reduce((s, i) => s + i.hpp_subtotal, 0);
+
+      await orderService.createWalkinDraft({
+        customer_id:      resolvedCustomerId,
+        customer_name:    customerName.trim(),
+        customer_phone:   customerPhone.trim(),
+        customer_company: customerCompany.trim(),
+        warehouse,
+        items:            items.map(({ sku, name, qty, unit_price, subtotal }) => ({
+          sku, name, qty, unit_price, subtotal,
+        })),
+        subtotal,
+        hpp_total:        hppTotalDraft,
+        total:            subtotal,
+      });
+
+      showToast('Sales order (belum dibayar) tersimpan. Cek menu Pipeline.', 'success');
+      onClose();
+    } catch (e) {
+      console.error(e);
+      showToast('Gagal menyimpan draft.', 'warning');
     } finally {
       setSaving(false);
     }
@@ -930,6 +991,15 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
             <span className="text-xs font-bold text-gray-500">Total</span>
             <span className="text-xl font-black text-[#012749]">{formatRp(subtotal)}</span>
           </div>
+          {channel === 'walkin' && (
+            <button
+              onClick={() => handleSaveDraft()}
+              disabled={saving || items.length === 0}
+              className="w-full mb-2 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-white hover:bg-amber-400 transition-all disabled:opacity-50"
+            >
+              Buat Sales Order (Belum Dibayar)
+            </button>
+          )}
           <div className="flex gap-2">
             <button
               onClick={() => handleSave(false)}

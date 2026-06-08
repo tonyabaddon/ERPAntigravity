@@ -19,9 +19,13 @@ import {
   ClipboardList,
   BarChart2,
   ShoppingCart,
-  Receipt
+  Receipt,
+  ClipboardCheck,
+  PackageSearch
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
+import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
+import PendingApprovalBadge from './approval/PendingApprovalBadge';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -30,20 +34,33 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
+type MenuItem = {
+  id: ActivePage;
+  label: string;
+  icon: React.ElementType;
+  description: string;
+  /** When an array is provided, the entry is visible if ANY listed key is truthy. */
+  permKey: keyof PermissionSet | Array<keyof PermissionSet>;
+};
+
 export default function Sidebar({ activePage, onPageChange, currentUser, onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // If user is not logged in / is on auth screen, we don't render standard sidebar
   if (activePage === 'auth' || !currentUser) return null;
 
-  const menuItems: Array<{ id: ActivePage; label: string; icon: React.ElementType; description: string; permKey: keyof PermissionSet }> = [
+  const menuItems: Array<MenuItem> = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Ringkasan Toko', permKey: 'dashboard' },
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, description: 'Percakapan WA', permKey: 'salesInbox' },
     { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
     { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
+    { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, description: 'Sesi Opname & Riwayat', permKey: 'can_start_opname' },
+    { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, description: 'Approval Inbox', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
     { id: 'kasir', label: 'Kasir', icon: Receipt, description: 'Rekonsiliasi Harian', permKey: 'kasir' },
     { id: 'penjualanBaru', label: 'Catat Penjualan', icon: ShoppingCart, description: 'Input Penjualan Baru', permKey: 'kasir' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingCart, description: 'PO & Supplier', permKey: 'pembelian' },
+    { id: 'rekonsiliasi', label: 'Rekonsiliasi', icon: Receipt, description: 'Tutup Buku Bulanan', permKey: 'reconciliation' as keyof PermissionSet },
     { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, description: 'Leads & Prospek', permKey: 'pipeline' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, description: 'Profil & Riwayat', permKey: 'pelanggan' },
     { id: 'order-history', label: 'Riwayat Pesanan', icon: ClipboardList, description: 'Semua Pesanan', permKey: 'orderHistory' },
@@ -53,9 +70,52 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'settings', label: 'Pengaturan', icon: Settings, description: 'Konfigurasi Sistem', permKey: 'settings' },
   ];
 
-  const visibleItems = currentUser?.permissions
-    ? menuItems.filter(item => currentUser.permissions[item.permKey] !== false)
-    : menuItems;
+  const perms = currentUser?.permissions;
+  // Some perm keys are defaulted-on (legacy boolean keys treat "missing" as visible),
+  // while Phase 2 action keys (can_*) are opt-in and only visible when truthy.
+  const isPermVisible = (key: keyof PermissionSet): boolean => {
+    if (!perms) return true;
+    const value = perms[key];
+    if (typeof key === 'string' && key.startsWith('can_')) {
+      return value === true;
+    }
+    return value !== false;
+  };
+
+  const visibleItems = menuItems.filter(item => {
+    if (Array.isArray(item.permKey)) {
+      return item.permKey.some(isPermVisible);
+    }
+    return isPermVisible(item.permKey);
+  });
+
+  // Subscribe to pending approvals so the Persetujuan badge stays fresh.
+  // Only run when the current user can actually approve something.
+  const canApproveAny = !!(
+    perms?.can_approve_adjustment ||
+    perms?.can_approve_price_change ||
+    perms?.can_commit_opname
+  );
+  useEffect(() => {
+    if (!canApproveAny) {
+      setPendingCount(0);
+      return;
+    }
+    let cancelled = false;
+    const refresh = () => {
+      void listPendingApprovals()
+        .then(rows => {
+          if (!cancelled) setPendingCount(rows.length);
+        })
+        .catch(() => { /* silent — badge is best-effort */ });
+    };
+    refresh();
+    const unsub = subscribeApprovalRequests(() => refresh());
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, [canApproveAny]);
 
   useEffect(() => {
     if (currentUser?.permissions && activePage !== 'auth') {
@@ -102,11 +162,23 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                   : 'text-white/70 hover:bg-white/10 hover:text-white'
               }`}
             >
-              <IconComponent className={`w-5 h-5 shrink-0 transition-transform duration-200 group-hover/item:scale-110 ${isActive ? 'text-emerald-300' : ''}`} />
-              <div className={`flex flex-col transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <div className="relative shrink-0">
+                <IconComponent className={`w-5 h-5 transition-transform duration-200 group-hover/item:scale-110 ${isActive ? 'text-emerald-300' : ''}`} />
+                {item.id === 'persetujuan' && pendingCount > 0 && !isExpanded && (
+                  <span className="absolute -top-1.5 -right-1.5">
+                    <PendingApprovalBadge count={pendingCount} size="sm" />
+                  </span>
+                )}
+              </div>
+              <div className={`flex flex-col flex-1 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <span className="text-sm font-semibold whitespace-nowrap">{item.label}</span>
                 <span className="text-[10px] text-white/40 font-medium whitespace-nowrap select-none">{item.description}</span>
               </div>
+              {item.id === 'persetujuan' && pendingCount > 0 && isExpanded && (
+                <span className={`transition-opacity duration-300 opacity-100`}>
+                  <PendingApprovalBadge count={pendingCount} size="md" />
+                </span>
+              )}
             </button>
           );
         })}

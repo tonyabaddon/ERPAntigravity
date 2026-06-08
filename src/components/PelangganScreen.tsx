@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Search, Pencil, Check, X } from 'lucide-react';
 import { ActivePage, DbCustomerWithStats, DbCustomerProfile } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -117,6 +118,13 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
       c.company.toLowerCase().includes(q)
     );
   });
+
+  const salesEntries = profile
+    ? mergeSalesEntries(profile.orders, profile.kasir_transactions ?? [])
+    : [];
+  const totalSpend = salesEntries
+    .filter(e => e.status === 'PAYMENT_VERIFIED' || e.status === 'PAID' || e.status === 'COMPLETED')
+    .reduce((s, e) => s + e.total, 0);
 
   if (!isSupabaseConfigured) {
     return (
@@ -269,7 +277,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="text-right">
                       <div className="text-lg font-extrabold text-emerald-300">
-                        {formatRupiah(profile.orders.reduce((s, o) => s + o.total, 0))}
+                        {formatRupiah(totalSpend)}
                       </div>
                       <div className="text-[9px] opacity-55">total belanja</div>
                     </div>
@@ -286,7 +294,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               {/* Stats row */}
               <div className="grid grid-cols-3 border-b border-gray-200 shrink-0">
                 {[
-                  { label: 'Pesanan', value: profile.orders.length.toString() },
+                  { label: 'Pesanan', value: salesEntries.length.toString() },
                   { label: 'Leads',   value: profile.leads.length.toString() },
                   {
                     label: 'Konversi',
@@ -304,30 +312,37 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 ))}
               </div>
 
-              {/* Orders section */}
+              {/* Sales entries section */}
               <div className="px-5 py-4">
                 <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-                  Riwayat Pesanan ({profile.orders.length})
+                  Riwayat Pesanan ({salesEntries.length})
                 </div>
-                {profile.orders.length === 0 ? (
+                {salesEntries.length === 0 ? (
                   <p className="text-sm text-gray-400">Belum ada pesanan.</p>
                 ) : (
-                  profile.orders.map(order => {
-                    const badge = STATUS_BADGE[order.status] ?? { label: order.status, className: 'bg-gray-100 text-gray-600' };
-                    const totalColor = TOTAL_COLOR[order.status] ?? 'text-gray-700';
+                  salesEntries.map(entry => {
+                    const badge = STATUS_BADGE[entry.status] ??
+                      (entry.status === 'PAID'
+                        ? { label: '✓ Lunas (Kasir)', className: 'bg-green-100 text-green-800' }
+                        : { label: entry.status, className: 'bg-gray-100 text-gray-600' });
+                    const totalColor = TOTAL_COLOR[entry.status] ?? (entry.status === 'PAID' ? 'text-green-700' : 'text-gray-700');
                     return (
-                      <div key={order.id} className="border border-gray-200 rounded-lg p-3 mb-2 last:mb-0 text-xs">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-bold font-mono text-gray-700">{order.gjp_order_id ?? order.id.slice(0, 8)}</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                      <div key={entry.id} className="border border-gray-200 rounded-lg p-3 mb-2 last:mb-0 text-xs">
+                        <div className="flex justify-between items-center mb-1 gap-2">
+                          <span className="font-bold font-mono text-gray-700 truncate">{entry.display_id}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${CHANNEL_BADGE_CLASS[entry.channel]}`}>
+                              {CHANNEL_LABEL[entry.channel]}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+                          </div>
                         </div>
                         <div className="text-gray-500 text-[11px]">
-                          {order.items[0]?.name ?? '—'}
-                          {order.items.length > 1 && ` +${order.items.length - 1}`}
-                          {order.delivery_type === 'PICKUP' ? ' · 🏪 Pickup' : ' · 🚚 Delivery'}
-                          {' · '}{formatDate(order.created_at)}
+                          {entry.items[0]?.name ?? '—'}
+                          {entry.items.length > 1 && ` +${entry.items.length - 1}`}
+                          {' · '}{formatDate(entry.created_at)}
                         </div>
-                        <div className={`font-extrabold text-sm mt-1 ${totalColor}`}>{formatRupiah(order.total)}</div>
+                        <div className={`font-extrabold text-sm mt-1 ${totalColor}`}>{formatRupiah(entry.total)}</div>
                       </div>
                     );
                   })

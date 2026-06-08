@@ -3,6 +3,8 @@ module github.com/username/sinar-elektrik-backend
 go 1.25.0
 
 require (
+	github.com/agnivade/levenshtein v1.2.1
+	github.com/dustin/go-humanize v1.0.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	go.mau.fi/whatsmeow v0.0.0-20260529101937-a7ea56383ec4
@@ -38,7 +40,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/generative-ai-go v0.19.0
 	github.com/google/s2a-go v0.1.7 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
 	go.opencensus.io v0.24.0 // indirect

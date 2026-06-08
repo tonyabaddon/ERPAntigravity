@@ -69,39 +69,52 @@ Semua tabel audit pakai `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`. Client-
 ### 4. Detective + Preventive co-equal
 Dengan N=4 dan kemungkinan kolusi 2-orang, gate-based preventive control bisa di-bypass. Phase 4 (anomaly dashboard + daily WA heartbeat) bukan polish-at-end, melainkan equal partner dari Phase 2. Implementasi Phase 4 dapat berjalan paralel dengan Phase 3.
 
-### 5. Action-level permissions extend existing sidebar PermissionSet
-Existing `PermissionSet` (11-key, sidebar-level) tetap tidak berubah. Spec ini menambahkan `ActionPermissionSet` (key-value JSONB di `admin_users.action_permissions`) untuk gate per-tindakan:
+### 5. Action-level permissions extend existing `permissions` JSONB
+Existing `admin_users.permissions` (JSONB with 11 sidebar keys) is **extended in place** with 15 additional action-level keys. Single column, single source of truth, single UI section in User Management. The shape becomes:
 
 ```ts
-export interface ActionPermissionSet {
-  // Phase 2
-  can_request_adjustment: boolean;
-  can_approve_adjustment: boolean;
-  can_start_opname: boolean;
-  can_witness_opname: boolean;
-  can_commit_opname: boolean;
-  can_request_price_change: boolean;
-  can_approve_price_change: boolean;
+export interface PermissionSet {
+  // Existing sidebar keys (11) — unchanged
+  dashboard: boolean;
+  salesInbox: boolean;
+  laporan: boolean;
+  aiStock: boolean;
+  pipeline: boolean;
+  pelanggan: boolean;
+  orderHistory: boolean;
+  userManagement: boolean;
+  whatsappAi: boolean;
+  notifications: boolean;
+  settings: boolean;
+
+  // New action-level keys (Phase 2)
+  can_request_adjustment?: boolean;
+  can_approve_adjustment?: boolean;
+  can_start_opname?: boolean;
+  can_witness_opname?: boolean;
+  can_commit_opname?: boolean;
+  can_request_price_change?: boolean;
+  can_approve_price_change?: boolean;
   // Phase 3a
-  can_witness_po_receipt: boolean;
+  can_witness_po_receipt?: boolean;
   // Phase 3b
-  can_open_kasir_shift: boolean;
-  can_request_kasir_price_override: boolean;
-  can_approve_kasir_price_override: boolean;
-  can_request_kasir_void: boolean;
-  can_approve_kasir_void: boolean;
-  can_request_kasir_refund: boolean;
-  can_approve_kasir_refund: boolean;
-  can_override_price_floor: boolean;
+  can_open_kasir_shift?: boolean;
+  can_request_kasir_price_override?: boolean;
+  can_approve_kasir_price_override?: boolean;
+  can_request_kasir_void?: boolean;
+  can_approve_kasir_void?: boolean;
+  can_request_kasir_refund?: boolean;
+  can_approve_kasir_refund?: boolean;
+  can_override_price_floor?: boolean;
   // Phase 3d
-  can_initiate_transfer: boolean;
-  can_receive_transfer: boolean;
+  can_initiate_transfer?: boolean;
+  can_receive_transfer?: boolean;
   // Phase 4
-  can_view_pengawasan: boolean;
+  can_view_pengawasan?: boolean;
 }
 ```
 
-Owner = all-true locked. Other roles get sensible defaults (lihat Phase 2 RLS section).
+Owner = all-true locked. Other roles get sensible defaults (lihat Phase 2 RLS section). UserManagementScreen extends to show two sections within one form: "Akses Menu" (11 sidebar toggles) + "Akses Aksi" (15 action toggles).
 
 ### 6. Hybrid Owner approval (sync + async)
 Owner kadang di toko, kadang remote. Spec satu infra approval untuk dua jalur:
@@ -411,16 +424,20 @@ REVOKE UPDATE (price, harga_modal, stock_atas, stock_bawah) ON public.stocks
 -- Go backend only writes via approved RPCs, which is enforced in code.
 ```
 
-**Migration: `20260607000007_action_permissions.sql`**
+**Migration: `20260607000007_extend_permissions_and_pin.sql`**
 
 ```sql
+-- admin_users.permissions JSONB already exists with 11 sidebar keys.
+-- Extend in place — no new column. Use jsonb concat (||) to merge action keys
+-- into the existing object so the right-hand value wins on key collision.
 ALTER TABLE public.admin_users
-  ADD COLUMN IF NOT EXISTS action_permissions JSONB NOT NULL DEFAULT '{}',
   ADD COLUMN IF NOT EXISTS approval_pin_hash  TEXT,
   ADD COLUMN IF NOT EXISTS pin_failed_count   INT  NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS pin_locked_until   TIMESTAMPTZ;
--- Seed defaults via UPDATE statement (Owner = all-true; others per the matrix
--- documented in Foundational Decision #5).
+
+-- Seed defaults per role via UPDATE … SET permissions = permissions || jsonb_build_object(...).
+-- Owner = all action keys true (locked-on); other roles per the matrix
+-- documented in Foundational Decision #5.
 ```
 
 ### RPC changes
@@ -455,7 +472,7 @@ All new RPCs are `SECURITY DEFINER` and take `actor_user_id UUID DEFAULT auth.ui
 **Touched components:**
 - `StockManagerScreen.tsx` — remove inline-edit of qty / `price` / `harga_modal`; each cell becomes a click target that opens the appropriate modal. Add "Permintaan Anda yang menunggu" banner at top reading from `approval_requests WHERE requested_by = me AND status='pending'`. Add row action: "Lihat riwayat pergerakan stok" → drawer of `stock_movements` for this SKU.
 - `Sidebar.tsx` — new items: "Stok Opname" (gated `can_start_opname`), "Persetujuan" (gated by any `can_approve_*`).
-- `types.ts` — add `ActionPermissionSet` type, extend `CurrentUser` shape.
+- `types.ts` — extend existing `PermissionSet` with 15 optional action-level keys (no new interface).
 - `src/lib/supabaseClient.ts` — service wrapper functions for the new RPCs.
 
 **Realtime:** one Supabase realtime channel per logged-in user on `approval_requests WHERE requested_by = me OR (status='pending' AND I have can_approve_<X>)`. Updates badge counts and inbox without polling.
@@ -467,7 +484,7 @@ All new RPCs are `SECURITY DEFINER` and take `actor_user_id UUID DEFAULT auth.ui
 
 ### RLS / Permissions
 
-Default `action_permissions` per existing role:
+Default action-permission keys per existing role (merged into `permissions` JSONB):
 
 | Permission | Owner | Finance Mgr | Staff Admin | Sup. Gudang |
 |---|---|---|---|---|
@@ -901,7 +918,7 @@ ALTER TABLE public.heartbeat_config
 Extend `internal/heartbeat/poller.go`:
 - Add `pengawasan` report type. Fires once per day at `pengawasan_report_hour` WIB.
 - Builds payload from views, formats as a single WA message (or up to 4 if > 1500 chars).
-- Owner JID resolution: from existing `company_settings.owner_jid`.
+- Owner WA recipient resolution: read from existing `wa_recipients` table (`WHERE role='owner' AND is_active=true`) — same source the heartbeat poller already uses. No new `company_settings.owner_jid` column added.
 
 ### RLS / Permissions
 - `can_view_pengawasan` locked: Owner only.

@@ -17,6 +17,34 @@ export interface PermissionSet {
   settings: boolean;
   pembelian: boolean;
   kasir: boolean;
+  reconciliation?: boolean;
+  // Action permissions (Phase 2 anti-fraud foundation)
+  can_create_po?: boolean;
+  can_edit_po?: boolean;
+  // Phase 2 — stock adjustments, opname, price changes
+  can_request_adjustment?: boolean;
+  can_approve_adjustment?: boolean;
+  can_start_opname?: boolean;
+  can_witness_opname?: boolean;
+  can_commit_opname?: boolean;
+  can_request_price_change?: boolean;
+  can_approve_price_change?: boolean;
+  // Phase 3a — PO receipt witness
+  can_witness_po_receipt?: boolean;
+  // Phase 3b — kasir gates
+  can_open_kasir_shift?: boolean;
+  can_request_kasir_price_override?: boolean;
+  can_approve_kasir_price_override?: boolean;
+  can_request_kasir_void?: boolean;
+  can_approve_kasir_void?: boolean;
+  can_request_kasir_refund?: boolean;
+  can_approve_kasir_refund?: boolean;
+  can_override_price_floor?: boolean;
+  // Phase 3d — inter-warehouse transfers
+  can_initiate_transfer?: boolean;
+  can_receive_transfer?: boolean;
+  // Phase 4 — Pengawasan (immutable ledger reader)
+  can_view_pengawasan?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -33,6 +61,28 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  reconciliation: true,
+  can_create_po: true,
+  can_edit_po: true,
+  can_request_adjustment: true,
+  can_approve_adjustment: true,
+  can_start_opname: true,
+  can_witness_opname: true,
+  can_commit_opname: true,
+  can_request_price_change: true,
+  can_approve_price_change: true,
+  can_witness_po_receipt: true,
+  can_open_kasir_shift: true,
+  can_request_kasir_price_override: true,
+  can_approve_kasir_price_override: true,
+  can_request_kasir_void: true,
+  can_approve_kasir_void: true,
+  can_request_kasir_refund: true,
+  can_approve_kasir_refund: true,
+  can_override_price_floor: true,
+  can_initiate_transfer: true,
+  can_receive_transfer: true,
+  can_view_pengawasan: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -160,6 +210,8 @@ export interface DbOrder {
   id: string;
   conversation_id: string;
   customer_id?: string;
+  sales_channel: 'whatsapp' | 'walkin';
+  warehouse?: 'atas' | 'bawah' | null;
   customer_name: string;
   customer_company: string;
   customer_address: string;
@@ -258,6 +310,7 @@ export interface DbCustomerWithStats extends DbCustomer {
 export interface DbCustomerProfile extends DbCustomer {
   orders: DbOrder[];
   leads: DbLead[];
+  kasir_transactions: KasirTransaction[];
 }
 
 export interface DbNotificationConfig {
@@ -329,13 +382,17 @@ export interface DbPurchaseOrder {
   total: number;
   created_at: string;
   items?: DbPurchaseOrderItem[];
+  expected_receive_date?: string;   // ISO date 'YYYY-MM-DD', NULL-able
+  created_by_user_id?: string;      // UUID, FK admin_users(id)
+  updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'stok-opname' | 'rekonsiliasi';
 
 // ─── Kasir types ────────────────────────────────────────────
 
 export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir' | 'whatsapp';
+export type SalesChannel = 'whatsapp' | 'walkin' | 'tokopedia' | 'grosir';
 export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris' | 'edc';
 export type KasirPaymentSubtype = 'debit' | 'qris' | null;
 export type KasirPaymentType = 'FULL' | 'DP';
@@ -383,6 +440,7 @@ export interface KasirTransaction {
   customer_phone?: string | null;
   customer_company?: string | null;
   delivery_address?: string | null;
+  customer_id?: string | null;
   invoice_number?: string | null;
   expense_category?: KasirExpenseCategory | null;
   description?: string | null;
@@ -423,6 +481,7 @@ export interface NewSaleTransaction {
   customer_phone?: string;
   customer_company?: string;
   delivery_address?: string;
+  customer_id?: string;
   invoice_number: string;
 }
 
@@ -431,4 +490,180 @@ export interface NewExpense {
   expense_category: KasirExpenseCategory;
   description: string;
   subtotal: number;
+}
+
+export interface SalesEntry {
+  source: 'order' | 'kasir';
+  id: string;
+  display_id: string;
+  channel: SalesChannel;
+  customer_id: string | null;
+  customer_name: string;
+  customer_phone: string | null;
+  customer_company: string | null;
+  items: Array<{ name: string; qty: number; sku?: string }>;
+  total: number;
+  status: string;
+  created_at: string;
+  walkin_order_id: string | null;
+}
+
+// Phase 2: Approval data shapes ----------------------------------------------
+
+export type ApprovalRequestType =
+  | 'adjustment'
+  | 'opname'
+  | 'price_change'
+  | 'kasir_price_override'
+  | 'kasir_void'
+  | 'kasir_refund';
+
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+export interface ApprovalRequest {
+  id: number;
+  requestType: ApprovalRequestType;
+  payload: Record<string, unknown>;
+  requestedBy: string;
+  requestedAt: string; // ISO timestamp
+  expiresAt: string;
+  status: ApprovalStatus;
+  decidedBy?: string | null;
+  decidedAt?: string | null;
+  decisionChannel?: 'wa_button' | 'owner_pin' | 'app_inbox' | 'auto_expire' | null;
+}
+
+export type StockAdjustmentReason =
+  | 'rusak' | 'hilang' | 'sampel' | 'koreksi_input' | 'korjual_admin';
+
+export interface StockAdjustment {
+  id: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  qtyDelta: number;
+  reasonCode: StockAdjustmentReason;
+  reasonNote?: string;
+  evidenceUrls: string[];
+  requestedBy: string;
+  requestedAt: string;
+  approvalRequestId: number;
+  status: 'pending_approval' | 'approved' | 'rejected' | 'expired';
+  committedAt?: string | null;
+  committedMovementId?: number | null;
+}
+
+export interface OpnameSession {
+  id: number;
+  opnameType: 'full' | 'per_kategori' | 'per_sku_list';
+  scopePayload: Record<string, unknown>;
+  countedByUserId: string;
+  witnessedByUserId: string;
+  witnessAcknowledgedAt?: string | null;
+  status: 'in_progress' | 'pending_owner' | 'committed' | 'rejected';
+  varianceTotalValue: number;
+  approvalRequestId?: number | null;
+  startedAt: string;
+  submittedAt?: string | null;
+  committedAt?: string | null;
+}
+
+export interface OpnameCount {
+  sessionId: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  systemQtySnapshot: number;
+  countedQty?: number | null;
+  variance: number; // generated
+  varianceValue: number;
+}
+
+export interface PriceChangeRequest {
+  id: number;
+  sku: string;
+  field: 'price' | 'harga_modal';
+  oldValue: number;
+  newValue: number;
+  reasonNote: string;
+  approvalRequestId: number;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  requestedBy: string;
+  requestedAt: string;
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  committedAt?: string | null;
+}
+
+// ─── Monthly Reconciliation Types ─────────────────────────────────────────
+
+export interface BankAccount {
+  id: string;
+  bank_code: 'BCA' | 'MANDIRI' | 'BRI' | 'BNI' | 'PERMATA' | 'CIMB' | 'OTHER';
+  account_number: string;
+  account_label: string;
+  purpose: 'OPERATIONAL' | 'OWNER_PERSONAL' | 'SAVINGS' | 'OTHER';
+  is_active: boolean;
+}
+
+export interface BankImport {
+  id: string;
+  bank_account_id: string;
+  period_start: string;
+  period_end: string;
+  filename: string;
+  line_count: number;
+  matched_count: number;
+  status: 'PROCESSING' | 'READY' | 'FAILED';
+  error_message?: string;
+}
+
+export type BankLineKind =
+  | 'CUSTOMER_PAYMENT' | 'CASH_DEPOSIT' | 'EDC_SETTLEMENT' | 'SUPPLIER_PAYMENT'
+  | 'EXPENSE' | 'BANK_FEE' | 'INTERNAL_TRANSFER' | 'CUSTOMER_TOPUP'
+  | 'OWNER_DRAWING' | 'OWNER_TOPUP' | 'REFUND' | 'OTHER_INCOME'
+  | 'LEGACY_PERIOD' | 'UNKNOWN';
+
+export type Lane = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED' | 'GRAY';
+
+export interface BankStatementLine {
+  id: string;
+  bank_account_id: string;
+  txn_date: string;
+  amount: number;
+  direction: 'IN' | 'OUT';
+  description: string;
+  counterparty?: string;
+  line_kind: BankLineKind;
+  lane: Lane;
+  match_confidence?: number;
+  match_reason?: string;
+}
+
+export interface PayableSlot {
+  id: string;
+  order_id: string;
+  slot_type: 'FULL' | 'DP' | 'BALANCE';
+  expected_amount: number;
+  matched_amount: number;
+  status: 'OPEN' | 'MATCHED' | 'WRITTEN_OFF' | 'EXTENDED';
+  due_date?: string;
+}
+
+export interface CashDepositBatch {
+  id: string;
+  deposit_date?: string;
+  bank_line_id?: string;
+  deposited_amount?: number;
+  expected_amount: number;
+  variance: number;
+  variance_reason?: 'PETTY_CASH' | 'HITUNG_KURANG' | 'HITUNG_LEBIH' | 'LAINNYA';
+  status: 'PENDING' | 'DEPOSITED' | 'CARRY_OVER';
+}
+
+export interface ReconciliationPeriod {
+  id: string;
+  year: number;
+  month: number;
+  status: 'OPEN' | 'CLOSING' | 'CLOSED';
+  closed_at?: string;
+  summary?: Record<string, unknown>;
 }

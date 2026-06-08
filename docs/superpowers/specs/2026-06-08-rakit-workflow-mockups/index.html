@@ -1,0 +1,2024 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<title>Sub-project B — Rakit Workflow Interactive Mockup</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background:#f8f9ff; color:#43474e; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+  .navy { color:#012749; } .bg-navy { background:#012749; }
+  .card { background:#fff; border-radius:1.5rem; border:1px solid #e5eeff; box-shadow:0 8px 24px rgba(1,39,73,0.05); }
+  .card-tight { background:#fff; border-radius:1rem; border:1px solid #e5eeff; }
+  .label-up { font-size:10px; font-weight:800; color:#9ca3af; letter-spacing:0.2em; text-transform:uppercase; }
+  .pill { border-radius:9999px; padding:0.25rem 0.7rem; font-size:10px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px; }
+  .btn-primary { background:#2d8a4e; color:#fff; border-radius:0.75rem; padding:0.65rem 1.25rem; font-weight:800; font-size:13px; cursor:pointer; transition:transform .12s, background .12s; border:none; }
+  .btn-primary:hover { transform:translateY(-1px); background:#247841; }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; background:#94a3b8; }
+  .btn-amber { background:#f59e0b; color:#fff; border-radius:0.75rem; padding:0.65rem 1.25rem; font-weight:800; font-size:13px; cursor:pointer; border:none; transition:background .12s; }
+  .btn-amber:hover { background:#d97706; }
+  .btn-navy { background:#012749; color:#fff; border-radius:0.75rem; padding:0.65rem 1.25rem; font-weight:800; font-size:13px; cursor:pointer; border:none; transition:background .12s; }
+  .btn-navy:hover { background:#01365f; }
+  .btn-ghost { background:#fff; color:#012749; border:1px solid #cbd5e1; border-radius:0.75rem; padding:0.55rem 1.1rem; font-weight:700; font-size:12px; cursor:pointer; transition:all .12s; }
+  .btn-ghost:hover { border-color:#2d8a4e; color:#2d8a4e; }
+  .btn-danger { background:#fff1f2; color:#be123c; border:1px solid #fecdd3; border-radius:0.75rem; padding:0.55rem 1.1rem; font-weight:700; font-size:12px; cursor:pointer; transition:background .12s; }
+  .btn-danger:hover { background:#fecdd3; }
+  .field { background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.75rem; padding:0.55rem 0.9rem; font-weight:600; font-size:13px; color:#0b1c30; width:100%; transition:border .15s; }
+  .field:focus { border-color:#2d8a4e; outline:none; background:#fff; }
+  .field-sm { padding:4px 8px; font-size:12px; }
+  .chip-success { background:#ecfdf5; color:#2d8a4e; }
+  .chip-warning { background:#fffbeb; color:#b45309; }
+  .chip-danger  { background:#fff1f2; color:#be123c; }
+  .chip-info    { background:#eff6ff; color:#1d4ed8; }
+  .chip-muted   { background:#f1f5f9; color:#475569; }
+  .chip-rakit   { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+  .row-rakit    { background:linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02) 80%); border-left:3px solid #f59e0b; border-radius:0.75rem; }
+  .row-komp     { background:#f8fafc; border:1px solid #e2e8f0; border-radius:0.75rem; }
+  .row-pending  { background:linear-gradient(90deg, rgba(245,158,11,0.05), transparent 70%); }
+  .modal-backdrop { position:fixed; inset:0; background:rgba(11,28,48,0.6); display:flex; align-items:flex-start; justify-content:center; z-index:50; padding:2rem 1rem; overflow-y:auto; }
+  .modal-card   { background:#fff; border-radius:1.5rem; box-shadow:0 30px 60px rgba(1,39,73,0.3); max-width:680px; width:100%; }
+  .modal-card.wide   { max-width:880px; }
+  .modal-card.narrow { max-width:480px; }
+  .sidebar-mock { background:#012749; border-radius:1.5rem; color:#fff; padding:1.25rem 1rem; }
+  .sidebar-mock a { display:flex; align-items:center; gap:0.75rem; padding:0.55rem 0.85rem; border-radius:0.75rem; font-size:12px; font-weight:700; color:#cbd5e1; cursor:pointer; transition:background .12s, color .12s; }
+  .sidebar-mock a.active { background:rgba(255,255,255,0.15); color:#6ee7b7; }
+  .sidebar-mock a:hover  { background:rgba(255,255,255,0.07); color:#fff; }
+  .badge-count { background:#be123c; color:#fff; border-radius:9999px; font-size:10px; font-weight:800; padding:1px 7px; margin-left:auto; min-width:1.25rem; text-align:center; }
+  .key-up { font-size:10px; font-weight:800; color:#64748b; letter-spacing:0.18em; text-transform:uppercase; }
+  .seg { display:inline-flex; background:#f1f5f9; border-radius:0.6rem; padding:3px; gap:2px; }
+  .seg button { padding:6px 14px; border-radius:0.5rem; font-size:12px; font-weight:700; color:#64748b; cursor:pointer; border:none; background:transparent; transition:all .12s; }
+  .seg button.active { background:#fff; color:#012749; box-shadow:0 1px 2px rgba(0,0,0,0.06); }
+  .seg button:hover:not(.active) { color:#012749; }
+  .seg.amber button.active { background:#fed7aa; color:#9a3412; }
+  .panel-card { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; padding:1rem; }
+  .panel-card.amber { background:#fffbf5; border-color:#fed7aa; }
+  .dotted { background-image: repeating-linear-gradient(90deg, #cbd5e1, #cbd5e1 6px, transparent 6px, transparent 12px); height:1px; }
+  details > summary { list-style:none; cursor:pointer; }
+  details > summary::-webkit-details-marker { display:none; }
+  .state-pill { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:9999px; font-size:11px; font-weight:800; transition:all .25s; }
+  .state-WIP     { background:#fef3c7; color:#92400e; }
+  .state-PENDING { background:#dbeafe; color:#1e40af; }
+  .state-PAID    { background:#dcfce7; color:#166534; }
+  .state-AWAITING_LUNAS { background:#fed7aa; color:#9a3412; }
+  .state-COMPLETED { background:#e0e7ff; color:#3730a3; }
+  .state-CANCELLED  { background:#fee2e2; color:#991b1b; }
+  .pulse { animation: pulse 1s ease-in-out 2; }
+  @keyframes pulse {
+    0%, 100% { transform:scale(1); }
+    50% { transform:scale(1.1); }
+  }
+  .toast-container { position:fixed; top:1rem; right:1rem; z-index:100; display:flex; flex-direction:column; gap:0.5rem; }
+  .toast { background:#fff; border-left:4px solid #2d8a4e; border-radius:0.75rem; padding:0.85rem 1.1rem; box-shadow:0 8px 24px rgba(1,39,73,0.15); min-width:280px; max-width:380px; animation: slideIn .25s ease-out; font-size:13px; }
+  .toast.warning { border-left-color:#f59e0b; }
+  .toast.danger  { border-left-color:#be123c; }
+  .toast.info    { border-left-color:#1d4ed8; }
+  @keyframes slideIn {
+    from { transform:translateX(120%); opacity:0; }
+    to   { transform:translateX(0); opacity:1; }
+  }
+  .demo-guide { position:fixed; bottom:1rem; left:1rem; max-width:340px; background:#012749; color:#fff; border-radius:1rem; padding:1rem 1.1rem; box-shadow:0 10px 30px rgba(1,39,73,0.25); z-index:40; font-size:12px; }
+  .demo-guide .step { color:#6ee7b7; font-weight:800; font-size:11px; letter-spacing:0.1em; }
+  .demo-guide .arrow { display:inline-block; margin-left:0.4rem; font-size:14px; }
+  .hidden { display:none !important; }
+  .fade-in { animation: fadeIn .25s ease-out; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:translateY(0);} }
+  .stepper { display:inline-flex; background:#fff; border:1px solid #e2e8f0; border-radius:0.6rem; padding:2px; }
+  .stepper button { width:24px; height:24px; border:none; background:#f1f5f9; border-radius:0.4rem; font-weight:800; font-size:12px; cursor:pointer; }
+  .stepper button:hover { background:#e2e8f0; }
+  .stepper input { width:36px; text-align:center; font-weight:800; font-size:12px; border:none; background:transparent; outline:none; }
+  .header-bar { background:#012749; color:#fff; padding:0.6rem 1.25rem; border-radius:1rem 1rem 0 0; }
+  .nav-tab { padding:0.5rem 1rem; border-radius:0.6rem; font-size:13px; font-weight:700; color:#cbd5e1; cursor:pointer; transition:all .15s; border:none; background:transparent; }
+  .nav-tab:hover { background:rgba(255,255,255,0.1); color:#fff; }
+  .nav-tab.active { background:#6ee7b7; color:#012749; }
+</style>
+</head>
+<body>
+
+<!-- ============== TOP NAV ============== -->
+<header class="bg-[#012749] text-white sticky top-0 z-30 shadow-md">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex items-center gap-4">
+    <div>
+      <div class="font-extrabold text-base">Sub-project B — Rakit Workflow</div>
+      <div class="text-[11px] opacity-70">Interactive mockup · click around · state changes are real</div>
+    </div>
+    <nav class="ml-auto flex gap-1">
+      <button class="nav-tab" data-view="cart">📋 Catat Penjualan</button>
+      <button class="nav-tab" data-view="wip-list">⏳ WIP List <span id="wip-count-badge" class="ml-1 bg-amber-500/30 px-1.5 rounded-full text-[10px]">0</span></button>
+      <button class="nav-tab" data-view="approval-inbox">✅ Approval <span id="approval-count-badge" class="ml-1 bg-rose-500/40 px-1.5 rounded-full text-[10px]">0</span></button>
+      <button class="nav-tab" data-view="invoice-preview">📄 Invoice Preview</button>
+    </nav>
+    <div class="flex items-center gap-3 border-l border-white/15 pl-4">
+      <div class="text-right">
+        <div class="text-[10px] opacity-60 leading-tight">Login sebagai</div>
+        <div id="current-user-label" class="text-[12px] font-bold leading-tight">Admin Toko</div>
+      </div>
+      <button id="role-toggle" class="btn-ghost !bg-white/10 !text-white !border-white/20 hover:!bg-white/20">🔁 Switch ke Owner</button>
+    </div>
+    <button id="reset-demo" class="btn-ghost !bg-rose-500/15 !text-rose-200 !border-rose-400/30 hover:!bg-rose-500/30">🔄 Reset</button>
+  </div>
+</header>
+
+<!-- ============== DEMO GUIDE ============== -->
+<div id="demo-guide" class="demo-guide">
+  <div class="step">DEMO STEP 1 OF 4</div>
+  <div id="demo-guide-text" class="mt-1 leading-snug">
+    Halo! Coba buat transaksi rakit baru — klik <strong class="text-amber-300">+ Tambah Jasa Rakit</strong> di section kiri.
+  </div>
+</div>
+
+<!-- ============== TOAST CONTAINER ============== -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- ============== MAIN ============== -->
+<main class="max-w-7xl mx-auto px-6 py-6 pb-32">
+
+  <!-- ===== VIEW: CART ===== -->
+  <div id="view-cart" class="view"></div>
+
+  <!-- ===== VIEW: WIP LIST ===== -->
+  <div id="view-wip-list" class="view hidden"></div>
+
+  <!-- ===== VIEW: APPROVAL INBOX ===== -->
+  <div id="view-approval-inbox" class="view hidden"></div>
+
+  <!-- ===== VIEW: INVOICE PREVIEW ===== -->
+  <div id="view-invoice-preview" class="view hidden"></div>
+
+</main>
+
+<!-- ============== MODALS CONTAINER ============== -->
+<div id="modals"></div>
+
+<script>
+// ========================================================
+//                   SAMPLE DATA / STATE
+// ========================================================
+const CATALOG = [
+  { sku:'MCB-SCH-3P-25A', name:'MCB Schneider 3p 25A', price:250000, fifoCost:220000, stockAtas:12, stockBawah:8 },
+  { sku:'MCB-SCH-4P-63A', name:'MCB Schneider 4p 63A', price:950000, fifoCost:850000, stockAtas:4, stockBawah:0 },
+  { sku:'KTR-SCH-LC1D32', name:'Kontaktor Schneider LC1D32', price:950000, fifoCost:800000, stockAtas:6, stockBawah:2 },
+  { sku:'BUSBAR-CU-12',   name:'Busbar Tembaga 12mm', price:280000, fifoCost:240000, stockAtas:20, stockBawah:0 },
+  { sku:'KBL-NYY-3X25',   name:'Kabel NYY 3×2.5 (m)', price:20000, fifoCost:18000, stockAtas:120, stockBawah:0 },
+  { sku:'KBL-NYM-3X25',   name:'Kabel NYM 3×2.5 (m)', price:18000, fifoCost:16000, stockAtas:80, stockBawah:0 },
+  { sku:'TER-FENIX-10A',  name:'Terminal Fenix 10A', price:25000, fifoCost:21000, stockAtas:200, stockBawah:0 },
+  { sku:'ISO-3M',         name:'Isolasi 3M (roll)',  price:18000, fifoCost:14000, stockAtas:50, stockBawah:0 },
+];
+
+const CUSTOMERS = [
+  { id:'C1', name:'PT Sumber Berkah',    phone:'0812-3456-7890', company:'PT Sumber Berkah' },
+  { id:'C2', name:'CV Karya Mandiri',    phone:'0821-9999-1234', company:'CV Karya Mandiri' },
+  { id:'C3', name:'Toko Listrik Jaya',   phone:'0811-2222-3333', company:'' },
+  { id:'C4', name:'Pak Budi (Kontraktor)', phone:'0856-7777-8888', company:'CV Budi Karya' },
+];
+
+function newInitialState() {
+  return {
+    isOwner: false,
+    currentView: 'cart',
+    demoStep: 1,
+    transactions: [
+      // Pre-existing transactions for demo
+      {
+        id: 'INV-WIB-20260604-0032',
+        customer: 'PT Sumber Berkah',
+        phone: '0812-3456-7890',
+        company: 'PT Sumber Berkah',
+        status: 'WIP',
+        createdAt: '2026-06-04 10:30',
+        cartItems: [
+          { sku:'MCB-SCH-3P-25A', name:'MCB Schneider 3p 25A', qty:1, unitPrice:250000, warehouse:'atas' }
+        ],
+        rakitLines: [
+          { id:'R1', type:'jasa_rakit', description:'Box Wiring untuk PT XYZ — 1 unit', estimatedPrice:4500000, finalPrice:null, components:[], laborCost:0 }
+        ],
+        paymentMethod:'cash', paymentType:'DP', dpAmount:2000000,
+        total: 4750000,
+      },
+      {
+        id: 'INV-WIB-20260605-0017',
+        customer: 'CV Karya Mandiri',
+        phone: '0821-9999-1234',
+        status: 'PENDING_LOCK_APPROVAL',
+        createdAt: '2026-06-05 14:20',
+        submittedAt: '2026-06-08 09:15',
+        submittedBy: 'Admin Toko',
+        cartItems: [],
+        rakitLines: [{
+          id:'R1', type:'jasa_custom_panel',
+          description:'Custom Panel Distribusi 3-fase',
+          estimatedPrice:12000000, finalPrice:12500000,
+          components: [
+            { sku:'MCB-SCH-4P-63A', name:'MCB Schneider 4p 63A', qty:1, fifoCost:850000 },
+            { sku:'BUSBAR-CU-12',   name:'Busbar Tembaga 12mm',  qty:5, fifoCost:1200000 },
+            { sku:'KTR-SCH-LC1D32', name:'Kontaktor Schneider LC1D32', qty:4, fifoCost:3200000 },
+            { sku:'KBL-NYY-3X25',   name:'Kabel NYY 3×2.5 (m)',  qty:40, fifoCost:720000 },
+          ],
+          laborCost:4250000,
+        }],
+        paymentMethod:'transfer', paymentType:'DP', dpAmount:5000000,
+        total: 12500000,
+      },
+      {
+        id: 'INV-WIB-20260606-0003',
+        customer: 'Walk-in',
+        phone: '0813-1111-2222',
+        status: 'PENDING_LOCK_APPROVAL',
+        createdAt: '2026-06-06 11:00',
+        submittedAt: '2026-06-07 16:00',
+        submittedBy: 'Admin Toko',
+        cartItems: [],
+        rakitLines: [{
+          id:'R1', type:'jasa_rakit',
+          description:'Box Wiring rumah 2 lantai',
+          estimatedPrice:2500000, finalPrice:2800000,
+          components: [
+            { sku:'MCB-SCH-3P-25A', name:'MCB Schneider 3p 25A', qty:1, fifoCost:220000 },
+            { sku:'KBL-NYM-3X25',   name:'Kabel NYM 3×2.5 (m)',  qty:30, fifoCost:480000 },
+            { sku:'TER-FENIX-10A',  name:'Terminal Fenix 10A',   qty:8,  fifoCost:168000 },
+          ],
+          laborCost:800000,
+        }],
+        paymentMethod:'cash', paymentType:'DP', dpAmount:1000000,
+        total: 2800000,
+      },
+    ],
+    // Draft cart (for creating new transaction)
+    draft: {
+      // Customer (existing A)
+      selectedCustomerId: null,
+      customer:'', phone:'', company:'',
+      customerSearchTerm:'',
+      customerDropdownOpen: false,
+      // Payment (existing A)
+      paymentMethod:'cash',     // 'cash' | 'transfer' | 'edc'
+      paymentSubtype: null,      // 'debit' | 'qris' | null (only for EDC)
+      paymentType:'DP',          // 'FULL' | 'DP'
+      dpAmount:0,
+      dpInputType:'AMOUNT',      // 'AMOUNT' | 'PERCENT'
+      // Extras (existing A)
+      ongkirOn: false,
+      ongkirAmount: 0,
+      deliveryAddress: '',
+      notes: '',
+      // Channel (existing A)
+      channel: 'walkin',         // 'walkin' | 'tokopedia' | 'grosir' | 'whatsapp'
+      tokpedOrderNo: '',
+      waPhone: '',
+      waChatUrl: '',
+      // Item search (existing A)
+      itemSearchTerm: '',
+      // Cart
+      cartItems: [],
+      rakitLines: [],
+      // Rakit form (B addition) — type set by which button user clicked
+      rakitFormOpen: false,
+      rakitFormDraft: { type:'jasa_rakit', description:'', estimatedPrice:0 },
+    },
+    // Modal state
+    modal: null, // 'lock' | 'review' | 'cancel' | 'reject'
+    modalTxId: null,
+    // Modal-specific working state
+    lockDraft: null,    // copy of tx being locked
+    reviewDraft: null,  // copy of tx being reviewed (HPP override etc.)
+    cancelDraft: null,  // { refund, forfeit, reason }
+    rejectDraft: null,  // { reason }
+  };
+}
+
+let state = newInitialState();
+
+// ========================================================
+//                  UTILITY FUNCTIONS
+// ========================================================
+function fmtRp(n) {
+  if (n == null || isNaN(n)) return 'Rp 0';
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+function uid() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+function nextInvoiceNo() {
+  const today = new Date();
+  const d = today.toISOString().slice(0,10).replace(/-/g,'');
+  return `INV-WIB-${d}-${uid().slice(0,4)}`;
+}
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+// ========================================================
+//                       TOAST
+// ========================================================
+function toast(msg, kind='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.innerHTML = msg;
+  $('#toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity .3s, transform .3s';
+    el.style.opacity = 0;
+    el.style.transform = 'translateX(50%)';
+    setTimeout(() => el.remove(), 320);
+  }, 3200);
+}
+
+// ========================================================
+//                    DEMO GUIDE
+// ========================================================
+const DEMO_STEPS = {
+  1: { text: 'Halo! Coba buat transaksi rakit baru — klik <strong class="text-amber-300">+ Tambah Jasa Rakit</strong> di section kiri.', total: 4 },
+  2: { text: 'Bagus. Isi form rakit (sudah ada default values), klik <strong class="text-amber-300">+ Tambah ke Cart</strong> → line muncul di keranjang.', total: 4 },
+  3: { text: 'Cart sudah ada rakit. Sekarang klik <strong class="text-amber-300">💾 Simpan & Cetak Invoice DP</strong> di kanan. Transaksi akan masuk ke WIP list.', total: 4 },
+  4: { text: 'Buka tab <strong class="text-amber-300">⏳ WIP List</strong> di top nav. Klik transaksi yang baru kamu buat → klik <strong class="text-amber-300">🔒 Selesaikan Rakit</strong>.', total: 4 },
+  5: { text: 'Lock modal terbuka. Komponen bisa di-tambah/edit, harga final bisa di-adjust. Saat siap, klik <strong class="text-amber-300">📤 Submit untuk Approval Owner</strong>.', total: 4 },
+  6: { text: 'Sekarang switch role ke Owner via tombol <strong class="text-amber-300">🔁 Switch ke Owner</strong> di kanan atas. Lalu buka tab <strong class="text-amber-300">✅ Approval</strong>.', total: 4 },
+  7: { text: 'Sebagai Owner, kamu lihat list pending. Klik salah satu → review modal → klik <strong class="text-amber-300">✅ Approve</strong>. Stock decrement otomatis, status berubah.', total: 4 },
+  8: { text: '🎉 Done — full lifecycle: WIP → PENDING_LOCK_APPROVAL → AWAITING_LUNAS. Coba juga tombol <strong class="text-amber-300">❌ Cancel</strong> di WIP atau <strong class="text-amber-300">Reject</strong> di Approval untuk explore flows lain.', total: 4 },
+};
+function updateDemoGuide() {
+  const step = DEMO_STEPS[state.demoStep];
+  if (!step) { $('#demo-guide').classList.add('hidden'); return; }
+  $('#demo-guide').classList.remove('hidden');
+  const stepLabel = state.demoStep >= 8 ? 'SELESAI 🎉' : `STEP ${Math.min(state.demoStep, 4)} OF 4`;
+  $('#demo-guide').innerHTML = `
+    <div class="step">DEMO ${stepLabel}</div>
+    <div class="mt-1 leading-snug">${step.text}</div>
+    ${state.demoStep > 1 ? '<button onclick="closeDemoGuide()" class="mt-2 text-[10px] text-cyan-300 hover:text-white underline">tutup panduan</button>' : ''}
+  `;
+}
+function closeDemoGuide() { $('#demo-guide').classList.add('hidden'); }
+function advanceDemo(targetStep) { if (state.demoStep < targetStep) { state.demoStep = targetStep; updateDemoGuide(); } }
+
+// ========================================================
+//                  NAV / VIEW SWITCHER
+// ========================================================
+function setView(view) {
+  state.currentView = view;
+  $$('.view').forEach(v => v.classList.add('hidden'));
+  $(`#view-${view}`).classList.remove('hidden');
+  $$('.nav-tab').forEach(t => t.classList.remove('active'));
+  $(`.nav-tab[data-view="${view}"]`)?.classList.add('active');
+  render();
+}
+
+// ========================================================
+//                       COUNTS
+// ========================================================
+function updateCounts() {
+  const wipCount = state.transactions.filter(t => t.status === 'WIP').length;
+  const approvalCount = state.transactions.filter(t => t.status === 'PENDING_LOCK_APPROVAL').length;
+  $('#wip-count-badge').textContent = wipCount;
+  $('#approval-count-badge').textContent = approvalCount;
+}
+
+// ========================================================
+//                  ROLE TOGGLE
+// ========================================================
+$('#role-toggle').addEventListener('click', () => {
+  state.isOwner = !state.isOwner;
+  $('#current-user-label').textContent = state.isOwner ? 'Owner Pak Tony' : 'Admin Toko';
+  $('#role-toggle').textContent = state.isOwner ? '🔁 Switch ke Admin' : '🔁 Switch ke Owner';
+  toast(`Login sekarang sebagai <strong>${state.isOwner ? 'Owner' : 'Admin'}</strong>`, 'info');
+  render();
+});
+
+$('#reset-demo').addEventListener('click', () => {
+  state = newInitialState();
+  setView('cart');
+  toast('Demo direset ke initial state.', 'info');
+  updateDemoGuide();
+});
+
+$$('.nav-tab').forEach(t => t.addEventListener('click', () => setView(t.dataset.view)));
+
+// ========================================================
+//          RENDER: CART VIEW (PenjualanBaruScreen)
+// ========================================================
+function renderCart() {
+  const d = state.draft;
+  const subtotalKomp = d.cartItems.reduce((s,i) => s + (i.qty * i.unitPrice), 0);
+  const subtotalRakit = d.rakitLines.reduce((s,r) => s + r.estimatedPrice, 0);
+  const subtotal = subtotalKomp + subtotalRakit;
+  const total = subtotal + (d.ongkirOn ? d.ongkirAmount : 0);
+  const hasRakit = d.rakitLines.length > 0;
+  const isCustomerLocked = d.selectedCustomerId != null;
+  // Effective DP: convert percent → nominal
+  const effectiveDp = d.paymentType === 'DP'
+    ? (d.dpInputType === 'PERCENT' ? Math.round(total * d.dpAmount / 100) : d.dpAmount)
+    : 0;
+  const sisa = Math.max(0, total - effectiveDp);
+  // Customer search filter
+  const searchLow = (d.customerSearchTerm || '').toLowerCase();
+  const matches = searchLow
+    ? CUSTOMERS.filter(c => c.name.toLowerCase().includes(searchLow) || c.phone.includes(searchLow))
+    : [];
+
+  $('#view-cart').innerHTML = `
+    <div class="card overflow-hidden">
+      <div class="header-bar flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="opacity-70">‹</span>
+          <div>
+            <div class="font-extrabold text-sm">📋 Catat Penjualan Baru</div>
+            <div class="text-[11px] opacity-65">Dashboard › Penjualan › Baru</div>
+          </div>
+        </div>
+        <div class="flex gap-2 text-[11px]">
+          <span class="bg-white/15 px-3 py-1 rounded-full font-bold">📅 8 Jun 2026</span>
+          <span class="bg-white/15 px-3 py-1 rounded-full font-bold">👤 ${state.isOwner ? 'Owner' : 'Admin Toko'}</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 md:p-6 space-y-4">
+
+        <!-- Channel selector -->
+        <div class="seg">
+          <button class="${d.channel==='walkin'?'active':''}" onclick="setChannel('walkin')">🏬 Walk-in</button>
+          <button class="${d.channel==='tokopedia'?'active':''}" onclick="setChannel('tokopedia')">🛍 Tokopedia</button>
+          <button class="${d.channel==='grosir'?'active':''}" onclick="setChannel('grosir')">🏭 Grosir</button>
+          <button class="${d.channel==='whatsapp'?'active':''}" onclick="setChannel('whatsapp')">💬 WhatsApp</button>
+        </div>
+
+        ${d.channel === 'tokopedia' ? `
+          <div class="bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5 mt-2 fade-in">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="font-extrabold text-orange-700 text-[12px] flex items-center gap-1">🛍 Detail Pesanan Tokopedia</span>
+              <span class="pill chip-warning" style="font-size:9px">wajib</span>
+            </div>
+            <input class="field" placeholder="No. Pesanan Tokopedia (mis. INV/20260608/MPL/0123456789)" value="${d.tokpedOrderNo}" oninput="state.draft.tokpedOrderNo=this.value" />
+          </div>
+        ` : ''}
+
+        ${d.channel === 'whatsapp' ? `
+          <div class="bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 mt-2 fade-in">
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="font-extrabold text-green-700 text-[12px] flex items-center gap-1">💬 Detail WhatsApp</span>
+              <span class="pill chip-info" style="font-size:9px">opsional · untuk follow-up</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input class="field" placeholder="No. HP customer" value="${d.waPhone}" oninput="state.draft.waPhone=this.value" />
+              <input class="field" placeholder="Chat URL (opsional)" value="${d.waChatUrl}" oninput="state.draft.waChatUrl=this.value" />
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-4">
+
+          <!-- LEFT PANEL -->
+          <div class="space-y-3">
+
+            <!-- Item Search -->
+            <div class="panel-card">
+              <div class="flex items-center justify-between mb-2">
+                <div class="label-up">Cari Komponen</div>
+                <span class="text-[11px] text-slate-400">SKU / nama barang</span>
+              </div>
+              <input class="field mb-3" placeholder="🔎 Cari SKU / nama..." value="${d.itemSearchTerm}" oninput="state.draft.itemSearchTerm=this.value;render()" />
+              <div class="space-y-1.5 max-h-56 overflow-y-auto">
+                ${(() => {
+                  const term = d.itemSearchTerm.toLowerCase();
+                  const filtered = term
+                    ? CATALOG.filter(i => i.sku.toLowerCase().includes(term) || i.name.toLowerCase().includes(term))
+                    : CATALOG.slice(0, 4);
+                  if (filtered.length === 0) {
+                    return `<div class="text-center text-slate-400 text-[12px] py-3">Tidak ada barang cocok dengan "${d.itemSearchTerm}"</div>`;
+                  }
+                  return filtered.map(item => `
+                    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 cursor-pointer" onclick="addKompToCart('${item.sku}')">
+                      <div class="flex-1">
+                        <div class="font-extrabold text-[13px]">${item.name}</div>
+                        <div class="text-[11px] text-slate-400">
+                          <span class="text-blue-700 font-bold">Atas: ${item.stockAtas}</span> ·
+                          <span class="text-amber-700 font-bold">Bawah: ${item.stockBawah}</span> ·
+                          ${fmtRp(item.price)}
+                        </div>
+                      </div>
+                      <button class="btn-ghost text-[11px] py-1 px-2">+ Tambah</button>
+                    </div>
+                  `).join('');
+                })()}
+              </div>
+              ${!d.itemSearchTerm ? `<div class="text-[10px] text-slate-400 mt-2 text-center">Nampilkan 4 item teratas · ketik untuk filter</div>` : ''}
+            </div>
+
+            <!-- Jasa Rakit / Custom Panel Buttons (B addition) -->
+            <div class="panel-card amber">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">🛠</span>
+                  <div>
+                    <div class="font-extrabold text-[13px] text-orange-700">Tambah Jasa</div>
+                    <div class="text-[11px] text-orange-700/70">Pilih tipe jasa · invoice WIP sampai lock + approval</div>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mb-2">
+                <button class="${d.rakitFormOpen && d.rakitFormDraft.type==='jasa_rakit' ? 'opacity-60':''} btn-amber py-2.5 px-3 text-[12px]" onclick="openRakitForm('jasa_rakit')">
+                  ⚡ + Tambah Jasa Rakit
+                </button>
+                <button class="${d.rakitFormOpen && d.rakitFormDraft.type==='jasa_custom_panel' ? 'opacity-60':''} btn-amber py-2.5 px-3 text-[12px]" onclick="openRakitForm('jasa_custom_panel')" style="background:#0ea5e9;">
+                  📦 + Tambah Jasa Custom Panel
+                </button>
+              </div>
+
+              ${d.rakitFormOpen ? `
+              <div class="bg-white border ${d.rakitFormDraft.type==='jasa_rakit'?'border-orange-300':'border-sky-300'} rounded-xl p-3 space-y-3 fade-in">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="pill ${d.rakitFormDraft.type==='jasa_rakit'?'chip-rakit':'chip-info'}">
+                      ${d.rakitFormDraft.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}
+                    </span>
+                    <span class="text-[11px] text-slate-500">isi detail di bawah</span>
+                  </div>
+                  <button class="text-slate-400 hover:text-rose-500 text-base" onclick="cancelRakitForm()">✕</button>
+                </div>
+                <div>
+                  <div class="key-up mb-1.5">Deskripsi (singkat, tampil di invoice)</div>
+                  <input class="field" placeholder="${d.rakitFormDraft.type==='jasa_rakit'?'Mis. Box Wiring untuk PT XYZ — 1 unit':'Mis. Custom Panel Distribusi 3-fase — PLN 50kVA'}" value="${d.rakitFormDraft.description}" oninput="setRakitFormField('description', this.value)" />
+                </div>
+                <div>
+                  <div class="key-up mb-1.5">Estimasi Harga (quote disepakati)</div>
+                  <input class="field" type="number" placeholder="0" value="${d.rakitFormDraft.estimatedPrice || ''}" oninput="setRakitFormField('estimatedPrice', Number(this.value || 0))" />
+                  <div class="text-[11px] text-slate-500 mt-1.5">
+                    ℹ Admin bisa adjust ke harga final saat lock kalau scope berubah.
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                  <button class="btn-ghost" onclick="cancelRakitForm()">Batal</button>
+                  <button class="${d.rakitFormDraft.type==='jasa_rakit'?'btn-amber':''}" style="${d.rakitFormDraft.type==='jasa_custom_panel'?'background:#0ea5e9;color:#fff;border-radius:0.75rem;padding:0.55rem 1.1rem;font-weight:800;font-size:12px;border:none;cursor:pointer;':''}" onclick="addRakitToCart()">+ Tambah ke Cart</button>
+                </div>
+              </div>
+              ` : ''}
+            </div>
+
+            <!-- Keranjang -->
+            ${(d.cartItems.length || d.rakitLines.length) ? `
+            <div class="panel-card">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-extrabold text-emerald-700 text-[14px] flex items-center gap-2">
+                  🧺 Keranjang
+                  <span class="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[11px] font-extrabold">${d.cartItems.length + d.rakitLines.length} item</span>
+                </div>
+                <div class="font-extrabold text-emerald-700 text-[14px]">${fmtRp(total)}</div>
+              </div>
+
+              ${d.cartItems.length ? `
+                <div class="label-up mb-2 flex items-center gap-2">
+                  <span>📦 Komponen</span>
+                  <span class="dotted flex-1"></span>
+                </div>
+                ${d.cartItems.map((it, idx) => {
+                  const stock = CATALOG.find(c => c.sku === it.sku);
+                  const atas = stock?.stockAtas ?? 0;
+                  const bawah = stock?.stockBawah ?? 0;
+                  return `
+                  <div class="row-komp p-3 mb-2 grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-[12px]">
+                    <div>
+                      <div class="font-extrabold">${it.name}</div>
+                      <div class="text-[11px] text-slate-400 mt-0.5">@ ${fmtRp(it.unitPrice)}</div>
+                    </div>
+                    <div class="flex gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5">
+                      <button onclick="setWarehouse(${idx},'atas')" ${atas===0?'disabled':''} class="px-2 py-1 rounded-md text-[11px] font-extrabold ${it.warehouse==='atas'?'bg-blue-100 text-blue-700':atas===0?'opacity-40 cursor-not-allowed':'text-slate-400 hover:bg-slate-50'}">
+                        Atas <span class="text-[10px] opacity-70">${atas}</span>
+                      </button>
+                      <button onclick="setWarehouse(${idx},'bawah')" ${bawah===0?'disabled':''} class="px-2 py-1 rounded-md text-[11px] font-extrabold ${it.warehouse==='bawah'?'bg-amber-100 text-amber-700':bawah===0?'opacity-40 cursor-not-allowed':'text-slate-400 hover:bg-slate-50'}">
+                        Bawah <span class="text-[10px] opacity-70">${bawah}</span>
+                      </button>
+                    </div>
+                    <div class="stepper">
+                      <button onclick="updateKompQty(${idx}, -1)">−</button>
+                      <input value="${it.qty}" readonly />
+                      <button onclick="updateKompQty(${idx}, +1)">+</button>
+                    </div>
+                    <div class="font-extrabold text-[#012749] min-w-[90px] text-right text-[13px]">${fmtRp(it.qty * it.unitPrice)}</div>
+                    <button class="text-slate-300 hover:text-rose-500 text-lg" onclick="removeKomp(${idx})">✕</button>
+                  </div>`;
+                }).join('')}
+              ` : ''}
+
+              ${d.rakitLines.length ? `
+                <div class="label-up mb-2 mt-3 flex items-center gap-2">
+                  <span style="color:#c2410c">🛠 Jasa Rakit</span>
+                  <span class="dotted flex-1"></span>
+                </div>
+                ${d.rakitLines.map((r, idx) => `
+                  <div class="${r.type==='jasa_rakit'?'row-rakit':'row-rakit'} p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-[12px]" style="${r.type==='jasa_custom_panel'?'background:linear-gradient(90deg, rgba(14,165,233,0.08), rgba(14,165,233,0.02) 80%); border-left:3px solid #0ea5e9;':''}">
+                    <div>
+                      <div class="flex items-center gap-2 mb-0.5">
+                        <span class="pill ${r.type==='jasa_rakit'?'chip-rakit':'chip-info'}">${r.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}</span>
+                        <span class="font-extrabold text-[13px]">${r.description}</span>
+                      </div>
+                      <div class="text-[11px] text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
+                    </div>
+                    <div class="font-extrabold ${r.type==='jasa_rakit'?'text-amber-700':'text-sky-700'} text-[14px]">${fmtRp(r.estimatedPrice)}</div>
+                    <button class="text-slate-300 hover:text-rose-500 text-lg" onclick="removeRakit(${idx})">✕</button>
+                  </div>
+                `).join('')}
+              ` : ''}
+
+              ${hasRakit ? `
+                <div class="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-[11px] text-amber-800">
+                  ⚠ <strong>Transaksi ini akan masuk status WIP</strong> karena ada jasa rakit. Lock + approval owner diperlukan sebelum stock decrement &amp; pelunasan.
+                </div>
+              ` : ''}
+            </div>
+            ` : `
+              <div class="panel-card text-center text-slate-400 text-[13px] py-8 bg-slate-50 border-dashed">
+                Belum ada item. Cari komponen atau klik "+ Tambah Jasa Rakit" di atas.
+              </div>
+            `}
+          </div>
+
+          <!-- RIGHT PANEL -->
+          <div class="panel-card space-y-4">
+
+            <!-- CUSTOMER -->
+            <div>
+              <div class="label-up mb-2">Pelanggan</div>
+
+              ${isCustomerLocked ? `
+                <!-- Locked state: showing selected customer -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2 text-[12px]">
+                    <span>🔒</span>
+                    <span class="font-extrabold text-emerald-700">${d.customer}</span>
+                    <span class="text-emerald-700/70">(${d.phone})</span>
+                  </div>
+                  <button class="text-[11px] text-emerald-700 hover:text-emerald-900 font-bold" onclick="unlockCustomer()">✕ Ganti</button>
+                </div>
+                <div class="opacity-50 pointer-events-none">
+                  <div class="space-y-1.5">
+                    <input class="field" placeholder="Nama (wajib)" value="${d.customer}" readonly />
+                    <input class="field" placeholder="HP (wajib)" value="${d.phone}" readonly />
+                    <input class="field" placeholder="Perusahaan (opsional)" value="${d.company}" readonly />
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-1.5 pl-1">🔒 Nonaktif — sudah pilih pelanggan terdaftar</div>
+                </div>
+              ` : `
+                <!-- Search bar -->
+                <div class="relative mb-2">
+                  <input class="field" placeholder="🔎 Cari pelanggan terdaftar (nama / HP)..." value="${d.customerSearchTerm}" oninput="searchCustomer(this.value)" onfocus="state.draft.customerDropdownOpen=true; render();" />
+                  ${d.customerDropdownOpen && matches.length > 0 ? `
+                    <div class="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto z-20">
+                      ${matches.map(c => `
+                        <button class="w-full text-left px-3 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 text-[12px]" onclick="selectCustomer('${c.id}')">
+                          <div class="font-bold">${c.name}</div>
+                          <div class="text-[11px] text-slate-500">${c.phone}${c.company ? ' · '+c.company : ''}</div>
+                        </button>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                  ${d.customerSearchTerm && matches.length === 0 ? `
+                    <div class="absolute top-full left-0 right-0 mt-1 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-[11px] text-amber-800 z-20">
+                      Tidak ditemukan. Isi sebagai pelanggan baru di bawah ↓
+                    </div>
+                  ` : ''}
+                </div>
+
+                <!-- New customer block -->
+                <div class="space-y-1.5">
+                  <input class="field" placeholder="Nama (wajib)" value="${d.customer}" oninput="state.draft.customer=this.value" />
+                  <input class="field" placeholder="HP (wajib)" value="${d.phone}" oninput="state.draft.phone=this.value" />
+                  <input class="field" placeholder="Perusahaan (opsional)" value="${d.company}" oninput="state.draft.company=this.value" />
+                </div>
+                <div class="text-[11px] text-slate-500 mt-1.5 pl-1">💡 Pelanggan baru akan auto-create setelah simpan</div>
+              `}
+            </div>
+
+            <!-- PAYMENT METHOD -->
+            <div>
+              <div class="label-up mb-2">Metode Pembayaran</div>
+              <div class="seg">
+                <button class="${d.paymentMethod==='cash'?'active':''}" onclick="setPaymentMethod('cash')">💵 Cash</button>
+                <button class="${d.paymentMethod==='transfer'?'active':''}" onclick="setPaymentMethod('transfer')">🏦 Transfer</button>
+                <button class="${d.paymentMethod==='edc'?'active':''}" onclick="setPaymentMethod('edc')">💳 EDC</button>
+              </div>
+              ${d.paymentMethod === 'edc' ? `
+                <div class="mt-2 fade-in">
+                  <div class="key-up mb-1.5">Tipe EDC <span class="text-rose-500">*</span></div>
+                  <div class="seg">
+                    <button class="${d.paymentSubtype==='debit'?'active':''}" onclick="state.draft.paymentSubtype='debit';render()">💳 Debit</button>
+                    <button class="${d.paymentSubtype==='qris'?'active':''}" onclick="state.draft.paymentSubtype='qris';render()">📱 QRIS</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- PAYMENT TYPE -->
+            <div>
+              <div class="label-up mb-2">Tipe Pembayaran</div>
+              <div class="seg">
+                <button class="${d.paymentType==='FULL'?'active':''}" onclick="state.draft.paymentType='FULL';state.draft.dpAmount=0;render()">Full Payment</button>
+                <button class="${d.paymentType==='DP'?'active':''}" onclick="state.draft.paymentType='DP';render()">DP / Tanda Jadi</button>
+              </div>
+              ${d.paymentType==='DP' ? `
+                <div class="grid grid-cols-2 gap-2 mt-2 fade-in">
+                  <input class="field" type="number" placeholder="${d.dpInputType==='PERCENT'?'Persen (mis. 30)':'Jumlah DP (Rp)'}" value="${d.dpAmount || ''}" min="0" max="${d.dpInputType==='PERCENT'?100:''}" oninput="state.draft.dpAmount=Number(this.value||0);render()" />
+                  <select class="field" onchange="state.draft.dpInputType=this.value;render()">
+                    <option value="AMOUNT" ${d.dpInputType==='AMOUNT'?'selected':''}>Nominal (Rp)</option>
+                    <option value="PERCENT" ${d.dpInputType==='PERCENT'?'selected':''}>Persen (%)</option>
+                  </select>
+                </div>
+                ${d.dpInputType==='PERCENT' && d.dpAmount > 0 ? `
+                  <p class="text-[11px] mt-1 pl-1 font-semibold text-emerald-700">
+                    💡 Customer bayar DP: <strong>${fmtRp(effectiveDp)}</strong>${d.dpAmount > 0 && d.dpAmount <= 100 ? ` (${d.dpAmount}% dari ${fmtRp(total)})` : ''}
+                    ${d.dpAmount > 100 ? '<span class="text-rose-600"> · ⚠️ Persen tidak boleh > 100</span>' : ''}
+                  </p>
+                ` : ''}
+              ` : ''}
+            </div>
+
+            <!-- ONGKIR -->
+            <div>
+              <div class="label-up mb-2">Tambahan</div>
+              <button type="button" onclick="state.draft.ongkirOn=!state.draft.ongkirOn;render()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] border ${d.ongkirOn?'bg-orange-50 border-orange-500':'bg-slate-50 border-dashed border-slate-300'}">
+                <span class="font-extrabold flex items-center gap-1.5 ${d.ongkirOn?'text-orange-700':'text-slate-700'}">
+                  🚚 Biaya Ongkir <span class="text-[11px] text-slate-400 font-semibold">(opsional)</span>
+                </span>
+                <span class="w-8 h-4 rounded-full relative ${d.ongkirOn?'bg-orange-500':'bg-slate-300'}">
+                  <span class="absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${d.ongkirOn?'left-4':'left-0.5'}"></span>
+                </span>
+              </button>
+              ${d.ongkirOn ? `
+                <input class="mt-2 w-full bg-white border border-orange-500 rounded-lg px-3 py-2 text-[13px] font-bold text-orange-700 fade-in" type="number" placeholder="Rp 0" value="${d.ongkirAmount || ''}" oninput="state.draft.ongkirAmount=Number(this.value||0);render()" />
+              ` : ''}
+            </div>
+
+            <!-- DELIVERY ADDRESS -->
+            <div>
+              <div class="bg-violet-50 border border-violet-200 rounded-xl px-3 py-2.5">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-extrabold text-violet-700 text-[13px] flex items-center gap-1">📍 Alamat Pengiriman</span>
+                  <span class="text-[10px] text-violet-700 font-extrabold uppercase tracking-widest">opsional · tampil di invoice</span>
+                </div>
+                <textarea class="w-full min-h-[48px] bg-white border border-violet-200 rounded-lg px-3 py-2 text-[13px] text-violet-900 resize-y outline-none" placeholder="Isi jika barang dikirim. Mis. Jl. Merdeka No. 12, Jakarta Utara." oninput="state.draft.deliveryAddress=this.value">${d.deliveryAddress}</textarea>
+              </div>
+            </div>
+
+            <!-- NOTES -->
+            <div>
+              <div class="bg-sky-50 border border-sky-200 rounded-xl px-3 py-2.5">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-extrabold text-sky-700 text-[13px] flex items-center gap-1">📝 Catatan</span>
+                  <span class="text-[10px] text-sky-700 font-extrabold uppercase tracking-widest">opsional · tampil di invoice</span>
+                </div>
+                <textarea class="w-full min-h-[56px] bg-white border border-sky-200 rounded-lg px-3 py-2 text-[13px] text-sky-900 resize-y outline-none" placeholder="Mis. Garansi 1 bulan. Bawakan kunci pas." oninput="state.draft.notes=this.value">${d.notes}</textarea>
+              </div>
+            </div>
+
+            <!-- TOTALS -->
+            <div class="bg-slate-50 rounded-xl px-3 py-3">
+              <div class="flex justify-between py-1 text-[13px] text-slate-600">
+                <span>Subtotal barang</span><span>${fmtRp(subtotalKomp + subtotalRakit)}</span>
+              </div>
+              ${subtotalKomp ? `<div class="flex justify-between py-0.5 text-[11px] text-slate-500 pl-3">
+                <span>· komponen</span><span>${fmtRp(subtotalKomp)}</span>
+              </div>` : ''}
+              ${subtotalRakit ? `<div class="flex justify-between py-0.5 text-[11px] text-amber-700 font-bold pl-3">
+                <span>· jasa rakit</span><span>${fmtRp(subtotalRakit)}</span>
+              </div>` : ''}
+              ${d.ongkirOn && d.ongkirAmount > 0 ? `<div class="flex justify-between py-1 text-[13px] text-orange-700 font-bold">
+                <span>↳ Biaya ongkir</span><span>${fmtRp(d.ongkirAmount)}</span>
+              </div>` : ''}
+              ${d.paymentType==='DP' && effectiveDp > 0 ? `
+                <div class="flex justify-between py-1 text-[13px] text-emerald-700 font-bold">
+                  <span>↳ DP diterima</span><span>${fmtRp(effectiveDp)}</span>
+                </div>
+                <div class="flex justify-between py-1 text-[13px] text-amber-700 font-extrabold">
+                  <span>↳ Sisa pelunasan</span><span>${fmtRp(sisa)}</span>
+                </div>
+              ` : ''}
+              <div class="flex justify-between py-2 mt-1 border-t-2 border-[#012749] text-[15px] font-extrabold text-[#012749]">
+                <span>Total Invoice</span><span>${fmtRp(total)}</span>
+              </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <button class="${hasRakit||d.paymentType==='DP'?'btn-amber':'btn-primary'} w-full py-3 text-[14px]" onclick="saveTransaction()" ${(!d.cartItems.length && !d.rakitLines.length) ? 'disabled':''}>
+              💾 Simpan &amp; Cetak Invoice ${d.paymentType==='DP'?'DP':'Lunas'}${hasRakit ? ' (Status: WIP)' : ''}
+            </button>
+            <p class="text-[11px] text-slate-500 text-center">🖨️ Invoice otomatis cetak ke printer dotmatrix${hasRakit?'. Lock + approval setelah rakit selesai.':''}.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Customer search + lock
+function searchCustomer(term) {
+  state.draft.customerSearchTerm = term;
+  state.draft.customerDropdownOpen = true;
+  render();
+}
+function selectCustomer(customerId) {
+  const c = CUSTOMERS.find(x => x.id === customerId);
+  if (!c) return;
+  state.draft.selectedCustomerId = c.id;
+  state.draft.customer = c.name;
+  state.draft.phone = c.phone;
+  state.draft.company = c.company || '';
+  state.draft.customerSearchTerm = '';
+  state.draft.customerDropdownOpen = false;
+  toast(`🔒 Pelanggan <strong>${c.name}</strong> dipilih. Form di-lock.`, 'info');
+  render();
+}
+function unlockCustomer() {
+  state.draft.selectedCustomerId = null;
+  state.draft.customer = '';
+  state.draft.phone = '';
+  state.draft.company = '';
+  state.draft.customerSearchTerm = '';
+  toast('Pelanggan di-clear. Bisa pilih ulang atau isi sebagai pelanggan baru.', 'info');
+  render();
+}
+
+// Payment method
+function setPaymentMethod(m) {
+  state.draft.paymentMethod = m;
+  // EDC needs sub-type; clear sub-type when switching away
+  if (m !== 'edc') state.draft.paymentSubtype = null;
+  render();
+}
+
+// Cart actions
+function addKompToCart(sku) {
+  const item = CATALOG.find(c => c.sku === sku);
+  if (!item) return;
+  const existing = state.draft.cartItems.find(i => i.sku === sku);
+  if (existing) { existing.qty += 1; }
+  else { state.draft.cartItems.push({ sku, name: item.name, qty:1, unitPrice: item.price, warehouse:'atas' }); }
+  render();
+}
+function updateKompQty(idx, delta) {
+  const it = state.draft.cartItems[idx];
+  it.qty = Math.max(1, it.qty + delta);
+  render();
+}
+function removeKomp(idx) { state.draft.cartItems.splice(idx, 1); render(); }
+function removeRakit(idx) { state.draft.rakitLines.splice(idx, 1); render(); }
+
+function openRakitForm(type) {
+  // type = 'jasa_rakit' | 'jasa_custom_panel'
+  state.draft.rakitFormOpen = true;
+  const defaults = type === 'jasa_rakit'
+    ? { description:'Box Wiring untuk PT XYZ — 1 unit', estimatedPrice:4500000 }
+    : { description:'Custom Panel Distribusi 3-fase', estimatedPrice:8500000 };
+  state.draft.rakitFormDraft = { type, ...defaults };
+  advanceDemo(2);
+  render();
+}
+function setRakitFormField(field, val) {
+  state.draft.rakitFormDraft[field] = val;
+}
+function cancelRakitForm() { state.draft.rakitFormOpen = false; render(); }
+function addRakitToCart() {
+  const f = state.draft.rakitFormDraft;
+  if (!f.description.trim()) { toast('Deskripsi wajib diisi.', 'warning'); return; }
+  if (!f.estimatedPrice || f.estimatedPrice <= 0) { toast('Estimasi harga wajib diisi.', 'warning'); return; }
+  state.draft.rakitLines.push({
+    id:'R'+uid(), type:f.type, description:f.description,
+    estimatedPrice:f.estimatedPrice, finalPrice:null, components:[], laborCost:0,
+  });
+  state.draft.rakitFormOpen = false;
+  const label = f.type === 'jasa_rakit' ? 'Jasa Rakit' : 'Jasa Custom Panel';
+  toast(`${label} "<strong>${f.description}</strong>" ditambahkan ke cart.`, 'success');
+  advanceDemo(3);
+  render();
+}
+
+// Channel + warehouse
+function setChannel(ch) {
+  state.draft.channel = ch;
+  render();
+}
+function setWarehouse(idx, wh) {
+  state.draft.cartItems[idx].warehouse = wh;
+  render();
+}
+
+function saveTransaction() {
+  const d = state.draft;
+  if (!d.cartItems.length && !d.rakitLines.length) { toast('Cart kosong.', 'warning'); return; }
+  if (!d.customer.trim()) { toast('Nama pelanggan wajib diisi.', 'warning'); return; }
+  if (!d.phone.trim()) { toast('Nomor HP wajib diisi.', 'warning'); return; }
+  if (d.channel === 'tokopedia' && !d.tokpedOrderNo.trim()) { toast('No. Pesanan Tokopedia wajib diisi.', 'warning'); return; }
+  if (d.paymentMethod === 'edc' && !d.paymentSubtype) { toast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning'); return; }
+  if (d.paymentType === 'DP' && d.dpInputType === 'PERCENT' && (d.dpAmount <= 0 || d.dpAmount > 100)) { toast('Persen DP harus 1-100.', 'warning'); return; }
+
+  const subtotalKomp = d.cartItems.reduce((s,i) => s + (i.qty * i.unitPrice), 0);
+  const subtotalRakit = d.rakitLines.reduce((s,r) => s + r.estimatedPrice, 0);
+  const total = subtotalKomp + subtotalRakit + (d.ongkirOn ? d.ongkirAmount : 0);
+  const effectiveDp = d.paymentType === 'DP'
+    ? (d.dpInputType === 'PERCENT' ? Math.round(total * d.dpAmount / 100) : d.dpAmount)
+    : 0;
+  if (d.paymentType === 'DP' && (effectiveDp <= 0 || effectiveDp >= total)) { toast('Jumlah DP harus > 0 dan < total.', 'warning'); return; }
+  const hasRakit = d.rakitLines.length > 0;
+
+  const tx = {
+    id: nextInvoiceNo(),
+    customer: d.customer, phone: d.phone, company: d.company,
+    status: hasRakit ? 'WIP' : (d.paymentType==='DP' ? 'AWAITING_LUNAS' : 'PAID'),
+    createdAt: new Date().toISOString().slice(0,16).replace('T',' '),
+    cartItems: JSON.parse(JSON.stringify(d.cartItems)),
+    rakitLines: JSON.parse(JSON.stringify(d.rakitLines)),
+    paymentMethod: d.paymentMethod,
+    paymentSubtype: d.paymentSubtype,
+    paymentType: d.paymentType,
+    dpAmount: effectiveDp,
+    dpInputType: d.paymentType==='DP' ? d.dpInputType : null,
+    ongkirAmount: d.ongkirOn ? d.ongkirAmount : 0,
+    deliveryAddress: d.deliveryAddress.trim() || null,
+    notes: d.notes.trim() || null,
+    total,
+  };
+  if (!d.selectedCustomerId) {
+    toast(`💡 Pelanggan baru <strong>${d.customer}</strong> akan auto-create.`, 'info');
+  }
+  state.transactions.push(tx);
+  // reset draft
+  state.draft = {
+    selectedCustomerId: null,
+    customer:'', phone:'', company:'',
+    customerSearchTerm:'', customerDropdownOpen:false,
+    paymentMethod:'cash', paymentSubtype:null, paymentType:'DP', dpAmount:0, dpInputType:'AMOUNT',
+    ongkirOn:false, ongkirAmount:0,
+    deliveryAddress:'', notes:'',
+    channel:'walkin', tokpedOrderNo:'', waPhone:'', waChatUrl:'',
+    itemSearchTerm:'',
+    cartItems:[], rakitLines:[],
+    rakitFormOpen:false, rakitFormDraft:{type:'jasa_rakit',description:'',estimatedPrice:0},
+  };
+
+  toast(`✅ Transaksi <strong>${tx.id}</strong> disimpan. Status: <strong>${tx.status}</strong>.`, 'success');
+  if (hasRakit) {
+    advanceDemo(4);
+    setView('wip-list');
+  } else {
+    setView('cart');
+  }
+}
+
+// ========================================================
+//          RENDER: WIP LIST VIEW
+// ========================================================
+function renderWipList() {
+  const wips = state.transactions.filter(t => t.status === 'WIP');
+  $('#view-wip-list').innerHTML = `
+    <div class="card overflow-hidden">
+      <div class="header-bar">
+        <div class="font-extrabold text-sm">⏳ WIP — Rakit Job in Progress</div>
+        <div class="text-[11px] opacity-65">Transaksi yang sedang dikerjakan. Klik salah satu untuk lock atau cancel.</div>
+      </div>
+      <div class="p-5">
+        ${wips.length === 0 ? `
+          <div class="text-center text-slate-400 text-[13px] py-12">
+            Belum ada transaksi WIP. Buat transaksi baru dengan jasa rakit di tab <strong>📋 Catat Penjualan</strong>.
+          </div>
+        ` : `
+          <div class="space-y-2">
+            ${wips.map(tx => `
+              <div class="border border-slate-200 rounded-xl p-4 hover:border-amber-400 transition fade-in">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-extrabold text-[14px]">${tx.id}</span>
+                      <span class="state-pill state-WIP">WIP</span>
+                    </div>
+                    <div class="text-[12px] text-slate-600">${tx.customer} · ${tx.phone}</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Created: ${tx.createdAt}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-[11px] text-slate-400">Total</div>
+                    <div class="font-extrabold text-[15px] text-[#012749]">${fmtRp(tx.total)}</div>
+                    <div class="text-[11px] text-emerald-700">DP: ${fmtRp(tx.dpAmount)}</div>
+                  </div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-2 mb-3 text-[12px]">
+                  ${tx.cartItems.length ? `<div class="text-slate-700"><strong>${tx.cartItems.length} komponen</strong> · ${tx.cartItems.map(i=>i.name).join(', ')}</div>`:''}
+                  ${tx.rakitLines.map(r => `
+                    <div class="flex items-center justify-between mt-1">
+                      <div class="flex items-center gap-2">
+                        <span class="pill chip-rakit">${r.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}</span>
+                        <span class="text-[12px] font-bold">${r.description}</span>
+                      </div>
+                      <span class="text-[12px] font-bold text-amber-700">${fmtRp(r.estimatedPrice)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="flex gap-2 justify-end">
+                  <button class="btn-danger" onclick="openCancelModal('${tx.id}')">❌ Cancel Job</button>
+                  <button class="btn-navy" onclick="openLockModal('${tx.id}')">🔒 Selesaikan Rakit</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+// ========================================================
+//           RENDER: APPROVAL INBOX
+// ========================================================
+function renderApprovalInbox() {
+  const pendings = state.transactions.filter(t => t.status === 'PENDING_LOCK_APPROVAL');
+  const isOwner = state.isOwner;
+  $('#view-approval-inbox').innerHTML = `
+    <div class="grid lg:grid-cols-[220px_1fr] gap-4">
+      <div class="sidebar-mock">
+        <div class="text-[10px] uppercase tracking-widest opacity-50 mb-2 px-2">Garindo ERP</div>
+        <a><span>📊</span> Dashboard</a>
+        <a><span>📋</span> Penjualan</a>
+        <a><span>🛍</span> Pembelian</a>
+        <a><span>📦</span> Stok</a>
+        <a class="active"><span>✅</span> Approval <span class="badge-count">${pendings.length}</span></a>
+        <a><span>👥</span> Pelanggan</a>
+        <a><span>💬</span> Inbox AI</a>
+        <a><span>📈</span> Laporan</a>
+        <a><span>⚙️</span> Pengaturan</a>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="header-bar">
+          <div class="font-extrabold text-sm">✅ Approval Inbox</div>
+          <div class="text-[11px] opacity-65">Owner-only · review &amp; approve pending locks</div>
+        </div>
+        <div class="p-5">
+          ${!isOwner ? `
+            <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[13px] text-amber-800 mb-4">
+              ⚠ Halaman ini cuma bisa diakses oleh <strong>Owner</strong>. Klik <strong>🔁 Switch ke Owner</strong> di top-right untuk preview owner experience.
+            </div>
+          ` : ''}
+          <div class="flex items-center gap-2 mb-4">
+            <div class="seg">
+              <button class="active">Semua (${pendings.length})</button>
+              <button>Rakit Lock (${pendings.length})</button>
+              <button>Stock Adj (0)</button>
+              <button>Opname (0)</button>
+            </div>
+            <div class="ml-auto text-[11px] text-slate-500">Sortir: Terlama dulu ▾</div>
+          </div>
+          ${pendings.length === 0 ? `
+            <div class="text-center text-slate-400 text-[13px] py-12">
+              Tidak ada approval pending. 🎉
+            </div>
+          ` : `
+            <div class="space-y-2">
+              ${pendings.map(tx => {
+                const r = tx.rakitLines[0];
+                const hppKomp = r.components.reduce((s,c)=>s+c.fifoCost,0);
+                const hppTotal = hppKomp + r.laborCost;
+                const margin = r.finalPrice - hppTotal;
+                const marginPct = r.finalPrice > 0 ? (margin/r.finalPrice*100) : 0;
+                const marginWarn = marginPct < 10;
+                return `
+                <div class="row-pending border border-slate-200 rounded-xl p-4 hover:border-amber-400 transition cursor-pointer" onclick="openReviewModal('${tx.id}')">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="pill chip-rakit">${r.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}</span>
+                        <span class="font-extrabold text-[14px]">${tx.id}</span>
+                        <span class="state-pill state-PENDING">PENDING</span>
+                      </div>
+                      <div class="text-[12px] text-slate-600">${tx.customer} · ${r.description}</div>
+                      <div class="text-[11px] text-slate-400 mt-1">Submitted by <strong>${tx.submittedBy}</strong> · ${tx.submittedAt} · ${r.components.length} komponen</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-[11px] text-slate-400">Harga rakit final</div>
+                      <div class="font-extrabold text-[15px] text-[#012749]">${fmtRp(r.finalPrice)}</div>
+                      <div class="text-[11px] font-bold ${marginWarn?'text-rose-600':'text-emerald-700'}">${marginWarn?'⚠ ':''}Margin: ${fmtRp(margin)} (${marginPct.toFixed(1)}%)</div>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========================================================
+//            LOCK MODAL (admin/kasir submit)
+// ========================================================
+function openLockModal(txId) {
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  state.modal = 'lock';
+  state.modalTxId = txId;
+  // Init draft from existing tx (deep copy)
+  state.lockDraft = JSON.parse(JSON.stringify(tx));
+  // Set final price = estimated (default); init mode to 'detail'
+  state.lockDraft.rakitLines.forEach(r => {
+    if (!r.finalPrice) r.finalPrice = r.estimatedPrice;
+    if (!r.trackingMode) r.trackingMode = 'detail'; // 'detail' | 'lumpsum'
+    if (r.lumpSumHpp == null) r.lumpSumHpp = 0;
+  });
+  advanceDemo(5);
+  renderModals();
+}
+function lockSetMode(rakitIdx, mode) {
+  state.lockDraft.rakitLines[rakitIdx].trackingMode = mode;
+  renderModals();
+}
+function lockSetLumpHpp(rakitIdx, val) {
+  state.lockDraft.rakitLines[rakitIdx].lumpSumHpp = Number(val) || 0;
+  renderModals();
+}
+
+function lockFieldUpdate(rakitIdx, field, val) {
+  state.lockDraft.rakitLines[rakitIdx][field] = val;
+  renderModals();
+}
+function lockAddComponent(rakitIdx, sku) {
+  const cat = CATALOG.find(c => c.sku === sku);
+  if (!cat) return;
+  const r = state.lockDraft.rakitLines[rakitIdx];
+  const existing = r.components.find(c => c.sku === sku);
+  if (existing) { existing.qty += 1; existing.fifoCost = existing.qty * cat.fifoCost; }
+  else { r.components.push({ sku, name:cat.name, qty:1, fifoCost: cat.fifoCost }); }
+  renderModals();
+}
+function lockComponentQty(rakitIdx, cIdx, delta) {
+  const r = state.lockDraft.rakitLines[rakitIdx];
+  const c = r.components[cIdx];
+  const cat = CATALOG.find(x => x.sku === c.sku);
+  c.qty = Math.max(1, c.qty + delta);
+  c.fifoCost = c.qty * (cat ? cat.fifoCost : (c.fifoCost / Math.max(1, c.qty - delta)));
+  renderModals();
+}
+function lockRemoveComponent(rakitIdx, cIdx) {
+  state.lockDraft.rakitLines[rakitIdx].components.splice(cIdx, 1);
+  renderModals();
+}
+
+function submitLock() {
+  const tx = state.transactions.find(t => t.id === state.modalTxId);
+  if (!tx) return;
+  // Copy lockDraft → tx
+  tx.rakitLines = state.lockDraft.rakitLines;
+  tx.status = 'PENDING_LOCK_APPROVAL';
+  tx.submittedAt = new Date().toISOString().slice(0,16).replace('T',' ');
+  tx.submittedBy = state.isOwner ? 'Owner Pak Tony' : 'Admin Toko';
+  state.modal = null;
+  state.modalTxId = null;
+  state.lockDraft = null;
+  toast(`📤 <strong>${tx.id}</strong> submitted for approval. Status: <strong>PENDING_LOCK_APPROVAL</strong>.`, 'info');
+  advanceDemo(6);
+  setView('wip-list');
+}
+
+function closeModal() {
+  state.modal = null;
+  state.modalTxId = null;
+  state.lockDraft = null;
+  state.reviewDraft = null;
+  state.cancelDraft = null;
+  state.rejectDraft = null;
+  renderModals();
+}
+
+// ========================================================
+//          APPROVAL REVIEW MODAL
+// ========================================================
+function openReviewModal(txId) {
+  if (!state.isOwner) {
+    toast('⚠ Approval cuma bisa dilakukan oleh <strong>Owner</strong>. Switch role dulu.', 'warning');
+    return;
+  }
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  state.modal = 'review';
+  state.modalTxId = txId;
+  state.reviewDraft = JSON.parse(JSON.stringify(tx));
+  advanceDemo(7);
+  renderModals();
+}
+function reviewSetHppOverride(rakitIdx, val) {
+  state.reviewDraft.rakitLines[rakitIdx].hppOverride = val;
+  renderModals();
+}
+function approveTransaction() {
+  const tx = state.transactions.find(t => t.id === state.modalTxId);
+  if (!tx) return;
+  // Apply HPP override if any
+  tx.rakitLines = state.reviewDraft.rakitLines;
+  // Decide next state: if sisa > 0 → AWAITING_LUNAS, else PAID
+  const sisa = tx.total - tx.dpAmount;
+  tx.status = sisa > 0 ? 'AWAITING_LUNAS' : 'PAID';
+  tx.approvedAt = new Date().toISOString().slice(0,16).replace('T',' ');
+  tx.approvedBy = 'Owner Pak Tony';
+  const detailLines = tx.rakitLines.filter(r => (r.trackingMode||'detail') === 'detail');
+  const compCount = detailLines.reduce((s,r)=>s+r.components.length,0);
+  const lumpsumCount = tx.rakitLines.length - detailLines.length;
+  const adjustmentMsg = compCount > 0
+    ? `Stock Adjustment dibuat untuk ${compCount} komponen (detail mode).`
+    : '';
+  const lumpsumMsg = lumpsumCount > 0
+    ? `${lumpsumCount} rakit line dalam lump-sum mode — stock tidak otomatis decrement.`
+    : '';
+  toast(`✅ <strong>${tx.id}</strong> approved! ${adjustmentMsg} ${lumpsumMsg} Status → <strong>${tx.status}</strong>.`, 'success');
+  closeModal();
+  advanceDemo(8);
+  render();
+}
+function openRejectModal() {
+  state.modal = 'reject';
+  state.rejectDraft = { reason: '' };
+  renderModals();
+}
+function submitReject() {
+  if (!state.rejectDraft.reason.trim()) { toast('Alasan reject wajib diisi.', 'warning'); return; }
+  const tx = state.transactions.find(t => t.id === state.modalTxId);
+  if (!tx) return;
+  tx.status = 'WIP';
+  tx.rejectedReason = state.rejectDraft.reason;
+  toast(`❌ <strong>${tx.id}</strong> rejected. Status → <strong>WIP</strong>. Admin notified to fix &amp; resubmit.`, 'warning');
+  closeModal();
+  render();
+}
+
+// ========================================================
+//          CANCEL MODAL
+// ========================================================
+function openCancelModal(txId) {
+  const tx = state.transactions.find(t => t.id === txId);
+  if (!tx) return;
+  state.modal = 'cancel';
+  state.modalTxId = txId;
+  state.cancelDraft = { refund: 0, reason: '' };
+  renderModals();
+}
+function cancelSetRefund(val) {
+  state.cancelDraft.refund = Number(val) || 0;
+  renderModals();
+}
+function submitCancel() {
+  const tx = state.transactions.find(t => t.id === state.modalTxId);
+  if (!tx) return;
+  const c = state.cancelDraft;
+  if (c.refund < 0 || c.refund > tx.dpAmount) { toast(`Refund harus antara 0 dan ${fmtRp(tx.dpAmount)}.`, 'warning'); return; }
+  if (!c.reason.trim()) { toast('Alasan cancel wajib diisi.', 'warning'); return; }
+  tx.status = 'CANCELLED';
+  tx.cancelRefund = c.refund;
+  tx.cancelForfeit = tx.dpAmount - c.refund;
+  tx.cancelReason = c.reason;
+  toast(`❌ <strong>${tx.id}</strong> cancelled. Refund: ${fmtRp(c.refund)}, Forfeit: ${fmtRp(tx.cancelForfeit)}.`, 'warning');
+  closeModal();
+  render();
+}
+
+// ========================================================
+//                  RENDER: MODALS
+// ========================================================
+function renderModals() {
+  if (!state.modal) {
+    $('#modals').innerHTML = '';
+    return;
+  }
+  if (state.modal === 'lock') renderLockModal();
+  else if (state.modal === 'review') renderReviewModal();
+  else if (state.modal === 'reject') renderRejectModal();
+  else if (state.modal === 'cancel') renderCancelModal();
+}
+
+function renderLockModal() {
+  const tx = state.lockDraft;
+  if (!tx) return;
+  const linesHtml = tx.rakitLines.map((r, ri) => {
+    const isDetail = r.trackingMode === 'detail';
+    const hppKomp = r.components.reduce((s,c)=>s+c.fifoCost, 0);
+    const hppTotal = isDetail ? (hppKomp + (r.laborCost || 0)) : (r.lumpSumHpp || 0);
+    const margin = (r.finalPrice||0) - hppTotal;
+    const marginPct = r.finalPrice ? (margin/r.finalPrice*100) : 0;
+    return `
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 ${ri>0?'mt-3':''}">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="pill ${r.type==='jasa_rakit'?'chip-rakit':'chip-info'}">${r.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}</span>
+          <span class="font-extrabold text-[14px]">${r.description}</span>
+        </div>
+        <div class="text-[11px] text-slate-500">Line ${ri+1} dari ${tx.rakitLines.length}</div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <div class="key-up mb-1.5">Estimasi awal (read-only)</div>
+          <div class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] font-bold text-slate-500">${fmtRp(r.estimatedPrice)}</div>
+        </div>
+        <div>
+          <div class="key-up mb-1.5">Harga Rakit Final <span class="text-rose-500">*</span></div>
+          <input class="field" type="number" value="${r.finalPrice || ''}" oninput="lockFieldUpdate(${ri},'finalPrice',Number(this.value||0))" />
+          ${r.finalPrice !== r.estimatedPrice ? `<div class="text-[11px] text-amber-700 mt-1">${r.finalPrice>r.estimatedPrice?'⬆ +':'⬇ '}${fmtRp(Math.abs(r.finalPrice-r.estimatedPrice))} dari estimasi</div>` : ''}
+        </div>
+      </div>
+
+      <!-- MODE TOGGLE: Detail vs Lump-sum -->
+      <div class="mb-3">
+        <div class="key-up mb-1.5 flex items-center gap-2">
+          <span>Mode Tracking Komponen</span>
+          <span class="pill chip-info" style="font-size:9px">internal only</span>
+        </div>
+        <div class="seg">
+          <button class="${isDetail?'active':''}" onclick="lockSetMode(${ri},'detail')">📋 Detail (komponen + FIFO auto)</button>
+          <button class="${!isDetail?'active':''}" onclick="lockSetMode(${ri},'lumpsum')">💰 Lump-sum HPP (manual)</button>
+        </div>
+        <div class="text-[11px] mt-1.5 ${isDetail?'text-emerald-700':'text-amber-700'}">
+          ${isDetail
+            ? '✓ Audit trail komplit. Stock decrement otomatis per komponen via Stock Adjustment saat approve.'
+            : '⚠ Stok tidak otomatis decrement. Owner input HPP manual. Drift accepted untuk transaksi ini.'}
+        </div>
+      </div>
+
+      ${isDetail ? `
+      <!-- DETAIL MODE: komponen list -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="key-up flex items-center gap-2">
+            <span>📋 Komponen yang dipakai</span>
+            <span class="pill chip-info" style="font-size:9px">internal · NOT shown to customer</span>
+          </div>
+        </div>
+        <details class="bg-white border border-slate-200 rounded-lg p-2 mb-2">
+          <summary class="text-[12px] font-bold text-slate-600 cursor-pointer">+ Tambah Komponen ▾</summary>
+          <div class="mt-2 space-y-1 max-h-40 overflow-y-auto">
+            ${CATALOG.map(c => `
+              <button class="w-full text-left p-2 rounded-lg hover:bg-slate-50 text-[12px]" onclick="lockAddComponent(${ri},'${c.sku}')">
+                <strong>${c.name}</strong> · <span class="text-slate-400">FIFO ${fmtRp(c.fifoCost)}</span>
+              </button>
+            `).join('')}
+          </div>
+        </details>
+        <div class="space-y-1.5">
+          ${r.components.length===0 ? `<div class="text-center text-slate-400 text-[12px] py-3 bg-slate-50 rounded-lg">Belum ada komponen. Klik "+ Tambah Komponen" di atas.</div>` : ''}
+          ${r.components.map((c, ci) => `
+            <div class="bg-white border border-slate-200 rounded-lg p-2.5 grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-[12px]">
+              <div>
+                <div class="font-extrabold">${c.name}</div>
+                <div class="text-[10px] text-slate-400">SKU: ${c.sku}</div>
+              </div>
+              <div class="stepper">
+                <button onclick="lockComponentQty(${ri},${ci},-1)">−</button>
+                <input value="${c.qty}" readonly />
+                <button onclick="lockComponentQty(${ri},${ci},+1)">+</button>
+              </div>
+              <div class="text-[11px] text-slate-500 min-w-[110px] text-right">FIFO: <strong>${fmtRp(c.fifoCost)}</strong></div>
+              <button class="text-slate-300 hover:text-rose-500" onclick="lockRemoveComponent(${ri},${ci})">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="mt-4 bg-slate-50 rounded-xl px-3 py-3 space-y-1.5">
+        <div class="flex justify-between text-[12px] text-slate-600">
+          <span>HPP komponen (FIFO sum)</span>
+          <span class="font-bold">${fmtRp(hppKomp)}</span>
+        </div>
+        <div class="flex justify-between items-center text-[12px] text-slate-600">
+          <span>+ Labor &amp; overhead (manual)</span>
+          <input class="field field-sm" style="width:130px; text-align:right;" type="number" value="${r.laborCost || 0}" oninput="lockFieldUpdate(${ri},'laborCost',Number(this.value||0))" />
+        </div>
+        <div class="flex justify-between text-[12px] border-t border-slate-200 pt-1.5">
+          <span><strong>HPP Total</strong></span>
+          <span class="font-extrabold text-[#012749]">${fmtRp(hppTotal)}</span>
+        </div>
+        <div class="flex justify-between text-[12px]">
+          <span class="${margin<0?'text-rose-700':marginPct<10?'text-amber-700':'text-emerald-700'}"><strong>Margin estimasi</strong></span>
+          <span class="font-extrabold ${margin<0?'text-rose-700':marginPct<10?'text-amber-700':'text-emerald-700'}">${fmtRp(margin)} (${marginPct.toFixed(1)}%)</span>
+        </div>
+      </div>
+      ` : `
+      <!-- LUMP-SUM MODE: single HPP input -->
+      <div class="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
+        <div>
+          <div class="key-up mb-1.5">HPP Total (input manual) <span class="text-rose-500">*</span></div>
+          <input class="field" type="number" placeholder="0" value="${r.lumpSumHpp || ''}" oninput="lockSetLumpHpp(${ri}, this.value)" />
+          <div class="text-[11px] text-slate-500 mt-1.5">
+            ℹ Single number — total cost komponen + labor + overhead. Owner ngira-ngira sendiri tanpa breakdown sistem.
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-lg px-3 py-2 space-y-1">
+          <div class="flex justify-between text-[12px] text-slate-600">
+            <span>Harga rakit final</span>
+            <span class="font-bold">${fmtRp(r.finalPrice || 0)}</span>
+          </div>
+          <div class="flex justify-between text-[12px] text-slate-600">
+            <span>− HPP Total (lump-sum)</span>
+            <span class="font-bold">${fmtRp(hppTotal)}</span>
+          </div>
+          <div class="flex justify-between text-[12px] border-t border-slate-300 pt-1">
+            <span class="${margin<0?'text-rose-700':marginPct<10?'text-amber-700':'text-emerald-700'}"><strong>Margin</strong></span>
+            <span class="font-extrabold ${margin<0?'text-rose-700':marginPct<10?'text-amber-700':'text-emerald-700'}">${fmtRp(margin)} (${marginPct.toFixed(1)}%)</span>
+          </div>
+        </div>
+      </div>
+      `}
+    </div>
+    `;
+  }).join('');
+
+  $('#modals').innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal-card wide">
+        <div class="bg-[#012749] text-white px-5 py-4 rounded-t-3xl flex items-center justify-between">
+          <div>
+            <div class="font-extrabold text-[15px]">🔒 Selesaikan Rakit &amp; Submit untuk Approval</div>
+            <div class="text-[11px] opacity-75 mt-0.5">${tx.id} · ${tx.customer}</div>
+          </div>
+          <button class="text-white/70 hover:text-white text-xl" onclick="closeModal()">✕</button>
+        </div>
+        <div class="p-5 space-y-5">
+          ${linesHtml}
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+            <div class="text-[11px] text-slate-500">
+              Submit → status: <span class="state-pill state-PENDING">PENDING_LOCK_APPROVAL</span><br/>
+              Stock decrement <strong>belum</strong> terjadi sampai owner approve.
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-ghost" onclick="closeModal()">Batal</button>
+              <button class="btn-navy" onclick="submitLock()">📤 Submit untuk Approval Owner</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderReviewModal() {
+  const tx = state.reviewDraft;
+  if (!tx) return;
+  const linesHtml = tx.rakitLines.map((r, ri) => {
+    const isDetail = (r.trackingMode || 'detail') === 'detail';
+    const hppKomp = r.components.reduce((s,c)=>s+c.fifoCost, 0);
+    const hppAuto = isDetail ? hppKomp + (r.laborCost || 0) : (r.lumpSumHpp || 0);
+    const hppFinal = r.hppOverride != null ? r.hppOverride : hppAuto;
+    const margin = (r.finalPrice||0) - hppFinal;
+    const marginPct = r.finalPrice ? (margin/r.finalPrice*100) : 0;
+    return `
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 ${ri>0?'mt-3':''}">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="pill ${r.type==='jasa_rakit'?'chip-rakit':'chip-info'}">${r.type==='jasa_rakit'?'⚡ Jasa Rakit':'📦 Jasa Custom Panel'}</span>
+          <span class="font-extrabold text-[14px]">${r.description}</span>
+        </div>
+        <span class="pill ${isDetail?'chip-success':'chip-warning'}" style="font-size:9px">
+          ${isDetail?'📋 Detail mode':'💰 Lump-sum mode'}
+        </span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-white rounded-lg px-3 py-2 border border-amber-100">
+          <div class="key-up">Estimasi awal</div>
+          <div class="font-bold text-[13px]">${fmtRp(r.estimatedPrice)}</div>
+        </div>
+        <div class="bg-white rounded-lg px-3 py-2 border border-amber-100">
+          <div class="key-up">Harga rakit final (admin)</div>
+          <div class="font-bold text-[13px]">${fmtRp(r.finalPrice)} ${r.finalPrice !== r.estimatedPrice ? `<span class="text-[10px] text-amber-700">${r.finalPrice>r.estimatedPrice?'⬆ +':'⬇ '}${fmtRp(Math.abs(r.finalPrice-r.estimatedPrice))}</span>`:''}</div>
+        </div>
+      </div>
+      ${isDetail ? `
+        <details open>
+          <summary class="flex items-center justify-between text-[12px] font-extrabold text-slate-600 cursor-pointer mb-2">
+            <span>📋 Komponen yang dipakai (${r.components.length}) — internal</span>
+            <span>▾</span>
+          </summary>
+          <div class="space-y-1.5 text-[12px]">
+            ${r.components.map(c => `
+              <div class="bg-white border border-amber-100 rounded-lg px-3 py-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center">
+                <div class="font-extrabold">${c.name}</div>
+                <div class="text-slate-500"><strong>${c.qty}</strong> ${c.sku.includes('KBL')?'m':'pcs'}</div>
+                <div class="text-[#012749] font-bold min-w-[110px] text-right">${fmtRp(c.fifoCost)}</div>
+              </div>
+            `).join('')}
+            <div class="border-t border-amber-200 pt-1.5 mt-1 grid grid-cols-[1fr_auto] text-[12px]">
+              <span class="font-bold text-slate-700">Total FIFO komponen</span>
+              <span class="font-extrabold text-[#012749] min-w-[110px] text-right">${fmtRp(hppKomp)}</span>
+            </div>
+          </div>
+        </details>
+      ` : `
+        <div class="bg-amber-100 border border-amber-300 rounded-lg px-3 py-2 text-[11px] text-amber-800 mb-3">
+          ⚠ Mode lump-sum dipilih admin. Tidak ada komponen breakdown. Stock <strong>tidak otomatis decrement</strong> saat approve — drift accepted untuk transaksi ini.
+        </div>
+      `}
+      <div class="mt-3 bg-white rounded-xl px-3 py-3 border border-amber-200">
+        ${isDetail ? `
+          <div class="flex justify-between text-[12px] mb-1.5">
+            <span>HPP komponen (FIFO)</span><span class="font-bold">${fmtRp(hppKomp)}</span>
+          </div>
+          <div class="flex justify-between text-[12px] mb-1.5">
+            <span>+ Labor &amp; overhead (admin input)</span><span class="font-bold">${fmtRp(r.laborCost)}</span>
+          </div>
+        ` : `
+          <div class="flex justify-between text-[12px] mb-1.5">
+            <span>HPP (lump-sum manual)</span><span class="font-bold">${fmtRp(r.lumpSumHpp || 0)}</span>
+          </div>
+        `}
+        <div class="flex justify-between items-center text-[12px] border-t border-slate-200 pt-2">
+          <span><strong>HPP Total final</strong> <span class="text-[10px] text-amber-700">— owner override</span></span>
+          <input class="field" style="width:160px; text-align:right; padding:4px 10px; font-weight:800; color:#012749;" type="number" value="${hppFinal}" oninput="reviewSetHppOverride(${ri}, Number(this.value || 0))" />
+        </div>
+        <div class="flex justify-between text-[12px] mt-1.5 ${margin<0?'text-rose-700':marginPct<10?'text-amber-700':'text-emerald-700'}">
+          <span><strong>Margin final</strong></span>
+          <span class="font-extrabold">${fmtRp(margin)} (${marginPct.toFixed(1)}%)</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalHpp = tx.rakitLines.reduce((s,r) => s + (r.hppOverride != null ? r.hppOverride : (r.components.reduce((cs,c)=>cs+c.fifoCost,0)+(r.laborCost||0))), 0);
+  const totalRakit = tx.rakitLines.reduce((s,r)=>s+(r.finalPrice||0), 0);
+  const totalMargin = totalRakit - totalHpp;
+
+  $('#modals').innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal-card wide">
+        <div class="bg-[#012749] text-white px-5 py-4 rounded-t-3xl flex items-center justify-between">
+          <div>
+            <div class="font-extrabold text-[15px]">✅ Review &amp; Approve — Rakit Lock</div>
+            <div class="text-[11px] opacity-75 mt-0.5">${tx.id} · ${tx.customer}</div>
+          </div>
+          <button class="text-white/70 hover:text-white text-xl" onclick="closeModal()">✕</button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="grid grid-cols-3 gap-3">
+            <div class="bg-slate-50 rounded-xl px-3 py-2.5">
+              <div class="key-up">Submitted by</div>
+              <div class="font-extrabold text-[13px]">${tx.submittedBy}</div>
+              <div class="text-[10px] text-slate-400">${tx.submittedAt}</div>
+            </div>
+            <div class="bg-slate-50 rounded-xl px-3 py-2.5">
+              <div class="key-up">Total invoice</div>
+              <div class="font-extrabold text-[13px]">${fmtRp(tx.total)}</div>
+              <div class="text-[10px] text-slate-400">DP ${fmtRp(tx.dpAmount)} · sisa ${fmtRp(tx.total-tx.dpAmount)}</div>
+            </div>
+            <div class="${totalMargin<0?'bg-rose-50':'bg-emerald-50'} rounded-xl px-3 py-2.5">
+              <div class="key-up ${totalMargin<0?'text-rose-700':'text-emerald-700'}">Margin preview</div>
+              <div class="font-extrabold text-[13px] ${totalMargin<0?'text-rose-700':'text-emerald-700'}">${fmtRp(totalMargin)}</div>
+              <div class="text-[10px] ${totalMargin<0?'text-rose-700':'text-emerald-700'}">${totalRakit>0?(totalMargin/totalRakit*100).toFixed(1):0}% atas harga rakit</div>
+            </div>
+          </div>
+          ${linesHtml}
+          <div class="border-t border-slate-200 pt-4">
+            <div class="text-[11px] text-slate-500 mb-3">
+              ⚡ Approve → Stock Adjustment otomatis dibuat untuk decrement semua komponen, status transaksi → <span class="state-pill state-AWAITING_LUNAS">AWAITING_LUNAS</span> (atau PAID kalau sisa=0)
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="btn-danger py-2.5" onclick="openRejectModal()">❌ Reject (input alasan)</button>
+              <button class="btn-primary py-2.5" onclick="approveTransaction()">✅ Approve &amp; Decrement Stock</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRejectModal() {
+  $('#modals').innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal-card narrow">
+        <div class="bg-rose-700 text-white px-5 py-4 rounded-t-3xl flex items-center justify-between">
+          <div class="font-extrabold text-[14px]">❌ Reject Lock — Alasan</div>
+          <button class="text-white/70 hover:text-white text-xl" onclick="closeModal()">✕</button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div>
+            <div class="key-up mb-1.5">Alasan reject <span class="text-rose-500">*</span></div>
+            <textarea class="field" rows="4" placeholder="Mis. Kontaktor yang dipakai bukan Schneider, tapi merk lokal. Mohon koreksi sebelum approve." oninput="state.rejectDraft.reason=this.value"></textarea>
+            <div class="text-[11px] text-slate-500 mt-2">Status akan kembali ke <span class="state-pill state-WIP">WIP</span>. Admin akan dapat notifikasi untuk fix &amp; resubmit.</div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button class="btn-ghost" onclick="state.modal='review'; renderModals();">‹ Kembali ke Review</button>
+            <button class="btn-danger" onclick="submitReject()">Confirm Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCancelModal() {
+  const tx = state.transactions.find(t => t.id === state.modalTxId);
+  if (!tx) return;
+  const c = state.cancelDraft;
+  const forfeit = Math.max(0, tx.dpAmount - c.refund);
+  $('#modals').innerHTML = `
+    <div class="modal-backdrop">
+      <div class="modal-card">
+        <div class="bg-rose-700 text-white px-5 py-4 rounded-t-3xl flex items-center justify-between">
+          <div>
+            <div class="font-extrabold text-[15px]">❌ Cancel Rakit Job</div>
+            <div class="text-[11px] opacity-75 mt-0.5">${tx.id} · ${tx.customer}</div>
+          </div>
+          <button class="text-white/70 hover:text-white text-xl" onclick="closeModal()">✕</button>
+        </div>
+        <div class="p-5 space-y-4">
+          <div class="bg-slate-50 rounded-xl px-3 py-3 grid grid-cols-2 gap-3">
+            <div>
+              <div class="key-up">DP awal diterima</div>
+              <div class="font-extrabold text-[15px] text-[#012749]">${fmtRp(tx.dpAmount)}</div>
+            </div>
+            <div>
+              <div class="key-up">Status sekarang</div>
+              <div class="font-extrabold text-[13px]"><span class="state-pill state-WIP">WIP</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="key-up mb-2">Pembagian DP (owner-decided)</div>
+            <div class="bg-white border border-slate-200 rounded-xl p-3 space-y-3">
+              <div>
+                <div class="flex justify-between text-[12px] mb-1">
+                  <span class="font-bold text-emerald-700">💰 Refund ke customer</span>
+                  <span class="text-[10px] text-slate-400">cash, manual</span>
+                </div>
+                <input class="field" type="number" value="${c.refund}" max="${tx.dpAmount}" min="0" oninput="cancelSetRefund(this.value)" />
+              </div>
+              <div>
+                <div class="flex justify-between text-[12px] mb-1">
+                  <span class="font-bold text-rose-700">🔒 Forfeit (tertahan toko)</span>
+                  <span class="text-[10px] text-slate-400">auto-computed</span>
+                </div>
+                <div class="field bg-slate-50 font-extrabold">${fmtRp(forfeit)}</div>
+              </div>
+              <div class="text-[11px] text-slate-500 border-t border-slate-200 pt-2">
+                ℹ Tidak ada formula otomatis — owner judge per case sesuai komponen yang sudah disiapkan / progress kerjaan.
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="key-up mb-1.5">Alasan cancel <span class="text-rose-500">*</span></div>
+            <textarea class="field" rows="3" placeholder="Mis. Customer batal karena tender batal. Komponen sudah disiapkan, refund parsial." oninput="state.cancelDraft.reason=this.value">${c.reason}</textarea>
+          </div>
+          <div class="border-t border-slate-200 pt-3 flex items-center justify-between">
+            <div class="text-[11px] text-slate-500">
+              Confirm → status: <span class="state-pill state-CANCELLED">CANCELLED</span><br/>
+              Forfeit ${fmtRp(forfeit)} masuk laporan "Pendapatan Forfeit Rakit"
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-ghost" onclick="closeModal()">Jangan cancel</button>
+              <button class="btn-danger" onclick="submitCancel()">❌ Confirm Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========================================================
+//                   MAIN RENDER
+// ========================================================
+function render() {
+  if (state.currentView === 'cart') renderCart();
+  else if (state.currentView === 'wip-list') renderWipList();
+  else if (state.currentView === 'approval-inbox') renderApprovalInbox();
+  else if (state.currentView === 'invoice-preview') renderInvoicePreview();
+  updateCounts();
+  renderModals();
+}
+
+// ========================================================
+//        RENDER: INVOICE PREVIEW (customer-facing PDF)
+// ========================================================
+let invoicePreviewState = { variant: 'dp', scenario: 'pure_rakit' };  // variant: dp|lunas; scenario: pure_rakit | mixed | pure_komp
+
+function setInvoiceVariant(v) { invoicePreviewState.variant = v; render(); }
+function setInvoiceScenario(s) { invoicePreviewState.scenario = s; render(); }
+
+function getInvoiceSample() {
+  const baseHead = {
+    invoice_number: 'GJP-2026-0042',
+    created_at: '2026-06-08 14:30',
+    channel: 'walkin',
+    customer_name: 'PT Sumber Berkah',
+    customer_phone: '0812-3456-7890',
+    customer_company: 'PT Sumber Berkah',
+    delivery_address: 'Jl. Merdeka No. 12 Lt.3, Glodok, Jakarta Barat 11180',
+    notes: 'Garansi 1 bulan. Bawakan kunci pas 8mm dan 10mm.',
+    payment_method: 'transfer',
+    payment_subtype: null,
+  };
+
+  if (invoicePreviewState.scenario === 'pure_rakit') {
+    return {
+      ...baseHead,
+      // PURE RAKIT ONLY — invoice cuma 2 baris lump-sum, NO komponen sale
+      items: [
+        { sku:'RAKIT-WIRING', name:'Jasa Rakit', description:'Box Wiring untuk PT XYZ — 1 unit', qty:1, unit_price:4750000, subtotal:4750000, isRakit:true, rakitType:'jasa_rakit' },
+        { sku:'RAKIT-PANEL', name:'Jasa Custom Panel', description:'Custom Panel Distribusi 3-fase — PLN 50kVA', qty:1, unit_price:12500000, subtotal:12500000, isRakit:true, rakitType:'jasa_custom_panel' },
+      ],
+      subtotal: 17250000, ongkir_amount: 150000, total_amount: 17400000, dp_amount: 5000000,
+    };
+  }
+  if (invoicePreviewState.scenario === 'pure_komp') {
+    return {
+      ...baseHead,
+      // KOMPONEN ONLY — existing A flow, no rakit lines
+      items: [
+        { sku:'MCB-SCH-3P-25A', name:'MCB Schneider 3p 25A', qty:1, unit_price:250000, subtotal:250000 },
+        { sku:'KBL-NYY-3X25', name:'Kabel NYY 3×2.5 (m)', qty:50, unit_price:20000, subtotal:1000000 },
+        { sku:'KTR-SCH-LC1D32', name:'Kontaktor Schneider LC1D32', qty:2, unit_price:950000, subtotal:1900000 },
+      ],
+      subtotal: 3150000, ongkir_amount: 50000, total_amount: 3200000, dp_amount: 0,
+    };
+  }
+  // mixed
+  return {
+    ...baseHead,
+    items: [
+      { sku:'MCB-SCH-3P-25A', name:'MCB Schneider 3p 25A', qty:1, unit_price:250000, subtotal:250000 },
+      { sku:'KBL-NYY-3X25', name:'Kabel NYY 3×2.5 (m)', qty:50, unit_price:20000, subtotal:1000000 },
+      { sku:'RAKIT-WIRING', name:'Jasa Rakit', description:'Box Wiring untuk PT XYZ — 1 unit', qty:1, unit_price:4750000, subtotal:4750000, isRakit:true, rakitType:'jasa_rakit' },
+      { sku:'RAKIT-PANEL', name:'Jasa Custom Panel', description:'Custom Panel Distribusi 3-fase — PLN 50kVA', qty:1, unit_price:12500000, subtotal:12500000, isRakit:true, rakitType:'jasa_custom_panel' },
+    ],
+    subtotal: 18500000, ongkir_amount: 150000, total_amount: 18650000, dp_amount: 5000000,
+  };
+}
+
+function renderInvoicePreview() {
+  const sample = getInvoiceSample();
+
+  const variant = invoicePreviewState.variant;
+  const company = {
+    company_name: 'GARINDO JAYA PANEL',
+    address: 'Jl. Pinangsia Raya No. 56 Blok C-7, Glodok, Jakarta Barat 11110',
+    phone: '021-6293000',
+    email: 'info@garindo-jaya.id',
+    npwp: '01.234.567.8-911.000',
+  };
+  const bank = {
+    bank_name: 'BCA',
+    account_number: '6450-123-456',
+    account_name: 'Tony Wei (PT Garindo Jaya Panel)',
+  };
+
+  const subtotal = sample.subtotal;
+  const ongkir = sample.ongkir_amount;
+  const total = sample.total_amount;
+  const dp = sample.dp_amount;
+  const sisa = variant === 'dp' ? total - dp : 0;
+  const sudahDibayar = variant === 'lunas' ? total : dp;
+  const channelLabel = 'WALK-IN';
+  const paymentLabel = 'Transfer';
+  const adminName = 'Admin Toko';
+
+  $('#view-invoice-preview').innerHTML = `
+    <div class="space-y-4">
+      <!-- Controls -->
+      <div class="card p-4 space-y-3">
+        <div class="flex items-center gap-4 flex-wrap">
+          <div>
+            <div class="label-up mb-1">Scenario Transaksi</div>
+            <div class="seg">
+              <button class="${invoicePreviewState.scenario==='pure_rakit'?'active':''}" onclick="setInvoiceScenario('pure_rakit')">🛠 Pure Rakit (rakit only)</button>
+              <button class="${invoicePreviewState.scenario==='mixed'?'active':''}" onclick="setInvoiceScenario('mixed')">📦 Mixed (komponen + rakit)</button>
+              <button class="${invoicePreviewState.scenario==='pure_komp'?'active':''}" onclick="setInvoiceScenario('pure_komp')">📦 Pure Komponen (existing A)</button>
+            </div>
+          </div>
+          <div>
+            <div class="label-up mb-1">Invoice Variant</div>
+            <div class="seg">
+              <button class="${variant==='dp'?'active':''}" onclick="setInvoiceVariant('dp')">📋 DP</button>
+              <button class="${variant==='lunas'?'active':''}" onclick="setInvoiceVariant('lunas')">✅ Lunas</button>
+            </div>
+          </div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-[12px] text-amber-900">
+          <strong>👀 Penting:</strong> apapun scenario-nya, untuk <strong>jasa rakit / jasa custom panel</strong> SELALU muncul di invoice sebagai <strong>1 baris lump-sum</strong>. Komponen detail (MCB, Kontaktor, Kabel, dll) yang admin input di Lock Modal <strong>NEVER</strong> muncul di invoice — itu internal only (untuk Stock Adjustment + audit).
+        </div>
+      </div>
+
+      <!-- Annotated callout -->
+      <div class="grid lg:grid-cols-[1fr_300px] gap-4">
+
+        <!-- INVOICE PAPER -->
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div style="background:#012749; color:white; padding:0.5rem 1rem; font-size:12px; font-weight:bold; display:flex; justify-content:space-between; align-items:center;">
+            <span>📄 Preview · Invoice ${sample.invoice_number}</span>
+            <span style="font-size:10px; opacity:0.7;">Layout = A's SalesInvoicePDF.tsx · dotmatrix 9.5"×11"</span>
+          </div>
+
+          <!-- INVOICE BODY (replica of A's SalesInvoicePDF) -->
+          <div class="relative" style="font-family: 'Courier New', monospace; padding:2rem; color:#1e293b; font-size:12px; line-height:1.45;">
+
+            <!-- Stamp -->
+            <div style="position:absolute; right:2rem; top:8rem; transform:rotate(-8deg); border:3px solid ${variant==='lunas'?'#047857':'#b45309'}; padding:0.4rem 0.8rem; font-weight:800; font-size:18px; letter-spacing:0.2em; font-family:ui-sans-serif,sans-serif; opacity:0.85; color:${variant==='lunas'?'#047857':'#b45309'};">
+              ${variant === 'lunas' ? 'LUNAS' : 'DP'}
+            </div>
+
+            <!-- Header -->
+            <div style="display:grid; grid-template-columns: auto 1fr; gap:1rem; padding-bottom:0.75rem; border-bottom: 2px solid #0f172a; margin-bottom:0.75rem;">
+              <div style="width:64px; height:64px; background:#0f172a; color:white; display:flex; align-items:center; justify-content:center; font-family:ui-sans-serif,sans-serif; font-weight:800; font-size:9px; text-align:center; line-height:1.2; padding:4px;">
+                GARINDO<br/>JAYA<br/>PANEL
+              </div>
+              <div>
+                <div style="font-weight:800; font-family:ui-sans-serif,sans-serif; font-size:15px;">${company.company_name}</div>
+                <div style="font-size:11px; margin-top:2px;">${company.address}</div>
+                <div style="font-size:11px;">Telp ${company.phone} · ${company.email}</div>
+                <div style="font-size:11px;">NPWP ${company.npwp}</div>
+              </div>
+            </div>
+
+            <!-- Title block -->
+            <div style="display:grid; grid-template-columns: 1fr auto; gap:0.75rem; margin-bottom:0.75rem;">
+              <div>
+                <div style="font-family:ui-sans-serif,sans-serif; font-weight:800; font-size:17px; letter-spacing:0.1em;">SALES INVOICE</div>
+                <div style="font-size:11px; font-weight:bold; text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; color:${variant==='lunas'?'#047857':'#b45309'};">
+                  ${variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
+                </div>
+              </div>
+              <div style="text-align:right; font-size:11px;">
+                <div style="font-weight:800; font-size:13px;">${sample.invoice_number}</div>
+                <div>${sample.created_at} WIB</div>
+                <div>Channel: ${channelLabel}</div>
+              </div>
+            </div>
+
+            <!-- Bill-to -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; padding:0.5rem 0; border-bottom:1px dashed #94a3b8; margin-bottom:0.5rem; font-size:11px;">
+              <div>
+                <div style="font-weight:800; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:#475569; margin-bottom:0.25rem;">Pelanggan</div>
+                <div><strong>${sample.customer_name}</strong></div>
+                <div>${sample.customer_company}</div>
+                <div>${sample.customer_phone}</div>
+                <div style="margin-top:0.25rem;">
+                  <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#475569;">📍 Kirim ke:</span>
+                  <span> ${sample.delivery_address}</span>
+                </div>
+              </div>
+              <div>
+                <div style="font-weight:800; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; color:#475569; margin-bottom:0.25rem;">Metode Bayar</div>
+                <div><strong>${paymentLabel}</strong></div>
+                <div style="margin-top:0.25rem;">
+                  <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#475569;">Admin:</span>
+                  <span> ${adminName}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Items table -->
+            <table style="width:100%; font-size:11px; margin:0.5rem 0; border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="border-top:1px solid #0f172a; border-bottom:1px solid #0f172a; padding:0.25rem; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase;">No</th>
+                  <th style="border-top:1px solid #0f172a; border-bottom:1px solid #0f172a; padding:0.25rem; text-align:left; font-weight:800; font-size:10px; text-transform:uppercase;">Deskripsi Barang</th>
+                  <th style="border-top:1px solid #0f172a; border-bottom:1px solid #0f172a; padding:0.25rem; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase;">Qty</th>
+                  <th style="border-top:1px solid #0f172a; border-bottom:1px solid #0f172a; padding:0.25rem; text-align:right; font-weight:800; font-size:10px; text-transform:uppercase;">Harga</th>
+                  <th style="border-top:1px solid #0f172a; border-bottom:1px solid #0f172a; padding:0.25rem; text-align:right; font-weight:800; font-size:10px; text-transform:uppercase;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sample.items.map((it, idx) => `
+                  <tr style="vertical-align:top;">
+                    <td style="padding:0.25rem; text-align:center; border-bottom:1px dotted #cbd5e1;">${idx+1}</td>
+                    <td style="padding:0.25rem; border-bottom:1px dotted #cbd5e1;">
+                      <div style="font-weight:bold;">${it.name}</div>
+                      ${it.isRakit
+                        ? `<div style="font-size:10px; color:#64748b; margin-top:1px;">${it.description}</div>`
+                        : `<div style="font-size:10px; color:#94a3b8;">${it.sku}</div>`}
+                    </td>
+                    <td style="padding:0.25rem; text-align:center; border-bottom:1px dotted #cbd5e1;">${it.qty}</td>
+                    <td style="padding:0.25rem; text-align:right; border-bottom:1px dotted #cbd5e1;">${it.unit_price.toLocaleString('id-ID')}</td>
+                    <td style="padding:0.25rem; text-align:right; border-bottom:1px dotted #cbd5e1;">${it.subtotal.toLocaleString('id-ID')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <!-- Notes -->
+            <div style="border:1px dashed #94a3b8; padding:0.4rem 0.6rem; margin:0.5rem 0; font-size:11px;">
+              <div style="font-weight:800; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:2px;">📝 Catatan</div>
+              <div>${sample.notes}</div>
+            </div>
+
+            <!-- Totals (right-aligned 60%) -->
+            <div style="margin-left:auto; width:60%; font-size:12px; margin-top:0.5rem;">
+              <div style="display:flex; justify-content:space-between; padding:2px 0; border-top:1px solid #0f172a; margin-top:0.25rem; padding-top:0.25rem;">
+                <span>Subtotal</span><span>${fmtRp(subtotal)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0;">
+                <span>Biaya Ongkir</span><span>${fmtRp(ongkir)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:4px 0; border-top:1px solid #0f172a; border-bottom:3px double #0f172a; font-weight:800; font-size:13px;">
+                <span>TOTAL TAGIHAN</span><span>${fmtRp(total)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0; font-weight:bold;">
+                <span>${variant==='lunas' ? 'Sudah Dibayar' : 'Uang Muka (DP) Diterima'}</span><span>${fmtRp(sudahDibayar)}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:2px 0; font-weight:800;">
+                <span>${variant==='lunas' ? 'SISA' : 'SISA PELUNASAN'}</span><span>${fmtRp(sisa)}</span>
+              </div>
+            </div>
+
+            <!-- Payment block -->
+            <div style="margin-top:1rem; padding-top:0.5rem; border-top:1px dashed #94a3b8; font-size:11px;">
+              <div style="font-weight:800; font-size:10px; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:2px;">Rekening Pembayaran</div>
+              <div>
+                <strong>${bank.bank_name}</strong> · ${bank.account_number} a/n <strong>${bank.account_name}</strong>
+              </div>
+              <div style="font-size:10px; color:#64748b; margin-top:1px;">
+                ${variant==='lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
+              </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div style="margin-top:0.75rem; border:1px solid #0f172a; padding:0.4rem 0.6rem; text-align:center; font-size:10px; font-weight:800; letter-spacing:0.05em;">
+              ⚠ BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN
+            </div>
+
+            <!-- Signature footer -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; padding-top:0.75rem; border-top:1px dashed #94a3b8; font-size:11px;">
+              <div style="text-align:center;">
+                <div style="border-bottom:1px solid #0f172a; height:2.5rem; margin:0 1rem 0.25rem;"></div>
+                <div style="font-weight:bold; font-size:10px;">Penerima Barang</div>
+                <div style="font-size:9px; color:#64748b; font-style:italic; margin-top:1px;">(tanda tangan + nama jelas)</div>
+              </div>
+              <div style="text-align:center;">
+                <div style="position:relative; height:2.5rem; margin:0 1rem 0.25rem; border-bottom:1px solid #0f172a;">
+                  <div style="position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center; padding-bottom:2px; font-family:ui-sans-serif,sans-serif; font-size:11px; font-style:italic;">
+                    ${adminName}
+                  </div>
+                </div>
+                <div style="font-weight:bold; font-size:10px;">Hormat Kami</div>
+                <div style="font-size:9px; color:#64748b; font-style:italic; margin-top:1px;">${company.company_name}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Annotations sidebar -->
+        <div class="space-y-3">
+          <div class="card p-3 text-[12px]">
+            <div class="label-up mb-2 text-amber-700">🟠 Rakit lines (B addition)</div>
+            <div class="space-y-2 text-slate-700">
+              <div>
+                <strong>Items dengan label "Jasa Rakit" atau "Jasa Custom Panel":</strong>
+              </div>
+              <div>
+                Setiap rakit line = <strong>1 baris di invoice</strong>:
+                <ul class="mt-1 pl-3 list-disc text-[11px] space-y-0.5">
+                  <li>Name = "Jasa Rakit" / "Jasa Custom Panel"</li>
+                  <li>Sub-text = <code>description</code> (e.g., "Box Wiring untuk PT XYZ")</li>
+                  <li>Qty = 1</li>
+                  <li>Harga = <code>final_price</code> (lump-sum)</li>
+                </ul>
+              </div>
+              <div class="bg-rose-50 border border-rose-200 rounded-lg p-2 mt-2">
+                <strong class="text-rose-700">🚫 NEVER shown di invoice:</strong>
+                <ul class="mt-1 pl-3 list-disc text-[11px] text-rose-800">
+                  <li>Komponen list yang admin input (MCB Schneider, Kontaktor, Kabel NYY dst)</li>
+                  <li>FIFO cost per komponen</li>
+                  <li>Labor cost / HPP / margin</li>
+                  <li>Mode tracking (detail/lump-sum)</li>
+                </ul>
+                <div class="text-[10px] text-rose-700 mt-1">Itu semua internal di <code>rakit_components</code> + Stock Adjustment + Approval Inbox view.</div>
+              </div>
+            </div>
+          </div>
+          ${invoicePreviewState.scenario === 'mixed' || invoicePreviewState.scenario === 'pure_komp' ? `
+            <div class="card p-3 text-[12px]">
+              <div class="label-up mb-2 text-slate-600">⚪ Komponen sale (existing A)</div>
+              <div class="space-y-2 text-slate-700">
+                <div>
+                  <strong>Items tanpa label "Jasa":</strong>
+                </div>
+                <div>
+                  Ini komponen yang <strong>customer beli terpisah</strong> dari rakit job (e.g., customer order box wiring + ALSO ambil 1 roll kabel buat di rumah).
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-2 mt-2 text-[11px] text-emerald-900">
+                  <strong>Beda dengan komponen rakit:</strong> komponen sale = customer dapet barang fisik take-home. Komponen rakit = komponen yang dipakai oleh toko buat ngerakit (customer gak dapet barang fisik komponen, dapetnya assembled box).
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          <div class="card p-3 text-[12px]">
+            <div class="label-up mb-2">Data source per row</div>
+            <div class="space-y-1 text-slate-700 text-[11px]">
+              <div>• <strong>Komponen sale rows</strong> → dari <code>kasir_transaction_items</code></div>
+              <div>• <strong>Rakit lump-sum rows</strong> → dari <code>rakit_job_lines</code></div>
+              <div>• Combined chronologically di invoice items table (komponen first, rakit lines after)</div>
+            </div>
+          </div>
+          <div class="card p-3 text-[12px]">
+            <div class="label-up mb-2">⚪ Existing A elements</div>
+            <div class="space-y-1 text-slate-700 text-[11px]">
+              <div>• Header: logo + company info</div>
+              <div>• Bill-to: customer + delivery + payment</div>
+              <div>• Items table format</div>
+              <div>• Notes block, totals, bank info, T&C</div>
+              <div>• Signature lines + admin signature</div>
+              <div>• Stamp DP (orange) / LUNAS (green)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Init
+setView('cart');
+updateDemoGuide();
+</script>
+
+</body>
+</html>

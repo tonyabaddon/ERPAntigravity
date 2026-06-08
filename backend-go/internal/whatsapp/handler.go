@@ -644,7 +644,7 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 	// Errors are logged but never block payment confirmation.
 	var totalHpp float64
 	for _, item := range order.Items {
-		cost, err := h.db.DeductStockAndGetHPP(item.SKU, item.Qty)
+		cost, err := h.db.DeductStockAndGetHPP(item.SKU, item.Qty, orderID)
 		if err != nil {
 			log.Printf("[HANDLER] DeductStockAndGetHPP error for %s x%d: %v", item.SKU, item.Qty, err)
 			continue

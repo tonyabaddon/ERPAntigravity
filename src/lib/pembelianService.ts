@@ -74,6 +74,8 @@ export const purchaseOrderService = {
     total: number;
     status: 'DRAFT' | 'ORDERED';
     items: PoItemDraft[];
+    expected_receive_date?: string | null;
+    created_by_user_id?: string | null;
   }): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const po_number = await purchaseOrderService.generatePoNumber();
@@ -88,6 +90,9 @@ export const purchaseOrderService = {
         subtotal: po.subtotal,
         total: po.total,
         status: po.status,
+        expected_receive_date: po.expected_receive_date ?? null,
+        created_by_user_id: po.created_by_user_id || null,
+        updated_by_user_id: po.created_by_user_id || null,
         ...(po.status === 'ORDERED' ? { ordered_at: new Date().toISOString() } : {}),
       })
       .select('id')
@@ -108,11 +113,22 @@ export const purchaseOrderService = {
     subtotal: number;
     total: number;
     items: PoItemDraft[];
+    expected_receive_date?: string | null;
+    updated_by_user_id?: string | null;
   }): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error: poError } = await supabase
       .from('purchase_orders')
-      .update({ supplier_id: po.supplier_id, notes: po.notes, tax_rate: po.tax_rate, tax_amount: po.tax_amount, subtotal: po.subtotal, total: po.total })
+      .update({
+        supplier_id: po.supplier_id,
+        notes: po.notes,
+        tax_rate: po.tax_rate,
+        tax_amount: po.tax_amount,
+        subtotal: po.subtotal,
+        total: po.total,
+        expected_receive_date: po.expected_receive_date ?? null,
+        updated_by_user_id: po.updated_by_user_id || null,
+      })
       .eq('id', poId);
     if (poError) throw poError;
     await supabase.from('purchase_order_items').delete().eq('po_id', poId);

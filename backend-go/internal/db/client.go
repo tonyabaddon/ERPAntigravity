@@ -46,6 +46,24 @@ func NewClient(connStr string) (*Client, error) {
 	return &Client{DB: db, listener: listener}, nil
 }
 
+// NewClientWithoutListener returns a *Client with only the SQL connection
+// initialised. Used by integration tests where the LISTEN/NOTIFY plumbing is
+// irrelevant and slow to set up.
+func NewClientWithoutListener(connStr string) (*Client, error) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return &Client{DB: db}, nil
+}
+
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
 func (c *Client) StartListening(h NotifyHandlers) error {
@@ -150,6 +168,8 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 }
 
 func (c *Client) Close() {
-	c.listener.Close()
+	if c.listener != nil {
+		c.listener.Close()
+	}
 	c.DB.Close()
 }

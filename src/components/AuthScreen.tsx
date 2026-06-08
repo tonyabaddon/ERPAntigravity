@@ -9,7 +9,7 @@ import { supabase, isSupabaseConfigured, adminUsersService } from '../lib/supaba
 import { PermissionSet, ALL_PERMISSIONS } from '../types';
 
 interface AuthScreenProps {
-  onLoginSuccess: (userData: { name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => void;
+  onLoginSuccess: (userData: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => void;
 }
 
 function deriveDisplayName(email: string, fullName?: string): string {
@@ -46,6 +46,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
   // Dev bypass when Supabase is not configured
   const devBypass = (email: string, name?: string, storeName?: string) => {
     onLoginSuccess({
+      id: '',
       name: name ?? deriveDisplayName(email),
       role: 'Owner',
       permissions: ALL_PERMISSIONS,
@@ -127,6 +128,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     showToast('🎉 Masuk sukses! Memuat sistem ERP...');
     setTimeout(() => {
       onLoginSuccess({
+        id: user.id,
         name: deriveDisplayName(user.email ?? '', adminRow!.name),
         role: adminRow!.role,
         permissions: adminRow!.permissions as PermissionSet,
@@ -218,6 +220,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     showToast(`🎉 Toko "${signUpStore}" sukses terdaftar! Mengalihkan ke Dashboard.`);
     setTimeout(() => {
       onLoginSuccess({
+        id: data.user?.id ?? '',
         name: signUpName,
         role: 'Owner',
         permissions: ALL_PERMISSIONS,

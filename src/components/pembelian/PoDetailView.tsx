@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Printer } from 'lucide-react';
-import { DbPurchaseOrder, DbPurchaseOrderItem, StockItem } from '../../types';
+import { X, Printer, FileText } from 'lucide-react';
+import { DbPurchaseOrder, DbPurchaseOrderItem, StockItem, DbCompanySettings } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
-import { companySettingsService } from '../../lib/supabaseClient';
+import { companySettingsService, adminUsersService } from '../../lib/supabaseClient';
+import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf';
 
 interface PoDetailViewProps {
   po: DbPurchaseOrder;
@@ -36,10 +37,65 @@ const STATUS_LABEL: Record<string, string> = {
 export default function PoDetailView({ po, stockList, onClose, onRefresh, showToast, onReceiveReplacement }: PoDetailViewProps) {
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [companySettings, setCompanySettings] = useState<DbCompanySettings | null>(null);
 
   useEffect(() => {
-    companySettingsService.fetch().then(s => { if (s?.company_name) setStoreName(s.company_name); }).catch(() => {});
+    companySettingsService.fetch().then(s => {
+      setCompanySettings(s);
+      if (s?.company_name) setStoreName(s.company_name);
+    }).catch(() => {});
   }, []);
+
+  async function handleDownloadPdf() {
+    if (downloadingPdf) return;
+    if (!po.supplier) {
+      showToast('Data supplier tidak lengkap. Reload halaman.', 'warning');
+      return;
+    }
+    if (!companySettings?.address || !companySettings?.phone) {
+      const proceed = confirm(
+        'Alamat atau nomor telepon toko belum diisi di Pengaturan. ' +
+        'PDF akan tampil tanpa info tersebut. Tetap generate?'
+      );
+      if (!proceed) return;
+    }
+    setDownloadingPdf(true);
+    try {
+      let createdByName = '—';
+      if (po.created_by_user_id) {
+        try {
+          const admins = await adminUsersService.fetchAll();
+          const author = admins.find(a => a.id === po.created_by_user_id);
+          if (author) createdByName = author.name;
+        } catch (_) { /* fallback to '—' */ }
+      }
+      const blob = generatePoPdf({
+        po,
+        supplier: po.supplier,
+        items: po.items ?? [],
+        companySettings,
+        createdByName,
+      });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win) {
+        // Popup blocked — fallback to download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${po.po_number}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (e: any) {
+      console.error('PDF generation error:', e);
+      showToast('Gagal generate PDF. Coba lagi.', 'warning');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   async function handleDamageStatusChange(item: DbPurchaseOrderItem, newStatus: string) {
     setUpdatingItemId(item.id);
@@ -67,6 +123,17 @@ export default function PoDetailView({ po, stockList, onClose, onRefresh, showTo
             <p className="text-xs text-gray-400 mt-0.5">{po.supplier?.name} · {STATUS_LABEL[po.status]}</p>
           </div>
           <div className="flex gap-2">
+            {po.status !== 'DRAFT' && (
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {downloadingPdf ? 'Memproses...' : 'Download PDF'}
+              </button>
+            )}
             <button
               onClick={() => window.print()}
               className="text-xs text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center gap-1"
