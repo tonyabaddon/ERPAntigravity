@@ -5,6 +5,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel } from '../types';
+import type {
+  ApprovalRequest,
+  StockAdjustmentReason,
+  OpnameSession,
+  OpnameCount,
+} from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
@@ -1128,3 +1134,222 @@ export const salesEntriesService = {
     return (data ?? []) as DbOrder[];
   },
 };
+
+// ============================================================================
+// Phase 2 — Approval / adjustment / opname / price-change / seed RPC wrappers
+// ============================================================================
+// These standalone exports wrap the SECURITY DEFINER RPCs introduced in
+// Phase 2 (T1–T20). They are consumed by the approval inbox, stock adjustment
+// modal, opname workflow, and CSV-upsert paths in subsequent tasks (T23+).
+
+// --- Approvals ---
+
+export async function listPendingApprovals(): Promise<ApprovalRequest[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('approval_requests')
+    .select('*')
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as ApprovalRequest[];
+}
+
+export async function verifyOwnerPin(approvalId: number, pin: string): Promise<boolean> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('verify_owner_pin', {
+    p_approval_id: approvalId,
+    p_pin: pin,
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+// --- Adjustments ---
+
+export async function requestAdjustment(args: {
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  qty_delta: number;
+  reason_code: StockAdjustmentReason;
+  reason_note?: string;
+  evidence_urls?: string[];
+  actor_user_id: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('request_adjustment', {
+    p_sku: args.sku,
+    p_warehouse: args.warehouse,
+    p_qty_delta: args.qty_delta,
+    p_reason_code: args.reason_code,
+    p_reason_note: args.reason_note ?? null,
+    p_evidence_urls: args.evidence_urls ?? [],
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitApprovedAdjustment(approvalId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('commit_approved_adjustment', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+// --- Opname ---
+
+export async function startOpnameSession(args: {
+  opname_type: OpnameSession['opnameType'];
+  scope_payload: Record<string, unknown>;
+  counted_by: string;
+  witnessed_by: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('start_opname_session', {
+    p_opname_type: args.opname_type,
+    p_scope_payload: args.scope_payload,
+    p_counted_by: args.counted_by,
+    p_witnessed_by: args.witnessed_by,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function recordOpnameCount(args: {
+  session_id: number;
+  sku: string;
+  warehouse: 'atas' | 'bawah';
+  counted_qty: number;
+}): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('record_opname_count', {
+    p_session_id: args.session_id,
+    p_sku: args.sku,
+    p_warehouse: args.warehouse,
+    p_counted_qty: args.counted_qty,
+  });
+  if (error) throw error;
+}
+
+export async function acknowledgeOpnameWitness(
+  sessionId: number,
+  witnessUserId: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('acknowledge_opname_witness', {
+    p_session_id: sessionId,
+    p_witness_user_id: witnessUserId,
+  });
+  if (error) throw error;
+}
+
+export async function submitOpnameForOwner(sessionId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('submit_opname_for_owner', {
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitOpname(approvalId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('commit_opname', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('stock_opname_counts')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('sku', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as unknown as OpnameCount[];
+}
+
+// --- Price change ---
+
+export async function requestPriceChange(args: {
+  sku: string;
+  field: 'price' | 'harga_modal';
+  new_value: number;
+  reason_note: string;
+  actor_user_id: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('request_price_change', {
+    p_sku: args.sku,
+    p_field: args.field,
+    p_new_value: args.new_value,
+    p_reason_note: args.reason_note,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function commitApprovedPriceChange(approvalId: number): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('commit_approved_price_change', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+}
+
+// --- Realtime subscription for approval inbox ---
+
+export function subscribeApprovalRequests(
+  onChange: (row: ApprovalRequest) => void,
+): () => void {
+  if (!supabase) {
+    // Realtime is a no-op when Supabase isn't configured; return an inert
+    // unsubscriber so callers don't need to special-case configuration.
+    return () => { /* no-op */ };
+  }
+  const client = supabase;
+  const channel = client
+    .channel('approval_requests_inbox')
+    .on(
+      'postgres_changes' as any,
+      { event: '*', schema: 'public', table: 'approval_requests' },
+      (payload: { new: unknown }) => onChange(payload.new as ApprovalRequest),
+    )
+    .subscribe();
+  return () => {
+    client.removeChannel(channel);
+  };
+}
+
+// --- Seed (for CSV upsert + new SKU creation) ---
+
+export async function seedStockRow(args: {
+  sku: string;
+  name: string;
+  category: string;
+  price: number;
+  harga_modal: number;
+  stock_atas?: number;
+  stock_bawah?: number;
+  actor_user_id: string;
+}): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('seed_stock_row', {
+    p_sku: args.sku,
+    p_name: args.name,
+    p_category: args.category,
+    p_price: args.price,
+    p_harga_modal: args.harga_modal,
+    p_stock_atas: args.stock_atas ?? 0,
+    p_stock_bawah: args.stock_bawah ?? 0,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+}
