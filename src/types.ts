@@ -387,7 +387,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'stok-opname' | 'rekonsiliasi';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'stok-opname' | 'rekonsiliasi' | 'wip-list';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -514,7 +514,8 @@ export type ApprovalRequestType =
   | 'price_change'
   | 'kasir_price_override'
   | 'kasir_void'
-  | 'kasir_refund';
+  | 'kasir_refund'
+  | 'rakit_lock';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
@@ -664,4 +665,51 @@ export interface ReconciliationPeriod {
   status: 'OPEN' | 'CLOSING' | 'CLOSED';
   closed_at?: string;
   summary?: Record<string, unknown>;
+}
+
+// === Rakit Workflow (Sub-project B) ===
+
+export type RakitServiceType = 'jasa_rakit' | 'jasa_custom_panel';
+export type RakitTrackingMode = 'detail' | 'lumpsum';
+
+export interface RakitComponent {
+  id?: string;
+  rakitLineId?: string;
+  sku: string;
+  name: string;
+  qty: number;
+  warehouse: 'atas' | 'bawah';
+  fifoCostSnapshot: number;
+}
+
+export interface RakitJobLine {
+  id: string;
+  transactionId: string;
+  lineNumber: number;
+  serviceType: RakitServiceType;
+  description: string;
+  estimatedPrice: number;
+  finalPrice: number | null;
+  trackingMode: RakitTrackingMode;
+  laborCost: number;
+  lumpSumHpp: number;
+  hppOwnerOverride: number | null;
+  hppFinal: number | null;
+  components?: RakitComponent[];
+}
+
+export type RakitLockRequestStatus =
+  | 'pending_approval' | 'approved' | 'rejected' | 'expired' | 'withdrawn' | 'superseded';
+
+export interface RakitLockRequest {
+  id: number;
+  transactionId: string;
+  approvalRequestId: number;
+  linesSnapshot: RakitJobLine[];
+  requestedBy: string;
+  requestedAt: string;
+  status: RakitLockRequestStatus;
+  committedAt: string | null;
+  isMaterialEdit: boolean;
+  priorLockRequestId: number | null;
 }

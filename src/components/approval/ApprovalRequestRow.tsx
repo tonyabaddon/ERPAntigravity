@@ -20,6 +20,7 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   kasir_price_override: 'Kasir Override',
   kasir_void: 'Kasir Void',
   kasir_refund: 'Kasir Refund',
+  rakit_lock: 'Rakit Lock',
 };
 
 const TYPE_ICON: Record<
@@ -32,6 +33,7 @@ const TYPE_ICON: Record<
   kasir_price_override: { icon: '🧾', bg: 'bg-violet-50', fg: 'text-violet-700' },
   kasir_void:           { icon: '💸', bg: 'bg-violet-50', fg: 'text-violet-700' },
   kasir_refund:         { icon: '💸', bg: 'bg-violet-50', fg: 'text-violet-700' },
+  rakit_lock:           { icon: '🔧', bg: 'bg-amber-50',  fg: 'text-amber-700'  },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {
