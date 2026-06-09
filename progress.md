@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.6 — Save flow: create WIP transaction with rakit lines — DONE
+
+- **Commit**: 6186b05
+- **Files**: `src/lib/supabaseClient.ts`, `src/components/PenjualanBaruScreen.tsx`, `src/App.tsx`
+- **Changes**:
+  - Added `RakitServiceType` to the second import block in `supabaseClient.ts`
+  - Added `kasirService.insertWipWithRakit` method: builds `service_summary` label, inserts `kasir_transactions` with `status='WIP'` and `items=[]` (no FIFO stock deduction), then inserts `rakit_job_lines` rows with `tracking_mode='detail'`, `labor_cost=0`, `lump_sum_hpp=0`
+  - Fields mapped into `kasir_transactions` insert: `date`, `channel`, `subtotal`, `total_amount`, `dp_amount`, `ongkir_amount`, `payment_method`, `payment_subtype`, `notes`, `customer_id`, `customer_name`, `customer_phone`, `customer_company`, `delivery_address`, `tokped_order_no`, `wa_phone`, `wa_chat_url`, plus `type='income'`, `status='WIP'`, `hpp_total=0`, `items=[]`, `service_summary`
+  - Added optional `onNavigate?: (page: ActivePage) => void` prop to `PenjualanBaruScreen` + imported `ActivePage` type
+  - Added `hasRakit` early-return branch at start of `handleSave` (after all validation checks): calls `insertWipWithRakit`, shows success toast, navigates to `wip-list` via `onNavigate`, falls back to `onBack()` if prop absent
+  - WIP branch ends with `return` before the existing `recordSale` path — invoice PDF modal is never triggered for WIP saves
+  - Wired `onNavigate` in `App.tsx` `case 'penjualanBaru'` with `setPenjualanInitialChannel(undefined); setActivePage(page)`
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 2.1 — WipListScreen component
+
 ## 2026-06-09 — Rakit Workflow: Task 1.5 — WIP banner + rakit total in subtotal — DONE
 
 - **Commit**: 8699319
