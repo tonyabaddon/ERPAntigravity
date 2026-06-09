@@ -4,7 +4,7 @@ import {
   KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType,
   KasirDpInputType, KasirItem, WarehouseLocation, PermissionSet, KasirTransaction,
 } from '../types';
-import type { DbCustomerWithStats } from '../types';
+import type { DbCustomerWithStats, RakitServiceType } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
@@ -15,6 +15,8 @@ import CartRows from './penjualan/CartRows';
 import CustomerPanel from './penjualan/CustomerPanel';
 import PaymentPanel from './penjualan/PaymentPanel';
 import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
+import RakitButtonsRow from './penjualan/RakitButtonsRow';
+import RakitInlineForm from './penjualan/RakitInlineForm';
 
 let _itemSeq = 0;
 
@@ -67,6 +69,35 @@ export default function PenjualanBaruScreen({
 
   // Invoice modal after save
   const [savedTx, setSavedTx] = useState<KasirTransaction | null>(null);
+
+  // Rakit lines
+  const [rakitLines, setRakitLines] = useState<Array<{
+    id: string;
+    type: RakitServiceType;
+    description: string;
+    estimatedPrice: number;
+  }>>([]);
+  const [rakitFormOpen, setRakitFormOpen] = useState(false);
+  const [rakitFormType, setRakitFormType] = useState<RakitServiceType | null>(null);
+
+  const openRakitForm = (t: RakitServiceType) => {
+    setRakitFormType(t);
+    setRakitFormOpen(true);
+  };
+  const cancelRakitForm = () => {
+    setRakitFormOpen(false);
+    setRakitFormType(null);
+  };
+  const addRakitLine = (line: { type: RakitServiceType; description: string; estimatedPrice: number }) => {
+    const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `rakit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setRakitLines(prev => [...prev, { id, ...line }]);
+    cancelRakitForm();
+  };
+  const removeRakitLine = (id: string) => {
+    setRakitLines(prev => prev.filter(l => l.id !== id));
+  };
 
   // Load master data once
   useEffect(() => {
@@ -236,6 +267,18 @@ export default function PenjualanBaruScreen({
                     onRemove={removeItem}
                   />
                 </ItemSearchPanel>
+                <RakitButtonsRow
+                  formOpen={rakitFormOpen}
+                  formType={rakitFormType}
+                  onOpen={openRakitForm}
+                />
+                {rakitFormOpen && rakitFormType && (
+                  <RakitInlineForm
+                    type={rakitFormType}
+                    onAdd={addRakitLine}
+                    onCancel={cancelRakitForm}
+                  />
+                )}
               </div>
               <div>
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-4">
