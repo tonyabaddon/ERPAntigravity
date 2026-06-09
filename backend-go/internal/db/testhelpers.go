@@ -382,6 +382,46 @@ func SeedStockMovement(t testing.TB, c *Client, sku, warehouse string, qtyDelta 
 	}
 }
 
+// SeedWarehouseTransfer inserts a public.warehouse_transfers row with the
+// caller-controlled status and back-dated initiated_at. Used by Phase 4 Task 4
+// tests for v_pengawasan_transfer_aging, which flags rows still 'initiated'
+// more than 24h after initiated_at.
+//
+// ageHours controls how long ago the row was "initiated" — the helper computes
+// `initiated_at = now() - (ageHours hours)` so tests can place rows on either
+// side of the 24h cutoff. Returns the generated id so callers can assert which
+// row surfaced in the view.
+//
+// The Phase 3d migration owns warehouse_transfers; Phase 4 ships a minimal
+// stub (CREATE TABLE IF NOT EXISTS in 20260607000053). The stub has no FKs,
+// so a baseline UUID for initiated_by/intended_receiver is fine here.
+func SeedWarehouseTransfer(t testing.TB, c *Client, sku, fromWarehouse, toWarehouse string, qty int, status string, ageHours int) int64 {
+	t.Helper()
+	if fromWarehouse != "atas" && fromWarehouse != "bawah" {
+		t.Fatalf("fromWarehouse must be atas|bawah, got %q", fromWarehouse)
+	}
+	if toWarehouse != "atas" && toWarehouse != "bawah" {
+		t.Fatalf("toWarehouse must be atas|bawah, got %q", toWarehouse)
+	}
+	var id int64
+	err := c.DB.QueryRow(
+		`INSERT INTO public.warehouse_transfers
+		   (sku, from_warehouse, to_warehouse, initiated_qty,
+		    initiated_by_user_id, intended_receiver_user_id,
+		    initiated_at, status)
+		 VALUES ($1, $2, $3, $4,
+		         '00000000-0000-0000-0000-000000000001',
+		         '00000000-0000-0000-0000-000000000002',
+		         now() - ($5 || ' hours')::interval, $6)
+		 RETURNING id`,
+		sku, fromWarehouse, toWarehouse, qty, ageHours, status,
+	).Scan(&id)
+	if err != nil {
+		t.Fatalf("seed warehouse_transfer: %v", err)
+	}
+	return id
+}
+
 // KasirTxItem is one element of the kasir_transactions.items JSONB array.
 // Field names must match the view's jsonb_to_recordset key list — see
 // v_pengawasan_kasir_discount_7d in migration 20260607000051.

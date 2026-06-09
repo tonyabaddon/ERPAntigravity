@@ -314,3 +314,71 @@ func TestPengawasanView_OutflowOutliers_ExcludesNormalSKU(t *testing.T) {
 			sku, err, mult)
 	}
 }
+
+// TestPengawasanView_TransferAging_FlagsOldInitiated pins the contract of
+// v_pengawasan_transfer_aging (Phase 4 Task 4): warehouse_transfers rows still
+// in 'initiated' status more than 24h after initiated_at must surface.
+//
+// Seed strategy:
+//   - 1 transfer aged 30h, status='initiated' → past the 24h cutoff → flagged.
+//   - hours_pending in the view ≈ 30 (give or take fractional seconds since
+//     seed); assert >= 24 to stay robust against clock drift.
+//
+// Per-test unique SKU prevents collisions on the shared Supabase test DB.
+func TestPengawasanView_TransferAging_FlagsOldInitiated(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	sku := fmt.Sprintf("T4-XFER-OLD-%d", nano)
+
+	id := db.SeedWarehouseTransfer(t, client, sku, "atas", "bawah", 5, "initiated", 30)
+
+	var gotID int64
+	var hoursPending float64
+	err := client.DB.QueryRow(
+		`SELECT id, hours_pending
+		   FROM public.v_pengawasan_transfer_aging
+		  WHERE sku = $1`, sku).Scan(&gotID, &hoursPending)
+	if err != nil {
+		t.Fatalf("query view: %v — expected %s (id=%d) to surface as aged transfer", err, sku, id)
+	}
+	if gotID != id {
+		t.Fatalf("id mismatch: got %d want %d", gotID, id)
+	}
+	if hoursPending < 24 {
+		t.Fatalf("hours_pending=%v want >= 24 (seeded at -30h)", hoursPending)
+	}
+}
+
+// TestPengawasanView_TransferAging_ExcludesFreshOrReceived verifies the view's
+// dual filter: rows under 24h OR rows already received must NOT appear.
+//
+// Seed strategy:
+//   - Fresh transfer: 12h old, status='initiated' → too young → excluded.
+//   - Received transfer: 30h old, status='received' → wrong status → excluded.
+//
+// Both queries expect sql.ErrNoRows.
+func TestPengawasanView_TransferAging_ExcludesFreshOrReceived(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	nano := time.Now().UnixNano()
+	freshSKU := fmt.Sprintf("T4-XFER-FRESH-%d", nano)
+	receivedSKU := fmt.Sprintf("T4-XFER-RCVD-%d", nano)
+
+	db.SeedWarehouseTransfer(t, client, freshSKU, "atas", "bawah", 3, "initiated", 12)
+	db.SeedWarehouseTransfer(t, client, receivedSKU, "bawah", "atas", 4, "received", 30)
+
+	for _, sku := range []string{freshSKU, receivedSKU} {
+		var id int64
+		err := client.DB.QueryRow(
+			`SELECT id
+			   FROM public.v_pengawasan_transfer_aging
+			  WHERE sku = $1`, sku).Scan(&id)
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("expected %s excluded (sql.ErrNoRows), got err=%v id=%d",
+				sku, err, id)
+		}
+	}
+}
