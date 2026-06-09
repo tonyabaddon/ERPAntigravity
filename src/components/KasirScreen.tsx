@@ -12,6 +12,7 @@ import {
 } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import type { DbCustomerWithStats } from '../types';
+import { formatRp } from '../lib/format';
 import KasirInvoiceModal from './KasirInvoiceModal';
 import MarkLunasModal from './penjualan/MarkLunasModal';
 import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
@@ -47,11 +48,6 @@ function todayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatRp(val: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(val);
-}
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

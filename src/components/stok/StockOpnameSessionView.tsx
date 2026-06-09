@@ -12,6 +12,7 @@ import type {
   OpnameSession,
   PermissionSet,
 } from '../../types';
+import { formatRpDelta } from '../../lib/format';
 
 interface StockOpnameSessionViewProps {
   sessionId: number;
@@ -43,11 +44,6 @@ const STATUS_PILL: Record<OpnameSession['status'], string> = {
   committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
 };
-
-function formatRp(value: number): string {
-  const sign = value < 0 ? '−' : value > 0 ? '+' : '';
-  return `${sign}Rp ${Math.abs(value).toLocaleString('id-ID')}`;
-}
 
 function formatDateTime(iso: string): string {
   try {
@@ -255,7 +251,7 @@ export default function StockOpnameSessionView({
         <div className="text-right">
           <p className="text-xs uppercase tracking-wide text-slate-500">Total Varians</p>
           <p className={`font-bold text-xl ${totalVariance < 0 ? 'text-rose-600' : totalVariance > 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
-            {formatRp(totalVariance)}
+            {formatRpDelta(totalVariance)}
           </p>
           <p className="text-xs text-slate-500 mt-1">Diisi: {filledCount}/{totalCount}</p>
         </div>
@@ -336,7 +332,7 @@ export default function StockOpnameSessionView({
                         }`}
                       >
                         {c.countedQty !== null && c.countedQty !== undefined
-                          ? formatRp(c.varianceValue)
+                          ? formatRpDelta(c.varianceValue)
                           : '—'}
                       </div>
                     </div>

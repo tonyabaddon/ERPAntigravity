@@ -10,6 +10,7 @@ import type {
   DbAdminUser,
   PermissionSet,
 } from '../../types';
+import { formatRpDelta } from '../../lib/format';
 import StockOpnameSessionView from './StockOpnameSessionView';
 
 interface StockOpnameScreenProps {
@@ -43,11 +44,6 @@ const STATUS_PILL: Record<OpnameSession['status'], string> = {
   committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
 };
-
-function formatRp(value: number): string {
-  const sign = value < 0 ? '−' : value > 0 ? '+' : '';
-  return `${sign}Rp ${Math.abs(value).toLocaleString('id-ID')}`;
-}
 
 function formatDateTime(iso: string): string {
   try {
@@ -216,7 +212,7 @@ export default function StockOpnameScreen({
               <div className="text-right">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Total Varians</p>
                 <p className="font-bold text-lg text-slate-900">
-                  {formatRp(activeSession.varianceTotalValue)}
+                  {formatRpDelta(activeSession.varianceTotalValue)}
                 </p>
               </div>
             </div>
@@ -263,7 +259,7 @@ export default function StockOpnameScreen({
                       {STATUS_LABEL[s.status]}
                     </span>
                     <p className="text-xs text-slate-600 mt-1">
-                      Varians {formatRp(s.varianceTotalValue)}
+                      Varians {formatRpDelta(s.varianceTotalValue)}
                     </p>
                   </div>
                 </div>

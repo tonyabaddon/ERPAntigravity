@@ -8,6 +8,14 @@ export function formatRp(n: number): string {
   }).format(n);
 }
 
+// Signed Rupiah delta — used for stock-adjustment screens to show "+Rp X"
+// or "−Rp X" for an explicit qty/value change. Distinct from formatRp which
+// is unsigned absolute currency. Uses the Unicode minus (−), not ASCII -.
+export function formatRpDelta(value: number): string {
+  const sign = value < 0 ? '−' : value > 0 ? '+' : '';
+  return `${sign}Rp ${Math.abs(value).toLocaleString('id-ID')}`;
+}
+
 // Returns YYYY-MM-DD for the given moment in Asia/Jakarta (WIB, UTC+7).
 //
 // Why this helper exists: `new Date().toISOString().slice(0, 10)` returns the
