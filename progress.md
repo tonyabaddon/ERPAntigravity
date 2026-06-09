@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.1 — RakitButtonsRow component — DONE
+
+- **Commit**: 31ae14d
+- **File**: `src/components/penjualan/RakitButtonsRow.tsx`
+- Presentational component with two buttons (Tambah Jasa Rakit / Tambah Jasa Custom Panel)
+- Props: `formOpen: boolean`, `formType: RakitServiceType | null`, `onOpen: (type: RakitServiceType) => void`
+- Buttons disabled when `formOpen=true`; active button gets muted color (amber-300/sky-300) with cursor-not-allowed
+- `tsc --noEmit`: no errors (clean baseline)
+- Next: Task 1.2 (RakitInlineForm component)
+
 ## 2026-06-09 — Rakit Workflow: Task 0.3 — supabaseClient RPC wrappers — DONE
 
 - **Commit**: 9c376c2
