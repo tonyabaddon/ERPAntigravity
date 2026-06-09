@@ -13,6 +13,8 @@ import {
   supabase,
 } from '../../lib/supabaseClient';
 import ApprovalRequestRow from './ApprovalRequestRow';
+import RakitLockApprovalRequestRow from './RakitLockApprovalRequestRow';
+import { approveRakitLock, rejectRakitLock } from '../../lib/supabaseClient';
 
 /**
  * Owner-facing inbox of pending `approval_requests`. Subscribes to Supabase
@@ -125,6 +127,9 @@ export default function ApprovalInboxScreen({
         case 'opname':
           await commitOpname(id);
           break;
+        case 'rakit_lock':
+          await approveRakitLock(id);
+          break;
         case 'kasir_price_override':
         case 'kasir_void':
         case 'kasir_refund':
@@ -165,6 +170,14 @@ export default function ApprovalInboxScreen({
           p_reason_note: reason ?? null,
         });
         if (error) throw error;
+        showToast('Permintaan ditolak', 'info');
+        await refresh();
+      } else if (req.requestType === 'rakit_lock') {
+        if (!currentUser) {
+          showToast('User belum login', 'warning');
+          return;
+        }
+        await rejectRakitLock(id, reason ?? 'Owner reject from Persetujuan inbox', currentUser.id);
         showToast('Permintaan ditolak', 'info');
         await refresh();
       } else {
@@ -223,13 +236,23 @@ export default function ApprovalInboxScreen({
       <div className="space-y-3">
         {filtered.map((r) => (
           <div key={r.id}>
-            <ApprovalRequestRow
-              request={r}
-              isOwner={isOwner}
-              disabled={busyId !== null && busyId !== r.id}
-              onApprove={handleApprove}
-              onReject={handleReject}
-            />
+            {r.requestType === 'rakit_lock' ? (
+              <RakitLockApprovalRequestRow
+                request={r}
+                isOwner={isOwner}
+                disabled={busyId !== null && busyId !== r.id}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            ) : (
+              <ApprovalRequestRow
+                request={r}
+                isOwner={isOwner}
+                disabled={busyId !== null && busyId !== r.id}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            )}
           </div>
         ))}
       </div>
