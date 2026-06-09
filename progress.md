@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 4.3 — Hook RakitLockApprovalRequestRow into ApprovalInboxScreen + wire approve/reject — DONE
+
+- **Commit**: 04ce239
+- **File**: `src/components/approval/ApprovalInboxScreen.tsx`
+- **Changes**:
+  - Added imports: `RakitLockApprovalRequestRow` and `{ approveRakitLock, rejectRakitLock }` from supabaseClient
+  - Branched row render in `filtered.map`: `r.requestType === 'rakit_lock'` renders `RakitLockApprovalRequestRow`, all others continue using `ApprovalRequestRow`
+  - Added `case 'rakit_lock': await approveRakitLock(id); break;` to `handleApprove` switch (after opname case)
+  - Extended `handleReject` if-else chain with `rakit_lock` branch: calls `rejectRakitLock(id, reason ?? 'Owner reject from Persetujuan inbox', currentUser.id)` with user guard
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 4.4 / End-to-end smoke test
+
 ## 2026-06-09 — Rakit Workflow: Task 4.2 — RakitLockApprovalRequestRow renderer — DONE
 
 - **Commit**: 417f366
