@@ -11,6 +11,8 @@ import type {
   StockAdjustmentReason,
   OpnameSession,
   OpnameCount,
+  RakitJobLine,
+  RakitLockRequest,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -1548,6 +1550,131 @@ export async function seedStockRow(args: {
     p_actor_user_id: args.actor_user_id,
   });
   if (error) throw error;
+}
+
+// --- Rakit Workflow (Sub-project B) ---
+
+export async function requestRakitLock(args: {
+  transaction_id: string;
+  lines: Array<{
+    id: string;
+    final_price: number;
+    tracking_mode: 'detail' | 'lumpsum';
+    labor_cost: number;
+    lump_sum_hpp: number;
+    components?: Array<{
+      sku: string;
+      name: string;
+      qty: number;
+      warehouse: 'atas' | 'bawah';
+      fifo_cost: number;
+    }>;
+  }>;
+  actor_user_id: string;
+}): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('request_rakit_lock', {
+    p_transaction_id: args.transaction_id,
+    p_lines: args.lines,
+    p_actor_user_id: args.actor_user_id,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function approveRakitLock(
+  approvalId: number,
+  hppOverrides: Record<string, number> = {},
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  // Wraps _transition_approval('approved') + commit_approved_rakit_lock in one txn.
+  // Required because UPDATE on approval_requests is REVOKEd from authenticated.
+  const { error } = await supabase.rpc('approve_rakit_lock', {
+    p_approval_id: approvalId,
+    p_hpp_overrides: hppOverrides,
+  });
+  if (error) throw error;
+}
+
+export async function rejectRakitLock(
+  approvalId: number,
+  reason: string,
+  actorUserId: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('reject_rakit_lock', {
+    p_approval_id: approvalId,
+    p_reason: reason,
+    p_actor_user_id: actorUserId,
+  });
+  if (error) throw error;
+}
+
+export async function fetchWipList(): Promise<Array<{
+  id: string;
+  total_amount: number;
+  dp_amount: number;
+  customer_name: string | null;
+  customer_phone: string | null;
+  service_summary: string | null;
+  created_at: string;
+  rakit_lines: RakitJobLine[];
+}>> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('kasir_transactions')
+    .select('id, total_amount, dp_amount, customer_name, customer_phone, service_summary, created_at, rakit_job_lines(*)')
+    .eq('status', 'WIP')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    total_amount: Number(row.total_amount ?? 0),
+    dp_amount: Number(row.dp_amount ?? 0),
+    customer_name: row.customer_name ?? null,
+    customer_phone: row.customer_phone ?? null,
+    service_summary: row.service_summary ?? null,
+    created_at: row.created_at,
+    rakit_lines: (row.rakit_job_lines ?? []).map((l: any) => ({
+      id: l.id,
+      transactionId: l.transaction_id,
+      lineNumber: l.line_number,
+      serviceType: l.service_type,
+      description: l.description,
+      estimatedPrice: Number(l.estimated_price ?? 0),
+      finalPrice: l.final_price == null ? null : Number(l.final_price),
+      trackingMode: l.tracking_mode,
+      laborCost: Number(l.labor_cost ?? 0),
+      lumpSumHpp: Number(l.lump_sum_hpp ?? 0),
+      hppOwnerOverride: l.hpp_owner_override == null ? null : Number(l.hpp_owner_override),
+      hppFinal: l.hpp_final == null ? null : Number(l.hpp_final),
+    })),
+  }));
+}
+
+export async function fetchRakitLockRequestByApprovalId(
+  approvalId: number,
+): Promise<RakitLockRequest | null> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('rakit_lock_requests')
+    .select('*')
+    .eq('approval_request_id', approvalId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    id: data.id,
+    transactionId: data.transaction_id,
+    approvalRequestId: data.approval_request_id,
+    linesSnapshot: data.lines_snapshot,
+    requestedBy: data.requested_by,
+    requestedAt: data.requested_at,
+    status: data.status,
+    committedAt: data.committed_at,
+    isMaterialEdit: data.is_material_edit,
+    priorLockRequestId: data.prior_lock_request_id,
+  };
 }
 
 export const reconciliationService = {
