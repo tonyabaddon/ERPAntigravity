@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 0.3 — supabaseClient RPC wrappers — DONE
+
+- **Commit**: 9c376c2
+- **File**: `src/lib/supabaseClient.ts`
+- **Changes**:
+  - Added `RakitJobLine, RakitLockRequest` to the existing `import type { ... } from '../types'` block (second import block, lines 9–16).
+  - Inserted 5 new exported async functions after `seedStockRow` under comment `// --- Rakit Workflow (Sub-project B) ---`:
+    - `requestRakitLock(args)` → calls `request_rakit_lock` RPC, returns `number` (approval id)
+    - `approveRakitLock(approvalId, hppOverrides?)` → calls `approve_rakit_lock` RPC
+    - `rejectRakitLock(approvalId, reason, actorUserId)` → calls `reject_rakit_lock` RPC
+    - `fetchWipList()` → queries `kasir_transactions` with `status = 'WIP'` + joined `rakit_job_lines`, maps to camelCase
+    - `fetchRakitLockRequestByApprovalId(approvalId)` → queries `rakit_lock_requests` by `approval_request_id`, maps to `RakitLockRequest`
+- `tsc --noEmit`: clean (no output) — no new errors introduced.
+
 ## 2026-06-09 — Rakit Workflow: Task 0.2 — Frontend types delta — DONE
 
 - **Commit**: 852ce66
