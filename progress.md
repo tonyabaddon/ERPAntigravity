@@ -4466,3 +4466,21 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - RLS enabled on all three; full-access policies for anon+authenticated on periods/settings; audit_log read-only for anon, full for authenticated
   - Function `create_slots_for_order()` + trigger `trg_orders_create_slots` AFTER INSERT/UPDATE OF status on `orders`: skips orders created before `first_eligible_period_start`; on first transition into WAITING_PAYMENT/WAITING_DP/BOOKED, inserts payable_slots (FULL or DP+BALANCE based on `payment_type`) using `booking_expires_at` or created_at+2d for due_date
 - **Not applied to Supabase** — controller batches migrations later.
+
+## 2026-06-09 — Sub-project B / Tasks 3.1 + 3.2: LockSubmissionModal — DONE
+
+- **Commit**: 86930a3
+- **Files**: `src/components/penjualan/LockSubmissionModal.tsx` (new), `src/components/WipListScreen.tsx` (uncommented)
+- **LockSubmissionModal** (`353 lines`):
+  - Per-line editor: description, final price (pre-filled from `estimatedPrice`), Detail / Lumpsum mode toggle
+  - Detail mode: labor cost field + SKU autocomplete (filters against `supabaseService.fetchStocks()` in-memory; shows FIFO cost from `harga_modal`), per-component qty + warehouse (Atas/Bawah) toggle, total HPP preview per row, remove button
+  - Lumpsum mode: single HPP input field
+  - Submit guard (`canSubmit`): description non-empty, finalPrice > 0, detail → ≥1 component all qty > 0, lumpsum → lumpSumHpp > 0
+  - Calls `requestRakitLock` RPC wrapper; on success calls `onSubmitted()` (caller refreshes list + shows success toast); errors surface via `showToast`
+- **WipListScreen** changes:
+  - Uncommented `import LockSubmissionModal` line
+  - Uncommented `const [lockTx, setLockTx]` state
+  - "Selesaikan Rakit" button `onClick` changed from toast-stub to `setLockTx(tx)`
+  - Uncommented `{lockTx && currentUser && <LockSubmissionModal ... />}` render block
+- `tsc --noEmit`: 0 errors (clean)
+- Next: Task 4.1 (rakit_lock filter pill in ApprovalInboxScreen)
