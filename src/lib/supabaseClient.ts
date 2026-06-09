@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, NewSaleTransaction, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -18,8 +18,8 @@ const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
 // Create a singleton client if keys are present
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-export const supabase = isSupabaseConfigured 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
+export const supabase = isSupabaseConfigured
+  ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
 export interface SupabaseStockItem {
@@ -1080,63 +1080,41 @@ export const kasirService = {
     return { totalIncome, totalExpense, totalHpp, labaKotor, labaBersih, itemsSold, byChannel, byPaymentMethod };
   },
 
-  async insertSaleTransaction(tx: NewSaleTransaction): Promise<KasirTransaction> {
+  // Atomically record a kasir sale via the record_kasir_sale RPC. Bundles
+  // FIFO stock deduction, warehouse-column decrement, invoice counter, and
+  // kasir_transactions insert in ONE transaction. Customer find-or-create
+  // also happens inside the RPC.
+  //
+  // Use this for all new kasir sales. The previous flow
+  //   nextInvoiceNumber → deductFifo (per item) → insertSaleTransaction → decrementStock
+  // was non-atomic and could strand stock_lots or burn invoice numbers on
+  // partial failure.
+  async recordSale(input: RecordKasirSaleInput): Promise<KasirTransaction> {
     if (!supabase) throw new Error('Supabase not configured');
-    let customer_id = tx.customer_id ?? null;
-
-    // If no customer_id provided but phone+name are, try to find or create the customer.
-    if (!customer_id && tx.customer_phone && tx.customer_name) {
-      const phone = tx.customer_phone.trim();
-      const { data: existing } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('wa_number', phone)
-        .maybeSingle();
-      if (existing) {
-        customer_id = existing.id;
-      } else {
-        const newId = crypto.randomUUID();
-        const { error: insertErr } = await supabase
-          .from('customers')
-          .upsert(
-            { id: newId, wa_number: phone, name: tx.customer_name.trim(), company: tx.customer_company?.trim() ?? '' },
-            { onConflict: 'wa_number', ignoreDuplicates: false }
-          );
-        if (!insertErr) customer_id = newId;
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('kasir_transactions')
-      .insert({
-        date: tx.date,
-        type: 'income',
-        channel: tx.channel,
-        items: tx.items,
-        subtotal: tx.subtotal,
-        hpp_total: tx.hpp_total,
-        payment_method: tx.payment_method,
-        payment_subtype: tx.payment_subtype ?? null,
-        payment_type: tx.payment_type,
-        dp_amount: tx.dp_amount,
-        dp_input_type: tx.dp_input_type ?? null,
-        ongkir_amount: tx.ongkir_amount,
-        notes: tx.notes ?? null,
-        total_amount: tx.total_amount,
-        tokped_order_no: tx.tokped_order_no ?? null,
-        wa_phone: tx.wa_phone ?? null,
-        wa_chat_url: tx.wa_chat_url ?? null,
-        status: tx.payment_type === 'DP' ? 'AWAITING_LUNAS' : 'PAID',
-        customer_name: tx.customer_name ?? null,
-        customer_phone: tx.customer_phone ?? null,
-        customer_company: tx.customer_company ?? null,
-        delivery_address: tx.delivery_address ?? null,
-        customer_id,
-        invoice_number: tx.invoice_number,
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('record_kasir_sale', {
+      p_date:              input.date,
+      p_channel:           input.channel,
+      p_items:             input.items,
+      p_subtotal:          input.subtotal,
+      p_payment_method:    input.payment_method,
+      p_payment_subtype:   input.payment_subtype ?? null,
+      p_payment_type:      input.payment_type,
+      p_dp_amount:         input.dp_amount,
+      p_dp_input_type:     input.dp_input_type ?? null,
+      p_ongkir_amount:     input.ongkir_amount,
+      p_notes:             input.notes ?? null,
+      p_total_amount:      input.total_amount,
+      p_customer_name:     input.customer_name ?? null,
+      p_customer_phone:    input.customer_phone ?? null,
+      p_customer_company:  input.customer_company ?? null,
+      p_delivery_address:  input.delivery_address ?? null,
+      p_tokped_order_no:   input.tokped_order_no ?? null,
+      p_wa_phone:          input.wa_phone ?? null,
+      p_wa_chat_url:       input.wa_chat_url ?? null,
+      p_customer_id:       input.customer_id ?? null,
+    });
     if (error) throw error;
+    if (!data) throw new Error('record_kasir_sale returned no row');
     return data as KasirTransaction;
   },
 
@@ -1190,22 +1168,6 @@ export const kasirService = {
     return data as KasirTransaction;
   },
 
-  async nextInvoiceNumber(channel: KasirChannel, date: string): Promise<string> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const prefix = channel === 'walkin' ? 'WLK'
-      : channel === 'tokopedia' ? 'TPD'
-      : channel === 'whatsapp' ? 'WAM'
-      : 'GRS';
-    const dateCompact = date.replace(/-/g, '');
-    const { data, error } = await supabase.rpc('next_kasir_number', {
-      p_channel: channel,
-      p_date: date,
-    });
-    if (error) throw error;
-    if (data == null) throw new Error('next_kasir_number returned null');
-    const counter = String(data).padStart(3, '0');
-    return `${prefix}-${dateCompact}-${counter}`;
-  },
 };
 
 export const salesEntriesService = {

@@ -460,12 +460,11 @@ export interface DailySummary {
   byPaymentMethod: Record<string, number>;
 }
 
-export interface NewSaleTransaction {
+export interface RecordKasirSaleInput {
   date: string;
   channel: KasirChannel;
   items: KasirItem[];
   subtotal: number;
-  hpp_total: number;
   payment_method: KasirPaymentMethod;
   payment_subtype?: KasirPaymentSubtype;
   payment_type: KasirPaymentType;
@@ -482,7 +481,6 @@ export interface NewSaleTransaction {
   customer_company?: string;
   delivery_address?: string;
   customer_id?: string;
-  invoice_number: string;
 }
 
 export interface NewExpense {

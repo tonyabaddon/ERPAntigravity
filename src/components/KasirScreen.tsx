@@ -5,13 +5,12 @@ import {
 } from 'lucide-react';
 import {
   KasirTransaction, KasirChannel, KasirPaymentMethod, KasirExpenseCategory,
-  KasirItem, NewSaleTransaction, DailySummary, PermissionSet, DbOrder
+  KasirItem, DailySummary, PermissionSet, DbOrder
 } from '../types';
 import {
   kasirService, stockService, customersService, orderService, isSupabaseConfigured,
 } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
-import { purchaseOrderService } from '../lib/pembelianService';
 import type { DbCustomerWithStats } from '../types';
 import KasirInvoiceModal from './KasirInvoiceModal';
 import MarkLunasModal from './penjualan/MarkLunasModal';
@@ -661,55 +660,11 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
 
     setSaving(true);
     try {
-      const invoiceNumber = await kasirService.nextInvoiceNumber(channel, selectedDate);
-
-      // Resolve true COGS via FIFO before recording the transaction.
-      // NOTE: non-atomic — deductFifo cannot be rolled back if insertSaleTransaction fails.
-      // On partial failure, check stock_lots manually to restore qty_remaining.
-      let itemsWithFifo: typeof items;
-      try {
-        itemsWithFifo = await Promise.all(
-          items.map(async (item) => {
-            const totalCost = await purchaseOrderService.deductFifo(item.sku, item.qty);
-            return {
-              ...item,
-              hpp_per_unit: item.qty > 0 ? totalCost / item.qty : 0,
-              hpp_subtotal: totalCost,
-            };
-          })
-        );
-      } catch (fifoErr: any) {
-        console.error('deductFifo failed — some stock lots may have been partially decremented:', fifoErr);
-        showToast('Gagal menghitung HPP FIFO. Cek stock_lots jika stok tidak sesuai.', 'warning');
-        setSaving(false);
-        return;
-      }
-
-      // Resolve customer_id BEFORE inserting the kasir row.
-      let resolvedCustomerId: string | undefined = selectedCustomerId ?? undefined;
-      if (!resolvedCustomerId && customerName.trim() && customerPhone.trim()) {
-        try {
-          await customersService.createCustomer(
-            customerPhone.trim(),
-            customerName.trim(),
-            customerCompany.trim()
-          );
-          // createCustomer is upsert(ignoreDuplicates:true), so look up the id.
-          const allCustomers = await customersService.fetchAll();
-          resolvedCustomerId = allCustomers.find(
-            c => c.wa_number === customerPhone.trim()
-          )?.id;
-        } catch {
-          showToast('Transaksi disimpan, tapi gagal simpan data pelanggan.', 'warning');
-        }
-      }
-
-      const newTx: NewSaleTransaction = {
+      const saved = await kasirService.recordSale({
         date: selectedDate,
         channel,
-        items: itemsWithFifo.map(({ _key, ...rest }) => rest),
+        items: items.map(({ _key, ...rest }) => rest),
         subtotal,
-        hpp_total: itemsWithFifo.reduce((s, i) => s + i.hpp_subtotal, 0),
         payment_method: paymentMethod,
         payment_type: 'FULL',
         dp_amount: 0,
@@ -718,23 +673,11 @@ function SaleModal({ channel, stocks, customers, selectedDate, isOwner, onClose,
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,
         customer_company: customerCompany || undefined,
-        customer_id: resolvedCustomerId,
-        invoice_number: invoiceNumber,
-      };
-
-      const saved = await kasirService.insertSaleTransaction(newTx);
-
-      for (const item of items) {
-        try {
-          await stockService.decrementStock(item.sku, item.qty, warehouse);
-        } catch {
-          showToast(`Gagal kurangi stok ${item.name}.`, 'warning');
-        }
-      }
-
+        customer_id: selectedCustomerId ?? undefined,
+      });
       onSaved(print ? saved : { ...saved, invoice_number: null });
-    } catch {
-      showToast('Gagal menyimpan transaksi.', 'warning');
+    } catch (err: any) {
+      showToast(`Gagal menyimpan: ${err.message ?? 'unknown'}`, 'warning');
     } finally {
       setSaving(false);
     }

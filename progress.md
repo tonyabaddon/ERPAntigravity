@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Sales Recording Overhaul, Phase A: atomic `record_kasir_sale` RPC — DONE (migration pending apply)
+
+- **Goal**: Close Critical #1 + #2 + Important #5 from the end-to-end code review of the Sales Recording Overhaul. The pre-existing save path (`nextInvoiceNumber → Promise.all(deductFifo) → insertSaleTransaction → decrementStock`) was non-atomic and could (a) strand `stock_lots.qty_remaining` on partial failure, (b) race on shared lots when the same SKU appeared twice in cart, (c) burn the per-(channel,date) invoice counter on a failed insert (audit-grade gap).
+- **Files**:
+  - `supabase/migrations/20260609000001_record_kasir_sale_rpc.sql` (new) — `record_kasir_sale(p_date, p_channel, p_items, …)` `SECURITY DEFINER` RPC. Inside one transaction: validates inputs → find-or-create customer (ON CONFLICT on `customers.wa_number`) → reserves invoice number via `next_kasir_number` → aggregates `p_items` by `(sku, warehouse)` → calls `decrement_stock` + `deduct_stock_fifo` ONCE per aggregate group (mirrors the `mark_walkin_order_paid` pattern) → distributes aggregate FIFO cost proportionally to per-line `hpp_per_unit` → inserts `kasir_transactions` row with `status = (p_payment_type='DP' ? 'AWAITING_LUNAS' : 'PAID')`. Any failure rolls back EVERYTHING including the counter increment. Whitelist: channel ∈ `walkin|tokopedia|grosir|whatsapp`, payment_method ∈ `cash|transfer|qris|edc` (already supports EDC, so Important #7 is also closed by this single RPC for kasir sales — `mark_walkin_order_paid` still needs its own update under Phase D).
+  - `src/lib/supabaseClient.ts` — replaced `insertSaleTransaction` with `recordSale(input: RecordKasirSaleInput): Promise<KasirTransaction>` (thin RPC wrapper), removed `nextInvoiceNumber` (RPC computes invoice internally), removed `NewSaleTransaction` import.
+  - `src/types.ts` — `NewSaleTransaction` renamed to `RecordKasirSaleInput`, dropped fields `hpp_total` and `invoice_number` (both computed server-side now).
+  - `src/components/PenjualanBaruScreen.tsx` — `handleSave` collapsed from ~70 lines (with the "NOTE: non-atomic" caveat comment) to a single `kasirService.recordSale` call. Dropped the redundant client-side `customersService.createCustomer` follow-up (reviewer Minor #11) since the RPC handles customer find-or-create. Dropped `purchaseOrderService` import.
+  - `src/components/KasirScreen.tsx` — `SaleModal.handleSave` collapsed the same way. The kartu-channel flow (Walk-in/Tokopedia/Grosir cards on the right panel) keeps `SaleModal` as its UI, but its save path is now atomic via the same RPC. Dropped `purchaseOrderService` import.
+- **Tests** (`backend-go/internal/db/record_kasir_sale_test.go`, NEW, 3 tests — will PASS once migration is applied):
+  - `TestRecordKasirSale_HappyPath` — single SKU, qty=3. Asserts `stocks.stock_atas` 10→7, `stock_lots.qty_remaining` 10→7, `hpp_total=3000`, invoice matches `WLK-YYYYMMDD-\d{3}`, items[].hpp_per_unit=1000 (= seeded lot unit_cost), exactly 2 `stock_movements` rows (decrement_stock + deduct_stock_fifo) sharing `related_doc_id = invoice_number`.
+  - `TestRecordKasirSale_RollsBackOnInvalidPayment` — call with `payment_method='bitcoin'` raises. Asserts NO side effect: `stock_atas` still 10, `stock_lots.qty_remaining` still 10, `kasir_counters.counter` unchanged, no `kasir_transactions` row inserted. Regression guard for the Critical #1 atomicity claim.
+  - `TestRecordKasirSale_AggregatesSameSKU` — same SKU + warehouse in two lines (qty=2 and qty=3). Asserts aggregate behavior: `stock_atas` 10→5, `stock_lots` 10→5, exactly 2 `stock_movements` rows (proof: per-aggregate, not per-line). Both output items carry the same averaged `hpp_per_unit`. Regression guard for Critical #2 (the FIFO race on Promise.all).
+- **Migration NOT yet applied** to the DB this session — user preference: write migration only, defer apply to user via psql per the T1-T3 pengawasan pattern. Tests will fail with `pq: function public.record_kasir_sale(…) does not exist` until apply.
+- **Verification**: `npx tsc --noEmit` clean, `go vet ./internal/db/` clean. Test run confirms function-not-yet-exists error — exactly the expected pre-apply state.
+- **Reviewer findings status after Phase A**: Critical #1 + #2 → closed. Important #5 (burned invoice number) → closed. The kartu-channel SaleModal path is now atomic via the same RPC even though the modal UI was kept per user scope decision (sunset of SaleModal was explicitly deferred).
+- **Next**: Phase B (lunas date fix in SalesInvoicePDF), Phase C (createWalkinDraft field expansion), Phase D (mark_walkin_order_paid EDC whitelist), Phase E (salesEntries pagination).
+
+---
+
 ## 2026-06-08 — Stok Opname: grouped row by SKU (Atas + Bawah in one card) — DONE
 
 - **Goal**: Sesi opname dulu render 1 baris per `(sku, warehouse)` — tiap SKU jadi 2 row terpisah. Sekarang 1 SKU = 1 card dengan 2 sub-row (Atas + Bawah) sejajar, sehingga counter dapat menyelesaikan 1 SKU tanpa lompat baris.
