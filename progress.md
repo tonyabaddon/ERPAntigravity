@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 4.2 — RakitLockApprovalRequestRow renderer — DONE
+
+- **Commit**: 417f366
+- **File**: `src/components/approval/RakitLockApprovalRequestRow.tsx` (new, 148 lines)
+- **Features**:
+  - Fetches full snapshot via `fetchRakitLockRequestByApprovalId` on mount
+  - Shows Rakit Lock badge, requestedBy (truncated 8 chars), timestamp in header
+  - Computes totalFinal (sum of `final_price` across lines) and totalHpp (FIFO cost × qty per component + labor/lump-sum per line)
+  - Margin badge: green if ≥10%, rose with `⚠` warning if <10%
+  - Expandable detail panel: per-line component list (SKU, name, qty, warehouse, FIFO cost) or lump-sum HPP fallback
+  - Approve/Reject buttons shown only when `isOwner && status === 'pending'`; busy state prevents double-click
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 4.3 — Hook RakitLockApprovalRequestRow into ApprovalInboxScreen + wire approveRakitLock
+
+## 2026-06-09 — Rakit Workflow: Task 4.1 — Add rakit_lock filter pill to ApprovalInboxScreen — DONE
+
+- **Commit**: c8c9b00
+- **File**: `src/components/approval/ApprovalInboxScreen.tsx`
+- **Changes**:
+  - Extended `FilterPill` type union to include `'rakit_lock'` (between `'opname'` and `'kasir'`)
+  - Added `{ key: 'rakit_lock', label: 'Rakit Lock' }` entry to `PILLS` array (between Opname and Kasir)
+  - Added comment on `can_approve_adjustment` in `isOwner` block noting it also gates rakit_lock approvals for session 1 (dedicated perm deferred to session 2)
+  - No changes to row rendering or handleApprove (deferred to Task 4.3)
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 4.2 — RakitLockApprovalRequestRow renderer
+
 ## 2026-06-09 — Rakit Workflow: Task 2.3 — Wire WipListScreen into routing + sidebar — DONE
 
 - **Commit**: f7dba26
