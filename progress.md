@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Post-Overhaul Backlog Phase 1: working-tree triage — DONE
+
+Brought a six-file modified + seven-untracked-folder working tree back to clean per the plan in `docs/superpowers/plans/2026-06-09-post-overhaul-backlog.md`. Six commits total, every leftover decided.
+
+- `5346349 docs(plan)` — write the 4-phase post-overhaul backlog plan itself.
+- `5ce3498 chore(infra)` — gitignore: `.claire/`, `.claude/worktrees/`, `supabase/.temp/`, `backend-go/daemon.pid`, `docs/haloai-demo/`, `docs/mekari-demo/`. Untrack the previously-committed `daemon.pid`. **Also bundled an attempted `_IMAGE_TAG` substitution in `cloudbuild.frontend.yaml` that was wrong** (see next commit).
+- `e9dfdc3 fix(infra)` — revert `_IMAGE_TAG` → `$COMMIT_SHA` after the previous commit's Cloud Build run failed with `invalid image name "...:"` (the active trigger doesn't supply `_IMAGE_TAG`, so the tag came out empty). `_VITE_BACKEND_URL` default in the `substitutions` block kept because it's harmless. **Lesson: a working-tree mod is not evidence of a working production config — verify the trigger before committing infra YAML.**
+- `e0a79cb fix(pembelian)` — `MarkAsPaidModal.tsx` silent `catch {}` → console.error + warning toast on kasir-expense insert failure (PO already marked paid, but cashier now has a chance to manually reconcile).
+- `e80c18b docs(plans/specs)` — track 4 untracked plan files + 1 spec under `docs/superpowers/`: payment-proof-fix (2026-06-04), wib-timezone-fix (2026-06-05), unified-sales-channel + walkin-stock-decrement + design spec (2026-06-08). Some are partially implemented already; Phase 4 audit will reconcile per-plan status.
+- `62bc8cf feat(pengawasan)` — Phase 4 Task 4 view `v_pengawasan_transfer_aging` + 2 tests + `SeedWarehouseTransfer` helper. Flags `warehouse_transfers` rows stuck in `initiated` for > 24h. Migration `20260607000053` applied to prod DB; both tests PASS.
+- **Connectivity note**: the Supabase project's direct DB endpoint `db.ekhhojaezdfjfwuxyjkl.supabase.co` is **IPv6-only** and the local network's IPv6 was flaking mid-session. Switched to the **Session pooler** at `aws-1-ap-northeast-1.pooler.supabase.com:5432` (dual-stack, supports DDL). Pooler endpoint fetched via Supabase Management API (`GET /v1/projects/:ref/config/database/pooler`). The pooler should now be the default applier route — direct endpoint is fragile on IPv4-only ISPs. Consider switching `backend-go/.env` `SUPABASE_DB_CONNECTION` to the pooler as a follow-up.
+- **Result**: `git status` returns empty. All 6 phase-1-relevant commits deployed via Cloud Build (frontend builds passed after the `_IMAGE_TAG` revert).
+- **Next**: Phase 2 — WIB timezone fix (`docs/superpowers/plans/2026-06-05-wib-timezone-fix.md`).
+
+---
+
 ## 2026-06-09 — Sales Recording Overhaul, Minor follow-ups — DONE
 
 Closes the four Minor items the post-overhaul code review left as follow-ups. No DB change.
