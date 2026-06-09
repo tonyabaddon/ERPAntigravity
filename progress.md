@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 2.1 — WipListScreen component — DONE
+
+- **Commit**: 18c0b35
+- **File**: `src/components/WipListScreen.tsx`
+- **Changes**:
+  - Created `WipListScreen` component that fetches and displays `kasir_transactions` where `status='WIP'` via `fetchWipList()`
+  - Each row shows: truncated transaction ID + WIP badge, customer name/phone, created timestamp, total/DP amounts, `service_summary`, and per-line rakit job detail (serviceType badge + description + estimatedPrice)
+  - Action buttons: "Cancel Job" (stub toast) and "Selesaikan Rakit" (stub toast — wired to open `LockSubmissionModal` in Task 3.1)
+  - `LockSubmissionModal` import and `lockTx` state are commented out with `// Task 3.1` markers for easy re-enable
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 2.3 — Wire WipListScreen into routing + sidebar
+
 ## 2026-06-09 — Rakit Workflow: Task 1.6 — Save flow: create WIP transaction with rakit lines — DONE
 
 - **Commit**: 6186b05
