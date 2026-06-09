@@ -15,3 +15,7 @@ backend-go/daemon.pid
 # Demo presentation materials (folders kept locally, not committed)
 docs/haloai-demo/
 docs/mekari-demo/
+
+# Large benchmark recordings (too big for GitHub; keep locally only)
+docs/competitive-research/**/Results Benchmark/*.mov
+docs/competitive-research/**/Results Benchmark/*.mp4
