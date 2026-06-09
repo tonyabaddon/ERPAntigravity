@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow Session 1: Task 0.1 — Migration 0010 applied — DONE
+
+- **Commit**: ff236f2
+- **File**: `supabase/migrations/20260609000010_rakit_workflow_revision.sql`
+- **Applied to prod DB** via Session pooler (aws-1-ap-northeast-1)
+- **Schema changes**:
+  - Dropped: `rakit_audit_log` table, all 7 legacy RPCs (`_rakit_audit`, `submit_rakit_lock`, `approve_rakit_lock`, `reject_rakit_lock`, `withdraw_rakit_lock`, `cancel_rakit`, `material_edit_rakit`) — all had `p_actor_role TEXT` trailing arg in actual prod DB (different from plan's assumed signatures; handled by adding correct DROP signatures to migration)
+  - Dropped: `kasir_transactions.lock_submitted_by/at`, `lock_approved_by/at`, `lock_rejected_reason/at`
+  - Added: `kasir_transactions.service_summary TEXT`
+  - Enum `approval_request_type` += `'rakit_lock'` (now 7 values)
+  - Enum `stock_movement_source` += `'rakit_usage'`, `'rakit_reversal'` (now 12 values)
+  - New table: `rakit_lock_requests` (FK to kasir_transactions + approval_requests; RLS enabled)
+  - New RPCs: `request_rakit_lock`, `commit_approved_rakit_lock`, `approve_rakit_lock`, `withdraw_rakit_lock`, `cancel_rakit`, `material_edit_rakit`, `cosmetic_edit_rakit`
+- **Post-migration verification**: All 7 expected functions present (no duplicates), 3 rakit tables (no audit_log), enum values correct, 0 lock_* columns, service_summary present.
+
 ## 2026-06-09 — Post-Overhaul Backlog Phase 3: sales overhaul polish — DONE
 
 Closes all five sub-tasks the post-overhaul code review left for Phase 3. Five commits, two new migrations applied to prod DB via Session pooler. Build + Cloud Build deploy green.
