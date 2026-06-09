@@ -1,5 +1,6 @@
 import React from 'react';
 import { KasirItem, WarehouseLocation } from '../../types';
+import type { RakitServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
 
@@ -9,9 +10,11 @@ export interface CartRowsProps {
   onQtyChange: (key: number, qty: number) => void;
   onWarehouseChange: (key: number, wh: WarehouseLocation) => void;
   onRemove: (key: number) => void;
+  rakitLines?: Array<{ id: string; type: RakitServiceType; description: string; estimatedPrice: number }>;
+  onRemoveRakit?: (id: string) => void;
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit }: CartRowsProps) {
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
 
   if (items.length === 0) {
@@ -92,6 +95,51 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
           </div>
         );
       })}
+
+      {rakitLines && rakitLines.length > 0 && (
+        <>
+          <div className="text-[10px] font-extrabold text-orange-700 uppercase tracking-widest mb-2 mt-3 flex items-center gap-2">
+            <span>🛠 Jasa Rakit</span>
+            <span className="flex-1 border-t border-dotted border-slate-300" />
+          </div>
+          {rakitLines.map(r => (
+            <div
+              key={r.id}
+              className="rounded-xl p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-[12px]"
+              style={{
+                background: r.type === 'jasa_custom_panel'
+                  ? 'linear-gradient(90deg, rgba(14,165,233,0.08), rgba(14,165,233,0.02) 80%)'
+                  : 'linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02) 80%)',
+                borderLeft: r.type === 'jasa_custom_panel' ? '3px solid #0ea5e9' : '3px solid #f59e0b',
+              }}
+            >
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                    r.type === 'jasa_custom_panel'
+                      ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                      : 'bg-orange-50 text-orange-700 border border-orange-200'
+                  }`}>
+                    {r.type === 'jasa_custom_panel' ? '📦 Jasa Custom Panel' : '⚡ Jasa Rakit'}
+                  </span>
+                  <span className="font-extrabold text-[13px]">{r.description}</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
+              </div>
+              <div className={`font-extrabold text-[14px] ${r.type === 'jasa_custom_panel' ? 'text-sky-700' : 'text-amber-700'}`}>
+                {formatRp(r.estimatedPrice)}
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemoveRakit?.(r.id)}
+                className="text-slate-300 hover:text-rose-500 text-lg"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </>
+      )}
     </>
   );
 }

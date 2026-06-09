@@ -265,6 +265,8 @@ export default function PenjualanBaruScreen({
                     onQtyChange={updateQty}
                     onWarehouseChange={updateWarehouse}
                     onRemove={removeItem}
+                    rakitLines={rakitLines}
+                    onRemoveRakit={removeRakitLine}
                   />
                 </ItemSearchPanel>
                 <RakitButtonsRow
