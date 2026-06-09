@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.3 — Wire RakitButtonsRow + RakitInlineForm into PenjualanBaruScreen — DONE
+
+- **Commit**: 2029b98
+- **File**: `src/components/PenjualanBaruScreen.tsx`
+- **Changes**:
+  - Appended `RakitServiceType` to the existing `import type { DbCustomerWithStats, ... } from '../types'` line (line 7)
+  - Added `import RakitButtonsRow` and `import RakitInlineForm` after `SalesInvoicePDF` import (lines 18–19)
+  - Added rakit state block after `savedTx` useState: `rakitLines`, `rakitFormOpen`, `rakitFormType`
+  - Added handlers: `openRakitForm`, `cancelRakitForm`, `addRakitLine`, `removeRakitLine`
+  - Inserted `<RakitButtonsRow>` + conditional `<RakitInlineForm>` in left column after `</ItemSearchPanel>` (lines 270–281)
+- **JSX insertion**: lines 270–281 (after `</ItemSearchPanel>`, before closing `</div>` of left column)
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 1.4 — Cart line rendering for rakit lines
+
 ## 2026-06-09 — Rakit Workflow: Task 1.2 — RakitInlineForm component — DONE
 
 - **Commit**: 3f8a68d
