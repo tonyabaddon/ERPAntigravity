@@ -348,7 +348,7 @@ export const orderService = {
     delivery_address?: string;
     payment_type?: 'FULL' | 'DP';
     dp_amount?: number;
-    dp_input_type?: 'AMOUNT' | 'PERCENTAGE';
+    dp_input_type?: 'AMOUNT' | 'PERCENT';
     delivery_type?: 'PICKUP' | 'DELIVERY';
   }): Promise<DbOrder> {
     if (!supabase) throw new Error('Supabase not configured');
