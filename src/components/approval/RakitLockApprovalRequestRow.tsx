@@ -33,11 +33,14 @@ export default function RakitLockApprovalRequestRow({
   const lines: any[] = (snapshot?.linesSnapshot as any[]) ?? [];
   const totalFinal = lines.reduce((s: number, l: any) => s + Number(l.final_price ?? 0), 0);
   const totalHpp = lines.reduce((s: number, l: any) => {
+    if (l.tracking_mode === 'lumpsum') {
+      return s + Number(l.lump_sum_hpp ?? 0);
+    }
     const compsHpp = (l.components ?? []).reduce(
       (cs: number, c: any) => cs + Number(c.fifo_cost ?? 0) * Number(c.qty ?? 0),
       0,
     );
-    return s + compsHpp + Number(l.labor_cost ?? l.lump_sum_hpp ?? 0);
+    return s + compsHpp + Number(l.labor_cost ?? 0);
   }, 0);
   const margin = totalFinal - totalHpp;
   const marginPct = totalFinal > 0 ? (margin / totalFinal) * 100 : 0;

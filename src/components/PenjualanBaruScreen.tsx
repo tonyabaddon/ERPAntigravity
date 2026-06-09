@@ -194,6 +194,8 @@ export default function PenjualanBaruScreen({
             ongkir_amount: ongkirOn ? ongkirAmount : 0,
             payment_method: paymentMethod,
             payment_subtype: paymentSubtype,
+            payment_type: paymentType,
+            dp_input_type: paymentType === 'DP' ? dpInputType : null,
             notes: notes.trim() || null,
             customer_id: selectedCustomerId ?? null,
             customer_name: customerName || null,

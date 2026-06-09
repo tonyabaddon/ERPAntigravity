@@ -397,7 +397,7 @@ export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris' | 'edc';
 export type KasirPaymentSubtype = 'debit' | 'qris' | null;
 export type KasirPaymentType = 'FULL' | 'DP';
 export type KasirDpInputType = 'AMOUNT' | 'PERCENT' | null;
-export type KasirStatus = 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED';
+export type KasirStatus = 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED' | 'WIP' | 'PENDING_LOCK_APPROVAL';
 export type WarehouseLocation = 'atas' | 'bawah';
 export type KasirExpenseCategory =
   | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
@@ -705,7 +705,13 @@ export interface RakitLockRequest {
   id: number;
   transactionId: string;
   approvalRequestId: number;
-  linesSnapshot: RakitJobLine[];
+  /**
+   * Snapshot of rakit lines at lock submission time. Stored as JSONB in the DB
+   * with snake_case keys (final_price, tracking_mode, labor_cost, lump_sum_hpp,
+   * components: [{sku, name, qty, warehouse, fifo_cost}]). Typed as unknown[]
+   * to force consumers to validate the shape rather than assume RakitJobLine.
+   */
+  linesSnapshot: unknown[];
   requestedBy: string;
   requestedAt: string;
   status: RakitLockRequestStatus;

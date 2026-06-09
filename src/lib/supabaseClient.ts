@@ -1196,6 +1196,8 @@ export const kasirService = {
       ongkir_amount: number;
       payment_method: KasirPaymentMethod;
       payment_subtype?: KasirPaymentSubtype;
+      payment_type?: 'FULL' | 'DP';
+      dp_input_type?: 'AMOUNT' | 'PERCENT' | null;
       notes?: string | null;
       tokped_order_no?: string | null;
       wa_phone?: string | null;
