@@ -348,3 +348,79 @@ describe('CHECK constraint enforcement', () => {
     expect(error?.message.toLowerCase()).toMatch(/check|constraint/);
   });
 });
+
+// ─── record_kasir_sale RPC (production save path) ─────────────────
+//
+// The tests above insert into kasir_transactions directly to verify the
+// schema. In production every sale now goes through the
+// record_kasir_sale RPC instead, which bundles FIFO + counter + insert
+// atomically. These two tests pin the RPC's contract from the TS side.
+// (Backend-go has 3 deeper RPC tests in record_kasir_sale_test.go;
+// these are the TS-side smoke that the same RPC remains callable from
+// supabase-js with the payload shape PenjualanBaruScreen sends.)
+
+describe('record_kasir_sale RPC', () => {
+  test('RPC inserts a row with server-generated invoice + hpp_total', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase.rpc('record_kasir_sale', {
+      p_date:              today,
+      p_channel:           'walkin',
+      p_items:             [
+        { sku: TEST_SKU, name: 'Test', qty: 2, unit_price: 50000, subtotal: 100000, warehouse: 'atas' },
+      ],
+      p_subtotal:          100000,
+      p_payment_method:    'cash',
+      p_payment_subtype:   null,
+      p_payment_type:      'FULL',
+      p_dp_amount:         0,
+      p_dp_input_type:     null,
+      p_ongkir_amount:     0,
+      p_notes:             null,
+      p_total_amount:      100000,
+      p_customer_name:     `${TEST_PREFIX}-rpc-happy`,
+      p_customer_phone:    '0812-TEST-rpc-happy',
+      p_customer_company:  'QA Test Co.',
+      p_delivery_address:  null,
+      p_tokped_order_no:   null,
+      p_wa_phone:          null,
+      p_wa_chat_url:       null,
+      p_customer_id:       null,
+    });
+    expect(error).toBeNull();
+    expect(data).toBeTruthy();
+    expect(data.invoice_number).toMatch(/^WLK-\d{8}-\d{3}$/);
+    expect(data.status).toBe('PAID');
+    expect(Number(data.hpp_total)).toBeGreaterThan(0); // FIFO walked the seeded lot
+    expect(data.channel).toBe('walkin');
+  });
+
+  test('RPC rejects unknown payment_subtype before any side effect', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const { error } = await supabase.rpc('record_kasir_sale', {
+      p_date:              today,
+      p_channel:           'walkin',
+      p_items:             [
+        { sku: TEST_SKU, name: 'Test', qty: 1, unit_price: 50000, subtotal: 50000, warehouse: 'atas' },
+      ],
+      p_subtotal:          50000,
+      p_payment_method:    'edc',
+      p_payment_subtype:   'cash',  // invalid: chk_kasir_payment_subtype allows debit|qris only
+      p_payment_type:      'FULL',
+      p_dp_amount:         0,
+      p_dp_input_type:     null,
+      p_ongkir_amount:     0,
+      p_notes:             null,
+      p_total_amount:      50000,
+      p_customer_name:     `${TEST_PREFIX}-rpc-bad-subtype`,
+      p_customer_phone:    '0812-TEST-rpc-bad-subtype',
+      p_customer_company:  null,
+      p_delivery_address:  null,
+      p_tokped_order_no:   null,
+      p_wa_phone:          null,
+      p_wa_chat_url:       null,
+      p_customer_id:       null,
+    });
+    expect(error).not.toBeNull();
+    expect(error?.message.toLowerCase()).toMatch(/invalid payment_subtype/);
+  });
+});
