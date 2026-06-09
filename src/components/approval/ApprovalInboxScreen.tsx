@@ -39,13 +39,14 @@ interface ApprovalInboxScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'kasir';
+type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'rakit_lock' | 'kasir';
 
 const PILLS: { key: FilterPill; label: string }[] = [
   { key: 'all',           label: 'Semua' },
   { key: 'adjustment',    label: 'Adjustment' },
   { key: 'price_change',  label: 'Harga' },
   { key: 'opname',        label: 'Opname' },
+  { key: 'rakit_lock',    label: 'Rakit Lock' },
   { key: 'kasir',         label: 'Kasir' },
 ];
 
@@ -66,7 +67,8 @@ export default function ApprovalInboxScreen({
 
   const perms = currentUser?.permissions;
   const isOwner = !!(
-    perms?.can_approve_adjustment ||
+    perms?.can_approve_adjustment ||      // also gates rakit_lock approvals for session 1
+                                           // (dedicated can_approve_rakit_lock perm deferred to session 2)
     perms?.can_approve_price_change ||
     perms?.can_commit_opname ||
     perms?.can_approve_kasir_price_override ||
