@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 0.2 — Frontend types delta — DONE
+
+- **Commit**: 852ce66
+- **Files**: `src/types.ts`, `src/components/approval/ApprovalRequestRow.tsx`
+- **Changes**:
+  - Appended rakit workflow types to `src/types.ts`: `RakitServiceType`, `RakitTrackingMode`, `RakitComponent`, `RakitJobLine`, `RakitLockRequestStatus` (includes `'superseded'` per migration 0011), `RakitLockRequest`
+  - Extended `ApprovalRequestType` union with `'rakit_lock'`
+  - Extended `ActivePage` union with `'wip-list'`
+  - Fixed `ApprovalRequestRow.tsx` exhaustive `Record<ApprovalRequestType, ...>` maps to include `rakit_lock` entries (label: 'Rakit Lock', icon: 🔧 amber)
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean pass)
+- **Next**: Task 0.3 — supabaseClient RPC wrappers
+
 ## 2026-06-09 — Rakit Workflow: Migration 0011 — reject_rakit_lock RPC + double-reversal fix — DONE
 
 - **Commit**: b1461e4
