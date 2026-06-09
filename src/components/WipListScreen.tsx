@@ -1,7 +1,7 @@
 // src/components/WipListScreen.tsx
 import React, { useEffect, useState } from 'react';
 import { fetchWipList } from '../lib/supabaseClient';
-// import LockSubmissionModal from './penjualan/LockSubmissionModal'; // Task 3.1 - uncomment after that component exists
+import LockSubmissionModal from './penjualan/LockSubmissionModal';
 import type { RakitJobLine } from '../types';
 
 interface WipListScreenProps {
@@ -27,7 +27,7 @@ function formatRp(n: number): string {
 export default function WipListScreen({ currentUser, showToast }: WipListScreenProps) {
   const [rows, setRows] = useState<WipRow[]>([]);
   const [loading, setLoading] = useState(true);
-  // const [lockTx, setLockTx] = useState<WipRow | null>(null); // Task 3.1
+  const [lockTx, setLockTx] = useState<WipRow | null>(null);
 
   const refresh = async () => {
     try {
@@ -108,7 +108,7 @@ export default function WipListScreen({ currentUser, showToast }: WipListScreenP
               </button>
               <button
                 type="button"
-                onClick={() => showToast('Selesaikan Rakit — LockSubmissionModal akan dibuka (Task 3.1 belum diimplementasi)', 'info')}
+                onClick={() => setLockTx(tx)}
                 className="px-3 py-1.5 rounded-full text-[12px] font-extrabold text-white bg-[#012749] hover:bg-[#01365f]"
               >
                 🔒 Selesaikan Rakit
@@ -118,7 +118,6 @@ export default function WipListScreen({ currentUser, showToast }: WipListScreenP
         ))}
       </div>
 
-      {/* Task 3.1 — re-enable when LockSubmissionModal exists
       {lockTx && currentUser && (
         <LockSubmissionModal
           transactionId={lockTx.id}
@@ -133,7 +132,6 @@ export default function WipListScreen({ currentUser, showToast }: WipListScreenP
           showToast={showToast}
         />
       )}
-      */}
     </div>
   );
 }
