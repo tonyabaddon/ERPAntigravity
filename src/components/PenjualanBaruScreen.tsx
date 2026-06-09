@@ -219,7 +219,11 @@ export default function PenjualanBaruScreen({
           onBack();
         }
       } catch (e: any) {
-        showToast(`❌ Gagal simpan WIP: ${e instanceof Error ? e.message : String(e)}`, 'warning');
+        // PostgrestError isn't an Error instance, but has .message + .code + .details + .hint
+        const msg = e?.message || e?.error_description || (typeof e === 'string' ? e : JSON.stringify(e));
+        const code = e?.code ? ` [${e.code}]` : '';
+        showToast(`❌ Gagal simpan WIP: ${msg}${code}`, 'warning');
+        console.error('insertWipWithRakit failed:', e);  // log full object for debugging
       } finally {
         setSaving(false);
       }
@@ -253,7 +257,10 @@ export default function PenjualanBaruScreen({
       });
       setSavedTx(saved);
     } catch (err: any) {
-      showToast(`Gagal menyimpan: ${err.message ?? 'unknown'}`, 'warning');
+      const msg = err?.message || err?.error_description || (typeof err === 'string' ? err : JSON.stringify(err));
+      const code = err?.code ? ` [${err.code}]` : '';
+      showToast(`Gagal menyimpan: ${msg}${code}`, 'warning');
+      console.error('recordSale failed:', err);
     } finally {
       setSaving(false);
     }
