@@ -18,7 +18,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
-import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS } from './types';
+import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -51,6 +51,7 @@ export default function App() {
   // Gating system: start at 'auth' or direct bypass for immediate interaction 
   const [activePage, setActivePage] = useState<ActivePage>('auth');
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
+  const [penjualanInitialChannel, setPenjualanInitialChannel] = useState<KasirChannel | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
@@ -340,7 +341,10 @@ export default function App() {
           <KasirScreen
             currentUser={currentUser}
             showToast={triggerToast}
-            onOpenPenjualanBaru={() => setActivePage('penjualanBaru')}
+            onOpenPenjualanBaru={(channel) => {
+              setPenjualanInitialChannel(channel);
+              setActivePage('penjualanBaru');
+            }}
           />
         );
       case 'penjualanBaru':
@@ -348,8 +352,15 @@ export default function App() {
           <PenjualanBaruScreen
             currentUser={currentUser}
             showToast={triggerToast}
-            onBack={() => setActivePage('kasir')}
-            onSaved={(_txId) => setActivePage('kasir')}
+            initialChannel={penjualanInitialChannel}
+            onBack={() => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage('kasir');
+            }}
+            onSaved={(_txId) => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage('kasir');
+            }}
           />
         );
       case 'rekonsiliasi':
