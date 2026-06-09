@@ -1,6 +1,7 @@
 // src/components/rekonsiliasi/POSellThrough.tsx
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { wibDateString } from '../../lib/format';
 
 interface POSummary {
   id: string;
@@ -30,7 +31,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
     (async () => {
       if (!supabase) return;
       const start = `${year}-${String(month).padStart(2, '0')}-01`;
-      const end = new Date(year, month, 1).toISOString().slice(0, 10);
+      const end = wibDateString(new Date(year, month, 1));
       const { data: poRows } = await supabase
         .from('purchase_orders')
         .select(`id, po_number, total, status, received_at, payment_due_at, supplier:suppliers(name),

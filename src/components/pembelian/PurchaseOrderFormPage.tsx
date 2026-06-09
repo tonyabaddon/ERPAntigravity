@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { DbPurchaseOrder, DbSupplier, StockItem, PermissionSet } from '../../types';
 import { purchaseOrderService, PoItemDraft } from '../../lib/pembelianService';
+import { wibDateString } from '../../lib/format';
 import SupplierPicker from './form/SupplierPicker';
 import InlineSupplierForm from './form/InlineSupplierForm';
 import StockPicker from './form/StockPicker';
@@ -26,7 +27,7 @@ function formatRupiah(n: number): string {
 
 function isPastDate(iso: string): boolean {
   if (!iso) return false;
-  return iso < new Date().toISOString().slice(0, 10);
+  return iso < wibDateString();
 }
 
 export default function PurchaseOrderFormPage({

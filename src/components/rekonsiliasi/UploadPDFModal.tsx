@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { BankAccount } from '../../types';
 import { reconciliationService } from '../../lib/supabaseClient';
+import { wibDateString } from '../../lib/format';
 
 interface Props {
   account: BankAccount;
@@ -21,7 +22,7 @@ export default function UploadPDFModal({ account, year, month, onDone, onCancel 
     setBusy(true);
     setErr(null);
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
-    const end = new Date(year, month, 0).toISOString().slice(0, 10);
+    const end = wibDateString(new Date(year, month, 0));
     try {
       await reconciliationService.uploadPDF(file, account.id, account.bank_code, start, end);
       onDone();

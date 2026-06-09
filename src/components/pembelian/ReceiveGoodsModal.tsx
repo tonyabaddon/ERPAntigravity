@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { DbPurchaseOrder } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
+import { wibDateString } from '../../lib/format';
 
 interface ReceiveGoodsModalProps {
   po: DbPurchaseOrder;
@@ -19,7 +20,7 @@ function addDays(dateStr: string, days: number): string {
 }
 
 export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }: ReceiveGoodsModalProps) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = wibDateString();
   const supplierTermDays = po.supplier?.payment_term_days ?? 0;
   const defaultDueDate = supplierTermDays > 0 ? addDays(today, supplierTermDays) : today;
 

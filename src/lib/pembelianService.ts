@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { wibDateString } from './format';
 import type { DbSupplier, DbPurchaseOrder } from '../types';
 
 export const supplierService = {
@@ -230,9 +231,9 @@ export const purchaseOrderService = {
       .select('total, status, payment_due_at, created_at');
     const rows = (data ?? []) as Array<{ total: number; status: string; payment_due_at?: string; created_at: string }>;
     const now = new Date();
-    const todayDate = now.toISOString().slice(0, 10);
+    const todayDate = wibDateString(now);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const monthEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const monthEndDate = wibDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     const monthStartDate = monthStart.slice(0, 10);
     const totalMtd = rows.filter(r => r.created_at >= monthStart).reduce((s, r) => s + Number(r.total), 0);
     const countMtd = rows.filter(r => r.created_at >= monthStart).length;

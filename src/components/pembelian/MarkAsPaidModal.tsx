@@ -3,6 +3,7 @@ import { X, Upload } from 'lucide-react';
 import { DbPurchaseOrder } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
 import { kasirService } from '../../lib/supabaseClient';
+import { wibDateString } from '../../lib/format';
 
 interface MarkAsPaidModalProps {
   po: DbPurchaseOrder;
@@ -29,7 +30,7 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
       await purchaseOrderService.markPaid(po.id, proofUrl);
       try {
         await kasirService.insertExpense({
-          date: new Date().toISOString().slice(0, 10),
+          date: wibDateString(),
           expense_category: 'Pembelian Stok',
           description: `Pembayaran PO ${po.po_number} — ${po.supplier?.name ?? ''}`.trim(),
           subtotal: po.total,

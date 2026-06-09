@@ -7,6 +7,7 @@ import {
 import type { DbCustomerWithStats } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
+import { wibDateString } from '../lib/format';
 import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 import ItemSearchPanel from './penjualan/ItemSearchPanel';
@@ -143,7 +144,7 @@ export default function PenjualanBaruScreen({
 
     setSaving(true);
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = wibDateString();
       const saved = await kasirService.recordSale({
         date: today,
         channel,

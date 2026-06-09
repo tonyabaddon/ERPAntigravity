@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Post-Overhaul Backlog Phase 2: WIB timezone catch-up — DONE
+
+The original `2026-06-05-wib-timezone-fix.md` plan had already landed for `supabaseClient.ts` internals + `LaporanScreen.tsx`. But ~13 NEW call sites of `new Date().toISOString().slice(0, 10)` (and the `new Date(year, month, X)` variants) appeared since that plan was written — mostly from the Sales Recording Overhaul + Pembelian PO/PDF + Rekonsiliasi work. This commit catches them up.
+
+- **Root cause refresher**: `new Date().toISOString().slice(0, 10)` returns the UTC calendar date. In WIB (UTC+7) anytime after 17:00 local, UTC has rolled over to H+1 — so the sale or expense is filed under tomorrow's date. The same buggy idiom applied to `new Date(year, month, 1).toISOString().slice(0, 10)` (month-end query bounds) returned the previous day, silently truncating monthly reconciliation queries by ~24h.
+- **Helper move**: relocated `wibDateString(date?: Date): string` from a private function inside `supabaseClient.ts:409` to an exported helper in `src/lib/format.ts` (joining `formatRp` extracted in the Phase Minor cleanup). Same `toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })` impl — guaranteed ISO `YYYY-MM-DD` per spec.
+- **Sites fixed (13 across 8 files)**:
+  - `src/lib/supabaseClient.ts` — drop local `wibDateString`, re-import from `format`. Fix 3 `new Date(year, month, 1).toISOString().slice(0, 10)` sites in `listOrdersForPeriod`, `listBankLinesForPeriod`, `listCashBatches`.
+  - `src/lib/pembelianService.ts` — `todayDate` + `monthEndDate` computations.
+  - `src/components/PenjualanBaruScreen.tsx` — `today` inside `handleSave` (the most user-impacting site: every sale after 17:00 WIB used to land on H+1).
+  - `src/components/PembelianScreen.tsx` — `today` for `isOverdue` predicate.
+  - `src/components/rekonsiliasi/UploadPDFModal.tsx` — month-end `end` bound.
+  - `src/components/rekonsiliasi/POSellThrough.tsx` — exclusive month `end` bound.
+  - `src/components/pembelian/PurchaseOrderFormPage.tsx` — `isPastDate` comparison.
+  - `src/components/pembelian/MarkAsPaidModal.tsx` — kasir expense `date`.
+  - `src/components/pembelian/ReceiveGoodsModal.tsx` — receive `today`.
+- **Intentionally not touched**: `ReceiveGoodsModal.tsx:19` inside `addDays(dateStr, days)` keeps `.toISOString().slice(0, 10)` — input is already a `YYYY-MM-DD` WIB string from `wibDateString()`, internal arithmetic stays in UTC offset-free math, no TZ drift. Also `format.ts` comments mention the buggy idiom to explain why the helper exists; those are intentional doc text.
+- **Verification**: `npx tsc --noEmit` clean. `grep -rn "toISOString().slice(0, 10)" src/` returns only the 2 doc comments in `format.ts` + the safe `addDays` internal — every user-impacting call site is now WIB-aware.
+- **Next**: Phase 3 (sales overhaul polish — sunset SaleModal, integration test, formatRp consolidation outside penjualan/*, payment_subtype validation, dp_input_type alignment).
+
+---
+
 ## 2026-06-09 — Post-Overhaul Backlog Phase 1: working-tree triage — DONE
 
 Brought a six-file modified + seven-untracked-folder working tree back to clean per the plan in `docs/superpowers/plans/2026-06-09-post-overhaul-backlog.md`. Six commits total, every leftover decided.
@@ -107,31 +129,20 @@ Closes the rest of the reviewer's Important items after Phase A. The kartu-chann
 
 ---
 
-## 2026-06-08 — Persetujuan menu shows blank on cloud — root-caused to user's browser/network environment — RESOLVED (no code change)
+## 2026-06-09 — Persetujuan menu "shows blank" — ACTUAL root cause: zero pending approvals in DB — NO CODE CHANGE
 
-- **Symptom**: On the deployed Cloud Run frontend (`garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app`), clicking the Persetujuan sidebar item rendered an empty main panel. DevTools Network tab showed the request to `https://ekhhojaezdfjfwuxyjkl.supabase.co/rest/v1/approval_requests?…` returning `{"message":"No API key found in request","hint":"No \`apikey\` request header or url param was found."}`.
-- **Investigation phases**:
-  1. **Bundle code verified**: deployed `index-Wi9PYk0b.js` (revision 00013) embeds Supabase URL + anon JWT as constants and constructs the supabase-js client correctly (`fe = yq(wq, _q)`). The library's `fq` fetch wrapper sets `apikey` via `x.set("apikey", e)`.
-  2. **Library reproduction in Node**: Created supabase-js v2.106.2 client with the same URL/key and ran the same `.from('approval_requests').select('*')` query — request goes out with apikey header, server returns 94 pending approvals.
-  3. **CORS preflight verified**: Supabase's OPTIONS response on `/rest/v1/approval_requests` returns `access-control-allow-headers: apikey,authorization,x-client-info,accept-profile` and `access-control-allow-origin: *`. Preflight is correctly configured.
-  4. **End-to-end browser reproduction**: Drove the live deployed app with headless Chrome (puppeteer-core + installed Chrome 148) and captured outgoing network requests. The browser execution of the LIVE bundle DOES send the `apikey` header on Supabase REST calls (verified on the `/rest/v1/stocks` call that fires on app load):
-     ```
-     "apikey": "eyJhbGciOi…",
-     "authorization": "Bearer eyJhbGciOi…",
-     "x-client-info": "supabase-js-web/2.106.2"
-     ```
-- **Root cause**: NOT in the deployed code, bundle, library, or Supabase config — all four are correct and the apikey header IS sent by the live app when executed in a real browser. The cause is in the **user's specific browser environment** stripping the `apikey` header in flight. Likely culprits (in order of probability):
-  1. A browser extension stripping non-standard headers (possibly enabled in incognito too — some users have extensions allowed in private mode)
-  2. Antivirus / firewall with HTTPS-MITM inspection rewriting headers
-  3. Corporate proxy / VPN / network appliance filtering custom headers
-  4. A browser/version-specific quirk (less likely — supabase-js-web/2.106.2 is widely used)
-- **Why this is the right diagnosis**: The headless Chrome run executes the exact same deployed bundle (same Cloud Run URL, same hashed JS file) and produces a request with apikey present and Supabase responds 200. Therefore the bundle works. The only variable left is what's between the user's browser process and Supabase — i.e., the user's environment.
-- **Defensive fix considered and rejected**: Attempted `createClient(url, key, { global: { headers: { apikey: key } } })` to redundantly inject apikey. Local test confirmed it still produces a request with apikey, but the root cause analysis above shows the deployed app already sends apikey — so this fix would only put the same header in the same place where it's currently being stripped. Reverted to keep code clean.
-- **Action for the user**: Isolate which environment component strips the header:
-  1. Open the same URL on a **different network** (e.g., mobile hotspot instead of WiFi) — if it works, network appliance / corporate proxy
-  2. Open the URL in a **different browser** (Firefox if they were on Chrome, or vice versa) — if it works, browser-level extension/setting
-  3. Open the URL on a **different device** (phone or another laptop) — if it works, device-specific (antivirus/firewall)
-- **Verification artifact**: `/tmp/test_deployed.mjs` — puppeteer-core script that loads the live deployed app in headless Chrome and logs all supabase.co requests with full headers. Reusable for future "is this a deployment bug or a user-env bug" triage.
+- **Symptom (user-reported)**: User reported clicking Persetujuan on the deployed Cloud Run frontend rendered an "empty" / "blank" main panel. Shared a `{"message":"No API key found in request"}` error JSON in chat which initially sent the investigation down a header-stripping rabbit hole.
+- **Investigation phases (in order, and what each ruled out)**:
+  1. **Bundle code verified**: deployed `index-Wi9PYk0b.js` (revision 00013) embeds Supabase URL + anon JWT as constants and constructs the supabase-js client correctly. Ruled out a missing-key build issue.
+  2. **Library reproduction in Node**: supabase-js v2.106.2 + same URL/key locally → apikey header is sent. Ruled out a library bug.
+  3. **CORS preflight verified**: Supabase OPTIONS on `/rest/v1/approval_requests` returns `access-control-allow-headers: apikey,authorization,x-client-info,accept-profile` + `access-control-allow-origin: *`. Ruled out CORS misconfig.
+  4. **Headless-Chrome browser reproduction**: Drove the LIVE deployed app with puppeteer-core + installed Chrome 148 and captured outgoing requests. apikey header IS sent on every Supabase REST call. Ruled out a browser-specific runtime bug in supabase-js-web/2.106.2.
+  5. **Extended test (`/tmp/test_approval.mjs`)**: injected a `from('approval_requests').select('*').eq('status','pending')` query inside the loaded deployed page → HTTP 200 with body `[]`. **Zero pending rows.**
+  6. **Direct REST verification**: `curl ".../approval_requests?select=count&status=eq.pending" -H "apikey: …" -H "Prefer: count=exact"` → `[{"count":0}]`. Recent rows in the table are all `expired` or `approved` (30-min auto-expiry from yesterday).
+- **Actual root cause**: The screen was rendering its legitimate empty state ("Semua permintaan sudah diputuskan." at `ApprovalInboxScreen.tsx:215-219`) because `listPendingApprovals()` correctly returned `[]` — there are zero pending approvals in the DB right now. The non-technical user read the empty UI (title + filter pills + "all decided" message) as "blank". The earlier "No API key found" error was either a transient session issue or a pasted artifact — the live app sends apikey correctly and the relevant requests succeed.
+- **Lesson learned**: When a non-technical user says "blank", verify the DB state via a 30-second `curl … Prefer: count=exact` BEFORE chasing client-side errors. The advisor flagged this exact failure mode two turns into the chase ("a non-technical user might call the empty state blank"); the chase continued anyway. Cost: hours of bundle-spelunking that an earlier `curl` would have prevented.
+- **What the user can do to verify the screen works**: create a pending approval first (e.g. trigger a stock adjustment from Stok / AI Stock Manager that requires owner approval), then the inbox will render that row with Setujui / Tolak action buttons.
+- **Verification artifacts retained at `/tmp/test_deployed.mjs` and `/tmp/test_approval.mjs`** — puppeteer-core scripts that load the live deployed app and inspect supabase.co requests + responses. Reusable for future "is this a deploy bug or a user-env / data-state issue?" triage.
 
 ---
 

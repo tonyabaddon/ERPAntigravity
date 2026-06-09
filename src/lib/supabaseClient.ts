@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { wibDateString } from './format';
 import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
 import type {
   ApprovalRequest,
@@ -405,10 +406,6 @@ export const orderService = {
 };
 
 type Period = '7d' | '30d' | '90d';
-
-function wibDateString(date = new Date()): string {
-  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
-}
 
 function periodStart(p: Period): string {
   const d = new Date();
@@ -1573,7 +1570,7 @@ export const reconciliationService = {
   async listOrdersForPeriod(year: number, month: number) {
     if (!supabase) throw new Error('Supabase not configured');
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
-    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const end = wibDateString(new Date(year, month, 1));
     const { data, error } = await supabase
       .from('orders')
       .select('id, customer_name, customer_phone, total, payment_type, dp_amount, channel, status, created_at, booking_expires_at')
@@ -1595,7 +1592,7 @@ export const reconciliationService = {
   async listBankLinesForPeriod(year: number, month: number): Promise<BankStatementLine[]> {
     if (!supabase) throw new Error('Supabase not configured');
     const start = `${year}-${String(month).padStart(2, '0')}-01`;
-    const end = new Date(year, month, 1).toISOString().slice(0, 10);
+    const end = wibDateString(new Date(year, month, 1));
     const { data, error } = await supabase
       .from('bank_statement_lines').select('*')
       .gte('txn_date', start).lt('txn_date', end)
@@ -1609,7 +1606,7 @@ export const reconciliationService = {
     let q = supabase.from('cash_deposit_batches').select('*').order('deposit_date', { ascending: false });
     if (year && month) {
       const start = `${year}-${String(month).padStart(2, '0')}-01`;
-      const end = new Date(year, month, 1).toISOString().slice(0, 10);
+      const end = wibDateString(new Date(year, month, 1));
       // Match rows EITHER (a) deposit_date in [start, end), OR (b) pending batches with null deposit_date.
       // Postgres NULL semantics: `.lt()` on null returns null → would be filtered out, so we use a nested
       // and() inside or() to bracket the range correctly.

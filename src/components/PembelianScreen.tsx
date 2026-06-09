@@ -4,6 +4,7 @@ import { StockItem, PermissionSet } from '../types';
 import { purchaseOrderService, supplierService } from '../lib/pembelianService';
 import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { wibDateString } from '../lib/format';
 import SupplierModal from './pembelian/SupplierModal';
 import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 import PoDetailView from './pembelian/PoDetailView';
@@ -190,7 +191,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
   const [detailPo, setDetailPo] = useState<DbPurchaseOrder | null>(null);
   const [replaceItem, setReplaceItem] = useState<DbPurchaseOrderItem | null>(null);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = wibDateString();
 
   function isOverdue(po: DbPurchaseOrder): boolean {
     return po.status === 'RECEIVED' && !!po.payment_due_at && po.payment_due_at < today;
