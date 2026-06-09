@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.2 — RakitInlineForm component — DONE
+
+- **Commit**: 3f8a68d
+- **File**: `src/components/penjualan/RakitInlineForm.tsx`
+- **Summary**: Form panel for entering rakit line details (description + estimated price). Conditionally styled for `jasa_rakit` (amber/orange) vs `jasa_custom_panel` (sky/blue). `canSubmit` guards require non-empty description + price > 0. Resets state after successful `onAdd` call.
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean).
+
 ## 2026-06-09 — Rakit Workflow: Task 1.1 — RakitButtonsRow component — DONE
 
 - **Commit**: 31ae14d
