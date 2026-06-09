@@ -152,7 +152,7 @@ function InvoiceBody({
         </div>
         <div className="text-right text-[11px]">
           <div className="font-extrabold text-[13px]">{t.invoice_number}</div>
-          <div>{formatDateTime(t.created_at)}</div>
+          <div>{formatDateTime(variant === 'lunas' && t.lunas_at ? t.lunas_at : t.created_at)}</div>
           <div>Channel: {channelLabel.toUpperCase()}</div>
         </div>
       </div>

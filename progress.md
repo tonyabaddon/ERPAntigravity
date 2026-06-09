@@ -1,5 +1,40 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Sales Recording Overhaul, Phases B+C+D+E: code review remaining fixes — DONE (migration #2 pending apply)
+
+Closes the rest of the reviewer's Important items after Phase A. The kartu-channel SaleModal flow is kept (sunset deferred per user scope decision).
+
+**Phase B — Lunas invoice prints pelunasan date (Important #4)**
+- `src/components/penjualan/SalesInvoicePDF.tsx:155` — when `variant === 'lunas'` AND `transaction.lunas_at` is set, render `lunas_at` instead of `created_at`. DP-stage invoices (variant !== 'lunas') still render `created_at` so the DP "tanggal terima" is unchanged. Backdated Lunas invoices no longer mislead the customer or the bookkeeper about when the final payment landed.
+
+**Phase C+D — Walk-in draft → paid: field passthrough + EDC whitelist (Important #6 + #7)**
+- `supabase/migrations/20260609000002_walkin_paid_field_passthrough.sql` (new):
+  - Adds `notes TEXT` column to `public.orders` (`IF NOT EXISTS`, nullable).
+  - Replaces `public.mark_walkin_order_paid(uuid, text, text, date)` with a version that:
+    - Adds `'edc'` to the payment_method whitelist (was `cash|transfer|qris` only, even though the `kasir_payment_method` enum already permits `edc` since `20260607000001_kasir_sales_recording.sql`).
+    - Properly splits the kasir_transactions insert: `subtotal = v_order.subtotal` (was `v_order.total` — silently inflated subtotal by the shipping fee, which inconsistent with how `record_kasir_sale` inserts and with how the dashboard sums revenue).
+    - Surfaces `ongkir_amount = v_order.shipping_fee`, `notes = v_order.notes`, `delivery_address = NULLIF(btrim(v_order.customer_address), '')`, `total_amount = v_order.total`, `payment_type = 'FULL'`, `status = 'PAID'` on the kasir row.
+  - Signature, return type, RLS grants, and existing transition guards (sales_channel='walkin', status whitelist, warehouse default, items walk + decrement_stock + deduct_stock_fifo + items_out rebuild + UPDATE orders) are unchanged. Drop-in replacement.
+- `src/lib/supabaseClient.ts` `orderService.createWalkinDraft` — extended input signature with optional `shipping_fee`, `notes`, `delivery_address`, `payment_type`, `dp_amount`, `dp_input_type`, `delivery_type`. Defaults reproduce the legacy hardcoded values (`'FULL'`, `0`, `'PICKUP'`, empty address, no notes) so the existing SaleModal `handleSaveDraft` caller doesn't need to change. A future caller (e.g. PenjualanBaruScreen wired to produce drafts) can now flow ongkir / notes / address / DP through the draft.
+- `src/lib/supabaseClient.ts` `orderService.markWalkinPaid` — payment_method type widened to `'cash' | 'transfer' | 'qris' | 'edc'` to match the updated SQL whitelist.
+
+**Phase E — `salesEntriesService.fetchAll` no longer unbounded (Important #8)**
+- `src/lib/supabaseClient.ts` `salesEntriesService.fetchAll` — adds optional `{from?, to?, limit?}` parameter. Default behavior: no date filter (preserves OrderHistoryScreen showing all time), but applies `.range(0, 4999)` hard cap per table. Callers wanting a narrower date window can pass ISO timestamps; passing both `from` and `to` is more efficient than relying on the limit cap. The previous unbounded `.select('*').order(...)` scaled linearly with toko lifetime — now it's capped regardless of input.
+
+**Reviewer findings status after Phases A-E**:
+- Critical #1 + #2 → closed (Phase A).
+- Important #4 → closed (Phase B). Important #5 → closed (Phase A). Important #6 → closed (Phase C). Important #7 → closed for both record_kasir_sale (Phase A) and mark_walkin_order_paid (Phase D). Important #8 → closed (Phase E).
+- Important #3 (dual SaleModal vs PenjualanBaruScreen save paths) → explicitly OUT OF SCOPE per user decision. Both paths are now atomic via `record_kasir_sale`, but the two UI surfaces still coexist. Sunset can land in a separate change.
+- Minor #11 (redundant customer create) → closed (Phase A, since RPC handles find-or-create).
+- Minor #9/#10/#12/#13 → not addressed; left for follow-up.
+
+**Verification**: `npx tsc --noEmit` clean across all phases. Migration `20260609000002_walkin_paid_field_passthrough.sql` NOT yet applied; both phase migrations (`…00001` + `…00002`) must be applied via psql before the `record_kasir_sale` test suite and walkin-paid integration tests pass. Recommended apply order: `…00001` first (new RPC + no existing dependency), then `…00002` (replaces an existing RPC, adds nullable column).
+
+**Known untouched**:
+- WIB timezone bug in `PenjualanBaruScreen.handleSave` (`new Date().toISOString().slice(0,10)` returns UTC date) — tracked separately under `docs/superpowers/plans/2026-06-05-wib-timezone-fix.md`.
+
+---
+
 ## 2026-06-09 — Sales Recording Overhaul, Phase A: atomic `record_kasir_sale` RPC — DONE (migration pending apply)
 
 - **Goal**: Close Critical #1 + #2 + Important #5 from the end-to-end code review of the Sales Recording Overhaul. The pre-existing save path (`nextInvoiceNumber → Promise.all(deductFifo) → insertSaleTransaction → decrementStock`) was non-atomic and could (a) strand `stock_lots.qty_remaining` on partial failure, (b) race on shared lots when the same SKU appeared twice in cart, (c) burn the per-(channel,date) invoice counter on a failed insert (audit-grade gap).

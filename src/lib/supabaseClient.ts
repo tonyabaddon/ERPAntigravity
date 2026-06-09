@@ -339,6 +339,16 @@ export const orderService = {
     subtotal: number;
     hpp_total: number;
     total: number;
+    // Optional fields preserved on draft → paid transition.
+    // Defaults reproduce the legacy behavior (FULL, no ongkir, PICKUP, no notes,
+    // empty address) so existing callers don't have to change.
+    shipping_fee?: number;
+    notes?: string;
+    delivery_address?: string;
+    payment_type?: 'FULL' | 'DP';
+    dp_amount?: number;
+    dp_input_type?: 'AMOUNT' | 'PERCENTAGE';
+    delivery_type?: 'PICKUP' | 'DELIVERY';
   }): Promise<DbOrder> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
@@ -351,14 +361,17 @@ export const orderService = {
         customer_name:     input.customer_name,
         customer_phone:    input.customer_phone,
         customer_company:  input.customer_company,
-        customer_address:  '',
+        customer_address:  input.delivery_address ?? '',
         items:             input.items,
         subtotal:          input.subtotal,
-        shipping_fee:      0,
+        shipping_fee:      input.shipping_fee ?? 0,
         total:             input.total,
         hpp_total:         input.hpp_total,
-        payment_type:      'FULL',
-        delivery_type:     'PICKUP',
+        payment_type:      input.payment_type ?? 'FULL',
+        dp_amount:         input.dp_amount ?? 0,
+        dp_input_type:     input.dp_input_type ?? null,
+        notes:             input.notes ?? null,
+        delivery_type:     input.delivery_type ?? 'PICKUP',
       })
       .select()
       .single();
@@ -368,7 +381,7 @@ export const orderService = {
 
   async markWalkinPaid(
     orderId: string,
-    paymentMethod: 'cash' | 'transfer' | 'qris',
+    paymentMethod: 'cash' | 'transfer' | 'qris' | 'edc',
     invoiceNumber: string
   ): Promise<KasirTransaction> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -1171,12 +1184,34 @@ export const kasirService = {
 };
 
 export const salesEntriesService = {
-  async fetchAll(): Promise<{ orders: DbOrder[]; kasir: KasirTransaction[] }> {
+  // Hard caps each table at `limit` rows (default 5000) so the previously
+  // unbounded query doesn't grow linearly with toko lifetime. Callers can
+  // narrow to a date window via {from, to} to skip the cap entirely.
+  async fetchAll(opts?: {
+    from?: string;   // ISO timestamp (inclusive)
+    to?:   string;   // ISO timestamp (inclusive)
+    limit?: number;  // hard cap per table; default = 5000
+  }): Promise<{ orders: DbOrder[]; kasir: KasirTransaction[] }> {
     if (!supabase) throw new Error('Supabase not configured');
-    const [ordersRes, kasirRes] = await Promise.all([
-      supabase.from('orders').select('*').order('created_at', { ascending: false }),
-      supabase.from('kasir_transactions').select('*').eq('type', 'income').order('created_at', { ascending: false }),
-    ]);
+    const limit = opts?.limit ?? 5000;
+
+    let ordersQuery = supabase.from('orders').select('*')
+      .order('created_at', { ascending: false })
+      .range(0, limit - 1);
+    let kasirQuery  = supabase.from('kasir_transactions').select('*')
+      .eq('type', 'income')
+      .order('created_at', { ascending: false })
+      .range(0, limit - 1);
+    if (opts?.from) {
+      ordersQuery = ordersQuery.gte('created_at', opts.from);
+      kasirQuery  = kasirQuery.gte('created_at', opts.from);
+    }
+    if (opts?.to) {
+      ordersQuery = ordersQuery.lte('created_at', opts.to);
+      kasirQuery  = kasirQuery.lte('created_at', opts.to);
+    }
+
+    const [ordersRes, kasirRes] = await Promise.all([ordersQuery, kasirQuery]);
     if (ordersRes.error) throw ordersRes.error;
     if (kasirRes.error)  throw kasirRes.error;
     return {
