@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import {
   KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType,
   KasirDpInputType, KasirItem, WarehouseLocation, PermissionSet, KasirTransaction,
+  ActivePage,
 } from '../types';
 import type { DbCustomerWithStats, RakitServiceType } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
@@ -26,10 +27,11 @@ export interface PenjualanBaruScreenProps {
   onBack: () => void;            // navigate back to kasir
   onSaved: (txId: string) => void; // after save, parent can refresh + open invoice
   initialChannel?: KasirChannel;
+  onNavigate?: (page: ActivePage) => void; // optional: navigate to another page after WIP save
 }
 
 export default function PenjualanBaruScreen({
-  currentUser, showToast, onBack, onSaved, initialChannel,
+  currentUser, showToast, onBack, onSaved, initialChannel, onNavigate,
 }: PenjualanBaruScreenProps) {
   // Channel
   const [channel, setChannel] = useState<KasirChannel>(initialChannel ?? 'walkin');
@@ -175,6 +177,51 @@ export default function PenjualanBaruScreen({
     }
     if (paymentType === 'DP' && (effectiveDp <= 0 || effectiveDp >= totalInvoice)) {
       showToast('Jumlah DP harus > 0 dan < Total Invoice.', 'warning'); return;
+    }
+
+    // WIP branch: when rakit lines exist, save as WIP and navigate to wip-list
+    if (hasRakit) {
+      setSaving(true);
+      try {
+        const today = wibDateString();
+        await kasirService.insertWipWithRakit({
+          tx: {
+            date: today,
+            channel,
+            subtotal,
+            total_amount: totalInvoice,
+            dp_amount: effectiveDp,
+            ongkir_amount: ongkirOn ? ongkirAmount : 0,
+            payment_method: paymentMethod,
+            payment_subtype: paymentSubtype,
+            notes: notes.trim() || null,
+            customer_id: selectedCustomerId ?? null,
+            customer_name: customerName || null,
+            customer_phone: customerPhone || null,
+            customer_company: customerCompany || null,
+            delivery_address: deliveryAddress.trim() || null,
+            tokped_order_no: channel === 'tokopedia' ? tokpedOrderNo : null,
+            wa_phone: channel === 'whatsapp' ? waPhone : null,
+            wa_chat_url: channel === 'whatsapp' ? waChatUrl : null,
+          },
+          rakitLines: rakitLines.map(l => ({
+            serviceType: l.type,
+            description: l.description,
+            estimatedPrice: l.estimatedPrice,
+          })),
+        });
+        showToast('✅ Transaksi WIP tersimpan. Lanjutkan ke WIP list untuk submit lock.', 'success');
+        if (onNavigate) {
+          onNavigate('wip-list');
+        } else {
+          onBack();
+        }
+      } catch (e: any) {
+        showToast(`❌ Gagal simpan WIP: ${e instanceof Error ? e.message : String(e)}`, 'warning');
+      } finally {
+        setSaving(false);
+      }
+      return;
     }
 
     setSaving(true);

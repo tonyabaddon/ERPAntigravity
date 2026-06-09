@@ -361,6 +361,10 @@ export default function App() {
               setPenjualanInitialChannel(undefined);
               setActivePage('kasir');
             }}
+            onNavigate={(page) => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage(page);
+            }}
           />
         );
       case 'rekonsiliasi':

@@ -13,6 +13,7 @@ import type {
   OpnameCount,
   RakitJobLine,
   RakitLockRequest,
+  RakitServiceType,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -1178,6 +1179,75 @@ export const kasirService = {
       .single();
     if (error) throw error;
     return data as KasirTransaction;
+  },
+
+  async insertWipWithRakit(input: {
+    tx: {
+      date: string;
+      customer_id?: string | null;
+      customer_name?: string | null;
+      customer_phone?: string | null;
+      customer_company?: string | null;
+      delivery_address?: string | null;
+      channel: KasirChannel;
+      subtotal: number;
+      total_amount: number;
+      dp_amount: number;
+      ongkir_amount: number;
+      payment_method: KasirPaymentMethod;
+      payment_subtype?: KasirPaymentSubtype;
+      notes?: string | null;
+      tokped_order_no?: string | null;
+      wa_phone?: string | null;
+      wa_chat_url?: string | null;
+    };
+    rakitLines: Array<{
+      serviceType: RakitServiceType;
+      description: string;
+      estimatedPrice: number;
+    }>;
+  }): Promise<string> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    // 1. Build service_summary
+    const rCount = input.rakitLines.filter(l => l.serviceType === 'jasa_rakit').length;
+    const cCount = input.rakitLines.filter(l => l.serviceType === 'jasa_custom_panel').length;
+    const summary = [
+      rCount ? `⚡ ${rCount} Rakit` : null,
+      cCount ? `📦 ${cCount} Custom Panel` : null,
+    ].filter(Boolean).join(' + ');
+
+    // 2. Insert kasir_transactions with status='WIP' (no stock deduction yet)
+    const { data: txRow, error: txErr } = await supabase
+      .from('kasir_transactions')
+      .insert({
+        ...input.tx,
+        type: 'income',
+        status: 'WIP',
+        hpp_total: 0,
+        items: [],
+        service_summary: summary,
+      })
+      .select('id')
+      .single();
+    if (txErr) throw txErr;
+    const transactionId = (txRow as { id: string }).id;
+
+    // 3. Insert rakit_job_lines
+    const lineRows = input.rakitLines.map((l, idx) => ({
+      transaction_id: transactionId,
+      line_number: idx + 1,
+      service_type: l.serviceType,
+      description: l.description,
+      estimated_price: l.estimatedPrice,
+      tracking_mode: 'detail',
+      labor_cost: 0,
+      lump_sum_hpp: 0,
+    }));
+    const { error: linesErr } = await supabase.from('rakit_job_lines').insert(lineRows);
+    if (linesErr) throw linesErr;
+
+    return transactionId;
   },
 
 };
