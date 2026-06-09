@@ -107,8 +107,12 @@ export default function PenjualanBaruScreen({
       .finally(() => setLoading(false));
   }, []);
 
+  // Rakit derived values
+  const hasRakit = rakitLines.length > 0;
+  const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
+
   // Totals — effectiveDp converts percent input to Rp; sisaPelunasan uses it
-  const subtotal = cart.reduce((s, i) => s + i.subtotal, 0);
+  const subtotal = cart.reduce((s, i) => s + i.subtotal, 0) + rakitTotal;
   const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
   const effectiveDp = paymentType === 'DP'
     ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
@@ -306,6 +310,12 @@ export default function PenjualanBaruScreen({
                     onPhoneChange={setCustomerPhone}
                     onCompanyChange={setCustomerCompany}
                   />
+                  {hasRakit && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-[12px] text-amber-800 mt-3">
+                      ⚠ <strong>Transaksi ini akan masuk status WIP</strong> karena ada jasa rakit.
+                      Lock + approval owner diperlukan sebelum stock decrement &amp; pelunasan.
+                    </div>
+                  )}
                   <PaymentPanel
                     method={paymentMethod}
                     subtype={paymentSubtype}
