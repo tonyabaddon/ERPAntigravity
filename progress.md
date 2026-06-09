@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Migration 0011 — reject_rakit_lock RPC + double-reversal fix — DONE
+
+- **Commit**: b1461e4
+- **File**: `supabase/migrations/20260609000011_rakit_workflow_fixes.sql`
+- **Applied to prod DB** via Session pooler (aws-1-ap-northeast-1)
+- **C1 — reject_rakit_lock RPC**: New `reject_rakit_lock(BIGINT, TEXT, UUID)` function mirrors `withdraw_rakit_lock` but fires on owner rejection (`channel='owner_reject'`). Without it, clicking Tolak in Persetujuan inbox left the transaction permanently stuck in `PENDING_LOCK_APPROVAL`. Reason stored in `approval_requests.payload.reject_reason` since `_transition_approval` has no note arg (confirmed signature: `(BIGINT, approval_status, UUID, TEXT)`).
+- **C2 — double-reversal fix**: `rakit_lock_requests.status` CHECK constraint extended with `'superseded'`. `material_edit_rakit` now marks prior approved row as `superseded` after stock reversal; prevents re-picking the same prior row on a second material_edit call.
+- **Verification passed**: `reject_rakit_lock` signature = `bigint, text, uuid`; CHECK includes `superseded`; `material_edit_rakit` body contains `superseded` marker.
+
 ## 2026-06-09 — Rakit Workflow Session 1: Task 0.1 — Migration 0010 applied — DONE
 
 - **Commit**: ff236f2
