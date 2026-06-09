@@ -3,12 +3,8 @@ import { X, Printer } from 'lucide-react';
 import { KasirTransaction, DbCompanySettings } from '../../types';
 import { companySettingsService, bankConfigService, isSupabaseConfigured } from '../../lib/supabaseClient';
 import type { DbBankConfig } from '../../types';
+import { formatRp } from '../../lib/format';
 
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
-}
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   return `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
@@ -99,7 +95,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
           ) : (
-            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} formatRp={formatRp} formatDateTime={formatDateTime} />
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} />
           )}
         </div>
       </div>
@@ -107,10 +103,20 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
   );
 }
 
-// Body extracted to its own function for clarity (still in the same file)
+interface InvoiceBodyProps {
+  transaction: KasirTransaction;
+  variant: InvoiceVariant;
+  adminName?: string;
+  company: DbCompanySettings | null;
+  bank: DbBankConfig | null;
+  channelLabel: string;
+  paymentLabel: string;
+}
+
+// Body extracted to its own function for clarity (still in the same file).
 function InvoiceBody({
-  transaction: t, variant, adminName, company, bank, channelLabel, paymentLabel, formatRp, formatDateTime,
-}: any) {
+  transaction: t, variant, adminName, company, bank, channelLabel, paymentLabel,
+}: InvoiceBodyProps) {
   const subtotal = t.subtotal;
   const ongkir = t.ongkir_amount ?? 0;
   const total = t.total_amount ?? subtotal + ongkir;

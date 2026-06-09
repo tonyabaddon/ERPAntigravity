@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Lock, X } from 'lucide-react';
 import type { DbCustomerWithStats } from '../../types';
-
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatRp } from '../../lib/format';
 
 export interface CustomerPanelProps {
   customers: DbCustomerWithStats[];

@@ -1,12 +1,7 @@
 import React from 'react';
 import { KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType, KasirDpInputType } from '../../types';
+import { formatRp } from '../../lib/format';
 import PaymentMethodSelector from './PaymentMethodSelector';
-
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
-}
 
 export interface PaymentPanelProps {
   // payment method

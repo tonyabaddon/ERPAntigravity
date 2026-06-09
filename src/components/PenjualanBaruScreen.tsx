@@ -128,6 +128,9 @@ export default function PenjualanBaruScreen({
     if (channel === 'tokopedia' && !tokpedOrderNo.trim()) {
       showToast('Nomor Pesanan Tokopedia wajib diisi.', 'warning'); return;
     }
+    if (channel === 'whatsapp' && !waPhone.trim()) {
+      showToast('Nomor WhatsApp wajib diisi untuk channel WhatsApp Manual.', 'warning'); return;
+    }
     if (paymentMethod === 'edc' && !paymentSubtype) {
       showToast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning'); return;
     }

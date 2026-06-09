@@ -1,12 +1,7 @@
 import React from 'react';
 import { KasirItem, WarehouseLocation } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
-
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
-}
+import { formatRp } from '../../lib/format';
 
 export interface CartRowsProps {
   items: (KasirItem & { _key: number })[];
@@ -81,9 +76,14 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
               <button type="button" onClick={() => onQtyChange(item._key, Math.max(1, item.qty - 1))} className="w-6 h-6 rounded bg-slate-100 font-extrabold">−</button>
               <input
+                type="number"
+                min={1}
                 value={item.qty}
-                onChange={e => onQtyChange(item._key, Math.max(1, parseInt(e.target.value || '1', 10)))}
-                className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none"
+                onChange={e => {
+                  const n = Number(e.target.value);
+                  if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n);
+                }}
+                className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <button type="button" onClick={() => onQtyChange(item._key, item.qty + 1)} className="w-6 h-6 rounded bg-slate-100 font-extrabold">+</button>
             </div>

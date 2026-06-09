@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Sales Recording Overhaul, Minor follow-ups — DONE
+
+Closes the four Minor items the post-overhaul code review left as follow-ups. No DB change.
+
+- **Minor #9 — `InvoiceBody` typed `any`** (`SalesInvoicePDF.tsx:113`): introduced `InvoiceBodyProps` interface (`transaction: KasirTransaction`, `variant: InvoiceVariant`, `adminName?: string`, `company: DbCompanySettings | null`, `bank: DbBankConfig | null`, `channelLabel: string`, `paymentLabel: string`). `formatRp` and `formatDateTime` were previously also passed as props purely to share within the file; they're now used as module-level references inside `InvoiceBody`, so they drop from the prop set entirely.
+- **Minor #10 — duplicated `formatRp`**: extracted to a new `src/lib/format.ts` (`export function formatRp(n: number): string`). Replaced 6 identical local declarations in `src/components/penjualan/` (`MarkLunasModal`, `CartRows`, `PaymentPanel`, `CustomerPanel`, `ItemSearchPanel`, `SalesInvoicePDF`) with a one-line import. The three remaining duplicates outside the review's scope (`KasirScreen`, `stok/StockOpnameScreen`, `stok/StockOpnameSessionView`) were left untouched — out of scope for this set of fixes.
+- **Minor #12 — WhatsApp channel skipped phone validation** (`PenjualanBaruScreen.tsx:128-130`): mirrored the Tokopedia validation by adding `if (channel === 'whatsapp' && !waPhone.trim())` → toast + return. The whole reason to pick WhatsApp Manual channel is to associate the sale with a wa phone, so this is now a hard precondition for save.
+- **Minor #13 — `CartRows` qty input flicker** (`CartRows.tsx:78-84`): replaced `parseInt(e.target.value || '1', 10) → Math.max(1, …)` (which forced empty → 1 and clamped on every keystroke, producing flicker when typing "0" then a digit) with `type="number" min={1}` + an onChange that only commits values satisfying `Number.isInteger(n) && n >= 1`. Invalid intermediates are silently ignored, the controlled `item.qty` stays stable, and the native number stepper arrows are hidden with the existing Tailwind `[appearance:textfield]` / spinner-suppression utility classes. The +/- buttons unchanged.
+- **Files**: `src/lib/format.ts` (new), `src/components/penjualan/SalesInvoicePDF.tsx`, `src/components/penjualan/MarkLunasModal.tsx`, `src/components/penjualan/CartRows.tsx`, `src/components/penjualan/PaymentPanel.tsx`, `src/components/penjualan/CustomerPanel.tsx`, `src/components/penjualan/ItemSearchPanel.tsx`, `src/components/PenjualanBaruScreen.tsx`.
+- **Verification**: `npx tsc --noEmit` clean. No DB or RPC change.
+- **Final review tally (post-Minor-follow-ups)**: Critical 2/2 closed, Important 5/6 closed (only #3 SaleModal sunset deferred per user), Minor 5/5 closed. Recommendations: pattern promotion ✓ done, sunset ✗ deferred, frontend integration test ✗ not added, WIB tz ✗ tracked separately.
+
+---
+
 ## 2026-06-09 — Sales Recording Overhaul, Phases B+C+D+E: code review remaining fixes — DONE (migration #2 pending apply)
 
 Closes the rest of the reviewer's Important items after Phase A. The kartu-channel SaleModal flow is kept (sunset deferred per user scope decision).

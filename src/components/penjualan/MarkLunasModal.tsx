@@ -2,13 +2,8 @@ import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { KasirTransaction, KasirPaymentMethod, KasirPaymentSubtype } from '../../types';
 import { kasirService } from '../../lib/supabaseClient';
+import { formatRp } from '../../lib/format';
 import PaymentMethodSelector from './PaymentMethodSelector';
-
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
-}
 
 export interface MarkLunasModalProps {
   transaction: KasirTransaction;

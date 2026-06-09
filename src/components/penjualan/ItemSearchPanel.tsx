@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
+import { formatRp } from '../../lib/format';
 
 export interface ItemSearchPanelProps {
   stocks: SupabaseStockItem[];
@@ -8,12 +9,6 @@ export interface ItemSearchPanelProps {
   cartSubtotal: number;
   onAdd: (stock: SupabaseStockItem) => void;
   children?: React.ReactNode; // cart content rendered below by parent
-}
-
-function formatRp(n: number) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-  }).format(n);
 }
 
 export default function ItemSearchPanel({ stocks, cartCount, cartSubtotal, onAdd, children }: ItemSearchPanelProps) {
