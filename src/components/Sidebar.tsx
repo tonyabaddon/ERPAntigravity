@@ -21,7 +21,8 @@ import {
   ShoppingCart,
   Receipt,
   ClipboardCheck,
-  PackageSearch
+  PackageSearch,
+  Clock
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
@@ -56,6 +57,13 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
     { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, description: 'Sesi Opname & Riwayat', permKey: 'can_start_opname' },
+    {
+      id: 'wip-list',
+      label: 'WIP Rakit',
+      icon: Clock,
+      description: 'Transaksi rakit in progress',
+      permKey: 'aiStock' as keyof PermissionSet,
+    },
     { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, description: 'Approval Inbox', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
     { id: 'kasir', label: 'Kasir', icon: Receipt, description: 'Rekonsiliasi Harian', permKey: 'kasir' },
     { id: 'penjualanBaru', label: 'Catat Penjualan', icon: ShoppingCart, description: 'Input Penjualan Baru', permKey: 'kasir' },

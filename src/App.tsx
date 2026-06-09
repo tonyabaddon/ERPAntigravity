@@ -38,6 +38,7 @@ import PenjualanBaruScreen from './components/PenjualanBaruScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
+import WipListScreen from './components/WipListScreen';
 
 import {
   INITIAL_STOCK,
@@ -370,6 +371,13 @@ export default function App() {
       case 'rekonsiliasi':
         return (
           <RekonsiliasiScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
+        );
+      case 'wip-list':
+        return (
+          <WipListScreen
             currentUser={currentUser}
             showToast={triggerToast}
           />
