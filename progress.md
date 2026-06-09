@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.4 — Cart line rendering for rakit lines — DONE
+
+- **Commit**: 1fd19c5
+- **Files**: `src/components/penjualan/CartRows.tsx`, `src/components/PenjualanBaruScreen.tsx`
+- **Changes**:
+  - Added `import type { RakitServiceType } from '../../types'` to CartRows.tsx
+  - Extended `CartRowsProps` with optional `rakitLines` array and `onRemoveRakit` handler
+  - Added destructuring of new props in component signature
+  - Appended rakit section render after existing items.map block: section header "🛠 Jasa Rakit" + per-line cards styled differently for `jasa_rakit` (amber) vs `jasa_custom_panel` (sky/blue) with estimated price and remove button
+  - Passed `rakitLines={rakitLines}` and `onRemoveRakit={removeRakitLine}` to `<CartRows>` in PenjualanBaruScreen
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 1.5 — WIP warning banner + include rakit total in subtotal
+
 ## 2026-06-09 — Rakit Workflow: Task 1.3 — Wire RakitButtonsRow + RakitInlineForm into PenjualanBaruScreen — DONE
 
 - **Commit**: 2029b98
