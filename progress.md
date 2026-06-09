@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 2.3 — Wire WipListScreen into routing + sidebar — DONE
+
+- **Commit**: f7dba26
+- **Files**: `src/App.tsx`, `src/components/Sidebar.tsx`
+- **Changes**:
+  - Added `import WipListScreen from './components/WipListScreen'` to App.tsx
+  - Added `case 'wip-list':` route in `renderPage()` switch, passing `currentUser` and `showToast`
+  - Added `Clock` to lucide-react imports in Sidebar.tsx
+  - Added `{ id: 'wip-list', label: 'WIP Rakit', icon: Clock, description: 'Transaksi rakit in progress', permKey: 'aiStock' }` menu item after `stok-opname` entry
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 3.1+3.2 — LockSubmissionModal with per-line editor and component picker
+
 ## 2026-06-09 — Rakit Workflow: Task 2.1 — WipListScreen component — DONE
 
 - **Commit**: 18c0b35
