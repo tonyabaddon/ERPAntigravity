@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Post-final-review fixes C1 + I1-I3 — DONE
+
+- **Commit**: 4a758bb
+- post-final-review fixes: C1 lumpsum margin (branch on tracking_mode so lumpsum HPP is no longer zeroed), I1 payment_type/dp_input_type added to insertWipWithRakit, I2 RakitLockRequest.linesSnapshot typed as unknown[], I3 KasirStatus union extended with 'WIP' | 'PENDING_LOCK_APPROVAL'
+- `tsc --noEmit`: 0 errors (clean)
+
 ## 2026-06-09 — Rakit Workflow: Task 4.3 — Hook RakitLockApprovalRequestRow into ApprovalInboxScreen + wire approve/reject — DONE
 
 - **Commit**: 04ce239
