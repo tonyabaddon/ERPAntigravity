@@ -34,8 +34,9 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
           description: `Pembayaran PO ${po.po_number} — ${po.supplier?.name ?? ''}`.trim(),
           subtotal: po.total,
         });
-      } catch {
-        // expense logging is best-effort; PO is already marked paid
+      } catch (expenseErr: any) {
+        console.error('Kasir expense insert failed:', expenseErr);
+        showToast('PO lunas. Gagal catat di kasir: ' + (expenseErr?.message ?? 'unknown'), 'warning');
       }
       showToast(`${po.po_number} ditandai Lunas.`, 'success');
       onPaid();
