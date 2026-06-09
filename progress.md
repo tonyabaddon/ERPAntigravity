@@ -1,5 +1,36 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Session 1: Rakit (Assembly Service) Workflow — SHIPPED
+
+### What shipped
+
+- **DB migration 0010** (`ff236f2`): Phase 2 approval-gate integration — drops legacy `rakit_audit_log` + 7 old RPCs + `lock_*` columns; adds `rakit_lock_requests` satellite table + `request_rakit_lock` / `commit_approved_rakit_lock` RPCs; refactored `withdraw_rakit` / `cancel_rakit` / `material_edit` / `cosmetic_edit` RPCs; `approve_rakit_lock` wrapper; adds `'rakit_lock'` to `approval_request_type` enum + `'rakit_usage'` / `'rakit_reversal'` to `stock_movement_source` enum
+- **DB migration 0011** (`b1461e4`): Post-review fixes — adds `reject_rakit_lock` RPC + `'superseded'` status for material-edit chain integrity
+- **Types** (`852ce66`): TypeScript type definitions for new DB shape
+- **RPC wrappers** (`9c376c2`): `approveRakitLock`, `rejectRakitLock`, `fetchRakitLockRequestByApprovalId`, `fetchWipList`, `insertWipWithRakit` added to `supabaseClient.ts`
+- **Phase 1 — Cart UI** (`31ae14d, 3f8a68d, 2029b98, 1fd19c5, 8699319, 6186b05`): `RakitButtonsRow` + `RakitInlineForm` on `PenjualanBaruScreen`, rakit cart line render, amber WIP warning banner, `hasRakit` save-flow branch → calls `insertWipWithRakit` + redirects to WIP list
+- **Phase 2 — WIP List** (`18c0b35, f7dba26`): `WipListScreen` component + sidebar nav item + App.tsx routing
+- **Phase 3 — Lock Submission Modal** (`86930a3`): `LockSubmissionModal` with per-line editor, component picker with SKU search, tracking-mode toggle (detail vs lump-sum)
+- **Phase 4 — Approval Inbox extension** (`c8c9b00, 417f366, 04ce239`): `rakit_lock` filter pill + `RakitLockApprovalRequestRow` renderer with margin badge + approve/reject wiring
+- **Post-final-review fixes** (`4a758bb`): C1 lumpsum margin (branch on `tracking_mode` so lumpsum HPP is no longer zeroed by `?? 0`); I1 `payment_type`/`dp_input_type` passthrough in `insertWipWithRakit`; I2 `linesSnapshot` typed as `unknown[]`; I3 `KasirStatus` union extended with `'WIP' | 'PENDING_LOCK_APPROVAL'`
+
+### Deferred to Session 2
+
+- Phase 5: Cancel + Withdraw UI (RPCs exist, frontend UI deferred)
+- Phase 6: Edit AWAITING_LUNAS UI (`material_edit` + `cosmetic_edit` RPCs exist, UI deferred)
+- Phase 7: Invoice/PDF rendering for rakit transactions
+- Reject-reason prompt UI (I4 — currently uses generic default)
+- Cancel Job button in WipListScreen (currently stubs toast)
+
+### Lessons learned
+
+- Plan revision (2026-06-08 doc) anticipated Phase 2 integration but didn't ship migration code — Session 1 had to write migration 0010 fresh; ship migration code at plan-revision time next time
+- Code review caught 2 critical migration bugs (`reject_rakit_lock` missing + `material_edit` double-reversal) on first pass — fresh-eyes reviewer between implementer and merge is valuable
+- Final review caught the lumpsum margin bug (C1) — `?? 0` nullish coalescing trap is easy to miss when one alternative is legitimately `0`
+- Mockup HTML (2024 lines) served as a good visual reference but actual implementation diverged in small ways — treat mockup as "spirit, not letter" for future sessions
+
+---
+
 ## 2026-06-09 — Rakit Workflow: Post-final-review fixes C1 + I1-I3 — DONE
 
 - **Commit**: 4a758bb
