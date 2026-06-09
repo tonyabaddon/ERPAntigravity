@@ -1219,6 +1219,29 @@ export const kasirService = {
       cCount ? `📦 ${cCount} Custom Panel` : null,
     ].filter(Boolean).join(' + ');
 
+    // DIAGNOSTIC: identify any field that contains a non-primitive (e.g. Window) that would
+    // cause JSON.stringify to throw in supabase-js's body serialization.
+    const __dbg = (obj: Record<string, any>, label: string) => {
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (v === null || v === undefined) {
+          out[k] = String(v);
+        } else if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+          out[k] = `${typeof v}: ${String(v).slice(0, 60)}`;
+        } else if (Array.isArray(v)) {
+          out[k] = `array(${v.length})`;
+        } else {
+          // Try to detect if this is a DOM/Window-tainted object
+          const ctor = Object.prototype.toString.call(v);
+          const isWindowy = (typeof window !== 'undefined' && v === window) || ctor.includes('Window');
+          out[k] = isWindowy ? `**WINDOW REF** (${ctor})` : `object:${ctor}`;
+        }
+      }
+      console.log(`[insertWipWithRakit] ${label}:`, out);
+    };
+    __dbg({ ...input.tx, type: 'income', status: 'WIP', hpp_total: 0, items: [], service_summary: summary }, 'tx payload');
+    console.log('[insertWipWithRakit] rakitLines:', input.rakitLines);
+
     // 2. Insert kasir_transactions with status='WIP' (no stock deduction yet)
     const { data: txRow, error: txErr } = await supabase
       .from('kasir_transactions')
