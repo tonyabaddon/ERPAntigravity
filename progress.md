@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-09 — Rakit Workflow: Task 1.5 — WIP banner + rakit total in subtotal — DONE
+
+- **Commit**: 8699319
+- **File**: `src/components/PenjualanBaruScreen.tsx`
+- **Changes**:
+  - Added `hasRakit` and `rakitTotal` derived values (lines 111–112) just before the Totals block
+  - Updated `subtotal` to `cart.reduce(...) + rakitTotal` so rakit service fees flow into all downstream totals (totalInvoice, effectiveDp, sisaPelunasan)
+  - Added amber WIP warning banner `{hasRakit && (...)}` inside the right column, above `<PaymentPanel>`, inside the existing `space-y-4` container
+- **Typecheck**: `tsc --noEmit` — 0 errors (clean)
+- **Next**: Task 1.6 — Save flow: create WIP transaction with rakit lines
+
 ## 2026-06-09 — Rakit Workflow: Task 1.4 — Cart line rendering for rakit lines — DONE
 
 - **Commit**: 1fd19c5
