@@ -1608,8 +1608,14 @@ export function subscribeApprovalRequests(
     return () => { /* no-op */ };
   }
   const client = supabase;
+  // Channel topic must be unique per subscriber: supabase-js reuses a channel
+  // by topic name across calls, and adding `.on()` after another caller has
+  // already invoked `.subscribe()` throws ("cannot add postgres_changes
+  // callbacks ... after subscribe()"). Sidebar mounts a subscription for the
+  // badge count; ApprovalInboxScreen mounts another for the list, so they
+  // would collide on a shared name.
   const channel = client
-    .channel('approval_requests_inbox')
+    .channel(`approval_requests_inbox:${Math.random().toString(36).slice(2)}`)
     .on(
       'postgres_changes' as any,
       { event: '*', schema: 'public', table: 'approval_requests' },

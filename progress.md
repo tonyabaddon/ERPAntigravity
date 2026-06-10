@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-10 — Bug fix: Persetujuan inbox blank — DONE
+
+- **Root cause**: `subscribeApprovalRequests` in `src/lib/supabaseClient.ts` used a hard-coded channel topic `approval_requests_inbox`. Sidebar.tsx already subscribes to that topic on app mount for the badge count; when the user opens the Persetujuan inbox, `ApprovalInboxScreen` calls the same helper, supabase-js reuses the existing channel by topic name, and `.on('postgres_changes', ...)` after `.subscribe()` throws `cannot add postgres_changes callbacks for realtime:approval_requests_inbox after subscribe()`. The synchronous throw in `useEffect` + no ErrorBoundary → React 18 unmounts the whole tree → blank inbox screen.
+- **Diagnostic**: chrome-devtools-mcp `list_console_messages` after clicking Persetujuan surfaced the exact error. Sidebar badge correctly showed "1 permintaan menunggu" — ruling out auth/RLS/PostgREST. Session 2 dossier (curl, psql, role grants) was on the right diagnostic level but missed the realtime subscribe path; one shot of console messages from the live tab would have caught it on session 1.
+- **Fix**: Suffix the channel topic with a random token per call so each subscriber gets its own channel. Both Sidebar and ApprovalInboxScreen can now subscribe independently. `vite build`: clean.
+
+---
+
 ## 2026-06-09 — Session 1: Rakit (Assembly Service) Workflow — SHIPPED
 
 ### What shipped

@@ -47,6 +47,35 @@
    ```
 4. Then paste the Response body for the `approval_requests` REST call from your DevTools Network tab.
 
+## Session 2 update (2026-06-10 ~14:30 UTC)
+
+### Server-side conclusively ruled out
+- Both `anon` AND `authenticated` roles have SELECT on `approval_requests` (verified via `information_schema.table_privileges`)
+- `relrowsecurity=f`, `relforcerowsecurity=f`, 0 rows in `pg_policies` (RLS truly off)
+- No `db-pre-request` hook (`pg_settings` has no pgrst/pre-request entries)
+- `authenticator` role only preloads `supautils, safeupdate` (no read-side filter)
+- Directly via psql with `SET ROLE authenticated` and with `SET ROLE anon`: row 516 returned in both cases
+- **Live curl with the user's actual session JWT**: HTTP 200 + row returned (matches user's headers showing `content-range: 0-0/*` = 1 row)
+
+### Client-side narrowing
+- User's request to `/rest/v1/approval_requests?...` carried correct `apikey`, `authorization`, `accept-profile: public`, `x-client-info: supabase-js-web/2.106.2`, origin `garindo-jaya-panel-msme-erp-frontend-422860632808.asia-southeast1.run.app`
+- User's bundle = `index-D9yt4tJY.js` (confirmed via curl on both Cloud Run aliases)
+- User claimed body=`[]` but response headers say 1 row → likely user copied body from a different Network entry than headers came from. **Multiple entries must exist** (initial mount fetch, realtime subscription re-fetch, 30s poll re-fetch). One of them may genuinely return empty.
+
+### Standing hypothesis
+The deployed `listPendingApprovals` is called at least once with no Authorization (before supabase-js restores the session from localStorage), gets back empty under some condition we haven't reproduced, then a later call returns the row but state is already set to empty AND… no — `refresh()` always overwrites with the latest fetch result. So this hypothesis doesn't fully explain the UI staying empty.
+
+Alternative: a render-time crash in `RakitLockApprovalRequestRow` could explain blank UI but NOT the "0 permintaan terbuka" header count (which uses `requests.length`, set before render). Unless React tears down on crash and restarts with empty state.
+
+### Next session plan
+User installed `chrome-devtools-mcp` so I can inspect the live app directly. Sequence:
+1. `mcp__chrome-devtools__new_page` on the Cloud Run URL
+2. Wait for user to log in via OTP
+3. Navigate to Persetujuan
+4. `list_network_requests` filtered by `approval_requests` — see EVERY entry + body
+5. `list_console_messages` for any silent errors
+6. `evaluate_script` to read `localStorage['sb-*-auth-token']` and inspect React state
+
 ## Also pending
 - Task #19: `[object Object]` → TypeError Window root cause is **still unknown**. The diagnostic logging is deployed but no console output shared yet. User said they got past the bug somehow ("udah bisa create rakit") — may have been intermittent, may have been a specific input. If it doesn't recur, low priority.
 - Task #16: End-to-end smoke test (partially passed: cart + WIP + lock submit work; approval display blocked by current bug).
