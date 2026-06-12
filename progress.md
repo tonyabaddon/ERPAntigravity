@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 8: Shared WarehousePicker adaptive component — DONE (SHA 6ab3992)
+
+- **What:** Created `src/components/warehouse/WarehousePicker.tsx` — the shared adaptive picker that replaces every `'atas' | 'bawah'` toggle.
+- **Behavior:** Collapses to a static label pill for N=1, renders blue/amber pill toggles for N=2 (matching existing Atas/Bawah visual identity), falls back to a dropdown with ChevronDown icon overlay for N≥3.
+- **Props:** `mode: 'single'`, `warehouses: Warehouse[]`, `value: string | null`, `onChange: (id: string) => void`; optional `skuQtyByWarehouseId`, `disabled`, `excludeIds` (for pair composition in Task 10).
+- **Imports:** `Warehouse` from `../../types` (added by Task 2); `ChevronDown` from `lucide-react`.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
+## 2026-06-13 — Warehouses Task 7: Code quality fix — warehouse admin RPCs — DONE (SHA 2fff390)
+
+- **What:** Applied 3 code quality fixes to `20260613000002d_warehouses_admin_rpcs.sql`:
+  1. **PIN race fix (blocking):** Added `FOR UPDATE` to the `admin_users` SELECT in `force_deactivate_warehouse` — prevents two concurrent wrong-PIN attempts from both reading `count=4`, both incrementing to 5, and racing against a correct-PIN reset.
+  2. **Dead variable fix:** Refactored the failed-attempt UPDATE to use `v_fails` variable (`v_fails + 1`) instead of re-reading `pin_failed_count` from the column — eliminates dead variable and column re-read inconsistency.
+  3. **Auth guard consistency:** Removed redundant `IF v_actor IS NULL THEN RAISE EXCEPTION 'not authenticated'` from `create_warehouse`. All 5 RPCs now rely on the same `admin_users WHERE id = v_actor AND role = 'Owner'` existence check (returns 'Owner role required' when unauthenticated — slightly less precise but consistent).
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
 ## 2026-06-13 — Warehouses Task 7: Migration 2d — warehouse admin RPCs — DONE (SHA 9607c93)
 
 - **What:** Task 7 of the configurable N-warehouse plan. 5 new SECURITY DEFINER RPCs for warehouse administration, all writing `warehouse_audit_log` rows.
@@ -1105,7 +1125,7 @@ Closes the rest of the reviewer's Important items after Phase A. The kartu-chann
 - **Commit**: `feat(po-pdf): PDF rendering library — generatePoPdf()` (468de41).
 - **Next**: Task 11 of the PO Create page plan — wire a "Download PDF" button into `PoDetailView` that calls `generatePoPdf({...})`, converts the Blob to an Object URL via `URL.createObjectURL`, and triggers a download via a synthetic `<a download="PO-NUMBER.pdf">` click. Task 11 will also handle the `createdByName` resolution (admin_users lookup or `currentUser.full_name` fallback) and the `companySettings` fetch.
 
-## 2026-06-08 — PO Create Page, Task 9: Wire `PembelianScreen` sub-view + delete `PurchaseOrderModal` — DONE
+## 2026-06-08 — PO Create Page, Task 9: ManajemenGudangScreen + sidebar — DONE (b6e1b88)
 - **Goal**: Integrate Task 8's `PurchaseOrderFormPage` orchestrator into the production app flow by wiring it as a sub-view of `PembelianScreen` (replacing the modal-based `PurchaseOrderModal` experience) and removing the now-obsolete modal file from the tree. This is the integration step that finally lets a user actually USE the new full-page create/edit PO flow end-to-end. State for "are we creating/editing/listing" is hoisted from the `OrdersTab` sub-component up to `PembelianScreen` so the sub-view can render in the same scroll region as the list (replacing it, not stacked above as a modal). Also threads `currentUser.id` and `currentUser.permissions` from `App.tsx` down through `PembelianScreen` into the form page — required for the audit columns (`created_by`/`updated_by`) and the permission gate (`can_create_po`/`can_edit_po`) that Tasks 1 and 8 wired up.
 - **What — `PembelianScreen.tsx`**: Removed `PurchaseOrderModal` import. Added `PurchaseOrderFormPage` import. Added `PermissionSet` import. Added two new props on `PembelianScreenProps` — `currentUserId?: string` and `currentUserPermissions?: PermissionSet`. Added discriminated union type `ViewMode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; po: DbPurchaseOrder }` and `useState<ViewMode>({ kind: 'list' })`. Wrapped the main render body (summary cards + tabs + OrdersTab/SuppliersTab) in a ternary: when `viewMode.kind !== 'list'`, render `<PurchaseOrderFormPage>` with all 10 props wired (po, suppliers, orders, stockList, currentUserId, currentUserPermissions, onBack, onSaved, onSupplierAdded, showToast); otherwise render the original list UI. `onSaved` keeps the form open after a draft save (lets the user keep editing) but pops back to the list after a Simpan & Pesan (status transitions to ORDERED). `onSupplierAdded` triggers `reload()` so the supplier list refreshes after an inline supplier-create. Hoisted state OUT of `OrdersTab` — removed the two local `useState` hooks (`showCreateModal`, `editPo`) and added `onCreate` + `onEdit` callbacks to `OrdersTabProps`. Wired "Buat PO Baru" button to `onCreate` and the per-row Edit button to `onEdit(po)`. Deleted the entire `(showCreateModal || editPo) && <PurchaseOrderModal>` conditional render block from the end of `OrdersTab`. The other 4 conditional renders (ReceiveGoodsModal, PoDetailView, MarkAsPaidModal, ReceiveReplacementModal) stay — they're orthogonal to the create/edit flow.
 - **What — `src/components/pembelian/PurchaseOrderModal.tsx`**: Deleted via `git rm` (staged as `D`). 256 lines removed from the tree. Last reference (the import in PembelianScreen.tsx) was already cut in the same commit, so the build stays green. `grep -rn "PurchaseOrderModal" src/` returned only the three references that the commit removes — no orphan callsites elsewhere in the codebase.
