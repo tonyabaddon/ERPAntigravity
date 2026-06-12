@@ -78,6 +78,7 @@ export default function PenjualanBaruScreen({
     type: RakitServiceType;
     description: string;
     estimatedPrice: number;
+    hppEstimate: number;
   }>>([]);
   const [rakitFormOpen, setRakitFormOpen] = useState(false);
   const [rakitFormType, setRakitFormType] = useState<RakitServiceType | null>(null);
@@ -90,7 +91,7 @@ export default function PenjualanBaruScreen({
     setRakitFormOpen(false);
     setRakitFormType(null);
   };
-  const addRakitLine = (line: { type: RakitServiceType; description: string; estimatedPrice: number }) => {
+  const addRakitLine = (line: { type: RakitServiceType; description: string; estimatedPrice: number; hppEstimate: number }) => {
     const id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
       ? crypto.randomUUID()
       : `rakit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -111,6 +112,8 @@ export default function PenjualanBaruScreen({
 
   // Rakit derived values
   const hasRakit = rakitLines.length > 0;
+  const isMixedCart = hasRakit && cart.length > 0;
+  const isPureJasa = hasRakit && cart.length === 0;
   const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
 
   // Totals — effectiveDp converts percent input to Rp; sisaPelunasan uses it
@@ -160,7 +163,10 @@ export default function PenjualanBaruScreen({
 
   async function handleSave() {
     // Validation
-    if (cart.length === 0) { showToast('Tambahkan minimal 1 item.', 'warning'); return; }
+    if (cart.length === 0 && rakitLines.length === 0) {
+      showToast('Tambahkan minimal 1 item atau jasa.', 'warning');
+      return;
+    }
     if (!customerName.trim()) { showToast('Nama pelanggan wajib diisi.', 'warning'); return; }
     if (!customerPhone.trim()) { showToast('Nomor HP wajib diisi.', 'warning'); return; }
     if (channel === 'tokopedia' && !tokpedOrderNo.trim()) {
@@ -179,8 +185,10 @@ export default function PenjualanBaruScreen({
       showToast('Jumlah DP harus > 0 dan < Total Invoice.', 'warning'); return;
     }
 
-    // WIP branch: when rakit lines exist, save as WIP and navigate to wip-list
-    if (hasRakit) {
+    // WIP branch: mixed carts (SKU + jasa) go through lock-approval so SKU
+    // stock can be deducted at lock time. Pure-jasa carts fall through to
+    // the recordSale path below.
+    if (isMixedCart) {
       setSaving(true);
       try {
         const today = wibDateString();
@@ -233,10 +241,21 @@ export default function PenjualanBaruScreen({
     setSaving(true);
     try {
       const today = wibDateString();
+      const skuItems = cart.map(({ _key, ...rest }) => rest);
+      const serviceItems = rakitLines.map(l => ({
+        sku: null,
+        name: l.description,
+        qty: 1,
+        unit_price: l.estimatedPrice,
+        hpp_per_unit: l.hppEstimate,
+        subtotal: l.estimatedPrice,
+        hpp_subtotal: l.hppEstimate,
+        warehouse: null,
+      }));
       const saved = await kasirService.recordSale({
         date: today,
         channel,
-        items: cart.map(({ _key, ...rest }) => rest),
+        items: [...skuItems, ...serviceItems],
         subtotal,
         payment_method: paymentMethod,
         payment_subtype: paymentSubtype,
@@ -366,10 +385,15 @@ export default function PenjualanBaruScreen({
                     onPhoneChange={setCustomerPhone}
                     onCompanyChange={setCustomerCompany}
                   />
-                  {hasRakit && (
+                  {isMixedCart && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-[12px] text-amber-800 mt-3">
-                      ⚠ <strong>Transaksi ini akan masuk status WIP</strong> karena ada jasa rakit.
+                      ⚠ <strong>Transaksi ini akan masuk status WIP</strong> karena ada SKU + jasa rakit di cart yang sama.
                       Lock + approval owner diperlukan sebelum stock decrement &amp; pelunasan.
+                    </div>
+                  )}
+                  {isPureJasa && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-[12px] text-emerald-800 mt-3">
+                      💡 Cart pure-jasa &mdash; invoice langsung dicetak tanpa lock/approval.
                     </div>
                   )}
                   <PaymentPanel

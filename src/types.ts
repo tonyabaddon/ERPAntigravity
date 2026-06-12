@@ -403,14 +403,14 @@ export type KasirExpenseCategory =
   | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
 
 export interface KasirItem {
-  sku: string;
+  sku: string | null;
   name: string;
   qty: number;
   unit_price: number;
   hpp_per_unit: number;
   subtotal: number;
   hpp_subtotal: number;
-  warehouse: WarehouseLocation;
+  warehouse: WarehouseLocation | null;
 }
 
 export interface KasirTransaction {
