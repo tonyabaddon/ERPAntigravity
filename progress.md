@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Sidebar Refactor Task 2: PenjualanScreen wrapper + ActivePage — DONE
+
+- **Commit**: 9baac90
+- **Files**: `src/types.ts` (added `'penjualan'` to `ActivePage` union), `src/components/PenjualanScreen.tsx` (new), `src/App.tsx` (import + new `case 'penjualan':` route)
+- **PenjualanScreen**: Hub screen with 3 tabs — Input Baru (PenjualanBaruScreen), Riwayat (OrderHistoryScreen), WIP Rakit (WipListScreen). Tabs are permission-gated (kasir / orderHistory / aiStock keys). Legacy `case 'penjualanBaru':` route in App.tsx left unchanged.
+- **Lint**: 0 new errors introduced (pre-existing StockOpnameSessionView.tsx errors unrelated to this task)
+
 ## 2026-06-13 — Multi-Tenant Prerequisites: brainstorming + decomposition spec — DONE
 
 - **What:** Brainstorming session via `/superpowers:brainstorming` to plan prerequisites before onboarding paying tenant #2+.
