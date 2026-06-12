@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 4: Fix I-1 (BIGINT return) + Fix I-3 (seed_stock_row test) — DONE (SHA 867c7d5)
+
+- **Fix I-1:** Replaced 3 race-prone `PERFORM _log_stock_movement(...); UPDATE ... WHERE id = (SELECT id ... ORDER BY id DESC LIMIT 1)` patterns with `v_mv_out_id/v_mv_in_id/v_mv_id := _log_stock_movement(...); UPDATE ... WHERE id = v_mv_id`. Variables declared in each function's DECLARE block. Sites: `transfer_warehouse` (transfer_out + transfer_in), `seed_stock_row` (FOR loop).
+- **Fix I-3:** Appended `describe('seed_stock_row(jsonb) overload', ...)` test block to `tests/integration/warehouses-phase2a-rpcs.test.ts`. Tests stock_levels rows for both warehouses, ledger row for non-zero warehouse, and warehouse_id assignment.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+- **Files modified:** `supabase/migrations/20260613000002a_warehouses_phase2_stock_rpcs.sql`, `tests/integration/warehouses-phase2a-rpcs.test.ts`
+- **Commit:** `867c7d5`
+
+---
+
+## 2026-06-13 — Warehouses Task 4: Spec Compliance Review — PASS (all 10 elements verified)
+
+- **Review verdict:** All 6 RPC definitions present and correct. SECURITY DEFINER + SET search_path=public + GRANT EXECUTE on all 5 new functions. All spec error message substrings verified. BEGIN/COMMIT wrapper present. Test file has all 6 test scenarios. Apply-script entry in correct position. DROP NOT NULL scoped ONLY to stock_movements.warehouse.
+
+---
+
 ## 2026-06-13 — Warehouses Task 4: Migration 2a — stock-mutating RPCs (uuid) — DONE_WITH_CONCERNS (SHA 8316f1d)
 
 - **What:** Task 4 of the configurable N-warehouse plan. Rewrote `transfer_warehouse`, `decrement_stock`, and `seed_stock_row` to accept `warehouse_id uuid` and read/write `stock_levels`. Legacy text-arg overloads kept as thin wrappers. Also dropped NOT NULL on `stock_movements.warehouse` (was blocking `_log_stock_movement(p_warehouse=>NULL)` — the column will be dropped entirely in Migration 3).
