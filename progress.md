@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Sidebar Refactor: Full Plan Completion — DONE
+
+Plan: `docs/superpowers/plans/2026-06-13-sidebar-categorization.md`
+Spec: `docs/superpowers/specs/2026-06-13-sidebar-categorization-design.md`
+
+- **Outcome:** 18 menu flat → 15 menu in 4 categories (14 per spec + manajemen-gudang from parallel work). 4 layar di-merged sebagai tab di hub (PenjualanScreen, PengaturanScreen). Compact rows: no description, py-2.5, text-left.
+- **Categories:** Operasional (6), Inventory (4 — Stok / Stok Opname / Pembelian / Manajemen Gudang), Kontrol & Laporan (3), Sistem (2).
+- **Renames:** Catat Penjualan → Penjualan; AI Stock Manager → Stok; Rekonsiliasi → Rekonsiliasi & Tutup Buku.
+- **Files:** new `src/components/ui/TabBar.tsx` (Task 1, SHA 7b97c99 / fix 8f4e2e3); new `src/components/PenjualanScreen.tsx` (Task 2, SHA 9baac90 / fix bda82e7); modified `src/components/PengaturanScreen.tsx` (Task 3, SHA d8fa1fd / fix 53cbce9); modified `src/components/Sidebar.tsx` (Task 4, SHA f658da4 / fix bd19ce8); modified `src/types.ts` and `src/App.tsx`.
+- **Backward compat:** Legacy `ActivePage` values (order-history, wip-list, notifications, whatsapp-ai, penjualanBaru) retained for internal callbacks from KasirScreen/DashboardScreen/Bell button.
+- **Tests:** No React component test infra in repo — verified via `npm run lint` (clean) per task. Visual verification by user pending.
+
 ## 2026-06-13 — Sidebar Refactor Task 4: Sidebar restructure — DONE
 
 - **Commit**: f658da4
