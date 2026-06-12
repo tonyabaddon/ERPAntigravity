@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import {
   KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType,
-  KasirDpInputType, KasirItem, WarehouseLocation, PermissionSet, KasirTransaction,
+  KasirDpInputType, KasirItem, PermissionSet, KasirTransaction,
   ActivePage,
 } from '../types';
 import type { DbCustomerWithStats, RakitServiceType } from '../types';
 import { stockService, customersService, kasirService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
+import { useWarehouses } from '../hooks/useWarehouses';
 import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 import ItemSearchPanel from './penjualan/ItemSearchPanel';
@@ -68,6 +69,9 @@ export default function PenjualanBaruScreen({
   const [customers, setCustomers] = useState<DbCustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Warehouse list (for default warehouse in addItem)
+  const { warehouses } = useWarehouses();
 
   // Invoice modal after save
   const [savedTx, setSavedTx] = useState<KasirTransaction | null>(null);
@@ -152,9 +156,7 @@ export default function PenjualanBaruScreen({
 
   // Cart handlers
   function addItem(stock: SupabaseStockItem) {
-    const atas = stock.stock_atas ?? 0;
-    const bawah = stock.stock_bawah ?? 0;
-    const defaultWh: WarehouseLocation = atas > 0 ? 'atas' : (bawah > 0 ? 'bawah' : 'atas');
+    const defaultWh = warehouses.find(w => w.is_default) ?? warehouses[0];
     setCart(prev => [
       ...prev,
       {
@@ -166,7 +168,8 @@ export default function PenjualanBaruScreen({
         hpp_per_unit: stock.harga_modal ?? 0,
         subtotal: stock.price,
         hpp_subtotal: stock.harga_modal ?? 0,
-        warehouse: defaultWh,
+        warehouse: null,
+        warehouse_id: defaultWh?.id ?? null,
       },
     ]);
   }
@@ -179,8 +182,8 @@ export default function PenjualanBaruScreen({
     ));
   }
 
-  function updateWarehouse(key: number, wh: WarehouseLocation) {
-    setCart(prev => prev.map(i => i._key === key ? { ...i, warehouse: wh } : i));
+  function updateWarehouse(key: number, warehouseId: string) {
+    setCart(prev => prev.map(i => i._key === key ? { ...i, warehouse_id: warehouseId } : i));
   }
 
   function removeItem(key: number) {

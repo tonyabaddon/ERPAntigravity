@@ -1,20 +1,23 @@
 import React from 'react';
-import { KasirItem, WarehouseLocation } from '../../types';
+import { KasirItem } from '../../types';
 import type { RakitServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
+import { useWarehouses } from '../../hooks/useWarehouses';
+import WarehousePicker from '../warehouse/WarehousePicker';
 
 export interface CartRowsProps {
   items: (KasirItem & { _key: number })[];
   stocks: SupabaseStockItem[]; // for per-warehouse stock lookup
   onQtyChange: (key: number, qty: number) => void;
-  onWarehouseChange: (key: number, wh: WarehouseLocation) => void;
+  onWarehouseChange: (key: number, warehouseId: string) => void;
   onRemove: (key: number) => void;
   rakitLines?: Array<{ id: string; type: RakitServiceType; description: string; estimatedPrice: number }>;
   onRemoveRakit?: (id: string) => void;
 }
 
 export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit }: CartRowsProps) {
+  const { warehouses } = useWarehouses();
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   const rakitSubtotal = (rakitLines ?? []).reduce((s, r) => s + r.estimatedPrice, 0);
   const totalLineCount = items.length + (rakitLines?.length ?? 0);
@@ -43,8 +46,16 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
 
       {items.map(item => {
         const stock = stocks.find(s => s.sku === item.sku);
-        const atas = stock?.stock_atas ?? 0;
-        const bawah = stock?.stock_bawah ?? 0;
+        // Build a qty map keyed by warehouse id using the warehouse code
+        // to match stock_atas / stock_bawah fields on SupabaseStockItem.
+        const skuQtyByWarehouseId: Record<string, number> = {};
+        if (stock) {
+          for (const w of warehouses) {
+            const lowerCode = w.code.toLowerCase();
+            if (lowerCode === 'atas') skuQtyByWarehouseId[w.id] = stock.stock_atas ?? 0;
+            else if (lowerCode === 'bawah') skuQtyByWarehouseId[w.id] = stock.stock_bawah ?? 0;
+          }
+        }
         return (
           <div
             key={item._key}
@@ -56,30 +67,13 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             </div>
             {/* Warehouse selector */}
             <div className="flex gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5">
-              <button
-                type="button"
-                onClick={() => atas > 0 && onWarehouseChange(item._key, 'atas')}
-                disabled={atas === 0}
-                className={`px-2 py-1 rounded-md text-[11px] font-extrabold flex items-center gap-1 ${
-                  item.warehouse === 'atas'
-                    ? 'bg-blue-100 text-blue-700'
-                    : atas === 0 ? 'opacity-40 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-50'
-                }`}
-              >
-                Atas <span className="text-[10px] opacity-70">{atas}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => bawah > 0 && onWarehouseChange(item._key, 'bawah')}
-                disabled={bawah === 0}
-                className={`px-2 py-1 rounded-md text-[11px] font-extrabold flex items-center gap-1 ${
-                  item.warehouse === 'bawah'
-                    ? 'bg-amber-100 text-amber-700'
-                    : bawah === 0 ? 'opacity-40 cursor-not-allowed' : 'text-slate-400 hover:bg-slate-50'
-                }`}
-              >
-                Bawah <span className="text-[10px] opacity-70">{bawah}</span>
-              </button>
+              <WarehousePicker
+                mode="single"
+                warehouses={warehouses}
+                skuQtyByWarehouseId={skuQtyByWarehouseId}
+                value={item.warehouse_id ?? null}
+                onChange={(id) => onWarehouseChange(item._key, id)}
+              />
             </div>
             {/* Qty stepper */}
             <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">

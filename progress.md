@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 12: PenjualanBaruScreen + CartRows rewired to use warehouse_id — DONE
+
+- **What:** Cart items now carry `warehouse_id: string | null` instead of the legacy `warehouse: WarehouseLocation`. Line-level picker in `CartRows` replaced with `<WarehousePicker mode="single">`.
+- **PenjualanBaruScreen.tsx changes:**
+  - Added `import { useWarehouses }` and `const { warehouses } = useWarehouses()` inside the component.
+  - `addItem`: default warehouse now uses `warehouses.find(w => w.is_default) ?? warehouses[0]`; sets `warehouse: null` (required field) and `warehouse_id: defaultWh?.id ?? null`.
+  - `updateWarehouse`: signature changed from `(key, wh: WarehouseLocation)` to `(key, warehouseId: string)`. Updates `warehouse_id` on the cart item.
+  - Removed `WarehouseLocation` import (no longer needed).
+- **CartRows.tsx changes:**
+  - Added `useWarehouses` + `WarehousePicker` imports; removed `WarehouseLocation` import.
+  - `onWarehouseChange` prop type: `(key: number, wh: WarehouseLocation)` → `(key: number, warehouseId: string)`.
+  - Per-item `skuQtyByWarehouseId` built by matching `warehouse.code.toLowerCase()` to `stock_atas`/`stock_bawah` fields on `SupabaseStockItem` — preserves the existing stock-level badges in the picker.
+  - Atas/Bawah hardcoded button pair replaced with `<WarehousePicker mode="single" warehouses={warehouses} ... />`.
+- **ItemSearchPanel.tsx:** No changes needed — no warehouse props.
+- **recordSale items payload:** `skuItems = cart.map(({ _key, ...rest }) => rest)` already spreads all fields including `warehouse_id`; the Task 5 RPC accepts both `warehouse` and `warehouse_id` so dual-field spread is backward-compatible.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
 ## 2026-06-13 — Warehouses Task 11: StockAdjustmentModal rewired to use WarehousePicker — DONE (SHA bce2186)
 
 - **What:** Replaced the hardcoded `warehouse: 'atas' | 'bawah'` prop in `StockAdjustmentModal` with `warehouseId: string`. The modal now renders a `<WarehousePicker mode="single">` inside the form so operators can override the default warehouse selection before submitting.
