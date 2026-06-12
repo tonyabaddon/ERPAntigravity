@@ -24,6 +24,7 @@ export default function TabBar<T extends string>({ tabs, active, onChange }: Tab
         return (
           <button
             key={tab.id}
+            type="button"
             onClick={() => onChange(tab.id)}
             className={`px-5 py-3 text-sm border-b-2 transition-colors cursor-pointer ${
               isActive
