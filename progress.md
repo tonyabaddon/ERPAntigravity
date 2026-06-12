@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
-ho
+
+## 2026-06-13 — Warehouses Task 4: Migration 2a — stock-mutating RPCs (uuid) — DONE_WITH_CONCERNS (SHA 8316f1d)
+
+- **What:** Task 4 of the configurable N-warehouse plan. Rewrote `transfer_warehouse`, `decrement_stock`, and `seed_stock_row` to accept `warehouse_id uuid` and read/write `stock_levels`. Legacy text-arg overloads kept as thin wrappers. Also dropped NOT NULL on `stock_movements.warehouse` (was blocking `_log_stock_movement(p_warehouse=>NULL)` — the column will be dropped entirely in Migration 3).
+- **Key decision:** Plan said `_log_stock_movement(p_warehouse=>NULL)` would work, but `stock_movements.warehouse` was `NOT NULL`. Added `ALTER TABLE public.stock_movements ALTER COLUMN warehouse DROP NOT NULL` at the top of the migration (inside BEGIN block) to unblock the insert.
+- **Files created/modified:**
+  - `supabase/migrations/20260613000002a_warehouses_phase2_stock_rpcs.sql` — new migration (BEGIN..COMMIT)
+  - `tests/integration/warehouses-phase2a-rpcs.test.ts` — 5 integration tests
+  - `scripts/apply-pending-migrations.sh` — added new migration to MIGRATIONS array
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, no errors.
+- **Apply attempt:** FAILED (expected) — `dial tcp [2406:...]: connect: connection refused` (IPv6 unreachable). User must apply from their network.
+- **Integration tests:** Not run (DB unreachable). Expected 5 passing once applied.
+- **Commit:** `8316f1d`
+
+---
+
 ## 2026-06-13 — Warehouses Task 3: warehousesService + useWarehouses hook — DONE_WITH_CONCERNS (SHA 1cf2d8a)
 
 - **What:** Task 3 of the configurable N-warehouse plan. Added `warehousesService` (fetchAll, fetchActive, create, update, setDefault, deactivate, forceDeactivate, fetchAuditLog) to `src/lib/supabaseClient.ts` after `companySettingsService`. Created `src/hooks/useWarehouses.ts` with realtime `postgres_changes` subscription (same pattern as `useRealtimeConversations.ts`). Created integration test at `tests/integration/warehousesService.test.ts`.
