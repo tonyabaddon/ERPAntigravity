@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 5: Migration 2b — sale + PO RPCs accept warehouse_id — DONE_WITH_CONCERNS (SHA 7616245)
+
+- **What:** Task 5 of the configurable N-warehouse plan. Rewrote `record_kasir_sale` and `receive_purchase_order` to read `warehouse_id` uuid from items and mutate `stock_levels` instead of `stocks.stock_atas/bawah`.
+- **record_kasir_sale changes:**
+  - DROP + CREATE (added `p_actor_user_id uuid DEFAULT NULL` as 21st param — signature change requires DROP).
+  - Aggregation loop now resolves `warehouse_id` per group (prefer `item.warehouse_id`, fall back to `warehouses.code` lookup for legacy `item.warehouse`).
+  - Replaced `decrement_stock(text, qty, warehouse_text, ...)` call with inline SELECT FOR UPDATE on `stock_levels` + UPDATE + `_log_stock_movement` returning BIGINT + UPDATE `stock_movements.warehouse_id`.
+  - `deduct_stock_fifo` retained (FIFO per-SKU per spec) with fallback text 'atas'.
+  - Re-emit loop injects `warehouse_id` uuid string into each JSONB item in `v_items_out`.
+  - GRANT EXECUTE updated to 21-arg signature.
+- **receive_purchase_order changes:**
+  - Resolves default warehouse from `warehouses WHERE is_default = true` as fallback for lines without per-line `warehouse_id`.
+  - Per-line `warehouse_id` from `p_conditions[item_id].warehouse_id`.
+  - Replaced `UPDATE stocks SET stock = stock + qty` with INSERT INTO `stock_levels` ON CONFLICT DO UPDATE.
+  - Kept `INSERT INTO stock_lots (sku, po_id, unit_cost, qty_received, qty_remaining, received_at)` verbatim from canonical body in `20260604000015_fifo_rpcs.sql`.
+  - Calls `_log_stock_movement` (BIGINT pattern) + UPDATE `stock_movements.warehouse_id`.
+  - Stamps `purchase_order_items.warehouse_id = v_warehouse_id` after receive.
+- **Deviations documented in migration header:** no `kasir_transaction_items` table (items stay JSONB), `receive_purchase_order` canonical body was in `20260604000015` (not `20260604000010`).
+- **Files created/modified:**
+  - `supabase/migrations/20260613000002b_warehouses_phase2_sale_po_rpcs.sql` — new migration (BEGIN..COMMIT)
+  - `tests/integration/warehouses-phase2b-rpcs.test.ts` — 2 integration tests
+  - `scripts/apply-pending-migrations.sh` — added migration to MIGRATIONS array
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, no errors.
+- **Apply attempt:** FAILED (expected) — IPv6 unreachable. User must apply from their network.
+- **Integration tests:** Not run (DB unreachable).
+- **Commit:** `7616245`
+
+---
+
 ## 2026-06-13 — Warehouses Task 4: Fix I-1 (BIGINT return) + Fix I-3 (seed_stock_row test) — DONE (SHA 867c7d5)
 
 - **Fix I-1:** Replaced 3 race-prone `PERFORM _log_stock_movement(...); UPDATE ... WHERE id = (SELECT id ... ORDER BY id DESC LIMIT 1)` patterns with `v_mv_out_id/v_mv_in_id/v_mv_id := _log_stock_movement(...); UPDATE ... WHERE id = v_mv_id`. Variables declared in each function's DECLARE block. Sites: `transfer_warehouse` (transfer_out + transfer_in), `seed_stock_row` (FOR loop).
