@@ -36,10 +36,11 @@ describe('warehousesService.fetchAll', () => {
 describe('warehousesService.fetchActive', () => {
   test('filters out is_active=false rows', async () => {
     // Insert a deactivated probe
-    await supabase.from('warehouses').insert({
+    const { error: insertError } = await supabase.from('warehouses').insert({
       code: TEST_CODE, name: `Probe ${TEST_CODE}`,
       is_active: false, sort_order: 999,
     });
+    expect(insertError).toBeNull();
     const { data } = await supabase
       .from('warehouses')
       .select('*')

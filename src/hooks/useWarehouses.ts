@@ -21,6 +21,10 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Internal loader used by the realtime subscription. `refresh` (exported)
+  // is the public version that consumers can call imperatively; both share
+  // the same body, but only the in-effect version is guarded by the
+  // mounted flag so we don't setState on an unmounted component.
   const refresh = async () => {
     try {
       const rows = activeOnly
@@ -36,15 +40,36 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
   };
 
   useEffect(() => {
-    void refresh();
-    if (!supabase) return;
+    let mounted = true;
+    const load = async () => {
+      try {
+        const rows = activeOnly
+          ? await warehousesService.fetchActive()
+          : await warehousesService.fetchAll();
+        if (!mounted) return;
+        setWarehouses(rows);
+        setError(null);
+      } catch (e) {
+        if (!mounted) return;
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    void load();
+    if (!supabase) {
+      return () => { mounted = false; };
+    }
     const ch = supabase
       .channel('warehouses-realtime')
       .on('postgres_changes',
           { event: '*', schema: 'public', table: 'warehouses' },
-          () => { void refresh(); })
+          () => { void load(); })
       .subscribe();
-    return () => { supabase!.removeChannel(ch); };
+    return () => {
+      mounted = false;
+      supabase!.removeChannel(ch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeOnly]);
 
