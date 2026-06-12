@@ -255,10 +255,6 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     <>
       {!isSupabaseConfigured ? (
         <div className="space-y-6 animate-fadeIn">
-          <div className="flex items-center gap-3">
-            <Settings className="w-6 h-6 text-gray-700" />
-            <h1 className="text-2xl font-bold text-gray-800">Pengaturan Sistem</h1>
-          </div>
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-yellow-800 text-sm font-medium">
             Supabase belum dikonfigurasi. Tambahkan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY ke file .env untuk menggunakan fitur ini.
           </div>
