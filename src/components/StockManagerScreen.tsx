@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { StockItem, ApprovalRequest } from '../types';
 import { isSupabaseConfigured, stockService, listPendingApprovals, companySettingsService } from '../lib/supabaseClient';
+import { useWarehouses } from '../hooks/useWarehouses';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import WarehouseTransferModal from './WarehouseTransferModal';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
@@ -162,8 +163,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; stock_atas: string; stock_bawah: string; harga_modal: number | null; specs: Record<string, string> }>>({});
   const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
+  const { warehouses } = useWarehouses();
+
   // Phase 2: approval-gated cell editing
-  const [adjustmentTarget, setAdjustmentTarget] = useState<{ item: StockItem; warehouse: 'atas' | 'bawah' } | null>(null);
+  const [adjustmentTarget, setAdjustmentTarget] = useState<{ item: StockItem; warehouseId: string } | null>(null);
   const [priceTarget, setPriceTarget] = useState<{ item: StockItem; field: 'price' | 'harga_modal' } | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<ApprovalRequest[]>([]);
   const [pendingRefreshTick, setPendingRefreshTick] = useState(0);
@@ -856,7 +859,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                     <div className="flex gap-1 text-[10px] font-bold">
                       <button
                         type="button"
-                        onClick={() => setAdjustmentTarget({ item, warehouse: 'atas' })}
+                        onClick={() => setAdjustmentTarget({ item, warehouseId: warehouses.find(w => w.code === 'ATAS')?.id ?? '' })}
                         disabled={isEditing || !currentUser}
                         title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Atas' : 'Login diperlukan'}
                         className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
@@ -871,7 +874,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                       </button>
                       <button
                         type="button"
-                        onClick={() => setAdjustmentTarget({ item, warehouse: 'bawah' })}
+                        onClick={() => setAdjustmentTarget({ item, warehouseId: warehouses.find(w => w.code === 'BAWAH')?.id ?? '' })}
                         disabled={isEditing || !currentUser}
                         title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Bawah' : 'Login diperlukan'}
                         className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
@@ -919,7 +922,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                       ⇄ Transfer
                     </button>
                     <button
-                      onClick={() => setAdjustmentTarget({ item, warehouse: 'atas' })}
+                      onClick={() => setAdjustmentTarget({ item, warehouseId: warehouses.find(w => w.is_default)?.id ?? warehouses.find(w => w.code === 'ATAS')?.id ?? '' })}
                       disabled={isEditing || !currentUser}
                       title={currentUser ? 'Ajukan penyesuaian stok (rusak / hilang / koreksi)' : 'Login diperlukan'}
                       className="px-3 py-1.5 rounded-full text-[10px] font-black border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
@@ -1046,7 +1049,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       {adjustmentTarget && (
         <StockAdjustmentModal
           item={adjustmentTarget.item}
-          warehouse={adjustmentTarget.warehouse}
+          warehouseId={adjustmentTarget.warehouseId}
           currentUser={currentUser ?? null}
           onClose={() => setAdjustmentTarget(null)}
           onSubmitted={refreshPending}

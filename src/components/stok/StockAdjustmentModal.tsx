@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { requestAdjustment, supabase } from '../../lib/supabaseClient';
 import type { StockItem, StockAdjustmentReason } from '../../types';
+import WarehousePicker from '../warehouse/WarehousePicker';
+import { useWarehouses } from '../../hooks/useWarehouses';
 
 interface Props {
   item: StockItem;
-  warehouse: 'atas' | 'bawah';
+  warehouseId: string;
   currentUser: { id: string; name: string; role: string } | null;
   onClose: () => void;
   onSubmitted: () => void;
@@ -21,8 +23,10 @@ const REASONS: { code: StockAdjustmentReason; label: string }[] = [
 ];
 
 export default function StockAdjustmentModal({
-  item, warehouse, currentUser, onClose, onSubmitted, showToast,
+  item, warehouseId, currentUser, onClose, onSubmitted, showToast,
 }: Props) {
+  const { warehouses } = useWarehouses();
+  const [activeWarehouseId, setActiveWarehouseId] = useState<string>(warehouseId);
   const [qtyDelta, setQtyDelta] = useState<number>(-1);
   const [reasonCode, setReasonCode] = useState<StockAdjustmentReason>('rusak');
   const [reasonNote, setReasonNote] = useState('');
@@ -50,12 +54,19 @@ export default function StockAdjustmentModal({
       showToast?.('Bukti foto wajib untuk rusak/hilang', 'warning');
       return;
     }
+    // TODO(Phase-2c): replace with p_warehouse_id once request_adjustment RPC
+    // is updated to accept a uuid parameter. For now, resolve uuid → text code.
+    const selectedCode = warehouses.find(w => w.id === activeWarehouseId)?.code.toLowerCase();
+    if (selectedCode !== 'atas' && selectedCode !== 'bawah') {
+      showToast?.('Penyesuaian untuk gudang ini belum tersedia — coba ATAS atau BAWAH', 'warning');
+      return;
+    }
     setSubmitting(true);
     try {
       const evidence_urls = await uploadFiles();
       await requestAdjustment({
         sku: item.sku,
-        warehouse,
+        warehouse: selectedCode as 'atas' | 'bawah',
         qty_delta: qtyDelta,
         reason_code: reasonCode,
         reason_note: reasonNote || undefined,
@@ -86,8 +97,17 @@ export default function StockAdjustmentModal({
           <button onClick={onClose}><X className="w-4 h-4" /></button>
         </div>
         <p className="text-xs text-slate-500">
-          {item.sku} · {item.name} · Gudang {warehouse === 'atas' ? 'Atas' : 'Bawah'}
+          {item.sku} · {item.name}
         </p>
+        <div>
+          <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Gudang</label>
+          <WarehousePicker
+            mode="single"
+            warehouses={warehouses}
+            value={activeWarehouseId}
+            onChange={setActiveWarehouseId}
+          />
+        </div>
         <label className="block text-xs text-slate-600">Selisih (negatif untuk kurang)</label>
         <input
           type="number"
