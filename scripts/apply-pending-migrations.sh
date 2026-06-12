@@ -32,6 +32,15 @@ MIGRATIONS=(
   "20260613000002c_warehouses_phase2_approval_rpcs.sql"
   "20260613000002d_warehouses_admin_rpcs.sql"
   "20260613000004_backfill_can_manage_warehouses.sql"
+  # NOTE: 20260613000003 (Phase 3 cutover) has a lower filename timestamp than
+  # 20260613000004 but MUST be applied AFTER it. The script preserves declared
+  # order, not filename sort order. This entry is intentionally last.
+  # DO NOT apply until:
+  #   1. All migrations above have been applied.
+  #   2. The new frontend (WarehousePicker / warehouse_id) has run in prod for
+  #      >= 24 hours with no errors.
+  #   3. The user has explicitly approved running it.
+  "20260613000003_warehouses_phase3_cutover.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
