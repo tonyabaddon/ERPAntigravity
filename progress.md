@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 6: Migration 2c — approval-flow RPCs — DONE (SHA pending)
+
+- **What:** Task 6 of the configurable N-warehouse plan. Rewrote `commit_approved_adjustment` and `commit_opname` to read `warehouse_id` from their satellite tables (`stock_adjustments.warehouse_id`, `stock_opname_counts.warehouse_id`) and mutate `stock_levels` instead of `stocks.stock_atas/bawah`.
+- **commit_approved_adjustment changes:**
+  - Step 3: null-guard on `v_sa.warehouse_id` (actionable Indonesian error if un-backfilled), then SELECT FOR UPDATE from `stock_levels WHERE (sku, warehouse_id)` instead of dynamic `stocks.stock_<warehouse>`.
+  - Step 4: negative-stock guard unchanged.
+  - Step 5: `UPDATE stock_levels SET qty = qty + qty_delta` instead of `EXECUTE format(UPDATE stocks...)`.
+  - Step 6: BIGINT-id ledger pattern — `v_movement_id := _log_stock_movement(p_warehouse => NULL, ...)` then `UPDATE stock_movements SET warehouse_id = v_sa.warehouse_id WHERE id = v_movement_id`.
+  - Step 7: satellite close-out unchanged.
+- **commit_opname changes:**
+  - FOR loop now selects `warehouse_id` (uuid) instead of `warehouse` (text).
+  - Per-row: null-guard on `r.warehouse_id`, SELECT FOR UPDATE from `stock_levels`, `UPDATE stock_levels SET qty + r.variance`, BIGINT-id ledger pattern with `UPDATE stock_movements SET warehouse_id = r.warehouse_id WHERE id = v_movement_id`.
+  - Added `v_movement_id BIGINT` and `v_qty_before INT` to DECLARE block.
+  - `RETURNS INT` preserved (original returns movement count, not void).
+- **Correctness notes:**
+  - All approval-gate locks and opname-session locks preserved byte-for-byte.
+  - `reject_adjustment` NOT touched (no stock writes, no warehouse_id needed).
+  - Error messages in Indonesian where original was Indonesian.
+  - `evidence_urls` is `TEXT[]` (confirmed from migration 0008) — test seed uses `[]`.
+- **Files created/modified:**
+  - `supabase/migrations/20260613000002c_warehouses_phase2_approval_rpcs.sql` — new migration
+  - `tests/integration/warehouses-phase2c-rpcs.test.ts` — 3 integration tests
+  - `scripts/apply-pending-migrations.sh` — added migration to MIGRATIONS array
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+- **Apply attempt:** FAILED (expected) — IPv6 unreachable. User must apply from their network.
+- **Integration tests:** Not run (DB unreachable).
+
+---
+
 ## 2026-06-13 — Warehouses Task 5 follow-up: 6-arg bridge + PO tests — DONE (SHA 7e4f377)
 
 - **Issue 1 (Important):** Added 6-arg `receive_purchase_order(uuid, timestamptz, date, text, jsonb, text)` bridge to `20260613000002b_warehouses_phase2_sale_po_rpcs.sql`. Drops the old buggy overload (which wrote to `stocks.stock_atas/bawah`) and replaces it with a thin wrapper that resolves the text warehouse code to a `uuid`, merges `warehouse_id` into each PO line's conditions JSONB (without overwriting per-line overrides), then delegates to the 5-arg form that writes to `stock_levels`.
