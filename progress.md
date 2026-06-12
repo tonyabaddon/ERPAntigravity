@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 ho
+## 2026-06-13 — Warehouses Phase 1 schema + backfill — CODE DONE, DB MIGRATION PENDING APPLY (IPv6 unreachable)
+
+- **What:** Task 1 of the configurable N-warehouse plan (`docs/superpowers/plans/2026-06-13-warehouses-configurable.md`). Additive schema migration only — nothing breaks.
+- **Files created/modified:**
+  - `supabase/migrations/20260613000001_warehouses_phase1_schema.sql` — full migration (BEGIN..COMMIT)
+  - `tests/integration/warehouses-phase1.test.ts` — 6 integration tests
+  - `scripts/apply-pending-migrations.sh` — appended new migration filename as 4th entry
+- **Migration contents:** `warehouses` table + ATAS/BAWAH seed rows → `stock_levels` table + backfill from `stocks.stock_atas`/`stock_bawah` → `warehouse_audit_log` (append-only with block triggers) → `warehouse_id uuid NULL` columns on 6 history tables + backfill from text `warehouse` column → `_sync_stocks_stock_from_levels()` SUM trigger (AFTER INSERT/UPDATE/DELETE on `stock_levels`) → `DISABLE TRIGGER trg_sync_stock_total` (not dropped — Migration 3 does that).
+- **Apply path:** DB unreachable from this session (IPv6-only free-tier endpoint `[2406:da14:25a:5801:…]:5432` connection refused). Apply with: `cd /Users/tonywei/IdeaProjects/ERPAntigravity && bash -c 'set -a; source backend-go/.env; set +a; /tmp/apply-migration supabase/migrations/20260613000001_warehouses_phase1_schema.sql'`
+- **Integration tests:** Skipped (tables don't exist until migration is applied). Run with: `npx vitest run tests/integration/warehouses-phase1.test.ts` — expects 6 passing.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, no errors.
+- **Commit:** Included in the same commit as the code (see git SHA in commit message).
+
+---
+
 ## 2026-06-12 — E2E audit fixes (sweep #1 + sweep #2 follow-ups) — CODE DONE, DB MIGRATIONS PENDING APPLY
 
 - **What:** Implemented every fix the user asked for from the sweep #1 + sweep #2 audits (one exception was explicitly excluded: the Pengaturan "Rekening Bank" + Rekonsiliasi "Rekening Aktif" surfaces are kept distinct — the first is the bank-on-invoice, the second is the multi-account reconciliation list). `npm run lint` clean. Verified via Chrome MCP pass against `npm run dev` on :3000.
