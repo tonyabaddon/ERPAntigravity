@@ -55,7 +55,7 @@ export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFo
           onChange={e => setDescription(e.target.value)}
         />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Estimasi Harga (quote disepakati)</div>
           <input
