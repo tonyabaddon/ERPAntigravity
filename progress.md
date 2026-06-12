@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Multi-Tenant Prerequisites: brainstorming + decomposition spec — DONE
+
+- **What:** Brainstorming session via `/superpowers:brainstorming` to plan prerequisites before onboarding paying tenant #2+.
+- **Architecture locked:** Option 1 — shared DB, Garindo Jaya Panel becomes tenant #1. Bug-catcher mechanic: construction-phase bugs surface against founder's wife's toko (under controlled cutover), not against paying customers.
+- **Layer sequence locked:** D-min (staging + migration dry-run + DR runbook) → A (tenant_id everywhere + RLS + composite FK + auth + storage scoping + per-tenant tz) → C-min (operator console MVP, magic-link owner invite) → tenant #2 onboardable → B (module/entitlement system + Calista as first toggle) → C-full → D-full.
+- **5-layer cross-tenant isolation:** RLS as floor + migration linter + SECURITY DEFINER RPC discipline + automated leak tests + audit/monitoring. Scales by template, not per-table manual work.
+- **Module gating:** declarative `modules.requires_caps` + `tenants.capabilities` + `tenant_module_compatibility()` enforced at UI, DB trigger, runtime guard.
+- **Packages:** Starter / Pro / Premium + `garindo_legacy` internal-only. Snapshot-at-apply (not live binding). Calista not in any paid package — sold as add-on after Meta Cloud API integration ships.
+- **Subscription:** 7-day grace → auto read-only → 90-day archive trigger → cold-storage export to GCS Coldline → hard delete after 1 year. Garindo gets `expires_at = '2099-01-01'`, same code path.
+- **WhatsApp:** Garindo keeps whatsmeow (legacy). Paying tenants use Meta Cloud API. 5 modules gated on `wa_backend` capability (calista / sales_inbox / pipeline / notifications / followup_poller).
+- **Operator console:** separate frontend app, shared DB. Super-admin defined in separate `super_admin_users` table (not boolean on `admin_users`) — privilege escalation surface isolated, no UI writes to it.
+- **Monitoring:** Sentry (errors) + PostHog (events) + BetterUptime (uptime) + internal health dashboard + email alerting via Resend. Internal dashboard surfaces anomalies (e.g. sales-silent comparing to last week).
+- **Tech ops AI:** investigation agent (Claude API) produces root cause + draft PR. **Human review required before merge/deploy** — no autonomous fixes.
+- **Garindo cutover:** dedicated section in spec with go/no-go criteria, batched migration order, verification queries, rollback SQL prep, PITR backstop. Window: WIB 23:00-04:00. Wife informed and on standby.
+- **Residual risk:** explicit table in spec listing what Option 1 does NOT solve (RLS misconfig blast radius, migration affects all tenants, RPC bypass risk, noisy neighbor, shared deploy blast radius).
+- **Spec:** `docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md` (decomposition spec — defers 8 per-layer specs + 3 runbook docs to follow when each layer is scheduled).
+- **Next:** user reviews spec → invoke writing-plans skill for first layer (D-min, ~3-5 solo days).
+
 ## 2026-06-13 — Warehouses Task 12: PenjualanBaruScreen + CartRows rewired to use warehouse_id — DONE
 
 - **What:** Cart items now carry `warehouse_id: string | null` instead of the legacy `warehouse: WarehouseLocation`. Line-level picker in `CartRows` replaced with `<WarehousePicker mode="single">`.
