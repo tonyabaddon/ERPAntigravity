@@ -206,7 +206,7 @@ function InvoiceBody({
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
               <td className="px-1 py-1 border-b border-dotted border-slate-300">
                 <div className="font-bold">{item.name}</div>
-                <div className="text-[10px] text-slate-500">{item.sku}</div>
+                {item.sku && <div className="text-[10px] text-slate-500">{item.sku}</div>}
               </td>
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{item.qty}</td>
               <td className="px-1 py-1 text-right border-b border-dotted border-slate-300">{formatRp(item.unit_price).replace('Rp', '').trim()}</td>
