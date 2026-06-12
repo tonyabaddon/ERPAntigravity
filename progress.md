@@ -25,6 +25,28 @@
 - **Spec:** `docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md` (decomposition spec — defers 8 per-layer specs + 3 runbook docs to follow when each layer is scheduled).
 - **Next:** user reviews spec → invoke writing-plans skill for first layer (D-min, ~3-5 solo days).
 
+## 2026-06-13 — Warehouses Task 13: PO + Opname rewired to use warehouse_id + WarehousePicker — DONE (SHA 13d804a)
+
+- **PurchaseOrderFormPage.tsx:** No changes needed — the form has no warehouse selection at create-time. Destination warehouse belongs only to the receive flow.
+- **ReceiveGoodsModal.tsx:**
+  - Added `useWarehouses` + `WarehousePicker` imports.
+  - Replaced hardcoded `<select>` with `<WarehousePicker mode="single">`. State: `warehouseId: string | null` (null until warehouse list loads, then defaults to first active warehouse via `useEffect`).
+  - `handleConfirm`: builds `conditionsWithWarehouse` — per-line `{warehouse_id, qty_received, qty_damaged, damage_notes}` — and calls the 5-arg form of the RPC (no `p_warehouse` text arg).
+  - Guard: if `warehouseId` is still null (loading edge case), toast warns before submitting.
+- **pembelianService.ts — receiveGoods:**
+  - Dropped `warehouse: 'atas'|'bawah'` from params.
+  - `conditions` type updated to include `warehouse_id: string` per line.
+  - RPC call changed to 5-arg form: removed `p_warehouse` arg.
+- **StockOpnameSessionView.tsx:**
+  - Added `useWarehouses({ activeOnly: false })` and `warehouseName(key)` helper (uuid lookup → capitalised legacy text fallback).
+  - `groupedBySku`: type changed from `Map<string, { atas?: OpnameCount; bawah?: OpnameCount }>` to `Map<string, Record<string, OpnameCount>>` — supports N warehouses.
+  - Render loop: replaced `(['atas', 'bawah'] as const).map(wh => group[wh])` with `groupEntries.map(([wh, c]) => ...)` (iterates actual keys). `allFilled` check generalised to all present entries.
+  - Warehouse label: `wh === 'atas' ? 'Atas' : 'Bawah'` → `warehouseName(wh)`.
+  - `recordOpnameCount` call is unchanged — opname RPC still takes `warehouse: text` (not migrated in Phase 2).
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
 ## 2026-06-13 — Warehouses Task 12: PenjualanBaruScreen + CartRows rewired to use warehouse_id — DONE
 
 - **What:** Cart items now carry `warehouse_id: string | null` instead of the legacy `warehouse: WarehouseLocation`. Line-level picker in `CartRows` replaced with `<WarehousePicker mode="single">`.
