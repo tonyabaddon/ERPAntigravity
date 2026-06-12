@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Sidebar Refactor Task 3: PengaturanScreen tabs hub — DONE
+
+- **Commit**: (see below)
+- **Files**: `src/components/PengaturanScreen.tsx`, `src/App.tsx`
+- **PengaturanScreen**: Refactored to hub with 3 tabs — Umum (existing bank/company/logo/recipients UI unchanged), Notifikasi (NotificationSettingsScreen), WhatsApp AI (WhatsappAiScreen). Tabs gated by `notifications` and `whatsappAi` permission keys. New props: `notificationConfig`, `onNotificationConfigChange`, `stockList`, `onNavigate`, `permissions`, `initialTab`.
+- **App.tsx**: `case 'settings':` now passes all required new props through from App state (`config`, `setConfig`, `stockList`, `setActivePage`, `currentUser?.permissions`).
+- **Umum content**: Moved verbatim into `umumContent` fragment — no styling or logic changes. The only structural difference is that the early `!isSupabaseConfigured` return is now a conditional inside the fragment.
+- **Lint**: 0 errors (clean pass).
+
 ## 2026-06-13 — Warehouses Task 15: Dashboard + Laporan low-stock queries — DONE (no changes needed)
 
 - **Files inspected:** `src/components/DashboardScreen.tsx`, `src/components/LaporanScreen.tsx`, `src/lib/supabaseClient.ts`

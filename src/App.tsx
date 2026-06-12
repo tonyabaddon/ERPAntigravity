@@ -307,7 +307,14 @@ export default function App() {
         );
       case 'settings':
         return (
-          <PengaturanScreen showToast={triggerToast} />
+          <PengaturanScreen
+            showToast={triggerToast}
+            notificationConfig={config}
+            onNotificationConfigChange={setConfig}
+            stockList={stockList}
+            onNavigate={setActivePage}
+            permissions={currentUser?.permissions}
+          />
         );
       case 'pipeline':
         return (
