@@ -27,6 +27,7 @@ MIGRATIONS=(
   "20260612000002_set_company_name.sql"
   "20260612000003_e2e_data_scrub.sql"
   "20260613000001_warehouses_phase1_schema.sql"
+  "20260613000002a_warehouses_phase2_stock_rpcs.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
