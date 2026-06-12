@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 ho
+## 2026-06-13 — Warehouses Task 2: Frontend types + permission — DONE (SHA 9b535e4)
+
+- **What:** Task 2 of the configurable N-warehouse plan. Added `Warehouse`, `WarehouseAuditAction`, `WarehouseAuditLogRow` interfaces; added `can_manage_warehouses` to `PermissionSet` + `ALL_PERMISSIONS`; added `warehouse_id?: string | null` to `KasirItem` (parallel to legacy `warehouse` field, which is preserved for Task 22 cutover).
+- **Files modified:** `src/types.ts` only (41 insertions, 1 deletion).
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, no errors.
+- **Commit:** `9b535e4`
+
+---
+
 ## 2026-06-13 — Warehouses Phase 1 schema + backfill — CODE DONE, DB MIGRATION PENDING APPLY (IPv6 unreachable)
 
 - **What:** Task 1 of the configurable N-warehouse plan (`docs/superpowers/plans/2026-06-13-warehouses-configurable.md`). Additive schema migration only — nothing breaks.
