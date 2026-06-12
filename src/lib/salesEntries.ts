@@ -30,7 +30,7 @@ export function kasirToSalesEntry(t: KasirTransaction): SalesEntry {
     customer_name: t.customer_name ?? '(Tanpa Nama)',
     customer_phone: t.customer_phone ?? null,
     customer_company: t.customer_company ?? null,
-    items: (t.items ?? []).map(i => ({ name: i.name, qty: i.qty, sku: i.sku })),
+    items: (t.items ?? []).map(i => ({ name: i.name, qty: i.qty, sku: i.sku ?? undefined })),
     total: t.subtotal,
     status: 'PAID',
     created_at: t.created_at,
