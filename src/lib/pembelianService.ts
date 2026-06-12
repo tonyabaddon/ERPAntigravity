@@ -152,8 +152,10 @@ export const purchaseOrderService = {
     received_at: string;
     payment_due_at: string;
     invoice_url?: string;
-    conditions: Record<string, { qty_received: number; qty_damaged: number; damage_notes?: string }>;
-    warehouse: 'atas' | 'bawah';
+    /** Per-line conditions keyed by po_item.id. Each entry must include
+     *  warehouse_id (uuid) so the 5-arg receive_purchase_order RPC can route
+     *  stock to the correct warehouse. */
+    conditions: Record<string, { warehouse_id: string; qty_received: number; qty_damaged: number; damage_notes?: string }>;
   }): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase.rpc('receive_purchase_order', {
@@ -162,7 +164,6 @@ export const purchaseOrderService = {
       p_payment_due_at: params.payment_due_at,
       p_invoice_url: params.invoice_url ?? null,
       p_conditions: params.conditions,
-      p_warehouse: params.warehouse,
     });
     if (error) throw error;
   },

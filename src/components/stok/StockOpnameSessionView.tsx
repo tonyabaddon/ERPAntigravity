@@ -14,6 +14,7 @@ import type {
   PermissionSet,
 } from '../../types';
 import { formatRpDelta } from '../../lib/format';
+import { useWarehouses } from '../../hooks/useWarehouses';
 
 interface StockOpnameSessionViewProps {
   sessionId: number;
@@ -63,6 +64,17 @@ export default function StockOpnameSessionView({
   onClose,
   showToast,
 }: StockOpnameSessionViewProps) {
+  // Resolve warehouse_id / legacy text to a human-readable name.
+  const { warehouses } = useWarehouses({ activeOnly: false });
+  const warehouseName = (whKey: string | null | undefined): string => {
+    if (!whKey) return '—';
+    // Try uuid lookup first (future: when warehouse_id is on count rows).
+    const byId = warehouses.find(w => w.id === whKey);
+    if (byId) return byId.name;
+    // Fall back: legacy text values 'atas' / 'bawah' → capitalise first letter.
+    return whKey.charAt(0).toUpperCase() + whKey.slice(1);
+  };
+
   const [session, setSession] = useState<OpnameSession | null>(null);
   const [counts, setCounts] = useState<OpnameCount[]>([]);
   const [skuMeta, setSkuMeta] = useState<Record<string, SkuMeta>>({});
@@ -146,10 +158,12 @@ export default function StockOpnameSessionView({
     );
   }, [counts, filter, skuMeta]);
 
+  // Group counts by SKU; within each SKU, key by warehouse text value (legacy
+  // 'atas'/'bawah' or uuid when the opname RPC is migrated in a future task).
   const groupedBySku = useMemo(() => {
-    const map = new Map<string, { atas?: OpnameCount; bawah?: OpnameCount }>();
+    const map = new Map<string, Record<string, OpnameCount>>();
     for (const c of filteredCounts) {
-      const existing = map.get(c.sku) ?? {};
+      const existing: Record<string, OpnameCount> = map.get(c.sku) ?? {};
       existing[c.warehouse] = c;
       map.set(c.sku, existing);
     }
@@ -298,14 +312,15 @@ export default function StockOpnameSessionView({
       ) : (
         <div className="space-y-2">
           {Array.from(groupedBySku).map(([sku, group]) => {
-            const bothFilled =
-              group.atas?.countedQty !== null && group.atas?.countedQty !== undefined &&
-              group.bawah?.countedQty !== null && group.bawah?.countedQty !== undefined;
+            const groupEntries = Object.entries(group) as [string, OpnameCount][];
+            const allFilled = groupEntries.length > 0 && groupEntries.every(
+              ([, c]) => c.countedQty !== null && c.countedQty !== undefined
+            );
             return (
               <div
                 key={sku}
                 className={`bg-white border border-slate-200 rounded-lg overflow-hidden ${
-                  bothFilled ? 'border-l-4 border-l-emerald-500' : ''
+                  allFilled ? 'border-l-4 border-l-emerald-500' : ''
                 }`}
               >
                 <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
@@ -315,9 +330,8 @@ export default function StockOpnameSessionView({
                     {skuMeta[sku]?.name ?? '—'}
                   </span>
                 </div>
-                {(['atas', 'bawah'] as const).map((wh) => {
-                  const c = group[wh];
-                  if (!c) return null;
+                {/* Iterate over the warehouse keys actually present for this SKU (supports N warehouses) */}
+                {groupEntries.map(([wh, c]) => {
                   const key = `${c.sku}-${c.warehouse}`;
                   const draftValue = draft[key];
                   const inputValue = draftValue !== undefined
@@ -329,7 +343,7 @@ export default function StockOpnameSessionView({
                       className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm first:border-t-0"
                     >
                       <div className="col-span-2 text-xs uppercase tracking-wide text-slate-500">
-                        {wh === 'atas' ? 'Atas' : 'Bawah'}
+                        {warehouseName(wh)}
                       </div>
                       <div className="col-span-3 text-xs text-slate-500">
                         Sistem <span className="text-slate-800 font-medium">{c.systemQtySnapshot}</span>

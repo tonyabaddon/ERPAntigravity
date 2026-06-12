@@ -3,6 +3,8 @@ import { X, Upload } from 'lucide-react';
 import { DbPurchaseOrder } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
 import { wibDateString } from '../../lib/format';
+import { useWarehouses } from '../../hooks/useWarehouses';
+import WarehousePicker from '../warehouse/WarehousePicker';
 
 interface ReceiveGoodsModalProps {
   po: DbPurchaseOrder;
@@ -24,6 +26,8 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
   const supplierTermDays = po.supplier?.payment_term_days ?? 0;
   const defaultDueDate = supplierTermDays > 0 ? addDays(today, supplierTermDays) : today;
 
+  const { warehouses } = useWarehouses({ activeOnly: true });
+
   const [receivedAt, setReceivedAt] = useState(today);
   const [paymentDueAt, setPaymentDueAt] = useState(defaultDueDate);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
@@ -34,7 +38,15 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
     ]))
   );
   const [saving, setSaving] = useState(false);
-  const [warehouse, setWarehouse] = useState<'atas' | 'bawah'>('atas');
+  // warehouse_id: null means "not yet selected / waiting for warehouse list to load"
+  const [warehouseId, setWarehouseId] = useState<string | null>(null);
+
+  // Once warehouses load, default to the first active warehouse (only runs once).
+  React.useEffect(() => {
+    if (warehouseId === null && warehouses.length > 0) {
+      setWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, warehouseId]);
 
   function updateCondition(itemId: string, field: keyof ItemCondition, value: string | number) {
     setConditions(prev => {
@@ -59,6 +71,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
   }
 
   async function handleConfirm() {
+    if (!warehouseId) { showToast('Pilih gudang tujuan terlebih dahulu.', 'warning'); return; }
     const err = validate();
     if (err) { showToast(err, 'warning'); return; }
     setSaving(true);
@@ -67,20 +80,27 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
       if (invoiceFile) {
         invoiceUrl = await purchaseOrderService.uploadDocument(invoiceFile, `invoices/${po.id}`);
       }
+      // Build per-line conditions with warehouse_id for the 5-arg receive_purchase_order RPC.
+      const conditionsWithWarehouse: Record<string, {
+        warehouse_id: string;
+        qty_received: number;
+        qty_damaged: number;
+        damage_notes?: string;
+      }> = {};
+      for (const [id, c] of Object.entries(conditions)) {
+        const cond = c as ItemCondition;
+        conditionsWithWarehouse[id] = {
+          warehouse_id: warehouseId,
+          qty_received: cond.qty_received,
+          qty_damaged: cond.qty_damaged,
+          damage_notes: cond.damage_notes || undefined,
+        };
+      }
       await purchaseOrderService.receiveGoods(po.id, {
         received_at: new Date(receivedAt).toISOString(),
         payment_due_at: paymentDueAt,
         invoice_url: invoiceUrl,
-        conditions: Object.fromEntries(
-          Object.entries(conditions).map(([id, c]) => {
-            const cond = c as ItemCondition;
-            return [
-              id,
-              { qty_received: cond.qty_received, qty_damaged: cond.qty_damaged, damage_notes: cond.damage_notes || undefined }
-            ];
-          })
-        ),
-        warehouse,
+        conditions: conditionsWithWarehouse,
       });
       showToast(`${po.po_number} diterima. Stok diperbarui.`, 'success');
       onReceived();
@@ -119,14 +139,12 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Gudang Tujuan <span className="text-rose-500">*</span></label>
-              <select
-                value={warehouse}
-                onChange={e => setWarehouse(e.target.value as 'atas' | 'bawah')}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-              >
-                <option value="atas">Gudang Atas</option>
-                <option value="bawah">Gudang Bawah</option>
-              </select>
+              <WarehousePicker
+                mode="single"
+                warehouses={warehouses}
+                value={warehouseId}
+                onChange={setWarehouseId}
+              />
             </div>
           </div>
 
