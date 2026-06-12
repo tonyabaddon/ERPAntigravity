@@ -1,4 +1,33 @@
 # ERP Antigravity — Implementation Progress
+ho
+## 2026-06-12 — Pure-jasa Lunas invoice (skip WIP for jasa-only carts) — DONE
+
+- **Problem**: Cart with only Jasa Rakit / Jasa Custom Panel (no SKU items) couldn't reach "Simpan & Cetak Invoice Lunas" — `handleSave` validation toasted "Tambahkan minimal 1 item" because it only checked `cart.length === 0`, and even past that gate, `if (hasRakit)` forced every cart with jasa lines through WIP + lock-approval.
+- **Change**:
+  - **RPC migration** `supabase/migrations/20260610000001_record_kasir_sale_service_lines.sql` (`c628dde`, fix `2fcaf53`): `record_kasir_sale` skips items where `sku IS NULL` in the (sku, warehouse) aggregation loop — no `decrement_stock`, no `deduct_stock_fifo`. The per-item re-emit loop branches on `v_sku IS NULL` and passes `hpp_per_unit` / `hpp_subtotal` from the input verbatim (`COALESCE(..., 0)` for missing fields; service-line `v_qty` defaults to 1 to prevent NULL-poisoning `v_hpp_total`). Service-line HPP still adds to `v_hpp_total` so `kasir_transactions.hpp_total` matches cart cost. Carried forward `p_payment_subtype` / `p_dp_input_type` validation from migration `20260609000003`. Applied to live Supabase via psql.
+  - **`RakitInlineForm`** (`3f5f40e`, breakpoint fix `cdaa355`): added "HPP (modal)" number input alongside "Estimasi Harga" in a `grid-cols-1 sm:grid-cols-2` layout. `onAdd` callback payload widens to `{type, description, estimatedPrice, hppEstimate}`.
+  - **`PenjualanBaruScreen`** (`67ff9ae`): `rakitLines` state shape gains `hppEstimate`. New derived gates `isMixedCart = hasRakit && cart.length > 0` and `isPureJasa = hasRakit && cart.length === 0`. Validation accepts pure-jasa cart (`'Tambahkan minimal 1 item atau jasa.'`). The WIP branch trigger is now `if (isMixedCart)` so pure-jasa falls through to the existing `recordSale` path with `items: [...skuItems, ...serviceItems]` where service items carry `sku: null, qty: 1, unit_price/hpp_per_unit` from the cart. New emerald "💡 Cart pure-jasa" banner; the amber WIP banner copy is updated to "karena ada SKU + jasa rakit di cart yang sama".
+  - **`KasirItem` type** (`67ff9ae`): `sku: string | null` and `warehouse: WarehouseLocation | null`. Existing JSX consumers (`KasirInvoiceModal`, `OrderHistoryScreen`, `SalesInvoicePDF`) render null as nothing so no string-op consumer was broken.
+  - **`salesEntries.ts`** (`ada2d0a`): coerce `KasirItem.sku ?? undefined` at the `SalesEntry.items.sku` boundary so `null` doesn't leak into a `string | undefined` contract.
+  - **`SalesInvoicePDF`** (`ae06fb3`): render the `<div>{item.sku}</div>` subtitle only when `item.sku` is truthy, so service lines don't show an empty subtitle row.
+- **Tests**: 2 new integration tests in `tests/integration/sales-recording.test.ts` pin the null-sku RPC happy-path (stock untouched, HPP propagates verbatim) and the mixed-cart RPC contract (SKU line deducts stock by 1, service line passes HPP through, `hpp_total = FIFO + verbatim`). All 4 tests in `describe('record_kasir_sale RPC')` pass against live Supabase. `npm run lint`: 0 errors. `vite build` clean → bundle `index-BdOgndk0.js`.
+- **Verified live (Cloud Run revision shipping `index-BdOgndk0.js`)**:
+  - Pure-jasa Lunas: jasa rakit only (Rp 1.5jt / HPP 800k) → invoice `WLK-20260612-016` prints with the service description, no SKU subtitle, no WIP detour. Dashboard OMSET reflects +Rp 1.5jt, PESANAN TERPROSES +1, no Persetujuan badge.
+  - Mixed cart regression: SKU "Box Panel — Ukuran Kecil" + jasa rakit → amber WIP banner shows "SKU + jasa rakit di cart yang sama", save routes to WIP list with status `WIP`, transaction visible for lock submission. No regression on the existing flow.
+  - Empty cart toast: clicking Simpan with empty cart + no jasa lines → toast `"Tambahkan minimal 1 item atau jasa."` exactly.
+  - Console clean across all three scenarios.
+- **Out of scope** (per spec): mixed-cart bypass (still WIP), edit-HPP-later UI, component inventory tracking on pure-jasa, `LockSubmissionModal` / approval inbox changes.
+- **Spec**: `docs/superpowers/specs/2026-06-10-pure-jasa-invoice-design.md`. **Plan**: `docs/superpowers/plans/2026-06-10-pure-jasa-invoice.md`.
+
+---
+
+## 2026-06-12 — Build snapshot for Mekari diff — DONE
+
+- **What:** Produced `docs/product/BUILD_SNAPSHOT_2026-06-12.md` — comprehensive cross-section of everything shipped to date, organized by business module rather than chronology, designed to be diff-compared against Mekari Jurnal / Qontak / Desty `.mov` benchmark recordings in `docs/competitive-research/mekari-jurnal/Results Benchmark/`.
+- **Structure (21 sections):** TL;DR · Architecture · 12 module catalogs (Sales, Inventory, Rakit, Purchasing, CRM, WA AI, Approval, Pengawasan, Reconciliation, Reports, Admin, WA infra) · cross-cutting (audit, RBAC, FIFO, timezone) · Mekari diff (what Vosi has + lacks + parity) · side-by-side mapping per Mekari product · Phase 1 lenses · RPC/table/page/HTTP inventory · PRD open questions.
+- **Inputs synthesized:** Read `docs/product/PRD.md` (439 lines), 4 parallel Explore agents mapping `src/`, `backend-go/`, `supabase/migrations + functions`, plus `progress.md` heading scan (4,569 lines, 250+ task entries).
+- **Use:** User will download this, watch the 3 Mekari `.mov` recordings (Desty/Jurnal/Qontak; 9.6GB total), diff against this catalog, then build a Phase 1 roadmap before returning to continue implementation.
+- **Stats captured:** 82 migrations · 47 RPCs · 41+ tables · 19 frontend pages · 9 backend HTTP endpoints · 4 background pollers · 6 NOTIFY channels · 30+ permission flags · 11 conversation states · 6 approval request types.
 
 ## 2026-06-10 — Bug fix: Persetujuan inbox blank — DONE
 
