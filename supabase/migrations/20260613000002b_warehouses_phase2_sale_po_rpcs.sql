@@ -444,4 +444,63 @@ GRANT EXECUTE ON FUNCTION public.receive_purchase_order(
   uuid, timestamptz, date, text, jsonb
 ) TO anon, authenticated;
 
+-- ─── receive_purchase_order(6-arg) legacy overload bridge ──────────────────
+-- The 6-arg form in 20260607000002_wrap_receive_po.sql still writes to
+-- stocks.stock_atas/bawah. Migration 1 disabled the trg_sync_stock_total
+-- trigger that synced stocks.stock from those columns. Without bridging, a
+-- PO receipt via the legacy 6-arg path during the deploy window leaves
+-- stock_levels stale. This wrapper resolves the text warehouse to a uuid,
+-- merges it into each line's conditions, then delegates to the new 5-arg
+-- form that writes to stock_levels. Task 13 will update pembelianService.ts
+-- to call the 5-arg form directly; Task 17 (Migration 3) will drop this
+-- wrapper entirely.
+
+-- Drop the existing (uuid, timestamptz, date, text, jsonb, text) overload
+-- that still writes to stocks.stock_atas/bawah before replacing it.
+DROP FUNCTION IF EXISTS public.receive_purchase_order(uuid, timestamptz, date, text, jsonb, text);
+
+CREATE OR REPLACE FUNCTION public.receive_purchase_order(
+  p_po_id          uuid,
+  p_received_at    timestamptz,
+  p_payment_due_at date,
+  p_invoice_url    text,
+  p_conditions     jsonb,
+  p_warehouse      text
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_warehouse_id    uuid;
+  v_merged          jsonb := COALESCE(p_conditions, '{}'::jsonb);
+  v_item            record;
+BEGIN
+  SELECT id INTO v_warehouse_id FROM public.warehouses
+    WHERE tenant_id IS NULL AND code = upper(p_warehouse);
+  IF v_warehouse_id IS NULL THEN
+    RAISE EXCEPTION 'receive_purchase_order: gudang % tidak ditemukan', p_warehouse;
+  END IF;
+
+  -- For each PO item, ensure conditions has a warehouse_id (don't overwrite
+  -- per-line overrides if the caller already set one).
+  FOR v_item IN SELECT id::text AS item_id FROM public.purchase_order_items WHERE po_id = p_po_id LOOP
+    IF (v_merged -> v_item.item_id ->> 'warehouse_id') IS NULL THEN
+      v_merged := jsonb_set(
+        v_merged,
+        ARRAY[v_item.item_id, 'warehouse_id'],
+        to_jsonb(v_warehouse_id::text),
+        true
+      );
+    END IF;
+  END LOOP;
+
+  -- Delegate to the 5-arg form which writes to stock_levels + stock_movements.
+  PERFORM public.receive_purchase_order(
+    p_po_id, p_received_at, p_payment_due_at, p_invoice_url, v_merged
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.receive_purchase_order(uuid, timestamptz, date, text, jsonb, text)
+  TO anon, authenticated;
+
 COMMIT;

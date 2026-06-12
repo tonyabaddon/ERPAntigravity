@@ -41,6 +41,7 @@ afterAll(async () => {
     .from('kasir_transactions')
     .delete()
     .like('customer_name', 'QA-PH2B-%');
+  await supabase.from('stock_levels').delete().eq('sku', TEST_SKU);  // explicit before cascade
   await supabase.from('stocks').delete().eq('sku', TEST_SKU);
 });
 
@@ -137,5 +138,164 @@ describe('record_kasir_sale with warehouse_id', () => {
       .eq('warehouse_id', atasId)
       .single();
     expect(lvl?.qty).toBe(14);
+  });
+});
+
+describe('receive_purchase_order writes stock_levels', () => {
+  // Strategy: insert a minimal QA supplier + PO + 1 item, receive it via the
+  // RPC, verify stock_levels was incremented, then clean up.
+  const TEST_PO_PREFIX = `QA-POREC-${Date.now()}`;
+
+  test('5-arg form: per-line warehouse_id increments stock_levels', async () => {
+    // Create a supplier (name only; payment_term_days has default 0)
+    const { data: supplier, error: supErr } = await supabase
+      .from('suppliers')
+      .insert({ name: `${TEST_PO_PREFIX}-supplier` })
+      .select('id')
+      .single();
+    expect(supErr).toBeNull();
+    expect(supplier?.id).toBeDefined();
+
+    // Create a draft PO in ORDERED status
+    const { data: po, error: poErr } = await supabase
+      .from('purchase_orders')
+      .insert({
+        po_number: TEST_PO_PREFIX,
+        supplier_id: supplier!.id,
+        status: 'ORDERED',
+        ordered_at: '2026-06-13',
+        total: 1500,
+      })
+      .select('id')
+      .single();
+    expect(poErr).toBeNull();
+    const testPoId = po!.id;
+
+    // Add 1 line for our QA SKU (product_name and subtotal are NOT NULL)
+    const { data: item, error: itemErr } = await supabase
+      .from('purchase_order_items')
+      .insert({
+        po_id: testPoId,
+        sku: TEST_SKU,
+        product_name: 'QA phase2b item',
+        qty: 3,
+        unit_cost: 500,
+        subtotal: 1500,
+      })
+      .select('id')
+      .single();
+    expect(itemErr).toBeNull();
+    const testItemId = item!.id;
+
+    // Read pre-state of stock_levels
+    const { data: pre } = await supabase
+      .from('stock_levels')
+      .select('qty')
+      .eq('sku', TEST_SKU)
+      .eq('warehouse_id', atasId)
+      .single();
+    const preQty = pre?.qty ?? 0;
+
+    // Call 5-arg form: conditions must include qty_received + warehouse_id per line
+    const conditions: Record<string, { qty_received: number; qty_damaged: number; warehouse_id: string }> = {};
+    conditions[testItemId] = { qty_received: 3, qty_damaged: 0, warehouse_id: atasId };
+
+    const { error } = await supabase.rpc('receive_purchase_order', {
+      p_po_id: testPoId,
+      p_received_at: '2026-06-13',
+      p_payment_due_at: '2026-06-20',
+      p_invoice_url: null,
+      p_conditions: conditions,
+    });
+    expect(error).toBeNull();
+
+    // Verify stock_levels incremented by 3
+    const { data: post } = await supabase
+      .from('stock_levels')
+      .select('qty')
+      .eq('sku', TEST_SKU)
+      .eq('warehouse_id', atasId)
+      .single();
+    expect(post?.qty).toBe(preQty + 3);
+
+    // Cleanup
+    await supabase.from('purchase_order_items').delete().eq('po_id', testPoId);
+    await supabase.from('purchase_orders').delete().eq('id', testPoId);
+    await supabase.from('suppliers').delete().eq('id', supplier!.id);
+  });
+
+  test('6-arg legacy form: delegates and writes stock_levels (not stocks.stock_atas)', async () => {
+    // Same setup: fresh supplier + PO + 1 line
+    const { data: supplier, error: supErr } = await supabase
+      .from('suppliers')
+      .insert({ name: `${TEST_PO_PREFIX}-supplier-6arg` })
+      .select('id')
+      .single();
+    expect(supErr).toBeNull();
+
+    const { data: po, error: poErr } = await supabase
+      .from('purchase_orders')
+      .insert({
+        po_number: `${TEST_PO_PREFIX}-6ARG`,
+        supplier_id: supplier!.id,
+        status: 'ORDERED',
+        ordered_at: '2026-06-13',
+        total: 1000,
+      })
+      .select('id')
+      .single();
+    expect(poErr).toBeNull();
+    const sixArgPoId = po!.id;
+
+    const { data: item, error: itemErr } = await supabase
+      .from('purchase_order_items')
+      .insert({
+        po_id: sixArgPoId,
+        sku: TEST_SKU,
+        product_name: 'QA phase2b item 6arg',
+        qty: 2,
+        unit_cost: 500,
+        subtotal: 1000,
+      })
+      .select('id')
+      .single();
+    expect(itemErr).toBeNull();
+    const sixArgItemId = item!.id;
+
+    const { data: pre } = await supabase
+      .from('stock_levels')
+      .select('qty')
+      .eq('sku', TEST_SKU)
+      .eq('warehouse_id', atasId)
+      .single();
+    const preQty = pre?.qty ?? 0;
+
+    // Call the 6-arg form with p_warehouse='atas'; conditions must include qty_received
+    const conditions: Record<string, { qty_received: number; qty_damaged: number }> = {};
+    conditions[sixArgItemId] = { qty_received: 2, qty_damaged: 0 };
+
+    const { error } = await supabase.rpc('receive_purchase_order', {
+      p_po_id: sixArgPoId,
+      p_received_at: '2026-06-13',
+      p_payment_due_at: '2026-06-20',
+      p_invoice_url: null,
+      p_conditions: conditions,
+      p_warehouse: 'atas',
+    });
+    expect(error).toBeNull();
+
+    // Verify stock_levels incremented (NOT stocks.stock_atas, which is the bug we're preventing)
+    const { data: post } = await supabase
+      .from('stock_levels')
+      .select('qty')
+      .eq('sku', TEST_SKU)
+      .eq('warehouse_id', atasId)
+      .single();
+    expect(post?.qty).toBe(preQty + 2);
+
+    // Cleanup
+    await supabase.from('purchase_order_items').delete().eq('po_id', sixArgPoId);
+    await supabase.from('purchase_orders').delete().eq('id', sixArgPoId);
+    await supabase.from('suppliers').delete().eq('id', supplier!.id);
   });
 });
