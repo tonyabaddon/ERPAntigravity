@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 11: StockAdjustmentModal rewired to use WarehousePicker — DONE (SHA bce2186)
+
+- **What:** Replaced the hardcoded `warehouse: 'atas' | 'bawah'` prop in `StockAdjustmentModal` with `warehouseId: string`. The modal now renders a `<WarehousePicker mode="single">` inside the form so operators can override the default warehouse selection before submitting.
+- **RPC boundary shim:** `request_adjustment` still accepts `p_warehouse text` (not updated in Phase 2c yet). At submit time, the modal resolves `activeWarehouseId` → `warehouses.find(w => w.id === id)?.code.toLowerCase()` and validates it is `'atas'` or `'bawah'`; otherwise shows a warning toast. A TODO comment marks the Phase-2c upgrade point.
+- **StockManagerScreen changes:**
+  - Added `useWarehouses` import and `const { warehouses } = useWarehouses()` hook.
+  - `adjustmentTarget` state type changed: `{ item; warehouse: 'atas'|'bawah' }` → `{ item; warehouseId: string }`.
+  - All three `setAdjustmentTarget` call sites updated:
+    - "Atas" pill button: `warehouses.find(w => w.code === 'ATAS')?.id ?? ''`
+    - "Bawah" pill button: `warehouses.find(w => w.code === 'BAWAH')?.id ?? ''`
+    - Explicit "Penyesuaian" button: `warehouses.find(w => w.is_default)?.id ?? warehouses.find(w => w.code === 'ATAS')?.id ?? ''`
+  - `<StockAdjustmentModal warehouseId={adjustmentTarget.warehouseId}>` updated.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
+## 2026-06-13 — Warehouses Task 10: WarehouseTransferModal rewired to use WarehousePicker — DONE (SHA bdefb16)
+
+- **What:** Replaced the hardcoded `'atas' | 'bawah'` radio/swap UI in `WarehouseTransferModal` with two `<WarehousePicker mode="single">` components (From / To). Updated the `transferWarehouse` service method to use the uuid-arg RPC signature.
+- **Service change (`pembelianService.ts`):** `transferWarehouse(sku, from: 'atas'|'bawah', to: 'atas'|'bawah', qty)` → `transferWarehouse(sku, fromId: string, toId: string, qty: number)`. RPC args changed from `{p_from, p_to}` to `{p_from_warehouse_id, p_to_warehouse_id}`.
+- **Modal change (`WarehouseTransferModal.tsx`):** Replaced manual toggle + labels with `useWarehouses()` + two `WarehousePicker` instances. Each picker receives `excludeIds` pointing at the other side to prevent same-warehouse selection. Error handling preserved: `42501` → admin migration message; `P0001` → server message. `e: unknown` cast applied (no `any`).
+- **No other callers:** `transferWarehouse` was only called from `WarehouseTransferModal`. `WarehouseTransferModal` is only imported by `StockManagerScreen` — prop shape (`item`, `onClose`, `onTransferred`, `showToast`) unchanged.
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+
+---
+
 ## 2026-06-13 — Warehouses Task 8: Shared WarehousePicker adaptive component — DONE (SHA 6ab3992)
 
 - **What:** Created `src/components/warehouse/WarehousePicker.tsx` — the shared adaptive picker that replaces every `'atas' | 'bawah'` toggle.
