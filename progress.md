@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 ho
+## 2026-06-13 — Warehouses Task 3: warehousesService + useWarehouses hook — DONE_WITH_CONCERNS (SHA 1cf2d8a)
+
+- **What:** Task 3 of the configurable N-warehouse plan. Added `warehousesService` (fetchAll, fetchActive, create, update, setDefault, deactivate, forceDeactivate, fetchAuditLog) to `src/lib/supabaseClient.ts` after `companySettingsService`. Created `src/hooks/useWarehouses.ts` with realtime `postgres_changes` subscription (same pattern as `useRealtimeConversations.ts`). Created integration test at `tests/integration/warehousesService.test.ts`.
+- **Files modified/created:**
+  - `src/lib/supabaseClient.ts` — merged `Warehouse, WarehouseAuditLogRow` into existing type imports; added `warehousesService` block after `companySettingsService` (line 927)
+  - `src/hooks/useWarehouses.ts` — new hook
+  - `tests/integration/warehousesService.test.ts` — new integration test
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, no errors.
+- **Integration test:** DONE_WITH_CONCERNS — fails with `PGRST205: Could not find the table 'public.warehouses' in the schema cache`. Expected — migration (Task 1) not yet applied to production DB (IPv6 unreachable).
+- **Commit:** `1cf2d8a`
+
+---
+
 ## 2026-06-13 — Warehouses Task 2: Frontend types + permission — DONE (SHA 9b535e4)
 
 - **What:** Task 2 of the configurable N-warehouse plan. Added `Warehouse`, `WarehouseAuditAction`, `WarehouseAuditLogRow` interfaces; added `can_manage_warehouses` to `PermissionSet` + `ALL_PERMISSIONS`; added `warehouse_id?: string | null` to `KasirItem` (parallel to legacy `warehouse` field, which is preserved for Task 22 cutover).
