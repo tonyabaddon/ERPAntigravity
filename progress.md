@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 7: Migration 2d — warehouse admin RPCs — DONE (SHA 9607c93)
+
+- **What:** Task 7 of the configurable N-warehouse plan. 5 new SECURITY DEFINER RPCs for warehouse administration, all writing `warehouse_audit_log` rows.
+- **RPCs added:**
+  - `create_warehouse(p_code, p_name, p_address, p_sort_order)` — inserts a new warehouse; auto-sets `is_default=true` for the first warehouse of a tenant; emits `'create'` audit row.
+  - `update_warehouse(p_id, p_name, p_address, p_sort_order)` — COALESCE-patch; emits conditional audit rows per changed field (`rename`, `address_update`, `sort_update`).
+  - `set_default_warehouse(p_id)` — clears existing default first (safe against partial UNIQUE index), then sets new default; emits `'set_default'` audit row.
+  - `deactivate_warehouse(p_id)` — 3-guard check: (a) `stock_levels.qty > 0` count, (b) pending `approval_requests` via `stock_adjustments`, (c) `stock_movements` in last 30 days; refuses if `is_default`; emits `'deactivate'` audit row.
+  - `force_deactivate_warehouse(p_id, p_pin, p_reason)` — requires `p_reason ≥ 5 chars` + Owner PIN (bcrypt compare via pgcrypto.crypt + 1-hour lockout at 5 failed attempts); bypasses deactivate guards; `SET search_path = public, extensions` for `crypt()`.
+- **Correctness notes:**
+  - `set_default_warehouse` clears old default BEFORE setting new one to avoid partial UNIQUE index violation on `warehouses_one_default_per_tenant`.
+  - PIN lockout logic mirrors `verify_owner_pin` exactly: `CASE WHEN pin_failed_count + 1 >= 5 THEN now() + INTERVAL '1 hour'`.
+  - `force_deactivate_warehouse` checks `v_locked > now()` before PIN compare; correct PIN resets `pin_failed_count = 0, pin_locked_until = NULL`.
+  - All RPCs grant `EXECUTE TO authenticated`.
+- **Files created/modified:**
+  - `supabase/migrations/20260613000002d_warehouses_admin_rpcs.sql` — new migration (BEGIN..COMMIT)
+  - `tests/integration/warehouses-phase2d-admin.test.ts` — 1 passing + 1 skipped (auth-gated)
+  - `scripts/apply-pending-migrations.sh` — `20260613000002d_warehouses_admin_rpcs.sql` appended
+- **Lint:** `npm run lint` (tsc --noEmit) — clean, 0 errors.
+- **Apply attempt:** FAILED (expected) — IPv6 unreachable (`connection refused` on port 5432).
+- **Integration tests:** 1 passing (deactivate guard, gracefully skips when `warehouses` table absent), 1 skipped (`create_warehouse` requires Owner JWT — service_role `auth.uid()` returns NULL inside SECURITY DEFINER).
+
+---
+
 ## 2026-06-13 — Warehouses Task 6: Migration 2c — approval-flow RPCs — DONE (SHA pending)
 
 - **What:** Task 6 of the configurable N-warehouse plan. Rewrote `commit_approved_adjustment` and `commit_opname` to read `warehouse_id` from their satellite tables (`stock_adjustments.warehouse_id`, `stock_opname_counts.warehouse_id`) and mutate `stock_levels` instead of `stocks.stock_atas/bawah`.
