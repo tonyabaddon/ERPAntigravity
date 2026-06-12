@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 5 follow-up: 6-arg bridge + PO tests — DONE (SHA 7e4f377)
+
+- **Issue 1 (Important):** Added 6-arg `receive_purchase_order(uuid, timestamptz, date, text, jsonb, text)` bridge to `20260613000002b_warehouses_phase2_sale_po_rpcs.sql`. Drops the old buggy overload (which wrote to `stocks.stock_atas/bawah`) and replaces it with a thin wrapper that resolves the text warehouse code to a `uuid`, merges `warehouse_id` into each PO line's conditions JSONB (without overwriting per-line overrides), then delegates to the 5-arg form that writes to `stock_levels`.
+- **Key deviation from spec:** Bridge uses `p_received_at timestamptz` (not `date`) to match the exact signature of both the old 6-arg overload and the new 5-arg form. Spec used `date`; that would have created a NEW overload instead of replacing the buggy one.
+- **Issue 2 (Important):** Appended `describe('receive_purchase_order writes stock_levels', ...)` block to `tests/integration/warehouses-phase2b-rpcs.test.ts` with corrected test inserts (no `payment_terms` on suppliers, added `product_name`/`subtotal` to items, added `qty_received`/`qty_damaged` into conditions JSONB).
+- **Issue 3 (Minor):** `afterAll` now explicitly deletes `stock_levels` rows before `stocks` delete.
+- **Lint:** `npm run lint` (tsc --noEmit) — 0 errors.
+- **Commit:** `7e4f377`
+
+---
+
 ## 2026-06-13 — Warehouses Task 5: Migration 2b — sale + PO RPCs accept warehouse_id — DONE_WITH_CONCERNS (SHA 7616245)
 
 - **What:** Task 5 of the configurable N-warehouse plan. Rewrote `record_kasir_sale` and `receive_purchase_order` to read `warehouse_id` uuid from items and mutate `stock_levels` instead of `stocks.stock_atas/bawah`.
