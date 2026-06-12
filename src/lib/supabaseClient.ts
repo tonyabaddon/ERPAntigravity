@@ -14,6 +14,8 @@ import type {
   RakitJobLine,
   RakitLockRequest,
   RakitServiceType,
+  Warehouse,
+  WarehouseAuditLogRow,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -922,6 +924,85 @@ export const companySettingsService = {
       .from('company_settings')
       .update({ logo_url: null })
       .eq('id', 1);
+  },
+};
+
+// ─── warehousesService ──────────────────────────────────────────────────────
+// CRUD + admin helpers for the configurable N-warehouse model.
+// 2026-06-13 spec.
+
+export const warehousesService = {
+  async fetchAll(): Promise<Warehouse[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('warehouses')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Warehouse[];
+  },
+
+  async fetchActive(): Promise<Warehouse[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('warehouses')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as Warehouse[];
+  },
+
+  async create(input: { code: string; name: string; address?: string; sort_order?: number }): Promise<Warehouse> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('create_warehouse', {
+      p_code: input.code, p_name: input.name,
+      p_address: input.address ?? null, p_sort_order: input.sort_order ?? 100,
+    });
+    if (error) throw error;
+    return data as Warehouse;
+  },
+
+  async update(id: string, patch: { name?: string; address?: string | null; sort_order?: number }): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('update_warehouse', {
+      p_id: id,
+      p_name: patch.name ?? null,
+      p_address: patch.address ?? null,
+      p_sort_order: patch.sort_order ?? null,
+    });
+    if (error) throw error;
+  },
+
+  async setDefault(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('set_default_warehouse', { p_id: id });
+    if (error) throw error;
+  },
+
+  async deactivate(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('deactivate_warehouse', { p_id: id });
+    if (error) throw error;
+  },
+
+  async forceDeactivate(id: string, pin: string, reason: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('force_deactivate_warehouse', {
+      p_id: id, p_pin: pin, p_reason: reason,
+    });
+    if (error) throw error;
+  },
+
+  async fetchAuditLog(limit = 50): Promise<WarehouseAuditLogRow[]> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('warehouse_audit_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []) as WarehouseAuditLogRow[];
   },
 };
 
