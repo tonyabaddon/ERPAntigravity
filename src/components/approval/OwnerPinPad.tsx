@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { verifyOwnerPin } from '../../lib/supabaseClient';
 
 interface OwnerPinPadProps {
@@ -23,9 +23,26 @@ export default function OwnerPinPad({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
 
-  // Auto-verify when 6 digits entered
+  // Refs hold the latest onSuccess / showToast so the verify-effect can keep
+  // them out of its deps. Previously including them caused the parent's
+  // ApprovalInboxScreen — whose `onPinSuccess` is a new function on every
+  // render (30s poll, realtime nudges, busyId state changes) — to tear down
+  // this effect mid-verify (`cancelled = true`), which silently dropped the
+  // success callback. The 2026-06-12 prod e2e walkthrough hit this exactly:
+  // verify_owner_pin flipped the gate (counter dropped 1 → 0) but
+  // commit_approved_adjustment never fired (stock stayed at 211), leaving the
+  // approval half-committed.
+  const onSuccessRef = useRef(onSuccess);
+  const showToastRef = useRef(showToast);
+  useEffect(() => { onSuccessRef.current = onSuccess; }, [onSuccess]);
+  useEffect(() => { showToastRef.current = showToast; }, [showToast]);
+
+  // Auto-verify when 6 digits entered. Deps intentionally narrow to (pin,
+  // approvalId) so a stable identity for THIS effect run is preserved across
+  // parent re-renders. submitting + the two callbacks are read via closure
+  // or ref so re-renders cannot trigger the cleanup `cancelled = true`.
   useEffect(() => {
-    if (pin.length !== PIN_LENGTH || submitting) return;
+    if (pin.length !== PIN_LENGTH) return;
 
     let cancelled = false;
     const run = async () => {
@@ -35,11 +52,11 @@ export default function OwnerPinPad({
         const ok = await verifyOwnerPin(approvalId, pin);
         if (cancelled) return;
         if (ok) {
-          showToast?.('PIN benar — disetujui', 'success');
+          showToastRef.current?.('PIN benar — disetujui', 'success');
           setPin('');
-          onSuccess();
+          onSuccessRef.current();
         } else {
-          showToast?.('PIN salah', 'error');
+          showToastRef.current?.('PIN salah', 'error');
           setErrorMsg('PIN salah — coba lagi');
           setShake(true);
           setTimeout(() => {
@@ -52,7 +69,7 @@ export default function OwnerPinPad({
       } catch (e) {
         if (cancelled) return;
         const msg = e instanceof Error ? e.message : String(e);
-        showToast?.(msg, 'error');
+        showToastRef.current?.(msg, 'error');
         setErrorMsg(msg);
         setShake(true);
         setTimeout(() => {
@@ -70,7 +87,8 @@ export default function OwnerPinPad({
     return () => {
       cancelled = true;
     };
-  }, [pin, approvalId, onSuccess, showToast, submitting]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin, approvalId]);
 
   const press = (digit: string) => {
     if (submitting) return;
