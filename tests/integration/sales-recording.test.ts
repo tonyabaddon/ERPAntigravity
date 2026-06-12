@@ -423,4 +423,125 @@ describe('record_kasir_sale RPC', () => {
     expect(error).not.toBeNull();
     expect(error?.message.toLowerCase()).toMatch(/invalid payment_subtype/);
   });
+
+  test('RPC accepts service line with sku=null and skips stock deduction', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Snapshot stock before — should be unchanged after the call.
+    const { data: beforeStock } = await supabase
+      .from('stocks')
+      .select('stock_atas, stock_bawah')
+      .eq('sku', TEST_SKU)
+      .single();
+
+    const { data, error } = await supabase.rpc('record_kasir_sale', {
+      p_date:              today,
+      p_channel:           'walkin',
+      p_items:             [
+        {
+          sku: null,
+          name: 'Jasa Rakit — Box Wiring PT XYZ',
+          qty: 1,
+          unit_price: 1500000,
+          subtotal: 1500000,
+          hpp_per_unit: 800000,
+          hpp_subtotal: 800000,
+          warehouse: null,
+        },
+      ],
+      p_subtotal:          1500000,
+      p_payment_method:    'cash',
+      p_payment_subtype:   null,
+      p_payment_type:      'FULL',
+      p_dp_amount:         0,
+      p_dp_input_type:     null,
+      p_ongkir_amount:     0,
+      p_notes:             null,
+      p_total_amount:      1500000,
+      p_customer_name:     `${TEST_PREFIX}-rpc-pure-jasa`,
+      p_customer_phone:    '0812-TEST-rpc-pure-jasa',
+      p_customer_company:  null,
+      p_delivery_address:  null,
+      p_tokped_order_no:   null,
+      p_wa_phone:          null,
+      p_wa_chat_url:       null,
+      p_customer_id:       null,
+    });
+    expect(error).toBeNull();
+    expect(data).toBeTruthy();
+    expect(data.status).toBe('PAID');
+    expect(Number(data.hpp_total)).toBe(800000); // owner-typed HPP propagates verbatim
+    expect(data.items).toHaveLength(1);
+    expect(data.items[0].sku).toBeNull();
+    expect(Number(data.items[0].hpp_per_unit)).toBe(800000);
+    expect(Number(data.items[0].hpp_subtotal)).toBe(800000);
+
+    // Stock untouched — RPC must skip null-sku in aggregation.
+    const { data: afterStock } = await supabase
+      .from('stocks')
+      .select('stock_atas, stock_bawah')
+      .eq('sku', TEST_SKU)
+      .single();
+    expect(afterStock?.stock_atas).toBe(beforeStock?.stock_atas);
+    expect(afterStock?.stock_bawah).toBe(beforeStock?.stock_bawah);
+  });
+
+  test('RPC handles mixed cart: SKU line deducts stock, service line passes through', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: beforeStock } = await supabase
+      .from('stocks')
+      .select('stock_atas')
+      .eq('sku', TEST_SKU)
+      .single();
+
+    const { data, error } = await supabase.rpc('record_kasir_sale', {
+      p_date:              today,
+      p_channel:           'walkin',
+      p_items:             [
+        { sku: TEST_SKU, name: 'Test SKU', qty: 1, unit_price: 50000, subtotal: 50000, warehouse: 'atas' },
+        {
+          sku: null,
+          name: 'Jasa Custom Panel',
+          qty: 1,
+          unit_price: 500000,
+          subtotal: 500000,
+          hpp_per_unit: 200000,
+          hpp_subtotal: 200000,
+          warehouse: null,
+        },
+      ],
+      p_subtotal:          550000,
+      p_payment_method:    'cash',
+      p_payment_subtype:   null,
+      p_payment_type:      'FULL',
+      p_dp_amount:         0,
+      p_dp_input_type:     null,
+      p_ongkir_amount:     0,
+      p_notes:             null,
+      p_total_amount:      550000,
+      p_customer_name:     `${TEST_PREFIX}-rpc-mixed`,
+      p_customer_phone:    '0812-TEST-rpc-mixed',
+      p_customer_company:  null,
+      p_delivery_address:  null,
+      p_tokped_order_no:   null,
+      p_wa_phone:          null,
+      p_wa_chat_url:       null,
+      p_customer_id:       null,
+    });
+    expect(error).toBeNull();
+    expect(data).toBeTruthy();
+
+    // SKU line deducts 1 from stock_atas; service line is no-op for stock.
+    const { data: afterStock } = await supabase
+      .from('stocks')
+      .select('stock_atas')
+      .eq('sku', TEST_SKU)
+      .single();
+    expect((afterStock?.stock_atas ?? 0)).toBe((beforeStock?.stock_atas ?? 0) - 1);
+
+    // hpp_total = FIFO-walked SKU cost + verbatim service HPP.
+    // Seeded harga_modal = 30000 (TEST_SKU lot from beforeAll), so SKU contributes 30000.
+    expect(Number(data.hpp_total)).toBe(30000 + 200000);
+  });
 });
