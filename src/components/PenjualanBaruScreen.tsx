@@ -102,6 +102,32 @@ export default function PenjualanBaruScreen({
     setRakitLines(prev => prev.filter(l => l.id !== id));
   };
 
+  // Clear all per-transaction inputs so a second sale doesn't accidentally
+  // inherit the first customer + last cart + last rakit form state. Master
+  // data (stocks, customers) is preserved.
+  const resetForm = () => {
+    setCart([]);
+    setRakitLines([]);
+    setRakitFormOpen(false);
+    setRakitFormType(null);
+    setSelectedCustomerId(null);
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerCompany('');
+    setPaymentMethod('cash');
+    setPaymentSubtype(null);
+    setPaymentType('FULL');
+    setDpAmount(0);
+    setDpInputType('AMOUNT');
+    setOngkirOn(false);
+    setOngkirAmount(0);
+    setDeliveryAddress('');
+    setNotes('');
+    setTokpedOrderNo('');
+    setWaPhone('');
+    setWaChatUrl('');
+  };
+
   // Load master data once
   useEffect(() => {
     Promise.all([stockService.fetchAll(), customersService.fetchAll()])
@@ -275,6 +301,10 @@ export default function PenjualanBaruScreen({
         customer_id: selectedCustomerId ?? undefined,
       });
       setSavedTx(saved);
+      // Clear cart + rakit + customer + payment so re-clicking Simpan
+      // (e.g. while the invoice modal is up) does not silently invoice the
+      // same line again — surfaced by the 2026-06-12 e2e audit.
+      resetForm();
     } catch (err: any) {
       const msg = err?.message || err?.error_description || (typeof err === 'string' ? err : JSON.stringify(err));
       const code = err?.code ? ` [${err.code}]` : '';
@@ -334,7 +364,7 @@ export default function PenjualanBaruScreen({
               <div>
                 <ItemSearchPanel
                   stocks={stocks}
-                  cartCount={cart.length}
+                  cartCount={cart.length + rakitLines.length}
                   cartSubtotal={subtotal}
                   onAdd={addItem}
                 >

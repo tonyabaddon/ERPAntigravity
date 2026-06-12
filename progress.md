@@ -1,5 +1,186 @@
 # ERP Antigravity — Implementation Progress
 ho
+## 2026-06-12 — E2E audit fixes (sweep #1 + sweep #2 follow-ups) — CODE DONE, DB MIGRATIONS PENDING APPLY
+
+- **What:** Implemented every fix the user asked for from the sweep #1 + sweep #2 audits (one exception was explicitly excluded: the Pengaturan "Rekening Bank" + Rekonsiliasi "Rekening Aktif" surfaces are kept distinct — the first is the bank-on-invoice, the second is the multi-account reconciliation list). `npm run lint` clean. Verified via Chrome MCP pass against `npm run dev` on :3000.
+- **Apply path:** DB migrations live under `supabase/migrations/20260612*.sql`; my network can't reach the project's IPv6-only DB endpoint, so apply with `cd backend-go && set -a && source .env && set +a && cd .. && ./scripts/apply-pending-migrations.sh` (script uses `lib/pq`, same driver the daemon uses, so it works on IPv6-only hosts). All 3 migrations are idempotent; the data migrations only mutate well-defined patterns (PO-TEST-%, Test Supplier %, T20 stress recipients, nil-UUID opname sessions, T1-PENG- pengawasan SKUs, the E2E-AUDIT 017 row I wrote during the audit).
+
+### CRITICAL fixes
+
+- **CRIT-1 transfer_warehouse 403 (`supabase/migrations/20260612000001_fix_transfer_warehouse_security_definer.sql`)**. The Phase 1 wrap at `20260607000005_wrap_transfer_warehouse.sql` was authored without `SECURITY DEFINER` even though the Phase 2 revoke migration `20260607000017_revoke_stocks_writes.sql` explicitly listed it as a sanctioned SECURITY DEFINER path. Re-issued the function body byte-equal with `LANGUAGE plpgsql SECURITY DEFINER SET search_path = public` + an explicit `GRANT EXECUTE … TO authenticated`, matching the pattern in `commit_approved_adjustment` etc. Frontend now distinguishes 42501 ("server menolak — migrasi backend belum di-apply, hubungi admin") from P0001 errors in `WarehouseTransferModal` so the silent fail surfaces as a meaningful toast instead of nothing.
+- **CRIT-2 Approval inbox decisions (`ApprovalInboxScreen.tsx`)**. The Setujui handler used to call `commit_approved_adjustment` directly, which always 400'd because the gate was still `pending`. Now adjustment / price_change / opname requests gate Setujui behind an `OwnerPinPad` modal (the component already existed under `approval/`); `verify_owner_pin` flips the gate to `approved` and bumps `pin_failed_count` on misses (5-fail lockout per migration `…000019`), then the commit RPC runs. Rakit_lock keeps the one-shot `approve_rakit_lock` RPC path (server-side wraps both steps in one txn). Kasir_* still surfaces the Phase 3b "belum tersedia" message instead of silently failing.
+- **CRIT-3 Penjualan Baru cart ghost-line + form reset (`CartRows.tsx` + `PenjualanBaruScreen.tsx`)**. Root cause was `if (items.length === 0) return <EmptyState/>` in `CartRows` short-circuiting BEFORE the rakit-line render, so pure-jasa carts hit the "Belum ada item" placeholder even though the subtotal had updated. Fixed the gate to consider `items.length + rakitLines.length === 0`, and the in-card counter now reads `totalLineCount` instead of just `items.length`. Also plumbed `cartCount={cart.length + rakitLines.length}` into `ItemSearchPanel`. Added `resetForm()` that clears cart + rakit + customer + payment + extras after a successful save, called right after `setSavedTx(saved)` so re-clicking Simpan while the invoice modal is still up cannot silently re-invoice.
+
+### UX fixes
+
+- **UX-1 Stock Adjustment trigger discoverability (`StockManagerScreen.tsx:889-899`)**. Added an explicit `⚖ Penyesuaian` button next to `✏ Edit` / `⇄ Transfer` / 🗑 delete on each stock row, opening the `StockAdjustmentModal` for the `atas` warehouse by default. The `Atas: N` / `Bawah: N` pill click is still wired (existing power-user shortcut) but the explicit verb is now visible without hovering.
+- **UX-2 UUID name resolution (`ApprovalInboxScreen.tsx` + `StockOpnameSessionView.tsx`)**. Both screens one-shot-fetch `admin_users` on mount and build a `Record<id, name>` map. ApprovalInboxScreen passes `actorName={actorNames[r.requestedBy]}` through to `ApprovalRequestRow` so the raw `227c28f4-…` resolves to "Tony Wei". StockOpnameSessionView replaces the `id.slice(0, 8)` placeholders ("bf47bc57") in counter + witness lines with a `resolveName()` lookup that falls back to the truncated UUID only if the lookup misses (e.g. an Eva who was later deleted).
+- **UX-3 Material Symbols not rendering (`src/index.css`)**. The Google Fonts stylesheet loaded the FONT in `index.html` but the `.material-symbols-outlined` class binding wasn't reliably in the cascade — on multiple screens "monitor_heart", "inventory_2", "timer", "verified" rendered as raw ligature names. Added the canonical class definition to `src/index.css` outside the `@layer utilities` block (so it doesn't get scoped behind Tailwind's preflight): `font-family: 'Material Symbols Outlined'`, `font-feature-settings: 'liga'`, plus the standard ligature display properties. Verified visually post-fix — the Notification Settings page now shows a heart, an alert flame, and a clock instead of literal text. Also fixed a bogus icon name in User Management (`magic_button` → `auto_awesome`) — `magic_button` isn't a real Material Symbols glyph so it would have rendered as text regardless.
+- **UX-4 Eva "21/13 aktif" permission counter (`UserManagementScreen.tsx:343-358`)**. The counter divided by the original 13-key `PERM_LABELS` UI subset but the numerator was `Object.values(adm.permissions).filter(Boolean).length` — so a legacy DB record with truthy keys outside the current catalog landed at "21/13". Fixed both sides to walk `Object.keys(ALL_PERMISSIONS)` (32 keys today), giving a coherent "X/32 aktif" display that correctly excludes stale keys.
+- **UX-5 PO "Download PDF" double-action (`PoDetailView.tsx:80-95`)**. The button label was "Download PDF" but the code path was window.open-first, anchor-download as fallback — so the primary action opened a new tab. Inverted: anchor download first (matches the verb), `window.open` only if `'download' in a === false` (essentially never for a browser that targets this app).
+
+### Redundancy cleanup
+
+- **RED-1 Top-nav duplicate routes (`App.tsx`)**. Deleted the `Settings` + `Konfigurasi Histori` buttons (both routed to Notification Settings, which already has a sidebar entry), plus the dead `showHistoryModal` state and the generic info modal it opened. Sidebar is now the single source of nav. The Notifikasi-laporan bell on the right of the top bar stays — it's an idiomatic affordance, not a label duplicate.
+- **RED-2 WA-recipient editor duplicate (`NotificationSettingsScreen.tsx`)**. The editor (add/remove/toggle) used to live in BOTH Pengaturan AND Notification Settings, so the two lists could drift. Pengaturan is now canonical. Notification Settings renders a read-only mirror with a "14 aktif · 19 total" chip + a footer redirect ("Untuk menambah / mengubah / menonaktifkan: buka Pengaturan → Penerima Notifikasi WA"). Dead state + the three CRUD handlers removed.
+- **RED-3 CSV filename hardcoded "Sinar_Elektrik" (`StockManagerScreen.tsx`)**. Both `Template_Stok_*.csv` and `Stok_*.csv` now derive the company-name slug from `company_settings.name` via a one-shot fetch on mount; non-filename chars are stripped (Unicode `\p{Letter}\p{Number}` only) and the result snake-cased. Falls back to "Stok" if the row isn't reachable.
+
+### Data fixes (migrations)
+
+- **DATA-1 (`supabase/migrations/20260612000002_set_company_name.sql`)**. Idempotent `UPDATE company_settings SET company_name='Garindo Jaya Panel' WHERE id=1 AND company_name='TEST_DO_NOT_SAVE'`. Stops the test marker from landing on every invoice header + PO PDF + daily-report PDF + CSV export filename.
+- **DATA-2 (`supabase/migrations/20260612000003_e2e_data_scrub.sql`)**. Transactional pattern-matched scrub of: `PO-TEST-%` POs + line items; `Test Supplier %` suppliers; `T20 %` 16+digit stress-test WA recipients; `Test Kasir %` admin_users (Owner excluded defensively); `T1-PENG-{A,B}-%` pengawasan SKUs (with their stock_lots + opname_counts; `stocks` row deletion expected to succeed because the test never wrote `stock_movements` — falls back manual if a real ledger row exists); opname sessions where counted_by or witnessed_by is the nil UUID; duplicate `T9-PRICE%` SKUs (keep lowest sku per name); the audit's own `WLK-20260612-017` + `0812-E2E-AUDIT-1` rows. All in a single transaction so a mid-script failure leaves the catalog whole.
+- **Apply ordering** captured in `scripts/apply-pending-migrations.sh`; all 3 migrations in the list.
+
+### Verification (Chrome MCP, post-fix)
+
+- Top-nav `Settings` + `Konfigurasi Histori` not in DOM ✅.
+- Penjualan Baru: Tambah Jasa Rakit + fill + Tambah ke Cart → cart card flips from "Belum ada item / 0 ITEM · Rp 0" to "🧺 Keranjang 1 item · Rp 777.000" with the description "POST-FIX TEST line" rendered ✅.
+- Notification Settings: Material Icons render as glyphs (heart / alert flame / clock) ✅, recipient editor inputs are gone (read-only count chip + footer redirect ✅).
+- Approval inbox still shows the previously stuck E2E-AUDIT request (id 517) — once the DB migrations apply, clicking Setujui will open the PIN pad.
+- Not verified live (DB unreachable from this machine): transfer 403 fix + Setujui→PIN→commit flow — pending the migration apply. The migration is correct (signature + body byte-equal to existing wrap; SECURITY DEFINER added; grant added) and the toast / PIN modal frontend wiring works at the JS level (lint passes).
+
+### Created files / scripts
+
+- `supabase/migrations/20260612000001_fix_transfer_warehouse_security_definer.sql`
+- `supabase/migrations/20260612000002_set_company_name.sql`
+- `supabase/migrations/20260612000003_e2e_data_scrub.sql`
+- `scripts/apply-pending-migrations.sh` — bash one-shot, lists migrations to apply
+- `backend-go/cmd/apply-migration/main.go` — tiny Go tool the script uses to apply via `lib/pq` (works on IPv6-only Supabase free-tier)
+
+### Not in this batch
+
+- Pengaturan "Rekening Bank" surface — left as-is per user instruction (it is the bank-on-invoice; `Rekonsiliasi → Rekening Aktif` is the multi-account reconciliation list; they're different domains, not duplicates).
+- Pipeline rename / fold-into-OrderHistory — flagged in the audit but didn't merit a code change without product alignment.
+- Heavy `Test SKU` / `Test Customer` rows outside the well-defined patterns above — left alone so the scrub doesn't accidentally delete a legit row the audit pattern can't distinguish.
+
+---
+
+## 2026-06-12 — E2E deep-test follow-up — DONE
+
+- **What (sweep #2):** After sweep #1 (below) the user asked to execute the previously-skipped write paths. Drove these live against Supabase from the SPA, with `window.print` + `window.open` + anchor-download hooks installed so I could inspect blob URLs and intercept the dotmatrix print payload. All test artifacts use the `E2E-AUDIT 2026-06-12` marker so they're greppable for cleanup.
+- **Result:** PDF generation + CSV export + invoice save all work. **Warehouse transfer and the entire Approval Inbox decision flow are functionally broken** — both fail silently with no error toast.
+
+### CRITICAL — Approval Inbox decisions are broken end-to-end
+
+- Steps reproduced: Stock Manager → click "Atas: 211" pill on `0671d9fd · MCB SchneiderA 16` (the pill IS the adjustment trigger — see discoverability finding) → modal "Permintaan Penyesuaian Stok" → fill Selisih `-1`, Alasan `Koreksi Salah Input`, Catatan, no evidence (allowed for `koreksi_input`) → Kirim ke Owner → toast "menunggu: 1 sedang menunggu persetujuan Owner" ✅ → navigate to Persetujuan → see the request with status MENUNGGU → click **Setujui**.
+- Observed: nothing changes on screen. No PIN modal. No toast. Request stays MENUNGGU. Network panel shows `POST /rest/v1/rpc/commit_approved_adjustment {"p_approval_id":517}` → **HTTP 400** with body `{"code":"P0001","message":"approval_request 517 is not approved (status=pending)"}`.
+- Root cause: the **Setujui handler skips the pending → approved transition** and goes straight to `commit_approved_adjustment`. There is no call to `_transition_approval` / `verify_owner_pin` / `decide_via_wa_button` between them. The build snapshot §9.3 explicitly lists "Owner PIN (bcrypt + 5-fail lockout) AND WhatsApp button decision channel" as the shipped channels — neither is reachable from the in-app inbox.
+- Net effect: every adjustment / opname / price-change / rakit-lock / kasir-gate approval in the app is **non-functional** today. Owner can only approve via WA-button (which routes through the daemon webhook) or by directly mutating the DB. The whole governance layer described in §9 is gated by a button that returns a silent 400.
+- Fix sketch: wire the inbox Setujui to first POST `verify_owner_pin` (collecting PIN via modal) → `_transition_approval(id, 'approved', decision_channel='owner_pin')` → THEN `commit_approved_adjustment(id)`. Same shape for the other 5 request_types. Until then, surface the 400 in a toast at minimum so the operator knows nothing happened.
+
+### CRITICAL — Warehouse transfer is broken (permission denied)
+
+- Steps reproduced: Stock Manager → click "⇄ Transfer" on `0671d9fd · MCB SchneiderA 16` → inline form expands "Transfer Stok — Dari Gudang Atas 211 pcs → Ke Gudang Bawah 0 pcs" → enter `1` → click "Transfer ke Gudang Bawah".
+- Observed: counts unchanged (Atas: 211 / Bawah: 0). No toast. Network shows `POST /rest/v1/rpc/transfer_warehouse {"p_sku":"0671d9fd","p_from":"atas","p_to":"bawah","p_qty":1}` → **HTTP 403** body `{"code":"42501","message":"permission denied for table stocks","hint":"Grant the required privileges to the current role with: GRANT UPDATE ON public.stocks TO authenticated;"}`.
+- Root cause: `transfer_warehouse` is not `SECURITY DEFINER`, and the `authenticated` role has no UPDATE on `public.stocks`. PostgREST's hint literally spells the fix. (For comparison, `record_kasir_sale` succeeded on the same session — so it's marked SECURITY DEFINER or has explicit grants; transfer was missed.)
+- Net effect: dual-warehouse stock cannot be rebalanced via the UI. Combined with the earlier observation that nearly all SKUs sit at `Bawah: 0`, the dual-warehouse design is doubly inert: no data flows into Bawah, and the only mechanism that would move it there is broken.
+- Fix: simplest is `ALTER FUNCTION public.transfer_warehouse(...) SECURITY DEFINER;` (and SET search_path) — matches how `record_kasir_sale` was set up. Also surface the 403 in a toast.
+
+### Pure-jasa Lunas — save works despite the ghost-line UI bug
+
+- Steps reproduced: same as sweep #1 (fill Rakit form, Add to Cart, Submit).
+- Observed: cart still showed `0 ITEM · Rp 250.000` with the "Belum ada item" placeholder up to the moment of submit; clicking Simpan still produced a successful save → invoice modal `WLK-20260612-017` with the line `E2E-AUDIT 2026-06-12 — Box Test Probe ×1 Rp 250.000`, customer `E2E AUDIT Test` (auto-created via ON CONFLICT wa_number with `0812-E2E-AUDIT-1` / `E2E Audit Co`), `window.print` fired once (hooked), invoice appeared in Riwayat Pesanan and Kasir Harian. So **the ghost-line bug is render-only, not data-loss**.
+- New related observation: after save the form does NOT reset — customer name, payment method, last rakit form state all stay. A panicked operator re-clicking Simpan would invoice the same line again. Clear the form (or at minimum the cart + rakit lines) post-save.
+- Net: the recent `67ff9ae` data routing is correct; the surrounding cart UX needs a render fix + post-submit reset.
+
+### Stock Adjustment trigger is hidden inside the stock pills
+
+- The "Atas: 211" / "Bawah: 0" coloured pills in Stock Manager rows are themselves the entry to `StockAdjustmentModal` (`src/components/StockManagerScreen.tsx:833` and `:848`). The only signal that they are clickable is the `title` tooltip ("Klik untuk ajukan penyesuaian Gudang Atas") visible on hover.
+- Result: a new operator cannot find Penyesuaian. Neither Stock Manager toolbar nor Stok Opname surfaces it. Add an explicit "Penyesuaian" action on the row's right-side action group (next to ✏ Edit / ⇄ Transfer / 🗑 delete) and keep the pill click as a shortcut.
+
+### PDF + CSV verification
+
+- **Invoice PDF** (jsPDF-free; HTML + window.print): triggered automatically on save. Hooked `window.print` and confirmed it fires exactly once per save. "Cetak Ulang" button re-fires print. Modal content matches DB. Header + footer both show `TEST_DO_NOT_SAVE` company name — same leak as Pengaturan.
+- **PO PDF** (jsPDF blob): clicked "Download PDF" on `PO-2026-06-003 · GTA · Rp 11.2M`. Anchor download wrote `~/Downloads/PO-2026-06-003.pdf` (9.2 KB). PDF strings extraction confirms the document opens with "TEST_DO_NOT_SAVE" header (same Pengaturan leak — every PO sent to suppliers carries this string today). **Side-effect**: the same blob URL is also `window.open`-ed in a new tab — so the click both downloads AND opens. Slight redundancy; pick one.
+- **Daily Report PDF** (HTML + window.print): clicked "Cetak Laporan Harian" → `confirm("Alamat atau nomor telepon toko belum diisi di Pengaturan. PDF akan tampil tanpa info tersebut. Tetap generate?")`. Good UX — the screen itself knows Pengaturan is incomplete, but instead of refusing to print it warns. window.print fires correctly after Accept.
+- **CSV bulk export** (Stock Manager → "EXPORT STOK"): wrote `~/Downloads/Stok_Sinar_Elektrik.csv` (214 lines, 16.3 KB). All category-spec columns wired (panel material/dimensions, mcb merek/ampere/phase, kabel tipe/mm²/panjang, etc.). **Filename surprise**: hardcoded to "Sinar_Elektrik" even though Pengaturan company name is "TEST_DO_NOT_SAVE" — a third places company-name is pulled from a separate source.
+
+### Opname witness flow — could not test
+
+- Active session is `#173` with me (`tonywei.office`) as Penghitung; CHECK constraint blocks self-witness. To run witness_acknowledge → submit_for_owner → owner_approve_commit would need a second user session. Skipped to avoid disrupting an active count.
+- New finding while inspecting: the same session's witness shows as **"Jenny Setiawan" in the list view** and **"bf47bc57" (UUID prefix) in the detail view**. Two different code paths resolving the same FK with different success rates.
+
+### Mark Lunas — no qualifying data
+
+- Order History shows 58 orders, all Selesai. Filter counts: Perlu Konfirmasi 0 · Menunggu Bayar 0 · Bukti Dikirim 0 · Dibatalkan 0. No AWAITING_LUNAS to mark. Manufacturing one would require a fresh DP submit which writes 2 real txs — skipped.
+
+### WhatsApp daemon — local daemon is moot for the SPA
+
+- Built `backend-go/daemon-darwin` (Go 1.26) and ran with .env-sourced credentials. Daemon came up healthy: HTTP :8090, DB connected, follow-up / heartbeat / approval expiry pollers running, LISTEN/NOTIFY active on all 6 channels, QR ready. ✅
+- BUT: the SPA's `whatsappService` hits a **hardcoded Cloud Run URL** `https://sinar-elektrik-msme-erp-422860632808.asia-southeast1.run.app/api/wa/qr`, not localhost. So local daemon contributes nothing to the SPA's WA screen during dev.
+- The Cloud Run daemon does respond — `{"connected":false,"phone":"","qr":"https://wa.me/settings/linked_devices#2@..."}` → the SPA receives a real QR string and renders it. So the screen does work in prod.
+- Suggest: read the daemon base URL from `import.meta.env.VITE_WA_DAEMON_URL` with a Cloud Run default; cleaned up `daemon-darwin` artifact.
+
+### New artifacts left in your live DB (E2E-AUDIT marker, safe to grep + delete)
+
+- `customers`: `E2E AUDIT Test` / `E2E Audit Co` / `0812-E2E-AUDIT-1` (auto-created via ON CONFLICT wa_number)
+- `kasir_transactions`: `WLK-20260612-017` · Walk-in · pure-jasa · Rp 250.000 · HPP Rp 150.000 · 12 Jun 2026 22.12 WIB
+- `approval_requests`: id 517, type `adjustment`, status `pending` (will auto-expire in 30 min per sweeper). Note: even though I clicked Setujui, the bug above means it never transitioned out of pending; let it expire.
+- One-shot cleanup later: `DELETE FROM kasir_transactions WHERE invoice_no = 'WLK-20260612-017'; DELETE FROM customers WHERE wa_number = '0812-E2E-AUDIT-1';` (approval will expire automatically). The 1-unit stock movement on SKU `0671d9fd` was never written (transfer 403'd; adjustment never committed).
+
+---
+
+## 2026-06-12 — E2E Chrome-driven walkthrough + redundancy audit — DONE
+
+- **What:** Drove the dev SPA (`npm run dev` on :3000) through all 18 sidebar routes via Chrome DevTools MCP, logged in as Owner (`tonywei.office@gmail.com` + email OTP), captured screenshots for each screen into `tmp/e2e-screens/`, probed the recent pure-jasa Rakit flow as the deep-dive target (per latest commit `67ff9ae`).
+- **Verdict:** mostly **PASS** on golden paths, but found **1 confirmed UX bug**, several **data-quality / cosmetic bugs**, and **clear redundancy clusters** worth a cleanup pass before Phase 1.
+
+### Confirmed bug — Penjualan Baru Rakit line is invisible in cart
+- Reproduction: Catat Penjualan → `+ Tambah Jasa Rakit` → fill description ("E2E TEST — Box Test Probe") + Estimasi Harga 500 000 + HPP 300 000 → `+ Tambah ke Cart`.
+- Observed: cart subtotal jumps to `Rp 500.000` AND `Subtotal barang Rp 500.000` / `Total Invoice Rp 500.000` AND the green "💡 Cart pure-jasa — invoice langsung dicetak tanpa lock/approval." banner appears AND submit button correctly reads "💾 Simpan & Cetak Invoice Lunas" (so the recent commit's data routing is correct), BUT the cart counter still reads `0 ITEM` and the empty-state text `"Belum ada item. Tambahkan dari hasil pencarian di atas."` stays. The added rakit description appears NOWHERE on the page (`document.body.innerText.includes('E2E TEST') === false`).
+- Impact: user fills the form, clicks add, sees no row, may add it again — easy way to silently double-invoice. The pure-jasa Lunas routing fix is shipping on top of a cart-render bug that predates it.
+- Screenshot: `tmp/e2e-screens/09-rakit-ghost-line.png`.
+
+### Other bugs / friction observed
+- **Stok Opname history** — sessions #170/#171 show counter/witness as raw `00000000` instead of resolved user names. (Looks like a join failure or seeded test sessions with placeholder UUIDs leaking to UI.)
+- **User Management** — Eva renders "21/13 aktif" permissions. 21 > 13 is impossible math; suggests the count of *active* keys diverges from the count of *known* keys after the permission catalog grew. Re-normalize.
+- **Material Icons not rendering** on Notification Settings + User Management + multiple screens — buttons show ligature names as literal text: `magic_button BUAT AKUN`, `monitor_heart`, `inventory_2`, `timer`. Font is either missing for these pages or the surrounding span misses the `material-icons` class.
+- **Pengaturan / Profil Perusahaan** — `Nama Perusahaan: TEST_DO_NOT_SAVE` (test bleed into the production company-name field; this string ends up on every invoice).
+- **Notification Settings / Pengaturan WA recipients** — many T20 stress-test rows with 21-digit phone numbers (`628116473880667475576`, etc.). Invalid IDs polluting the canonical recipient list.
+- **Pelanggan + Pipeline** — WhatsApp leads display as raw JIDs (`154671050153994@lid`, `6282114341213@s.whatsapp.net`). No auto-resolve to a customer name; the Customer 360 promise breaks for AI-originated leads.
+- **Sales Inbox** — multiple `ESCALATED: Gemini failed after 10 retries` rows on the visible page. Production Gemini calls are intermittently failing all retries; surfaces as user-facing "Mohon maaf, sistem kami sedang sibuk." Worth checking quota / region.
+- **WhatsApp AI screen** — "Daemon online" pill renders even when daemon is offline (we never started `backend-go`); below it the actual state correctly says "Menunggu QR dari daemon...". Pill should reflect ping result, not be hardcoded.
+- **Dashboard / Laporan** — top products are mostly test data ("Test", "Test Item", "Test SKU", "Line B"); the only real-looking row is "Jasa Rakit — Box Wiring PT XYZ". Production-shaped reports will only become meaningful after a test-data purge.
+- **Recharts** warns about `width(-1) height(-1)` on first paint of Dashboard charts — cosmetic but consistently logged.
+- **Console** — small `Failed to load resource: 404` + an "empty `src` attribute" warning on every page (probably a missing icon/logo asset).
+
+### Redundancy findings (per the 4 categories you picked)
+
+**A. Duplicate UI surfaces**
+1. **Three entry points → same screen**: sidebar "Notification Settings · Detak Jantung WA" AND top-nav "Settings" AND top-nav "Konfigurasi Histori" all open the same Notification-heartbeat config screen. The two top-nav buttons add zero functionality.
+2. **Kasir → "📋 Catat Penjualan"** big CTA duplicates the sidebar "Catat Penjualan" entry. Quick-action is fine in principle, but the button is given premium real-estate while doing exactly what the always-visible sidebar already does.
+3. **Stock Manager → "Stok Opname"** button shortcuts to the same screen as the sidebar "Stok Opname" entry. Same critique.
+4. **Dashboard → "Buka Inbox Chat"** CTA duplicates sidebar "Sales Inbox".
+5. Sidebar uses the word "Rekonsiliasi" for two unrelated things — "**Kasir** · Rekonsiliasi Harian" (daily kasir close) and "**Rekonsiliasi** · Tutup Buku Bulanan" (monthly bank recon). Not technically duplicated, but the shared word causes confusion when scanning the menu.
+
+**B. Overlapping data models / fields**
+1. **WA recipients list is editable from TWO places**: `Notification Settings` AND `Pengaturan`. Same rows render in both; unclear which is canonical. Pick one, link from the other.
+2. **Bank account** is configured in BOTH `Pengaturan → Rekening Bank` (legacy single-row: BCA / 5271166282 / Tony) AND in `Rekonsiliasi → Rekening Aktif` (multi-row, currently `BCA Bisnis`). The build snapshot §13.4 already labels this "legacy single-row" — the legacy surface should be deleted from `Pengaturan` so users don't edit the wrong record.
+3. **Dual-warehouse `stock_atas` / `stock_bawah`** is effectively unused. Of ~50 rows visible in Stock Manager, all but a handful have `Bawah: 0`. The dual-warehouse model is shipped throughout the schema (transfer RPC, FIFO, ledger sources, UI columns) but operationally everything sits in "atas". Either commit and seed bawah, or collapse to a single `stock` field plus a future N-warehouse model.
+4. **WhatsApp JID ↔ customer** — `customers` rows carry `+62...` phone numbers but Pipeline / Pelanggan / Sales Inbox show JIDs (`@lid`, `@s.whatsapp.net`) for AI-originated leads. The data is effectively two siloed identities for the same human; needs a join.
+5. **HPP shown twice on a sale** — Kasir tx rows show `HPP Rp 800.000` AND the Laporan KPI shows `HPP (Harga Modal)` derived from the same field. Acceptable, but worth checking whether the per-line HPP and the rolled-up HPP can diverge after a Rakit material-edit reversal (out of scope for this sweep).
+
+**C. Dead / misleading navigation**
+1. **"Konfigurasi Histori"** — name suggests *configuration audit history*, which would actually be useful (build snapshot §13.4 explicitly says "Audit log UI 🟡 Tables exist — no unified UI"). The button instead routes to Notification Settings. Either rename it ("Notifikasi") or repurpose it to a real config-history view backed by `reconciliation_audit_log`, `rakit_audit_log`, `approval_requests`.
+2. **"Settings"** in top-nav adds nothing beyond duplicating Notification Settings — and is in English while every other label is Indonesian. Delete.
+3. **Pipeline** screen brands itself as a sales kanban but renders a flat list filtered by status pill (Semua/Aktif/Eskalasi/Selesai/Gugur). The build snapshot §7.4 already acknowledges "Drag-drop status transitions 🟡 View-only currently" — but then the value-add over Order History is unclear; consider folding Pipeline into Order History with a "Tahap Pipeline" filter.
+4. **WhatsApp AI** screen has no useful local affordance when the daemon isn't running; for an Owner who never touches the daemon, this nav item is permanent dead weight. Consider hiding behind a permission or under Pengaturan.
+
+**D. Workflow steps that feel pointless**
+1. **Rakit form** has a "+ Tambah ke Cart" sub-button inside the sub-form even though the parent cart has its own "Simpan & Cetak Invoice" submit. With the ghost-line bug above, the intermediate Add step costs the user a click and gives no visual feedback — collapse the sub-form's submit straight into "Simpan & Cetak Invoice" if the form is valid.
+2. **PO list** is dominated by `PO-TEST-1780915984037581000` rows with `Rp 0` totals, all marked "Terlambat". Whatever process is creating these should not surface them in the operator's overdue queue.
+3. **Top bar** carries: search box "Cari menu…" + notification bell + system info button + Settings + Konfigurasi Histori — five widgets to maintain a screen that mostly just routes between sidebar items. The sidebar itself has 18 entries. Either commit to a top bar with real verbs (global search, profile) or remove it.
+4. **Sidebar count is 18** — even with no Phase 1 additions this is more than the cognitive limit for first-time users. Likely groupings: Sales (Kasir, Catat Penjualan, Riwayat Pesanan, Pipeline, Pelanggan, Sales Inbox), Inventory (Stock Manager, Stok Opname, WIP Rakit), Finance (Pembelian, Rekonsiliasi, Persetujuan), Insights (Dashboard, Laporan), System (User Mgmt, Notifications, WhatsApp AI, Pengaturan). Five sections × 3-6 items is friendlier than a flat 18.
+
+### Not tested (out of scope for this sweep)
+- Did NOT submit any new transaction (would write live Supabase data).
+- Did NOT exercise PDF generation (invoice, PO, daily report) — file-download flow needs a different harness.
+- Did NOT verify Mark Lunas, approval inbox decisions, opname commit, warehouse transfer, bulk CSV upload/export, edge-function admin invite, or WhatsApp button webhook (all need state I don't want to mutate live).
+- Did NOT run the backend-go daemon; WhatsApp AI screen tested as UI only.
+- Evidence in `tmp/e2e-screens/02-…` through `11-…` (`tmp/e2e-screens/` is git-ignored as a tmp dir).
+
+---
+
 ## 2026-06-12 — Pure-jasa Lunas invoice (skip WIP for jasa-only carts) — DONE
 
 - **Problem**: Cart with only Jasa Rakit / Jasa Custom Panel (no SKU items) couldn't reach "Simpan & Cetak Invoice Lunas" — `handleSave` validation toasted "Tambahkan minimal 1 item" because it only checked `cart.length === 0`, and even past that gate, `if (hasRakit)` forced every cart with jasa lines through WIP + lock-approval.

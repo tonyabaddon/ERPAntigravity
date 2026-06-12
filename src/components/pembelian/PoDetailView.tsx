@@ -78,15 +78,22 @@ export default function PoDetailView({ po, stockList, onClose, onRefresh, showTo
         createdByName,
       });
       const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
-      if (!win) {
-        // Popup blocked — fallback to download
-        const a = document.createElement('a');
+      // The button is labelled "Download PDF" so download is the primary
+      // path; previously this opened a new tab via window.open() and only
+      // downloaded as the popup-blocked fallback, which mismatched the
+      // label (2026-06-12 e2e audit). HTMLAnchorElement.download is
+      // supported in every browser we target, so the fallback chain is
+      // download → new tab if download is somehow unavailable (preserved
+      // because feature-detection isn't free).
+      const a = document.createElement('a');
+      if ('download' in a) {
         a.href = url;
         a.download = `${po.po_number}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
+      } else {
+        window.open(url, '_blank');
       }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e: any) {

@@ -16,8 +16,14 @@ export interface CartRowsProps {
 
 export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit }: CartRowsProps) {
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-
-  if (items.length === 0) {
+  const rakitSubtotal = (rakitLines ?? []).reduce((s, r) => s + r.estimatedPrice, 0);
+  const totalLineCount = items.length + (rakitLines?.length ?? 0);
+  // Empty-state is only correct when BOTH SKU cart and jasa-rakit list are
+  // empty. Returning early on items.length===0 hid pure-jasa lines and was
+  // the root cause of the "0 ITEM · Rp X" ghost-cart bug surfaced by the
+  // 2026-06-12 e2e audit — the rakit lines below this `if` never rendered
+  // for a jasa-only cart even though their subtotal flowed into Total Invoice.
+  if (totalLineCount === 0) {
     return (
       <div className="px-6 py-8 text-center text-slate-400 text-[13px] bg-slate-50 border border-dashed border-slate-300 rounded-xl">
         Belum ada item. Tambahkan dari hasil pencarian di atas.
@@ -30,9 +36,9 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
       <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2 mb-2 flex justify-between items-center">
         <div className="font-extrabold text-emerald-700 text-[13px] flex items-center gap-2">
           🧺 Keranjang
-          <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[11px] font-extrabold">{items.length} item</span>
+          <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[11px] font-extrabold">{totalLineCount} item</span>
         </div>
-        <div className="font-extrabold text-emerald-700 text-[13px]">{formatRp(subtotal)}</div>
+        <div className="font-extrabold text-emerald-700 text-[13px]">{formatRp(subtotal + rakitSubtotal)}</div>
       </div>
 
       {items.map(item => {

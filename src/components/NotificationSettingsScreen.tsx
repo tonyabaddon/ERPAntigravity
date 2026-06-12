@@ -42,12 +42,10 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
   const [lowStockLimit, setLowStockLimit] = useState(config.lowStockAlert);
   const [delayLimit, setDelayLimit] = useState(config.delayAlert);
 
-  // WA Recipients state
+  // WA Recipients — read-only display. CRUD lives in Pengaturan (2026-06-12
+  // e2e audit: the editor used to live here AND in Pengaturan; the two
+  // could drift). Loading-flag retained for the initial fetch.
   const [recipients, setRecipients] = useState<DbWaRecipient[]>([]);
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [newRole, setNewRole] = useState<'admin' | 'owner'>('admin');
-  const [recipientsLoading, setRecipientsLoading] = useState(false);
 
   const dbConfigIdRef = useRef<number | undefined>(undefined);
 
@@ -68,48 +66,8 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
     }).catch(err => console.error('notificationConfig load error:', err));
   }, []);
 
-  const handleAddRecipient = async () => {
-    if (!newName.trim() || !newPhone.trim()) {
-      showToast('⚠️ Lengkapi nama dan nomor WA penerima.');
-      return;
-    }
-    const formatted = newPhone.startsWith('+') ? newPhone.replace('+', '') : newPhone.startsWith('0') ? '62' + newPhone.slice(1) : newPhone;
-    setRecipientsLoading(true);
-    try {
-      await waRecipientsService.add({ role: newRole, name: newName.trim(), wa_number: formatted });
-      const updated = await waRecipientsService.fetchAll();
-      setRecipients(updated);
-      setNewName('');
-      setNewPhone('');
-      showToast('✅ Nomor WA penerima berhasil ditambahkan.');
-    } catch (err) {
-      console.error(err);
-      showToast('⚠️ Gagal menambahkan nomor WA penerima.');
-    } finally {
-      setRecipientsLoading(false);
-    }
-  };
-
-  const handleRemoveRecipient = async (id: number) => {
-    try {
-      await waRecipientsService.remove(id);
-      setRecipients(prev => prev.filter(r => r.id !== id));
-      showToast('✅ Nomor WA penerima dihapus.');
-    } catch (err) {
-      console.error(err);
-      showToast('⚠️ Gagal menghapus nomor WA penerima.');
-    }
-  };
-
-  const handleToggleRecipient = async (id: number, current: boolean) => {
-    try {
-      await waRecipientsService.toggleActive(id, !current);
-      setRecipients(prev => prev.map(r => r.id === id ? { ...r, is_active: !current } : r));
-    } catch (err) {
-      console.error(err);
-      showToast('⚠️ Gagal mengubah status penerima.');
-    }
-  };
+  // CRUD handlers for WA recipients moved to PengaturanScreen on 2026-06-12.
+  // The screen now only renders the read-only summary above.
 
   const handleSave = async () => {
     const updated: NotificationConfig = {
@@ -334,89 +292,60 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         </div>
       </section>
 
-      {/* WA Recipients card */}
+      {/* WA Recipients — read-only summary. The editable list lives in
+          Pengaturan → Penerima Notifikasi WA. Previously this screen
+          duplicated the same editor and the two lists could drift
+          (2026-06-12 e2e audit). Read-only mirror keeps the operator
+          aware of who receives the heartbeat while the canonical source
+          stays in Pengaturan. */}
       <section className="bg-white border border-[#e5eeff] rounded-[2.5rem] p-8 shadow-xl">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-100">
-            <Smartphone className="w-7 h-7" />
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-100">
+              <Smartphone className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-[#012749]">Nomor WA Penerima Notifikasi</h3>
+              <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mt-0.5">
+                Daftar dikelola di Pengaturan — di sini hanya tampilan
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-extrabold text-[#012749]">Nomor WA Penerima Notifikasi</h3>
-            <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mt-0.5">
-              Laporan & eskalasi dikirim ke nomor-nomor berikut via WhatsApp
-            </p>
-          </div>
+          <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border border-emerald-100 whitespace-nowrap">
+            {recipients.filter(r => r.is_active).length} aktif · {recipients.length} total
+          </span>
         </div>
 
-        {/* Existing recipients list */}
-        <div className="space-y-3 mb-6">
+        <div className="space-y-2">
           {recipients.length === 0 ? (
             <p className="text-xs text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">
-              Belum ada nomor penerima. Tambahkan di bawah.
+              Belum ada nomor. Tambahkan di Pengaturan → Penerima Notifikasi WA.
             </p>
           ) : (
             recipients.map(r => (
-              <div key={r.id} className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl border transition-all ${r.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+              <div key={r.id} className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border ${r.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-sm text-[#012749] truncate">{r.name}</span>
                     <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${r.role === 'owner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                       {r.role}
                     </span>
+                    {!r.is_active && (
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0">
+                        Nonaktif
+                      </span>
+                    )}
                   </div>
                   <p className="font-mono text-[11px] text-gray-400 mt-0.5">+{r.wa_number}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input type="checkbox" className="sr-only peer" checked={r.is_active} onChange={() => handleToggleRecipient(r.id, r.is_active)} />
-                  <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2d8a4e]" />
-                </label>
-                <button onClick={() => handleRemoveRecipient(r.id)} className="text-gray-300 hover:text-red-500 transition-colors shrink-0 cursor-pointer">
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             ))
           )}
         </div>
 
-        {/* Add new recipient form */}
-        <div className="bg-[#f8f9ff] rounded-3xl p-5 border border-blue-50/50 space-y-4">
-          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Tambah Nomor Penerima</span>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input
-              type="text"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="Nama (cth: Pak Budi)"
-              className="bg-white rounded-2xl px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
-            />
-            <div className="bg-white border border-slate-200/60 rounded-2xl flex items-center px-3 gap-1.5">
-              <span className="text-[#012749]/40 text-xs font-black shrink-0">+62</span>
-              <input
-                type="text"
-                value={newPhone}
-                onChange={e => setNewPhone(e.target.value)}
-                placeholder="8123456789"
-                className="w-full bg-transparent border-none focus:ring-0 font-bold text-xs py-2.5 outline-none"
-              />
-            </div>
-            <select
-              value={newRole}
-              onChange={e => setNewRole(e.target.value as 'admin' | 'owner')}
-              className="bg-white rounded-2xl px-4 py-2.5 border border-slate-200/60 font-bold text-xs focus:ring-1 focus:ring-[#012749] outline-none"
-            >
-              <option value="admin">Admin</option>
-              <option value="owner">Owner</option>
-            </select>
-          </div>
-          <button
-            onClick={handleAddRecipient}
-            disabled={recipientsLoading}
-            className="bg-[#012749] hover:bg-[#2d8a4e] text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <Plus className="w-4 h-4" />
-            {recipientsLoading ? 'Menyimpan...' : 'Tambah Nomor'}
-          </button>
-        </div>
+        <p className="mt-5 text-[11px] text-gray-500 italic">
+          Untuk menambah / mengubah / menonaktifkan: buka <b className="text-[#012749]">Pengaturan → Penerima Notifikasi WA</b>.
+        </p>
       </section>
 
       {/* Floating Save controls footer button */}

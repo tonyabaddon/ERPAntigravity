@@ -5,6 +5,7 @@ import {
   recordOpnameCount,
   acknowledgeOpnameWitness,
   submitOpnameForOwner,
+  adminUsersService,
   supabase,
 } from '../../lib/supabaseClient';
 import type {
@@ -68,6 +69,10 @@ export default function StockOpnameSessionView({
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  // userId → display name (Penghitung / Saksi resolution). Previously the
+  // detail view showed `id.slice(0, 8)` which surfaced raw "bf47bc57"
+  // strings to the operator (2026-06-12 e2e audit).
+  const [adminNames, setAdminNames] = useState<Record<string, string>>({});
 
   // Local draft of counted_qty so user can type then commit on blur without
   // each keystroke roundtripping to the DB.
@@ -106,8 +111,23 @@ export default function StockOpnameSessionView({
 
   useEffect(() => {
     void refresh();
+    // One-shot admin lookup. Failure leaves the map empty and the row falls
+    // back to the truncated-UUID display.
+    adminUsersService
+      .fetchAll()
+      .then((rows) => {
+        const map: Record<string, string> = {};
+        for (const a of rows) map[a.id] = a.name;
+        setAdminNames(map);
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
+
+  const resolveName = (uid: string | null | undefined): string => {
+    if (!uid) return '—';
+    return adminNames[uid] ?? uid.slice(0, 8);
+  };
 
   const isCounter = !!session && !!currentUser && currentUser.id === session.countedByUserId;
   const isWitness = !!session && !!currentUser && currentUser.id === session.witnessedByUserId;
@@ -238,8 +258,8 @@ export default function StockOpnameSessionView({
             Sesi Opname #{session.id}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Penghitung: <b>{isCounter ? `${currentUser?.name} (Anda)` : session.countedByUserId.slice(0, 8)}</b>
-            {' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : session.witnessedByUserId.slice(0, 8)}</b>
+            Penghitung: <b>{isCounter ? `${currentUser?.name} (Anda)` : resolveName(session.countedByUserId)}</b>
+            {' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : resolveName(session.witnessedByUserId)}</b>
             {' · '}Mulai {formatDateTime(session.startedAt)}
           </p>
           {witnessAcked && session.witnessAcknowledgedAt && (

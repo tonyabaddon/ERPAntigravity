@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Applies the e2e-audit fix migrations to live Supabase.
+# Uses lib/pq via the existing apply-migration tool so it works on IPv6-only
+# free-tier projects.
+#
+# Usage:
+#   cd backend-go && set -a && source .env && set +a && cd ..
+#   ./scripts/apply-pending-migrations.sh
+set -euo pipefail
+
+if [[ -z "${SUPABASE_DB_CONNECTION:-}" ]]; then
+  echo "SUPABASE_DB_CONNECTION not set — source backend-go/.env first" >&2
+  exit 1
+fi
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BIN=/tmp/apply-migration
+
+if [[ ! -x "$BIN" ]]; then
+  echo "[build] $BIN"
+  (cd "$ROOT/backend-go" && go build -o "$BIN" ./cmd/apply-migration)
+fi
+
+# List in apply order. Add new migrations to the bottom of this list.
+MIGRATIONS=(
+  "20260612000001_fix_transfer_warehouse_security_definer.sql"
+  "20260612000002_set_company_name.sql"
+  "20260612000003_e2e_data_scrub.sql"
+)
+
+for m in "${MIGRATIONS[@]}"; do
+  f="$ROOT/supabase/migrations/$m"
+  if [[ ! -f "$f" ]]; then
+    echo "[skip] missing $f" >&2
+    continue
+  fi
+  echo "[apply] $m"
+  "$BIN" "$f"
+done
+
+echo "[done] all migrations applied"

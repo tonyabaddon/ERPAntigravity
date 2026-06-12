@@ -69,7 +69,6 @@ export default function App() {
   // Global Floating Alert state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
 
   // Restore Supabase auth session on page refresh
   useEffect(() => {
@@ -433,26 +432,13 @@ export default function App() {
               </h1>
             </div>
             
-            <div className="h-5 w-px bg-slate-200" />
-            
-            <nav className="flex gap-4">
-              <button 
-                onClick={() => setActivePage('notifications')}
-                className={`text-xs font-bold transition-all cursor-pointer ${
-                  activePage === 'notifications' 
-                    ? 'text-[#2d8a4e] border-b-2 border-[#2d8a4e] pb-1' 
-                    : 'text-slate-400 hover:text-[#012749]'
-                }`}
-              >
-                Settings
-              </button>
-              <button 
-                onClick={() => setShowHistoryModal(true)}
-                className="text-xs font-bold text-slate-400 hover:text-[#012749] cursor-pointer"
-              >
-                Konfigurasi Histori
-              </button>
-            </nav>
+            {/* Top-nav "Settings" + "Konfigurasi Histori" buttons removed
+               on 2026-06-12 e2e audit — "Settings" routed to the same
+               Notification Settings page as the sidebar entry, and
+               "Konfigurasi Histori" opened a generic info modal whose name
+               implied an audit-log view it didn't deliver. Sidebar is now
+               the single source of nav. The notification bell on the right
+               keeps the quick-access affordance with a recognized icon. */}
           </div>
 
           <div className="flex items-center gap-3 select-none">
@@ -503,28 +489,6 @@ export default function App() {
         </footer>
       </main>
 
-      {/* Histori Configuration Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-[2rem] border border-blue-105 shadow-2x p-8 max-w-sm w-full space-y-4 animate-slideUp">
-            <div className="flex items-center gap-2.5">
-              <Info className="w-6 h-6 text-[#1e3d60]" />
-              <h4 className="font-extrabold text-[#012749]">Informasi Histori ERP</h4>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed font-semibold">
-              Seluruh rekayasa stok, revisi hak akses tim pengurus, and draf invoice kiriman tersimpan dengan aman di server lokal virtual browser Anda (LocalStorage).
-            </p>
-            <div className="flex justify-end pt-2">
-              <button 
-                onClick={() => setShowHistoryModal(false)}
-                className="px-6 py-2 bg-[#012749] text-white rounded-full text-xs font-bold hover:scale-105 transition-all cursor-pointer"
-              >
-                Mengerti
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

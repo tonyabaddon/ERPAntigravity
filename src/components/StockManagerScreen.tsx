@@ -9,7 +9,7 @@ import {
   PlusCircle, Save, Trash2, FileCheck, ChevronUp, ClipboardCheck
 } from 'lucide-react';
 import { StockItem, ApprovalRequest } from '../types';
-import { isSupabaseConfigured, stockService, listPendingApprovals } from '../lib/supabaseClient';
+import { isSupabaseConfigured, stockService, listPendingApprovals, companySettingsService } from '../lib/supabaseClient';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import WarehouseTransferModal from './WarehouseTransferModal';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
@@ -167,6 +167,11 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [priceTarget, setPriceTarget] = useState<{ item: StockItem; field: 'price' | 'harga_modal' } | null>(null);
   const [pendingApprovals, setPendingApprovals] = useState<ApprovalRequest[]>([]);
   const [pendingRefreshTick, setPendingRefreshTick] = useState(0);
+  // Company name is loaded from company_settings so the CSV filename
+  // matches Pengaturan instead of the hardcoded "Sinar_Elektrik" that
+  // shipped originally (2026-06-12 e2e audit). Falls back to a generic
+  // label if the row isn't reachable.
+  const [companyName, setCompanyName] = useState<string>('Stok');
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -181,6 +186,27 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     })();
     return () => { cancelled = true; };
   }, [pendingRefreshTick]);
+
+  // One-shot company-name fetch for the CSV filename. Done separately from
+  // the pending-approvals effect so the latter's tick doesn't refetch.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const row = await companySettingsService.fetch();
+        if (cancelled) return;
+        if (row?.company_name && row.company_name.trim()) setCompanyName(row.company_name.trim());
+      } catch {
+        // silent: hardcoded fallback used
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Snake-case + strip non-filename chars so weird company names (slashes,
+  // quotes, emoji) don't break the download attribute.
+  const filenameSafeCompany = companyName.replace(/[^\p{Letter}\p{Number}]+/gu, '_').replace(/^_+|_+$/g, '') || 'Stok';
 
   const refreshPending = () => setPendingRefreshTick((n) => n + 1);
 
@@ -324,7 +350,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Template_Stok_Sinar_Elektrik.csv';
+    link.download = `Template_Stok_${filenameSafeCompany}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -356,7 +382,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Stok_Sinar_Elektrik.csv';
+    link.download = `Stok_${filenameSafeCompany}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -891,6 +917,14 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                       className="px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
                     >
                       ⇄ Transfer
+                    </button>
+                    <button
+                      onClick={() => setAdjustmentTarget({ item, warehouse: 'atas' })}
+                      disabled={isEditing || !currentUser}
+                      title={currentUser ? 'Ajukan penyesuaian stok (rusak / hilang / koreksi)' : 'Login diperlukan'}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-black border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
+                    >
+                      ⚖ Penyesuaian
                     </button>
                     <button onClick={() => handleDeleteItem(item.sku)} className="p-1.5 text-rose-400 hover:text-rose-600 rounded-full hover:bg-rose-50 cursor-pointer transition-all">
                       <Trash2 className="w-4 h-4" />

@@ -15,6 +15,28 @@
   --radius-signature: 2rem;
 }
 
+/* Material Symbols Outlined — class binding for the ligature font loaded
+   from Google Fonts in index.html. Without this rule the cascade falls back
+   to var(--font-sans) (Inter) on some screens and the ligature names
+   ("monitor_heart", "inventory_2", "timer", "verified") render as raw text
+   instead of glyphs (2026-06-12 e2e audit). font-feature-settings: 'liga'
+   is what swaps the literal text for the glyph. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'liga';
+}
+
 @layer utilities {
   /* Hide scrollbars but keep functionality */
   .hide-scrollbar::-webkit-scrollbar {

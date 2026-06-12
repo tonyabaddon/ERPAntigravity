@@ -32,7 +32,14 @@ export default function WarehouseTransferModal({ item, onClose, onTransferred, s
       await purchaseOrderService.transferWarehouse(item.sku, from, to, n);
       onTransferred();
     } catch (e: any) {
-      showToast(e.message ?? 'Transfer gagal.', 'warning');
+      const code = e?.code as string | undefined;
+      let msg = e?.message ?? 'Transfer gagal.';
+      if (code === '42501') {
+        msg = 'Server menolak transfer (RPC butuh privilege admin). Migrasi backend belum di-apply — hubungi admin sistem.';
+      } else if (code === 'P0001') {
+        msg = e?.message ?? 'Transfer ditolak server.';
+      }
+      showToast(msg, 'warning');
     } finally {
       setSaving(false);
     }

@@ -10,10 +10,12 @@ import {
   commitApprovedAdjustment,
   commitApprovedPriceChange,
   commitOpname,
+  adminUsersService,
   supabase,
 } from '../../lib/supabaseClient';
 import ApprovalRequestRow from './ApprovalRequestRow';
 import RakitLockApprovalRequestRow from './RakitLockApprovalRequestRow';
+import OwnerPinPad from './OwnerPinPad';
 import { approveRakitLock, rejectRakitLock } from '../../lib/supabaseClient';
 
 /**
@@ -66,6 +68,16 @@ export default function ApprovalInboxScreen({
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterPill>('all');
   const [busyId, setBusyId] = useState<number | null>(null);
+  // requesterId → name lookup. Filled once on mount so each row resolves the
+  // raw UUID into the admin's display name (was previously rendered raw —
+  // surfaced by the 2026-06-12 e2e audit).
+  const [actorNames, setActorNames] = useState<Record<string, string>>({});
+  // Setujui on adjustment / price_change / opname requires Owner PIN before the
+  // commit RPC will accept the request (the commit RPC verifies
+  // approval_requests.status='approved' and the only sanctioned approver-side
+  // transition path is verify_owner_pin → _transition_approval). Track the
+  // request waiting on PIN here; null means no PIN modal is open.
+  const [pinTarget, setPinTarget] = useState<{ id: number; type: ApprovalRequestType } | null>(null);
 
   const perms = currentUser?.permissions;
   const isOwner = !!(
@@ -90,6 +102,18 @@ export default function ApprovalInboxScreen({
   };
 
   useEffect(() => {
+    // One-shot admin lookup. We don't subscribe to changes — admin renames
+    // are rare and a 30s poll backstop already refreshes the request list.
+    adminUsersService
+      .fetchAll()
+      .then((rows) => {
+        const map: Record<string, string> = {};
+        for (const a of rows) map[a.id] = a.name;
+        setActorNames(map);
+      })
+      .catch(() => {
+        /* leave map empty; rows fall back to raw UUID */
+      });
     void refresh();
     // Best-effort realtime — silently no-ops if Realtime publication is
     // disabled for `approval_requests` (T22 fallback note).
@@ -112,12 +136,14 @@ export default function ApprovalInboxScreen({
     [requests, filter],
   );
 
-  const handleApprove = async (id: number) => {
-    const req = requests.find((r) => r.id === id);
-    if (!req) return;
+  // Adjustment / price_change / opname commits require the gate to already be
+  // status='approved'. The in-app sanctioned path to flip it is Owner PIN →
+  // verify_owner_pin (which itself calls _transition_approval). This helper
+  // runs the commit RPC AFTER verify_owner_pin has returned TRUE.
+  const runCommitAfterPin = async (id: number, type: ApprovalRequestType) => {
     setBusyId(id);
     try {
-      switch (req.requestType) {
+      switch (type) {
         case 'adjustment':
           await commitApprovedAdjustment(id);
           break;
@@ -127,16 +153,6 @@ export default function ApprovalInboxScreen({
         case 'opname':
           await commitOpname(id);
           break;
-        case 'rakit_lock':
-          await approveRakitLock(id);
-          break;
-        case 'kasir_price_override':
-        case 'kasir_void':
-        case 'kasir_refund':
-          // Kasir approval RPCs land in Phase 3b — surface the gap explicitly
-          // rather than silently no-op.
-          showToast('Persetujuan kasir belum tersedia (Fase 3b)', 'info');
-          return;
         default:
           showToast('Tipe permintaan tidak dikenali', 'warning');
           return;
@@ -148,6 +164,50 @@ export default function ApprovalInboxScreen({
     } finally {
       setBusyId(null);
     }
+  };
+
+  const handleApprove = async (id: number) => {
+    const req = requests.find((r) => r.id === id);
+    if (!req) return;
+
+    // rakit_lock has a one-shot RPC that wraps _transition_approval + commit
+    // in one txn and gates on auth.uid()'s admin_users.role='Owner'. PIN does
+    // not gate this path today — keep the existing direct call.
+    if (req.requestType === 'rakit_lock') {
+      setBusyId(id);
+      try {
+        await approveRakitLock(id);
+        showToast('Permintaan disetujui', 'success');
+        await refresh();
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : 'Gagal menyetujui', 'warning');
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
+
+    if (
+      req.requestType === 'kasir_price_override' ||
+      req.requestType === 'kasir_void' ||
+      req.requestType === 'kasir_refund'
+    ) {
+      // Kasir approval RPCs land in Phase 3b — surface the gap explicitly
+      // rather than silently no-op.
+      showToast('Persetujuan kasir belum tersedia (Fase 3b)', 'info');
+      return;
+    }
+
+    // adjustment | price_change | opname → prompt for Owner PIN. The commit
+    // RPC checks status='approved' and verify_owner_pin is what flips it.
+    setPinTarget({ id, type: req.requestType });
+  };
+
+  const onPinSuccess = () => {
+    if (!pinTarget) return;
+    const { id, type } = pinTarget;
+    setPinTarget(null);
+    void runCommitAfterPin(id, type);
   };
 
   const handleReject = async (id: number, reason?: string) => {
@@ -251,11 +311,30 @@ export default function ApprovalInboxScreen({
                 disabled={busyId !== null && busyId !== r.id}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                actorName={actorNames[r.requestedBy]}
               />
             )}
           </div>
         ))}
       </div>
+
+      {pinTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setPinTarget(null)}
+        >
+          <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <OwnerPinPad
+              approvalId={pinTarget.id}
+              onSuccess={onPinSuccess}
+              onCancel={() => setPinTarget(null)}
+              showToast={(msg, type) =>
+                showToast(msg, type === 'error' ? 'warning' : 'success')
+              }
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

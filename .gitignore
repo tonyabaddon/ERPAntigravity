@@ -11,6 +11,8 @@ coverage/
 .claude/worktrees/
 supabase/.temp/
 backend-go/daemon.pid
+# Ad-hoc audit / debugging artifacts (Chrome MCP screenshots, etc.)
+tmp/
 
 # Demo presentation materials (folders kept locally, not committed)
 docs/haloai-demo/

@@ -305,7 +305,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
               type="submit"
               className="w-full bg-[#012749] text-white py-4 px-6 rounded-full text-xs font-extrabold shadow-lg hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2.5 transition-all group cursor-pointer mt-6"
             >
-              <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">magic_button</span>
+              <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">auto_awesome</span>
               BUAT AKUN &amp; PILIH AKSES
             </button>
           </form>
@@ -340,7 +340,20 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
             ) : (
               filteredAdmins.map((adm) => {
                 const isOwner = adm.role === 'Owner';
-                const activeCount = Object.values(adm.permissions).filter(Boolean).length;
+                // Count + denominator MUST come from the same key set or the
+                // ratio is incoherent. Previously we counted ALL truthy keys
+                // (including legacy keys from old DB records that aren't in
+                // the current catalog) but divided by the older 13-key UI
+                // subset — Eva landed at "21/13 aktif" on the 2026-06-12
+                // e2e audit. Constrain both sides to ALL_PERMISSIONS so a
+                // legacy `whatsappAi:true` that was renamed away doesn't
+                // inflate the numerator.
+                const permKeys = Object.keys(ALL_PERMISSIONS) as (keyof PermissionSet)[];
+                const totalCount = permKeys.length;
+                const activeCount = permKeys.reduce(
+                  (n, k) => n + (adm.permissions[k] ? 1 : 0),
+                  0,
+                );
                 const isExpanded = expandedId === adm.id;
                 return (
                   <div key={adm.id} className="border border-[#e5eeff] rounded-2xl overflow-hidden">
@@ -363,7 +376,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                       <span className={`text-[10px] font-black px-2.5 py-1 rounded-full shrink-0 ${
                         isOwner ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
                       }`}>
-                        {isOwner ? 'Semua akses' : `${activeCount}/13 aktif`}
+                        {isOwner ? 'Semua akses' : `${activeCount}/${totalCount} aktif`}
                       </span>
                       <span className="inline-block px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full bg-emerald-50 text-[#0b743b] border border-emerald-100 shrink-0">
                         {adm.status}
