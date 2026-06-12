@@ -4,21 +4,28 @@ import type { RakitServiceType } from '../../types';
 
 interface RakitInlineFormProps {
   type: RakitServiceType;
-  onAdd: (line: { type: RakitServiceType; description: string; estimatedPrice: number }) => void;
+  onAdd: (line: {
+    type: RakitServiceType;
+    description: string;
+    estimatedPrice: number;
+    hppEstimate: number;
+  }) => void;
   onCancel: () => void;
 }
 
 export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFormProps) {
   const [description, setDescription] = useState('');
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
+  const [hppEstimate, setHppEstimate] = useState<number>(0);
   const isCustom = type === 'jasa_custom_panel';
 
   const canSubmit = description.trim().length > 0 && estimatedPrice > 0;
   const submit = () => {
     if (!canSubmit) return;
-    onAdd({ type, description: description.trim(), estimatedPrice });
+    onAdd({ type, description: description.trim(), estimatedPrice, hppEstimate });
     setDescription('');
     setEstimatedPrice(0);
+    setHppEstimate(0);
   };
 
   const placeholder = isCustom
@@ -48,19 +55,32 @@ export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFo
           onChange={e => setDescription(e.target.value)}
         />
       </div>
-      <div>
-        <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Estimasi Harga (quote disepakati)</div>
-        <input
-          type="number"
-          min={0}
-          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
-          placeholder="0"
-          value={estimatedPrice || ''}
-          onChange={e => setEstimatedPrice(Number(e.target.value || 0))}
-        />
-        <div className="text-[11px] text-slate-500 mt-1.5">
-          ℹ Admin bisa adjust ke harga final saat lock kalau scope berubah.
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Estimasi Harga (quote disepakati)</div>
+          <input
+            type="number"
+            min={0}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
+            placeholder="0"
+            value={estimatedPrice || ''}
+            onChange={e => setEstimatedPrice(Number(e.target.value || 0))}
+          />
         </div>
+        <div>
+          <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">HPP (modal)</div>
+          <input
+            type="number"
+            min={0}
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
+            placeholder="0"
+            value={hppEstimate || ''}
+            onChange={e => setHppEstimate(Number(e.target.value || 0))}
+          />
+        </div>
+      </div>
+      <div className="text-[11px] text-slate-500">
+        ℹ Admin bisa adjust ke harga final saat lock kalau scope berubah (untuk cart dengan SKU). Untuk cart pure-jasa, HPP di sini final.
       </div>
       <div className="flex justify-end gap-2 pt-1">
         <button type="button" onClick={onCancel} className="px-3 py-2 rounded-lg text-[12px] font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
