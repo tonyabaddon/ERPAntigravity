@@ -21,6 +21,9 @@
 - **Files**: `src/types.ts` (added `'penjualan'` to `ActivePage` union), `src/components/PenjualanScreen.tsx` (new), `src/App.tsx` (import + new `case 'penjualan':` route)
 - **PenjualanScreen**: Hub screen with 3 tabs — Input Baru (PenjualanBaruScreen), Riwayat (OrderHistoryScreen), WIP Rakit (WipListScreen). Tabs are permission-gated (kasir / orderHistory / aiStock keys). Legacy `case 'penjualanBaru':` route in App.tsx left unchanged.
 - **Lint**: 0 new errors introduced (pre-existing StockOpnameSessionView.tsx errors unrelated to this task)
+- **Code review fix (2026-06-13)**: Added `overflow-y-auto` to tab content wrapper div (line 70). `PenjualanBaruScreen` uses `min-h-screen` which would push footer offscreen when hosted inside flex-constrained container. Commit: bda82e7
+
+
 
 ## 2026-06-13 — Multi-Tenant Prerequisites: brainstorming + decomposition spec — DONE
 
