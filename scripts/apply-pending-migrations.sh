@@ -30,6 +30,7 @@ MIGRATIONS=(
   "20260613000002a_warehouses_phase2_stock_rpcs.sql"
   "20260613000002b_warehouses_phase2_sale_po_rpcs.sql"
   "20260613000002c_warehouses_phase2_approval_rpcs.sql"
+  "20260613000002d_warehouses_admin_rpcs.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
