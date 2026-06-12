@@ -21,6 +21,7 @@ import {
   ClipboardCheck,
   PackageSearch,
   BookCheck,
+  Warehouse,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
@@ -72,6 +73,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'ai-stock', label: 'Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingBag, category: 'inventory', permKey: 'pembelian' },
+    { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, category: 'inventory', permKey: 'can_manage_warehouses' },
     // Kontrol & Laporan
     { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
     { id: 'rekonsiliasi', label: 'Rekonsiliasi & Tutup Buku', icon: BookCheck, category: 'kontrol', permKey: 'reconciliation' as keyof PermissionSet },
