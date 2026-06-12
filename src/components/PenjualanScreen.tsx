@@ -67,7 +67,7 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
 
       <TabBar tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {activeTab === 'input' && (
           <PenjualanBaruScreen
             currentUser={props.currentUser}

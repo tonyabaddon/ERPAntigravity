@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouses Task 15: Dashboard + Laporan low-stock queries — DONE (no changes needed)
+
+- **Files inspected:** `src/components/DashboardScreen.tsx`, `src/components/LaporanScreen.tsx`, `src/lib/supabaseClient.ts`
+- **Grep result:** No `stock_atas` / `stock_bawah` references exist in `DashboardScreen.tsx` or `LaporanScreen.tsx`. In `supabaseClient.ts`, `reportsService` and `statsService` contain zero warehouse-specific stock queries.
+- **Low-stock computation:** `lowStockCount` is computed in-memory in `App.tsx` line 237 as `stockList.filter(item => item.stock < config.lowStockAlert).length` — uses `stocks.stock` (the total kept in sync by the Migration 1 trigger), not `stock_atas`/`stock_bawah`. `DashboardScreen` receives this as a prop, does no DB queries itself.
+- **LaporanScreen:** No stock or warehouse references at all — purely revenue/channel/conversation reports.
+- **Action:** No code changes needed. Task is DONE_WITH_CONCERNS — the screens already operate on `stocks.stock` (total), which the trigger keeps accurate.
+
+## 2026-06-13 — Warehouses Task 14: Invoice modals + PDF warehouse.name rendering — DONE (no changes needed)
+
+- **Files inspected:** `src/components/KasirInvoiceModal.tsx`, `src/components/penjualan/SalesInvoicePDF.tsx`, `src/components/InvoiceModal.tsx`
+- **Findings:** None of the three invoice files display warehouse information. All three show items with columns: product name/SKU, qty, unit price, subtotal — no warehouse column exists.
+- **Grep result:** The only "atas"/"bawah" matches in these files are Indonesian language phrases ("Terima kasih atas kepercayaan Anda") unrelated to warehouse identifiers.
+- **Action:** No code changes made. Task is DONE_WITH_CONCERNS — warehouse is intentionally not on these invoice displays.
+
 ## 2026-06-13 — Sidebar Refactor Task 2: PenjualanScreen wrapper + ActivePage — DONE
 
 - **Commit**: 9baac90
