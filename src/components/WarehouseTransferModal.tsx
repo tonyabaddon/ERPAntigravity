@@ -1,43 +1,46 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, ArrowRight } from 'lucide-react';
 import { StockItem } from '../types';
 import { purchaseOrderService } from '../lib/pembelianService';
+import { useWarehouses } from '../hooks/useWarehouses';
+import WarehousePicker from './warehouse/WarehousePicker';
 
-interface WarehouseTransferModalProps {
+interface Props {
   item: StockItem;
   onClose: () => void;
   onTransferred: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-export default function WarehouseTransferModal({ item, onClose, onTransferred, showToast }: WarehouseTransferModalProps) {
-  const [from, setFrom] = useState<'atas' | 'bawah'>('atas');
+export default function WarehouseTransferModal({ item, onClose, onTransferred, showToast }: Props) {
+  const { warehouses } = useWarehouses();
+  const [fromId, setFromId] = useState<string>(warehouses[0]?.id ?? '');
+  const [toId, setToId] = useState<string>(warehouses[1]?.id ?? '');
   const [qty, setQty] = useState<number | ''>('');
   const [saving, setSaving] = useState(false);
 
-  const to: 'atas' | 'bawah' = from === 'atas' ? 'bawah' : 'atas';
-  const fromQty = from === 'atas' ? (item.stock_atas ?? item.stock) : (item.stock_bawah ?? 0);
-  const toQty = from === 'atas' ? (item.stock_bawah ?? 0) : (item.stock_atas ?? item.stock);
-  const fromLabel = from === 'atas' ? 'Gudang Atas' : 'Gudang Bawah';
-  const toLabel = from === 'atas' ? 'Gudang Bawah' : 'Gudang Atas';
-  const fromColor = from === 'atas' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-amber-50 border-amber-200 text-amber-700';
-  const toColor = from === 'atas' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-blue-50 border-blue-200 text-blue-700';
+  // qty in stock_levels per warehouse — passed through StockItem if available.
+  // The StockItem doesn't currently expose per-warehouse qty as a typed field;
+  // callers may extend with a transient property. Falls back to empty map.
+  const qtyByWarehouseId: Record<string, number> =
+    (item as unknown as { qty_by_warehouse_id?: Record<string, number> }).qty_by_warehouse_id ?? {};
 
   async function handleConfirm() {
+    if (!fromId || !toId) { showToast('Pilih gudang asal + tujuan', 'warning'); return; }
+    if (fromId === toId) { showToast('Gudang asal dan tujuan harus berbeda', 'warning'); return; }
     const n = qty;
-    if (!n || n <= 0) { showToast('Masukkan jumlah yang valid.', 'warning'); return; }
-    if (n > fromQty) { showToast(`Stok ${fromLabel} hanya ${fromQty} pcs.`, 'warning'); return; }
+    if (!n || n <= 0) { showToast('Masukkan jumlah yang valid', 'warning'); return; }
     setSaving(true);
     try {
-      await purchaseOrderService.transferWarehouse(item.sku, from, to, n);
+      await purchaseOrderService.transferWarehouse(item.sku, fromId, toId, n);
       onTransferred();
-    } catch (e: any) {
-      const code = e?.code as string | undefined;
-      let msg = e?.message ?? 'Transfer gagal.';
-      if (code === '42501') {
-        msg = 'Server menolak transfer (RPC butuh privilege admin). Migrasi backend belum di-apply — hubungi admin sistem.';
-      } else if (code === 'P0001') {
-        msg = e?.message ?? 'Transfer ditolak server.';
+    } catch (e: unknown) {
+      const err = e as { code?: string; message?: string };
+      let msg = err?.message ?? 'Transfer gagal';
+      if (err?.code === '42501') {
+        msg = 'Server menolak transfer — hubungi admin sistem (migrasi belum di-apply)';
+      } else if (err?.code === 'P0001') {
+        msg = err?.message ?? 'Transfer ditolak server';
       }
       showToast(msg, 'warning');
     } finally {
@@ -47,58 +50,39 @@ export default function WarehouseTransferModal({ item, onClose, onTransferred, s
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-sm font-extrabold text-[#012749]">Transfer Stok — {item.name}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X className="w-4 h-4" /></button>
+          <button onClick={onClose}><X className="w-4 h-4 text-slate-400" /></button>
         </div>
-
         <div className="p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className={`flex-1 border rounded-2xl p-3 text-center ${fromColor}`}>
-              <div className="text-[10px] font-black uppercase tracking-wider mb-1">Dari</div>
-              <div className="text-sm font-extrabold">{fromLabel}</div>
-              <div className="text-xs font-bold mt-1">{fromQty} pcs</div>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-wider mb-1 text-slate-400">Dari</div>
+              <WarehousePicker mode="single" warehouses={warehouses}
+                skuQtyByWarehouseId={qtyByWarehouseId}
+                value={fromId} onChange={setFromId} excludeIds={[toId]} />
             </div>
-            <button
-              onClick={() => setFrom(f => f === 'atas' ? 'bawah' : 'atas')}
-              className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
-              title="Swap arah"
-            >
-              <ArrowRight className="w-4 h-4 text-slate-500" />
-            </button>
-            <div className={`flex-1 border rounded-2xl p-3 text-center ${toColor}`}>
-              <div className="text-[10px] font-black uppercase tracking-wider mb-1">Ke</div>
-              <div className="text-sm font-extrabold">{toLabel}</div>
-              <div className="text-xs font-bold mt-1">{toQty} pcs</div>
+            <ArrowRight className="w-4 h-4 text-slate-400" />
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-wider mb-1 text-slate-400">Ke</div>
+              <WarehousePicker mode="single" warehouses={warehouses}
+                skuQtyByWarehouseId={qtyByWarehouseId}
+                value={toId} onChange={setToId} excludeIds={[fromId]} />
             </div>
           </div>
-
           <div className="space-y-1">
             <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Transfer (Pcs)</label>
-            <input
-              type="number"
-              min="1"
-              max={fromQty}
-              value={qty}
+            <input type="number" min="1" value={qty}
               onChange={e => setQty(e.target.value === '' ? '' : parseInt(e.target.value) || '')}
-              placeholder={`Maks ${fromQty}`}
-              className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2d8a4e]"
-            />
+              className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2d8a4e]" />
           </div>
         </div>
-
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-full text-xs font-bold hover:bg-slate-50 cursor-pointer">Batal</button>
-          <button
-            onClick={handleConfirm}
-            disabled={saving}
-            className="flex-1 py-2.5 bg-[#2d8a4e] text-white rounded-full text-xs font-bold hover:bg-emerald-700 disabled:opacity-50 cursor-pointer"
-          >
-            {saving ? 'Memproses...' : `Transfer ke ${toLabel}`}
+          <button onClick={onClose} className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-full text-xs font-bold hover:bg-slate-50">Batal</button>
+          <button onClick={handleConfirm} disabled={saving}
+            className="flex-1 py-2.5 bg-[#2d8a4e] text-white rounded-full text-xs font-bold hover:bg-emerald-700 disabled:opacity-50">
+            {saving ? 'Memproses…' : 'Transfer'}
           </button>
         </div>
       </div>
