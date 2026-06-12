@@ -541,7 +541,8 @@ describe('record_kasir_sale RPC', () => {
     expect((afterStock?.stock_atas ?? 0)).toBe((beforeStock?.stock_atas ?? 0) - 1);
 
     // hpp_total = FIFO-walked SKU cost + verbatim service HPP.
-    // Seeded harga_modal = 30000 (TEST_SKU lot from beforeAll), so SKU contributes 30000.
+    // No stock_lots row for TEST_SKU — deduct_stock_fifo falls back to
+    // stocks.harga_modal (30000) seeded in beforeAll. SKU contributes 30000.
     expect(Number(data.hpp_total)).toBe(30000 + 200000);
   });
 });

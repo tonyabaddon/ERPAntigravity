@@ -162,8 +162,11 @@ BEGIN
   --    input's hpp_per_unit / hpp_subtotal verbatim and add to v_hpp_total.
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items) LOOP
     v_sku       := v_item->>'sku';
-    v_qty       := (v_item->>'qty')::int;
     IF v_sku IS NULL THEN
+      -- Service lines always have qty=1 (one bill line per service). Default
+      -- defensively so a malformed payload with a missing qty doesn't
+      -- silently poison v_hpp_total via NULL arithmetic.
+      v_qty          := COALESCE((v_item->>'qty')::int, 1);
       v_hpp_per_unit := COALESCE((v_item->>'hpp_per_unit')::numeric, 0);
       v_hpp_subtotal := COALESCE((v_item->>'hpp_subtotal')::numeric, v_hpp_per_unit * v_qty);
       v_hpp_total    := v_hpp_total + v_hpp_subtotal;
@@ -172,8 +175,9 @@ BEGIN
         'hpp_subtotal', v_hpp_subtotal
       );
     ELSE
-      v_warehouse := COALESCE(v_item->>'warehouse', 'atas');
-      v_key       := v_sku || '||' || v_warehouse;
+      v_qty          := (v_item->>'qty')::int;
+      v_warehouse    := COALESCE(v_item->>'warehouse', 'atas');
+      v_key          := v_sku || '||' || v_warehouse;
       v_hpp_per_unit := COALESCE((v_cost_map ->> v_key)::numeric, 0);
       v_hpp_subtotal := v_hpp_per_unit * v_qty;
       v_item_out := v_item || jsonb_build_object(
