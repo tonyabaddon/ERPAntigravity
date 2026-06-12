@@ -31,6 +31,8 @@ DECLARE
   v_to_tenant   uuid;
   v_found_from  boolean := false;
   v_found_to    boolean := false;
+  v_mv_out_id   bigint;
+  v_mv_in_id    bigint;
 BEGIN
   IF p_from_warehouse_id = p_to_warehouse_id THEN
     RAISE EXCEPTION 'transfer_warehouse: source and destination must differ';
@@ -86,7 +88,7 @@ BEGIN
   DO UPDATE SET qty = stock_levels.qty + EXCLUDED.qty, updated_at = now();
 
   -- Ledger: transfer_out row
-  PERFORM public._log_stock_movement(
+  v_mv_out_id := public._log_stock_movement(
     p_sku              => p_sku,
     p_warehouse        => NULL,        -- legacy text column deprecated in Migration 3
     p_qty_delta        => -p_qty,
@@ -95,16 +97,10 @@ BEGIN
     p_related_doc_type => 'transfer_legacy',
     p_related_doc_id   => NULL
   );
-  UPDATE stock_movements
-     SET warehouse_id = p_from_warehouse_id
-   WHERE id = (
-     SELECT id FROM stock_movements
-      WHERE sku = p_sku AND source = 'transfer_out'
-      ORDER BY id DESC LIMIT 1
-   );
+  UPDATE stock_movements SET warehouse_id = p_from_warehouse_id WHERE id = v_mv_out_id;
 
   -- Ledger: transfer_in row
-  PERFORM public._log_stock_movement(
+  v_mv_in_id := public._log_stock_movement(
     p_sku              => p_sku,
     p_warehouse        => NULL,
     p_qty_delta        => p_qty,
@@ -113,13 +109,7 @@ BEGIN
     p_related_doc_type => 'transfer_legacy',
     p_related_doc_id   => NULL
   );
-  UPDATE stock_movements
-     SET warehouse_id = p_to_warehouse_id
-   WHERE id = (
-     SELECT id FROM stock_movements
-      WHERE sku = p_sku AND source = 'transfer_in'
-      ORDER BY id DESC LIMIT 1
-   );
+  UPDATE stock_movements SET warehouse_id = p_to_warehouse_id WHERE id = v_mv_in_id;
 END;
 $$;
 
@@ -223,6 +213,7 @@ DECLARE
   v_actor  uuid := COALESCE(p_actor_user_id, auth.uid());
   v_role   text;
   v_kv     record;
+  v_mv_id  bigint;
 BEGIN
   IF v_actor IS NULL THEN
     RAISE EXCEPTION 'seed_stock_row requires p_actor_user_id (or auth.uid())';
@@ -257,7 +248,7 @@ BEGIN
          VALUES (p_sku, v_kv.key::uuid, v_kv.qty);
 
     IF v_kv.qty > 0 THEN
-      PERFORM public._log_stock_movement(
+      v_mv_id := public._log_stock_movement(
         p_sku           => p_sku,
         p_warehouse     => NULL,   -- legacy text column deprecated in Migration 3
         p_qty_delta     => v_kv.qty,
@@ -266,13 +257,7 @@ BEGIN
         p_actor_user_id => v_actor,
         p_actor_role    => 'Owner'
       );
-      UPDATE stock_movements
-         SET warehouse_id = v_kv.key::uuid
-       WHERE id = (
-         SELECT id FROM stock_movements
-          WHERE sku = p_sku AND source = 'seed'
-          ORDER BY id DESC LIMIT 1
-       );
+      UPDATE stock_movements SET warehouse_id = v_kv.key::uuid WHERE id = v_mv_id;
     END IF;
   END LOOP;
 

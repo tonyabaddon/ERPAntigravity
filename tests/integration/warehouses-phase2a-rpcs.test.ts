@@ -90,3 +90,52 @@ describe('decrement_stock(uuid)', () => {
     expect(error?.message).toMatch(/tidak cukup/i);
   });
 });
+
+describe('seed_stock_row(jsonb) overload', () => {
+  const NEW_SKU = `QA-SEEDJ-${Date.now()}`;
+
+  test('creates stocks row + stock_levels rows per warehouse_id + ledger row', async () => {
+    // We need an actor with Owner role. The session uses the service-role key,
+    // so auth.uid() returns NULL — but the existing Owner-gate code uses
+    // p_actor_user_id when passed. Pull the first Owner from admin_users.
+    const { data: owner } = await supabase.from('admin_users')
+      .select('id').eq('role', 'Owner').order('id').limit(1).single();
+    expect(owner?.id).toBeDefined();
+
+    const initialLevels = {
+      [atasId]: 4,
+      [bawahId]: 0,  // explicit zero — exercises the if (qty > 0) branch
+    };
+
+    const { data, error } = await supabase.rpc('seed_stock_row', {
+      p_sku: NEW_SKU,
+      p_name: 'QA seed jsonb',
+      p_category: 'QA',
+      p_price: 1000,
+      p_harga_modal: 600,
+      p_initial_levels: initialLevels,
+      p_actor_user_id: owner!.id,
+    });
+    expect(error).toBeNull();
+    expect(data).toBe(NEW_SKU);
+
+    // Verify stock_levels rows exist for both warehouses
+    const { data: levels } = await supabase.from('stock_levels')
+      .select('warehouse_id, qty').eq('sku', NEW_SKU);
+    const map = Object.fromEntries(levels!.map(l => [l.warehouse_id, l.qty]));
+    expect(map[atasId]).toBe(4);
+    expect(map[bawahId]).toBe(0);
+
+    // Verify a single ledger row exists for the non-zero warehouse, with warehouse_id set
+    const { data: movements } = await supabase.from('stock_movements')
+      .select('warehouse_id, qty_delta, source').eq('sku', NEW_SKU);
+    expect(movements!.length).toBe(1);
+    expect(movements![0].warehouse_id).toBe(atasId);
+    expect(movements![0].qty_delta).toBe(4);
+    expect(movements![0].source).toBe('seed');
+
+    // Cleanup — CASCADE on stocks delete handles stock_levels.
+    // stock_movements is append-only, cannot be deleted.
+    await supabase.from('stocks').delete().eq('sku', NEW_SKU);
+  });
+});
