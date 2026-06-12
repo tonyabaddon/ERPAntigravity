@@ -39,6 +39,7 @@ import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 import WipListScreen from './components/WipListScreen';
+import ManajemenGudangScreen from './components/ManajemenGudangScreen';
 
 import {
   INITIAL_STOCK,
@@ -257,6 +258,13 @@ export default function App() {
             showToast={triggerToast}
             currentUser={currentUser}
             onNavigateToOpname={() => setActivePage('stok-opname')}
+          />
+        );
+      case 'manajemen-gudang':
+        return (
+          <ManajemenGudangScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
           />
         );
       case 'persetujuan':

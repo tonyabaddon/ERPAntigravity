@@ -22,7 +22,8 @@ import {
   Receipt,
   ClipboardCheck,
   PackageSearch,
-  Clock
+  Clock,
+  Warehouse
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
@@ -56,6 +57,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, description: 'Percakapan WA', permKey: 'salesInbox' },
     { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
     { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
+    { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, description: 'Konfigurasi Lokasi', permKey: 'can_manage_warehouses' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, description: 'Sesi Opname & Riwayat', permKey: 'can_start_opname' },
     {
       id: 'wip-list',
