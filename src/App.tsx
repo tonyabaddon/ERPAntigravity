@@ -35,6 +35,7 @@ import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
 import PenjualanBaruScreen from './components/PenjualanBaruScreen';
+import PenjualanScreen from './components/PenjualanScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
@@ -353,6 +354,27 @@ export default function App() {
               setPenjualanInitialChannel(channel);
               setActivePage('penjualanBaru');
             }}
+          />
+        );
+      case 'penjualan':
+        return (
+          <PenjualanScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+            initialChannel={penjualanInitialChannel}
+            onBack={() => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage('kasir');
+            }}
+            onSaved={(_txId) => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage('kasir');
+            }}
+            onNavigate={(page) => {
+              setPenjualanInitialChannel(undefined);
+              setActivePage(page);
+            }}
+            onOpenCustomer={handleOpenCustomer}
           />
         );
       case 'penjualanBaru':
