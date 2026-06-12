@@ -138,7 +138,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                           <td className="px-3 py-2 text-gray-400">{i + 1}</td>
                           <td className="px-3 py-2">
                             <div className="font-semibold text-gray-800">{item.name}</div>
-                            <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
+                            {item.sku && <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>}
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{item.qty}</td>
                           <td className="px-3 py-2 text-right text-gray-500">
