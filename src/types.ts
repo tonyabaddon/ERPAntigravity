@@ -43,6 +43,8 @@ export interface PermissionSet {
   // Phase 3d — inter-warehouse transfers
   can_initiate_transfer?: boolean;
   can_receive_transfer?: boolean;
+  // Warehouse admin (2026-06-13 spec)
+  can_manage_warehouses?: boolean;
   // Phase 4 — Pengawasan (immutable ledger reader)
   can_view_pengawasan?: boolean;
 }
@@ -82,6 +84,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   can_override_price_floor: true,
   can_initiate_transfer: true,
   can_receive_transfer: true,
+  can_manage_warehouses: true,
   can_view_pengawasan: true,
 };
 
@@ -410,7 +413,8 @@ export interface KasirItem {
   hpp_per_unit: number;
   subtotal: number;
   hpp_subtotal: number;
-  warehouse: WarehouseLocation | null;
+  warehouse: WarehouseLocation | null;   // legacy — Task 22 removes
+  warehouse_id?: string | null;            // new — populated by Task 14 onwards
 }
 
 export interface KasirTransaction {
@@ -718,4 +722,40 @@ export interface RakitLockRequest {
   committedAt: string | null;
   isMaterialEdit: boolean;
   priorLockRequestId: number | null;
+}
+
+// ─── Warehouse model (configurable N warehouses, 2026-06-13 spec) ───────────
+
+export interface Warehouse {
+  id: string;
+  tenant_id: string | null;
+  code: string;
+  name: string;
+  address: string | null;
+  is_active: boolean;
+  is_default: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type WarehouseAuditAction =
+  | 'create'
+  | 'rename'
+  | 'set_default'
+  | 'deactivate'
+  | 'force_deactivate'
+  | 'reactivate'
+  | 'address_update'
+  | 'sort_update';
+
+export interface WarehouseAuditLogRow {
+  id: number;
+  warehouse_id: string;
+  actor_user_id: string;
+  action: WarehouseAuditAction;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  reason_note: string | null;
+  created_at: string;
 }
