@@ -7,6 +7,13 @@
 - **Changes**: 19 menu items → 14 (removed: order-history, wip-list, notifications, whatsapp-ai). Added `Category` type + `CATEGORY_ORDER` + `CATEGORY_LABELS` constants. Menu grouped into 4 categories: Operasional / Inventory / Kontrol & Laporan / Sistem. Compact rows: `py-2.5`, no description span, `text-left`. Expanded: section header above each group. Collapsed: divider line between groups. Renames: `penjualanBaru` → `penjualan` (label "Penjualan"), "AI Stock Manager" → "Stok", "Rekonsiliasi" → "Rekonsiliasi & Tutup Buku". Lucide imports cleaned: removed Bell, Bot, ClipboardList, Clock, Warehouse; added ShoppingBag, BookCheck. `title` attribute on buttons for collapsed-mode tooltip.
 - **Lint**: 0 errors (clean pass).
 
+### Regression Fix: Manajemen Gudang (2026-06-13)
+
+- **Commit**: bd19ce8
+- **Issue**: Parallel warehouse work stream had added `manajemen-gudang` menu entry post-plan. Task 4 refactor wiped it out when replacing the `menuItems` array.
+- **Fix**: Restored `Warehouse` import (from lucide-react) + re-added `manajemen-gudang` entry to Inventory category after `pembelian` (4 items total: Stok, Stok Opname, Pembelian, Manajemen Gudang). Total menu items now 15.
+- **Lint**: 0 errors (clean pass).
+
 ## 2026-06-13 — Sidebar Refactor Task 3: PengaturanScreen tabs hub — DONE
 
 - **Commit**: (see below)
