@@ -9,21 +9,18 @@ import {
   Inbox,
   Package,
   Users,
-  Bell,
   Settings,
   LogOut,
   Zap,
   UserCheck,
-  Bot,
   TrendingUp,
-  ClipboardList,
   BarChart2,
   ShoppingCart,
+  ShoppingBag,
   Receipt,
   ClipboardCheck,
   PackageSearch,
-  Clock,
-  Warehouse
+  BookCheck,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
@@ -36,11 +33,22 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
+type Category = 'operasional' | 'inventory' | 'kontrol' | 'sistem';
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  operasional: 'Operasional',
+  inventory: 'Inventory',
+  kontrol: 'Kontrol & Laporan',
+  sistem: 'Sistem',
+};
+
+const CATEGORY_ORDER: Category[] = ['operasional', 'inventory', 'kontrol', 'sistem'];
+
 type MenuItem = {
   id: ActivePage;
   label: string;
   icon: React.ElementType;
-  description: string;
+  category: Category;
   /** When an array is provided, the entry is visible if ANY listed key is truthy. */
   permKey: keyof PermissionSet | Array<keyof PermissionSet>;
 };
@@ -53,31 +61,24 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   if (activePage === 'auth' || !currentUser) return null;
 
   const menuItems: Array<MenuItem> = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Ringkasan Toko', permKey: 'dashboard' },
-    { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, description: 'Percakapan WA', permKey: 'salesInbox' },
-    { id: 'laporan', label: 'Laporan', icon: BarChart2, description: 'Analitik & Tren', permKey: 'laporan' },
-    { id: 'ai-stock', label: 'AI Stock Manager', icon: Package, description: 'Stok & Harga', permKey: 'aiStock' },
-    { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, description: 'Konfigurasi Lokasi', permKey: 'can_manage_warehouses' },
-    { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, description: 'Sesi Opname & Riwayat', permKey: 'can_start_opname' },
-    {
-      id: 'wip-list',
-      label: 'WIP Rakit',
-      icon: Clock,
-      description: 'Transaksi rakit in progress',
-      permKey: 'aiStock' as keyof PermissionSet,
-    },
-    { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, description: 'Approval Inbox', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
-    { id: 'kasir', label: 'Kasir', icon: Receipt, description: 'Rekonsiliasi Harian', permKey: 'kasir' },
-    { id: 'penjualanBaru', label: 'Catat Penjualan', icon: ShoppingCart, description: 'Input Penjualan Baru', permKey: 'kasir' },
-    { id: 'pembelian', label: 'Pembelian', icon: ShoppingCart, description: 'PO & Supplier', permKey: 'pembelian' },
-    { id: 'rekonsiliasi', label: 'Rekonsiliasi', icon: Receipt, description: 'Tutup Buku Bulanan', permKey: 'reconciliation' as keyof PermissionSet },
-    { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, description: 'Leads & Prospek', permKey: 'pipeline' },
-    { id: 'pelanggan', label: 'Pelanggan', icon: Users, description: 'Profil & Riwayat', permKey: 'pelanggan' },
-    { id: 'order-history', label: 'Riwayat Pesanan', icon: ClipboardList, description: 'Semua Pesanan', permKey: 'orderHistory' },
-    { id: 'user-management', label: 'User Management', icon: UserCheck, description: 'Akses Admin', permKey: 'userManagement' },
-    { id: 'notifications', label: 'Notification Settings', icon: Bell, description: 'Detak Jantung WA', permKey: 'notifications' },
-    { id: 'whatsapp-ai', label: 'WhatsApp AI', icon: Bot, description: 'whatsmeow & Gemini', permKey: 'whatsappAi' },
-    { id: 'settings', label: 'Pengaturan', icon: Settings, description: 'Konfigurasi Sistem', permKey: 'settings' },
+    // Operasional
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'operasional', permKey: 'dashboard' },
+    { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, category: 'operasional', permKey: 'salesInbox' },
+    { id: 'penjualan', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
+    { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
+    { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
+    { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, category: 'operasional', permKey: 'pipeline' },
+    // Inventory
+    { id: 'ai-stock', label: 'Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
+    { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
+    { id: 'pembelian', label: 'Pembelian', icon: ShoppingBag, category: 'inventory', permKey: 'pembelian' },
+    // Kontrol & Laporan
+    { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
+    { id: 'rekonsiliasi', label: 'Rekonsiliasi & Tutup Buku', icon: BookCheck, category: 'kontrol', permKey: 'reconciliation' as keyof PermissionSet },
+    { id: 'laporan', label: 'Laporan', icon: BarChart2, category: 'kontrol', permKey: 'laporan' },
+    // Sistem
+    { id: 'user-management', label: 'User Management', icon: UserCheck, category: 'sistem', permKey: 'userManagement' },
+    { id: 'settings', label: 'Pengaturan', icon: Settings, category: 'sistem', permKey: 'settings' },
   ];
 
   const perms = currentUser?.permissions;
@@ -157,39 +158,62 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 space-y-1.5 px-3">
-        {visibleItems.map((item) => {
-          const IconComponent = item.icon;
-          const isActive = activePage === item.id;
+      {/* Navigation Links — grouped by category */}
+      <nav className="flex-1 px-3 overflow-y-auto">
+        {CATEGORY_ORDER.map((cat, catIdx) => {
+          const itemsInCategory = visibleItems.filter(item => item.category === cat);
+          if (itemsInCategory.length === 0) return null;
+          const isFirst = catIdx === 0 || !CATEGORY_ORDER.slice(0, catIdx).some(c => visibleItems.some(v => v.category === c));
           return (
-            <button
-              key={item.id}
-              onClick={() => onPageChange(item.id)}
-              className={`w-full flex items-center gap-4 py-3 px-4 rounded-full transition-all duration-200 cursor-pointer text-left group/item ${
-                isActive 
-                  ? 'bg-white/15 text-emerald-300 font-bold shadow-lg shadow-white/5' 
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <div className="relative shrink-0">
-                <IconComponent className={`w-5 h-5 transition-transform duration-200 group-hover/item:scale-110 ${isActive ? 'text-emerald-300' : ''}`} />
-                {item.id === 'persetujuan' && pendingCount > 0 && !isExpanded && (
-                  <span className="absolute -top-1.5 -right-1.5">
-                    <PendingApprovalBadge count={pendingCount} size="sm" />
-                  </span>
-                )}
-              </div>
-              <div className={`flex flex-col flex-1 transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                <span className="text-sm font-semibold whitespace-nowrap">{item.label}</span>
-                <span className="text-[10px] text-white/40 font-medium whitespace-nowrap select-none">{item.description}</span>
-              </div>
-              {item.id === 'persetujuan' && pendingCount > 0 && isExpanded && (
-                <span className={`transition-opacity duration-300 opacity-100`}>
-                  <PendingApprovalBadge count={pendingCount} size="md" />
-                </span>
+            <div key={cat} className="space-y-0.5">
+              {isExpanded ? (
+                <div className={`px-4 ${isFirst ? 'pt-1' : 'pt-3'} pb-1.5`}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400/70 whitespace-nowrap">
+                    {CATEGORY_LABELS[cat]}
+                  </p>
+                </div>
+              ) : (
+                !isFirst && (
+                  <div className="py-1.5 px-3">
+                    <div className="h-px bg-white/10"></div>
+                  </div>
+                )
               )}
-            </button>
+
+              {itemsInCategory.map(item => {
+                const IconComponent = item.icon;
+                const isActive = activePage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onPageChange(item.id)}
+                    className={`w-full flex items-center gap-3 py-2.5 px-4 rounded-full text-left transition-all duration-200 cursor-pointer group/item ${
+                      isActive
+                        ? 'bg-white/15 text-emerald-300 font-bold shadow-lg shadow-white/5'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                    title={!isExpanded ? item.label : undefined}
+                  >
+                    <div className="relative shrink-0">
+                      <IconComponent className={`w-5 h-5 transition-transform duration-200 group-hover/item:scale-110 ${isActive ? 'text-emerald-300' : ''}`} />
+                      {item.id === 'persetujuan' && pendingCount > 0 && !isExpanded && (
+                        <span className="absolute -top-1.5 -right-1.5">
+                          <PendingApprovalBadge count={pendingCount} size="sm" />
+                        </span>
+                      )}
+                    </div>
+                    <span className={`text-sm font-semibold flex-1 whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                      {item.label}
+                    </span>
+                    {item.id === 'persetujuan' && pendingCount > 0 && isExpanded && (
+                      <span className="transition-opacity duration-300 opacity-100 shrink-0">
+                        <PendingApprovalBadge count={pendingCount} size="md" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           );
         })}
       </nav>
