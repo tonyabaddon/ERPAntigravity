@@ -26,9 +26,6 @@ DECLARE
   v_first boolean;
   v_row   public.warehouses;
 BEGIN
-  IF v_actor IS NULL THEN
-    RAISE EXCEPTION 'create_warehouse: not authenticated';
-  END IF;
   IF NOT EXISTS (SELECT 1 FROM admin_users WHERE id = v_actor AND role = 'Owner') THEN
     RAISE EXCEPTION 'create_warehouse: Owner role required';
   END IF;
@@ -235,11 +232,12 @@ BEGIN
     RAISE EXCEPTION 'force_deactivate_warehouse: Owner role required';
   END IF;
 
-  -- Read PIN state from the acting Owner's row
+  -- Read PIN state from the acting Owner's row (FOR UPDATE prevents PIN-check races)
   SELECT approval_pin_hash, pin_locked_until, pin_failed_count
     INTO v_hash, v_locked, v_fails
     FROM admin_users
-   WHERE id = v_actor;
+   WHERE id = v_actor
+     FOR UPDATE;
 
   -- Lockout check: even correct PIN is rejected while locked
   IF v_locked IS NOT NULL AND v_locked > now() THEN
@@ -254,9 +252,9 @@ BEGIN
   IF crypt(p_pin, v_hash) <> v_hash THEN
     -- Bump failure counter; arm lockout once post-increment count reaches 5
     UPDATE admin_users
-       SET pin_failed_count = pin_failed_count + 1,
+       SET pin_failed_count = v_fails + 1,
            pin_locked_until = CASE
-             WHEN pin_failed_count + 1 >= 5 THEN now() + interval '1 hour'
+             WHEN v_fails + 1 >= 5 THEN now() + INTERVAL '1 hour'
              ELSE pin_locked_until
            END
      WHERE id = v_actor;
