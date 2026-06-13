@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { requestRakitLock, supabaseService } from '../../lib/supabaseClient';
 import type { RakitJobLine, RakitTrackingMode } from '../../types';
+import { useWarehouses } from '../../hooks/useWarehouses';
+import WarehousePicker from '../warehouse/WarehousePicker';
 
 interface LockSubmissionModalProps {
   transactionId: string;
@@ -17,7 +19,7 @@ type ComponentDraft = {
   sku: string;
   name: string;
   qty: number;
-  warehouse: 'atas' | 'bawah';
+  warehouse_id: string;
   fifo_cost: number;
 };
 
@@ -70,6 +72,7 @@ export default function LockSubmissionModal({
   const [submitting, setSubmitting] = useState(false);
   const [stockOptions, setStockOptions] = useState<StockOption[]>([]);
   const [skuQuery, setSkuQuery] = useState<Record<string, string>>({});
+  const { warehouses } = useWarehouses();
 
   useEffect(() => {
     void supabaseService.fetchStocks()
@@ -95,6 +98,7 @@ export default function LockSubmissionModal({
   };
 
   const addComponent = (lineId: string, opt: StockOption) => {
+    const defaultWh = warehouses.find(w => w.is_default) ?? warehouses[0];
     setDrafts(prev => prev.map(d => d.id === lineId ? {
       ...d,
       components: [
@@ -104,7 +108,7 @@ export default function LockSubmissionModal({
           sku: opt.sku,
           name: opt.name,
           qty: 1,
-          warehouse: opt.stock_atas > 0 ? 'atas' : 'bawah',
+          warehouse_id: defaultWh?.id ?? '',
           fifo_cost: opt.harga_modal ?? 0,
         },
       ],
@@ -144,6 +148,29 @@ export default function LockSubmissionModal({
 
   const submit = async () => {
     if (!canSubmit || submitting) return;
+
+    // Guard: validate all components have a warehouse and it's atas/bawah-compatible
+    // (the submit_rakit_lock RPC still reads legacy warehouse text; non-atas/bawah
+    // warehouses are blocked until the rakit RPC is migrated in Phase 3).
+    for (const line of drafts) {
+      if (line.trackingMode !== 'detail') continue;
+      for (const c of line.components) {
+        const wh = warehouses.find(w => w.id === c.warehouse_id);
+        if (!wh) {
+          showToast('Pilih gudang untuk setiap komponen', 'warning');
+          return;
+        }
+        const code = wh.code.toLowerCase();
+        if (code !== 'atas' && code !== 'bawah') {
+          showToast(
+            `Komponen di gudang ${wh.name} belum bisa di-lock — pakai ATAS atau BAWAH dulu (sementara, sampai migrasi Rakit Lock selesai)`,
+            'warning',
+          );
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
     try {
       await requestRakitLock({
@@ -154,13 +181,17 @@ export default function LockSubmissionModal({
           tracking_mode: d.trackingMode,
           labor_cost: d.trackingMode === 'detail' ? d.laborCost : 0,
           lump_sum_hpp: d.trackingMode === 'lumpsum' ? d.lumpSumHpp : 0,
-          components: d.trackingMode === 'detail' ? d.components.map(c => ({
-            sku: c.sku,
-            name: c.name,
-            qty: c.qty,
-            warehouse: c.warehouse,
-            fifo_cost: c.fifo_cost,
-          })) : [],
+          components: d.trackingMode === 'detail' ? d.components.map(c => {
+            const wh = warehouses.find(w => w.id === c.warehouse_id);
+            return {
+              sku: c.sku,
+              name: c.name,
+              qty: c.qty,
+              warehouse: wh?.code.toLowerCase() ?? 'atas',  // legacy text — current RPC reads this
+              warehouse_id: c.warehouse_id,                  // future: when RPC migrates
+              fifo_cost: c.fifo_cost,
+            };
+          }) : [],
         })),
         actor_user_id: currentUser.id,
       });
@@ -262,18 +293,12 @@ export default function LockSubmissionModal({
                         value={c.qty}
                         onChange={e => updateComponent(d.id, c.key, { qty: Number(e.target.value || 1) })}
                       />
-                      <div className="inline-flex rounded bg-white border border-slate-200 p-0.5">
-                        <button
-                          type="button"
-                          onClick={() => updateComponent(d.id, c.key, { warehouse: 'atas' })}
-                          className={`px-2 py-0.5 rounded text-[11px] font-bold ${c.warehouse === 'atas' ? 'bg-blue-500 text-white' : 'text-slate-600'}`}
-                        >Atas</button>
-                        <button
-                          type="button"
-                          onClick={() => updateComponent(d.id, c.key, { warehouse: 'bawah' })}
-                          className={`px-2 py-0.5 rounded text-[11px] font-bold ${c.warehouse === 'bawah' ? 'bg-amber-500 text-white' : 'text-slate-600'}`}
-                        >Bawah</button>
-                      </div>
+                      <WarehousePicker
+                        mode="single"
+                        warehouses={warehouses}
+                        value={c.warehouse_id || null}
+                        onChange={(id) => updateComponent(d.id, c.key, { warehouse_id: id })}
+                      />
                       <div className="font-bold text-amber-700">{formatRp(c.qty * c.fifo_cost)}</div>
                       <button
                         type="button"
