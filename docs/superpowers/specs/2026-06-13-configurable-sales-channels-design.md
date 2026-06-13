@@ -59,6 +59,7 @@ Via brainstorming dialogue:
 | D14 | OrdersColumn / OrderHistory filter pakai **hybrid: 4 group pills + dropdown spesifik** untuk granular filter individual channel. Dropdown spesifik punya `<optgroup>` "Dinonaktifkan (untuk historical)" supaya operator tetap bisa filter historical data dari channel yang sudah di-hide. | Group-only filter kehilangan granular; all-individual filter overwhelming dengan 14 pilihan. Hybrid balance. |
 | D15 | Tidak ada draft persistence migration untuk rename `tokpedOrderNo` → `marketplaceOrderNo` | Verified: PenjualanBaru saat ini tidak pakai localStorage / sessionStorage / draft. Tidak ada state yang perlu di-migrate. |
 | D16 | TS narrower type `OrdersChannel = Extract<SalesChannel, 'whatsapp' \| 'walkin'>` untuk usage di order insert sites | Cheap type safety win. Mencegah "TS terima tapi DB CHECK reject" bug class di future code yang touch orders flow. |
+| D17 | **Brand logo asli** (SVG resmi) untuk 9 channel brand: Tokopedia, Shopee, Lazada, Blibli, Bukalapak, Ralali, Bhinneka, WhatsApp, Instagram. **Lucide-react icon** + brand color untuk 5 channel non-brand: Walk-in (Store), Grosir (Warehouse), Sales Lapangan (Briefcase), Pameran (Tent), Website Sendiri (Globe). | Brand recognition instant, profesional, konsisten antar OS (vs emoji rendering differences). Asset disimpan di `public/icons/channels/*.svg`, fair-use untuk internal ERP tagging. |
 
 ## Channel Canonical List
 
@@ -217,7 +218,9 @@ export type ChannelGroup = 'offline' | 'marketplace' | 'direct';
 export interface ChannelDef {
   code: SalesChannel;
   label: string;
-  emoji: string;
+  // D17: icon type — brand logo SVG OR Lucide-react component
+  iconType: 'svg' | 'lucide';
+  iconAsset: string;        // path `/icons/channels/shopee.svg` ATAU Lucide name 'Store'
   group: ChannelGroup;
   invoicePrefix: string;
   flow: 'kasir' | 'orders';
