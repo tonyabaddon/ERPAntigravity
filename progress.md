@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable sales channels: Phase A.1 ENUM extension (Task 2) — DONE
+
+- **What:** Task 2 of the configurable sales channels plan. Created Phase A migration that extends both `kasir_channel` and `sales_channel` Postgres ENUMs with 10 new canonical values each: `sales`, `expo`, `shopee`, `lazada`, `blibli`, `bukalapak`, `ralali`, `bhinneka`, `instagram`, `website`. Uses `ADD VALUE IF NOT EXISTS` so the migration is idempotent regardless of whether `whatsapp` was added in a prior migration. Trailing `COMMIT;` ensures new ENUM labels are durable before any subsequent statement could reference them (Postgres requires ADD VALUE to be committed before the new value can be used).
+- **Migration**: `supabase/migrations/20260613000010_sales_channels_phase_a_schema.sql` — file-only (controller override: no `supabase db push`; user applies manually after review). 6-digit suffix `000010` chosen — no collision with the warehouse migrations `000001`–`000005` on the same date.
+- **Branch:** `feat/configurable-sales-channels`.
+- **Next:** Task 3 (config table / lookup seed) per the plan.
+
 ## 2026-06-13 — Pembelian page: PO detail in new tab + KPI redesign + date filter (spec) — DONE
 
 - **What:** Brainstormed design for three concurrent changes to `PembelianScreen`: (1) PO Detail button opens a standalone full-page view in a new browser tab (replaces the cramped `PoDetailView` modal) via query-string routing (`?screen=pembelian&po=PO-XYZ`); (2) the four KPI summary cards (Total PO / Jatuh Tempo / Terlambat Bayar / Jumlah PO) adopt the canonical `KpiCard` pattern used by `DashboardScreen` and `LaporanScreen` (rounded-3xl, icon chip, badge, `#012749` extrabold, alarming rose-tint for overdue > 0); (3) new date-filter bar between page header and KPI cards with presets `Bulan Ini` (default) / `30 Hari` / `90 Hari` / `Custom` (range popover). Filter drives cards 1/2/4 + the list; "Terlambat Bayar" stays "saat ini" by design (overdue is a now-state, hiding it under arbitrary date ranges would be unsafe).
