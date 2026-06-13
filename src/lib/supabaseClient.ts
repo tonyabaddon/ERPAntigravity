@@ -1692,19 +1692,22 @@ export async function seedStockRow(args: {
   category: string;
   price: number;
   harga_modal: number;
-  stock_atas?: number;
-  stock_bawah?: number;
+  initial_levels?: Record<string, number>;  // warehouse_id → starting qty
   actor_user_id: string;
 }): Promise<void> {
   if (!supabase) throw new Error('Supabase not configured');
+  // Phase 2a (2026-06-13 spec) replaced the legacy 8-arg seed_stock_row
+  // (text, text, text, numeric, numeric, int, int, uuid) — which Migration
+  // 3 cutover drops — with the new jsonb form taking p_initial_levels.
+  // Callers without a specific per-warehouse starting qty pass {} and the
+  // SKU starts with 0 in every active warehouse.
   const { error } = await supabase.rpc('seed_stock_row', {
     p_sku: args.sku,
     p_name: args.name,
     p_category: args.category,
     p_price: args.price,
     p_harga_modal: args.harga_modal,
-    p_stock_atas: args.stock_atas ?? 0,
-    p_stock_bawah: args.stock_bawah ?? 0,
+    p_initial_levels: args.initial_levels ?? {},
     p_actor_user_id: args.actor_user_id,
   });
   if (error) throw error;
