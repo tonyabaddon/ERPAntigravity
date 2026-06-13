@@ -18,6 +18,7 @@
 | Subscription | `subscription_expires_at` + 7-day grace + auto read-only mode + manual suspend |
 | Retention | 7-day grace → read-only mode → 10-year hard delete (UU KUP-compliant). Vosi keeps tenant business records in-DB for 10 years from row creation; annual cron deletes records past 10 years. PII deletion via tenant's existing customer-edit UI (their controllership). No dedicated anonymization tooling Phase 1 or Phase 2. Vosi's own audit/billing records also retained 10 years. No cold storage Phase 1 (in-DB only). |
 | Pricing & business policy | Separated to `docs/business/pricing.md` and `docs/business/compliance-indonesia.md` — different change cadence than tech architecture. This spec references `packages.id` and policy decisions only, no concrete prices. |
+| Cost upgrade approval | **Every paid-tier upgrade requires explicit founder approval.** No system, cron, or AI agent auto-flips a billing switch. Alerts from §9.5 trigger notifications to founder email; founder decides and manually clicks the upgrade button per service. See §8.5 "Approval rule". |
 | WhatsApp | Garindo keeps whatsmeow (legacy). Paying tenants use Meta Cloud API. Calista + Sales Inbox + Pipeline + Notifications + Followup gated on `wa_backend` capability |
 | Operator console | **Separate frontend app**, shared DB. Super-admin defined in separate `super_admin_users` table (not a boolean on `admin_users`) |
 | Owner invitation | Magic link via Resend |
@@ -495,6 +496,8 @@ Infrastructure stays on **free tiers until usage triggers an upgrade**. Free-tie
 4. **Approaching 1M PostHog events/mo (~20 tenants)** → self-host PostHog on $10 VPS BEFORE cloud tier kicks in (paid PostHog is prohibitively expensive at 50-tenant volume).
 5. **Tenant 25+** → Supabase Team tier $599/mo.
 
+> 🔴 **Approval rule — non-negotiable.** Every paid-tier upgrade requires explicit founder approval before card is charged. No automation, no cron job, no AI agent ever flips a billing switch. Alerts from §9.5 trigger *notifications to founder email*; founder reviews, decides, and **manually clicks the upgrade button on the respective service dashboard.** This rule applies to every line in the table above, every per-service tier upgrade, every storage/compute add-on, and any new paid service introduced later.
+
 **Honest note on PostHog**: at 50 tenant × ~5 users × ~20 sessions/day × ~100 events = ~15M events/mo. PostHog cloud cost would be ~$3,700/mo (margin-killing). Self-hosting on a $10/mo VPS is mandatory at scale. Migration from cloud to self-host should happen at ~tenant 15-20 before cloud bills accumulate.
 
 **Founder time and support hire are not on this table** — they're the dominant non-infra cost from tenant 25+. Plan to either hire 1 part-time support engineer or move to self-serve onboarding around then.
@@ -568,6 +571,8 @@ One Resend integration serves: owner invitation, subscription notifications, ale
 ### 9.5 Free tier usage monitor
 
 Phase 1 mandatory. Strategy: stay on every service's free tier as long as possible, get alerted at 70% and 90% of every limit so upgrades are anticipated.
+
+**Alerts are NOTIFICATIONS, not actions.** No part of this monitor (or any system) auto-upgrades a paid tier. Every upgrade requires founder review + manual click on the respective service dashboard. See §8.5 "Approval rule" — this rule binds the monitor's behavior.
 
 **Two layers:**
 
