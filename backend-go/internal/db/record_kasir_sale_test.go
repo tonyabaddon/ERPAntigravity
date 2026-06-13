@@ -205,6 +205,69 @@ func TestRecordKasirSale_RollsBackOnInvalidPayment(t *testing.T) {
 	}
 }
 
+// TestRecordKasirSale_ShopeeChannel_IssuesSHPInvoice verifies that the
+// expanded sales_channel ENUM (Phase A migration of the configurable-sales-
+// channels work) accepts the new `shopee` channel value AND that the invoice
+// number CASE in record_kasir_sale resolves to the `SHP-` prefix per the
+// Phase B.2 RPC refactor.
+//
+// Regression guard: if validate_sales_channel() helper or the invoice prefix
+// CASE in record_kasir_sale breaks (e.g. an ENUM rename, a missing seed row
+// in sales_channel_settings, or a typo in the prefix CASE), this test will
+// fail at the .Scan or the strings.HasPrefix check.
+//
+// Test calls the SQL RPC directly (matching the pattern used by the other
+// tests in this file — there is no `RecordKasirSaleInput` Go struct in this
+// package; the RPC is a stable SQL contract).
+func TestRecordKasirSale_ShopeeChannel_IssuesSHPInvoice(t *testing.T) {
+	client := db.NewTestClient(t)
+	defer client.Close()
+
+	sku := fmt.Sprintf("RKS-SHP-%d", time.Now().UnixNano())
+	db.EnsureSKUStock(t, client, sku, "atas", 5)
+	today := time.Now().Format("2006-01-02")
+
+	items := fmt.Sprintf(`[
+		{"sku":"%s","name":"Test Shopee","qty":1,"unit_price":1000,"subtotal":1000,"warehouse":"atas"}
+	]`, sku)
+
+	marketplaceOrderNo := fmt.Sprintf("SHP-TEST-%d", time.Now().UnixNano())
+	customerName := fmt.Sprintf("QA-SHP-%d", time.Now().Unix())
+
+	// Call signature matches the 20-arg record_kasir_sale: p_date, p_channel,
+	// p_items, p_subtotal, p_payment_method, p_payment_subtype, p_payment_type,
+	// p_dp_amount, p_dp_input_type, p_ongkir_amount, p_notes, p_total_amount,
+	// p_customer_name, p_customer_phone, p_customer_company, p_delivery_address,
+	// p_marketplace_order_no, p_wa_phone, p_wa_chat_url, p_customer_id.
+	// (Matches the pattern in TestRecordKasirSale_HappyPath above; ordinals
+	// confirmed against supabase/migrations/20260613000021_sales_channels_phase_b_rpcs.sql)
+	var invoice string
+	err := client.DB.QueryRow(
+		`SELECT (public.record_kasir_sale(
+		   $1::date, 'shopee', $2::jsonb, 1000,
+		   'transfer', NULL, 'FULL', 0, NULL, 0, NULL, 1000,
+		   $3, '081234567890', NULL, NULL, $4, NULL, NULL, NULL
+		 )).invoice_number`,
+		today, items, customerName, marketplaceOrderNo,
+	).Scan(&invoice)
+	if err != nil {
+		t.Fatalf("record_kasir_sale for shopee channel: %v (this likely means the ENUM does not include 'shopee', "+
+			"or validate_sales_channel rejects it, or the invoice CASE is missing the SHP- branch)", err)
+	}
+
+	if !strings.HasPrefix(invoice, "SHP-") {
+		t.Fatalf("invoice_number = %q, want SHP- prefix (Phase B.2 invoice CASE regression)", invoice)
+	}
+
+	// Cleanup: drop the test transaction so the test is idempotent across runs
+	// on the shared Supabase test DB.
+	if _, err := client.DB.Exec(
+		`DELETE FROM public.kasir_transactions WHERE invoice_number=$1`, invoice,
+	); err != nil {
+		t.Logf("cleanup of kasir_transactions %s failed (non-fatal): %v", invoice, err)
+	}
+}
+
 // TestRecordKasirSale_AggregatesSameSKU verifies the SKU aggregation fix the
 // reviewer flagged as Critical #2: the Promise.all-over-deductFifo race when
 // the same SKU appears as two separate cart lines.
