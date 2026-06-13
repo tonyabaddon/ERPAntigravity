@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Task 2: shared KpiCard extracted — DONE
+
+- **What:** Lifted the file-local `KpiCard` helper out of `LaporanScreen.tsx` into a new shared `src/components/ui/KpiCard.tsx`. Same body (rounded-3xl, icon chip, badge, `#012749` extrabold, hover-lift). LaporanScreen now imports the shared component; visual unchanged. Sets up the upcoming Pembelian KPI redesign (Task 5) to reuse the same canonical card.
+- **Prop split:** Call sites in LaporanScreen previously combined icon background + color into a single `iconBg` string (e.g., `"bg-blue-50 text-[#1e3d60]"`). Shared component splits these into `iconBg` and `iconColor` separately — call sites updated accordingly. New `alarming` prop added for rose-tinted overdue card (Task 5 will use it).
+- **Lint:** `npm run lint` → 0 errors.
+- **Commit:** `191b710` on `feat/pembelian-detail-tab-and-filter`.
+- **Next:** Tasks 3-8 implement Pembelian filter bar, fetchByNumber, App.tsx routing, KpiCard adoption, PembelianDetailPage; commit together at end of Task 8.
+
 ## 2026-06-13 — Task 1 code-review fixes: dateRange.ts + test casts — DONE
 
 - **Fix 1:** Removed misleading `as unknown as string` casts in `inRange` test — signature already accepts `string | null | undefined`.
