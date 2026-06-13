@@ -924,6 +924,8 @@ export const warehousesService = {
     const { data, error } = await supabase
       .from('warehouses')
       .select('*')
+      // Default warehouse always first; sort_order is the tiebreaker for the rest.
+      .order('is_default', { ascending: false })
       .order('sort_order', { ascending: true });
     if (error) throw error;
     return (data ?? []) as Warehouse[];
@@ -935,6 +937,7 @@ export const warehousesService = {
       .from('warehouses')
       .select('*')
       .eq('is_active', true)
+      .order('is_default', { ascending: false })
       .order('sort_order', { ascending: true });
     if (error) throw error;
     return (data ?? []) as Warehouse[];

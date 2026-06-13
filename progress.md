@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Warehouse list: default always on top — DONE
+
+- **What:** User asked for the default warehouse to always appear first in the list without having to manage sort_order manually.
+- **Change:** `warehousesService.fetchAll()` + `fetchActive()` in `src/lib/supabaseClient.ts` now order by `is_default DESC, sort_order ASC`. sort_order retained as the tiebreaker for non-default rows (useful when N > 3 and operators want a specific order for non-default cabang).
+- **Scope check:** verified no client-side resort — `useWarehouses` hook just renders the fetched array verbatim; realtime subscription re-fetches via the same service, so the new ordering applies after every change.
+- **No UI/schema changes** — sort_order field stays in the Edit modal for power users.
+
 ## 2026-06-13 — Multi-Tenant Prerequisites: fourth-pass onboarding gap fill + playbook — DONE
 
 - **What:** Gap audit specifically for "what's needed to onboard tenant #2" surfaced non-tech items missing from existing spec/docs. Added 4 features to Layer C-min spec + created comprehensive operational onboarding playbook.
