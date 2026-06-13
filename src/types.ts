@@ -47,6 +47,8 @@ export interface PermissionSet {
   can_manage_warehouses?: boolean;
   // Phase 4 — Pengawasan (immutable ledger reader)
   can_view_pengawasan?: boolean;
+  // Sales channel admin (2026-06-13 spec)
+  canConfigureSalesChannels?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -86,6 +88,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   can_receive_transfer: true,
   can_manage_warehouses: true,
   can_view_pengawasan: true,
+  canConfigureSalesChannels: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -213,7 +216,7 @@ export interface DbOrder {
   id: string;
   conversation_id: string;
   customer_id?: string;
-  sales_channel: 'whatsapp' | 'walkin';
+  sales_channel: OrdersChannel;  // CHECK constraint restricts to whatsapp/walkin
   warehouse?: 'atas' | 'bawah' | null;
   customer_name: string;
   customer_company: string;
@@ -394,8 +397,15 @@ export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-g
 
 // ─── Kasir types ────────────────────────────────────────────
 
-export type KasirChannel = 'walkin' | 'tokopedia' | 'grosir' | 'whatsapp';
-export type SalesChannel = 'whatsapp' | 'walkin' | 'tokopedia' | 'grosir';
+export type SalesChannel =
+  | 'walkin' | 'grosir' | 'sales' | 'expo'
+  | 'tokopedia' | 'shopee' | 'lazada' | 'blibli' | 'bukalapak' | 'ralali' | 'bhinneka'
+  | 'whatsapp' | 'instagram' | 'website';
+
+export type KasirChannel = SalesChannel;
+
+// D16: narrower type for orders-flow only (matches CHECK constraint on orders.sales_channel)
+export type OrdersChannel = Extract<SalesChannel, 'whatsapp' | 'walkin'>;
 export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris' | 'edc';
 export type KasirPaymentSubtype = 'debit' | 'qris' | null;
 export type KasirPaymentType = 'FULL' | 'DP';
