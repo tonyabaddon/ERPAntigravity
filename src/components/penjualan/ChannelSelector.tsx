@@ -52,7 +52,7 @@ export default function ChannelSelector({ value, onChange }: ChannelSelectorProp
                       className="w-5 h-5 rounded flex items-center justify-center"
                       style={{ background: isActive ? def.brandColor : 'transparent' }}
                     >
-                      <ChannelIcon code={code} size={14} className={isActive ? '' : 'text-slate-400'} />
+                      <ChannelIcon code={code} size={14} tint={isActive ? 'white' : 'none'} className={isActive ? '' : 'text-slate-400'} />
                     </span>
                     <span>{def.label}</span>
                     {code === 'whatsapp' && isActive && (

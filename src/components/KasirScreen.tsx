@@ -173,7 +173,10 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
     if (filter === 'wa') return e._src === 'wa';
     if (filter === 'expense') return e._src === 'kasir' && e.tx!.type === 'expense';
     if (filter === 'walkin') return e._src === 'kasir' && e.tx!.channel === 'walkin';
-    if (filter === 'online') return e._src === 'kasir' && CHANNEL_GROUPS.marketplace.includes(e.tx!.channel as SalesChannel);
+    if (filter === 'online') return e._src === 'kasir' && (
+      CHANNEL_GROUPS.marketplace.includes(e.tx!.channel as SalesChannel) ||
+      CHANNEL_GROUPS.direct.includes(e.tx!.channel as SalesChannel)
+    );
     return true;
   });
 

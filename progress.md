@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable sales channels: Final review fixes (C1 + I2 + I3) — DONE
+
+- **What (C1):** `src/components/icons/ChannelIcon.tsx` — added `tint?: 'white' | 'none'` prop (default `'white'` preserves prior behavior on colored backgrounds). The `filter: 'brightness(0) invert(1)'` is now applied conditionally via spread (`...(tint === 'white' && { filter: ... })`). `src/components/penjualan/ChannelSelector.tsx` — inactive pills now pass `tint='none'` so the SVG renders in its native color over the white card background instead of pure-white-on-white (which made 9 channel icons — 7 marketplace + WhatsApp + Instagram — invisible in the inactive state). Active pills still get `tint='white'` to read against the brand-colored square.
+- **What (I2):** `src/components/KasirScreen.tsx` — extended the `'online'` filter predicate to include `CHANNEL_GROUPS.direct` in addition to `CHANNEL_GROUPS.marketplace`. Previously the "Online" tab excluded WhatsApp/Instagram/Website (direct online channels), which contradicted the inclusive label. Now any non-walkin digital channel matches.
+- **What (I3):** `package.json` — added `"test": "vitest run src"` script before `"test:integration"`. The 6 `salesChannels.test.ts` unit tests previously had no npm wrapper; `npm test` was a no-op default. Verified `npm test` runs the suite (6 passed, 88ms).
+- **Why one commit for all three:** all three were flagged by the same final review pass and are independently small/targeted; bundling avoids commit churn while keeping the diff small enough to read in one shot. None of them is a logic-flow change inside hot paths — C1 is a JSX prop addition, I2 is one extra OR clause, I3 is a single line in scripts.
+- **Build verification:** `npm run build` after C1 → clean (`built in 2.50s`, bundle `index-Bmw9T69W.js = 1,775.83 kB`). After I2 → clean (`built in 2.37s`, bundle `index-D9frV1YX.js = 1,775.86 kB`, +3B for the extra OR clause). Unit tests: `npm test` → 6/6 passed.
+- **Files:** `src/components/icons/ChannelIcon.tsx`, `src/components/penjualan/ChannelSelector.tsx`, `src/components/KasirScreen.tsx`, `package.json`, `progress.md`.
+- **Commits:** to be added below after `git commit`.
+- **Branch:** `feat/configurable-sales-channels`.
+- **Out of scope (deferred to validation checklist):** I1 (Laporan capped at 4 channels), M1–M4 — see `docs/superpowers/plans/2026-06-13-sales-channels-validation-checklist.md` for follow-up.
+
 ## 2026-06-13 — Configurable Sales Channels (Phases A–G) — Implementation Complete
 
 **Goal**: Extend the sales channel taxonomy from 4 hardcoded values to 14 canonical channels (4 offline + 7 marketplace + 3 direct online), add admin visibility toggle in PengaturanScreen, consolidate 5 scattered hardcoded label maps into single `salesChannels.ts` source of truth, and refactor 5 surfaces (PenjualanBaru, KasirScreen, OrderHistory, Recon, Dashboard) for dynamic channel handling.

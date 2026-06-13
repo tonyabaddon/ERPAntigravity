@@ -23,22 +23,32 @@ interface ChannelIconProps {
   code: SalesChannel;
   size?: number;        // pixel size, default 20
   className?: string;   // extra Tailwind classes (e.g. for tint via currentColor)
+  /**
+   * When 'white' (default), tint SVG icons to white via filter (assumes icon container
+   * has a colored background). When 'none', render SVG as-is (assumes icon container
+   * is transparent or default).
+   */
+  tint?: 'white' | 'none';
 }
 
-export default function ChannelIcon({ code, size = 20, className = '' }: ChannelIconProps) {
+export default function ChannelIcon({ code, size = 20, className = '', tint = 'white' }: ChannelIconProps) {
   const def = getChannelDef(code);
   if (def.iconType === 'lucide') {
     const Icon = LUCIDE_REGISTRY[def.iconAsset];
     if (!Icon) return null;
     return <Icon size={size} className={className} />;
   }
-  // SVG asset — render <img> with white tint via filter
-  // (Background brand color is set by parent container.)
+  // SVG asset — render <img>. Optionally tint to white via filter when sitting on
+  // a colored background (caller signals via tint='white').
   return (
     <img
       src={def.iconAsset}
       alt={def.label}
-      style={{ width: size, height: size, filter: 'brightness(0) invert(1)' }}
+      style={{
+        width: size,
+        height: size,
+        ...(tint === 'white' && { filter: 'brightness(0) invert(1)' }),
+      }}
       className={className}
     />
   );
