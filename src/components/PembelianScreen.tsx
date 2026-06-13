@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, Calendar, AlertTriangle, FileText, CalendarRange, ChevronDown, SearchX, Plus } from 'lucide-react';
 import { StockItem, PermissionSet } from '../types';
 import { purchaseOrderService, supplierService } from '../lib/pembelianService';
-import type { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../types';
+import type { DbPurchaseOrder, DbSupplier } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
+import { type FilterState, resolveRange, periodLabel, resolvedRangeShort, inRange } from '../lib/dateRange';
+import KpiCard from './ui/KpiCard';
 import SupplierModal from './pembelian/SupplierModal';
 import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
-import PoDetailView from './pembelian/PoDetailView';
 import MarkAsPaidModal from './pembelian/MarkAsPaidModal';
-import ReceiveReplacementModal from './pembelian/ReceiveReplacementModal';
 import PurchaseOrderFormPage from './pembelian/PurchaseOrderFormPage';
+import PembelianDetailPage from './pembelian/PembelianDetailPage';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -18,10 +19,16 @@ interface PembelianScreenProps {
   onStockRefresh: () => void;
   currentUserId?: string;
   currentUserPermissions?: PermissionSet;
+  initialDetailPoNumber?: string | null;
+  onDetailConsumed?: () => void;
 }
 
 type Tab = 'orders' | 'suppliers';
-type ViewMode = { kind: 'list' } | { kind: 'create' } | { kind: 'edit'; po: DbPurchaseOrder };
+type ViewMode =
+  | { kind: 'list' }
+  | { kind: 'create' }
+  | { kind: 'edit'; po: DbPurchaseOrder }
+  | { kind: 'detail'; poNumber: string };
 
 function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -42,25 +49,26 @@ const LEFT_BORDER: Record<string, string> = {
 
 export default function PembelianScreen({
   stockList, showToast, onStockRefresh, currentUserId, currentUserPermissions,
+  initialDetailPoNumber, onDetailConsumed,
 }: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('orders');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
-  const [summary, setSummary] = useState({ totalMtd: 0, dueMtd: 0, overdueAmount: 0, countMtd: 0 });
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>({ kind: 'list' });
+  const [filter, setFilter] = useState<FilterState>({ preset: 'bulan_ini' });
+  const [customPopoverOpen, setCustomPopoverOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   async function reload() {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     try {
-      const [ords, sups, sum] = await Promise.all([
+      const [ords, sups] = await Promise.all([
         purchaseOrderService.fetchAll(),
         supplierService.fetchAll(),
-        purchaseOrderService.fetchSummary(),
       ]);
       setOrders(ords);
       setSuppliers(sups);
-      setSummary(sum);
     } catch (e: any) {
       console.error('Load pembelian error:', e);
       showToast(e?.message ?? 'Gagal memuat data pembelian.', 'warning');
@@ -71,21 +79,137 @@ export default function PembelianScreen({
 
   useEffect(() => { reload(); }, []);
 
+  // Open detail directly if invoked via deep-link (?po=...)
+  useEffect(() => {
+    if (initialDetailPoNumber) {
+      setViewMode({ kind: 'detail', poNumber: initialDetailPoNumber });
+      onDetailConsumed?.();
+    }
+  }, [initialDetailPoNumber, onDetailConsumed]);
+
+  // Tab-sync: when the list tab regains focus (e.g., after the user took an action
+  // in a detail tab), re-fetch so the list reflects the latest state.
+  useEffect(() => {
+    if (viewMode.kind !== 'list') return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reload();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [viewMode.kind]);
+
+  // Click-outside closes the Custom popover.
+  useEffect(() => {
+    if (!customPopoverOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setCustomPopoverOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [customPopoverOpen]);
+
+  const range = resolveRange(filter);
+  const pLabel = periodLabel(filter);
+  const rangeLabel = resolvedRangeShort(filter);
+
+  function poDateAnchor(po: DbPurchaseOrder): string | null {
+    return po.ordered_at ?? po.created_at ?? null;
+  }
+  function inListPeriod(po: DbPurchaseOrder): boolean {
+    return inRange(poDateAnchor(po) ?? undefined, range);
+  }
+
+  // Cards 1 + 4: filtered by coalesce(ordered_at, created_at) — "what did I buy?"
+  const inWindow = orders.filter(inListPeriod);
+  const total = inWindow.reduce((s, p) => s + Number(p.total), 0);
+  const count = inWindow.length;
+
+  // Card 2: filtered by payment_due_at AND status === 'RECEIVED' — "what do I owe in this window?"
+  const dueInWindow = orders.filter(p =>
+    p.status === 'RECEIVED' && p.payment_due_at && inRange(p.payment_due_at, range)
+  );
+  const dueAmount = dueInWindow.reduce((s, p) => s + Number(p.total), 0);
+  const dueCount = dueInWindow.length;
+
+  // Card 3: ALWAYS "right now" — ignores filter (see spec §5.2 Card 3 row).
+  const todayWib = wibDateString();
+  const overdueNow = orders.filter(p =>
+    p.status === 'RECEIVED' && p.payment_due_at && p.payment_due_at < todayWib
+  );
+  const overdueAmount = overdueNow.reduce((s, p) => s + Number(p.total), 0);
+  const overdueCount = overdueNow.length;
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Page header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 flex-shrink-0">
         <div className="bg-indigo-100 p-2 rounded-lg">
           <ShoppingCart className="w-5 h-5 text-indigo-600" />
         </div>
         <div>
           <h1 className="text-base font-bold text-gray-900">Pembelian</h1>
-          <p className="text-xs text-gray-500">Manajemen Supplier & Purchase Order</p>
+          <p className="text-xs text-gray-500">Manajemen Supplier &amp; Purchase Order</p>
         </div>
       </div>
 
+      {/* Filter bar — only visible in list view-mode */}
+      {viewMode.kind === 'list' && (
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between gap-4 flex-wrap flex-shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mr-1">Periode</span>
+            {(['bulan_ini', '30_hari', '90_hari'] as const).map(key => {
+              const active = filter.preset === key;
+              const text = key === 'bulan_ini' ? 'Bulan Ini' : key === '30_hari' ? '30 Hari' : '90 Hari';
+              return (
+                <button
+                  key={key}
+                  onClick={() => { setFilter({ preset: key }); setCustomPopoverOpen(false); }}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                    active
+                      ? 'bg-[#012749] text-white shadow'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749] hover:text-[#012749]'
+                  }`}
+                >
+                  {text}
+                </button>
+              );
+            })}
+            <div className="relative" ref={popoverRef}>
+              <button
+                onClick={() => setCustomPopoverOpen(v => !v)}
+                aria-label="Pilih rentang tanggal custom"
+                className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-1.5 transition ${
+                  filter.preset === 'custom'
+                    ? 'bg-[#012749] text-white shadow'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749] hover:text-[#012749]'
+                }`}
+              >
+                <Calendar className="w-4 h-4" /> Custom <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              {customPopoverOpen && (
+                <CustomPopover
+                  initial={filter.preset === 'custom' ? { from: filter.customFrom, to: filter.customTo } : {}}
+                  onCancel={() => setCustomPopoverOpen(false)}
+                  onApply={(from, to) => {
+                    setFilter({ preset: 'custom', customFrom: from, customTo: to });
+                    setCustomPopoverOpen(false);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <CalendarRange className="w-4 h-4" />
+            <span className="font-semibold text-gray-700">{pLabel}</span>
+            <span className="text-gray-400">·</span>
+            <span>{rangeLabel}</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-        {viewMode.kind !== 'list' ? (
+        {viewMode.kind === 'create' || viewMode.kind === 'edit' ? (
           <PurchaseOrderFormPage
             po={viewMode.kind === 'edit' ? viewMode.po : undefined}
             suppliers={suppliers}
@@ -96,39 +220,63 @@ export default function PembelianScreen({
             onBack={() => setViewMode({ kind: 'list' })}
             onSaved={(status) => {
               reload();
-              // Draft: stay on page (allow continued editing). Ordered: back to list.
               if (status === 'ORDERED') setViewMode({ kind: 'list' });
             }}
             onSupplierAdded={reload}
             showToast={showToast}
           />
+        ) : viewMode.kind === 'detail' ? (
+          <PembelianDetailPage
+            poNumber={viewMode.poNumber}
+            stockList={stockList}
+            suppliers={suppliers}
+            orders={orders}
+            currentUserId={currentUserId}
+            currentUserPermissions={currentUserPermissions}
+            showToast={showToast}
+            onStockRefresh={onStockRefresh}
+            onBackToList={() => setViewMode({ kind: 'list' })}
+          />
         ) : (
           <>
-            {/* Summary cards */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total PO Bulan Ini</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{formatRupiah(summary.totalMtd)}</p>
-                <p className="text-xs text-gray-400 mt-1">{summary.countMtd} purchase order</p>
-              </div>
-              <div className="bg-white rounded-xl border border-amber-200 p-4">
-                <p className="text-xs text-amber-600 font-medium uppercase tracking-wide">Jatuh Tempo Bulan Ini</p>
-                <p className="text-2xl font-bold text-amber-700 mt-1">{formatRupiah(summary.dueMtd)}</p>
-                <p className="text-xs text-amber-400 mt-1">belum dibayar, jatuh tempo bulan ini</p>
-              </div>
-              <div className="bg-white rounded-xl border border-rose-200 p-4">
-                <p className="text-xs text-rose-600 font-medium uppercase tracking-wide">Terlambat Bayar</p>
-                <p className="text-2xl font-bold text-rose-700 mt-1">{formatRupiah(summary.overdueAmount)}</p>
-                <p className="text-xs text-rose-400 mt-1">melewati jatuh tempo, belum lunas</p>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Jumlah PO Bulan Ini</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{summary.countMtd}</p>
-                <p className="text-xs text-gray-400 mt-1">purchase order dibuat</p>
-              </div>
+            {/* KPI cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <KpiCard
+                icon={<ShoppingCart className="w-6 h-6" />}
+                iconBg="bg-blue-50" iconColor="text-[#1e3d60]"
+                badge={pLabel} badgeClass="bg-blue-50 text-[#1e3d60]"
+                label="Total PO" value={formatRupiah(total)}
+                sub={count > 0 ? `${count} purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
+              />
+              <KpiCard
+                icon={<Calendar className="w-6 h-6" />}
+                iconBg="bg-amber-50" iconColor="text-amber-600"
+                badge={`${dueCount} PO`} badgeClass="bg-amber-50 text-amber-700"
+                label="Jatuh Tempo" value={formatRupiah(dueAmount)}
+                sub={dueCount > 0 ? `Belum dibayar, jatuh tempo di ${pLabel.toLowerCase()}` : 'Tidak ada PO jatuh tempo di periode ini'}
+              />
+              <KpiCard
+                icon={<AlertTriangle className="w-6 h-6" />}
+                iconBg={overdueAmount > 0 ? 'bg-rose-100' : 'bg-gray-50'}
+                iconColor={overdueAmount > 0 ? 'text-rose-700' : 'text-gray-400'}
+                badge={overdueAmount > 0 ? 'Tindakan!' : 'Aman'}
+                badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-[#2d8a4e]'}
+                label="Terlambat Bayar" value={formatRupiah(overdueAmount)}
+                sub={overdueAmount > 0
+                  ? `${overdueCount} PO melewati jatuh tempo — selalu hari ini, tidak ikut filter`
+                  : 'Semua PO dilunasi tepat waktu'}
+                alarming={overdueAmount > 0}
+              />
+              <KpiCard
+                icon={<FileText className="w-6 h-6" />}
+                iconBg="bg-emerald-50" iconColor="text-[#2d8a4e]"
+                badge={pLabel} badgeClass="bg-emerald-50 text-[#2d8a4e]"
+                label="Jumlah PO" value={`${count}`}
+                sub={count > 0 ? `Purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
+              />
             </div>
 
-            {/* Tabs */}
+            {/* Tabs (unchanged structure) */}
             <div className="flex gap-1 border-b border-gray-200">
               <button
                 onClick={() => setTab('orders')}
@@ -156,6 +304,9 @@ export default function PembelianScreen({
                 onStockRefresh={onStockRefresh}
                 onCreate={() => setViewMode({ kind: 'create' })}
                 onEdit={(po) => setViewMode({ kind: 'edit', po })}
+                inListPeriod={inListPeriod}
+                periodLabel={pLabel}
+                buildDetailUrl={(poNumber) => `${window.location.origin}/?screen=pembelian&po=${encodeURIComponent(poNumber)}`}
               />
             ) : (
               <SuppliersTab
@@ -171,7 +322,6 @@ export default function PembelianScreen({
   );
 }
 
-// Placeholder sub-components — implemented in Tasks 6 and 7
 interface OrdersTabProps {
   orders: DbPurchaseOrder[];
   suppliers: DbSupplier[];
@@ -181,15 +331,19 @@ interface OrdersTabProps {
   onStockRefresh: () => void;
   onCreate: () => void;
   onEdit: (po: DbPurchaseOrder) => void;
+  inListPeriod: (po: DbPurchaseOrder) => boolean;
+  periodLabel: string;
+  buildDetailUrl: (poNumber: string) => string;
 }
 
-function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStockRefresh, onCreate, onEdit }: OrdersTabProps) {
+function OrdersTab({
+  orders, suppliers, stockList, showToast, onRefresh, onStockRefresh, onCreate, onEdit,
+  inListPeriod, periodLabel, buildDetailUrl,
+}: OrdersTabProps) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [receivePo, setReceivePo] = useState<DbPurchaseOrder | null>(null);
   const [payPo, setPayPo] = useState<DbPurchaseOrder | null>(null);
-  const [detailPo, setDetailPo] = useState<DbPurchaseOrder | null>(null);
-  const [replaceItem, setReplaceItem] = useState<DbPurchaseOrderItem | null>(null);
 
   const today = wibDateString();
 
@@ -209,6 +363,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
   }
 
   const filtered = orders
+    .filter(inListPeriod)
     .filter(o => {
       const matchSearch = o.po_number.toLowerCase().includes(search.toLowerCase()) ||
         (o.supplier?.name ?? '').toLowerCase().includes(search.toLowerCase());
@@ -282,7 +437,7 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
             onClick={onCreate}
             className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
           >
-            Buat PO Baru
+            <Plus className="w-4 h-4" /> Buat PO Baru
           </button>
         </div>
 
@@ -299,7 +454,15 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
           </div>
 
           {filtered.length === 0 ? (
-            <div className="py-12 text-center text-sm text-gray-400">Belum ada purchase order.</div>
+            <div className="py-16 text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-3">
+                <SearchX className="w-6 h-6" />
+              </div>
+              <p className="text-sm text-gray-500">
+                Tidak ada purchase order di periode <span className="font-semibold">{periodLabel}</span>.
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Coba periode lain, atau buat PO baru.</p>
+            </div>
           ) : (
             filtered.map(po => (
               <div key={po.id} className={`grid grid-cols-8 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50 ${
@@ -346,7 +509,18 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
                   </span>
                 </div>
                 <div className="col-span-1 flex justify-center gap-1">
-                  <button onClick={() => setDetailPo(po)} className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Detail</button>
+                  <button
+                    onClick={() => {
+                      const url = buildDetailUrl(po.po_number);
+                      const win = window.open(url, '_blank');
+                      if (!win) {
+                        showToast('Aktifkan popup untuk membuka PO di tab baru.', 'warning');
+                      }
+                    }}
+                    className="text-xs text-gray-500 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                  >
+                    Detail
+                  </button>
                   {po.status === 'DRAFT' && (
                     <>
                       <button onClick={() => onEdit(po)} className="text-xs text-gray-600 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50">Edit</button>
@@ -367,7 +541,6 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
         </div>
       </div>
 
-      {/* Modals — wired in Tasks 8-11 */}
       {receivePo && (
         <ReceiveGoodsModal
           po={receivePo}
@@ -376,29 +549,11 @@ function OrdersTab({ orders, suppliers, stockList, showToast, onRefresh, onStock
           showToast={showToast}
         />
       )}
-      {detailPo && (
-        <PoDetailView
-          po={detailPo}
-          stockList={stockList}
-          onClose={() => setDetailPo(null)}
-          onRefresh={() => { onRefresh(); setDetailPo(null); }}
-          showToast={showToast}
-          onReceiveReplacement={item => setReplaceItem(item)}
-        />
-      )}
       {payPo && (
         <MarkAsPaidModal
           po={payPo}
           onClose={() => setPayPo(null)}
           onPaid={onRefresh}
-          showToast={showToast}
-        />
-      )}
-      {replaceItem && (
-        <ReceiveReplacementModal
-          item={replaceItem}
-          onClose={() => setReplaceItem(null)}
-          onReplaced={() => { setReplaceItem(null); setDetailPo(null); onRefresh(); }}
           showToast={showToast}
         />
       )}
@@ -494,5 +649,51 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
         />
       )}
     </>
+  );
+}
+
+interface CustomPopoverProps {
+  initial: { from?: string; to?: string };
+  onCancel: () => void;
+  onApply: (from: string, to: string) => void;
+}
+function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
+  const [from, setFrom] = useState(initial.from ?? '');
+  const [to, setTo] = useState(initial.to ?? '');
+  const invalid = !!from && !!to && from > to;
+  const canApply = !!from && !!to && !invalid;
+  return (
+    <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-2xl p-5 w-[360px]">
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Rentang Tanggal Custom</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-semibold text-gray-500 block mb-1">Dari</label>
+          <input
+            type="date" value={from} onChange={e => setFrom(e.target.value)}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-gray-500 block mb-1">Sampai</label>
+          <input
+            type="date" value={to} onChange={e => setTo(e.target.value)}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+          />
+        </div>
+      </div>
+      {invalid && (
+        <p className="text-xs text-rose-600 mt-2">Tanggal 'Sampai' harus setelah 'Dari'.</p>
+      )}
+      <div className="flex justify-end gap-2 mt-4">
+        <button onClick={onCancel} className="text-sm font-semibold text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50">Batal</button>
+        <button
+          onClick={() => canApply && onApply(from, to)}
+          disabled={!canApply}
+          className="text-sm font-semibold text-white bg-[#012749] hover:bg-[#013865] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 rounded-lg"
+        >
+          Terapkan
+        </button>
+      </div>
+    </div>
   );
 }
