@@ -72,7 +72,7 @@ export const supabaseService = {
     //                     price, T1-T4 for qty); UI for that lands in T26+.
     const { data: existing, error: lookupErr } = await supabase
       .from('stocks')
-      .select('sku, price, harga_modal, stock_atas, stock_bawah')
+      .select('sku, price, harga_modal')
       .eq('sku', item.sku)
       .maybeSingle();
     if (lookupErr) {
@@ -86,8 +86,7 @@ export const supabaseService = {
         p_category: item.category,
         p_price: item.price,
         p_harga_modal: item.harga_modal ?? 0,
-        p_stock_atas: item.stock_atas ?? item.stock ?? 0,
-        p_stock_bawah: item.stock_bawah ?? 0,
+        p_initial_levels: {},
       });
       if (seedErr) {
         throw seedErr;
@@ -96,9 +95,9 @@ export const supabaseService = {
     }
 
     // Existing SKU: refuse mutations to value-bearing columns. Compare against
-    // the snapshot we just read. Changing price / harga_modal / stock_atas /
-    // stock_bawah requires the approval flow (Phase 2 T9/T10 for price,
-    // T1-T4 for qty); UI for that lands in T26+. Metadata edits (name,
+    // the snapshot we just read. Changing price / harga_modal requires the
+    // approval flow (Phase 2 T9/T10 for price); qty changes go through the
+    // warehouse adjustment flow, not upsertStock. Metadata edits (name,
     // category, status, specs) flow through directly via the GRANT preserved
     // in migration …017.
     const restrictedDiffs: string[] = [];
@@ -108,18 +107,6 @@ export const supabaseService = {
       item.harga_modal !== existing.harga_modal
     ) {
       restrictedDiffs.push('harga_modal');
-    }
-    if (
-      item.stock_atas !== undefined &&
-      item.stock_atas !== existing.stock_atas
-    ) {
-      restrictedDiffs.push('stock_atas');
-    }
-    if (
-      item.stock_bawah !== undefined &&
-      item.stock_bawah !== existing.stock_bawah
-    ) {
-      restrictedDiffs.push('stock_bawah');
     }
     if (restrictedDiffs.length > 0) {
       throw new Error(
@@ -1061,17 +1048,6 @@ export const stockService = {
       .from('stocks')
       .update({ harga_modal: hargaModal, updated_at: new Date().toISOString() })
       .eq('sku', sku);
-    if (error) throw error;
-  },
-
-  async decrementStock(sku: string, qty: number, warehouse: 'atas' | 'bawah' = 'atas'): Promise<void> {
-    if (!supabase) throw new Error('Supabase not configured');
-    // Phase 2 Task 11: direct UPDATE on stocks.{stock_atas,stock_bawah} is now
-    // REVOKEd for anon + authenticated, so the old fallback path that did
-    // supabase.from('stocks').update({ [col]: ... }) on RPC failure can only
-    // raise "permission denied" — masking the real RPC error. The RPC is the
-    // only sanctioned path; let its error propagate cleanly.
-    const { error } = await supabase.rpc('decrement_stock', { p_sku: sku, p_qty: qty, p_warehouse: warehouse });
     if (error) throw error;
   },
 
