@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — FOLLOWUP-2: StockManagerScreen inline edit — qty fields removed — DONE
+
+- **Commit**: 5803d72
+- **File**: `src/components/StockManagerScreen.tsx`
+- **Changes**:
+  - `editValues` state type: removed `stock`, `stock_atas`, `stock_bawah` fields. Now only `{ price, harga_modal, specs }`.
+  - `startEdit`: stopped populating the removed qty fields.
+  - `saveEdit`: no longer reads `stock_atas`/`stock_bawah` or derives `stock = stock_atas + stock_bawah`. The StockItem `stock`/`stock_atas`/`stock_bawah` fields are untouched on save — they reflect `stock_levels` via the Phase 2 trigger.
+  - Inline edit JSX: removed the two qty input fields ("Stok Gudang Atas" / "Stok Gudang Bawah"). Replaced with a violet info box: "Untuk ubah jumlah stok per gudang, klik tombol ⚖ Penyesuaian di kanan baris (perlu approval Owner)."
+  - Price + harga_modal + specs editing preserved intact.
+  - Atas/Bawah display pills (line ~867) and the explicit ⚖ Penyesuaian button untouched — both still open StockAdjustmentModal.
+- **Rationale**: After Migration 3 cutover, `stocks.stock_atas/bawah` columns drop. The free-form qty edit was a legacy shortcut bypassing the approval flow. Per warehouse spec, qty changes require `request_adjustment` → Owner approval → `commit_approved_adjustment`.
+- **Lint**: 0 errors (`tsc --noEmit` clean).
+
+## 2026-06-13 — FOLLOWUP-1: LockSubmissionModal WarehousePicker — DONE
+
+- **Commit**: b3a33ab
+- **File**: `src/components/penjualan/LockSubmissionModal.tsx`
+- **Changes**:
+  - `ComponentDraft.warehouse: 'atas'|'bawah'` replaced with `warehouse_id: string`
+  - Added `useWarehouses()` hook + `<WarehousePicker mode="single">` component imports
+  - `addComponent` now defaults to `is_default` warehouse (fallback to first active)
+  - Hardcoded Atas/Bawah toggle buttons replaced with `<WarehousePicker>`
+  - Submit handler: pre-flight guard blocks non-atas/bawah warehouses with user-friendly toast (until Phase 3 rakit RPC migration)
+  - RPC payload sends both `warehouse` (legacy text, resolved from code) and `warehouse_id` for forward compatibility
+- **Lint**: 0 errors (clean `tsc --noEmit`)
+
+## 2026-06-13 — Plan Task 17: Migration 3 cutover SQL — DONE (NOT APPLIED)
+
+- **Commit**: 5428ea3
+- **Files**:
+  - `supabase/migrations/20260613000003_warehouses_phase3_cutover.sql` (new) — drops `stocks.stock_atas/stock_bawah`, all legacy text-arg RPC overloads (`transfer_warehouse(text,text,text,int)`, `decrement_stock(text,text,int)`, etc.), and `warehouse` text columns on all history tables. Promotes `warehouse_id` to NOT NULL on `stock_movements`, `stock_adjustments`, `stock_opname_counts`, `purchase_order_items`. Drops legacy `trg_sync_stock_total` trigger + `sync_stock_total()` function. All DROPs use `IF EXISTS` for idempotency. Wrapped in `BEGIN/COMMIT`.
+  - `tests/integration/warehouses-phase3-cutover.test.ts` (new) — 4 tests verifying columns/overloads no longer exist post-cutover, plus SUM trigger still keeps `stocks.stock` correct via `stock_levels`.
+  - `scripts/apply-pending-migrations.sh` — appended Phase 3 cutover as LAST entry (after `20260613000004` backfill) with prominent DO-NOT-APPLY guard comment explaining the intentional ordering.
+- **Lint**: 0 errors (no TS changes, clean pass).
+- **Status**: Migration authored but NOT applied. Must not be applied until all prior migrations are live, new frontend has run in prod >= 24 hours with no errors, and user explicitly approves.
+
 ## 2026-06-13 — Sidebar Refactor: Full Plan Completion — DONE
 
 Plan: `docs/superpowers/plans/2026-06-13-sidebar-categorization.md`
