@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingBag, Receipt, Zap } from 'lucide-react';
+import KpiCard from './ui/KpiCard';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -108,7 +109,8 @@ export default function LaporanScreen() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           icon={<TrendingUp className="w-6 h-6" />}
-          iconBg="bg-blue-50 text-[#1e3d60]"
+          iconBg="bg-blue-50"
+          iconColor="text-[#1e3d60]"
           badge="Revenue"
           badgeClass="text-[#2d8a4e] bg-emerald-50"
           label="Total Omset"
@@ -117,7 +119,8 @@ export default function LaporanScreen() {
         />
         <KpiCard
           icon={<ShoppingBag className="w-6 h-6" />}
-          iconBg="bg-emerald-50 text-[#2d8a4e]"
+          iconBg="bg-emerald-50"
+          iconColor="text-[#2d8a4e]"
           badge="Selesai"
           badgeClass="text-blue-600 bg-blue-50"
           label="Pesanan Terproses"
@@ -126,7 +129,8 @@ export default function LaporanScreen() {
         />
         <KpiCard
           icon={<Receipt className="w-6 h-6" />}
-          iconBg="bg-amber-50 text-amber-600"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-600"
           badge="Rata-rata"
           badgeClass="text-amber-700 bg-amber-50"
           label="Nilai Rata-rata Pesanan"
@@ -135,7 +139,8 @@ export default function LaporanScreen() {
         />
         <KpiCard
           icon={<Zap className="w-6 h-6" />}
-          iconBg="bg-violet-50 text-violet-600"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-600"
           badge="AI"
           badgeClass="text-violet-700 bg-violet-50"
           label="Tingkat Otomasi AI"
@@ -249,33 +254,6 @@ export default function LaporanScreen() {
           </table>
         )}
       </div>
-    </div>
-  );
-}
-
-// ─── KPI card helper ──────────────────────────────────────────────────────────
-
-interface KpiCardProps {
-  icon: React.ReactNode;
-  iconBg: string;
-  badge: string;
-  badgeClass: string;
-  label: string;
-  value: string;
-  sub: string;
-}
-function KpiCard({ icon, iconBg, badge, badgeClass, label, value, sub }: KpiCardProps) {
-  return (
-    <div className="bg-white rounded-3xl p-6 border border-[#e5eeff] shadow-lg shadow-primary/5 hover:translate-y-[-4px] transition-all duration-300">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg}`}>
-          {icon}
-        </div>
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}`}>{badge}</span>
-      </div>
-      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">{label}</span>
-      <h3 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-1">{value}</h3>
-      <p className="text-xs text-[#43474e] mt-2">{sub}</p>
     </div>
   );
 }
