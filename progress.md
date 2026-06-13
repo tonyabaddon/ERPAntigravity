@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable sales channels: Phase B.3 realtime publication for sales_channel_settings (Task 8) — DONE
+
+- **What:** Task 8 of the configurable sales channels plan. Adds `public.sales_channel_settings` to the `supabase_realtime` publication so admin edits in one browser tab (Pengaturan -> Sales Channels) propagate to subscribers (PenjualanBaru channel picker, etc.) in other tabs within ~2s — the latency target from the design spec for the admin toggle UX. Guarded by `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname='supabase_realtime' AND schemaname='public' AND tablename='sales_channel_settings') THEN ALTER PUBLICATION supabase_realtime ADD TABLE public.sales_channel_settings; END IF; END $$;` so replays of `supabase db push` are idempotent and won't error on the second invocation. Pairs with the Phase C frontend infra task that will register a `supabase.channel('sales-channel-settings').on('postgres_changes', ...)` subscription consumed by the channel registry context.
+- **Migration**: `supabase/migrations/20260613000022_sales_channels_phase_b_realtime.sql` — file-only (controller override: no `supabase db push`; user applies manually after review). 6-digit suffix `000022` chosen — sequential follow-on to `000021` Phase B.2 RPC refactor migration; no collision with prior same-date migrations.
+- **Branch:** `feat/configurable-sales-channels`.
+- **Next:** Task 9 (per the plan) — integration tests for Phase A+B schema.
+
 ## 2026-06-13 — Configurable sales channels: Phase B.2 refactor record_kasir_sale RPC variants (Task 7) — DONE
 
 - **What:** Task 7 of the configurable sales channels plan. Refactors the three historical `record_kasir_sale` RPC variants (base `20260609000001`, validate-subtype `20260609000003`, service-lines `20260610000001`) into a single Phase B migration. Three changes applied to each variant verbatim — function body, DECLAREs, business logic, INSERT shape, and return type all preserved 100% from the prior revision:
