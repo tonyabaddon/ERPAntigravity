@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stok Opname Blind-Count — UI Mockup v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #f8f9ff; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .annotation {
+    background: #fef9c3;
+    border-left: 3px solid #ca8a04;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #713f12;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+  .annotation b { color: #422006; }
+  .section-divider {
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #cbd5e1;
+  }
+  .section-title { font-size: 18px; font-weight: 700; color: #0b1c30; }
+  .section-subtitle { font-size: 13px; color: #475569; margin-top: 4px; }
+</style>
+</head>
+<body class="text-slate-900 text-sm">
+
+<div class="max-w-6xl mx-auto p-6 space-y-6">
+
+  <!-- Header -->
+  <header class="bg-white border border-slate-200 rounded-lg p-5">
+    <h1 class="text-xl font-bold text-slate-900">Stok Opname — Blind-Count UI Mockup <span class="text-sm text-slate-500 font-normal">(v2 — revised)</span></h1>
+    <p class="text-sm text-slate-600 mt-1">
+      Verifikasi visual untuk spec
+      <span class="mono text-xs">2026-06-13-stok-opname-blind-count-design.md</span>.
+      Revisi v2: kolom selisih qty di Owner view, bahasa Indonesia mudah (tanpa "commit"), section baru "Owner Setuju → apa yang terjadi".
+    </p>
+    <div class="mt-3 flex flex-wrap gap-2 text-xs">
+      <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300">Design system: Inter / slate / emerald / amber / blue / rose</span>
+      <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300">Base font 14px</span>
+      <span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">v2: bahasa diperjelas, "commit" → "selesai/setujui"</span>
+    </div>
+  </header>
+
+  <!-- ============ STATE A: Admin, in_progress (BLIND) ============ -->
+  <div class="section-divider">
+    <div class="section-title">State A — Admin view, status <span class="mono text-base">in_progress</span> (TANPA LIHAT SISTEM)</div>
+    <div class="section-subtitle">Login sebagai admin/staff (role ≠ Owner). Tidak boleh lihat Sistem, Selisih, Total Selisih.</div>
+  </div>
+
+  <div class="annotation">
+    <b>Yang berbeda dari sekarang:</b>
+    (1) Header kanan: badge <i>"Tanpa Lihat Sistem"</i> menggantikan "Total Varians".
+    (2) Per baris: kolom <i>"Sistem N"</i>, <i>"Selisih qty"</i>, dan <i>"Selisih Rp"</i> hilang sepenuhnya — input field jadi lebih lebar.
+    (3) Backend RPC mengganti <span class="mono text-xs">system_qty_snapshot</span> &amp; <span class="mono text-xs">variance</span> jadi NULL untuk non-Owner saat in_progress.
+    (4) Tombol bawah: "Kirim ke Owner untuk Disetujui" (sebelumnya "untuk Commit").
+  </div>
+
+  <div class="p-6 bg-white rounded-lg border border-slate-300 space-y-4">
+    <button class="text-sm text-slate-500">← Kembali ke daftar</button>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">Berlangsung</span>
+        <h1 class="text-lg font-bold text-slate-900 mt-1">Sesi Opname #142</h1>
+        <p class="text-xs text-slate-500 mt-1">
+          Penghitung: <b>Budi (Anda)</b> · Saksi: <b>Sari</b> · Mulai 13 Jun 2026, 10:24
+        </p>
+        <p class="text-xs text-emerald-700 mt-1">Saksi acknowledged 13 Jun 2026, 11:02</p>
+      </div>
+      <div class="text-right">
+        <span class="inline-block px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-300">
+          🔒 Tanpa Lihat Sistem
+        </span>
+        <p class="text-xs text-slate-500 mt-2">Diisi: 5/7</p>
+      </div>
+    </div>
+
+    <div>
+      <input type="text" placeholder="Cari SKU atau nama barang…"
+             class="w-full border border-slate-300 rounded px-3 py-2 text-sm" />
+    </div>
+
+    <!-- Blind layout [3 warehouse | 6 input | 3 spacer] -->
+    <div class="space-y-2">
+      <div class="bg-white border border-slate-200 border-l-4 border-l-emerald-500 rounded-lg overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+          <span class="mono text-xs text-slate-600">SKU-001</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-semibold text-slate-800 text-sm">Beras Premium 5kg</span>
+        </div>
+        <!-- Column header row -->
+        <div class="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+          <div class="col-span-3">Gudang</div>
+          <div class="col-span-6 text-right pr-3">Stok Fisik (yang Anda hitung)</div>
+          <div class="col-span-3"></div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-3 text-xs uppercase tracking-wide text-slate-500">Atas</div>
+          <div class="col-span-6 text-right">
+            <input type="number" value="24" class="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm" />
+          </div>
+          <div class="col-span-3"></div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-3 text-xs uppercase tracking-wide text-slate-500">Bawah</div>
+          <div class="col-span-6 text-right">
+            <input type="number" value="12" class="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm" />
+          </div>
+          <div class="col-span-3"></div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+          <span class="mono text-xs text-slate-600">SKU-002</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-semibold text-slate-800 text-sm">Gula Pasir 1kg</span>
+        </div>
+        <!-- Column header row -->
+        <div class="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+          <div class="col-span-3">Gudang</div>
+          <div class="col-span-6 text-right pr-3">Stok Fisik (yang Anda hitung)</div>
+          <div class="col-span-3"></div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-3 text-xs uppercase tracking-wide text-slate-500">Atas</div>
+          <div class="col-span-6 text-right">
+            <input type="number" value="50" class="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm" />
+          </div>
+          <div class="col-span-3"></div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-3 text-xs uppercase tracking-wide text-slate-500">Bawah</div>
+          <div class="col-span-6 text-right">
+            <input type="number" value="" placeholder="—" class="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm" />
+          </div>
+          <div class="col-span-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 items-center">
+      <button class="py-2 px-4 border border-slate-300 rounded-full text-sm bg-slate-50 text-slate-500">
+        Saksi ✓ acknowledged
+      </button>
+      <span class="flex-1"></span>
+      <button class="py-2 px-4 bg-emerald-600 text-white rounded-full text-sm">
+        Kirim ke Owner untuk Disetujui
+      </button>
+    </div>
+
+    <p class="text-xs text-slate-400 italic">
+      Catatan: tombol submit tetap "Kirim ke Owner" — admin belum tahu apakah akan selesai-otomatis atau lewat persetujuan (karena tidak lihat sistem). Tahu setelah submit lewat toast.
+    </p>
+  </div>
+
+
+  <!-- ============ STATE B: Owner, in_progress (FULL VIEW + qty delta) ============ -->
+  <div class="section-divider">
+    <div class="section-title">State B — Owner view, status <span class="mono text-base">in_progress</span> (LIHAT SEMUA + kolom selisih qty)</div>
+    <div class="section-subtitle">Login sebagai role Owner. Tidak ada blinding. Kolom baru: Selisih -1 (-Rp 25.000) digabung.</div>
+  </div>
+
+  <div class="annotation">
+    <b>Perubahan v2:</b> baris kanan sekarang menampilkan <b>selisih qty</b> dan <b>selisih Rp</b> dalam satu kolom — Owner tidak perlu hitung manual.
+    Format: <span class="mono text-xs">"-1 (-Rp 25.000)"</span> = qty selisih + rupiah dalam tanda kurung.
+  </div>
+
+  <div class="p-6 bg-white rounded-lg border border-slate-300 space-y-4">
+    <button class="text-sm text-slate-500">← Kembali ke daftar</button>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">Berlangsung</span>
+        <h1 class="text-lg font-bold text-slate-900 mt-1">Sesi Opname #142</h1>
+        <p class="text-xs text-slate-500 mt-1">
+          Penghitung: <b>Budi</b> · Saksi: <b>Sari</b> · Mulai 13 Jun 2026, 10:24
+        </p>
+        <p class="text-xs text-emerald-700 mt-1">Saksi acknowledged 13 Jun 2026, 11:02</p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
+        <p class="font-bold text-xl text-rose-600">-Rp 75.000</p>
+        <p class="text-xs text-slate-500 mt-1">Diisi: 5/7</p>
+      </div>
+    </div>
+
+    <!-- Owner full layout v2: 12-col [2 wh | 3 sistem | 3 input | 4 selisih combined] -->
+    <div class="space-y-2">
+      <div class="bg-white border border-slate-200 border-l-4 border-l-emerald-500 rounded-lg overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+          <span class="mono text-xs text-slate-600">SKU-001</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-semibold text-slate-800 text-sm">Beras Premium 5kg</span>
+        </div>
+        <!-- Column header (only first row, for clarity in mockup) -->
+        <div class="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+          <div class="col-span-2">Gudang</div>
+          <div class="col-span-3 text-right">Sistem</div>
+          <div class="col-span-3 text-right">Fisik (input)</div>
+          <div class="col-span-4 text-right">Selisih</div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-2 text-xs uppercase tracking-wide text-slate-500">Atas</div>
+          <div class="col-span-3 text-right text-slate-800 font-medium">25</div>
+          <div class="col-span-3 text-right">
+            <input type="number" value="24" class="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm" />
+          </div>
+          <div class="col-span-4 text-right font-semibold text-rose-600">
+            -1 <span class="text-xs font-normal">(-Rp 25.000)</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-2 text-xs uppercase tracking-wide text-slate-500">Bawah</div>
+          <div class="col-span-3 text-right text-slate-800 font-medium">12</div>
+          <div class="col-span-3 text-right">
+            <input type="number" value="12" class="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm" />
+          </div>
+          <div class="col-span-4 text-right text-slate-400">
+            0 <span class="text-xs">(cocok)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-2 flex-wrap">
+          <span class="mono text-xs text-slate-600">SKU-002</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-semibold text-slate-800 text-sm">Gula Pasir 1kg</span>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-2 text-xs uppercase tracking-wide text-slate-500">Atas</div>
+          <div class="col-span-3 text-right text-slate-800 font-medium">55</div>
+          <div class="col-span-3 text-right">
+            <input type="number" value="50" class="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm" />
+          </div>
+          <div class="col-span-4 text-right font-semibold text-rose-600">
+            -5 <span class="text-xs font-normal">(-Rp 50.000)</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm">
+          <div class="col-span-2 text-xs uppercase tracking-wide text-slate-500">Bawah</div>
+          <div class="col-span-3 text-right text-slate-800 font-medium">20</div>
+          <div class="col-span-3 text-right">
+            <input type="number" value="" placeholder="—" class="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm" />
+          </div>
+          <div class="col-span-4 text-right text-slate-400">
+            <span class="text-xs italic">belum dihitung</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-xs text-slate-500 italic">
+      Format kolom Selisih: <b>qty (Rp)</b>. Merah = kurang (kerugian), hijau = lebih (keuntungan), abu-abu = cocok atau belum dihitung.
+    </p>
+  </div>
+
+
+  <!-- ============ STATE C: Admin, committed (POST-INPUT TRANSPARENCY) ============ -->
+  <div class="section-divider">
+    <div class="section-title">State C — Admin view, status <span class="mono text-base">committed</span> (sudah disetujui — transparansi)</div>
+    <div class="section-subtitle">Setelah submit (selesai-otomatis atau lewat persetujuan). Counts ter-frozen, blinding off.</div>
+  </div>
+
+  <div class="annotation">
+    <b>Kenapa angka muncul kembali di sini:</b> counts sudah immutable — tidak ada lagi yang bisa dimanipulasi. Admin perlu angka untuk menjelaskan kalau ditanya Owner, dan untuk belajar pola selisih per SKU. Transparansi pasca-input.
+  </div>
+
+  <div class="p-6 bg-white rounded-lg border border-slate-300 space-y-4">
+    <button class="text-sm text-slate-500">← Kembali ke daftar</button>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-4 flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <span class="inline-block px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-800 border border-emerald-200">Selesai</span>
+        <h1 class="text-lg font-bold text-slate-900 mt-1">Sesi Opname #142</h1>
+        <p class="text-xs text-slate-500 mt-1">
+          Penghitung: <b>Budi (Anda)</b> · Saksi: <b>Sari</b> · Mulai 13 Jun 2026, 10:24
+        </p>
+      </div>
+      <div class="text-right">
+        <p class="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
+        <p class="font-bold text-xl text-rose-600">-Rp 75.000</p>
+        <p class="text-xs text-slate-500 mt-1">Diisi: 7/7</p>
+      </div>
+    </div>
+
+    <div class="rounded bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-800">
+      Sesi sudah disetujui Owner.
+    </div>
+
+    <p class="text-xs text-slate-500 italic">
+      Detail count + selisih per SKU tampil sama seperti view Owner di State B (tidak diulang di mockup).
+    </p>
+  </div>
+
+
+  <!-- ============ NEW: Owner approve action ============ -->
+  <div class="section-divider">
+    <div class="section-title">Owner Setuju → apa yang terjadi di stock sistem?</div>
+    <div class="section-subtitle">Penjelasan visual: Owner masukkan PIN dan tap "Setuju" → stock sistem otomatis disesuaikan ke stock fisik.</div>
+  </div>
+
+  <div class="annotation">
+    <b>Perilaku (sama seperti sekarang, tidak berubah):</b>
+    Saat Owner setuju, sistem (1) mengubah stock_levels ke angka fisik, (2) menulis baris di stock_movements (ledger permanen) sebagai bukti, (3) menulis catatan kerugian/keuntungan di laporan keuangan.
+    Owner <b>tidak bisa edit</b> angka counted — kalau ada yang terlihat salah, Owner reject sesi, admin re-count.
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <!-- BEFORE -->
+    <div class="bg-white rounded-lg border border-slate-300 p-4">
+      <div class="text-xs uppercase tracking-wide text-slate-500 mb-2">Sebelum Owner Setuju</div>
+      <div class="text-xs text-slate-600 mb-3">Status sesi: <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">Menunggu Persetujuan</span></div>
+      <table class="w-full text-sm">
+        <thead class="text-xs text-slate-500 uppercase">
+          <tr class="border-b border-slate-200">
+            <th class="text-left py-1">SKU</th>
+            <th class="text-left py-1">Gudang</th>
+            <th class="text-right py-1">Stock Sistem</th>
+          </tr>
+        </thead>
+        <tbody class="mono">
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-001</td><td>Atas</td><td class="text-right">25</td></tr>
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-001</td><td>Bawah</td><td class="text-right">12</td></tr>
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-002</td><td>Atas</td><td class="text-right">55</td></tr>
+          <tr><td class="py-1">SKU-002</td><td>Bawah</td><td class="text-right">20</td></tr>
+        </tbody>
+      </table>
+      <div class="text-xs text-slate-500 mt-2 italic">Total selisih opname: -Rp 75.000</div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="bg-white rounded-lg border-2 border-emerald-300 p-4">
+      <div class="text-xs uppercase tracking-wide text-emerald-700 mb-2 font-semibold">Setelah Owner Setuju ✓</div>
+      <div class="text-xs text-slate-600 mb-3">Status sesi: <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Selesai</span></div>
+      <table class="w-full text-sm">
+        <thead class="text-xs text-slate-500 uppercase">
+          <tr class="border-b border-slate-200">
+            <th class="text-left py-1">SKU</th>
+            <th class="text-left py-1">Gudang</th>
+            <th class="text-right py-1">Stock Sistem</th>
+          </tr>
+        </thead>
+        <tbody class="mono">
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-001</td><td>Atas</td><td class="text-right"><span class="line-through text-slate-300 mr-1">25</span><span class="text-emerald-700 font-bold">24</span></td></tr>
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-001</td><td>Bawah</td><td class="text-right text-slate-400">12 <span class="text-xs">(tetap)</span></td></tr>
+          <tr class="border-b border-slate-100"><td class="py-1">SKU-002</td><td>Atas</td><td class="text-right"><span class="line-through text-slate-300 mr-1">55</span><span class="text-emerald-700 font-bold">50</span></td></tr>
+          <tr><td class="py-1">SKU-002</td><td>Bawah</td><td class="text-right text-slate-400">20 <span class="text-xs">(belum dihitung — tetap)</span></td></tr>
+        </tbody>
+      </table>
+      <div class="text-xs text-emerald-700 mt-2 italic">+ 2 baris ditulis di ledger stock_movements + entry kerugian -Rp 75.000 di laporan keuangan.</div>
+    </div>
+  </div>
+
+  <!-- Reject scenario -->
+  <div class="mt-4 bg-rose-50 border border-rose-200 rounded-lg p-4">
+    <div class="text-xs uppercase tracking-wide text-rose-700 font-semibold mb-2">Kalau Owner Tolak ✗</div>
+    <ul class="text-sm text-rose-900 space-y-1">
+      <li>• Status sesi → <span class="px-2 py-0.5 rounded-full text-xs bg-rose-100 text-rose-800 border border-rose-200">Ditolak</span></li>
+      <li>• Stock sistem TIDAK berubah (tetap 25, 12, 55, 20 untuk contoh di atas)</li>
+      <li>• Tidak ada baris ledger ditulis, tidak ada entry laporan keuangan</li>
+      <li>• Admin biasanya buat sesi opname baru dan re-count</li>
+      <li>• Owner kasih catatan alasan reject</li>
+    </ul>
+  </div>
+
+
+  <!-- ============ Toast variants ============ -->
+  <div class="section-divider">
+    <div class="section-title">Toast outcome — dua varian setelah admin submit</div>
+    <div class="section-subtitle">Toast adalah satu-satunya cara admin mengetahui jalur mana yang ditempuh (Selesai Otomatis vs Menunggu Persetujuan).</div>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <div class="annotation"><b>Selesai Otomatis</b> — semua counted_qty terisi, semua selisih = 0, saksi sudah ack. Tanpa Owner PIN.</div>
+      <div class="bg-white rounded-lg border border-slate-200 p-4 flex justify-center">
+        <div class="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 max-w-sm">
+          <div class="font-semibold">✓ Sesi #142 selesai</div>
+          <div class="text-xs mt-1 text-emerald-700">Semua cocok dengan sistem — selesai otomatis. Tanpa perlu persetujuan Owner.</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="annotation"><b>Menunggu Persetujuan</b> — ada baris NULL atau ada selisih ≠ 0. Owner buka Kotak Persetujuan.</div>
+      <div class="bg-white rounded-lg border border-slate-200 p-4 flex justify-center">
+        <div class="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800 max-w-sm">
+          <div class="font-semibold">→ Sesi #142 dikirim ke Owner</div>
+          <div class="text-xs mt-1 text-blue-700">Ditemukan selisih — menunggu Owner buka Kotak Persetujuan &amp; masukkan PIN.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============ Audit log preview ============ -->
+  <div class="section-divider">
+    <div class="section-title">Catatan audit — penghitung &amp; saksi untuk SETIAP opname</div>
+    <div class="section-subtitle">Setiap sesi opname yang berakhir (Selesai Otomatis ATAU Disetujui Owner) menulis row di <span class="mono text-base">audit_log</span>. Owner bisa cek kapan saja siapa yang menghitung dan siapa saksinya.</div>
+  </div>
+
+  <div class="annotation">
+    <b>Yang dijamin:</b> tidak ada opname yang bisa "lewat" tanpa jejak. Counter (penghitung) + Witness (saksi) selalu tercatat dengan user_id + timestamp.
+    Dua event types:
+    <span class="mono text-xs bg-emerald-100 px-1 rounded">opname_auto_commit</span> untuk path auto, dan
+    <span class="mono text-xs bg-blue-100 px-1 rounded">opname_owner_commit</span> untuk path persetujuan Owner.
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <!-- Auto-commit audit -->
+    <div>
+      <div class="text-xs uppercase tracking-wide text-emerald-700 font-semibold mb-2">Selesai Otomatis (variance = 0)</div>
+      <div class="bg-slate-900 rounded-lg p-4 text-xs mono text-slate-100 overflow-x-auto">
+<pre>{
+  "id": 8841,
+  "event_type": "opname_auto_commit",
+  "actor_user_id": "f4e2-budi-uuid",
+  "created_at": "2026-06-13T11:08:34Z",
+  "payload": {
+    "session_id": 142,
+    "counter_user_id": "f4e2-budi-uuid",
+    "counter_name": "Budi",
+    "witness_user_id": "a91c-sari-uuid",
+    "witness_name": "Sari",
+    "warehouse_keys": ["wh-atas", "wh-bawah"],
+    "row_count": 7,
+    "total_variance_value": 0
+  }
+}</pre>
+      </div>
+    </div>
+
+    <!-- Owner-approved audit -->
+    <div>
+      <div class="text-xs uppercase tracking-wide text-blue-700 font-semibold mb-2">Disetujui Owner (variance ≠ 0)</div>
+      <div class="bg-slate-900 rounded-lg p-4 text-xs mono text-slate-100 overflow-x-auto">
+<pre>{
+  "id": 8842,
+  "event_type": "opname_owner_commit",
+  "actor_user_id": "owner-uuid-tony",
+  "created_at": "2026-06-13T14:22:11Z",
+  "payload": {
+    "session_id": 143,
+    "counter_user_id": "f4e2-budi-uuid",
+    "counter_name": "Budi",
+    "witness_user_id": "a91c-sari-uuid",
+    "witness_name": "Sari",
+    "approved_by_user_id": "owner-uuid-tony",
+    "approved_by_name": "Owner Tony",
+    "warehouse_keys": ["wh-atas", "wh-bawah"],
+    "row_count": 7,
+    "total_variance_value": -75000
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audit log UI preview -->
+  <div class="mt-6">
+    <div class="text-sm font-semibold text-slate-700 mb-2">Tampilan di UI Pengawasan (Owner view)</div>
+    <div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+        <span class="text-sm font-semibold text-slate-800">Catatan Audit Opname</span>
+        <span class="ml-auto px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300 text-xs">7 hari terakhir</span>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="text-xs text-slate-500 uppercase bg-slate-50/50">
+          <tr class="border-b border-slate-200">
+            <th class="text-left py-2 px-4">Waktu</th>
+            <th class="text-left py-2 px-4">Sesi</th>
+            <th class="text-left py-2 px-4">Penghitung</th>
+            <th class="text-left py-2 px-4">Saksi</th>
+            <th class="text-right py-2 px-4">Total Selisih</th>
+            <th class="text-left py-2 px-4">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-slate-100">
+            <td class="py-2 px-4 text-xs text-slate-600">14 Jun, 09:02</td>
+            <td class="py-2 px-4 mono text-xs">#144</td>
+            <td class="py-2 px-4">Sari</td>
+            <td class="py-2 px-4">Budi</td>
+            <td class="py-2 px-4 text-right text-slate-400">Rp 0</td>
+            <td class="py-2 px-4"><span class="inline-block px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-800 border border-emerald-200">Selesai Otomatis</span></td>
+          </tr>
+          <tr class="border-b border-slate-100">
+            <td class="py-2 px-4 text-xs text-slate-600">13 Jun, 14:22</td>
+            <td class="py-2 px-4 mono text-xs">#143</td>
+            <td class="py-2 px-4">Budi</td>
+            <td class="py-2 px-4">Sari</td>
+            <td class="py-2 px-4 text-right text-rose-600 font-semibold">-Rp 75.000</td>
+            <td class="py-2 px-4"><span class="inline-block px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200">Disetujui Owner</span></td>
+          </tr>
+          <tr class="border-b border-slate-100">
+            <td class="py-2 px-4 text-xs text-slate-600">13 Jun, 11:08</td>
+            <td class="py-2 px-4 mono text-xs">#142</td>
+            <td class="py-2 px-4">Budi</td>
+            <td class="py-2 px-4">Sari</td>
+            <td class="py-2 px-4 text-right text-slate-400">Rp 0</td>
+            <td class="py-2 px-4"><span class="inline-block px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-800 border border-emerald-200">Selesai Otomatis</span></td>
+          </tr>
+          <tr>
+            <td class="py-2 px-4 text-xs text-slate-600">12 Jun, 16:45</td>
+            <td class="py-2 px-4 mono text-xs">#141</td>
+            <td class="py-2 px-4">Sari</td>
+            <td class="py-2 px-4">Andi</td>
+            <td class="py-2 px-4 text-right text-rose-600 font-semibold">-Rp 12.000</td>
+            <td class="py-2 px-4"><span class="inline-block px-2 py-0.5 rounded-full text-xs bg-rose-100 text-rose-800 border border-rose-200">Ditolak</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-slate-500 italic mt-2">
+      Owner bisa filter berdasarkan: rentang waktu, penghitung, saksi, status. Klik sesi → buka detail count + selisih per SKU.
+      Reject session (#141) tetap muncul di audit untuk forensik — siapa yang gagal opname dan kapan.
+    </p>
+  </div>
+
+  <p class="text-xs text-slate-500 italic mt-3">Note: <span class="mono">event_type</span> tetap pakai nama teknis Inggris di DB (opname_auto_commit / opname_owner_commit) untuk konsistensi kode. Display di UI diterjemahkan jadi "Selesai Otomatis" / "Disetujui Owner".</p>
+
+
+  <!-- ============ Requirements checklist ============ -->
+  <div class="section-divider">
+    <div class="section-title">Requirements coverage checklist</div>
+    <div class="section-subtitle">Verifikasi bahwa semua keputusan brainstorming + feedback v2 ter-cover di mockup.</div>
+  </div>
+
+  <div class="bg-white border border-slate-200 rounded-lg p-5 space-y-2 text-sm">
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q1 — Selesai Otomatis kalau cocok, persetujuan Owner kalau ada selisih → <i>State A submit + dua toast variants</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q2 — Hanya Owner lihat system_qty saat in_progress → <i>State A (admin tanpa lihat) vs State B (Owner lihat semua)</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q3 — Sembunyikan ketiganya: Sistem, Selisih qty, Selisih Rp, Total Selisih → <i>State A header &amp; rows</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q4 — Backend strip + UI hide → <i>annotation di State A</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q5 — Selesai Otomatis hanya kalau: semua non-NULL + saksi ack + 2 orang + audit_log → <i>audit log preview</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q6 — Blinding hanya saat in_progress, terbuka pasca-submit → <i>State C</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q7 — Owner counts → lihat semua, tidak blind → <i>State B</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span>Q8 — Tersembunyi = kolom hilang sepenuhnya, badge "Tanpa Lihat Sistem" → <i>State A grid 3-6-3</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span><b>v2 #1 — Owner view kolom selisih qty digabung (-1 (-Rp 25.000))</b> → <i>State B kolom kanan</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span><b>v2 #2 — Bahasa diperjelas: "Commit" → "Selesaikan/Disetujui", "Auto-commit" → "Selesai Otomatis"</b> → <i>semua copy text</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span><b>v2 #3 — Owner approve behavior: stock sistem disesuaikan ke fisik, ledger ditulis</b> → <i>section baru "Owner Setuju → apa yang terjadi"</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span><b>v2 #4 — Judul kolom di Admin view: "Stok Fisik (yang Anda hitung)"</b> → <i>State A column header row</i></span></div>
+    <div class="flex gap-2"><span class="text-emerald-600 font-bold">✓</span><span><b>v2 #5 — Audit log siapa penghitung &amp; saksi untuk SETIAP opname (auto + persetujuan)</b> → <i>dua JSON examples + table preview Pengawasan</i></span></div>
+  </div>
+
+  <footer class="text-xs text-slate-500 text-center pt-6 pb-12">
+    Mockup ini static HTML — implementation akan jadi React component (StockOpnameSessionView.tsx) sesuai Design Section 3.
+  </footer>
+
+</div>
+
+</body>
+</html>
