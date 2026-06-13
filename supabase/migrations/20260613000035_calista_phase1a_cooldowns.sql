@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS public.model_cooldowns (
 
 ALTER TABLE public.model_cooldowns ENABLE ROW LEVEL SECURITY;
 
+-- RLS read policy uses `authenticated` role with USING (true). In this project,
+-- only admin users authenticate to Supabase — end customers never do — so
+-- `authenticated` is effectively admin-only. Writes go through the backend
+-- service_role which bypasses RLS by design. No write policy is needed.
 DO $$
 BEGIN
     IF NOT EXISTS (

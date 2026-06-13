@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS public.llm_calls (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+    conversation_id uuid REFERENCES public.conversations(id) ON DELETE SET NULL,
     model_slug text NOT NULL,
     tier text NOT NULL DEFAULT 'layer1_free',
     was_forced_swap boolean NOT NULL DEFAULT false,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.llm_calls (
     prompt_tokens int NOT NULL DEFAULT 0,
     completion_tokens int NOT NULL DEFAULT 0,
     latency_ms int NOT NULL DEFAULT 0,
-    cost_idr_estimated numeric(12,4) NOT NULL DEFAULT 0,
+    cost_idr_estimated numeric(15,2) NOT NULL DEFAULT 0,
     status text NOT NULL,
     error_message text,
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -34,6 +34,10 @@ CREATE INDEX IF NOT EXISTS idx_llm_calls_status
 
 ALTER TABLE public.llm_calls ENABLE ROW LEVEL SECURITY;
 
+-- RLS read policy uses `authenticated` role with USING (true). In this project,
+-- only admin users authenticate to Supabase — end customers never do — so
+-- `authenticated` is effectively admin-only. Writes go through the backend
+-- service_role which bypasses RLS by design. No write policy is needed.
 DO $$
 BEGIN
     IF NOT EXISTS (

@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Calista Phase 1A: migration review fixes — DONE
+
+- **What:** Layered fix-up commit on top of `c840132`/`de0e023`/`47cf0ed` addressing code-review findings on the three Phase 1A migration files. No amend — per project convention, fixes go in a new commit. File-only (founder has not yet applied any of the Phase 1A migrations).
+- **Issue 1 (CRITICAL) — `llm_calls.conversation_id` retention:** Changed `NOT NULL ... ON DELETE CASCADE` → nullable `... ON DELETE SET NULL` (`20260613000034_calista_phase1a_llm_calls.sql:7`). Preserves telemetry forever for the ML training corpus (spec §13) even if a parent `conversations` row is deleted. Previously a conversation delete would erase all per-call telemetry, contradicting the retention decision.
+- **Issue 2 (IMPORTANT) — IDR money precision:** `cost_idr_estimated numeric(12,4)` → `numeric(15,2)` (`20260613000034_calista_phase1a_llm_calls.sql:15`). Matches house style used in `core_ai_engine.sql`, `recon_payable_slots.sql`, `recon_cash_batches.sql`, and `orders.total`. Avoids precision drift on JOINs. Per-call Gemini Flash cost ≈ Rp 16 for 1k tokens, so 2-decimal cents-of-rupiah precision is sufficient.
+- **Issue 3 (IMPORTANT) — RLS policy clarification:** Added explanatory comment block above the `DO $$` policy blocks in BOTH `20260613000034_calista_phase1a_llm_calls.sql:37-40` and `20260613000035_calista_phase1a_cooldowns.sql:16-19`. Clarifies that `authenticated` role with `USING (true)` is intentional in this project — only admins authenticate to Supabase, end customers never do; backend writes via `service_role` bypass RLS. Eliminates "admin" naming vs `USING (true)` predicate confusion for future readers.
+- **Deferred (minor, not fixed):** `status text + CHECK` vs ENUM, `idx_llm_calls_created` global-time aggregations index, `swap_count` index, policy name quoting style. Will revisit if dashboard/volume signal warrants.
+- **Not applied:** `DATABASE_URL` unset; founder runs `supabase db push` manually after merging the branch.
+- **Next:** Task 4 (`internal/llm/models.go` core types).
+
 ## 2026-06-13 — Calista Phase 1A Tasks 1-3: Supabase migrations written — DONE
 
 - **What:** Authored three Supabase migration files for Phase 1A. File-only delivery per project convention (founder applies `supabase db push` manually after review). Branch `feat/calista-phase-1a`.
