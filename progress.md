@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Multi-Tenant Prerequisites: fourth-pass onboarding gap fill + playbook — DONE
+
+- **What:** Gap audit specifically for "what's needed to onboard tenant #2" surfaced non-tech items missing from existing spec/docs. Added 4 features to Layer C-min spec + created comprehensive operational onboarding playbook.
+- **Layer C-min additions:**
+  - **Tenant invoice generator** in operator console — button "Generate Invoice" per tenant; server-side PDF with Vosi entity + tenant details + period + amount; stored at `invoices/{tenant_id}/` + emailed via Resend; sequential invoice numbering per fiscal year.
+  - **Welcome email** auto-sent post-provision alongside magic link — friendlier copy with login URL, 3-step getting-started pointer, support contact, help docs link.
+  - **Demo tenant infrastructure** — `provision_demo_tenant()` operator function creates "Vosi Demo" tenant pre-seeded with ~80 LTC electrical SKUs + ~20 sample customers + ~30 days fake transactions. Reset-able via `reset_demo_tenant()`. Used for prospect demos + internal smoke testing. `internal_demo=true` flag excludes from tenant metrics + billing.
+  - **Pre-launch E2E provisioning drill** as Layer C-min exit gate — operator must complete full flow on staging (provision → magic link → owner login → CSV import → first transaction → invoice generation) before any real prospect approached.
+- **Created `docs/business/onboarding-playbook.md`** — 9-section comprehensive operational guide:
+  - §0 Founder action TODO with lead-time-sensitive items (entity registration, NPWP, bank account, lead identification)
+  - §1 Pre-launch checklist (tech + non-tech) + provisioning drill procedure
+  - §2 Legal documents required (ToS, DPA, privacy policy, invoice template)
+  - §3 Sales kit (prospect identification, discovery call template, demo flow, founding customer offer)
+  - §4 Onboarding day-by-day procedure (contract → catalog import → training → soft go-live)
+  - §5 Billing & invoicing flow (manual collection for first ≤10 tenants)
+  - §6 Support runbook (channels, bug triage, maintenance comms)
+  - §7 Risk scenarios & responses (data corruption, churn, fraud, disputes, outage)
+  - §8 Tenant #2 specific 30-day countdown
+  - §9 Founder mindset notes
+- **Decisions captured:** founding customer offer recommendations (locked pricing 24mo, 50% setup fee discount, first month free on quarterly+ commit, founder direct WA, testimonial agreement). Discovery call template (10 questions). Demo flow script (7 stages × 2-3 min each).
+- **Spec self-review pass:** Section 13 updated to reference new playbook. Cross-references between spec / pricing / compliance / playbook all consistent.
+- **Next:** user reviews playbook, then invoke `writing-plans` skill for Layer D-min (first implementation).
+
 ## 2026-06-13 — Manajemen Gudang: edit + enable/disable + actor names in audit — DONE
 
 - **What:** Three additions on top of the warehouse admin screen after the user asked for editability, re-activation, and actor-name display in Riwayat Perubahan.

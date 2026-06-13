@@ -229,9 +229,11 @@ D-min complete; staging available for migration dry-run.
 - Separate Cloud Run service (or single service with route-based serving — implementation decision deferred to per-layer spec).
 - Hosted at separate URL (`operator.vosi.id` planned; alias acceptable for first deploy).
 - Operator authenticates via Supabase auth pool. Routes only accept JWTs whose `user_id` matches a `super_admin_users` row.
-- "Provision Tenant" form: name + owner email + package selector + subscription duration → creates tenant row, applies package template (populates `tenant_modules` from `packages.included_modules`), creates Supabase auth user for the owner, sends magic link via Resend, writes audit.
+- "Provision Tenant" form: name + owner email + package selector + subscription duration → creates tenant row, applies package template (populates `tenant_modules` from `packages.included_modules`), creates Supabase auth user for the owner, sends magic link via Resend, **sends welcome email** (separate from magic link — friendlier copy with: login URL, 3-step "getting started" pointer, support contact, link to help docs), writes audit.
 - Owner accepts magic link, sets password, lands in tenant app at `app.vosi.id`. First Owner is flagged `is_first_owner=true`.
 - Subscription controls: extend `subscription_expires_at`, suspend, reactivate. Every action goes through `tenant_subscription_audit`.
+- **Tenant invoice generator**: operator console button "Generate Invoice" per tenant. Server-side PDF with Vosi entity details + tenant details + period covered + amount + payment instructions + tax notes. Stored in `invoices/{tenant_id}/{invoice_id}.pdf` and emailed to tenant Owner via Resend. Invoice numbering sequential per fiscal year. Template details in `docs/business/pricing.md` "Tenant invoice format" section.
+- **Demo tenant infrastructure**: `provision_demo_tenant()` operator function creates a "Vosi Demo" tenant pre-seeded with curated realistic sample data — ~80 typical LTC electrical SKUs, ~20 sample customers, ~30 days of fake kasir transactions, sample purchase orders. Used for prospect demos + internal smoke testing. Operator can `reset_demo_tenant()` to baseline between demo sessions. Demo tenant has its own subscription_expires_at = '2099-01-01' and `internal_demo=true` flag so it's never billed or counted in tenant metrics.
 - Tenant offboarding action: subscription expires → 7-day grace → read-only mode (auto via `tenant_access_status()` function). Tenant data stays in-DB indefinitely until UU KUP 10-year retention timeout. Annual cron for 10-year hard-delete is Phase 2 (no urgency in Phase 1 since no record will be 10 years old).
 - **Data portability (UU PDP Pasal 6)**: tenant-triggered bulk export. Format: zipped CSV files, one per tenant-scoped table (`kasir_transactions.csv`, `orders.csv`, `stocks.csv`, etc.) plus a `README.txt` listing schema versions. Triggered via owner-only button in tenant settings. Generated server-side, emailed download link via Resend (signed URL, 7-day expiry). Self-serve, no operator involvement.
 
@@ -243,6 +245,8 @@ Layer A exit gate passed. `super_admin_users` exists. RLS verified.
 
 - Tenant #2 can be provisioned end-to-end (operator clicks → owner receives email → owner logs in → owner sees empty tenant app ready to use).
 - Operator can extend or suspend subscription; audit log records every action.
+- **Pre-launch end-to-end provisioning drill** completed on staging: operator runs full flow on a dummy tenant — provision via operator console → magic link + welcome email received → owner logs in → catalog imported via CSV wizard → first kasir transaction recorded → invoice generated → invoice email received. Drill must pass cleanly before any real prospect is approached. See `docs/business/onboarding-playbook.md` "Pre-launch checklist" for the step-by-step procedure.
+- Demo tenant provisionable via `provision_demo_tenant()`; sample data renders correctly in kasir + stock + reports.
 
 ### 4.4 Layer B — Module / entitlement system
 
@@ -785,8 +789,9 @@ Plus standalone runbook docs:
 
 Plus business policy docs (separated from tech architecture — different change cadence):
 
-- `docs/business/pricing.md` — tier pricing, commitment terms, discount structure, setup fees, unit economics
+- `docs/business/pricing.md` — tier pricing, commitment terms, discount structure, setup fees, unit economics, tenant invoice format
 - `docs/business/compliance-indonesia.md` — UU PDP + UU KUP framework, controller/processor split, breach notification procedure, DPA template requirements, data localization decisions
+- `docs/business/onboarding-playbook.md` — operational + sales procedures for onboarding tenant #2 (discovery → demo → import → go-live → first-week support), pre-launch checklist, founder action TODO (Vosi entity, NPWP, bank account, lead identification)
 
 ---
 
