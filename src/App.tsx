@@ -112,7 +112,22 @@ export default function App() {
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
-        setActivePage('dashboard');
+        // Default destination is dashboard; deep-link overrides if present.
+        let nextPage: ActivePage = 'dashboard';
+        try {
+          const raw = sessionStorage.getItem('pembelian.pendingDeepLink');
+          if (raw) {
+            const stash = JSON.parse(raw) as { screen?: string; po?: string | null };
+            if (stash.screen === 'pembelian') {
+              nextPage = 'pembelian';
+              if (stash.po) setInitialDetailPoNumber(stash.po);
+            }
+            sessionStorage.removeItem('pembelian.pendingDeepLink');
+          }
+        } catch {
+          // Stash unreadable — fall through to dashboard.
+        }
+        setActivePage(nextPage);
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

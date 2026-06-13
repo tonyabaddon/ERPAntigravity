@@ -218,7 +218,13 @@ export default function PembelianDetailPage({
             <h2 className="text-lg font-bold text-[#012749]">PO tidak ditemukan</h2>
             <p className="text-sm text-gray-500 mt-2">Nomor PO <span className="font-mono font-semibold">{poNumber}</span> sudah dihapus atau tidak pernah ada.</p>
             <button
-              onClick={onBackToList}
+              onClick={() => {
+                // Detail tab is normally opened via window.open from the list tab.
+                // window.close() works for those; silently no-ops for pasted-URL tabs,
+                // in which case we fall back to switching view-mode to the list.
+                window.close();
+                onBackToList();
+              }}
               className="mt-6 inline-flex items-center gap-2 bg-[#012749] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#013865]"
             >
               <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Pembelian
