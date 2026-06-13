@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Pembelian page: PO detail in new tab + KPI redesign + date filter (spec) — DONE
+
+- **What:** Brainstormed design for three concurrent changes to `PembelianScreen`: (1) PO Detail button opens a standalone full-page view in a new browser tab (replaces the cramped `PoDetailView` modal) via query-string routing (`?screen=pembelian&po=PO-XYZ`); (2) the four KPI summary cards (Total PO / Jatuh Tempo / Terlambat Bayar / Jumlah PO) adopt the canonical `KpiCard` pattern used by `DashboardScreen` and `LaporanScreen` (rounded-3xl, icon chip, badge, `#012749` extrabold, alarming rose-tint for overdue > 0); (3) new date-filter bar between page header and KPI cards with presets `Bulan Ini` (default) / `30 Hari` / `90 Hari` / `Custom` (range popover). Filter drives cards 1/2/4 + the list; "Terlambat Bayar" stays "saat ini" by design (overdue is a now-state, hiding it under arbitrary date ranges would be unsafe).
+- **Design decisions locked:**
+  - Routing = query-string (`?screen=pembelian&po=...`), NOT `react-router`. Avoids backend rewrite for `index.html` fallback. App.tsx parses URLSearchParams once on boot.
+  - List + cards filter by `coalesce(ordered_at, created_at)` — DRAFT POs (no `ordered_at` yet) fall into period of their creation date so they don't disappear from "Bulan Ini".
+  - Tab-sync = `visibilitychange` refocus-refresh only. No `BroadcastChannel`, no `storage` event. Cheap, covers 100% of the common "did something in detail tab, switch back to list" flow.
+  - `KpiCard` extracted to `src/components/ui/KpiCard.tsx` (was file-local in `LaporanScreen.tsx`). Both screens import the shared component.
+  - `purchaseOrderService.fetchSummary()` removed — all 4 cards computed client-side from the already-fetched PO list.
+  - Edit on detail tab → form replaces detail body in same tab (Option A locked). On save, returns to detail view of same PO. Hapus on detail tab redirects to list URL after success so user isn't stranded.
+- **Mockup**: `tmp/pembelian-mockup.html` — interactive prototype demonstrating chip filtering (cards + list react live), Custom popover with from/sampai date inputs + validation, Detail-button opens new tab (`?po=...`), in-page Buat PO Baru, dynamic period labels.
+- **Spec**: `docs/superpowers/specs/2026-06-13-pembelian-detail-tab-and-filter-design.md` — 11 sections covering routing, UI, data, behaviors, testing, rollout, out-of-scope follow-ups.
+- **Spec self-review pass**: removed §6 "open decision" (locked to Option A), locked §5.2 to Path A (drop `fetchSummary()`), clarified §3.2 boot-parsing semantics for `screen=` alone vs `screen=&po=`, fixed §4.4 cross-reference.
+- **Next:** user reviews spec end-to-end, then invoke `writing-plans` skill for implementation plan.
+
 ## 2026-06-13 — Warehouse list: default always on top — DONE
 
 - **What:** User asked for the default warehouse to always appear first in the list without having to manage sort_order manually.
