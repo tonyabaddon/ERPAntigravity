@@ -54,6 +54,7 @@ export default function App() {
   // Gating system: start at 'auth' or direct bypass for immediate interaction 
   const [activePage, setActivePage] = useState<ActivePage>('auth');
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
+  const [initialDetailPoNumber, setInitialDetailPoNumber] = useState<string | null>(null);
   const [penjualanInitialChannel, setPenjualanInitialChannel] = useState<KasirChannel | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
@@ -72,6 +73,31 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
 
+  // Read deep-link params on boot. Two paths:
+  //  - logged in: apply immediately (handled below after auth restore).
+  //  - logged out: stash in sessionStorage; restored by handleLoginSuccess.
+  // sessionStorage (not localStorage) so a stale deep-link doesn't survive a closed tab.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const screen = params.get('screen');
+    const po = params.get('po');
+    if (!screen) return;
+    // Only 'pembelian' is recognized for now.
+    if (screen !== 'pembelian') return;
+    if (currentUser) {
+      // Logged in already — apply now.
+      setActivePage('pembelian');
+      if (po) setInitialDetailPoNumber(po);
+    } else {
+      // Not logged in — stash for after-login restore.
+      try {
+        sessionStorage.setItem('pembelian.pendingDeepLink', JSON.stringify({ screen, po: po ?? null }));
+      } catch {
+        // sessionStorage unavailable (e.g., private window quota) — ignore.
+      }
+    }
+  }, []);
+
   // Restore Supabase auth session on page refresh
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -86,7 +112,26 @@ export default function App() {
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
-        setActivePage('dashboard');
+        // Default destination is dashboard; deep-link overrides if present.
+        let nextPage: ActivePage = 'dashboard';
+        try {
+          const raw = sessionStorage.getItem('pembelian.pendingDeepLink');
+          if (raw) {
+            const stash = JSON.parse(raw) as { screen?: string; po?: string | null };
+            if (stash.screen === 'pembelian') {
+              nextPage = 'pembelian';
+              if (stash.po) setInitialDetailPoNumber(stash.po);
+            }
+            sessionStorage.removeItem('pembelian.pendingDeepLink');
+          }
+        } catch {
+          // Stash unreadable — fall through to dashboard.
+        }
+        // Use functional setter: if activePage has already been moved off 'auth'
+        // by a prior run of this effect (React StrictMode double-mount in dev),
+        // don't override — a previous setActivePage('pembelian') from the
+        // deep-link branch should win over a no-stash fallback in the re-run.
+        setActivePage(current => current !== 'auth' ? current : nextPage);
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -204,7 +249,22 @@ export default function App() {
   // Handle successful login
   const handleLoginSuccess = (user: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
     setCurrentUser(user);
-    setActivePage('dashboard');
+    // Default destination is dashboard; deep-link overrides if present.
+    let nextPage: ActivePage = 'dashboard';
+    try {
+      const raw = sessionStorage.getItem('pembelian.pendingDeepLink');
+      if (raw) {
+        const stash = JSON.parse(raw) as { screen?: string; po?: string | null };
+        if (stash.screen === 'pembelian') {
+          nextPage = 'pembelian';
+          if (stash.po) setInitialDetailPoNumber(stash.po);
+        }
+        sessionStorage.removeItem('pembelian.pendingDeepLink');
+      }
+    } catch {
+      // Stash unreadable — fall through to dashboard.
+    }
+    setActivePage(nextPage);
   };
 
   const handleOpenCustomer = (customerId: string) => {
@@ -350,6 +410,8 @@ export default function App() {
             onStockRefresh={handleStockRefresh}
             currentUserId={currentUser?.id}
             currentUserPermissions={currentUser?.permissions}
+            initialDetailPoNumber={initialDetailPoNumber}
+            onDetailConsumed={() => setInitialDetailPoNumber(null)}
           />
         );
       case 'kasir':
@@ -423,9 +485,44 @@ export default function App() {
     }
   };
 
+  // Detail-tab detection: the URL carries ?po=... and we want a chromeless shell.
+  // Read URL fresh on every render — the param is stable for the tab's lifetime
+  // (we never replaceState the URL), so no React state needed.
+  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const params = new URLSearchParams(search);
+  const isDetailTab = params.get('screen') === 'pembelian' && params.get('po') !== null;
+
   // Switch to Auth Screen if no session active
   if (activePage === 'auth' || !currentUser) {
     return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Detail tab: no sidebar, no global header, no footer. Only the toast and the screen.
+  // The screen itself owns its top bar (close X + action buttons).
+  if (isDetailTab && activePage === 'pembelian') {
+    return (
+      <div className="min-h-screen bg-gray-50 text-[#0b1c30] font-sans">
+        {toastMessage && (
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-bounce-subtle">
+            <div className="bg-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-[#abc9f3] whitespace-nowrap">
+              {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
+              {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
+              {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
+              <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+            </div>
+          </div>
+        )}
+        <PembelianScreen
+          stockList={stockList}
+          showToast={triggerToast}
+          onStockRefresh={handleStockRefresh}
+          currentUserId={currentUser?.id}
+          currentUserPermissions={currentUser?.permissions}
+          initialDetailPoNumber={initialDetailPoNumber}
+          onDetailConsumed={() => setInitialDetailPoNumber(null)}
+        />
+      </div>
+    );
   }
 
   return (
@@ -450,6 +547,7 @@ export default function App() {
         activePage={activePage}
         onPageChange={(page) => {
           if (page !== 'pelanggan') setOpenCustomerId(null);
+          setInitialDetailPoNumber(null);
           setActivePage(page);
         }}
         currentUser={currentUser}

@@ -59,6 +59,22 @@ export const purchaseOrderService = {
     })) as DbPurchaseOrder[];
   },
 
+  async fetchByNumber(poNumber: string): Promise<DbPurchaseOrder | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select('*, suppliers(*), purchase_order_items(*)')
+      .eq('po_number', poNumber)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return {
+      ...(data as any),
+      supplier: (data as any).suppliers,
+      items: (data as any).purchase_order_items ?? [],
+    } as DbPurchaseOrder;
+  },
+
   async generatePoNumber(): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase.rpc('generate_po_number');
@@ -228,25 +244,4 @@ export const purchaseOrderService = {
     return Number(data ?? 0);
   },
 
-  async fetchSummary(): Promise<{ totalMtd: number; dueMtd: number; overdueAmount: number; countMtd: number }> {
-    if (!supabase) return { totalMtd: 0, dueMtd: 0, overdueAmount: 0, countMtd: 0 };
-    const { data } = await supabase
-      .from('purchase_orders')
-      .select('total, status, payment_due_at, created_at');
-    const rows = (data ?? []) as Array<{ total: number; status: string; payment_due_at?: string; created_at: string }>;
-    const now = new Date();
-    const todayDate = wibDateString(now);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const monthEndDate = wibDateString(new Date(now.getFullYear(), now.getMonth() + 1, 0));
-    const monthStartDate = monthStart.slice(0, 10);
-    const totalMtd = rows.filter(r => r.created_at >= monthStart).reduce((s, r) => s + Number(r.total), 0);
-    const countMtd = rows.filter(r => r.created_at >= monthStart).length;
-    const dueMtd = rows
-      .filter(r => r.status === 'RECEIVED' && r.payment_due_at && r.payment_due_at >= monthStartDate && r.payment_due_at <= monthEndDate)
-      .reduce((s, r) => s + Number(r.total), 0);
-    const overdueAmount = rows
-      .filter(r => r.status === 'RECEIVED' && r.payment_due_at && r.payment_due_at < todayDate)
-      .reduce((s, r) => s + Number(r.total), 0);
-    return { totalMtd, dueMtd, overdueAmount, countMtd };
-  },
 };

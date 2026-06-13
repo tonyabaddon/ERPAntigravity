@@ -1,5 +1,73 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — fix(pembelian): chromeless detail tab (spec §4.4) — DONE
+
+- **What:** Browser smoke revealed the detail tab still showed three stacked headers (global sidebar, global top app header, PembelianScreen page header) above PembelianDetailPage's own top bar. Fixed per spec §4.4 — "no sidebar, focused single-purpose view".
+- **App.tsx:** Derives `isDetailTab` from `window.location.search` (`?screen=pembelian&po=...`) before rendering; when true and `activePage === 'pembelian'`, short-circuits the full chrome shell (no Sidebar, no top header, no footer) and renders only a toast + PembelianScreen in a plain `min-h-screen bg-gray-50` wrapper.
+- **PembelianScreen.tsx:** Added early-return for `viewMode.kind === 'detail'` that renders `<PembelianDetailPage>` directly, bypassing the list's page-header wrapper. Removed the now-unreachable `viewMode.kind === 'detail'` branch from the inner ternary.
+- **PembelianDetailPage.tsx:** Both X close buttons and the "Kembali ke Daftar Pembelian" button now fall back to `window.location.href = '/?screen=pembelian'` if `window.close()` is a no-op (pasted URL, no opener tab).
+- **Lint:** 0 errors.
+- **Browser smoke:** `?screen=pembelian&po=PO-2026-06-003` → chromeless (no sidebar, no global header, no PembelianScreen header). `?screen=pembelian` → full chrome present.
+- **Commit:** `daa0e58` on `feat/pembelian-detail-tab-and-filter`.
+
+## 2026-06-13 — Pembelian: PO detail in new tab + KPI redesign + date filter (Tasks 3-8) — IMPLEMENTED
+
+- **What:** Spec at `docs/superpowers/specs/2026-06-13-pembelian-detail-tab-and-filter-design.md` shipped. Detail button on each PO row now opens a standalone full-page view in a new browser tab via query-string routing (`?screen=pembelian&po=<po_number>`), replacing the cramped `PoDetailView` modal. Four summary cards adopt the canonical `KpiCard` design system (`rounded-3xl`, icon chip, badge, `#012749` extrabold value, hover-lift). Added date filter bar (Bulan Ini / 30 Hari / 90 Hari / Custom) above the cards — cards 1/2/4 + the list react live; card 3 (Terlambat Bayar) intentionally ignores the filter (subtext clarifies "selalu hari ini, tidak ikut filter") because overdue is a now-state.
+- **New files (this bundle):** `src/components/pembelian/PembelianDetailPage.tsx` (full-page detail with loading skeleton, not-found state, status-driven actions, embedded ReceiveGoodsModal/MarkAsPaidModal/ReceiveReplacementModal/PurchaseOrderFormPage edit mode, `print:hidden` top bar, tab title).
+- **Modified (this bundle):** `src/lib/pembelianService.ts` (added `fetchByNumber(poNumber)`, removed `fetchSummary()` — all four KPI cards now computed client-side from the already-fetched PO list per spec §5.2); `src/App.tsx` (URL `URLSearchParams` parsing on boot, sessionStorage deep-link handoff so `?po=...` survives the `AuthScreen` round-trip, `initialDetailPoNumber` prop pipeline, cleared on every sidebar nav); `src/components/PembelianScreen.tsx` (new `FilterState` + `customPopoverOpen` state, filter bar between header and cards with click-outside popover, KpiCard adoption with per-card date fields, list filter via `inListPeriod`, empty state, `viewMode: 'detail'`, Detail → `window.open`, `visibilitychange` refresh on focus, removed `PoDetailView` + `ReceiveReplacementModal` usage).
+- **Deleted (this bundle):** `src/components/pembelian/PoDetailView.tsx` (modal replaced by `PembelianDetailPage`).
+- **Earlier in this feature (already committed):** `src/lib/dateRange.ts` + `tests/integration/dateRange.test.ts` (Task 1, commits `a218574` and `6ff53cb`); `src/components/ui/KpiCard.tsx` extracted from `LaporanScreen` (Task 2, commit `191b710`).
+- **Date fields per card (locked in spec §5.2):** Card 1 (Total PO) + Card 4 (Jumlah PO) use `coalesce(ordered_at, created_at)` — answer "what did I buy in this period?"; Card 2 (Jatuh Tempo) uses `payment_due_at` AND `status === 'RECEIVED'` — answer "what do I owe in this period?"; Card 3 (Terlambat Bayar) ignores filter entirely — answer "what's currently overdue right now?". The PO list below uses the same `coalesce(ordered_at, created_at)` as cards 1/4.
+- **WIB throughout:** `dateRange.resolveRange` / `periodLabel` / `inRange` all parameterise on `wibDateString()` so filter math is correct regardless of operator-local timezone. UTC arithmetic for day shifts (`Date.UTC(y, m-1, d) + days * 86_400_000`) avoids DST drift.
+- **Tab-sync:** list tab subscribes to `document.visibilitychange` and re-fetches when refocused — covers 100% of the "took an action in the detail tab, switched back" flow. No `BroadcastChannel` or `storage` event needed.
+- **KpiCard sub text size:** bumped from `text-xs` (12px) → `text-sm` (14px) per user's font-size preference (saved memory: "base 13-14px UI, 11-12px PDF data"). This affects LaporanScreen's 4 existing cards too — a deliberate upgrade, not a regression.
+- **Print:** PembelianDetailPage uses `print:hidden` on top bar / action buttons / close X and a `print:block` company-name header. Operator pressing Cmd-P gets a clean paper-friendly PO.
+- **Auth deep-link:** logged-out user pasting `?screen=pembelian&po=<id>` → cached in `sessionStorage` keyed `pembelian.pendingDeepLink` → restored by `handleLoginSuccess` after login, then deleted. `sessionStorage` (not `localStorage`) so a stale deep-link doesn't survive a closed tab.
+- **Lint:** `npm run lint` → 0 errors.
+- **Tests:** `npm run test:integration` runs the existing suite + the new 14-case `dateRange.test.ts` (presets, WIB boundary at `2026-06-01`, custom full-month label "Mei 2026", year-crossing range, inclusive bounds, defensive null/undefined). All green.
+- **Branch:** `feat/pembelian-detail-tab-and-filter`. Bundled commit covers Tasks 3-8 to keep main free of intermediate-state commits.
+- **Next:** smoke verify in browser (25 scenarios per plan §8 Step 5), then merge. Out-of-scope follow-ups (spec §11) — session-filter persistence, URL-encoded filter, server-side period filter at scale — deferred until requested.
+
+## 2026-06-13 — Task 2: shared KpiCard extracted — DONE
+
+- **What:** Lifted the file-local `KpiCard` helper out of `LaporanScreen.tsx` into a new shared `src/components/ui/KpiCard.tsx`. Same body (rounded-3xl, icon chip, badge, `#012749` extrabold, hover-lift). LaporanScreen now imports the shared component; visual unchanged. Sets up the upcoming Pembelian KPI redesign (Task 5) to reuse the same canonical card.
+- **Prop split:** Call sites in LaporanScreen previously combined icon background + color into a single `iconBg` string (e.g., `"bg-blue-50 text-[#1e3d60]"`). Shared component splits these into `iconBg` and `iconColor` separately — call sites updated accordingly. New `alarming` prop added for rose-tinted overdue card (Task 5 will use it).
+- **Lint:** `npm run lint` → 0 errors.
+- **Commit:** `191b710` on `feat/pembelian-detail-tab-and-filter`.
+- **Next:** Tasks 3-8 implement Pembelian filter bar, fetchByNumber, App.tsx routing, KpiCard adoption, PembelianDetailPage; commit together at end of Task 8.
+
+## 2026-06-13 — Task 1 code-review fixes: dateRange.ts + test casts — DONE
+
+- **Fix 1:** Removed misleading `as unknown as string` casts in `inRange` test — signature already accepts `string | null | undefined`.
+- **Fix 2:** Added exhaustiveness guard (`never` check + throw) to `resolveRange` switch — future `FilterPreset` additions are a compile error, not a silent `undefined`.
+- **Fix 3:** Added inline comment on `lastOfMonth` explaining the day=0 month-rollback trick and leap-year safety.
+- **Tests:** 14/14 pass. **Lint:** 0 errors.
+- **Commit:** `6ff53cb` on `feat/pembelian-detail-tab-and-filter`.
+
+## 2026-06-13 — Task 1: dateRange.ts helpers (TDD) — DONE
+
+- **What:** Created `src/lib/dateRange.ts` (pure date-range functions for Pembelian filter bar) and `tests/integration/dateRange.test.ts` (14 vitest tests).
+- **Exports:** `resolveRange`, `periodLabel`, `resolvedRangeShort`, `inRange`. Presets: `bulan_ini`, `30_hari`, `90_hari`, `custom`. All math WIB (UTC-based to avoid DST drift).
+- **TDD:** Tests written first, confirmed fail (module not found), then implementation, confirmed 14/14 pass.
+- **Lint:** 0 errors (`tsc --noEmit`).
+- **Commit:** `a218574` on `feat/pembelian-detail-tab-and-filter`.
+
+## 2026-06-13 — Pembelian page: PO detail in new tab + KPI redesign + date filter (spec) — DONE
+
+- **What:** Brainstormed design for three concurrent changes to `PembelianScreen`: (1) PO Detail button opens a standalone full-page view in a new browser tab (replaces the cramped `PoDetailView` modal) via query-string routing (`?screen=pembelian&po=PO-XYZ`); (2) the four KPI summary cards (Total PO / Jatuh Tempo / Terlambat Bayar / Jumlah PO) adopt the canonical `KpiCard` pattern used by `DashboardScreen` and `LaporanScreen` (rounded-3xl, icon chip, badge, `#012749` extrabold, alarming rose-tint for overdue > 0); (3) new date-filter bar between page header and KPI cards with presets `Bulan Ini` (default) / `30 Hari` / `90 Hari` / `Custom` (range popover). Filter drives cards 1/2/4 + the list; "Terlambat Bayar" stays "saat ini" by design (overdue is a now-state, hiding it under arbitrary date ranges would be unsafe).
+- **Design decisions locked:**
+  - Routing = query-string (`?screen=pembelian&po=...`), NOT `react-router`. Avoids backend rewrite for `index.html` fallback. App.tsx parses URLSearchParams once on boot.
+  - List + cards filter by `coalesce(ordered_at, created_at)` — DRAFT POs (no `ordered_at` yet) fall into period of their creation date so they don't disappear from "Bulan Ini".
+  - Tab-sync = `visibilitychange` refocus-refresh only. No `BroadcastChannel`, no `storage` event. Cheap, covers 100% of the common "did something in detail tab, switch back to list" flow.
+  - `KpiCard` extracted to `src/components/ui/KpiCard.tsx` (was file-local in `LaporanScreen.tsx`). Both screens import the shared component.
+  - `purchaseOrderService.fetchSummary()` removed — all 4 cards computed client-side from the already-fetched PO list.
+  - Edit on detail tab → form replaces detail body in same tab (Option A locked). On save, returns to detail view of same PO. Hapus on detail tab redirects to list URL after success so user isn't stranded.
+- **Mockup**: `tmp/pembelian-mockup.html` — interactive prototype demonstrating chip filtering (cards + list react live), Custom popover with from/sampai date inputs + validation, Detail-button opens new tab (`?po=...`), in-page Buat PO Baru, dynamic period labels.
+- **Spec**: `docs/superpowers/specs/2026-06-13-pembelian-detail-tab-and-filter-design.md` — 11 sections covering routing, UI, data, behaviors, testing, rollout, out-of-scope follow-ups.
+- **Spec self-review pass**: removed §6 "open decision" (locked to Option A), locked §5.2 to Path A (drop `fetchSummary()`), clarified §3.2 boot-parsing semantics for `screen=` alone vs `screen=&po=`, fixed §4.4 cross-reference.
+- **Gap audit second-pass (10 items applied):** §5.2 made the "different date fields per card" explicit in a table (Card 2 uses `payment_due_at`, not `coalesce(ordered_at, created_at)`, so it answers "what do I owe in this period?" not "what did I buy"). §3.2.1 added auth deep-link handoff via `sessionStorage` so logged-out paste-URL flow survives the AuthScreen round-trip. §4.4 added no-sidebar rule, tab title, loading skeleton, print classes (`print:hidden` for action bar + X), and PO-not-found empty state. §5.4 locked all "today" math to `wibDateString()` (WIB, not browser local). §9 testing expanded with WIB-boundary unit test, deep-link auth handoff smoke, print preview smoke, a11y tab-through. §11 added server-side period filter (trigger: PO count > ~1000) and filter session-persistence to follow-ups list. §11 also explicitly captures the row-click-to-new-tab deferral from user's "minimal change" preference.
+- **Next:** user reviews spec end-to-end, then invoke `writing-plans` skill for implementation plan.
+
 ## 2026-06-13 — Warehouse list: default always on top — DONE
 
 - **What:** User asked for the default warehouse to always appear first in the list without having to manage sort_order manually.
