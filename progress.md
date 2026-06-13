@@ -1,5 +1,114 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Calista Phase 1A implementation plan written — DONE
+
+- **What:** Invoked `superpowers:writing-plans` skill to produce a bite-sized, TDD-discipline implementation plan for Phase 1A (OpenRouter swap + auto-failover router + sticky pinning + tripwire heuristics + engine integration). Plan saved to `docs/superpowers/plans/2026-06-13-calista-phase-1a-implementation.md`.
+- **Plan structure (20 tasks + 5 pre-flight checks + 5 self-review steps):**
+  - Pre-flight P.1-P.5: env setup, OpenRouter account creation, $10 prefund, CALISTA_ALERT_PHONE configuration
+  - Tasks 1-3: Supabase migrations — `llm_calls` table, `model_cooldowns` table, `conversations` ALTER for pinning columns
+  - Tasks 4-12: `backend-go/internal/llm/` package — models, chain config (10 free models + Calista persona prompt), OpenRouter HTTP client, cooldown registry with exponential backoff, sticky pin manager with 2-swap cap, tripwire heuristics (7 flags), first-reply tone seeding, telemetry recorder, router orchestrator
+  - Task 13: `backend-go/internal/db/calista.go` — CalistaStore implementing llm CooldownStore/PinStore/TelemetryStore via lib/pq
+  - Tasks 14-15: Engine refactor — rename `GeminiClient → LLMClient`, add `CallOpts/LLMResult/ChainExhausted`, per-state max_tokens, tolerant JSON parser
+  - Tasks 16-17: Adapters — `gemini.EngineAdapter` (emergency direct fallback) and `llm.EngineAdapter` (router → engine.LLMClient)
+  - Task 18: `main.go` wiring behind `ENABLE_OPENROUTER` feature flag with Gemini as fallback
+  - Task 19: Engine integration test — happy path + chain-exhausted escalation to admin
+  - Task 20: Manual smoke test against real OpenRouter (8 steps including pin verification, ChainExhausted forced scenario, 30-min soak)
+  - Self-review R.1-R.5: spec coverage gap-check (caught missing `Router.Unpin` on terminal state — added as R.2 fix), placeholder scan, type consistency, full-build + full-test
+- **Each task uses 4-5 step TDD structure:** write failing test → run (verify fail) → minimal implementation → run (verify pass) → commit. Frequent commits, DRY, YAGNI throughout.
+- **No placeholders:** every code block in the plan is complete and ready to copy. Exact file paths, exact bash commands, exact expected output for each step.
+- **Files to create:** ~12 new Go files, 3 new SQL migrations, 0 new third-party dependencies (OpenRouter accessed via raw net/http since it's OpenAI-compatible).
+- **Files modified:** `internal/engine/machine.go`, `internal/engine/parser.go`, `internal/engine/machine_test.go`, `config/config.go`, `main.go`. Existing `internal/gemini/` untouched (kept as emergency fallback).
+- **Estimate:** ~1.5 weeks for a single engineer following the plan. Subagent-driven execution can compress to 2-3 days if parallelizable.
+- **Next step options offered to user:**
+  1. **Subagent-driven execution** (recommended) — dispatch fresh subagent per task with two-stage review
+  2. **Inline execution** — batch execution in this session using executing-plans skill with checkpoints
+
+## 2026-06-13 — Pricing v2: Premium tier + Calista cost notification + stage-based hiring discipline — DONE
+
+- **What:** Founder asked for pricing analysis for new Premium tier (Pro + Calista AI) with target 50% net margin. Conversation surfaced critical reality check: at 50 tenants with FULL hired team (founder + 5 employees), Vosi would lose ~Rp 947 juta/year. Resulted in major pricing.md v2 rewrite + adding stage-based hiring discipline rules.
+- **Pricing v2 (LOCKED after multi-round refinement):**
+  - **Starter Q Rp 549K / Y Rp 384.3K** (was Rp 399K / Rp 339K — bumped +38% Q, +13% Y; margin Q 49% / Y 27%)
+  - **Pro Q Rp 859K / Y Rp 601.3K** (was Rp 799K / Rp 559K — bumped +7.5% Q, +7.5% Y; margin Q 52% / Y 32%)
+  - **Premium Q Rp 3,499K / Y Rp 2,449.3K** (NEW tier — Pro + Calista AI; margin Q 74% / Y 63%)
+  - **Anchor pricing strategy:** all tiers show struck-through "list price" 2× effective + "50% OFF LAUNCH" badge for psychology
+  - **Setup fees:** Starter/Pro Rp 1.5M, Premium Rp 3.5M (covers Calista persona tuning + shadow mode monitoring)
+  - **Yearly discount 30% uniform** across all tiers (was asymmetric 15% Starter / 30% Pro in v1)
+- **Feature restructure:** Pro now INCLUDES GL/Neraca/Arus Kas (was Premium-only in v1). Premium's ONLY differentiator vs Pro = Calista AI. Cleaner positioning.
+- **Refined HPP per tier (v2):** Starter Rp 280K, Pro Rp 410K (+Rp 30K GL), Premium Rp 910K (+Rp 400K Calista marginal cost). v1 used flat Rp 321K for all tiers — v2 differentiates per feature complexity.
+- **NEW major section: Stage-based hiring roadmap.** 7 stages from 1-3 tenants (founder only) → 300+ tenants (full team). Each stage maps tenant count → team config → monthly OPEX → expected margin. Breaks the illusion that "47% blended margin at 50 tenants" is sustainable with hired team — only with founder sweat equity.
+- **NEW major section: Year 1-2 Financial Discipline Rules** (7 rules):
+  1. Hire only when MRR ≥ 3× new hire's monthly cost (no pre-hiring)
+  2. Founder cash salary scales with stage (Rp 5M Stage 0 → Rp 30M Stage 5+); difference = unrealized founder equity
+  3. Setup fees treated as runway (one-time Year 1 cash), NOT recurring profitability
+  4. Premium tier subsidizes Starter/Pro at blended level; target ≥20% Premium share
+  5. LTV/CAC ≥ 3:1 discipline — walk away from tenants below
+  6. Cost notification + manual approval (mirrors Calista paid-tier rule from existing memory)
+  7. Quarterly P&L self-review with stage transition readiness check
+- **PAT forecast at 50 tenants per team config:**
+  - LEAN (founder + 1 CS, Rp 15M OPEX): +Rp 398M/year ✅
+  - MID (+ jr eng + sales, Rp 55M OPEX): -Rp 82M/year ⚠️
+  - FULL (+ marketing + sr eng, Rp 135M OPEX): -Rp 947M/year ❌
+- **Break-even tenant count per team size:** founder only ~5, +1 CS ~16, +1 jr eng ~37, +1 sales ~58, +1 marketing ~78, full team ~140. Vosi achieves real 40-50% net margin only at 500-1000+ tenants (year 3-4 trajectory typical for bootstrapped Indonesian SaaS).
+- **Updated cashflow projection at 50 tenants** (35% Starter / 45% Pro / 20% Premium mix):
+  - Recurring revenue: Rp 54.2M/mo (vs v1 Rp 27.8M/mo, +95%)
+  - Year 1 cash upfront (incl setup): Rp 452M (vs v1 Rp 264M, +71%)
+  - Annual profit at lean stage: Rp 372M (vs v1 Rp 140M, +166%)
+- **Competitive context updated** with Premium vs Mekari Kontak comparison: Vosi Premium Rp 3,499K Q matches Jurnal's Rp 3M monthly anchor while bundling full ERP + Calista AI; Mekari Kontak requires Jurnal subscription on top → total stack actually more expensive.
+- **Files changed:** `docs/business/pricing.md` extensively rewritten (~150 lines added, all sections updated). `docs/superpowers/specs/2026-06-13-calista-phase-1-design.md` earlier updated with cost notification system (§5.7), per-tenant OpenRouter API key column (§4.2), Layer 2 paid Gemini Flash opt-in with founder approval flow.
+- **Strategic implication for tenant #2-50 trajectory:** Premium tier is the financial linchpin. Without Premium subsidizing thin Starter Yearly margins, blended margin collapses. Sales conversation must aggressively position Calista as the upsell driver — every Starter→Premium or Pro→Premium conversion = +Rp 2,640K/mo per tenant (the AI value capture).
+- **Branch:** `feat/configurable-sales-channels` (Calista work + pricing piggybacks current branch; will split when implementation starts).
+- **Next:** founder reviews `pricing.md` v2 + Phase 1 spec one final pass. If approved, invoke `writing-plans` skill on Phase 1A for the implementation plan. Sales/marketing collateral for Premium tier launch is separate workstream.
+
+## 2026-06-13 — Calista Phase 1: gap audit + retention reversal + data-moat sections (brainstorm + spec update) — DONE
+
+- **What:** Founder asked for gap audit ("is there anything I miss?"). Surfaced 20 gaps across blocker/important/nice-to-have severity. Critical finding: **schema collision** — `conversations` and `messages` tables ALREADY exist (from migration `20260531000000_core_ai_engine.sql`) with matching Go structs in `backend-go/internal/models/types.go`. Original spec proposed `CREATE` for both → would either fail migration or break existing engine/poller code. Fixed via `ALTER TABLE` approach. Also: founder reversed retention policy — wants ALL data kept forever for future ML training corpus.
+- **Spec edits applied (~10 changes):**
+  - **§4.1 Migrations** — restructured: 2 ALTER migrations for existing `conversations` + `messages`, plus NEW migrations for `ai_agents`, `ai_knowledge_sources`, `llm_calls`, `model_cooldowns` (cooldown registry persistence), media Storage bucket
+  - **§4.2.1** — explicit ALTER of `conversations`: adds `mode_changed_at`, `mode_changed_by`, `last_message_at`, `last_message_preview`, `unread_count`, `pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`. `mode` is a GENERATED column derived from existing `ai_active` boolean — keeps backward compat with existing `engine.Machine`/`followup_poller`/`heartbeat_poller`. Writes use `ai_active`; reads use `mode`. Backfill `last_message_at` from existing data
+  - **§4.2.2** — explicit ALTER of `messages`: adds `direction` (generated from `sender`), `model_used`, `latency_ms`, `tripwire_flags`. No rename of `body`/`sender`/etc. — existing struct interfaces preserved
+  - **§4.2** — added `model_cooldowns` table (cooldown registry persistence — solves "daemon restart wipes cooldown → 429 storm" gap)
+  - **§4.3** — added `whatsapp-media` Supabase Storage bucket (was missing for multimodal media_url)
+  - **§5.1 Cooldown rules** — added persistence detail, exponential backoff (60→90→120m), and `Router.Call` 15s total budget on top of per-call 8s soft timeout
+  - **§5.1 Tripwire heuristics** — added 3 new rules: language drift (>30% English), customer opt-out (`STOP`/`berhenti`/`unsubscribe` → flip to human mode + ack message), AI self-ID question detection (inject directive into next prompt so model answers honestly without breaking voice)
+  - **§5.2 engine refactor** — expanded: full-payload token budget (drops oldest history when total prompt > 80% of model context), tolerant JSON parser (strips markdown fences, extracts first balanced `{...}`, retry-with-strict-directive on parse failure)
+  - **§5.2.1 NEW** — Engine integration map: how each existing engine artifact wires to new `llm.Router`. `GeminiClient` interface renamed `LLMClient`, `ProcessResult.GeminiError` renamed `LLMError`, new `ProcessResult.ChainExhausted bool` flag, `Conversation.AIActive` Go field unchanged, `internal/gemini/` kept as emergency direct fallback
+  - **§8 Rollout** — added 6 objective shadow-mode criteria (was vague "compare quality manually"): reply relevance 1-5 sample, length comparable to baseline, language ≥95% Bahasa, tripwire fires per provider, state transition success ≥98%, latency p95 <3s. Plus tenant #1 operator communication script
+  - **§13 NEW Data Retention Policy** — locked: no automated cleanup, indefinite retention for ML training. UU PDP individual deletion handled via admin-triggered `redact_calista_conversation(conversation_id)` RPC (preserves structural rows for ML stats). Storage cost projected <$1/month for 10-year retention
+  - **§14 NEW Data as a Moat** — articulates ML training corpus value: conversation pairs, operator-corrected drafts as DPO preference pairs (highest-value modern training signal), tone signatures, tripwire-flagged outputs, customer media. Projected corpus size (3 years = ~40K conversations, ~16.5K preference pairs). Fine-tuning roadmap month 6/12/18/24
+  - **§15 NEW Capacity & Benefits Summary** — capacity table (conservative 165/realistic 300/generous 625 conversations/day), 2-5× multiplier vs today, headroom for 5 tenants on single chain. Benefits broken into customer-facing, operator-facing, engineering, business, data-moat
+  - **§16 NEW Pre-Launch Checklist** — gates `ENABLE_OPENROUTER=true` flip: operational (account/keys/migrations), legal/compliance (UU PDP individual deletion RPC, privacy notice, lawful basis check, AI self-ID), quality (fallback testing, sticky pin, integration map, cooldown persistence, media bucket), rollback plan
+- **Capacity headlines:** ~165-625 customer conversations/day per tenant (vs ~125/day today on Gemini-only); 3-12× headroom for tenant #1's current ~50/day actual volume; room for tenants #2-5 on the same OpenRouter free-tier chain
+- **Retention policy LOCKED:** no auto-cleanup; data preserved forever for ML training. Individual customer deletion handled via admin RPC (per UU PDP §35). Storage cost <$1/month long-term
+- **Branch:** `feat/configurable-sales-channels` (Calista work piggybacks this branch for now; will split when implementation starts)
+- **Next:** user reviews the updated spec one more time. If approved, invoke `writing-plans` skill on Phase 1A for the actual implementation plan.
+
+## 2026-06-13 — Calista Phase 1A: deepen continuity + drop paid fallback (brainstorm + spec update) — DONE
+
+- **What:** User refined Phase 1A scope to emphasize WhatsApp conversation continuity during model swaps + remove paid fallback. Updated `docs/superpowers/specs/2026-06-13-calista-phase-1-design.md` extensively. Two threads of refinement:
+  1. **Continuity design (new §5.6):** sticky per-conversation pinning, state-boundary unpin opportunity, hard 2-swap cap → `ChainExhaustedError` → engine transitions to `StateEscalatedAdmin` (reuse existing escalation flow), first-reply tone seeding (`conversations.first_reply_tone JSONB`), persona constants, per-state max_tokens cap, language-drift guard. Worked example showing a 9-turn order with two swaps and one escalation.
+  2. **Cost = Rp 0:** dropped `google/gemini-2.5-flash` paid last-resort. Expanded chain from 7 → 10 free models: `gemma-4-31b → qwen3-next-80b → nex-n2-pro → nemotron-3-super → gemma-4-26b-a4b → gpt-oss-120b → llama-3.3-70b → hermes-3-405b → nemotron-3-nano-30b → gpt-oss-20b → (escalate to admin)`. All exhausted → human handover via existing `StateEscalatedAdmin` flow. Recommended one-time $10 OpenRouter prefund to unlock higher free-tier rate limits (deposit, not subscription).
+- **Decision locked: Sticky once swapped (Option A) + anti-flip-flop + state-boundary unpin.** Customer sees AT MOST 2 voice changes per conversation; 3rd is to a human.
+- **Mitigation tradeoffs walked through with user in plain (shop staff) language:**
+  - Con: stuck on backup model after primary returns → fix: state-boundary unpin opportunity + chain quality + short conversations + telemetry-driven retune
+  - Con: cascading swaps → fix: hard 2-swap cap → escalate + cooldown registry + pre-flight health probe + traffic distribution
+  - Voice shift dampening → fix: tight persona + first-reply tone memory + few-shot examples + length cap + language guard
+- **Spec changes applied (8 edits):**
+  - §1 Goals — added continuity + Rp 0 cost as explicit goals
+  - §4.2 `conversations` table — added `pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`
+  - §4.2 `llm_calls` table — added `was_forced_swap`, `state_boundary`, `escalated_chain_exhausted` status
+  - §5.1 Router — Pin/Unpin/StateBoundary methods, ChainExhaustedError, 5-step routing decision algorithm
+  - §5.5 Background jobs — added stale-pin cleanup (24h inactivity)
+  - §5.6 **NEW** — Conversation Continuity Design (extensive: technical/perceptual layers, 7 mechanisms, worked example, test coverage list)
+  - §6.3 Calista Settings UI mockup — 10 free models listed, paid removed, continuity controls shown
+  - §7 Phase 1A — estimate raised to ~1.5 weeks, added pre-phase founder setup steps (OpenRouter $10 prefund, env vars)
+  - §8 Rollout — added pre-Phase-1A setup steps
+  - §11 Risks — added 4 new risks specific to escalate-to-admin pattern + silent-paid-conversion
+  - §12 Success Criteria — updated metrics (≥5 of 10 models, <0.5% escalation rate, Rp 0 monthly)
+- **Cost prediction**: Tenant #1 monthly cost = Rp 0. With $10 prefund, OpenRouter free-tier rate limits go up; we won't spend the deposit because no paid model in chain.
+- **Worst-case UX flow** (all 10 models simultaneously down): Calista sends "Sebentar ya Pak/Bu, saya cek dulu" → admin notified via existing WA escalation flow → human takes over. Customer not stranded.
+- **Branch:** `feat/configurable-sales-channels` (current branch — Calista work piggybacks the same branch for now since both touch infra; will branch separately when implementation starts).
+- **Next:** user reviews the updated spec end-to-end. After approval, invoke `writing-plans` skill for Phase 1A implementation plan.
+
 ## 2026-06-13 — Configurable sales channels: Final review fixes (C1 + I2 + I3) — DONE
 
 - **What (C1):** `src/components/icons/ChannelIcon.tsx` — added `tint?: 'white' | 'none'` prop (default `'white'` preserves prior behavior on colored backgrounds). The `filter: 'brightness(0) invert(1)'` is now applied conditionally via spread (`...(tint === 'white' && { filter: ... })`). `src/components/penjualan/ChannelSelector.tsx` — inactive pills now pass `tint='none'` so the SVG renders in its native color over the white card background instead of pure-white-on-white (which made 9 channel icons — 7 marketplace + WhatsApp + Instagram — invisible in the inactive state). Active pills still get `tint='white'` to read against the brand-colored square.
