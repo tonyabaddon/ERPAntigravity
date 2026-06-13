@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Task 1 code-review fixes: dateRange.ts + test casts — DONE
+
+- **Fix 1:** Removed misleading `as unknown as string` casts in `inRange` test — signature already accepts `string | null | undefined`.
+- **Fix 2:** Added exhaustiveness guard (`never` check + throw) to `resolveRange` switch — future `FilterPreset` additions are a compile error, not a silent `undefined`.
+- **Fix 3:** Added inline comment on `lastOfMonth` explaining the day=0 month-rollback trick and leap-year safety.
+- **Tests:** 14/14 pass. **Lint:** 0 errors.
+- **Commit:** `6ff53cb` on `feat/pembelian-detail-tab-and-filter`.
+
 ## 2026-06-13 — Task 1: dateRange.ts helpers (TDD) — DONE
 
 - **What:** Created `src/lib/dateRange.ts` (pure date-range functions for Pembelian filter bar) and `tests/integration/dateRange.test.ts` (14 vitest tests).
