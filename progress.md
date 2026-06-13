@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Calista Phase 1A Tasks 1-3: Supabase migrations written — DONE
+
+- **What:** Authored three Supabase migration files for Phase 1A. File-only delivery per project convention (founder applies `supabase db push` manually after review). Branch `feat/calista-phase-1a`.
+- **Migrations (one commit each, in apply order):**
+  - `supabase/migrations/20260613000034_calista_phase1a_llm_calls.sql` (49 lines) — new `llm_calls` telemetry table: id/conversation_id (FK → conversations ON DELETE CASCADE) /model_slug/tier/was_forced_swap/state_boundary/token counts/latency_ms/cost_idr_estimated/status/error_message/created_at. CHECK constraints on tier (4 values) + status (7 values). Three indexes: `(model_slug, created_at DESC)`, `(conversation_id, created_at DESC)`, partial `(status) WHERE status != 'success'`. RLS enabled, idempotent `llm_calls_admin_read` SELECT policy for authenticated. Commit `c840132`.
+  - `supabase/migrations/20260613000035_calista_phase1a_cooldowns.sql` (28 lines) — new `model_cooldowns` table: `model_slug PRIMARY KEY`, `cooldown_until`, `last_error`, `consecutive_failures`, `updated_at`. Source of truth across daemon restarts to prevent 429 storms. RLS enabled, idempotent `model_cooldowns_admin_read` policy. Commit `de0e023`.
+  - `supabase/migrations/20260613000036_calista_phase1a_conversations_pinning.sql` (20 lines) — ALTERs existing `conversations` (from `20260531000000_core_ai_engine.sql`) adding `pinned_model_slug`, `pinned_at`, `swap_count` (default 0), `first_reply_tone jsonb` — all `ADD COLUMN IF NOT EXISTS`. Partial index `idx_conversations_pinned_model` on `pinned_model_slug WHERE NOT NULL`. Comments document spec §5.1 routing decision, swap cap (2 → escalate), tone signature shape. Commit `47cf0ed`.
+- **Pre-flight verification:** Read base `20260531000000_core_ai_engine.sql` and confirmed (a) `conversations.id` is `uuid PRIMARY KEY` (FK target valid), (b) none of the 4 pinning columns exist on the base table, (c) no later migration introduces `llm_calls`, `model_cooldowns`, or any of the pinning columns — clean adds.
+- **Migration timestamps:** `34`, `35`, `36` — gapless after latest `20260613000022_sales_channels_phase_b_realtime.sql`. No collision risk.
+- **Not applied:** `DATABASE_URL` unset; founder runs `supabase db push` manually. File-only delivery per CLAUDE.md gotcha.
+- **Next:** Tasks 4-12 implement `backend-go/internal/llm/` package (models, chain, OpenRouter client, cooldown registry, pin manager, tripwire, tone, telemetry, router).
+
 ## 2026-06-13 — Calista Phase 1A implementation plan written — DONE
 
 - **What:** Invoked `superpowers:writing-plans` skill to produce a bite-sized, TDD-discipline implementation plan for Phase 1A (OpenRouter swap + auto-failover router + sticky pinning + tripwire heuristics + engine integration). Plan saved to `docs/superpowers/plans/2026-06-13-calista-phase-1a-implementation.md`.
