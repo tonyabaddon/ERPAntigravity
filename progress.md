@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable sales channels: Phase A.2 column rename + alias view (Task 3) — DONE
+
+- **What:** Task 3 of the configurable sales channels plan. Renames `kasir_transactions.tokped_order_no` to `marketplace_order_no` to reflect the broader marketplace scope unlocked by the Phase A.1 ENUM expansion (shopee, lazada, blibli, bukalapak, ralali, bhinneka now valid alongside tokopedia). Adds a `COMMENT ON COLUMN` documenting which channels require the field. Creates backward-compat view `public.kasir_transactions_legacy` that re-exposes `marketplace_order_no AS tokped_order_no`, giving frontend reads (PenjualanBaru, SalesInvoicePDF, etc.) a ~1-week soak window before Phase C/D updates them to the new name. The alias view will be dropped in Phase H.
+- **Migration**: `supabase/migrations/20260613000011_sales_channels_phase_a_rename.sql` — file-only (controller override: no `supabase db push`; user applies manually after review). 6-digit suffix `000011` chosen — no collision with `000005` warehouse migration or `000010` Phase A.1 ENUM migration on the same date.
+- **Branch:** `feat/configurable-sales-channels`.
+- **Next:** Task 4 (per the plan).
+
 ## 2026-06-13 — Configurable sales channels: Phase A.1 ENUM extension (Task 2) — DONE
 
 - **What:** Task 2 of the configurable sales channels plan. Created Phase A migration that extends both `kasir_channel` and `sales_channel` Postgres ENUMs with 10 new canonical values each: `sales`, `expo`, `shopee`, `lazada`, `blibli`, `bukalapak`, `ralali`, `bhinneka`, `instagram`, `website`. Uses `ADD VALUE IF NOT EXISTS` so the migration is idempotent regardless of whether `whatsapp` was added in a prior migration. Trailing `COMMIT;` ensures new ENUM labels are durable before any subsequent statement could reference them (Postgres requires ADD VALUE to be committed before the new value can be used).
