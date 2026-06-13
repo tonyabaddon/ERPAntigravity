@@ -120,7 +120,11 @@ export const CHANNEL_GROUPS: Record<ChannelGroup, SalesChannel[]> = {
 
 export const CHANNEL_REQUIRES_ORDER_NO: Set<SalesChannel> = new Set(CHANNEL_GROUPS.marketplace);
 
-export const CHANNEL_LOCKED: Set<SalesChannel> = new Set(['walkin']);
+// No channels are locked — admin can disable any of the 14 (D11 revoked 2026-06-13).
+// If admin disables ALL channels, PenjualanBaru pill selector renders empty and
+// operator cannot input new sales. By design — admin is trusted. Historical data
+// (recon, dashboard, laporan) is unaffected by visibility.
+export const CHANNEL_LOCKED: Set<SalesChannel> = new Set();
 
 export function getChannelDef(code: SalesChannel): ChannelDef {
   return CHANNEL_VISUAL[code];

@@ -30,8 +30,8 @@ describe('salesChannels', () => {
       .toEqual([...CHANNEL_GROUPS.marketplace].sort());
   });
 
-  test('CHANNEL_LOCKED contains walkin only', () => {
-    expect(Array.from(CHANNEL_LOCKED)).toEqual(['walkin']);
+  test('CHANNEL_LOCKED is empty — admin can toggle all 14 channels (D11 revoked)', () => {
+    expect(Array.from(CHANNEL_LOCKED)).toEqual([]);
   });
 
   test('getChannelDef returns expected shape', () => {
