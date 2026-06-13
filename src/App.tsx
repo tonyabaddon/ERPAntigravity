@@ -127,7 +127,11 @@ export default function App() {
         } catch {
           // Stash unreadable — fall through to dashboard.
         }
-        setActivePage(nextPage);
+        // Use functional setter: if activePage has already been moved off 'auth'
+        // by a prior run of this effect (React StrictMode double-mount in dev),
+        // don't override — a previous setActivePage('pembelian') from the
+        // deep-link branch should win over a no-stash fallback in the re-run.
+        setActivePage(current => current !== 'auth' ? current : nextPage);
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
