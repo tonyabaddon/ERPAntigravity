@@ -206,7 +206,15 @@ export default function PembelianDetailPage({
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
-          <button onClick={() => window.close()} aria-label="Tutup" className="text-gray-400 hover:text-gray-700">
+          <button
+            onClick={() => {
+              window.close();
+              // If we're still here, window.close was a no-op (pasted URL, no opener).
+              window.location.href = '/?screen=pembelian';
+            }}
+            aria-label="Tutup"
+            className="text-gray-400 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -219,11 +227,11 @@ export default function PembelianDetailPage({
             <p className="text-sm text-gray-500 mt-2">Nomor PO <span className="font-mono font-semibold">{poNumber}</span> sudah dihapus atau tidak pernah ada.</p>
             <button
               onClick={() => {
-                // Detail tab is normally opened via window.open from the list tab.
-                // window.close() works for those; silently no-ops for pasted-URL tabs,
-                // in which case we fall back to switching view-mode to the list.
                 window.close();
-                onBackToList();
+                // If window.close was a no-op (pasted URL), navigate to list URL —
+                // a full reload resets the URL params so the chromeless detail-tab
+                // branch in App.tsx falls through to the normal list view.
+                window.location.href = '/?screen=pembelian';
               }}
               className="mt-6 inline-flex items-center gap-2 bg-[#012749] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#013865]"
             >
@@ -262,7 +270,15 @@ export default function PembelianDetailPage({
       {/* Top bar */}
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-3">
-          <button onClick={() => window.close()} aria-label="Tutup" className="text-gray-400 hover:text-gray-700">
+          <button
+            onClick={() => {
+              window.close();
+              // If we're still here, window.close was a no-op (pasted URL, no opener).
+              window.location.href = '/?screen=pembelian';
+            }}
+            aria-label="Tutup"
+            className="text-gray-400 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
           <div className="bg-indigo-100 p-2 rounded-lg">

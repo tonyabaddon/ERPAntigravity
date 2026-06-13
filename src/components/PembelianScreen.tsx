@@ -141,6 +141,25 @@ export default function PembelianScreen({
   const overdueAmount = overdueNow.reduce((s, p) => s + Number(p.total), 0);
   const overdueCount = overdueNow.length;
 
+  // Detail view-mode short-circuits the page chrome: PembelianDetailPage is a
+  // standalone full-page view and must NOT be wrapped by the list's page header.
+  // Spec §4.4: detail tab is a focused single-purpose view.
+  if (viewMode.kind === 'detail') {
+    return (
+      <PembelianDetailPage
+        poNumber={viewMode.poNumber}
+        stockList={stockList}
+        suppliers={suppliers}
+        orders={orders}
+        currentUserId={currentUserId}
+        currentUserPermissions={currentUserPermissions}
+        showToast={showToast}
+        onStockRefresh={onStockRefresh}
+        onBackToList={() => setViewMode({ kind: 'list' })}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 flex-shrink-0">
@@ -224,18 +243,6 @@ export default function PembelianScreen({
             }}
             onSupplierAdded={reload}
             showToast={showToast}
-          />
-        ) : viewMode.kind === 'detail' ? (
-          <PembelianDetailPage
-            poNumber={viewMode.poNumber}
-            stockList={stockList}
-            suppliers={suppliers}
-            orders={orders}
-            currentUserId={currentUserId}
-            currentUserPermissions={currentUserPermissions}
-            showToast={showToast}
-            onStockRefresh={onStockRefresh}
-            onBackToList={() => setViewMode({ kind: 'list' })}
           />
         ) : (
           <>

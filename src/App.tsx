@@ -485,9 +485,44 @@ export default function App() {
     }
   };
 
+  // Detail-tab detection: the URL carries ?po=... and we want a chromeless shell.
+  // Read URL fresh on every render — the param is stable for the tab's lifetime
+  // (we never replaceState the URL), so no React state needed.
+  const search = typeof window !== 'undefined' ? window.location.search : '';
+  const params = new URLSearchParams(search);
+  const isDetailTab = params.get('screen') === 'pembelian' && params.get('po') !== null;
+
   // Switch to Auth Screen if no session active
   if (activePage === 'auth' || !currentUser) {
     return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Detail tab: no sidebar, no global header, no footer. Only the toast and the screen.
+  // The screen itself owns its top bar (close X + action buttons).
+  if (isDetailTab && activePage === 'pembelian') {
+    return (
+      <div className="min-h-screen bg-gray-50 text-[#0b1c30] font-sans">
+        {toastMessage && (
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-bounce-subtle">
+            <div className="bg-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-[#abc9f3] whitespace-nowrap">
+              {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
+              {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
+              {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
+              <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+            </div>
+          </div>
+        )}
+        <PembelianScreen
+          stockList={stockList}
+          showToast={triggerToast}
+          onStockRefresh={handleStockRefresh}
+          currentUserId={currentUser?.id}
+          currentUserPermissions={currentUser?.permissions}
+          initialDetailPoNumber={initialDetailPoNumber}
+          onDetailConsumed={() => setInitialDetailPoNumber(null)}
+        />
+      </div>
+    );
   }
 
   return (
