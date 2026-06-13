@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Product Photo + Cari by Foto</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .dropzone-dashed {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='20' ry='20' stroke='%232d8a4e80' stroke-width='2' stroke-dasharray='8,8' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+  .dropzone-violet {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='28' ry='28' stroke='%237c3aed99' stroke-width='2' stroke-dasharray='10,10' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+  .photo-card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.12); }
+  .indexing-pulse {
+    background: linear-gradient(90deg, transparent, rgba(45,138,78,0.18), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body class="text-[#1e3d60]">
+
+<!-- ─── Sticky Header / Nav ────────────────────────────────────────────── -->
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">photo_camera</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup Review — Product Photo &amp; Cari by Foto</h1>
+        <p class="text-[11px] text-[#43474e]">2026-06-13 • Design system mengikuti ERPAntigravity (emerald/blue-900, rounded-[2.5rem], font Inter)</p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden md:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">1. Form Stok</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">2. Kasir</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">3. Hasil Foto</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-amber-50 text-amber-900">4. Pengaturan</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-16">
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MOCKUP 1: Form Stok (Tambah Barang Baru) + Foto + Deskripsi          -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="mb-5 flex items-end justify-between">
+      <div>
+        <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">Mockup 1 / 4</span>
+        <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Menu Stok → Tambah Barang Baru (extend form existing)</h2>
+        <p class="text-xs text-[#43474e] mt-1">Section <strong>"Foto Produk"</strong> + <strong>"Deskripsi"</strong> ditambahkan ke form yang sudah ada di <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">StockManagerScreen.tsx:683</code>. Tidak ada menu baru.</p>
+      </div>
+    </div>
+
+    <!-- Card form -->
+    <div class="bg-slate-50 border border-[#abc9f3] p-6 rounded-3xl shadow-inner">
+      <h4 class="font-extrabold text-[#012749] text-sm flex items-center gap-1.5 mb-4">
+        <span class="material-symbols-outlined text-emerald-600 text-base">add_circle</span>
+        Tambah Barang Baru
+      </h4>
+
+      <!-- Section: Identitas Produk -->
+      <div class="flex items-center gap-3 mb-3">
+        <div class="flex-1 h-px bg-slate-200"></div>
+        <span class="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-slate-100 text-slate-700 rounded-full">📋 Identitas Produk</span>
+        <div class="flex-1 h-px bg-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+        <div class="space-y-1">
+          <div class="flex items-center justify-between pl-1">
+            <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Kode Produk / SKU</label>
+            <button type="button" class="text-[9px] font-extrabold text-purple-600 hover:text-purple-800 inline-flex items-center gap-0.5" title="Toggle antara auto-generate dan manual">
+              <span class="material-symbols-outlined text-xs">refresh</span> Auto
+            </button>
+          </div>
+          <input type="text" value="MCB-SCH-16A-1P" placeholder="Mis: MCB-SCH-16A-1P" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          <p class="text-[9.5px] text-slate-400 italic pl-1">Kosongkan untuk auto-generate</p>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Kategori <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <select class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] appearance-none pr-8">
+              <option>MCB</option><option>Panel</option><option>Kabel</option><option>Aksesori</option>
+              <option disabled>──────────</option>
+              <option value="__new__" class="text-emerald-700 font-extrabold">+ Buat kategori baru…</option>
+            </select>
+            <span class="material-symbols-outlined text-sm text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Sub-Kategori <span class="text-slate-400 text-[8px] font-black">opsional</span></label>
+          <div class="relative">
+            <select class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] appearance-none pr-8">
+              <option value="">— Tidak ada —</option>
+              <option>MCB 1 Phase</option><option>MCB 3 Phase</option><option>MCCB</option>
+              <option disabled>──────────</option>
+              <option value="__new__" class="text-emerald-700 font-extrabold">+ Buat sub-kategori baru…</option>
+            </select>
+            <span class="material-symbols-outlined text-sm text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Satuan Utama <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <select class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] appearance-none pr-8">
+              <option>pcs</option>
+              <option>meter</option>
+              <option>roll</option>
+              <option>dus</option>
+              <option>set</option>
+              <option>unit</option>
+              <option disabled>──────────</option>
+              <option value="__new__" class="text-emerald-700 font-extrabold">+ Buat satuan baru…</option>
+            </select>
+            <span class="material-symbols-outlined text-sm text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-satuan konversi (toggle, default collapsed) -->
+      <div class="mb-4 bg-blue-50 border border-blue-100 rounded-2xl p-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked class="accent-emerald-600 w-3.5 h-3.5" />
+          <span class="text-[11px] font-extrabold text-[#012749]">Aktifkan multi-satuan konversi</span>
+          <span class="text-[9.5px] text-slate-500 italic">— mis. kabel: utama meter, packaging roll (1 roll = 100 m)</span>
+        </label>
+        <!-- Expanded panel -->
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end">
+          <div class="space-y-1">
+            <label class="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">1 Satuan Kedua (Paket)</label>
+            <select class="w-full bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold text-slate-800 outline-none">
+              <option>roll</option><option>dus</option><option>set</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-center pb-1.5">
+            <span class="text-base font-black text-slate-400">=</span>
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Berapa</label>
+            <input type="number" value="100" min="2" class="w-full bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          </div>
+          <div class="space-y-1">
+            <label class="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Satuan Utama</label>
+            <input readonly value="meter" class="w-full bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold text-slate-600 outline-none" />
+          </div>
+          <p class="sm:col-span-2 text-[9.5px] text-blue-800 italic leading-tight pb-1.5">Stok dilacak dalam <strong>Satuan Utama</strong> (terkecil). Beli/jual per paket otomatis dikonversi (×100) ke Satuan Utama.</p>
+        </div>
+      </div>
+
+      <!-- Inline "Buat kategori baru" expansion panel (state: kategori = __new__) -->
+      <div class="mb-4 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-end gap-3">
+        <div class="flex-1 space-y-1">
+          <label class="text-[10px] font-extrabold text-emerald-800 uppercase tracking-widest pl-1">Nama Kategori Baru</label>
+          <input type="text" placeholder="Mis: Kontaktor, Saklar, Lampu, Stop Kontak…" class="w-full bg-white rounded-xl px-3 py-2 border border-emerald-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500" />
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 text-emerald-700 text-[10px] font-extrabold uppercase tracking-wider hover:bg-emerald-100 rounded-full">Batal</button>
+          <button class="px-4 py-2 bg-emerald-600 text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider hover:bg-emerald-700 inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span> Tambah
+          </button>
+        </div>
+      </div>
+
+      <!-- Section: Harga & Persediaan (grouped) -->
+      <div class="flex items-center gap-3 mb-3">
+        <div class="flex-1 h-px bg-amber-200"></div>
+        <span class="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-amber-100 text-amber-900 rounded-full">💰 Harga &amp; Persediaan</span>
+        <div class="flex-1 h-px bg-amber-200"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Jual (Rp) <span class="text-rose-500">*</span></label>
+          <input type="text" value="125.000" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          <p class="text-[9.5px] text-slate-400 italic pl-1">per pcs</p>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Beli / Modal (Rp)</label>
+          <input type="text" value="98.500" placeholder="opsional" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          <p class="text-[9.5px] text-emerald-700 italic pl-1 font-bold">Margin: 26.9%</p>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Stok Awal <span class="text-slate-400 text-[8px] font-black">opsional</span></label>
+          <input type="number" value="48" placeholder="0" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          <p class="text-[9.5px] text-slate-400 italic pl-1">satuan: pcs</p>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Batas Stok Min</label>
+          <input type="number" value="10" placeholder="kosong = global" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]" />
+          <p class="text-[9.5px] text-slate-400 italic pl-1">Alert kalau stok &le; 10</p>
+        </div>
+      </div>
+
+      <!-- Approval warning for Stok Awal -->
+      <div class="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 flex items-start gap-2">
+        <span class="material-symbols-outlined text-amber-600 text-base shrink-0 mt-0.5">verified_user</span>
+        <div class="flex-1">
+          <p class="text-[11px] font-bold text-amber-900 leading-tight">Stok awal &gt; 0 akan dikirim ke owner untuk approval</p>
+          <p class="text-[10px] text-amber-800 mt-0.5 leading-snug">Produk tetap dibuat &amp; bisa di-edit, tapi stok belum aktif sampai owner approve via WhatsApp / inbox (mirip Stock Adjustment). Skip kolom Stok Awal = produk dibuat dengan stok 0, tidak perlu approval.</p>
+        </div>
+      </div>
+
+      <!-- Nama auto preview -->
+      <div class="mb-4 space-y-1">
+        <label class="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest pl-1">Nama Produk <span class="text-purple-400 text-[8px] font-black">auto dari spek</span></label>
+        <input readonly value="MCB Schneider 16A 1P" class="w-full bg-purple-50 rounded-xl px-3 py-2 border border-purple-200 text-xs font-bold text-purple-700 outline-none" />
+      </div>
+
+      <!-- Divider Spesifikasi -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex-1 h-px bg-slate-200"></div>
+        <span class="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-blue-100 text-blue-800 rounded-full">⚙ Spesifikasi MCB</span>
+        <div class="flex-1 h-px bg-slate-200"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Merek <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <select class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold outline-none appearance-none pr-8">
+              <option>Schneider</option>
+              <option>ABB</option>
+              <option>Chint</option>
+              <option>Hager</option>
+              <option>LS</option>
+              <option disabled>──────────</option>
+              <option value="__new__" class="text-emerald-700 font-extrabold">+ Tambah merek baru…</option>
+            </select>
+            <span class="material-symbols-outlined text-sm text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+          </div>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Ampere (A) <span class="text-rose-500">*</span></label>
+          <input type="number" value="16" class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold outline-none" />
+        </div>
+        <div class="space-y-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Phase <span class="text-rose-500">*</span></label>
+          <select class="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold outline-none"><option>1P</option></select>
+        </div>
+      </div>
+
+      <!-- Inline "Tambah merek baru" expansion (state: merek = __new__) -->
+      <div class="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-end gap-3">
+        <div class="flex-1 space-y-1">
+          <label class="text-[10px] font-extrabold text-emerald-800 uppercase tracking-widest pl-1">Nama Merek Baru</label>
+          <input type="text" placeholder="Mis: Mitsubishi, Siemens, Larkin…" class="w-full bg-white rounded-xl px-3 py-2 border border-emerald-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-emerald-500" />
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-2 text-emerald-700 text-[10px] font-extrabold uppercase tracking-wider hover:bg-emerald-100 rounded-full">Batal</button>
+          <button class="px-4 py-2 bg-emerald-600 text-white rounded-full text-[10px] font-extrabold uppercase tracking-wider hover:bg-emerald-700 inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">add</span> Tambah
+          </button>
+        </div>
+      </div>
+
+      <!-- ✨ NEW: Foto Produk section -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex-1 h-px bg-emerald-200"></div>
+        <span class="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">📷 Foto Produk (min 1 wajib · max 5)</span>
+        <div class="flex-1 h-px bg-emerald-200"></div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-3 mb-3">
+        <!-- Foto 1: thumbnail with badge -->
+        <div class="relative aspect-square rounded-2xl overflow-hidden border-2 border-emerald-300 photo-card-shadow group cursor-grab">
+          <div class="absolute inset-0 bg-gradient-to-br from-slate-300 to-slate-500 flex items-center justify-center">
+            <span class="material-symbols-outlined text-white text-4xl opacity-70">electrical_services</span>
+          </div>
+          <div class="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">★ Thumbnail · Wajib</div>
+          <div class="absolute top-1.5 right-1.5 bg-white/95 text-emerald-700 text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center">1</div>
+          <button class="absolute bottom-1.5 right-1.5 bg-white/95 hover:bg-rose-50 text-rose-600 w-7 h-7 rounded-full flex items-center justify-center transition opacity-0 group-hover:opacity-100">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+        </div>
+        <!-- Foto 2 -->
+        <div class="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 photo-card-shadow group cursor-grab">
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-200 to-blue-400 flex items-center justify-center">
+            <span class="material-symbols-outlined text-white text-4xl opacity-70">power</span>
+          </div>
+          <div class="absolute top-1.5 right-1.5 bg-white/95 text-slate-700 text-[10px] font-extrabold w-5 h-5 rounded-full flex items-center justify-center">2</div>
+          <button class="absolute bottom-1.5 right-1.5 bg-white/95 hover:bg-rose-50 text-rose-600 w-7 h-7 rounded-full flex items-center justify-center transition opacity-0 group-hover:opacity-100">
+            <span class="material-symbols-outlined text-base">delete</span>
+          </button>
+          <!-- Indexing badge -->
+          <div class="absolute inset-x-0 bottom-0 px-1.5 py-1 bg-emerald-700/90 backdrop-blur-sm text-white text-[8.5px] font-black uppercase tracking-widest text-center flex items-center justify-center gap-1">
+            <span class="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-pulse"></span> Indexing AI
+          </div>
+        </div>
+        <!-- Foto 3 (uploading) -->
+        <div class="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 photo-card-shadow">
+          <div class="absolute inset-0 bg-slate-100"></div>
+          <div class="absolute inset-0 indexing-pulse"></div>
+          <div class="absolute inset-0 flex flex-col items-center justify-center text-emerald-700">
+            <div class="w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-1"></div>
+            <span class="text-[9px] font-extrabold uppercase tracking-widest">42%</span>
+          </div>
+        </div>
+        <!-- Foto 4 (empty slot) -->
+        <label class="aspect-square rounded-2xl dropzone-dashed flex flex-col items-center justify-center text-emerald-700 hover:bg-emerald-50/40 cursor-pointer transition">
+          <span class="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest">Tambah</span>
+          <input type="file" class="hidden" accept="image/*" multiple />
+        </label>
+        <!-- Foto 5 (empty slot) -->
+        <label class="aspect-square rounded-2xl dropzone-dashed flex flex-col items-center justify-center text-emerald-700 hover:bg-emerald-50/40 cursor-pointer transition">
+          <span class="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest">Tambah</span>
+          <input type="file" class="hidden" accept="image/*" multiple />
+        </label>
+      </div>
+
+      <p class="text-[11px] text-[#43474e] italic flex items-start gap-1.5 mb-4">
+        <span class="material-symbols-outlined text-emerald-600 text-sm">info</span>
+        <strong>Minimal 1 foto wajib</strong> — foto pertama jadi thumbnail. Drag untuk reorder. Foto akan di-index oleh AI ~5 detik setelah simpan dan langsung bisa dipakai untuk <strong>Cari by Foto</strong> di kasir.
+      </p>
+
+      <!-- ✨ NEW: Deskripsi Produk -->
+      <div class="space-y-1 mb-4">
+        <div class="flex items-end justify-between pl-1">
+          <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Deskripsi Produk <span class="text-slate-400 text-[8px] font-black">opsional</span></label>
+          <button type="button" class="text-[10px] font-extrabold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-full px-3 py-1 inline-flex items-center gap-1 cursor-pointer">
+            <span class="material-symbols-outlined text-xs">auto_awesome</span>
+            Generate dari Foto
+          </button>
+        </div>
+        <textarea rows="3" class="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-medium text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] resize-none" placeholder="MCB Schneider warna putih, untuk panel kontrol indoor...">MCB Schneider iC60H 16A 1P, untuk proteksi sirkuit rumah/panel kontrol indoor. Body putih, breaker biru.</textarea>
+        <p class="text-[10px] text-slate-400 text-right pr-1">87 / 500 karakter</p>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex justify-end gap-2 pt-4 border-t border-slate-200">
+        <button type="button" class="px-4 py-2 border border-rose-200 text-rose-600 rounded-full text-xs font-bold hover:bg-rose-50 cursor-pointer">Batal</button>
+        <button type="submit" class="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold hover:bg-emerald-700 cursor-pointer inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-sm">add_circle</span> Tambahkan Produk
+        </button>
+      </div>
+    </div>
+
+    <!-- Annotation strip -->
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-1">★ Thumbnail</div>
+        <p class="text-[11px] text-emerald-950 leading-snug">Foto urutan #1 otomatis dijadikan thumbnail produk (tampil di list Stok &amp; hasil Cari).</p>
+      </div>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-1">⚡ Indexing AI</div>
+        <p class="text-[11px] text-emerald-950 leading-snug">Background job describe + embed foto via Gemini Flash 2.5 + text-embedding-004 (free tier). Selesai ~5 detik.</p>
+      </div>
+      <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-purple-700 mb-1">✨ Generate Deskripsi</div>
+        <p class="text-[11px] text-purple-950 leading-snug">Hanya enabled kalau ≥1 foto sudah upload. Hasil bisa di-edit manual sebelum simpan.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MOCKUP 2: Kasir Screen — Tombol "Cari by Foto"                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-blue-700 uppercase bg-blue-50 border border-blue-200 px-2 py-1 rounded-full">Mockup 2 / 4</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Menu Kasir → Tombol &amp; Modal "Cari by Foto"</h2>
+      <p class="text-xs text-[#43474e] mt-1">Tombol baru di header KasirScreen membuka modal kamera + file picker.</p>
+    </div>
+
+    <!-- Kasir header section -->
+    <div class="bg-white rounded-[2.5rem] p-6 border border-[#e5eeff] shadow-xl mb-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-2xl">point_of_sale</span>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-[#012749]">Kasir — Walk-in / Phone-in</h3>
+            <p class="text-[11px] text-[#43474e]">Cari barang lalu tambahkan ke keranjang.</p>
+          </div>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <!-- Search teks (existing) -->
+          <div class="relative flex-1 sm:min-w-[300px]">
+            <input type="text" placeholder="Cari SKU atau nama..." class="w-full pl-12 pr-4 py-3 bg-[#eff4ff] rounded-full border-none text-xs font-bold text-slate-800 outline-none" />
+            <span class="material-symbols-outlined text-base text-[#43474e]/60 absolute left-4 top-1/2 -translate-y-1/2">search</span>
+          </div>
+          <!-- ✨ NEW: Cari by Foto button -->
+          <button type="button" class="px-5 py-3 bg-gradient-to-br from-[#2d8a4e] to-emerald-700 text-white rounded-full text-xs font-extrabold uppercase tracking-wider hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-600/25 cursor-pointer inline-flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-base">photo_camera</span>
+            Cari by Foto
+            <span class="ml-1 text-[8px] font-black bg-white/25 px-1.5 py-0.5 rounded-full uppercase tracking-widest">AI</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Cari by Foto (state: initial choice) -->
+    <div class="relative bg-slate-200/50 rounded-3xl p-8 border-2 border-dashed border-slate-300">
+      <div class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-slate-200 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Modal Overlay</div>
+
+      <div class="bg-white rounded-[2rem] shadow-2xl max-w-2xl mx-auto p-6 border border-[#e5eeff]">
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl">photo_camera</span>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-[#012749]">Cari Produk by Foto</h4>
+              <p class="text-[11px] text-[#43474e]">Pilih sumber foto. AI akan mencari produk paling cocok di katalog.</p>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Opt 1: Camera -->
+          <button class="dropzone-violet rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:bg-emerald-500/5 transition cursor-pointer group" style="background-color: #f0fdf4;">
+            <div class="w-16 h-16 rounded-full bg-emerald-100 text-[#2d8a4e] flex items-center justify-center mb-3 group-hover:scale-105 transition">
+              <span class="material-symbols-outlined text-3xl">photo_camera</span>
+            </div>
+            <h5 class="font-extrabold text-[#012749] text-xs uppercase tracking-wider">Pakai Kamera</h5>
+            <p class="text-[11px] text-[#43474e] mt-1 font-medium">Snap langsung dari kamera tablet/HP</p>
+          </button>
+          <!-- Opt 2: File picker -->
+          <button class="dropzone-dashed rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:bg-blue-500/5 transition cursor-pointer group" style="background-color: #eff4ff;">
+            <div class="w-16 h-16 rounded-full bg-blue-100 text-[#012749] flex items-center justify-center mb-3 group-hover:scale-105 transition">
+              <span class="material-symbols-outlined text-3xl">upload_file</span>
+            </div>
+            <h5 class="font-extrabold text-[#012749] text-xs uppercase tracking-wider">Upload File</h5>
+            <p class="text-[11px] text-[#43474e] mt-1 font-medium">Pilih foto dari galeri/komputer (JPG/PNG)</p>
+          </button>
+        </div>
+
+        <div class="mt-4 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-start gap-2">
+          <span class="material-symbols-outlined text-amber-600 text-base">info</span>
+          <div>
+            <p class="text-[11px] font-bold text-amber-900">Tip: foto produk dari angle depan / label paling jelas memberi hasil paling akurat.</p>
+            <p class="text-[10px] text-amber-800 mt-0.5">Hasil pencarian biasanya muncul dalam 2-4 detik.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Annotation -->
+    <div class="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-1">📷 Kamera</div>
+        <p class="text-[11px] text-emerald-950 leading-snug">Akses langsung kamera tablet/HP. Live preview, snap, langsung query. Cocok saat customer bawa barang.</p>
+      </div>
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-blue-700 mb-1">📁 Upload</div>
+        <p class="text-[11px] text-blue-950 leading-snug">Pilih file dari gallery. Cocok saat customer kirim foto dulu via WA dan staff search dari komputer.</p>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <div class="text-[9px] font-black uppercase tracking-widest text-amber-700 mb-1">⚙ Tombol AI</div>
+        <p class="text-[11px] text-amber-950 leading-snug">Badge "AI" agar staff tahu fitur ini berbeda dari search biasa. Gradient emerald supaya menonjol di header.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MOCKUP 3: Hasil Cari by Foto (top 5)                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-violet-700 uppercase bg-violet-50 border border-violet-200 px-2 py-1 rounded-full">Mockup 3 / 4</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Modal Hasil Cari by Foto — Top 5 + tindakan</h2>
+      <p class="text-xs text-[#43474e] mt-1">Setelah AI memproses foto query, modal menampilkan top 5 produk dengan similarity score, stok, harga, dan tombol tambah.</p>
+    </div>
+
+    <div class="relative bg-slate-200/50 rounded-3xl p-8 border-2 border-dashed border-slate-300">
+      <div class="absolute -top-3 left-6 bg-white px-3 py-1 rounded-full border border-slate-200 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Modal Overlay</div>
+
+      <div class="bg-white rounded-[2rem] shadow-2xl max-w-4xl mx-auto p-6 border border-[#e5eeff]">
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl">image_search</span>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-[#012749]">Hasil Pencarian by Foto</h4>
+              <p class="text-[11px] text-[#43474e]">5 produk paling cocok ditemukan dalam 1.8 detik</p>
+            </div>
+          </div>
+          <button class="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 flex items-center justify-center">
+            <span class="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <!-- Query photo + retry strip -->
+        <div class="flex items-center gap-3 mb-5 bg-slate-50 rounded-2xl p-3 border border-slate-100">
+          <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-emerald-300 shrink-0 bg-gradient-to-br from-slate-300 to-slate-500 flex items-center justify-center">
+            <span class="material-symbols-outlined text-white text-3xl opacity-70">electrical_services</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700">Foto Query Anda</div>
+            <p class="text-xs font-bold text-[#012749] mt-0.5">AI deskripsi: <span class="font-medium text-slate-600 italic">"MCB Schneider biru putih 16A single phase, label ic60h"</span></p>
+          </div>
+          <button class="px-3 py-1.5 border border-slate-200 text-slate-700 rounded-full text-[10px] font-extrabold uppercase tracking-widest hover:bg-slate-100 inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">refresh</span> Ganti
+          </button>
+        </div>
+
+        <!-- Results list -->
+        <div class="space-y-3 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar">
+          <!-- Result 1: best match -->
+          <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3 flex items-center gap-4 hover:shadow-lg transition">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-slate-300 to-slate-500 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-white text-4xl opacity-80">electrical_services</span>
+              <div class="absolute top-1 left-1 bg-emerald-600 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">#1</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">MCB</span>
+                <span class="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">★ Best Match</span>
+              </div>
+              <h5 class="text-sm font-extrabold text-[#012749] truncate">MCB Schneider 16A 1P</h5>
+              <p class="text-[11px] text-slate-600 truncate">SKU: <code class="bg-white px-1 py-0.5 rounded">a7f9b203</code> • Stok: <strong class="text-emerald-700">48 pcs</strong> • Rp 125.000</p>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mb-0.5">Cocok</div>
+              <div class="text-xl font-black text-emerald-700">94%</div>
+            </div>
+            <button class="px-4 py-2.5 bg-[#2d8a4e] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider hover:bg-emerald-700 shrink-0 inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+              <span class="material-symbols-outlined text-base">add_shopping_cart</span> Tambah
+            </button>
+          </div>
+
+          <!-- Result 2 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-blue-200 to-blue-400 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-white text-4xl opacity-80">electrical_services</span>
+              <div class="absolute top-1 left-1 bg-slate-700 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">#2</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">MCB</span>
+              </div>
+              <h5 class="text-sm font-extrabold text-[#012749] truncate">MCB Schneider 20A 1P</h5>
+              <p class="text-[11px] text-slate-600 truncate">SKU: <code class="bg-slate-100 px-1 py-0.5 rounded">e5c12a64</code> • Stok: <strong class="text-emerald-700">22 pcs</strong> • Rp 138.000</p>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Cocok</div>
+              <div class="text-xl font-black text-slate-700">82%</div>
+            </div>
+            <button class="px-4 py-2.5 border-2 border-emerald-200 text-emerald-700 rounded-full text-[11px] font-extrabold uppercase tracking-wider hover:bg-emerald-50 shrink-0 inline-flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">add_shopping_cart</span> Tambah
+            </button>
+          </div>
+
+          <!-- Result 3 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-white text-4xl opacity-80">electrical_services</span>
+              <div class="absolute top-1 left-1 bg-slate-700 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">#3</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">MCB</span>
+              </div>
+              <h5 class="text-sm font-extrabold text-[#012749] truncate">MCB Schneider 10A 1P</h5>
+              <p class="text-[11px] text-slate-600 truncate">SKU: <code class="bg-slate-100 px-1 py-0.5 rounded">3b81f0c2</code> • Stok: <strong class="text-amber-700">3 pcs</strong> <span class="text-[9px] text-rose-600 font-black uppercase tracking-widest">Tipis</span> • Rp 112.000</p>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Cocok</div>
+              <div class="text-xl font-black text-slate-700">79%</div>
+            </div>
+            <button class="px-4 py-2.5 border-2 border-emerald-200 text-emerald-700 rounded-full text-[11px] font-extrabold uppercase tracking-wider hover:bg-emerald-50 shrink-0 inline-flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">add_shopping_cart</span> Tambah
+            </button>
+          </div>
+
+          <!-- Result 4 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-emerald-200 to-emerald-400 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-white text-4xl opacity-80">electrical_services</span>
+              <div class="absolute top-1 left-1 bg-slate-700 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">#4</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">MCB</span>
+              </div>
+              <h5 class="text-sm font-extrabold text-[#012749] truncate">MCB ABB 16A 1P</h5>
+              <p class="text-[11px] text-slate-600 truncate">SKU: <code class="bg-slate-100 px-1 py-0.5 rounded">9d24e810</code> • Stok: <strong class="text-emerald-700">31 pcs</strong> • Rp 98.000</p>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Cocok</div>
+              <div class="text-xl font-black text-slate-700">73%</div>
+            </div>
+            <button class="px-4 py-2.5 border-2 border-emerald-200 text-emerald-700 rounded-full text-[11px] font-extrabold uppercase tracking-wider hover:bg-emerald-50 shrink-0 inline-flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">add_shopping_cart</span> Tambah
+            </button>
+          </div>
+
+          <!-- Result 5 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-4 hover:shadow-md hover:border-emerald-200 transition">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gradient-to-br from-violet-200 to-violet-400 flex items-center justify-center relative">
+              <span class="material-symbols-outlined text-white text-4xl opacity-80">electrical_services</span>
+              <div class="absolute top-1 left-1 bg-slate-700 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">#5</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">MCB</span>
+              </div>
+              <h5 class="text-sm font-extrabold text-[#012749] truncate">MCB Chint 16A 2P</h5>
+              <p class="text-[11px] text-slate-600 truncate">SKU: <code class="bg-slate-100 px-1 py-0.5 rounded">4f0a99d8</code> • Stok: <strong class="text-emerald-700">17 pcs</strong> • Rp 86.000</p>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Cocok</div>
+              <div class="text-xl font-black text-slate-700">71%</div>
+            </div>
+            <button class="px-4 py-2.5 border-2 border-emerald-200 text-emerald-700 rounded-full text-[11px] font-extrabold uppercase tracking-wider hover:bg-emerald-50 shrink-0 inline-flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-base">add_shopping_cart</span> Tambah
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-5 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p class="text-[11px] text-slate-500">Tidak ada yang cocok? <button class="text-[#2d8a4e] font-extrabold hover:underline">Cari manual via teks</button></p>
+          <div class="flex gap-2">
+            <button class="px-4 py-2 border border-slate-200 text-slate-700 rounded-full text-xs font-bold hover:bg-slate-50">Tutup</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty-state variant note -->
+    <div class="mt-5 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-amber-600 text-2xl">warning</span>
+        <div class="flex-1">
+          <h5 class="text-sm font-extrabold text-amber-900">Variant Empty-state: skor tertinggi &lt; 70%</h5>
+          <p class="text-[11px] text-amber-800 mt-1 leading-relaxed">Jika tidak ada produk dengan similarity ≥ 70%, modal menampilkan banner kuning: <em>"Tidak menemukan produk yang cukup mirip. Coba foto lain atau cari via teks/SKU."</em> + tombol <strong>Cari Manual</strong> + opsi <strong>Ganti Foto</strong>. Top 5 tetap ditampilkan di bawah dengan opacity 60% supaya staff masih bisa lihat near-miss kalau perlu konfirmasi visual.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- MOCKUP 4: Pengaturan — Costing Method + AI Quota Monitor             -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m4">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-amber-700 uppercase bg-amber-50 border border-amber-200 px-2 py-1 rounded-full">Mockup 4 / 4</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Pengaturan — Costing Method + AI Quota Monitor</h2>
+      <p class="text-xs text-[#43474e] mt-1">Dua panel baru di PengaturanScreen: setting FIFO/Average (toko-wide) dan dashboard kuota Gemini harian.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Panel A: Costing Method -->
+      <div class="bg-white rounded-[2.5rem] p-7 border border-[#e5eeff] shadow-xl">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-[#012749] flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-2xl">calculate</span>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-[#012749]">Metode Costing Toko</h3>
+            <p class="text-[11px] text-[#43474e]">Berlaku untuk semua produk &amp; laporan profit.</p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <!-- FIFO (selected) -->
+          <label class="block bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 cursor-pointer">
+            <div class="flex items-start gap-3">
+              <input type="radio" name="costing" checked class="mt-1 accent-emerald-600 w-4 h-4" />
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-sm font-extrabold text-[#012749]">FIFO (First-In, First-Out)</span>
+                  <span class="text-[8.5px] font-black uppercase tracking-widest bg-emerald-600 text-white px-1.5 py-0.5 rounded-full">Default</span>
+                </div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">HPP dihitung dari stock lot tertua. Akurat untuk barang dengan harga modal yang berubah-ubah. <strong>Direkomendasikan untuk toko elektrik.</strong></p>
+              </div>
+            </div>
+          </label>
+
+          <!-- Average -->
+          <label class="block bg-white border-2 border-slate-200 rounded-2xl p-4 hover:border-slate-300 cursor-pointer">
+            <div class="flex items-start gap-3">
+              <input type="radio" name="costing" class="mt-1 accent-emerald-600 w-4 h-4" />
+              <div class="flex-1">
+                <div class="text-sm font-extrabold text-[#012749] mb-0.5">Average (Rata-rata Tertimbang)</div>
+                <p class="text-[11px] text-slate-600 leading-relaxed">HPP rata-rata semua lot dalam stok aktif. Lebih sederhana, fluktuasi profit lebih halus, tapi kurang akurat saat harga modal volatile.</p>
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div class="mt-5 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-start gap-2">
+          <span class="material-symbols-outlined text-amber-600 text-base">warning</span>
+          <p class="text-[11px] text-amber-900 leading-relaxed"><strong>Penting:</strong> Mengubah metode di tengah operasi akan menghitung ulang HPP semua transaksi setelah tanggal perubahan. Laporan profit historis sebelum tanggal ini tidak berubah.</p>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="px-4 py-2 border border-slate-200 text-slate-700 rounded-full text-xs font-bold hover:bg-slate-50">Batal</button>
+          <button class="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold hover:bg-emerald-700 inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">save</span> Simpan Metode
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel B: AI Call Activity (HONEST — count call kita, bukan sisa kuota Google) -->
+      <div class="bg-white rounded-[2.5rem] p-7 border border-[#e5eeff] shadow-xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-2xl">monitoring</span>
+            </div>
+            <div>
+              <h3 class="text-base font-extrabold text-[#012749]">Aktivitas AI Call — Hari Ini</h3>
+              <p class="text-[11px] text-[#43474e]">Reset 00:00 WIB · sumber: log internal kita (bukan dashboard Google)</p>
+            </div>
+          </div>
+          <span class="text-[9px] font-black uppercase tracking-widest text-emerald-700 bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-full">● OK</span>
+        </div>
+
+        <!-- Honesty disclaimer -->
+        <div class="mb-5 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 flex items-start gap-2">
+          <span class="material-symbols-outlined text-slate-500 text-base">info</span>
+          <p class="text-[10.5px] text-slate-700 leading-snug">
+            <strong>Catatan:</strong> Google tidak expose sisa kuota Gemini real-time. Angka di bawah <strong>hanya menghitung call yang sistem kita lakukan</strong> hari ini — bukan sisa kuota Google. Indikator "perlu upgrade" pakai sinyal nyata: jumlah error <code class="bg-white border border-slate-200 px-1 py-0.5 rounded text-[10px]">429</code> (rate-limit).
+          </p>
+        </div>
+
+        <!-- Real call stats -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+            <div class="text-[9px] font-black uppercase tracking-widest text-purple-700 mb-1">Vision (describe foto)</div>
+            <div class="text-2xl font-black text-[#012749]">312</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">call · sukses 312 · gagal 0</div>
+          </div>
+          <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+            <div class="text-[9px] font-black uppercase tracking-widest text-blue-700 mb-1">Text Embedding</div>
+            <div class="text-2xl font-black text-[#012749]">312</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">call · sukses 312 · gagal 0</div>
+          </div>
+        </div>
+
+        <!-- Source breakdown -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-slate-50 rounded-2xl p-3 text-center">
+            <div class="text-lg font-black text-[#012749]">287</div>
+            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-0.5">Search Kasir</div>
+          </div>
+          <div class="bg-slate-50 rounded-2xl p-3 text-center">
+            <div class="text-lg font-black text-[#012749]">25</div>
+            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mt-0.5">Foto Upload</div>
+          </div>
+          <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-center">
+            <div class="text-lg font-black text-emerald-700">0</div>
+            <div class="text-[9px] font-black uppercase tracking-widest text-emerald-700 mt-0.5">429 Rate-Limit</div>
+          </div>
+        </div>
+
+        <!-- Latency p95 (real, measurable) -->
+        <div class="bg-slate-50 rounded-2xl p-3 flex items-center justify-between mb-4 border border-slate-100">
+          <div>
+            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500">Latency Vision (p50 / p95)</div>
+            <div class="text-xs font-bold text-[#012749] mt-0.5">1.4 s / 3.1 s</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[9px] font-black uppercase tracking-widest text-slate-500">Last Error</div>
+            <div class="text-xs font-bold text-slate-400 mt-0.5">—</div>
+          </div>
+        </div>
+
+        <!-- Upgrade trigger note (honest signal) -->
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <div class="flex items-start gap-2">
+            <span class="material-symbols-outlined text-[#012749] text-base">tips_and_updates</span>
+            <div>
+              <p class="text-[11px] font-bold text-[#012749]">Sinyal kapan perlu mempertimbangkan upgrade:</p>
+              <ul class="text-[10px] text-blue-900 mt-1 list-disc list-inside space-y-0.5">
+                <li><strong>429 Rate-Limit &gt; 0 berulang</strong> dalam jam sibuk → quota Google sudah mulai menghalangi</li>
+                <li><strong>Latency p95 &gt; 5 s konsisten</strong> → free tier mungkin di-throttle</li>
+                <li>Sistem hanya <strong>notify</strong>, tidak pernah auto-upgrade billing — perlu approval owner.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- Footer / Decision strip                                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section class="bg-gradient-to-br from-[#012749] to-[#1e3d60] rounded-[2.5rem] p-8 text-white shadow-2xl">
+    <h3 class="text-xl font-extrabold mb-2">Setelah review mockup, apa langkah selanjutnya?</h3>
+    <p class="text-[13px] text-blue-100 mb-5">Mockup ini representasi ringkas. Detail kecil (warna badge, spacing pixel, copy bahasa) akan presisi saat implementasi React mengikuti komponen UI library yang sudah ada.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20">
+        <div class="text-[9px] font-black uppercase tracking-widest text-emerald-300 mb-1">OPSI A — Lanjut</div>
+        <p class="text-[12px] text-white">Saya tulis spec lengkap ke file <code class="bg-black/20 px-1 py-0.5 rounded">.md</code>, lalu masuk ke <code class="bg-black/20 px-1 py-0.5 rounded">writing-plans</code> untuk implementasi plan.</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20">
+        <div class="text-[9px] font-black uppercase tracking-widest text-amber-300 mb-1">OPSI B — Revisi</div>
+        <p class="text-[12px] text-white">Ada bagian mockup yang mau diubah/dihapus/ditambah sebelum spec ditulis. Saya akan update mockup dulu.</p>
+      </div>
+      <div class="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20">
+        <div class="text-[9px] font-black uppercase tracking-widest text-purple-300 mb-1">OPSI C — Mockup tambahan</div>
+        <p class="text-[12px] text-white">Tambah mockup untuk: empty state list Stok, edit-foto flow, kamera live view, atau Pengaturan utuh.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

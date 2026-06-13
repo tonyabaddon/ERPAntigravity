@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Stok Opname blind-count Task 2: `supabaseClient.toOpnameCount` propagates null for `system_qty_snapshot` + `variance` — DONE
+
+- **What:** Phase A null-tolerance step 2 of the blind-count plan. Updated the snake_case→camelCase mapper at `src/lib/supabaseClient.ts:1615` (`toOpnameCount`) so two fields preserve null instead of coercing: `systemQtySnapshot: row.system_qty_snapshot ?? null` (was `row.system_qty_snapshot`, which would have passed undefined when missing) and `variance: row.variance ?? null` (was `?? 0`, which silently masked unknown variances as zero). Without this, when Task 4's `fetch_opname_counts` RPC starts NULLing `system_qty_snapshot`/`variance` for non-Owner roles during `in_progress`, the client would coerce those nulls back into `0` and the admin would see "Sistem 0" / "Selisih 0" — defeating the entire blind-count purpose. `varianceValue: Number(row.variance_value ?? 0)` was intentionally left as-is per plan scope (variance *value* in Rupiah, no blinding requirement). Only `toOpnameCount` was touched; `fetchOpnameCounts` (which calls `.map(toOpnameCount)`) needed no changes since the mapping body is what coerces.
+- **Tests:** `npx tsc --noEmit` → EXIT=0 (clean). The plan flagged consumer errors in `StockOpnameSessionView` as "expected — Task 3 will fix"; in practice no TS errors surfaced because the component renders `c.systemQtySnapshot` directly inside JSX (React renders null as empty) and never reads `c.variance` (only `c.varianceValue`). Task 3 will still update rendering to show a graceful placeholder (e.g. `—`) instead of an empty space — that's a UX concern, not a type concern.
+- **Commit:** `860f8a7` — `feat(stok): preserve null system_qty/variance from fetchOpnameCounts`. Branch `feat/calista-phase-1a`.
+- **Files:** `src/lib/supabaseClient.ts` (2 lines changed), `progress.md`.
+- **Next:** Task 3 — `StockOpnameSessionView` graceful null rendering (replace `{c.systemQtySnapshot}` with `{c.systemQtySnapshot ?? '—'}` and add a "blind mode" header hint so admin understands why the column reads "—").
+
 ## 2026-06-14 — Stok Opname blind-count + conditional approval — SPEC DRAFTED
 
 - **What:** Brainstorming session menghasilkan spec untuk modul Stok Opname. Dua mekanisme anti-bias: (1) admin tidak lihat `system_qty_snapshot` saat input fisik (blind-count, Owner only), (2) auto-commit kalau semua match, owner approval kalau ada selisih. Audit log mencatat penghitung + saksi untuk SEMUA path (auto/commit/reject). Witness configurable per tenant (default ON). Sebagian besar perilaku Owner-approve (stock → fisik, ledger ditulis) sudah ada di kode existing — spec hanya menambah branch dan masking.
@@ -5783,3 +5791,18 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - Uncommented `{lockTx && currentUser && <LockSubmissionModal ... />}` render block
 - `tsc --noEmit`: 0 errors (clean)
 - Next: Task 4.1 (rakit_lock filter pill in ApprovalInboxScreen)
+
+## 2026-06-14 — Spec: Product Module Enhancement (Multi-Photo Upload + Cari by Foto) — BRAINSTORMING DONE
+
+- **Spec**: `docs/superpowers/specs/2026-06-14-product-photo-search-design.md`
+- **Mockups**: `docs/superpowers/specs/2026-06-13-product-photo-search-mockups/index.html`
+- **Scope**: Extend form Stok existing dengan SKU editable, Sub-Kategori, Satuan (UoM) + multi-satuan konversi opsional, Harga Beli/Modal eksplisit (margin live), Batas Stok Min per produk, Stok Awal (+ approval), Merek "+ Tambah baru", Kategori/Sub-Kategori "+ Buat baru", Foto Produk (min 1 wajib, max 5), Deskripsi (+ tombol "✨ Generate dari Foto"), AI indexing pipeline (Gemini Flash 2.5 Vision + text-embedding-004 + pgvector, free tier), Kasir "Cari by Foto" modal, Pengaturan Costing Method (FIFO/Average toko-wide) + AI activity monitor.
+- **Non-goals**: menu Produk terpisah, Variant, Bundle, Multi-tier pricing, Barcode (no scanner), PPN (belum PKP), Default Supplier, GL accounts, Expiry/Serial/Batch, Rerank Vision step.
+- **Benchmark vs Jurnal Mekari**: gap-fill 4 critical fields ditambah; 5+ field di-skip dengan justification.
+- **Status**: spec written, awaiting user review sebelum invoke writing-plans.
+- **Decisions yang dikunci di session ini**:
+  - Tabel `stocks` di-extend (BUKAN tabel `products` baru) — alasan: hindari migrasi data, banyak FK existing
+  - Free tier Gemini (no paid upgrade tanpa approval owner)
+  - Multi-satuan konvensi: Utama = base/smallest (stock unit), Kedua = packaging (factor &gt; 1)
+  - Min 1 foto wajib (mandatory), thumbnail = slot pertama
+  - AI quota panel: HONEST — count call sistem kita, no fake "X/1500"
