@@ -96,14 +96,20 @@ ALTER TABLE public.orders               ADD COLUMN warehouse_id uuid NULL REFERE
 ALTER TABLE public.kasir_transactions   ADD COLUMN warehouse_id uuid NULL REFERENCES public.warehouses(id);
 ALTER TABLE public.purchase_order_items ADD COLUMN warehouse_id uuid NULL REFERENCES public.warehouses(id);
 
--- Backfill warehouse_id from the existing 'atas'|'bawah' text columns where they exist
+-- Backfill warehouse_id from the existing 'atas'|'bawah' text columns where they exist.
+-- stock_movements is append-only (the trg_deny_sm_update trigger blocks UPDATEs); the
+-- backfill is a one-time schema-evolution exception, so we temporarily disable the
+-- deny-trigger for the duration of this transaction, run the UPDATE, then re-enable.
+ALTER TABLE public.stock_movements DISABLE TRIGGER trg_deny_sm_update;
 UPDATE public.stock_movements      SET warehouse_id = (SELECT id FROM public.warehouses WHERE tenant_id IS NULL AND code = upper(warehouse));
+ALTER TABLE public.stock_movements ENABLE TRIGGER trg_deny_sm_update;
+
 UPDATE public.stock_adjustments    SET warehouse_id = (SELECT id FROM public.warehouses WHERE tenant_id IS NULL AND code = upper(warehouse));
 UPDATE public.stock_opname_counts  SET warehouse_id = (SELECT id FROM public.warehouses WHERE tenant_id IS NULL AND code = upper(warehouse));
 UPDATE public.orders               SET warehouse_id = (SELECT id FROM public.warehouses WHERE tenant_id IS NULL AND code = upper(warehouse));
-UPDATE public.purchase_order_items SET warehouse_id = (SELECT id FROM public.warehouses WHERE tenant_id IS NULL AND code = upper(warehouse));
--- kasir_transactions doesn't currently have a warehouse text column — nothing to backfill yet.
--- Per-line warehouse_id lands on kasir_transaction_items in Task 4.
+-- purchase_order_items + kasir_transactions don't have a `warehouse` text column —
+-- their warehouse_id stays NULL on existing rows and gets populated by future
+-- receive / sale flows that pass warehouse_id explicitly.
 
 -- ─── 6. stocks.stock SUM trigger ───────────────────────────────────────────
 -- The old sync_stock_total trigger set stock = stock_atas + stock_bawah on
