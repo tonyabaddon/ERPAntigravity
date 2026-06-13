@@ -172,7 +172,7 @@ export default function StockOpnameSessionView({
 
   const filledCount = counts.filter((c) => c.countedQty !== null && c.countedQty !== undefined).length;
   const totalCount = counts.length;
-  const totalVariance = counts.reduce((sum, c) => sum + (c.varianceValue || 0), 0);
+  const totalVariance = counts.reduce((sum, c) => sum + (c.varianceValue ?? 0), 0);
 
   const onBlurCount = async (c: OpnameCount) => {
     if (!currentUser) return;
@@ -346,7 +346,7 @@ export default function StockOpnameSessionView({
                         {warehouseName(wh)}
                       </div>
                       <div className="col-span-3 text-xs text-slate-500">
-                        Sistem <span className="text-slate-800 font-medium">{c.systemQtySnapshot}</span>
+                        Sistem <span className="text-slate-800 font-medium">{c.systemQtySnapshot ?? '—'}</span>
                       </div>
                       <div className="col-span-3 text-right">
                         <input
@@ -360,13 +360,13 @@ export default function StockOpnameSessionView({
                       </div>
                       <div
                         className={`col-span-4 text-right font-semibold ${
-                          c.varianceValue < 0 ? 'text-rose-600'
-                          : c.varianceValue > 0 ? 'text-emerald-700'
+                          (c.varianceValue ?? 0) < 0 ? 'text-rose-600'
+                          : (c.varianceValue ?? 0) > 0 ? 'text-emerald-700'
                           : 'text-slate-400'
                         }`}
                       >
                         {c.countedQty !== null && c.countedQty !== undefined
-                          ? formatRpDelta(c.varianceValue)
+                          ? formatRpDelta(c.varianceValue ?? 0)
                           : '—'}
                       </div>
                     </div>
