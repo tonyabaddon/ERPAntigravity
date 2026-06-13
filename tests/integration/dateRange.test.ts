@@ -82,8 +82,8 @@ describe('inRange', () => {
   });
   test('null / undefined date → false (defensive)', () => {
     const r = { from: '2026-06-01', to: '2026-06-13' };
-    expect(inRange(null as unknown as string, r)).toBe(false);
-    expect(inRange(undefined as unknown as string, r)).toBe(false);
+    expect(inRange(null, r)).toBe(false);
+    expect(inRange(undefined, r)).toBe(false);
     expect(inRange('', r)).toBe(false);
   });
 });

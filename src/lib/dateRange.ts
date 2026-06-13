@@ -48,6 +48,8 @@ function firstOfMonth(iso: string): string {
 }
 
 function lastOfMonth(y: number, m: number): number {
+  // Pass 1-indexed m as the (0-indexed) month slot with day=0 → rolls back
+  // to the last day of month m. Handles 28/29/30/31 + leap years for free.
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
@@ -64,6 +66,10 @@ export function resolveRange(filter: FilterState, todayWib: string = wibDateStri
         return { from: filter.customFrom, to: filter.customTo };
       }
       return { from: firstOfMonth(todayWib), to: todayWib };
+    default: {
+      const _exhaustive: never = filter.preset;
+      throw new Error(`Unknown filter preset: ${_exhaustive as string}`);
+    }
   }
 }
 
