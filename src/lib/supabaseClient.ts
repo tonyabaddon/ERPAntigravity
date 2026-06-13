@@ -1617,9 +1617,9 @@ export function toOpnameCount(row: any): OpnameCount {
     sessionId: row.session_id,
     sku: row.sku,
     warehouse: row.warehouse,
-    systemQtySnapshot: row.system_qty_snapshot,
+    systemQtySnapshot: row.system_qty_snapshot ?? null,
     countedQty: row.counted_qty ?? null,
-    variance: row.variance ?? 0,
+    variance: row.variance ?? null,
     varianceValue: Number(row.variance_value ?? 0),
   };
 }
