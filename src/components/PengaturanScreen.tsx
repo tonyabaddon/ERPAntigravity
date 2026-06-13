@@ -5,8 +5,9 @@ import { bankConfigService, waRecipientsService, companySettingsService, isSupab
 import TabBar, { TabDef } from './ui/TabBar';
 import NotificationSettingsScreen from './NotificationSettingsScreen';
 import WhatsappAiScreen from './WhatsappAiScreen';
+import SalesChannelConfigPanel from './pengaturan/SalesChannelConfigPanel';
 
-type PengaturanTab = 'umum' | 'notifikasi' | 'whatsapp-ai';
+type PengaturanTab = 'umum' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -32,6 +33,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     const list: TabDef<PengaturanTab>[] = [{ id: 'umum', label: 'Umum' }];
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
     if (isVisible('whatsappAi')) list.push({ id: 'whatsapp-ai', label: 'WhatsApp AI' });
+    if (isVisible('canConfigureSalesChannels')) list.push({ id: 'kanal-penjualan', label: 'Kanal Penjualan' });
     return list;
   }, [props.permissions]);
 
@@ -639,6 +641,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             onNavigate={props.onNavigate}
           />
         )}
+        {activeTab === 'kanal-penjualan' && <SalesChannelConfigPanel showToast={showToast} />}
       </div>
     </div>
   );
