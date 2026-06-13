@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable sales channels: Phase A.3 sales_channel_settings table + RLS (Task 4) — DONE
+
+- **What:** Task 4 of the configurable sales channels plan. Creates `public.sales_channel_settings` — the source-of-truth table for per-tenant admin visibility config of the 14 canonical sales channels (`walkin`, `grosir`, `sales`, `expo`, `tokopedia`, `shopee`, `lazada`, `blibli`, `bukalapak`, `ralali`, `bhinneka`, `whatsapp`, `instagram`, `website`). Columns: `channel_code TEXT PK`, `is_visible BOOLEAN DEFAULT true`, `sort_order INT DEFAULT 0`, `tenant_id UUID` (nullable — current single-tenant deployment uses NULL = global; multi-tenant future populates), `updated_at TIMESTAMPTZ`, `updated_by UUID REFERENCES admin_users(id)`. CHECK constraint enforces the 14 canonical channel codes. Index on `tenant_id` for future multi-tenant queries. RLS enabled with two idempotent policies (DO $$ block + pg_policies guard): `all_admins_read` (any authenticated user can SELECT — operators need to know which channels are visible) and `owners_admins_write` (FOR ALL — owners OR admins with `canConfigureSalesChannels=true` permission flag). `is_visible=false` hides channel from input selectors only; historical recon/dashboard/laporan data is never filtered.
+- **Migration**: `supabase/migrations/20260613000012_sales_channels_phase_a_settings_table.sql` — file-only (controller override: no `supabase db push`; user applies manually after review). 6-digit suffix `000012` chosen — no collision with `000005` warehouse migration or `000010`/`000011` Phase A.1/A.2 sales-channel migrations on the same date.
+- **Branch:** `feat/configurable-sales-channels`.
+- **Next:** Task 5 (per the plan).
+
 ## 2026-06-13 — Configurable sales channels: Phase A.2 column rename + alias view (Task 3) — DONE
 
 - **What:** Task 3 of the configurable sales channels plan. Renames `kasir_transactions.tokped_order_no` to `marketplace_order_no` to reflect the broader marketplace scope unlocked by the Phase A.1 ENUM expansion (shopee, lazada, blibli, bukalapak, ralali, bhinneka now valid alongside tokopedia). Adds a `COMMENT ON COLUMN` documenting which channels require the field. Creates backward-compat view `public.kasir_transactions_legacy` that re-exposes `marketplace_order_no AS tokped_order_no`, giving frontend reads (PenjualanBaru, SalesInvoicePDF, etc.) a ~1-week soak window before Phase C/D updates them to the new name. The alias view will be dropped in Phase H.
