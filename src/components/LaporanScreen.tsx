@@ -7,6 +7,15 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { reportsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { CHANNEL_VISUAL } from '../lib/salesChannels';
+import type { SalesChannel } from '../types';
+
+function colorForChannel(name: string): string {
+  const code = (Object.keys(CHANNEL_VISUAL) as SalesChannel[]).find(
+    c => CHANNEL_VISUAL[c].label === name,
+  );
+  return code ? CHANNEL_VISUAL[code].brandColor : '#94a3b8';
+}
 
 type Period = '7d' | '30d' | '90d';
 
@@ -144,6 +153,19 @@ export default function LaporanScreen() {
         />
       </div>
 
+      {/* Top 3 Kanal */}
+      {channelTotals.length > 0 && (
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {channelTotals.slice(0, 3).map((c, idx) => (
+            <div key={c.name} className="bg-white border border-slate-200 rounded-xl p-3">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">#{idx + 1} Kanal</div>
+              <div className="mt-1 font-extrabold text-sm text-slate-800">{c.name}</div>
+              <div className="text-xs font-semibold text-slate-600">Rp {c.value.toLocaleString('id-ID')}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Revenue by channel: stacked bar (left) + donut (right) */}
       <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
         <h4 className="text-lg font-bold text-[#012749] mb-1">Revenue per Channel</h4>
@@ -175,17 +197,17 @@ export default function LaporanScreen() {
               <>
                 <PieChart width={160} height={160}>
                   <Pie data={channelTotals} cx={80} cy={80} innerRadius={48} outerRadius={72} dataKey="value" paddingAngle={3}>
-                    {channelTotals.map((_, i) => (
-                      <Cell key={i} fill={['#2d8a4e', '#f97316', '#1e3d60', '#8b5cf6'][i % 4]} />
+                    {channelTotals.map((c, i) => (
+                      <Cell key={i} fill={colorForChannel(c.name)} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: any) => formatRupiah(Number(value))} />
                 </PieChart>
                 <div className="space-y-1.5 mt-2 w-full">
-                  {channelTotals.map((c, i) => (
+                  {channelTotals.map(c => (
                     <div key={c.name} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: ['#2d8a4e', '#f97316', '#1e3d60', '#8b5cf6'][i % 4] }} />
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: colorForChannel(c.name) }} />
                         <span className="text-gray-600 font-medium">{c.name}</span>
                       </div>
                       <span className="font-bold text-gray-800">{formatRupiah(c.value)}</span>
