@@ -95,8 +95,8 @@ All data lives in Supabase Postgres. No cold storage Phase 1. Storage scaling tr
 ### 3.2 PII (customer records)
 
 - **Active:** Full access, tenant manages via UI.
-- **On data-subject deletion request:** Tenant edits or deletes customer record via existing tenant UI. Or invokes `anonymize_customer(customer_id)` SQL function (Phase 1) which replaces name/phone/email with hash and keeps transaction-reference integrity.
-- **On tenant churn:** PII can be anonymized in bulk on operator request. Business records (transactions) retained 10 years with anonymized customer references.
+- **On data-subject deletion request:** Tenant manages via their existing customer-edit UI. They decide per request whether to blank fields, delete the row outright, or keep as-is. This is the tenant's controllership role — Vosi does not provide a separate "anonymize" function.
+- **On tenant churn:** Tenant decides via export + delete in their own UI before churning. After churn, Vosi retains business records 10 years (UU KUP); customer references survive as-is unless tenant cleaned up before exit.
 
 ### 3.3 Vosi's own audit & billing records
 
@@ -200,13 +200,17 @@ Some tenants will be PKP themselves and want Vosi to handle their PPN/e-Faktur c
 
 ## 9. Open legal questions (for lawyer review)
 
-1. Is Singapore (Supabase `ap-southeast-1`) acceptable for tenant-of-customer PII under UU PDP Pasal 21, or must all PII be in Indonesia?
-2. Vosi-tenant DPA template — does it adequately spell out the processor/controller split? Sub-processor disclosure (Supabase, GCS, Sentry, etc.)?
-3. What level of customer-of-tenant consent does Vosi need to support (banner? click-through? signed paper?)?
-4. DPO threshold — when does Vosi cross "skala besar" requiring DPO appointment?
-5. Cross-border data transfer for Sentry (US-hosted) / PostHog (EU/US) / Anthropic (US) — does sanitized telemetry (stack traces without PII) require explicit consent / DPA addenda?
-6. Liability cap for data breach — what's standard for processor in Indonesian DPA?
-7. Termination clause — Vosi terminates tenant: data hand-off timeline. Tenant terminates Vosi: same. Differences?
+1. **Vosi legal entity structure — sole proprietorship vs PT.** Critical decision before tenant #2 onboards. Implications:
+   - **Sole proprietorship**: simpler, PPh Final 0.5% under Rp 4.8B/year revenue. But cannot issue invoice in PT format. Tenant who is PKP may need PT invoice to credit PPN / book as expense.
+   - **PT (limited company)**: can issue PT invoice, register as PKP if/when revenue exceeds Rp 4.8B/year, signs DPA with own liability cap. Higher setup + ongoing accounting cost.
+   - **Recommendation:** consult lawyer on whether starting as sole proprietorship is acceptable for first 5-10 tenants, with PT incorporation triggered later.
+2. Is Singapore (Supabase `ap-southeast-1`) acceptable for tenant-of-customer PII under UU PDP Pasal 21, or must all PII be in Indonesia?
+3. Vosi-tenant DPA template — does it adequately spell out the processor/controller split? Sub-processor disclosure (Supabase, GCS, Sentry, etc.)?
+4. What level of customer-of-tenant consent does Vosi need to support (banner? click-through? signed paper?)?
+5. DPO threshold — when does Vosi cross "skala besar" requiring DPO appointment?
+6. Cross-border data transfer for Sentry (US-hosted) / PostHog (EU/US) / Anthropic (US) — does sanitized telemetry (stack traces without PII) require explicit consent / DPA addenda?
+7. Liability cap for data breach — what's standard for processor in Indonesian DPA?
+8. Termination clause — Vosi terminates tenant: data hand-off timeline. Tenant terminates Vosi: same. Differences?
 
 ---
 

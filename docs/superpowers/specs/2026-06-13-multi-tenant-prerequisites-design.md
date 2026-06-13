@@ -16,7 +16,7 @@
 | Module gating | Declarative `modules.requires_caps` + `tenants.capabilities` + compatibility check at 3 enforcement points (UI, DB trigger, runtime guard) |
 | Packages | Snapshot-at-apply template (not live binding). `tenants.package_id` is metadata; `tenant_modules` is source of truth at runtime |
 | Subscription | `subscription_expires_at` + 7-day grace + auto read-only mode + manual suspend |
-| Retention | 7-day grace → read-only mode → 10-year hard delete (UU KUP-compliant). Vosi keeps tenant business records in-DB for 10 years from row creation; annual cron deletes records past 10 years. PII deletion via tenant UI (Phase 1) or dedicated anonymization tool (Phase 2). Vosi's own audit/billing records also retained 10 years. No cold storage Phase 1 (in-DB only). |
+| Retention | 7-day grace → read-only mode → 10-year hard delete (UU KUP-compliant). Vosi keeps tenant business records in-DB for 10 years from row creation; annual cron deletes records past 10 years. PII deletion via tenant's existing customer-edit UI (their controllership). No dedicated anonymization tooling Phase 1 or Phase 2. Vosi's own audit/billing records also retained 10 years. No cold storage Phase 1 (in-DB only). |
 | Pricing & business policy | Separated to `docs/business/pricing.md` and `docs/business/compliance-indonesia.md` — different change cadence than tech architecture. This spec references `packages.id` and policy decisions only, no concrete prices. |
 | WhatsApp | Garindo keeps whatsmeow (legacy). Paying tenants use Meta Cloud API. Calista + Sales Inbox + Pipeline + Notifications + Followup gated on `wa_backend` capability |
 | Operator console | **Separate frontend app**, shared DB. Super-admin defined in separate `super_admin_users` table (not a boolean on `admin_users`) |
@@ -231,7 +231,8 @@ D-min complete; staging available for migration dry-run.
 - "Provision Tenant" form: name + owner email + package selector + subscription duration → creates tenant row, applies package template (populates `tenant_modules` from `packages.included_modules`), creates Supabase auth user for the owner, sends magic link via Resend, writes audit.
 - Owner accepts magic link, sets password, lands in tenant app at `app.vosi.id`. First Owner is flagged `is_first_owner=true`.
 - Subscription controls: extend `subscription_expires_at`, suspend, reactivate. Every action goes through `tenant_subscription_audit`.
-- Tenant offboarding action: subscription expires → 7-day grace → read-only mode (auto via `tenant_access_status()` function). Tenant data stays in-DB indefinitely until UU KUP 10-year retention timeout. Bulk export endpoint available so tenant can download their data anytime. Annual cron for 10-year hard-delete is Phase 2 (no urgency in Phase 1 since no record will be 10 years old).
+- Tenant offboarding action: subscription expires → 7-day grace → read-only mode (auto via `tenant_access_status()` function). Tenant data stays in-DB indefinitely until UU KUP 10-year retention timeout. Annual cron for 10-year hard-delete is Phase 2 (no urgency in Phase 1 since no record will be 10 years old).
+- **Data portability (UU PDP Pasal 6)**: tenant-triggered bulk export. Format: zipped CSV files, one per tenant-scoped table (`kasir_transactions.csv`, `orders.csv`, `stocks.csv`, etc.) plus a `README.txt` listing schema versions. Triggered via owner-only button in tenant settings. Generated server-side, emailed download link via Resend (signed URL, 7-day expiry). Self-serve, no operator involvement.
 
 **Entry gate**
 
@@ -438,11 +439,12 @@ purchase_orders, payments, audit logs):
                               period elapsed)
 
 PII in tenant's customer records:
-   • Tenant edits / deletes customer rows via existing UI (Phase 1)
-   • Dedicated anonymization function `anonymize_customer(customer_id)`
-     ships Phase 1 as SQL; UI Phase 2
-   • Foreign key references in transaction rows survive anonymization
-     (compatible with UU KUP — business record integrity preserved)
+   • Tenant manages via existing customer-edit UI (their controllership role).
+   • Tenant decides per request: edit fields to blank, delete row outright,
+     or keep as-is. Transaction history FK behavior is the tenant's call.
+   • No dedicated anonymization tooling from Vosi. The tenant UI is enough
+     to satisfy UU PDP deletion requests; Vosi does not add a separate
+     "anonymize" function.
 
 Vosi's own audit + billing records (super_admin_audit_log,
 tenant_subscription_audit, security_audit_log):
@@ -496,6 +498,37 @@ Infrastructure stays on **free tiers until usage triggers an upgrade**. Free-tie
 **Honest note on PostHog**: at 50 tenant × ~5 users × ~20 sessions/day × ~100 events = ~15M events/mo. PostHog cloud cost would be ~$3,700/mo (margin-killing). Self-hosting on a $10/mo VPS is mandatory at scale. Migration from cloud to self-host should happen at ~tenant 15-20 before cloud bills accumulate.
 
 **Founder time and support hire are not on this table** — they're the dominant non-infra cost from tenant 25+. Plan to either hire 1 part-time support engineer or move to self-serve onboarding around then.
+
+### 8.6 Domain & URL strategy
+
+**Tenant resolution model**: single-domain. All tenants access the same URL (aspirationally `app.vosi.id`). Tenant resolved from JWT via `current_tenant_id()` — no subdomain or path prefix per tenant. The LTC owner persona is URL-agnostic; subdomain branding adds complexity without UX benefit.
+
+**Phase 1 (Garindo only) — use Cloud Run default URLs. Free.**
+
+- Tenant app: `vosi-app-<hash>.a.run.app`
+- Operator console: `vosi-operator-<hash>.a.run.app`
+- WhatsApp daemon: `vosi-daemon-<hash>.a.run.app`
+- HTTPS + cert auto-managed by Cloud Run. Cost $0.
+- Magic link in owner invitation goes to the Cloud Run URL directly.
+- Bonus: obscure operator URL = security-by-obscurity layer on top of `super_admin_users` gate.
+
+**Trigger to register custom domain**: first paying tenant go-live.
+
+- Cost: ~Rp 250-350k/year for `.id` domain (or ~$10-15/year for `.com`).
+- Cloudflare DNS: free. Cloud Run domain mapping: free. SSL cert: auto-managed.
+- Migration is non-breaking: change Cloud Run domain mapping + DNS, update owner email templates, keep old Cloud Run URLs as redirect for 30 days.
+
+**DNS structure once registered:**
+
+```
+vosi.id              → marketing site (vosi-landing)
+app.vosi.id          → tenant app (all tenants)
+operator.vosi.id     → operator console
+status.vosi.id       → status page (Phase 2)
+docs.vosi.id         → help docs (Phase 2/3)
+```
+
+**Future Phase 3 escalation** (premium feature, on request): per-tenant subdomain (`mytoko.vosi.id`) or custom domain (`mytoko.com`). Layer A tenant resolution unchanged (still JWT-based); only DNS + cert automation differ.
 
 ### 9.1 Five-layer monitoring stack
 
@@ -654,6 +687,19 @@ weeks but can be paced based on tenant demand.
 - **Sentry** is wired in D-min (so even staging errors are captured).
 - **GitHub repo access** for the investigation agent is configured during Layer A (the integration is set up; the agent itself is built in C-full).
 
+### 11.3 External dependency — Phase 0 "First Rupiah" product readiness
+
+**This spec covers multi-tenant infrastructure only.** Selling to tenant #2 also requires product-readiness items that live in the roadmap §8 "First Rupiah" sprint, **separate from this spec**:
+
+- Managerial P&L report (revenue − FIFO COGS − operating expenses).
+- Sales-by-product margin report.
+- Per-deployment config (de-Garindo-ify branding/channels/bank rek).
+- Onboarding CSV import wizard polish.
+- Hutang-piutang basic.
+- Pengawasan one-screen.
+
+Estimated effort: ~10-15 solo-days per roadmap §8.4. **These run in parallel to this spec's Layers D-min/A/C-min, and must both be done before paying tenant #2 onboards.** Sequence-wise: Phase 0 product items can be tackled before, during, or after multi-tenant infra work — they don't block each other technically.
+
 ---
 
 ## 12. Deferred to Phase 2+ — explicit
@@ -676,7 +722,7 @@ The following appear in roadmap §2-9 or in the brainstorming discussion and are
 - Annual 10-year hard-delete cron (Phase 2 — no row will be 10 years old until ~2036).
 - Cold-storage archive (deferred indefinitely — in-DB retention with Supabase scaling is cheaper for 10-year retention at projected 50-tenant volume).
 - Public ToS / DPA / privacy policy (legal-quality drafts require a lawyer; **rough draft template must exist before tenant #2 onboard** per UU PDP Pasal 51, refined with lawyer in Phase 2 — see `docs/business/compliance-indonesia.md`).
-- Dedicated customer-of-tenant PII anonymization UI (Phase 1 = tenant uses existing customer-edit screens + a SQL function `anonymize_customer()`; full UI Phase 2).
+- ~~Dedicated customer-of-tenant PII anonymization UI / SQL function~~ — **explicitly not built.** Tenant manages PII via existing customer-edit screens; that satisfies their controllership obligation.
 - DPO (Data Protection Officer) appointment — required-threshold ambiguity in UU PDP; lawyer determines when applicable. Phase 2/3.
 - Mobile native app.
 - Multi-language UI.
@@ -702,7 +748,7 @@ The following appear in roadmap §2-9 or in the brainstorming discussion and are
 **What this spec bakes in:**
 
 1. Tenant business records retained 10 years in-DB (§7.3) — supports both tenants' UU KUP obligation AND PDP "necessary for purpose" framework.
-2. PII deletion: tenant via UI, dedicated `anonymize_customer()` SQL function Phase 1, full UI Phase 2.
+2. PII deletion: tenant uses existing customer-edit UI (their controllership role). No Vosi-side anonymization tooling.
 3. Breach notification procedure documented in `docs/runbooks/disaster-recovery.md` (Layer D-min).
 4. Data localization: Supabase region `ap-southeast-1` (Singapore PDPA = adequate protection per UU PDP). DR backups to GCS `asia-southeast2` (Jakarta — physically in Indonesia).
 5. DPA + privacy policy template MUST exist before tenant #2 onboards (draft in Phase 1, refined Phase 2 with lawyer).
@@ -723,6 +769,8 @@ This decomposition spec is the parent. Each of the following will become its own
 6. `2026-MM-DD-layer-c-full-operator-console-design.md`
 7. `2026-MM-DD-layer-d-full-release-safety-design.md`
 8. `2026-MM-DD-tech-ops-investigation-agent-design.md`
+9. `2026-MM-DD-posthog-self-host-migration-design.md` — trigger: tenant 10-12 (lead time before paid-tier cost bites at ~15-20 tenants). ~1 solo-day setup, ongoing $10/mo VPS.
+10. `2026-MM-DD-data-portability-export-design.md` — tenant-triggered zipped CSV export per UU PDP Pasal 6. Phase 1 minimal version OK; full polish per-layer spec when needed.
 
 Plus standalone runbook docs:
 

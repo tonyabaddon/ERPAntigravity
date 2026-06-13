@@ -125,12 +125,34 @@
 
 ---
 
+## Tenant invoice format (Vosi → tenant)
+
+**TBD — depends on Vosi legal entity decision** (see `compliance-indonesia.md` §9 question 1).
+
+When tenant pays subscription, Vosi issues an invoice. Minimum requirements:
+
+- Vosi entity name + address + NPWP (if PT) or NIK (if sole proprietorship)
+- Tenant entity name + address + NPWP
+- Invoice number (sequential, per fiscal year)
+- Line items: package name, period covered, amount
+- PPN line: **none currently** (Vosi not PKP until revenue exceeds Rp 4.8B/year)
+- Payment instructions (bank transfer details)
+- Tax notes ("PPh Final 0.5% Bagi Wajib Pajak Penghasilan Tertentu" if applicable)
+
+**Format options:**
+- (A) PDF generated server-side, emailed to tenant at each renewal
+- (B) Manual via spreadsheet → PDF for first 5-10 tenants, automate later
+- (C) Use a service (e.g., Pajak.io, Klikpajak) — overkill for non-PKP
+
+**Recommendation Phase 1:** Option B (manual). Vosi generates PDF per invoice using a template stored in `docs/business/templates/`. Automate at tenant 10+ via Layer C-full operator console invoice generator.
+
 ## Open questions / iterate next time
 
 - Should Premium tier (post-GL) be priced Rp 1,200-1,500k or higher? Lawyer-grade accountant-grade GL justifies premium.
 - Calista add-on pricing — depends on Meta API ongoing cost per-tenant per-message.
 - Annual vs lifetime grandfather: how long should founding-customer pricing lock in?
 - Optional: pricing experiment with founding customers (A/B Rp 399k vs Rp 449k Starter Quarterly to see if elasticity).
+- Vosi legal entity (sole prop vs PT) — drives invoice format and DPA validity.
 
 ---
 

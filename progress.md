@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Multi-Tenant Prerequisites: third-pass refinement (gap audit) — DONE
+
+- **What:** Final pre-review-gate audit after user asked "is there anything I miss?" Six items surfaced and applied to spec + business docs.
+- **Changes:**
+  - **PII anonymization tooling removed** (per user direction) — no `anonymize_customer()` SQL function, no dedicated anonymization UI. Tenant manages PII via existing customer-edit screens (their controllership role). Updated decisions table, §7.3, §12 defer list, compliance doc §3.2.
+  - **Section 8.6 Domain & URL strategy** added — locks single-domain model (`current_tenant_id()` from JWT, no per-tenant subdomain). Phase 1 uses free Cloud Run URLs; custom `.id` domain triggered on first paying tenant go-live (~Rp 250-350k/year). Future Phase 3 escalation to per-tenant subdomain/custom domain as premium feature.
+  - **Section 4.3 — data portability format** specified: tenant-triggered zipped CSV bundle per tenant-scoped table, signed download URL via Resend (7-day expiry). UU PDP Pasal 6 compliance.
+  - **Section 11.3 — Phase 0 dependency note** added: explicit acknowledgment that this multi-tenant infra spec does NOT cover Phase 0 "First Rupiah" product readiness items (managerial P&L, sales-by-product margin, de-Garindo-ify, onboarding wizard). Both tracks must complete before paying tenant #2 onboards.
+  - **Section 13 — added 2 future per-layer specs**: PostHog self-host migration (trigger tenant 10-12) + data portability export design.
+  - **compliance-indonesia.md §9** — Vosi legal entity question moved to top (sole proprietorship vs PT — affects invoice format, DPA validity, PPN/PKP threshold). Lawyer consult required before tenant #2.
+  - **pricing.md** — added "Tenant invoice format" section with three implementation options. Recommendation: manual PDF first 5-10 tenants, automate at tenant 10+.
+- **Spec self-review pass:** consistency check OK across decisions table, 7.3 lifecycle, 12.5 legal, 12 defer list, 13 specs list. PII anonymization fully removed across spec + compliance doc (no contradiction).
+- **Brainstorming complete.** Spec gate before invoking writing-plans.
+- **Next:** user reviews spec end-to-end (advisor recommended sleep-on-it). On approval, invoke `writing-plans` skill for Layer D-min (first implementation, ~3-5 solo-day).
+
 ## 2026-06-13 — Multi-Tenant Prerequisites: spec scope expansion + business docs split — DONE
 
 - **What:** Second-pass spec refinement after additional brainstorming surfaced 50-tenant scale target, free-tier-first cost strategy, 10-year UU KUP-compliant retention, and pricing/legal separation requirement.
@@ -15,6 +30,15 @@
 - **Tech spec updates committed to** `docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md` — Section 12.5 added (legal & compliance brief with pointer to business doc); Section 13 updated to include business policy doc references.
 - **Advisor flagged + addressed:** pricing zigzagged during brainstorming (flat → +6mo → +quarterly → drop 6mo → Rp 279k → Rp 329k → Rp 339k Starter). Pricing extracted to separate doc with explicit "sleep-on-it" status. Status page kept in Phase 2 defer (not pulled forward despite 50-tenant target). Retention edits applied as one coherent batch to avoid spec inconsistency.
 - **Next:** user reviews spec end-to-end, then invoke `writing-plans` skill for Layer D-min (~3-5 solo-day first implementation).
+
+## 2026-06-13 — FOLLOWUP-3: supabaseClient pre-cutover gaps closed — DONE
+
+- **Commit**: 4b4de31
+- **File**: `src/lib/supabaseClient.ts`
+- **Gap 1 — upsertStock SELECT**: Removed `stock_atas, stock_bawah` from SELECT (columns dropped by Migration 3). Updated `seed_stock_row` RPC call to use new `p_initial_levels: {}` jsonb arg (Migration 2a signature). Removed `stock_atas`/`stock_bawah` diff-check guards from existing-row block (qty changes go through adjustment flow, not upsertStock).
+- **Gap 2 — decrementStock**: Deleted the function entirely. `grep -rn "decrementStock" src/` confirmed zero runtime callers (only a comment reference on line 1183 in the "old non-atomic flow" warning). The legacy `decrement_stock(text, text, int)` text overload is dropped by Migration 3; the atomic `record_kasir_sale` RPC replaced the old multi-step flow.
+- **Lint**: `npm run lint` → 0 errors (tsc --noEmit clean).
+- **Callers updated**: none (decrementStock deleted, not refactored; no callers existed).
 
 ## 2026-06-13 — FOLLOWUP-2: StockManagerScreen inline edit — qty fields removed — DONE
 
