@@ -58,6 +58,16 @@ Query-string form (not path form) chosen deliberately: the app already serves `i
 
 After parsing, the params remain in the URL so the operator can refresh / bookmark the page without losing context. We do **not** rewrite the URL via `history.replaceState` — that would surprise the user who pasted the link.
 
+#### 3.2.1 Auth deep-link handoff
+
+If the operator pastes `/?screen=pembelian&po=PO-XYZ` while logged out, `App.tsx` shows `AuthScreen` first (existing behavior). The intended target must survive the login round-trip. Mechanism:
+
+- On boot, before deciding what to render, `App.tsx` reads the params and caches `{ screen, po }` in `sessionStorage` under key `pembelian.pendingDeepLink`.
+- After successful login (existing post-auth handler), `App.tsx` checks `sessionStorage` for `pembelian.pendingDeepLink`, restores the target screen + `initialDetailPoNumber`, then deletes the key.
+- `sessionStorage` (not `localStorage`) so a stale deep-link doesn't survive a closed tab and surprise the user later.
+
+If the operator is already logged in, the deep-link applies immediately without touching `sessionStorage`.
+
 ### 3.3 Detail-page entry contract
 
 `PembelianScreen` accepts an optional `initialDetailPoNumber` prop. On mount, if set, it:
@@ -130,14 +140,24 @@ Row click is **not** added. Only the `Detail` button navigates (matches user's e
 
 ### 4.4 `PembelianDetailPage` (new tab)
 
-A standalone page (not a modal). Layout:
+A standalone page (not a modal). **No sidebar** — the detail tab is a focused single-purpose view. The X button closes the tab (`window.close()`); to navigate anywhere else, the operator returns to the list tab. This is intentional: the detail tab exists to look at one PO, not to roam the app.
 
-- **Top bar** (`bg-white border-b`): `×` close button → `window.close()`; indigo `ShoppingCart` chip; `PO-2026-0042` title; supplier name + status pill subtitle. On the right: status-driven action buttons (see below) + Download PDF + Print.
+**Tab title**: `document.title = '${po_number} — Pembelian'` set on mount and updated after re-fetch (so refreshing the tab still gets the right title).
+
+**Loading state**: while `fetchByNumber` is in flight, render a tailwind skeleton — gray-block rectangles for the header pill, title, and items table. Matches the gentle existing "Memuat data..." pattern but more visual on a full page than a single line.
+
+**Print layout**: existing modal classes (`print:hidden` for action buttons + X, `print:block` for a print-only company-header section) carry over to the new page. Operator pressing Cmd-P from the detail tab gets a clean paper-friendly PO; the action bar and close X disappear.
+
+Layout:
+
+- **Top bar** (`bg-white border-b`, `print:hidden`): `×` close button (`aria-label="Tutup"`) → `window.close()`; indigo `ShoppingCart` chip; `PO-2026-0042` title; supplier name + status pill subtitle. On the right: status-driven action buttons (see below) + Download PDF + Print.
 - **Body** (max-w-4xl centered, `bg-gray-50`):
   - PO meta card (3-col: Tanggal Pesan, Tanggal Terima, Jatuh Tempo).
   - Items card (table with margin column — unchanged from current modal).
   - Damaged-goods section (unchanged, only shown if `damagedItems.length > 0`).
   - Attachments (invoice URL, payment proof URL — unchanged).
+
+**Error state — PO not found**: if `fetchByNumber` returns `null` (PO deleted between list-tab fetch and detail-tab open, or operator typed a wrong URL), render `bg-white rounded-2xl` empty state with a search-X icon, "PO tidak ditemukan" headline, and a `Kembali ke Daftar Pembelian` button that closes the tab.
 
 **Status-driven actions** (mirror row buttons so the operator can act without switching tabs):
 - `DRAFT`: `Edit` (replaces the detail body with `PurchaseOrderFormPage` in the same tab — see §6), `Tandai Dipesan`, `Hapus`.
@@ -162,7 +182,18 @@ Rationale: `fetchAll()` is heavy. The detail tab only needs one PO. Adding `fetc
 
 ### 5.2 No DB schema changes
 
-All four KPI numbers and the list rows are derived client-side from the already-fetched PO list + the active filter. Cards 1, 2, and 4 use `POS.filter(inPeriod)`; card 3 uses `POS.filter(isPaymentOverdue)` regardless of period.
+All four KPI numbers and the list rows are derived client-side from the already-fetched PO list + the active filter. The cards intentionally filter by **different date fields** because they answer different questions:
+
+| Card | Date field | Question it answers |
+|---|---|---|
+| 1. Total PO | `coalesce(ordered_at, created_at)` | "How much did I buy in this period?" |
+| 2. Jatuh Tempo | **`payment_due_at`** | "How much do I owe in this period?" |
+| 3. Terlambat Bayar | (ignores filter) | "What's currently overdue right now?" |
+| 4. Jumlah PO | `coalesce(ordered_at, created_at)` | "How many POs did I create in this period?" |
+
+This is deliberate: card 2 by `ordered_at` would show payments due based on when the PO was placed, which is uninteresting. Card 2 by `payment_due_at` shows the cash-out window — what the operator actually wants to see when planning Juni's payments.
+
+The PO **list below** filters by `coalesce(ordered_at, created_at)` (same as cards 1 and 4) — the list answers "what POs were placed in this period?", not "what payments are due in this period?".
 
 `purchaseOrderService.fetchSummary()` is **removed**. It returned only a server-side MTD aggregate, which no longer matches what any card displays once the filter is per-period. The full PO list is already fetched for the table; reusing it for all four cards costs nothing extra and keeps the data source single.
 
@@ -181,8 +212,11 @@ Single React state object inside `PembelianScreen`. Default: `{ preset: 'bulan_i
 
 ### 5.4 `resolveRange` and `periodLabel` helpers
 
-Pure functions in `PembelianScreen.tsx` (or in a small `src/lib/dateRange.ts` if any other screen wants the same presets later). Logic:
+Pure functions in `PembelianScreen.tsx` (or in a small `src/lib/dateRange.ts` if any other screen wants the same presets later).
 
+**Timezone:** all "today" math uses `wibDateString()` (already in `src/lib/format`) so `30 Hari` / `90 Hari` / `Bulan Ini` compute against WIB, not browser local. The store operates in WIB; using browser-local would drift one day for an operator working from outside Asia/Jakarta.
+
+Logic (where `today = wibDateString()` parsed as `YYYY-MM-DD`):
 - `bulan_ini` → `[firstDayOfMonth(today), today]`
 - `30_hari` → `[today - 29d, today]` (rolling, inclusive)
 - `90_hari` → `[today - 89d, today]`
@@ -256,7 +290,7 @@ Body mirrors the current `LaporanScreen.KpiCard` (lines 267-281). Hover-lift tra
 
 ## 9. Testing
 
-- **Unit:** `resolveRange` and `periodLabel` covering all four presets, full-month custom, partial-month custom, year-crossing range.
+- **Unit:** `resolveRange` and `periodLabel` covering all four presets, full-month custom, partial-month custom, year-crossing range, and a WIB-vs-UTC boundary case (operator opens the screen at 11pm WIB on the first of the month — "Bulan Ini" should still start that day, not roll back).
 - **Unit:** `inPeriod` predicate against POs with `ordered_at`, with `ordered_at === null`, and with both null (defensive — shouldn't happen but should not throw).
 - **Integration (manual smoke):**
   - Filter chip switching updates card numbers + list rows in the same tick.
@@ -266,7 +300,10 @@ Body mirrors the current `LaporanScreen.KpiCard` (lines 267-281). Hover-lift tra
   - List tab refreshes on refocus after detail tab finishes an action.
   - `Buat PO Baru` still opens form in the same tab (not new tab).
   - Edit on DRAFT row still opens form in the same tab.
+  - Deep-link auth handoff: log out → paste `/?screen=pembelian&po=<id>` → log back in → detail page loads (not just list).
+  - Print preview on the detail page hides the action bar + close X (`print:hidden` classes).
 - **Permission gating:** existing `currentUserPermissions` checks on the action buttons survive the modal → page move.
+- **A11y smoke:** tab through the filter bar (chips → Custom → date inputs → Terapkan), then tab through the detail page header (close X → action buttons). Every interactive element reachable, focus ring visible, icon-only buttons (close X, Custom calendar) have `aria-label`s.
 
 ## 10. Rollout
 
@@ -274,8 +311,9 @@ Single deploy. No DB migration. No feature flag — the surface is internal-faci
 
 ## 11. Out-of-scope follow-ups (note for later)
 
-- Persist filter state in localStorage so the operator's last-used period survives page reloads.
-- Encode filter in URL (`?period=30_hari` or `?from=...&to=...`) so screenshots / shared links carry the period scope.
-- `BroadcastChannel` for tab-sync if focus-refresh proves insufficient (e.g., operator works split-screen with both tabs visible).
-- Sticky filter bar option if list scroll proves annoying with the bar scrolling away.
-- Row click → new tab (in addition to the Detail button) — explicitly deferred per the user's "minimal change" preference.
+- **Filter persistence within session.** Today the filter resets to `Bulan Ini` every time `PembelianScreen` mounts — switching to Stok and back loses your "90 Hari" selection. Cheapest fix: `sessionStorage` keyed by `pembelian.filter`. Not worth doing until someone complains.
+- **Encode filter in URL** (`?period=30_hari` or `?from=...&to=...`) so screenshots / shared links carry the period scope.
+- **Server-side period filter** for the list when total PO count grows past ~1,000. Today's `fetchAll()` returns every PO and the client filters; at ~50 POs that's fine, at ~5,000 it isn't. Trigger threshold: when initial Pembelian load exceeds ~1.5s.
+- **`BroadcastChannel`** for tab-sync if focus-refresh proves insufficient (e.g., operator works split-screen with both list and detail tab visible).
+- **Sticky filter bar** option if list scroll proves annoying with the bar scrolling away.
+- **Row click → new tab** (in addition to the Detail button) — explicitly deferred per the user's "minimal change" preference.
