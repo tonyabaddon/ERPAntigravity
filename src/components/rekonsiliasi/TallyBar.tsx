@@ -1,62 +1,75 @@
 // src/components/rekonsiliasi/TallyBar.tsx
 import React from 'react';
+import type { SalesChannel } from '../../types';
+import { getChannelDef } from '../../lib/salesChannels';
+import { useSalesChannels } from '../../contexts/SalesChannelsContext';
+import ChannelIcon from '../icons/ChannelIcon';
 
-interface Props {
-  totalSales: number;
-  transferAmount: number;
-  edcAmount: number;
-  cashAmount: number;
-  piutangAmount: number;
-  perChannel: { whatsapp: number; tokopedia: number; walkin: number; grosir: number };
-  perChannelCount: { whatsapp: number; tokopedia: number; walkin: number; grosir: number };
+interface TallyBarProps {
+  tally: Map<SalesChannel, { amount: number; count: number }>;
+  totalAmount: number;
+  totalCount: number;
 }
 
-function fmt(n: number) {
-  return 'Rp ' + (n / 1_000_000).toFixed(1).replace('.', ',') + 'jt';
-}
+export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarProps) {
+  const { settings } = useSalesChannels();
+  // Hide-zero, sort by amount DESC
+  const rows = Array.from(tally.entries())
+    .filter(([, v]) => v.amount > 0)
+    .sort(([, a], [, b]) => b.amount - a.amount);
 
-export default function TallyBar({ totalSales, transferAmount, edcAmount, cashAmount, piutangAmount, perChannel, perChannelCount }: Props) {
-  const sum = transferAmount + edcAmount + cashAmount + piutangAmount;
-  const tallyOK = Math.abs(sum - totalSales) < 50_000;
-
-  const pct = (a: number) => totalSales === 0 ? 0 : Math.max(0, (a / totalSales) * 100);
+  if (rows.length === 0) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-400">
+        Belum ada transaksi di periode ini.
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">⚖️ Tally Penjualan</div>
-          <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Total = Transfer + EDC + Tunai + Piutang</div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-[10px] text-slate-500 font-bold uppercase">Total Sales</div>
-            <div className="text-xl font-black text-[#012749]">{fmt(totalSales)}</div>
-          </div>
-          <span className={`text-[11px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full ${tallyOK ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-            {tallyOK ? '✓ TALLY' : `❌ Selisih ${fmt(Math.abs(sum - totalSales))}`}
-          </span>
-        </div>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+        <div className="col-span-1">#</div>
+        <div className="col-span-5">Kanal</div>
+        <div className="col-span-3 text-right">Total</div>
+        <div className="col-span-2 text-right">Trx</div>
+        <div className="col-span-1 text-right">%</div>
       </div>
-      <div className="flex rounded-xl overflow-hidden border border-[#e5eeff] mb-3" style={{ height: 22 }}>
-        <div className="text-[9px] font-extrabold text-white flex items-center justify-center" style={{ width: pct(transferAmount) + '%', background: '#10b981' }}>🏦 {fmt(transferAmount)}</div>
-        <div className="text-[9px] font-extrabold text-white flex items-center justify-center" style={{ width: pct(edcAmount) + '%', background: '#3b82f6' }}>💳 {fmt(edcAmount)}</div>
-        <div className="text-[9px] font-extrabold text-white flex items-center justify-center" style={{ width: pct(cashAmount) + '%', background: '#8b5cf6' }}>💵 {fmt(cashAmount)}</div>
-        <div className="text-[9px] font-extrabold text-white flex items-center justify-center" style={{ width: pct(piutangAmount) + '%', background: '#f59e0b' }}>⏳ {fmt(piutangAmount)}</div>
-      </div>
-      <div className="grid grid-cols-4 gap-3 pt-3 border-t border-[#e5eeff]">
-        {([
-          ['📱 WhatsApp', perChannel.whatsapp, perChannelCount.whatsapp, '#2d8a4e'],
-          ['🛍️ Tokopedia', perChannel.tokopedia, perChannelCount.tokopedia, '#a16207'],
-          ['🏪 Walk-in', perChannel.walkin, perChannelCount.walkin, '#1e40af'],
-          ['🏭 Grosir', perChannel.grosir, perChannelCount.grosir, '#5b21b6'],
-        ] as const).map(([label, amt, cnt, color]) => (
-          <div key={label as string} className="text-center">
-            <div className="text-[9px] font-bold uppercase tracking-widest" style={{ color }}>{label}</div>
-            <div className="text-sm font-black text-[#012749]">{fmt(amt as number)}</div>
-            <div className="text-[10px] font-bold text-slate-500">{cnt} order</div>
+      {rows.map(([code, v], idx) => {
+        const def = getChannelDef(code);
+        const isHidden = !settings[code]?.isVisible;
+        const pct = totalAmount > 0 ? Math.round((v.amount / totalAmount) * 100) : 0;
+        return (
+          <div key={code} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-slate-100 items-center hover:bg-slate-50">
+            <div className="col-span-1 text-sm font-bold text-slate-400">{idx + 1}</div>
+            <div className="col-span-5 flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                style={{ background: def.brandColor }}
+              >
+                <ChannelIcon code={code} size={16} />
+              </div>
+              <div>
+                <div className="font-semibold text-sm text-slate-800 flex items-center gap-1.5">
+                  {def.label}
+                  {isHidden && (
+                    <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">DINONAKTIFKAN</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="col-span-3 text-right font-mono font-bold text-slate-800">Rp {v.amount.toLocaleString('id-ID')}</div>
+            <div className="col-span-2 text-right text-sm text-slate-600">{v.count}</div>
+            <div className="col-span-1 text-right text-xs font-semibold text-slate-500">{pct}%</div>
           </div>
-        ))}
+        );
+      })}
+      <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-slate-50 border-t-2 border-slate-300 items-center">
+        <div className="col-span-1"></div>
+        <div className="col-span-5 text-sm font-extrabold text-slate-800">TOTAL</div>
+        <div className="col-span-3 text-right font-mono font-extrabold text-slate-900">Rp {totalAmount.toLocaleString('id-ID')}</div>
+        <div className="col-span-2 text-right text-sm font-bold text-slate-700">{totalCount}</div>
+        <div className="col-span-1 text-right text-xs font-bold text-slate-500">100%</div>
       </div>
     </div>
   );
