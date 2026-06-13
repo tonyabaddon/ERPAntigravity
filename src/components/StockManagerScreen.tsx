@@ -160,7 +160,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
   const [newSpecs, setNewSpecs] = useState<Record<string, string>>({});
 
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { price: string; stock: string; stock_atas: string; stock_bawah: string; harga_modal: number | null; specs: Record<string, string> }>>({});
+  const [editValues, setEditValues] = useState<Record<string, { price: string; harga_modal: number | null; specs: Record<string, string> }>>({});
   const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
   const { warehouses } = useWarehouses();
@@ -302,9 +302,6 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
       ...prev,
       [item.sku]: {
         price: String(item.price),
-        stock: String(item.stock),
-        stock_atas: String(item.stock_atas ?? item.stock),
-        stock_bawah: String(item.stock_bawah ?? 0),
         harga_modal: item.harga_modal ?? null,
         specs: Object.fromEntries(
           Object.entries(item.specs ?? {}).map(([k, v]) => [k, String(v)])
@@ -323,9 +320,6 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     const item = stockList.find(i => i.sku === sku);
     if (!item) return;
     const price = parseInt(vals.price.replace(/\D/g, '')) || 0;
-    const stock_atas = parseInt(vals.stock_atas) || 0;
-    const stock_bawah = parseInt(vals.stock_bawah) || 0;
-    const stock = stock_atas + stock_bawah;
     const name = generateName(item.category, vals.specs);
     if (!name) {
       showToast('⚠️ Mohon lengkapi spesifikasi produk!', 'warning');
@@ -333,7 +327,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
     }
     const updated = stockList.map(i =>
       i.sku === sku
-        ? { ...i, price, stock, stock_atas, stock_bawah, harga_modal: vals.harga_modal ?? null, specs: vals.specs, name, status: (stock < 10 ? 'Stok Tipis' : 'Sinkron') as 'Stok Tipis' | 'Sinkron' }
+        ? { ...i, price, harga_modal: vals.harga_modal ?? null, specs: vals.specs, name }
         : i
     );
     onStockUpdate(updated);
@@ -960,25 +954,10 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
                           className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest pl-1">Stok Gudang Atas</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={vals.stock_atas}
-                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], stock_atas: e.target.value } }))}
-                          className="w-full bg-blue-50 rounded-xl px-3 py-2 border border-blue-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-blue-400"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-amber-600 uppercase tracking-widest pl-1">Stok Gudang Bawah</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={vals.stock_bawah}
-                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], stock_bawah: e.target.value } }))}
-                          className="w-full bg-amber-50 rounded-xl px-3 py-2 border border-amber-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-amber-400"
-                        />
+                      <div className="md:col-span-1 flex items-end">
+                        <div className="w-full bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                          💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 mb-4">
