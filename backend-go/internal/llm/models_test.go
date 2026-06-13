@@ -33,3 +33,19 @@ func TestMessageRole_Validation(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultChain_TenModels(t *testing.T) {
+	cfg := DefaultCalistaAgent()
+	if cfg.Name != "Calista" {
+		t.Errorf("expected Name=Calista, got %q", cfg.Name)
+	}
+	if len(cfg.Chain) != 10 {
+		t.Fatalf("expected 10 models in chain, got %d", len(cfg.Chain))
+	}
+	if cfg.Chain[0].Slug != "google/gemma-4-31b" {
+		t.Errorf("expected primary model gemma-4-31b, got %q", cfg.Chain[0].Slug)
+	}
+	if cfg.SystemPrompt == "" {
+		t.Error("expected non-empty SystemPrompt")
+	}
+}
