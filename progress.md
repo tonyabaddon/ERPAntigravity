@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Task 1: dateRange.ts helpers (TDD) — DONE
+
+- **What:** Created `src/lib/dateRange.ts` (pure date-range functions for Pembelian filter bar) and `tests/integration/dateRange.test.ts` (14 vitest tests).
+- **Exports:** `resolveRange`, `periodLabel`, `resolvedRangeShort`, `inRange`. Presets: `bulan_ini`, `30_hari`, `90_hari`, `custom`. All math WIB (UTC-based to avoid DST drift).
+- **TDD:** Tests written first, confirmed fail (module not found), then implementation, confirmed 14/14 pass.
+- **Lint:** 0 errors (`tsc --noEmit`).
+- **Commit:** `a218574` on `feat/pembelian-detail-tab-and-filter`.
+
 ## 2026-06-13 — Pembelian page: PO detail in new tab + KPI redesign + date filter (spec) — DONE
 
 - **What:** Brainstormed design for three concurrent changes to `PembelianScreen`: (1) PO Detail button opens a standalone full-page view in a new browser tab (replaces the cramped `PoDetailView` modal) via query-string routing (`?screen=pembelian&po=PO-XYZ`); (2) the four KPI summary cards (Total PO / Jatuh Tempo / Terlambat Bayar / Jumlah PO) adopt the canonical `KpiCard` pattern used by `DashboardScreen` and `LaporanScreen` (rounded-3xl, icon chip, badge, `#012749` extrabold, alarming rose-tint for overdue > 0); (3) new date-filter bar between page header and KPI cards with presets `Bulan Ini` (default) / `30 Hari` / `90 Hari` / `Custom` (range popover). Filter drives cards 1/2/4 + the list; "Terlambat Bayar" stays "saat ini" by design (overdue is a now-state, hiding it under arbitrary date ranges would be unsafe).
