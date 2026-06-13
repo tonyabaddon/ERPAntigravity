@@ -8,7 +8,7 @@
 - **Why one commit for all three:** all three were flagged by the same final review pass and are independently small/targeted; bundling avoids commit churn while keeping the diff small enough to read in one shot. None of them is a logic-flow change inside hot paths — C1 is a JSX prop addition, I2 is one extra OR clause, I3 is a single line in scripts.
 - **Build verification:** `npm run build` after C1 → clean (`built in 2.50s`, bundle `index-Bmw9T69W.js = 1,775.83 kB`). After I2 → clean (`built in 2.37s`, bundle `index-D9frV1YX.js = 1,775.86 kB`, +3B for the extra OR clause). Unit tests: `npm test` → 6/6 passed.
 - **Files:** `src/components/icons/ChannelIcon.tsx`, `src/components/penjualan/ChannelSelector.tsx`, `src/components/KasirScreen.tsx`, `package.json`, `progress.md`.
-- **Commits:** to be added below after `git commit`.
+- **Commits:** `49b49fe` (single commit covering C1 + I2 + I3 + progress.md).
 - **Branch:** `feat/configurable-sales-channels`.
 - **Out of scope (deferred to validation checklist):** I1 (Laporan capped at 4 channels), M1–M4 — see `docs/superpowers/plans/2026-06-13-sales-channels-validation-checklist.md` for follow-up.
 
