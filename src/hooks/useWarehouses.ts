@@ -4,7 +4,7 @@
 // every consumer of <WarehousePicker> so they don't each hit the DB.
 // 2026-06-13 spec.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { Warehouse } from '../types';
 import { warehousesService, supabase } from '../lib/supabaseClient';
 
@@ -20,6 +20,13 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Unique-per-instance channel name. supabase.channel(name) returns the
+  // existing channel if `name` matches one already subscribed elsewhere —
+  // which then throws when a second consumer tries to call .on() on the
+  // already-subscribed channel. Multiple components (PenjualanBaruScreen +
+  // CartRows + modals) all call useWarehouses on the same page, so the
+  // channel name MUST be per-instance to keep their subscriptions independent.
+  const instanceId = useId();
 
   // Internal loader used by the realtime subscription. `refresh` (exported)
   // is the public version that consumers can call imperatively; both share
@@ -61,7 +68,7 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
       return () => { mounted = false; };
     }
     const ch = supabase
-      .channel('warehouses-realtime')
+      .channel(`warehouses-realtime-${instanceId}`)
       .on('postgres_changes',
           { event: '*', schema: 'public', table: 'warehouses' },
           () => { void load(); })
