@@ -51,16 +51,14 @@ export function mergeSalesEntries(
   );
 }
 
-export const CHANNEL_LABEL: Record<SalesChannel, string> = {
-  whatsapp:  'WhatsApp',
-  walkin:    'Walk-in',
-  tokopedia: 'Tokopedia',
-  grosir:    'Grosir',
-};
+// CHANNEL_LABEL and CHANNEL_BADGE_CLASS are deprecated — use CHANNEL_VISUAL from salesChannels.
+// These re-exports provide backward-compat for legacy callers; remove after Phase D cleanup.
+import { CHANNEL_VISUAL } from './salesChannels';
 
-export const CHANNEL_BADGE_CLASS: Record<SalesChannel, string> = {
-  whatsapp:  'bg-emerald-100 text-emerald-800',
-  walkin:    'bg-slate-100 text-slate-700',
-  tokopedia: 'bg-green-100 text-green-800',
-  grosir:    'bg-amber-100 text-amber-800',
-};
+export const CHANNEL_LABEL: Record<SalesChannel, string> = Object.fromEntries(
+  Object.entries(CHANNEL_VISUAL).map(([code, def]) => [code, def.label])
+) as Record<SalesChannel, string>;
+
+export const CHANNEL_BADGE_CLASS: Record<SalesChannel, string> = Object.fromEntries(
+  Object.entries(CHANNEL_VISUAL).map(([code, def]) => [code, `${def.bgClass} ${def.textClass}`])
+) as Record<SalesChannel, string>;
