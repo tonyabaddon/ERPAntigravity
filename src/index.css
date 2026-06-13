@@ -13,6 +13,22 @@
   --radius-lg: 2rem;
   --radius-xl: 3rem;
   --radius-signature: 2rem;
+
+  /* Sales channel brand colors (D17) — used as background for icon containers + chart segments + pill border */
+  --color-channel-walkin:    #64748B;
+  --color-channel-grosir:    #7C3AED;
+  --color-channel-sales:     #D97706;
+  --color-channel-expo:      #0D9488;
+  --color-channel-tokopedia: #03AC0E;
+  --color-channel-shopee:    #EE4D2D;
+  --color-channel-lazada:    #0F146E;
+  --color-channel-blibli:    #0095DA;
+  --color-channel-bukalapak: #E31E52;
+  --color-channel-ralali:    #1E3A8A;
+  --color-channel-bhinneka:  #E63946;
+  --color-channel-whatsapp:  #25D366;
+  --color-channel-instagram: #E1306C;
+  --color-channel-website:   #475569;
 }
 
 /* Material Symbols Outlined — class binding for the ligature font loaded
