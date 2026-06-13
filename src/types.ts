@@ -443,7 +443,7 @@ export interface KasirTransaction {
   ongkir_amount?: number;
   notes?: string | null;
   total_amount?: number;
-  tokped_order_no?: string | null;
+  marketplace_order_no?: string | null;
   wa_phone?: string | null;
   wa_chat_url?: string | null;
   status?: KasirStatus;
@@ -487,7 +487,7 @@ export interface RecordKasirSaleInput {
   ongkir_amount: number;
   notes?: string;
   total_amount: number;
-  tokped_order_no?: string;
+  marketplace_order_no?: string;
   wa_phone?: string;
   wa_chat_url?: string;
   customer_name?: string;

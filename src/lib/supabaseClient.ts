@@ -1187,7 +1187,7 @@ export const kasirService = {
       p_customer_phone:    input.customer_phone ?? null,
       p_customer_company:  input.customer_company ?? null,
       p_delivery_address:  input.delivery_address ?? null,
-      p_tokped_order_no:   input.tokped_order_no ?? null,
+      p_marketplace_order_no: input.marketplace_order_no ?? null,
       p_wa_phone:          input.wa_phone ?? null,
       p_wa_chat_url:       input.wa_chat_url ?? null,
       p_customer_id:       input.customer_id ?? null,
@@ -1265,7 +1265,7 @@ export const kasirService = {
       payment_type?: 'FULL' | 'DP';
       dp_input_type?: 'AMOUNT' | 'PERCENT' | null;
       notes?: string | null;
-      tokped_order_no?: string | null;
+      marketplace_order_no?: string | null;
       wa_phone?: string | null;
       wa_chat_url?: string | null;
     };
