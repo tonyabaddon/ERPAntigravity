@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Manajemen Gudang: edit + enable/disable + actor names in audit — DONE
+
+- **What:** Three additions on top of the warehouse admin screen after the user asked for editability, re-activation, and actor-name display in Riwayat Perubahan.
+- **Migration**: `supabase/migrations/20260613000005_reactivate_warehouse_rpc.sql` — new `reactivate_warehouse(uuid)` SECURITY DEFINER RPC, Owner-only, writes a `reactivate` audit row (already in Migration 1's CHECK list). Idempotent — already-active warehouse is a no-op. Applied to prod.
+- **Frontend** `src/lib/supabaseClient.ts`: `warehousesService.reactivate(id)` wraps the RPC.
+- **Frontend** `src/components/ManajemenGudangScreen.tsx` rewritten:
+  - Edit modal (name + address + sort_order) — opens via pencil icon on every row (active or inactive). Only changed fields are sent; the `update_warehouse` RPC COALESCEs nulls so untouched fields are preserved.
+  - Reactivate button (RotateCcw icon, green) visible only on `!w.is_active` rows; calls `warehousesService.reactivate`.
+  - Audit log resolves `actor_user_id` → admin name via a one-shot `adminUsersService.fetchAll()` (matches the UX-2 pattern from the e2e audit). Also resolves `warehouse_id` → warehouse name from the cached list. Riwayat Perubahan now reads e.g. "RENAME · Gudang Jakarta · oleh Tony Wei · 3 menit lalu".
+  - Code field intentionally left non-editable in the modal (note shown to user) — code is the stable identifier across historical data; rename via `name` only.
+- **Lint:** `npm run lint` → 0 errors.
+- **Next:** commit, push (triggers Cloud Build deploy), drive Chrome smoke verify on prod. Phase 3 cutover still held pending 24h soak.
+
 ## 2026-06-13 — Multi-Tenant Prerequisites: third-pass refinement (gap audit) — DONE
 
 - **What:** Final pre-review-gate audit after user asked "is there anything I miss?" Six items surfaced and applied to spec + business docs.

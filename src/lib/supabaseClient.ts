@@ -981,6 +981,12 @@ export const warehousesService = {
     if (error) throw error;
   },
 
+  async reactivate(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('reactivate_warehouse', { p_id: id });
+    if (error) throw error;
+  },
+
   async fetchAuditLog(limit = 50): Promise<WarehouseAuditLogRow[]> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
