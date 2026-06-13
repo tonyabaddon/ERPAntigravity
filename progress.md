@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Calista Phase 1A Task 4: `internal/llm/models.go` core types — DONE
+
+- **What:** First Go code in the new `backend-go/internal/llm/` package — pure types, zero internal-package dependencies. TDD: failing test first (build errors on undefined `ChainExhaustedError`, `ErrChainExhausted`, `IsValidRole`), then minimal implementation, then green. Tasks 5-12 will build on these types.
+- **File `backend-go/internal/llm/models.go` (107 LOC):** Package doc comment lays out the gateway's eventual responsibilities (HTTP to OpenRouter, sticky pinning, cooldown registry, tone seeding, tripwires, telemetry). Defines `ErrChainExhausted` sentinel + `ChainExhaustedError{TriedModels}` wrapper with `Is(target)` matching the sentinel (engine catches this and transitions conversation to `StateEscalatedAdmin`). Defines `ModelSpec{Slug, CooldownMinutes}`, `AgentConfig{Name, SystemPrompt, Chain}`, `Message{Role, Content}` (OpenAI chat-completion role convention), `IsValidRole` (system/user/assistant only), `CallOpts{ConversationID, StateBoundary, MaxTokens}` (StateBoundary is the *one* moment the router may unpin), `Response{Body, ModelUsed, WasForcedSwap, LatencyMs, PromptTokens, OutputTokens, TripwireFlags}`, `TokenUsage{Prompt, Completion, Total}`.
+- **File `backend-go/internal/llm/models_test.go` (35 LOC):** Two table-style tests — `TestChainExhaustedError_ContainsTriedModels` asserts non-empty `Error()` and `errors.Is(err, ErrChainExhausted)` matches; `TestMessageRole_Validation` covers all 3 valid roles + `"customer"` + empty-string negatives. Both PASS at commit time.
+- **Commit:** `da183b1 feat(llm): core types — ChainExhaustedError, ModelSpec, AgentConfig, CallOpts`. 2 files, 132 insertions, branch `feat/calista-phase-1a`.
+- **Next:** Task 5 (`internal/llm/chain.go` — default 10-model chain + Calista persona system prompt loaded from `internal/assets/calista_system_prompt.txt`).
+
 ## 2026-06-13 — Calista Phase 1A: migration review fixes — DONE
 
 - **What:** Layered fix-up commit on top of `c840132`/`de0e023`/`47cf0ed` addressing code-review findings on the three Phase 1A migration files. No amend — per project convention, fixes go in a new commit. File-only (founder has not yet applied any of the Phase 1A migrations).
