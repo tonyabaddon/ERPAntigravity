@@ -48,6 +48,7 @@ import {
 } from './initialData';
 
 import { isSupabaseConfigured, supabase, supabaseService } from './lib/supabaseClient';
+import { SalesChannelsProvider } from './contexts/SalesChannelsContext';
 
 
 export default function App() {
@@ -429,7 +430,8 @@ export default function App() {
   }
 
   return (
-    <div 
+    <SalesChannelsProvider>
+    <div
       className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex font-sans"
       style={{ background: 'radial-gradient(circle at 70% 80%, #eff4ff 0%, #f8f9ff 100%)' }}
     >
@@ -527,5 +529,6 @@ export default function App() {
       </main>
 
     </div>
+    </SalesChannelsProvider>
   );
 }
