@@ -584,9 +584,9 @@ export interface OpnameCount {
   sessionId: number;
   sku: string;
   warehouse: 'atas' | 'bawah';
-  systemQtySnapshot: number;
+  systemQtySnapshot: number | null;
   countedQty?: number | null;
-  variance: number; // generated
+  variance: number | null; // generated
   varianceValue: number;
 }
 
