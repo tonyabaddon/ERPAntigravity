@@ -5,7 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -27,6 +27,31 @@ export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+/**
+ * Bucket kasir income rows by date and channel.
+ * Replaces 2 nearly-identical hardcoded bucket functions used by
+ * `fetchWeeklyRevenueByChannel` and `fetchDailyRevenueByChannel`.
+ *
+ * Input rows must already carry a normalized `date` (YYYY-MM-DD WIB) — callers
+ * are responsible for converting `created_at` timestamps via `wibDateString`.
+ *
+ * Returns `Record<dateString, Partial<Record<SalesChannel, number>>>`. Channels
+ * with zero revenue on a date are omitted; the consumer pre-seeds zero-day
+ * buckets for chart axes and fills missing channels at the output mapping step.
+ */
+function bucketByChannel(
+  rows: Array<{ subtotal: number; channel?: string | null; date: string }>,
+): Record<string, Partial<Record<SalesChannel, number>>> {
+  const out: Record<string, Partial<Record<SalesChannel, number>>> = {};
+  for (const row of rows) {
+    const date = row.date;
+    const ch = (row.channel ?? 'walkin') as SalesChannel;
+    if (!out[date]) out[date] = {};
+    out[date][ch] = (out[date][ch] ?? 0) + (row.subtotal ?? 0);
+  }
+  return out;
+}
 
 export interface SupabaseStockItem {
   sku: string;
@@ -506,32 +531,31 @@ export const statsService = {
       supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
       supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
     ]);
-    const buckets: Record<string, { walkin: number; tokopedia: number; grosir: number; waai: number }> = {};
+    const buckets = bucketByChannel((kasirRes.data ?? []).map(tx => ({
+      subtotal: Number((tx as any).subtotal ?? 0),
+      channel: (tx as any).channel,
+      date: (tx as any).date as string,
+    })));
+    // Pre-seed zero-day buckets so the chart x-axis is contiguous
     const today = new Date();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(today); d.setDate(d.getDate() - i);
-      buckets[wibDateString(d)] = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
+      const key = wibDateString(d);
+      if (!buckets[key]) buckets[key] = {};
     }
-    for (const tx of (kasirRes.data ?? [])) {
-      const key = (tx as any).date as string;
-      if (!(key in buckets)) continue;
-      const ch = (tx as any).channel as string;
-      const amt = Number((tx as any).subtotal ?? 0);
-      if (ch === 'walkin') buckets[key].walkin += amt;
-      else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
-      else if (ch === 'grosir') buckets[key].grosir += amt;
-    }
+    // Orders-table revenue is the synthetic "WA AI" lane (not a SalesChannel value)
+    const waaiByDate: Record<string, number> = {};
     for (const o of (ordersRes.data ?? [])) {
       const key = wibDateString(new Date((o as any).created_at));
       if (!(key in buckets)) continue;
-      buckets[key].waai += Number((o as any).total ?? 0);
+      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number((o as any).total ?? 0);
     }
-    return Object.entries(buckets).map(([key, v]) => ({
+    return Object.keys(buckets).sort().map(key => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      'Walk-in': v.walkin,
-      'Tokopedia': v.tokopedia,
-      'Grosir': v.grosir,
-      'WA AI': v.waai,
+      'Walk-in': buckets[key].walkin ?? 0,
+      'Tokopedia': buckets[key].tokopedia ?? 0,
+      'Grosir': buckets[key].grosir ?? 0,
+      'WA AI': waaiByDate[key] ?? 0,
     }));
   },
 };
@@ -626,32 +650,31 @@ export const reportsService = {
       supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
       supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
     ]);
-    const buckets: Record<string, { walkin: number; tokopedia: number; grosir: number; waai: number }> = {};
+    const buckets = bucketByChannel((kasirRes.data ?? []).map(tx => ({
+      subtotal: Number((tx as any).subtotal ?? 0),
+      channel: (tx as any).channel,
+      date: (tx as any).date as string,
+    })));
+    // Pre-seed zero-day buckets so the chart x-axis is contiguous
     const today = new Date();
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(today); d.setDate(d.getDate() - i);
-      buckets[wibDateString(d)] = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
+      const key = wibDateString(d);
+      if (!buckets[key]) buckets[key] = {};
     }
-    for (const tx of (kasirRes.data ?? [])) {
-      const key = (tx as any).date as string;
-      if (!(key in buckets)) continue;
-      const ch = (tx as any).channel as string;
-      const amt = Number((tx as any).subtotal ?? 0);
-      if (ch === 'walkin') buckets[key].walkin += amt;
-      else if (ch === 'tokopedia') buckets[key].tokopedia += amt;
-      else if (ch === 'grosir') buckets[key].grosir += amt;
-    }
+    // Orders-table revenue is the synthetic "WA AI" lane (not a SalesChannel value)
+    const waaiByDate: Record<string, number> = {};
     for (const o of (ordersRes.data ?? [])) {
       const key = wibDateString(new Date((o as any).created_at));
       if (!(key in buckets)) continue;
-      buckets[key].waai += Number((o as any).total ?? 0);
+      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number((o as any).total ?? 0);
     }
-    return Object.entries(buckets).map(([key, v]) => ({
+    return Object.keys(buckets).sort().map(key => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-      'Walk-in': v.walkin,
-      'Tokopedia': v.tokopedia,
-      'Grosir': v.grosir,
-      'WA AI': v.waai,
+      'Walk-in': buckets[key].walkin ?? 0,
+      'Tokopedia': buckets[key].tokopedia ?? 0,
+      'Grosir': buckets[key].grosir ?? 0,
+      'WA AI': waaiByDate[key] ?? 0,
     }));
   },
 
