@@ -3,6 +3,7 @@ import { X, Download, FileText } from 'lucide-react';
 import { KasirTransaction } from '../types';
 import { DbCompanySettings } from '../types';
 import { companySettingsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { CHANNEL_VISUAL } from '../lib/salesChannels';
 
 interface KasirInvoiceModalProps {
   transaction: KasirTransaction;
@@ -19,12 +20,6 @@ const PAYMENT_LABEL: Record<string, string> = {
   cash: 'Tunai',
   transfer: 'Transfer Bank',
   qris: 'QRIS',
-};
-
-const CHANNEL_LABEL: Record<string, string> = {
-  walkin: 'Walk-in / Konter',
-  tokopedia: 'Tokopedia',
-  grosir: 'Grosir / Partai',
 };
 
 export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoiceModalProps) {
@@ -104,7 +99,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                         Tanggal: {formatDate(transaction.created_at)}
                       </div>
                       <div className="text-[10px] text-gray-500 font-sans mt-0.5">
-                        {transaction.channel ? CHANNEL_LABEL[transaction.channel] : ''}
+                        {transaction.channel ? CHANNEL_VISUAL[transaction.channel].label : ''}
                       </div>
                     </div>
                   </div>

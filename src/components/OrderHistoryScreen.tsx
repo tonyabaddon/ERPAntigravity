@@ -3,7 +3,12 @@ import { ClipboardList, Search, ChevronDown } from 'lucide-react';
 import { DbOrder, KasirTransaction, SalesEntry, SalesChannel } from '../types';
 import { orderService, salesEntriesService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
+import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../lib/salesChannels';
+import { useSalesChannels } from '../contexts/SalesChannelsContext';
 import InvoiceModal from './InvoiceModal';
+
+type ChannelFilterGroup = 'all' | 'offline' | 'marketplace' | 'direct';
+type ChannelFilter = ChannelFilterGroup | SalesChannel;
 
 interface OrderHistoryScreenProps {
   currentUser: { name: string; role: string; avatarUrl: string; storeName: string } | null;
@@ -52,16 +57,25 @@ const LEFT_BORDER: Record<string, string> = {
   DP_UPLOADED:                'border-l-4 border-l-indigo-500',
 };
 
+function matchesChannel(
+  orderChannel: SalesChannel,
+  channelFilter: ChannelFilter,
+  specificChannel: SalesChannel | '',
+): boolean {
+  if (specificChannel) return orderChannel === specificChannel;
+  if (channelFilter === 'all') return true;
+  return CHANNEL_GROUPS[channelFilter].includes(orderChannel);
+}
+
 function filterEntries(
   entries: SalesEntry[],
   tab: FilterTab,
   search: string,
-  channel: 'all' | SalesChannel,
+  channelFilter: ChannelFilter,
+  specificChannel: SalesChannel | '',
 ): SalesEntry[] {
   let filtered = entries;
-  if (channel !== 'all') {
-    filtered = filtered.filter(e => e.channel === channel);
-  }
+  filtered = filtered.filter(e => matchesChannel(e.channel, channelFilter, specificChannel));
   if (tab === 'pending')   filtered = filtered.filter(e => e.status === 'PENDING_ADMIN_CONFIRMATION');
   if (tab === 'waiting')   filtered = filtered.filter(e => e.status === 'WAITING_PAYMENT' || e.status === 'WAITING_DP' || e.status === 'DP_VERIFIED');
   if (tab === 'uploaded')  filtered = filtered.filter(e => e.status === 'PAYMENT_UPLOADED' || e.status === 'DP_UPLOADED');
@@ -192,7 +206,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const [kasir, setKasir] = useState<KasirTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<FilterTab>('all');
-  const [channelFilter, setChannelFilter] = useState<'all' | SalesChannel>('all');
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
+  const [specificChannel, setSpecificChannel] = useState<SalesChannel | ''>('');
+  const { settings } = useSalesChannels();
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
@@ -357,7 +373,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const doneCount      = entries.filter(e => e.status === 'PAYMENT_VERIFIED' || e.status === 'COMPLETED' || e.status === 'PAID').length;
   const cancelledCount = entries.filter(e => e.status === 'CANCELLED' || e.status === 'PAYMENT_REJECTED' || e.status === 'DP_PROOF_REJECTED').length;
 
-  const visible = filterEntries(entries, tab, search, channelFilter);
+  const visible = filterEntries(entries, tab, search, channelFilter, specificChannel);
 
   const tabs: { id: FilterTab; label: string; count: number; dot?: boolean }[] = [
     { id: 'all',       label: 'Semua',            count: entries.length },
@@ -433,16 +449,46 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        {/* Group dropdown */}
         <select
           value={channelFilter}
-          onChange={e => setChannelFilter(e.target.value as 'all' | SalesChannel)}
+          onChange={e => { setChannelFilter(e.target.value as ChannelFilter); setSpecificChannel(''); }}
           className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
         >
-          <option value="all">Semua Channel</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="walkin">Walk-in</option>
-          <option value="tokopedia">Tokopedia</option>
-          <option value="grosir">Grosir</option>
+          <option value="all">Semua</option>
+          <option value="offline">📋 Semua Offline</option>
+          <option value="marketplace">🛍️ Semua Marketplace</option>
+          <option value="direct">💬 Semua Direct</option>
+        </select>
+
+        {/* Specific dropdown with optgroup for hidden channels */}
+        <select
+          value={specificChannel}
+          onChange={e => { setSpecificChannel(e.target.value as SalesChannel | ''); }}
+          className="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+        >
+          <option value="">— pilih kanal spesifik —</option>
+          {(['offline', 'marketplace', 'direct'] as const).map(group => {
+            const visible = CHANNEL_GROUPS[group].filter(c => settings[c]?.isVisible);
+            if (visible.length === 0) return null;
+            return (
+              <optgroup
+                key={group}
+                label={`${group === 'offline' ? 'Offline' : group === 'marketplace' ? 'Marketplace' : 'Direct'} (aktif)`}
+              >
+                {visible.map(code => (
+                  <option key={code} value={code}>{getChannelDef(code).label}</option>
+                ))}
+              </optgroup>
+            );
+          })}
+          <optgroup label="Dinonaktifkan (untuk historical)">
+            {(Object.keys(CHANNEL_VISUAL) as SalesChannel[])
+              .filter(c => !settings[c]?.isVisible)
+              .map(code => (
+                <option key={code} value={code}>{getChannelDef(code).label} (non-aktif)</option>
+              ))}
+          </optgroup>
         </select>
       </div>
 

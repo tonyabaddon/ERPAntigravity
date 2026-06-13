@@ -10,6 +10,7 @@ import { stockService, customersService, kasirService } from '../lib/supabaseCli
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
 import { useWarehouses } from '../hooks/useWarehouses';
+import { CHANNEL_REQUIRES_ORDER_NO } from '../lib/salesChannels';
 import ChannelSelector from './penjualan/ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from './penjualan/ChannelStrip';
 import ItemSearchPanel from './penjualan/ItemSearchPanel';
@@ -38,7 +39,7 @@ export default function PenjualanBaruScreen({
   const [channel, setChannel] = useState<KasirChannel>(initialChannel ?? 'walkin');
 
   // Channel-specific fields
-  const [tokpedOrderNo, setTokpedOrderNo] = useState('');
+  const [marketplaceOrderNo, setMarketplaceOrderNo] = useState('');
   const [waPhone, setWaPhone] = useState('');
   const [waChatUrl, setWaChatUrl] = useState('');
 
@@ -127,7 +128,7 @@ export default function PenjualanBaruScreen({
     setOngkirAmount(0);
     setDeliveryAddress('');
     setNotes('');
-    setTokpedOrderNo('');
+    setMarketplaceOrderNo('');
     setWaPhone('');
     setWaChatUrl('');
   };
@@ -198,8 +199,8 @@ export default function PenjualanBaruScreen({
     }
     if (!customerName.trim()) { showToast('Nama pelanggan wajib diisi.', 'warning'); return; }
     if (!customerPhone.trim()) { showToast('Nomor HP wajib diisi.', 'warning'); return; }
-    if (channel === 'tokopedia' && !tokpedOrderNo.trim()) {
-      showToast('Nomor Pesanan Tokopedia wajib diisi.', 'warning'); return;
+    if (CHANNEL_REQUIRES_ORDER_NO.has(channel) && !marketplaceOrderNo.trim()) {
+      showToast('Nomor Order Marketplace wajib diisi.', 'warning'); return;
     }
     if (channel === 'whatsapp' && !waPhone.trim()) {
       showToast('Nomor WhatsApp wajib diisi untuk channel WhatsApp Manual.', 'warning'); return;
@@ -239,7 +240,7 @@ export default function PenjualanBaruScreen({
             customer_phone: customerPhone || null,
             customer_company: customerCompany || null,
             delivery_address: deliveryAddress.trim() || null,
-            tokped_order_no: channel === 'tokopedia' ? tokpedOrderNo : null,
+            marketplace_order_no: CHANNEL_REQUIRES_ORDER_NO.has(channel) ? marketplaceOrderNo : null,
             wa_phone: channel === 'whatsapp' ? waPhone : null,
             wa_chat_url: channel === 'whatsapp' ? waChatUrl : null,
           },
@@ -294,7 +295,7 @@ export default function PenjualanBaruScreen({
         ongkir_amount: ongkirOn ? ongkirAmount : 0,
         notes: notes.trim() || undefined,
         total_amount: totalInvoice,
-        tokped_order_no: channel === 'tokopedia' ? tokpedOrderNo : undefined,
+        marketplace_order_no: CHANNEL_REQUIRES_ORDER_NO.has(channel) ? marketplaceOrderNo : undefined,
         wa_phone: channel === 'whatsapp' ? waPhone : undefined,
         wa_chat_url: channel === 'whatsapp' ? waChatUrl : undefined,
         customer_name: customerName,
@@ -348,9 +349,9 @@ export default function PenjualanBaruScreen({
           <>
             {/* Channel selector + strips go here (Task 4.x) */}
             <ChannelSelector value={channel} onChange={setChannel} />
-            {channel === 'tokopedia' && (
+            {CHANNEL_REQUIRES_ORDER_NO.has(channel) && (
               <div className="mt-4">
-                <TokpedStrip value={tokpedOrderNo} onChange={setTokpedOrderNo} />
+                <TokpedStrip value={marketplaceOrderNo} onChange={setMarketplaceOrderNo} />
               </div>
             )}
             {channel === 'whatsapp' && (

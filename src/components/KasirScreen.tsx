@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 import {
   KasirTransaction, KasirChannel, KasirPaymentMethod, KasirExpenseCategory,
-  KasirItem, DailySummary, PermissionSet, DbOrder
+  KasirItem, DailySummary, PermissionSet, DbOrder, SalesChannel
 } from '../types';
 import {
   kasirService, stockService, customersService, orderService, isSupabaseConfigured,
 } from '../lib/supabaseClient';
+import { CHANNEL_GROUPS, CHANNEL_VISUAL } from '../lib/salesChannels';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import type { DbCustomerWithStats } from '../types';
 import { formatRp } from '../lib/format';
@@ -26,13 +27,6 @@ interface KasirScreenProps {
 }
 
 // ─── helpers ─────────────────────────────────────────────────
-
-const CHANNEL_LABEL: Record<KasirChannel, string> = {
-  walkin: '🏪 Walk-in',
-  tokopedia: '🛍️ Tokopedia',
-  grosir: '🏭 Grosir',
-  whatsapp: '💬 WhatsApp',
-};
 
 const PAYMENT_LABEL: Record<KasirPaymentMethod, string> = {
   cash: 'Tunai',
@@ -58,15 +52,10 @@ function formatTime(iso: string): string {
 // ─── Sub-components ──────────────────────────────────────────
 
 function ChannelPill({ channel }: { channel: KasirChannel }) {
-  const styles: Record<KasirChannel, string> = {
-    walkin: 'bg-blue-50 text-blue-700',
-    tokopedia: 'bg-yellow-50 text-yellow-700',
-    grosir: 'bg-violet-50 text-violet-700',
-    whatsapp: 'bg-green-50 text-green-700',
-  };
+  const def = CHANNEL_VISUAL[channel];
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${styles[channel]}`}>
-      {CHANNEL_LABEL[channel]}
+    <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${def.bgClass} ${def.textClass}`}>
+      {def.label}
     </span>
   );
 }
@@ -184,7 +173,10 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
     if (filter === 'wa') return e._src === 'wa';
     if (filter === 'expense') return e._src === 'kasir' && e.tx!.type === 'expense';
     if (filter === 'walkin') return e._src === 'kasir' && e.tx!.channel === 'walkin';
-    if (filter === 'online') return e._src === 'kasir' && (e.tx!.channel === 'tokopedia' || e.tx!.channel === 'grosir');
+    if (filter === 'online') return e._src === 'kasir' && (
+      CHANNEL_GROUPS.marketplace.includes(e.tx!.channel as SalesChannel) ||
+      CHANNEL_GROUPS.direct.includes(e.tx!.channel as SalesChannel)
+    );
     return true;
   });
 
@@ -425,25 +417,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {(['walkin', 'tokopedia', 'grosir'] as KasirChannel[]).map(ch => (
-                <button
-                  key={ch}
-                  onClick={() => onOpenPenjualanBaru?.(ch)}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 text-center transition-all hover:scale-[1.02] ${
-                    ch === 'walkin' ? 'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100' :
-                    ch === 'tokopedia' ? 'bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100' :
-                    'bg-violet-50 border-violet-200 text-violet-800 hover:bg-violet-100'
-                  }`}
-                >
-                  <span className="text-xl mb-1">
-                    {ch === 'walkin' ? '🏪' : ch === 'tokopedia' ? '🛍️' : '🏭'}
-                  </span>
-                  <span className="text-[11px] font-black uppercase tracking-wide">
-                    {ch === 'walkin' ? 'Walk-in' : ch === 'tokopedia' ? 'Tokopedia' : 'Grosir'}
-                  </span>
-                </button>
-              ))}
+            <div className="grid grid-cols-1 gap-2.5">
               <button
                 onClick={() => setShowExpenseModal(true)}
                 className="flex flex-col items-center justify-center p-4 rounded-2xl border-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 transition-all hover:scale-[1.02] text-center"
@@ -490,7 +464,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
                 </div>
                 {(Object.entries(summary.byChannel) as [string, number][]).filter(([, v]) => v > 0).map(([ch, val]) => (
                   <div key={ch} className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs opacity-70 capitalize">{ch === 'wa_order' ? 'WA Orders' : (CHANNEL_LABEL[ch as KasirChannel] ?? ch)}</span>
+                    <span className="text-xs opacity-70 capitalize">{ch === 'wa_order' ? 'WA Orders' : (CHANNEL_VISUAL[ch as KasirChannel]?.label ?? ch)}</span>
                     <span className="text-xs font-bold text-emerald-300">+{formatRp(val)}</span>
                   </div>
                 ))}

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { X, Printer } from 'lucide-react';
 import { KasirTransaction, DbCompanySettings } from '../../types';
+import type { DbBankConfig, SalesChannel } from '../../types';
 import { companySettingsService, bankConfigService, isSupabaseConfigured } from '../../lib/supabaseClient';
-import type { DbBankConfig } from '../../types';
 import { formatRp } from '../../lib/format';
+import { CHANNEL_VISUAL } from '../../lib/salesChannels';
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -49,9 +50,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
     }
   }, [autoPrint, loading]);
 
-  const channelLabel = {
-    walkin: 'Walk-in', tokopedia: 'Tokopedia', grosir: 'Grosir', whatsapp: 'WhatsApp Manual',
-  }[transaction.channel ?? 'walkin'] ?? '';
+  const channelLabel = CHANNEL_VISUAL[(transaction.channel ?? 'walkin') as SalesChannel].label;
 
   const paymentLabel = (() => {
     if (transaction.payment_method === 'edc') {

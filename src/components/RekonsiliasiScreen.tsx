@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRekonsiliasi } from '../hooks/useRekonsiliasi';
 import { reconciliationService, supabase } from '../lib/supabaseClient';
-import type { BankAccount, BankStatementLine } from '../types';
+import type { BankAccount, BankStatementLine, SalesChannel } from '../types';
 import WizardSteps from './rekonsiliasi/WizardSteps';
 import NextActionBanner from './rekonsiliasi/NextActionBanner';
 import MultiAccountStatus from './rekonsiliasi/MultiAccountStatus';
@@ -42,22 +42,15 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
 
   // ─── Derived state ─────────────────────────────────
   const totalSales = useMemo(() => orders.reduce((a, o) => a + o.total, 0), [orders]);
-  const piutangAmount = useMemo(() => orders.reduce(
-    (a, o) => a + o.slots.filter(s => s.status === 'OPEN').reduce((b, s) => b + s.expected_amount, 0),
-    0,
-  ), [orders]);
-  const matchedNonPiutang = totalSales - piutangAmount;
-  const transferAmount = matchedNonPiutang; // assume most matched are bank transfer in v1
-  const perChannel = useMemo(() => {
-    const acc = { whatsapp: 0, tokopedia: 0, walkin: 0, grosir: 0 };
-    for (const o of orders) acc[o.channel] += o.total;
+  const channelTally = useMemo(() => {
+    const acc = new Map<SalesChannel, { amount: number; count: number }>();
+    for (const o of orders) {
+      const cur = acc.get(o.channel) ?? { amount: 0, count: 0 };
+      acc.set(o.channel, { amount: cur.amount + o.total, count: cur.count + 1 });
+    }
     return acc;
   }, [orders]);
-  const perChannelCount = useMemo(() => {
-    const acc = { whatsapp: 0, tokopedia: 0, walkin: 0, grosir: 0 };
-    for (const o of orders) acc[o.channel] += 1;
-    return acc;
-  }, [orders]);
+  const totalOrderCount = orders.length;
 
   const reviewCount = bankLines.filter(l => l.lane === 'YELLOW' || l.lane === 'ORANGE' || l.lane === 'RED').length;
   const cashPending = cashBatches.filter(b => b.status === 'PENDING').length;
@@ -192,13 +185,9 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
         onUpload={(a) => setUploadFor(a)}
       />
       <TallyBar
-        totalSales={totalSales}
-        transferAmount={transferAmount}
-        edcAmount={0}
-        cashAmount={0}
-        piutangAmount={piutangAmount}
-        perChannel={perChannel}
-        perChannelCount={perChannelCount}
+        tally={channelTally}
+        totalAmount={totalSales}
+        totalCount={totalOrderCount}
       />
       <div className="grid grid-cols-3 gap-4">
         <OrdersColumn

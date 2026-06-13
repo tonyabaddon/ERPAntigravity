@@ -11,14 +11,14 @@ export function TokpedStrip({ value, onChange }: TokpedStripProps) {
       <span className="text-2xl leading-none">🛍️</span>
       <div className="flex-1">
         <label className="text-[11px] font-extrabold text-amber-700 uppercase tracking-widest block">
-          Nomor Pesanan Tokopedia <span className="text-rose-600">*</span>
+          Nomor Order Marketplace <span className="text-rose-600">*</span>
         </label>
-        <p className="text-[11px] text-amber-800 mt-0.5">Copy dari aplikasi Seller Tokopedia.</p>
+        <p className="text-[11px] text-amber-800 mt-0.5">Copy dari aplikasi Seller marketplace (Tokopedia, Shopee, dll).</p>
       </div>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="INV/..."
+        placeholder="Contoh: SHP-2406-12345 / INV/..."
         className="bg-white border border-amber-300 rounded-lg px-3 py-2 text-[13px] font-bold text-amber-900 min-w-[220px]"
       />
     </div>

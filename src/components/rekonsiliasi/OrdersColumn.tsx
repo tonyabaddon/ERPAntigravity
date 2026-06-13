@@ -1,8 +1,15 @@
 // src/components/rekonsiliasi/OrdersColumn.tsx
 import React, { useState } from 'react';
 import type { PayableSlot, SalesChannel } from '../../types';
+import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../../lib/salesChannels';
+import { useSalesChannels } from '../../contexts/SalesChannelsContext';
+import ChannelIcon from '../icons/ChannelIcon';
 
-type Filter = 'all' | 'transfer' | 'edc' | 'cash' | 'piutang' | SalesChannel;
+type FilterGroup = 'all' | 'offline' | 'marketplace' | 'direct' | 'piutang';
+type Filter = FilterGroup | SalesChannel;
+
+const FILTER_GROUPS = ['all', 'offline', 'marketplace', 'direct', 'piutang'] as const;
+const FILTER_GROUP_SET: ReadonlySet<string> = new Set<string>(FILTER_GROUPS);
 
 interface OrderRow {
   id: string;
@@ -26,25 +33,38 @@ interface Props {
 function fmt(n: number) { return 'Rp ' + (n / 1_000_000).toFixed(1).replace('.', ',') + 'jt'; }
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }); }
 
-const CHANNEL_PILL: Record<SalesChannel, { emoji: string; bg: string; color: string }> = {
-  whatsapp:  { emoji: '📱', bg: '#dcfce7', color: '#15803d' },
-  tokopedia: { emoji: '🛍️', bg: '#fef3c7', color: '#a16207' },
-  walkin:    { emoji: '🏪', bg: '#dbeafe', color: '#1e40af' },
-  grosir:    { emoji: '🏭', bg: '#ede9fe', color: '#5b21b6' },
-};
+function filterMatches(filter: Filter, channel: SalesChannel, isPiutang: boolean): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'piutang') return isPiutang;
+  if (filter === 'offline' || filter === 'marketplace' || filter === 'direct') {
+    return CHANNEL_GROUPS[filter].includes(channel);
+  }
+  return filter === channel;
+}
+
+function groupLabel(g: FilterGroup): string {
+  switch (g) {
+    case 'all': return '📋 Semua';
+    case 'offline': return '🏪 Offline';
+    case 'marketplace': return '🛍️ Marketplace';
+    case 'direct': return '💬 Direct';
+    case 'piutang': return '⏳ Piutang';
+  }
+}
 
 export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteOff }: Props) {
   const [filter, setFilter] = useState<Filter>('all');
+  const { settings } = useSalesChannels();
 
   const filtered = orders.filter(o => {
-    if (filter === 'all') return true;
-    if (['whatsapp', 'tokopedia', 'walkin', 'grosir'].includes(filter)) return o.channel === filter;
-    if (filter === 'piutang') return o.slots.some(s => s.status === 'OPEN');
-    return true;
+    const isPiutang = o.slots.some(s => s.status === 'OPEN');
+    return filterMatches(filter, o.channel, isPiutang);
   });
 
   const paired = orders.filter(o => o.slots.length > 0 && o.slots.every(s => s.status !== 'OPEN')).length;
   const pct = orders.length === 0 ? 0 : Math.round((paired / orders.length) * 100);
+
+  const dropdownValue = FILTER_GROUP_SET.has(filter) ? '' : filter;
 
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
@@ -56,16 +76,28 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
         <div className="h-1.5 mt-2 bg-slate-100 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600" style={{ width: pct + '%' }} />
         </div>
-        <div className="flex gap-1 mt-2 flex-wrap">
-          {(['all', 'whatsapp', 'tokopedia', 'walkin', 'grosir', 'piutang'] as const).map(f => (
-            <span
-              key={f}
-              onClick={() => setFilter(f as Filter)}
-              className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full cursor-pointer ${filter === f ? 'bg-[#012749] text-white' : 'bg-slate-100 text-slate-500'}`}
+        <div className="flex items-center gap-2 flex-wrap mt-2">
+          {FILTER_GROUPS.map(g => (
+            <button
+              key={g}
+              onClick={() => setFilter(g)}
+              className={`px-3 py-1 text-xs font-bold rounded-full ${filter === g ? 'bg-[#012749] text-white' : 'bg-white text-slate-600 border border-slate-300'}`}
             >
-              {f === 'all' ? 'Semua' : f === 'piutang' ? '⏳ Piutang' : `${CHANNEL_PILL[f as SalesChannel]?.emoji ?? ''} ${f}`}
-            </span>
+              {groupLabel(g)}
+            </button>
           ))}
+          <select
+            value={dropdownValue}
+            onChange={e => { if (e.target.value) setFilter(e.target.value as SalesChannel); }}
+            className="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white"
+          >
+            <option value="">— pilih kanal spesifik —</option>
+            {(Object.keys(CHANNEL_VISUAL) as SalesChannel[]).map(code => {
+              const def = getChannelDef(code);
+              const isHidden = !settings[code]?.isVisible;
+              return <option key={code} value={code}>{def.label}{isHidden ? ' (non-aktif)' : ''}</option>;
+            })}
+          </select>
         </div>
       </div>
       <div className="p-3 overflow-y-auto" style={{ maxHeight: 540 }}>
@@ -74,14 +106,20 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
           const allMatched = o.slots.length > 0 && o.slots.every(s => s.status === 'MATCHED');
           const cardBg = allMatched ? 'rgba(236,253,245,0.5)' : isPiutang ? 'rgba(255,251,235,0.55)' : 'rgba(248,250,252,0.6)';
           const cardBorder = allMatched ? '#a7f3d0' : isPiutang ? '#fde68a' : '#f1f5f9';
-          const ch = CHANNEL_PILL[o.channel];
+          const def = getChannelDef(o.channel);
           return (
             <div key={o.id} className="p-3 rounded-2xl border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
               <div className="flex justify-between items-start">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-[#012749]">#{o.id.slice(0, 6)} · {o.customer_name}</span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full" style={{ background: ch.bg, color: ch.color }}>{ch.emoji} {o.channel}</span>
+                    <span
+                      className="text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 text-white"
+                      style={{ background: def.brandColor }}
+                    >
+                      <ChannelIcon code={o.channel} size={10} />
+                      {def.label}
+                    </span>
                   </div>
                   <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{fmtDate(o.created_at)}</div>
                 </div>

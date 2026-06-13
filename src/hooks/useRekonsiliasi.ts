@@ -1,7 +1,7 @@
 // src/hooks/useRekonsiliasi.ts
 import { useEffect, useState, useCallback } from 'react';
 import { reconciliationService } from '../lib/supabaseClient';
-import type { BankAccount, BankStatementLine, PayableSlot, CashDepositBatch } from '../types';
+import type { BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, SalesChannel } from '../types';
 
 interface OrderRow {
   id: string;
@@ -9,7 +9,7 @@ interface OrderRow {
   total: number;
   payment_type: 'FULL' | 'DP';
   dp_amount: number;
-  channel: 'whatsapp' | 'tokopedia' | 'walkin' | 'grosir';
+  channel: SalesChannel;
   status: string;
   created_at: string;
   booking_expires_at: string;
