@@ -1,5 +1,45 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Configurable Sales Channels (Phases A–G) — Implementation Complete
+
+**Goal**: Extend the sales channel taxonomy from 4 hardcoded values to 14 canonical channels (4 offline + 7 marketplace + 3 direct online), add admin visibility toggle in PengaturanScreen, consolidate 5 scattered hardcoded label maps into single `salesChannels.ts` source of truth, and refactor 5 surfaces (PenjualanBaru, KasirScreen, OrderHistory, Recon, Dashboard) for dynamic channel handling.
+
+**Spec**: `docs/superpowers/specs/2026-06-13-configurable-sales-channels-design.md`
+**Plan**: `docs/superpowers/plans/2026-06-13-configurable-sales-channels.md`
+**Validation**: `docs/superpowers/plans/2026-06-13-sales-channels-validation-checklist.md`
+
+**Commits**: 30+ commits on `feat/configurable-sales-channels` branch (Tasks 2-30 of plan).
+
+**Migrations created (NOT applied)**:
+- Phase A (4 migrations): ENUM extension × 2, column rename + view alias, sales_channel_settings table + RLS, validate helper
+- Phase B (3 migrations): seed 14 channels, refactor 3 RPC variants with helper + 14-channel invoice prefix, realtime publication
+
+**Frontend**:
+- `src/types.ts` — SalesChannel expanded to 14, KasirChannel alias, OrdersChannel narrower, canConfigureSalesChannels permission
+- `src/index.css` — 14 brand color tokens in @theme
+- `public/icons/channels/*.svg` — 9 monogram placeholders (swap with real brand logos pre-production)
+- `src/lib/salesChannels.ts` — CHANNEL_VISUAL + CHANNEL_GROUPS + helpers (with 6 unit tests)
+- `src/lib/salesEntries.ts` — re-exports from salesChannels
+- `src/contexts/SalesChannelsContext.tsx` — load + realtime subscribe + toggle
+- `src/components/icons/ChannelIcon.tsx` — SVG + Lucide renderer
+- `src/components/penjualan/ChannelSelector.tsx` — refactored, grouped, props-driven
+- `src/components/PenjualanBaruScreen.tsx` — marketplaceOrderNo state + CHANNEL_REQUIRES_ORDER_NO conditional
+- `src/components/KasirScreen.tsx` — 3 kartu cepat removed, group-based filter
+- `src/components/penjualan/SalesInvoicePDF.tsx` + `src/components/KasirInvoiceModal.tsx` — use CHANNEL_VISUAL
+- `src/lib/supabaseClient.ts` — bucketByChannel DRY helper, rename to marketplace_order_no
+- `src/hooks/useRekonsiliasi.ts` + `src/components/RekonsiliasiScreen.tsx` — Map-based accumulator
+- `src/components/rekonsiliasi/TallyBar.tsx` — hide-zero, sort DESC, brand-color rows, "DINONAKTIFKAN" badge
+- `src/components/rekonsiliasi/OrdersColumn.tsx` — 5 group pills + dropdown hybrid filter
+- `src/components/OrderHistoryScreen.tsx` — hybrid filter with "Dinonaktifkan" optgroup
+- `src/components/LaporanScreen.tsx` — brand colors + Top-3 insight cards
+- `src/components/pengaturan/SalesChannelConfigPanel.tsx` (NEW) — admin toggle UI
+- `src/components/PengaturanScreen.tsx` — "Kanal Penjualan" tab with permission gating
+- `src/App.tsx` — wrap with SalesChannelsProvider
+
+**Backend Go**: Test smoke case added for Shopee channel (SHP- invoice prefix).
+
+**Next**: Apply migrations to dev DB, walk through validation checklist, then deploy. Phase H cleanup (drop view alias) deferred to 1 week post-deploy.
+
 ## 2026-06-13 — Configurable sales channels: Phase F Pengaturan tab — SalesChannelConfigPanel + Pengaturan tab gating (Tasks 26 + 27) — DONE
 
 - **What (Task 26):** New `src/components/pengaturan/SalesChannelConfigPanel.tsx` — admin-facing panel that lists all 14 canonical channels grouped by `ChannelGroup` (offline / marketplace / direct) with per-channel visibility toggles wired to `useSalesChannels().toggleVisibility(code)`. Walk-in renders a `Lock` icon + "Aktif (dikunci)" label and disabled button (`CHANNEL_LOCKED.has('walkin')`); attempting to toggle it surfaces an info toast. Each row shows the brand-color square + `ChannelIcon` (same treatment as ChannelSelector / TallyBar / OrdersColumn) + `def.label` + tiny meta line `invoice {invoicePrefix}-…` plus `· flow orders` for the WhatsApp Manual lane. Marketplace group section carries an italic hint reminding admins that marketplace channels require an order number at input time (matches the Phase D validation in PenjualanBaru). The intro renders an emerald pill with live `visibleCount` ("X kanal aktif dari 14 · Perubahan tersimpan otomatis"), and the footer adds a tip that historical data on disabled channels still appears in Recon / Laporan — visibility filters only new input. Loading state renders a `Memuat...` placeholder.
