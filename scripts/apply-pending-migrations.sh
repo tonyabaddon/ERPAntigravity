@@ -45,6 +45,28 @@ MIGRATIONS=(
   # the backfill (20260613000004) on purpose — the script preserves array
   # order, not filename sort. Cutover must run AFTER the backfill.
   # "20260613000003_warehouses_phase3_cutover.sql"
+
+  # ─── Sales channels Phase A (schema + helper) ──────────────────────────
+  # 14 canonical channels: 4 offline + 7 marketplace + 3 direct online.
+  # Adds 10 new ENUM values to kasir_channel + sales_channel; renames
+  # tokped_order_no → marketplace_order_no (with kasir_transactions_legacy
+  # view alias for 1-week soak); creates sales_channel_settings + RLS;
+  # creates validate_sales_channel(text) helper for RPC reuse.
+  # All idempotent (IF NOT EXISTS / ON CONFLICT DO NOTHING).
+  "20260613000010_sales_channels_phase_a_schema.sql"
+  "20260613000011_sales_channels_phase_a_rename.sql"
+  "20260613000012_sales_channels_phase_a_settings_table.sql"
+  "20260613000013_sales_channels_phase_a_helper.sql"
+
+  # ─── Sales channels Phase B (seed + RPC refactor + realtime) ───────────
+  # Seeds 14 rows in sales_channel_settings (default is_visible=true);
+  # refactors 3 record_kasir_sale variants to use validate_sales_channel +
+  # 14-channel invoice prefix CASE + p_marketplace_order_no param rename;
+  # adds sales_channel_settings to supabase_realtime publication.
+  # MUST be applied together with Phase A above — frontend deploy after.
+  "20260613000020_sales_channels_phase_b_seed.sql"
+  "20260613000021_sales_channels_phase_b_rpcs.sql"
+  "20260613000022_sales_channels_phase_b_realtime.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
