@@ -16,7 +16,8 @@
 | Module gating | Declarative `modules.requires_caps` + `tenants.capabilities` + compatibility check at 3 enforcement points (UI, DB trigger, runtime guard) |
 | Packages | Snapshot-at-apply template (not live binding). `tenants.package_id` is metadata; `tenant_modules` is source of truth at runtime |
 | Subscription | `subscription_expires_at` + 7-day grace + auto read-only mode + manual suspend |
-| Retention | 90-day read-only → archive to GCS Coldline → hard delete after 1 year |
+| Retention | 7-day grace → read-only mode → 10-year hard delete (UU KUP-compliant). Vosi keeps tenant business records in-DB for 10 years from row creation; annual cron deletes records past 10 years. PII deletion via tenant UI (Phase 1) or dedicated anonymization tool (Phase 2). Vosi's own audit/billing records also retained 10 years. No cold storage Phase 1 (in-DB only). |
+| Pricing & business policy | Separated to `docs/business/pricing.md` and `docs/business/compliance-indonesia.md` — different change cadence than tech architecture. This spec references `packages.id` and policy decisions only, no concrete prices. |
 | WhatsApp | Garindo keeps whatsmeow (legacy). Paying tenants use Meta Cloud API. Calista + Sales Inbox + Pipeline + Notifications + Followup gated on `wa_backend` capability |
 | Operator console | **Separate frontend app**, shared DB. Super-admin defined in separate `super_admin_users` table (not a boolean on `admin_users`) |
 | Owner invitation | Magic link via Resend |
@@ -42,6 +43,7 @@ The owner wants three concrete capabilities, all delivered by this prerequisite 
 
 - Garindo Jaya Panel runs on the multi-tenant code path with no data loss, no downtime longer than the agreed cutover window, no broken business operations.
 - A second tenant (tenant #2) can be provisioned end-to-end from the operator console in under one operator-day.
+- **The infrastructure scales to at least 50 tenants without architectural rewrite.** Performance, isolation, ops burden, and cost economics are all designed for 50-tenant steady state, not just "two tenants work."
 - A cross-tenant data leak is structurally prevented by RLS + composite FK + RPC discipline + automated tests — verified by a CI-run leak-test suite that exercises every tenant-scoped table and every SECURITY DEFINER RPC.
 - A deploy to production does not interrupt an in-flight kasir transaction for any tenant.
 - A bug discovered in production has an investigation report generated automatically (with human review required before any fix is applied).
@@ -159,8 +161,9 @@ Each layer lists: **what it delivers**, **entry gate**, **exit gate**, **key pre
 - Separate Cloud Run service for staging.
 - `apply-pending-migrations.sh` runs against staging first, then prod (manual promote).
 - Off-peak deploy discipline documented in `docs/runbooks/deploy.md`.
-- Disaster recovery runbook in `docs/runbooks/disaster-recovery.md` covering Supabase outage, migration corruption, service-role key rotation.
-- Supabase paid tier enabled on prod for PITR (~$25/month).
+- Disaster recovery runbook in `docs/runbooks/disaster-recovery.md` covering Supabase outage, migration corruption, service-role key rotation, **plus Kominfo breach notification procedure (UU PDP Pasal 46 ayat 3 — 3×24 hour deadline)**.
+- **DIY backup to GCS** (free tier path): Cloud Run Scheduler runs daily `pg_dump` → GCS bucket. 7-day retention via GCS lifecycle rule. Pre-migration manual snapshot procedure documented. Restore drill verified on staging.
+- **Supabase free tier through Phase 1** (Garindo only). Upgrade to Pro tier ($25/mo, enables daily auto-backup) triggered on first paying-tenant go-live — see §8.5 Cost & Scaling.
 
 **Entry gate**
 
@@ -193,7 +196,11 @@ Feature flags, canary rollouts, per-tenant maintenance windows — these belong 
 - Migration linter (pre-commit hook + CI check) that rejects `CREATE TABLE` migrations missing `tenant_id NOT NULL`, RLS enabled, and at least one policy.
 - Automated cross-tenant leak test suite. Creates 2 tenants in CI, iterates all tables via `information_schema`, attempts cross-tenant access, asserts 0 leak.
 - `security_audit_log` table for RLS denials, RPC tenant assertion failures, super-admin operations.
-- Storage quota monitoring cron (daily) writing to `tenant_health_summary`; alert at >80% of plan quota.
+- **Per-tenant storage hard quota** enforced (`tenants.storage_quota_mb`, default 1000). Storage upload RPC rejects when quota exceeded. Owner UI shows storage usage bar. Daily cron writes to `tenant_health_summary` and alerts at >80%.
+- **Connection pooling**: Supabase Supavisor (transaction pooler mode) wired for all RPC/query traffic — handles 50 concurrent tenants without exhausting Postgres connection limits.
+- **Indexing strategy for 50-tenant scale**: every `tenant_id` column gets B-tree index. Composite indexes for common query patterns: `(tenant_id, created_at)`, `(tenant_id, status)`, `(tenant_id, sku)`. Query-plan inspection of representative tenant queries before exit gate.
+- **Per-tenant rate limit baseline**: in-app counter (per tenant per minute) for expensive RPCs (`record_kasir_sale`, OCR submit, bulk operations). Throttles a runaway tenant before they degrade others. Advanced per-tenant tuning deferred to Phase 2.
+- Free tier usage monitor wired up — see §9.5.
 
 **Entry gate**
 
@@ -206,6 +213,7 @@ D-min complete; staging available for migration dry-run.
 - Cross-tenant leak test suite passes 100%.
 - Composite FK constraints in place; no orphaned cross-tenant references.
 - Migration linter is active in CI.
+- **Load test passes at 50-tenant scale**: simulated 50 tenants × 10 concurrent kasir transactions/min × 5 minutes against staging. p95 RPC latency < 500ms, no deadlocks, RLS query plans verified via `EXPLAIN ANALYZE` for representative queries.
 
 **Migrations involved**
 
@@ -223,7 +231,7 @@ D-min complete; staging available for migration dry-run.
 - "Provision Tenant" form: name + owner email + package selector + subscription duration → creates tenant row, applies package template (populates `tenant_modules` from `packages.included_modules`), creates Supabase auth user for the owner, sends magic link via Resend, writes audit.
 - Owner accepts magic link, sets password, lands in tenant app at `app.vosi.id`. First Owner is flagged `is_first_owner=true`.
 - Subscription controls: extend `subscription_expires_at`, suspend, reactivate. Every action goes through `tenant_subscription_audit`.
-- Tenant offboarding action (manual trigger): triggers 90-day read-only mode → 9-month archive countdown → cold-storage export + hard delete. Implementation of archive job itself is Phase 2; the trigger and timeline metadata land in Phase 1.
+- Tenant offboarding action: subscription expires → 7-day grace → read-only mode (auto via `tenant_access_status()` function). Tenant data stays in-DB indefinitely until UU KUP 10-year retention timeout. Bulk export endpoint available so tenant can download their data anytime. Annual cron for 10-year hard-delete is Phase 2 (no urgency in Phase 1 since no record will be 10 years old).
 
 **Entry gate**
 
@@ -305,8 +313,8 @@ This is the **single riskiest operation** in the project. Garindo is wife-owned 
 
 ### 5.1 Pre-cutover prep (all must be true)
 
-- Supabase paid tier active on prod with PITR enabled.
-- Manual snapshot of Garindo's DB taken via `pg_dump` and downloaded to two physically separate locations (local + GCS).
+- DIY backup automation verified working (latest pg_dump < 24h old, restore drill passed on staging within the last 7 days).
+- **Pre-cutover manual snapshot** of Garindo's DB taken via `pg_dump` immediately before cutover starts. Downloaded to **three** locations: local disk, GCS bucket, external drive. This is the single most important pre-cutover step; do not skip.
 - Staging Supabase project has the **exact same schema as prod** (verified by `pg_dump --schema-only` diff = 0 lines).
 - Layer A migrations (40-50 of them) have been dry-run on staging against a recent copy of Garindo's prod data — completed without error, schema diff matches expectations.
 - Cross-tenant leak test suite is in place and passes against staging.
@@ -353,14 +361,15 @@ If verification at T+0:45 fails:
 
 This rollback is verified on staging before the prod cutover starts. If staging rollback works in <30 min, prod rollback budget is 60 min before invoking PITR restore.
 
-If rollback fails or takes >60 min: invoke Supabase PITR restore to T-5min snapshot. Wife loses ~5 min of business activity (typically <1 transaction at that hour). Acceptable.
+If rollback fails or takes >60 min: restore from the immediate pre-cutover pg_dump snapshot. Wife loses **up to last 1-3 minutes** of business activity (since snapshot was taken at T-5min). Acceptable but painful. (After tenant #2 onboard + Supabase Pro upgrade, this becomes Supabase PITR with second-level recovery.)
 
 ### 5.5 Go/no-go criteria
 
 Cutover **proceeds** only if all are true at T-0:
 - Staging dry-run completed without error in the past 7 days.
 - Rollback SQL dry-run on staging succeeds in <30 min.
-- PITR confirmed working (one restore drill performed on a test project).
+- DIY backup restore drill performed on staging within last 7 days.
+- Fresh pre-cutover pg_dump taken to 3 locations (local, GCS, external drive).
 - Wife is informed and on standby.
 - Founder is well-rested and unhurried.
 
@@ -403,23 +412,49 @@ The scaling property: as new tables and RPCs are added, the isolation guarantee 
 
 Calista is **not** in any paid package. It is sold as an add-on once Meta Cloud API integration ships.
 
-### 7.3 Subscription lifecycle
+> **Pricing, commitment terms, discount structure, and setup fees** are intentionally kept out of this spec — they live in **`docs/business/pricing.md`** because they evolve on a much faster cadence than the architecture. Tech spec references package *identity* only (`'starter'`, `'pro'`, `'premium'`), never concrete prices.
+
+### 7.3 Subscription lifecycle & retention
 
 ```
-Active (now < expires_at)
+SUBSCRIPTION LIFECYCLE
+─────────────────────────────────────────────────────────────
+Active (now < expires_at)             → full access
    ↓ T-14d → banner "Subscription expires in 14 days"
    ↓ T-7d  → banner red
-   ↓ T-0   → grace period (default 7 days)
-   ↓ T+grace → read_only_mode = true (auto via cron or login check)
-              banner persists: "Subscription expired — contact admin to renew"
-   ↓ +90 days → archive trigger fires (Layer C-full)
-   ↓ +9 months → cold-storage export to GCS Coldline
-   ↓ +1 year → hard delete
+   ↓ T-0   → grace period (default 7 days)               → still full access
+   ↓ T+grace → read_only_mode = true (auto enforce)      → view + export only
+                banner: "Subscription expired — contact admin to renew"
+                tenant can bulk-export their data anytime
+
+DATA RETENTION (UU KUP-compliant, 10 years)
+─────────────────────────────────────────────────────────────
+Tenant business records (kasir_transactions, orders, stock_movements,
+purchase_orders, payments, audit logs):
+   • Active subscription   → full retention
+   • Read-only mode        → indefinite, tenant view + export available
+   • Hard delete           → annual cron deletes individual rows aged
+                              10+ years from creation (UU KUP retention
+                              period elapsed)
+
+PII in tenant's customer records:
+   • Tenant edits / deletes customer rows via existing UI (Phase 1)
+   • Dedicated anonymization function `anonymize_customer(customer_id)`
+     ships Phase 1 as SQL; UI Phase 2
+   • Foreign key references in transaction rows survive anonymization
+     (compatible with UU KUP — business record integrity preserved)
+
+Vosi's own audit + billing records (super_admin_audit_log,
+tenant_subscription_audit, security_audit_log):
+   • Retained 10 years (Vosi's own business records — separate from
+     tenant's books)
 ```
 
 Manual `suspended = true` bypasses lifecycle; login is blocked entirely. Reactivation requires operator action + audit.
 
 Garindo gets `subscription_expires_at = '2099-01-01'` — same code path, no special-casing.
+
+> Full Indonesia legal framework (UU PDP + UU KUP analysis, controller/processor split, breach notification, DPA template requirements) lives in **`docs/business/compliance-indonesia.md`**. This section captures only the implementation-level policy.
 
 ### 7.4 Three enforcement points (recap)
 
@@ -438,9 +473,29 @@ Garindo gets `subscription_expires_at = '2099-01-01'` — same code path, no spe
 - Privilege escalation surface: `super_admin_users` has no UI that writes to it. Rows are inserted manually via Supabase Studio SQL editor. A tenant admin cannot promote themselves through any application path.
 - Audit: every super-admin action writes to `super_admin_audit_log`. Impersonation sessions are tagged separately and shown with full query log.
 
----
+### 8.5 Cost & scaling tiers
 
-## 9. Monitoring & tech ops
+Infrastructure stays on **free tiers until usage triggers an upgrade**. Free-tier usage monitor (§9.5) alerts at 70% and 90% of every limit so upgrades are anticipated, not surprises.
+
+| Tenant count | Total infra cost/mo | Per-tenant | Trigger for tier escalation |
+|---|---|---|---|
+| **1 (Garindo only)** | **$0** | n/a (internal) | All services on free tier. DIY backup to GCS replaces Supabase PITR. |
+| **1-5 paying** | **$25-35** | $5-7 | Supabase Pro $25/mo (daily backup + 8GB DB) triggered on first paying-tenant go-live. |
+| **6-15** | **$110-150** | $7-10 | Sentry / Resend / BetterUptime free tiers hit; upgrade to paid (~$66 combined). |
+| **16-25** | **$200-300** | $10-12 | Supabase Pro storage/compute add-ons (delays Team tier). |
+| **26-50** | **~$745** | ~$15 | Supabase Team tier $599/mo + PostHog self-host (mandatory — cloud tier cost would be $3700+/mo at 50-tenant event volume). |
+
+**Upgrade triggers**, in order:
+
+1. **First paying tenant onboard** → Supabase Pro $25/mo (daily backup, 8GB DB).
+2. **Tenant 6+** → Sentry Team $26 + Resend $20 + BetterUptime $20 (if free tier limits hit; monitor §9.5 will alert).
+3. **DB approaching 7GB** → Supabase storage add-on (~$30-100/mo) OR Team tier evaluation.
+4. **Approaching 1M PostHog events/mo (~20 tenants)** → self-host PostHog on $10 VPS BEFORE cloud tier kicks in (paid PostHog is prohibitively expensive at 50-tenant volume).
+5. **Tenant 25+** → Supabase Team tier $599/mo.
+
+**Honest note on PostHog**: at 50 tenant × ~5 users × ~20 sessions/day × ~100 events = ~15M events/mo. PostHog cloud cost would be ~$3,700/mo (margin-killing). Self-hosting on a $10/mo VPS is mandatory at scale. Migration from cloud to self-host should happen at ~tenant 15-20 before cloud bills accumulate.
+
+**Founder time and support hire are not on this table** — they're the dominant non-infra cost from tenant 25+. Plan to either hire 1 part-time support engineer or move to self-serve onboarding around then.
 
 ### 9.1 Five-layer monitoring stack
 
@@ -477,6 +532,75 @@ These are code patterns built into the application, not decisions made by AI:
 
 One Resend integration serves: owner invitation, subscription notifications, alert emails, password resets, investigation summaries. Single integration eliminates the question "which email service for X."
 
+### 9.5 Free tier usage monitor
+
+Phase 1 mandatory. Strategy: stay on every service's free tier as long as possible, get alerted at 70% and 90% of every limit so upgrades are anticipated.
+
+**Two layers:**
+
+**Layer 1 — Native alerts (config only, ~30 min total setup):**
+
+Most services have built-in usage alerts; enable per service dashboard config:
+- Sentry: Spike Protection notification
+- PostHog: Billing usage alerts
+- GCP / Cloud Run: Budget alert at $5/mo with 70%/90% notification
+- Resend: Usage Alerts
+- Anthropic console: Spend cap on Claude API ($30/mo hard cap)
+
+**Layer 2 — Custom unified monitor (for services without native alerts + unified dashboard):**
+
+Schema (lands in Layer A migrations):
+
+```sql
+CREATE TABLE free_tier_quotas (
+  service       text PRIMARY KEY,
+  metric        text NOT NULL,
+  free_limit    numeric NOT NULL,
+  warn_pct      int DEFAULT 70,
+  critical_pct  int DEFAULT 90,
+  unit          text NOT NULL,
+  notes         text
+);
+
+CREATE TABLE free_tier_usage_log (
+  id           bigserial PRIMARY KEY,
+  service      text NOT NULL,
+  metric       text NOT NULL,
+  current_val  numeric NOT NULL,
+  pct_used     numeric NOT NULL,
+  measured_at  timestamptz NOT NULL DEFAULT now()
+);
+```
+
+Cron worker (Cloud Run Scheduler, daily WIB 06:00):
+1. For each service in `free_tier_quotas`, query its usage API.
+2. Compute `pct_used`, write log row.
+3. If `pct_used ≥ critical_pct` and not alerted this month → `alert_queue` row (severity critical).
+4. Else if `pct_used ≥ warn_pct` and not alerted this month → `alert_queue` row (severity warning).
+5. Dedup key: `(service, threshold, month)` — at most one alert per service per threshold per month.
+
+**Services tracked** (free tier limit / 70% / 90%):
+
+| Service | Free limit | Source |
+|---|---|---|
+| Supabase DB size | 500 MB | `pg_database_size()` |
+| Supabase Storage | 1 GB | Management API |
+| Supabase Auth MAUs | 50,000 | `auth.users` count |
+| Supabase Bandwidth | 5 GB egress/mo | Management API |
+| Cloud Run requests | 2M req/mo | GCP Metrics API |
+| Cloud Run GB-sec memory | 360k | GCP Metrics API |
+| Sentry errors | 5K/mo | Sentry API |
+| PostHog events | 1M/mo | PostHog API |
+| Resend emails | 3K/mo | Resend API |
+| BetterUptime monitors | 10 | API count |
+| GCS backup storage | 5 GB free | gcloud storage du |
+| GitHub Actions minutes | 2000/mo | GitHub API |
+| Claude API spend | $30/mo cap | Anthropic dashboard |
+
+**Operator console page** `/operator/free-tier-status` renders a scannable view (green/yellow/red per service) for 1-minute weekly visual check.
+
+Implementation effort: ~1-2 solo-day for Layer 2 (13 service API integrations are mostly simple REST). Native alerts (Layer 1) are ~30-min config across dashboards.
+
 ---
 
 ## 10. Residual risk surface — explicit
@@ -486,10 +610,10 @@ Option 1 (shared DB) gives the bug-catcher advantage but does **not** eliminate 
 | Risk | Mitigation in this plan | Residual |
 |---|---|---|
 | RLS misconfig leak | 5-layer defense; shadow mode; CI leak tests | A bug that passes all 5 layers leaks all tenants simultaneously. The mitigation is rigor of testing, not architecture. |
-| Migration blast radius | Staging dry-run; off-peak window; PITR | A migration that fails halfway in prod affects every tenant. Rollback is fast (Cloud Run revision); data damage may need PITR restore for all tenants. |
+| Migration blast radius | Staging dry-run; off-peak window; DIY backup (Phase 1) / Supabase PITR (post tenant #2) | **At 50-tenant scale, one bad migration affects 50 tokos** — business-existential risk. Large-table migrations (e.g. `ALTER TABLE` on 20GB+ `kasir_transactions`) must use online migration patterns (pg_repack, additive-only with backfill, never destructive in single transaction). Per-layer spec for Layer D-full adds canary migration to one tenant before all-tenant rollout. |
 | SECURITY DEFINER RPC bypass | `assert_tenant_owns()` helper; code review; audit log | A new RPC that forgets the assertion is the highest-likelihood individual leak vector. Migration linter and CI test cover schema; only code review covers RPC code. |
-| Noisy neighbor | Supabase Pooler; monitoring | One tenant's heavy query slows others. Not mitigated by architecture; needs query-level optimization or per-tenant resource caps (Phase 2). |
-| Shared deploy blast radius | Off-peak deploy in D-min; feature flags in D-full | Between D-min and D-full, a bad frontend deploy hits every tenant. Manual rollback (Cloud Run revision) is the recourse. |
+| Noisy neighbor | Supabase Supavisor pooler; per-tenant rate limit baseline (Layer A); monitoring | **At 50-tenant scale, noisy neighbor goes from "occasional" to "regular"** — query optimization discipline + indexing strategy + per-tenant rate caps become operationally critical. Advanced per-tenant resource caps (Postgres role limits, statement_timeout per tenant) deferred to Phase 2 escalation. |
+| Shared deploy blast radius | Off-peak deploy in D-min; feature flags in D-full | **At 50 tenants, a bad frontend deploy = 50 broken tokos simultaneously.** Between D-min and D-full, manual Cloud Run revision rollback is the only recourse. Layer D-full canary rollout (one tenant → watch → promote) is what eventually contains this. |
 | whatsmeow ban risk for Garindo | Isolated to Garindo only (paying tenants use Meta) | Garindo could lose WA access; the rest of Vosi keeps working. Wife is informed of this risk. |
 | Garindo cutover failure | Rollback SQL + PITR + staging dry-run | A botched cutover impacts Garindo only (no other tenants exist at that point). Rollback budget 60 min before PITR. |
 | Operator console compromise | Separate frontend; `super_admin_users` not writable from UI; audit log | An attacker who gains a super-admin session has read/write access to all tenants. Mitigation: long sessions disabled, all actions audited, optional Phase 2 IP allowlist. |
@@ -538,10 +662,10 @@ The following appear in roadmap §2-9 or in the brainstorming discussion and are
 
 - Billing automation (Xendit/Midtrans). Manual bank transfer for first ≤5 tenants.
 - 2FA / MFA. Per-tenant opt-in when requested.
-- Public status page.
-- Sandbox / demo environment.
-- Per-tenant rate limiting beyond Supabase defaults.
-- Customer support ticketing.
+- Public status page (`status.vosi.id`) — Phase 2 priority once tenant count >10 (support burden justifies it then).
+- Sandbox / demo environment for self-serve trial.
+- Per-tenant rate limit *advanced tuning* (dynamic per-plan limits, statement_timeout, Postgres role caps). Phase 1 ships baseline in-app counter for expensive RPCs; advanced tuning Phase 2 when noisy-neighbor patterns are observed.
+- Customer support ticketing system (Phase 2 when tenant count >15; WhatsApp/email to founder enough for ≤10 tenants).
 - Full GL / Neraca / Arus Kas implementation (roadmap Phase 1 long pole — separate spec).
 - Calista Meta Cloud API integration (separate spec, triggered by first paying tenant requesting it).
 - Hutang-piutang full implementation (separate spec).
@@ -549,11 +673,41 @@ The following appear in roadmap §2-9 or in the brainstorming discussion and are
 - Barcode UX (separate spec).
 - Marketplace API sync.
 - PPN / e-Faktur / Coretax (conditional on PKP demand per roadmap §4 coherence check).
-- Per-tenant cold-storage archive job implementation (Layer A provides the metadata; the archive worker itself is Phase 2).
-- Public ToS / DPA / privacy policy (legal-quality drafts require a lawyer; placeholder docs land in Phase 1, refined in Phase 2).
+- Annual 10-year hard-delete cron (Phase 2 — no row will be 10 years old until ~2036).
+- Cold-storage archive (deferred indefinitely — in-DB retention with Supabase scaling is cheaper for 10-year retention at projected 50-tenant volume).
+- Public ToS / DPA / privacy policy (legal-quality drafts require a lawyer; **rough draft template must exist before tenant #2 onboard** per UU PDP Pasal 51, refined with lawyer in Phase 2 — see `docs/business/compliance-indonesia.md`).
+- Dedicated customer-of-tenant PII anonymization UI (Phase 1 = tenant uses existing customer-edit screens + a SQL function `anonymize_customer()`; full UI Phase 2).
+- DPO (Data Protection Officer) appointment — required-threshold ambiguity in UU PDP; lawyer determines when applicable. Phase 2/3.
 - Mobile native app.
 - Multi-language UI.
 - Per-module subscription billing (currently subscription is per-tenant, not per-module).
+
+---
+
+## 12.5 Legal & Compliance — Indonesia (summary)
+
+**DISCLAIMER:** Design-level interpretation, not legal advice. Lawyer consult required before tenant #2 onboards.
+
+**Two applicable laws** (often in tension; resolved in this spec):
+
+- **UU No. 27 Tahun 2022 (UU PDP)** — Personal Data Protection, full effect since Oct 2024. Data subjects have rights (access, correct, delete, port). Breach notification within 3×24 hours to Kominfo + affected subjects (Pasal 46 ayat 3). Data localization expectation (Pasal 21).
+- **UU KUP Pasal 28(11)** — Wajib Pajak must retain books 10 years. Applies to every tenant (toko).
+
+**Role assignment in this spec:**
+
+- **Tenant (toko)** = data controller for their customers' PII. They obtain consent, handle deletion requests, own the UU KUP 10-year retention obligation.
+- **Vosi** = data processor for tenant-of-customer PII; also data controller for tenant's own data (Owner email, billing info, audit logs).
+- **Customer of tenant** = data subject.
+
+**What this spec bakes in:**
+
+1. Tenant business records retained 10 years in-DB (§7.3) — supports both tenants' UU KUP obligation AND PDP "necessary for purpose" framework.
+2. PII deletion: tenant via UI, dedicated `anonymize_customer()` SQL function Phase 1, full UI Phase 2.
+3. Breach notification procedure documented in `docs/runbooks/disaster-recovery.md` (Layer D-min).
+4. Data localization: Supabase region `ap-southeast-1` (Singapore PDPA = adequate protection per UU PDP). DR backups to GCS `asia-southeast2` (Jakarta — physically in Indonesia).
+5. DPA + privacy policy template MUST exist before tenant #2 onboards (draft in Phase 1, refined Phase 2 with lawyer).
+
+> **Full framework, controller/processor analysis, breach notification procedure, DPA template requirements, and data localization decisions** live in `docs/business/compliance-indonesia.md`. This spec section captures only the implementation-level commitments.
 
 ---
 
@@ -570,11 +724,16 @@ This decomposition spec is the parent. Each of the following will become its own
 7. `2026-MM-DD-layer-d-full-release-safety-design.md`
 8. `2026-MM-DD-tech-ops-investigation-agent-design.md`
 
-Plus standalone docs:
+Plus standalone runbook docs:
 
-- `docs/runbooks/disaster-recovery.md`
+- `docs/runbooks/disaster-recovery.md` (includes Kominfo breach notification procedure)
 - `docs/runbooks/deploy.md`
 - `docs/runbooks/cutover-garindo.md`
+
+Plus business policy docs (separated from tech architecture — different change cadence):
+
+- `docs/business/pricing.md` — tier pricing, commitment terms, discount structure, setup fees, unit economics
+- `docs/business/compliance-indonesia.md` — UU PDP + UU KUP framework, controller/processor split, breach notification procedure, DPA template requirements, data localization decisions
 
 ---
 

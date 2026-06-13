@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — Multi-Tenant Prerequisites: spec scope expansion + business docs split — DONE
+
+- **What:** Second-pass spec refinement after additional brainstorming surfaced 50-tenant scale target, free-tier-first cost strategy, 10-year UU KUP-compliant retention, and pricing/legal separation requirement.
+- **Decisions added/changed:**
+  - **Scale target locked at 50 tenants** — success criterion explicit in §1.2. Triggers per-tenant storage hard quota, connection pooling (Supavisor), composite indexing strategy, per-tenant rate limit baseline, 50-tenant load test as Layer A exit gate.
+  - **Free-tier-first** cost strategy — Supabase free tier through Phase 1 with DIY pg_dump→GCS backup. Pro tier ($25/mo) triggered on first paying-tenant go-live. Section 8.5 added with full cost progression table (1 → 50 tenants).
+  - **Retention policy = 10 years UU KUP-compliant**, in-DB only, no cold storage. Tenant business records retained 10 years from row creation; annual hard-delete cron is Phase 2 (no row will be 10y old until 2036). PII deletion via tenant UI + `anonymize_customer()` SQL function Phase 1; full UI Phase 2. Section 7.3 rewritten.
+  - **Free tier usage monitor (§9.5)** as Phase 1 mandatory — 13 services tracked, 70% / 90% alerts via custom cron + native dashboards.
+  - **Cross-tenant residual risk sharpened** for 50-tenant scale — noisy neighbor, migration blast radius, shared deploy blast radius all flagged as elevated severity at scale.
+- **Business policy split out of tech spec** per advisor feedback (different change cadence):
+  - `docs/business/pricing.md` — Starter Rp 399k Q / Rp 339k Y (15% off); Pro Rp 799k Q / Rp 559.3k Y (30% off). 6-month tier dropped. Setup fee Rp 1.5M one-time. 40% Starter / 60% Pro mix at 50 tenant = ~42% net margin, ~Rp 264M cash upfront at go-live. **Sleep-on-it before lock.**
+  - `docs/business/compliance-indonesia.md` — Full UU PDP + UU KUP framework, controller/processor split, breach notification 3×24h procedure, DPA template requirements, data localization, open lawyer questions.
+- **Tech spec updates committed to** `docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md` — Section 12.5 added (legal & compliance brief with pointer to business doc); Section 13 updated to include business policy doc references.
+- **Advisor flagged + addressed:** pricing zigzagged during brainstorming (flat → +6mo → +quarterly → drop 6mo → Rp 279k → Rp 329k → Rp 339k Starter). Pricing extracted to separate doc with explicit "sleep-on-it" status. Status page kept in Phase 2 defer (not pulled forward despite 50-tenant target). Retention edits applied as one coherent batch to avoid spec inconsistency.
+- **Next:** user reviews spec end-to-end, then invoke `writing-plans` skill for Layer D-min (~3-5 solo-day first implementation).
+
 ## 2026-06-13 — FOLLOWUP-2: StockManagerScreen inline edit — qty fields removed — DONE
 
 - **Commit**: 5803d72
