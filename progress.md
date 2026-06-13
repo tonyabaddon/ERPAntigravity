@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-13 — fix(pembelian): chromeless detail tab (spec §4.4) — DONE
+
+- **What:** Browser smoke revealed the detail tab still showed three stacked headers (global sidebar, global top app header, PembelianScreen page header) above PembelianDetailPage's own top bar. Fixed per spec §4.4 — "no sidebar, focused single-purpose view".
+- **App.tsx:** Derives `isDetailTab` from `window.location.search` (`?screen=pembelian&po=...`) before rendering; when true and `activePage === 'pembelian'`, short-circuits the full chrome shell (no Sidebar, no top header, no footer) and renders only a toast + PembelianScreen in a plain `min-h-screen bg-gray-50` wrapper.
+- **PembelianScreen.tsx:** Added early-return for `viewMode.kind === 'detail'` that renders `<PembelianDetailPage>` directly, bypassing the list's page-header wrapper. Removed the now-unreachable `viewMode.kind === 'detail'` branch from the inner ternary.
+- **PembelianDetailPage.tsx:** Both X close buttons and the "Kembali ke Daftar Pembelian" button now fall back to `window.location.href = '/?screen=pembelian'` if `window.close()` is a no-op (pasted URL, no opener tab).
+- **Lint:** 0 errors.
+- **Browser smoke:** `?screen=pembelian&po=PO-2026-06-003` → chromeless (no sidebar, no global header, no PembelianScreen header). `?screen=pembelian` → full chrome present.
+- **Commit:** `daa0e58` on `feat/pembelian-detail-tab-and-filter`.
+
 ## 2026-06-13 — Pembelian: PO detail in new tab + KPI redesign + date filter (Tasks 3-8) — IMPLEMENTED
 
 - **What:** Spec at `docs/superpowers/specs/2026-06-13-pembelian-detail-tab-and-filter-design.md` shipped. Detail button on each PO row now opens a standalone full-page view in a new browser tab via query-string routing (`?screen=pembelian&po=<po_number>`), replacing the cramped `PoDetailView` modal. Four summary cards adopt the canonical `KpiCard` design system (`rounded-3xl`, icon chip, badge, `#012749` extrabold value, hover-lift). Added date filter bar (Bulan Ini / 30 Hari / 90 Hari / Custom) above the cards — cards 1/2/4 + the list react live; card 3 (Terlambat Bayar) intentionally ignores the filter (subtext clarifies "selalu hari ini, tidak ikut filter") because overdue is a now-state.
