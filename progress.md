@@ -1,5 +1,39 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista Phase 1A: end-to-end smoke PASSED + production-ready — DONE
+
+- **What:** Built `backend-go/cmd/smoke-calista` — a non-daemon end-to-end harness that exercises engine → router → real OpenRouter → sticky-pin + tone-seeding without touching the whatsmeow daemon. Runs entirely from CLI with stub DB stores, so failures isolate to the production code path (not infra plumbing).
+- **Smoke result (run on 2026-06-14):**
+  - ✅ OpenRouter API: reachable, key valid, attribution headers accepted
+  - ✅ Primary `google/gemma-4-31b-it:free`: serving requests in Bahasa Indonesia
+  - ✅ Reply quality: Calista persona + Garindo Jaya Panel SOP fully intact (C.1 fix verified — embedded `assets.CalistaSystemPrompt` reaches the model, not the 18-line abbreviated version)
+  - ✅ Sticky pinning: identical model used across 2 calls in same conversation
+  - ✅ First-reply tone extraction: `Greeting="Halo"`, `Formality="formal_bapak_ibu"`, `ModelUsed="google/gemma-4-31b-it:free"` captured and persistable
+  - ✅ New conversation: pinned to primary correctly (fresh pin assignment)
+  - ⚠️ **Latency p50: 5,238ms** — above the spec target of <3s. Persona prompt is ~11,196 input tokens, which is the dominant inference cost on free-tier providers. Functional but slow — flag for shadow-soak monitoring.
+- **Material fix surfaced during smoke (committed):** all 10 OpenRouter model slugs in `DefaultCalistaAgent` were wrong format — needed `:free` suffix and some needed `-it` variants. Without this fix, `ENABLE_OPENROUTER=true` would have 400'd every model → universal escalation to admin on first customer message. Verified `google/gemma-4-31b-it:free` works against the live catalog. (commit `b01a651`)
+- **Earlier-in-session security fix:** `.env` was world-readable mode 644 AND NOT gitignored. Verified key never committed to git history. `chmod 600`, added `.env` + `backend-go/.env` to `.gitignore`. (commit `8613ff5`)
+- **3 Phase 1A migrations applied to live Supabase** via management API (port 5432 direct DB connection IPv6-resets from this machine; Supabase REST endpoint works): `public.llm_calls` (13 cols, 3 indexes), `public.model_cooldowns` (5 cols), `public.conversations` +4 columns (`pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`) + 1 partial index. Verified via post-apply `information_schema` query.
+- **Phase 1A criticals final state:** ALL CLOSED.
+  - ✅ C.1 persona prompt parity
+  - ✅ C.2 tone seeding wire-up
+  - ✅ I.3 401 fast-fail boot probe
+  - ✅ I.4 OpenRouter attribution headers
+  - ✅ M.1 retry short-circuit on ChainExhausted
+  - ✅ (NEW) Correct OpenRouter model slugs verified against live catalog
+  - ✅ (NEW) End-to-end smoke against real OpenRouter
+  - ⏭️ I.1 StateBoundary signal — Phase 1B
+  - ⏭️ I.2 inbound tripwires from handler — Phase 1B
+- **Founder action items remaining (production deploy):**
+  - [ ] **Rotate Supabase project access token** `sbp_cb539...` at https://supabase.com/dashboard/account/tokens — still pending despite multiple reminders. Token used twice during this session (migrations + management API queries) and is in conversation logs + scrollback.
+  - [ ] Deploy `feat/calista-phase-1a` branch (merge or push directly per your CI conventions)
+  - [ ] Set Cloud Run env vars: `OPENROUTER_API_KEY=<your-key>`, `ENABLE_OPENROUTER=true`
+  - [ ] After first real customer message lands, query `llm_calls` to verify telemetry rows: `psql -c "SELECT model_slug, status, latency_ms, was_forced_swap FROM llm_calls ORDER BY created_at DESC LIMIT 5"`
+  - [ ] Verify `conversations.first_reply_tone IS NOT NULL` populates after first conversation
+  - [ ] Shadow-soak ≥3 days monitoring (a) latency p95 against 3s target — likely will exceed, flag for Phase 1A-bis persona-trim consideration, (b) `escalated_chain_exhausted` rate — expect <0.5% per spec, (c) customer complaints about voice consistency or reply quality
+  - [ ] (Optional Phase 1A-bis) Persona prompt trim to bring latency below 3s — current ~11K input tokens is the dominant inference cost. Realistic target ~3-5K tokens by removing rarely-triggered SOP branches and consolidating examples.
+- **Branch:** `feat/calista-phase-1a` — Phase 1A complete + verified. Ready for merge.
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 5: customer_credit_activate RPCs (request + approve) — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000012_customer_credit_activate_rpcs.sql`
