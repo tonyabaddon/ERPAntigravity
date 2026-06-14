@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 8: Vitest integration tests — DONE (deferred run)
+
+- **File written:** `tests/integration/piutang-tempo-phase1a.test.ts`
+- **8 tests** across 3 describe blocks:
+  - `piutang phase 1A — customer credit activate` (5 tests): happy path, rejects term_days=45, rejects credit_limit≤0, rejects wrong PIN, rejects re-activation
+  - `piutang phase 1A — limit change` (2 tests): happy path, rejects reason <5 chars
+  - `piutang phase 1A — deactivate` (1 test): happy path (retains term_days/credit_limit as history)
+- **Two-client design:** `admin` (service-role, bypasses RLS for setup/teardown) + `user` (anon key, exercises real RPC auth path)
+- **Error tokens verified** against migration SQL: `term_days_not_allowed`, `credit_limit_must_be_positive`, `pin_invalid`, `customer_already_activated`, `reason_required`
+- **TypeScript check:** `npx tsc --noEmit` — zero errors
+- **Run deferred** until founder applies migrations T1-T7 (20260614000008 through 20260614000014) via Supabase Studio SQL editor. DB is unreachable from this host (IPv6-only endpoint).
+- **Run command:** `npx vitest run --no-file-parallelism tests/integration/piutang-tempo-phase1a.test.ts`
+- **Required env vars** (either naming convention works):
+  - `SUPABASE_URL` or `VITE_SUPABASE_URL`
+  - `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE` or `SUPABASE_SERVICE_KEY`
+  - `OWNER_PIN` (defaults to `0000` for dev)
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 7: customer_credit_deactivate RPCs (request + approve) — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000014_customer_credit_deactivate_rpcs.sql`
