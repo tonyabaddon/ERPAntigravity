@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista Production Hotfix: reasoning-model empty content + chain reorder — DEPLOYED
+
+**Problem:** Customer received `"maaf, saya mengalami kendala teknis ....."` (FallbackReply) after live WA test. Root cause: `nex-agi/nex-n2-pro:free` (chain position 3) is a reasoning-style model. With `StateCollecting.MaxTokens=100`, the model exhausted its budget inside the `message.reasoning` phase and returned empty `message.content` → `tolerantParseJSON` failed → FallbackReply served.
+
+**Evidence (production `llm_calls`):** `model_slug=nex-agi/nex-n2-pro:free, status=success, completion_tokens=100, content=""`. Direct OpenRouter API replay confirmed reply text lived in `reasoning` field, not `content`.
+
+**Fix 1 — Reasoning fallback (`2550f91`):**
+- `backend-go/internal/llm/openrouter.go` `openRouterAPIResponse.Choices[].Message` gains `Reasoning string \`json:"reasoning,omitempty"\``
+- After parse: prefer `Content`, fall back to `Reasoning` when `Content == ""`. Downstream `tolerantParseJSON` treats both the same.
+- Tests: `go test ./internal/llm/` ✅
+
+**Fix 2 — Chain reorder, demote reasoning models (`e508c29`):**
+- Moved `nex-agi/nex-n2-pro:free`, `nvidia/nemotron-3-super-120b-a12b:free`, `nvidia/nemotron-3-nano-30b-a3b:free` to positions 8, 9, 10
+- Kept `google/gemma-4-31b-it:free` at position 0 (test `TestDefaultChain_TenModels` requires it)
+- Comment in `chain.go` explains demotion rationale (reasoning vs instruct output style)
+- Conservative reorder (Option 2) — only reasoning models touched; other models keep their original relative order
+- Tests: ✅ all 10 models, gemma-31b at position 0
+
+**Why not full reorder:** No empirical telemetry yet on gpt-oss-120b/llama-3.3 latency in our pipeline. Promoting unverified models to top fallback positions risks adding latency on cooldown events. Wait for 2 weeks of `llm_calls` data, then re-rank by `success_rate × parse_success_rate × avg_latency`.
+
+**Deploy:** Both commits pushed to `main` (fast-forward). Cloud Build builds 4fb20bba (Fix 1) + 59d31f66 (Fix 2) processed in sequence. Cloud Run auto-rolls to latest revision.
+
+**Pending verification:** Send a real WA message post-deploy and confirm Calista returns clean Bahasa reply (not FallbackReply, not reasoning-monologue text).
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000010_piutang_settings.sql`
