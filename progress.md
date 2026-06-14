@@ -1,5 +1,40 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista Phase 1A: implementation complete (19/20 tasks) — AWAITING FOUNDER SMOKE TEST
+
+- **What:** Full Phase 1A implementation via subagent-driven-development. 19 of 20 plan tasks landed; Task 20 is founder-driven manual smoke test against real OpenRouter (deferred until founder is ready). Branch `feat/calista-phase-1a`.
+- **Delivered (commits ascending):**
+  - 3 migrations (file-only): `llm_calls` (telemetry), `model_cooldowns` (persistence), `conversations` ALTER (pinning columns). Founder applies via `supabase db push` after review.
+  - New package `backend-go/internal/llm/`: `models.go` (ChainExhaustedError, ModelSpec, AgentConfig, CallOpts, Response), `chain.go` (10 free-tier models + persona via embedded `assets.CalistaSystemPrompt`), `openrouter.go` (OpenAI-compatible HTTP client + 429/5xx/timeout classifiers), `cooldown.go` (in-memory + persistence + 60→90→120→240 min exponential bump cap 4h), `pinning.go` (sticky-pin manager + hard 2-swap cap → ErrSwapCapExceeded), `tripwire.go` (7 heuristics across inbound + outbound), `tone.go` (ExtractTone + BuildToneHint — built and tested but **NOT yet wired in router**, see C.2 below), `telemetry.go` (Recorder + status/tier constants mirroring DB CHECK constraints), `router.go` (orchestrator: routing decision 4 cases, sticky pinning, fallback, cooldown, telemetry, tripwire, 8s/15s budget), `engine_adapter.go` (Router → engine.LLMClient), `testing.go` (exported stub stores for cross-package tests).
+  - New file `backend-go/internal/db/calista.go`: PostgreSQL implementation of CooldownStore + PinStore + TelemetryStore via lib/pq.
+  - Engine refactor: `GeminiClient` → `LLMClient` interface, `CallOpts`/`LLMResult` types, `ChainExhausted` flag, `tolerantParseJSON` wrapping all 7 `Parse*` functions, `Unpin` on terminal states (BOOKED/COMPLETED/CANCELLED/ESCALATED_*).
+  - Adapters: `gemini.EngineAdapter` for ENABLE_OPENROUTER=false emergency fallback; `llm.EngineAdapter` exposes Router as engine.LLMClient.
+  - `main.go` wiring + 2 new config fields (`OpenRouterAPIKey`, `EnableOpenRouter`) — picks llm.Router when `EnableOpenRouter && OpenRouterAPIKey != ""`, else gemini.EngineAdapter. Logs `[CALISTA] OpenRouter chain ENABLED` / `DISABLED` on boot.
+  - Downstream rename to LLMError: `internal/whatsapp/handler.go`, `internal/engine/retry.go`.
+  - Import-cycle fix: hoisted `ErrChainExhausted` sentinel to engine package, re-exported from llm package — surfaced when Task 17 needed llm→engine for the adapter.
+  - End-to-end integration test `internal/engine/engine_router_test.go`: happy path + chain-exhausted → StateEscalatedAdmin (using `package engine_test` external-test-package pattern to keep cycle-free).
+- **Plan deviations (all justified by tests-as-spec):**
+  - Cooldown formula: plan had inconsistent linear vs table formula vs test; implementer chose table `{0,30,60,180}` matching the docstring + test. Plan file patched.
+  - Router `WasForcedSwap` semantics: plan code computed from filtered candidates list; implementer snapshot the actual pin via `pins.Get` upfront. Plan deviation justified — tests didn't pass under plan-as-written.
+  - Router StateBoundary IsHealthy gate: plan required `IsHealthy(primary)`, but the cooldown-from-turn-1 made the test fail; implementer dropped the gate (the whole point of StateBoundary is escape from stale cooldown). Justified deviation.
+  - Engine integration test package: `package engine` → `package engine_test` to break the cycle introduced by `engine→llm` re-export and `llm→engine` adapter.
+- **Final code reviewer findings (action items for founder before flipping ENABLE_OPENROUTER=true):**
+  - **CRITICAL fixed inline (C.1):** OpenRouter path now uses embedded `assets.CalistaSystemPrompt` (~1,100 lines: full Garindo persona + SOP) for behavioral parity with gemini.NewClient. Without this, shadow-soak would surface persona regression. Commit `b68d481`.
+  - **CRITICAL deferred (C.2):** Tone seeding (`ExtractTone`/`BuildToneHint`/`MarshalToneJSON` + `conversations.first_reply_tone` jsonb column) is built and unit-tested but never called from production. Pillar 2 of 3 of spec §5.6 perceptual continuity. Recommend a Phase 1A-bis follow-up commit (~50 LOC: wire router to extract on first success, persist via PinStore extension, inject via BuildToneHint on subsequent calls).
+  - **IMPORTANT (I.1) deferred:** StateBoundary signal from engine never set to true — Case 2 of router routing decision is dead code in prod. Plan-acknowledged TODO. Increases escalation rate under sustained chain pressure.
+  - **IMPORTANT (I.2) deferred:** Inbound tripwires (opt-out, jailbreak, AI-question) — exported + tested but no handler caller. Phase 1B scope per spec §5.3 (handler routing).
+  - **IMPORTANT (I.3) deferred:** Invalid `OPENROUTER_API_KEY` triggers silent universal escalation. Recommend adding `IsAuth(err)` classifier + boot probe to fail-fast on 401.
+  - **IMPORTANT (I.4) deferred:** Missing `HTTP-Referer` + `X-Title` headers — OpenRouter recommends these for attribution + higher free-tier limits.
+  - **MINOR (M.1):** `retry.go` doesn't short-circuit on ChainExhausted — wastes ~51s retry latency. Add `errors.Is(err, ErrChainExhausted)` guard.
+- **Test status:** `go build ./...` clean. `go vet ./...` clean. All engine + llm + whatsapp + gemini tests PASS. internal/db tests fail with `dial tcp ... connect: refused` — environmental (no local Postgres), unrelated to Phase 1A.
+- **Code metrics:** ~2,200 LOC across new llm package (impl + tests), ~145 LOC new db/calista.go, ~85 LOC engine integration test, plus targeted edits to machine.go (~50 LOC delta), parser.go (~40 LOC delta), config.go (~5 LOC delta), main.go (~25 LOC delta), handler.go (3 LOC rename).
+- **Pre-launch checklist (founder Task 20 + ops):**
+  - [ ] Apply migrations via `supabase db push`
+  - [ ] Set `OPENROUTER_API_KEY` in prod env (kept `ENABLE_OPENROUTER=false` initially)
+  - [ ] Address C.2 (tone seeding wire-up) + I.3 (401 fast-fail) before flipping the flag
+  - [ ] Run shadow-soak per spec §8 for ≥3 days before flipping
+- **Branch:** `feat/calista-phase-1a` (~30 Calista-related commits interleaved with unrelated stok-opname work). Ready for founder review + smoke test.
+
 ## 2026-06-14 — Pembelian: Belanja Numpang Lewat (Phase 1) + PO Refactor Roadmap (Phase 2) — design spec brainstormed — AWAITING REVIEW
 
 - **What:** Founder requested fitur untuk catat pembelian pass-through (beli ke grosir khusus untuk 1 Order customer, dijual same-day, tidak nambah stok). Brainstorm session menghasilkan 2 spec: Phase 1 detailed (Belanja Numpang Lewat) untuk ship segera, Phase 2 roadmap (PO refactor) untuk SaaS multi-tenant readiness.
