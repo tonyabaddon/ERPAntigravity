@@ -917,6 +917,15 @@ export const companySettingsService = {
     return url;
   },
 
+  async updateOpnameRequireWitness(required: boolean): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('company_settings')
+      .update({ opname_require_witness: required, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (error) throw error;
+  },
+
   async clearLogo(): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data: settings, error: fetchErr } = await supabase

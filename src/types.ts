@@ -340,6 +340,7 @@ export interface DbCompanySettings {
   email: string;
   logo_url?: string | null;
   npwp?: string | null;
+  opname_require_witness?: boolean;
   updated_at: string;
 }
 
