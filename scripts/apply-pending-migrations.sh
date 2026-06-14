@@ -119,6 +119,12 @@ MIGRATIONS=(
 
   # ─── Product Photo Phase 1 — M4: costing_method setting + product-photos Storage bucket ───
   "20260614000023_costing_and_storage.sql"
+
+  # ─── Product Photo Phase 1 — M5: initial_stock enum + search_products_by_embedding RPC ───
+  "20260614000024_initial_stock_and_search_rpc.sql"
+
+  # ─── Product Photo Phase 1 — M5b: ai_call_log table for activity monitoring ───
+  "20260614000025_ai_call_log.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
