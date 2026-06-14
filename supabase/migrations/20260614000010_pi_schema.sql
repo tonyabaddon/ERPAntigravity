@@ -26,11 +26,11 @@ CREATE TABLE public.purchase_invoices (
   status                      text NOT NULL DEFAULT 'BELUM_LUNAS'
                                 CHECK (status IN ('BELUM_LUNAS','LUNAS')),
   notes                       text NULL,
-  created_by_user_id          uuid NULL REFERENCES public.users(id),
+  created_by_user_id          uuid NULL REFERENCES auth.users(id),
   created_at                  timestamptz NOT NULL DEFAULT now(),
   updated_at                  timestamptz NOT NULL DEFAULT now(),
   voided_at                   timestamptz NULL,
-  voided_by_user_id           uuid NULL REFERENCES public.users(id),
+  voided_by_user_id           uuid NULL REFERENCES auth.users(id),
   void_reason                 text NULL,
   CONSTRAINT pi_passthrough_requires_order
     CHECK (type != 'PASSTHROUGH' OR order_id IS NOT NULL),
@@ -59,12 +59,15 @@ CREATE TABLE public.purchase_invoice_items (
   unit_cost       numeric NOT NULL CHECK (unit_cost >= 0),
   sell_price      numeric NOT NULL CHECK (sell_price >= 0),
   subtotal        numeric NOT NULL CHECK (subtotal >= 0),
-  order_item_id   uuid NULL REFERENCES public.order_items(id) ON DELETE SET NULL,
   created_at      timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX pi_items_pi_idx ON public.purchase_invoice_items (pi_id);
 CREATE INDEX pi_items_sku_idx ON public.purchase_invoice_items (sku);
+
+CREATE TRIGGER trg_pi_updated_at
+  BEFORE UPDATE ON public.purchase_invoices
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 ALTER TABLE public.purchase_invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purchase_invoice_items ENABLE ROW LEVEL SECURITY;
