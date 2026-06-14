@@ -263,25 +263,34 @@ func isTerminalState(s models.ConversationState) bool {
 	return false
 }
 
-// maxTokensForState returns the per-state max_tokens budget (spec §5.6 #6).
+// maxTokensForState returns the per-state max_tokens budget. The Calista
+// persona reply (greeting + numbered prompt list + JSON wrapper) consistently
+// runs 150-250 tokens, and the original spec §5.6 #6 budgets (60-200) caused
+// JSON truncation mid-string → tolerant_parser "unbalanced braces" errors →
+// customer sees FallbackReply "kendala teknis". Verified in prod 2026-06-14
+// with Gemini 2.5-flash-lite: model emitted a clean reply but completion
+// hit the 100-token cap mid-sentence in StateCollecting.
+//
+// Budgets bumped ~2-3x. On Gemini direct (~$0.0001 per call at this volume)
+// the cost is negligible; on OpenRouter free tier the budget isn't billed.
 func maxTokensForState(s models.ConversationState) int {
 	switch s {
 	case models.StateGreeting:
-		return 60
-	case models.StateCollecting:
-		return 100
-	case models.StateClarifying:
-		return 120
-	case models.StateStockCheck:
-		return 150
-	case models.StateConfirming:
-		return 150
-	case models.StateAddMore:
-		return 60
-	case models.StateDelivery:
-		return 100
-	case models.StateBooked:
 		return 200
+	case models.StateCollecting:
+		return 300
+	case models.StateClarifying:
+		return 300
+	case models.StateStockCheck:
+		return 400
+	case models.StateConfirming:
+		return 400
+	case models.StateAddMore:
+		return 150
+	case models.StateDelivery:
+		return 250
+	case models.StateBooked:
+		return 400
 	}
-	return 150 // safe default
+	return 300 // safe default
 }

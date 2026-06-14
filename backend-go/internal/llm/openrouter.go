@@ -173,7 +173,7 @@ type rateLimitError struct {
 }
 
 func (e *rateLimitError) Error() string {
-	return fmt.Sprintf("openrouter: rate limited (HTTP %d): %s", e.status, e.body)
+	return fmt.Sprintf("llm: rate limited (HTTP %d): %s", e.status, e.body)
 }
 
 type serverError struct {
@@ -182,7 +182,7 @@ type serverError struct {
 }
 
 func (e *serverError) Error() string {
-	return fmt.Sprintf("openrouter: server error (HTTP %d): %s", e.status, e.body)
+	return fmt.Sprintf("llm: server error (HTTP %d): %s", e.status, e.body)
 }
 
 // authError signals the API key was rejected (401) or lacks permission (403).
@@ -194,12 +194,12 @@ type authError struct {
 }
 
 func (e *authError) Error() string {
-	return fmt.Sprintf("openrouter: auth rejected (HTTP %d) — check OPENROUTER_API_KEY: %s", e.status, e.body)
+	return fmt.Sprintf("llm: auth rejected (HTTP %d) — check API key: %s", e.status, e.body)
 }
 
 type timeoutError struct{ cause error }
 
-func (e *timeoutError) Error() string { return "openrouter: timeout: " + e.cause.Error() }
+func (e *timeoutError) Error() string { return "llm: timeout: " + e.cause.Error() }
 func (e *timeoutError) Unwrap() error { return e.cause }
 
 // IsRateLimit returns true when the error indicates a 429 / quota condition.
