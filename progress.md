@@ -34,6 +34,27 @@
 - **Branch:** main (will create `feat/piutang-tempo` saat implementation start)
 - **Next:** founder review spec → kalau approved, invoke `writing-plans` skill untuk Phase 1A implementation plan
 
+## 2026-06-14 — Stok Opname blind-count + conditional approval — IMPLEMENTATION COMPLETE
+
+- **What:** Implemented the full 18-task plan from `docs/superpowers/plans/2026-06-14-stok-opname-blind-count.md`. Six SQL migrations applied via Supabase Management API + four integration test files (12 tests passing). Frontend session view rebuilt with conditional rendering (blind 3-col vs full 4-col grid), bahasa updates ("Disetujui"/"Selesai"/"Menunggu Persetujuan"), re-ack banner, Owner-only audit table.
+- **Backend migrations applied (via api.supabase.com/v1/.../database/query):**
+  - `20260614000001_opname_blind_count_fetch_mask.sql` — `fetch_opname_counts` + `get_opname_session` SECURITY DEFINER masking (default-deny via `COALESCE(role,'')!='Owner'`, mask only during `in_progress`)
+  - `20260614000002_opname_reack_on_edit.sql` — `record_opname_count` invalidates witness ack on counter edit (gated by require_witness in Task 13)
+  - `20260614000003_audit_log_table.sql` — generic `audit_log` table (cross-module forensic events)
+  - `20260614000004_opname_submit_auto_commit.sql` — `submit_opname_for_owner` dual-branch (auto-commit when no NULL + no variance + witness ack) + `commit_opname_internal` helper; return shape BIGINT → TABLE(status, auto, approval_id)
+  - `20260614000005_opname_audit_log_events.sql` — `commit_opname` writes `opname_owner_commit`; trigger `_audit_opname_reject` on `approval_requests AFTER UPDATE` writes `opname_owner_reject` + flips session to rejected
+  - `20260614000006_opname_witness_optional_schema.sql` — `witnessed_by_user_id` nullable, `chk_two_person` → conditional CHECK, `company_settings.opname_require_witness BOOLEAN DEFAULT TRUE`, `_opname_require_witness()` helper
+  - `20260614000007_opname_witness_optional_rpcs.sql` — `start_opname_session` + `submit_opname_for_owner` + `record_opname_count` all branch on setting
+- **Frontend changes:** `types.ts` (OpnameCount nullable + opname_require_witness), `supabaseClient.ts` (toOpnameCount null-tolerant, startOpnameSession witness nullable, SubmitOpnameResult, OpnameAuditEntry + fetchOpnameAuditLog, companySettingsService.updateOpnameRequireWitness), `StockOpnameSessionView.tsx` (isBlindMode, conditional header/grid/witness UI, merged selisih, re-ack banner, toast variants, bahasa updates), `StockOpnameScreen.tsx` (fetch setting, conditional witness prompt, Owner-only Catatan Audit Opname table), `PengaturanScreen.tsx` (Modul Stok Opname toggle).
+- **Integration tests (12 passing with `--no-file-parallelism`):** `opname-blind-count.test.ts` (masking + re-ack on edit), `opname-auto-commit.test.ts` (auto-commit vs pending_owner branches + audit_log), `opname-audit-log.test.ts` (commit/reject paths write audit_log + names + reject trigger flips session), `opname-witness-config.test.ts` (setting toggles RPC behavior, solo auto-commit allowed).
+- **Test script:** `package.json:test:integration` uses `--no-file-parallelism` to prevent `opname_require_witness` toggle contamination between concurrent files.
+- **Adaptations from spec/plan:**
+  - Spec assumed generic `tenant_settings` key-value table; reused `company_settings` single-row config with new BOOLEAN column.
+  - Spec assumed Phase 3 warehouse cutover applied (warehouse_id UUID); it isn't (commented out in `apply-pending-migrations.sh` pending 24h soak). All RPCs kept legacy text `warehouse` ('atas'/'bawah'). Phase 3 cutover needs follow-up to migrate these new RPCs.
+  - Spec referenced "Pengawasan screen" which doesn't exist. Catatan Audit Opname table placed in existing StockOpnameScreen (Owner-only section).
+- **Branch:** `feat/calista-phase-1a` — 14 commits stacked on top of spec/plan/mockup commits.
+- **Next:** PR or merge to main when ready. Phase 3 warehouse cutover (separate plan) will need to update these new opname RPCs to use `warehouse_id UUID`. Outside this spec's scope.
+
 ## 2026-06-14 — Calista Phase 1A Tasks 16 & 17: `gemini.EngineAdapter` + `llm.EngineAdapter` — DONE (with surfaced import-cycle fix)
 
 - **What:** Two small adapters bundled per orchestrator instruction. (16) `gemini.EngineAdapter` wraps the existing `*gemini.Client` (`GenerateReply(ctx, prompt) (string, error)`) to satisfy `engine.LLMClient` — used when `ENABLE_OPENROUTER=false` emergency path. `CallOpts` is ignored (direct Gemini has no sticky-pin/budget concept). Always reports `ModelUsed="google/gemini-2.5-flash-lite-direct"`. Implements no-op `Unpin` for safe terminal-state cleanup. (17) `llm.EngineAdapter` wraps `*llm.Router` to satisfy `engine.LLMClient` — the DEFAULT path. Builds a 2-message `[system, user]` payload (system from `router.agent.SystemPrompt`, user from the engine's `fullPrompt`), translates `engine.CallOpts` → `llm.CallOpts`, maps `llm.Response` → `engine.LLMResult` (Body, ModelUsed, WasForcedSwap, LatencyMs, TripwireFlags). Exposes `Unpin(ctx, convID)` straight through to `Router.Unpin` for terminal-state cleanup.
