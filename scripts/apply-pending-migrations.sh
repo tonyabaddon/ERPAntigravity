@@ -107,6 +107,9 @@ MIGRATIONS=(
   # request: validates activated + reason≥5. approve: type-guarded +
   # verify_owner_pin; UPDATE allows_tempo=false (retains term_days/credit_limit as audit).
   "20260614000014_customer_credit_deactivate_rpcs.sql"
+
+  # ─── Product Photo Phase 1 — M1: stocks UoM + photo_urls + min_stock + initial_stock_approved ───
+  "20260614000020_stocks_product_columns.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
