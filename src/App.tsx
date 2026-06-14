@@ -393,6 +393,7 @@ export default function App() {
             stockList={stockList}
             onNavigate={setActivePage}
             permissions={currentUser?.permissions}
+            currentUserRole={currentUser?.role}
           />
         );
       case 'pipeline':

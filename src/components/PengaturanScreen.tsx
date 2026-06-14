@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Building2, Users, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Save, X, MapPin, Upload, Image as ImageIcon } from 'lucide-react';
 import { DbBankConfig, DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
-import { bankConfigService, waRecipientsService, companySettingsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { bankConfigService, waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import TabBar, { TabDef } from './ui/TabBar';
 import NotificationSettingsScreen from './NotificationSettingsScreen';
 import WhatsappAiScreen from './WhatsappAiScreen';
@@ -17,10 +17,12 @@ interface PengaturanScreenProps {
   onNavigate: (page: ActivePage) => void;
   permissions?: PermissionSet;
   initialTab?: PengaturanTab;
+  currentUserRole?: string;
 }
 
 export default function PengaturanScreen(props: PengaturanScreenProps) {
   const { showToast } = props;
+  const currentUserRole = props.currentUserRole;
 
   const tabs = useMemo<TabDef<PengaturanTab>[]>(() => {
     const perms = props.permissions;
@@ -641,6 +643,11 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </div>
             </label>
           </div>
+
+          {/* Owner PIN Persetujuan — self-service PIN setup (Owner only) */}
+          {currentUserRole === 'Owner' && (
+            <OwnerPinCard showToast={showToast} />
+          )}
         </div>
       )}
     </>
@@ -678,6 +685,140 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         )}
         {activeTab === 'kanal-penjualan' && <SalesChannelConfigPanel showToast={showToast} />}
       </div>
+    </div>
+  );
+}
+
+// ─── OwnerPinCard ────────────────────────────────────────────────────────
+// Self-service PIN management for the currently logged-in Owner.
+// - First-time set: shows only New PIN + Confirm fields (no Old PIN).
+// - Subsequent change: shows Old PIN + New PIN + Confirm fields.
+// - Backend RPC change_owner_pin verifies role=Owner + status=Aktif and
+//   bcrypt-checks old PIN when one is already set.
+function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void }) {
+  const [hasPin, setHasPin] = useState<boolean | null>(null);
+  const [oldPin, setOldPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    adminUsersService.currentOwnerHasPin()
+      .then(setHasPin)
+      .catch((err) => {
+        console.error('currentOwnerHasPin error:', err);
+        setHasPin(false);
+      });
+  }, []);
+
+  const onSave = async () => {
+    if (newPin.length < 4 || !/^\d+$/.test(newPin)) {
+      showToast('PIN baru harus minimal 4 digit angka', 'warning');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      showToast('PIN baru dan konfirmasi tidak cocok', 'warning');
+      return;
+    }
+    if (hasPin && !oldPin) {
+      showToast('Masukkan PIN lama dulu', 'warning');
+      return;
+    }
+    setSaving(true);
+    try {
+      await adminUsersService.changeOwnerPin(oldPin, newPin);
+      showToast(hasPin ? 'PIN berhasil diubah' : 'PIN berhasil diset', 'success');
+      setOldPin('');
+      setNewPin('');
+      setConfirmPin('');
+      setHasPin(true);
+    } catch (err) {
+      console.error('changeOwnerPin error:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`Gagal: ${msg}`, 'warning');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (hasPin === null) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500">
+        Memuat status PIN…
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-800">PIN Persetujuan Owner</h2>
+        <span className={`text-xs px-2 py-0.5 rounded-full border ${
+          hasPin
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : 'bg-amber-50 text-amber-700 border-amber-200'
+        }`}>
+          {hasPin ? 'Sudah di-set' : 'Belum di-set'}
+        </span>
+      </div>
+      <p className="text-sm text-gray-600">
+        PIN ini dipakai untuk approve permintaan adjustment stok, opname dengan selisih,
+        perubahan harga, dan request kasir (refund/void/override). Hanya Owner aktif yang
+        bisa set/ubah PIN sendiri.
+      </p>
+      <div className="space-y-3 max-w-md">
+        {hasPin && (
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">PIN Lama</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              value={oldPin}
+              onChange={(e) => setOldPin(e.target.value)}
+              placeholder="Masukkan PIN saat ini"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+              disabled={saving}
+            />
+          </div>
+        )}
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">PIN Baru (minimal 4 digit angka)</label>
+          <input
+            type="password"
+            inputMode="numeric"
+            value={newPin}
+            onChange={(e) => setNewPin(e.target.value)}
+            placeholder="Misal 482917"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            disabled={saving}
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Konfirmasi PIN Baru</label>
+          <input
+            type="password"
+            inputMode="numeric"
+            value={confirmPin}
+            onChange={(e) => setConfirmPin(e.target.value)}
+            placeholder="Ketik ulang PIN baru"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            disabled={saving}
+          />
+        </div>
+        <button
+          onClick={onSave}
+          disabled={saving || newPin.length < 4 || newPin !== confirmPin || (hasPin && !oldPin)}
+          className="py-2 px-4 bg-emerald-600 text-white rounded-full text-sm disabled:opacity-50"
+        >
+          {saving ? 'Menyimpan…' : hasPin ? 'Ubah PIN' : 'Set PIN'}
+        </button>
+      </div>
+      {!hasPin && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          ⚠️ Tanpa PIN, kamu tidak bisa approve permintaan opname dengan selisih
+          atau stok adjustment. Set PIN dulu sebelum tim pakai modul Opname/Adjustment.
+        </p>
+      )}
     </div>
   );
 }
