@@ -75,6 +75,11 @@ MIGRATIONS=(
   # Bumped from originally planned 000001 — slots 000001-000007 taken by
   # parallel opname migrations on same date.
   "20260614000008_customers_tempo_fields.sql"
+
+  # ─── Piutang T2 — approval_request_type enum (+3 values for customer credit) ───
+  # Extend enum to support customer_credit_activate, customer_credit_limit_change,
+  # customer_credit_deactivate. Standalone ALTER TYPE statements (no transaction).
+  "20260614000009_approval_types_tempo.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 2: approval_request_type enum extension — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000009_approval_types_tempo.sql`
+  - Extends `public.approval_request_type` enum with 3 new values: `customer_credit_activate`, `customer_credit_limit_change`, `customer_credit_deactivate`
+  - Standalone `ALTER TYPE ... ADD VALUE IF NOT EXISTS` statements (no `BEGIN`/`COMMIT` — required for `ADD VALUE` in older PG)
+  - **Slot:** `000009`, following T1 at `000008`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with new entry after T1
+- **Apply status: NOT YET APPLIED** — same IPv6-only DB connectivity block as previous migrations. Founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000009_approval_types_tempo.sql` via Supabase Studio SQL editor. Migration is idempotent (`IF NOT EXISTS`) — safe to paste and run.
+- **Verification query (run after apply):**
+  ```sql
+  SELECT unnest(enum_range(NULL::public.approval_request_type)) AS value;
+  -- Expected: list includes customer_credit_activate, customer_credit_limit_change, customer_credit_deactivate
+  ```
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 1: customers tempo fields migration — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000008_customers_tempo_fields.sql`
