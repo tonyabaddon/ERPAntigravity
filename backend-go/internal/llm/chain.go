@@ -1,17 +1,36 @@
 package llm
 
+import "github.com/username/sinar-elektrik-backend/internal/assets"
+
 // DefaultCalistaAgent returns Calista's Phase 1A runtime config. All 10 models
 // are OpenRouter free-tier as of June 2026 (spec §1, §6.3 mockup). When one
 // rate-limits, the router falls through to the next; if all are exhausted
 // in a single conversation, the engine escalates to admin.
 //
-// The order is locked from the spec's "Pricing v2" decision (no paid fallback
-// in Phase 1A). Re-order or substitute by editing this slice; the router
-// reads it once per Call so changes apply on next request.
+// SystemPrompt uses the embedded `assets.CalistaSystemPrompt` (~1,100 lines —
+// full Garindo Jaya Panel persona + SOP + phase-by-phase rules) so the
+// OpenRouter path has BEHAVIORAL PARITY with the legacy direct-Gemini path,
+// which loads the same string into `gemini.NewClient(...)`'s SystemInstruction.
+// Spec §12 success criterion: "tenant #1 cannot distinguish from Gemini
+// baseline" — only achievable when both paths see the same persona. The
+// abbreviated inline `calistaSystemPrompt` below is kept ONLY as fallback
+// for tests that want a tiny deterministic string.
+//
+// The model order is locked from the spec's "Pricing v2" decision (no paid
+// fallback in Phase 1A). Re-order or substitute by editing this slice; the
+// router reads it once per Call so changes apply on next request.
 func DefaultCalistaAgent() AgentConfig {
+	prompt := assets.CalistaSystemPrompt
+	if prompt == "" {
+		// Embedded asset failed to load — fall back to the abbreviated prompt
+		// so the system still functions. This should never happen in practice
+		// (the embed directive resolves at compile time), but a defensive
+		// guard avoids a silent empty-prompt regression if assets.go is broken.
+		prompt = calistaSystemPrompt
+	}
 	return AgentConfig{
 		Name:         "Calista",
-		SystemPrompt: calistaSystemPrompt,
+		SystemPrompt: prompt,
 		Chain: []ModelSpec{
 			{Slug: "google/gemma-4-31b", CooldownMinutes: 60},
 			{Slug: "qwen/qwen3-next-80b-a3b-instruct", CooldownMinutes: 60},
