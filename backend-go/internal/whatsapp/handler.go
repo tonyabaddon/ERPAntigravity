@@ -257,9 +257,9 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 		}
 	})
 
-	if result.GeminiError != nil {
-		log.Printf("[HANDLER] Gemini failed after all retries for %s: %v", senderPhone, result.GeminiError)
-		h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED: Gemini failed after 10 retries")
+	if result.LLMError != nil {
+		log.Printf("[HANDLER] LLM failed after all retries for %s: %v", senderPhone, result.LLMError)
+		h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED: LLM failed after 10 retries")
 		if dbErr := h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin); dbErr != nil {
 			log.Printf("[HANDLER] UpdateConversationState (escalation) error: %v", dbErr)
 		}
