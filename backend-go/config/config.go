@@ -13,6 +13,10 @@ type Config struct {
 	Port               string
 	SupabaseURL        string
 	SupabaseServiceKey string
+
+	// Phase 1A — Calista OpenRouter wiring
+	OpenRouterAPIKey string // OPENROUTER_API_KEY
+	EnableOpenRouter bool   // ENABLE_OPENROUTER (default false in Phase 1A ship; flip to true after shadow soak)
 }
 
 func Load() *Config {
@@ -25,6 +29,8 @@ func Load() *Config {
 		Port:               getEnv("PORT", "8080"),
 		SupabaseURL:        getEnv("SUPABASE_URL", "https://ekhhojaezdfjfwuxyjkl.supabase.co"),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),
+		OpenRouterAPIKey:   os.Getenv("OPENROUTER_API_KEY"),
+		EnableOpenRouter:   os.Getenv("ENABLE_OPENROUTER") == "true",
 	}
 }
 

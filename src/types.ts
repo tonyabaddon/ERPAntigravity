@@ -340,6 +340,7 @@ export interface DbCompanySettings {
   email: string;
   logo_url?: string | null;
   npwp?: string | null;
+  opname_require_witness?: boolean;
   updated_at: string;
 }
 
@@ -584,9 +585,9 @@ export interface OpnameCount {
   sessionId: number;
   sku: string;
   warehouse: 'atas' | 'bawah';
-  systemQtySnapshot: number;
+  systemQtySnapshot: number | null;
   countedQty?: number | null;
-  variance: number; // generated
+  variance: number | null; // generated
   varianceValue: number;
 }
 

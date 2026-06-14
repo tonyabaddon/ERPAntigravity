@@ -8,20 +8,20 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
-type mockGemini struct{ response string }
+type mockLLM struct{ response string }
 
-func (m *mockGemini) GenerateReply(_ context.Context, _ string) (string, error) {
-	return m.response, nil
+func (m *mockLLM) Complete(_ context.Context, _ string, _ CallOpts) (*LLMResult, error) {
+	return &LLMResult{Body: m.response, ModelUsed: "mock"}, nil
 }
 
-type mockGeminiError struct{ err error }
+type mockLLMError struct{ err error }
 
-func (m *mockGeminiError) GenerateReply(_ context.Context, _ string) (string, error) {
-	return "", m.err
+func (m *mockLLMError) Complete(_ context.Context, _ string, _ CallOpts) (*LLMResult, error) {
+	return nil, m.err
 }
 
 func newTestMachine(response string) *Machine {
-	return &Machine{gemini: &mockGemini{response: response}}
+	return &Machine{llm: &mockLLM{response: response}}
 }
 
 func TestProcessGreeting(t *testing.T) {
@@ -187,15 +187,15 @@ func TestProcessBookedStateReturnsEmptyReply(t *testing.T) {
 	}
 }
 
-func TestProcessGeminiError_SetsGeminiErrorField(t *testing.T) {
-	m := &Machine{gemini: &mockGeminiError{err: fmt.Errorf("context deadline exceeded")}}
+func TestProcessLLMError_SetsLLMErrorField(t *testing.T) {
+	m := &Machine{llm: &mockLLMError{err: fmt.Errorf("context deadline exceeded")}}
 	conv := &models.Conversation{State: models.StateGreeting, Language: "id"}
 	result, err := m.Process(context.Background(), conv, "halo", nil, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.GeminiError == nil {
-		t.Error("expected GeminiError to be set when Gemini call fails")
+	if result.LLMError == nil {
+		t.Error("expected LLMError to be set when LLM call fails")
 	}
 	if result.Reply == "" {
 		t.Error("expected fallback reply to still be populated")

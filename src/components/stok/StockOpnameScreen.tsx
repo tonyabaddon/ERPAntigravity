@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import {
+  fetchOpnameAuditLog,
   listOpnameSessions,
   startOpnameSession,
   supabase,
 } from '../../lib/supabaseClient';
+import type { OpnameAuditEntry } from '../../lib/supabaseClient';
 import type {
   OpnameSession,
   DbAdminUser,
@@ -33,7 +35,7 @@ const TYPE_LABEL: Record<OpnameType, string> = {
 
 const STATUS_LABEL: Record<OpnameSession['status'], string> = {
   in_progress: 'Berlangsung',
-  pending_owner: 'Menunggu Owner',
+  pending_owner: 'Menunggu Persetujuan',
   committed: 'Selesai',
   rejected: 'Ditolak',
 };
@@ -70,6 +72,34 @@ export default function StockOpnameScreen({
   const [opnameType, setOpnameType] = useState<OpnameType>('full');
   const [witnessId, setWitnessId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [requireWitness, setRequireWitness] = useState<boolean>(true);
+  const [auditEntries, setAuditEntries] = useState<OpnameAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState<boolean>(false);
+
+  // Fetch opname_require_witness setting at mount. Default TRUE (MSME-safe).
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('company_settings')
+      .select('opname_require_witness')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {
+          setRequireWitness((data as { opname_require_witness: boolean }).opname_require_witness);
+        }
+      });
+  }, []);
+
+  // Owner-only: fetch audit log entries on mount (and when sessions list refreshes).
+  useEffect(() => {
+    if (currentUser?.role !== 'Owner' || !supabase) return;
+    setAuditLoading(true);
+    fetchOpnameAuditLog(7)
+      .then(setAuditEntries)
+      .catch(err => console.error('audit fetch error:', err))
+      .finally(() => setAuditLoading(false));
+  }, [currentUser?.role, sessions.length]);
 
   const refresh = async () => {
     if (!supabase) return;
@@ -124,11 +154,11 @@ export default function StockOpnameScreen({
 
   const onStart = async () => {
     if (!currentUser) return;
-    if (!witnessId) {
+    if (requireWitness && !witnessId) {
       showToast('Pilih saksi terlebih dahulu', 'warning');
       return;
     }
-    if (witnessId === currentUser.id) {
+    if (requireWitness && witnessId === currentUser.id) {
       showToast('Saksi tidak boleh sama dengan penghitung', 'warning');
       return;
     }
@@ -138,7 +168,7 @@ export default function StockOpnameScreen({
         opname_type: opnameType,
         scope_payload: {},
         counted_by: currentUser.id,
-        witnessed_by: witnessId,
+        witnessed_by: requireWitness ? witnessId : null,
       });
       showToast('Sesi opname dimulai', 'success');
       setShowStartModal(false);
@@ -171,7 +201,7 @@ export default function StockOpnameScreen({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Stok Opname</h1>
           <p className="text-xs text-slate-500">
-            Penghitung dan saksi harus orang berbeda. Owner sign-off untuk commit.
+            Penghitung dan saksi harus orang berbeda. Owner sign-off untuk persetujuan.
           </p>
         </div>
         <button
@@ -210,7 +240,7 @@ export default function StockOpnameScreen({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Total Varians</p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
                 <p className="font-bold text-lg text-slate-900">
                   {formatRpDelta(activeSession.varianceTotalValue)}
                 </p>
@@ -259,7 +289,7 @@ export default function StockOpnameScreen({
                       {STATUS_LABEL[s.status]}
                     </span>
                     <p className="text-xs text-slate-600 mt-1">
-                      Varians {formatRpDelta(s.varianceTotalValue)}
+                      Selisih {formatRpDelta(s.varianceTotalValue)}
                     </p>
                   </div>
                 </div>
@@ -268,6 +298,63 @@ export default function StockOpnameScreen({
           </ul>
         )}
       </section>
+
+      {/* Catatan Audit Opname (Owner only) */}
+      {currentUser?.role === 'Owner' && (
+        <section className="space-y-2">
+          <h2 className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+            Catatan Audit Opname (7 hari terakhir)
+          </h2>
+          {auditLoading ? (
+            <p className="text-sm text-slate-500">Memuat…</p>
+          ) : auditEntries.length === 0 ? (
+            <p className="text-sm text-slate-500">Belum ada catatan audit.</p>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-2 px-3">Waktu</th>
+                    <th className="text-left py-2 px-3">Sesi</th>
+                    <th className="text-left py-2 px-3">Penghitung</th>
+                    <th className="text-left py-2 px-3">Saksi</th>
+                    <th className="text-right py-2 px-3">Total Selisih</th>
+                    <th className="text-left py-2 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditEntries.map(e => (
+                    <tr key={e.id} className="border-b border-slate-100 last:border-b-0">
+                      <td className="py-2 px-3 text-xs text-slate-600">{formatDateTime(e.createdAt)}</td>
+                      <td className="py-2 px-3 font-mono text-xs">#{e.sessionId}</td>
+                      <td className="py-2 px-3">{e.counterName ?? '—'}</td>
+                      <td className="py-2 px-3">{e.witnessName ?? <span className="text-xs italic text-slate-400">(solo)</span>}</td>
+                      <td className={`py-2 px-3 text-right font-semibold ${
+                        e.totalVarianceValue < 0 ? 'text-rose-600'
+                        : e.totalVarianceValue > 0 ? 'text-emerald-700'
+                        : 'text-slate-400'
+                      }`}>
+                        {formatRpDelta(e.totalVarianceValue)}
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${
+                          e.eventType === 'opname_auto_commit' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : e.eventType === 'opname_owner_commit' ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-rose-100 text-rose-800 border-rose-200'
+                        }`}>
+                          {e.eventType === 'opname_auto_commit' ? 'Selesai Otomatis'
+                            : e.eventType === 'opname_owner_commit' ? 'Disetujui Owner'
+                            : 'Ditolak'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Start session modal */}
       {showStartModal && (
@@ -302,23 +389,25 @@ export default function StockOpnameScreen({
               </p>
             </div>
 
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">
-                Saksi (wajib, bukan penghitung)
-              </label>
-              <select
-                value={witnessId}
-                onChange={(e) => setWitnessId(e.target.value)}
-                className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm"
-              >
-                <option value="">— Pilih Saksi —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {requireWitness && (
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">
+                  Saksi (wajib, bukan penghitung)
+                </label>
+                <select
+                  value={witnessId}
+                  onChange={(e) => setWitnessId(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm"
+                >
+                  <option value="">— Pilih Saksi —</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="rounded bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
               Penghitung: <b>{currentUser?.name ?? '—'}</b>. Sesi dikunci ke Anda
@@ -334,7 +423,7 @@ export default function StockOpnameScreen({
               </button>
               <button
                 onClick={onStart}
-                disabled={submitting || !witnessId}
+                disabled={submitting || (requireWitness && !witnessId)}
                 className="flex-1 py-2 bg-emerald-600 text-white rounded-full text-sm disabled:opacity-50"
               >
                 {submitting ? 'Memulai…' : 'Mulai Sesi'}

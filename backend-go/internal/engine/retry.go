@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 var retrySleep = time.Sleep
 
 // RetryProcess calls machine.Process up to maxAttempts times. Between attempts it
-// sleeps with exponential backoff (2s, 4s, 8s, …). If the Gemini error is a
+// sleeps with exponential backoff (2s, 4s, 8s, …). If the LLM error is a
 // rate-limit (HTTP 429 / RESOURCE_EXHAUSTED), it bails out immediately —
 // per-minute quota does not reset within the retry window, so further attempts
 // would only burn budget without recovering.
@@ -20,7 +21,7 @@ var retrySleep = time.Sleep
 // onFirstFail is called exactly once when attempt 1 fails — use it to send
 // a holding message to the customer.
 // Returns the first successful ProcessResult, or the last failed result if all
-// attempts are exhausted (GeminiError will be non-nil in that case).
+// attempts are exhausted (LLMError will be non-nil in that case).
 func RetryProcess(
 	ctx context.Context,
 	machine *Machine,
@@ -34,13 +35,20 @@ func RetryProcess(
 	var result *ProcessResult
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		result, _ = machine.Process(ctx, conv, text, history, stockContext) // Process never returns non-nil error
-		if result.GeminiError == nil {
+		if result.LLMError == nil {
 			return result
 		}
 		if attempt == 1 {
 			onFirstFail()
 		}
-		if isRateLimitError(result.GeminiError) {
+		// ChainExhausted means the router already tried all 10 free models and
+		// gave up — retrying would re-run the same exhausted chain. Bail out
+		// immediately so the handler can escalate to admin without waiting
+		// for the full 51s exponential backoff (2+4+8+16+...).
+		if errors.Is(result.LLMError, ErrChainExhausted) {
+			return result
+		}
+		if isRateLimitError(result.LLMError) {
 			return result
 		}
 		if attempt < maxAttempts {

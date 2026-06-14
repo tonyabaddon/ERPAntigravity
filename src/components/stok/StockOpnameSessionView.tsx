@@ -35,7 +35,7 @@ interface SkuMeta {
 
 const STATUS_LABEL: Record<OpnameSession['status'], string> = {
   in_progress: 'Berlangsung',
-  pending_owner: 'Menunggu Owner',
+  pending_owner: 'Menunggu Persetujuan',
   committed: 'Selesai',
   rejected: 'Ditolak',
 };
@@ -141,13 +141,36 @@ export default function StockOpnameSessionView({
     return adminNames[uid] ?? uid.slice(0, 8);
   };
 
+  const [requireWitness, setRequireWitness] = useState<boolean>(true);
+
+  // Fetch opname_require_witness setting at mount.
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('company_settings')
+      .select('opname_require_witness')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {
+          setRequireWitness((data as { opname_require_witness: boolean }).opname_require_witness);
+        }
+      });
+  }, []);
+
   const isCounter = !!session && !!currentUser && currentUser.id === session.countedByUserId;
-  const isWitness = !!session && !!currentUser && currentUser.id === session.witnessedByUserId;
+  const isWitness = !!session && !!currentUser
+    && !!session.witnessedByUserId
+    && currentUser.id === session.witnessedByUserId;
   const isEditable = !!session && session.status === 'in_progress'
-    && (isCounter || isWitness);
+    && (isCounter || isWitness || (!requireWitness && isCounter));
   const witnessAcked = !!session?.witnessAcknowledgedAt;
   const canAckWitness = !!session && isWitness && !witnessAcked && session.status === 'in_progress';
-  const canSubmit = !!session && isCounter && witnessAcked && session.status === 'in_progress';
+  // Submit allowed when:
+  //   - witness required: counter + witness acked
+  //   - witness optional: counter alone (no ack required)
+  const canSubmit = !!session && isCounter && session.status === 'in_progress'
+    && (requireWitness ? witnessAcked : true);
 
   const filteredCounts = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -172,7 +195,22 @@ export default function StockOpnameSessionView({
 
   const filledCount = counts.filter((c) => c.countedQty !== null && c.countedQty !== undefined).length;
   const totalCount = counts.length;
-  const totalVariance = counts.reduce((sum, c) => sum + (c.varianceValue || 0), 0);
+  const totalVariance = counts.reduce((sum, c) => sum + (c.varianceValue ?? 0), 0);
+
+  // Blind-count: non-Owner roles see input field only, no Sistem/Selisih,
+  // during the input window (status='in_progress'). Backend RPC also masks
+  // these fields server-side as defense in depth.
+  const isOwner = currentUser?.role === 'Owner';
+  const isBlindMode = session?.status === 'in_progress' && !isOwner;
+
+  // Re-ack required banner: counter edited a count after witness ack, so
+  // witness_acknowledged_at was cleared by record_opname_count. Surface a
+  // visible cue so witness knows to ack again before submit unlocks.
+  const [prevAcked, setPrevAcked] = useState(false);
+  useEffect(() => {
+    if (session?.witnessAcknowledgedAt) setPrevAcked(true);
+  }, [session?.witnessAcknowledgedAt]);
+  const ackInvalidated = prevAcked && !session?.witnessAcknowledgedAt;
 
   const onBlurCount = async (c: OpnameCount) => {
     if (!currentUser) return;
@@ -224,8 +262,12 @@ export default function StockOpnameSessionView({
     }
     setBusy('submit');
     try {
-      await submitOpnameForOwner(sessionId, currentUser.id);
-      showToast('Sesi opname dikirim ke Owner untuk commit', 'success');
+      const result = await submitOpnameForOwner(sessionId, currentUser.id);
+      if (result.auto) {
+        showToast('Sesi selesai — semua cocok dengan sistem (Selesai Otomatis)', 'success');
+      } else {
+        showToast('Sesi dikirim ke Owner untuk persetujuan', 'success');
+      }
       onClose();
     } catch (e) {
       showToast(e instanceof Error ? e.message : String(e), 'warning');
@@ -273,7 +315,9 @@ export default function StockOpnameSessionView({
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Penghitung: <b>{isCounter ? `${currentUser?.name} (Anda)` : resolveName(session.countedByUserId)}</b>
-            {' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : resolveName(session.witnessedByUserId)}</b>
+            {session.witnessedByUserId && (
+              <>{' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : resolveName(session.witnessedByUserId)}</b></>
+            )}
             {' · '}Mulai {formatDateTime(session.startedAt)}
           </p>
           {witnessAcked && session.witnessAcknowledgedAt && (
@@ -283,11 +327,22 @@ export default function StockOpnameSessionView({
           )}
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Total Varians</p>
-          <p className={`font-bold text-xl ${totalVariance < 0 ? 'text-rose-600' : totalVariance > 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
-            {formatRpDelta(totalVariance)}
-          </p>
-          <p className="text-xs text-slate-500 mt-1">Diisi: {filledCount}/{totalCount}</p>
+          {isBlindMode ? (
+            <>
+              <span className="inline-block px-2 py-1 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-300">
+                🔒 Tanpa Lihat Sistem
+              </span>
+              <p className="text-xs text-slate-500 mt-2">Diisi: {filledCount}/{totalCount}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
+              <p className={`font-bold text-xl ${totalVariance < 0 ? 'text-rose-600' : totalVariance > 0 ? 'text-emerald-700' : 'text-slate-900'}`}>
+                {formatRpDelta(totalVariance)}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">Diisi: {filledCount}/{totalCount}</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -330,6 +385,21 @@ export default function StockOpnameSessionView({
                     {skuMeta[sku]?.name ?? '—'}
                   </span>
                 </div>
+                {/* Column header row — adapts between blind 3-6-3 and full 2-3-3-4 layouts */}
+                {isBlindMode ? (
+                  <div className="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+                    <div className="col-span-3">Gudang</div>
+                    <div className="col-span-6 text-right pr-3">Stok Fisik (yang Anda hitung)</div>
+                    <div className="col-span-3"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
+                    <div className="col-span-2">Gudang</div>
+                    <div className="col-span-3 text-right">Sistem</div>
+                    <div className="col-span-3 text-right">Fisik (input)</div>
+                    <div className="col-span-4 text-right">Selisih</div>
+                  </div>
+                )}
                 {/* Iterate over the warehouse keys actually present for this SKU (supports N warehouses) */}
                 {groupEntries.map(([wh, c]) => {
                   const key = `${c.sku}-${c.warehouse}`;
@@ -337,16 +407,36 @@ export default function StockOpnameSessionView({
                   const inputValue = draftValue !== undefined
                     ? draftValue
                     : (c.countedQty !== null && c.countedQty !== undefined ? String(c.countedQty) : '');
-                  return (
+                  return isBlindMode ? (
                     <div
                       key={key}
-                      className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm first:border-t-0"
+                      className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm"
+                    >
+                      <div className="col-span-3 text-xs uppercase tracking-wide text-slate-500">
+                        {warehouseName(wh)}
+                      </div>
+                      <div className="col-span-6 text-right">
+                        <input
+                          type="number"
+                          value={inputValue}
+                          onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+                          onBlur={() => onBlurCount(c)}
+                          disabled={!isEditable || busy === key}
+                          className="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm disabled:bg-slate-50"
+                        />
+                      </div>
+                      <div className="col-span-3"></div>
+                    </div>
+                  ) : (
+                    <div
+                      key={key}
+                      className="grid grid-cols-12 px-3 py-2 items-center border-t border-slate-100 text-sm"
                     >
                       <div className="col-span-2 text-xs uppercase tracking-wide text-slate-500">
                         {warehouseName(wh)}
                       </div>
-                      <div className="col-span-3 text-xs text-slate-500">
-                        Sistem <span className="text-slate-800 font-medium">{c.systemQtySnapshot}</span>
+                      <div className="col-span-3 text-right text-slate-800 font-medium">
+                        {c.systemQtySnapshot ?? '—'}
                       </div>
                       <div className="col-span-3 text-right">
                         <input
@@ -355,19 +445,25 @@ export default function StockOpnameSessionView({
                           onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
                           onBlur={() => onBlurCount(c)}
                           disabled={!isEditable || busy === key}
-                          className="border border-slate-300 rounded px-2 py-1 w-24 text-right text-sm disabled:bg-slate-50"
+                          className="border border-slate-300 rounded px-2 py-1 w-20 text-right text-sm disabled:bg-slate-50"
                         />
                       </div>
                       <div
                         className={`col-span-4 text-right font-semibold ${
-                          c.varianceValue < 0 ? 'text-rose-600'
-                          : c.varianceValue > 0 ? 'text-emerald-700'
+                          (c.varianceValue ?? 0) < 0 ? 'text-rose-600'
+                          : (c.varianceValue ?? 0) > 0 ? 'text-emerald-700'
                           : 'text-slate-400'
                         }`}
                       >
                         {c.countedQty !== null && c.countedQty !== undefined
-                          ? formatRpDelta(c.varianceValue)
-                          : '—'}
+                          ? (
+                            <>
+                              {c.variance ?? 0}{' '}
+                              <span className="text-xs font-normal">({formatRpDelta(c.varianceValue ?? 0)})</span>
+                            </>
+                          )
+                          : <span className="text-xs italic">belum dihitung</span>
+                        }
                       </div>
                     </div>
                   );
@@ -378,23 +474,33 @@ export default function StockOpnameSessionView({
         </div>
       )}
 
+      {/* Re-ack banner — surfaces after counter edits a count following an existing
+          witness ack. Hidden when witness is disabled (no ack to invalidate). */}
+      {requireWitness && session.status === 'in_progress' && ackInvalidated && (
+        <div className="rounded bg-amber-50 border border-amber-300 px-3 py-2 text-sm text-amber-900">
+          Counter mengubah angka — saksi perlu acknowledge ulang sebelum submit.
+        </div>
+      )}
+
       {/* Action bar */}
       {session.status === 'in_progress' && (
         <div className="flex flex-wrap gap-2 items-center">
-          <button
-            onClick={onAcknowledge}
-            disabled={!canAckWitness || busy === 'ack'}
-            className="py-2 px-4 border border-slate-300 rounded-full text-sm disabled:opacity-50"
-            title={
-              !isWitness ? 'Hanya saksi yang dapat acknowledge'
-              : witnessAcked ? 'Saksi sudah acknowledge'
-              : ''
-            }
-          >
-            {witnessAcked
-              ? `Saksi ✓ acknowledged`
-              : busy === 'ack' ? 'Memproses…' : 'Saya Saksi (Acknowledge)'}
-          </button>
+          {requireWitness && (
+            <button
+              onClick={onAcknowledge}
+              disabled={!canAckWitness || busy === 'ack'}
+              className="py-2 px-4 border border-slate-300 rounded-full text-sm disabled:opacity-50"
+              title={
+                !isWitness ? 'Hanya saksi yang dapat acknowledge'
+                : witnessAcked ? 'Saksi sudah acknowledge'
+                : ''
+              }
+            >
+              {witnessAcked
+                ? `Saksi ✓ acknowledged`
+                : busy === 'ack' ? 'Memproses…' : 'Saya Saksi (Acknowledge)'}
+            </button>
+          )}
           <span className="flex-1" />
           <button
             onClick={onSubmit}
@@ -406,19 +512,19 @@ export default function StockOpnameSessionView({
               : ''
             }
           >
-            {busy === 'submit' ? 'Mengirim…' : 'Kirim ke Owner untuk Commit'}
+            {busy === 'submit' ? 'Mengirim…' : 'Kirim ke Owner untuk Disetujui'}
           </button>
         </div>
       )}
 
       {session.status === 'pending_owner' && (
         <div className="rounded bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
-          Sesi ini sudah dikirim ke Owner. Menunggu commit.
+          Sesi ini sudah dikirim ke Owner. Menunggu persetujuan.
         </div>
       )}
       {session.status === 'committed' && (
         <div className="rounded bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-800">
-          Sesi sudah di-commit oleh Owner.
+          Sesi sudah disetujui Owner.
         </div>
       )}
       {session.status === 'rejected' && (

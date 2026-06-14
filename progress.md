@@ -1,5 +1,485 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 1: customers tempo fields migration — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000008_customers_tempo_fields.sql`
+  - Adds 5 columns to `public.customers`: `allows_tempo`, `term_days`, `credit_limit`, `tempo_activated_at`, `tempo_activated_by`
+  - Partial index `idx_customers_allows_tempo` on `allows_tempo = true`
+  - Column comments as per spec §4.1
+  - **Slot bump:** Originally planned as `000001`; bumped to `000008` because slots `000001`–`000007` were claimed by parallel opname migrations on the same date. Plan file note added inline.
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with new entry (with inline comment block)
+- **Apply status: NOT YET APPLIED** — same IPv6-only DB connectivity block as opname migrations (see 2026-06-14 Stok Opname entry). Direct TCP to `db.ekhhojaezdfjfwuxyjkl.supabase.co:5432` has no IPv4 A record; pooler endpoints reject the project tenant name.
+- **Action needed from founder:** Apply `20260614000008_customers_tempo_fields.sql` via Supabase Studio SQL editor (same path as previous blocked migrations). Migration is idempotent (`IF NOT EXISTS`) — safe to paste and run.
+- **Verification query (run after apply):**
+  ```sql
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name='customers'
+  AND column_name IN ('allows_tempo','term_days','credit_limit','tempo_activated_at','tempo_activated_by')
+  ORDER BY column_name;
+  -- Expected: 5 rows
+
+  SELECT indexname FROM pg_indexes WHERE indexname = 'idx_customers_allows_tempo';
+  -- Expected: 1 row
+  ```
+- **Commit:** see below
+
+## 2026-06-14 — Calista Phase 1A: post-review fixes C.2 + I.3 + I.4 + M.1 + security — DONE
+
+- **What:** Closed the post-review action items the final reviewer surfaced as needed before `ENABLE_OPENROUTER=true` flip. C.2 (tone seeding wire-up) was the substantive one — pillar 2 of 3 of perceptual continuity (§5.6 #4). I.3 + I.4 + M.1 are short pragmatic fixes. I.1 (StateBoundary signal) explicitly deferred to Phase 1B because the clean implementation needs a new column on `conversations` to track recent state transitions.
+- **Commits (apply order on `feat/calista-phase-1a`):**
+  - `8613ff5` `chore(security): gitignore .env files` — `backend-go/.env` was world-readable mode 644 AND NOT gitignored. Key never committed (`git log -p | grep sk-or-v1- → 0`). `chmod 600` applied, gitignore updated.
+  - `a663d0b` `feat(llm): I.3+I.4 — 401 fast-fail boot probe + OpenRouter attribution headers` — `authError` type + `IsAuth(err)` predicate; router short-circuits on auth errors without cooling models; main.go runs 1-token probe at startup and `log.Fatalf` on 401; `HTTP-Referer: https://calista.vosi.id` + `X-Title: Calista` headers for OpenRouter attribution.
+  - `2f1b698` `feat(engine): M.1 — retry short-circuits on ChainExhausted error` — saves 51s of exponential backoff in chain-exhausted case.
+  - `8d2284c` `feat(llm): C.2 — wire tone seeding through router` — PinStore extended with LoadTone/SaveTone; CalistaStore implements via `SELECT first_reply_tone::text` + `UPDATE first_reply_tone = $1::jsonb`; Router injects tone hint as system message before LLM call when tone exists, extracts and persists tone on first successful reply (first-write-wins). Two new tests verify call shape + non-overwrite semantics.
+- **I.1 deferred:** clean implementation needs `conversations.last_state_change_at` or `state_just_changed` to be set by handler on persisting state transitions. Heuristic options (ClarificationRound=0, len(history)=0) are wrong for different reasons. Accept the cost: when a conversation forced-swaps off primary, it now never returns even if primary recovers — increases escalation rate under sustained chain pressure. Phase 1B scope.
+- **Phase 1A criticals final state:**
+  - ✅ C.1 (persona prompt parity) — fixed inline before this push
+  - ✅ C.2 (tone seeding) — fixed this push
+  - ✅ I.3 (401 fast-fail) — fixed this push
+  - ✅ I.4 (attribution headers) — fixed this push
+  - ✅ M.1 (retry short-circuit) — fixed this push
+  - ⏭️ I.1 (StateBoundary signal) — deferred to Phase 1B
+  - ⏭️ I.2 (inbound tripwires from handler) — Phase 1B (handler routing ships then)
+- **Test status:** `go build ./...` clean. `go vet ./...` clean. All Calista-related packages PASS. `internal/db` failures are `dial tcp 127.0.0.1:5432: connect: refused` (no local Postgres) — environmental, unrelated.
+- **Founder action items remaining:**
+  - [ ] **Rotate Supabase project access token** (`sbp_cb539...`) shared in chat at https://supabase.com/dashboard/account/tokens — same security pattern as the OpenRouter key
+  - [ ] Apply 3 migrations: `supabase login` then `supabase db push` from your local CLI (no token paste)
+  - [ ] Verify Gemini fallback: `ENABLE_OPENROUTER=false go run .` → log shows `[CALISTA] OpenRouter DISABLED`
+  - [ ] Verify OpenRouter probe + chain: `ENABLE_OPENROUTER=true go run .` → log shows `[CALISTA] OpenRouter auth probe OK` then `[CALISTA] OpenRouter chain ENABLED`
+  - [ ] Verify telemetry rows: `psql -c "SELECT model_slug, status, latency_ms FROM llm_calls ORDER BY created_at DESC LIMIT 5"`
+  - [ ] Verify pin + tone: `psql -c "SELECT pinned_model_slug, swap_count, first_reply_tone IS NOT NULL AS has_tone FROM conversations ORDER BY updated_at DESC LIMIT 3"`
+  - [ ] Shadow-soak per spec §8 for ≥3 days before flipping `ENABLE_OPENROUTER=true` as default
+- **Branch:** `feat/calista-phase-1a` — ready for founder smoke test (Task 20).
+
+## 2026-06-14 — Calista Phase 1A: implementation complete (19/20 tasks) — AWAITING FOUNDER SMOKE TEST
+
+- **What:** Full Phase 1A implementation via subagent-driven-development. 19 of 20 plan tasks landed; Task 20 is founder-driven manual smoke test against real OpenRouter (deferred until founder is ready). Branch `feat/calista-phase-1a`.
+- **Delivered (commits ascending):**
+  - 3 migrations (file-only): `llm_calls` (telemetry), `model_cooldowns` (persistence), `conversations` ALTER (pinning columns). Founder applies via `supabase db push` after review.
+  - New package `backend-go/internal/llm/`: `models.go` (ChainExhaustedError, ModelSpec, AgentConfig, CallOpts, Response), `chain.go` (10 free-tier models + persona via embedded `assets.CalistaSystemPrompt`), `openrouter.go` (OpenAI-compatible HTTP client + 429/5xx/timeout classifiers), `cooldown.go` (in-memory + persistence + 60→90→120→240 min exponential bump cap 4h), `pinning.go` (sticky-pin manager + hard 2-swap cap → ErrSwapCapExceeded), `tripwire.go` (7 heuristics across inbound + outbound), `tone.go` (ExtractTone + BuildToneHint — built and tested but **NOT yet wired in router**, see C.2 below), `telemetry.go` (Recorder + status/tier constants mirroring DB CHECK constraints), `router.go` (orchestrator: routing decision 4 cases, sticky pinning, fallback, cooldown, telemetry, tripwire, 8s/15s budget), `engine_adapter.go` (Router → engine.LLMClient), `testing.go` (exported stub stores for cross-package tests).
+  - New file `backend-go/internal/db/calista.go`: PostgreSQL implementation of CooldownStore + PinStore + TelemetryStore via lib/pq.
+  - Engine refactor: `GeminiClient` → `LLMClient` interface, `CallOpts`/`LLMResult` types, `ChainExhausted` flag, `tolerantParseJSON` wrapping all 7 `Parse*` functions, `Unpin` on terminal states (BOOKED/COMPLETED/CANCELLED/ESCALATED_*).
+  - Adapters: `gemini.EngineAdapter` for ENABLE_OPENROUTER=false emergency fallback; `llm.EngineAdapter` exposes Router as engine.LLMClient.
+  - `main.go` wiring + 2 new config fields (`OpenRouterAPIKey`, `EnableOpenRouter`) — picks llm.Router when `EnableOpenRouter && OpenRouterAPIKey != ""`, else gemini.EngineAdapter. Logs `[CALISTA] OpenRouter chain ENABLED` / `DISABLED` on boot.
+  - Downstream rename to LLMError: `internal/whatsapp/handler.go`, `internal/engine/retry.go`.
+  - Import-cycle fix: hoisted `ErrChainExhausted` sentinel to engine package, re-exported from llm package — surfaced when Task 17 needed llm→engine for the adapter.
+  - End-to-end integration test `internal/engine/engine_router_test.go`: happy path + chain-exhausted → StateEscalatedAdmin (using `package engine_test` external-test-package pattern to keep cycle-free).
+- **Plan deviations (all justified by tests-as-spec):**
+  - Cooldown formula: plan had inconsistent linear vs table formula vs test; implementer chose table `{0,30,60,180}` matching the docstring + test. Plan file patched.
+  - Router `WasForcedSwap` semantics: plan code computed from filtered candidates list; implementer snapshot the actual pin via `pins.Get` upfront. Plan deviation justified — tests didn't pass under plan-as-written.
+  - Router StateBoundary IsHealthy gate: plan required `IsHealthy(primary)`, but the cooldown-from-turn-1 made the test fail; implementer dropped the gate (the whole point of StateBoundary is escape from stale cooldown). Justified deviation.
+  - Engine integration test package: `package engine` → `package engine_test` to break the cycle introduced by `engine→llm` re-export and `llm→engine` adapter.
+- **Final code reviewer findings (action items for founder before flipping ENABLE_OPENROUTER=true):**
+  - **CRITICAL fixed inline (C.1):** OpenRouter path now uses embedded `assets.CalistaSystemPrompt` (~1,100 lines: full Garindo persona + SOP) for behavioral parity with gemini.NewClient. Without this, shadow-soak would surface persona regression. Commit `b68d481`.
+  - **CRITICAL deferred (C.2):** Tone seeding (`ExtractTone`/`BuildToneHint`/`MarshalToneJSON` + `conversations.first_reply_tone` jsonb column) is built and unit-tested but never called from production. Pillar 2 of 3 of spec §5.6 perceptual continuity. Recommend a Phase 1A-bis follow-up commit (~50 LOC: wire router to extract on first success, persist via PinStore extension, inject via BuildToneHint on subsequent calls).
+  - **IMPORTANT (I.1) deferred:** StateBoundary signal from engine never set to true — Case 2 of router routing decision is dead code in prod. Plan-acknowledged TODO. Increases escalation rate under sustained chain pressure.
+  - **IMPORTANT (I.2) deferred:** Inbound tripwires (opt-out, jailbreak, AI-question) — exported + tested but no handler caller. Phase 1B scope per spec §5.3 (handler routing).
+  - **IMPORTANT (I.3) deferred:** Invalid `OPENROUTER_API_KEY` triggers silent universal escalation. Recommend adding `IsAuth(err)` classifier + boot probe to fail-fast on 401.
+  - **IMPORTANT (I.4) deferred:** Missing `HTTP-Referer` + `X-Title` headers — OpenRouter recommends these for attribution + higher free-tier limits.
+  - **MINOR (M.1):** `retry.go` doesn't short-circuit on ChainExhausted — wastes ~51s retry latency. Add `errors.Is(err, ErrChainExhausted)` guard.
+- **Test status:** `go build ./...` clean. `go vet ./...` clean. All engine + llm + whatsapp + gemini tests PASS. internal/db tests fail with `dial tcp ... connect: refused` — environmental (no local Postgres), unrelated to Phase 1A.
+- **Code metrics:** ~2,200 LOC across new llm package (impl + tests), ~145 LOC new db/calista.go, ~85 LOC engine integration test, plus targeted edits to machine.go (~50 LOC delta), parser.go (~40 LOC delta), config.go (~5 LOC delta), main.go (~25 LOC delta), handler.go (3 LOC rename).
+- **Pre-launch checklist (founder Task 20 + ops):**
+  - [ ] Apply migrations via `supabase db push`
+  - [ ] Set `OPENROUTER_API_KEY` in prod env (kept `ENABLE_OPENROUTER=false` initially)
+  - [ ] Address C.2 (tone seeding wire-up) + I.3 (401 fast-fail) before flipping the flag
+  - [ ] Run shadow-soak per spec §8 for ≥3 days before flipping
+- **Branch:** `feat/calista-phase-1a` (~30 Calista-related commits interleaved with unrelated stok-opname work). Ready for founder review + smoke test.
+
+## 2026-06-14 — Pembelian: Belanja Numpang Lewat (Phase 1) + PO Refactor Roadmap (Phase 2) — design spec brainstormed — AWAITING REVIEW
+
+- **What:** Founder requested fitur untuk catat pembelian pass-through (beli ke grosir khusus untuk 1 Order customer, dijual same-day, tidak nambah stok). Brainstorm session menghasilkan 2 spec: Phase 1 detailed (Belanja Numpang Lewat) untuk ship segera, Phase 2 roadmap (PO refactor) untuk SaaS multi-tenant readiness.
+- **Phase 1 — Belanja Numpang Lewat (BNL) — detail spec ready untuk implementasi:**
+  - Wajib link ke 1 Sales Order (1 Order : N BNL — barang dari multi grosir untuk 1 customer)
+  - Zero stock impact (no stock_lots, no stocks.stock change)
+  - COGS attribution dari PI ke Order lines (SQL view `order_cogs_breakdown` FIFO allocation)
+  - Lifecycle BELUM_LUNAS → LUNAS → TERLAMBAT (derived) → VOIDED (audit reason wajib)
+  - Cash / Transfer / Tempo + jatuh tempo (auto-fill dari supplier term)
+  - Kasir expense entry dengan category baru "Pembelian Pass-Through" (beda dari PO PAID "Pembelian Stok")
+  - PI Number format `PI-YYYY-MM-NNN` reset per bulan
+  - SKU inline-create (kategori default "Pass-through", stok=0, no stock_lots)
+  - 2 menu UI terpisah (Belanja Numpang Lewat + Tagihan Phase 2), 1 table backend dengan `type` discriminator
+  - Shortcut button "+ Buat PI untuk Order ini" di Order detail page
+  - Edit hanya saat BELUM_LUNAS; setelah LUNAS pakai Void & re-create
+  - PDF Tanda Terima A6 untuk operator cetak / WA
+- **Phase 2 — PO Refactor Roadmap — high-level untuk planning:**
+  - 4-entity model: Pesanan + Tagihan + Tukar Faktur + Pembayaran (vs existing PO collapsed 4-status)
+  - Adopt Jurnal/Accurate naming standard (Pesanan/Tagihan/Pembayaran) — familiar untuk tenant migran
+  - SOP Profile per tenant: Warung (1-step) / Service Shop (2) / Toko Ritel (3) / Distributor B2B (4) / Pass-through Only / Custom
+  - Approval workflow permission-based: `pembelian.create` + `approve_pesanan` + `approve_pembayaran`. Self-approve untuk owner (1-step). Admin draft → owner approve (2-step). Tenant config 3 toggle gate.
+  - Partial delivery (item-level FK Pesanan ↔ Tagihan items, auto-close Pesanan saat semua fulfilled)
+  - Multi-Tagihan-per-Pembayaran via junction table; support partial payment + consolidated payment + Tukar Faktur
+  - Tukar Faktur sebagai entitas terpisah (B2B ritual Indonesia — gap workflow nyata antara verifikasi faktur dan transfer)
+  - Reconciliation panel Tukar Faktur Day (full mode untuk distributor + Quick mode untuk toko ritel)
+  - AP Report dashboard (KPI strip + per-supplier breakdown + aging chart + cash flow forecast 7-14 hari)
+  - WA reminder via whatsmeow (free) — 3 trigger: 3 hari sebelum jatuh tempo, saat lunas, saat tukar faktur tertanda
+  - Migration big-bang split: existing PO DRAFT→Pesanan, ORDERED→Pesanan, RECEIVED→Pesanan+Tagihan, PAID→Pesanan+Tagihan+Pembayaran. stock_lots.po_id → source_id+source_type. Checksum verification + rollback plan.
+- **Benchmark Jurnal/Mekari:** Full chain Permintaan → Penawaran → Pesanan → Penagihan → Faktur → Pembayaran. Kita skip Permintaan + Penawaran untuk Phase 2 (Phase 3 kalau ada demand multi-branch tenant). Differentiator vs Jurnal: linked pass-through PI (Jurnal tidak punya), Tukar Faktur auto-suggest + reconciliation panel, WA reminder built-in, mobile-first, free tier.
+- **MSME-first design principles applied:**
+  - Bahasa awam (Belanja Numpang Lewat / Tagihan / Tukar Faktur / Pembayaran), bukan jargon akuntansi
+  - SOP Profile per tenant — fitur opt-in, tidak dipaksa lewat semua 4 tahap
+  - Quick Mode 1-form-3-records untuk Cash purchase (Warung skenario)
+  - Killer features di Tukar Faktur (auto-suggest, photo bulk upload, reconciliation panel, calendar reminder) vs Jurnal yang manual
+- **Out of scope (kedua spec):** Penawaran (Quote), Permintaan (PR), Retur Pembelian, multi-currency, PPN formal — Phase 3 atau paid tier nanti
+- **Files added:**
+  - `docs/superpowers/specs/2026-06-14-pembelian-belanja-numpang-lewat-design.md` — Phase 1 detailed (13 sections)
+  - `docs/superpowers/specs/2026-06-14-pembelian-phase2-roadmap-design.md` — Phase 2 roadmap (14 sections)
+  - `tmp/pembelian-cash-invoice-mockup.html` — visual mockup 4 layar (list / form / detail / Order linked)
+- **Branch:** main (will create `feat/belanja-numpang-lewat` saat implementation start)
+- **Next:** founder review 2 spec docs → kalau approved, invoke `writing-plans` skill untuk Phase 1 implementation plan
+
+## 2026-06-14 — Calista Phase 1A Task 19: engine integration test (router-backed E2E) — DONE
+
+- **What:** End-to-end integration test that wires the full Phase 1A LLM stack — `engine.Machine` → `llm.EngineAdapter` → `llm.Router` → stub stores (cooldown / pin / telemetry) → fake `llm.Completer` — and validates two scenarios in one go. (1) Happy path: a `greetingCompleter` returns valid greeting JSON; engine transitions `GREETING → COLLECTING` with no `LLMError` and `ChainExhausted=false`. (2) Chain-exhausted path: an `alwaysRateLimitedCompleter` always returns a `*rateLimitError` (constructed via the new `llm.NewRateLimitErrorForTest` helper); router falls through all 10 models marking each cooled-down until it returns `ErrChainExhausted`; engine catches via `errors.Is`, sets `ChainExhausted=true`, and transitions `NextState=StateEscalatedAdmin`.
+- **Files created:** `backend-go/internal/llm/testing.go` — exported test helpers (`NewStubCooldownStore`, `NewStubPinStoreForTest`, `NewStubTelemetryStoreForTest`, `NewRateLimitErrorForTest`) lifted out of `_test.go` so packages outside `llm` can use them. `backend-go/internal/engine/engine_router_test.go` — the integration test itself.
+- **Adaptation from spec (single change):** Spec drafted the test as `package engine` so it could call `NewMachine` directly. That triggered `import cycle not allowed in test`: `llm` already imports `engine` (Task 16/17 cycle-fix re-exports `engine.ErrChainExhausted` as `llm.ErrChainExhausted`), so a test file inside `engine` that imports `llm` re-introduces the cycle but only at test-binary link time. Fixed by switching the test file to the external `engine_test` package — same directory, Go's standard cycle-break for tests. All references in the test are now qualified (`engine.NewMachine`, `engine.ErrChainExhausted`); no production code touched. The exported helpers in `testing.go` are the load-bearing piece, not the test file's package.
+- **Runtime observation:** Spec predicted ~15s for the chain-exhausted test (router's 15s total budget × 10 rate-limited fallbacks). Actual: <1s. Reason: the fake completer returns the rate-limit synchronously with no HTTP delay, so the router's per-attempt time check (`time.Since(start) >= budget`) never fires; it just marks each model cooled-down and falls through immediately. Behavior is still correct — `ChainExhausted=true`, `NextState=StateEscalatedAdmin`, `errors.Is(res.LLMError, engine.ErrChainExhausted) = true` all verified.
+- **Verification:** `go build ./...` clean. `go vet ./...` clean. `go test ./internal/engine/ -v -timeout 60s` → all engine tests PASS including the 2 new `TestEngine_WithRouter_HappyPath` + `TestEngine_WithRouter_ChainExhausted_EscalatesToAdmin`. `go test ./internal/llm/ -timeout 60s` → PASS (15.7s, unchanged — the new `testing.go` adds exported helpers but no test-only logic).
+- **Branch:** `feat/calista-phase-1a`. Plan progress: 19/20 (Task 20 manual smoke test remaining).
+
+## 2026-06-14 — Calista Phase 1A Task 18: `main.go` wiring behind `ENABLE_OPENROUTER` flag — DONE
+
+- **What:** The unblock task. Since Task 14 refactored `engine.NewMachine` from `*gemini.Client` to the abstract `engine.LLMClient` interface, `main.go` line 227 (`engine.NewMachine(geminiClient)`) was failing to build because `*gemini.Client` no longer satisfies the interface directly. Task 18 wires the two adapters from Tasks 16/17 behind a feature flag: (1) added `OpenRouterAPIKey` (from `OPENROUTER_API_KEY` env) + `EnableOpenRouter` (from `ENABLE_OPENROUTER=="true"`) fields to `config.Config`, (2) refactored the engine-wiring block in `main.go` to dispatch on `cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != ""` — true path constructs `llm.NewCooldownRegistry(calistaStore)` + `llm.NewPinManager(calistaStore)` + `llm.NewRecorder(calistaStore)` + `llm.NewOpenRouterClient(cfg.OpenRouterAPIKey)` + `llm.NewRouter(...)` + `llm.NewEngineAdapter(router)`; false path constructs `gemini.NewEngineAdapter(geminiClient)`. Both paths log a `[CALISTA]` line announcing which chain is active. Default is OFF (`EnableOpenRouter=false`) per Phase 1A ship plan — flip to true after shadow soak.
+- **Files modified:** `backend-go/config/config.go` (+5/-0: 2 new struct fields + 2 lines in `Load()`), `backend-go/main.go` (+19/-1: added `llm` import + replaced the single-line `machine := engine.NewMachine(geminiClient)` with the feature-flagged dispatch block).
+- **Verification:** `go build ./...` → clean (no output, main.go now builds end-to-end for the first time since Task 14). `go test ./... -timeout 120s` → all Calista-related packages PASS (`internal/engine`, `internal/llm`, `internal/whatsapp`, `internal/gemini` no test files), plus `recon`, `followup`, `heartbeat`, `rules`, `scheduler`, `storage`. Only failures are 13 `internal/db` tests all failing with `dial tcp ...:5432: connect: connection refused` — env-level (no local Postgres test DB available), not related to LLM/engine code. No NEW failures introduced.
+- **Constraint discipline:** Used `Edit` operations not file rewrites. Did NOT touch any unrelated code in main.go (approvalStoreAdapter, dbClient retry loop, geminiClient retry loop, docClient init, recon endpoints, waClient init, sched, etc. all unchanged). `geminiClient` is still constructed unconditionally (the false-flag branch needs it; the true-flag branch could skip it but spec says keep it — also makes flag-flipping at runtime less risky).
+- **Branch:** `feat/calista-phase-1a`. Plan: Tasks 4-18 done (18/20). Next: Task 19 — engine integration test (router-backed E2E).
+
+## 2026-06-14 — Piutang & Tempo (Sales Credit) — design spec brainstormed — AWAITING REVIEW
+
+- **What:** Founder requested fitur untuk track sales invoice yang sudah jatuh tempo + add concept of customer credit/tempo. Brainstorm session menghasilkan spec lengkap untuk customer credit whitelist (Net 7/30/60/90 + credit_limit), invoice tempo lifecycle, hard-block over-limit dengan owner-PIN approval, halaman Piutang dedicated dengan AR aging chart, sidebar badge realtime, operator-triggered WA follow-up via existing whatsmeow.
+- **Key decisions locked:**
+  - Per-customer tempo gating (whitelist via `customers.allows_tempo` + `term_days` + `credit_limit`); aktivasi & limit change BOTH require owner approval via existing `approval_requests` + PIN
+  - Channel-agnostic: WA + Walk-in + Kasir all eligible asal customer.allows_tempo=true (bukan per-channel gate)
+  - Auto due_date = created_at + term_days; hard-block kalau outstanding+this > limit (no warning-only)
+  - Pelunasan reuse existing payment_proof upload + verify (zero new payment infra)
+  - Notif channel: in-app only (sidebar badge + halaman Piutang); WA send manual operator-triggered via whatsmeow dengan preview modal
+  - Notif timing: default [-3, 0, 3, 7, 14] (owner-configurable via new `piutang_settings` table)
+  - 3 additions ke MVP setelah komparasi dengan Jurnal: configurable reminder offsets, AR Aging mini-chart, write-off path
+  - Visual mockup di-review user via brainstorming visual companion server (5 surface: sidebar badge, halaman Piutang, customer activation, invoice creation hard-block, owner approval cards)
+- **Advisor flagged issues yang diatasi di spec:**
+  - Race condition: create_tempo_invoice RPC wrap dalam SECURITY DEFINER + row lock pada customers (FOR UPDATE)
+  - Bad-debt write-off path: added INVOICE_WRITTEN_OFF status + owner-PIN gated RPC
+  - payment_type CHECK constraint widening: explicit ALTER untuk orders + kasir_transactions + record_kasir_sale RPC validator
+  - messages.sender reuse 'system' enum (sudah ada), no enum change needed
+  - `piutang_settings` table sendiri (bukan numpang `notification_config`) untuk separation of concerns
+- **Coordination note:** ada parallel work join-invoice di terminal lain — spec ini own halaman Piutang sepenuhnya dengan extension point untuk grouping; migration date prefix beda; WA rate-limiter di-share via shared helper (Phase 1C)
+- **Phasing:** 1A (schema + customer credit + activation/limit-change RPC + customer profile UI), 1B (tempo invoice + Piutang page + sidebar badge), 1C (write-off + WA send via whatsmeow + AR aging chart + piutang_settings)
+- **Files added:**
+  - `docs/superpowers/specs/2026-06-14-piutang-tempo-design.md` — full design spec (16 sections after multi-tenant update)
+  - `.superpowers/brainstorm/<session>/content/piutang-mockup.html` — visual mockup (ephemeral)
+- **Multi-tenant readiness update (same day):** founder asked "apakah ada yang hardcoded yang harus dibikin configurable untuk MT?". Analysis 4 kategori (MT infra / business knobs / global constants / UI styling). Applied A+B (skip C cosmetic & D theming):
+  - `piutang_settings` rewrite ke per-tenant (PK = tenant_id, sentinel UUID untuk pre-Layer-A; mirror warehouses pattern)
+  - Added `term_days_allowed int[]` ke piutang_settings (replace hardcoded `IN (7,14,30,60,90)` validator) — tenant bisa add Net 21/45 dst
+  - Added `aging_buckets int[]` (default `{30,60,90}`) — AR Aging chart configurable per tenant
+  - RPCs pakai `_resolve_tenant_id()` convention dengan sentinel fallback (no-op pre-Layer-A, active post-Layer-A)
+  - New §4.5 Multi-tenant column inheritance — explain customers/orders/approval_requests/messages tenant_id deferred ke Layer A retrofit
+  - New §16 Multi-tenant readiness checklist — table per-concern: ✅ solved-here / ⏳ Layer A / ❌ out of scope
+  - §13 Coordination section extended dengan Layer A dependency mapping
+- **Branch:** main (will create `feat/piutang-tempo` saat implementation start)
+- **Next:** founder review spec → kalau approved, invoke `writing-plans` skill untuk Phase 1A implementation plan
+
+## 2026-06-14 — Stok Opname blind-count + conditional approval — IMPLEMENTATION COMPLETE
+
+- **What:** Implemented the full 18-task plan from `docs/superpowers/plans/2026-06-14-stok-opname-blind-count.md`. Six SQL migrations applied via Supabase Management API + four integration test files (12 tests passing). Frontend session view rebuilt with conditional rendering (blind 3-col vs full 4-col grid), bahasa updates ("Disetujui"/"Selesai"/"Menunggu Persetujuan"), re-ack banner, Owner-only audit table.
+- **Backend migrations applied (via api.supabase.com/v1/.../database/query):**
+  - `20260614000001_opname_blind_count_fetch_mask.sql` — `fetch_opname_counts` + `get_opname_session` SECURITY DEFINER masking (default-deny via `COALESCE(role,'')!='Owner'`, mask only during `in_progress`)
+  - `20260614000002_opname_reack_on_edit.sql` — `record_opname_count` invalidates witness ack on counter edit (gated by require_witness in Task 13)
+  - `20260614000003_audit_log_table.sql` — generic `audit_log` table (cross-module forensic events)
+  - `20260614000004_opname_submit_auto_commit.sql` — `submit_opname_for_owner` dual-branch (auto-commit when no NULL + no variance + witness ack) + `commit_opname_internal` helper; return shape BIGINT → TABLE(status, auto, approval_id)
+  - `20260614000005_opname_audit_log_events.sql` — `commit_opname` writes `opname_owner_commit`; trigger `_audit_opname_reject` on `approval_requests AFTER UPDATE` writes `opname_owner_reject` + flips session to rejected
+  - `20260614000006_opname_witness_optional_schema.sql` — `witnessed_by_user_id` nullable, `chk_two_person` → conditional CHECK, `company_settings.opname_require_witness BOOLEAN DEFAULT TRUE`, `_opname_require_witness()` helper
+  - `20260614000007_opname_witness_optional_rpcs.sql` — `start_opname_session` + `submit_opname_for_owner` + `record_opname_count` all branch on setting
+- **Frontend changes:** `types.ts` (OpnameCount nullable + opname_require_witness), `supabaseClient.ts` (toOpnameCount null-tolerant, startOpnameSession witness nullable, SubmitOpnameResult, OpnameAuditEntry + fetchOpnameAuditLog, companySettingsService.updateOpnameRequireWitness), `StockOpnameSessionView.tsx` (isBlindMode, conditional header/grid/witness UI, merged selisih, re-ack banner, toast variants, bahasa updates), `StockOpnameScreen.tsx` (fetch setting, conditional witness prompt, Owner-only Catatan Audit Opname table), `PengaturanScreen.tsx` (Modul Stok Opname toggle).
+- **Integration tests (12 passing with `--no-file-parallelism`):** `opname-blind-count.test.ts` (masking + re-ack on edit), `opname-auto-commit.test.ts` (auto-commit vs pending_owner branches + audit_log), `opname-audit-log.test.ts` (commit/reject paths write audit_log + names + reject trigger flips session), `opname-witness-config.test.ts` (setting toggles RPC behavior, solo auto-commit allowed).
+- **Test script:** `package.json:test:integration` uses `--no-file-parallelism` to prevent `opname_require_witness` toggle contamination between concurrent files.
+- **Adaptations from spec/plan:**
+  - Spec assumed generic `tenant_settings` key-value table; reused `company_settings` single-row config with new BOOLEAN column.
+  - Spec assumed Phase 3 warehouse cutover applied (warehouse_id UUID); it isn't (commented out in `apply-pending-migrations.sh` pending 24h soak). All RPCs kept legacy text `warehouse` ('atas'/'bawah'). Phase 3 cutover needs follow-up to migrate these new RPCs.
+  - Spec referenced "Pengawasan screen" which doesn't exist. Catatan Audit Opname table placed in existing StockOpnameScreen (Owner-only section).
+- **Branch:** `feat/calista-phase-1a` — 14 commits stacked on top of spec/plan/mockup commits.
+- **Next:** PR or merge to main when ready. Phase 3 warehouse cutover (separate plan) will need to update these new opname RPCs to use `warehouse_id UUID`. Outside this spec's scope.
+
+## 2026-06-14 — Calista Phase 1A Tasks 16 & 17: `gemini.EngineAdapter` + `llm.EngineAdapter` — DONE (with surfaced import-cycle fix)
+
+- **What:** Two small adapters bundled per orchestrator instruction. (16) `gemini.EngineAdapter` wraps the existing `*gemini.Client` (`GenerateReply(ctx, prompt) (string, error)`) to satisfy `engine.LLMClient` — used when `ENABLE_OPENROUTER=false` emergency path. `CallOpts` is ignored (direct Gemini has no sticky-pin/budget concept). Always reports `ModelUsed="google/gemini-2.5-flash-lite-direct"`. Implements no-op `Unpin` for safe terminal-state cleanup. (17) `llm.EngineAdapter` wraps `*llm.Router` to satisfy `engine.LLMClient` — the DEFAULT path. Builds a 2-message `[system, user]` payload (system from `router.agent.SystemPrompt`, user from the engine's `fullPrompt`), translates `engine.CallOpts` → `llm.CallOpts`, maps `llm.Response` → `engine.LLMResult` (Body, ModelUsed, WasForcedSwap, LatencyMs, TripwireFlags). Exposes `Unpin(ctx, convID)` straight through to `Router.Unpin` for terminal-state cleanup.
+- **Surfaced fix (Task 15 follow-up):** Initial Task 17 build failed with `import cycle not allowed` — Task 15 introduced `engine -> llm` via `llm.ErrChainExhausted` at `machine.go:80`, silently violating the comment at `machine.go:23-24` ("duplicated here to keep the engine package import-free of llm"). Cycle only surfaced now because `llm.EngineAdapter` requires `llm -> engine`. Fixed by hoisting the sentinel: created `backend-go/internal/engine/errors.go` with `ErrChainExhausted = errors.New("engine: LLM chain exhausted")`; `internal/llm/models.go` re-exports as `var ErrChainExhausted = engine.ErrChainExhausted` (existing tests + llm call sites unchanged); `internal/engine/machine.go` drops `internal/llm` import and uses local `ErrChainExhausted`. Committed as its own `fix(engine):` commit BEFORE the adapter commits per advisor — preserves bisectability.
+- **Files created:** `backend-go/internal/engine/errors.go`, `backend-go/internal/gemini/adapter.go`, `backend-go/internal/llm/engine_adapter.go`.
+- **Files modified:** `backend-go/internal/engine/machine.go` (drop llm import, switch sentinel ref), `backend-go/internal/llm/models.go` (re-export sentinel from engine).
+- **Verification:** `go build ./internal/gemini/... ./internal/llm/... ./internal/engine/...` → clean. `go test ./internal/gemini/... ./internal/llm/... ./internal/engine/...` → engine + llm PASS, gemini has no tests. main.go still expected-broken (Task 18).
+- **Commits (in order):** `c1033d7` fix(engine): hoist ErrChainExhausted to break engine->llm import cycle • `1d5f9c6` feat(gemini): EngineAdapter to satisfy engine.LLMClient for emergency fallback path • `2d1ba78` feat(llm): EngineAdapter exposing Router as engine.LLMClient.
+- **Constraint discipline:** Adapter code is verbatim per spec. No test files for the adapters (covered by Task 19 integration test). Did NOT touch main.go (Task 18).
+- **Branch:** `feat/calista-phase-1a`. Plan: Tasks 4-17 done (17/20). Next: Task 18 — main.go wiring behind `ENABLE_OPENROUTER` flag.
+
+## 2026-06-14 — Calista Phase 1A Task 15: `ChainExhausted` flag + tolerant JSON parser — DONE
+
+- **What:** Task 15 of the Phase 1A plan — two surface-level robustness improvements on the engine. (1) Added `ProcessResult.ChainExhausted bool`; when `m.llm.Complete` returns an error wrapping `llm.ErrChainExhausted` (the sentinel Task 12's router emits when every model in the chain has been tried & all are unavailable, or when the 3rd forced-swap triggers `ErrSwapCapExceeded`), the engine now flips `ChainExhausted = true` AND transitions `NextState = models.StateEscalatedAdmin` so the conversation hands off to a human instead of looping fallback replies. (2) Added `tolerantParseJSON(raw)` — strips ` ```json … ``` ` markdown fences (some OpenRouter models still wrap JSON in fences despite the prompt instruction) and extracts the first balanced `{...}` block via brace counting (handles prose like `"Sure, here is the JSON: { ... } that's all."`). Each existing `Parse*` (ParseGreeting, ParseCollecting, ParseClarifying, ParseStockCheck, ParseConfirming, ParseDelivery, ParseAddMore) now runs `tolerantParseJSON` on its raw input BEFORE the strict `json.Unmarshal` — surgical wrap at the top of each function, no change to existing parsing logic.
+- **Files modified:** `backend-go/internal/engine/machine.go` (+5/-0: `errors` + `llm` imports, `ChainExhausted` field, `errors.Is(err, llm.ErrChainExhausted)` branch). `backend-go/internal/engine/parser.go` (+78/-7: `fmt`/`strings` imports added, all 7 `Parse*` funcs prefixed with `tolerantParseJSON`-then-rebind-raw, `tolerantParseJSON` helper appended).
+- **Files created:** `backend-go/internal/engine/tolerant_parser_test.go` (4 test cases: strips fences, extracts first balanced object from prose, errors on no-object, passthrough already-clean JSON).
+- **TDD:** wrote `tolerant_parser_test.go` first → `go test ./internal/engine/ -run TestTolerantParseJSON` failed with `undefined: tolerantParseJSON` (4 references) → implemented helper + wraps → all 4 new tests PASS plus every pre-existing engine test still PASS (TestProcess*, TestParse*, TestRetryProcess_*, TestBuildPrompt*, TestStockContextString*, etc.) → no test regressed because the existing test inputs were already clean JSON, which `tolerantParseJSON` passes through verbatim.
+- **Verification:** `go build ./internal/engine/... ./internal/llm/... ./internal/db/... ./internal/whatsapp/...` → clean. `go test ./internal/engine/` → ok. `go test ./internal/llm/` → ok. main.go still expected-broken (Task 18 wiring).
+- **Constraint discipline:** Did NOT touch `main.go` (Task 18). Did NOT touch `internal/gemini/` (Task 16). Did NOT modify any existing parser body logic — only prepended the tolerant-wrap. `ParseAddMore` keeps its no-error signature; tolerant failure returns the same zero-value `AddMoreResponse{AddAnother: false}` it already returned on bad JSON.
+- **Branch:** `feat/calista-phase-1a`. Plan: Tasks 4-15 done (15/20). Next: Task 16 — `gemini/adapter.go` EngineAdapter.
+
+## 2026-06-14 — Calista Phase 1A Task 14: engine refactor `GeminiClient` → `LLMClient` — DONE (with surfaced follow-up)
+
+- **What:** Task 14 of the Phase 1A plan — widen the engine's LLM seam so it can host both the new `llm.Router` and the legacy `gemini.Client` adapter (Tasks 16/17). Renamed `engine.GeminiClient` → `engine.LLMClient` with a new method shape `Complete(ctx, fullPrompt, CallOpts) (*LLMResult, error)` that carries richer call-site info (conversation ID, state-boundary hint, max-tokens budget) and richer return info (`ModelUsed`, `WasForcedSwap`, `LatencyMs`, `TripwireFlags`). Renamed `ProcessResult.GeminiError` → `LLMError`. Added `maxTokensForState(s)` helper with the spec §5.6 #6 per-state budgets (GREETING=60, COLLECTING=100, CLARIFYING=120, STOCK_CHECK=150, CONFIRMING=150, ADD_MORE=60, DELIVERY=100, BOOKED=200, default=150). Also updated the in-package downstream `retry.go` (`result.GeminiError` → `result.LLMError`, 2 occurrences + doc comment).
+- **Files modified:** `backend-go/internal/engine/machine.go` (+38/-13), `backend-go/internal/engine/machine_test.go` (mockGemini/mockGeminiError → mockLLM/mockLLMError, test name + field refs), `backend-go/internal/engine/retry.go` (LLMError refs + comment), `backend-go/internal/engine/retry_test.go` (mockLLMSequence/mockLLMCounter + all `result.GeminiError` → `result.LLMError`).
+- **Verification:** `go build ./internal/engine/... ./internal/llm/... ./internal/db/...` → clean. `go test ./internal/engine/ -v` → all PASS (TestProcessGreeting, TestProcessCollectingMovesToClarifying, TestProcessEscalate, TestProcessConfirmingMovesToAddMore, TestProcessConfirmingModificationRequestedMovesClarifying, TestProcessAddMore_AddAnother, TestProcessAddMore_Done, TestProcessGeminiFallback, TestProcessBookedStateReturnsEmptyReply, TestProcessLLMError_SetsLLMErrorField, all 6 retry tests, plus the unrelated prompt/parser/stock-context tests). Full-tree `go build ./...` fails on `internal/whatsapp/handler.go:260-261` referencing `result.GeminiError` and on `main.go` referencing `engine.NewMachine(geminiClient)`. The task spec named main.go as expected-broken; the handler.go breakage is also a downstream consumer that needs the same mechanical rename. Surfaced as a known follow-up — Task 18 (main.go wiring behind `ENABLE_OPENROUTER` flag) is the natural home for fixing both call sites together.
+- **Constraint discipline:** Did NOT add `ChainExhausted bool` to `ProcessResult` (Task 15). Did NOT touch `main.go` (Task 18). Did NOT touch `internal/gemini/` (Task 16). Did NOT add the handler.go mechanical rename to keep the engine commit clean — surfaced for orchestrator triage as the task instructed.
+- **Branch:** `feat/calista-phase-1a`. Commit `6c3c8d1`. Plan: Tasks 4-14 done (14/20). Next: Task 15 — `ChainExhausted bool` on `ProcessResult` + tolerant JSON parser for occasional model garbage.
+
+## 2026-06-14 — Calista Phase 1A Task 13: `internal/db/calista.go` CalistaStore — DONE
+
+- **What:** Task 13 of the Phase 1A plan — PostgreSQL store implementing the three Phase 1A interfaces from the `llm` package (commits Tasks 4-12).
+- **File created:** `backend-go/internal/db/calista.go` (144 lines). One struct `CalistaStore` wrapping `*sql.DB`, six methods:
+  - `LoadCooldowns()` / `SaveCooldown()` — `SELECT` + `INSERT ... ON CONFLICT (model_slug) DO UPDATE` against `public.model_cooldowns`. Nullable `cooldown_until` and `last_error` use `sql.NullTime` / `sql.NullString` per project convention (matches `approvals.go`, `bank_config.go`).
+  - `LoadPin(ctx, convID)` / `SavePin(ctx, p)` / `ClearPin(ctx, convID)` — read/write the pinning columns ON the existing `public.conversations` table (added in migration `20260613000036`). LoadPin returns `ok=false` when `pinned_model_slug IS NULL` OR when the conversation row doesn't exist (`sql.ErrNoRows`).
+  - `RecordLLMCall(ctx, r)` — `INSERT` into `public.llm_calls` (migration `20260613000034`). Defaults `CreatedAt` to `time.Now().UTC()` if zero so callers don't have to.
+- **Verification:** `go build ./internal/db/...` clean. `go vet ./internal/db/...` clean. No new unit tests in this task — DB-level coverage is deferred to the integration suite (Task 19 covers engine→router→stubStore end-to-end; this file is the production swap-in).
+- **Pattern alignment:** matches sibling files in `internal/db/` — `*Client`-style struct, `*sql.DB` injection, `$N` parameterized queries, `sql.Null*` for nullable columns. No `lib/pq`-specific extensions needed.
+- **Branch:** `feat/calista-phase-1a`. Commit `147417b`. Plan: Tasks 4-13 done (13/20). Next: Task 14 — engine refactor (rename `GeminiClient` interface → `LLMClient`, add `CallOpts`/`LLMResult`, per-state `MaxTokens`).
+- **Co-Authored-By: Claude Opus 4.7 (1M context)** — Task 13 was written directly by the controller because the dispatched implementer subagent hit Anthropic session quota mid-task. File content is verbatim from the Phase 1A plan, no plan deviations.
+
+## 2026-06-14 — Stok Opname blind-count Task 3: `StockOpnameSessionView` null-tolerant rendering — DONE
+
+- **What:** Phase A null-tolerance step 3 of the blind-count plan. Made `src/components/stok/StockOpnameSessionView.tsx` render `systemQtySnapshot === null` and `varianceValue === null` gracefully so that once Task 4's `fetch_opname_counts` masking deploys, admins opening an `in_progress` session see em-dash "—" instead of `NaN`, "null", or a React crash. Four targeted edits, no layout or role-logic changes (those are Tasks 9-10): (1) line 175 `totalVariance` reducer switched from `|| 0` to `?? 0` so a null variance contributes 0 to the header total instead of `NaN`; kept the existing plain `const` shape rather than introducing `useMemo` because the codebase didn't already use it here. (2) line 349 `Sistem {c.systemQtySnapshot}` → `Sistem {c.systemQtySnapshot ?? '—'}` so the per-row system column reads `—` when masked. (3) lines 363-365 className conditional rewritten with `(c.varianceValue ?? 0) < 0` / `> 0` guards so the color tint resolves to slate-400 (neutral) when null, not undefined. (4) line 369 `formatRpDelta(c.varianceValue)` → `formatRpDelta(c.varianceValue ?? 0)` to satisfy the now-`number | null` type; the outer ternary already gates on `countedQty` being filled, so a null varianceValue here only happens transiently and rendering 0 is acceptable fallback before the em-dash branch handles the "not yet counted" case.
+- **Scope discipline:** No `isBlindMode` flag, no header banner, no column reordering — those land in Tasks 9-11. No other component touched. Existing className strings preserved verbatim.
+- **Tests:** `npx tsc --noEmit` → EXIT=0 (clean). No browser smoke needed — Task 3 is pure null-safety; the visual blind-mode UX validates in Tasks 9-10 when conditional layout lands.
+- **Commit:** _pending_ — `feat(stok): null-tolerate system_qty/variance in opname session view`. Branch `feat/calista-phase-1a`.
+- **Files:** `src/components/stok/StockOpnameSessionView.tsx` (4 lines changed), `progress.md`.
+- **Next:** Task 4 — Migration A: `fetch_opname_counts` + `get_opname_session` mask `system_qty_snapshot` and `variance` to NULL for non-Owner roles while session is `in_progress`. This is the first backend step that actually produces the nulls Tasks 1-3 now tolerate.
+
+## 2026-06-14 — Stok Opname blind-count Task 2: `supabaseClient.toOpnameCount` propagates null for `system_qty_snapshot` + `variance` — DONE
+
+- **What:** Phase A null-tolerance step 2 of the blind-count plan. Updated the snake_case→camelCase mapper at `src/lib/supabaseClient.ts:1615` (`toOpnameCount`) so two fields preserve null instead of coercing: `systemQtySnapshot: row.system_qty_snapshot ?? null` (was `row.system_qty_snapshot`, which would have passed undefined when missing) and `variance: row.variance ?? null` (was `?? 0`, which silently masked unknown variances as zero). Without this, when Task 4's `fetch_opname_counts` RPC starts NULLing `system_qty_snapshot`/`variance` for non-Owner roles during `in_progress`, the client would coerce those nulls back into `0` and the admin would see "Sistem 0" / "Selisih 0" — defeating the entire blind-count purpose. `varianceValue: Number(row.variance_value ?? 0)` was intentionally left as-is per plan scope (variance *value* in Rupiah, no blinding requirement). Only `toOpnameCount` was touched; `fetchOpnameCounts` (which calls `.map(toOpnameCount)`) needed no changes since the mapping body is what coerces.
+- **Tests:** `npx tsc --noEmit` → EXIT=0 (clean). The plan flagged consumer errors in `StockOpnameSessionView` as "expected — Task 3 will fix"; in practice no TS errors surfaced because the component renders `c.systemQtySnapshot` directly inside JSX (React renders null as empty) and never reads `c.variance` (only `c.varianceValue`). Task 3 will still update rendering to show a graceful placeholder (e.g. `—`) instead of an empty space — that's a UX concern, not a type concern.
+- **Commit:** `860f8a7` — `feat(stok): preserve null system_qty/variance from fetchOpnameCounts`. Branch `feat/calista-phase-1a`.
+- **Files:** `src/lib/supabaseClient.ts` (2 lines changed), `progress.md`.
+- **Next:** Task 3 — `StockOpnameSessionView` graceful null rendering (replace `{c.systemQtySnapshot}` with `{c.systemQtySnapshot ?? '—'}` and add a "blind mode" header hint so admin understands why the column reads "—").
+
+## 2026-06-14 — Stok Opname blind-count + conditional approval — SPEC DRAFTED
+
+- **What:** Brainstorming session menghasilkan spec untuk modul Stok Opname. Dua mekanisme anti-bias: (1) admin tidak lihat `system_qty_snapshot` saat input fisik (blind-count, Owner only), (2) auto-commit kalau semua match, owner approval kalau ada selisih. Audit log mencatat penghitung + saksi untuk SEMUA path (auto/commit/reject). Witness configurable per tenant (default ON). Sebagian besar perilaku Owner-approve (stock → fisik, ledger ditulis) sudah ada di kode existing — spec hanya menambah branch dan masking.
+- **File `docs/superpowers/specs/2026-06-14-stok-opname-blind-count-design.md` (~480 LOC):** 14 sections. Section 1-2: tujuan + visibility matrix per role per status. Section 3: 5 submit gates (row_count > 0, all counted_qty NOT NULL, all variance = 0, witness ack, counter ≠ witness). Section 4: 4 backend migrations (mask fetch_opname_counts, submit_opname auto-commit branch, recordOpnameCount invalidate ack on edit, commit/reject audit_log). Section 5: frontend conditional rendering. Section 6: audit log structure (3 event types). Section 7: Owner approve action (existing behavior). Section 8: edge cases. Section 9: testing. Section 10: deploy order (frontend null-tolerance first). Section 11: out of scope. Section 12: risks. Section 13: configurable witness (tenant SOP). Section 14: acceptance criteria.
+- **File `docs/superpowers/specs/2026-06-13-stok-opname-blind-count-mockup.html` (~550 LOC):** Static HTML mockup pakai Tailwind + Inter font, mereproduksi design system existing. Menampilkan 3 state (Admin blind, Owner full dengan kolom selisih digabung `-1 (-Rp 25.000)`, Admin pasca-commit), section "Owner Setuju → apa yang terjadi" dengan BEFORE/AFTER stock_sistem table, dua toast variants (Selesai Otomatis vs Menunggu Persetujuan), audit log preview (2 JSON examples + tabel Pengawasan), requirements checklist 11 item.
+- **Commit:** `docs(spec): stok opname blind-count + conditional approval design`. 2 files, 1038 insertions, branch `feat/calista-phase-1a`.
+- **Next:** Tony review spec. Jika OK → invoke writing-plans skill untuk buat implementation plan dengan task breakdown TDD-style.
+
+## 2026-06-14 — Calista Phase 1A Task 12: `internal/llm/router.go` orchestrator (sticky pinning + fallback + cooldown + tripwire + telemetry) — DONE
+
+- **What:** Added the public entry point that ties Tasks 6-11 together into one `Router.Call(ctx, msgs, opts)` that the engine (Task 14) calls per turn. Implements the 4-case routing decision from spec §5.1: (1) pinned + healthy + under cap → use pinned; (2) pinned + healthy + StateBoundary + non-primary → speculative-retry primary; (3) pinned + cooldown → forced swap to next healthy slug in chain; (4) no pin (new conversation) → run chain from index 0, pin the first slug that returns 2xx. Per-call 8s soft timeout (`perCallTimeout`), 15s total budget (`totalCallBudget`) shared across the whole fallback walk. Error classification: 429 → `MarkRateLimited(60min, exp-bump)`, 5xx → `MarkTransient(5min, "5xx")`, timeout → `MarkTransient(2min, "timeout")`, unknown → `MarkTransient(5min, "unknown_error")`. Every attempt (success or error) writes one row to `llm_calls` via the Task 11 recorder; successful bodies are inspected by Task 9's `InspectOutbound` and the row's `status` flips from `success` → `tripwire_alert` when any flag fires. `ChainExhaustedError{TriedModels}` is returned when (a) all candidates fail, (b) `pickCandidates` returns empty, or (c) `ForceSwap` returns `ErrSwapCapExceeded` (the 3rd swap → escalation to admin per spec §5.6). `WasForcedSwap` on the response is computed by snapshotting the pre-call pin slug and comparing to the served slug — covers Case 2 (unpin to primary) AND Case 3 (cooldown-fallback) in one check.
+- **File `backend-go/internal/llm/router.go` (~225 LOC):** `Completer` interface (one method `Complete(ctx, CompletionRequest) (*CompletionResponse, error)`) so the router accepts either `*OpenRouterClient` in prod or a fake in tests. `Router{completer, cooldowns, pins, telemetry, agent}` constructed via `NewRouter(...)`. `Call(ctx, msgs, opts)` enforces `opts.ConversationID != ""`, wraps ctx in a 15s deadline, snapshots the pre-call pin slug, calls `pickCandidates(ctx, opts)` to build the ordered try list, then loops: per-candidate 8s timeout, dispatch to completer, on error → classify + cooldown + telemetry + continue, on success → `MarkSuccess` + `updatePinAfterSuccess` (sets fresh pin OR `ForceSwap` if served ≠ pinned) + tripwire-inspect + telemetry + return `Response{Body, ModelUsed, WasForcedSwap, LatencyMs, PromptTokens, OutputTokens, TripwireFlags}`. `pickCandidates` is the 4-case decision tree; Case 2's speculative-retry intentionally does NOT gate on `IsHealthy(primary)` — the cooldown flag may be stale (provider could have recovered before TTL) and state-boundary is the one moment we give primary another shot. `Pin`/`Unpin` are thin pass-throughs to `PinManager` for the engine to call on terminal states. `classifyAndCooldown` + `classifyStatus` are small switch helpers that route the typed errors from Task 6 (`IsRateLimit`, `IsTimeout`, `IsServerError`) to the right cooldown/telemetry call.
+- **File `backend-go/internal/llm/router_test.go` (~260 LOC):** 8 tests against a `fakeCompleter` whose behavior is a per-model `"ok"/"429"/"5xx"/"timeout"` map. (1) `TestRouter_NewConversation_PinsToPrimary` — fresh convo + healthy primary → pin written + 1 success telemetry. (2) `TestRouter_PrimaryRateLimited_FallsThrough_Pins` — gemma 429 → qwen ok → pin to qwen. (3) `TestRouter_StickyPin_OnSecondCall` — turn 2 reuses pinned gemma. (4) `TestRouter_PinRateLimited_ForcedSwapMidConversation` — gemma pinned, then 429 on turn 2 → falls to qwen, `WasForcedSwap=true`, `SwapCount=1`. (5) `TestRouter_ChainExhausted_ReturnsSentinel` — all 10 models 429 → `errors.Is(err, ErrChainExhausted)`. (6) `TestRouter_StateBoundary_UnpinAttempt` — pin=qwen, StateBoundary=true → speculative-retries primary (gemma) which now succeeds → pin moves back to gemma. (7) `TestRouter_TripwireFlagsOnLongReply` — 900-char body via `longBodyCompleter` wrapper → `FlagReplyTooLong` set, telemetry status flips to `tripwire_alert`. (8) `TestRouter_TimeBudget_TotalCallBudget15s` — `slowCompleter` 6s/call × 10 candidates would be 60s, but the 15s total deadline cuts the loop short (~15s wall-clock).
+- **Tests:** `go test ./internal/llm/ -v -run TestRouter -timeout 60s` → 8 PASS (15.671s total, with `TimeBudget` accounting for ~15s). Full package `go test ./internal/llm/ -timeout 60s` → ok (no other tests broken). Pre-existing `internal/db` failure unrelated (Task 13 addresses).
+- **Design notes (gotchas surfaced during TDD red-green):** (a) `WasForcedSwap` must be computed from the *pre-call* pin snapshot, not from `candidates[0]`, because in Case 3 `candidates[0]` IS the fallback (the pinned slug was already filtered out). (b) State-boundary's "retry primary" cannot gate on `IsHealthy(primary)` — the cooldown may be stale, and the next call either succeeds (provider recovered) or falls through normally; we give primary the speculative shot regardless. Both were caught by the verbatim test suite contradicting the verbatim code in the plan; sided with the tests per TDD.
+- **Commit:** `feat(llm): router orchestrator — sticky pinning, fallback, cooldown, telemetry, tripwire`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 13 (`internal/db/calista.go` — concrete PostgreSQL implementations of `CooldownStore`, `PinStore`, `TelemetryStore` interfaces, replacing the test stubs with real `pgx.Pool`-backed writes).
+
+## 2026-06-14 — Calista Phase 1A Task 11: `internal/llm/telemetry.go` recorder for `llm_calls` writes — DONE
+
+- **What:** Added the telemetry recorder that the Task 12 router will call after every LLM attempt (success, rate-limited, error, tripwire-alert, escalated-chain-exhausted, context-overflow, timeout). Each call becomes one row in `public.llm_calls` (Task 1 migration `20260613000034`). This task ships the `llm`-package interface and the thin `Recorder` wrapper that fills in `CreatedAt` and a default `Tier`; the actual DB-backed `RecordLLMCall` implementation lands in Task 13 (`internal/db/calista.go`). Same persistence-seam pattern used by cooldown (Task 7) and pinning (Task 8). TDD: wrote `telemetry_test.go` first with 3 cases, confirmed build failure on `undefined: TelemetryRecord/TierLayer1Free/StatusSuccess/NewRecorder`, then implemented `telemetry.go` and all 3 went green.
+- **File `backend-go/internal/llm/telemetry.go` (~65 LOC):** 7 status string consts mirroring the migration's CHECK constraint (`StatusSuccess`, `StatusRateLimited`, `StatusError`, `StatusTripwireAlert`, `StatusEscalatedChainExhaust`, `StatusContextOverflow`, `StatusTimeout`) + 4 tier consts (`TierLayer1Free`, `TierLayer2PaidGeminiFlash`, `TierLayer3DirectGemini`, `TierEscalateAdmin`). `TelemetryRecord` struct with the 12 fields that map 1:1 to `llm_calls` columns: `ConversationID`, `ModelSlug`, `Tier`, `WasForcedSwap`, `StateBoundary`, `PromptTokens`, `CompletionTokens`, `LatencyMs`, `CostIDREstimated` (float64 for Rp fractional cents), `Status`, `ErrorMessage`, `CreatedAt`. `TelemetryStore` interface with one method `RecordLLMCall(ctx, r) error`. `Recorder{store}` constructed via `NewRecorder(store)`; `Record(ctx, rec)` fills `CreatedAt = time.Now().UTC()` if zero (so callers can omit it on the hot path) and defaults `Tier` to `TierLayer1Free` when empty before delegating to the store. No retries, no batching — the router treats telemetry write failures as non-fatal but bubbled (log + continue is a router decision, not a recorder one).
+- **File `backend-go/internal/llm/telemetry_test.go` (~75 LOC):** Three tests against a `stubTelemetryStore` (in-memory record log + injectable error). `TestTelemetry_Record_Success` round-trips a fully-populated `TelemetryRecord` + asserts `CreatedAt` was set by recorder. `TestTelemetry_Record_ErrorPropagates` confirms `db down` error bubbles. `TestTelemetry_Record_DefaultsCreatedAt` brackets `time.Now()` before/after and asserts the auto-set timestamp falls within the window.
+- **Tests:** `go test ./internal/llm/ -v -run TestTelemetry` → 3 PASS (Record_Success, Record_ErrorPropagates, Record_DefaultsCreatedAt). Pre-existing `internal/db` failure unrelated (Task 13 will address).
+- **Commit:** `feat(llm): telemetry recorder for llm_calls writes`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 12 (`internal/llm/router.go` — orchestrator that wires chain + cooldown + pinning + tripwire + tone + telemetry into a single `Complete` entrypoint for the engine).
+
+## 2026-06-14 — Calista Phase 1A Task 10: `internal/llm/tone.go` first-reply tone seeding (extraction + injection) — DONE
+
+- **What:** Added the first-reply tone-signature layer that dampens perceived voice shift across forced model swaps. When a fresh conversation gets its first AI reply, `ExtractTone(reply, modelUsed)` distills it into a `ToneSignature{Greeting, Signoff, Formality, Sample, ModelUsed}` — persisted to `conversations.first_reply_tone` JSONB (column already exists from Task 3 migration). On every subsequent turn the router (Task 12) will call `BuildToneHint(tone)` to render a system-prompt fragment that asks whichever model is now serving the conversation to "MATCH THIS VOICE. Reply in the same Bahasa Indonesia register." — so a Gemma → DeepSeek swap mid-conversation doesn't feel like a different person. Spec §5.6 #4. Extraction is heuristic but stable (same reply → same signature): `classifyFormality` returns `formal_bapak_ibu` if "bapak"/"ibu" present, `casual_pak_bu` if " pak"/" bu" (or prefix/suffix) present, else `neutral`; `extractGreeting` returns the first fragment (split on `!.?`) if it starts with halo/selamat/hi/hai; `extractSignoff` returns the trailing fragment if "terima kasih"/"sampai jumpa"/"salam" appears (most replies have none — that's fine, empty field is omitted from hint). TDD: wrote `tone_test.go` first with 4 cases, confirmed `undefined: ExtractTone/ToneSignature/BuildToneHint` build failure, then implemented `tone.go` and all 4 went green.
+- **File `backend-go/internal/llm/tone.go` (~115 LOC):** Exported `ToneSignature` struct with json tags matching DB JSONB shape (greeting/signoff/formality/sample/model_used). Five exported functions: `ExtractTone(reply, modelUsed string) ToneSignature` (trims, short-circuits empty → `{ModelUsed: modelUsed}` only); `MarshalToneJSON` / `UnmarshalToneJSON` (thin wrappers for DB-layer use in Task 13, empty-bytes safe); `BuildToneHint(t ToneSignature) string` (returns `""` if `t.Sample == ""` so callers can unconditionally append the result; otherwise renders multi-line system fragment with `%q`-quoted fields, omits blank lines so an unset Signoff doesn't produce `- Sign-off style: ""`). Three private helpers: `classifyFormality`, `extractGreeting`, `extractSignoff`.
+- **File `backend-go/internal/llm/tone_test.go` (~55 LOC):** `TestExtractTone_TypicalReply` ("Halo Pak Budi! Kabel 2.5mm tersedia. Mau berapa meter ya Pak?" → non-empty Greeting, ModelUsed preserved, Sample populated, Formality `casual_pak_bu`); `TestExtractTone_EmptyReply` ("" → empty Sample); `TestBuildToneHint_AllFields` (asserts hint contains greeting verbatim + lowercased "match this voice" directive); `TestBuildToneHint_EmptyToneReturnsEmpty` (zero-value `ToneSignature{}` → `""`, so router can safely call it on first-turn convos before the signature exists).
+- **Tests:** `go test ./internal/llm/ -v -run "TestExtractTone|TestBuildToneHint"` → 4 PASS (TypicalReply, EmptyReply, AllFields, EmptyToneReturnsEmpty). Pre-existing `internal/db` failure unrelated (Task 13 will address).
+- **Commit:** `feat(llm): first-reply tone extraction + hint injection for perceptual continuity`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 11 (`internal/llm/telemetry.go` — recorder that writes `llm_calls` rows for every router invocation).
+
+## 2026-06-14 — Calista Phase 1A Task 9: `internal/llm/tripwire.go` heuristics (output + input) — DONE
+
+- **What:** Added the tripwire heuristic layer — pure observers (no blocking) that scan outbound Calista replies and inbound customer messages for red flags. Outbound side fires `FlagReplyTooLong` (>800 chars), `FlagNonWhitelistURL` (any `https?://host` whose host isn't `vosi.id`/`vosi.app`/`vosi.co.id`/`calista.vosi.id` or a subdomain thereof), `FlagProfanity` (conservative ID+EN wordlist, word-boundary match), `FlagLanguageDrift` (>30% English top-words → reply leaked out of Bahasa). Inbound side fires `FlagJailbreak` (regex set covering "ignore previous/above/prior/all prior", "you are now …", "disregard all/prior/previous/instructions", "system prompt"), `FlagOptOut` (whole-message match — trimmed — on `stop|berhenti|unsubscribe|cancel`, case-insensitive; substring usage like "saya mau stop merokok" intentionally does NOT fire), `FlagAIQuestion` (matches "apakah anda ai/bot/robot", "are you (an) ai/bot/robot", "calista manusia/ai/bot"). Spec §5.1: in Phase 1A all flags are observe-only — router will record `llm_calls.status='tripwire_alert'` + persist into `messages.tripwire_flags`. Only `FlagOptOut` has a future side-effect (forces `ai_active=false` at handler layer in Phase 1B); the heuristic itself stays pure. TDD: wrote `tripwire_test.go` first with 11 cases, confirmed build failure on `undefined: FlagReplyTooLong/InspectOutbound/...`, then implemented `tripwire.go` and all 11 tests went green.
+- **File `backend-go/internal/llm/tripwire.go` (~145 LOC):** 7 flag string consts (`FlagReplyTooLong`, `FlagNonWhitelistURL`, `FlagProfanity`, `FlagLanguageDrift`, `FlagJailbreak`, `FlagOptOut`, `FlagAIQuestion`). Package vars: `replyMaxChars=800`, `urlWhitelist` (4 vosi domains), `urlPattern` (`https?://([\w.-]+)`), `profanityWords` (12 ID+EN words — short on purpose; false-negatives tolerable since flags are observational), `englishTopWords` (~55-word stoplist for drift heuristic), `jailbreakPatterns` (4 regexes), `optOutPattern` (anchored `^…$` over `TrimSpace`), `aiQuestionPatterns` (3 regexes). Two public entry points: `InspectOutbound(reply string) []string` returns the set of outbound flags that fired (empty=clean); `InspectInbound(msg string) []string` returns inbound flags. Three private helpers: `hasNonWhitelistURL` (extracts every URL host, accepts exact whitelist match OR `*.whitelist` suffix), `hasProfanity` (lowercases input, word-boundary regex per term), `hasLanguageDrift` (splits on whitespace, strips trailing punctuation, requires ≥4 words to avoid noisy short replies, fires when English-stoplist ratio >0.30).
+- **File `backend-go/internal/llm/tripwire_test.go` (~110 LOC):** 11 tests using Go 1.21+ `slices.Contains`. Outbound: `TestTripwire_ReplyTooLong` (801 `a`s → flag), `TestTripwire_ReplyAcceptableLength` (Bahasa short reply → no flag), `TestTripwire_NonWhitelistURL` (`malicious-site.example` → flag), `TestTripwire_WhitelistURL_NoFlag` (`vosi.id` → no flag), `TestTripwire_Profanity` ("anjing kabel mahal banget" → flag), `TestTripwire_LanguageDrift` ("Hello Pak the price is good today" — 5/7 English → flag), `TestTripwire_BahasaReply_NoDrift` (pure Bahasa → no flag). Inbound: `TestTripwire_JailbreakInbound` (4 phrases including system-prompt probe), `TestTripwire_OptOut` (5 variants incl. case + leading/trailing whitespace), `TestTripwire_OptOut_NotPartOfSentence` (negative: "saya mau stop merokok" must NOT fire), `TestTripwire_AIQuestion` (4 variants ID+EN).
+- **Tests:** `go test ./internal/llm/ -v -run TestTripwire` → 11 PASS (ReplyTooLong, ReplyAcceptableLength, NonWhitelistURL, WhitelistURL_NoFlag, Profanity, LanguageDrift, BahasaReply_NoDrift, JailbreakInbound, OptOut, OptOut_NotPartOfSentence, AIQuestion). Pre-existing `internal/db` failure unrelated (Task 13 will address).
+- **Commit:** `feat(llm): tripwire heuristics — length, URL, profanity, drift, jailbreak, opt-out, AI-Q`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 10 (`internal/llm/tone.go` — first-reply tone shaping for the opening Calista turn on a fresh conversation).
+
+## 2026-06-14 — Calista Phase 1A Task 8: `internal/llm/pinning.go` sticky pin manager with hard 2-swap cap — DONE
+
+- **What:** Added the per-conversation sticky-pinning manager so once a model serves a conversation Calista keeps using it (customer-voice continuity over WhatsApp). Forced swaps (via Task 12 router when the pinned model is cooling down or chain-exhausted on it) bump `swap_count`; the third forced swap returns `ErrSwapCapExceeded`, which Task 12 will map to `ChainExhaustedError` so Task 15's engine escalates the conversation to admin. Same persistence pattern as Task 7's cooldown registry — interface lives here in `llm`, the actual DB-backed store lands in Task 13 (`internal/db/calista.go`). TDD: wrote `pinning_test.go` first against `stubPinStore`, confirmed build failure on `undefined: PinEntry/NewPinManager/ErrSwapCapExceeded`, then implemented `pinning.go` and all 5 tests went green.
+- **File `backend-go/internal/llm/pinning.go` (~80 LOC):** `PinEntry{ConversationID, ModelSlug, PinnedAt, SwapCount}` — persisted shape, mirrors the `conversations` columns added in Task 3's migration. `PinStore` interface: `LoadPin(ctx, convID) (PinEntry, bool, error)` + `SavePin(ctx, PinEntry) error` + `ClearPin(ctx, convID) error`. `PinManager{store}` constructed via `NewPinManager(store)` — no in-memory cache (router queries at most once per turn so DB hit acceptable; differs from cooldown which is hit on every chain walk). Four methods: `Get(ctx, convID) (*PinEntry, error)` returning nil-pin when unset; `Set(ctx, convID, slug)` for pre-flight assignment (resets `SwapCount=0`, used for fresh conversations); `ForceSwap(ctx, convID, newSlug)` rotates pin + increments `SwapCount`, returning `ErrSwapCapExceeded` when `current.SwapCount >= maxSwapCount=2` (so the 3rd attempt errors); `Unpin(ctx, convID)` clears the pin (called by engine on terminal states: BOOKED, COMPLETED, CANCELLED, ESCALATED_*). `ErrSwapCapExceeded = errors.New("llm/pinning: swap cap exceeded")`.
+- **File `backend-go/internal/llm/pinning_test.go` (~110 LOC):** Five tests against a `stubPinStore` (in-memory map + saved/cleared write logs). `TestPinning_NewConversation_NoPin` — `Get` returns nil for unknown conv. `TestPinning_SetAndGet` — round-trip + `SwapCount=0` invariant on initial Set. `TestPinning_ForcedSwap_IncrementsCount` — first swap rotates model and bumps count to 1. `TestPinning_ForceSwap_OverCapReturnsError` — Set + 2 ForceSwaps reach cap; 3rd ForceSwap returns `ErrSwapCapExceeded`. `TestPinning_Unpin_ClearsState` — `Unpin` removes pin + records one `ClearPin` call.
+- **Tests:** `go test ./internal/llm/ -v -run TestPinning` → 5 PASS (NewConversation_NoPin, SetAndGet, ForcedSwap_IncrementsCount, ForceSwap_OverCapReturnsError, Unpin_ClearsState). Full package still green; pre-existing `internal/db` failure unrelated.
+- **Commit:** `feat(llm): per-conversation sticky pin manager with hard 2-swap cap`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 9 (`internal/llm/tripwire.go` — heuristics for length >800, non-whitelist URLs, profanity, jailbreak phrases).
+
+## 2026-06-14 — Calista Phase 1A Task 7: `internal/llm/cooldown.go` registry with exponential backoff + persistence interface — DONE
+
+- **What:** Added the per-model cooldown registry — in-memory hot path with write-through to a pluggable `CooldownStore` interface (Task 13 will implement the actual DB store via lib/pq). Mutex-protected so concurrent message handlers can safely query/update. TDD: wrote `cooldown_test.go` with stub store first, confirmed build failure on `undefined: CooldownEntry/NewCooldownRegistry`, then implemented `cooldown.go` and all 5 tests went green.
+- **File `backend-go/internal/llm/cooldown.go` (~110 LOC):** `CooldownEntry{ModelSlug, CooldownUntil, LastError, ConsecutiveFailures, UpdatedAt}` — the persisted shape. `CooldownStore` interface: `LoadCooldowns() ([]CooldownEntry, error)` + `SaveCooldown(CooldownEntry) error`. `CooldownRegistry{mu sync.RWMutex, state map[string]CooldownEntry, store}` constructed via `NewCooldownRegistry(store)` which loads existing entries and propagates load errors. Four methods: `IsHealthy(slug, now) bool` (unknown=healthy), `MarkRateLimited(slug, baseMin, now)` (bumps via lookup table `{0, 30, 60, 180}` then hard-caps at 240min/4h), `MarkTransient(slug, minutes, reason, now)` (5xx=5min, timeout=2min, monotonic — only extends never shortens; does NOT bump failures counter since transient ≠ quota signal), `MarkSuccess(slug, now)` (resets ConsecutiveFailures to 0 so next 429 reverts to base 60min). All write methods do best-effort synchronous SaveCooldown — in-memory is source of truth, so a store failure logs but doesn't block routing.
+- **File `backend-go/internal/llm/cooldown_test.go` (~95 LOC):** Five tests against a `stubStore` (in-memory map + write log + injectable errors). `TestCooldown_NewIsHealthy` — unknown model healthy. `TestCooldown_MarkRateLimited` — 60min cooldown active at +1min, expired at +61min, 1 store write recorded. `TestCooldown_ExponentialOnRepeatedFailures` — 5 successive marks bump to 60→90→120→240→240 (cap), still cooled at +230min. `TestCooldown_ResetOnSuccess` — after success, fresh 429 cools fresh 60min (no carryover bump). `TestCooldown_LoadErrorReturned` — constructor propagates `store.LoadCooldowns` error.
+- **Implementation note (deviation from verbatim plan):** The verbatim plan code used linear `+30 per failure` which gives 60/90/120/150/180 — but the plan's own docstring AND the verbatim test (`IsHealthy at now+230 == false` after 5 calls) require the piecewise `{baseMin, +30, +60, +180, cap}` pattern. Aligned impl to docstring/test (using a `cooldownBumpTable []int{0, 30, 60, 180}` lookup). Spec text in the task description ("+30min per consecutive failure") also implies linear — flagging for spec update: actual backoff is piecewise accelerating, hitting the 4h cap on the 4th failure rather than the 7th.
+- **Tests:** `go test ./internal/llm/ -v -run TestCooldown` → 5 PASS (NewIsHealthy, MarkRateLimited, ExponentialOnRepeatedFailures, ResetOnSuccess, LoadErrorReturned). Full package green.
+- **Commit:** `feat(llm): cooldown registry with exponential backoff + persistence interface`. 2 files, branch `feat/calista-phase-1a`.
+- **Next:** Task 8 (`internal/llm/pinning.go` — sticky pin manager with 2-swap cap per conversation).
+
+## 2026-06-13 — Calista Phase 1A Task 6: `internal/llm/openrouter.go` HTTP client + error classification — DONE
+
+- **What:** Added the minimal OpenAI-compatible HTTP client for `https://openrouter.ai/api/v1/chat/completions` plus three exported error predicates (`IsRateLimit`, `IsServerError`, `IsTimeout`) that the router (Task 12) will use to drive cooldown decisions. Kept dependency-free — `net/http` + `encoding/json` only, no vendor SDK — because OpenRouter mirrors OpenAI's chat-completions contract verbatim. TDD: wrote `openrouter_test.go` first, confirmed build failure on `undefined: NewOpenRouterClient/WithBaseURL/WithHTTPTimeout/CompletionRequest/IsRateLimit/IsTimeout`, then implemented `openrouter.go` and watched all 3 tests turn green.
+- **File `backend-go/internal/llm/openrouter.go` (~180 LOC):** `OpenRouterClient{apiKey, baseURL, http}` with functional-options constructor `NewOpenRouterClient(apiKey, opts...)`. Options: `WithBaseURL(u)` for test-server injection, `WithHTTPTimeout(d)` to override the default 8s per-call soft timeout (spec §5.1). `CompletionRequest{Model, Messages, MaxTokens omitempty}` mirrors OpenAI shape. `Complete(ctx, req)` marshals JSON, sets `Authorization: Bearer <key>` + `Content-Type: application/json`, POSTs, then dispatches on status: 429 → `*rateLimitError`, 5xx → `*serverError`, other 4xx → opaque fmt error, 2xx → parse `openRouterAPIResponse` (choices[0].message.content + usage triple) into `CompletionResponse{Body, Usage TokenUsage}`. `http.Client.Do` errors are classified via `isContextDeadline` (checks `errors.Is(DeadlineExceeded)` + `Client.Timeout` substring) and wrapped as `*timeoutError`. All three error types are unexported; classification flows only via the three exported predicates using `errors.As`.
+- **File `backend-go/internal/llm/openrouter_test.go` (~80 LOC):** Three table-style tests using `httptest.NewServer`. `TestOpenRouterClient_Success` asserts the Authorization header (`Bearer test-key`), request body model field, and decoded `resp.Body == "Halo Pak!"` + `Usage.Prompt == 42 && Usage.Completion == 7`. `TestOpenRouterClient_RateLimited` returns 429 and asserts `IsRateLimit(err) == true`. `TestOpenRouterClient_Timeout` configures server to `time.Sleep(200ms)` against `WithHTTPTimeout(50ms)` and asserts `IsTimeout(err) || strings.Contains(err.Error(), "deadline")`.
+- **Tests:** `go test ./internal/llm/ -v -run TestOpenRouter` → 3 PASS (Success 0.00s, RateLimited 0.00s, Timeout 0.20s). Full package run still green for Task-4 + Task-5 tests.
+- **Commit:** `dcb3496 feat(llm): OpenRouter HTTP client with error classification`. 2 files, 264 insertions, branch `feat/calista-phase-1a`.
+- **Next:** Task 7 (`internal/llm/cooldown.go` — in-memory cooldown registry with exponential backoff, fed by 429/5xx/timeout classifications from this client).
+
+## 2026-06-13 — Calista Phase 1A Task 5: `internal/llm/chain.go` default 10-model chain + Calista persona prompt — DONE
+
+- **What:** Added `DefaultCalistaAgent()` factory returning the locked Phase 1A free-tier OpenRouter chain (no paid fallback) plus the Calista persona system prompt. TDD: appended `TestDefaultChain_TenModels` to `models_test.go`, confirmed build failure on `undefined: DefaultCalistaAgent`, then implemented `chain.go` and the test went green. Existing two Task-4 tests still pass.
+- **File `backend-go/internal/llm/chain.go` (50 LOC):** Single exported function `DefaultCalistaAgent() AgentConfig` returning `Name: "Calista"`, `SystemPrompt: calistaSystemPrompt`, and `Chain` — a 10-element `[]ModelSpec` with each slot at `CooldownMinutes: 60`. Slot order locked from spec §1 / §6.3 mockup: `google/gemma-4-31b` (primary) → `qwen/qwen3-next-80b-a3b-instruct` → `nex-agi/nex-n2-pro` → `nvidia/nemotron-3-super` → `google/gemma-4-26b-a4b` → `openai/gpt-oss-120b` → `meta-llama/llama-3.3-70b-instruct` → `nousresearch/hermes-3-405b` → `nvidia/nemotron-3-nano-30b-a3b` → `openai/gpt-oss-20b`. Doc comments explain rate-limit fall-through semantics, the "all 10 exhausted → admin escalation" path, and how to re-order (router reads slice per Call).
+- **Persona prompt (`calistaSystemPrompt` const):** Bahasa Indonesia hard-rules block (TONE/LANGUAGE/LENGTH/EMOJI), two few-shot exemplars (kabel 2.5mm, Surabaya order address-collect), and the AI-disclosure clause (`*staff*` escape hatch). Strict-trains every model in the 10-slot chain to keep the same Pak/Bu register, ≤3-sentence reply length, and constrained emoji set (👋 🙏 ✅) — minimizes inter-model voice variance when the router falls through.
+- **File `backend-go/internal/llm/models_test.go` (+16 LOC, append-only):** `TestDefaultChain_TenModels` asserts `Name == "Calista"`, `len(Chain) == 10`, `Chain[0].Slug == "google/gemma-4-31b"`, and non-empty `SystemPrompt`. Sufficient to lock the spec-mandated invariants without over-constraining the prompt copy.
+- **Tests:** `go test ./internal/llm/ -v` → 3 PASS (Task-4 `TestChainExhaustedError_ContainsTriedModels`, `TestMessageRole_Validation`, new `TestDefaultChain_TenModels`). Run time 0.146s.
+- **Commit:** `ea53a10 feat(llm): default 10-model free-tier chain + Calista persona prompt`. 2 files, 66 insertions, branch `feat/calista-phase-1a`.
+- **Next:** Task 6 (`internal/llm/openrouter.go` — HTTP client wrapping the OpenAI-compatible chat-completions endpoint at `https://openrouter.ai/api/v1`).
+
+## 2026-06-13 — Calista Phase 1A Task 4: `internal/llm/models.go` core types — DONE
+
+- **What:** First Go code in the new `backend-go/internal/llm/` package — pure types, zero internal-package dependencies. TDD: failing test first (build errors on undefined `ChainExhaustedError`, `ErrChainExhausted`, `IsValidRole`), then minimal implementation, then green. Tasks 5-12 will build on these types.
+- **File `backend-go/internal/llm/models.go` (107 LOC):** Package doc comment lays out the gateway's eventual responsibilities (HTTP to OpenRouter, sticky pinning, cooldown registry, tone seeding, tripwires, telemetry). Defines `ErrChainExhausted` sentinel + `ChainExhaustedError{TriedModels}` wrapper with `Is(target)` matching the sentinel (engine catches this and transitions conversation to `StateEscalatedAdmin`). Defines `ModelSpec{Slug, CooldownMinutes}`, `AgentConfig{Name, SystemPrompt, Chain}`, `Message{Role, Content}` (OpenAI chat-completion role convention), `IsValidRole` (system/user/assistant only), `CallOpts{ConversationID, StateBoundary, MaxTokens}` (StateBoundary is the *one* moment the router may unpin), `Response{Body, ModelUsed, WasForcedSwap, LatencyMs, PromptTokens, OutputTokens, TripwireFlags}`, `TokenUsage{Prompt, Completion, Total}`.
+- **File `backend-go/internal/llm/models_test.go` (35 LOC):** Two table-style tests — `TestChainExhaustedError_ContainsTriedModels` asserts non-empty `Error()` and `errors.Is(err, ErrChainExhausted)` matches; `TestMessageRole_Validation` covers all 3 valid roles + `"customer"` + empty-string negatives. Both PASS at commit time.
+- **Commit:** `da183b1 feat(llm): core types — ChainExhaustedError, ModelSpec, AgentConfig, CallOpts`. 2 files, 132 insertions, branch `feat/calista-phase-1a`.
+- **Next:** Task 5 (`internal/llm/chain.go` — default 10-model chain + Calista persona system prompt loaded from `internal/assets/calista_system_prompt.txt`).
+
+## 2026-06-13 — Calista Phase 1A: migration review fixes — DONE
+
+- **What:** Layered fix-up commit on top of `c840132`/`de0e023`/`47cf0ed` addressing code-review findings on the three Phase 1A migration files. No amend — per project convention, fixes go in a new commit. File-only (founder has not yet applied any of the Phase 1A migrations).
+- **Issue 1 (CRITICAL) — `llm_calls.conversation_id` retention:** Changed `NOT NULL ... ON DELETE CASCADE` → nullable `... ON DELETE SET NULL` (`20260613000034_calista_phase1a_llm_calls.sql:7`). Preserves telemetry forever for the ML training corpus (spec §13) even if a parent `conversations` row is deleted. Previously a conversation delete would erase all per-call telemetry, contradicting the retention decision.
+- **Issue 2 (IMPORTANT) — IDR money precision:** `cost_idr_estimated numeric(12,4)` → `numeric(15,2)` (`20260613000034_calista_phase1a_llm_calls.sql:15`). Matches house style used in `core_ai_engine.sql`, `recon_payable_slots.sql`, `recon_cash_batches.sql`, and `orders.total`. Avoids precision drift on JOINs. Per-call Gemini Flash cost ≈ Rp 16 for 1k tokens, so 2-decimal cents-of-rupiah precision is sufficient.
+- **Issue 3 (IMPORTANT) — RLS policy clarification:** Added explanatory comment block above the `DO $$` policy blocks in BOTH `20260613000034_calista_phase1a_llm_calls.sql:37-40` and `20260613000035_calista_phase1a_cooldowns.sql:16-19`. Clarifies that `authenticated` role with `USING (true)` is intentional in this project — only admins authenticate to Supabase, end customers never do; backend writes via `service_role` bypass RLS. Eliminates "admin" naming vs `USING (true)` predicate confusion for future readers.
+- **Deferred (minor, not fixed):** `status text + CHECK` vs ENUM, `idx_llm_calls_created` global-time aggregations index, `swap_count` index, policy name quoting style. Will revisit if dashboard/volume signal warrants.
+- **Not applied:** `DATABASE_URL` unset; founder runs `supabase db push` manually after merging the branch.
+- **Next:** Task 4 (`internal/llm/models.go` core types).
+
+## 2026-06-13 — Calista Phase 1A Tasks 1-3: Supabase migrations written — DONE
+
+- **What:** Authored three Supabase migration files for Phase 1A. File-only delivery per project convention (founder applies `supabase db push` manually after review). Branch `feat/calista-phase-1a`.
+- **Migrations (one commit each, in apply order):**
+  - `supabase/migrations/20260613000034_calista_phase1a_llm_calls.sql` (49 lines) — new `llm_calls` telemetry table: id/conversation_id (FK → conversations ON DELETE CASCADE) /model_slug/tier/was_forced_swap/state_boundary/token counts/latency_ms/cost_idr_estimated/status/error_message/created_at. CHECK constraints on tier (4 values) + status (7 values). Three indexes: `(model_slug, created_at DESC)`, `(conversation_id, created_at DESC)`, partial `(status) WHERE status != 'success'`. RLS enabled, idempotent `llm_calls_admin_read` SELECT policy for authenticated. Commit `c840132`.
+  - `supabase/migrations/20260613000035_calista_phase1a_cooldowns.sql` (28 lines) — new `model_cooldowns` table: `model_slug PRIMARY KEY`, `cooldown_until`, `last_error`, `consecutive_failures`, `updated_at`. Source of truth across daemon restarts to prevent 429 storms. RLS enabled, idempotent `model_cooldowns_admin_read` policy. Commit `de0e023`.
+  - `supabase/migrations/20260613000036_calista_phase1a_conversations_pinning.sql` (20 lines) — ALTERs existing `conversations` (from `20260531000000_core_ai_engine.sql`) adding `pinned_model_slug`, `pinned_at`, `swap_count` (default 0), `first_reply_tone jsonb` — all `ADD COLUMN IF NOT EXISTS`. Partial index `idx_conversations_pinned_model` on `pinned_model_slug WHERE NOT NULL`. Comments document spec §5.1 routing decision, swap cap (2 → escalate), tone signature shape. Commit `47cf0ed`.
+- **Pre-flight verification:** Read base `20260531000000_core_ai_engine.sql` and confirmed (a) `conversations.id` is `uuid PRIMARY KEY` (FK target valid), (b) none of the 4 pinning columns exist on the base table, (c) no later migration introduces `llm_calls`, `model_cooldowns`, or any of the pinning columns — clean adds.
+- **Migration timestamps:** `34`, `35`, `36` — gapless after latest `20260613000022_sales_channels_phase_b_realtime.sql`. No collision risk.
+- **Not applied:** `DATABASE_URL` unset; founder runs `supabase db push` manually. File-only delivery per CLAUDE.md gotcha.
+- **Next:** Tasks 4-12 implement `backend-go/internal/llm/` package (models, chain, OpenRouter client, cooldown registry, pin manager, tripwire, tone, telemetry, router).
+
+## 2026-06-13 — Calista Phase 1A implementation plan written — DONE
+
+- **What:** Invoked `superpowers:writing-plans` skill to produce a bite-sized, TDD-discipline implementation plan for Phase 1A (OpenRouter swap + auto-failover router + sticky pinning + tripwire heuristics + engine integration). Plan saved to `docs/superpowers/plans/2026-06-13-calista-phase-1a-implementation.md`.
+- **Plan structure (20 tasks + 5 pre-flight checks + 5 self-review steps):**
+  - Pre-flight P.1-P.5: env setup, OpenRouter account creation, $10 prefund, CALISTA_ALERT_PHONE configuration
+  - Tasks 1-3: Supabase migrations — `llm_calls` table, `model_cooldowns` table, `conversations` ALTER for pinning columns
+  - Tasks 4-12: `backend-go/internal/llm/` package — models, chain config (10 free models + Calista persona prompt), OpenRouter HTTP client, cooldown registry with exponential backoff, sticky pin manager with 2-swap cap, tripwire heuristics (7 flags), first-reply tone seeding, telemetry recorder, router orchestrator
+  - Task 13: `backend-go/internal/db/calista.go` — CalistaStore implementing llm CooldownStore/PinStore/TelemetryStore via lib/pq
+  - Tasks 14-15: Engine refactor — rename `GeminiClient → LLMClient`, add `CallOpts/LLMResult/ChainExhausted`, per-state max_tokens, tolerant JSON parser
+  - Tasks 16-17: Adapters — `gemini.EngineAdapter` (emergency direct fallback) and `llm.EngineAdapter` (router → engine.LLMClient)
+  - Task 18: `main.go` wiring behind `ENABLE_OPENROUTER` feature flag with Gemini as fallback
+  - Task 19: Engine integration test — happy path + chain-exhausted escalation to admin
+  - Task 20: Manual smoke test against real OpenRouter (8 steps including pin verification, ChainExhausted forced scenario, 30-min soak)
+  - Self-review R.1-R.5: spec coverage gap-check (caught missing `Router.Unpin` on terminal state — added as R.2 fix), placeholder scan, type consistency, full-build + full-test
+- **Each task uses 4-5 step TDD structure:** write failing test → run (verify fail) → minimal implementation → run (verify pass) → commit. Frequent commits, DRY, YAGNI throughout.
+- **No placeholders:** every code block in the plan is complete and ready to copy. Exact file paths, exact bash commands, exact expected output for each step.
+- **Files to create:** ~12 new Go files, 3 new SQL migrations, 0 new third-party dependencies (OpenRouter accessed via raw net/http since it's OpenAI-compatible).
+- **Files modified:** `internal/engine/machine.go`, `internal/engine/parser.go`, `internal/engine/machine_test.go`, `config/config.go`, `main.go`. Existing `internal/gemini/` untouched (kept as emergency fallback).
+- **Estimate:** ~1.5 weeks for a single engineer following the plan. Subagent-driven execution can compress to 2-3 days if parallelizable.
+- **Next step options offered to user:**
+  1. **Subagent-driven execution** (recommended) — dispatch fresh subagent per task with two-stage review
+  2. **Inline execution** — batch execution in this session using executing-plans skill with checkpoints
+
+## 2026-06-13 — Pricing v2: Premium tier + Calista cost notification + stage-based hiring discipline — DONE
+
+- **What:** Founder asked for pricing analysis for new Premium tier (Pro + Calista AI) with target 50% net margin. Conversation surfaced critical reality check: at 50 tenants with FULL hired team (founder + 5 employees), Vosi would lose ~Rp 947 juta/year. Resulted in major pricing.md v2 rewrite + adding stage-based hiring discipline rules.
+- **Pricing v2 (LOCKED after multi-round refinement):**
+  - **Starter Q Rp 549K / Y Rp 384.3K** (was Rp 399K / Rp 339K — bumped +38% Q, +13% Y; margin Q 49% / Y 27%)
+  - **Pro Q Rp 859K / Y Rp 601.3K** (was Rp 799K / Rp 559K — bumped +7.5% Q, +7.5% Y; margin Q 52% / Y 32%)
+  - **Premium Q Rp 3,499K / Y Rp 2,449.3K** (NEW tier — Pro + Calista AI; margin Q 74% / Y 63%)
+  - **Anchor pricing strategy:** all tiers show struck-through "list price" 2× effective + "50% OFF LAUNCH" badge for psychology
+  - **Setup fees:** Starter/Pro Rp 1.5M, Premium Rp 3.5M (covers Calista persona tuning + shadow mode monitoring)
+  - **Yearly discount 30% uniform** across all tiers (was asymmetric 15% Starter / 30% Pro in v1)
+- **Feature restructure:** Pro now INCLUDES GL/Neraca/Arus Kas (was Premium-only in v1). Premium's ONLY differentiator vs Pro = Calista AI. Cleaner positioning.
+- **Refined HPP per tier (v2):** Starter Rp 280K, Pro Rp 410K (+Rp 30K GL), Premium Rp 910K (+Rp 400K Calista marginal cost). v1 used flat Rp 321K for all tiers — v2 differentiates per feature complexity.
+- **NEW major section: Stage-based hiring roadmap.** 7 stages from 1-3 tenants (founder only) → 300+ tenants (full team). Each stage maps tenant count → team config → monthly OPEX → expected margin. Breaks the illusion that "47% blended margin at 50 tenants" is sustainable with hired team — only with founder sweat equity.
+- **NEW major section: Year 1-2 Financial Discipline Rules** (7 rules):
+  1. Hire only when MRR ≥ 3× new hire's monthly cost (no pre-hiring)
+  2. Founder cash salary scales with stage (Rp 5M Stage 0 → Rp 30M Stage 5+); difference = unrealized founder equity
+  3. Setup fees treated as runway (one-time Year 1 cash), NOT recurring profitability
+  4. Premium tier subsidizes Starter/Pro at blended level; target ≥20% Premium share
+  5. LTV/CAC ≥ 3:1 discipline — walk away from tenants below
+  6. Cost notification + manual approval (mirrors Calista paid-tier rule from existing memory)
+  7. Quarterly P&L self-review with stage transition readiness check
+- **PAT forecast at 50 tenants per team config:**
+  - LEAN (founder + 1 CS, Rp 15M OPEX): +Rp 398M/year ✅
+  - MID (+ jr eng + sales, Rp 55M OPEX): -Rp 82M/year ⚠️
+  - FULL (+ marketing + sr eng, Rp 135M OPEX): -Rp 947M/year ❌
+- **Break-even tenant count per team size:** founder only ~5, +1 CS ~16, +1 jr eng ~37, +1 sales ~58, +1 marketing ~78, full team ~140. Vosi achieves real 40-50% net margin only at 500-1000+ tenants (year 3-4 trajectory typical for bootstrapped Indonesian SaaS).
+- **Updated cashflow projection at 50 tenants** (35% Starter / 45% Pro / 20% Premium mix):
+  - Recurring revenue: Rp 54.2M/mo (vs v1 Rp 27.8M/mo, +95%)
+  - Year 1 cash upfront (incl setup): Rp 452M (vs v1 Rp 264M, +71%)
+  - Annual profit at lean stage: Rp 372M (vs v1 Rp 140M, +166%)
+- **Competitive context updated** with Premium vs Mekari Kontak comparison: Vosi Premium Rp 3,499K Q matches Jurnal's Rp 3M monthly anchor while bundling full ERP + Calista AI; Mekari Kontak requires Jurnal subscription on top → total stack actually more expensive.
+- **Files changed:** `docs/business/pricing.md` extensively rewritten (~150 lines added, all sections updated). `docs/superpowers/specs/2026-06-13-calista-phase-1-design.md` earlier updated with cost notification system (§5.7), per-tenant OpenRouter API key column (§4.2), Layer 2 paid Gemini Flash opt-in with founder approval flow.
+- **Strategic implication for tenant #2-50 trajectory:** Premium tier is the financial linchpin. Without Premium subsidizing thin Starter Yearly margins, blended margin collapses. Sales conversation must aggressively position Calista as the upsell driver — every Starter→Premium or Pro→Premium conversion = +Rp 2,640K/mo per tenant (the AI value capture).
+- **Branch:** `feat/configurable-sales-channels` (Calista work + pricing piggybacks current branch; will split when implementation starts).
+- **Next:** founder reviews `pricing.md` v2 + Phase 1 spec one final pass. If approved, invoke `writing-plans` skill on Phase 1A for the implementation plan. Sales/marketing collateral for Premium tier launch is separate workstream.
+
+## 2026-06-13 — Calista Phase 1: gap audit + retention reversal + data-moat sections (brainstorm + spec update) — DONE
+
+- **What:** Founder asked for gap audit ("is there anything I miss?"). Surfaced 20 gaps across blocker/important/nice-to-have severity. Critical finding: **schema collision** — `conversations` and `messages` tables ALREADY exist (from migration `20260531000000_core_ai_engine.sql`) with matching Go structs in `backend-go/internal/models/types.go`. Original spec proposed `CREATE` for both → would either fail migration or break existing engine/poller code. Fixed via `ALTER TABLE` approach. Also: founder reversed retention policy — wants ALL data kept forever for future ML training corpus.
+- **Spec edits applied (~10 changes):**
+  - **§4.1 Migrations** — restructured: 2 ALTER migrations for existing `conversations` + `messages`, plus NEW migrations for `ai_agents`, `ai_knowledge_sources`, `llm_calls`, `model_cooldowns` (cooldown registry persistence), media Storage bucket
+  - **§4.2.1** — explicit ALTER of `conversations`: adds `mode_changed_at`, `mode_changed_by`, `last_message_at`, `last_message_preview`, `unread_count`, `pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`. `mode` is a GENERATED column derived from existing `ai_active` boolean — keeps backward compat with existing `engine.Machine`/`followup_poller`/`heartbeat_poller`. Writes use `ai_active`; reads use `mode`. Backfill `last_message_at` from existing data
+  - **§4.2.2** — explicit ALTER of `messages`: adds `direction` (generated from `sender`), `model_used`, `latency_ms`, `tripwire_flags`. No rename of `body`/`sender`/etc. — existing struct interfaces preserved
+  - **§4.2** — added `model_cooldowns` table (cooldown registry persistence — solves "daemon restart wipes cooldown → 429 storm" gap)
+  - **§4.3** — added `whatsapp-media` Supabase Storage bucket (was missing for multimodal media_url)
+  - **§5.1 Cooldown rules** — added persistence detail, exponential backoff (60→90→120m), and `Router.Call` 15s total budget on top of per-call 8s soft timeout
+  - **§5.1 Tripwire heuristics** — added 3 new rules: language drift (>30% English), customer opt-out (`STOP`/`berhenti`/`unsubscribe` → flip to human mode + ack message), AI self-ID question detection (inject directive into next prompt so model answers honestly without breaking voice)
+  - **§5.2 engine refactor** — expanded: full-payload token budget (drops oldest history when total prompt > 80% of model context), tolerant JSON parser (strips markdown fences, extracts first balanced `{...}`, retry-with-strict-directive on parse failure)
+  - **§5.2.1 NEW** — Engine integration map: how each existing engine artifact wires to new `llm.Router`. `GeminiClient` interface renamed `LLMClient`, `ProcessResult.GeminiError` renamed `LLMError`, new `ProcessResult.ChainExhausted bool` flag, `Conversation.AIActive` Go field unchanged, `internal/gemini/` kept as emergency direct fallback
+  - **§8 Rollout** — added 6 objective shadow-mode criteria (was vague "compare quality manually"): reply relevance 1-5 sample, length comparable to baseline, language ≥95% Bahasa, tripwire fires per provider, state transition success ≥98%, latency p95 <3s. Plus tenant #1 operator communication script
+  - **§13 NEW Data Retention Policy** — locked: no automated cleanup, indefinite retention for ML training. UU PDP individual deletion handled via admin-triggered `redact_calista_conversation(conversation_id)` RPC (preserves structural rows for ML stats). Storage cost projected <$1/month for 10-year retention
+  - **§14 NEW Data as a Moat** — articulates ML training corpus value: conversation pairs, operator-corrected drafts as DPO preference pairs (highest-value modern training signal), tone signatures, tripwire-flagged outputs, customer media. Projected corpus size (3 years = ~40K conversations, ~16.5K preference pairs). Fine-tuning roadmap month 6/12/18/24
+  - **§15 NEW Capacity & Benefits Summary** — capacity table (conservative 165/realistic 300/generous 625 conversations/day), 2-5× multiplier vs today, headroom for 5 tenants on single chain. Benefits broken into customer-facing, operator-facing, engineering, business, data-moat
+  - **§16 NEW Pre-Launch Checklist** — gates `ENABLE_OPENROUTER=true` flip: operational (account/keys/migrations), legal/compliance (UU PDP individual deletion RPC, privacy notice, lawful basis check, AI self-ID), quality (fallback testing, sticky pin, integration map, cooldown persistence, media bucket), rollback plan
+- **Capacity headlines:** ~165-625 customer conversations/day per tenant (vs ~125/day today on Gemini-only); 3-12× headroom for tenant #1's current ~50/day actual volume; room for tenants #2-5 on the same OpenRouter free-tier chain
+- **Retention policy LOCKED:** no auto-cleanup; data preserved forever for ML training. Individual customer deletion handled via admin RPC (per UU PDP §35). Storage cost <$1/month long-term
+- **Branch:** `feat/configurable-sales-channels` (Calista work piggybacks this branch for now; will split when implementation starts)
+- **Next:** user reviews the updated spec one more time. If approved, invoke `writing-plans` skill on Phase 1A for the actual implementation plan.
+
+## 2026-06-13 — Calista Phase 1A: deepen continuity + drop paid fallback (brainstorm + spec update) — DONE
+
+- **What:** User refined Phase 1A scope to emphasize WhatsApp conversation continuity during model swaps + remove paid fallback. Updated `docs/superpowers/specs/2026-06-13-calista-phase-1-design.md` extensively. Two threads of refinement:
+  1. **Continuity design (new §5.6):** sticky per-conversation pinning, state-boundary unpin opportunity, hard 2-swap cap → `ChainExhaustedError` → engine transitions to `StateEscalatedAdmin` (reuse existing escalation flow), first-reply tone seeding (`conversations.first_reply_tone JSONB`), persona constants, per-state max_tokens cap, language-drift guard. Worked example showing a 9-turn order with two swaps and one escalation.
+  2. **Cost = Rp 0:** dropped `google/gemini-2.5-flash` paid last-resort. Expanded chain from 7 → 10 free models: `gemma-4-31b → qwen3-next-80b → nex-n2-pro → nemotron-3-super → gemma-4-26b-a4b → gpt-oss-120b → llama-3.3-70b → hermes-3-405b → nemotron-3-nano-30b → gpt-oss-20b → (escalate to admin)`. All exhausted → human handover via existing `StateEscalatedAdmin` flow. Recommended one-time $10 OpenRouter prefund to unlock higher free-tier rate limits (deposit, not subscription).
+- **Decision locked: Sticky once swapped (Option A) + anti-flip-flop + state-boundary unpin.** Customer sees AT MOST 2 voice changes per conversation; 3rd is to a human.
+- **Mitigation tradeoffs walked through with user in plain (shop staff) language:**
+  - Con: stuck on backup model after primary returns → fix: state-boundary unpin opportunity + chain quality + short conversations + telemetry-driven retune
+  - Con: cascading swaps → fix: hard 2-swap cap → escalate + cooldown registry + pre-flight health probe + traffic distribution
+  - Voice shift dampening → fix: tight persona + first-reply tone memory + few-shot examples + length cap + language guard
+- **Spec changes applied (8 edits):**
+  - §1 Goals — added continuity + Rp 0 cost as explicit goals
+  - §4.2 `conversations` table — added `pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`
+  - §4.2 `llm_calls` table — added `was_forced_swap`, `state_boundary`, `escalated_chain_exhausted` status
+  - §5.1 Router — Pin/Unpin/StateBoundary methods, ChainExhaustedError, 5-step routing decision algorithm
+  - §5.5 Background jobs — added stale-pin cleanup (24h inactivity)
+  - §5.6 **NEW** — Conversation Continuity Design (extensive: technical/perceptual layers, 7 mechanisms, worked example, test coverage list)
+  - §6.3 Calista Settings UI mockup — 10 free models listed, paid removed, continuity controls shown
+  - §7 Phase 1A — estimate raised to ~1.5 weeks, added pre-phase founder setup steps (OpenRouter $10 prefund, env vars)
+  - §8 Rollout — added pre-Phase-1A setup steps
+  - §11 Risks — added 4 new risks specific to escalate-to-admin pattern + silent-paid-conversion
+  - §12 Success Criteria — updated metrics (≥5 of 10 models, <0.5% escalation rate, Rp 0 monthly)
+- **Cost prediction**: Tenant #1 monthly cost = Rp 0. With $10 prefund, OpenRouter free-tier rate limits go up; we won't spend the deposit because no paid model in chain.
+- **Worst-case UX flow** (all 10 models simultaneously down): Calista sends "Sebentar ya Pak/Bu, saya cek dulu" → admin notified via existing WA escalation flow → human takes over. Customer not stranded.
+- **Branch:** `feat/configurable-sales-channels` (current branch — Calista work piggybacks the same branch for now since both touch infra; will branch separately when implementation starts).
+- **Next:** user reviews the updated spec end-to-end. After approval, invoke `writing-plans` skill for Phase 1A implementation plan.
+
 ## 2026-06-13 — Configurable sales channels: Final review fixes (C1 + I2 + I3) — DONE
 
 - **What (C1):** `src/components/icons/ChannelIcon.tsx` — added `tint?: 'white' | 'none'` prop (default `'white'` preserves prior behavior on colored backgrounds). The `filter: 'brightness(0) invert(1)'` is now applied conditionally via spread (`...(tint === 'white' && { filter: ... })`). `src/components/penjualan/ChannelSelector.tsx` — inactive pills now pass `tint='none'` so the SVG renders in its native color over the white card background instead of pure-white-on-white (which made 9 channel icons — 7 marketplace + WhatsApp + Instagram — invisible in the inactive state). Active pills still get `tint='white'` to read against the brand-colored square.
@@ -5561,3 +6041,77 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - Uncommented `{lockTx && currentUser && <LockSubmissionModal ... />}` render block
 - `tsc --noEmit`: 0 errors (clean)
 - Next: Task 4.1 (rakit_lock filter pill in ApprovalInboxScreen)
+
+## 2026-06-14 — Spec: Product Module Enhancement (Multi-Photo Upload + Cari by Foto) — BRAINSTORMING DONE
+
+- **Spec**: `docs/superpowers/specs/2026-06-14-product-photo-search-design.md`
+- **Mockups**: `docs/superpowers/specs/2026-06-13-product-photo-search-mockups/index.html`
+- **Scope**: Extend form Stok existing dengan SKU editable, Sub-Kategori, Satuan (UoM) + multi-satuan konversi opsional, Harga Beli/Modal eksplisit (margin live), Batas Stok Min per produk, Stok Awal (+ approval), Merek "+ Tambah baru", Kategori/Sub-Kategori "+ Buat baru", Foto Produk (min 1 wajib, max 5), Deskripsi (+ tombol "✨ Generate dari Foto"), AI indexing pipeline (Gemini Flash 2.5 Vision + text-embedding-004 + pgvector, free tier), Kasir "Cari by Foto" modal, Pengaturan Costing Method (FIFO/Average toko-wide) + AI activity monitor.
+- **Non-goals**: menu Produk terpisah, Variant, Bundle, Multi-tier pricing, Barcode (no scanner), PPN (belum PKP), Default Supplier, GL accounts, Expiry/Serial/Batch, Rerank Vision step.
+- **Benchmark vs Jurnal Mekari**: gap-fill 4 critical fields ditambah; 5+ field di-skip dengan justification.
+- **Status**: spec written, awaiting user review sebelum invoke writing-plans.
+- **Decisions yang dikunci di session ini**:
+  - Tabel `stocks` di-extend (BUKAN tabel `products` baru) — alasan: hindari migrasi data, banyak FK existing
+  - Free tier Gemini (no paid upgrade tanpa approval owner)
+  - Multi-satuan konvensi: Utama = base/smallest (stock unit), Kedua = packaging (factor &gt; 1)
+  - Min 1 foto wajib (mandatory), thumbnail = slot pertama
+  - AI quota panel: HONEST — count call sistem kita, no fake "X/1500"
+
+## 2026-06-14 — Stok Opname Blind-Count Task 4 — Migration A (fetch_opname_counts + get_opname_session masking) — BLOCKED (DB unreachable)
+
+- **Migration written**: `supabase/migrations/20260614000001_opname_blind_count_fetch_mask.sql`
+  - `fetch_opname_counts(p_session_id BIGINT)` SECURITY DEFINER: returns row-set; masks `system_qty_snapshot`, `variance` (→ NULL) and `variance_value` (→ 0) when caller is NOT 'Owner' AND session status='in_progress'. `counted_qty` stays visible. Default-deny via `COALESCE(v_caller_role, '') <> 'Owner'`.
+  - `get_opname_session(p_session_id BIGINT)` SECURITY DEFINER: returns session row; masks `variance_total_value` (→ 0) under same condition.
+  - Uses legacy text `warehouse` column (pre-Phase-3 cutover) — matches current applied prod schema.
+  - GRANT EXECUTE ... TO authenticated on both fns.
+- **Integration test written**: `tests/integration/opname-blind-count.test.ts`
+  - Inserts QA SKU into `stocks` (legacy columns `stock_atas=25`, `stock_bawah=0`, `harga_modal=1000`).
+  - Picks two non-Owner admin_users as counter/witness; calls `start_opname_session({p_opname_type:'per_sku_list', p_scope_payload:{skus:[testSku]}, p_counted_by, p_witnessed_by})` (verified real param names via grep).
+  - Asserts service-role RPC returns full data with `system_qty_snapshot === 25`.
+- **BLOCKED on apply step**: direct DB host `db.ekhhojaezdfjfwuxyjkl.supabase.co:5432` returns TCP "connection refused" (IPv6-only endpoint; no A record). REST API alive (HTTP 200 on `/rest/v1/admin_users`). Tried 8 AWS pooler regions — all reply "tenant/user postgres.ekhhojaezdfjfwuxyjkl not found" (project ref not provisioned on any pooler tenant).
+- **Action needed from user**: apply via Supabase Studio SQL editor or Supabase MCP `apply_migration` (which is how recent migrations like `kasir_transactions`, `harga_modal` were applied per progress.md history). Then run `npm test tests/integration/opname-blind-count.test.ts`.
+- **NOT yet committed** — per task Step 6 the commit happens after the test passes. Files are durable on disk.
+
+## 2026-06-14 — Spec Product Photo: Round 2 updates dari review user
+
+- **Spec**: same file `docs/superpowers/specs/2026-06-14-product-photo-search-design.md` (updated)
+- **Changes**:
+  - **Variant produk** — pushback success: tunda ke sprint terpisah (alasan: kompleksitas tinggi, parent/child template, attribute registry, migrasi SKU existing, kasir/PO flow rewrite — 5-7 hari sendiri)
+  - **Harga Modal label dinamis**:
+    - Produk baru (tidak ada stock_lots): `Harga Modal Awal (Estimasi)` editable, badge Estimasi
+    - Setelah ≥1 stock_lot dari PO: `Harga Modal Aktual (FIFO|Average)` (dinamis dari company_settings.costing_method), read-only dengan badge 🔒, edit hanya via price_change approval existing
+  - **Multi-warehouse stock display per produk** (data sudah ada di `stock_levels`):
+    - Form Create: dropdown "Gudang Tujuan" untuk Stok Awal
+    - Form Edit: section "Stok per Gudang" tabel read-only
+    - Kasir Cari by Foto hasil: per-warehouse breakdown di card (e.g. "Gudang Atas: 30 · Gudang Bawah: 18 = 48 pcs")
+    - RPC `search_products_by_embedding` updated: return `warehouse_stock JSONB` array dan `total_stock`
+  - **Sub-kategori "+ Buat baru"** dikonfirmasi sudah di spec
+  - **Multi-satuan konversi** dikonfirmasi optional default OFF
+- **Estimasi delta**: +1.5 hari (8 → 9-10 hari sprint)
+- **Status**: spec updated, user reviews next
+
+## 2026-06-14 — Spec Product Photo: Round 4 — multi-tenant readiness (Change A + B)
+
+- **Spec & mockup**: updated
+- **Change A — Generic fallback**: kategori tidak ada di `CATEGORY_SPECS` (Panel/MCB/Kabel/Aksesori) otomatis pakai pola Aksesori (1 textarea Deskripsi, auto-name = isi deskripsi). Code reuse, no new code path. Allows tenant non-elektrik (sembako/fashion/sparepart) buat produk tanpa schema builder.
+- **Change B — tenant_id NULL columns**: `product_categories`, `product_brands`, `product_units` masing-masing dapat `tenant_id UUID NULL` (default NULL = global). Saat multi-tenant Phase 1 ship (sesuai `2026-06-13-multi-tenant-prerequisites-design.md`), backfill + RLS filter — tidak ada migrasi data berisiko. UNIQUE constraint per (tenant_id, lower(name)).
+- **Schema Builder UI per tenant**: explicit deferred ke spec mandiri sprint berikutnya saat tenant non-elektrik onboard dengan kebutuhan konkrit. YAGNI.
+- **Estimasi sprint TIDAK berubah**: 9-10 hari (changes A + B adalah generalisasi gratis, no extra work).
+- **Tenant timeline asumsi**: tenant #2 elektrik 1-2 bulan ke depan = CATEGORY_SPECS elektrik reusable.
+
+## 2026-06-14 — Spec Product Photo: Round 5 — Menu rename + tab structure
+
+- **Spec & mockup**: updated
+- **Pivot decision setelah grilling user soal "kenapa tidak menu terpisah":**
+  - Saya admit reasoning error 2x dalam session ini (push-back awal "extend Stok" → setelah review konteks MSME, terkoreksi)
+  - Final: GABUNG (sesuai MSME convention Jurnal/Moka/Pawoon) + rename label
+- **Menu rename**: "Stok" → **"Produk & Stok"** di Sidebar entry. Label match isi (catalog + stock ops).
+- **Tab structure dalam screen Produk & Stok**:
+  - 📋 Katalog (default) — grid card produk dengan foto, search/filter, tombol Tambah
+  - 🏬 Stok per Gudang — tabel padat qty per warehouse, inline edit, transfer
+  - 📥 Bulk Upload — CSV template/export/import (existing)
+  - ⚠️ Stok Tipis — filter shortcut produk stok ≤ min
+- **File refactor `StockManagerScreen.tsx`** (1051 baris monster) → orchestrator (~200 lines) + 5 child components:
+  - `CatalogGridView.tsx`, `ProductForm.tsx`, `StockTableView.tsx`, `BulkUploadSection.tsx`, `PreviewCard.tsx`
+- **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
+- **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view

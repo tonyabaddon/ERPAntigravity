@@ -1,6 +1,10 @@
 package engine
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 // GreetingResponse is the JSON shape Gemini returns in GREETING state.
 type GreetingResponse struct {
@@ -51,6 +55,11 @@ type ConfirmingResponse struct {
 }
 
 func ParseGreeting(raw string) (*GreetingResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r GreetingResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -59,6 +68,11 @@ func ParseGreeting(raw string) (*GreetingResponse, error) {
 }
 
 func ParseCollecting(raw string) (*CollectingResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r CollectingResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -67,6 +81,11 @@ func ParseCollecting(raw string) (*CollectingResponse, error) {
 }
 
 func ParseClarifying(raw string) (*ClarifyingResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r ClarifyingResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -75,6 +94,11 @@ func ParseClarifying(raw string) (*ClarifyingResponse, error) {
 }
 
 func ParseStockCheck(raw string) (*StockCheckResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r StockCheckResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -83,6 +107,11 @@ func ParseStockCheck(raw string) (*StockCheckResponse, error) {
 }
 
 func ParseConfirming(raw string) (*ConfirmingResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r ConfirmingResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -98,6 +127,11 @@ type DeliveryResponse struct {
 }
 
 func ParseDelivery(raw string) (*DeliveryResponse, error) {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return nil, err
+	}
+	raw = clean
 	var r DeliveryResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return nil, err
@@ -122,9 +156,57 @@ type AddMoreResponse struct {
 }
 
 func ParseAddMore(raw string) AddMoreResponse {
+	clean, err := tolerantParseJSON(raw)
+	if err != nil {
+		return AddMoreResponse{AddAnother: false}
+	}
+	raw = clean
 	var r AddMoreResponse
 	if err := json.Unmarshal([]byte(raw), &r); err != nil {
 		return AddMoreResponse{AddAnother: false}
 	}
 	return r
+}
+
+// tolerantParseJSON normalizes the various JSON-output quirks that different
+// OpenRouter-backed models exhibit. Returns a cleaned JSON object string
+// ready for the strict parsers (ParseGreeting, ParseCollecting, etc.).
+//
+// Steps:
+//   1. Strip ` ```json … ``` ` markdown fences.
+//   2. Find the first balanced `{...}` block via brace counting.
+//   3. Return the extracted block.
+//
+// Errors when no balanced block is present.
+func tolerantParseJSON(raw string) (string, error) {
+	s := raw
+	// 1. Strip markdown code fences.
+	if i := strings.Index(s, "```"); i >= 0 {
+		after := s[i+3:]
+		after = strings.TrimPrefix(after, "json")
+		after = strings.TrimPrefix(after, "\n")
+		if j := strings.Index(after, "```"); j >= 0 {
+			s = after[:j]
+		} else {
+			s = after
+		}
+	}
+	// 2. Find first balanced {...} block.
+	start := strings.Index(s, "{")
+	if start < 0 {
+		return "", fmt.Errorf("tolerant_parser: no opening brace in %q", raw)
+	}
+	depth := 0
+	for i := start; i < len(s); i++ {
+		switch s[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return s[start : i+1], nil
+			}
+		}
+	}
+	return "", fmt.Errorf("tolerant_parser: unbalanced braces in %q", raw)
 }

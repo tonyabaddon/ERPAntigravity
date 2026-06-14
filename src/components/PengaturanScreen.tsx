@@ -606,6 +606,41 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </>
             )}
           </div>
+
+          {/* Modul Stok Opname — witness configurability (Task 14) */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-lg font-bold text-gray-800">Modul Stok Opname</h2>
+            </div>
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={company?.opname_require_witness ?? true}
+                onChange={async (e) => {
+                  const v = e.target.checked;
+                  // Optimistic local update for snappy toggle UX.
+                  setCompany(prev => prev ? { ...prev, opname_require_witness: v } : prev);
+                  try {
+                    await companySettingsService.updateOpnameRequireWitness(v);
+                    showToast(`Saksi wajib: ${v ? 'AKTIF' : 'NONAKTIF'}`, 'success');
+                  } catch (err) {
+                    console.error('updateOpnameRequireWitness error:', err);
+                    setCompany(prev => prev ? { ...prev, opname_require_witness: !v } : prev);
+                    showToast('Gagal menyimpan pengaturan.', 'warning');
+                  }
+                }}
+                className="mt-1"
+              />
+              <div>
+                <div className="text-sm text-gray-800 font-medium">Wajibkan saksi saat opname</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Saat aktif: setiap sesi butuh saksi (counter ≠ saksi), saksi acknowledge sebelum submit.
+                  Saat nonaktif: counter bisa kerja sendiri, tidak ada acknowledge step.
+                  Rekomendasi: AKTIF untuk toko dengan staff &gt; 1.
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
       )}
     </>

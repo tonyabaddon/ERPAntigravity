@@ -917,6 +917,15 @@ export const companySettingsService = {
     return url;
   },
 
+  async updateOpnameRequireWitness(required: boolean): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('company_settings')
+      .update({ opname_require_witness: required, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (error) throw error;
+  },
+
   async clearLogo(): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data: settings, error: fetchErr } = await supabase
@@ -1067,6 +1076,17 @@ export const adminUsersService = {
       .from('admin_users')
       .select('*')
       .eq('email', email)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  },
+
+  async fetchById(id: string): Promise<DbAdminUser | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', id)
       .maybeSingle();
     if (error) throw error;
     return data ?? null;
@@ -1522,7 +1542,7 @@ export async function startOpnameSession(args: {
   opname_type: OpnameSession['opnameType'];
   scope_payload: Record<string, unknown>;
   counted_by: string;
-  witnessed_by: string;
+  witnessed_by: string | null;
 }): Promise<number> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('start_opname_session', {
@@ -1565,17 +1585,69 @@ export async function acknowledgeOpnameWitness(
   if (error) throw error;
 }
 
+export interface SubmitOpnameResult {
+  status: 'committed' | 'pending_owner';
+  auto: boolean;
+  approvalId: number | null;
+}
+
 export async function submitOpnameForOwner(
   sessionId: number,
   actorUserId: string,
-): Promise<number> {
+): Promise<SubmitOpnameResult> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('submit_opname_for_owner', {
     p_session_id: sessionId,
     p_actor_user_id: actorUserId,
   });
   if (error) throw error;
-  return data as number;
+  const row = (data as any[])[0];
+  return {
+    status: row.status,
+    auto: row.auto,
+    approvalId: row.approval_id ?? null,
+  };
+}
+
+export interface OpnameAuditEntry {
+  id: number;
+  eventType: 'opname_auto_commit' | 'opname_owner_commit' | 'opname_owner_reject';
+  createdAt: string;
+  sessionId: number;
+  counterName: string | null;
+  witnessName: string | null;
+  approvedByName?: string | null;
+  rejectedByName?: string | null;
+  totalVarianceValue: number;
+  rowCount: number;
+}
+
+export async function fetchOpnameAuditLog(daysBack: number = 7): Promise<OpnameAuditEntry[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const since = new Date(Date.now() - daysBack * 86_400_000).toISOString();
+  const { data, error } = await supabase
+    .from('audit_log')
+    .select('id, event_type, created_at, payload')
+    .in('event_type', ['opname_auto_commit', 'opname_owner_commit', 'opname_owner_reject'])
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).map(row => {
+    const p = (row as { payload: Record<string, unknown> }).payload;
+    return {
+      id: (row as { id: number }).id,
+      eventType: (row as { event_type: 'opname_auto_commit' | 'opname_owner_commit' | 'opname_owner_reject' }).event_type,
+      createdAt: (row as { created_at: string }).created_at,
+      sessionId: Number(p.session_id),
+      counterName: (p.counter_name as string | null) ?? null,
+      witnessName: (p.witness_name as string | null) ?? null,
+      approvedByName: (p.approved_by_name as string | null) ?? null,
+      rejectedByName: (p.rejected_by_name as string | null) ?? null,
+      totalVarianceValue: Number(p.total_variance_value ?? 0),
+      rowCount: Number(p.row_count ?? 0),
+    };
+  });
 }
 
 export async function commitOpname(approvalId: number): Promise<number> {
@@ -1617,22 +1689,30 @@ export function toOpnameCount(row: any): OpnameCount {
     sessionId: row.session_id,
     sku: row.sku,
     warehouse: row.warehouse,
-    systemQtySnapshot: row.system_qty_snapshot,
+    systemQtySnapshot: row.system_qty_snapshot ?? null,
     countedQty: row.counted_qty ?? null,
-    variance: row.variance ?? 0,
+    variance: row.variance ?? null,
     varianceValue: Number(row.variance_value ?? 0),
   };
 }
 
 export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[]> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase
-    .from('stock_opname_counts')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('sku', { ascending: true });
+  // Use SECURITY DEFINER RPC fetch_opname_counts (migration
+  // 20260614000001) so server-side blind-count masking applies: when
+  // caller is NOT 'Owner' AND session.status='in_progress', the RPC
+  // returns NULL for system_qty_snapshot + variance + variance_value.
+  // Direct table read would bypass the mask — admin could read system
+  // values via DevTools network tab.
+  const { data, error } = await supabase.rpc('fetch_opname_counts', {
+    p_session_id: sessionId,
+  });
   if (error) throw error;
-  return (data ?? []).map(toOpnameCount);
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  // Server returns alphabetical-by-column unordered; sort by SKU client-side
+  // to preserve previous ordering contract.
+  rows.sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
+  return rows.map(toOpnameCount);
 }
 
 export async function listOpnameSessions(limit = 20): Promise<OpnameSession[]> {
