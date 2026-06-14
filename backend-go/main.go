@@ -335,7 +335,17 @@ func main() {
 		log.Printf("[MAIN] Debounce enabled soft=%dms hard=%dms", softWaitMs, hardWaitMs)
 	}
 
-	waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, debounceHandler)
+	// Pass UNTYPED nil when the debounce handler wasn't constructed. Without
+	// this conversion the typed nil (*DebounceHandler)(nil) gets boxed into
+	// a non-nil interface — handler.go's `if h.debounce != nil` returns true
+	// and dispatch panics on the nil receiver inside DebounceHandler.Push.
+	// Classic Go interface-vs-typed-nil pitfall; explicit nil at the call
+	// site is the cleanest fix.
+	if debounceHandler != nil {
+		waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, debounceHandler)
+	} else {
+		waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, nil)
+	}
 	waClient.AddEventHandler(waHandler.Handle)
 	followup.NewPoller(dbClient, sender).Start(ctx)
 	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
