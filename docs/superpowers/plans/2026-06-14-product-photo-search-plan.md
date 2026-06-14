@@ -33,7 +33,7 @@ Total: 9.5–10.5 days.
 ## Task 1.1: Migration M1 — Extend `stocks` columns
 
 **Files:**
-- Create: `supabase/migrations/20260614000010_stocks_product_columns.sql`
+- Create: `supabase/migrations/20260614000020_stocks_product_columns.sql`
 
 **Why:** Add new columns to existing `stocks` table for: subcategory, unit (UoM base), unit_alt (packaging), unit_alt_factor, photo_urls (JSONB), description, min_stock_per_product, initial_stock_approved. CHECK constraint on multi-satuan: alt must be > 1 primary.
 
@@ -42,7 +42,7 @@ Total: 9.5–10.5 days.
 - [ ] **Step 1: Write migration SQL**
 
 ```sql
--- supabase/migrations/20260614000010_stocks_product_columns.sql
+-- supabase/migrations/20260614000020_stocks_product_columns.sql
 -- Extend stocks with: UoM base + alt, photo_urls JSONB, description,
 -- min_stock_per_product, initial_stock_approved.
 -- Spec: docs/superpowers/specs/2026-06-14-product-photo-search-design.md §2.1
@@ -117,7 +117,7 @@ DELETE FROM public.stocks WHERE sku LIKE 'test_%';
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260614000010_stocks_product_columns.sql
+git add supabase/migrations/20260614000020_stocks_product_columns.sql
 git commit -m "feat(db): M1 — extend stocks with UoM, photo_urls, description, min_stock, initial_stock_approved"
 ```
 
@@ -128,7 +128,7 @@ git commit -m "feat(db): M1 — extend stocks with UoM, photo_urls, description,
 ## Task 1.2: Migration M2 — Registry tables (categories/brands/units) with tenant_id
 
 **Files:**
-- Create: `supabase/migrations/20260614000011_product_registries.sql`
+- Create: `supabase/migrations/20260614000021_product_registries.sql`
 
 **Why:** Registry tables back the "+ Buat baru" UX. `tenant_id NULL` column forward-compats with multi-tenant rollout (Change B). Seed defaults mirror existing hardcoded list.
 
@@ -137,7 +137,7 @@ git commit -m "feat(db): M1 — extend stocks with UoM, photo_urls, description,
 - [ ] **Step 1: Write migration**
 
 ```sql
--- supabase/migrations/20260614000011_product_registries.sql
+-- supabase/migrations/20260614000021_product_registries.sql
 -- Registry tables for categories, brands, units. All with tenant_id NULL
 -- for multi-tenant forward-compat (Spec §2.2 Change B).
 
@@ -230,7 +230,7 @@ Expected: 1 row, `pcs`.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/20260614000011_product_registries.sql
+git add supabase/migrations/20260614000021_product_registries.sql
 git commit -m "feat(db): M2 — product_categories/brands/units registry with tenant_id NULL + seeds"
 ```
 
@@ -241,7 +241,7 @@ git commit -m "feat(db): M2 — product_categories/brands/units registry with te
 ## Task 1.3: Migration M3 — pgvector + `stock_photo_embeddings`
 
 **Files:**
-- Create: `supabase/migrations/20260614000012_stock_photo_embeddings.sql`
+- Create: `supabase/migrations/20260614000022_stock_photo_embeddings.sql`
 
 **Why:** Enable `vector` extension. Create per-photo embedding table with HNSW index for cosine similarity. ON DELETE CASCADE from `stocks(sku)`.
 
@@ -250,7 +250,7 @@ git commit -m "feat(db): M2 — product_categories/brands/units registry with te
 - [ ] **Step 1: Write migration**
 
 ```sql
--- supabase/migrations/20260614000012_stock_photo_embeddings.sql
+-- supabase/migrations/20260614000022_stock_photo_embeddings.sql
 -- Enable pgvector + per-photo embeddings for Cari by Foto.
 -- Spec §2.3.
 
@@ -306,7 +306,7 @@ Expected: 3 indexes (pkey, idx_vector, idx_sku).
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/20260614000012_stock_photo_embeddings.sql
+git add supabase/migrations/20260614000022_stock_photo_embeddings.sql
 git commit -m "feat(db): M3 — enable pgvector + stock_photo_embeddings + HNSW cosine index"
 ```
 
@@ -317,7 +317,7 @@ git commit -m "feat(db): M3 — enable pgvector + stock_photo_embeddings + HNSW 
 ## Task 1.4: Migration M4 — Costing setting + Storage bucket
 
 **Files:**
-- Create: `supabase/migrations/20260614000013_costing_and_storage.sql`
+- Create: `supabase/migrations/20260614000023_costing_and_storage.sql`
 
 **Why:** Seed `company_settings.costing_method = 'FIFO'`. Create public `product-photos` Storage bucket with RLS.
 
@@ -326,7 +326,7 @@ git commit -m "feat(db): M3 — enable pgvector + stock_photo_embeddings + HNSW 
 - [ ] **Step 1: Write migration**
 
 ```sql
--- supabase/migrations/20260614000013_costing_and_storage.sql
+-- supabase/migrations/20260614000023_costing_and_storage.sql
 -- Spec §2.4
 
 -- Costing method (toko-wide). Reuse existing company_settings.
@@ -391,7 +391,7 @@ If `storage.create_policy` wasn't available in Step 1, run the 4 `CREATE POLICY`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20260614000013_costing_and_storage.sql
+git add supabase/migrations/20260614000023_costing_and_storage.sql
 git commit -m "feat(db): M4 — costing_method default FIFO + product-photos Storage bucket"
 ```
 
@@ -402,8 +402,8 @@ git commit -m "feat(db): M4 — costing_method default FIFO + product-photos Sto
 ## Task 1.5: Migration M5 — `initial_stock` approval type + search RPC + `ai_call_log`
 
 **Files:**
-- Create: `supabase/migrations/20260614000014_initial_stock_and_search_rpc.sql`
-- Create: `supabase/migrations/20260614000015_ai_call_log.sql`
+- Create: `supabase/migrations/20260614000024_initial_stock_and_search_rpc.sql`
+- Create: `supabase/migrations/20260614000025_ai_call_log.sql`
 
 **Why:** Extend approval enum with `initial_stock`. Create `search_products_by_embedding` RPC with per-warehouse JSONB. Separately, `ai_call_log` table for activity monitoring.
 
@@ -412,7 +412,7 @@ git commit -m "feat(db): M4 — costing_method default FIFO + product-photos Sto
 - [ ] **Step 1: Write approval+RPC migration**
 
 ```sql
--- supabase/migrations/20260614000014_initial_stock_and_search_rpc.sql
+-- supabase/migrations/20260614000024_initial_stock_and_search_rpc.sql
 -- Spec §2.5
 
 ALTER TYPE public.approval_request_type ADD VALUE IF NOT EXISTS 'initial_stock';
@@ -500,7 +500,7 @@ Expected: 0 rows (no embeddings yet) without error.
 - [ ] **Step 4: Write `ai_call_log` migration**
 
 ```sql
--- supabase/migrations/20260614000015_ai_call_log.sql
+-- supabase/migrations/20260614000025_ai_call_log.sql
 -- Spec §6.2
 
 CREATE TABLE IF NOT EXISTS public.ai_call_log (
@@ -533,8 +533,8 @@ END $$;
 - [ ] **Step 5: Commit both migrations**
 
 ```bash
-git add supabase/migrations/20260614000014_initial_stock_and_search_rpc.sql \
-        supabase/migrations/20260614000015_ai_call_log.sql
+git add supabase/migrations/20260614000024_initial_stock_and_search_rpc.sql \
+        supabase/migrations/20260614000025_ai_call_log.sql
 git commit -m "feat(db): M5 — initial_stock enum + search_products_by_embedding RPC + ai_call_log table"
 ```
 
@@ -4244,7 +4244,7 @@ export const aiCallLogService = {
 
 - [ ] **Step 2: Add SQL function**
 
-Create `supabase/migrations/20260614000016_ai_call_log_today_stats_rpc.sql`:
+Create `supabase/migrations/20260614000026_ai_call_log_today_stats_rpc.sql`:
 ```sql
 CREATE OR REPLACE FUNCTION public.ai_call_log_today_stats()
 RETURNS TABLE (
@@ -4338,7 +4338,7 @@ Panel (paste after Costing panel):
 
 ```bash
 npm run lint
-git add supabase/migrations/20260614000016_ai_call_log_today_stats_rpc.sql \
+git add supabase/migrations/20260614000026_ai_call_log_today_stats_rpc.sql \
         src/lib/supabaseClient.ts src/components/PengaturanScreen.tsx
 git commit -m "feat(pengaturan): Aktivitas AI Call panel (honest counts, no fake quota %)"
 ```
