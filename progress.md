@@ -1,5 +1,59 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista: Direct Gemini backend (Phase 1A architecture preserved) — VERIFIED IN PRODUCTION
+
+**Why:** OpenRouter free-tier rate-limit storm exhausted 6/10 models in ~25 minutes during three test conversations. Free-tier OpenRouter quotas are a SHARED pool across all global users → infeasible for real-customer testing without paying. Founder declined paid OpenRouter top-up for now; chose to switch backend to Gemini direct (Google AI Studio) where free-tier quota belongs to OUR account (500-1500 RPD per model, not shared).
+
+**What KEEP (Phase 1A architecture preserved):**
+- Router (sticky pinning, fallback chain, force-swap detection)
+- Cooldown registry (`model_cooldowns` table)
+- Telemetry recorder (`llm_calls` table)
+- Tone seeding (first-reply tone extraction + injection)
+- Tripwire heuristics (output + input safety checks)
+- Calista system prompt (~11K-token embedded persona)
+- Reasoning-content fallback in `openrouter.go` (dormant under Gemini backend)
+
+**What SWAP:**
+- HTTP client: `OpenRouterClient` → `GeminiClient` (uses Gemini's OpenAI-compatible endpoint `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`)
+- Chain: 10 OpenRouter free models → single `gemini-2.5-flash-lite`
+
+**Implementation:**
+
+1. **`backend-go/internal/llm/gemini.go`** (new) — minimal HTTP client implementing the `Completer` interface. Reuses error types from `openrouter.go` (rateLimitError, authError, serverError, timeoutError) so router classification logic is uniform across backends.
+
+2. **`backend-go/internal/llm/chain.go`** — added `DefaultCalistaAgentGemini()` returning single-model chain. Comment documents model selection rationale (verified empirically):
+   - `gemini-2.5-flash` runs in thinking mode by default → consumes max_tokens silently
+   - `gemini-2.0-flash` returns `limit: 0` on this key's free tier
+   - `gemini-1.5-flash` deprecated (HTTP 404)
+   - `gemini-2.5-flash-lite` ✅ clean JSON, no thinking, parity with legacy direct-SDK
+
+3. **`backend-go/config/config.go`** — added `LLMBackend` field driven by `LLM_BACKEND` env var.
+
+4. **`backend-go/main.go`** — three-way branch:
+   - `LLM_BACKEND=gemini` AND `GEMINI_API_KEY` → Phase 1A router + GeminiClient + DefaultCalistaAgentGemini
+   - else if `ENABLE_OPENROUTER=true` → Phase 1A router + OpenRouterClient + DefaultCalistaAgent
+   - else → legacy direct Gemini SDK (`gemini.NewEngineAdapter`)
+
+5. **`backend-go/internal/engine/machine.go`** — bumped `maxTokensForState` budgets ~2-3x. Original spec §5.6 #6 caps (60-200) truncated Calista's persona reply mid-string → tolerant_parser "unbalanced braces" → customer saw FallbackReply. New budgets:
+   - StateGreeting 60 → 200, StateCollecting 100 → 300, StateClarifying 120 → 300
+   - StateStockCheck 150 → 400, StateConfirming 150 → 400, StateAddMore 60 → 150
+   - StateDelivery 100 → 250, StateBooked 200 → 400, default 150 → 300
+
+6. **`backend-go/internal/llm/openrouter.go`** — drive-by rename of error type prefixes from `"openrouter:"` to `"llm:"` so GeminiClient (which reuses these types) doesn't emit misleading `"openrouter: timeout"` labels.
+
+7. **`backend-go/cmd/smoke-gemini/main.go`** (new) — standalone smoke test for the GeminiClient (matches existing `cmd/smoke-calista` pattern).
+
+**Cloud Run deploy:** Revision `garindo-jaya-panel-msme-erp-00063-r72` deployed with `LLM_BACKEND=gemini` env var. Startup log: `[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]`.
+
+**Production verification (WA test 17:21):**
+- Customer "Halo" → 4 seconds total latency → clean Calista persona reply (no FallbackReply)
+- `llm_calls` row: `gemini-2.5-flash-lite`, success, 650 prompt + 149 completion tokens, 2.2s latency
+- Conversation state COLLECTING, pinned to gemini-2.5-flash-lite, swap_count=0
+
+**Side-issue surfaced (pre-existing, not fixed):**
+- Cloud Run scale-to-zero can race with WA daemon goroutines. First WA test after deploy hit a race where conversation state was still ESCALATED_ADMIN when the message goroutine read it → goroutine returned silently via `IsTerminal()` check (handler.go:218). Fixed inline by re-running with state already reset.
+- Mitigation candidates: minScale=1 on Cloud Run, or sequence state-reset BEFORE asking founder to retry.
+
 ## 2026-06-14 — Calista Production Hotfix: reasoning-model empty content + chain reorder — DEPLOYED
 
 **Problem:** Customer received `"maaf, saya mengalami kendala teknis ....."` (FallbackReply) after live WA test. Root cause: `nex-agi/nex-n2-pro:free` (chain position 3) is a reasoning-style model. With `StateCollecting.MaxTokens=100`, the model exhausted its budget inside the `message.reasoning` phase and returned empty `message.content` → `tolerantParseJSON` failed → FallbackReply served.
