@@ -160,6 +160,15 @@ function summarisePayload(req: ApprovalRequest): string {
       if (total !== undefined) parts.push(formatRupiah(total));
       return parts.join(' · ');
     }
+    case 'customer_credit_activate':
+      return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;
+
+    case 'customer_credit_limit_change':
+      return `Ubah limit tempo ${get('customer_id')} → ${formatRupiah(Number(get('new_limit') ?? 0))} (alasan: ${get('reason')})`;
+
+    case 'customer_credit_deactivate':
+      return `Nonaktifkan tempo ${get('customer_id')} (alasan: ${get('reason')})`;
+
     default:
       return 'Permintaan persetujuan';
   }
