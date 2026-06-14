@@ -622,6 +622,85 @@
       <p class="text-[10.5px] text-slate-500 italic mt-3">
         💡 <strong>Bagaimana cara tambah field baru di kategori existing?</strong> Edit konstanta <code class="bg-slate-100 px-1 py-0.5 rounded text-[10px]">CATEGORY_SPECS</code> di <code class="bg-slate-100 px-1 py-0.5 rounded text-[10px]">StockManagerScreen.tsx</code>. Mis. tambah `kedalaman_cm` ke Panel = tambah satu entry di array Panel. Auto-name generator perlu di-update juga supaya field baru ikut masuk pattern nama.
       </p>
+
+      <!-- Multi-tenant generic fallback explanation -->
+      <div class="mt-6 bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-200 rounded-3xl p-5">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-xl">apartment</span>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-[#012749]">Multi-tenant ready — Generic fallback untuk kategori custom</h4>
+            <p class="text-[11px] text-slate-700 mt-0.5">Saat tenant lain (sembako, fashion, sparepart) atau Anda sendiri create kategori baru di luar Panel/MCB/Kabel/Aksesori, sistem otomatis pakai <strong>pola Aksesori</strong>: 1 field bebas, auto-name dari isi field itu. Tidak ada code change tiap kategori baru.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Example tenant A: Sembako Beras -->
+          <div class="bg-white rounded-2xl border border-violet-100 p-3">
+            <div class="flex items-center gap-1.5 mb-2">
+              <span class="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-full">Tenant: Sembako</span>
+              <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">Custom: Beras</span>
+            </div>
+            <div class="bg-slate-50 rounded-lg px-2 py-2 text-[11px]">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Deskripsi Produk *</div>
+              <div class="font-bold text-[#012749]">Beras Pandan Wangi 5kg Premium</div>
+            </div>
+            <div class="mt-2 bg-purple-50 border border-purple-200 rounded-lg px-2 py-1.5">
+              <div class="text-[9px] font-black uppercase tracking-widest text-purple-700">Auto Nama</div>
+              <div class="text-[11px] font-extrabold text-purple-900">Beras Pandan Wangi 5kg Premium</div>
+            </div>
+          </div>
+
+          <!-- Example tenant B: Fashion Baju -->
+          <div class="bg-white rounded-2xl border border-violet-100 p-3">
+            <div class="flex items-center gap-1.5 mb-2">
+              <span class="text-[9px] font-black uppercase tracking-widest bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded-full">Tenant: Fashion</span>
+              <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">Custom: Kaos</span>
+            </div>
+            <div class="bg-slate-50 rounded-lg px-2 py-2 text-[11px]">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Deskripsi Produk *</div>
+              <div class="font-bold text-[#012749]">Kaos Polos Hitam Cotton Combed 30s M</div>
+            </div>
+            <div class="mt-2 bg-purple-50 border border-purple-200 rounded-lg px-2 py-1.5">
+              <div class="text-[9px] font-black uppercase tracking-widest text-purple-700">Auto Nama</div>
+              <div class="text-[11px] font-extrabold text-purple-900">Kaos Polos Hitam Cotton Combed 30s M</div>
+            </div>
+          </div>
+
+          <!-- Example tenant C: Sinar Elektrik adding new category -->
+          <div class="bg-white rounded-2xl border border-violet-100 p-3">
+            <div class="flex items-center gap-1.5 mb-2">
+              <span class="text-[9px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded-full">Tenant: Sinar</span>
+              <span class="text-[9px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full">Custom: Kontaktor</span>
+            </div>
+            <div class="bg-slate-50 rounded-lg px-2 py-2 text-[11px]">
+              <div class="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Deskripsi Produk *</div>
+              <div class="font-bold text-[#012749]">Kontaktor Schneider LC1D09 9A 220V</div>
+            </div>
+            <div class="mt-2 bg-purple-50 border border-purple-200 rounded-lg px-2 py-1.5">
+              <div class="text-[9px] font-black uppercase tracking-widest text-purple-700">Auto Nama</div>
+              <div class="text-[11px] font-extrabold text-purple-900">Kontaktor Schneider LC1D09 9A 220V</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+          <div class="bg-white/70 border border-violet-100 rounded-xl px-3 py-2">
+            <div class="text-[9px] font-black uppercase tracking-widest text-violet-700 mb-0.5">Change A: Generic fallback</div>
+            <p class="text-slate-700 leading-snug">Kategori tidak ada di <code class="bg-slate-100 px-1 rounded text-[10px]">CATEGORY_SPECS</code> → pola Aksesori (1 textarea). Tenant elektrik tetap dapat Panel/MCB/Kabel/Aksesori siap pakai.</p>
+          </div>
+          <div class="bg-white/70 border border-violet-100 rounded-xl px-3 py-2">
+            <div class="text-[9px] font-black uppercase tracking-widest text-violet-700 mb-0.5">Change B: tenant_id kolom</div>
+            <p class="text-slate-700 leading-snug"><code class="bg-slate-100 px-1 rounded text-[10px]">tenant_id UUID NULL</code> di 3 registry tables. Saat ini NULL (global). Saat multi-tenant rollout: backfill + RLS filter, no data migration risk.</p>
+          </div>
+        </div>
+
+        <p class="text-[10.5px] text-violet-800 italic mt-3 flex items-start gap-1.5">
+          <span class="material-symbols-outlined text-violet-600 text-sm">lightbulb</span>
+          <span><strong>Schema Builder per tenant</strong> (UI tenant admin define field-field sendiri per kategori) = spec mandiri terpisah saat tenant non-elektrik onboard dengan kebutuhan konkrit.</span>
+        </p>
+      </div>
     </div>
 
   </section>

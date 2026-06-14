@@ -35,6 +35,16 @@
 - **Rerank step di image search** — sprint berikutnya kalau akurasi kurang.
 - **Upgrade ke paid Gemini** — sistem hanya notify, tidak auto-upgrade billing (sesuai feedback `cost_upgrade_approval`).
 - **Katalog publik / katalog cetak** — non-goal.
+- **Schema Builder UI per tenant** — tunda ke spec terpisah saat tenant non-elektrik onboard (lihat Section "Multi-tenant readiness" di bawah).
+
+### Multi-tenant readiness (Change A + B)
+
+Spec ini siap untuk multi-tenant rollout (lihat `2026-06-13-multi-tenant-prerequisites-design.md`) dengan 2 perubahan kecil yang tidak menambah effort:
+
+- **Change A — Generic fallback untuk kategori non-elektrik**: kalau user (atau tenant lain) buat kategori baru tidak ada di `CATEGORY_SPECS`, otomatis pakai pola Aksesori (1 textarea Deskripsi, auto-name dari deskripsi). Lihat Section 3.1.
+- **Change B — `tenant_id NULL` columns** di `product_categories`, `product_brands`, `product_units` registry tables. Saat ini semua row NULL (global). Saat multi-tenant Phase 1 ship: backfill `tenant_id = sinar_tenant_id` + tambah RLS filter — tidak ada migrasi data berisiko.
+
+**Tenant timeline asumsi:** tenant #2 elektrik 1-2 bulan ke depan (CATEGORY_SPECS elektrik reusable). Tenant non-elektrik = spec mandiri "Schema Builder per Tenant".
 
 ### Boundaries
 
@@ -84,24 +94,35 @@ ALTER TABLE public.stocks
 ### 2.2. Migrasi `M2` — Tabel referensi (registry untuk "+ Buat baru" flow)
 
 ```sql
+-- All three registry tables include `tenant_id UUID NULL` for forward-compat
+-- dengan multi-tenant rollout (lihat docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md).
+-- Saat ini semua row pakai tenant_id=NULL (global registry). Saat multi-tenant Phase 1 ship,
+-- backfill tenant_id = sinar_tenant_id dan tambah RLS policy filter by tenant_id.
+
 CREATE TABLE IF NOT EXISTS public.product_categories (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        TEXT UNIQUE NOT NULL,
+  tenant_id   UUID NULL,                              -- multi-tenant forward-compat; NULL = global
+  name        TEXT NOT NULL,
   parent_id   UUID REFERENCES public.product_categories(id),  -- untuk sub-kategori (sub = parent_id ≠ NULL)
-  created_at  TIMESTAMPTZ DEFAULT now()
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, lower(name))                     -- nama unique per tenant scope
 );
 
 CREATE TABLE IF NOT EXISTS public.product_brands (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        TEXT UNIQUE NOT NULL,
-  created_at  TIMESTAMPTZ DEFAULT now()
+  tenant_id   UUID NULL,                              -- multi-tenant forward-compat
+  name        TEXT NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, lower(name))
 );
 
 CREATE TABLE IF NOT EXISTS public.product_units (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        TEXT UNIQUE NOT NULL,   -- pcs, meter, roll, dus, set, unit, …
+  tenant_id   UUID NULL,                              -- multi-tenant forward-compat
+  name        TEXT NOT NULL,                          -- pcs, meter, roll, dus, set, unit, …
   is_default  BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at  TIMESTAMPTZ DEFAULT now()
+  created_at  TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (tenant_id, lower(name))
 );
 
 -- Seed default values (mirror hardcoded list yg ada di StockManagerScreen.tsx)
@@ -262,10 +283,12 @@ Form di-organize jadi 4 section visual (divider pill style mengikuti pola "Spesi
   - Factor selalu &gt; 1 (1 packaging berisi banyak primary).
 - Validation submit: `unit_alt ≠ unit`; `unit_alt_factor &gt; 1`; kedua keduanya filled atau NULL. Kalau OFF, save NULL.
 
-#### Section ⚙ "Spesifikasi [Kategori]" (existing)
+#### Section ⚙ "Spesifikasi [Kategori]" (existing + generic fallback)
 - Render fields dari `CATEGORY_SPECS[category]` seperti existing.
 - **Modifikasi:** dropdown `Merek` untuk kategori MCB sekarang punya `+ Tambah merek baru…` inline panel (sama style emerald) — submit → `INSERT INTO product_brands`. List options dari `product_brands` (bukan hardcoded array di `CATEGORY_SPECS`).
 - **Auto-name preview** (existing) tetap berfungsi.
+- **🆕 Generic fallback (multi-tenant ready):** Saat kategori yang dipilih **tidak ada di `CATEGORY_SPECS`** (mis. user pakai "+ Buat kategori baru…" untuk bikin "Kontaktor", "Saklar Lampu", atau tenant lain bikin "Beras", "Baju") → render **pola Aksesori**: 1 field textarea "Deskripsi Produk" (required), auto-name = isi deskripsi langsung. Implementasi: di `renderSpecForm()`, kalau `CATEGORY_SPECS[category]` undefined → return Aksesori spec form. `generateName()` di-fallback ke `specs.deskripsi || ''`. Pola Aksesori sudah ada di codebase, **tidak ada code baru**, hanya generalize routing.
+- **Akibat:** tenant elektrik lain (target onboarding 1-2 bulan) dapat Panel/MCB/Kabel/Aksesori siap pakai. Tenant non-elektrik (mis. sembako, fashion, sparepart) bisa create produk dengan pola Aksesori untuk setiap kategori mereka. Mereka tidak dapat structured field-typed spec untuk kategori spesifik mereka — itu domain spec "Schema Builder per Tenant" (separate spec, sprint berikutnya).
 
 #### Section 💰 "Harga &amp; Persediaan"
 - **Harga Jual (Rp)** (required) — hint kecil *"per [unit utama]"*.

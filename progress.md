@@ -5952,3 +5952,12 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - **Multi-satuan konversi** dikonfirmasi optional default OFF
 - **Estimasi delta**: +1.5 hari (8 → 9-10 hari sprint)
 - **Status**: spec updated, user reviews next
+
+## 2026-06-14 — Spec Product Photo: Round 4 — multi-tenant readiness (Change A + B)
+
+- **Spec & mockup**: updated
+- **Change A — Generic fallback**: kategori tidak ada di `CATEGORY_SPECS` (Panel/MCB/Kabel/Aksesori) otomatis pakai pola Aksesori (1 textarea Deskripsi, auto-name = isi deskripsi). Code reuse, no new code path. Allows tenant non-elektrik (sembako/fashion/sparepart) buat produk tanpa schema builder.
+- **Change B — tenant_id NULL columns**: `product_categories`, `product_brands`, `product_units` masing-masing dapat `tenant_id UUID NULL` (default NULL = global). Saat multi-tenant Phase 1 ship (sesuai `2026-06-13-multi-tenant-prerequisites-design.md`), backfill + RLS filter — tidak ada migrasi data berisiko. UNIQUE constraint per (tenant_id, lower(name)).
+- **Schema Builder UI per tenant**: explicit deferred ke spec mandiri sprint berikutnya saat tenant non-elektrik onboard dengan kebutuhan konkrit. YAGNI.
+- **Estimasi sprint TIDAK berubah**: 9-10 hari (changes A + B adalah generalisasi gratis, no extra work).
+- **Tenant timeline asumsi**: tenant #2 elektrik 1-2 bulan ke depan = CATEGORY_SPECS elektrik reusable.
