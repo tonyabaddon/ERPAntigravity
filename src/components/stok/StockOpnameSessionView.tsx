@@ -519,7 +519,7 @@ export default function StockOpnameSessionView({
 
       {session.status === 'pending_owner' && (
         <div className="rounded bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
-          Sesi ini sudah dikirim ke Owner. Menunggu commit.
+          Sesi ini sudah dikirim ke Owner. Menunggu persetujuan.
         </div>
       )}
       {session.status === 'committed' && (

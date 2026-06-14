@@ -35,7 +35,7 @@ const TYPE_LABEL: Record<OpnameType, string> = {
 
 const STATUS_LABEL: Record<OpnameSession['status'], string> = {
   in_progress: 'Berlangsung',
-  pending_owner: 'Menunggu Owner',
+  pending_owner: 'Menunggu Persetujuan',
   committed: 'Selesai',
   rejected: 'Ditolak',
 };
@@ -201,7 +201,7 @@ export default function StockOpnameScreen({
         <div>
           <h1 className="text-xl font-bold text-slate-900">Stok Opname</h1>
           <p className="text-xs text-slate-500">
-            Penghitung dan saksi harus orang berbeda. Owner sign-off untuk commit.
+            Penghitung dan saksi harus orang berbeda. Owner sign-off untuk persetujuan.
           </p>
         </div>
         <button
@@ -240,7 +240,7 @@ export default function StockOpnameScreen({
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Total Varians</p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
                 <p className="font-bold text-lg text-slate-900">
                   {formatRpDelta(activeSession.varianceTotalValue)}
                 </p>
@@ -289,7 +289,7 @@ export default function StockOpnameScreen({
                       {STATUS_LABEL[s.status]}
                     </span>
                     <p className="text-xs text-slate-600 mt-1">
-                      Varians {formatRpDelta(s.varianceTotalValue)}
+                      Selisih {formatRpDelta(s.varianceTotalValue)}
                     </p>
                   </div>
                 </div>
