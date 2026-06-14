@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 5: customer_credit_activate RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000012_customer_credit_activate_rpcs.sql`
+  - `request_customer_credit_activate(p_customer_id text, p_term_days int, p_credit_limit numeric, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors request_adjustment pattern
+    - 4 validations in order: customer_not_found → term_days_not_allowed (checks piutang_settings.term_days_allowed, fallback ARRAY[7,14,30,60,90]) → credit_limit_must_be_positive → customer_already_activated
+    - Inserts `approval_requests` row with type `customer_credit_activate` and JSON payload
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_activate(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with TWO args; raises `pin_invalid` on FALSE return
+    - `_transition_approval` NOT called directly — verify_owner_pin handles it atomically
+    - On approval: extracts payload, locks customer row (`FOR UPDATE`), updates `allows_tempo`, `term_days`, `credit_limit`, `tempo_activated_at`, `tempo_activated_by` (resolved Owner uuid from admin_users)
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000012`, following T4 at `000011`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T5 entry after T4
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000012_customer_credit_activate_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_activate', 'approve_customer_credit_activate');
+  -- Expected: 2 rows
+  ```
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 4: _resolve_tenant_id() helper — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000011_resolve_tenant_helper.sql`

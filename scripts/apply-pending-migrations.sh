@@ -90,6 +90,13 @@ MIGRATIONS=(
   # STABLE function reading app.current_tenant_id GUC; returns sentinel
   # UUID pre-Layer-A. Granted to anon, authenticated, service_role.
   "20260614000011_resolve_tenant_helper.sql"
+
+  # ─── Piutang T5 — customer_credit_activate RPCs (request + approve) ───
+  # request: validates customer + term_days (vs piutang_settings.term_days_allowed)
+  # + credit_limit > 0 + not-already-activated, inserts approval_requests.
+  # approve: type-guarded, uses verify_owner_pin which auto-transitions; on
+  # success applies UPDATE to customers under row lock.
+  "20260614000012_customer_credit_activate_rpcs.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
