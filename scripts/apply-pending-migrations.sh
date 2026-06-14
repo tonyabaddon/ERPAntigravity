@@ -80,6 +80,11 @@ MIGRATIONS=(
   # Extend enum to support customer_credit_activate, customer_credit_limit_change,
   # customer_credit_deactivate. Standalone ALTER TYPE statements (no transaction).
   "20260614000009_approval_types_tempo.sql"
+
+  # ─── Piutang T3 — piutang_settings per-tenant config table ───
+  # PK=tenant_id with sentinel UUID. Seeds one row. RLS enabled with
+  # pre-Layer-A anon SELECT + authenticated UPDATE policies.
+  "20260614000010_piutang_settings.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

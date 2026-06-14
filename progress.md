@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000010_piutang_settings.sql`
+  - Creates `public.piutang_settings` with `tenant_id uuid PRIMARY KEY` (default sentinel `00000000-0000-0000-0000-000000000000`)
+  - 6 config columns: `reminder_offsets int[]`, `wa_send_rate_per_minute int`, `wa_template_followup text`, `term_days_allowed int[]`, `aging_buckets int[]`, `updated_at timestamptz`
+  - Seeds sentinel row via `INSERT ... ON CONFLICT (tenant_id) DO NOTHING` — idempotent
+  - RLS enabled; 2 policies created idempotently via `DO $$ BEGIN IF NOT EXISTS ... END $$`:
+    - `anon_select_piutang_settings` — `FOR SELECT TO anon USING (true)`
+    - `authenticated_update_piutang_settings` — `FOR UPDATE TO authenticated USING (true) WITH CHECK (true)`
+  - Pre-Layer-A: policies open by design; Layer A will tighten to `current_setting('app.current_tenant_id')` filter
+  - **Slot:** `000010`, following T2 at `000009`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T3 entry after T2
+- **Apply status: NOT YET APPLIED** — same IPv6-only DB connectivity block as T1/T2. Founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000010_piutang_settings.sql` via Supabase Studio SQL editor. Migration is fully idempotent (`CREATE TABLE IF NOT EXISTS`, `INSERT ... ON CONFLICT DO NOTHING`, `IF NOT EXISTS` policy guards) — safe to paste and run.
+- **Verification query (run after apply):**
+  ```sql
+  SELECT tenant_id, term_days_allowed, aging_buckets FROM public.piutang_settings;
+  -- Expected: one row, sentinel UUID, default arrays
+  ```
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 2: approval_request_type enum extension — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000009_approval_types_tempo.sql`
