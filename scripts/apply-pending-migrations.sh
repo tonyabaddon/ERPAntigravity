@@ -85,6 +85,11 @@ MIGRATIONS=(
   # PK=tenant_id with sentinel UUID. Seeds one row. RLS enabled with
   # pre-Layer-A anon SELECT + authenticated UPDATE policies.
   "20260614000010_piutang_settings.sql"
+
+  # ─── Piutang T4 — _resolve_tenant_id() helper SQL function ───
+  # STABLE function reading app.current_tenant_id GUC; returns sentinel
+  # UUID pre-Layer-A. Granted to anon, authenticated, service_role.
+  "20260614000011_resolve_tenant_helper.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

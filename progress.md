@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 4: _resolve_tenant_id() helper — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000011_resolve_tenant_helper.sql`
+  - `CREATE OR REPLACE FUNCTION public._resolve_tenant_id() RETURNS uuid` — STABLE, plpgsql
+  - Reads `app.current_tenant_id` GUC via `current_setting('app.current_tenant_id', true)` (missing=ok variant)
+  - Returns sentinel `00000000-0000-0000-0000-000000000000` when GUC is NULL/empty (pre-Layer-A)
+  - Returns `v_setting::uuid` when GUC is set (post-Layer-A)
+  - `EXCEPTION WHEN OTHERS` block catches malformed UUID values — never raises
+  - GRANT to `anon`, `authenticated`, `service_role`
+  - COMMENT documents sentinel-fallback contract
+  - **Slot:** `000011`, following T3 at `000010`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T4 entry after T3
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000011_resolve_tenant_helper.sql` via Supabase Studio SQL editor. Idempotent (`CREATE OR REPLACE`) — safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT public._resolve_tenant_id();
+  -- Pre-Layer-A: expected 00000000-0000-0000-0000-000000000000
+
+  SET app.current_tenant_id = '11111111-1111-1111-1111-111111111111';
+  SELECT public._resolve_tenant_id();
+  -- Expected: 11111111-1111-1111-1111-111111111111
+  ```
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000010_piutang_settings.sql`
