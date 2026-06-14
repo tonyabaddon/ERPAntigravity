@@ -85,6 +85,22 @@ func (r *Router) Call(ctx context.Context, msgs []Message, opts CallOpts) (*Resp
 		latencyMs := int(time.Since(start) / time.Millisecond)
 
 		if callErr != nil {
+			// Auth error is a non-recoverable env-var problem — every model
+			// in the chain uses the same key. Return immediately so the
+			// founder sees the actual error (not "chain exhausted" 10 models
+			// later). Cooldown registry NOT touched: the models themselves
+			// aren't broken, the credential is.
+			if IsAuth(callErr) {
+				_ = r.telemetry.Record(ctx, TelemetryRecord{
+					ConversationID: opts.ConversationID,
+					ModelSlug:      slug,
+					StateBoundary:  opts.StateBoundary,
+					LatencyMs:      latencyMs,
+					Status:         StatusError,
+					ErrorMessage:   callErr.Error(),
+				})
+				return nil, callErr
+			}
 			r.classifyAndCooldown(slug, callErr, time.Now())
 			_ = r.telemetry.Record(ctx, TelemetryRecord{
 				ConversationID: opts.ConversationID,

@@ -238,6 +238,27 @@ func main() {
 		pinMgr := llm.NewPinManager(calistaStore)
 		recorder := llm.NewRecorder(calistaStore)
 		completer := llm.NewOpenRouterClient(cfg.OpenRouterAPIKey)
+
+		// Boot probe: send a 1-token test request to verify the API key is
+		// accepted. Without this, a bad key surfaces as silent universal
+		// chain-exhaustion on the first customer message (10 models all 401)
+		// — confusing to debug. Probe fails fast at startup instead.
+		probeCtx, probeCancel := context.WithTimeout(ctx, 10*time.Second)
+		_, probeErr := completer.Complete(probeCtx, llm.CompletionRequest{
+			Model:     "google/gemma-4-31b",
+			Messages:  []llm.Message{{Role: "user", Content: "ping"}},
+			MaxTokens: 1,
+		})
+		probeCancel()
+		if probeErr != nil && llm.IsAuth(probeErr) {
+			log.Fatalf("[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY: %v", probeErr)
+		}
+		if probeErr != nil {
+			log.Printf("[CALISTA] OpenRouter probe non-fatal error (proceeding): %v", probeErr)
+		} else {
+			log.Println("[CALISTA] OpenRouter auth probe OK")
+		}
+
 		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgent())
 		llmClient = llm.NewEngineAdapter(router)
 		log.Println("[CALISTA] OpenRouter chain ENABLED — 10-model fallback active")

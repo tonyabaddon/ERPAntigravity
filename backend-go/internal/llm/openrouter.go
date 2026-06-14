@@ -18,9 +18,11 @@ const defaultOpenRouterBaseURL = "https://openrouter.ai/api/v1"
 // Kept dependency-free (uses only net/http + encoding/json) — OpenRouter mirrors
 // OpenAI's /chat/completions contract, so we don't need a vendor SDK.
 type OpenRouterClient struct {
-	apiKey  string
-	baseURL string
-	http    *http.Client
+	apiKey     string
+	baseURL    string
+	httpRef    string // HTTP-Referer header (account attribution → higher free-tier rate limits)
+	appTitle   string // X-Title header (account attribution)
+	http       *http.Client
 }
 
 type OpenRouterOption func(*OpenRouterClient)
@@ -33,11 +35,25 @@ func WithHTTPTimeout(d time.Duration) OpenRouterOption {
 	return func(c *OpenRouterClient) { c.http.Timeout = d }
 }
 
+// WithHTTPReferer sets the HTTP-Referer header sent on every call.
+// OpenRouter uses this for account attribution and rewards attributed
+// requests with higher free-tier rate limits.
+func WithHTTPReferer(referer string) OpenRouterOption {
+	return func(c *OpenRouterClient) { c.httpRef = referer }
+}
+
+// WithAppTitle sets the X-Title header sent on every call (account attribution).
+func WithAppTitle(title string) OpenRouterOption {
+	return func(c *OpenRouterClient) { c.appTitle = title }
+}
+
 func NewOpenRouterClient(apiKey string, opts ...OpenRouterOption) *OpenRouterClient {
 	c := &OpenRouterClient{
-		apiKey:  apiKey,
-		baseURL: defaultOpenRouterBaseURL,
-		http:    &http.Client{Timeout: 8 * time.Second}, // per-call soft timeout (spec §5.1)
+		apiKey:   apiKey,
+		baseURL:  defaultOpenRouterBaseURL,
+		httpRef:  "https://calista.vosi.id", // sensible default per spec §5.1
+		appTitle: "Calista",
+		http:     &http.Client{Timeout: 8 * time.Second}, // per-call soft timeout (spec §5.1)
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -86,6 +102,12 @@ func (c *OpenRouterClient) Complete(ctx context.Context, req CompletionRequest) 
 	}
 	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
 	httpReq.Header.Set("Content-Type", "application/json")
+	if c.httpRef != "" {
+		httpReq.Header.Set("HTTP-Referer", c.httpRef)
+	}
+	if c.appTitle != "" {
+		httpReq.Header.Set("X-Title", c.appTitle)
+	}
 
 	resp, err := c.http.Do(httpReq)
 	if err != nil {
@@ -100,6 +122,9 @@ func (c *OpenRouterClient) Complete(ctx context.Context, req CompletionRequest) 
 
 	if resp.StatusCode == http.StatusTooManyRequests {
 		return nil, &rateLimitError{status: resp.StatusCode, body: string(body)}
+	}
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return nil, &authError{status: resp.StatusCode, body: string(body)}
 	}
 	if resp.StatusCode >= 500 {
 		return nil, &serverError{status: resp.StatusCode, body: string(body)}
@@ -146,6 +171,18 @@ func (e *serverError) Error() string {
 	return fmt.Sprintf("openrouter: server error (HTTP %d): %s", e.status, e.body)
 }
 
+// authError signals the API key was rejected (401) or lacks permission (403).
+// The router does NOT cooldown on auth errors — they affect every model in
+// the chain identically and are non-recoverable without env-var change.
+type authError struct {
+	status int
+	body   string
+}
+
+func (e *authError) Error() string {
+	return fmt.Sprintf("openrouter: auth rejected (HTTP %d) — check OPENROUTER_API_KEY: %s", e.status, e.body)
+}
+
 type timeoutError struct{ cause error }
 
 func (e *timeoutError) Error() string { return "openrouter: timeout: " + e.cause.Error() }
@@ -155,6 +192,15 @@ func (e *timeoutError) Unwrap() error { return e.cause }
 func IsRateLimit(err error) bool {
 	var rl *rateLimitError
 	return errors.As(err, &rl)
+}
+
+// IsAuth returns true when the error indicates a 401 / 403 (bad API key).
+// Auth errors are NEVER cooldown-eligible — every model in the chain shares
+// the same key, so cooling one model wouldn't help. The router fails fast on
+// auth errors and surfaces them directly to the caller.
+func IsAuth(err error) bool {
+	var ae *authError
+	return errors.As(err, &ae)
 }
 
 // IsServerError returns true when the error indicates a 5xx upstream failure.
