@@ -1,5 +1,47 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Pembelian: Belanja Numpang Lewat (Phase 1) + PO Refactor Roadmap (Phase 2) — design spec brainstormed — AWAITING REVIEW
+
+- **What:** Founder requested fitur untuk catat pembelian pass-through (beli ke grosir khusus untuk 1 Order customer, dijual same-day, tidak nambah stok). Brainstorm session menghasilkan 2 spec: Phase 1 detailed (Belanja Numpang Lewat) untuk ship segera, Phase 2 roadmap (PO refactor) untuk SaaS multi-tenant readiness.
+- **Phase 1 — Belanja Numpang Lewat (BNL) — detail spec ready untuk implementasi:**
+  - Wajib link ke 1 Sales Order (1 Order : N BNL — barang dari multi grosir untuk 1 customer)
+  - Zero stock impact (no stock_lots, no stocks.stock change)
+  - COGS attribution dari PI ke Order lines (SQL view `order_cogs_breakdown` FIFO allocation)
+  - Lifecycle BELUM_LUNAS → LUNAS → TERLAMBAT (derived) → VOIDED (audit reason wajib)
+  - Cash / Transfer / Tempo + jatuh tempo (auto-fill dari supplier term)
+  - Kasir expense entry dengan category baru "Pembelian Pass-Through" (beda dari PO PAID "Pembelian Stok")
+  - PI Number format `PI-YYYY-MM-NNN` reset per bulan
+  - SKU inline-create (kategori default "Pass-through", stok=0, no stock_lots)
+  - 2 menu UI terpisah (Belanja Numpang Lewat + Tagihan Phase 2), 1 table backend dengan `type` discriminator
+  - Shortcut button "+ Buat PI untuk Order ini" di Order detail page
+  - Edit hanya saat BELUM_LUNAS; setelah LUNAS pakai Void & re-create
+  - PDF Tanda Terima A6 untuk operator cetak / WA
+- **Phase 2 — PO Refactor Roadmap — high-level untuk planning:**
+  - 4-entity model: Pesanan + Tagihan + Tukar Faktur + Pembayaran (vs existing PO collapsed 4-status)
+  - Adopt Jurnal/Accurate naming standard (Pesanan/Tagihan/Pembayaran) — familiar untuk tenant migran
+  - SOP Profile per tenant: Warung (1-step) / Service Shop (2) / Toko Ritel (3) / Distributor B2B (4) / Pass-through Only / Custom
+  - Approval workflow permission-based: `pembelian.create` + `approve_pesanan` + `approve_pembayaran`. Self-approve untuk owner (1-step). Admin draft → owner approve (2-step). Tenant config 3 toggle gate.
+  - Partial delivery (item-level FK Pesanan ↔ Tagihan items, auto-close Pesanan saat semua fulfilled)
+  - Multi-Tagihan-per-Pembayaran via junction table; support partial payment + consolidated payment + Tukar Faktur
+  - Tukar Faktur sebagai entitas terpisah (B2B ritual Indonesia — gap workflow nyata antara verifikasi faktur dan transfer)
+  - Reconciliation panel Tukar Faktur Day (full mode untuk distributor + Quick mode untuk toko ritel)
+  - AP Report dashboard (KPI strip + per-supplier breakdown + aging chart + cash flow forecast 7-14 hari)
+  - WA reminder via whatsmeow (free) — 3 trigger: 3 hari sebelum jatuh tempo, saat lunas, saat tukar faktur tertanda
+  - Migration big-bang split: existing PO DRAFT→Pesanan, ORDERED→Pesanan, RECEIVED→Pesanan+Tagihan, PAID→Pesanan+Tagihan+Pembayaran. stock_lots.po_id → source_id+source_type. Checksum verification + rollback plan.
+- **Benchmark Jurnal/Mekari:** Full chain Permintaan → Penawaran → Pesanan → Penagihan → Faktur → Pembayaran. Kita skip Permintaan + Penawaran untuk Phase 2 (Phase 3 kalau ada demand multi-branch tenant). Differentiator vs Jurnal: linked pass-through PI (Jurnal tidak punya), Tukar Faktur auto-suggest + reconciliation panel, WA reminder built-in, mobile-first, free tier.
+- **MSME-first design principles applied:**
+  - Bahasa awam (Belanja Numpang Lewat / Tagihan / Tukar Faktur / Pembayaran), bukan jargon akuntansi
+  - SOP Profile per tenant — fitur opt-in, tidak dipaksa lewat semua 4 tahap
+  - Quick Mode 1-form-3-records untuk Cash purchase (Warung skenario)
+  - Killer features di Tukar Faktur (auto-suggest, photo bulk upload, reconciliation panel, calendar reminder) vs Jurnal yang manual
+- **Out of scope (kedua spec):** Penawaran (Quote), Permintaan (PR), Retur Pembelian, multi-currency, PPN formal — Phase 3 atau paid tier nanti
+- **Files added:**
+  - `docs/superpowers/specs/2026-06-14-pembelian-belanja-numpang-lewat-design.md` — Phase 1 detailed (13 sections)
+  - `docs/superpowers/specs/2026-06-14-pembelian-phase2-roadmap-design.md` — Phase 2 roadmap (14 sections)
+  - `tmp/pembelian-cash-invoice-mockup.html` — visual mockup 4 layar (list / form / detail / Order linked)
+- **Branch:** main (will create `feat/belanja-numpang-lewat` saat implementation start)
+- **Next:** founder review 2 spec docs → kalau approved, invoke `writing-plans` skill untuk Phase 1 implementation plan
+
 ## 2026-06-14 — Calista Phase 1A Task 18: `main.go` wiring behind `ENABLE_OPENROUTER` flag — DONE
 
 - **What:** The unblock task. Since Task 14 refactored `engine.NewMachine` from `*gemini.Client` to the abstract `engine.LLMClient` interface, `main.go` line 227 (`engine.NewMachine(geminiClient)`) was failing to build because `*gemini.Client` no longer satisfies the interface directly. Task 18 wires the two adapters from Tasks 16/17 behind a feature flag: (1) added `OpenRouterAPIKey` (from `OPENROUTER_API_KEY` env) + `EnableOpenRouter` (from `ENABLE_OPENROUTER=="true"`) fields to `config.Config`, (2) refactored the engine-wiring block in `main.go` to dispatch on `cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != ""` — true path constructs `llm.NewCooldownRegistry(calistaStore)` + `llm.NewPinManager(calistaStore)` + `llm.NewRecorder(calistaStore)` + `llm.NewOpenRouterClient(cfg.OpenRouterAPIKey)` + `llm.NewRouter(...)` + `llm.NewEngineAdapter(router)`; false path constructs `gemini.NewEngineAdapter(geminiClient)`. Both paths log a `[CALISTA]` line announcing which chain is active. Default is OFF (`EnableOpenRouter=false`) per Phase 1A ship plan — flip to true after shadow soak.
