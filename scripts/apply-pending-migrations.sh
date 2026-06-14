@@ -102,6 +102,11 @@ MIGRATIONS=(
   # request: validates customer is activated + new limit > 0 + reason ≥5 chars.
   # approve: type-guarded + verify_owner_pin; on success UPDATEs customers.credit_limit.
   "20260614000013_customer_credit_limit_change_rpcs.sql"
+
+  # ─── Piutang T7 — customer_credit_deactivate RPCs ───
+  # request: validates activated + reason≥5. approve: type-guarded +
+  # verify_owner_pin; UPDATE allows_tempo=false (retains term_days/credit_limit as audit).
+  "20260614000014_customer_credit_deactivate_rpcs.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

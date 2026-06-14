@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 7: customer_credit_deactivate RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000014_customer_credit_deactivate_rpcs.sql`
+  - `request_customer_credit_deactivate(p_customer_id text, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors T5/T6 pattern
+    - 2 validations in order: customer_not_activated (checks `allows_tempo = true`) → reason_required (≥5 chars via `coalesce(length(p_reason), 0) < 5`)
+    - Inserts `approval_requests` row with type `customer_credit_deactivate` and JSON payload (`customer_id`, `reason`)
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_deactivate(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with two args; raises `pin_invalid` on FALSE return
+    - On approval: extracts `customer_id` from payload, locks customer row (`FOR UPDATE`), sets `allows_tempo = false`
+    - Intentionally does NOT reset `term_days` / `credit_limit` — values retained as audit trail for re-activation
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000014`, following T6 at `000013`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T7 entry after T6
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000014_customer_credit_deactivate_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_deactivate', 'approve_customer_credit_deactivate');
+  -- Expected: 2 rows
+  ```
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 6: customer_credit_limit_change RPCs (request + approve) — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000013_customer_credit_limit_change_rpcs.sql`
