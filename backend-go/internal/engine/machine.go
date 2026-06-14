@@ -11,17 +11,36 @@ import (
 
 const maxClarificationRounds = 3
 
-// GeminiClient is the interface the machine depends on — allows mocking in tests.
-type GeminiClient interface {
-	GenerateReply(ctx context.Context, fullPrompt string) (string, error)
+// LLMClient is the interface the engine depends on. Implemented by both
+// llm.Router (default) and the legacy gemini.Client adapter (for the
+// ENABLE_OPENROUTER=false emergency fallback path).
+type LLMClient interface {
+	Complete(ctx context.Context, fullPrompt string, opts CallOpts) (*LLMResult, error)
+}
+
+// CallOpts mirrors llm.CallOpts but is duplicated here to keep the engine
+// package import-free of llm (avoiding a cycle if llm ever needed engine).
+type CallOpts struct {
+	ConversationID string
+	StateBoundary  bool
+	MaxTokens      int
+}
+
+// LLMResult is what the engine receives back from any LLM client.
+type LLMResult struct {
+	Body          string
+	ModelUsed     string
+	WasForcedSwap bool
+	LatencyMs     int
+	TripwireFlags []string
 }
 
 type Machine struct {
-	gemini GeminiClient
+	llm LLMClient
 }
 
-func NewMachine(g GeminiClient) *Machine {
-	return &Machine{gemini: g}
+func NewMachine(l LLMClient) *Machine {
+	return &Machine{llm: l}
 }
 
 type ProcessResult struct {
@@ -32,11 +51,11 @@ type ProcessResult struct {
 	Language           string
 	CreateOrder        bool
 	DeliveryType       models.DeliveryType
-	GeminiError        error
+	LLMError           error
 }
 
 // Process runs the state machine for one incoming customer message.
-// On any Gemini or parse failure, it returns a safe fallback — never returns an error.
+// On any LLM or parse failure, it returns a safe fallback — never returns an error.
 func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomingText string, history []models.Message, stockContext string) (*ProcessResult, error) {
 	result := &ProcessResult{
 		NextState:          conv.State,
@@ -47,13 +66,17 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	prompt := BuildPrompt(conv.State, conv.Language, conv.CollectedData, history, stockContext)
 	fullPrompt := fmt.Sprintf("%s\n\nCustomer message: %s", prompt, incomingText)
 
-	rawJSON, err := m.gemini.GenerateReply(ctx, fullPrompt)
+	res, err := m.llm.Complete(ctx, fullPrompt, CallOpts{
+		ConversationID: conv.ID,
+		MaxTokens:      maxTokensForState(conv.State),
+	})
 	if err != nil {
-		log.Printf("[ENGINE] Gemini error in state %s: %v", conv.State, err)
+		log.Printf("[ENGINE] LLM error in state %s: %v", conv.State, err)
 		result.Reply = FallbackReply(conv.Language)
-		result.GeminiError = err
+		result.LLMError = err
 		return result, nil
 	}
+	rawJSON := res.Body
 
 	switch conv.State {
 	case models.StateGreeting:
@@ -204,4 +227,27 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	}
 
 	return result, nil
+}
+
+// maxTokensForState returns the per-state max_tokens budget (spec §5.6 #6).
+func maxTokensForState(s models.ConversationState) int {
+	switch s {
+	case models.StateGreeting:
+		return 60
+	case models.StateCollecting:
+		return 100
+	case models.StateClarifying:
+		return 120
+	case models.StateStockCheck:
+		return 150
+	case models.StateConfirming:
+		return 150
+	case models.StateAddMore:
+		return 60
+	case models.StateDelivery:
+		return 100
+	case models.StateBooked:
+		return 200
+	}
+	return 150 // safe default
 }
