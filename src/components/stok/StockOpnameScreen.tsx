@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import {
+  fetchOpnameAuditLog,
   listOpnameSessions,
   startOpnameSession,
   supabase,
 } from '../../lib/supabaseClient';
+import type { OpnameAuditEntry } from '../../lib/supabaseClient';
 import type {
   OpnameSession,
   DbAdminUser,
@@ -71,6 +73,8 @@ export default function StockOpnameScreen({
   const [witnessId, setWitnessId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [requireWitness, setRequireWitness] = useState<boolean>(true);
+  const [auditEntries, setAuditEntries] = useState<OpnameAuditEntry[]>([]);
+  const [auditLoading, setAuditLoading] = useState<boolean>(false);
 
   // Fetch opname_require_witness setting at mount. Default TRUE (MSME-safe).
   useEffect(() => {
@@ -86,6 +90,16 @@ export default function StockOpnameScreen({
         }
       });
   }, []);
+
+  // Owner-only: fetch audit log entries on mount (and when sessions list refreshes).
+  useEffect(() => {
+    if (currentUser?.role !== 'Owner' || !supabase) return;
+    setAuditLoading(true);
+    fetchOpnameAuditLog(7)
+      .then(setAuditEntries)
+      .catch(err => console.error('audit fetch error:', err))
+      .finally(() => setAuditLoading(false));
+  }, [currentUser?.role, sessions.length]);
 
   const refresh = async () => {
     if (!supabase) return;
@@ -284,6 +298,63 @@ export default function StockOpnameScreen({
           </ul>
         )}
       </section>
+
+      {/* Catatan Audit Opname (Owner only) */}
+      {currentUser?.role === 'Owner' && (
+        <section className="space-y-2">
+          <h2 className="text-xs uppercase tracking-wide text-slate-500 font-semibold">
+            Catatan Audit Opname (7 hari terakhir)
+          </h2>
+          {auditLoading ? (
+            <p className="text-sm text-slate-500">Memuat…</p>
+          ) : auditEntries.length === 0 ? (
+            <p className="text-sm text-slate-500">Belum ada catatan audit.</p>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
+                  <tr className="border-b border-slate-200">
+                    <th className="text-left py-2 px-3">Waktu</th>
+                    <th className="text-left py-2 px-3">Sesi</th>
+                    <th className="text-left py-2 px-3">Penghitung</th>
+                    <th className="text-left py-2 px-3">Saksi</th>
+                    <th className="text-right py-2 px-3">Total Selisih</th>
+                    <th className="text-left py-2 px-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditEntries.map(e => (
+                    <tr key={e.id} className="border-b border-slate-100 last:border-b-0">
+                      <td className="py-2 px-3 text-xs text-slate-600">{formatDateTime(e.createdAt)}</td>
+                      <td className="py-2 px-3 font-mono text-xs">#{e.sessionId}</td>
+                      <td className="py-2 px-3">{e.counterName ?? '—'}</td>
+                      <td className="py-2 px-3">{e.witnessName ?? <span className="text-xs italic text-slate-400">(solo)</span>}</td>
+                      <td className={`py-2 px-3 text-right font-semibold ${
+                        e.totalVarianceValue < 0 ? 'text-rose-600'
+                        : e.totalVarianceValue > 0 ? 'text-emerald-700'
+                        : 'text-slate-400'
+                      }`}>
+                        {formatRpDelta(e.totalVarianceValue)}
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs border ${
+                          e.eventType === 'opname_auto_commit' ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : e.eventType === 'opname_owner_commit' ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-rose-100 text-rose-800 border-rose-200'
+                        }`}>
+                          {e.eventType === 'opname_auto_commit' ? 'Selesai Otomatis'
+                            : e.eventType === 'opname_owner_commit' ? 'Disetujui Owner'
+                            : 'Ditolak'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Start session modal */}
       {showStartModal && (

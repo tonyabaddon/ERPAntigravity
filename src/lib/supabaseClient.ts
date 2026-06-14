@@ -1598,6 +1598,47 @@ export async function submitOpnameForOwner(
   };
 }
 
+export interface OpnameAuditEntry {
+  id: number;
+  eventType: 'opname_auto_commit' | 'opname_owner_commit' | 'opname_owner_reject';
+  createdAt: string;
+  sessionId: number;
+  counterName: string | null;
+  witnessName: string | null;
+  approvedByName?: string | null;
+  rejectedByName?: string | null;
+  totalVarianceValue: number;
+  rowCount: number;
+}
+
+export async function fetchOpnameAuditLog(daysBack: number = 7): Promise<OpnameAuditEntry[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const since = new Date(Date.now() - daysBack * 86_400_000).toISOString();
+  const { data, error } = await supabase
+    .from('audit_log')
+    .select('id, event_type, created_at, payload')
+    .in('event_type', ['opname_auto_commit', 'opname_owner_commit', 'opname_owner_reject'])
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).map(row => {
+    const p = (row as { payload: Record<string, unknown> }).payload;
+    return {
+      id: (row as { id: number }).id,
+      eventType: (row as { event_type: 'opname_auto_commit' | 'opname_owner_commit' | 'opname_owner_reject' }).event_type,
+      createdAt: (row as { created_at: string }).created_at,
+      sessionId: Number(p.session_id),
+      counterName: (p.counter_name as string | null) ?? null,
+      witnessName: (p.witness_name as string | null) ?? null,
+      approvedByName: (p.approved_by_name as string | null) ?? null,
+      rejectedByName: (p.rejected_by_name as string | null) ?? null,
+      totalVarianceValue: Number(p.total_variance_value ?? 0),
+      rowCount: Number(p.row_count ?? 0),
+    };
+  });
+}
+
 export async function commitOpname(approvalId: number): Promise<number> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('commit_opname', {
