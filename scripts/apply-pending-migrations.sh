@@ -67,6 +67,14 @@ MIGRATIONS=(
   "20260613000020_sales_channels_phase_b_seed.sql"
   "20260613000021_sales_channels_phase_b_rpcs.sql"
   "20260613000022_sales_channels_phase_b_realtime.sql"
+
+  # ─── Piutang & Tempo Phase 1A — customers tempo fields ─────────────────
+  # Adds allows_tempo, term_days, credit_limit, tempo_activated_at/by columns
+  # to customers table. Owner-PIN-gated writes via SECURITY DEFINER RPCs
+  # (coming in subsequent piutang migrations). Idempotent (IF NOT EXISTS).
+  # Bumped from originally planned 000001 — slots 000001-000007 taken by
+  # parallel opname migrations on same date.
+  "20260614000008_customers_tempo_fields.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

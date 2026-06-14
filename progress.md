@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 1: customers tempo fields migration — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000008_customers_tempo_fields.sql`
+  - Adds 5 columns to `public.customers`: `allows_tempo`, `term_days`, `credit_limit`, `tempo_activated_at`, `tempo_activated_by`
+  - Partial index `idx_customers_allows_tempo` on `allows_tempo = true`
+  - Column comments as per spec §4.1
+  - **Slot bump:** Originally planned as `000001`; bumped to `000008` because slots `000001`–`000007` were claimed by parallel opname migrations on the same date. Plan file note added inline.
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with new entry (with inline comment block)
+- **Apply status: NOT YET APPLIED** — same IPv6-only DB connectivity block as opname migrations (see 2026-06-14 Stok Opname entry). Direct TCP to `db.ekhhojaezdfjfwuxyjkl.supabase.co:5432` has no IPv4 A record; pooler endpoints reject the project tenant name.
+- **Action needed from founder:** Apply `20260614000008_customers_tempo_fields.sql` via Supabase Studio SQL editor (same path as previous blocked migrations). Migration is idempotent (`IF NOT EXISTS`) — safe to paste and run.
+- **Verification query (run after apply):**
+  ```sql
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name='customers'
+  AND column_name IN ('allows_tempo','term_days','credit_limit','tempo_activated_at','tempo_activated_by')
+  ORDER BY column_name;
+  -- Expected: 5 rows
+
+  SELECT indexname FROM pg_indexes WHERE indexname = 'idx_customers_allows_tempo';
+  -- Expected: 1 row
+  ```
+- **Commit:** see below
+
 ## 2026-06-14 — Calista Phase 1A: post-review fixes C.2 + I.3 + I.4 + M.1 + security — DONE
 
 - **What:** Closed the post-review action items the final reviewer surfaced as needed before `ENABLE_OPENROUTER=true` flip. C.2 (tone seeding wire-up) was the substantive one — pillar 2 of 3 of perceptual continuity (§5.6 #4). I.3 + I.4 + M.1 are short pragmatic fixes. I.1 (StateBoundary signal) explicitly deferred to Phase 1B because the clean implementation needs a new column on `conversations` to track recent state transitions.
