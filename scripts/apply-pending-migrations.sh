@@ -110,6 +110,9 @@ MIGRATIONS=(
 
   # ─── Product Photo Phase 1 — M1: stocks UoM + photo_urls + min_stock + initial_stock_approved ───
   "20260614000020_stocks_product_columns.sql"
+
+  # ─── Product Photo Phase 1 — M2: product_categories/brands/units registries + seeds ───
+  "20260614000021_product_registries.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
