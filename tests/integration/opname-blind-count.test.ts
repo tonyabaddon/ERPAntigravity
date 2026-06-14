@@ -16,6 +16,10 @@ let witnessId: string;
 beforeAll(async () => {
   svc = createClient(SUPABASE_URL, SERVICE_KEY);
 
+  // Defensively reset opname_require_witness=true so other tests' flipping
+  // doesn't leak into this file (the re-ack test depends on it).
+  await svc.from('company_settings').update({ opname_require_witness: true }).neq('id', -1);
+
   const { data: users } = await svc.from('admin_users').select('id, role').limit(20);
   counterId = users!.find(u => u.role !== 'Owner')!.id;
   witnessId = users!.filter(u => u.role !== 'Owner' && u.id !== counterId)[0].id;

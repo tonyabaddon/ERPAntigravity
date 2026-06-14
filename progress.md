@@ -21,8 +21,16 @@
 - **Coordination note:** ada parallel work join-invoice di terminal lain — spec ini own halaman Piutang sepenuhnya dengan extension point untuk grouping; migration date prefix beda; WA rate-limiter di-share via shared helper (Phase 1C)
 - **Phasing:** 1A (schema + customer credit + activation/limit-change RPC + customer profile UI), 1B (tempo invoice + Piutang page + sidebar badge), 1C (write-off + WA send via whatsmeow + AR aging chart + piutang_settings)
 - **Files added:**
-  - `docs/superpowers/specs/2026-06-14-piutang-tempo-design.md` — full design spec (15 sections)
+  - `docs/superpowers/specs/2026-06-14-piutang-tempo-design.md` — full design spec (16 sections after multi-tenant update)
   - `.superpowers/brainstorm/<session>/content/piutang-mockup.html` — visual mockup (ephemeral)
+- **Multi-tenant readiness update (same day):** founder asked "apakah ada yang hardcoded yang harus dibikin configurable untuk MT?". Analysis 4 kategori (MT infra / business knobs / global constants / UI styling). Applied A+B (skip C cosmetic & D theming):
+  - `piutang_settings` rewrite ke per-tenant (PK = tenant_id, sentinel UUID untuk pre-Layer-A; mirror warehouses pattern)
+  - Added `term_days_allowed int[]` ke piutang_settings (replace hardcoded `IN (7,14,30,60,90)` validator) — tenant bisa add Net 21/45 dst
+  - Added `aging_buckets int[]` (default `{30,60,90}`) — AR Aging chart configurable per tenant
+  - RPCs pakai `_resolve_tenant_id()` convention dengan sentinel fallback (no-op pre-Layer-A, active post-Layer-A)
+  - New §4.5 Multi-tenant column inheritance — explain customers/orders/approval_requests/messages tenant_id deferred ke Layer A retrofit
+  - New §16 Multi-tenant readiness checklist — table per-concern: ✅ solved-here / ⏳ Layer A / ❌ out of scope
+  - §13 Coordination section extended dengan Layer A dependency mapping
 - **Branch:** main (will create `feat/piutang-tempo` saat implementation start)
 - **Next:** founder review spec → kalau approved, invoke `writing-plans` skill untuk Phase 1A implementation plan
 
