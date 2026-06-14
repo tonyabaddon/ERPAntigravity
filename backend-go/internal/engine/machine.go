@@ -232,7 +232,35 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		}
 	}
 
+	// Unpin the router's sticky-pin when the conversation reaches a terminal
+	// state. Only the llm.EngineAdapter implements the unpinner interface; the
+	// gemini.EngineAdapter is a no-op (it has no pin concept). Best-effort —
+	// errors here would only leak a DB row that the hourly stale-pin cleanup
+	// job (spec §5.5) reaps anyway.
+	if isTerminalState(result.NextState) {
+		if u, ok := m.llm.(unpinner); ok {
+			_ = u.Unpin(ctx, conv.ID)
+		}
+	}
+
 	return result, nil
+}
+
+// unpinner is the optional interface an LLMClient may implement to clear
+// per-conversation sticky-pin state when the conversation terminates. The
+// llm.EngineAdapter (wrapping llm.Router) implements it; the gemini.EngineAdapter
+// returns nil (no-op) by design.
+type unpinner interface {
+	Unpin(ctx context.Context, conversationID string) error
+}
+
+func isTerminalState(s models.ConversationState) bool {
+	switch s {
+	case models.StateBooked, models.StateCompleted, models.StateCancelled,
+		models.StateEscalatedAdmin, models.StateEscalatedWiring:
+		return true
+	}
+	return false
 }
 
 // maxTokensForState returns the per-state max_tokens budget (spec §5.6 #6).
