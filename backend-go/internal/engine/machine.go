@@ -2,10 +2,12 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
+	"github.com/username/sinar-elektrik-backend/internal/llm"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
@@ -52,6 +54,7 @@ type ProcessResult struct {
 	CreateOrder        bool
 	DeliveryType       models.DeliveryType
 	LLMError           error
+	ChainExhausted     bool
 }
 
 // Process runs the state machine for one incoming customer message.
@@ -74,6 +77,10 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		log.Printf("[ENGINE] LLM error in state %s: %v", conv.State, err)
 		result.Reply = FallbackReply(conv.Language)
 		result.LLMError = err
+		if errors.Is(err, llm.ErrChainExhausted) {
+			result.ChainExhausted = true
+			result.NextState = models.StateEscalatedAdmin
+		}
 		return result, nil
 	}
 	rawJSON := res.Body
