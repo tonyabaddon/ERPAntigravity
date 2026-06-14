@@ -1,5 +1,32 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 10: customerCreditService in supabaseClient — DONE
+
+- **File changed:** `src/lib/supabaseClient.ts`
+- **Commit:** (see below)
+- **Added:** `customerCreditService` export with 6 RPC wrapper methods inserted after `customersService` (line 850):
+  - `requestActivate(customerId, termDays, creditLimit, reason)` → `number` (request ID)
+  - `approveActivate(requestId, ownerPin)` → `void`
+  - `requestLimitChange(customerId, newLimit, reason)` → `number`
+  - `approveLimitChange(requestId, ownerPin)` → `void`
+  - `requestDeactivate(customerId, reason)` → `number`
+  - `approveDeactivate(requestId, ownerPin)` → `void`
+- **`customersService` selects:** Both use `select('*')` — no column list changes needed; new tempo columns auto-included.
+- **TypeScript:** `npx tsc --noEmit` — 1 pre-existing error in `PengaturanScreen.tsx` (OwnerPinCard), zero new errors.
+- **Supabase guard:** Each method has `if (!supabase) throw new Error('Supabase not configured')` consistent with existing patterns.
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 9: Frontend types extension — DONE
+
+- **Files changed:** `src/types.ts` + `src/components/approval/ApprovalRequestRow.tsx`
+- **Commit:** `0792e1c`
+- **Changes in `src/types.ts`:**
+  - `DbCustomer`: +5 fields (`allows_tempo: boolean`, `term_days: number`, `credit_limit: number`, `tempo_activated_at?: string | null`, `tempo_activated_by?: string | null`)
+  - `ApprovalRequestType`: +3 union values (`customer_credit_activate`, `customer_credit_limit_change`, `customer_credit_deactivate`)
+  - `PermissionSet`: +6 optional keys (`can_request_credit_activate`, `can_approve_credit_activate`, `can_request_limit_change`, `can_approve_limit_change`, `can_request_deactivate`, `can_approve_deactivate`)
+  - `ALL_PERMISSIONS`: +6 keys all set to `true`
+- **Companion fix in `ApprovalRequestRow.tsx`:** Added 3 new entries to `TYPE_LABEL` and `TYPE_ICON` Record maps to satisfy exhaustive `Record<ApprovalRequestType, ...>` typing — needed to keep `tsc --noEmit` clean.
+- **TypeScript:** `npx tsc --noEmit` — zero errors
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 8: Vitest integration tests — DONE (deferred run)
 
 - **File written:** `tests/integration/piutang-tempo-phase1a.test.ts`
