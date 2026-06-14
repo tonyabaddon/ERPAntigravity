@@ -24,7 +24,7 @@
 ### Non-goals (definitif skip di spec ini)
 
 - **Menu Produk baru terpisah** — tetap extend menu Stok existing (tabel `stocks` ditambah kolom).
-- **Variant produk** (warna/ukuran) — non-goal.
+- **Variant produk** (warna/ukuran) — **tunda ke sprint terpisah** dengan spec sendiri (alasan: kompleksitas tinggi — parent/child template, attribute registry, migrasi data SKU existing, kasir/PO flow rewrite. Estimasi 5-7 hari sendiri, tidak masuk sprint 8-10 hari ini).
 - **Bundle / Composite produk** — sudah ada `Rakit Workflow` untuk assembly; pure bundle (paket) tunda ke spec terpisah.
 - **Multi-tier pricing** (retail/grosir) — tunda.
 - **Barcode** — toko tidak punya scanner (per konfirmasi user).
@@ -170,37 +170,62 @@ ALTER TYPE public.approval_request_type ADD VALUE IF NOT EXISTS 'initial_stock';
 -- Create approval payload schema (validated di app layer):
 -- { sku, sku_name, qty, unit, requested_cost_per_unit?, requested_total_cost? }
 
--- RPC: cari produk by embedding
+-- RPC: cari produk by embedding (return per-warehouse stock breakdown)
 CREATE OR REPLACE FUNCTION public.search_products_by_embedding(
   query_embedding VECTOR(768),
   match_threshold FLOAT DEFAULT 0.70,
   match_limit INT DEFAULT 5
 ) RETURNS TABLE (
-  sku           VARCHAR(50),
-  name          TEXT,
-  category      VARCHAR(100),
-  similarity    FLOAT,
-  thumbnail_url TEXT,
-  stock         INT,
-  price         NUMERIC,
-  unit          TEXT,
-  min_stock     INT
+  sku             VARCHAR(50),
+  name            TEXT,
+  category        VARCHAR(100),
+  similarity      FLOAT,
+  thumbnail_url   TEXT,
+  total_stock     INT,
+  warehouse_stock JSONB,  -- [{warehouse_id, code, name, qty}, ...] non-zero only
+  price           NUMERIC,
+  unit            TEXT,
+  min_stock       INT
 ) LANGUAGE sql STABLE AS $$
-  SELECT DISTINCT ON (e.sku)
-    e.sku,
+  WITH ranked AS (
+    SELECT DISTINCT ON (e.sku)
+      e.sku,
+      1 - (e.embedding &lt;=&gt; query_embedding) AS similarity,
+      e.embedding &lt;=&gt; query_embedding AS dist
+    FROM public.stock_photo_embeddings e
+    WHERE 1 - (e.embedding &lt;=&gt; query_embedding) &gt;= match_threshold
+    ORDER BY e.sku, e.embedding &lt;=&gt; query_embedding ASC
+  ),
+  warehouse_agg AS (
+    SELECT
+      sl.sku,
+      jsonb_agg(jsonb_build_object(
+        'warehouse_id', sl.warehouse_id,
+        'code', w.code,
+        'name', w.name,
+        'qty', sl.qty
+      ) ORDER BY w.sort_order) FILTER (WHERE sl.qty &gt; 0) AS by_warehouse,
+      SUM(sl.qty) AS total
+    FROM public.stock_levels sl
+    JOIN public.warehouses w ON w.id = sl.warehouse_id AND w.is_active = TRUE
+    GROUP BY sl.sku
+  )
+  SELECT
+    r.sku,
     s.name,
     s.category,
-    1 - (e.embedding &lt;=&gt; query_embedding) AS similarity,
+    r.similarity,
     (s.photo_urls-&gt;0-&gt;&gt;'url')::TEXT AS thumbnail_url,
-    s.stock,
+    COALESCE(wa.total, 0)::INT AS total_stock,
+    COALESCE(wa.by_warehouse, '[]'::jsonb) AS warehouse_stock,
     s.price,
     s.unit,
     COALESCE(s.min_stock_per_product, 5) AS min_stock
-  FROM public.stock_photo_embeddings e
-  JOIN public.stocks s ON s.sku = e.sku
-  WHERE 1 - (e.embedding &lt;=&gt; query_embedding) &gt;= match_threshold
-    AND s.initial_stock_approved = TRUE  -- jangan tampilkan produk yang stoknya masih pending approval
-  ORDER BY e.sku, e.embedding &lt;=&gt; query_embedding ASC
+  FROM ranked r
+  JOIN public.stocks s ON s.sku = r.sku
+  LEFT JOIN warehouse_agg wa ON wa.sku = r.sku
+  WHERE s.initial_stock_approved = TRUE
+  ORDER BY r.dist ASC
   LIMIT match_limit;
 $$;
 ```
@@ -244,10 +269,19 @@ Form di-organize jadi 4 section visual (divider pill style mengikuti pola "Spesi
 
 #### Section 💰 "Harga &amp; Persediaan"
 - **Harga Jual (Rp)** (required) — hint kecil *"per [unit utama]"*.
-- **Harga Beli / Modal (Rp)** (opsional) — hint live margin %: `((harga_jual − harga_beli) / harga_jual) × 100`.
-- **Stok Awal** (opsional) — placeholder `0`. Empty/0 = skip approval. &gt;0 = trigger approval (lihat 3.3).
+- **Harga Modal** (opsional) — label &amp; mode dinamis berdasarkan state produk:
+  - **Produk baru / tidak ada `stock_lots`**: label `Harga Modal Awal (Estimasi)`, input editable, hint *"Akan di-overwrite otomatis dari harga PO saat barang diterima (FIFO/Average sesuai pengaturan). Untuk migrasi stok awal saja."*
+  - **Produk sudah punya ≥1 `stock_lots`**: label `Harga Modal Aktual ([FIFO|Average] dari Pembelian)` — `[FIFO|Average]` dibaca dari `company_settings.costing_method`. Field **read-only** dengan badge `🔒 Dari Pembelian`. Edit manual hanya lewat `price_change` approval (existing pattern di `bulkUpsert`, `supabaseClient.ts:131`).
+  - Hint live margin %: `((harga_jual − harga_modal) / harga_jual) × 100` — selalu compute, baik dari Estimasi maupun Aktual.
+- **Stok Awal** (opsional) — placeholder `0`. Empty/0 = skip approval. &gt;0 = trigger approval (lihat 3.3). **Dropdown gudang tujuan**: pilih warehouse target dari `warehouses WHERE is_active=true` (default = `is_default=true`).
 - **Batas Stok Min** (opsional) — hint *"Alert kalau stok ≤ [angka]"*. Empty = pakai `NotificationConfig.lowStockAlert` global.
 - **Banner kuning approval warning** di bawah row (visible kalau Stok Awal &gt; 0 di-input).
+
+#### Section 🏬 "Stok per Gudang" (di form Edit; di form Create hanya tampil setelah Stok Awal diisi)
+- Table view, kolom: Gudang (nama + code badge) | Stok (qty) | Batas Min (per-warehouse override, opsional).
+- Saat Create: row hanya 1 (gudang yang dipilih di Stok Awal). Bisa transfer lewat `WarehouseTransferModal` yang sudah ada.
+- Saat Edit: row per warehouse aktif, semua produk di-pre-populate dari `stock_levels`.
+- Read-only di sini (tidak boleh edit qty langsung dari form Produk — harus lewat Stok Opname / Stock Adjustment / Transfer; reuse existing flow). UI tujuan: **visibility**, bukan input.
 
 #### Section 📷 "Foto Produk (min 1 wajib · max 5)"
 - 5-slot grid; slot pertama mandatory dengan badge `★ Thumbnail · Wajib`.
@@ -318,10 +352,12 @@ Open modal `CariByFotoModal`.
 - List 5 card produk:
   - Thumbnail dari `thumbnail_url`.
   - Pill kategori (color-coded).
-  - Nama + SKU + Stok + Harga + Satuan.
+  - Nama + SKU + Harga + Satuan.
+  - **Stok per gudang inline** (memudahkan tim gudang tahu ambil dari mana): `Gudang Atas: 30 · Gudang Bawah: 18` (warehouse name + qty). Sembunyikan warehouse dengan qty=0. Kalau cuma 1 warehouse aktif, sederhanakan jadi `Stok: 48`.
+  - Total stok sebagai summary.
   - Score similarity (right-aligned, %).
   - Tombol `+ Tambah` (primary di best match #1, outline di lainnya).
-  - Stok ≤ `min_stock` → badge kuning `Tipis`.
+  - Stok total ≤ `min_stock` → badge kuning `Tipis`.
 - Click `Tambah` → push ke kasir cart (reuse existing logic add-to-cart by SKU).
 - Footer: link `Tidak ada yang cocok? Cari manual via teks` → close modal, focus ke search box.
 
@@ -550,9 +586,10 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Update `StockItem` type di `src/types.ts`
 - Service methods di `stockService` untuk registry CRUD
 
-**Fase 2 — Form Stok Extension (2 hari)**
+**Fase 2 — Form Stok Extension (2.5 hari)**
 - UI: section Identitas (SKU editable, Sub-Kategori, Satuan, multi-satuan)
-- UI: section Harga &amp; Persediaan (margin live, Batas Stok Min, banner approval)
+- UI: section Harga &amp; Persediaan (margin live, Batas Stok Min, banner approval, warehouse dropdown untuk Stok Awal)
+- UI: **Harga Modal dynamic label/mode** — query `stock_lots` count; baca `costing_method` dari `company_settings`; render Estimasi vs Aktual dengan badge + read-only state
 - UI: section Foto (5-slot grid, drag-drop, mandatory slot 1, client compress)
 - UI: section Deskripsi (textarea + tombol Generate)
 - Submit flow + validation
@@ -564,11 +601,14 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Endpoint `POST /api/products/search-by-photo`
 - AI call logging ke `ai_call_log`
 
-**Fase 4 — Kasir Cari by Foto UI (1 hari)**
+**Fase 4 — Kasir Cari by Foto UI + Multi-warehouse stock display (1.5 hari)**
 - Tombol di KasirScreen header
 - `CariByFotoModal` + `HasilCariFotoModal`
+- Per-warehouse stock breakdown di card hasil (parse `warehouse_stock` JSONB dari RPC response)
 - Empty state + error states
 - Integration dengan add-to-cart existing
+- StockManagerScreen: section "Stok per Gudang" di edit form (read-only) + badge per-warehouse di list row
+- Update kategori filter di StockManagerScreen kalau perlu
 
 **Fase 5 — Pengaturan &amp; Approval (1 hari)**
 - Panel Costing Method
@@ -580,4 +620,4 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Manual smoke per checklist
 - Update `progress.md`
 
-Total estimasi: **8 hari kerja** (1 sprint dengan buffer).
+Total estimasi: **9-10 hari kerja** (1 sprint dengan buffer; +1.5 hari dari estimasi awal untuk harga modal dynamic + multi-warehouse stock display).

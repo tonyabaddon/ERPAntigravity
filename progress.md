@@ -5815,3 +5815,36 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - Multi-satuan konvensi: Utama = base/smallest (stock unit), Kedua = packaging (factor &gt; 1)
   - Min 1 foto wajib (mandatory), thumbnail = slot pertama
   - AI quota panel: HONEST — count call sistem kita, no fake "X/1500"
+
+## 2026-06-14 — Stok Opname Blind-Count Task 4 — Migration A (fetch_opname_counts + get_opname_session masking) — BLOCKED (DB unreachable)
+
+- **Migration written**: `supabase/migrations/20260614000001_opname_blind_count_fetch_mask.sql`
+  - `fetch_opname_counts(p_session_id BIGINT)` SECURITY DEFINER: returns row-set; masks `system_qty_snapshot`, `variance` (→ NULL) and `variance_value` (→ 0) when caller is NOT 'Owner' AND session status='in_progress'. `counted_qty` stays visible. Default-deny via `COALESCE(v_caller_role, '') <> 'Owner'`.
+  - `get_opname_session(p_session_id BIGINT)` SECURITY DEFINER: returns session row; masks `variance_total_value` (→ 0) under same condition.
+  - Uses legacy text `warehouse` column (pre-Phase-3 cutover) — matches current applied prod schema.
+  - GRANT EXECUTE ... TO authenticated on both fns.
+- **Integration test written**: `tests/integration/opname-blind-count.test.ts`
+  - Inserts QA SKU into `stocks` (legacy columns `stock_atas=25`, `stock_bawah=0`, `harga_modal=1000`).
+  - Picks two non-Owner admin_users as counter/witness; calls `start_opname_session({p_opname_type:'per_sku_list', p_scope_payload:{skus:[testSku]}, p_counted_by, p_witnessed_by})` (verified real param names via grep).
+  - Asserts service-role RPC returns full data with `system_qty_snapshot === 25`.
+- **BLOCKED on apply step**: direct DB host `db.ekhhojaezdfjfwuxyjkl.supabase.co:5432` returns TCP "connection refused" (IPv6-only endpoint; no A record). REST API alive (HTTP 200 on `/rest/v1/admin_users`). Tried 8 AWS pooler regions — all reply "tenant/user postgres.ekhhojaezdfjfwuxyjkl not found" (project ref not provisioned on any pooler tenant).
+- **Action needed from user**: apply via Supabase Studio SQL editor or Supabase MCP `apply_migration` (which is how recent migrations like `kasir_transactions`, `harga_modal` were applied per progress.md history). Then run `npm test tests/integration/opname-blind-count.test.ts`.
+- **NOT yet committed** — per task Step 6 the commit happens after the test passes. Files are durable on disk.
+
+## 2026-06-14 — Spec Product Photo: Round 2 updates dari review user
+
+- **Spec**: same file `docs/superpowers/specs/2026-06-14-product-photo-search-design.md` (updated)
+- **Changes**:
+  - **Variant produk** — pushback success: tunda ke sprint terpisah (alasan: kompleksitas tinggi, parent/child template, attribute registry, migrasi SKU existing, kasir/PO flow rewrite — 5-7 hari sendiri)
+  - **Harga Modal label dinamis**:
+    - Produk baru (tidak ada stock_lots): `Harga Modal Awal (Estimasi)` editable, badge Estimasi
+    - Setelah ≥1 stock_lot dari PO: `Harga Modal Aktual (FIFO|Average)` (dinamis dari company_settings.costing_method), read-only dengan badge 🔒, edit hanya via price_change approval existing
+  - **Multi-warehouse stock display per produk** (data sudah ada di `stock_levels`):
+    - Form Create: dropdown "Gudang Tujuan" untuk Stok Awal
+    - Form Edit: section "Stok per Gudang" tabel read-only
+    - Kasir Cari by Foto hasil: per-warehouse breakdown di card (e.g. "Gudang Atas: 30 · Gudang Bawah: 18 = 48 pcs")
+    - RPC `search_products_by_embedding` updated: return `warehouse_stock JSONB` array dan `total_stock`
+  - **Sub-kategori "+ Buat baru"** dikonfirmasi sudah di spec
+  - **Multi-satuan konversi** dikonfirmasi optional default OFF
+- **Estimasi delta**: +1.5 hari (8 → 9-10 hari sprint)
+- **Status**: spec updated, user reviews next
