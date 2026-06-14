@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 12: TempoCreditSection component + mount — DONE
+
+- **Files changed:**
+  - `src/components/pelanggan/TempoCreditSection.tsx` (new)
+  - `src/components/PelangganScreen.tsx` (modified)
+- **Component:** `TempoCreditSection` — 3-state UI for customer credit/tempo management:
+  - **State 1 (pending request):** Amber banner "Menunggu Persetujuan Owner" — shown when `approval_requests` table has a pending credit request for this customer
+  - **State 2 (not activated):** Form to request activation — term selector (from `piutang_settings`), limit input, optional reason, "Minta Persetujuan Owner" button
+  - **State 3 (activated):** Shows Net term, credit limit, placeholder usage bar (0% — Phase 1B), + buttons to request limit change or deactivation
+- **Mount in PelangganScreen:** Added after Leads section with `onChanged` reloading profile via `customersService.fetchProfile(selectedId)`, `showToast` passed through
+- **TypeScript fix:** Wrapped Supabase chain in `Promise.resolve()` to expose full `.catch()` (PromiseLike → Promise)
+- **TypeScript:** `npx tsc --noEmit` — zero errors
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 10: customerCreditService in supabaseClient — DONE
 
 - **File changed:** `src/lib/supabaseClient.ts`
