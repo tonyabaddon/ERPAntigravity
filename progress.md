@@ -1,5 +1,57 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista end-to-end payment flow VERIFIED + state-machine bugs A/B fixed; C/D and UX gaps surfaced
+
+**Goal:** Drive a real WhatsApp customer (Jenny Setiawan) from greeting → product collection → confirmation → delivery → BOOKED → APPROVED → WAITING_PAYMENT → PAYMENT_UPLOADED → PAYMENT_VERIFIED → COMPLETED, end-to-end, on production. Document any bugs surfaced along the way.
+
+**Result:** Order `6c6ca38d-2cc3-4f30-ae64-ee0996e8f3af` reached **COMPLETED** state. Customer paid Rp 380.000 for 1× Kabel NYM 2.5mm² 100m/Rol. Conversation `78fe5701-…` state = COMPLETED. Two pre-existing engine bugs (A, B) were fixed and applied to prod mid-test to unblock progression; two more (C, D) and two UX gaps were surfaced and logged for follow-up.
+
+**Bug A — DB enum missing `ADD_MORE` and `DELIVERY` values** (FIXED)
+- Go `internal/models/types.go` defined `StateAddMore = "ADD_MORE"` and `StateDelivery = "DELIVERY"`, but original `20260531000000_core_ai_engine.sql` ENUM never included them.
+- `UpdateConversationState` failed silently with `pq: invalid input value for enum conversation_state: "ADD_MORE"`. Every conversation that passed CONFIRMING was stuck there forever; no order rows could be created.
+- Migration `20260615000001_conversation_state_add_more_delivery.sql` adds both via `ALTER TYPE … ADD VALUE IF NOT EXISTS`. Applied to prod via management API.
+
+**Bug B — `StateConfirming` prompt read empty flat fields instead of cart** (FIXED)
+- CLARIFYING / STOCK_CHECK deposit confirmed product data into `collected_data.cart[]`, but the prompt rendered `c.Product` / `c.Quantity` / `c.Specs.Size`, which stay empty after the first product.
+- Prompt rendered "Produk: belum diketahui" even when Calista had clearly identified the item earlier in conversation.
+- `confirmingItemsContext` helper added: when cart has non-empty entries, render those as numbered line items; else fall back to flat fields. Commit `14dd1de`.
+
+**Bug C — Model occasionally skips the pickup-vs-delivery question** (LOGGED, not fixed)
+- `StateDelivery` prompt explicitly says "Tanyakan: ambil di toko (1) atau dikirim (2)", but `gemini-2.5-flash-lite` sometimes jumps straight to asking for the address.
+- Observed twice this session (12:24 and 12:42 GMT+7), but also observed asking correctly at other times. Model-adherence intermittency, not a state-machine bug.
+- Possible fixes: stronger few-shot example in the per-state prompt, lower temperature, or move to `gemini-2.5-flash` with thinking disabled. Not blocking — the engine still parses next_action correctly when the address is present.
+
+**Bug D — Cart not cleared on customer restart** (LOGGED, fixed inline for THIS conversation only)
+- After customer typed "Halo" to restart mid-conversation, the new product spec (qty=1) was captured in a NEW cart entry but the OLD entry (qty=10) was never cleared. Cart ended up with `[{Kabel, qty:10}, {empty}, {empty}]`.
+- Risked creating an order with qty=10 when customer expected qty=1.
+- Fixed inline via SQL UPDATE to replace cart with `[{Kabel NYM, qty:1, specs:"2.5 mm², 100m/roll"}]` before letting the address flow proceed. Engine-level fix deferred — needs design pass on restart-detection heuristic (greeting keyword vs. state change vs. timer-based session reset).
+
+**UX gap 1 — "🔔 Konfirmasi Pesanan" button navigates away instead of opening modal in place**
+- Sales Inbox right-panel button `onClick={() => onNavigate('order-history')}` (SalesInboxScreen.tsx:466) takes admin to Riwayat Pesanan list view, losing conversation context. The admin then has to find the order row again and click it to expand.
+- Better UX: open a confirmation drawer/modal in place (same screen) with shipping fee input + Approve/Reject buttons.
+
+**UX gap 2 — Order row expand-on-click did not trigger reliably via the accessibility tree**
+- OrderHistoryScreen renders each row as a `<div onClick={…}>` (not a button). MCP Chrome's snapshot exposes only the inner `StaticText` nodes, not the clickable wrapper. JS-evaluated `.click()` on the parent div fired but didn't visibly expand the row in the next snapshot.
+- Approval was completed via direct Supabase API instead (`UPDATE orders SET status='APPROVED' …`), which matches what the frontend would have done anyway. Worth wrapping order rows in proper `<button>` or `role="button"` for both a11y and automation reliability.
+
+**Flow timeline (all UTC):**
+| Step | Time | Event |
+|------|------|-------|
+| Greeting | 17:21:15 | Customer "Halo" → Calista persona reply |
+| Collecting | 17:21:41 – 17:23:34 | Name/Company/Product/specs gathered, stock-check offer at Rp 380.000 |
+| Confirming | 17:23:53 – 17:24:12 | "Sesuai" → "Selesai" |
+| (Bugs A+B fix deployed at 17:43-ish, redeployed binary) | | |
+| Add-more → Delivery | 17:42-ish | After fix, ADD_MORE accepted, transition to DELIVERY |
+| Booked | 17:42:14 | Order 6c6ca38d created (PENDING_ADMIN_CONFIRMATION) |
+| Approved | 17:48:41 | Admin (via direct API) → APPROVED → backend listener auto-advanced to WAITING_PAYMENT |
+| Payment uploaded | 17:49:08 | Customer sent transfer-proof image |
+| Payment verified | 17:50:12 | Admin → PAYMENT_VERIFIED → order auto-advanced to COMPLETED, conversation COMPLETED |
+
+**Carried forward (follow-up tasks):**
+- Engine fix for Bug D (cart reset on restart) — needs design pass before implementation.
+- Persona prompt tightening for Bug C — add explicit "DILARANG menanyakan alamat sebelum metode pengambilan dipilih" + few-shot in `StateDelivery` prompt.
+- Frontend UX rework for the two gaps — drawer-based order confirmation, role="button" on order rows.
+
 ## 2026-06-14 — Calista: Direct Gemini backend (Phase 1A architecture preserved) — VERIFIED IN PRODUCTION
 
 **Why:** OpenRouter free-tier rate-limit storm exhausted 6/10 models in ~25 minutes during three test conversations. Free-tier OpenRouter quotas are a SHARED pool across all global users → infeasible for real-customer testing without paying. Founder declined paid OpenRouter top-up for now; chose to switch backend to Gemini direct (Google AI Studio) where free-tier quota belongs to OUR account (500-1500 RPD per model, not shared).
