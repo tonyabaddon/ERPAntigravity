@@ -17,6 +17,12 @@ type Config struct {
 	// Phase 1A — Calista OpenRouter wiring
 	OpenRouterAPIKey string // OPENROUTER_API_KEY
 	EnableOpenRouter bool   // ENABLE_OPENROUTER (default false in Phase 1A ship; flip to true after shadow soak)
+
+	// LLMBackend selects which Completer the router uses when Phase 1A
+	// architecture is active. Values: "openrouter" (default) or "gemini"
+	// (direct Google AI Studio via OpenAI-compatible endpoint — uses your
+	// own free-tier quota rather than OpenRouter's shared pool).
+	LLMBackend string // LLM_BACKEND
 }
 
 func Load() *Config {
@@ -31,6 +37,7 @@ func Load() *Config {
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),
 		OpenRouterAPIKey:   os.Getenv("OPENROUTER_API_KEY"),
 		EnableOpenRouter:   os.Getenv("ENABLE_OPENROUTER") == "true",
+		LLMBackend:         os.Getenv("LLM_BACKEND"),
 	}
 }
 

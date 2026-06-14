@@ -224,12 +224,46 @@ func main() {
 	mux.HandleFunc("/api/recon/close", closerHandler.Close)
 	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
 
-	// State machine — wire LLMClient behind ENABLE_OPENROUTER feature flag.
-	// When enabled (Phase 1A post shadow-soak), Calista routes through the
-	// 10-model OpenRouter chain with cooldown/pin/telemetry. When disabled,
-	// fall back to direct Gemini 2.5 Flash Lite via gemini.EngineAdapter.
+	// State machine — wire LLMClient based on LLM_BACKEND + ENABLE_OPENROUTER.
+	// Three modes:
+	//   1. LLM_BACKEND=gemini → Phase 1A architecture (router/pin/cooldown/
+	//      telemetry) backed by direct Google AI Studio API. Uses your own
+	//      account's free quota (500-1500 RPD per model) instead of
+	//      OpenRouter's shared pool.
+	//   2. ENABLE_OPENROUTER=true → Phase 1A architecture backed by
+	//      OpenRouter free-tier 10-model chain.
+	//   3. Neither → legacy direct Gemini SDK (gemini.EngineAdapter).
 	var llmClient engine.LLMClient
-	if cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != "" {
+	if cfg.LLMBackend == "gemini" && cfg.GeminiAPIKey != "" {
+		calistaStore := db.NewCalistaStore(dbClient.DB)
+		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
+		if cdErr != nil {
+			log.Fatalf("[MAIN] llm cooldown registry: %v", cdErr)
+		}
+		pinMgr := llm.NewPinManager(calistaStore)
+		recorder := llm.NewRecorder(calistaStore)
+		completer := llm.NewGeminiClient(cfg.GeminiAPIKey)
+
+		probeCtx, probeCancel := context.WithTimeout(ctx, 10*time.Second)
+		_, probeErr := completer.Complete(probeCtx, llm.CompletionRequest{
+			Model:     "gemini-2.5-flash-lite",
+			Messages:  []llm.Message{{Role: "user", Content: "ping"}},
+			MaxTokens: 10,
+		})
+		probeCancel()
+		if probeErr != nil && llm.IsAuth(probeErr) {
+			log.Fatalf("[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY: %v", probeErr)
+		}
+		if probeErr != nil {
+			log.Printf("[CALISTA] Gemini probe non-fatal error (proceeding): %v", probeErr)
+		} else {
+			log.Println("[CALISTA] Gemini auth probe OK")
+		}
+
+		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgentGemini())
+		llmClient = llm.NewEngineAdapter(router)
+		log.Println("[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]")
+	} else if cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != "" {
 		calistaStore := db.NewCalistaStore(dbClient.DB)
 		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
 		if cdErr != nil {

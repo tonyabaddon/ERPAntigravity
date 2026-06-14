@@ -58,6 +58,34 @@ func DefaultCalistaAgent() AgentConfig {
 	}
 }
 
+// DefaultCalistaAgentGemini returns Calista's config wired for the Gemini
+// direct backend (Google AI Studio free tier via the OpenAI-compatible
+// endpoint). Same SystemPrompt as the OpenRouter variant — only the chain
+// slugs differ.
+//
+// Single model: gemini-2.5-flash-lite. Rationale verified empirically on
+// 2026-06-14:
+//   - gemini-2.5-flash and gemini-flash-latest run in "thinking mode" by
+//     default, which consumes max_tokens silently and leaves message.content
+//     truncated or empty (same failure mode as OpenRouter reasoning models).
+//   - gemini-2.0-flash returned `limit: 0` for this key's free tier.
+//   - gemini-1.5-flash is deprecated (HTTP 404 on this API version).
+//   - gemini-2.5-flash-lite emits clean JSON in one round with no thinking
+//     overhead — matches the legacy direct-SDK model choice for parity.
+func DefaultCalistaAgentGemini() AgentConfig {
+	prompt := assets.CalistaSystemPrompt
+	if prompt == "" {
+		prompt = calistaSystemPrompt
+	}
+	return AgentConfig{
+		Name:         "Calista",
+		SystemPrompt: prompt,
+		Chain: []ModelSpec{
+			{Slug: "gemini-2.5-flash-lite", CooldownMinutes: 60},
+		},
+	}
+}
+
 // calistaSystemPrompt is the persona reinforcement prompt (spec §5.6 #5).
 // Strict tone/length/language directives reduce inter-model voice variance.
 // Two few-shot examples seed the expected reply shape.
