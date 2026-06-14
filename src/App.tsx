@@ -47,7 +47,7 @@ import {
   INITIAL_CONFIG
 } from './initialData';
 
-import { isSupabaseConfigured, supabase, supabaseService } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase, supabaseService, adminUsersService } from './lib/supabaseClient';
 import { SalesChannelsProvider } from './contexts/SalesChannelsContext';
 
 
@@ -102,14 +102,32 @@ export default function App() {
   // Restore Supabase auth session on page refresh
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user && !currentUser) {
         const user = session.user;
+        // Look up real role + permissions from admin_users (was hardcoded to
+        // 'Owner' + ALL_PERMISSIONS before — bypassed any per-role gating
+        // including stok-opname blind-count). Fall back to Owner only when
+        // no admin_users row exists, so existing auth users stay functional
+        // until an Owner provisions them.
+        let role: string = 'Owner';
+        let permissions: PermissionSet = ALL_PERMISSIONS;
+        try {
+          const adminRow = await adminUsersService.fetchById(user.id);
+          if (adminRow) {
+            role = adminRow.role;
+            permissions = adminRow.permissions as PermissionSet;
+          } else {
+            console.warn(`No admin_users row for ${user.id}; defaulting to Owner (provision via User Management)`);
+          }
+        } catch (err) {
+          console.error('Failed to fetch admin_users role on session restore:', err);
+        }
         setCurrentUser({
           id: user.id,
           name: user.user_metadata?.full_name ?? (user.email?.split('@')[0] ?? 'User'),
-          role: 'Owner',
-          permissions: ALL_PERMISSIONS,
+          role,
+          permissions,
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });

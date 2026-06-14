@@ -1080,6 +1080,17 @@ export const adminUsersService = {
     if (error) throw error;
     return data ?? null;
   },
+
+  async fetchById(id: string): Promise<DbAdminUser | null> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    return data ?? null;
+  },
 };
 
 export const stockService = {
@@ -1687,13 +1698,21 @@ export function toOpnameCount(row: any): OpnameCount {
 
 export async function fetchOpnameCounts(sessionId: number): Promise<OpnameCount[]> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase
-    .from('stock_opname_counts')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('sku', { ascending: true });
+  // Use SECURITY DEFINER RPC fetch_opname_counts (migration
+  // 20260614000001) so server-side blind-count masking applies: when
+  // caller is NOT 'Owner' AND session.status='in_progress', the RPC
+  // returns NULL for system_qty_snapshot + variance + variance_value.
+  // Direct table read would bypass the mask — admin could read system
+  // values via DevTools network tab.
+  const { data, error } = await supabase.rpc('fetch_opname_counts', {
+    p_session_id: sessionId,
+  });
   if (error) throw error;
-  return (data ?? []).map(toOpnameCount);
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  // Server returns alphabetical-by-column unordered; sort by SKU client-side
+  // to preserve previous ordering contract.
+  rows.sort((a, b) => String(a.sku).localeCompare(String(b.sku)));
+  return rows.map(toOpnameCount);
 }
 
 export async function listOpnameSessions(limit = 20): Promise<OpnameSession[]> {
