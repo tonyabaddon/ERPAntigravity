@@ -78,6 +78,12 @@ type openRouterAPIResponse struct {
 	Choices []struct {
 		Message struct {
 			Content string `json:"content"`
+			// Reasoning models (e.g. nex-agi/nex-n2-pro:free,
+			// nvidia/nemotron-3-nano-omni) split their output between Content
+			// and Reasoning. When per-state max_tokens is tight, reasoning can
+			// consume the budget and leave Content empty. Fallback to Reasoning
+			// below preserves whatever the model actually produced.
+			Reasoning string `json:"reasoning,omitempty"`
 		} `json:"message"`
 	} `json:"choices"`
 	Usage struct {
@@ -141,8 +147,16 @@ func (c *OpenRouterClient) Complete(ctx context.Context, req CompletionRequest) 
 		return nil, fmt.Errorf("openrouter: empty choices")
 	}
 
+	// Prefer Content; fall back to Reasoning for reasoning-style models that
+	// exhausted their max_tokens budget inside the reasoning phase and left
+	// Content empty. The downstream tolerantParseJSON treats both the same.
+	replyBody := parsed.Choices[0].Message.Content
+	if replyBody == "" {
+		replyBody = parsed.Choices[0].Message.Reasoning
+	}
+
 	return &CompletionResponse{
-		Body: parsed.Choices[0].Message.Content,
+		Body: replyBody,
 		Usage: TokenUsage{
 			Prompt:     parsed.Usage.PromptTokens,
 			Completion: parsed.Usage.CompletionTokens,
