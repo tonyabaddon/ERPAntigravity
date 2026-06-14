@@ -113,6 +113,9 @@ MIGRATIONS=(
 
   # ─── Product Photo Phase 1 — M2: product_categories/brands/units registries + seeds ───
   "20260614000021_product_registries.sql"
+
+  # ─── Product Photo Phase 1 — M3: pgvector + stock_photo_embeddings + HNSW cosine index ───
+  "20260614000022_stock_photo_embeddings.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
