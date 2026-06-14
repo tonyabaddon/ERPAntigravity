@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -39,6 +40,13 @@ func RetryProcess(
 		}
 		if attempt == 1 {
 			onFirstFail()
+		}
+		// ChainExhausted means the router already tried all 10 free models and
+		// gave up — retrying would re-run the same exhausted chain. Bail out
+		// immediately so the handler can escalate to admin without waiting
+		// for the full 51s exponential backoff (2+4+8+16+...).
+		if errors.Is(result.LLMError, ErrChainExhausted) {
+			return result
 		}
 		if isRateLimitError(result.LLMError) {
 			return result
