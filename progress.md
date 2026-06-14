@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Calista Phase 1A: post-review fixes C.2 + I.3 + I.4 + M.1 + security — DONE
+
+- **What:** Closed the post-review action items the final reviewer surfaced as needed before `ENABLE_OPENROUTER=true` flip. C.2 (tone seeding wire-up) was the substantive one — pillar 2 of 3 of perceptual continuity (§5.6 #4). I.3 + I.4 + M.1 are short pragmatic fixes. I.1 (StateBoundary signal) explicitly deferred to Phase 1B because the clean implementation needs a new column on `conversations` to track recent state transitions.
+- **Commits (apply order on `feat/calista-phase-1a`):**
+  - `8613ff5` `chore(security): gitignore .env files` — `backend-go/.env` was world-readable mode 644 AND NOT gitignored. Key never committed (`git log -p | grep sk-or-v1- → 0`). `chmod 600` applied, gitignore updated.
+  - `a663d0b` `feat(llm): I.3+I.4 — 401 fast-fail boot probe + OpenRouter attribution headers` — `authError` type + `IsAuth(err)` predicate; router short-circuits on auth errors without cooling models; main.go runs 1-token probe at startup and `log.Fatalf` on 401; `HTTP-Referer: https://calista.vosi.id` + `X-Title: Calista` headers for OpenRouter attribution.
+  - `2f1b698` `feat(engine): M.1 — retry short-circuits on ChainExhausted error` — saves 51s of exponential backoff in chain-exhausted case.
+  - `8d2284c` `feat(llm): C.2 — wire tone seeding through router` — PinStore extended with LoadTone/SaveTone; CalistaStore implements via `SELECT first_reply_tone::text` + `UPDATE first_reply_tone = $1::jsonb`; Router injects tone hint as system message before LLM call when tone exists, extracts and persists tone on first successful reply (first-write-wins). Two new tests verify call shape + non-overwrite semantics.
+- **I.1 deferred:** clean implementation needs `conversations.last_state_change_at` or `state_just_changed` to be set by handler on persisting state transitions. Heuristic options (ClarificationRound=0, len(history)=0) are wrong for different reasons. Accept the cost: when a conversation forced-swaps off primary, it now never returns even if primary recovers — increases escalation rate under sustained chain pressure. Phase 1B scope.
+- **Phase 1A criticals final state:**
+  - ✅ C.1 (persona prompt parity) — fixed inline before this push
+  - ✅ C.2 (tone seeding) — fixed this push
+  - ✅ I.3 (401 fast-fail) — fixed this push
+  - ✅ I.4 (attribution headers) — fixed this push
+  - ✅ M.1 (retry short-circuit) — fixed this push
+  - ⏭️ I.1 (StateBoundary signal) — deferred to Phase 1B
+  - ⏭️ I.2 (inbound tripwires from handler) — Phase 1B (handler routing ships then)
+- **Test status:** `go build ./...` clean. `go vet ./...` clean. All Calista-related packages PASS. `internal/db` failures are `dial tcp 127.0.0.1:5432: connect: refused` (no local Postgres) — environmental, unrelated.
+- **Founder action items remaining:**
+  - [ ] **Rotate Supabase project access token** (`sbp_cb539...`) shared in chat at https://supabase.com/dashboard/account/tokens — same security pattern as the OpenRouter key
+  - [ ] Apply 3 migrations: `supabase login` then `supabase db push` from your local CLI (no token paste)
+  - [ ] Verify Gemini fallback: `ENABLE_OPENROUTER=false go run .` → log shows `[CALISTA] OpenRouter DISABLED`
+  - [ ] Verify OpenRouter probe + chain: `ENABLE_OPENROUTER=true go run .` → log shows `[CALISTA] OpenRouter auth probe OK` then `[CALISTA] OpenRouter chain ENABLED`
+  - [ ] Verify telemetry rows: `psql -c "SELECT model_slug, status, latency_ms FROM llm_calls ORDER BY created_at DESC LIMIT 5"`
+  - [ ] Verify pin + tone: `psql -c "SELECT pinned_model_slug, swap_count, first_reply_tone IS NOT NULL AS has_tone FROM conversations ORDER BY updated_at DESC LIMIT 3"`
+  - [ ] Shadow-soak per spec §8 for ≥3 days before flipping `ENABLE_OPENROUTER=true` as default
+- **Branch:** `feat/calista-phase-1a` — ready for founder smoke test (Task 20).
+
 ## 2026-06-14 — Calista Phase 1A: implementation complete (19/20 tasks) — AWAITING FOUNDER SMOKE TEST
 
 - **What:** Full Phase 1A implementation via subagent-driven-development. 19 of 20 plan tasks landed; Task 20 is founder-driven manual smoke test against real OpenRouter (deferred until founder is ready). Branch `feat/calista-phase-1a`.
