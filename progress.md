@@ -1,5 +1,39 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo (Sales Credit) — design spec brainstormed — AWAITING REVIEW
+
+- **What:** Founder requested fitur untuk track sales invoice yang sudah jatuh tempo + add concept of customer credit/tempo. Brainstorm session menghasilkan spec lengkap untuk customer credit whitelist (Net 7/30/60/90 + credit_limit), invoice tempo lifecycle, hard-block over-limit dengan owner-PIN approval, halaman Piutang dedicated dengan AR aging chart, sidebar badge realtime, operator-triggered WA follow-up via existing whatsmeow.
+- **Key decisions locked:**
+  - Per-customer tempo gating (whitelist via `customers.allows_tempo` + `term_days` + `credit_limit`); aktivasi & limit change BOTH require owner approval via existing `approval_requests` + PIN
+  - Channel-agnostic: WA + Walk-in + Kasir all eligible asal customer.allows_tempo=true (bukan per-channel gate)
+  - Auto due_date = created_at + term_days; hard-block kalau outstanding+this > limit (no warning-only)
+  - Pelunasan reuse existing payment_proof upload + verify (zero new payment infra)
+  - Notif channel: in-app only (sidebar badge + halaman Piutang); WA send manual operator-triggered via whatsmeow dengan preview modal
+  - Notif timing: default [-3, 0, 3, 7, 14] (owner-configurable via new `piutang_settings` table)
+  - 3 additions ke MVP setelah komparasi dengan Jurnal: configurable reminder offsets, AR Aging mini-chart, write-off path
+  - Visual mockup di-review user via brainstorming visual companion server (5 surface: sidebar badge, halaman Piutang, customer activation, invoice creation hard-block, owner approval cards)
+- **Advisor flagged issues yang diatasi di spec:**
+  - Race condition: create_tempo_invoice RPC wrap dalam SECURITY DEFINER + row lock pada customers (FOR UPDATE)
+  - Bad-debt write-off path: added INVOICE_WRITTEN_OFF status + owner-PIN gated RPC
+  - payment_type CHECK constraint widening: explicit ALTER untuk orders + kasir_transactions + record_kasir_sale RPC validator
+  - messages.sender reuse 'system' enum (sudah ada), no enum change needed
+  - `piutang_settings` table sendiri (bukan numpang `notification_config`) untuk separation of concerns
+- **Coordination note:** ada parallel work join-invoice di terminal lain — spec ini own halaman Piutang sepenuhnya dengan extension point untuk grouping; migration date prefix beda; WA rate-limiter di-share via shared helper (Phase 1C)
+- **Phasing:** 1A (schema + customer credit + activation/limit-change RPC + customer profile UI), 1B (tempo invoice + Piutang page + sidebar badge), 1C (write-off + WA send via whatsmeow + AR aging chart + piutang_settings)
+- **Files added:**
+  - `docs/superpowers/specs/2026-06-14-piutang-tempo-design.md` — full design spec (15 sections)
+  - `.superpowers/brainstorm/<session>/content/piutang-mockup.html` — visual mockup (ephemeral)
+- **Branch:** main (will create `feat/piutang-tempo` saat implementation start)
+- **Next:** founder review spec → kalau approved, invoke `writing-plans` skill untuk Phase 1A implementation plan
+
+## 2026-06-14 — Calista Phase 1A Task 14: engine refactor `GeminiClient` → `LLMClient` — DONE (with surfaced follow-up)
+
+- **What:** Task 14 of the Phase 1A plan — widen the engine's LLM seam so it can host both the new `llm.Router` and the legacy `gemini.Client` adapter (Tasks 16/17). Renamed `engine.GeminiClient` → `engine.LLMClient` with a new method shape `Complete(ctx, fullPrompt, CallOpts) (*LLMResult, error)` that carries richer call-site info (conversation ID, state-boundary hint, max-tokens budget) and richer return info (`ModelUsed`, `WasForcedSwap`, `LatencyMs`, `TripwireFlags`). Renamed `ProcessResult.GeminiError` → `LLMError`. Added `maxTokensForState(s)` helper with the spec §5.6 #6 per-state budgets (GREETING=60, COLLECTING=100, CLARIFYING=120, STOCK_CHECK=150, CONFIRMING=150, ADD_MORE=60, DELIVERY=100, BOOKED=200, default=150). Also updated the in-package downstream `retry.go` (`result.GeminiError` → `result.LLMError`, 2 occurrences + doc comment).
+- **Files modified:** `backend-go/internal/engine/machine.go` (+38/-13), `backend-go/internal/engine/machine_test.go` (mockGemini/mockGeminiError → mockLLM/mockLLMError, test name + field refs), `backend-go/internal/engine/retry.go` (LLMError refs + comment), `backend-go/internal/engine/retry_test.go` (mockLLMSequence/mockLLMCounter + all `result.GeminiError` → `result.LLMError`).
+- **Verification:** `go build ./internal/engine/... ./internal/llm/... ./internal/db/...` → clean. `go test ./internal/engine/ -v` → all PASS (TestProcessGreeting, TestProcessCollectingMovesToClarifying, TestProcessEscalate, TestProcessConfirmingMovesToAddMore, TestProcessConfirmingModificationRequestedMovesClarifying, TestProcessAddMore_AddAnother, TestProcessAddMore_Done, TestProcessGeminiFallback, TestProcessBookedStateReturnsEmptyReply, TestProcessLLMError_SetsLLMErrorField, all 6 retry tests, plus the unrelated prompt/parser/stock-context tests). Full-tree `go build ./...` fails on `internal/whatsapp/handler.go:260-261` referencing `result.GeminiError` and on `main.go` referencing `engine.NewMachine(geminiClient)`. The task spec named main.go as expected-broken; the handler.go breakage is also a downstream consumer that needs the same mechanical rename. Surfaced as a known follow-up — Task 18 (main.go wiring behind `ENABLE_OPENROUTER` flag) is the natural home for fixing both call sites together.
+- **Constraint discipline:** Did NOT add `ChainExhausted bool` to `ProcessResult` (Task 15). Did NOT touch `main.go` (Task 18). Did NOT touch `internal/gemini/` (Task 16). Did NOT add the handler.go mechanical rename to keep the engine commit clean — surfaced for orchestrator triage as the task instructed.
+- **Branch:** `feat/calista-phase-1a`. Commit `6c3c8d1`. Plan: Tasks 4-14 done (14/20). Next: Task 15 — `ChainExhausted bool` on `ProcessResult` + tolerant JSON parser for occasional model garbage.
+
 ## 2026-06-14 — Calista Phase 1A Task 13: `internal/db/calista.go` CalistaStore — DONE
 
 - **What:** Task 13 of the Phase 1A plan — PostgreSQL store implementing the three Phase 1A interfaces from the `llm` package (commits Tasks 4-12).
