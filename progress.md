@@ -1,5 +1,107 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A implementation — READY FOR MCP-CHROME QA
+
+**Status:** All 13 tasks committed; integration tests written (deferred until DB apply); local stack runs clean.
+
+**Migrations to apply (via Supabase Studio SQL editor, in order):**
+1. `20260614000008_customers_tempo_fields.sql` (T1)
+2. `20260614000009_approval_types_tempo.sql` (T2)
+3. `20260614000010_piutang_settings.sql` (T3)
+4. `20260614000011_resolve_tenant_helper.sql` (T4)
+5. `20260614000012_customer_credit_activate_rpcs.sql` (T5)
+6. `20260614000013_customer_credit_limit_change_rpcs.sql` (T6)
+7. `20260614000014_customer_credit_deactivate_rpcs.sql` (T7)
+
+**Then run seed SQL** to create the QA fixture:
+
+```sql
+-- Ensure a test customer exists (idempotent)
+INSERT INTO public.customers (id, wa_number, name, company)
+VALUES ('GJP-CUST-QATEST', '+628111000001', 'QA Tempo Customer', 'CV Test Grosir')
+ON CONFLICT (id) DO UPDATE
+  SET allows_tempo = false,
+      term_days    = 0,
+      credit_limit = 0,
+      tempo_activated_at = NULL,
+      tempo_activated_by = NULL;
+
+-- Clear any prior approval requests for this customer
+DELETE FROM public.approval_requests
+WHERE request_type IN ('customer_credit_activate','customer_credit_limit_change','customer_credit_deactivate')
+  AND payload->>'customer_id' = 'GJP-CUST-QATEST';
+
+-- Verify piutang_settings sentinel row exists
+SELECT tenant_id, term_days_allowed, aging_buckets FROM public.piutang_settings;
+```
+
+**Seed customer:** `GJP-CUST-QATEST` (CV Test Grosir, +628111000001) — reset to inactive state at start of QA.
+
+**QA scenarios for founder to execute via MCP Chrome (chrome-devtools):**
+
+1. **Scenario A — Happy path activation**
+   - Open Pelanggan screen, select GJP-CUST-QATEST
+   - In "Tempo & Limit Kredit" section: pick Net 30, limit 50000000, reason "langganan grosir baru" → click Minta Persetujuan Owner
+   - Verify: state changes to "Menunggu Persetujuan Owner"
+   - Switch to owner login → Persetujuan screen → verify violet "AKTIVASI TEMPO CUSTOMER" card appears with summary
+   - Click Setujui → enter PIN → confirm
+   - Switch back to admin → reload customer profile → verify state shows "AKTIF" with Net 30 hari + Rp 50.000.000 + usage 0%
+
+2. **Scenario B — term_days outside allowed list**
+   - Edit `piutang_settings.term_days_allowed` to a narrower set via Supabase Studio (e.g. `{7,14,30}`)
+   - From Scenario A's UI, try Net 60 → expect error toast "term_days_not_allowed"
+
+3. **Scenario C — Wrong PIN at approve**
+   - Repeat Scenario A through Setujui; enter wrong PIN twice → expect rejection toast with `pin_invalid`. Verify customer remains inactive after both attempts.
+
+4. **Scenario D — Re-activation blocked**
+   - Customer already active (from Scenario A) → admin tries to call activate again from UI → expect `customer_already_activated`.
+
+5. **Scenario E — Limit change happy path**
+   - Customer active → in profile, enter new limit `100000000` + reason "pesanan baru besar" → Ubah Limit
+   - Owner approves with PIN → customer credit_limit becomes 100jt
+
+6. **Scenario F — Limit change rejected reason too short**
+   - Enter reason "xx" (under 5 chars) → expect `reason_required`
+
+7. **Scenario G — Deactivate happy path**
+   - Customer active → reason "customer pindah supplier" → Nonaktifkan
+   - Owner approves → allows_tempo=false; verify term_days/credit_limit retained as audit history (shown in admin SQL view)
+
+**Integration test status:**
+- 8 vitest tests written at `tests/integration/piutang-tempo-phase1a.test.ts` (T8 commit `8948d90`)
+- Tests deferred until migrations applied + test env vars set (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, OWNER_PIN)
+- Run: `npx vitest run tests/integration/piutang-tempo-phase1a.test.ts`
+
+**What's NOT in Phase 1A:**
+- Sidebar "Piutang" menu (Phase 1B)
+- Outstanding usage meter showing real number (Phase 1B)
+- "Catat Bayar" button (Phase 1B)
+- WA send & write-off (Phase 1C)
+- piutang_settings Pengaturan UI (Phase 1C; for now edit via Supabase Studio)
+
+---
+
+## 2026-06-14 — Product Photo Phase 1 — Task 1.1 (M1): extend stocks columns — DONE
+
+- **Commit:** `421bcb6`
+- **Files added/modified:**
+  - `supabase/migrations/20260614000020_stocks_product_columns.sql` (new)
+  - `scripts/apply-pending-migrations.sh` (appended M1 entry)
+- **Schema additions to `public.stocks`** (all `ADD COLUMN IF NOT EXISTS`):
+  - `subcategory TEXT`
+  - `unit TEXT NOT NULL DEFAULT 'pcs'` (base UoM)
+  - `unit_alt TEXT`, `unit_alt_factor INT` (alternate UoM + conversion factor)
+  - `photo_urls JSONB NOT NULL DEFAULT '[]'::jsonb`
+  - `description TEXT`
+  - `min_stock_per_product INT`
+  - `initial_stock_approved BOOLEAN NOT NULL DEFAULT TRUE`
+- **Constraints (idempotent via `pg_constraint` lookup):**
+  - `chk_stocks_unit_alt` — both alt fields NULL OR both non-NULL with factor > 1
+  - `chk_stocks_photo_urls_array` — must be JSONB array of length ≤ 5
+- **Migration filename:** prefix `20260614000020` (renumbered from planned `000010` to avoid Piutang T3–T7 collision)
+- **Manual verification needed by user:** apply migration via `./scripts/apply-pending-migrations.sh`, then run plan §1.1 Step 4 verification queries.
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 12: TempoCreditSection component + mount — DONE
 
 - **Files changed:**
