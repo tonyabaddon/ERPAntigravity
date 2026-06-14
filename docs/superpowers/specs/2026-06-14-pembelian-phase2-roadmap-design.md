@@ -54,6 +54,25 @@ Phase 2 refactor PO ke **4-entity model** + tambah killer features (SOP Profile,
 - 1 Pembayaran : N PembayaranItem (junction)
 - 1 PembayaranItem : 1 Tagihan ATAU 1 Tukar Faktur (exactly one)
 
+### 2.1 Field umum lintas entitas (audit trail wajib)
+
+Semua 4 entitas (Pesanan, Tagihan, Tukar Faktur, Pembayaran) punya 2 field audit trail dokumen:
+
+- `supplier_doc_number` (text, opsional) — nomor referensi dokumen dari supplier:
+  - Pesanan: nomor SO supplier (kalau supplier kasih konfirmasi)
+  - **Tagihan: nomor faktur/invoice supplier — paling penting**
+  - Tukar Faktur: nomor tanda terima tukar faktur
+  - Pembayaran: nomor referensi transfer / cek
+- `supplier_doc_photo_url` (text, opsional, Supabase Storage) — foto dokumen asli:
+  - Pesanan: foto konfirmasi pesanan
+  - **Tagihan: foto faktur asli supplier — paling penting**
+  - Tukar Faktur: foto tanda terima fisik (signed)
+  - Pembayaran: foto bukti transfer
+
+**Soft duplicate warning di Tagihan:** Saat operator input `supplier_doc_number` di Tagihan, cek apakah supplier + nomor yang sama sudah ada. Warning, bukan block. Lihat BR6 di Phase 1 spec.
+
+**Tukar Faktur bulk photo:** selain `supplier_doc_photo_url` (foto tanda terima), Tukar Faktur juga punya `tagihan_photos[]` jsonb dengan struktur `[{tagihan_id, photo_url}]` — operator upload 1 foto per Tagihan asli yang di-tukar (bulk camera roll, drag-drop multi).
+
 ## 3. Naming Convention (Indonesian everyday)
 
 | Database table | UI label | Apa yang di-track |

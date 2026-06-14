@@ -50,10 +50,12 @@ Detail Phase 2 di `2026-06-14-pembelian-phase2-roadmap-design.md`.
 | `supplier_id` | uuid FK → suppliers NOT NULL | Toko grosir. Bisa quick-add inline saat create. |
 | `order_id` | uuid FK → orders | Sales Order tujuan. **NULL allowed di kolom level** (untuk Phase 2 STOCK), tapi diharuskan oleh CHECK constraint kalau type=PASSTHROUGH. |
 | `purchase_date` | date NOT NULL DEFAULT CURRENT_DATE | Tanggal beli ke grosir. |
+| `supplier_invoice_number` | text | Opsional. Nomor faktur/nota dari supplier (e.g., `INV-Eterna-0123`, `FK/2026/06/00045`). Toko grosir kadang nota tulis tangan tanpa nomor — itu sebabnya opsional. |
+| `supplier_invoice_photo_url` | text | Opsional Supabase Storage URL. Foto faktur/nota asli dari supplier. Strongly recommended di UI (bukti dispute supplier kalau ada masalah). |
 | `payment_method` | text NOT NULL | `CASH` / `TRANSFER` / `TEMPO`. |
 | `payment_due_at` | date | Wajib kalau status=BELUM_LUNAS. Auto-fill = purchase_date + supplier.payment_term_days; editable. |
 | `paid_at` | timestamptz | Set saat status → LUNAS. |
-| `payment_proof_url` | text | Opsional Supabase Storage URL. |
+| `payment_proof_url` | text | Opsional Supabase Storage URL. Foto bukti bayar (transfer / kuitansi). Beda dari `supplier_invoice_photo_url`. |
 | `subtotal` | numeric NOT NULL DEFAULT 0 | Sum dari line subtotal (qty × unit_cost). |
 | `total` | numeric NOT NULL DEFAULT 0 | = subtotal di Phase 1 (no tax). Kolom terpisah supaya Phase 2 bisa add tax. |
 | `status` | text NOT NULL DEFAULT 'BELUM_LUNAS' | `BELUM_LUNAS` / `LUNAS` / `TERLAMBAT` (derived). |
@@ -68,6 +70,7 @@ Detail Phase 2 di `2026-06-14-pembelian-phase2-roadmap-design.md`.
 **Indexes:**
 - `pi_number` UNIQUE (numbering generator depends on this)
 - `(supplier_id, status)` — fast filter outstanding per supplier
+- `(supplier_id, supplier_invoice_number) WHERE supplier_invoice_number IS NOT NULL` — fast duplicate-detection warning
 - `(order_id) WHERE order_id IS NOT NULL` — fast lookup PI per Order
 - `(status, payment_due_at) WHERE status='BELUM_LUNAS'` — fast TERLAMBAT computation cron
 - `(type, status, purchase_date DESC)` — fast list query
@@ -201,7 +204,27 @@ Saat operator void PI lunas:
 - Insert reversal Kasir expense entry (negative amount) dengan reference ke original
 - Order's profit calculation re-runs (kalau Order belum closed)
 
-### BR6 — Payment due reminder
+### BR6 — Duplicate supplier invoice number warning (soft)
+
+Saat operator input `supplier_invoice_number`, RPC `record_pi` (sebelum INSERT) cek:
+
+```sql
+SELECT pi_number FROM purchase_invoices
+WHERE supplier_id = $1
+  AND supplier_invoice_number = $2
+  AND voided_at IS NULL
+  AND id != COALESCE($3, '00000000-0000-0000-0000-000000000000'::uuid)
+LIMIT 1;
+```
+
+Kalau ada hasil:
+- RPC return success dengan payload tambahan `{ warning: 'duplicate_supplier_invoice', existing_pi: <pi_number> }`
+- Frontend display warning modal: "Faktur INV-0123 dari supplier ini sudah pernah dicatat di PI-2026-06-005. Lanjut?"
+- Operator klik "Lanjut" → ulang call RPC dengan param `ignore_duplicate_warning=true` → skip check, INSERT.
+
+Soft warning, bukan hard block — operator boleh override (kadang supplier kasih nomor sama karena typo).
+
+### BR7 — Payment due reminder
 Cron daily (Jakarta midnight):
 - Untuk semua PI status=BELUM_LUNAS dengan `payment_due_at - CURRENT_DATE = 3`:
   - Insert reminder ke dashboard widget (visible saat user login)
@@ -219,6 +242,8 @@ type RecordPiPayload = {
   supplier_id: string;
   order_id: string;
   purchase_date: string;       // YYYY-MM-DD
+  supplier_invoice_number?: string;  // opsional, nomor faktur dari supplier
+  supplier_invoice_photo_url?: string; // opsional, foto faktur supplier
   payment_method: 'CASH' | 'TRANSFER' | 'TEMPO';
   payment_due_at?: string;     // wajib kalau status=BELUM_LUNAS
   initial_status: 'BELUM_LUNAS' | 'LUNAS';  // operator boleh langsung lunas
@@ -232,6 +257,7 @@ type RecordPiPayload = {
     sell_price: number;
     order_item_id?: string;
   }>;
+  ignore_duplicate_warning?: boolean; // untuk konfirmasi setelah BR6 warning
 };
 ```
 
@@ -315,6 +341,8 @@ Header section (2 col grid):
 - Order tujuan (search + pick; pill style menonjol; wajib)
 - Supplier toko grosir (search + quick-add)
 - Tanggal beli (date picker, default today)
+- **Nomor faktur supplier** (text input, opsional, dengan placeholder "INV-0123 / nota tulis tangan")
+- **Foto faktur supplier** (upload zone, opsional, accept JPG/PNG/PDF, max 5MB) — UI nudge: "Recommended — bukti kalau ada dispute supplier"
 - Catatan (textarea)
 
 Items section:
@@ -343,8 +371,13 @@ Header:
 
 3 info card:
 - Order Terkait (clickable ke Order detail)
-- Supplier
+- Supplier (+ nomor faktur supplier kalau ada)
 - Jatuh Tempo (warna merah kalau Terlambat)
+
+Lampiran section (2 thumbnail kalau ada):
+- Foto faktur supplier (klik → fullscreen viewer)
+- Foto bukti bayar (klik → fullscreen viewer)
+- Tombol download / re-upload untuk owner
 
 Items table (read-only): SKU, qty, unit cost, sell price, profit/unit, subtotal beli.
 
@@ -415,6 +448,7 @@ Tanggal: 13 Jun 2026          Status: ✓ LUNAS
 ─────────────────────────────────────────────
 Supplier (Grosir): Toko Grosir Sumber Jaya
 Cash & Carry
+Faktur Supplier: INV-Eterna-0123  (kalau ada)
 Untuk Order:     ORD-2026-1184 — Pak Heri (Walk-in)
 ─────────────────────────────────────────────
 Item                Qty   Beli      Subtotal
