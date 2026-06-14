@@ -23,6 +23,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
+	"github.com/username/sinar-elektrik-backend/internal/llm"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
@@ -223,8 +224,28 @@ func main() {
 	mux.HandleFunc("/api/recon/close", closerHandler.Close)
 	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
 
-	// State machine
-	machine := engine.NewMachine(geminiClient)
+	// State machine — wire LLMClient behind ENABLE_OPENROUTER feature flag.
+	// When enabled (Phase 1A post shadow-soak), Calista routes through the
+	// 10-model OpenRouter chain with cooldown/pin/telemetry. When disabled,
+	// fall back to direct Gemini 2.5 Flash Lite via gemini.EngineAdapter.
+	var llmClient engine.LLMClient
+	if cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != "" {
+		calistaStore := db.NewCalistaStore(dbClient.DB)
+		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
+		if cdErr != nil {
+			log.Fatalf("[MAIN] llm cooldown registry: %v", cdErr)
+		}
+		pinMgr := llm.NewPinManager(calistaStore)
+		recorder := llm.NewRecorder(calistaStore)
+		completer := llm.NewOpenRouterClient(cfg.OpenRouterAPIKey)
+		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgent())
+		llmClient = llm.NewEngineAdapter(router)
+		log.Println("[CALISTA] OpenRouter chain ENABLED — 10-model fallback active")
+	} else {
+		llmClient = gemini.NewEngineAdapter(geminiClient)
+		log.Println("[CALISTA] OpenRouter DISABLED — using direct Gemini 2.5 Flash Lite")
+	}
+	machine := engine.NewMachine(llmClient)
 
 	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys)
 	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
