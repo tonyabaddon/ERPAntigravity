@@ -21,11 +21,11 @@ import { config as loadEnv } from 'dotenv';
 loadEnv();
 
 const SUPABASE_URL =
-  process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
+  process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL!;
 const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY!;
+  process.env.VITE_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY!;
 const SUPABASE_SERVICE_ROLE =
-  process.env.SUPABASE_SERVICE_ROLE ?? process.env.SUPABASE_SERVICE_KEY!;
+  process.env.SUPABASE_SERVICE_KEY ?? process.env.SUPABASE_SERVICE_ROLE!;
 const OWNER_PIN = process.env.OWNER_PIN ?? '0000'; // dev default
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE) {
