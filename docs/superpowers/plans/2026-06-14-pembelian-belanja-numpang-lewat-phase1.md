@@ -14,10 +14,71 @@
 
 ---
 
+## ⚠ CRITICAL CORRECTIONS (apply to EVERY task)
+
+After Task 1 code review uncovered 5 codebase mismatches, the following corrections apply to ALL remaining tasks. Implementer subagents MUST honor these over the original task text below.
+
+### C1. `public.users` doesn't exist → use `auth.users(id)`
+Codebase convention is Supabase auth schema (see `20260608000008_rakit_workflow_schema.sql:103`). **Affects:** Task 1 schema (already fixed in commit `186ffbb`).
+
+### C2. `public.order_items` doesn't exist → DROP `order_item_id` entirely
+`orders.items` is a JSONB column. There is no normalized `order_items` table. **DROP `order_item_id` everywhere it appears:**
+- Task 1 `purchase_invoice_items` schema → DROPPED (already fixed in `186ffbb`)
+- Task 2 `record_pi` RPC payload + INSERT → drop `order_item_id` from items
+- Task 4 view query → rewrite to use `jsonb_array_elements(orders.items)` (NOT join order_items table)
+- Task 5 integration test payload → drop `order_item_id`
+- Task 9 TypeScript types `DbPurchaseInvoiceItem` + `PiItemDraft` → drop `order_item_id` field
+- Task 10 service interfaces → drop `order_item_id`
+- Task 16 form `ItemRow` interface → drop `order_item_id`
+- Task 21 OrderDetailPage `order_item_id` join → match by SKU only (no precise line FK)
+
+### C3. `'Pembelian Pass-Through'` enum value doesn't exist → ALTER TYPE first
+`kasir_expense_category` is an ENUM defined in `20260604000008_kasir_transactions.sql`. Existing values: Gaji, Utilitas, Transportasi, **Pembelian Stok**, Marketing, Lain-lain, MDR EDC. Insert `'Pembelian Pass-Through'` will fail without ALTER TYPE.
+
+**Add a NEW migration BEFORE Task 2** (call it Task 1.5):
+- File: `supabase/migrations/20260614000010a_pi_kasir_enum.sql`
+- Content:
+  ```sql
+  BEGIN;
+  ALTER TYPE kasir_expense_category ADD VALUE IF NOT EXISTS 'Pembelian Pass-Through';
+  COMMIT;
+  ```
+- Commit: `feat(pembelian): add 'Pembelian Pass-Through' to kasir_expense_category enum`
+
+### C4. `orders.order_number` column doesn't exist → use `orders.id::text`
+The orders table has NO `order_number` column. Code that references it must use `id::text` (or substring for shorter display, e.g., `LEFT(id::text, 8)`).
+
+**Affects:**
+- Task 2 `record_pi` RPC: change `SELECT order_number INTO v_order_number FROM orders WHERE id = v_order_id` to `v_order_number := v_order_id::text`
+- Task 3 `mark_pi_paid` RPC: same change (replace `SELECT order_number INTO v_order_number` with `v_order_number := v_pi.order_id::text`)
+- Task 10 service `fetchAll`, `fetchByNumber`: change SELECT joined column from `orders(id, order_number, customer_name)` to `orders(id, customer_name)`
+- Task 9 TypeScript `DbPurchaseInvoice.order`: change shape to `{ id: string; customer_name?: string }` (drop `order_number`). Display layer derives short id.
+- Task 12 OrderPicker: search by `id::text ILIKE` instead of `order_number ILIKE`
+- Tasks 15, 17 list/detail: display `order.id.slice(0,8)` (prefixed with `ORD-`) instead of `order_number`
+- Task 21 Order integration: same
+
+### C5. `src/components/OrderDetailPage.tsx` doesn't exist → use `src/components/OrderHistoryScreen.tsx`
+Order detail in this codebase lives inside `OrderHistoryScreen.tsx`. **Task 21 must be re-scoped:** edit `OrderHistoryScreen.tsx` instead. Implementer should first locate the order-row rendering / detail section in OrderHistoryScreen and patch nearby. The "+ Buat PI untuk Order ini" button should be added wherever Order actions are rendered.
+
+### Commit state
+- `186ffbb` — Task 1 schema fix (canonical; the SQL inside Task 1 below is the BROKEN original kept for historical context only — DO NOT re-implement Task 1)
+- `fc60ddf` — Task 1 original commit (superseded)
+
+### How to handle these corrections
+
+When implementing any task, the implementer subagent will be given:
+1. The task text from this plan
+2. The full text of C1–C5 above
+
+The subagent must apply the corrections inline before writing code. Reviewers must verify corrections were applied (e.g., spec reviewer must reject code that re-introduces `public.users` or `order_item_id`).
+
+---
+
 ## File Map
 
 **Backend (SQL migrations):**
-- Create `supabase/migrations/20260614000010_pi_schema.sql` — tables, indexes, check constraints, RLS
+- Create `supabase/migrations/20260614000010_pi_schema.sql` — tables, indexes, check constraints, RLS (✅ committed as `186ffbb`)
+- Create `supabase/migrations/20260614000010a_pi_kasir_enum.sql` — ALTER TYPE add enum value (per C3)
 - Create `supabase/migrations/20260614000011_pi_rpcs_create.sql` — `generate_pi_number()`, `record_pi()`
 - Create `supabase/migrations/20260614000012_pi_rpcs_lifecycle.sql` — `mark_pi_paid()`, `void_pi()`, `update_pi()`
 - Create `supabase/migrations/20260614000013_order_cogs_breakdown_view.sql` — COGS attribution view
@@ -295,7 +356,7 @@ BEGIN
   ) RETURNING id INTO v_pi_id;
 
   INSERT INTO public.purchase_invoice_items (
-    pi_id, sku, product_name, qty, unit_cost, sell_price, subtotal, order_item_id
+    pi_id, sku, product_name, qty, unit_cost, sell_price, subtotal
   )
   SELECT
     v_pi_id,
@@ -304,14 +365,13 @@ BEGIN
     (item->>'qty')::int,
     (item->>'unit_cost')::numeric,
     (item->>'sell_price')::numeric,
-    (item->>'qty')::int * (item->>'unit_cost')::numeric,
-    NULLIF(item->>'order_item_id','')::uuid
+    (item->>'qty')::int * (item->>'unit_cost')::numeric
   FROM jsonb_array_elements(payload->'items') item;
 
   -- Kasir expense if initial LUNAS
   IF v_initial_status = 'LUNAS' THEN
     SELECT name INTO v_supplier_name FROM public.suppliers WHERE id = v_supplier_id;
-    SELECT order_number INTO v_order_number FROM public.orders WHERE id = v_order_id;
+    v_order_number := v_order_id::text;  -- orders.order_number doesn't exist; use id::text
     INSERT INTO public.kasir_transactions (
       type, date, expense_category, description, subtotal, hpp_total
     ) VALUES (
@@ -405,7 +465,7 @@ BEGIN
   WHERE id = p_pi_id;
 
   SELECT name INTO v_supplier_name FROM public.suppliers WHERE id = v_pi.supplier_id;
-  SELECT order_number INTO v_order_number FROM public.orders WHERE id = v_pi.order_id;
+  v_order_number := v_pi.order_id::text;  -- orders.order_number doesn't exist; use id::text
 
   INSERT INTO public.kasir_transactions (
     type, date, expense_category, description, subtotal, hpp_total
@@ -495,13 +555,12 @@ BEGIN
 
   DELETE FROM public.purchase_invoice_items WHERE pi_id = p_pi_id;
   INSERT INTO public.purchase_invoice_items (
-    pi_id, sku, product_name, qty, unit_cost, sell_price, subtotal, order_item_id
+    pi_id, sku, product_name, qty, unit_cost, sell_price, subtotal
   )
   SELECT
     p_pi_id, item->>'sku', item->>'product_name',
     (item->>'qty')::int, (item->>'unit_cost')::numeric, (item->>'sell_price')::numeric,
-    (item->>'qty')::int * (item->>'unit_cost')::numeric,
-    NULLIF(item->>'order_item_id','')::uuid
+    (item->>'qty')::int * (item->>'unit_cost')::numeric
   FROM jsonb_array_elements(payload->'items') item;
 END;
 $$;
@@ -526,30 +585,51 @@ git commit -m "feat(pembelian): mark_pi_paid + void_pi + update_pi lifecycle RPC
 
 ---
 
-## Task 4: SQL view — `order_cogs_breakdown`
+## Task 4: SQL view — `order_cogs_breakdown` (REWRITTEN per C2)
 
 **Files:**
 - Create: `supabase/migrations/20260614000013_order_cogs_breakdown_view.sql`
+
+**IMPORTANT:** `public.order_items` table does NOT exist. `orders.items` is a JSONB column with shape `[{sku, qty, ...}, ...]` (confirmed via grep in `20260613000002b_warehouses_phase2_sale_po_rpcs.sql` line 153+). View must expand JSONB via `jsonb_array_elements`. There is NO `order_item_id` to expose since rows are derived from JSONB indices, not stable identifiers.
 
 - [ ] **Step 1: Write the migration**
 
 ```sql
 -- supabase/migrations/20260614000013_order_cogs_breakdown_view.sql
--- View that allocates Order item COGS across linked PI items (FIFO by pi.created_at)
--- and falls back to existing FIFO stock_lots for remainder. Used by Order detail
--- "Sumber Pengadaan" column + profit calc.
+-- View that allocates Order item COGS across linked PI items and falls back to
+-- existing FIFO stock_lots for remainder. Used by Order detail "Sumber Pengadaan"
+-- column + profit calc.
+-- 
+-- Note: orders.items is JSONB (no public.order_items table). Expand JSONB
+-- via jsonb_array_elements. Match PI items to Order rows by sku.
 
 BEGIN;
 
 CREATE OR REPLACE VIEW public.order_cogs_breakdown AS
-WITH pi_alloc AS (
+WITH order_lines AS (
+  -- Expand orders.items JSONB array. Use array index as a stable per-Order line key.
+  SELECT
+    o.id AS order_id,
+    idx AS line_index,
+    item->>'sku' AS sku,
+    COALESCE((item->>'qty')::int, 0) AS order_qty,
+    COALESCE(
+      (item->>'sell_price')::numeric,
+      (item->>'price')::numeric,
+      (item->>'unit_price')::numeric,
+      0
+    ) AS sell_price
+  FROM public.orders o,
+       jsonb_array_elements(o.items) WITH ORDINALITY AS t(item, idx)
+  WHERE item ? 'sku'
+),
+pi_alloc AS (
   SELECT
     pii.sku,
     pi.order_id,
-    pii.qty,
+    pii.qty AS pi_qty,
     pii.unit_cost,
     pi.pi_number,
-    pi.id AS pi_id,
     pi.created_at AS pi_created_at
   FROM public.purchase_invoices pi
   JOIN public.purchase_invoice_items pii ON pii.pi_id = pi.id
@@ -557,44 +637,43 @@ WITH pi_alloc AS (
     AND pi.order_id IS NOT NULL
     AND pi.type = 'PASSTHROUGH'
 ),
-oi AS (
-  SELECT id, order_id, sku, qty, sell_price FROM public.order_items
-),
 matched AS (
   SELECT
-    oi.id AS order_item_id,
-    oi.order_id,
-    oi.sku,
-    oi.qty AS order_qty,
-    oi.sell_price,
-    pi_alloc.pi_number,
-    pi_alloc.unit_cost AS pi_unit_cost,
-    pi_alloc.qty AS pi_qty,
-    pi_alloc.pi_created_at
-  FROM oi
-  LEFT JOIN pi_alloc
-    ON pi_alloc.order_id = oi.order_id
-   AND pi_alloc.sku = oi.sku
+    ol.order_id,
+    ol.line_index,
+    ol.sku,
+    ol.order_qty,
+    ol.sell_price,
+    pa.pi_number,
+    pa.unit_cost AS pi_unit_cost,
+    pa.pi_qty,
+    pa.pi_created_at
+  FROM order_lines ol
+  LEFT JOIN pi_alloc pa
+    ON pa.order_id = ol.order_id
+   AND pa.sku = ol.sku
 )
 SELECT
-  order_item_id,
   order_id,
+  line_index,
   sku,
   order_qty,
   sell_price,
-  -- earliest PI (by created_at) provides cost; if multiple PIs for same SKU,
-  -- frontend can show as "mixed" but for now we take the first match
+  -- earliest PI by created_at supplies the cost label;
+  -- if multiple PIs for same SKU+Order, frontend can drill down.
   (array_agg(pi_number ORDER BY pi_created_at NULLS LAST))[1] AS source_pi_number,
   (array_agg(pi_unit_cost ORDER BY pi_created_at NULLS LAST))[1] AS pi_unit_cost,
-  LEAST(order_qty, COALESCE(SUM(pi_qty), 0)) AS qty_from_pi,
-  GREATEST(order_qty - COALESCE(SUM(pi_qty), 0), 0) AS qty_from_stock
+  LEAST(order_qty, COALESCE(SUM(pi_qty), 0)::int) AS qty_from_pi,
+  GREATEST(order_qty - COALESCE(SUM(pi_qty), 0)::int, 0) AS qty_from_stock
 FROM matched
-GROUP BY order_item_id, order_id, sku, order_qty, sell_price;
+GROUP BY order_id, line_index, sku, order_qty, sell_price;
 
 GRANT SELECT ON public.order_cogs_breakdown TO authenticated;
 
 COMMIT;
 ```
+
+**Note on `line_index`:** Replaces `order_item_id` from the original draft. It's the 1-based ordinal position of the item in `orders.items` JSONB array. Stable for a given Order as long as the items array is not reordered. Frontend can use `(order_id, line_index)` as the composite key.
 
 - [ ] **Step 2: Apply migration**
 
