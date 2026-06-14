@@ -1531,7 +1531,7 @@ export async function startOpnameSession(args: {
   opname_type: OpnameSession['opnameType'];
   scope_payload: Record<string, unknown>;
   counted_by: string;
-  witnessed_by: string;
+  witnessed_by: string | null;
 }): Promise<number> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('start_opname_session', {

@@ -141,13 +141,36 @@ export default function StockOpnameSessionView({
     return adminNames[uid] ?? uid.slice(0, 8);
   };
 
+  const [requireWitness, setRequireWitness] = useState<boolean>(true);
+
+  // Fetch opname_require_witness setting at mount.
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('company_settings')
+      .select('opname_require_witness')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {
+          setRequireWitness((data as { opname_require_witness: boolean }).opname_require_witness);
+        }
+      });
+  }, []);
+
   const isCounter = !!session && !!currentUser && currentUser.id === session.countedByUserId;
-  const isWitness = !!session && !!currentUser && currentUser.id === session.witnessedByUserId;
+  const isWitness = !!session && !!currentUser
+    && !!session.witnessedByUserId
+    && currentUser.id === session.witnessedByUserId;
   const isEditable = !!session && session.status === 'in_progress'
-    && (isCounter || isWitness);
+    && (isCounter || isWitness || (!requireWitness && isCounter));
   const witnessAcked = !!session?.witnessAcknowledgedAt;
   const canAckWitness = !!session && isWitness && !witnessAcked && session.status === 'in_progress';
-  const canSubmit = !!session && isCounter && witnessAcked && session.status === 'in_progress';
+  // Submit allowed when:
+  //   - witness required: counter + witness acked
+  //   - witness optional: counter alone (no ack required)
+  const canSubmit = !!session && isCounter && session.status === 'in_progress'
+    && (requireWitness ? witnessAcked : true);
 
   const filteredCounts = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -292,7 +315,9 @@ export default function StockOpnameSessionView({
           </h1>
           <p className="text-xs text-slate-500 mt-1">
             Penghitung: <b>{isCounter ? `${currentUser?.name} (Anda)` : resolveName(session.countedByUserId)}</b>
-            {' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : resolveName(session.witnessedByUserId)}</b>
+            {session.witnessedByUserId && (
+              <>{' · '}Saksi: <b>{isWitness ? `${currentUser?.name} (Anda)` : resolveName(session.witnessedByUserId)}</b></>
+            )}
             {' · '}Mulai {formatDateTime(session.startedAt)}
           </p>
           {witnessAcked && session.witnessAcknowledgedAt && (
@@ -450,8 +475,8 @@ export default function StockOpnameSessionView({
       )}
 
       {/* Re-ack banner — surfaces after counter edits a count following an existing
-          witness ack. Witness must re-acknowledge before submit unlocks. */}
-      {session.status === 'in_progress' && ackInvalidated && (
+          witness ack. Hidden when witness is disabled (no ack to invalidate). */}
+      {requireWitness && session.status === 'in_progress' && ackInvalidated && (
         <div className="rounded bg-amber-50 border border-amber-300 px-3 py-2 text-sm text-amber-900">
           Counter mengubah angka — saksi perlu acknowledge ulang sebelum submit.
         </div>
@@ -460,20 +485,22 @@ export default function StockOpnameSessionView({
       {/* Action bar */}
       {session.status === 'in_progress' && (
         <div className="flex flex-wrap gap-2 items-center">
-          <button
-            onClick={onAcknowledge}
-            disabled={!canAckWitness || busy === 'ack'}
-            className="py-2 px-4 border border-slate-300 rounded-full text-sm disabled:opacity-50"
-            title={
-              !isWitness ? 'Hanya saksi yang dapat acknowledge'
-              : witnessAcked ? 'Saksi sudah acknowledge'
-              : ''
-            }
-          >
-            {witnessAcked
-              ? `Saksi ✓ acknowledged`
-              : busy === 'ack' ? 'Memproses…' : 'Saya Saksi (Acknowledge)'}
-          </button>
+          {requireWitness && (
+            <button
+              onClick={onAcknowledge}
+              disabled={!canAckWitness || busy === 'ack'}
+              className="py-2 px-4 border border-slate-300 rounded-full text-sm disabled:opacity-50"
+              title={
+                !isWitness ? 'Hanya saksi yang dapat acknowledge'
+                : witnessAcked ? 'Saksi sudah acknowledge'
+                : ''
+              }
+            >
+              {witnessAcked
+                ? `Saksi ✓ acknowledged`
+                : busy === 'ack' ? 'Memproses…' : 'Saya Saksi (Acknowledge)'}
+            </button>
+          )}
           <span className="flex-1" />
           <button
             onClick={onSubmit}

@@ -70,6 +70,22 @@ export default function StockOpnameScreen({
   const [opnameType, setOpnameType] = useState<OpnameType>('full');
   const [witnessId, setWitnessId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+  const [requireWitness, setRequireWitness] = useState<boolean>(true);
+
+  // Fetch opname_require_witness setting at mount. Default TRUE (MSME-safe).
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('company_settings')
+      .select('opname_require_witness')
+      .eq('id', 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {
+          setRequireWitness((data as { opname_require_witness: boolean }).opname_require_witness);
+        }
+      });
+  }, []);
 
   const refresh = async () => {
     if (!supabase) return;
@@ -124,11 +140,11 @@ export default function StockOpnameScreen({
 
   const onStart = async () => {
     if (!currentUser) return;
-    if (!witnessId) {
+    if (requireWitness && !witnessId) {
       showToast('Pilih saksi terlebih dahulu', 'warning');
       return;
     }
-    if (witnessId === currentUser.id) {
+    if (requireWitness && witnessId === currentUser.id) {
       showToast('Saksi tidak boleh sama dengan penghitung', 'warning');
       return;
     }
@@ -138,7 +154,7 @@ export default function StockOpnameScreen({
         opname_type: opnameType,
         scope_payload: {},
         counted_by: currentUser.id,
-        witnessed_by: witnessId,
+        witnessed_by: requireWitness ? witnessId : null,
       });
       showToast('Sesi opname dimulai', 'success');
       setShowStartModal(false);
@@ -302,23 +318,25 @@ export default function StockOpnameScreen({
               </p>
             </div>
 
-            <div>
-              <label className="block text-xs text-slate-600 mb-1">
-                Saksi (wajib, bukan penghitung)
-              </label>
-              <select
-                value={witnessId}
-                onChange={(e) => setWitnessId(e.target.value)}
-                className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm"
-              >
-                <option value="">— Pilih Saksi —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {requireWitness && (
+              <div>
+                <label className="block text-xs text-slate-600 mb-1">
+                  Saksi (wajib, bukan penghitung)
+                </label>
+                <select
+                  value={witnessId}
+                  onChange={(e) => setWitnessId(e.target.value)}
+                  className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm"
+                >
+                  <option value="">— Pilih Saksi —</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="rounded bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
               Penghitung: <b>{currentUser?.name ?? '—'}</b>. Sesi dikunci ke Anda
@@ -334,7 +352,7 @@ export default function StockOpnameScreen({
               </button>
               <button
                 onClick={onStart}
-                disabled={submitting || !witnessId}
+                disabled={submitting || (requireWitness && !witnessId)}
                 className="flex-1 py-2 bg-emerald-600 text-white rounded-full text-sm disabled:opacity-50"
               >
                 {submitting ? 'Memulai…' : 'Mulai Sesi'}
