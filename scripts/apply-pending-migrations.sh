@@ -97,6 +97,11 @@ MIGRATIONS=(
   # approve: type-guarded, uses verify_owner_pin which auto-transitions; on
   # success applies UPDATE to customers under row lock.
   "20260614000012_customer_credit_activate_rpcs.sql"
+
+  # ─── Piutang T6 — customer_credit_limit_change RPCs ───
+  # request: validates customer is activated + new limit > 0 + reason ≥5 chars.
+  # approve: type-guarded + verify_owner_pin; on success UPDATEs customers.credit_limit.
+  "20260614000013_customer_credit_limit_change_rpcs.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

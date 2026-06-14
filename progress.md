@@ -1,5 +1,29 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 6: customer_credit_limit_change RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000013_customer_credit_limit_change_rpcs.sql`
+  - `request_customer_credit_limit_change(p_customer_id text, p_new_limit numeric, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors T5 pattern
+    - 3 validations in order: customer_not_activated (checks `allows_tempo = true`) → credit_limit_must_be_positive → reason_required (≥5 chars via `coalesce(length(p_reason), 0) < 5`)
+    - Inserts `approval_requests` row with type `customer_credit_limit_change` and JSON payload (`customer_id`, `new_limit`, `reason`)
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_limit_change(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with two args; raises `pin_invalid` on FALSE return
+    - `_transition_approval` NOT called directly — verify_owner_pin handles it atomically
+    - On approval: extracts `customer_id` + `new_limit` from payload, locks customer row (`FOR UPDATE`), updates `customers.credit_limit`
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000013`, following T5 at `000012`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T6 entry after T5
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000013_customer_credit_limit_change_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_limit_change', 'approve_customer_credit_limit_change');
+  -- Expected: 2 rows
+  ```
+
 ## 2026-06-14 — Calista Phase 1A: end-to-end smoke PASSED + production-ready — DONE
 
 - **What:** Built `backend-go/cmd/smoke-calista` — a non-daemon end-to-end harness that exercises engine → router → real OpenRouter → sticky-pin + tone-seeding without touching the whatsmeow daemon. Runs entirely from CLI with stub DB stores, so failures isolate to the production code path (not infra plumbing).
