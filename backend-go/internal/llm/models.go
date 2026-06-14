@@ -11,14 +11,20 @@
 package llm
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/username/sinar-elektrik-backend/internal/engine"
 )
 
 // ErrChainExhausted is the sentinel returned when all models in the chain
 // are simultaneously unavailable. The engine catches this and transitions
 // the conversation to StateEscalatedAdmin (human takeover).
-var ErrChainExhausted = errors.New("llm: chain exhausted")
+//
+// Re-exported from the engine package: the sentinel lives there so engine
+// does not need to import internal/llm (which would create a cycle with
+// llm.EngineAdapter). Callers may use either llm.ErrChainExhausted or
+// engine.ErrChainExhausted — they're the same value.
+var ErrChainExhausted = engine.ErrChainExhausted
 
 // ChainExhaustedError carries the list of model slugs tried, for telemetry
 // and debugging. Implements errors.Is(err, ErrChainExhausted).

@@ -7,7 +7,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/username/sinar-elektrik-backend/internal/llm"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
@@ -77,7 +76,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		log.Printf("[ENGINE] LLM error in state %s: %v", conv.State, err)
 		result.Reply = FallbackReply(conv.Language)
 		result.LLMError = err
-		if errors.Is(err, llm.ErrChainExhausted) {
+		if errors.Is(err, ErrChainExhausted) {
 			result.ChainExhausted = true
 			result.NextState = models.StateEscalatedAdmin
 		}
