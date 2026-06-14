@@ -22,10 +22,17 @@ type PinEntry struct {
 }
 
 // PinStore is the persistence interface for conversation pins.
+//
+// LoadTone / SaveTone manage the first_reply_tone JSONB column on the same
+// public.conversations row, supporting the perceptual-continuity tone
+// seeding flow (spec §5.6 #4). Co-located here because both concepts persist
+// per-conversation on the same row.
 type PinStore interface {
 	LoadPin(ctx context.Context, conversationID string) (PinEntry, bool, error)
 	SavePin(ctx context.Context, p PinEntry) error
 	ClearPin(ctx context.Context, conversationID string) error
+	LoadTone(ctx context.Context, conversationID string) (ToneSignature, bool, error)
+	SaveTone(ctx context.Context, conversationID string, tone ToneSignature) error
 }
 
 // PinManager wraps PinStore with the sticky-pinning business rules.
@@ -85,4 +92,23 @@ func (m *PinManager) ForceSwap(ctx context.Context, convID, newSlug string) erro
 // BOOKED, COMPLETED, CANCELLED, ESCALATED_*).
 func (m *PinManager) Unpin(ctx context.Context, convID string) error {
 	return m.store.ClearPin(ctx, convID)
+}
+
+// GetTone returns the first-reply tone signature for a conversation, or nil
+// if not yet set. Used by the router to inject voice hints on subsequent calls.
+func (m *PinManager) GetTone(ctx context.Context, convID string) (*ToneSignature, error) {
+	t, ok, err := m.store.LoadTone(ctx, convID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return &t, nil
+}
+
+// SetTone persists the first-reply tone signature. Called by the router
+// after the first successful LLM reply per conversation.
+func (m *PinManager) SetTone(ctx context.Context, convID string, tone ToneSignature) error {
+	return m.store.SaveTone(ctx, convID, tone)
 }

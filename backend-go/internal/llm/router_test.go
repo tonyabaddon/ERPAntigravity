@@ -235,6 +235,87 @@ func TestRouter_TripwireFlagsOnLongReply(t *testing.T) {
 	}
 }
 
+// captureCompleter records what messages the router sent on each call.
+// Used to verify tone-hint injection in TestRouter_ToneSeeding_*.
+type captureCompleter struct {
+	body  string
+	calls [][]Message
+}
+
+func (c *captureCompleter) Complete(_ context.Context, req CompletionRequest) (*CompletionResponse, error) {
+	msgs := make([]Message, len(req.Messages))
+	copy(msgs, req.Messages)
+	c.calls = append(c.calls, msgs)
+	return &CompletionResponse{
+		Body:  c.body,
+		Usage: TokenUsage{Prompt: 5, Completion: 3, Total: 8},
+	}, nil
+}
+
+func TestRouter_ToneSeeding_ExtractsAndInjects(t *testing.T) {
+	completer := &captureCompleter{body: "Halo Pak Budi! Kabel tersedia."}
+	r, _, _ := newTestRouter(t, &fakeCompleter{behavior: map[string]string{}})
+	r = NewRouter(completer, r.cooldowns, r.pins, r.telemetry, r.agent)
+	ctx := context.Background()
+
+	baseMsgs := []Message{
+		{Role: "system", Content: "PERSONA"},
+		{Role: "user", Content: "halo"},
+	}
+	_, err := r.Call(ctx, baseMsgs, CallOpts{ConversationID: "conv-tone-1"})
+	if err != nil {
+		t.Fatalf("first call: %v", err)
+	}
+	if len(completer.calls) != 1 || len(completer.calls[0]) != 2 {
+		t.Fatalf("first call should send 2 messages (system+user), got %d calls / %d msgs",
+			len(completer.calls), len(completer.calls[0]))
+	}
+
+	_, err = r.Call(ctx, baseMsgs, CallOpts{ConversationID: "conv-tone-1"})
+	if err != nil {
+		t.Fatalf("second call: %v", err)
+	}
+	second := completer.calls[1]
+	if len(second) != 3 {
+		t.Fatalf("second call should send 3 messages (system+tone-hint+user), got %d", len(second))
+	}
+	if second[0].Content != "PERSONA" {
+		t.Errorf("position 0 should be PERSONA, got %q", second[0].Content)
+	}
+	if second[1].Role != "system" {
+		t.Errorf("position 1 should be system tone hint, got role=%q", second[1].Role)
+	}
+	if !strings.Contains(strings.ToLower(second[1].Content), "match this voice") {
+		t.Errorf("tone hint should contain 'match this voice' directive, got %q", second[1].Content)
+	}
+	if second[2].Role != "user" {
+		t.Errorf("position 2 should be user, got role=%q", second[2].Role)
+	}
+}
+
+func TestRouter_ToneSeeding_DoesNotOverwrite(t *testing.T) {
+	completer := &captureCompleter{body: "Halo Pak Budi! Kabel tersedia."}
+	r, _, _ := newTestRouter(t, &fakeCompleter{behavior: map[string]string{}})
+	r = NewRouter(completer, r.cooldowns, r.pins, r.telemetry, r.agent)
+	ctx := context.Background()
+
+	baseMsgs := []Message{{Role: "user", Content: "halo"}}
+	_, _ = r.Call(ctx, baseMsgs, CallOpts{ConversationID: "conv-tone-2"})
+	tone1, _ := r.pins.GetTone(ctx, "conv-tone-2")
+	if tone1 == nil {
+		t.Fatal("expected tone after first call")
+	}
+	firstSample := tone1.Sample
+
+	completer.body = "Different reply with different tone marker."
+	_, _ = r.Call(ctx, baseMsgs, CallOpts{ConversationID: "conv-tone-2"})
+	tone2, _ := r.pins.GetTone(ctx, "conv-tone-2")
+	if tone2 == nil || tone2.Sample != firstSample {
+		t.Errorf("tone should not be overwritten; firstSample=%q gotSample=%q",
+			firstSample, tone2.Sample)
+	}
+}
+
 type slowCompleter struct{ delay time.Duration }
 
 func (s *slowCompleter) Complete(ctx context.Context, _ CompletionRequest) (*CompletionResponse, error) {

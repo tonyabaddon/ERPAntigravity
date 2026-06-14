@@ -56,6 +56,18 @@ func (r *Router) Call(ctx context.Context, msgs []Message, opts CallOpts) (*Resp
 		originalPinSlug = existing.ModelSlug
 	}
 
+	// Inject tone hint if this conversation already has a first_reply_tone
+	// signature. The hint asks the answering model to match the established
+	// voice — dampens perceptual voice shift on forced swap (spec §5.6 #4).
+	// On the FIRST call (no tone yet), this is a no-op; tone gets extracted
+	// after the first successful reply below.
+	existingTone, _ := r.pins.GetTone(ctx, opts.ConversationID)
+	if existingTone != nil {
+		if hint := BuildToneHint(*existingTone); hint != "" {
+			msgs = injectToneHint(msgs, hint)
+		}
+	}
+
 	candidates, err := r.pickCandidates(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -136,6 +148,16 @@ func (r *Router) Call(ctx context.Context, msgs []Message, opts CallOpts) (*Resp
 		status := StatusSuccess
 		if len(flags) > 0 {
 			status = StatusTripwireAlert
+		}
+
+		// First-reply tone extraction (spec §5.6 #4). If no tone signature
+		// exists yet for this conversation, capture one from this reply so
+		// subsequent calls can inject a voice-matching hint above.
+		if existingTone == nil {
+			tone := ExtractTone(resp.Body, slug)
+			if tone.Sample != "" {
+				_ = r.pins.SetTone(ctx, opts.ConversationID, tone)
+			}
 		}
 
 		_ = r.telemetry.Record(ctx, TelemetryRecord{
@@ -271,4 +293,26 @@ func classifyStatus(err error) string {
 	default:
 		return StatusError
 	}
+}
+
+// injectToneHint returns a NEW slice with a tone-hint system message inserted
+// after the first existing system message (or at position 0 if none). The
+// caller's msgs slice is NOT mutated.
+//
+// Layout becomes: [system_prompt][tone_hint][user_messages…]
+// — the LLM sees the persona first, then the conversation-specific voice
+// directive, then the user turn(s).
+func injectToneHint(msgs []Message, hint string) []Message {
+	insertAt := 0
+	for i, m := range msgs {
+		if m.Role == "system" {
+			insertAt = i + 1
+			break
+		}
+	}
+	out := make([]Message, 0, len(msgs)+1)
+	out = append(out, msgs[:insertAt]...)
+	out = append(out, Message{Role: "system", Content: hint})
+	out = append(out, msgs[insertAt:]...)
+	return out
 }

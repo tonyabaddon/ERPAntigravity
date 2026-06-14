@@ -7,7 +7,9 @@ import "context"
 // are package-private).
 
 func NewStubCooldownStore() CooldownStore   { return &stubCooldownStoreExport{m: map[string]CooldownEntry{}} }
-func NewStubPinStoreForTest() PinStore       { return &stubPinStoreExport{m: map[string]PinEntry{}} }
+func NewStubPinStoreForTest() PinStore {
+	return &stubPinStoreExport{m: map[string]PinEntry{}, tones: map[string]ToneSignature{}}
+}
 func NewStubTelemetryStoreForTest() TelemetryStore { return &stubTelemetryStoreExport{} }
 
 type stubCooldownStoreExport struct{ m map[string]CooldownEntry }
@@ -21,7 +23,10 @@ func (s *stubCooldownStoreExport) LoadCooldowns() ([]CooldownEntry, error) {
 }
 func (s *stubCooldownStoreExport) SaveCooldown(e CooldownEntry) error { s.m[e.ModelSlug] = e; return nil }
 
-type stubPinStoreExport struct{ m map[string]PinEntry }
+type stubPinStoreExport struct {
+	m     map[string]PinEntry
+	tones map[string]ToneSignature
+}
 
 func (s *stubPinStoreExport) LoadPin(_ context.Context, id string) (PinEntry, bool, error) {
 	p, ok := s.m[id]
@@ -33,6 +38,21 @@ func (s *stubPinStoreExport) SavePin(_ context.Context, p PinEntry) error {
 }
 func (s *stubPinStoreExport) ClearPin(_ context.Context, id string) error {
 	delete(s.m, id)
+	delete(s.tones, id)
+	return nil
+}
+func (s *stubPinStoreExport) LoadTone(_ context.Context, id string) (ToneSignature, bool, error) {
+	if s.tones == nil {
+		return ToneSignature{}, false, nil
+	}
+	t, ok := s.tones[id]
+	return t, ok, nil
+}
+func (s *stubPinStoreExport) SaveTone(_ context.Context, id string, tone ToneSignature) error {
+	if s.tones == nil {
+		s.tones = map[string]ToneSignature{}
+	}
+	s.tones[id] = tone
 	return nil
 }
 

@@ -117,9 +117,50 @@ func (s *CalistaStore) ClearPin(ctx context.Context, convID string) error {
 		UPDATE public.conversations
 		SET pinned_model_slug = NULL,
 		    pinned_at = NULL,
-		    swap_count = 0
+		    swap_count = 0,
+		    first_reply_tone = NULL
 		WHERE id = $1
 	`, convID)
+	return err
+}
+
+// LoadTone reads conversations.first_reply_tone JSONB and unmarshals it into
+// a ToneSignature. Returns ok=false when the column is NULL (no tone set yet)
+// or when the conversation row doesn't exist.
+func (s *CalistaStore) LoadTone(ctx context.Context, convID string) (llm.ToneSignature, bool, error) {
+	var raw sql.NullString
+	err := s.db.QueryRowContext(ctx, `
+		SELECT first_reply_tone::text
+		FROM public.conversations
+		WHERE id = $1
+	`, convID).Scan(&raw)
+	if err == sql.ErrNoRows {
+		return llm.ToneSignature{}, false, nil
+	}
+	if err != nil {
+		return llm.ToneSignature{}, false, err
+	}
+	if !raw.Valid || raw.String == "" {
+		return llm.ToneSignature{}, false, nil
+	}
+	tone, err := llm.UnmarshalToneJSON([]byte(raw.String))
+	if err != nil {
+		return llm.ToneSignature{}, false, err
+	}
+	return tone, true, nil
+}
+
+// SaveTone persists the ToneSignature as JSONB on the conversations row.
+func (s *CalistaStore) SaveTone(ctx context.Context, convID string, tone llm.ToneSignature) error {
+	raw, err := llm.MarshalToneJSON(tone)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE public.conversations
+		SET first_reply_tone = $1::jsonb
+		WHERE id = $2
+	`, string(raw), convID)
 	return err
 }
 

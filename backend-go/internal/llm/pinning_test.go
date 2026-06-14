@@ -6,13 +6,14 @@ import (
 )
 
 type stubPinStore struct {
-	pins   map[string]PinEntry
-	saved  []PinEntry
+	pins    map[string]PinEntry
+	tones   map[string]ToneSignature
+	saved   []PinEntry
 	cleared []string
 }
 
 func newStubPinStore() *stubPinStore {
-	return &stubPinStore{pins: map[string]PinEntry{}}
+	return &stubPinStore{pins: map[string]PinEntry{}, tones: map[string]ToneSignature{}}
 }
 
 func (s *stubPinStore) LoadPin(_ context.Context, convID string) (PinEntry, bool, error) {
@@ -28,7 +29,18 @@ func (s *stubPinStore) SavePin(_ context.Context, p PinEntry) error {
 
 func (s *stubPinStore) ClearPin(_ context.Context, convID string) error {
 	delete(s.pins, convID)
+	delete(s.tones, convID)
 	s.cleared = append(s.cleared, convID)
+	return nil
+}
+
+func (s *stubPinStore) LoadTone(_ context.Context, convID string) (ToneSignature, bool, error) {
+	t, ok := s.tones[convID]
+	return t, ok, nil
+}
+
+func (s *stubPinStore) SaveTone(_ context.Context, convID string, tone ToneSignature) error {
+	s.tones[convID] = tone
 	return nil
 }
 
