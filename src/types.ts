@@ -49,6 +49,13 @@ export interface PermissionSet {
   can_view_pengawasan?: boolean;
   // Sales channel admin (2026-06-13 spec)
   canConfigureSalesChannels?: boolean;
+  // Phase 1A — Piutang/Tempo customer credit
+  can_request_credit_activate?: boolean;
+  can_approve_credit_activate?: boolean;
+  can_request_limit_change?: boolean;
+  can_approve_limit_change?: boolean;
+  can_request_deactivate?: boolean;
+  can_approve_deactivate?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -89,6 +96,12 @@ export const ALL_PERMISSIONS: PermissionSet = {
   can_manage_warehouses: true,
   can_view_pengawasan: true,
   canConfigureSalesChannels: true,
+  can_request_credit_activate: true,
+  can_approve_credit_activate: true,
+  can_request_limit_change: true,
+  can_approve_limit_change: true,
+  can_request_deactivate: true,
+  can_approve_deactivate: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -293,6 +306,12 @@ export interface DbCustomer {
   name: string;
   company: string;
   created_at: string;
+  // Phase 1A — tempo whitelist
+  allows_tempo: boolean;
+  term_days: number;
+  credit_limit: number;
+  tempo_activated_at?: string | null;
+  tempo_activated_by?: string | null;
 }
 
 export interface DbLead {
@@ -530,7 +549,10 @@ export type ApprovalRequestType =
   | 'kasir_price_override'
   | 'kasir_void'
   | 'kasir_refund'
-  | 'rakit_lock';
+  | 'rakit_lock'
+  | 'customer_credit_activate'
+  | 'customer_credit_limit_change'
+  | 'customer_credit_deactivate';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
