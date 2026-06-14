@@ -224,8 +224,12 @@ export default function StockOpnameSessionView({
     }
     setBusy('submit');
     try {
-      await submitOpnameForOwner(sessionId, currentUser.id);
-      showToast('Sesi opname dikirim ke Owner untuk commit', 'success');
+      const result = await submitOpnameForOwner(sessionId, currentUser.id);
+      if (result.auto) {
+        showToast('Sesi selesai — semua cocok dengan sistem (Selesai Otomatis)', 'success');
+      } else {
+        showToast('Sesi dikirim ke Owner untuk persetujuan', 'success');
+      }
       onClose();
     } catch (e) {
       showToast(e instanceof Error ? e.message : String(e), 'warning');

@@ -1565,17 +1565,28 @@ export async function acknowledgeOpnameWitness(
   if (error) throw error;
 }
 
+export interface SubmitOpnameResult {
+  status: 'committed' | 'pending_owner';
+  auto: boolean;
+  approvalId: number | null;
+}
+
 export async function submitOpnameForOwner(
   sessionId: number,
   actorUserId: string,
-): Promise<number> {
+): Promise<SubmitOpnameResult> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('submit_opname_for_owner', {
     p_session_id: sessionId,
     p_actor_user_id: actorUserId,
   });
   if (error) throw error;
-  return data as number;
+  const row = (data as any[])[0];
+  return {
+    status: row.status,
+    auto: row.auto,
+    approvalId: row.approval_id ?? null,
+  };
 }
 
 export async function commitOpname(approvalId: number): Promise<number> {
