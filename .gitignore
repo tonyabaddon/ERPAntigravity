@@ -21,3 +21,5 @@ docs/mekari-demo/
 # Large benchmark recordings (too big for GitHub; keep locally only)
 docs/competitive-research/**/Results Benchmark/*.mov
 docs/competitive-research/**/Results Benchmark/*.mp4
+backend-go/.env
+.env
