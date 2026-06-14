@@ -77,3 +77,32 @@ describe('fetch_opname_counts masking', () => {
       .update({ status: 'in_progress' }).eq('id', sessionId);
   });
 });
+
+describe('record_opname_count invalidates witness ack on edit', () => {
+  test('counter edits after witness ack → witness_acknowledged_at reset to NULL', async () => {
+    // Witness acks first.
+    const { error: ackErr } = await svc.rpc('witness_acknowledge_opname', {
+      p_session_id: sessionId, p_actor_user_id: witnessId,
+    });
+    expect(ackErr).toBeNull();
+    const { data: before } = await svc.from('stock_opname_sessions')
+      .select('witness_acknowledged_at').eq('id', sessionId).single();
+    expect(before!.witness_acknowledged_at).not.toBeNull();
+
+    // Counter edits a count. (warehouse 'atas' exists because start_opname_session
+    // pre-inserted both atas + bawah rows for the SKU.)
+    const { error: editErr } = await svc.rpc('record_opname_count', {
+      p_session_id: sessionId,
+      p_sku: testSku,
+      p_warehouse: 'atas',
+      p_counted_qty: 24,
+      p_actor_user_id: counterId,
+    });
+    expect(editErr).toBeNull();
+
+    // Ack must now be NULL.
+    const { data: after } = await svc.from('stock_opname_sessions')
+      .select('witness_acknowledged_at').eq('id', sessionId).single();
+    expect(after!.witness_acknowledged_at).toBeNull();
+  });
+});
