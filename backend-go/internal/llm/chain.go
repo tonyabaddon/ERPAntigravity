@@ -32,16 +32,21 @@ func DefaultCalistaAgent() AgentConfig {
 		Name:         "Calista",
 		SystemPrompt: prompt,
 		Chain: []ModelSpec{
-			{Slug: "google/gemma-4-31b", CooldownMinutes: 60},
-			{Slug: "qwen/qwen3-next-80b-a3b-instruct", CooldownMinutes: 60},
-			{Slug: "nex-agi/nex-n2-pro", CooldownMinutes: 60},
-			{Slug: "nvidia/nemotron-3-super", CooldownMinutes: 60},
-			{Slug: "google/gemma-4-26b-a4b", CooldownMinutes: 60},
-			{Slug: "openai/gpt-oss-120b", CooldownMinutes: 60},
-			{Slug: "meta-llama/llama-3.3-70b-instruct", CooldownMinutes: 60},
-			{Slug: "nousresearch/hermes-3-405b", CooldownMinutes: 60},
-			{Slug: "nvidia/nemotron-3-nano-30b-a3b", CooldownMinutes: 60},
-			{Slug: "openai/gpt-oss-20b", CooldownMinutes: 60},
+			// Slugs verified against the live OpenRouter /api/v1/models catalog
+			// on 2026-06-14. All carry the `:free` suffix (required to route to
+			// the free-tier endpoint instead of the paid variant). Some require
+			// extra slug segments (e.g. `-it`, size suffix, llama-3.1 lineage)
+			// that didn't appear in the user-facing model browser.
+			{Slug: "google/gemma-4-31b-it:free", CooldownMinutes: 60},
+			{Slug: "qwen/qwen3-next-80b-a3b-instruct:free", CooldownMinutes: 60},
+			{Slug: "nex-agi/nex-n2-pro:free", CooldownMinutes: 60},
+			{Slug: "nvidia/nemotron-3-super-120b-a12b:free", CooldownMinutes: 60},
+			{Slug: "google/gemma-4-26b-a4b-it:free", CooldownMinutes: 60},
+			{Slug: "openai/gpt-oss-120b:free", CooldownMinutes: 60},
+			{Slug: "meta-llama/llama-3.3-70b-instruct:free", CooldownMinutes: 60},
+			{Slug: "nousresearch/hermes-3-llama-3.1-405b:free", CooldownMinutes: 60},
+			{Slug: "nvidia/nemotron-3-nano-30b-a3b:free", CooldownMinutes: 60},
+			{Slug: "openai/gpt-oss-20b:free", CooldownMinutes: 60},
 		},
 	}
 }

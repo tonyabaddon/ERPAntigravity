@@ -52,7 +52,7 @@ func newTestRouter(t *testing.T, completer *fakeCompleter) (*Router, *stubPinSto
 
 func TestRouter_NewConversation_PinsToPrimary(t *testing.T) {
 	completer := &fakeCompleter{behavior: map[string]string{
-		"google/gemma-4-31b": "ok",
+		"google/gemma-4-31b-it:free": "ok",
 	}}
 	r, pinStore, telStore := newTestRouter(t, completer)
 
@@ -61,10 +61,10 @@ func TestRouter_NewConversation_PinsToPrimary(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ModelUsed != "google/gemma-4-31b" {
+	if resp.ModelUsed != "google/gemma-4-31b-it:free" {
 		t.Errorf("expected primary model, got %q", resp.ModelUsed)
 	}
-	if pinStore.pins["conv-1"].ModelSlug != "google/gemma-4-31b" {
+	if pinStore.pins["conv-1"].ModelSlug != "google/gemma-4-31b-it:free" {
 		t.Errorf("expected pin written to gemma-4-31b, got %+v", pinStore.pins["conv-1"])
 	}
 	if len(telStore.records) != 1 || telStore.records[0].Status != StatusSuccess {
@@ -74,8 +74,8 @@ func TestRouter_NewConversation_PinsToPrimary(t *testing.T) {
 
 func TestRouter_PrimaryRateLimited_FallsThrough_Pins(t *testing.T) {
 	completer := &fakeCompleter{behavior: map[string]string{
-		"google/gemma-4-31b":                 "429",
-		"qwen/qwen3-next-80b-a3b-instruct":   "ok",
+		"google/gemma-4-31b-it:free":                 "429",
+		"qwen/qwen3-next-80b-a3b-instruct:free":   "ok",
 	}}
 	r, pinStore, _ := newTestRouter(t, completer)
 
@@ -84,17 +84,17 @@ func TestRouter_PrimaryRateLimited_FallsThrough_Pins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ModelUsed != "qwen/qwen3-next-80b-a3b-instruct" {
+	if resp.ModelUsed != "qwen/qwen3-next-80b-a3b-instruct:free" {
 		t.Errorf("expected qwen, got %q", resp.ModelUsed)
 	}
-	if pinStore.pins["conv-2"].ModelSlug != "qwen/qwen3-next-80b-a3b-instruct" {
+	if pinStore.pins["conv-2"].ModelSlug != "qwen/qwen3-next-80b-a3b-instruct:free" {
 		t.Errorf("expected pin to qwen, got %s", pinStore.pins["conv-2"].ModelSlug)
 	}
 }
 
 func TestRouter_StickyPin_OnSecondCall(t *testing.T) {
 	completer := &fakeCompleter{behavior: map[string]string{
-		"google/gemma-4-31b": "ok",
+		"google/gemma-4-31b-it:free": "ok",
 	}}
 	r, _, _ := newTestRouter(t, completer)
 	ctx := context.Background()
@@ -106,7 +106,7 @@ func TestRouter_StickyPin_OnSecondCall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ModelUsed != "google/gemma-4-31b" {
+	if resp.ModelUsed != "google/gemma-4-31b-it:free" {
 		t.Errorf("expected sticky pin to gemma, got %q", resp.ModelUsed)
 	}
 	if len(completer.calls) != 2 {
@@ -116,8 +116,8 @@ func TestRouter_StickyPin_OnSecondCall(t *testing.T) {
 
 func TestRouter_PinRateLimited_ForcedSwapMidConversation(t *testing.T) {
 	completer := &fakeCompleter{behavior: map[string]string{
-		"google/gemma-4-31b":                 "ok",
-		"qwen/qwen3-next-80b-a3b-instruct":   "ok",
+		"google/gemma-4-31b-it:free":                 "ok",
+		"qwen/qwen3-next-80b-a3b-instruct:free":   "ok",
 	}}
 	r, pinStore, _ := newTestRouter(t, completer)
 	ctx := context.Background()
@@ -127,14 +127,14 @@ func TestRouter_PinRateLimited_ForcedSwapMidConversation(t *testing.T) {
 		CallOpts{ConversationID: "conv-4"})
 
 	// Simulate gemma rate-limit at turn 2.
-	completer.behavior["google/gemma-4-31b"] = "429"
+	completer.behavior["google/gemma-4-31b-it:free"] = "429"
 
 	resp, err := r.Call(ctx, []Message{{Role: "user", Content: "lagi"}},
 		CallOpts{ConversationID: "conv-4"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ModelUsed != "qwen/qwen3-next-80b-a3b-instruct" {
+	if resp.ModelUsed != "qwen/qwen3-next-80b-a3b-instruct:free" {
 		t.Errorf("expected forced-swap to qwen, got %q", resp.ModelUsed)
 	}
 	if !resp.WasForcedSwap {
@@ -165,8 +165,8 @@ func TestRouter_ChainExhausted_ReturnsSentinel(t *testing.T) {
 func TestRouter_StateBoundary_UnpinAttempt(t *testing.T) {
 	// Turn 1: gemma 429, qwen ok → pin to qwen.
 	completer := &fakeCompleter{behavior: map[string]string{
-		"google/gemma-4-31b":                 "429",
-		"qwen/qwen3-next-80b-a3b-instruct":   "ok",
+		"google/gemma-4-31b-it:free":                 "429",
+		"qwen/qwen3-next-80b-a3b-instruct:free":   "ok",
 	}}
 	r, _, _ := newTestRouter(t, completer)
 	ctx := context.Background()
@@ -175,13 +175,13 @@ func TestRouter_StateBoundary_UnpinAttempt(t *testing.T) {
 
 	// Turn 2: gemma now healthy. With StateBoundary=true the router should
 	// retry primary; here gemma is now OK so the pin should move back to it.
-	completer.behavior["google/gemma-4-31b"] = "ok"
+	completer.behavior["google/gemma-4-31b-it:free"] = "ok"
 	resp, err := r.Call(ctx, []Message{{Role: "user", Content: "lagi"}},
 		CallOpts{ConversationID: "conv-6", StateBoundary: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.ModelUsed != "google/gemma-4-31b" {
+	if resp.ModelUsed != "google/gemma-4-31b-it:free" {
 		t.Errorf("expected state-boundary unpin back to gemma, got %q", resp.ModelUsed)
 	}
 }
@@ -203,7 +203,7 @@ func (c *longBodyCompleter) Complete(ctx context.Context, req CompletionRequest)
 
 func TestRouter_TripwireFlagsOnLongReply(t *testing.T) {
 	long := strings.Repeat("a", 900)
-	completer := &fakeCompleter{behavior: map[string]string{"google/gemma-4-31b": "ok"}}
+	completer := &fakeCompleter{behavior: map[string]string{"google/gemma-4-31b-it:free": "ok"}}
 	wrapper := &longBodyCompleter{inner: completer, body: long}
 
 	cooldownStore := &stubStore{loaded: map[string]CooldownEntry{}}
