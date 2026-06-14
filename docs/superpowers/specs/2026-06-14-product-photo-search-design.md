@@ -3,7 +3,8 @@
 **Status:** Approved (brainstormed 2026-06-13/14)
 **Owner:** tonywei
 **Mockups:** `docs/superpowers/specs/2026-06-13-product-photo-search-mockups/index.html`
-**Estimated effort:** Medium (1 sprint, ~5-7 hari dev)
+**Estimated effort:** Medium (1 sprint, ~9.5-10.5 hari dev)
+**Menu rename:** "Stok" → **"Produk &amp; Stok"** (mengikuti convention MSME tools: Jurnal Mekari "Produk &amp; Layanan", Moka/Pawoon "Produk"). Label match isi (catalog + stock ops dalam satu screen).
 
 ---
 
@@ -49,10 +50,31 @@ Spec ini siap untuk multi-tenant rollout (lihat `2026-06-13-multi-tenant-prerequ
 ### Boundaries
 
 Semua perubahan masuk ke modul existing:
-- Frontend: `StockManagerScreen.tsx`, `KasirScreen.tsx`, `PengaturanScreen.tsx`
+- Frontend: **`StockManagerScreen.tsx` di-refactor** (1051 baris → screen orchestrator + 5 child components untuk maintainability), `KasirScreen.tsx`, `PengaturanScreen.tsx`, `Sidebar.tsx` (rename label).
 - Service: `src/lib/supabaseClient.ts` (stockService extension), new `src/lib/productPhotoService.ts`
 - Backend Go: new `internal/gemini/embed.go` (Vision + embedding) + new Edge Function alternative
 - DB: extend tabel `stocks` (kolom baru), tabel baru `stock_photo_embeddings`, `product_brands`, `product_categories`, `product_units`, extend enum `approval_request_type` dengan `initial_stock`.
+
+### Menu &amp; Tab Structure (post-pivot)
+
+**Sidebar entry baru:** label "Produk &amp; Stok" menggantikan "Stok" di kategori `inventory`. `ActivePage` rename: `'ai-stock'` → `'produk-stok'` (atau biarkan internal `'ai-stock'` untuk kompatibilitas, hanya label berubah — keputusan implementasi).
+
+**Tab structure dalam screen "Produk &amp; Stok"** (tab pill di header screen, default tab = "Katalog"):
+
+| Tab | Isi | File komponen | Existing? |
+|---|---|---|---|
+| **📋 Katalog** | Grid card produk (thumbnail dominant), search, filter kategori/brand. Tombol "+ Tambah Barang" buka form (modal atau inline). | `CatalogGridView.tsx` (new) + `ProductForm.tsx` (new — full form yang kita design tadi: two-column + live preview) | Form: existing logic, di-extract |
+| **🏬 Stok per Gudang** | Tabel padat per produk + qty per warehouse + inline edit, transfer button. View untuk operasi stok harian. | `StockTableView.tsx` (extract dari existing) | Yes (existing) |
+| **📥 Bulk Upload** | CSV template download, export, upload. | `BulkUploadSection.tsx` (extract dari existing) | Yes (existing) |
+| **⚠️ Stok Tipis** | Filter shortcut produk dengan `stok ≤ min_stock` (per produk atau global). | Reuse `StockTableView.tsx` dengan filter prop | Yes (existing) |
+
+**File refactor `StockManagerScreen.tsx` (1051 baris) → orchestrator + 5 komponen:**
+- `StockManagerScreen.tsx` (~200 baris): orchestrator — load state, tab routing, current user, toast
+- `components/produk/CatalogGridView.tsx`: grid katalog
+- `components/produk/ProductForm.tsx`: form Tambah/Edit (two-column + live preview)
+- `components/produk/StockTableView.tsx`: tabel padat stok ops
+- `components/produk/BulkUploadSection.tsx`: CSV
+- `components/produk/PreviewCard.tsx`: live preview card (re-usable di form)
 
 ---
 
@@ -609,13 +631,20 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Update `StockItem` type di `src/types.ts`
 - Service methods di `stockService` untuk registry CRUD
 
-**Fase 2 — Form Stok Extension (2.5 hari)**
-- UI: section Identitas (SKU editable, Sub-Kategori, Satuan, multi-satuan)
-- UI: section Harga &amp; Persediaan (margin live, Batas Stok Min, banner approval, warehouse dropdown untuk Stok Awal)
+**Fase 2 — Refactor &amp; Form Produk (3 hari)**
+- Refactor `StockManagerScreen.tsx` (1051 baris) → orchestrator + 5 child components: `CatalogGridView`, `ProductForm`, `StockTableView`, `BulkUploadSection`, `PreviewCard`
+- Sidebar rename: "Stok" → "Produk &amp; Stok" + icon update (`Package` tetap atau `Inventory2`)
+- Tab pill structure di screen header (Katalog default / Stok per Gudang / Bulk Upload / Stok Tipis)
+- ProductForm: two-column layout (form left, sticky live preview right)
+- UI: card-stack Identitas (SKU editable, Sub-Kategori, Satuan, multi-satuan)
+- UI: card Harga &amp; Stok (margin live, Batas Stok Min, banner approval conditional, warehouse dropdown untuk Stok Awal)
 - UI: **Harga Modal dynamic label/mode** — query `stock_lots` count; baca `costing_method` dari `company_settings`; render Estimasi vs Aktual dengan badge + read-only state
-- UI: section Foto (5-slot grid, drag-drop, mandatory slot 1, client compress)
-- UI: section Deskripsi (textarea + tombol Generate)
-- Submit flow + validation
+- UI: card Foto (HERO slot 1 + 2×2 small slots 2-5, drag-drop, mandatory slot 1, client compress)
+- UI: card Spesifikasi (dinamis per kategori dari `CATEGORY_SPECS`, dengan generic fallback Aksesori pattern untuk kategori custom)
+- UI: card Pengaturan Lanjutan collapsible (multi-satuan + min stock + deskripsi + Generate from Photo)
+- PreviewCard live update: thumbnail, nama auto, harga, stok per gudang (dinamis dari `warehouses`)
+- Sticky bottom action bar
+- Submit flow + validation (min 1 foto, required fields, multi-satuan factor &gt; 1, unit ≠ unit_alt)
 
 **Fase 3 — AI Pipeline Backend (2 hari)**
 - `backend-go/internal/gemini/embed.go`: Vision describe + Embedding wrapper
@@ -643,4 +672,9 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Manual smoke per checklist
 - Update `progress.md`
 
-Total estimasi: **9-10 hari kerja** (1 sprint dengan buffer; +1.5 hari dari estimasi awal untuk harga modal dynamic + multi-warehouse stock display).
+Total estimasi: **9.5-10.5 hari kerja** (1 sprint dengan buffer). Berdasarkan beberapa revisi:
+- 8 hari (estimasi awal)
+- +1.5 hari (harga modal dynamic + multi-warehouse stock display)
+- +0.5 hari (rename menu + tab structure + file refactor untuk maintainability)
+- +0 hari (multi-tenant Change A + B — generalisasi tanpa extra effort)
+- +0 hari (Variant produk — tunda ke sprint berikut)

@@ -6047,3 +6047,20 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - **Schema Builder UI per tenant**: explicit deferred ke spec mandiri sprint berikutnya saat tenant non-elektrik onboard dengan kebutuhan konkrit. YAGNI.
 - **Estimasi sprint TIDAK berubah**: 9-10 hari (changes A + B adalah generalisasi gratis, no extra work).
 - **Tenant timeline asumsi**: tenant #2 elektrik 1-2 bulan ke depan = CATEGORY_SPECS elektrik reusable.
+
+## 2026-06-14 — Spec Product Photo: Round 5 — Menu rename + tab structure
+
+- **Spec & mockup**: updated
+- **Pivot decision setelah grilling user soal "kenapa tidak menu terpisah":**
+  - Saya admit reasoning error 2x dalam session ini (push-back awal "extend Stok" → setelah review konteks MSME, terkoreksi)
+  - Final: GABUNG (sesuai MSME convention Jurnal/Moka/Pawoon) + rename label
+- **Menu rename**: "Stok" → **"Produk & Stok"** di Sidebar entry. Label match isi (catalog + stock ops).
+- **Tab structure dalam screen Produk & Stok**:
+  - 📋 Katalog (default) — grid card produk dengan foto, search/filter, tombol Tambah
+  - 🏬 Stok per Gudang — tabel padat qty per warehouse, inline edit, transfer
+  - 📥 Bulk Upload — CSV template/export/import (existing)
+  - ⚠️ Stok Tipis — filter shortcut produk stok ≤ min
+- **File refactor `StockManagerScreen.tsx`** (1051 baris monster) → orchestrator (~200 lines) + 5 child components:
+  - `CatalogGridView.tsx`, `ProductForm.tsx`, `StockTableView.tsx`, `BulkUploadSection.tsx`, `PreviewCard.tsx`
+- **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
+- **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view

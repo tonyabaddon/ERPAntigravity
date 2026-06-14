@@ -62,9 +62,41 @@
     <div class="mb-5 flex items-end justify-between">
       <div>
         <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">Mockup 1 / 4 · REVAMPED</span>
-        <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Menu Stok → Tambah Barang Baru</h2>
-        <p class="text-xs text-[#43474e] mt-1">Two-column layout: form card-stack di kiri, live preview sticky di kanan. Foto hero di atas. Pengaturan lanjutan collapsible. Sticky action bar bawah. Multi-warehouse stock <strong>dinamis</strong> dari tabel <code class="bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">warehouses</code>.</p>
+        <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Menu <strong>Produk &amp; Stok</strong> → Tambah Barang Baru</h2>
+        <p class="text-xs text-[#43474e] mt-1">Menu di-rename dari "Stok" → "Produk &amp; Stok" supaya label match isi. Tab pill di header screen, default tab = Katalog. Form Tambah Barang di tab Katalog dengan two-column + live preview.</p>
       </div>
+    </div>
+
+    <!-- Tab pill demonstrasi -->
+    <div class="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm mb-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center">
+            <span class="material-symbols-outlined text-xl">inventory_2</span>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-[#012749]">Produk &amp; Stok</h3>
+            <p class="text-[10.5px] text-slate-500">Kelola master data produk &amp; operasi stok di satu tempat</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="px-4 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+          <span class="material-symbols-outlined text-base">grid_view</span> Katalog
+          <span class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">487</span>
+        </button>
+        <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-slate-200 inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">warehouse</span> Stok per Gudang
+        </button>
+        <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-slate-200 inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">upload_file</span> Bulk Upload
+        </button>
+        <button class="px-4 py-2 bg-amber-50 text-amber-900 border border-amber-200 rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-amber-100 inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">warning</span> Stok Tipis
+          <span class="text-[9px] bg-amber-600 text-white px-1.5 py-0.5 rounded-full">12</span>
+        </button>
+      </div>
+      <p class="text-[10.5px] text-slate-500 italic mt-3">Tab aktif: <strong>Katalog</strong> — grid card produk dengan foto, search/filter, tombol "+ Tambah Barang". Form Tambah Barang di bawah ini.</p>
     </div>
 
     <!-- ░░░ TWO-COLUMN GRID ░░░ -->
