@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — hotfix: catalog refresh after ProductForm submit — DONE
+
+User reported "products saved by Jenny user not showing up". Root cause: `StockManagerScreen` `onSubmit` callback closed the modal after `stockService.upsertProduct` resolved, but `stockList` in `App.tsx` was never refreshed and there is no realtime subscription on `stocks`. The row was in the DB; the UI just didn't re-fetch.
+
+- **Files modified:**
+  - `src/components/StockManagerScreen.tsx` — added `onStocksRefresh?: () => Promise<void> | void` to props; both ProductForm `onSubmit` handlers (add + edit) now `await onStocksRefresh?.()` between `upsertProduct` and modal close.
+  - `src/App.tsx` — pass existing `handleStockRefresh` (line 219, already does `fetchStocks` + map + `setStockList`) as `onStocksRefresh` to `<StockManagerScreen>`.
+- **Verification:** `npm run lint` → exit 0.
+- **Commit:** `0286772` on `feat/produk-stok-photo-impl`.
+- **Deploy:** Cloud Build `6b2e693c` SUCCESS (3m25s) → Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00063-2qn` serving 100% traffic at https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app.
+- **User action needed:** hard-refresh existing tabs to pull the new bundle + see the previously-saved products.
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.11: CatalogGridView + tab pill structure — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
