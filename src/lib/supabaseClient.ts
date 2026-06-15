@@ -19,6 +19,8 @@ import type {
   ProductCategory,
   ProductBrand,
   ProductUnit,
+  ProductPhoto,
+  StockItem,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -1244,6 +1246,37 @@ export const stockService = {
         { onConflict: 'sku' }
       );
     if (error) throw error;
+  },
+
+  async upsertProduct(input: {
+    sku: string;
+    name: string;
+    category: string;
+    subcategory: string | null;
+    unit: string;
+    unit_alt: string | null;
+    unit_alt_factor: number | null;
+    price: number;
+    harga_modal: number | null;
+    description: string | null;
+    min_stock_per_product: number | null;
+    photo_urls: ProductPhoto[];
+    specs: Record<string, string | number>;
+    initial_stock_approved: boolean;
+  }): Promise<StockItem> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('stocks')
+      .upsert({
+        ...input,
+        status: 'Sinkron',
+        stock: 0,           // M5 search RPC reads stock_levels; stocks.stock is derived
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'sku' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as StockItem;
   },
 };
 

@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.9: ProductForm submit + validation — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified/created:**
+  - `src/lib/supabaseClient.ts` — added `stockService.upsertProduct(input)` that writes to `stocks` via upsert-on-`sku` with `status: 'Sinkron'`, `stock: 0` (real qty derived from `stock_levels` via M5 search RPC) and `updated_at: now()`. Returns the inserted/updated `StockItem` via `.select().single()`. Imports `ProductPhoto` and `StockItem` from `../types`. Input shape is the full new-product payload: sku, name, category, subcategory, unit, unit_alt, unit_alt_factor, price, harga_modal, description, min_stock_per_product, photo_urls, specs, initial_stock_approved.
+  - `src/components/produk/ProductForm.tsx` — added top-level `validate(input)` helper that returns a `ValidationError[]` (field-tagged): rejects empty category/unit, `price ≤ 0`, `photos < 1`, half-filled multi-satuan (only one of `unitAlt`/`unitAltFactor` set), `unitAlt === unit`, and `unitAltFactor ≤ 1`. Removed the `void onSubmit` placeholder. Added `submitting` state and `handleSubmit()` that (a) counts only `status === 'uploaded'` photos toward the min-1-foto check, (b) shows the first validation error as a `warning` toast and bails, (c) builds the `Partial<StockItem>` payload using `finalSku = sku.trim() || autoSku` (same value used during photo upload), `name` from `generateName(category, specs)`, `subcategory || null`, only uploaded photos mapped to bare `{url, path, order, uploaded_at}` (drops localUrl/status/progress), `initial_stock_approved = (stokAwal === 0)` (zero stock auto-approved; nonzero stock pending owner approval per Task 2.10), and awaits `onSubmit`. Success → `'✅ Produk berhasil ditambahkan'` toast; failure → `'Gagal menyimpan: …'` warning. Submit button now uses `type="button"`, `onClick={handleSubmit}`, `disabled={submitting}`, emerald `#2d8a4e`/hover-emerald-700 styling, label flips to `'Menyimpan…'` while submitting. File grew from **633 → 695 lines** (+62).
+  - `src/components/produk/productFormValidate.test.ts` (new) — 5 vitest cases verifying: minimal valid input passes (empty errors), 0 photos → `photos` field error, `factor=1` → `unit_alt_factor` error, `unitAlt === unit` → `unit_alt` error, half-multi-satuan (`unitAlt` set, factor null) → `multi_satuan` error. Validator is a local copy of the production helper (kept in-test so it's a pure unit test with no React/jsdom dependency).
+- **Verification:** `npx vitest run src/components/produk/productFormValidate.test.ts` → 5/5 passing in 80ms. `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics. Full `npm run test` → 25/25 across 6 files.
+- **Next:** Task 2.10 — initial stock approval flow (wire the `initial_stock_approved = false` branch to create an `approval_request` for owner sign-off on first-time stock counts).
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.8: ProductForm Pengaturan Lanjutan — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/components/produk/ProductForm.tsx` — added collapsible `<details>` "Pengaturan Lanjutan" card between Harga & Stok and the action-buttons row. New state: `unitAlt` / `unitAltFactor` / `multiSatuanOn` (multi-satuan konversi — secondary unit + factor; checkbox toggles section, dropdown filters out the primary `unit`, factor input has `min={2}`), `minStockPerProduct` (per-product low-stock threshold; empty = use global setting), `description` (max 500 chars, hard-clamped via `.slice(0, 500)` on each change with `n / 500` counter). Includes a stub "✨ Generate dari Foto" button — disabled when `photos.length === 0`, otherwise shows an info toast (real backend wiring lands in Phase 3 Task 3.6). Card uses `group group-open:rotate-180` on the chevron for the open/close affordance. State is read in Task 2.9's submit handler. File grew from **546 → 633 lines** (+87).
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.9 — ProductForm submit + validation.
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.6: ProductForm Foto card — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)

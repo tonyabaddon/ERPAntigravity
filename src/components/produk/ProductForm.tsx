@@ -19,9 +19,31 @@ function generateSkuId(): string {
     .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export default function ProductForm({ initial, warehouses, onCancel, onSubmit, showToast }: Props) {
-  void onSubmit; // wired in Task 2.9
+interface ValidationError { field: string; message: string; }
 
+function validate(input: {
+  category: string; unit: string; price: number; photos: number;
+  unitAlt: string | null; unitAltFactor: number | null;
+}): ValidationError[] {
+  const errs: ValidationError[] = [];
+  if (!input.category) errs.push({ field: 'category', message: 'Kategori wajib dipilih' });
+  if (!input.unit) errs.push({ field: 'unit', message: 'Satuan wajib dipilih' });
+  if (!input.price || input.price <= 0) errs.push({ field: 'price', message: 'Harga Jual harus > 0' });
+  if (input.photos < 1) errs.push({ field: 'photos', message: 'Minimal 1 foto produk wajib' });
+  // Multi-satuan
+  if ((input.unitAlt && !input.unitAltFactor) || (!input.unitAlt && input.unitAltFactor)) {
+    errs.push({ field: 'multi_satuan', message: 'Multi-satuan: keduanya harus diisi atau dikosongkan' });
+  }
+  if (input.unitAlt && input.unitAlt === input.unit) {
+    errs.push({ field: 'unit_alt', message: 'Satuan Kedua tidak boleh sama dengan Satuan Utama' });
+  }
+  if (input.unitAltFactor !== null && input.unitAltFactor <= 1) {
+    errs.push({ field: 'unit_alt_factor', message: 'Faktor konversi harus > 1' });
+  }
+  return errs;
+}
+
+export default function ProductForm({ initial, warehouses, onCancel, onSubmit, showToast }: Props) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [units, setUnits] = useState<ProductUnit[]>([]);
@@ -85,6 +107,45 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
 
   const hargaModalIsAktual = lotsCount > 0;
   const marginPct = hargaModal && price ? ((price - hargaModal) / price) * 100 : null;
+
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit() {
+    const uploadedCount = photos.filter(p => p.status === 'uploaded').length;
+    const errs = validate({
+      category, unit, price, photos: uploadedCount,
+      unitAlt, unitAltFactor,
+    });
+    if (errs.length) {
+      showToast(errs[0].message, 'warning');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const finalSku = sku.trim() || autoSku;
+      await onSubmit({
+        sku: finalSku,
+        name: generateName(category, specs),
+        category,
+        subcategory: subcategory || null,
+        unit,
+        unit_alt: unitAlt,
+        unit_alt_factor: unitAltFactor,
+        price,
+        harga_modal: hargaModal,
+        description: description || null,
+        min_stock_per_product: minStockPerProduct,
+        photo_urls: photos.filter(p => p.status === 'uploaded').map(({ url, path, order, uploaded_at }) => ({ url, path, order, uploaded_at })),
+        specs,
+        initial_stock_approved: stokAwal === 0,
+      } as Partial<StockItem>);
+      showToast('✅ Produk berhasil ditambahkan');
+    } catch (e) {
+      showToast('Gagal menyimpan: ' + (e as Error).message, 'warning');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleFilesPicked(files: FileList | null, targetSku: string) {
     if (!files || files.length === 0) return;
@@ -411,11 +472,12 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
             Batal
           </button>
           <button
-            disabled
-            className="px-5 py-2 bg-slate-300 text-white rounded-full text-xs font-bold cursor-not-allowed"
-            title="Submit wires up in Task 2.9"
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-bold cursor-pointer hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Tambahkan Produk
+            {submitting ? 'Menyimpan…' : 'Tambahkan Produk'}
           </button>
         </div>
       </div>
