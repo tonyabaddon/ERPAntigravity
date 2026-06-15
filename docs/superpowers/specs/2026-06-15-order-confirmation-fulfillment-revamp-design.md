@@ -51,23 +51,22 @@ In parallel, the founder requested a complete fulfillment lifecycle: PROCESSING 
 ### Sidebar structure
 
 ```
-📥 Inbox       — WA-channel chat workspace. Quick-action card per
-                  conversation with "Buka Detail" deep-link.
-                  Future: IG DM, Marketplace AI chat.
+📥 Inbox       — Chat workspace. Quick-action card per conversation
+                  with "Buka Detail" deep-link.
+                  Channel: WhatsApp now. Future: IG DM, Marketplace AI chat.
 
-📦 Pesanan     — Multi-channel order workspace (single source of truth).
-                  Funnel view, all channels, full action capabilities.
-
-💰 Penjualan   — Stays for new transaction input.
-                  Tabs: Baru (Input Baru wizard) | WIP Rakit
-                  Riwayat tab REMOVED (now in Pesanan menu).
+💰 Penjualan   — Order management hub. Tabs:
+                    ├ Baru              (Input Baru 3-step wizard)
+                    ├ Pesanan Aktif     (6-stage funnel — multi-channel
+                    │                    source of truth, REPLACES Riwayat)
+                    └ WIP Rakit         (existing)
 
 ⚙️ Pengaturan  — Adds: Alamat Toko, Jam Operasional.
 ```
 
-### Inbox → Pesanan navigation
+### Inbox → Penjualan navigation
 
-Inbox right-panel card shows order summary + status badge. The `Buka Detail` button performs same-window navigation to `/pesanan?order={id}` (URL-stateful), which opens the Pesanan funnel view with that order pre-expanded into its action panel. Browser back returns to Inbox at the same conversation.
+Inbox right-panel card shows order summary + status badge. The `Buka Detail` button performs same-window navigation to `/penjualan?tab=pesanan-aktif&order={id}` (URL-stateful), which opens the Penjualan menu, selects the Pesanan Aktif tab, scrolls to and expands the order into its action panel. Browser back returns to Inbox at the same conversation.
 
 ### Component layering
 
@@ -321,6 +320,286 @@ PDF generation runs server-side in Go using a PDF library (gopdf, unipdf, or chr
 
 `orders.sales_order_revision` integer column. If admin edits an `APPROVED` order (e.g. ongkir change), a new SO PDF is generated with revision suffix in filename (`SO-2026-00012-Rev2.pdf`) and `sales_order_revision++`. Old revision PDFs retained for audit.
 
+### Print format support
+
+- **A4 PDF**: default for all customer-facing documents (SO, Invoice variants, Surat Jalan). Standard browser print dialog.
+- **Dot Matrix**: supported for Invoice (Lunas, Tempo) and Surat Jalan at counter print. Uses the existing dot matrix print path (per progress.md history, Kasir flow already supports dot matrix). Admin chooses "Print A4" or "Print Dot Matrix" at the print moment.
+- **Thermal printer**: out of scope this phase.
+
+## Stock Reservation & Inventory
+
+### Decision: stock decrements on payment commitment, not on approval
+
+Stock change events:
+
+| Event | Stock change | Reason |
+|---|---|---|
+| Order created (`PENDING_ADMIN_CONFIRMATION`) | None | Customer not yet committed |
+| Admin approves (`PENDING → APPROVED`) | None | Still waiting customer to pay |
+| `DP_UPLOADED → DP_VERIFIED` | **Decrement** | Customer paid DP — committed |
+| `PAYMENT_UPLOADED → PAYMENT_VERIFIED` (when no prior DP) | **Decrement** | Customer paid full — committed |
+| Walk-in / Pameran / Marketplace direct `PROCESSING` save | **Decrement on save** | Payment already verified |
+| Walk-in cash `COMPLETED` direct (Lunas Kasir) | **Decrement on save** | Cash received at counter |
+| Order cancelled or rejected AFTER stock decremented | **Restock** | Goods returned to available inventory |
+| Order modification reduces qty | **Restock the delta** | Reduced demand |
+| Order modification increases qty | **Decrement the delta** | Increased demand; check availability first |
+
+### Why not earlier (e.g., at APPROVED)?
+
+A customer who confirms but never pays is common. Reserving stock at APPROVED would leak inventory to phantom orders, blocking real paying customers. By tying decrement to DP_VERIFIED / PAYMENT_VERIFIED, stock only moves when there's real commitment.
+
+### Overselling guard
+
+The `verify_payment` / `verify_dp` actions must run an atomic check: if any cart item lacks enough stock, the verify fails with `STOCK_INSUFFICIENT`. Admin sees a modal listing shortfall per SKU and decides:
+
+1. Reject the payment (and notify customer for refund).
+2. Substitute item (modify order — see next section).
+3. Override (rare; allows negative stock for accounting hand-correction).
+
+Stored procedure / RPC ensures atomicity: stock check + decrement + status update all in one transaction.
+
+### Cancel + restock
+
+When admin cancels or system auto-cancels an order:
+
+- Check `orders.stock_decremented_at` timestamp column (new).
+- If not null, restock each item via inverse of decrement RPC.
+- Set `orders.stock_restocked_at`, retain `stock_decremented_at` for audit.
+
+## Order Modification After APPROVED
+
+### Allowed edits
+
+Editable until `DISPATCHED`. After `DISPATCHED`, frozen — modifications require Cancel + create new order.
+
+| Field | Editable in | Side effects |
+|---|---|---|
+| Ongkir | APPROVED → READY_AWAITING_PAYMENT | Update `total`, regenerate SO PDF (rev++), notify customer (`order_modified` template) |
+| Alamat | APPROVED → DISPATCHED | Update `customer_address`, no SO regenerate (cosmetic) |
+| Cart items (add) | APPROVED → PROCESSING | Recompute total, stock check delta, regenerate SO PDF |
+| Cart items (remove) | APPROVED → PROCESSING | Recompute total, restock delta, regenerate SO PDF |
+| Cart item qty | APPROVED → PROCESSING | Recompute, stock delta, regenerate SO PDF |
+| Customer name / phone | any pre-DISPATCHED | Update fields, no doc regen |
+| Notes (internal) | any | Update field only |
+
+### Modification audit
+
+New table `order_modifications`:
+
+```sql
+CREATE TABLE order_modifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id),
+  modified_by_user_id UUID,
+  modification_type TEXT,    -- 'ongkir' | 'cart_add' | 'cart_remove' | 'address' | etc
+  before_value JSONB,
+  after_value JSONB,
+  reason TEXT,                -- required from admin
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+Admin must provide a short `reason` (free-text, e.g., "customer minta tambah 5 unit") before saving any modification.
+
+### UI
+
+Order action panel exposes "Edit Order" button when status allows. Opens a modal with editable fields highlighted. Save triggers SO regenerate + WA notification + audit log entry.
+
+## Admin Alerts & Stuck Order Detection
+
+### Stuck definitions
+
+| Stage | Stuck threshold | Reason |
+|---|---|---|
+| Stage 2 Konfirmasi & Tunggu Bayar | 7 days no payment | Customer ghosted or forgot |
+| Stage 2 with `DP_VERIFIED` (waiting full) | 7 days no pelunasan | Customer needs reminder |
+| Stage 3 Diproses | 3 days no progress | Admin forgot |
+| Stage 4 `AWAITING_CUSTOMER_CONFIRMATION` (pickup, no auto-timer) | 3 days no admin mark | Admin forgot pickup confirmation |
+| Stage 4 `DELIVERY_ISSUE` | 1 day unresolved | Customer waiting for response |
+
+### Alert delivery
+
+Phase 1: **Dashboard widget** on the home dashboard page. Shows stuck order count per category with link to the relevant stage in funnel. Updates via Supabase realtime.
+
+```
+┌─────────────────────────────────────────┐
+│ ⚠️  Pesanan Perlu Perhatian             │
+├─────────────────────────────────────────┤
+│ 💰 3 tunggu bayar > 7 hari   →          │
+│ 📦 1 sedang DP_VERIFIED > 7 hari →      │
+│ 🚚 2 pickup tunggu konfirmasi > 3 hari →│
+│ 🆘 1 DELIVERY_ISSUE unresolved →        │
+└─────────────────────────────────────────┘
+```
+
+Phase 2 (deferred): WA push to admin owner number when stuck conditions arise (configurable in Pengaturan).
+
+### Background job
+
+A cron-like Go routine runs every hour:
+
+1. Query orders matching stuck criteria.
+2. Update internal `stuck_alert_flag` field (new column `orders.stuck_alert_at`) so frontend can highlight rows in funnel.
+3. (Phase 2) Send WA to admin numbers in `notification_recipients` table.
+
+## PDF Template Layouts
+
+### Common header (all customer-facing documents)
+
+```
+┌─────────────────────────────────────────────────────┐
+│ {store_name}                              {doc_no}  │
+│ {store_address}                           {date}    │
+│ {store_city}                                        │
+│ Telp/WA: {store_phone}                              │
+│ ────────────────────────────────────────────────── │
+```
+
+### Sales Order layout (`SO/2026/00001`)
+
+```
+[COMMON HEADER]
+
+PESANAN PENJUALAN
+
+Kepada:                          Pengiriman:
+{customer_name}                  {delivery_type}
+{customer_company (if any)}      {customer_address}
+Telp/WA: {customer_phone}
+
+ITEM:
+┌────┬─────────────────────────┬─────┬───────────┬──────────────┐
+│ No │ Nama Produk             │ Qty │ Harga     │ Subtotal     │
+├────┼─────────────────────────┼─────┼───────────┼──────────────┤
+│ 1  │ Kabel NYM 2.5mm² 100m   │ 10  │ 380,000   │ 3,800,000    │
+│ 2  │ MCB Schneider 16A       │ 2   │ 120,000   │   240,000    │
+└────┴─────────────────────────┴─────┴───────────┴──────────────┘
+
+Subtotal:                                          4,040,000
+Ongkir:                                              100,000
+Diskon (-):                                                0
+                                                  ───────────
+TOTAL:                                  Rp       4,140,000
+
+Tipe Pembayaran: {payment_type}     (Lunas / DP / Tempo)
+Jika DP:
+  DP wajib dibayar:                   Rp       2,070,000  (50%)
+  Sisa pelunasan:                     Rp       2,070,000
+
+Cara Pembayaran:
+  Transfer ke: {bank_info_from_settings}
+  Atau Cash/EDC di toko
+
+CATATAN:
+{notes_if_any}
+
+Mohon konfirmasi pembayaran dengan upload bukti transfer
+via WhatsApp ke nomor kami.
+
+Terima kasih atas kepercayaannya 🙏
+```
+
+### Invoice DP layout (`INV-DP/2026/00001`)
+
+```
+[COMMON HEADER]
+
+KWITANSI DOWN PAYMENT (DP)
+
+Pelanggan: {customer_name}
+Nomor Pesanan: {order_id_short}
+
+Total Pesanan:                          Rp       4,140,000
+DP Diterima:                            Rp       2,070,000  ← bold
+Sisa Pelunasan:                         Rp       2,070,000
+Tanggal Pelunasan: paling lambat sebelum barang dikirim
+
+Metode Pembayaran: {payment_method}
+Tanggal Diterima: {dp_verified_at}
+Diverifikasi oleh: {verified_by}
+
+[STATUS: DP DITERIMA — Menunggu Pelunasan]
+
+Item pesanan (sebagaimana SO #{sales_order_no}):
+[items table same format as SO]
+
+Terima kasih 🙏
+```
+
+### Invoice Pelunasan / Lunas layout (`INV/2026/00001`)
+
+```
+[COMMON HEADER]
+
+INVOICE PENJUALAN
+
+Pelanggan: {customer_name}
+Nomor Pesanan: {order_id_short}
+
+[items table]
+
+Subtotal:                                          4,040,000
+Ongkir:                                              100,000
+                                                  ───────────
+TOTAL:                                  Rp       4,140,000
+
+PEMBAYARAN:
+  {if DP path:}
+    DP (verified {dp_date}):              Rp     2,070,000
+    Pelunasan (verified {final_date}):    Rp     2,070,000
+  {else:}
+    Lunas (verified {final_date}):        Rp     4,140,000
+
+═══════════════════════════════════════════════════════════
+   STATUS: ✓ LUNAS                                          
+═══════════════════════════════════════════════════════════
+
+Diverifikasi oleh: {verified_by}
+Metode Pembayaran: {payment_method}
+```
+
+### Invoice Tempo layout (`INV/2026/00001-T`)
+
+Same as Invoice but with `STATUS: TEMPO — Jatuh Tempo {due_date}` and bank info displayed for payment.
+
+### Surat Jalan layout (`SJ/2026/00001`)
+
+```
+[COMMON HEADER]
+
+SURAT JALAN / DELIVERY ORDER
+
+Kepada:                          Dari:
+{customer_name}                  {store_name}
+{customer_company (if any)}      {store_address}
+{customer_address}               (Pengirim)
+
+Nomor Pesanan: {order_id_short}
+Metode: {delivery_type}        ({delivery / pickup})
+Tanggal Cetak: {today}
+Kurir / Tracking: {courier_tracking_link (jika delivery)}
+
+ITEM YANG DIKIRIM:
+┌────┬─────────────────────────┬─────┬──────────────┐
+│ No │ Nama Produk             │ Qty │ Catatan      │
+├────┼─────────────────────────┼─────┼──────────────┤
+│ 1  │ Kabel NYM 2.5mm² 100m   │ 10  │ Roll terikat │
+│ 2  │ MCB Schneider 16A       │ 2   │              │
+└────┴─────────────────────────┴─────┴──────────────┘
+
+TANDA TERIMA:
+
+Nama Penerima:    ____________________
+
+Tanggal/Jam:      ____________________
+
+Tanda Tangan:     ____________________
+
+
+Diserahkan oleh: ____________________
+{store_name} Staff
+```
+
 ## WA Notification Templates
 
 Hardcoded in code this phase (configurable in Pengaturan Phase 2). Templates fire only for channels with customer WA contact.
@@ -469,7 +748,24 @@ ALTER TABLE orders
   ADD COLUMN IF NOT EXISTS invoice_dp_pdf_url TEXT,
   ADD COLUMN IF NOT EXISTS invoice_final_pdf_url TEXT,
   ADD COLUMN IF NOT EXISTS surat_jalan_pdf_url TEXT,
-  ADD COLUMN IF NOT EXISTS surat_jalan_printed_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS surat_jalan_printed_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS stock_decremented_at TIMESTAMPTZ,  -- when inventory was decremented
+  ADD COLUMN IF NOT EXISTS stock_restocked_at TIMESTAMPTZ,    -- when inventory was returned (cancel)
+  ADD COLUMN IF NOT EXISTS stuck_alert_at TIMESTAMPTZ;        -- flagged by stuck-order job
+
+-- 2b. Order modification audit log
+CREATE TABLE IF NOT EXISTS order_modifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  modified_by_user_id UUID,
+  modification_type TEXT NOT NULL,
+    -- 'ongkir' | 'cart_add' | 'cart_remove' | 'cart_qty' | 'address' | 'customer' | 'notes'
+  before_value JSONB,
+  after_value JSONB,
+  reason TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_order_modifications_order_id ON order_modifications(order_id);
 
 -- 3. Store settings
 CREATE TABLE IF NOT EXISTS store_settings (
@@ -518,26 +814,30 @@ The `Riwayat` tab's data simply moves to Stage 5 and Stage 6 in the new Pesanan 
 
 Total effort estimate: 3–5 weeks solo dev.
 
-### Phase 1A — Foundation (1–2 weeks)
+### Phase 1A — Foundation + Inventory (2 weeks)
 
-- Migration `20260615000002` applied.
-- Pesanan top-level menu in sidebar (`/pesanan` route).
+- Migration `20260615000002` applied (enum + columns + `order_modifications` + `store_settings` + `doc_number_counters`).
+- New `Penjualan > Pesanan Aktif` tab (replaces `Riwayat`).
 - 6-stage funnel skeleton with stage-to-status mapping.
 - Global controls (search, channel, date, sort) and per-stage summary headers.
 - `<OrderActionPanel>` component with per-status action layouts.
 - State machine code paths for all new transitions.
-- Inbox `Buka Detail` button + deep-link routing.
-- Remove `Penjualan > Riwayat` tab.
-- Channel-specific entry rules for Input Baru (paths defined but form unchanged in this sub-phase).
+- Inbox `Buka Detail` button + deep-link routing to `/penjualan?tab=pesanan-aktif&order={id}`.
+- Channel-specific entry rules for Input Baru (paths defined; form revamp deferred to 1C).
+- **Stock reservation + cancel restock** (atomic RPC, `verify_payment` / `verify_dp` integrated).
+- **Order modification flow** with `order_modifications` audit table.
+- Supabase realtime subscription pattern for funnel auto-update.
 
-### Phase 1B — Documents & Notifications (1–2 weeks)
+### Phase 1B — Documents, Notifications & Alerts (2 weeks)
 
-- Pengaturan additions: Alamat Toko, Jam Operasional.
-- PDF generation pipeline (library choice + templates for SO, Invoice variants, Surat Jalan).
-- Document numbering counters.
-- WA template wiring (10 templates) with conditional channel logic.
+- Pengaturan additions: Alamat Toko (with required Google Maps), Jam Operasional.
+- PDF generation pipeline (library choice — gopdf or chromedp HTML→PDF).
+- Six PDF templates wired (SO, Invoice DP, Invoice Pelunasan, Invoice Lunas, Invoice Tempo, Surat Jalan) matching layout specs.
+- Document numbering counters with annual reset logic.
+- WA template wiring (10 templates) with conditional channel logic (chat-only).
 - WA attachment delivery (whatsmeow `SendDocument`).
-- Counter print mechanism for offline channels (PDF download + print dialog).
+- Counter print for offline channels — A4 default + **Dot Matrix support** (reuse existing Kasir dot matrix path).
+- **Stuck-order detection cron + dashboard widget** (5 stuck categories).
 
 ### Phase 1C — Input Baru Wizard Revamp (1 week)
 
@@ -546,6 +846,7 @@ Total effort estimate: 3–5 weeks solo dev.
 - Live status preview ("→ akan masuk ke Stage X").
 - Smart save button label.
 - Keep Jasa Rakit + Jasa Custom Panel paths intact.
+- Channel-aware print trigger on save (A4 / dot matrix selector).
 
 ### Acceptance criteria for Phase 1
 
@@ -556,18 +857,27 @@ Total effort estimate: 3–5 weeks solo dev.
 5. Customer received receives `order_completed` WA with Google Maps review link.
 6. Pickup orders cannot be auto-completed; admin must manually mark.
 7. Auto-timer fires exactly once at 24h reminder + 72h auto-complete (no spam).
+8. **Stock decrements at DP/Full payment verification, NOT at APPROVED.** Cancel after decrement restocks atomically. Concurrent payment verifies cannot oversell (atomic check + decrement).
+9. **Order modification (ongkir/items/address) recorded in `order_modifications` audit table** with reason field. SO PDF regenerated with `Rev2` suffix when ongkir or items change.
+10. **Stuck-order dashboard widget** shows correct counts and links into the relevant funnel stage. Background cron fires hourly.
+11. **Dot matrix print works** for Invoice + Surat Jalan at counter — reuses existing Kasir dot matrix print path.
 
 ## Out of Scope (Phase 2+)
 
 - Customer self-service order tracking page (mobile-friendly URL).
 - Marketplace API integrations (Tokopedia/Shopee/etc. webhooks).
-- Mass operations (mass email, bulk export, mass mark-as-paid).
+- Mass operations (mass print, bulk export, mass mark-as-paid).
 - Configurable WA notification templates in Pengaturan.
 - Configurable per-channel "send PDF via WA" toggle.
 - B2B document chain for high-volume Grosir (separate Penawaran/SO/Surat Jalan as distinct documents with conversion UI à la Jurnal.id).
-- Dot Matrix print format support.
 - IG DM channel implementation.
 - Website Sendiri channel implementation.
+- WA push alerts to admin for stuck orders (Phase 1 = dashboard widget only).
+- Refund flow (post-cancellation customer reimbursement).
+- Multi-admin row locking (rare for current solo founder team).
+- **Email delivery for SO/Invoice** — confirmed NOT needed per founder; offline channels use counter print, chat channels use WA attachment.
+- Thermal printer format.
+- Full piutang/tempo workflow integration — `WAITING_PAYMENT_TEMPO` state exists as a placeholder; deeper integration with menu Pelanggan piutang remains in existing tempo flow until a dedicated tempo spec.
 
 ## Risks & Mitigations
 
@@ -592,4 +902,5 @@ Total effort estimate: 3–5 weeks solo dev.
 ## Open Questions
 
 - **Walk-in (delivery, saved WA) confirmation watcher**: when admin sends a dispatch WA to a walk-in customer with saved WA number, does the Calista listener route their reply through the same confirmation parser as native WA orders? Spec assumes yes (any incoming WA reply to an order in `AWAITING_CUSTOMER_CONFIRMATION` is parsed regardless of origin channel). Implementation should verify whatsmeow's message-routing scope.
-- **WAITING_PAYMENT_TEMPO integration**: state exists in this spec, but actual integration with existing piutang/tempo system (Pelanggan menu) is out of scope and will be handled in the implementation plan.
+- **`WAITING_PAYMENT_TEMPO` minimal integration**: state exists for funnel visibility; the actual tempo workflow (aging buckets, reminders, follow-up cadence) continues to live in menu Pelanggan's piutang/tempo features. Implementation plan needs to confirm the read-only link from this funnel stage back to the Pelanggan piutang detail view.
+- **Concurrent payment verification ordering**: if two admins click "Verify Payment" on different orders that share a low-stock SKU simultaneously, the atomic RPC will let the first succeed and the second receive `STOCK_INSUFFICIENT`. Implementation plan should define exact RPC semantics and admin-facing error messages.
