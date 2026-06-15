@@ -107,6 +107,21 @@ MIGRATIONS=(
   # request: validates activated + reason≥5. approve: type-guarded +
   # verify_owner_pin; UPDATE allows_tempo=false (retains term_days/credit_limit as audit).
   "20260614000014_customer_credit_deactivate_rpcs.sql"
+
+  # ─── BNL Phase 1 (Belanja Numpang Lewat) — 5 migrations ───
+  # T1: purchase_invoices + purchase_invoice_items schema + indexes + RLS +
+  # set_updated_at trigger. type='PASSTHROUGH' (Phase 1) vs 'STOCK' (Phase 2 reserved).
+  "20260615000001_pi_schema.sql"
+  # T1.5: ALTER TYPE kasir_expense_category ADD VALUE 'Pembelian Pass-Through'.
+  # Must apply BEFORE RPCs that reference this enum value.
+  "20260615000002_pi_kasir_enum.sql"
+  # T2: generate_pi_number + record_pi RPCs with BR6 soft duplicate warning.
+  "20260615000003_pi_rpcs_create.sql"
+  # T3: mark_pi_paid + void_pi + update_pi lifecycle RPCs.
+  "20260615000004_pi_rpcs_lifecycle.sql"
+  # T4: order_cogs_breakdown view — allocates PI cost to Order items via
+  # jsonb_array_elements(orders.items) since there's no order_items table.
+  "20260615000005_order_cogs_breakdown_view.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
