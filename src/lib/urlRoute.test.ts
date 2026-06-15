@@ -63,3 +63,52 @@ describe('urlRoute.parseSearch', () => {
     expect(parseSearch('screen=dashboard')).toEqual({ screen: 'dashboard', params: {} });
   });
 });
+
+import { shouldInterceptClick } from './urlRoute';
+
+type MockEvent = {
+  button: number;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+};
+
+const ev = (overrides: Partial<MockEvent> = {}): MockEvent => ({
+  button: 0,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  altKey: false,
+  ...overrides,
+});
+
+describe('urlRoute.shouldInterceptClick', () => {
+  test('plain left-click → intercept (true)', () => {
+    expect(shouldInterceptClick(ev())).toBe(true);
+  });
+
+  test('Ctrl+left-click → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ ctrlKey: true }))).toBe(false);
+  });
+
+  test('Cmd+left-click → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ metaKey: true }))).toBe(false);
+  });
+
+  test('Shift+left-click → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ shiftKey: true }))).toBe(false);
+  });
+
+  test('Alt+left-click → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ altKey: true }))).toBe(false);
+  });
+
+  test('middle-click (button=1) → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ button: 1 }))).toBe(false);
+  });
+
+  test('right-click (button=2) → no intercept (false)', () => {
+    expect(shouldInterceptClick(ev({ button: 2 }))).toBe(false);
+  });
+});

@@ -76,3 +76,23 @@ export function parseSearch(search: string): RouteState {
   params.forEach((value, key) => { out[key] = value; });
   return { screen, params: out };
 }
+
+/**
+ * Pure: decide whether this click should be intercepted for SPA navigation
+ * (preventDefault + pushState) or left to the browser's native handling
+ * (which is what opens new tabs / new windows).
+ *
+ * Intercept only plain left-click. Any modifier (Ctrl/Cmd/Shift/Alt) or
+ * non-left button falls through to the browser.
+ */
+export function shouldInterceptClick(e: {
+  button: number;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+}): boolean {
+  if (e.button !== 0) return false;
+  if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return false;
+  return true;
+}
