@@ -76,6 +76,13 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
     if (initial?.sku) void stockLotsService.countForSku(initial.sku).then(setLotsCount).catch(() => {});
   }, [initial?.sku]);
 
+  // ─── Pengaturan Lanjutan state (Task 2.8) ───
+  const [unitAlt, setUnitAlt] = useState<string | null>(initial?.unit_alt ?? null);
+  const [unitAltFactor, setUnitAltFactor] = useState<number | null>(initial?.unit_alt_factor ?? null);
+  const [description, setDescription] = useState<string>(initial?.description ?? '');
+  const [multiSatuanOn, setMultiSatuanOn] = useState<boolean>(!!initial?.unit_alt);
+  const [minStockPerProduct, setMinStockPerProduct] = useState<number | null>(initial?.min_stock_per_product ?? null);
+
   const hargaModalIsAktual = lotsCount > 0;
   const marginPct = hargaModal && price ? ((price - hargaModal) / price) * 100 : null;
 
@@ -317,7 +324,87 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
           </div>
         </div>
 
-        {/* Task 2.8 (Pengaturan Lanjutan) will be added here */}
+        {/* Card: Pengaturan Lanjutan (collapsible) */}
+        <details className="bg-white rounded-3xl border border-[#e5eeff] shadow-sm group">
+          <summary className="cursor-pointer p-6 flex items-center gap-3 list-none">
+            <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-xl">tune</span>
+            </div>
+            <div className="flex-1">
+              <h5 className="text-sm font-extrabold text-[#012749]">Pengaturan Lanjutan</h5>
+              <p className="text-[10.5px] text-slate-500">Multi-satuan, batas stok min, deskripsi — opsional</p>
+            </div>
+            <span className="material-symbols-outlined text-slate-400 transition group-open:rotate-180">expand_more</span>
+          </summary>
+          <div className="px-6 pb-6 space-y-4 border-t border-slate-100 pt-4">
+            {/* Multi-satuan */}
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={multiSatuanOn}
+                       onChange={e => {
+                         const on = e.target.checked;
+                         setMultiSatuanOn(on);
+                         if (!on) { setUnitAlt(null); setUnitAltFactor(null); }
+                       }}
+                       className="accent-emerald-600 w-3.5 h-3.5" />
+                <span className="text-[11px] font-extrabold text-[#012749]">Aktifkan multi-satuan konversi</span>
+              </label>
+              {multiSatuanOn && (
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">1 Paket (Sekunder)</label>
+                    <select value={unitAlt ?? ''} onChange={e => setUnitAlt(e.target.value || null)}
+                            className="w-full bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold">
+                      <option value="">—</option>
+                      {units.filter(u => u.name !== unit).map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-center pb-1.5"><span className="text-base font-black text-slate-400">=</span></div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Berapa</label>
+                    <input type="number" min={2} value={unitAltFactor ?? ''} onChange={e => setUnitAltFactor(Number(e.target.value) || null)}
+                           className="w-full bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Satuan Utama</label>
+                    <input readOnly value={unit} className="w-full bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
+                  </div>
+                  <p className="text-[9.5px] text-blue-800 italic pb-1.5">Stok dilacak per Satuan Utama.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Batas Stok Min */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Batas Stok Min</label>
+                <input type="number" value={minStockPerProduct ?? ''}
+                       onChange={e => setMinStockPerProduct(e.target.value === '' ? null : Number(e.target.value))}
+                       placeholder="kosong = global"
+                       className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+                <p className="text-[10px] text-slate-400">Alert kalau stok ≤ angka ini</p>
+              </div>
+            </div>
+
+            {/* Deskripsi */}
+            <div className="space-y-1">
+              <div className="flex items-end justify-between">
+                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Deskripsi Produk</label>
+                <button type="button" disabled={photos.length === 0}
+                        onClick={() => {
+                          // Wired in Phase 3 (Task 3.6): backend /describe-product
+                          showToast('✨ Generate dari Foto akan tersedia setelah Phase 3', 'info');
+                        }}
+                        className="text-[10px] font-extrabold text-purple-700 hover:text-purple-900 bg-purple-50 border border-purple-200 rounded-full px-3 py-1 disabled:opacity-50">
+                  ✨ Generate dari Foto
+                </button>
+              </div>
+              <textarea rows={3} value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
+                        className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] resize-none" />
+              <p className="text-[10px] text-slate-400 text-right">{description.length} / 500</p>
+            </div>
+          </div>
+        </details>
 
         <div className="flex justify-end gap-2">
           <button onClick={onCancel} className="px-4 py-2 border border-slate-200 text-slate-700 rounded-full text-xs font-bold">
