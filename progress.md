@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Piutang & Tempo Phase 1A — T4-T13 completion + DB applied + 8/8 tests PASS — DONE
+
+- **Branch:** `feat/piutang-tempo-v2` (cherry-picked T4-T13 from feat/calista-phase-1a `b3a49ac` onto fresh branch from main)
+- **DB migrations applied via apply-migration tool (founder ran `/tmp/apply-migration` against live Supabase):** All 7 piutang migrations (000008-000014) successfully applied. Verified via integration test 8/8 PASS.
+- **Owner PIN set to '0000' for testing** (via direct UPDATE admin_users SET approval_pin_hash = crypt('0000', gen_salt('bf')))
+- **What's in this branch:**
+  - T4: `20260614000011_resolve_tenant_helper.sql` — `_resolve_tenant_id()` STABLE function with sentinel fallback
+  - T5: `20260614000012_customer_credit_activate_rpcs.sql` — request_ + approve_ pair with type guard, actor COALESCE, verify_owner_pin 2-arg
+  - T6: `20260614000013_customer_credit_limit_change_rpcs.sql` — request_ + approve_ pair, reason ≥5 chars validation
+  - T7: `20260614000014_customer_credit_deactivate_rpcs.sql` — request_ + approve_ pair, retains term_days/credit_limit as audit
+  - T8: `tests/integration/piutang-tempo-phase1a.test.ts` — 8 vitest integration tests (5 activate + 2 limit_change + 1 deactivate)
+  - T9: `src/types.ts` — DbCustomer tempo fields, ApprovalRequestType union +3, PermissionSet 6 can_* keys + ALL_PERMISSIONS
+  - T9b/T11: `src/components/approval/ApprovalRequestRow.tsx` — TYPE_LABEL, TYPE_ICON, summarisePayload for 3 customer_credit_* types
+  - T10: `src/lib/supabaseClient.ts` — customerCreditService with 6 RPC wrappers
+  - T12: `src/components/pelanggan/TempoCreditSection.tsx` — 3-state customer profile UI; mounted in PelangganScreen
+- **Scope explicitly skipped (Phase 1B/1C):** Sidebar Piutang menu, Piutang page, tempo invoice creation, payment recording, WA send, write-off, piutang_settings Pengaturan UI
+- **Test status:** `npx vitest run --no-file-parallelism tests/integration/piutang-tempo-phase1a.test.ts` → 8/8 PASS (6.57s)
+- **Slot collision note:** On main, slot 000009 has BOTH `approval_types_tempo.sql` AND `change_owner_pin.sql` (parallel owner PIN UI). Apply script only references piutang version. Filesystem collision exists but doesn't break the apply path. Parallel team should rename their owner_pin migration to next free slot at their convenience.
+- **Founder MCP-Chrome QA pending** — 7 scenarios documented in earlier T13 entry below.
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000010_piutang_settings.sql`
