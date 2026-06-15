@@ -1,7 +1,7 @@
 // src/components/produk/ProductForm.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto } from '../../types';
-import { registryService } from '../../lib/supabaseClient';
+import { registryService, companySettingsService, stockLotsService } from '../../lib/supabaseClient';
 import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '../../lib/productPhotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
@@ -61,6 +61,24 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
   );
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
 
+  // ─── Harga & Stok state (Task 2.7) ───
+  const [price, setPrice] = useState<number>(initial?.price ?? 0);
+  const [hargaModal, setHargaModal] = useState<number | null>(initial?.harga_modal ?? null);
+  const [stokAwal, setStokAwal] = useState<number>(0);
+  const [gudangTujuanId, setGudangTujuanId] = useState<string | null>(
+    warehouses.find(w => w.is_default)?.id ?? null
+  );
+  const [costingMethod, setCostingMethod] = useState<'FIFO' | 'Average'>('FIFO');
+  const [lotsCount, setLotsCount] = useState<number>(0);
+
+  useEffect(() => { void companySettingsService.getCostingMethod().then(setCostingMethod).catch(() => {}); }, []);
+  useEffect(() => {
+    if (initial?.sku) void stockLotsService.countForSku(initial.sku).then(setLotsCount).catch(() => {});
+  }, [initial?.sku]);
+
+  const hargaModalIsAktual = lotsCount > 0;
+  const marginPct = hargaModal && price ? ((price - hargaModal) / price) * 100 : null;
+
   async function handleFilesPicked(files: FileList | null, targetSku: string) {
     if (!files || files.length === 0) return;
     const slotsAvail = MAX_PHOTOS - photos.length;
@@ -103,19 +121,19 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
 
   const previewName = useMemo(() => generateName(category, specs), [category, specs]);
 
-  // Placeholder for fields filled in later tasks (2.7-2.9)
+  // Preview state — fields wired in Tasks 2.5-2.7; submit handled in 2.9.
   const previewState: ProductPreviewState = {
     name: previewName,
     sku: sku || 'auto',
     category,
     unit,
-    price: 0,
-    hargaModal: null,
-    stokAwal: 0,
-    gudangTujuanId: warehouses.find(w => w.is_default)?.id ?? null,
+    price,
+    hargaModal,
+    stokAwal,
+    gudangTujuanId,
     hasPhoto: photos.length > 0,
     thumbnailDataUrl: photos[0]?.url || photos[0]?.localUrl || null,
-    isPendingApproval: false,
+    isPendingApproval: stokAwal > 0,
   };
 
   const fields = specFieldsFor(category);
@@ -231,7 +249,75 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
           </p>
         </div>
 
-        {/* Tasks 2.7 (Harga & Stok), 2.8 (Pengaturan Lanjutan) will be added here */}
+        {/* Card: Harga & Stok */}
+        <div className="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
+          <h5 className="text-sm font-extrabold text-[#012749] mb-3">💰 Harga & Stok</h5>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div className="space-y-1">
+              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Harga Jual (Rp) *</label>
+              <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))}
+                     className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+              <p className="text-[10px] text-slate-400 pl-1">per {unit}</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+                  {hargaModalIsAktual ? `Harga Modal Aktual (${costingMethod})` : 'Harga Modal Awal'}
+                </label>
+                <span className={`text-[8.5px] font-black uppercase tracking-widest border rounded-full px-1.5 py-0.5 ${
+                  hargaModalIsAktual ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : 'text-amber-700 bg-amber-100 border-amber-200'
+                }`}>
+                  {hargaModalIsAktual ? '🔒 Dari Pembelian' : 'Estimasi'}
+                </span>
+              </div>
+              <input type="number" value={hargaModal ?? ''} readOnly={hargaModalIsAktual}
+                     onChange={e => setHargaModal(e.target.value === '' ? null : Number(e.target.value))}
+                     className={`w-full rounded-xl px-3 py-2.5 border text-[13px] font-semibold ${
+                       hargaModalIsAktual ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200'
+                     }`} />
+              <p className="text-[10px] text-emerald-700 font-bold pl-1">
+                {marginPct !== null ? `Margin: ${marginPct.toFixed(1)}%` : 'Margin: —'}
+                {!hargaModalIsAktual && ' · akan di-update otomatis dari PO'}
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-100 pt-3">
+            <div className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Stok (opsional)</label>
+                <input type="number" value={stokAwal} onChange={e => setStokAwal(Number(e.target.value))}
+                       className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Gudang Tujuan</label>
+                <select value={gudangTujuanId ?? ''} onChange={e => setGudangTujuanId(e.target.value || null)}
+                        className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold">
+                  {warehouses.filter(w => w.is_active).map(w => (
+                    <option key={w.id} value={w.id}>{w.name} ({w.code}){w.is_default ? ' · Default' : ''}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {stokAwal > 0 && (
+              <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                <span className="material-symbols-outlined text-amber-600 text-base shrink-0">verified_user</span>
+                <div className="flex-1">
+                  <p className="text-[11px] font-bold text-amber-900 leading-tight">
+                    Stok {stokAwal} {unit} akan dikirim ke owner untuk approval
+                  </p>
+                  <p className="text-[10px] text-amber-800 mt-0.5 leading-snug">
+                    Produk dibuat sekarang & bisa di-edit, tapi stok belum aktif sampai owner approve via WhatsApp/inbox.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Task 2.8 (Pengaturan Lanjutan) will be added here */}
 
         <div className="flex justify-end gap-2">
           <button onClick={onCancel} className="px-4 py-2 border border-slate-200 text-slate-700 rounded-full text-xs font-bold">

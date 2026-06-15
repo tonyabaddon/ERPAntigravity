@@ -1004,6 +1004,42 @@ export const companySettingsService = {
       .update({ logo_url: null })
       .eq('id', 1);
   },
+
+  // Costing method is stored in the key/value `company_settings` row (key='costing_method')
+  // seeded by migration M4. Value is JSONB — supabase-js parses it, so we may get either
+  // a quoted string or a plain string depending on how it was written.
+  async getCostingMethod(): Promise<'FIFO' | 'Average'> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('company_settings').select('value').eq('key', 'costing_method').maybeSingle();
+    if (error) throw error;
+    const raw = (data as { value?: unknown } | null)?.value;
+    const v = typeof raw === 'string' ? raw : (raw ?? 'FIFO');
+    return (v === 'Average' ? 'Average' : 'FIFO');
+  },
+
+  async setCostingMethod(m: 'FIFO' | 'Average'): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('company_settings')
+      .upsert({ key: 'costing_method', value: m, updated_at: new Date().toISOString() });
+    if (error) throw error;
+  },
+};
+
+// ─── stockLotsService ───────────────────────────────────────────────────────
+// Cheap reads against the stock_lots ledger (per migration 20260604000014).
+// Used by ProductForm to decide whether Harga Modal is "Awal" (editable) or
+// "Aktual" (locked from PO ledger).
+
+export const stockLotsService = {
+  async countForSku(sku: string): Promise<number> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { count, error } = await supabase
+      .from('stock_lots').select('id', { count: 'exact', head: true }).eq('sku', sku);
+    if (error) throw error;
+    return count ?? 0;
+  },
 };
 
 // ─── warehousesService ──────────────────────────────────────────────────────
