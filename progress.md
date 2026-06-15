@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Belanja Numpang Lewat (BNL) Phase 1 — IMPLEMENTATION COMPLETE (apply pending)
+
+- **What:** Full implementation of the 23-task plan at `docs/superpowers/plans/2026-06-14-pembelian-belanja-numpang-lewat-phase1.md`. New "Belanja Numpang Lewat" menu inside Pembelian, backed by `purchase_invoices` + `purchase_invoice_items` tables with `type='PASSTHROUGH'` discriminator. Four atomic RPCs (`record_pi`, `mark_pi_paid`, `void_pi`, `update_pi`) handle lifecycle BELUM_LUNAS → LUNAS → VOIDED with Kasir expense bookkeeping. SQL view `order_cogs_breakdown` allocates PI cost to matched Order items via `jsonb_array_elements(orders.items)`. OrderHistoryScreen got an `OrderBnlSection` embedded below `ItemsTable` showing linked BNLs + "+ Buat PI" shortcut.
+- **Backend migrations (5 files, apply pending — branch on `feat/piutang-tempo-v2`):**
+  - `20260615000001_pi_schema.sql` — tables + indexes + check constraints + RLS + `set_updated_at` trigger
+  - `20260615000002_pi_kasir_enum.sql` — `ALTER TYPE kasir_expense_category ADD VALUE 'Pembelian Pass-Through'`
+  - `20260615000003_pi_rpcs_create.sql` — `generate_pi_number()` + `record_pi()` with BR6 soft duplicate-supplier-invoice-number warning
+  - `20260615000004_pi_rpcs_lifecycle.sql` — `mark_pi_paid()` + `void_pi()` + `update_pi()`
+  - `20260615000005_order_cogs_breakdown_view.sql` — COGS view using JSONB expansion
+- **Integration tests (4 files, 19 cases):** record happy + edge cases + zero-stock verification, BR6 duplicate warning + override, lifecycle, COGS view structure.
+- **Frontend (12 new files + 4 modified files):** `DbPurchaseInvoice` + payload + view-row types; `purchaseInvoiceService.ts` (CRUD + COGS fetch + `shortOrderRef`/`isTerlambat` helpers); A6 PDF tanda terima generator; shared primitives `PiNumberBadge`/`PiStatusBadge`/`PaymentMethodPicker`/`OrderPicker` (UUID/customer search per C4)/`SkuPickerWithInlineCreate` (kategori "Pass-through"/stock=0); modals `MarkPaidModal`/`VoidConfirmModal` (≥10 char reason); pages `BelanjaNumpangLewatList`/`FormPage`/`DetailPage`; integrations `OrderBnlSection` (embedded across all OrderHistoryScreen tabs), `PembelianScreen` sub-tab + view router, `App.tsx` deep-link `?bnl=PI-...` + `?bnl-new-for-order=`.
+- **C1-C5 codebase corrections applied** (caught during Task 1 code review): C1 `public.users`→`auth.users`; C2 drop `order_item_id` (no `order_items` table); C3 ALTER TYPE for new enum value; C4 `orders.order_number`→`orders.id::text` via `shortOrderRef`; C5 OrderHistoryScreen target instead of nonexistent OrderDetailPage.
+- **Process note:** subagent-driven attempted first but each subagent worktree produced orphan commits unreachable from main branch. Recovered orphans then switched to direct execution for Tasks 3-23 — faster and no orphan risk.
+- **Branch:** `feat/piutang-tempo-v2` (per existing parallel-stream pattern). All BNL files TypeScript-clean.
+- **Next:** apply 5 migrations to Supabase (via Management API), founder smoke test:
+  1. Pembelian → Belanja Numpang Lewat tab → Buat PI Baru → fill form → save
+  2. Verify Kasir expense category "Pembelian Pass-Through" appears
+  3. Verify `stocks.stock` unchanged
+  4. Open OrderHistoryScreen → confirm "Purchase Invoice Terkait" appears under linked Order
+
 ## 2026-06-15 — Piutang & Tempo Phase 1A — T4-T13 completion + DB applied + 8/8 tests PASS — DONE
 
 - **Branch:** `feat/piutang-tempo-v2` (cherry-picked T4-T13 from feat/calista-phase-1a `b3a49ac` onto fresh branch from main)
