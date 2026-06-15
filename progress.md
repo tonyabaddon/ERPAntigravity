@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.10: Initial stock approval flow — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/lib/supabaseClient.ts` — added new `approvalService` object export (placed just before the "Phase 2 — Approval / adjustment / opname / price-change / seed RPC wrappers" section). Single method: `requestInitialStock(payload, requestedBy)` → `Promise<void>`. Payload shape `{ sku, sku_name, qty, unit, warehouse_id, requested_cost_per_unit? }`. Calls `supabase.from('approval_requests').insert({ request_type: 'initial_stock', payload, requested_by: requestedBy })` and throws on error. Snake_case column names match the `approval_requests` DB schema and the `toApprovalRequest` mapper (`request_type`, `requested_by`, `payload`). No SECURITY DEFINER RPC exists for initial-stock requests — the enum value `'initial_stock'` was added in migration `20260614000024_initial_stock_and_search_rpc.sql` (M5), and RLS permits authenticated users to insert pending approval rows directly, so this path is a deliberate direct insert (a comment block above the export records this convention divergence from the RPC-based adjustment/price-change wrappers).
+  - `src/components/produk/ProductForm.tsx` — extended Props with `currentUserId: string` and destructured it in the component signature (caller wires this in Task 2.11). Added `approvalService` to the `supabaseClient` import. In `handleSubmit`, after `await onSubmit(...)` succeeds and BEFORE the success toast, added a guarded branch: when `stokAwal > 0 && gudangTujuanId`, calls `approvalService.requestInitialStock({ sku: finalSku, sku_name: generateName(category, specs), qty: stokAwal, unit, warehouse_id: gudangTujuanId, requested_cost_per_unit: hargaModal ?? undefined }, currentUserId)` inside a try/catch. Success → info toast `'Stok {n} {unit} dikirim ke owner untuk approval'`. Failure → warning toast `'Approval gagal: …'` (product save itself is NOT rolled back — the row was already inserted with `initial_stock_approved=false` in Task 2.9, so the owner can retry approval via the inbox).
+- **Verification:** `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics.
+- **Next:** Task 2.11 — CatalogGridView + tab pill structure (also wires `currentUserId` prop into `<ProductForm>` from the parent screen).
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.9: ProductForm submit + validation — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)

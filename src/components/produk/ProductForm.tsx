@@ -1,7 +1,7 @@
 // src/components/produk/ProductForm.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto } from '../../types';
-import { registryService, companySettingsService, stockLotsService } from '../../lib/supabaseClient';
+import { registryService, companySettingsService, stockLotsService, approvalService } from '../../lib/supabaseClient';
 import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '../../lib/productPhotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
@@ -9,6 +9,7 @@ import PreviewCard, { type ProductPreviewState } from './PreviewCard';
 interface Props {
   initial?: Partial<StockItem>;
   warehouses: Warehouse[];
+  currentUserId: string;
   onCancel: () => void;
   onSubmit: (item: Partial<StockItem>) => Promise<void>;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -43,7 +44,7 @@ function validate(input: {
   return errs;
 }
 
-export default function ProductForm({ initial, warehouses, onCancel, onSubmit, showToast }: Props) {
+export default function ProductForm({ initial, warehouses, currentUserId, onCancel, onSubmit, showToast }: Props) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [units, setUnits] = useState<ProductUnit[]>([]);
@@ -139,6 +140,21 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
         specs,
         initial_stock_approved: stokAwal === 0,
       } as Partial<StockItem>);
+      if (stokAwal > 0 && gudangTujuanId) {
+        try {
+          await approvalService.requestInitialStock({
+            sku: finalSku,
+            sku_name: generateName(category, specs),
+            qty: stokAwal,
+            unit,
+            warehouse_id: gudangTujuanId,
+            requested_cost_per_unit: hargaModal ?? undefined,
+          }, currentUserId);
+          showToast(`Stok ${stokAwal} ${unit} dikirim ke owner untuk approval`, 'info');
+        } catch (e) {
+          showToast('Approval gagal: ' + (e as Error).message, 'warning');
+        }
+      }
       showToast('✅ Produk berhasil ditambahkan');
     } catch (e) {
       showToast('Gagal menyimpan: ' + (e as Error).message, 'warning');

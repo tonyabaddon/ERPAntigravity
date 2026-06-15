@@ -1639,6 +1639,38 @@ export const salesEntriesService = {
 };
 
 // ============================================================================
+// Phase 2 — approvalService (direct-insert namespace)
+// ============================================================================
+// Convention note: most Phase 2 approval requests go through SECURITY DEFINER
+// RPCs (see `requestAdjustment`, `requestPriceChange` below). Initial-stock
+// approval has no dedicated RPC — the row is inserted directly via PostgREST
+// because the `approval_request_type` enum already includes 'initial_stock'
+// (migration 20260614000024) and RLS lets authenticated users insert their
+// own pending requests. Column names mirror the DB (`request_type`,
+// `requested_by`, `payload`) — same casing used by `toApprovalRequest`.
+export const approvalService = {
+  async requestInitialStock(
+    payload: {
+      sku: string;
+      sku_name: string;
+      qty: number;
+      unit: string;
+      warehouse_id: string;
+      requested_cost_per_unit?: number;
+    },
+    requestedBy: string,
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('approval_requests').insert({
+      request_type: 'initial_stock',
+      payload,
+      requested_by: requestedBy,
+    });
+    if (error) throw error;
+  },
+};
+
+// ============================================================================
 // Phase 2 — Approval / adjustment / opname / price-change / seed RPC wrappers
 // ============================================================================
 // These standalone exports wrap the SECURITY DEFINER RPCs introduced in
