@@ -56,6 +56,8 @@ export default function App() {
   const [activePage, setActivePage] = useState<ActivePage>('auth');
   const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
   const [initialDetailPoNumber, setInitialDetailPoNumber] = useState<string | null>(null);
+  const [initialBnlPiNumber, setInitialBnlPiNumber] = useState<string | null>(null);
+  const [initialBnlPrefill, setInitialBnlPrefill] = useState<{ orderId: string; customerName?: string } | null>(null);
   const [penjualanInitialChannel, setPenjualanInitialChannel] = useState<KasirChannel | undefined>(undefined);
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
@@ -82,6 +84,9 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const screen = params.get('screen');
     const po = params.get('po');
+    const bnl = params.get('bnl');
+    const bnlNewForOrder = params.get('bnl-new-for-order');
+    const bnlNewCustomer = params.get('bnl-new-customer');
     if (!screen) return;
     // Only 'pembelian' is recognized for now.
     if (screen !== 'pembelian') return;
@@ -89,10 +94,15 @@ export default function App() {
       // Logged in already — apply now.
       setActivePage('pembelian');
       if (po) setInitialDetailPoNumber(po);
+      if (bnl) setInitialBnlPiNumber(bnl);
+      if (bnlNewForOrder) setInitialBnlPrefill({ orderId: bnlNewForOrder, customerName: bnlNewCustomer ?? undefined });
     } else {
       // Not logged in — stash for after-login restore.
       try {
-        sessionStorage.setItem('pembelian.pendingDeepLink', JSON.stringify({ screen, po: po ?? null }));
+        sessionStorage.setItem('pembelian.pendingDeepLink', JSON.stringify({
+          screen, po: po ?? null, bnl: bnl ?? null,
+          bnlNewForOrder: bnlNewForOrder ?? null, bnlNewCustomer: bnlNewCustomer ?? null,
+        }));
       } catch {
         // sessionStorage unavailable (e.g., private window quota) — ignore.
       }
@@ -432,6 +442,9 @@ export default function App() {
             currentUserPermissions={currentUser?.permissions}
             initialDetailPoNumber={initialDetailPoNumber}
             onDetailConsumed={() => setInitialDetailPoNumber(null)}
+            initialBnlPiNumber={initialBnlPiNumber}
+            onBnlDetailConsumed={() => setInitialBnlPiNumber(null)}
+            initialBnlPrefill={initialBnlPrefill}
           />
         );
       case 'kasir':
@@ -540,6 +553,9 @@ export default function App() {
           currentUserPermissions={currentUser?.permissions}
           initialDetailPoNumber={initialDetailPoNumber}
           onDetailConsumed={() => setInitialDetailPoNumber(null)}
+          initialBnlPiNumber={initialBnlPiNumber}
+          onBnlDetailConsumed={() => setInitialBnlPiNumber(null)}
+          initialBnlPrefill={initialBnlPrefill}
         />
       </div>
     );
