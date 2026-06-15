@@ -272,12 +272,28 @@ Located under `Pengaturan > Operasional`.
 
 | Field | Required | Notes |
 |---|---|---|
-| Nama toko | ✅ | |
-| Alamat lengkap | ✅ | Multiline |
+| Nama toko | ✅ | Renders in PDF document header |
+| Logo toko | ✅ | Uploaded image (PNG/JPG, recommended 200x200px). Renders top-left of every PDF document. Reused from existing tenant logo field if already configured |
+| Alamat lengkap | ✅ | Multiline; renders in PDF header |
 | Kota | ✅ | |
+| Telp/WA toko | ✅ | Customer-facing contact, renders in PDF header |
 | Link Google Maps | ✅ | Required because `order_completed` template embeds it for review prompt |
 | Parking info | optional | |
 | Catatan pickup | optional | e.g. "Tanya bagian gudang lantai 2" |
+
+### Informasi Rekening Bank
+
+For payment instructions on Sales Order and Invoice Tempo PDFs.
+
+| Field | Required | Notes |
+|---|---|---|
+| Bank list | ✅ at least one | Multiple banks supported (BCA, Mandiri, BRI, etc.) |
+| Per-bank: nama bank | ✅ | |
+| Per-bank: nomor rekening | ✅ | |
+| Per-bank: atas nama | ✅ | |
+| Per-bank: active toggle | ✅ | Disable a bank without deleting it |
+
+All active banks are listed on customer-facing PDFs.
 
 ### Jam Operasional
 
@@ -454,15 +470,35 @@ A cron-like Go routine runs every hour:
 
 ## PDF Template Layouts
 
-### Common header (all customer-facing documents)
+### Common header (all customer-facing + Surat Jalan documents)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ {store_name}                              {doc_no}  │
-│ {store_address}                           {date}    │
-│ {store_city}                                        │
-│ Telp/WA: {store_phone}                              │
+│ [LOGO]   {store_name}                     {doc_no}  │
+│          {store_address}                  {date}    │
+│          {store_city}                               │
+│          Telp/WA: {store_phone}                     │
 │ ────────────────────────────────────────────────── │
+```
+
+Logo source: `store_settings.logo_url` (falls back to the existing
+tenant logo if `store_settings.logo_url` is empty). Recommended
+upload 200×200 px PNG transparent. Renders top-left at ~50×50 px.
+
+### Common footer (all customer-facing + Surat Jalan documents)
+
+```
+─────────────────────────────────────────────────────
+SYARAT & KETENTUAN:
+
+• Barang yang telah dibeli tidak dapat dikembalikan
+• Pembayaran dianggap sah setelah dana masuk ke
+  rekening kami
+• Komplain barang rusak/kurang harap disampaikan
+  saat barang diterima
+─────────────────────────────────────────────────────
+
+Dicetak otomatis oleh sistem · {generated_at}
 ```
 
 ### Sales Order layout (`SO/2026/00001`)
@@ -497,7 +533,16 @@ Jika DP:
   Sisa pelunasan:                     Rp       2,070,000
 
 Cara Pembayaran:
-  Transfer ke: {bank_info_from_settings}
+  Transfer ke salah satu rekening berikut:
+  ┌──────────────────────────────────────────┐
+  │ {bank_1_name}                            │
+  │ Nomor: {bank_1_account}                  │
+  │ a.n. {bank_1_holder}                     │
+  ├──────────────────────────────────────────┤
+  │ {bank_2_name}                            │
+  │ Nomor: {bank_2_account}                  │
+  │ a.n. {bank_2_holder}                     │
+  └──────────────────────────────────────────┘
   Atau Cash/EDC di toko
 
 CATATAN:
@@ -507,6 +552,8 @@ Mohon konfirmasi pembayaran dengan upload bukti transfer
 via WhatsApp ke nomor kami.
 
 Terima kasih atas kepercayaannya 🙏
+
+[COMMON FOOTER — disclaimer + non-returnable note]
 ```
 
 ### Invoice DP layout (`INV-DP/2026/00001`)
@@ -533,7 +580,13 @@ Diverifikasi oleh: {verified_by}
 Item pesanan (sebagaimana SO #{sales_order_no}):
 [items table same format as SO]
 
+Sisa pelunasan harap ditransfer ke salah satu
+rekening berikut (sebagaimana di SO):
+{bank_list_block}
+
 Terima kasih 🙏
+
+[COMMON FOOTER]
 ```
 
 ### Invoice Pelunasan / Lunas layout (`INV/2026/00001`)
@@ -566,11 +619,24 @@ PEMBAYARAN:
 
 Diverifikasi oleh: {verified_by}
 Metode Pembayaran: {payment_method}
+
+[COMMON FOOTER]
 ```
 
 ### Invoice Tempo layout (`INV/2026/00001-T`)
 
-Same as Invoice but with `STATUS: TEMPO — Jatuh Tempo {due_date}` and bank info displayed for payment.
+Same as Invoice Pelunasan but with:
+
+- Header: `INVOICE TEMPO` (instead of `INVOICE PENJUALAN`)
+- Status block:
+  ```
+  ═══════════════════════════════════════════════════════════
+     STATUS: 🟠 TEMPO — Jatuh Tempo {due_date}
+     Mohon dilunasi sebelum tanggal jatuh tempo
+  ═══════════════════════════════════════════════════════════
+  ```
+- Bank list block (same as SO) embedded before footer so customer can pay against this Invoice
+- Common footer applies (disclaimer + non-returnable)
 
 ### Surat Jalan layout (`SJ/2026/00001`)
 
@@ -608,6 +674,8 @@ Tanda Tangan:     ____________________
 
 Diserahkan oleh: ____________________
 {store_name} Staff
+
+[COMMON FOOTER — disclaimer + non-returnable note]
 ```
 
 ## WA Notification Templates
@@ -783,14 +851,27 @@ CREATE INDEX IF NOT EXISTS idx_order_modifications_order_id ON order_modificatio
 CREATE TABLE IF NOT EXISTS store_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_name TEXT NOT NULL,
+  logo_url TEXT,                    -- optional override; falls back to tenant logo
   address TEXT NOT NULL,
   city TEXT NOT NULL,
-  gmaps_link TEXT NOT NULL,         -- required
+  store_phone TEXT NOT NULL,        -- customer-facing contact for PDF header
+  gmaps_link TEXT NOT NULL,         -- required for review prompt template
   parking_info TEXT,
   pickup_notes TEXT,
   operational_hours JSONB,          -- {"monday": {"open": "08:00", "close": "17:00"}, ...}
   holidays_overrides DATE[],
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3b. Bank accounts for payment instructions
+CREATE TABLE IF NOT EXISTS store_bank_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  bank_name TEXT NOT NULL,
+  account_number TEXT NOT NULL,
+  account_holder TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  display_order INT DEFAULT 0,      -- ordering on PDF render
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 4. Document numbering counters (fixed format, not configurable this phase)
