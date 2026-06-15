@@ -230,7 +230,7 @@ DISPATCHED → AWAITING_CUSTOMER_CONFIRMATION
 | Channel | Delivery method | Confirmation method | Auto-timer |
 |---|---|---|---|
 | WhatsApp / IG | DELIVERY | Calista AI parse customer reply (`sudah/diterima/ok/sampai/thanks` → `COMPLETED`; `rusak/belum/salah` → `DELIVERY_ISSUE`) + admin override | 3 days → `ASSUMED_COMPLETED` |
-| WhatsApp / IG | PICKUP | **Admin manual mark only** (customer often forgets to reply) | None |
+| WhatsApp / IG | PICKUP | **Both allowed (whichever fires first wins):** Calista AI parse customer reply (`sudah ambil/sudah/ok/thanks`) **OR** admin manual mark on physical handover. Both routes flag `customer_confirm_source` accordingly. | **No auto-timer** — pickup-never-shown stays in Stage 4 and surfaces via stuck-order alert (3-day threshold) so admin can decide to cancel or contact customer. |
 | Walk-in (delivery, saved WA) | DELIVERY | Calista AI parse + admin override | 3 days |
 | Walk-in (delivery, no WA) | DELIVERY | Admin manual mark only | None |
 | Walk-in (pickup) | PICKUP | Admin marks on physical handover at counter | None |
@@ -855,7 +855,7 @@ Total effort estimate: 3–5 weeks solo dev.
 3. Marketplace manual input lands directly in Stage 3 with `external_order_ref` populated.
 4. DP-then-pelunasan customer receives 2 distinct invoice PDFs (Invoice DP, Invoice Pelunasan) via WA.
 5. Customer received receives `order_completed` WA with Google Maps review link.
-6. Pickup orders cannot be auto-completed; admin must manually mark.
+6. Pickup orders never auto-complete from a timer. For WA/IG pickup, completion may come from either Calista AI parsing a customer reply OR admin manual mark — whichever fires first. For all other pickup channels (Walk-in, Grosir, Pameran), admin manual mark only. If neither path resolves after 3 days post-DISPATCHED, the stuck-order alert fires.
 7. Auto-timer fires exactly once at 24h reminder + 72h auto-complete (no spam).
 8. **Stock decrements at DP/Full payment verification, NOT at APPROVED.** Cancel after decrement restocks atomically. Concurrent payment verifies cannot oversell (atomic check + decrement).
 9. **Order modification (ongkir/items/address) recorded in `order_modifications` audit table** with reason field. SO PDF regenerated with `Rev2` suffix when ongkir or items change.
