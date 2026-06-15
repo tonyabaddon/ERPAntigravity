@@ -12,6 +12,10 @@ import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 import MarkAsPaidModal from './pembelian/MarkAsPaidModal';
 import PurchaseOrderFormPage from './pembelian/PurchaseOrderFormPage';
 import PembelianDetailPage from './pembelian/PembelianDetailPage';
+import BelanjaNumpangLewatList from './pembelian/bnl/BelanjaNumpangLewatList';
+import BelanjaNumpangLewatFormPage from './pembelian/bnl/BelanjaNumpangLewatFormPage';
+import BelanjaNumpangLewatDetailPage from './pembelian/bnl/BelanjaNumpangLewatDetailPage';
+import type { DbPurchaseInvoice } from '../types';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -21,14 +25,21 @@ interface PembelianScreenProps {
   currentUserPermissions?: PermissionSet;
   initialDetailPoNumber?: string | null;
   onDetailConsumed?: () => void;
+  initialBnlPiNumber?: string | null;
+  onBnlDetailConsumed?: () => void;
+  initialBnlPrefill?: { orderId: string; customerName?: string } | null;
 }
 
-type Tab = 'orders' | 'suppliers';
+type Tab = 'orders' | 'bnl' | 'suppliers';
 type ViewMode =
   | { kind: 'list' }
   | { kind: 'create' }
   | { kind: 'edit'; po: DbPurchaseOrder }
-  | { kind: 'detail'; poNumber: string };
+  | { kind: 'detail'; poNumber: string }
+  | { kind: 'bnl-list' }
+  | { kind: 'bnl-create'; prefill?: { orderId?: string; customerName?: string } }
+  | { kind: 'bnl-edit'; pi: DbPurchaseInvoice }
+  | { kind: 'bnl-detail'; piNumber: string };
 
 function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -50,6 +61,7 @@ const LEFT_BORDER: Record<string, string> = {
 export default function PembelianScreen({
   stockList, showToast, onStockRefresh, currentUserId, currentUserPermissions,
   initialDetailPoNumber, onDetailConsumed,
+  initialBnlPiNumber, onBnlDetailConsumed, initialBnlPrefill,
 }: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('orders');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
@@ -86,6 +98,23 @@ export default function PembelianScreen({
       onDetailConsumed?.();
     }
   }, [initialDetailPoNumber, onDetailConsumed]);
+
+  // BNL deep-link (?bnl=PI-...) — open detail tab
+  useEffect(() => {
+    if (initialBnlPiNumber) {
+      setTab('bnl');
+      setViewMode({ kind: 'bnl-detail', piNumber: initialBnlPiNumber });
+      onBnlDetailConsumed?.();
+    }
+  }, [initialBnlPiNumber, onBnlDetailConsumed]);
+
+  // BNL prefill (?bnl-new-for-order=...) — open create form pre-filled
+  useEffect(() => {
+    if (initialBnlPrefill?.orderId) {
+      setTab('bnl');
+      setViewMode({ kind: 'bnl-create', prefill: { orderId: initialBnlPrefill.orderId, customerName: initialBnlPrefill.customerName } });
+    }
+  }, [initialBnlPrefill?.orderId]);
 
   // Tab-sync: when the list tab regains focus (e.g., after the user took an action
   // in a detail tab), re-fetch so the list reflects the latest state.
@@ -286,20 +315,60 @@ export default function PembelianScreen({
             {/* Tabs (unchanged structure) */}
             <div className="flex gap-1 border-b border-gray-200">
               <button
-                onClick={() => setTab('orders')}
+                onClick={() => { setTab('orders'); setViewMode({ kind: 'list' }); }}
                 className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'orders' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Purchase Orders
               </button>
               <button
-                onClick={() => setTab('suppliers')}
+                onClick={() => { setTab('bnl'); setViewMode({ kind: 'bnl-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'bnl' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Belanja Numpang Lewat
+              </button>
+              <button
+                onClick={() => { setTab('suppliers'); setViewMode({ kind: 'list' }); }}
                 className={`px-4 py-2.5 text-sm font-medium -mb-px ${tab === 'suppliers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Supplier
               </button>
             </div>
 
-            {loading ? (
+            {/* BNL views (rendered when tab='bnl', overrides orders/suppliers rendering) */}
+            {tab === 'bnl' && viewMode.kind === 'bnl-list' && (
+              <BelanjaNumpangLewatList
+                showToast={showToast}
+                onCreate={() => setViewMode({ kind: 'bnl-create' })}
+                onOpenDetail={(piNumber) => setViewMode({ kind: 'bnl-detail', piNumber })}
+              />
+            )}
+            {tab === 'bnl' && viewMode.kind === 'bnl-create' && (
+              <BelanjaNumpangLewatFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'bnl-list' })}
+                onSaved={(piNumber) => setViewMode({ kind: 'bnl-detail', piNumber })}
+                prefill={viewMode.prefill}
+              />
+            )}
+            {tab === 'bnl' && viewMode.kind === 'bnl-edit' && (
+              <BelanjaNumpangLewatFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'bnl-detail', piNumber: viewMode.pi.pi_number })}
+                onSaved={(piNumber) => setViewMode({ kind: 'bnl-detail', piNumber })}
+                editing={viewMode.pi}
+              />
+            )}
+            {tab === 'bnl' && viewMode.kind === 'bnl-detail' && (
+              <BelanjaNumpangLewatDetailPage
+                piNumber={viewMode.piNumber}
+                showToast={showToast}
+                onBack={() => setViewMode({ kind: 'bnl-list' })}
+                onEdit={(pi) => setViewMode({ kind: 'bnl-edit', pi })}
+                onOrderClick={(orderId) => { /* future: nav to Order detail */ console.log('order:', orderId); }}
+              />
+            )}
+
+            {tab !== 'bnl' && (loading ? (
               <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
             ) : tab === 'orders' ? (
               <OrdersTab
@@ -321,7 +390,7 @@ export default function PembelianScreen({
                 showToast={showToast}
                 onRefresh={reload}
               />
-            )}
+            ))}
           </>
         )}
       </div>
