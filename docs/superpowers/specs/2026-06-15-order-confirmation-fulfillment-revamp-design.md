@@ -105,7 +105,7 @@ Active stages (1-4) default expanded. Completed stages (5-6) default collapsed.
 |---|---|---|
 | 1 | 💬 Bertanya | `conversations` rows with no linked order; `conversation.state IN (GREETING, COLLECTING, CLARIFYING, STOCK_CHECK, CONFIRMING, ADD_MORE, DELIVERY)` |
 | 2 | 💰 Konfirmasi & Tunggu Bayar | `orders` with `status IN (PENDING_ADMIN_CONFIRMATION, WAITING_PAYMENT, PAYMENT_UPLOADED, DP_UPLOADED)` |
-| 3 | 📦 Diproses | `orders` with `status IN (DP_VERIFIED, PAYMENT_VERIFIED, PROCESSING, READY_AWAITING_PAYMENT)` |
+| 3 | 📦 Diproses | `orders` with `status IN (DP_VERIFIED, PAYMENT_VERIFIED, PROCESSING, READY_AWAITING_PAYMENT)`. Rows with `payment_type = 'TEMPO'` render with `🟠 TEMPO` badge + due date. Tempo orders enter PROCESSING immediately on Input Baru save; piutang tracked separately in menu Pelanggan. |
 | 4 | 🚚 Dikirim / Siap Diambil | `orders` with `status IN (READY, DISPATCHED, AWAITING_CUSTOMER_CONFIRMATION, DELIVERY_ISSUE)` |
 | 5 | ✓ Diterima | `orders` with `status IN (COMPLETED, ASSUMED_COMPLETED)` |
 | 6 | ✗ Dibatalkan / Ditolak | `orders` with `status IN (CANCELLED, PAYMENT_REJECTED, DP_PROOF_REJECTED)` |
@@ -146,7 +146,6 @@ Filter controls collapse to a single "🔍 Filter & Sort" button. Stages remain 
 PENDING_ADMIN_CONFIRMATION
 APPROVED
 WAITING_PAYMENT
-**WAITING_PAYMENT_TEMPO**
 PAYMENT_UPLOADED
 DP_UPLOADED
 PAYMENT_VERIFIED
@@ -163,6 +162,16 @@ CANCELLED
 PAYMENT_REJECTED
 DP_PROOF_REJECTED
 ```
+
+### Tempo handling (separate concern from `order_status`)
+
+**Tempo is a `payment_type`, not an `order_status`.** Orders with `payment_type = 'TEMPO'` flow through the normal fulfillment lifecycle (PROCESSING → READY → DISPATCHED → AWAITING_CUSTOMER_CONFIRMATION → COMPLETED) regardless of when the customer pays.
+
+The funnel renders a `🟠 TEMPO` badge on tempo orders so admin sees them at a glance, but they do not get their own funnel stage.
+
+The piutang/tempo lifecycle (due date, aging buckets, reminders, payment recording) is handled in the existing menu Pelanggan / Piutang feature and is OUT OF SCOPE for this spec. The link between an order and its piutang record uses the existing `customer_id` + `order_id` join.
+
+A tempo order can be `COMPLETED` (customer received goods) while its piutang remains `OUTSTANDING`. This is intentional: fulfillment status and payment status are decoupled.
 
 ### Universal transition graph (WA happy path)
 
@@ -203,9 +212,8 @@ DISPATCHED → AWAITING_CUSTOMER_CONFIRMATION
 | Conversation only | ✅ | — | — | — | — | — | — | — |
 | `PENDING_ADMIN_CONFIRMATION` | ✅ | — | — | — | ✅ | — | ✅ | — |
 | `WAITING_PAYMENT` | ✅ | — | ✅ | — | ✅ | — | ✅ | — |
-| `WAITING_PAYMENT_TEMPO` | — | — | — | ✅ | ✅ | — | — | — |
 | Payment/DP variants | ✅ | — | ✅ | — | ✅ | — | ✅ | — |
-| `PROCESSING` | ✅ | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| `PROCESSING` (with tempo badge if applicable) | ✅ | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | `READY_AWAITING_PAYMENT` | ✅ | — | ✅ | — | ✅ | — | ✅ | — |
 | `READY` / `DISPATCHED` | ✅ | — | ✅ | ✅ | ✅ | — | ✅ | ✅ |
 | `AWAITING_CUSTOMER_CONFIRMATION` | ✅ | — | optional | optional | optional | — | optional | optional |
@@ -215,12 +223,12 @@ DISPATCHED → AWAITING_CUSTOMER_CONFIRMATION
 
 ### Channel-specific entry points (Input Baru form behaviour)
 
-- **Walk-in + bayar full + ambil langsung (no alamat):** save → `COMPLETED` direct → Stage 6/Riwayat as `Lunas Kasir`. Skip funnel.
+- **Walk-in + bayar full + ambil langsung (no alamat):** save → `COMPLETED` direct → Stage 5 as `Lunas Kasir`. Skip funnel mid-stages.
 - **Walk-in + bayar full + kirim later:** save → `PROCESSING` → Stage 3.
 - **Walk-in + DP + delivery:** save → `PROCESSING` with `DP_VERIFIED` substate badge → Stage 3.
-- **Walk-in + Tempo:** save → `WAITING_PAYMENT_TEMPO` → Stage 2 (or Stage 3 with badge if barang already released).
+- **Walk-in + Tempo:** save → `PROCESSING` with `🟠 TEMPO` badge → Stage 3. Continues normal lifecycle to COMPLETED. Piutang tracking is separate (menu Pelanggan).
 - **Grosir / Sales Lapangan / Pameran (order):** same as Walk-in matrix above, depending on payment type.
-- **Pameran (cash + ambil):** save → `COMPLETED` direct → Riwayat.
+- **Pameran (cash + ambil):** save → `COMPLETED` direct → Stage 5 as `Lunas Kasir`.
 - **Marketplace:** save → `PROCESSING` (skip stages 1–2, payment already verified by marketplace) → Stage 3.
 
 ## Customer Confirmation Handling
@@ -414,8 +422,10 @@ Order action panel exposes "Edit Order" button when status allows. Opens a modal
 | Stage 2 Konfirmasi & Tunggu Bayar | 7 days no payment | Customer ghosted or forgot |
 | Stage 2 with `DP_VERIFIED` (waiting full) | 7 days no pelunasan | Customer needs reminder |
 | Stage 3 Diproses | 3 days no progress | Admin forgot |
-| Stage 4 `AWAITING_CUSTOMER_CONFIRMATION` (pickup, no auto-timer) | 3 days no admin mark | Admin forgot pickup confirmation |
+| Stage 4 `AWAITING_CUSTOMER_CONFIRMATION` (pickup or non-WA delivery, no auto-timer) | 3 days no admin mark and no customer reply | Admin forgot or pickup customer never came |
 | Stage 4 `DELIVERY_ISSUE` | 1 day unresolved | Customer waiting for response |
+
+**Tempo orders are excluded from stuck-order alerts** in this spec — their aging is tracked separately in menu Pelanggan piutang. A tempo order at Stage 5 COMPLETED with outstanding piutang is normal and surfaces in the piutang menu, not here.
 
 ### Alert delivery
 
@@ -731,8 +741,10 @@ ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'READY';
 ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'DISPATCHED';
 ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'AWAITING_CUSTOMER_CONFIRMATION';
 ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'ASSUMED_COMPLETED';
-ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'WAITING_PAYMENT_TEMPO';
 ALTER TYPE order_status ADD VALUE IF NOT EXISTS 'DELIVERY_ISSUE';
+-- Note: no WAITING_PAYMENT_TEMPO. Tempo is a payment_type flag,
+-- not an order_status; tempo orders flow through PROCESSING → COMPLETED
+-- like any other order, with piutang tracked in menu Pelanggan.
 
 -- 2. New columns on orders
 ALTER TABLE orders
@@ -877,7 +889,7 @@ Total effort estimate: 3–5 weeks solo dev.
 - Multi-admin row locking (rare for current solo founder team).
 - **Email delivery for SO/Invoice** — confirmed NOT needed per founder; offline channels use counter print, chat channels use WA attachment.
 - Thermal printer format.
-- Full piutang/tempo workflow integration — `WAITING_PAYMENT_TEMPO` state exists as a placeholder; deeper integration with menu Pelanggan piutang remains in existing tempo flow until a dedicated tempo spec.
+- Full piutang/tempo workflow integration — tempo orders show with a `🟠 TEMPO` badge in the funnel, but the aging buckets / reminder cadence / payment recording all stay in the existing menu Pelanggan piutang flow. A dedicated piutang spec can revamp that side later if needed.
 
 ## Risks & Mitigations
 
@@ -902,5 +914,5 @@ Total effort estimate: 3–5 weeks solo dev.
 ## Open Questions
 
 - **Walk-in (delivery, saved WA) confirmation watcher**: when admin sends a dispatch WA to a walk-in customer with saved WA number, does the Calista listener route their reply through the same confirmation parser as native WA orders? Spec assumes yes (any incoming WA reply to an order in `AWAITING_CUSTOMER_CONFIRMATION` is parsed regardless of origin channel). Implementation should verify whatsmeow's message-routing scope.
-- **`WAITING_PAYMENT_TEMPO` minimal integration**: state exists for funnel visibility; the actual tempo workflow (aging buckets, reminders, follow-up cadence) continues to live in menu Pelanggan's piutang/tempo features. Implementation plan needs to confirm the read-only link from this funnel stage back to the Pelanggan piutang detail view.
+- **Tempo render link from funnel**: implementation plan should confirm how the tempo badge in Stage 3+ rows links back to the Pelanggan piutang detail page (deep link or expand-in-place modal showing piutang aging).
 - **Concurrent payment verification ordering**: if two admins click "Verify Payment" on different orders that share a low-stock SKU simultaneously, the atomic RPC will let the first succeed and the second receive `STOCK_INSUFFICIENT`. Implementation plan should define exact RPC semantics and admin-facing error messages.
