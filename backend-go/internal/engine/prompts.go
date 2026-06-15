@@ -107,18 +107,18 @@ Balas HANYA JSON (tidak ada teks lain):
 			orBelum(c.Product), qty, stockCtx, qty, qty)
 
 	case models.StateConfirming:
-		qty := c.Quantity
-		if qty == 0 {
-			qty = 1
-		}
+		// Prefer cart entries when present (filled in by upstream STOCK_CHECK /
+		// CLARIFYING flows). Flat fields (c.Product / c.Quantity / c.Specs) get
+		// populated only on the first product; multi-item carts and post-STOCK_CHECK
+		// updates flow through Cart. Without this fallback the prompt rendered
+		// "Produk: belum diketahui" even after Calista had clearly identified
+		// the item in conversation, confusing both model and customer.
+		itemsStr := confirmingItemsContext(c)
 		return fmt.Sprintf(`FASE: KONFIRMASI PESANAN (CONFIRMING)
 Ringkasan pesanan untuk dikonfirmasi:
 - Nama       : %s
 - Perusahaan : %s
-- Produk     : %s
-- Qty        : %d
-- Ukuran     : %s
-- Catatan    : %s
+%s
 
 Ikuti SOP Skenario 1a. Tunggu konfirmasi pelanggan.
 Jika customer balas OK/Oke/BENAR/Yes/Confirm/setuju/iya → confirmed: true
@@ -129,8 +129,7 @@ Jika customer mengkonfirmasi (confirmed: true), tambahkan kalimat di akhir reply
 
 Balas HANYA JSON (tidak ada teks lain):
 {"reply":"<pesan WA>","confirmed":false,"modification_requested":false}`,
-			orBelum(c.Name), orBelum(c.Company), orBelum(c.Product),
-			qty, orBelum(c.Specs.Size), orBelum(c.Specs.Notes))
+			orBelum(c.Name), orBelum(c.Company), itemsStr)
 
 	case models.StateAddMore:
 		cartStr := AddMoreContextString(c.Cart)
@@ -209,6 +208,42 @@ func formatHistory(msgs []models.Message) string {
 		sb.WriteString(fmt.Sprintf("[%s]: %s\n", strings.ToUpper(string(m.Sender)), m.Text))
 	}
 	return sb.String()
+}
+
+// confirmingItemsContext renders the order line items for the CONFIRMING
+// prompt. Prefers the cart when it has any non-empty entries — that's where
+// CLARIFYING + STOCK_CHECK actually deposit confirmed product data — and
+// falls back to the flat fields when cart is empty (single-item early
+// flow before cart consolidation).
+func confirmingItemsContext(c models.CollectedData) string {
+	nonEmpty := make([]models.CartItem, 0, len(c.Cart))
+	for _, it := range c.Cart {
+		if it.Product != "" || it.Quantity > 0 {
+			nonEmpty = append(nonEmpty, it)
+		}
+	}
+	if len(nonEmpty) > 0 {
+		var sb strings.Builder
+		sb.WriteString("Item pesanan:\n")
+		for i, it := range nonEmpty {
+			specs := it.Specs
+			if specs == "" {
+				specs = "-"
+			}
+			qty := it.Quantity
+			if qty == 0 {
+				qty = 1
+			}
+			sb.WriteString(fmt.Sprintf("  %d. %s — qty: %d, spek: %s\n", i+1, it.Product, qty, specs))
+		}
+		return strings.TrimRight(sb.String(), "\n")
+	}
+	qty := c.Quantity
+	if qty == 0 {
+		qty = 1
+	}
+	return fmt.Sprintf("- Produk     : %s\n- Qty        : %d\n- Ukuran     : %s\n- Catatan    : %s",
+		orBelum(c.Product), qty, orBelum(c.Specs.Size), orBelum(c.Specs.Notes))
 }
 
 // AddMoreContextString formats the current cart for the ADD_MORE prompt.

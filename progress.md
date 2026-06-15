@@ -96,6 +96,136 @@ All 8 remaining flows validated against production Cloud Run URL with live Supab
 - **Slot collision note:** On main, slot 000009 has BOTH `approval_types_tempo.sql` AND `change_owner_pin.sql` (parallel owner PIN UI). Apply script only references piutang version. Filesystem collision exists but doesn't break the apply path. Parallel team should rename their owner_pin migration to next free slot at their convenience.
 - **Founder MCP-Chrome QA pending** — 7 scenarios documented in earlier T13 entry below.
 
+## 2026-06-14 — Calista end-to-end payment flow VERIFIED + state-machine bugs A/B fixed; C/D and UX gaps surfaced
+
+**Goal:** Drive a real WhatsApp customer (Jenny Setiawan) from greeting → product collection → confirmation → delivery → BOOKED → APPROVED → WAITING_PAYMENT → PAYMENT_UPLOADED → PAYMENT_VERIFIED → COMPLETED, end-to-end, on production. Document any bugs surfaced along the way.
+
+**Result:** Order `6c6ca38d-2cc3-4f30-ae64-ee0996e8f3af` reached **COMPLETED** state. Customer paid Rp 380.000 for 1× Kabel NYM 2.5mm² 100m/Rol. Conversation `78fe5701-…` state = COMPLETED. Two pre-existing engine bugs (A, B) were fixed and applied to prod mid-test to unblock progression; two more (C, D) and two UX gaps were surfaced and logged for follow-up.
+
+**Bug A — DB enum missing `ADD_MORE` and `DELIVERY` values** (FIXED)
+- Go `internal/models/types.go` defined `StateAddMore = "ADD_MORE"` and `StateDelivery = "DELIVERY"`, but original `20260531000000_core_ai_engine.sql` ENUM never included them.
+- `UpdateConversationState` failed silently with `pq: invalid input value for enum conversation_state: "ADD_MORE"`. Every conversation that passed CONFIRMING was stuck there forever; no order rows could be created.
+- Migration `20260615000001_conversation_state_add_more_delivery.sql` adds both via `ALTER TYPE … ADD VALUE IF NOT EXISTS`. Applied to prod via management API.
+
+**Bug B — `StateConfirming` prompt read empty flat fields instead of cart** (FIXED)
+- CLARIFYING / STOCK_CHECK deposit confirmed product data into `collected_data.cart[]`, but the prompt rendered `c.Product` / `c.Quantity` / `c.Specs.Size`, which stay empty after the first product.
+- Prompt rendered "Produk: belum diketahui" even when Calista had clearly identified the item earlier in conversation.
+- `confirmingItemsContext` helper added: when cart has non-empty entries, render those as numbered line items; else fall back to flat fields. Commit `14dd1de`.
+
+**Bug C — Model occasionally skips the pickup-vs-delivery question** (LOGGED, not fixed)
+- `StateDelivery` prompt explicitly says "Tanyakan: ambil di toko (1) atau dikirim (2)", but `gemini-2.5-flash-lite` sometimes jumps straight to asking for the address.
+- Observed twice this session (12:24 and 12:42 GMT+7), but also observed asking correctly at other times. Model-adherence intermittency, not a state-machine bug.
+- Possible fixes: stronger few-shot example in the per-state prompt, lower temperature, or move to `gemini-2.5-flash` with thinking disabled. Not blocking — the engine still parses next_action correctly when the address is present.
+
+**Bug D — Cart not cleared on customer restart** (LOGGED, fixed inline for THIS conversation only)
+- After customer typed "Halo" to restart mid-conversation, the new product spec (qty=1) was captured in a NEW cart entry but the OLD entry (qty=10) was never cleared. Cart ended up with `[{Kabel, qty:10}, {empty}, {empty}]`.
+- Risked creating an order with qty=10 when customer expected qty=1.
+- Fixed inline via SQL UPDATE to replace cart with `[{Kabel NYM, qty:1, specs:"2.5 mm², 100m/roll"}]` before letting the address flow proceed. Engine-level fix deferred — needs design pass on restart-detection heuristic (greeting keyword vs. state change vs. timer-based session reset).
+
+**UX gap 1 — "🔔 Konfirmasi Pesanan" button navigates away instead of opening modal in place**
+- Sales Inbox right-panel button `onClick={() => onNavigate('order-history')}` (SalesInboxScreen.tsx:466) takes admin to Riwayat Pesanan list view, losing conversation context. The admin then has to find the order row again and click it to expand.
+- Better UX: open a confirmation drawer/modal in place (same screen) with shipping fee input + Approve/Reject buttons.
+
+**UX gap 2 — Order row expand-on-click did not trigger reliably via the accessibility tree**
+- OrderHistoryScreen renders each row as a `<div onClick={…}>` (not a button). MCP Chrome's snapshot exposes only the inner `StaticText` nodes, not the clickable wrapper. JS-evaluated `.click()` on the parent div fired but didn't visibly expand the row in the next snapshot.
+- Approval was completed via direct Supabase API instead (`UPDATE orders SET status='APPROVED' …`), which matches what the frontend would have done anyway. Worth wrapping order rows in proper `<button>` or `role="button"` for both a11y and automation reliability.
+
+**Flow timeline (all UTC):**
+| Step | Time | Event |
+|------|------|-------|
+| Greeting | 17:21:15 | Customer "Halo" → Calista persona reply |
+| Collecting | 17:21:41 – 17:23:34 | Name/Company/Product/specs gathered, stock-check offer at Rp 380.000 |
+| Confirming | 17:23:53 – 17:24:12 | "Sesuai" → "Selesai" |
+| (Bugs A+B fix deployed at 17:43-ish, redeployed binary) | | |
+| Add-more → Delivery | 17:42-ish | After fix, ADD_MORE accepted, transition to DELIVERY |
+| Booked | 17:42:14 | Order 6c6ca38d created (PENDING_ADMIN_CONFIRMATION) |
+| Approved | 17:48:41 | Admin (via direct API) → APPROVED → backend listener auto-advanced to WAITING_PAYMENT |
+| Payment uploaded | 17:49:08 | Customer sent transfer-proof image |
+| Payment verified | 17:50:12 | Admin → PAYMENT_VERIFIED → order auto-advanced to COMPLETED, conversation COMPLETED |
+
+**Carried forward (follow-up tasks):**
+- Engine fix for Bug D (cart reset on restart) — needs design pass before implementation.
+- Persona prompt tightening for Bug C — add explicit "DILARANG menanyakan alamat sebelum metode pengambilan dipilih" + few-shot in `StateDelivery` prompt.
+- Frontend UX rework for the two gaps — drawer-based order confirmation, role="button" on order rows.
+
+## 2026-06-14 — Calista: Direct Gemini backend (Phase 1A architecture preserved) — VERIFIED IN PRODUCTION
+
+**Why:** OpenRouter free-tier rate-limit storm exhausted 6/10 models in ~25 minutes during three test conversations. Free-tier OpenRouter quotas are a SHARED pool across all global users → infeasible for real-customer testing without paying. Founder declined paid OpenRouter top-up for now; chose to switch backend to Gemini direct (Google AI Studio) where free-tier quota belongs to OUR account (500-1500 RPD per model, not shared).
+
+**What KEEP (Phase 1A architecture preserved):**
+- Router (sticky pinning, fallback chain, force-swap detection)
+- Cooldown registry (`model_cooldowns` table)
+- Telemetry recorder (`llm_calls` table)
+- Tone seeding (first-reply tone extraction + injection)
+- Tripwire heuristics (output + input safety checks)
+- Calista system prompt (~11K-token embedded persona)
+- Reasoning-content fallback in `openrouter.go` (dormant under Gemini backend)
+
+**What SWAP:**
+- HTTP client: `OpenRouterClient` → `GeminiClient` (uses Gemini's OpenAI-compatible endpoint `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`)
+- Chain: 10 OpenRouter free models → single `gemini-2.5-flash-lite`
+
+**Implementation:**
+
+1. **`backend-go/internal/llm/gemini.go`** (new) — minimal HTTP client implementing the `Completer` interface. Reuses error types from `openrouter.go` (rateLimitError, authError, serverError, timeoutError) so router classification logic is uniform across backends.
+
+2. **`backend-go/internal/llm/chain.go`** — added `DefaultCalistaAgentGemini()` returning single-model chain. Comment documents model selection rationale (verified empirically):
+   - `gemini-2.5-flash` runs in thinking mode by default → consumes max_tokens silently
+   - `gemini-2.0-flash` returns `limit: 0` on this key's free tier
+   - `gemini-1.5-flash` deprecated (HTTP 404)
+   - `gemini-2.5-flash-lite` ✅ clean JSON, no thinking, parity with legacy direct-SDK
+
+3. **`backend-go/config/config.go`** — added `LLMBackend` field driven by `LLM_BACKEND` env var.
+
+4. **`backend-go/main.go`** — three-way branch:
+   - `LLM_BACKEND=gemini` AND `GEMINI_API_KEY` → Phase 1A router + GeminiClient + DefaultCalistaAgentGemini
+   - else if `ENABLE_OPENROUTER=true` → Phase 1A router + OpenRouterClient + DefaultCalistaAgent
+   - else → legacy direct Gemini SDK (`gemini.NewEngineAdapter`)
+
+5. **`backend-go/internal/engine/machine.go`** — bumped `maxTokensForState` budgets ~2-3x. Original spec §5.6 #6 caps (60-200) truncated Calista's persona reply mid-string → tolerant_parser "unbalanced braces" → customer saw FallbackReply. New budgets:
+   - StateGreeting 60 → 200, StateCollecting 100 → 300, StateClarifying 120 → 300
+   - StateStockCheck 150 → 400, StateConfirming 150 → 400, StateAddMore 60 → 150
+   - StateDelivery 100 → 250, StateBooked 200 → 400, default 150 → 300
+
+6. **`backend-go/internal/llm/openrouter.go`** — drive-by rename of error type prefixes from `"openrouter:"` to `"llm:"` so GeminiClient (which reuses these types) doesn't emit misleading `"openrouter: timeout"` labels.
+
+7. **`backend-go/cmd/smoke-gemini/main.go`** (new) — standalone smoke test for the GeminiClient (matches existing `cmd/smoke-calista` pattern).
+
+**Cloud Run deploy:** Revision `garindo-jaya-panel-msme-erp-00063-r72` deployed with `LLM_BACKEND=gemini` env var. Startup log: `[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]`.
+
+**Production verification (WA test 17:21):**
+- Customer "Halo" → 4 seconds total latency → clean Calista persona reply (no FallbackReply)
+- `llm_calls` row: `gemini-2.5-flash-lite`, success, 650 prompt + 149 completion tokens, 2.2s latency
+- Conversation state COLLECTING, pinned to gemini-2.5-flash-lite, swap_count=0
+
+**Side-issue surfaced (pre-existing, not fixed):**
+- Cloud Run scale-to-zero can race with WA daemon goroutines. First WA test after deploy hit a race where conversation state was still ESCALATED_ADMIN when the message goroutine read it → goroutine returned silently via `IsTerminal()` check (handler.go:218). Fixed inline by re-running with state already reset.
+- Mitigation candidates: minScale=1 on Cloud Run, or sequence state-reset BEFORE asking founder to retry.
+
+## 2026-06-14 — Calista Production Hotfix: reasoning-model empty content + chain reorder — DEPLOYED
+
+**Problem:** Customer received `"maaf, saya mengalami kendala teknis ....."` (FallbackReply) after live WA test. Root cause: `nex-agi/nex-n2-pro:free` (chain position 3) is a reasoning-style model. With `StateCollecting.MaxTokens=100`, the model exhausted its budget inside the `message.reasoning` phase and returned empty `message.content` → `tolerantParseJSON` failed → FallbackReply served.
+
+**Evidence (production `llm_calls`):** `model_slug=nex-agi/nex-n2-pro:free, status=success, completion_tokens=100, content=""`. Direct OpenRouter API replay confirmed reply text lived in `reasoning` field, not `content`.
+
+**Fix 1 — Reasoning fallback (`2550f91`):**
+- `backend-go/internal/llm/openrouter.go` `openRouterAPIResponse.Choices[].Message` gains `Reasoning string \`json:"reasoning,omitempty"\``
+- After parse: prefer `Content`, fall back to `Reasoning` when `Content == ""`. Downstream `tolerantParseJSON` treats both the same.
+- Tests: `go test ./internal/llm/` ✅
+
+**Fix 2 — Chain reorder, demote reasoning models (`e508c29`):**
+- Moved `nex-agi/nex-n2-pro:free`, `nvidia/nemotron-3-super-120b-a12b:free`, `nvidia/nemotron-3-nano-30b-a3b:free` to positions 8, 9, 10
+- Kept `google/gemma-4-31b-it:free` at position 0 (test `TestDefaultChain_TenModels` requires it)
+- Comment in `chain.go` explains demotion rationale (reasoning vs instruct output style)
+- Conservative reorder (Option 2) — only reasoning models touched; other models keep their original relative order
+- Tests: ✅ all 10 models, gemma-31b at position 0
+
+**Why not full reorder:** No empirical telemetry yet on gpt-oss-120b/llama-3.3 latency in our pipeline. Promoting unverified models to top fallback positions risks adding latency on cooldown events. Wait for 2 weeks of `llm_calls` data, then re-rank by `success_rate × parse_success_rate × avg_latency`.
+
+**Deploy:** Both commits pushed to `main` (fast-forward). Cloud Build builds 4fb20bba (Fix 1) + 59d31f66 (Fix 2) processed in sequence. Cloud Run auto-rolls to latest revision.
+
+**Pending verification:** Send a real WA message post-deploy and confirm Calista returns clean Bahasa reply (not FallbackReply, not reasoning-monologue text).
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
 
 - **Migration written:** `supabase/migrations/20260614000010_piutang_settings.sql`

@@ -37,16 +37,51 @@ func DefaultCalistaAgent() AgentConfig {
 			// the free-tier endpoint instead of the paid variant). Some require
 			// extra slug segments (e.g. `-it`, size suffix, llama-3.1 lineage)
 			// that didn't appear in the user-facing model browser.
+			//
+			// Reasoning-style models (nex-agi/*, nvidia/nemotron-*) are demoted
+			// to last-resort positions: they split output between message.content
+			// and message.reasoning, causing degraded reply text relative to plain
+			// instruct models. openrouter.go falls back to .reasoning when
+			// .content is empty, so customers still get *a* reply when we land
+			// on one — just not a clean instruct-style one.
 			{Slug: "google/gemma-4-31b-it:free", CooldownMinutes: 60},
 			{Slug: "qwen/qwen3-next-80b-a3b-instruct:free", CooldownMinutes: 60},
-			{Slug: "nex-agi/nex-n2-pro:free", CooldownMinutes: 60},
-			{Slug: "nvidia/nemotron-3-super-120b-a12b:free", CooldownMinutes: 60},
 			{Slug: "google/gemma-4-26b-a4b-it:free", CooldownMinutes: 60},
 			{Slug: "openai/gpt-oss-120b:free", CooldownMinutes: 60},
 			{Slug: "meta-llama/llama-3.3-70b-instruct:free", CooldownMinutes: 60},
 			{Slug: "nousresearch/hermes-3-llama-3.1-405b:free", CooldownMinutes: 60},
-			{Slug: "nvidia/nemotron-3-nano-30b-a3b:free", CooldownMinutes: 60},
 			{Slug: "openai/gpt-oss-20b:free", CooldownMinutes: 60},
+			{Slug: "nvidia/nemotron-3-super-120b-a12b:free", CooldownMinutes: 60},
+			{Slug: "nex-agi/nex-n2-pro:free", CooldownMinutes: 60},
+			{Slug: "nvidia/nemotron-3-nano-30b-a3b:free", CooldownMinutes: 60},
+		},
+	}
+}
+
+// DefaultCalistaAgentGemini returns Calista's config wired for the Gemini
+// direct backend (Google AI Studio free tier via the OpenAI-compatible
+// endpoint). Same SystemPrompt as the OpenRouter variant — only the chain
+// slugs differ.
+//
+// Single model: gemini-2.5-flash-lite. Rationale verified empirically on
+// 2026-06-14:
+//   - gemini-2.5-flash and gemini-flash-latest run in "thinking mode" by
+//     default, which consumes max_tokens silently and leaves message.content
+//     truncated or empty (same failure mode as OpenRouter reasoning models).
+//   - gemini-2.0-flash returned `limit: 0` for this key's free tier.
+//   - gemini-1.5-flash is deprecated (HTTP 404 on this API version).
+//   - gemini-2.5-flash-lite emits clean JSON in one round with no thinking
+//     overhead — matches the legacy direct-SDK model choice for parity.
+func DefaultCalistaAgentGemini() AgentConfig {
+	prompt := assets.CalistaSystemPrompt
+	if prompt == "" {
+		prompt = calistaSystemPrompt
+	}
+	return AgentConfig{
+		Name:         "Calista",
+		SystemPrompt: prompt,
+		Chain: []ModelSpec{
+			{Slug: "gemini-2.5-flash-lite", CooldownMinutes: 60},
 		},
 	}
 }

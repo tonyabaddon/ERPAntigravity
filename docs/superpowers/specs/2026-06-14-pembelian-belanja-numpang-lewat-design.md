@@ -60,11 +60,11 @@ Detail Phase 2 di `2026-06-14-pembelian-phase2-roadmap-design.md`.
 | `total` | numeric NOT NULL DEFAULT 0 | = subtotal di Phase 1 (no tax). Kolom terpisah supaya Phase 2 bisa add tax. |
 | `status` | text NOT NULL DEFAULT 'BELUM_LUNAS' | `BELUM_LUNAS` / `LUNAS` / `TERLAMBAT` (derived). |
 | `notes` | text | Opsional. |
-| `created_by_user_id` | uuid FK → users | Pencatat. |
+| `created_by_user_id` | uuid FK → auth.users | Pencatat. (Supabase auth schema, NOT public.users — yang tidak exist di codebase ini.) |
 | `created_at` | timestamptz DEFAULT now() | |
 | `updated_at` | timestamptz DEFAULT now() | |
 | `voided_at` | timestamptz | Soft-delete; set saat operator void PI lunas. |
-| `voided_by_user_id` | uuid FK → users | |
+| `voided_by_user_id` | uuid FK → auth.users | |
 | `void_reason` | text | |
 
 **Indexes:**
@@ -99,8 +99,9 @@ Detail Phase 2 di `2026-06-14-pembelian-phase2-roadmap-design.md`.
 | `unit_cost` | numeric NOT NULL CHECK (unit_cost >= 0) | Harga beli per unit ke grosir. |
 | `sell_price` | numeric NOT NULL CHECK (sell_price >= 0) | Harga jual ke customer (snapshot dari Order line atau editable). |
 | `subtotal` | numeric NOT NULL | qty × unit_cost. Stored for query speed. |
-| `order_item_id` | uuid FK → order_items | Optional — link item PI ke specific Order line untuk COGS attribution presisi. NULL = match by SKU saja. |
 | `created_at` | timestamptz DEFAULT now() | |
+
+**Note: `order_item_id` DROPPED.** Original draft proposed FK ke `public.order_items`, tapi table itu tidak ada — `orders.items` adalah JSONB column. Phase 1 COGS attribution match by `sku` + `pi.order_id = orders.id` saja (sufficient). Task 4 view expand `orders.items` via `jsonb_array_elements`.
 
 **Indexes:**
 - `(pi_id)` — fast load items per PI
@@ -186,17 +187,23 @@ Tidak buat `stock_lots` row (karena BNL tidak nambah stok). SKU lahir dengan sto
 Untuk profit calculation per Order:
 - Setiap PI item bawa `unit_cost` (harga beli) dan `sell_price` (harga jual).
 - Saat Order ditandai lunas, COGS untuk item yang punya matching PI item = PI.unit_cost. Item yang tidak match PI = FIFO `stock_lots` (current behavior).
-- Matching strategy: `order_item_id` FK kalau ada; kalau tidak, match by `sku` di Order line dengan qty cap (Order qty ≤ sum of PI qty for SKU).
+- Matching strategy: match by `sku` + `pi.order_id = orders.id` (tidak ada `order_item_id` FK — table `order_items` tidak ada di codebase). Qty cap: Order qty ≤ sum of PI qty for SKU.
 
 ### BR4 — Kasir expense pada LUNAS
 Saat status → LUNAS:
-- Insert `kasir_expenses`:
-  - `date` = `paid_at` (WIB)
-  - `expense_category` = `'Pembelian Pass-Through'`
-  - `description` = `'BNL <pi_number> — <supplier name> — utk Order <order_number>'`
+- Insert ke `public.kasir_transactions`:
+  - `type` = `'expense'`
+  - `date` = `paid_at::date` (WIB)
+  - `expense_category` = `'Pembelian Pass-Through'` (enum value)
+  - `description` = `'BNL <pi_number> — <supplier name> — utk Order <order_id_text>'` (pakai `orders.id::text` karena `order_number` column tidak ada)
   - `subtotal` = `pi.total`
+  - `hpp_total` = `0`
 
-Berbeda category dari PO PAID ("Pembelian Stok") supaya laporan bisa pisahkan stocking vs pass-through.
+**Pra-requisite migration:** Enum `kasir_expense_category` perlu di-extend dengan value `'Pembelian Pass-Through'` SEBELUM RPC dipakai:
+```sql
+ALTER TYPE kasir_expense_category ADD VALUE IF NOT EXISTS 'Pembelian Pass-Through';
+```
+Existing enum values (per `20260604000008_kasir_transactions.sql` + `20260607000004_recon_cash_batches.sql`): Gaji, Utilitas, Transportasi, **Pembelian Stok**, Marketing, Lain-lain, MDR EDC. Berbeda category dari PO PAID ("Pembelian Stok") supaya laporan bisa pisahkan stocking vs pass-through.
 
 ### BR5 — Void reverse
 Saat operator void PI lunas:
@@ -255,7 +262,6 @@ type RecordPiPayload = {
     qty: number;
     unit_cost: number;
     sell_price: number;
-    order_item_id?: string;
   }>;
   ignore_duplicate_warning?: boolean; // untuk konfirmasi setelah BR6 warning
 };
@@ -396,7 +402,9 @@ History panel (kalau ada): create/edit/lunas/void timestamps + user.
 
 ### 8.1 Order detail page
 
-Tambah section "Purchase Invoice Terkait (Pass-Through)" di `OrderDetailPage`:
+**Note: `OrderDetailPage.tsx` tidak ada.** Codebase menampilkan order detail di dalam `src/components/OrderHistoryScreen.tsx` (expanded row / modal di list page). Integrasi Phase 1 di-target ke OrderHistoryScreen.
+
+Tambah section "Purchase Invoice Terkait (Pass-Through)" di `OrderHistoryScreen`:
 
 - List semua PI yang link ke Order ini
 - Per PI row: PI Number + status + payment badge + supplier + total + tombol "Detail PI →"
@@ -428,12 +436,13 @@ Existing Order's revenue−COGS calc:
 - Untuk item yang tidak ada di PI: COGS = FIFO `stock_lots` (current behavior)
 - Untuk item yang ada di PI (matched by sku + qty): COGS = PI.unit_cost
 
-**Implementation:** SQL view `order_cogs_breakdown` yang join `order_items` ↔ `purchase_invoice_items` by `order_id` (header) + `sku` + qty cap. Logic:
+**Implementation:** SQL view `order_cogs_breakdown` yang expand `orders.items` JSONB (no `order_items` table — tidak ada di codebase) lalu join dengan `purchase_invoice_items` by `order_id` (header) + `sku` + qty cap. Logic:
 
-1. Untuk tiap `order_items` row, cari `purchase_invoice_items` WHERE `pi.order_id = order.id AND item.sku = order_item.sku AND pi.voided_at IS NULL`
-2. Allocate qty FIFO by `pi.created_at` ASC sampai habis order qty
-3. COGS = SUM(allocated_qty × pi_item.unit_cost) + sisa qty × FIFO `stock_lots.unit_cost`
-4. View materialized atau plain — keputusan saat implementasi berdasarkan query volume
+1. Expand `orders.items` JSONB via `jsonb_array_elements(o.items)` → derive `(order_id, sku, qty, sell_price)` rows
+2. Untuk tiap baris, cari `purchase_invoice_items` WHERE `pi.order_id = order.id AND item.sku = order_item.sku AND pi.voided_at IS NULL`
+3. Allocate qty FIFO by `pi.created_at` ASC sampai habis order qty
+4. COGS = SUM(allocated_qty × pi_item.unit_cost) + sisa qty × FIFO `stock_lots.unit_cost`
+5. View plain (non-materialized) — refresh on read
 
 Edge case: kalau total PI qty < order qty (under-coverage), sisa pakai FIFO stok. Kalau PI qty > order qty (over-coverage), warning di UI tapi tidak block — operator boleh beli buffer.
 
@@ -477,21 +486,29 @@ Tambah ke `PermissionSet`:
 
 ### Schema migrations (Phase 1)
 
-1. `20260614000001_pi_schema.sql`:
+1. `20260614000010_pi_schema.sql`:
    - Create `purchase_invoices` table
-   - Create `purchase_invoice_items` table
-   - Create indexes
-   - Setup RLS policies
+   - Create `purchase_invoice_items` table (no `order_item_id` column)
+   - FKs ke `auth.users` (bukan `public.users`)
+   - Create indexes + check constraints + RLS
+   - `set_updated_at()` trigger
+   - **Status: applied as commit `186ffbb` (after Task 1 fix-up)**
 
-2. `20260614000002_pi_rpcs.sql`:
+2. `20260614000010a_pi_kasir_enum.sql` (NEW, must apply BEFORE RPCs):
+   - `ALTER TYPE kasir_expense_category ADD VALUE IF NOT EXISTS 'Pembelian Pass-Through';`
+   - Idempotent — safe to re-run
+
+3. `20260614000011_pi_rpcs_create.sql`:
    - `generate_pi_number()`
-   - `record_pi(payload jsonb)`
+   - `record_pi(payload jsonb)` — pakai `orders.id::text` (bukan `order_number` yang tidak ada)
+
+4. `20260614000012_pi_rpcs_lifecycle.sql`:
    - `mark_pi_paid(pi_id uuid, proof_url text)`
    - `void_pi(pi_id uuid, reason text)`
    - `update_pi(pi_id uuid, payload jsonb)`
 
-3. `20260614000003_pi_kasir_category.sql`:
-   - Insert `'Pembelian Pass-Through'` ke kasir expense categories master (kalau ada)
+5. `20260614000013_order_cogs_breakdown_view.sql`:
+   - View `order_cogs_breakdown` — expand `orders.items` JSONB (bukan join `order_items` table)
 
 ### Backfill — tidak ada
 

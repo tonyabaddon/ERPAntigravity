@@ -78,6 +78,12 @@ type openRouterAPIResponse struct {
 	Choices []struct {
 		Message struct {
 			Content string `json:"content"`
+			// Reasoning models (e.g. nex-agi/nex-n2-pro:free,
+			// nvidia/nemotron-3-nano-omni) split their output between Content
+			// and Reasoning. When per-state max_tokens is tight, reasoning can
+			// consume the budget and leave Content empty. Fallback to Reasoning
+			// below preserves whatever the model actually produced.
+			Reasoning string `json:"reasoning,omitempty"`
 		} `json:"message"`
 	} `json:"choices"`
 	Usage struct {
@@ -141,8 +147,16 @@ func (c *OpenRouterClient) Complete(ctx context.Context, req CompletionRequest) 
 		return nil, fmt.Errorf("openrouter: empty choices")
 	}
 
+	// Prefer Content; fall back to Reasoning for reasoning-style models that
+	// exhausted their max_tokens budget inside the reasoning phase and left
+	// Content empty. The downstream tolerantParseJSON treats both the same.
+	replyBody := parsed.Choices[0].Message.Content
+	if replyBody == "" {
+		replyBody = parsed.Choices[0].Message.Reasoning
+	}
+
 	return &CompletionResponse{
-		Body: parsed.Choices[0].Message.Content,
+		Body: replyBody,
 		Usage: TokenUsage{
 			Prompt:     parsed.Usage.PromptTokens,
 			Completion: parsed.Usage.CompletionTokens,
@@ -159,7 +173,7 @@ type rateLimitError struct {
 }
 
 func (e *rateLimitError) Error() string {
-	return fmt.Sprintf("openrouter: rate limited (HTTP %d): %s", e.status, e.body)
+	return fmt.Sprintf("llm: rate limited (HTTP %d): %s", e.status, e.body)
 }
 
 type serverError struct {
@@ -168,7 +182,7 @@ type serverError struct {
 }
 
 func (e *serverError) Error() string {
-	return fmt.Sprintf("openrouter: server error (HTTP %d): %s", e.status, e.body)
+	return fmt.Sprintf("llm: server error (HTTP %d): %s", e.status, e.body)
 }
 
 // authError signals the API key was rejected (401) or lacks permission (403).
@@ -180,12 +194,12 @@ type authError struct {
 }
 
 func (e *authError) Error() string {
-	return fmt.Sprintf("openrouter: auth rejected (HTTP %d) — check OPENROUTER_API_KEY: %s", e.status, e.body)
+	return fmt.Sprintf("llm: auth rejected (HTTP %d) — check API key: %s", e.status, e.body)
 }
 
 type timeoutError struct{ cause error }
 
-func (e *timeoutError) Error() string { return "openrouter: timeout: " + e.cause.Error() }
+func (e *timeoutError) Error() string { return "llm: timeout: " + e.cause.Error() }
 func (e *timeoutError) Unwrap() error { return e.cause }
 
 // IsRateLimit returns true when the error indicates a 429 / quota condition.
