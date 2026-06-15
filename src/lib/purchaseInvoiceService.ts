@@ -113,6 +113,20 @@ export function isTerlambat(pi: DbPurchaseInvoice, today: string = new Date().to
   return pi.status === 'BELUM_LUNAS' && !!pi.payment_due_at && pi.payment_due_at < today;
 }
 
+/**
+ * BR7 — on-read payment due reminder.
+ * Returns true if PI is BELUM_LUNAS and due_date is within [today, today+3] (inclusive).
+ * Excludes Terlambat (already overdue) — those flow through isTerlambat instead.
+ */
+export function isDueSoon(pi: DbPurchaseInvoice, today: string = new Date().toISOString().slice(0, 10)): boolean {
+  if (pi.status !== 'BELUM_LUNAS' || !pi.payment_due_at || pi.voided_at) return false;
+  if (pi.payment_due_at < today) return false; // already terlambat
+  const due = new Date(pi.payment_due_at + 'T00:00:00');
+  const todayDate = new Date(today + 'T00:00:00');
+  const diffDays = Math.round((due.getTime() - todayDate.getTime()) / 86400000);
+  return diffDays >= 0 && diffDays <= 3;
+}
+
 export function shortOrderRef(orderId: string | null | undefined): string {
   if (!orderId) return '—';
   return 'ORD-' + orderId.slice(0, 8).toUpperCase();

@@ -1,8 +1,8 @@
 // BNL List — KPI strip + filter + table.
 // Reads from purchase_invoices WHERE type='PASSTHROUGH'.
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Search, FileText, ShoppingBag, Clock, AlertTriangle } from 'lucide-react';
-import { purchaseInvoiceService, isTerlambat, shortOrderRef } from '../../../lib/purchaseInvoiceService';
+import { Plus, Search, FileText, ShoppingBag, Clock, AlertTriangle, AlarmClock } from 'lucide-react';
+import { purchaseInvoiceService, isTerlambat, isDueSoon, shortOrderRef } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice } from '../../../types';
 import { type FilterState, resolveRange, inRange } from '../../../lib/dateRange';
 import KpiCard from '../../ui/KpiCard';
@@ -67,10 +67,12 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
     const totalBeli = filtered.reduce((a, p) => a + p.total, 0);
     const belumLunas = filtered.filter(p => p.status === 'BELUM_LUNAS' && !p.voided_at);
     const terlambat = filtered.filter(p => isTerlambat(p) && !p.voided_at);
+    const dueSoon = filtered.filter(p => isDueSoon(p));
     return {
       total, totalBeli,
       belumCount: belumLunas.length, belumTotal: belumLunas.reduce((a, p) => a + p.total, 0),
       terlambatCount: terlambat.length, terlambatTotal: terlambat.reduce((a, p) => a + p.total, 0),
+      dueSoonCount: dueSoon.length, dueSoonTotal: dueSoon.reduce((a, p) => a + p.total, 0),
     };
   }, [filtered]);
 
@@ -86,10 +88,11 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <KpiCard icon={<FileText className="w-5 h-5" />} iconBg="bg-indigo-50" iconColor="text-indigo-700" badge="Total PI" badgeClass="bg-indigo-50 text-indigo-700" label="Total PI" value={`${kpi.total} invoice`} sub="dalam periode" />
         <KpiCard icon={<ShoppingBag className="w-5 h-5" />} iconBg="bg-sky-50" iconColor="text-sky-700" badge="Belanja" badgeClass="bg-sky-50 text-sky-700" label="Total Belanja" value={fmtRpShort(kpi.totalBeli)} sub="dalam periode" />
         <KpiCard icon={<Clock className="w-5 h-5" />} iconBg="bg-amber-50" iconColor="text-amber-700" badge="Belum" badgeClass="bg-amber-50 text-amber-700" label="Belum Lunas" value={fmtRpShort(kpi.belumTotal)} sub={`${kpi.belumCount} invoice`} />
+        <KpiCard icon={<AlarmClock className="w-5 h-5" />} iconBg="bg-yellow-50" iconColor="text-yellow-700" badge="≤3 Hari" badgeClass="bg-yellow-50 text-yellow-700" label="Jatuh Tempo ≤3 Hari" value={fmtRpShort(kpi.dueSoonTotal)} sub={`${kpi.dueSoonCount} invoice`} />
         <KpiCard icon={<AlertTriangle className="w-5 h-5" />} iconBg="bg-rose-50" iconColor="text-rose-700" badge="Terlambat" badgeClass="bg-rose-50 text-rose-700" label="Terlambat" value={fmtRpShort(kpi.terlambatTotal)} sub={`${kpi.terlambatCount} invoice`} alarming={kpi.terlambatCount > 0} />
       </div>
 
