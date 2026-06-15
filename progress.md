@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — BNL Phase 1 — DEPLOYED TO GCLOUD CLOUD RUN — PRODUCTION VERIFIED
+
+- **Cloud Build submitted manually** (bypassing main-branch push trigger): `cloudbuild.frontend.yaml` with substitutions copied from `sinar-elektrik-frontend` trigger config. Build ID `2137ac44-af8b-4515-b713-82fae3f6b581`, duration 2m29s, status SUCCESS.
+- **Image:** `asia-southeast1-docker.pkg.dev/gen-lang-client-0410251117/cloud-run-source-deploy/garindo-jaya-panel-msme-erp-frontend:cf71525c4d9f5b72c07758060e6ac14cefaa1c2a`
+- **Cloud Run service:** `garindo-jaya-panel-msme-erp-frontend` in `asia-southeast1`, revision `garindo-jaya-panel-msme-erp-frontend-00059-tl6` serving the BNL Phase 1 commit chain.
+- **Production URL:** https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/
+- **Production smoke test via MCP Chrome — PASS:**
+  - ✅ Pembelian → Belanja Numpang Lewat sub-tab renders on prod URL
+  - ✅ List page shows PI-2026-06-001 with all fields: Test Supplier, Faktur SMOKE-INV-001, ORD-5DBC37E4, Rp 10.000, ● Lunas badge
+  - ✅ KPI strip live: Total PI=1, Total Belanja=Rp 10rb
+  - ✅ Screenshot: `docs/screenshots/bnl-production-verified.png`
+- **Note:** deploy did NOT push to `main` branch — manual `gcloud builds submit` from local commit. To make CI auto-deploy future BNL changes, merge `feat/piutang-tempo-v2` BNL commits into `main` (or open a PR).
+
 ## 2026-06-15 — BNL Phase 1 — MIGRATIONS APPLIED + MCP CHROME E2E SMOKE TEST PASS
 
 - **5 BNL migrations applied** to live Supabase (`db.ekhhojaezdfjfwuxyjkl`) via `scripts/apply-pending-migrations.sh`. Fix applied to migration script invocation: `SUPABASE_DB_CONNECTION` was being truncated by bash word-splitting on unquoted spaces — extracted raw line via `grep | sed` workaround for one-shot apply.
