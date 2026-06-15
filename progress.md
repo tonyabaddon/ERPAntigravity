@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — BNL Phase 1 — OrderPicker fix + BR7 on-read variant deployed + smoke tested
+
+PR #8 merged to main → Cloud Build `e444b057` SUCCESS → Cloud Run revision `00061-nfr` serving merge SHA `1a7bc100`.
+
+**Two improvements shipped:**
+- OrderPicker PostgREST fix: original code used `id::text.ilike` cast in `.or()` which PostgREST rejects with `PGRST100`. Search returned 0 hits for any input. Fixed to use `customer_name.ilike` primarily with `id.eq` exact fallback for UUID-ish queries.
+- BR7 on-read payment due reminder (skipped pg_cron + notification infra in favor of on-read signal): new `isDueSoon(pi)` helper, yellow ⏰ "Jatuh Tempo ≤3 Hari" badge in `PiStatusBadge`, 5th KPI card in BNL list.
+
+**Production smoke test (MCP Chrome):**
+- ✅ 5-KPI strip rendered: Total PI / Total Belanja / Belum Lunas / **Jatuh Tempo ≤3 Hari** / Terlambat
+- ✅ PI due in 2 days → counted in "≤3 Hari" KPI (Rp 7rb, 1 invoice) AND row badge shows ⏰ yellow
+- ✅ PI due in 10 days → only "Belum Lunas" amber, NOT in ≤3 Hari (discrimination correct)
+- ✅ OrderPicker dropdown shows 2 Jenny orders on production URL after typing "Jenny"
+- ✅ Production data cleanup verified (0 PIs after test)
+
+**Screenshot:** `docs/screenshots/bnl-orderpicker-fixed-prod.png`
+
+**BNL Phase 1 is production-ready.** Items 1-4 from go-live checklist all done:
+1. ✅ Storage bucket `purchase-documents` verified
+2. ✅ Test PIs cleaned up
+3. ✅ Inline SKU + BR6 duplicate warning verified (OrderPicker bug surfaced and fixed during this step)
+4. ✅ BR7 on-read variant (cron deferred to Phase 2 alongside whatsmeow WA reminders)
+
 ## 2026-06-15 — BNL Phase 1 — FULL E2E SMOKE TEST ON PRODUCTION (8 flows) — PASS
 
 All 8 remaining flows validated against production Cloud Run URL with live Supabase. Test PIs PI-2026-06-001/002/003 created on production DB for validation, all verified via UI + DB queries.
