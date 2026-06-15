@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.3: Extract StockTableView — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/StockTableView.tsx` (new) — 479 lines. Owns local UI state for the table: `searchQuery`, `selectedCategory`, `editingSkus`, `editValues`, plus the `startEdit`/`cancelEdit`/`saveEdit` inline-edit helpers. Receives `stockList`, `warehouses`, `currentUser`, `pendingIndex`, `showToast`, and five callbacks (`onDelete`, `onTransfer`, `onInlineUpdate`, `onRequestPriceChange`, `onRequestAdjustment`) plus optional `onOpname` from parent. The row map JSX (thumbnail/badge, name+spec pills, price button, harga_modal button, stock-per-gudang buttons, status pill, Edit/Transfer/Penyesuaian/Delete cluster, expand-spec edit block) moved verbatim — same Tailwind classes, toasts, and approval-gated disabled logic. Helpers `CATEGORY_SPECS` / `generateName` / `renderSpecForm` / `PILL_COLORS` duplicated inside with `// TODO(Task 2.11): consolidate with ProductForm` comment because parent still uses them for the add form. Optional `thinOnly` / `thinThreshold` props plumbed but unused (for the Stok Tipis tab in Task 2.11).
+  - `src/components/StockManagerScreen.tsx` — dropped `searchQuery` / `selectedCategory` / `uniqueCategories` / `filteredStock` / `editingSkus` / `editValues` / `startEdit` / `cancelEdit` / `saveEdit` / `handleCellEdit` (the last was dead code). Added `handleInlineSave(item)` that re-stamps `status` from `stock < 10` and merges into `stockList`. Replaced the table `<section>` block with `<StockTableView ...>` and lifted the add-form `{showAddForm && (...)}` and "Tambah Baris Barang Baru" trigger out as sibling `<section>` blocks (per task instruction to keep the add form in parent until Task 2.11). Trimmed lucide imports: dropped `Search`, `ChevronDown`, `ChevronUp`, `CheckCircle`, `AlertTriangle`, `Trash2`, `ClipboardCheck`; kept `PlusCircle` (add form) and `Save` (floating save button). File shrank from **808 → 509 lines** (−299).
+- **Handler-name mismatches resolved:** The task sketch's `onEdit(sku)` was misleading — the row's Edit button is a local expand/collapse toggle, not navigation. Dropped `onEdit` from props entirely; `editingSkus`/`startEdit`/`cancelEdit` live inside `StockTableView`. Expanded Props beyond the sketch to also accept `warehouses` / `currentUser` / `pendingIndex` / `onRequestPriceChange(item, field)` / `onRequestAdjustment(item, warehouseId)` because the approval-gated cells need them (the sketch's flat `onInlineUpdate` could not carry the warehouse / field info).
+- **Behavior preserved:** parent still owns `stockList`, modals (`transferItem`, `adjustmentTarget`, `priceTarget`), pending-approvals fetch + `pendingIndex` build, `currentUser`, and `warehouses` hook. `handleInlineSave` matches the old `saveEdit` semantics (price/harga_modal/specs/name merge + status re-stamp). The add form, "Tambah Baris" trigger, save-all floating button, and all three approval modals stay in parent verbatim. Minor visual reflow: add-form panel is now a sibling block above the table section instead of nested inside it — this is the change the brief flagged as acceptable.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.4 — create `PreviewCard` component.
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.2: Extract BulkUploadSection — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
