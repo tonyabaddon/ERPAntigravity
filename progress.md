@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — URL Routing & "Buka di Tab Baru" — SHIPPED
+
+- **Spec**: `docs/superpowers/specs/2026-06-15-url-routing-new-tab-design.md`
+- **Plan**: `docs/superpowers/plans/2026-06-15-url-routing-new-tab.md`
+- **Branch**: `feat/url-routing-new-tab` (rebased onto origin/main with BNL Phase 1 already merged)
+- **Files changed**:
+  - NEW `src/lib/urlRoute.ts` — pure: `buildHref`, `parseSearch`, `shouldInterceptClick`, `ACTIVE_PAGES`, `RouteState`; DOM: `navigate`, `replaceRoute`, `handleSPAClick`, `useURLRoute` (via `useSyncExternalStore`)
+  - NEW `src/lib/urlRoute.test.ts` — 19 unit tests for pure functions
+  - MOD `src/components/Sidebar.tsx` — `<button>` → `<a href onClick={handleSPAClick}>`
+  - MOD `src/App.tsx` — `useState<ActivePage>` → `useURLRoute()` driven; all `setActivePage` call sites → `navigate()`; `openCustomerId` / `initialDetailPoNumber` / `initialBnlPiNumber` / `initialBnlPrefill` / `penjualanInitialChannel` now derive from URL; deep-link block generalized (no more `if (screen !== 'pembelian') return;`); sessionStorage `pendingDeepLink` restore canonicalized via `parseSearch` + `replaceRoute`; StrictMode double-mount race guarded; `onDetailConsumed` + `onBnlDetailConsumed` no-op (URL is source of truth — chromeless detail-tab preserved)
+- **Tests**: 25/25 vitest pass (19 urlRoute pure-function tests + 6 salesChannels)
+- **Lint**: 0 errors (`tsc --noEmit` clean) — pre-existing `PengaturanScreen.tsx` errors were fixed on origin/main before this rebase
+- **Manual smoke tests via MCP Chrome (dev mode)**: 8/8 testable scenarios PASS — sidebar click + URL update, Ctrl/Cmd+click → new tab spawned (verified visually + synthetic-event preventDefault=false), middle-click + Shift-click same, F5 preserves URL, browser back fires popstate + screen updates, deep-link `?screen=pembelian&po=PO-TEST-001` opens chromeless detail-tab (B1/B2 fix verified — no flip to full chrome), logged-out deep-link → login → URL+screen restored. Tests 8 (multi-tab logout sync) + 10 (bookmark) require real Supabase — covered by code review.
+- **Side benefits delivered (one refactor, five wins)**: F5 stays in-place (was: dashboard reset), browser back/forward jalan, bookmark URL works, share-link works, `?screen=<any>` deep-link generalized dari pembelian-only
+- **NOT touched**: `window.open` existing di OrderBnlSection / BNL detail page (cosmetic follow-up), in-screen tab UI (defer ke spec Stok Round 5 per Scope Boundary di spec)
+- **Decisions yang dikunci**: anchor-tag standard (zero new UI), full SPA routing (URL = source of truth), custom hook (zero deps), `onDetailConsumed` + `onBnlDetailConsumed` jadi no-op
+- **Rebase notes**: origin/main moved +3 commits (BNL OrderPicker + BR7 KPI) between branch creation and ship. Rebased clean; conflict in `App.tsx` (BNL state additions `initialBnlPiNumber` / `initialBnlPrefill`) resolved by extending URL-driven pattern to BNL params (matches spec's URL Param Mapping table)
+
 ## 2026-06-15 — BNL Phase 1 — FULL E2E SMOKE TEST ON PRODUCTION (8 flows) — PASS
 
 All 8 remaining flows validated against production Cloud Run URL with live Supabase. Test PIs PI-2026-06-001/002/003 created on production DB for validation, all verified via UI + DB queries.
