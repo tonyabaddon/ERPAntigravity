@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useSyncExternalStore } from 'react';
+import type React from 'react';
 import type { ActivePage } from '../types';
 
 /**
@@ -95,4 +97,88 @@ export function shouldInterceptClick(e: {
   if (e.button !== 0) return false;
   if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return false;
   return true;
+}
+
+const ROUTE_CHANGE_EVENT = 'urlroute:change';
+
+/**
+ * Push a new URL into history and notify subscribers. Used for in-place
+ * SPA navigation (the path triggered by plain left-click — modifier-key
+ * clicks bypass this and let the browser handle).
+ */
+export function navigate(screen: ActivePage, params?: Record<string, string | undefined | null>): void {
+  const href = buildHref(screen, params);
+  window.history.pushState({}, '', href);
+  window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
+}
+
+/**
+ * Replace the current URL without adding to history. Use for fallback
+ * cases (unknown screen, permission denied) where we want the URL to
+ * reflect reality but not pollute back-button history.
+ */
+export function replaceRoute(screen: ActivePage, params?: Record<string, string | undefined | null>): void {
+  const href = buildHref(screen, params);
+  window.history.replaceState({}, '', href);
+  window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
+}
+
+/**
+ * Click handler for anchor tags that should behave as SPA navigation
+ * on plain left-click and as native browser navigation (new tab, new
+ * window) under any modifier key.
+ *
+ * Usage:
+ *   <a href={buildHref('pelanggan')}
+ *      onClick={(e) => handleSPAClick(e, 'pelanggan')}>
+ *     Pelanggan
+ *   </a>
+ */
+export function handleSPAClick(
+  e: React.MouseEvent,
+  screen: ActivePage,
+  params?: Record<string, string | undefined | null>,
+): void {
+  if (!shouldInterceptClick(e)) return;
+  e.preventDefault();
+  navigate(screen, params);
+}
+
+function subscribe(callback: () => void): () => void {
+  window.addEventListener('popstate', callback);
+  window.addEventListener(ROUTE_CHANGE_EVENT, callback);
+  return () => {
+    window.removeEventListener('popstate', callback);
+    window.removeEventListener(ROUTE_CHANGE_EVENT, callback);
+  };
+}
+
+// Cache the last-parsed route so useSyncExternalStore can return a stable
+// reference between renders when the URL hasn't actually changed. Without
+// this, every render would parse and create a fresh object → infinite loop
+// or unnecessary work.
+let lastSearch: string | null = null;
+let lastRoute: RouteState = { screen: 'dashboard', params: {} };
+function getSnapshot(): RouteState {
+  const current = window.location.search;
+  if (current !== lastSearch) {
+    lastSearch = current;
+    lastRoute = parseSearch(current);
+  }
+  return lastRoute;
+}
+function getServerSnapshot(): RouteState {
+  return { screen: 'dashboard', params: {} };
+}
+
+/**
+ * React hook returning the current route. Re-renders the component
+ * whenever the route changes via navigate(), replaceRoute(), or the
+ * browser's back/forward buttons.
+ *
+ * Implemented via useSyncExternalStore for safety with React 19
+ * concurrent rendering.
+ */
+export function useURLRoute(): RouteState {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
