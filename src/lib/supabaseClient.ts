@@ -62,6 +62,10 @@ export interface SupabaseStockItem {
   sku: string;
   name: string;
   category: string;
+  subcategory?: string | null;
+  unit?: string;
+  unit_alt?: string | null;
+  unit_alt_factor?: number | null;
   price: number;
   stock: number;
   stock_atas?: number;
@@ -70,6 +74,10 @@ export interface SupabaseStockItem {
   specs: Record<string, string | number>;
   updated_at?: string;
   harga_modal?: number | null;
+  photo_urls?: ProductPhoto[];
+  description?: string | null;
+  min_stock_per_product?: number | null;
+  initial_stock_approved?: boolean;
 }
 
 // Resilient API services with local fallback
