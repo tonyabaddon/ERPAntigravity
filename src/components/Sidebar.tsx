@@ -70,7 +70,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
     { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, category: 'operasional', permKey: 'pipeline' },
     // Inventory
-    { id: 'ai-stock', label: 'Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
+    { id: 'ai-stock', label: 'Produk & Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingBag, category: 'inventory', permKey: 'pembelian' },
     { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, category: 'inventory', permKey: 'can_manage_warehouses' },
