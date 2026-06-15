@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.6: ProductForm Foto card — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/ProductForm.tsx` — added Foto Produk card (hero slot + 2x2 small slots = 5 total) with drag-to-reorder, per-slot delete, and a counter pill. New state: `autoSku` (stable random 8-hex generated at mount via `crypto.getRandomValues`, used for upload path so photos land in the right folder before the user fills SKU at submit), `photos` (`Array<ProductPhoto & { localUrl?, status, progress? }>`), `draggingIdx`. Handlers: `handleFilesPicked(files, sku)` slices to remaining slots, optimistically inserts an `uploading` placeholder per file with a local `URL.createObjectURL` thumbnail, then calls `compressImage` + `uploadProductPhoto(sku, order, blob)`, swapping to `uploaded` status on success or `failed` on error with a warning toast. `handleDeletePhoto(order)` calls `deleteProductPhoto(path)` then re-indexes remaining photos. `reorderPhotos(from, to)` splice-moves then re-indexes. `previewState` now feeds `hasPhoto` and `thumbnailDataUrl` from `photos[0]`. New inline `PhotoSlot: React.FC<PhotoSlotProps>` helper renders either an empty `<label>` (dashed border, file input for picking) or a `draggable` div with thumbnail + Thumbnail badge (slot 0) + spinner overlay (uploading) + red banner (failed) + delete button (uploaded, hover). `React.FC` used so `key={i}` in the `.map([1,2,3,4])` typechecks. File grew from **304 → 460 lines**.
+  - `src/components/produk/photoValidation.test.ts` (new) — pure-function `validatePhotoCount(n)` covering 0 (reject), 1 (accept), 5 (accept), 6 (reject). Pulls `MIN_PHOTOS` / `MAX_PHOTOS` from `productPhotoService` to lock the contract.
+- **SKU upload path note:** photos upload to `{skuForUpload}/{order}.jpg` where `skuForUpload = sku.trim() || autoSku`. This avoids the "user types SKU after uploading photos → path mismatch" trap. At submit (Task 2.9), `finalSku = sku.trim() || autoSku` keeps paths aligned.
+- **Verification:** `npm run test -- src/components/produk/photoValidation.test.ts` → **20 passed** (4 new + 16 prior). `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.7 — ProductForm Harga & Stok card.
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.4: Create PreviewCard component — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)

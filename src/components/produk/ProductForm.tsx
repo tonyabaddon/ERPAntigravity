@@ -1,7 +1,8 @@
 // src/components/produk/ProductForm.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse } from '../../types';
+import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto } from '../../types';
 import { registryService } from '../../lib/supabaseClient';
+import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '../../lib/productPhotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
 
@@ -11,6 +12,11 @@ interface Props {
   onCancel: () => void;
   onSubmit: (item: Partial<StockItem>) => Promise<void>;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+}
+
+function generateSkuId(): string {
+  return Array.from(crypto.getRandomValues(new Uint8Array(4)))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export default function ProductForm({ initial, warehouses, onCancel, onSubmit, showToast }: Props) {
@@ -44,9 +50,60 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
     Object.fromEntries(Object.entries(initial?.specs ?? {}).map(([k, v]) => [k, String(v)]))
   );
 
+  // IMPORTANT: Generate a stable SKU at mount so photo uploads land in the right
+  // folder BEFORE the user fills in (or auto-generates) the SKU at submit time.
+  // User's manually-typed SKU (if any) is used at submit; otherwise this autoSku.
+  const [autoSku] = useState(() => generateSkuId());
+  const skuForUpload = (sku.trim() || autoSku);
+
+  const [photos, setPhotos] = useState<Array<ProductPhoto & { localUrl?: string; status: 'uploaded' | 'uploading' | 'failed'; progress?: number }>>(
+    (initial?.photo_urls ?? []).map(p => ({ ...p, status: 'uploaded' as const }))
+  );
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+
+  async function handleFilesPicked(files: FileList | null, targetSku: string) {
+    if (!files || files.length === 0) return;
+    const slotsAvail = MAX_PHOTOS - photos.length;
+    const taken = Array.from(files).slice(0, slotsAvail);
+    for (let i = 0; i < taken.length; i++) {
+      const file = taken[i];
+      const order = photos.length + i;
+      const localUrl = URL.createObjectURL(file);
+      setPhotos(curr => [...curr, {
+        url: '', path: '', order, uploaded_at: '',
+        localUrl, status: 'uploading', progress: 0,
+      }]);
+      try {
+        const { blob } = await compressImage(file);
+        const { url, path } = await uploadProductPhoto(targetSku, order, blob);
+        setPhotos(curr => curr.map(p => p.order === order
+          ? { ...p, url, path, uploaded_at: new Date().toISOString(), status: 'uploaded', localUrl: undefined }
+          : p));
+      } catch (e) {
+        showToast('Gagal upload foto: ' + (e as Error).message, 'warning');
+        setPhotos(curr => curr.map(p => p.order === order ? { ...p, status: 'failed' } : p));
+      }
+    }
+  }
+
+  async function handleDeletePhoto(order: number) {
+    const target = photos.find(p => p.order === order);
+    if (target?.path) await deleteProductPhoto(target.path).catch(() => {});
+    setPhotos(curr => curr.filter(p => p.order !== order).map((p, i) => ({ ...p, order: i })));
+  }
+
+  function reorderPhotos(from: number, to: number) {
+    setPhotos(curr => {
+      const arr = [...curr];
+      const [moved] = arr.splice(from, 1);
+      arr.splice(to, 0, moved);
+      return arr.map((p, i) => ({ ...p, order: i }));
+    });
+  }
+
   const previewName = useMemo(() => generateName(category, specs), [category, specs]);
 
-  // Placeholder for fields filled in later tasks (2.6-2.9)
+  // Placeholder for fields filled in later tasks (2.7-2.9)
   const previewState: ProductPreviewState = {
     name: previewName,
     sku: sku || 'auto',
@@ -56,8 +113,8 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
     hargaModal: null,
     stokAwal: 0,
     gudangTujuanId: warehouses.find(w => w.is_default)?.id ?? null,
-    hasPhoto: false,
-    thumbnailDataUrl: null,
+    hasPhoto: photos.length > 0,
+    thumbnailDataUrl: photos[0]?.url || photos[0]?.localUrl || null,
     isPendingApproval: false,
   };
 
@@ -129,7 +186,52 @@ export default function ProductForm({ initial, warehouses, onCancel, onSubmit, s
           </div>
         </div>
 
-        {/* Tasks 2.6 (Foto), 2.7 (Harga & Stok), 2.8 (Pengaturan Lanjutan) will be added here */}
+        {/* Card: Foto Produk */}
+        <div className="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h5 className="text-sm font-extrabold text-[#012749]">📷 Foto Produk <span className="w-1.5 h-1.5 bg-rose-500 rounded-full inline-block ml-1" /></h5>
+              <p className="text-[10.5px] text-slate-500">Min 1 wajib · max 5 · drag untuk urutan</p>
+            </div>
+            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
+              {photos.length} / {MAX_PHOTOS} terisi
+            </span>
+          </div>
+          <div className="grid grid-cols-12 gap-3">
+            {/* HERO slot 1 */}
+            <div className="col-span-12 sm:col-span-7">
+              <PhotoSlot
+                photo={photos[0]}
+                isThumbnail={true}
+                onDelete={() => handleDeletePhoto(0)}
+                onPick={files => handleFilesPicked(files, skuForUpload)}
+                onDragStart={() => setDraggingIdx(0)}
+                onDragOver={() => {}}
+                onDrop={() => { if (draggingIdx !== null) reorderPhotos(draggingIdx, 0); setDraggingIdx(null); }}
+              />
+            </div>
+            {/* Small slots 2-5 in 2×2 */}
+            <div className="col-span-12 sm:col-span-5 grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <PhotoSlot
+                  key={i}
+                  photo={photos[i]}
+                  isThumbnail={false}
+                  onDelete={() => handleDeletePhoto(i)}
+                  onPick={files => handleFilesPicked(files, skuForUpload)}
+                  onDragStart={() => setDraggingIdx(i)}
+                  onDragOver={() => {}}
+                  onDrop={() => { if (draggingIdx !== null) reorderPhotos(draggingIdx, i); setDraggingIdx(null); }}
+                />
+              ))}
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-500 italic mt-3">
+            Min 1 foto wajib — foto pertama jadi thumbnail. Foto akan di-index AI ~5 detik setelah simpan.
+          </p>
+        </div>
+
+        {/* Tasks 2.7 (Harga & Stok), 2.8 (Pengaturan Lanjutan) will be added here */}
 
         <div className="flex justify-end gap-2">
           <button onClick={onCancel} className="px-4 py-2 border border-slate-200 text-slate-700 rounded-full text-xs font-bold">
@@ -302,3 +404,57 @@ function SpecForm(p: {
     </div>
   );
 }
+
+type PhotoState = ProductPhoto & { localUrl?: string; status: 'uploaded' | 'uploading' | 'failed'; progress?: number };
+
+interface PhotoSlotProps {
+  photo?: PhotoState;
+  isThumbnail: boolean;
+  onDelete: () => void;
+  onPick: (files: FileList | null) => void;
+  onDragStart: () => void;
+  onDragOver: () => void;
+  onDrop: () => void;
+}
+
+const PhotoSlot: React.FC<PhotoSlotProps> = (p) => {
+  if (!p.photo) {
+    return (
+      <label className="aspect-square rounded-2xl border-2 border-dashed border-emerald-400 flex flex-col items-center justify-center text-emerald-700 cursor-pointer hover:bg-emerald-50/40">
+        <span className="material-symbols-outlined text-3xl mb-1">add_a_photo</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-widest">Tambah</span>
+        <input type="file" accept="image/*" multiple className="hidden"
+               onChange={e => p.onPick(e.target.files)} />
+      </label>
+    );
+  }
+  const thumb = p.photo.url || p.photo.localUrl;
+  return (
+    <div
+      draggable={p.photo.status === 'uploaded'}
+      onDragStart={p.onDragStart}
+      onDragOver={e => { e.preventDefault(); p.onDragOver(); }}
+      onDrop={e => { e.preventDefault(); p.onDrop(); }}
+      className={`relative aspect-square rounded-2xl overflow-hidden border ${p.isThumbnail ? 'border-2 border-emerald-300' : 'border-slate-200'} group`}
+    >
+      {thumb ? <img src={thumb} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-200" />}
+      {p.isThumbnail && (
+        <div className="absolute top-1.5 left-1.5 bg-emerald-600 text-white text-[8.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full">★ Thumbnail</div>
+      )}
+      {p.photo.status === 'uploading' && (
+        <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+        </div>
+      )}
+      {p.photo.status === 'failed' && (
+        <div className="absolute inset-x-0 bottom-0 bg-rose-600 text-white text-[8.5px] font-black uppercase tracking-widest px-1 py-0.5 text-center">Upload gagal</div>
+      )}
+      {p.photo.status === 'uploaded' && (
+        <button onClick={p.onDelete}
+                className="absolute bottom-1.5 right-1.5 bg-white/95 hover:bg-rose-50 text-rose-600 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <span className="material-symbols-outlined text-base">delete</span>
+        </button>
+      )}
+    </div>
+  );
+};
