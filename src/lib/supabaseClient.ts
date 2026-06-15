@@ -847,6 +847,63 @@ export const customersService = {
   },
 };
 
+export const customerCreditService = {
+  async requestActivate(customerId: string, termDays: number, creditLimit: number, reason: string | null) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('request_customer_credit_activate', {
+      p_customer_id: customerId,
+      p_term_days: termDays,
+      p_credit_limit: creditLimit,
+      p_reason: reason,
+    });
+    if (error) throw error;
+    return data as number;
+  },
+  async approveActivate(requestId: number, ownerPin: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('approve_customer_credit_activate', {
+      p_request_id: requestId,
+      p_owner_pin: ownerPin,
+    });
+    if (error) throw error;
+  },
+  async requestLimitChange(customerId: string, newLimit: number, reason: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('request_customer_credit_limit_change', {
+      p_customer_id: customerId,
+      p_new_limit: newLimit,
+      p_reason: reason,
+    });
+    if (error) throw error;
+    return data as number;
+  },
+  async approveLimitChange(requestId: number, ownerPin: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('approve_customer_credit_limit_change', {
+      p_request_id: requestId,
+      p_owner_pin: ownerPin,
+    });
+    if (error) throw error;
+  },
+  async requestDeactivate(customerId: string, reason: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('request_customer_credit_deactivate', {
+      p_customer_id: customerId,
+      p_reason: reason,
+    });
+    if (error) throw error;
+    return data as number;
+  },
+  async approveDeactivate(requestId: number, ownerPin: string) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('approve_customer_credit_deactivate', {
+      p_request_id: requestId,
+      p_owner_pin: ownerPin,
+    });
+    if (error) throw error;
+  },
+};
+
 export const notificationConfigService = {
   async fetch(): Promise<DbNotificationConfig | null> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -1090,6 +1147,22 @@ export const adminUsersService = {
       .maybeSingle();
     if (error) throw error;
     return data ?? null;
+  },
+
+  async currentOwnerHasPin(): Promise<boolean> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.rpc('current_owner_has_pin');
+    if (error) throw error;
+    return Boolean(data);
+  },
+
+  async changeOwnerPin(oldPin: string, newPin: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('change_owner_pin', {
+      p_old_pin: oldPin,
+      p_new_pin: newPin,
+    });
+    if (error) throw error;
   },
 };
 

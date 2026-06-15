@@ -3,6 +3,7 @@ import { Users, Search, Pencil, Check, X } from 'lucide-react';
 import { ActivePage, DbCustomerWithStats, DbCustomerProfile } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
+import TempoCreditSection from './pelanggan/TempoCreditSection';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -378,6 +379,21 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                     );
                   })
                 )}
+              </div>
+
+              {/* Tempo & Credit section */}
+              <div className="px-5 py-4 border-t border-gray-100">
+                <TempoCreditSection
+                  customer={profile}
+                  onChanged={() => {
+                    if (selectedId && isSupabaseConfigured) {
+                      customersService.fetchProfile(selectedId)
+                        .then(setProfile)
+                        .catch(() => showToast('Gagal memuat ulang profil.', 'warning'));
+                    }
+                  }}
+                  showToast={showToast}
+                />
               </div>
             </>
           ) : null}
