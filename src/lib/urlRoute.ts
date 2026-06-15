@@ -24,3 +24,55 @@ export function buildHref(screen: ActivePage, params?: Record<string, string | u
   }
   return '?' + search.toString();
 }
+
+/**
+ * Authoritative whitelist of valid screens. Mirrors the `ActivePage` union
+ * in src/types.ts. Used to silently fall back to 'dashboard' when a URL
+ * carries an unknown screen value (e.g. typo, deprecated screen, malicious).
+ *
+ * NOTE: when adding a new entry to ActivePage, add it here too.
+ */
+export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
+  'dashboard',
+  'sales-inbox',
+  'ai-stock',
+  'manajemen-gudang',
+  'stok-opname',
+  'user-management',
+  'notifications',
+  'auth',
+  'whatsapp-ai',
+  'settings',
+  'pipeline',
+  'order-history',
+  'pelanggan',
+  'laporan',
+  'pembelian',
+  'kasir',
+  'penjualanBaru',
+  'persetujuan',
+  'rekonsiliasi',
+  'wip-list',
+  'penjualan',
+]);
+
+export interface RouteState {
+  screen: ActivePage;
+  params: Record<string, string>;
+}
+
+/**
+ * Pure: parse a query-string ("?key=val&...") into a RouteState.
+ * Unknown screens silently fall back to 'dashboard' (web-standard behavior).
+ */
+export function parseSearch(search: string): RouteState {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  const rawScreen = params.get('screen') ?? '';
+  const screen: ActivePage = ACTIVE_PAGES.has(rawScreen as ActivePage)
+    ? (rawScreen as ActivePage)
+    : 'dashboard';
+  params.delete('screen');
+  const out: Record<string, string> = {};
+  params.forEach((value, key) => { out[key] = value; });
+  return { screen, params: out };
+}
