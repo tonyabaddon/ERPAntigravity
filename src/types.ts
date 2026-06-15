@@ -792,3 +792,86 @@ export interface WarehouseAuditLogRow {
   reason_note: string | null;
   created_at: string;
 }
+
+// ── Belanja Numpang Lewat (Phase 1) ──
+// Pass-through purchase invoice linked to a Sales Order.
+// type='PASSTHROUGH' has zero stock impact; type='STOCK' reserved for Phase 2.
+export type PiStatus = 'BELUM_LUNAS' | 'LUNAS' | 'TERLAMBAT';
+export type PiPaymentMethod = 'CASH' | 'TRANSFER' | 'TEMPO';
+export type PiType = 'PASSTHROUGH' | 'STOCK';
+
+export interface DbPurchaseInvoiceItem {
+  id: string;
+  pi_id: string;
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  sell_price: number;
+  subtotal: number;
+  created_at: string;
+}
+
+export interface DbPurchaseInvoice {
+  id: string;
+  pi_number: string;
+  type: PiType;
+  supplier_id: string;
+  order_id: string | null;
+  purchase_date: string;
+  supplier_invoice_number: string | null;
+  supplier_invoice_photo_url: string | null;
+  payment_method: PiPaymentMethod;
+  payment_due_at: string | null;
+  paid_at: string | null;
+  payment_proof_url: string | null;
+  subtotal: number;
+  total: number;
+  status: 'BELUM_LUNAS' | 'LUNAS';
+  notes: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  voided_at: string | null;
+  voided_by_user_id: string | null;
+  void_reason: string | null;
+  // joined
+  supplier?: DbSupplier;
+  order?: { id: string; customer_name?: string };
+  items?: DbPurchaseInvoiceItem[];
+}
+
+export interface PiItemDraft {
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  sell_price: number;
+}
+
+export interface RecordPiPayload {
+  supplier_id: string;
+  order_id: string;
+  purchase_date?: string;
+  supplier_invoice_number?: string;
+  supplier_invoice_photo_url?: string;
+  payment_method: PiPaymentMethod;
+  payment_due_at?: string;
+  initial_status: 'BELUM_LUNAS' | 'LUNAS';
+  payment_proof_url?: string;
+  notes?: string;
+  items: PiItemDraft[];
+  ignore_duplicate_warning?: boolean;
+}
+
+export interface OrderCogsBreakdownRow {
+  order_id: string;
+  line_index: number;
+  sku: string;
+  order_qty: number;
+  sell_price: number;
+  source_pi_number: string | null;
+  pi_unit_cost: number | null;
+  qty_from_pi: number;
+  qty_from_stock: number;
+}
