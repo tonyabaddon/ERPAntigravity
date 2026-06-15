@@ -4,12 +4,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Bot, 
-  Search, 
-  HelpCircle, 
-  UserCircle2, 
-  ShieldCheck, 
+import {
+  Bot,
+  Search,
+  HelpCircle,
+  UserCircle2,
+  ShieldCheck,
   LogOut,
   Bell,
   Menu,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
+import { useURLRoute, navigate, replaceRoute } from './lib/urlRoute';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -50,15 +51,38 @@ import {
 import { isSupabaseConfigured, supabase, supabaseService, adminUsersService } from './lib/supabaseClient';
 import { SalesChannelsProvider } from './contexts/SalesChannelsContext';
 
+// Local type guard for the channel URL param. Defensive — if URL is hand-edited
+// with a bogus channel, fall back to undefined (UI shows default channel picker).
+// Mirrors the KasirChannel union in src/types.ts (14 canonical sales channels).
+function isKasirChannel(value: string | undefined): value is KasirChannel {
+  if (!value) return false;
+  return [
+    'walkin', 'grosir', 'sales', 'expo',
+    'tokopedia', 'shopee', 'lazada', 'blibli', 'bukalapak', 'ralali', 'bhinneka',
+    'whatsapp', 'instagram', 'website',
+  ].includes(value);
+}
 
 export default function App() {
-  // Gating system: start at 'auth' or direct bypass for immediate interaction 
-  const [activePage, setActivePage] = useState<ActivePage>('auth');
-  const [openCustomerId, setOpenCustomerId] = useState<string | null>(null);
-  const [initialDetailPoNumber, setInitialDetailPoNumber] = useState<string | null>(null);
-  const [initialBnlPiNumber, setInitialBnlPiNumber] = useState<string | null>(null);
-  const [initialBnlPrefill, setInitialBnlPrefill] = useState<{ orderId: string; customerName?: string } | null>(null);
-  const [penjualanInitialChannel, setPenjualanInitialChannel] = useState<KasirChannel | undefined>(undefined);
+  // URL is single source of truth for navigation. activePage and screen-scoped
+  // params (customer, po, channel, bnl, bnl-new-for-order, bnl-new-customer)
+  // all derive from the current route.
+  const route = useURLRoute();
+  // Pre-auth, the AuthScreen gate below uses `!currentUser` to decide what to
+  // render — the URL doesn't carry 'auth' anymore. Post-auth, the URL wins.
+  const activePage: ActivePage = route.screen;
+  const openCustomerId: string | null = route.params.customer ?? null;
+  const initialDetailPoNumber: string | null = route.params.po ?? null;
+  const initialBnlPiNumber: string | null = route.params.bnl ?? null;
+  const initialBnlPrefill: { orderId: string; customerName?: string } | null = (() => {
+    const orderId = route.params['bnl-new-for-order'];
+    if (!orderId) return null;
+    return { orderId, customerName: route.params['bnl-new-customer'] || undefined };
+  })();
+  // Validate channel param against KasirChannel; invalid → undefined.
+  const penjualanInitialChannel: KasirChannel | undefined = isKasirChannel(route.params.channel)
+    ? route.params.channel
+    : undefined;
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
@@ -76,36 +100,17 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
 
-  // Read deep-link params on boot. Two paths:
-  //  - logged in: apply immediately (handled below after auth restore).
-  //  - logged out: stash in sessionStorage; restored by handleLoginSuccess.
-  // sessionStorage (not localStorage) so a stale deep-link doesn't survive a closed tab.
+  // Read deep-link query params on boot. URL is already source of truth for
+  // logged-in users (useURLRoute reads it directly). For logged-out users,
+  // we stash the route in sessionStorage so we can restore after login.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const screen = params.get('screen');
-    const po = params.get('po');
-    const bnl = params.get('bnl');
-    const bnlNewForOrder = params.get('bnl-new-for-order');
-    const bnlNewCustomer = params.get('bnl-new-customer');
-    if (!screen) return;
-    // Only 'pembelian' is recognized for now.
-    if (screen !== 'pembelian') return;
-    if (currentUser) {
-      // Logged in already — apply now.
-      setActivePage('pembelian');
-      if (po) setInitialDetailPoNumber(po);
-      if (bnl) setInitialBnlPiNumber(bnl);
-      if (bnlNewForOrder) setInitialBnlPrefill({ orderId: bnlNewForOrder, customerName: bnlNewCustomer ?? undefined });
-    } else {
-      // Not logged in — stash for after-login restore.
-      try {
-        sessionStorage.setItem('pembelian.pendingDeepLink', JSON.stringify({
-          screen, po: po ?? null, bnl: bnl ?? null,
-          bnlNewForOrder: bnlNewForOrder ?? null, bnlNewCustomer: bnlNewCustomer ?? null,
-        }));
-      } catch {
-        // sessionStorage unavailable (e.g., private window quota) — ignore.
-      }
+    if (currentUser) return; // Logged in — URL already drives state.
+    const search = window.location.search;
+    if (!search || search === '?') return;
+    try {
+      sessionStorage.setItem('pendingDeepLink', search);
+    } catch {
+      // sessionStorage unavailable (e.g., private window quota) — ignore.
     }
   }, []);
 
@@ -142,31 +147,31 @@ export default function App() {
           storeName: user.user_metadata?.store_name ?? '',
         });
         // Default destination is dashboard; deep-link overrides if present.
-        let nextPage: ActivePage = 'dashboard';
         try {
-          const raw = sessionStorage.getItem('pembelian.pendingDeepLink');
-          if (raw) {
-            const stash = JSON.parse(raw) as { screen?: string; po?: string | null };
-            if (stash.screen === 'pembelian') {
-              nextPage = 'pembelian';
-              if (stash.po) setInitialDetailPoNumber(stash.po);
-            }
-            sessionStorage.removeItem('pembelian.pendingDeepLink');
+          const stashedSearch = sessionStorage.getItem('pendingDeepLink');
+          if (stashedSearch) {
+            sessionStorage.removeItem('pendingDeepLink');
+            // Restore the stashed route by replacing the URL. parseSearch in
+            // urlRoute.ts gates against unknown screens, so we don't need to
+            // pre-validate here.
+            window.history.replaceState({}, '', stashedSearch);
+            window.dispatchEvent(new Event('urlroute:change'));
+          } else {
+            // No stash — go to dashboard (idempotent: if URL is already
+            // ?screen=dashboard, this is effectively a no-op).
+            replaceRoute('dashboard');
           }
         } catch {
           // Stash unreadable — fall through to dashboard.
+          replaceRoute('dashboard');
         }
-        // Use functional setter: if activePage has already been moved off 'auth'
-        // by a prior run of this effect (React StrictMode double-mount in dev),
-        // don't override — a previous setActivePage('pembelian') from the
-        // deep-link branch should win over a no-stash fallback in the re-run.
-        setActivePage(current => current !== 'auth' ? current : nextPage);
       }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         setCurrentUser(null);
-        setActivePage('auth');
+        // Don't push 'auth' into URL — let the !currentUser gate render AuthScreen.
+        // The next login will replaceRoute() to dashboard or stashed deep-link.
       }
     });
     return () => subscription.unsubscribe();
@@ -278,27 +283,23 @@ export default function App() {
   // Handle successful login
   const handleLoginSuccess = (user: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
     setCurrentUser(user);
-    // Default destination is dashboard; deep-link overrides if present.
-    let nextPage: ActivePage = 'dashboard';
+    // Restore stashed deep-link if present; otherwise go to dashboard.
     try {
-      const raw = sessionStorage.getItem('pembelian.pendingDeepLink');
-      if (raw) {
-        const stash = JSON.parse(raw) as { screen?: string; po?: string | null };
-        if (stash.screen === 'pembelian') {
-          nextPage = 'pembelian';
-          if (stash.po) setInitialDetailPoNumber(stash.po);
-        }
-        sessionStorage.removeItem('pembelian.pendingDeepLink');
+      const stashedSearch = sessionStorage.getItem('pendingDeepLink');
+      if (stashedSearch) {
+        sessionStorage.removeItem('pendingDeepLink');
+        window.history.replaceState({}, '', stashedSearch);
+        window.dispatchEvent(new Event('urlroute:change'));
+        return;
       }
     } catch {
-      // Stash unreadable — fall through to dashboard.
+      // Stash unreadable — fall through.
     }
-    setActivePage(nextPage);
+    replaceRoute('dashboard');
   };
 
   const handleOpenCustomer = (customerId: string) => {
-    setOpenCustomerId(customerId);
-    setActivePage('pelanggan');
+    navigate('pelanggan', { customer: customerId });
   };
 
   // Handle logout
@@ -311,7 +312,10 @@ export default function App() {
       }
     }
     setCurrentUser(null);
-    setActivePage('auth');
+    // Clear URL params so a refresh post-logout starts clean. AuthScreen renders
+    // via the !currentUser gate, not via ?screen=auth.
+    window.history.replaceState({}, '', window.location.pathname);
+    window.dispatchEvent(new Event('urlroute:change'));
   };
 
   const triggerToast = (msg: string, type: 'success' | 'info' | 'warning' = 'success') => {
@@ -332,13 +336,13 @@ export default function App() {
         return (
           <DashboardScreen
             showToast={triggerToast}
-            onNavigate={(page) => setActivePage(page)}
+            onNavigate={(page) => navigate(page)}
             lowStockCount={lowStockCount}
           />
         );
       case 'sales-inbox':
         return (
-          <SalesInboxScreen onNavigate={setActivePage} />
+          <SalesInboxScreen onNavigate={(page) => navigate(page)} />
         );
       case 'ai-stock':
         return (
@@ -347,7 +351,7 @@ export default function App() {
             onStockUpdate={handleStockUpdate}
             showToast={triggerToast}
             currentUser={currentUser}
-            onNavigateToOpname={() => setActivePage('stok-opname')}
+            onNavigateToOpname={() => navigate('stok-opname')}
           />
         );
       case 'manajemen-gudang':
@@ -391,7 +395,7 @@ export default function App() {
           <WhatsappAiScreen
             stockList={stockList}
             showToast={triggerToast}
-            onNavigate={setActivePage}
+            onNavigate={(page) => navigate(page)}
           />
         );
       case 'settings':
@@ -401,7 +405,7 @@ export default function App() {
             notificationConfig={config}
             onNotificationConfigChange={setConfig}
             stockList={stockList}
-            onNavigate={setActivePage}
+            onNavigate={(page) => navigate(page)}
             permissions={currentUser?.permissions}
             currentUserRole={currentUser?.role}
           />
@@ -410,7 +414,7 @@ export default function App() {
         return (
           <PipelineScreen
             onOpenCustomer={handleOpenCustomer}
-            onNavigate={setActivePage}
+            onNavigate={(page) => navigate(page)}
             showToast={triggerToast}
           />
         );
@@ -426,7 +430,7 @@ export default function App() {
         return (
           <PelangganScreen
             openCustomerId={openCustomerId}
-            onNavigate={setActivePage}
+            onNavigate={(page) => navigate(page)}
             showToast={triggerToast}
           />
         );
@@ -441,9 +445,9 @@ export default function App() {
             currentUserId={currentUser?.id}
             currentUserPermissions={currentUser?.permissions}
             initialDetailPoNumber={initialDetailPoNumber}
-            onDetailConsumed={() => setInitialDetailPoNumber(null)}
+            onDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
             initialBnlPiNumber={initialBnlPiNumber}
-            onBnlDetailConsumed={() => setInitialBnlPiNumber(null)}
+            onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
             initialBnlPrefill={initialBnlPrefill}
           />
         );
@@ -453,8 +457,7 @@ export default function App() {
             currentUser={currentUser}
             showToast={triggerToast}
             onOpenPenjualanBaru={(channel) => {
-              setPenjualanInitialChannel(channel);
-              setActivePage('penjualanBaru');
+              navigate('penjualanBaru', { channel });
             }}
           />
         );
@@ -464,18 +467,9 @@ export default function App() {
             currentUser={currentUser}
             showToast={triggerToast}
             initialChannel={penjualanInitialChannel}
-            onBack={() => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage('kasir');
-            }}
-            onSaved={(_txId) => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage('kasir');
-            }}
-            onNavigate={(page) => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage(page);
-            }}
+            onBack={() => navigate('kasir')}
+            onSaved={(_txId) => navigate('kasir')}
+            onNavigate={(page) => navigate(page)}
             onOpenCustomer={handleOpenCustomer}
           />
         );
@@ -485,18 +479,9 @@ export default function App() {
             currentUser={currentUser}
             showToast={triggerToast}
             initialChannel={penjualanInitialChannel}
-            onBack={() => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage('kasir');
-            }}
-            onSaved={(_txId) => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage('kasir');
-            }}
-            onNavigate={(page) => {
-              setPenjualanInitialChannel(undefined);
-              setActivePage(page);
-            }}
+            onBack={() => navigate('kasir')}
+            onSaved={(_txId) => navigate('kasir')}
+            onNavigate={(page) => navigate(page)}
           />
         );
       case 'rekonsiliasi':
@@ -518,15 +503,12 @@ export default function App() {
     }
   };
 
-  // Detail-tab detection: the URL carries ?po=... and we want a chromeless shell.
-  // Read URL fresh on every render — the param is stable for the tab's lifetime
-  // (we never replaceState the URL), so no React state needed.
-  const search = typeof window !== 'undefined' ? window.location.search : '';
-  const params = new URLSearchParams(search);
-  const isDetailTab = params.get('screen') === 'pembelian' && params.get('po') !== null;
+  // Detail-tab detection: route carries po param and we want a chromeless shell.
+  const isDetailTab = route.screen === 'pembelian' && route.params.po != null;
 
-  // Switch to Auth Screen if no session active
-  if (activePage === 'auth' || !currentUser) {
+  // Switch to Auth Screen if no session active. activePage no longer encodes
+  // 'auth' (URL never carries ?screen=auth) — gate purely on currentUser.
+  if (!currentUser) {
     return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
@@ -552,9 +534,9 @@ export default function App() {
           currentUserId={currentUser?.id}
           currentUserPermissions={currentUser?.permissions}
           initialDetailPoNumber={initialDetailPoNumber}
-          onDetailConsumed={() => setInitialDetailPoNumber(null)}
+          onDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
           initialBnlPiNumber={initialBnlPiNumber}
-          onBnlDetailConsumed={() => setInitialBnlPiNumber(null)}
+          onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
           initialBnlPrefill={initialBnlPrefill}
         />
       </div>
@@ -582,11 +564,7 @@ export default function App() {
       {/* Global Collapsible Sidebar Menu */}
       <Sidebar
         activePage={activePage}
-        onPageChange={(page) => {
-          if (page !== 'pelanggan') setOpenCustomerId(null);
-          setInitialDetailPoNumber(null);
-          setActivePage(page);
-        }}
+        onPageChange={(page) => navigate(page)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -626,7 +604,7 @@ export default function App() {
             </div>
 
             <button 
-              onClick={() => setActivePage('notifications')}
+              onClick={() => navigate('notifications')}
               className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 relative cursor-pointer"
               title="Notifikasi Laporan"
             >
