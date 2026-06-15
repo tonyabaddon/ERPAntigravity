@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.4: Create PreviewCard component — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added:**
+  - `src/components/produk/PreviewCard.tsx` (new) — presentational component for the live preview rail beside `ProductForm` (consumed in Task 2.5+). Exports `ProductPreviewState` interface (name, sku, category, unit, price, hargaModal, stokAwal, gudangTujuanId, hasPhoto, thumbnailDataUrl, isPendingApproval) and a default-exported `PreviewCard({ state, warehouses })`. Renders two cards: (1) **Di Daftar Stok** mock row showing the thumbnail (or `image` icon fallback), category pill, SKU, name, and `Rp price / unit · Margin X%` line (only when both `price` and `hargaModal` are set); (2) **Stok per Gudang** list filtered by `w.is_active`, where the warehouse matching `state.gudangTujuanId` shows `state.stokAwal` in emerald and all others show `0` in slate. Pending Approval pill appears in the second card header when `isPendingApproval` is true. `lg:sticky lg:top-6` wrapper so the rail stays visible on scroll.
+  - `src/components/produk/PreviewCard.test.tsx` (new) — vitest unit test for the `computeMargin(price, modal)` helper covering three cases: null modal → null, modal < price → positive margin (~21.2%), modal > price → negative margin (~−20%).
+- **Warehouse type verified:** `src/types.ts` exports `interface Warehouse { id, tenant_id, code, name, address, is_active, is_default, sort_order }` — matches the JSX access pattern (`w.id`, `w.name`, `w.is_active`); no adaptation needed.
+- **Verification:** `npx vitest run src/components/produk/PreviewCard.test.tsx` → **3 passed**, 1 file. `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.5 — ProductForm scaffold (Identitas + Spesifikasi cards).
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.3: Extract StockTableView — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
