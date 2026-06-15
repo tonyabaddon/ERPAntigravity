@@ -130,6 +130,18 @@ MIGRATIONS=(
   # Original M4 (20260614000023) assumed key/value company_settings; real schema
   # is single-row. This patch adds costing_method TEXT column + bucket creation.
   "20260615000020_costing_method_column.sql"
+
+  # ─── Product Photo M4-fix-2 — Storage RLS policies for product-photos ───
+  # The 4 storage.objects policies documented in the M4 NOTE comment; applied
+  # via DB tool now that we know Postgres role has sufficient privilege.
+  "20260615000021_product_photos_storage_policies.sql"
+
+  # ─── Product Photo Phase 2 — GRANTs on stocks + registries to authenticated ───
+  # ProductForm submit hit 42501 "permission denied" — registry tables and
+  # stocks lacked INSERT/UPDATE grants to authenticated role. Bulk upload path
+  # ran under a less-restricted role. This grant matches the existing RLS
+  # policies' intent.
+  "20260615000022_authenticated_grants.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
