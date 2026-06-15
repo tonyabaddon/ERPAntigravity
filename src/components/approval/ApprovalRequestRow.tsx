@@ -24,6 +24,7 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   customer_credit_activate: 'Aktifkan Kredit',
   customer_credit_limit_change: 'Ubah Limit Kredit',
   customer_credit_deactivate: 'Nonaktifkan Kredit',
+  initial_stock: 'Stok Awal',
 };
 
 const TYPE_ICON: Record<
@@ -40,6 +41,7 @@ const TYPE_ICON: Record<
   customer_credit_activate:     { icon: '✅', bg: 'bg-emerald-50', fg: 'text-emerald-700' },
   customer_credit_limit_change: { icon: '💳', bg: 'bg-sky-50',     fg: 'text-sky-700'     },
   customer_credit_deactivate:   { icon: '🚫', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
+  initial_stock:                { icon: '📦', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {

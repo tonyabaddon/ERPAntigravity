@@ -82,6 +82,17 @@ SELECT tenant_id, term_days_allowed, aging_buckets FROM public.piutang_settings;
 
 ---
 
+## 2026-06-15 — Product Photo Phase 1 — Task 1.6: types.ts updates + ApprovalRequestRow exhaustive-map fix — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/types.ts` — added `ProductPhoto` interface; extended `StockItem` with `subcategory`, `unit`, `unit_alt`, `unit_alt_factor`, `photo_urls`, `description`, `min_stock_per_product`, `initial_stock_approved`; appended `| 'initial_stock'` to `ApprovalRequestType`; appended Product Registry (M2) types (`ProductCategory`, `ProductBrand`, `ProductUnit`), Cari-by-Foto types (`WarehouseStockSlice`, `ProductPhotoSearchResult`, `ProductPhotoSearchResponse`), `CostingMethod`, and `AiCallLogStat`.
+  - `src/components/approval/ApprovalRequestRow.tsx` — added `initial_stock: 'Stok Awal'` to `TYPE_LABEL` and `initial_stock: { icon: '📦', bg: 'bg-slate-50', fg: 'text-slate-700' }` to `TYPE_ICON` to preserve exhaustive `Record<ApprovalRequestType, ...>` coverage. Matched existing emoji-string schema (not Lucide components) — previous-attempt note about `Package` icon was inaccurate for this file.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 1.7 — registryService in supabaseClient.
+
+---
+
 ## 2026-06-14 — Product Photo Phase 1 — Task 1.1 (M1): extend stocks columns — DONE
 
 - **Commit:** `421bcb6`
