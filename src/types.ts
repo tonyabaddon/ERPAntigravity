@@ -49,6 +49,13 @@ export interface PermissionSet {
   can_view_pengawasan?: boolean;
   // Sales channel admin (2026-06-13 spec)
   canConfigureSalesChannels?: boolean;
+  // Phase 1A — Piutang/Tempo customer credit
+  can_request_credit_activate?: boolean;
+  can_approve_credit_activate?: boolean;
+  can_request_limit_change?: boolean;
+  can_approve_limit_change?: boolean;
+  can_request_deactivate?: boolean;
+  can_approve_deactivate?: boolean;
 }
 
 export const ALL_PERMISSIONS: PermissionSet = {
@@ -89,6 +96,12 @@ export const ALL_PERMISSIONS: PermissionSet = {
   can_manage_warehouses: true,
   can_view_pengawasan: true,
   canConfigureSalesChannels: true,
+  can_request_credit_activate: true,
+  can_approve_credit_activate: true,
+  can_request_limit_change: true,
+  can_approve_limit_change: true,
+  can_request_deactivate: true,
+  can_approve_deactivate: true,
 };
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
@@ -293,6 +306,12 @@ export interface DbCustomer {
   name: string;
   company: string;
   created_at: string;
+  // Phase 1A — tempo whitelist
+  allows_tempo: boolean;
+  term_days: number;
+  credit_limit: number;
+  tempo_activated_at?: string | null;
+  tempo_activated_by?: string | null;
 }
 
 export interface DbLead {
@@ -530,7 +549,10 @@ export type ApprovalRequestType =
   | 'kasir_price_override'
   | 'kasir_void'
   | 'kasir_refund'
-  | 'rakit_lock';
+  | 'rakit_lock'
+  | 'customer_credit_activate'
+  | 'customer_credit_limit_change'
+  | 'customer_credit_deactivate';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
@@ -769,4 +791,87 @@ export interface WarehouseAuditLogRow {
   after: Record<string, unknown> | null;
   reason_note: string | null;
   created_at: string;
+}
+
+// ── Belanja Numpang Lewat (Phase 1) ──
+// Pass-through purchase invoice linked to a Sales Order.
+// type='PASSTHROUGH' has zero stock impact; type='STOCK' reserved for Phase 2.
+export type PiStatus = 'BELUM_LUNAS' | 'LUNAS' | 'TERLAMBAT';
+export type PiPaymentMethod = 'CASH' | 'TRANSFER' | 'TEMPO';
+export type PiType = 'PASSTHROUGH' | 'STOCK';
+
+export interface DbPurchaseInvoiceItem {
+  id: string;
+  pi_id: string;
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  sell_price: number;
+  subtotal: number;
+  created_at: string;
+}
+
+export interface DbPurchaseInvoice {
+  id: string;
+  pi_number: string;
+  type: PiType;
+  supplier_id: string;
+  order_id: string | null;
+  purchase_date: string;
+  supplier_invoice_number: string | null;
+  supplier_invoice_photo_url: string | null;
+  payment_method: PiPaymentMethod;
+  payment_due_at: string | null;
+  paid_at: string | null;
+  payment_proof_url: string | null;
+  subtotal: number;
+  total: number;
+  status: 'BELUM_LUNAS' | 'LUNAS';
+  notes: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  voided_at: string | null;
+  voided_by_user_id: string | null;
+  void_reason: string | null;
+  // joined
+  supplier?: DbSupplier;
+  order?: { id: string; customer_name?: string };
+  items?: DbPurchaseInvoiceItem[];
+}
+
+export interface PiItemDraft {
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  sell_price: number;
+}
+
+export interface RecordPiPayload {
+  supplier_id: string;
+  order_id: string;
+  purchase_date?: string;
+  supplier_invoice_number?: string;
+  supplier_invoice_photo_url?: string;
+  payment_method: PiPaymentMethod;
+  payment_due_at?: string;
+  initial_status: 'BELUM_LUNAS' | 'LUNAS';
+  payment_proof_url?: string;
+  notes?: string;
+  items: PiItemDraft[];
+  ignore_duplicate_warning?: boolean;
+}
+
+export interface OrderCogsBreakdownRow {
+  order_id: string;
+  line_index: number;
+  sku: string;
+  order_qty: number;
+  sell_price: number;
+  source_pi_number: string | null;
+  pi_unit_cost: number | null;
+  qty_from_pi: number;
+  qty_from_stock: number;
 }

@@ -21,19 +21,25 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   kasir_void: 'Kasir Void',
   kasir_refund: 'Kasir Refund',
   rakit_lock: 'Rakit Lock',
+  customer_credit_activate: 'Aktifkan Kredit',
+  customer_credit_limit_change: 'Ubah Limit Kredit',
+  customer_credit_deactivate: 'Nonaktifkan Kredit',
 };
 
 const TYPE_ICON: Record<
   ApprovalRequestType,
   { icon: string; bg: string; fg: string }
 > = {
-  adjustment:           { icon: '📊', bg: 'bg-rose-50',   fg: 'text-rose-600'   },
-  opname:               { icon: '🧮', bg: 'bg-blue-50',   fg: 'text-blue-700'   },
-  price_change:         { icon: '💰', bg: 'bg-blue-50',   fg: 'text-blue-700'   },
-  kasir_price_override: { icon: '🧾', bg: 'bg-violet-50', fg: 'text-violet-700' },
-  kasir_void:           { icon: '💸', bg: 'bg-violet-50', fg: 'text-violet-700' },
-  kasir_refund:         { icon: '💸', bg: 'bg-violet-50', fg: 'text-violet-700' },
-  rakit_lock:           { icon: '🔧', bg: 'bg-amber-50',  fg: 'text-amber-700'  },
+  adjustment:                   { icon: '📊', bg: 'bg-rose-50',    fg: 'text-rose-600'    },
+  opname:                       { icon: '🧮', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
+  price_change:                 { icon: '💰', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
+  kasir_price_override:         { icon: '🧾', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
+  kasir_void:                   { icon: '💸', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
+  kasir_refund:                 { icon: '💸', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
+  rakit_lock:                   { icon: '🔧', bg: 'bg-amber-50',   fg: 'text-amber-700'   },
+  customer_credit_activate:     { icon: '✅', bg: 'bg-emerald-50', fg: 'text-emerald-700' },
+  customer_credit_limit_change: { icon: '💳', bg: 'bg-sky-50',     fg: 'text-sky-700'     },
+  customer_credit_deactivate:   { icon: '🚫', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {
@@ -154,6 +160,15 @@ function summarisePayload(req: ApprovalRequest): string {
       if (total !== undefined) parts.push(formatRupiah(total));
       return parts.join(' · ');
     }
+    case 'customer_credit_activate':
+      return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;
+
+    case 'customer_credit_limit_change':
+      return `Ubah limit tempo ${get('customer_id')} → ${formatRupiah(Number(get('new_limit') ?? 0))} (alasan: ${get('reason')})`;
+
+    case 'customer_credit_deactivate':
+      return `Nonaktifkan tempo ${get('customer_id')} (alasan: ${get('reason')})`;
+
     default:
       return 'Permintaan persetujuan';
   }

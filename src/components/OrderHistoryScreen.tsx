@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ClipboardList, Search, ChevronDown } from 'lucide-react';
 import { DbOrder, KasirTransaction, SalesEntry, SalesChannel } from '../types';
+import OrderBnlSection from './pembelian/bnl/OrderBnlSection';
 import { orderService, salesEntriesService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../lib/salesChannels';
@@ -570,6 +571,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
                         </div>
                         <ItemsTable items={order.items} headerClass="bg-purple-100 text-purple-700" />
+                        <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                         <div className="text-[10px] text-gray-400">⏱ Booking berakhir: {formatDate(order.booking_expires_at)}</div>
                       </div>
                       {/* Right: action */}
@@ -685,6 +687,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pengiriman</div><div className="font-semibold text-gray-700">{order.delivery_type === 'PICKUP' ? '🏪 Pickup' : '🚚 Delivery'}</div></div>
                         </div>
                         <ItemsTable items={order.items} headerClass="bg-blue-100 text-blue-700" />
+                        <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                         {/* Payment proof */}
                         <div>
                           {/* DP proof summary — shown for DP orders above full proof */}
@@ -786,6 +789,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                         </div>
                         <ItemsTable items={order.items} headerClass="bg-indigo-100 text-indigo-700" />
+                        <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                         {/* DP Proof */}
                         <div className="mt-3">
                           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-2">
@@ -857,6 +861,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-teal-100 text-teal-700" />
+                    <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                     <div className="flex items-center gap-2 mt-2 bg-teal-100 rounded-lg px-3 py-2">
                       <span className="text-teal-600 text-sm">⏳</span>
                       <span className="text-xs text-teal-700 font-semibold">Menunggu bukti pelunasan dari customer</span>
@@ -872,6 +877,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-800">Rp {order.total.toLocaleString('id-ID')}</div></div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
+                    <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                   </div>
                 )}
                 {isExpanded && order && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
@@ -888,6 +894,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
+                    <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <span className="text-xs text-gray-500">
                         ✅ Diverifikasi oleh {order.verified_by ?? '—'} · {order.payment_verified_at ? formatDate(order.payment_verified_at) : '—'}
@@ -909,6 +916,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Total</div><div className="font-bold text-gray-400">Rp {order.total.toLocaleString('id-ID')}</div></div>
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-gray-100 text-gray-600" />
+                    <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
                   </div>
                 )}
               </div>

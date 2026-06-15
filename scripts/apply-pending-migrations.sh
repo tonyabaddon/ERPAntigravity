@@ -85,6 +85,43 @@ MIGRATIONS=(
   # PK=tenant_id with sentinel UUID. Seeds one row. RLS enabled with
   # pre-Layer-A anon SELECT + authenticated UPDATE policies.
   "20260614000010_piutang_settings.sql"
+
+  # ─── Piutang T4 — _resolve_tenant_id() helper SQL function ───
+  # STABLE function reading app.current_tenant_id GUC; returns sentinel
+  # UUID pre-Layer-A. Granted to anon, authenticated, service_role.
+  "20260614000011_resolve_tenant_helper.sql"
+
+  # ─── Piutang T5 — customer_credit_activate RPCs (request + approve) ───
+  # request: validates customer + term_days (vs piutang_settings.term_days_allowed)
+  # + credit_limit > 0 + not-already-activated, inserts approval_requests.
+  # approve: type-guarded, uses verify_owner_pin which auto-transitions; on
+  # success applies UPDATE to customers under row lock.
+  "20260614000012_customer_credit_activate_rpcs.sql"
+
+  # ─── Piutang T6 — customer_credit_limit_change RPCs ───
+  # request: validates customer is activated + new limit > 0 + reason ≥5 chars.
+  # approve: type-guarded + verify_owner_pin; on success UPDATEs customers.credit_limit.
+  "20260614000013_customer_credit_limit_change_rpcs.sql"
+
+  # ─── Piutang T7 — customer_credit_deactivate RPCs ───
+  # request: validates activated + reason≥5. approve: type-guarded +
+  # verify_owner_pin; UPDATE allows_tempo=false (retains term_days/credit_limit as audit).
+  "20260614000014_customer_credit_deactivate_rpcs.sql"
+
+  # ─── BNL Phase 1 (Belanja Numpang Lewat) — 5 migrations ───
+  # T1: purchase_invoices + purchase_invoice_items schema + indexes + RLS +
+  # set_updated_at trigger. type='PASSTHROUGH' (Phase 1) vs 'STOCK' (Phase 2 reserved).
+  "20260615000001_pi_schema.sql"
+  # T1.5: ALTER TYPE kasir_expense_category ADD VALUE 'Pembelian Pass-Through'.
+  # Must apply BEFORE RPCs that reference this enum value.
+  "20260615000002_pi_kasir_enum.sql"
+  # T2: generate_pi_number + record_pi RPCs with BR6 soft duplicate warning.
+  "20260615000003_pi_rpcs_create.sql"
+  # T3: mark_pi_paid + void_pi + update_pi lifecycle RPCs.
+  "20260615000004_pi_rpcs_lifecycle.sql"
+  # T4: order_cogs_breakdown view — allocates PI cost to Order items via
+  # jsonb_array_elements(orders.items) since there's no order_items table.
+  "20260615000005_order_cogs_breakdown_view.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
