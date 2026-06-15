@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.11: CatalogGridView + tab pill structure — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified/created:**
+  - `src/components/produk/CatalogGridView.tsx` (new, 66 lines) — grid card view of products with thumbnail (first `photo_urls[0].url` or `image` icon fallback), category badge, name (line-clamp-2), price formatted `Rp {n} / {unit}`, stock. Header row has search input (matches `name` or `sku` case-insensitive), category select (auto-derived from `stockList`, prefixed with `Semua`), and a green `+ Tambah Barang` button that fires `onAdd`. Clicking any card fires `onEdit(sku)`. Empty state: "Tidak ada produk yang cocok".
+  - `src/components/StockManagerScreen.tsx` — major rewrite. Removed the entire local add-form path: dead helpers `SpecFieldDef`, `CATEGORY_SPECS`, `generateName`, `PILL_COLORS`, `generateSkuId`, `renderSpecForm` (all only used by the old inline add-form; `StockTableView` carries its own copies); state `showAddForm`, `newCategory`, `newPrice`, `newStock`, `newSpecs`; handler `handleAddNewItem`; and JSX blocks `{showAddForm && <section>...}` and the `<button>Tambah Baris Barang Baru</button>` trigger. Trimmed lucide import: dropped `PlusCircle` (kept `Save`). Added imports: `CatalogGridView`, `ProductForm`, `stockService` (from `supabaseClient`). New state: `activeTab: 'katalog'|'stok'|'bulk'|'tipis'` (default `katalog`), `editingSku: string|null`, `showAddProductModal: boolean`. New memo `thinCount` counts items where `stock <= (min_stock_per_product ?? 5)` for the badge on the Tipis tab. New render structure: tab-pill bar (green active for non-amber tabs, amber-100 active for `tipis`) immediately under the header card → conditional content per tab (Katalog → `<CatalogGridView />`, Stok → `<StockTableView />` with full prop set, Bulk → `<BulkUploadSection />` with `companyName`/`onUploaded={refreshPending}`/`onStockUpdate`, Tipis → `<StockTableView thinOnly />` reusing the same prop set). Two new modals: `showAddProductModal` mounts `<ProductForm>` (no `initial`); `editingSku` mounts `<ProductForm initial={stockList.find(s => s.sku === editingSku)} />`. Both wire `warehouses`, `currentUserId={currentUser?.id ?? ''}`, `showToast`, and an `onSubmit` that calls `stockService.upsertProduct(data as Parameters<typeof stockService.upsertProduct>[0])` then closes the modal. Backdrop click closes; inner panel `stopPropagation`. File shrank from **509 → 360 lines** (−149).
+- **Verification:** `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics.
+- **Next:** Task 2.12 — Phase 2 smoke checkpoint (MCP Chrome verification of the new tabbed UI + ProductForm modal end-to-end with photo upload + initial-stock approval round-trip).
+
+---
+
 ## 2026-06-15 — Product Photo Phase 2 — Task 2.10: Initial stock approval flow — DONE
 
 - **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
