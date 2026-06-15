@@ -11,7 +11,9 @@ describe('urlRoute.buildHref', () => {
   });
 
   test('with multiple params (sorted by key for deterministic output)', () => {
-    expect(buildHref('pembelian', { po: 'PO-001', tab: 'detail' })).toBe('?screen=pembelian&po=PO-001&tab=detail');
+    // Insertion order (tab first, po second) deliberately differs from
+    // alphabetical sort order — verifies the sort path is actually exercised.
+    expect(buildHref('pembelian', { tab: 'detail', po: 'PO-001' })).toBe('?screen=pembelian&po=PO-001&tab=detail');
   });
 
   test('encodes special characters', () => {
@@ -21,5 +23,6 @@ describe('urlRoute.buildHref', () => {
   test('drops undefined / null / empty string params (no key=&)', () => {
     expect(buildHref('pelanggan', { customer: '' })).toBe('?screen=pelanggan');
     expect(buildHref('pelanggan', { customer: undefined as unknown as string })).toBe('?screen=pelanggan');
+    expect(buildHref('pelanggan', { customer: null as unknown as string })).toBe('?screen=pelanggan');
   });
 });
