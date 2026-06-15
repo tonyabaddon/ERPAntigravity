@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Confirmation & Fulfillment Revamp — Visual Mockup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .section { scroll-margin-top: 80px; }
+  .badge-tempo { background: #FFEDD5; color: #C2410C; }
+  .badge-dp { background: #FEF3C7; color: #92400E; }
+  .pdf-page { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 30px; min-height: 600px; font-family: 'Times New Roman', serif; font-size: 11pt; }
+  .pdf-page table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  .pdf-page th, .pdf-page td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; font-size: 10pt; }
+  .pdf-page th { background: #f5f5f5; }
+  .pdf-footer { border-top: 1px solid #888; padding-top: 8px; margin-top: 16px; font-size: 9pt; color: #444; }
+  .nav-sticky { position: sticky; top: 0; z-index: 50; background: white; border-bottom: 1px solid #e5e7eb; }
+</style>
+</head>
+<body class="bg-gray-100">
+
+<!-- Sticky top nav -->
+<nav class="nav-sticky p-3 flex flex-wrap gap-2 items-center">
+  <span class="font-bold text-sm mr-2">📦 Order Fulfillment Revamp — Mockup</span>
+  <a href="#section-1" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">1. Sidebar</a>
+  <a href="#section-2" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">2. Pesanan Aktif Funnel</a>
+  <a href="#section-3" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">3. Action Panel</a>
+  <a href="#section-4" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">4. Inbox Quick Action</a>
+  <a href="#section-5" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">5. Input Baru Wizard</a>
+  <a href="#section-6" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">6. Pengaturan</a>
+  <a href="#section-7" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">7. Edit Order Modal</a>
+  <a href="#section-8" class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">8. PDF Templates</a>
+</nav>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: Sidebar Structure -->
+<!-- ============================================================ -->
+<section id="section-1" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">1. Sidebar Structure (revised)</h2>
+  <p class="text-sm text-gray-600 mb-3">"Pesanan Aktif" sebagai tab di dalam Penjualan menu (bukan top-level). Riwayat tab dihapus — semua active+completed orders di funnel.</p>
+
+  <div class="bg-white rounded-lg shadow p-4 flex gap-4">
+    <!-- Sidebar mockup -->
+    <aside class="bg-gray-900 text-white rounded-lg p-3 w-64 text-sm">
+      <div class="font-bold text-lg mb-1">Garindo Jaya Panel</div>
+      <div class="text-xs text-gray-400 mb-4">MSME ERP SUITE</div>
+      <div class="text-[10px] text-gray-500 uppercase mb-2">OPERASIONAL</div>
+      <ul class="space-y-1 text-sm">
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">🏠 Dashboard</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">📥 Inbox</li>
+        <li class="px-2 py-1.5 rounded bg-blue-700 text-white">💰 Penjualan</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">🛒 Kasir</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">👥 Pelanggan</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">📊 Pipeline</li>
+      </ul>
+      <div class="text-[10px] text-gray-500 uppercase mt-4 mb-2">INVENTORY</div>
+      <ul class="space-y-1 text-sm">
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">📦 Stok</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">📋 Stok Opname</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">🛍️ Pembelian</li>
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">🏬 Manajemen Gudang</li>
+      </ul>
+      <div class="text-[10px] text-gray-500 uppercase mt-4 mb-2">SISTEM</div>
+      <ul class="space-y-1 text-sm">
+        <li class="px-2 py-1.5 rounded hover:bg-gray-800">⚙️ Pengaturan</li>
+      </ul>
+    </aside>
+
+    <!-- Penjualan tab structure preview -->
+    <div class="flex-1">
+      <div class="flex gap-2 border-b border-gray-200 mb-3">
+        <button class="px-3 py-2 text-sm font-bold border-b-2 border-blue-600 text-blue-700">Baru</button>
+        <button class="px-3 py-2 text-sm font-bold bg-blue-50 border-b-2 border-blue-600 text-blue-700">📦 Pesanan Aktif</button>
+        <button class="px-3 py-2 text-sm text-gray-500">WIP Rakit</button>
+        <span class="ml-auto text-[10px] text-gray-400 self-center">Riwayat tab DIHAPUS — completed orders ada di funnel Stage 5</span>
+      </div>
+      <div class="bg-gray-50 border border-dashed border-gray-300 rounded p-6 text-center text-gray-400 text-sm">
+        [Section 2 — Pesanan Aktif funnel content]
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: Pesanan Aktif Funnel -->
+<!-- ============================================================ -->
+<section id="section-2" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">2. Penjualan &gt; Pesanan Aktif — 6-stage Funnel</h2>
+  <p class="text-sm text-gray-600 mb-3">Single view for all channels. 4 active stages (auto-expand) + 2 completed stages (collapsed default).</p>
+
+  <div class="bg-white rounded-lg shadow">
+    <!-- Top filters -->
+    <div class="p-4 bg-gray-50 border-b border-gray-200">
+      <div class="flex flex-wrap gap-3 items-center mb-2">
+        <input type="text" placeholder="🔍 Cari order/customer/produk..." class="flex-1 min-w-[200px] px-3 py-1.5 border rounded-lg text-sm">
+        <select class="px-3 py-1.5 border rounded-lg text-sm">
+          <option>Channel: Semua</option>
+          <option>WhatsApp</option>
+          <option>Walk-in</option>
+          <option>Marketplace</option>
+        </select>
+        <select class="px-3 py-1.5 border rounded-lg text-sm">
+          <option>Date: Semua</option>
+          <option>Hari ini</option>
+          <option>30 hari</option>
+        </select>
+        <select class="px-3 py-1.5 border rounded-lg text-sm">
+          <option>Sort: Terbaru</option>
+          <option>Amount Tertinggi</option>
+          <option>Stuck Terlama</option>
+        </select>
+      </div>
+      <div class="text-xs text-gray-600">
+        Summary: <span class="font-bold">⏳ 12 aktif</span> · <span class="font-bold text-green-700">✓ 142 selesai</span> · <span class="font-bold text-red-600">✗ 5 dibatalkan</span>
+      </div>
+    </div>
+
+    <div class="p-4 space-y-3">
+      <!-- Active section divider -->
+      <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">━━━━ AKTIF ━━━━</div>
+
+      <!-- Stage 1: Bertanya -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-blue-50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">💬</span>
+            <span class="font-bold text-sm">1. Bertanya</span>
+            <span class="bg-blue-200 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+            <span class="text-xs text-gray-500">⏱ rata-rata 8m menunggu</span>
+          </div>
+          <span class="text-gray-400 text-sm">▼</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <div class="px-4 py-2 hover:bg-blue-50 text-sm flex justify-between">
+            <div><span class="font-medium">Jenny Setiawan</span> <span class="text-gray-400">@WA</span> · CLARIFYING · <span class="text-gray-500">3m yang lalu</span></div>
+            <span class="text-xs text-blue-600">→ Buka Chat</span>
+          </div>
+          <div class="px-4 py-2 hover:bg-blue-50 text-sm flex justify-between">
+            <div><span class="font-medium">Andi Wijaya</span> <span class="text-gray-400">@WA</span> · GREETING · <span class="text-gray-500">5m yang lalu</span></div>
+            <span class="text-xs text-blue-600">→ Buka Chat</span>
+          </div>
+          <div class="px-4 py-2 hover:bg-blue-50 text-sm flex justify-between">
+            <div><span class="font-medium">Budi Santoso</span> <span class="text-gray-400">@WA</span> · STOCK_CHECK · <span class="text-gray-500">12m yang lalu</span></div>
+            <span class="text-xs text-blue-600">→ Buka Chat</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 2: Konfirmasi & Tunggu Bayar -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-yellow-50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">💰</span>
+            <span class="font-bold text-sm">2. Konfirmasi &amp; Tunggu Bayar</span>
+            <span class="bg-yellow-200 text-yellow-800 text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+            <span class="text-xs text-gray-500">💵 Rp 1.14M · <span class="text-red-600">⏰ 1 stuck &gt; 7h</span></span>
+          </div>
+          <span class="text-gray-400 text-sm">▼</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <div class="px-4 py-2 hover:bg-yellow-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#6c6ca38d</span>
+                <span class="font-medium">Jenny Setiawan</span>
+                <span class="text-gray-400 text-xs">@WhatsApp</span>
+                <span class="font-bold text-green-700">Rp 380.000</span>
+              </div>
+              <span class="text-xs text-gray-400">▶</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">PAYMENT UPLOADED · perlu verify</div>
+          </div>
+          <div class="px-4 py-2 hover:bg-yellow-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#7a83b21f</span>
+                <span class="font-medium">Toko Sumber Jaya</span>
+                <span class="text-gray-400 text-xs">@Grosir</span>
+                <span class="font-bold text-green-700">Rp 4.500.000</span>
+                <span class="bg-red-100 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">⏰ STUCK 9h</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">WAITING PAYMENT · belum upload bukti</div>
+          </div>
+          <div class="px-4 py-2 hover:bg-yellow-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#0f1c8a90</span>
+                <span class="font-medium">CV Mekanikal Surya</span>
+                <span class="text-gray-400 text-xs">@WhatsApp</span>
+                <span class="font-bold text-green-700">Rp 380.000</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">PENDING ADMIN CONFIRMATION · perlu input ongkir + approve</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 3: Diproses (with expanded action panel example) -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-purple-50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">📦</span>
+            <span class="font-bold text-sm">3. Diproses</span>
+            <span class="bg-purple-200 text-purple-800 text-xs font-bold px-2 py-0.5 rounded-full">5</span>
+            <span class="text-xs text-gray-500">💵 Rp 2.1M · <span class="badge-dp px-1.5 py-0.5 rounded font-bold text-[10px]">2 DP-only</span> · <span class="badge-tempo px-1.5 py-0.5 rounded font-bold text-[10px]">1 TEMPO</span></span>
+          </div>
+          <span class="text-gray-400 text-sm">▼</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <div class="px-4 py-2 bg-purple-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#a8c93b1d</span>
+                <span class="font-medium">Ahmad Yusuf</span>
+                <span class="text-gray-400 text-xs">@Marketplace · Tokopedia</span>
+                <span class="font-bold text-green-700">Rp 720.000</span>
+                <span class="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded">🛍️ MARKETPLACE</span>
+              </div>
+              <span class="text-xs text-gray-400">▼</span>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">PAYMENT VERIFIED · siap diproses</div>
+          </div>
+          <div class="px-4 py-2 hover:bg-purple-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#3e7a1b09</span>
+                <span class="font-medium">Toko Kelistrikan Jaya</span>
+                <span class="text-gray-400 text-xs">@Grosir</span>
+                <span class="font-bold text-green-700">Rp 1.200.000</span>
+                <span class="badge-tempo px-1.5 py-0.5 rounded font-bold text-[10px]">🟠 TEMPO</span>
+                <span class="text-xs text-gray-500">jatuh tempo 22 Jun</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">PROCESSING · barang sedang disiapkan</div>
+          </div>
+          <div class="px-4 py-2 hover:bg-purple-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#b1e9c4f8</span>
+                <span class="font-medium">Rina Pratama</span>
+                <span class="text-gray-400 text-xs">@WhatsApp</span>
+                <span class="font-bold text-green-700">Rp 580.000</span>
+                <span class="badge-dp px-1.5 py-0.5 rounded font-bold text-[10px]">💛 DP</span>
+                <span class="text-xs text-gray-500">sisa Rp 290K</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">DP VERIFIED · admin bisa start prep, tunggu pelunasan untuk dispatch</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 4: Dikirim / Siap Diambil -->
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <div class="px-4 py-3 bg-cyan-50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">🚚</span>
+            <span class="font-bold text-sm">4. Dikirim / Siap Diambil</span>
+            <span class="bg-cyan-200 text-cyan-800 text-xs font-bold px-2 py-0.5 rounded-full">2</span>
+            <span class="text-xs text-gray-500">💵 Rp 850K · ❓ 1 tunggu konfirmasi customer</span>
+          </div>
+          <span class="text-gray-400 text-sm">▼</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+          <div class="px-4 py-2 hover:bg-cyan-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#f4a82b91</span>
+                <span class="font-medium">Yanto Hartono</span>
+                <span class="text-gray-400 text-xs">@WhatsApp</span>
+                <span class="font-bold text-green-700">Rp 420.000</span>
+                <span class="bg-cyan-100 text-cyan-700 text-[10px] font-bold px-1.5 py-0.5 rounded">🚚 DELIVERY</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">AWAITING CUSTOMER CONFIRMATION · dikirim via Lalamove 2h yang lalu</div>
+          </div>
+          <div class="px-4 py-2 hover:bg-cyan-50">
+            <div class="flex justify-between text-sm">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">#c5d3f019</span>
+                <span class="font-medium">Wati Susanti</span>
+                <span class="text-gray-400 text-xs">@WhatsApp</span>
+                <span class="font-bold text-green-700">Rp 430.000</span>
+                <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded">🏪 PICKUP</span>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 mt-0.5">READY · customer notified, menunggu pengambilan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed section divider -->
+      <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-4">━━━━ SELESAI ━━━━</div>
+
+      <!-- Stage 5: Diterima (collapsed) -->
+      <div class="border border-gray-200 rounded-lg">
+        <div class="px-4 py-3 bg-green-50 flex justify-between items-center cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">✓</span>
+            <span class="font-bold text-sm">5. Diterima</span>
+            <span class="bg-green-200 text-green-800 text-xs font-bold px-2 py-0.5 rounded-full">142</span>
+            <span class="text-xs text-gray-500">💵 Rp 54M closed (all-time)</span>
+          </div>
+          <span class="text-gray-400 text-sm">▶ collapsed (klik untuk expand)</span>
+        </div>
+      </div>
+
+      <!-- Stage 6: Dibatalkan/Ditolak (collapsed) -->
+      <div class="border border-gray-200 rounded-lg">
+        <div class="px-4 py-3 bg-red-50 flex justify-between items-center cursor-pointer">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">✗</span>
+            <span class="font-bold text-sm">6. Dibatalkan / Ditolak</span>
+            <span class="bg-red-200 text-red-800 text-xs font-bold px-2 py-0.5 rounded-full">5</span>
+            <span class="text-xs text-gray-500">💵 Rp 380K lost</span>
+          </div>
+          <span class="text-gray-400 text-sm">▶ collapsed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: OrderActionPanel — 4 status variants -->
+<!-- ============================================================ -->
+<section id="section-3" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">3. Order Action Panel — Per-Status Variants</h2>
+  <p class="text-sm text-gray-600 mb-3">Single React component that renders different action UI berdasarkan status order. Embedded in funnel expanded row OR Inbox quick-action card.</p>
+
+  <div class="grid grid-cols-2 gap-4">
+
+    <!-- PENDING_ADMIN_CONFIRMATION -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="font-mono text-xs text-gray-500">#0f1c8a90</span>
+        <span class="font-bold">CV Mekanikal Surya</span>
+        <span class="text-sm font-bold text-green-700">Rp 380.000</span>
+      </div>
+      <div class="text-xs text-purple-700 font-bold mb-3">STATUS: PENDING ADMIN CONFIRMATION</div>
+      <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+        <div><div class="text-[10px] text-gray-500 uppercase">Items</div><div>1× Kabel NYM 2.5mm² 100m/Rol</div></div>
+        <div><div class="text-[10px] text-gray-500 uppercase">Pengiriman</div><div>🚚 Delivery</div></div>
+      </div>
+      <div class="border-t pt-3">
+        <div class="text-[10px] text-gray-500 uppercase mb-2">TETAPKAN ONGKIR</div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-sm">Rp</span>
+          <input type="number" placeholder="0" class="flex-1 px-2 py-1 border rounded text-sm">
+        </div>
+        <div class="text-[10px] text-gray-500 uppercase mb-2">TIPE PEMBAYARAN</div>
+        <div class="flex gap-2 mb-3">
+          <button class="px-4 py-1 bg-purple-600 text-white text-xs font-bold rounded-full">Full</button>
+          <button class="px-4 py-1 bg-white border text-gray-600 text-xs font-bold rounded-full">DP</button>
+        </div>
+        <div class="flex gap-2">
+          <button class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded">✓ Approve</button>
+          <button class="px-4 py-2 border border-red-200 text-red-600 text-sm font-bold rounded">✕ Tolak</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT_UPLOADED -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="font-mono text-xs text-gray-500">#6c6ca38d</span>
+        <span class="font-bold">Jenny Setiawan</span>
+        <span class="text-sm font-bold text-green-700">Rp 380.000</span>
+      </div>
+      <div class="text-xs text-blue-700 font-bold mb-3">STATUS: PAYMENT UPLOADED</div>
+      <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-3">
+        <div class="text-xs text-blue-700 font-bold mb-1">📷 Bukti Transfer</div>
+        <a href="#" class="text-blue-600 underline text-sm">Lihat bukti (Image)</a>
+        <div class="text-[10px] text-gray-500 mt-1">Uploaded 17:49 · klik untuk preview</div>
+      </div>
+      <div class="text-xs text-gray-600 mb-3">
+        Nominal expected: <span class="font-bold">Rp 380.000</span> ke BCA 1234567890 a.n. Sinar Elektrik
+      </div>
+      <div class="flex gap-2">
+        <button class="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded">✓ Verify (decrement stock)</button>
+        <button class="px-4 py-2 border border-red-200 text-red-600 text-sm font-bold rounded">✕ Tolak</button>
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="font-mono text-xs text-gray-500">#a8c93b1d</span>
+        <span class="font-bold">Ahmad Yusuf</span>
+        <span class="text-sm font-bold text-green-700">Rp 720.000</span>
+        <span class="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded">MARKETPLACE</span>
+      </div>
+      <div class="text-xs text-purple-700 font-bold mb-3">STATUS: PROCESSING · siap mark ready</div>
+      <div class="text-sm mb-3">📦 Items siap dikirim. Customer di Tokopedia menunggu.</div>
+      <div class="border-t pt-3">
+        <div class="text-[10px] text-gray-500 uppercase mb-1">LINK KURIR (OPSIONAL)</div>
+        <input type="text" placeholder="https://tokopedia.com/tracking/..." class="w-full px-2 py-1 border rounded text-sm mb-3">
+        <div class="flex gap-2">
+          <button class="flex-1 px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded">📦 Mark Ready</button>
+          <button class="px-3 py-2 border border-gray-300 text-gray-700 text-sm rounded">🖨️ Surat Jalan</button>
+        </div>
+        <div class="text-[10px] text-gray-500 mt-2 italic">→ Status akan auto ke DISPATCHED + notif customer via WA</div>
+      </div>
+    </div>
+
+    <!-- AWAITING_CUSTOMER_CONFIRMATION -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="font-mono text-xs text-gray-500">#f4a82b91</span>
+        <span class="font-bold">Yanto Hartono</span>
+        <span class="text-sm font-bold text-green-700">Rp 420.000</span>
+      </div>
+      <div class="text-xs text-cyan-700 font-bold mb-3">STATUS: AWAITING CUSTOMER CONFIRMATION (2h ago)</div>
+      <div class="bg-cyan-50 border border-cyan-200 rounded p-3 mb-3">
+        <div class="text-xs"><strong>🚚 Delivery via:</strong> <a href="#" class="text-blue-600 underline">Lalamove tracking</a></div>
+        <div class="text-xs mt-1">Dikirim ke: Jl. Mawar No. 45, Bandung</div>
+      </div>
+      <div class="text-xs text-gray-600 mb-3">
+        🤖 Calista AI sedang monitor balasan customer. Reminder otomatis 24h jika belum balas.
+      </div>
+      <div class="flex gap-2">
+        <button class="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-bold rounded">✓ Tandai Diterima (Override)</button>
+        <button class="px-3 py-2 border border-red-300 text-red-600 text-sm font-bold rounded">🆘 Issue</button>
+      </div>
+      <div class="text-[10px] text-gray-500 mt-2 italic">Auto-timer akan fire ASSUMED_COMPLETED setelah 3 hari tanpa balasan</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: Inbox Quick Action Card -->
+<!-- ============================================================ -->
+<section id="section-4" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">4. Inbox — Quick Action Card (with "Buka Detail" deep-link)</h2>
+  <p class="text-sm text-gray-600 mb-3">Inbox tetap fokus chat. Card kanan punya summary order + button yang redirect ke Penjualan&gt;Pesanan Aktif dengan order pre-expanded.</p>
+
+  <div class="bg-white rounded-lg shadow flex h-[500px] overflow-hidden">
+    <!-- Conversation list (left) -->
+    <div class="w-56 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+      <div class="p-2 border-b text-xs font-bold">Inbox AI (11)</div>
+      <div class="px-3 py-2 bg-blue-100 border-l-4 border-blue-600 text-sm">
+        <div class="font-bold">Jenny Setiawan</div>
+        <div class="text-[10px] text-gray-600 truncate">Pesanan Anda sedang menunggu...</div>
+        <div class="text-[10px] text-purple-700 mt-1">Perlu Konfirmasi Admin</div>
+      </div>
+      <div class="px-3 py-2 text-sm hover:bg-gray-100">
+        <div class="font-bold">Tony</div>
+        <div class="text-[10px] text-gray-600 truncate">Halo Bapak/Ibu Tony...</div>
+      </div>
+      <div class="px-3 py-2 text-sm hover:bg-gray-100">
+        <div class="font-bold">Andi Wijaya</div>
+        <div class="text-[10px] text-gray-600 truncate">Sudah, terima kasih</div>
+      </div>
+    </div>
+
+    <!-- Chat panel (middle) -->
+    <div class="flex-1 flex flex-col">
+      <div class="p-3 border-b border-gray-200 text-sm font-bold">
+        Jenny Setiawan · 176823988170911@lid
+        <span class="ml-2 text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded">🤖 Dikelola AI · PAYMENT UPLOADED</span>
+      </div>
+      <div class="flex-1 p-3 overflow-y-auto space-y-2 bg-gray-50">
+        <div class="text-xs text-right">
+          <div class="inline-block bg-blue-100 px-3 py-1 rounded-2xl">Selamat datang di Garindo Jaya Panel...</div>
+          <div class="text-gray-400 text-[10px] mt-0.5">17:21</div>
+        </div>
+        <div class="text-xs">
+          <div class="inline-block bg-white border px-3 py-1 rounded-2xl">Jenny setiawan, Miracle, Kabel NYM</div>
+          <div class="text-gray-400 text-[10px] mt-0.5">17:21</div>
+        </div>
+        <div class="text-xs text-right">
+          <div class="inline-block bg-blue-100 px-3 py-1 rounded-2xl">Mau berapa rol pak? ada 2.5mm²?</div>
+        </div>
+        <div class="text-xs">
+          <div class="inline-block bg-white border px-3 py-1 rounded-2xl">1 rol 2.5mm 100m</div>
+        </div>
+        <div class="text-xs text-right">
+          <div class="inline-block bg-blue-100 px-3 py-1 rounded-2xl">Total Rp 380.000. Mohon transfer ke BCA...</div>
+        </div>
+        <div class="text-xs">
+          <div class="inline-block bg-white border px-3 py-1 rounded-2xl">📷 [bukti transfer]</div>
+        </div>
+      </div>
+      <div class="p-2 border-t flex gap-2 text-sm">
+        <input type="text" placeholder="Ketik pesan admin..." class="flex-1 px-2 py-1 border rounded">
+        <button class="px-3 py-1 bg-blue-600 text-white rounded">Kirim</button>
+      </div>
+    </div>
+
+    <!-- Right side: Quick Action Card -->
+    <div class="w-72 bg-gray-50 border-l border-gray-200 p-3 overflow-y-auto">
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-2">📋 Konteks Percakapan</div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-3 mb-3">
+        <div class="text-[10px] text-gray-500 uppercase font-bold mb-1">Data Terkumpul</div>
+        <div class="text-xs space-y-0.5">
+          <div>👤 Jenny Setiawan</div>
+          <div>🏢 Miracle</div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-purple-200 rounded-lg p-3 mb-3">
+        <div class="text-[10px] text-gray-500 uppercase font-bold mb-1">Pesanan Terkait</div>
+        <div class="font-mono text-xs font-bold text-gray-700">#6c6ca38d</div>
+        <div class="text-sm font-extrabold text-green-700 my-1">Rp 380.000</div>
+        <div class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded inline-block font-bold">PAYMENT UPLOADED</div>
+        <button class="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-lg">
+          🔗 Buka Detail →
+        </button>
+        <div class="text-[9px] text-gray-400 mt-1 text-center">Redirects ke /penjualan?tab=pesanan-aktif&amp;order=6c6ca38d</div>
+      </div>
+
+      <div class="bg-white border border-gray-200 rounded-lg p-3">
+        <div class="text-[10px] text-gray-500 uppercase font-bold mb-1">Follow-up Otomatis</div>
+        <div class="text-xs">0 / 2 terkirim hari ini</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: Input Baru Wizard -->
+<!-- ============================================================ -->
+<section id="section-5" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">5. Input Baru — 3-Step Wizard</h2>
+  <p class="text-sm text-gray-600 mb-3">Replaces existing single-page form. Channel-aware fields. Live status preview + smart save button.</p>
+
+  <div class="grid grid-cols-3 gap-4">
+
+    <!-- Step 1 -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex gap-1 mb-3">
+        <div class="flex-1 text-center pb-2 border-b-2 border-blue-600 text-blue-700 font-bold text-sm">Step 1</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-gray-200 text-gray-400 text-sm">Step 2</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-gray-200 text-gray-400 text-sm">Step 3</div>
+      </div>
+      <h4 class="font-bold mb-2">Kanal &amp; Pelanggan</h4>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">OFFLINE</div>
+      <div class="flex flex-wrap gap-1 mb-2">
+        <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded">Walk-in</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">Grosir</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">Sales Lap</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">Pameran</button>
+      </div>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">MARKETPLACE</div>
+      <div class="flex flex-wrap gap-1 mb-2">
+        <button class="px-2 py-1 text-xs bg-white border rounded">Tokopedia</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">Shopee</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">Lazada</button>
+      </div>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">DIRECT</div>
+      <div class="flex flex-wrap gap-1 mb-3">
+        <button class="px-2 py-1 text-xs bg-white border rounded">WhatsApp</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">IG DM</button>
+      </div>
+
+      <div class="mb-3">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">Pelanggan</div>
+        <input type="text" placeholder="Cari nama / HP..." class="w-full px-2 py-1 border rounded text-sm">
+        <button class="mt-1 text-xs text-blue-600">+ Daftar Pelanggan Baru</button>
+      </div>
+
+      <button class="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded">Lanjut →</button>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex gap-1 mb-3">
+        <div class="flex-1 text-center pb-2 border-b-2 border-green-500 text-green-700 text-sm">✓</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-blue-600 text-blue-700 font-bold text-sm">Step 2</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-gray-200 text-gray-400 text-sm">Step 3</div>
+      </div>
+      <h4 class="font-bold mb-2">Items &amp; Pembayaran</h4>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">🔍 CARI BARANG</div>
+      <input type="text" placeholder="Ketik nama atau SKU..." class="w-full px-2 py-1 border rounded text-sm mb-2">
+      <div class="text-[10px] bg-yellow-50 border-l-2 border-yellow-400 px-2 py-1 mb-2">
+        Live dropdown: SKU + nama + harga + stok
+      </div>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">🛠 TAMBAH JASA (KEEP)</div>
+      <div class="flex flex-wrap gap-1 mb-3">
+        <button class="px-2 py-1 text-xs bg-white border rounded">⚡ Jasa Rakit</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">📦 Custom Panel</button>
+      </div>
+
+      <div class="bg-gray-50 border rounded p-2 mb-3 text-xs">
+        🛒 1× Kabel NYM 2.5mm² — Rp 380K<br>
+        <span class="text-gray-500">[+/-] [hapus]</span>
+        <div class="font-bold mt-1">Subtotal: Rp 380.000</div>
+      </div>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">TIPE PEMBAYARAN</div>
+      <div class="flex gap-1 mb-2">
+        <button class="px-2 py-1 text-xs bg-blue-600 text-white rounded">LUNAS</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">DP</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">TEMPO</button>
+      </div>
+
+      <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">METODE</div>
+      <div class="flex gap-1 mb-3">
+        <button class="px-2 py-1 text-xs bg-white border rounded">💵 Cash</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">🏦 Transfer</button>
+        <button class="px-2 py-1 text-xs bg-white border rounded">💳 EDC</button>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="px-3 py-1 border text-sm">← Back</button>
+        <button class="flex-1 px-3 py-1 bg-blue-600 text-white text-sm rounded">Lanjut →</button>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <div class="flex gap-1 mb-3">
+        <div class="flex-1 text-center pb-2 border-b-2 border-green-500 text-green-700 text-sm">✓</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-green-500 text-green-700 text-sm">✓</div>
+        <div class="flex-1 text-center pb-2 border-b-2 border-blue-600 text-blue-700 font-bold text-sm">Step 3</div>
+      </div>
+      <h4 class="font-bold mb-2">Fulfillment &amp; Save</h4>
+
+      <div class="mb-3">
+        <label class="text-xs flex items-center gap-2">
+          <input type="checkbox" checked> Customer ambil langsung?
+        </label>
+        <div class="text-[10px] text-gray-500 ml-5">Toggle untuk Walk-in cash. Skip address dan langsung COMPLETED.</div>
+      </div>
+
+      <div class="mb-3 hidden">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">📍 Alamat Pengiriman</div>
+        <textarea rows="2" class="w-full px-2 py-1 border rounded text-sm" placeholder="Hanya muncul jika customer TIDAK ambil langsung"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <div class="text-[10px] font-bold text-gray-500 uppercase mb-1">📝 CATATAN INTERNAL</div>
+        <textarea rows="1" placeholder="Mis. Garansi 1 bulan..." class="w-full px-2 py-1 border rounded text-sm"></textarea>
+      </div>
+
+      <div class="bg-blue-50 border border-blue-200 rounded p-2 mb-3 text-xs">
+        🔮 <strong>Preview:</strong> Order akan disimpan dengan status <strong>COMPLETED</strong>, muncul di <strong>Stage 5 Diterima (Lunas Kasir)</strong>.
+      </div>
+
+      <div class="flex gap-2">
+        <button class="px-3 py-1 border text-sm">← Back</button>
+        <button class="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-bold rounded">
+          💾 Save &amp; Cetak Invoice Lunas
+        </button>
+      </div>
+      <div class="text-[10px] text-gray-500 mt-2 italic text-center">Tombol label adaptif sesuai predicted status</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: Pengaturan additions -->
+<!-- ============================================================ -->
+<section id="section-6" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">6. Pengaturan → Operasional (3 sub-sections baru)</h2>
+
+  <div class="grid grid-cols-3 gap-4">
+    <!-- Alamat Toko -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="font-bold mb-3">🏪 Alamat Toko</h4>
+      <div class="space-y-2 text-sm">
+        <div>
+          <label class="text-xs text-gray-600">Nama Toko *</label>
+          <input type="text" value="Sinar Elektrik" class="w-full px-2 py-1 border rounded">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">URL Logo</label>
+          <input type="text" placeholder="https://..." class="w-full px-2 py-1 border rounded">
+          <div class="text-[10px] text-gray-500">PNG/JPG 200×200px. Renders di header semua PDF.</div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Alamat Lengkap *</label>
+          <textarea rows="2" class="w-full px-2 py-1 border rounded">Jl. Pulau Nirwana IV Blok H6 No 14</textarea>
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Kota *</label>
+          <input type="text" value="Surabaya" class="w-full px-2 py-1 border rounded">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Telp/WA Toko *</label>
+          <input type="text" value="085264787775" class="w-full px-2 py-1 border rounded">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Link Google Maps * 🌟</label>
+          <input type="text" placeholder="https://maps.google.com/..." class="w-full px-2 py-1 border rounded border-red-300">
+          <div class="text-[10px] text-red-600">Wajib — dipakai di template order_completed</div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Parking info (opsional)</label>
+          <input type="text" class="w-full px-2 py-1 border rounded">
+        </div>
+        <button class="mt-2 w-full px-3 py-1 bg-blue-600 text-white text-sm rounded">Simpan</button>
+      </div>
+    </div>
+
+    <!-- Jam Operasional -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="font-bold mb-3">🕐 Jam Operasional</h4>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-[10px] text-gray-500 uppercase">
+            <th class="text-left py-1">Hari</th><th>Tutup?</th><th>Buka</th><th>Tutup</th>
+          </tr>
+        </thead>
+        <tbody class="text-xs">
+          <tr><td class="capitalize">Senin</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="17:00"></td></tr>
+          <tr><td class="capitalize">Selasa</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="17:00"></td></tr>
+          <tr><td class="capitalize">Rabu</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="17:00"></td></tr>
+          <tr><td class="capitalize">Kamis</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="17:00"></td></tr>
+          <tr><td class="capitalize">Jumat</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="17:00"></td></tr>
+          <tr><td class="capitalize">Sabtu</td><td class="text-center"><input type="checkbox"></td><td><input type="time" value="08:00"></td><td><input type="time" value="15:00"></td></tr>
+          <tr><td class="capitalize">Minggu</td><td class="text-center"><input type="checkbox" checked></td><td colspan="2" class="text-center text-gray-400">TUTUP</td></tr>
+        </tbody>
+      </table>
+      <div class="mt-3">
+        <label class="text-xs text-gray-600">Tanggal Libur Khusus</label>
+        <input type="text" placeholder="2026-06-25, 2026-12-25" class="w-full px-2 py-1 border rounded text-sm">
+      </div>
+      <button class="mt-2 w-full px-3 py-1 bg-blue-600 text-white text-sm rounded">Simpan</button>
+    </div>
+
+    <!-- Rekening Bank -->
+    <div class="bg-white rounded-lg shadow p-4">
+      <h4 class="font-bold mb-3">💳 Informasi Rekening Bank</h4>
+      <div class="space-y-2">
+        <div class="border rounded p-2">
+          <div class="grid grid-cols-3 gap-1 text-xs">
+            <input value="BCA" class="border rounded px-1 py-0.5" placeholder="Bank">
+            <input value="1234567890" class="border rounded px-1 py-0.5" placeholder="No. Rek">
+            <input value="Sinar Elektrik" class="border rounded px-1 py-0.5" placeholder="A.n.">
+          </div>
+          <div class="flex gap-2 mt-1 text-[10px]">
+            <label><input type="checkbox" checked> Aktif</label>
+            <button class="text-blue-600">Save</button>
+            <button class="text-red-600">Hapus</button>
+          </div>
+        </div>
+        <div class="border rounded p-2">
+          <div class="grid grid-cols-3 gap-1 text-xs">
+            <input value="Mandiri" class="border rounded px-1 py-0.5">
+            <input value="9876543210" class="border rounded px-1 py-0.5">
+            <input value="Sinar Elektrik" class="border rounded px-1 py-0.5">
+          </div>
+          <div class="flex gap-2 mt-1 text-[10px]">
+            <label><input type="checkbox" checked> Aktif</label>
+            <button class="text-blue-600">Save</button>
+            <button class="text-red-600">Hapus</button>
+          </div>
+        </div>
+      </div>
+      <button class="mt-3 w-full px-3 py-1 bg-green-600 text-white text-sm rounded">+ Tambah Bank</button>
+      <div class="text-[10px] text-gray-500 mt-2 italic">Bank aktif otomatis render di SO dan Invoice Tempo PDF.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: Edit Order Modal -->
+<!-- ============================================================ -->
+<section id="section-7" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">7. Edit Order Modal (post-APPROVED modification)</h2>
+  <p class="text-sm text-gray-600 mb-3">Allowed until DISPATCHED. Reason wajib. Audit log ke <code>order_modifications</code>.</p>
+
+  <div class="bg-black/50 p-6 rounded-lg flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+      <h3 class="font-bold mb-3">Edit Pesanan #6c6ca38d</h3>
+
+      <div class="space-y-2 mb-4">
+        <div>
+          <label class="text-xs text-gray-600">Ongkir</label>
+          <input type="number" value="50000" class="w-full px-2 py-1 border rounded text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-600">Alamat Pengiriman</label>
+          <textarea rows="2" class="w-full px-2 py-1 border rounded text-sm">Jl. Pulau Nirwana IV Blok H6 No 14, Surabaya</textarea>
+        </div>
+        <div>
+          <label class="text-xs text-red-600 font-bold">Alasan perubahan *</label>
+          <textarea rows="2" placeholder="Mis. Customer minta ubah alamat" class="w-full px-2 py-1 border border-red-300 rounded text-sm"></textarea>
+          <div class="text-[10px] text-gray-500">Audit trail untuk compliance.</div>
+        </div>
+      </div>
+
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-2 text-xs mb-3">
+        ⚠️ Sales Order akan re-generate dengan revisi (SO/2026/00012-Rev2). Customer dapat versi terbaru via WA.
+      </div>
+
+      <div class="flex gap-2 justify-end">
+        <button class="px-3 py-1 text-sm border rounded">Batal</button>
+        <button class="px-4 py-1 bg-blue-600 text-white text-sm rounded">Simpan</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: PDF Templates -->
+<!-- ============================================================ -->
+<section id="section-8" class="section p-6 max-w-7xl mx-auto">
+  <h2 class="text-xl font-bold mb-3">8. PDF Templates (with logo + bank info + disclaimer footer)</h2>
+  <p class="text-sm text-gray-600 mb-3">Header logo + telp toko, footer non-returnable disclaimer di SEMUA dokumen. Bank info di SO + Invoice Tempo.</p>
+
+  <div class="grid grid-cols-2 gap-6">
+
+    <!-- Sales Order PDF -->
+    <div>
+      <div class="text-xs font-bold mb-1 text-gray-600">📄 Sales Order PDF (sent on Approve)</div>
+      <div class="pdf-page">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 10px; align-items: start;">
+            <div style="width: 50px; height: 50px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+            <div style="font-size: 9pt;">
+              <strong>Sinar Elektrik</strong><br>
+              Jl. Pulau Nirwana IV Blok H6 No 14<br>
+              Surabaya<br>
+              Telp/WA: 085264787775
+            </div>
+          </div>
+          <div style="text-align: right; font-weight: bold;">
+            SO/2026/00012<br>
+            <small>15 Juni 2026</small>
+          </div>
+        </div>
+
+        <h3 style="text-align: center; font-size: 13pt; margin: 8px 0;">PESANAN PENJUALAN</h3>
+
+        <div style="display: flex; gap: 12px; margin: 6px 0; font-size: 9pt;">
+          <div style="flex: 1;">
+            <strong>Kepada:</strong><br>
+            Jenny Setiawan<br>
+            Miracle<br>
+            Telp: 085264787775
+          </div>
+          <div style="flex: 1;">
+            <strong>Pengiriman:</strong><br>
+            DELIVERY<br>
+            Jl. Mawar No. 45, Bandung
+          </div>
+        </div>
+
+        <table>
+          <thead><tr><th>No</th><th>Produk</th><th>Qty</th><th>Harga</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Kabel NYM 2.5mm² 100m/Rol</td><td>1</td><td>380.000</td><td>380.000</td></tr>
+          </tbody>
+        </table>
+
+        <div style="text-align: right; margin: 6px 0; font-size: 9pt;">
+          Subtotal: 380.000<br>
+          Ongkir: 50.000<br>
+          <strong style="font-size: 11pt;">TOTAL: Rp 430.000</strong>
+        </div>
+
+        <div style="font-size: 9pt; margin: 6px 0;">
+          <strong>Cara Pembayaran — Transfer ke salah satu rekening:</strong>
+          <div style="border: 1px solid #ddd; padding: 5px; margin-top: 3px;">
+            <strong>BCA</strong><br>
+            Nomor: 1234567890<br>
+            a.n. Sinar Elektrik
+          </div>
+          <div style="border: 1px solid #ddd; padding: 5px; margin-top: 3px;">
+            <strong>Mandiri</strong><br>
+            Nomor: 9876543210<br>
+            a.n. Sinar Elektrik
+          </div>
+        </div>
+
+        <div class="pdf-footer">
+          <strong>SYARAT &amp; KETENTUAN</strong>
+          <ul style="margin: 4px 0; padding-left: 16px;">
+            <li>Barang yang telah dibeli tidak dapat dikembalikan</li>
+            <li>Pembayaran dianggap sah setelah dana masuk ke rekening kami</li>
+            <li>Komplain barang rusak/kurang harap disampaikan saat barang diterima</li>
+          </ul>
+          <div style="text-align: right; margin-top: 4px;">Dicetak otomatis · 15 Jun 2026 10:25</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Pelunasan PDF -->
+    <div>
+      <div class="text-xs font-bold mb-1 text-gray-600">🧾 Invoice Pelunasan PDF (sent on full payment verified)</div>
+      <div class="pdf-page">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 10px; align-items: start;">
+            <div style="width: 50px; height: 50px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+            <div style="font-size: 9pt;">
+              <strong>Sinar Elektrik</strong><br>
+              Jl. Pulau Nirwana IV Blok H6 No 14<br>
+              Surabaya<br>
+              Telp/WA: 085264787775
+            </div>
+          </div>
+          <div style="text-align: right; font-weight: bold;">
+            INV/2026/00008<br>
+            <small>15 Juni 2026</small>
+          </div>
+        </div>
+
+        <h3 style="text-align: center; font-size: 13pt; margin: 8px 0;">INVOICE PENJUALAN</h3>
+
+        <table>
+          <thead><tr><th>Produk</th><th>Qty</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            <tr><td>Kabel NYM 2.5mm² 100m/Rol</td><td>1</td><td>380.000</td></tr>
+          </tbody>
+        </table>
+
+        <div style="text-align: right; margin: 6px 0; font-size: 9pt;">
+          Subtotal: 380.000<br>
+          Ongkir: 50.000<br>
+          <strong style="font-size: 11pt;">TOTAL: Rp 430.000</strong>
+        </div>
+
+        <div style="font-size: 9pt; margin: 8px 0;">
+          <strong>PEMBAYARAN:</strong><br>
+          Lunas (verified 15 Jun 2026 10:50): Rp 430.000<br>
+          Metode: Transfer · Diverifikasi: tonywei.office
+        </div>
+
+        <div style="background: #DCFCE7; border: 2px solid #16A34A; padding: 8px; text-align: center; font-weight: bold; margin: 8px 0;">
+          STATUS: ✓ LUNAS
+        </div>
+
+        <div class="pdf-footer">
+          <strong>SYARAT &amp; KETENTUAN</strong>
+          <ul style="margin: 4px 0; padding-left: 16px;">
+            <li>Barang yang telah dibeli tidak dapat dikembalikan</li>
+            <li>Pembayaran dianggap sah setelah dana masuk ke rekening kami</li>
+            <li>Komplain barang rusak/kurang harap disampaikan saat barang diterima</li>
+          </ul>
+          <div style="text-align: right; margin-top: 4px;">Dicetak otomatis · 15 Jun 2026 10:50</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice DP -->
+    <div>
+      <div class="text-xs font-bold mb-1 text-gray-600">💛 Invoice DP PDF (sent on DP verified)</div>
+      <div class="pdf-page">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 10px; align-items: start;">
+            <div style="width: 50px; height: 50px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+            <div style="font-size: 9pt;">
+              <strong>Sinar Elektrik</strong><br>
+              Jl. Pulau Nirwana IV Blok H6 No 14<br>
+              Surabaya<br>
+              Telp/WA: 085264787775
+            </div>
+          </div>
+          <div style="text-align: right; font-weight: bold;">
+            INV-DP/2026/00003<br>
+            <small>15 Juni 2026</small>
+          </div>
+        </div>
+
+        <h3 style="text-align: center; font-size: 13pt; margin: 8px 0;">KWITANSI DOWN PAYMENT (DP)</h3>
+
+        <div style="font-size: 9pt;">
+          Pelanggan: Rina Pratama<br>
+          Nomor Pesanan: #b1e9c4f8
+        </div>
+
+        <table style="margin: 8px 0;">
+          <tr><td>Total Pesanan</td><td style="text-align: right; font-weight: bold;">Rp 580.000</td></tr>
+          <tr><td>DP Diterima</td><td style="text-align: right; font-weight: bold; color: #F59E0B;">Rp 290.000</td></tr>
+          <tr><td>Sisa Pelunasan</td><td style="text-align: right;">Rp 290.000</td></tr>
+        </table>
+
+        <div style="background: #FEF3C7; border: 2px solid #F59E0B; padding: 8px; text-align: center; font-weight: bold; margin: 8px 0;">
+          STATUS: DP DITERIMA — Menunggu Pelunasan
+        </div>
+
+        <div style="font-size: 9pt;">
+          Sisa pelunasan harap ditransfer ke salah satu rekening berikut:
+          <div style="border: 1px solid #ddd; padding: 5px; margin-top: 3px;">
+            <strong>BCA</strong> · 1234567890 · a.n. Sinar Elektrik
+          </div>
+        </div>
+
+        <div class="pdf-footer">
+          <strong>SYARAT &amp; KETENTUAN</strong>
+          <ul style="margin: 4px 0; padding-left: 16px;">
+            <li>Barang yang telah dibeli tidak dapat dikembalikan</li>
+            <li>Pembayaran dianggap sah setelah dana masuk ke rekening kami</li>
+            <li>Komplain barang rusak/kurang harap disampaikan saat barang diterima</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surat Jalan -->
+    <div>
+      <div class="text-xs font-bold mb-1 text-gray-600">🚚 Surat Jalan PDF (admin print for kurir)</div>
+      <div class="pdf-page">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 8px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 10px; align-items: start;">
+            <div style="width: 50px; height: 50px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 8pt;">LOGO</div>
+            <div style="font-size: 9pt;">
+              <strong>Sinar Elektrik</strong><br>
+              Jl. Pulau Nirwana IV Blok H6 No 14<br>
+              Surabaya<br>
+              Telp/WA: 085264787775
+            </div>
+          </div>
+          <div style="text-align: right; font-weight: bold;">
+            SJ/2026/00005<br>
+            <small>15 Juni 2026</small>
+          </div>
+        </div>
+
+        <h3 style="text-align: center; font-size: 13pt; margin: 8px 0;">SURAT JALAN</h3>
+
+        <div style="display: flex; gap: 10px; margin: 6px 0; font-size: 9pt;">
+          <div style="flex: 1;"><strong>Kepada:</strong><br>Yanto Hartono<br>Jl. Mawar No. 45, Bandung</div>
+          <div style="flex: 1;"><strong>Dari:</strong><br>Sinar Elektrik<br>(Pengirim)</div>
+        </div>
+
+        <div style="font-size: 9pt; margin: 6px 0;">
+          Nomor Pesanan: #f4a82b91<br>
+          Metode: DELIVERY · Kurir: Lalamove (link tracking)
+        </div>
+
+        <table>
+          <thead><tr><th>No</th><th>Produk</th><th>Qty</th><th>Catatan</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Kabel NYM 2.5mm² 100m/Rol</td><td>1</td><td>Roll terikat</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top: 12px; font-size: 9pt;">
+          <strong>TANDA TERIMA:</strong>
+          <div style="margin-top: 6px;">Nama Penerima: ________________________</div>
+          <div style="margin-top: 6px;">Tanggal / Jam: ________________________</div>
+          <div style="margin-top: 6px;">Tanda Tangan: ________________________</div>
+          <div style="margin-top: 8px;">Diserahkan oleh: ________________________<br>Sinar Elektrik Staff</div>
+        </div>
+
+        <div class="pdf-footer">
+          <strong>SYARAT &amp; KETENTUAN</strong>
+          <ul style="margin: 4px 0; padding-left: 16px;">
+            <li>Barang yang telah dibeli tidak dapat dikembalikan</li>
+            <li>Komplain barang rusak/kurang harap disampaikan saat barang diterima</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="p-6 max-w-7xl mx-auto text-center text-xs text-gray-500 mt-8">
+  Spec ref: <code>docs/superpowers/specs/2026-06-15-order-confirmation-fulfillment-revamp-design.md</code><br>
+  Implementation plan: <code>docs/superpowers/plans/2026-06-15-order-confirmation-fulfillment-revamp-implementation.md</code><br>
+  <br>
+  Mockup ini visualization untuk final review. Implementasi akan match dengan Tailwind classes + React components per task.
+</footer>
+
+</body>
+</html>
