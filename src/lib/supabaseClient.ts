@@ -16,6 +16,9 @@ import type {
   RakitServiceType,
   Warehouse,
   WarehouseAuditLogRow,
+  ProductCategory,
+  ProductBrand,
+  ProductUnit,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -1205,6 +1208,60 @@ export const stockService = {
         { onConflict: 'sku' }
       );
     if (error) throw error;
+  },
+};
+
+export const registryService = {
+  async listCategories(): Promise<ProductCategory[]> {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductCategory[];
+  },
+  async addCategory(name: string, parentId: string | null = null): Promise<ProductCategory> {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .insert({ name: name.trim(), parent_id: parentId })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductCategory;
+  },
+  async listBrands(): Promise<ProductBrand[]> {
+    const { data, error } = await supabase
+      .from('product_brands')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductBrand[];
+  },
+  async addBrand(name: string): Promise<ProductBrand> {
+    const { data, error } = await supabase
+      .from('product_brands')
+      .insert({ name: name.trim() })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductBrand;
+  },
+  async listUnits(): Promise<ProductUnit[]> {
+    const { data, error } = await supabase
+      .from('product_units')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductUnit[];
+  },
+  async addUnit(name: string): Promise<ProductUnit> {
+    const { data, error } = await supabase
+      .from('product_units')
+      .insert({ name: name.trim(), is_default: false })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductUnit;
   },
 };
 
