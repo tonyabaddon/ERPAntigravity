@@ -24,6 +24,7 @@ import {
   Warehouse,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
+import { buildHref, handleSPAClick } from '../lib/urlRoute';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 
@@ -186,10 +187,20 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                 const IconComponent = item.icon;
                 const isActive = activePage === item.id;
                 return (
-                  <button
+                  <a
                     key={item.id}
-                    onClick={() => onPageChange(item.id)}
-                    className={`w-full flex items-center gap-3 py-2.5 px-4 rounded-full text-left transition-all duration-200 cursor-pointer group/item ${
+                    href={buildHref(item.id)}
+                    onClick={(e) => {
+                      handleSPAClick(e, item.id);
+                      // SPA path: still notify parent so existing side-effects (e.g. clearing
+                      // openCustomerId / initialDetailPoNumber in App.tsx) run. The parent
+                      // currently treats onPageChange as the canonical entrypoint; once the
+                      // App.tsx refactor lands (Task 6) this becomes a no-op because the
+                      // parent reads from useURLRoute() directly. Keep the call for now to
+                      // make this task independently shippable.
+                      if (e.defaultPrevented) onPageChange(item.id);
+                    }}
+                    className={`w-full flex items-center gap-3 py-2.5 px-4 rounded-full text-left transition-all duration-200 cursor-pointer group/item no-underline ${
                       isActive
                         ? 'bg-white/15 text-emerald-300 font-bold shadow-lg shadow-white/5'
                         : 'text-white/70 hover:bg-white/10 hover:text-white'
@@ -212,7 +223,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                         <PendingApprovalBadge count={pendingCount} size="md" />
                       </span>
                     )}
-                  </button>
+                  </a>
                 );
               })}
             </div>
