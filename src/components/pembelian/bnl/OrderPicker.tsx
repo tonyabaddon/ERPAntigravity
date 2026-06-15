@@ -18,11 +18,22 @@ export default function OrderPicker({ value, onChange }: OrderPickerProps) {
   useEffect(() => {
     if (!query || query.length < 2 || !supabase) { setResults([]); return; }
     const t = setTimeout(async () => {
-      // Search by id::text (UUID prefix) or customer_name
-      const { data } = await supabase!.from('orders')
+      // PostgREST .or() doesn't support `id::text.ilike` cast syntax. Search
+      // primarily by customer_name. For UUID-prefix lookup, fall back to
+      // exact-prefix match on the id field (Postgres handles uuid LIKE).
+      const isUuidish = /^[0-9a-f-]+$/i.test(query) && query.length >= 4;
+      const orFilter = isUuidish
+        ? `id.eq.${query},customer_name.ilike.%${query}%`
+        : `customer_name.ilike.%${query}%`;
+      const { data, error } = await supabase!.from('orders')
         .select('id, customer_name')
-        .or(`id::text.ilike.%${query}%,customer_name.ilike.%${query}%`)
+        .or(orFilter)
         .order('created_at', { ascending: false }).limit(20);
+      if (error) {
+        console.warn('OrderPicker search error:', error.message);
+        setResults([]);
+        return;
+      }
       setResults((data ?? []) as any);
     }, 250);
     return () => clearTimeout(t);
