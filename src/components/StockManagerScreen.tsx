@@ -20,6 +20,7 @@ import ProductForm from './produk/ProductForm';
 interface StockManagerScreenProps {
   stockList: StockItem[];
   onStockUpdate: (updated: StockItem[]) => void;
+  onStocksRefresh?: () => Promise<void> | void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   currentUser?: { id: string; name: string; role: string } | null;
   onNavigateToOpname?: () => void;
@@ -27,7 +28,7 @@ interface StockManagerScreenProps {
 
 type Tab = 'katalog' | 'stok' | 'bulk' | 'tipis';
 
-export default function StockManagerScreen({ stockList, onStockUpdate, showToast, currentUser, onNavigateToOpname }: StockManagerScreenProps) {
+export default function StockManagerScreen({ stockList, onStockUpdate, onStocksRefresh, showToast, currentUser, onNavigateToOpname }: StockManagerScreenProps) {
   const [activeTab, setActiveTab] = useState<Tab>('katalog');
   const [editingSku, setEditingSku] = useState<string | null>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -324,6 +325,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
               onCancel={() => setShowAddProductModal(false)}
               onSubmit={async data => {
                 await stockService.upsertProduct(data as Parameters<typeof stockService.upsertProduct>[0]);
+                await onStocksRefresh?.();
                 setShowAddProductModal(false);
               }}
               showToast={showToast}
@@ -348,6 +350,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, showToast
               onCancel={() => setEditingSku(null)}
               onSubmit={async data => {
                 await stockService.upsertProduct(data as Parameters<typeof stockService.upsertProduct>[0]);
+                await onStocksRefresh?.();
                 setEditingSku(null);
               }}
               showToast={showToast}

@@ -353,6 +353,7 @@ export default function App() {
           <StockManagerScreen
             stockList={stockList}
             onStockUpdate={handleStockUpdate}
+            onStocksRefresh={handleStockRefresh}
             showToast={triggerToast}
             currentUser={currentUser}
             onNavigateToOpname={() => setActivePage('stok-opname')}
