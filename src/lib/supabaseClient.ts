@@ -1007,16 +1007,15 @@ export const companySettingsService = {
       .eq('id', 1);
   },
 
-  // Costing method is stored in the key/value `company_settings` row (key='costing_method')
-  // seeded by migration M4. Value is JSONB — supabase-js parses it, so we may get either
-  // a quoted string or a plain string depending on how it was written.
+  // Costing method is stored as a column on the single-row company_settings table
+  // (added by migration 20260615000020). The original M4 spec used a key/value row
+  // model that didn't match this codebase — see fix migration header for context.
   async getCostingMethod(): Promise<'FIFO' | 'Average'> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
-      .from('company_settings').select('value').eq('key', 'costing_method').maybeSingle();
+      .from('company_settings').select('costing_method').eq('id', 1).maybeSingle();
     if (error) throw error;
-    const raw = (data as { value?: unknown } | null)?.value;
-    const v = typeof raw === 'string' ? raw : (raw ?? 'FIFO');
+    const v = (data as { costing_method?: string } | null)?.costing_method ?? 'FIFO';
     return (v === 'Average' ? 'Average' : 'FIFO');
   },
 
@@ -1024,7 +1023,8 @@ export const companySettingsService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('company_settings')
-      .upsert({ key: 'costing_method', value: m, updated_at: new Date().toISOString() });
+      .update({ costing_method: m, updated_at: new Date().toISOString() })
+      .eq('id', 1);
     if (error) throw error;
   },
 };

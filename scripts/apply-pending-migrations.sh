@@ -125,6 +125,11 @@ MIGRATIONS=(
 
   # ─── Product Photo Phase 1 — M5b: ai_call_log table for activity monitoring ───
   "20260614000025_ai_call_log.sql"
+
+  # ─── Product Photo M4-fix — costing_method column + product-photos bucket ───
+  # Original M4 (20260614000023) assumed key/value company_settings; real schema
+  # is single-row. This patch adds costing_method TEXT column + bucket creation.
+  "20260615000020_costing_method_column.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
