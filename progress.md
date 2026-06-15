@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-15 — Product Photo Phase 2 — Task 2.2: Extract BulkUploadSection — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/BulkUploadSection.tsx` (new) — 313 lines. Owns `uploadProgress`/`isUploading` state, `CSV_SPEC_COLS`/`CSV_HEADER` constants, and the four handlers (`handleDownloadTemplate`, `handleExportStock`, `parseAndUploadCSV`, `handleFileUpload`). Receives `stockList`, `companyName`, `showToast`, `onStockUpdate`, `onUploaded` as props. CSV parsing/validation/bulk-upsert flow preserved verbatim — same Tailwind classes, same toast strings, same `stockService.bulkUpsert(changedItems)` call surrounded by `isSupabaseConfigured` guard.
+  - `src/components/StockManagerScreen.tsx` — replaced inlined `<section>...</section>` (~75 lines) with `<BulkUploadSection ...>`; removed `uploadProgress`/`isUploading` state, `filenameSafeCompany` derivation, the four handler functions, the CSV constants block, and the now-unused `Download` + `FileCheck` lucide-react imports + `stockService` + `SupabaseStockItem` imports. File shrank from **1051 → 808 lines** (−243).
+- **Behavior preserved:** parent `StockManagerScreen` still owns `stockList` via `onStockUpdate`; child calls it inside `parseAndUploadCSV` exactly like before. `onUploaded` callback wired to `refreshPending` so pending-approvals badge refreshes after import.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.3 — extract `StockTableView`.
+
+---
+
 ## 2026-06-14 — Piutang & Tempo Phase 1A implementation — READY FOR MCP-CHROME QA
 
 **Status:** All 13 tasks committed; integration tests written (deferred until DB apply); local stack runs clean.
