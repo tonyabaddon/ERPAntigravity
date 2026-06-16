@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-16 — Pembelian Phase 2a — Task 3: extend purchase_invoices for Tagihan type=STOCK — DONE (apply pending)
+
+- **What:** Created `supabase/migrations/20260620000003_phase2_pi_extend.sql` to extend `purchase_invoices` for the Phase 2a Tagihan flow (STOCK type). Adds `pesanan_id uuid NULL REFERENCES public.pesanan(id) ON DELETE RESTRICT` (REQUIRED for STOCK type — references the parent Pesanan), `tukar_faktur_id uuid NULL` (left dangling without FK until Phase 2b lands the `tukar_faktur` table), and `paid_amount numeric NOT NULL DEFAULT 0 CHECK (paid_amount >= 0)` (partial-payment tracking). Expands `pi_status_check` to allow `DIBAYAR_SEBAGIAN` alongside `BELUM_LUNAS`/`LUNAS` (drop-then-re-add pattern via `DROP CONSTRAINT IF EXISTS`). New `pi_type_linkage_check` enforces mutual exclusivity: `PASSTHROUGH` requires `order_id` + `pesanan_id IS NULL`; `STOCK` requires `pesanan_id` + `order_id IS NULL`. `purchase_invoice_items` gains `pesanan_item_id uuid NULL REFERENCES public.pesanan_items(id) ON DELETE SET NULL` so each PI line can trace back to the Pesanan line it was committed against. Three partial indexes (`pi_pesanan_idx`, `pi_tukar_faktur_idx`, `pi_items_pesanan_item_idx`) keep nullable FK lookups cheap.
+- **Pattern:** Same as Tasks 1 (`20260620000001_phase2_pesanan_schema.sql`) and 2 (`20260620000002_phase2_pembayaran_schema.sql`) — write migration file, do NOT apply to Supabase yet (apply-pending list will batch all Phase 2a migrations), single-file commit on `feat/pembelian-phase2`.
+- **Files:** `supabase/migrations/20260620000003_phase2_pi_extend.sql` (new, 34 LOC).
+- **Commit:** `69264ae feat(pembelian): extend purchase_invoices for Tagihan type=STOCK + paid_amount tracking (Phase 2a Task 3)`.
+- **Branch:** `feat/pembelian-phase2`. Plan progress: Tasks 1-3 done (3/20). Next: Tasks 4-7 — RPC migrations.
+
 ## 2026-06-16 — Prod regression recovery — Produk & Stok overwritten by main deploy
 
 **Root cause (parallel-session desync):**
