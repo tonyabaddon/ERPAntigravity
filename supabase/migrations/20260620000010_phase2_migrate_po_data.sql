@@ -72,7 +72,11 @@ ins_tagihan AS (
 INSERT INTO public.purchase_invoice_items (pi_id, sku, product_name, qty, unit_cost, sell_price, subtotal, pesanan_item_id)
 SELECT
   it.id, poi.sku, poi.product_name, poi.qty, poi.unit_cost,
-  0, poi.subtotal, poi.id
+  0, poi.subtotal,
+  -- Lookup matching pesanan_item by (pesanan_id, sku). NULL if no match (e.g., duplicate SKUs in same Pesanan).
+  (SELECT pi.id FROM public.pesanan_items pi
+   WHERE pi.pesanan_id = it.pesanan_id AND pi.sku = poi.sku
+   LIMIT 1)
 FROM ins_tagihan it
 JOIN public.purchase_order_items poi ON poi.po_id = it.pesanan_id;
 
