@@ -1,5 +1,95 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-16 — Produk & Stok Phase 2 — RECOVERY MERGED + SHIPPED + DEPLOY HARDENED
+
+Follow-up to the same-day prod regression post-mortem (entry below). Branch
+`feat/produk-stok-photo-impl` permanently merged into `main` after pre-merge
+verification confirmed prod was safe to redeploy.
+
+**Pre-merge verification (advisor-flagged assumptions, both validated):**
+- Cloud Run rev `00063-2qn` serving 100% traffic — confirmed via
+  `gcloud run services describe`. Prod safe-by-default during merge.
+- M1–M5 + M-Fix product-photo migrations already applied to prod DB —
+  confirmed via Supabase MCP `execute_sql` against `ekhhojaezdfjfwuxyjkl`
+  (`ERP MSME AI Studio`): 16/16 schema checks pass (`stocks.photo_urls`,
+  `stocks.initial_stock_approved`, `product_categories`/`brands`/`units`,
+  `stock_photo_embeddings`, `vector` extension, `company_settings.costing_method`,
+  `product-photos` bucket, `initial_stock` enum value,
+  `search_products_by_embedding` RPC, `ai_call_log` table, both
+  `product_photos_select` + `product_photos_insert` storage policies).
+
+**Conflict resolution (PR #9 — merge `dccfee8`):**
+- `src/types.ts` — union `ApprovalRequestType` keeps both `customer_credit_*`
+  (main) AND `initial_stock` (branch). Concatenate Product Registry (M2) +
+  Cari-by-Foto + CostingMethod + AiCallLogStat types (branch) with BNL Phase 1
+  types (main).
+- `src/components/approval/ApprovalRequestRow.tsx` — add branch's
+  `initial_stock` label + icon entries (main side empty diff).
+- `backend-go/internal/llm/chain.go` — prefer main entirely. Main's
+  reasoning-demote chain ordering + Gemini direct backend + slug fix is a
+  strict superset of branch's slug fix (which main already had via cherry-pick).
+- `progress.md` — stack: header → main's 2026-06-16 post-mortem → branch's
+  Phase 2 entries → common older history (no information dropped).
+- `scripts/apply-pending-migrations.sh` — chronological union: Product Photo
+  M1–M5b (20260614000020–25) → BNL T1–T4 (20260615000001–5) → Product Photo
+  M-Fix (20260615000020–22).
+
+**Cleanup:** dropped duplicate `20260614000015_change_owner_pin.sql` (identical
+content to main's already-applied `20260614000009`).
+
+**Local verify pre-push:** `npm run lint` (tsc, exit 0), `npm run test` (vitest
+44/44 across 7 files), `go build ./...` clean, `go test ./internal/llm/…`
+pass (15.7s), `git grep` for conflict markers = 0 hits.
+
+**Deploy hardening (PR #10 — merge `aadfe68`):**
+Root cause of yesterday's regression was `cloudbuild.frontend.yaml` running
+`gcloud run deploy` without `--no-traffic`, so every main push auto-shifts
+100% traffic to the new revision. Permanent fix shipped today:
+- `--no-traffic` — Cloud Build creates revisions at 0% serving.
+- `--tag=c$SHORT_SHA` — addressable per-commit preview URL
+  (`https://c<sha>---<service>.run.app`). First attempt used
+  `preview-$SHORT_SHA` which exceeded Cloud Run's 46-char tag+service-name
+  limit (51 chars); shortened to `c$SHORT_SHA` (44 chars total). Letter prefix
+  retained as guard against any tooling that rejects digit-leading tag names.
+- New deploy flow now requires a manual `update-traffic` step — prevents
+  silent prod overwrite during parallel-feature work.
+
+**Smoke test on preview URL (`caadfe68`, rev `00067-bes`):**
+HTTP layer green (HTTP 200, 1.9 MB bundle delivered, `photo_urls` ×8,
+`initial_stock` ×8, `BelanjaNumpangLewat` ×1 in bundle confirms both
+branches' code merged). Browser-level smoke via Chrome DevTools MCP after
+clearing a stale browser-profile lock:
+- Login OTP flow works; zero console errors throughout.
+- Dashboard renders real data (Rp 18.366.000 omset 7-hari, 32 transaksi,
+  266 stok tipis, channel + AI activity charts populate).
+- Sidebar "Produk & Stok" entry visible (rename from "Stok" landed).
+- Produk & Stok 4-tab structure renders: 📋 KATALOG 293, 🏬 STOK PER GUDANG,
+  📥 BULK UPLOAD, ⚠️ STOK TIPIS 243.
+- CatalogGridView shows 293 real products with category badges
+  (MCB/Panel/Aksesori/Kabel/QA), thumbnails, price, stock.
+- ProductForm modal opens with all 5 sections: 📋 Identitas, ⚙ Spesifikasi
+  (MCB dynamic — Merek/Ampere/Phase), 📷 Foto (5 slots, "Min 1 wajib · max 5 ·
+  drag untuk urutan"), 💰 Harga & Stok (3 gudang: Jakarta/Atas/Bawah), ⚙
+  Pengaturan Lanjutan. Live Preview rail populated.
+- Pembelian → 3 sub-tabs render (Purchase Orders 40 rows, Belanja Numpang
+  Lewat, Supplier) — BNL Phase 1 from main NOT regressed.
+- BNL Phase 1 page: heading + 5 KPIs (TOTAL PI, TOTAL BELANJA, BELUM LUNAS,
+  JATUH TEMPO ≤3 HARI from BR7, TERLAMBAT), filters + search render.
+- Console clean throughout (zero errors/warns).
+- Screenshots: `docs/screenshots/smoke-login-caadfe68.png`,
+  `docs/screenshots/smoke-productform-caadfe68.png`.
+
+**Cutover:** `gcloud run services update-traffic ... --to-revisions=
+garindo-jaya-panel-msme-erp-frontend-00067-bes=100`. Both prod URL and
+preview tag URL now return matching etag `22ec9373…` confirming serving the
+same revision. Rollback path remains `--to-revisions=00063-2qn=100` (10s)
+since the old revision is retained.
+
+**Open follow-ups (not blocking, not in this entry's scope):**
+- Phase 3 "Cari by Foto" Kasir modal (Gemini Vision search frontend) — backend
+  RPC + pgvector index already deployed.
+- AI `✨ Generate Deskripsi dari Foto` button.
+
 ## 2026-06-16 — Prod regression recovery — Produk & Stok overwritten by main deploy
 
 **Root cause (parallel-session desync):**
