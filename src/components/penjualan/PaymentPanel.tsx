@@ -38,6 +38,13 @@ export interface PaymentPanelProps {
   effectiveDp: number;
   sisaPelunasan: number;
 
+  // tempo support (Phase 1B)
+  allowsTempo?: boolean;
+  termDays?: number | null;
+  creditLimit?: number | null;
+  outstanding?: number | null;
+  customerSelected?: boolean;
+
   // actions
   saving: boolean;
   onSave: () => void;
@@ -53,36 +60,60 @@ export default function PaymentPanel(props: PaymentPanelProps) {
     deliveryAddress, onDeliveryAddressChange,
     notes, onNotesChange,
     subtotal, totalInvoice, effectiveDp, sisaPelunasan,
+    allowsTempo, termDays, creditLimit, outstanding, customerSelected,
     saving, onSave, onCancel,
   } = props;
 
+  const isTempo = paymentType === 'TEMPO';
+  const limit = creditLimit ?? 0;
+  const used = outstanding ?? 0;
+  const available = Math.max(0, limit - used);
+  const willBeUsed = used + (isTempo ? totalInvoice : 0);
+  const usedPct = limit > 0 ? Math.min(100, Math.round((willBeUsed / limit) * 100)) : 0;
+  const overLimit = isTempo && totalInvoice > 0 && willBeUsed > limit && limit > 0;
+
   return (
     <div className="space-y-4">
-      <PaymentMethodSelector
-        method={method}
-        subtype={subtype}
-        onMethodChange={onMethodChange}
-        onSubtypeChange={onSubtypeChange}
-      />
+      {!isTempo && (
+        <PaymentMethodSelector
+          method={method}
+          subtype={subtype}
+          onMethodChange={onMethodChange}
+          onSubtypeChange={onSubtypeChange}
+        />
+      )}
 
       {/* Payment type toggle */}
       <div>
         <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest pl-1 block mb-2">
           Tipe Pembayaran
         </label>
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className={`grid ${allowsTempo ? 'grid-cols-3' : 'grid-cols-2'} gap-1 bg-slate-100 p-1 rounded-xl`}>
           {(['FULL','DP'] as const).map(t => (
             <button
               key={t}
               type="button"
               onClick={() => onPaymentTypeChange(t)}
-              className={`flex-1 text-center py-2 px-3 rounded-lg text-[12px] font-bold ${
+              className={`text-center py-2 px-2 rounded-lg text-[12px] font-bold ${
                 paymentType === t ? 'bg-white text-[#012749] shadow-sm' : 'text-slate-500'
               }`}
             >
               {t === 'FULL' ? 'Full Payment' : 'DP / Tanda Jadi'}
             </button>
           ))}
+          {allowsTempo && (
+            <button
+              type="button"
+              onClick={() => onPaymentTypeChange('TEMPO')}
+              disabled={!customerSelected}
+              title={!customerSelected ? 'Pilih customer dulu untuk Tempo' : `Tempo ${termDays ?? '?'} hari`}
+              className={`text-center py-2 px-2 rounded-lg text-[12px] font-bold disabled:opacity-50 ${
+                isTempo ? 'bg-white text-violet-700 shadow-sm' : 'text-slate-500'
+              }`}
+            >
+              Tempo {termDays ? `${termDays}h` : ''}
+            </button>
+          )}
         </div>
         {paymentType === 'DP' && (
           <>
@@ -113,6 +144,36 @@ export default function PaymentPanel(props: PaymentPanelProps) {
               </p>
             )}
           </>
+        )}
+        {isTempo && (
+          <div className={`mt-2 rounded-xl border px-3 py-2.5 ${overLimit ? 'bg-rose-50 border-rose-200' : 'bg-violet-50 border-violet-200'}`}>
+            <div className="text-[11px] font-extrabold text-violet-700 uppercase tracking-wider mb-2">
+              Kredit Pelanggan
+            </div>
+            <div className="space-y-1 text-[12px]">
+              <Row label="Plafon kredit" value={formatRp(limit)} />
+              <Row label="Sudah terpakai" value={formatRp(used)} />
+              <Row label="Sisa tersedia" value={formatRp(available)} highlight />
+              <div className="border-t border-violet-200 my-1.5" />
+              <Row label="Invoice ini" value={formatRp(totalInvoice)} />
+              <Row label="Setelah dibebani" value={`${formatRp(willBeUsed)} (${usedPct}%)`}
+                strong color={overLimit ? 'text-rose-700' : 'text-violet-900'} />
+            </div>
+            <div className="mt-2 h-1.5 bg-white rounded-full overflow-hidden">
+              <div className={`h-full ${overLimit ? 'bg-rose-500' : usedPct >= 80 ? 'bg-orange-500' : 'bg-violet-500'}`}
+                style={{ width: `${Math.min(100, usedPct)}%` }} />
+            </div>
+            {overLimit && (
+              <div className="mt-2 text-[11px] font-bold text-rose-700">
+                ⚠ Melebihi plafon — invoice tempo akan diblok di backend.
+              </div>
+            )}
+            {!overLimit && termDays && (
+              <div className="mt-2 text-[11px] text-violet-700">
+                Jatuh tempo dalam <strong>{termDays} hari</strong>.
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -208,12 +269,16 @@ export default function PaymentPanel(props: PaymentPanelProps) {
         <button
           type="button"
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || (isTempo && overLimit)}
           className={`w-full py-3.5 rounded-xl text-white text-[14px] font-extrabold disabled:opacity-60 ${
-            paymentType === 'DP' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-[#2d8a4e] hover:bg-green-700'
+            isTempo ? 'bg-violet-600 hover:bg-violet-700'
+            : paymentType === 'DP' ? 'bg-amber-500 hover:bg-amber-600'
+            : 'bg-[#2d8a4e] hover:bg-green-700'
           }`}
         >
-          {saving ? 'Menyimpan...' : `💾 Simpan & Cetak Invoice ${paymentType === 'DP' ? 'DP' : 'Lunas'}`}
+          {saving ? 'Menyimpan...'
+            : isTempo ? '🧾 Buat Faktur Tempo'
+            : `💾 Simpan & Cetak Invoice ${paymentType === 'DP' ? 'DP' : 'Lunas'}`}
         </button>
         <button
           type="button"
@@ -224,6 +289,17 @@ export default function PaymentPanel(props: PaymentPanelProps) {
         </button>
         <p className="text-[11px] text-slate-500 text-center">🖨️ Invoice otomatis dikirim ke printer dotmatrix</p>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value, highlight, strong, color }: {
+  label: string; value: string; highlight?: boolean; strong?: boolean; color?: string;
+}) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-slate-500">{label}</span>
+      <span className={`${strong ? 'font-extrabold' : highlight ? 'font-bold' : 'font-semibold'} ${color ?? 'text-violet-900'}`}>{value}</span>
     </div>
   );
 }
