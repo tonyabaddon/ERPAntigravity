@@ -262,7 +262,9 @@ export interface DbOrder {
     | 'PAYMENT_VERIFIED'
     | 'PAYMENT_REJECTED'
     | 'CANCELLED'
-    | 'COMPLETED';
+    | 'COMPLETED'
+    | 'INVOICE_TEMPO'
+    | 'INVOICE_WRITTEN_OFF';
   leads_id?: string;
   booking_expires_at: string;
   gjp_order_id?: string;
@@ -270,7 +272,11 @@ export interface DbOrder {
   delivery_type?: 'PICKUP' | 'DELIVERY';
   full_proof_url?: string | null;
   dp_proof_url?: string | null;
-  payment_type?: 'FULL' | 'DP';
+  payment_type?: 'FULL' | 'DP' | 'TEMPO';
+  due_date?: string | null;
+  written_off_at?: string | null;
+  written_off_by?: string | null;
+  write_off_reason?: string | null;
   dp_input_type?: 'AMOUNT' | 'PERCENTAGE' | null;
   dp_value?: number | null;
   dp_amount?: number | null;
@@ -874,4 +880,40 @@ export interface OrderCogsBreakdownRow {
   pi_unit_cost: number | null;
   qty_from_pi: number;
   qty_from_stock: number;
+}
+
+// ── Piutang Phase 1B — Tempo invoice + Piutang screen ──
+export interface CreateTempoInvoicePayload {
+  customer_id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_company?: string;
+  delivery_address?: string;
+  delivery_type?: 'PICKUP' | 'DELIVERY';
+  channel?: 'walkin' | 'whatsapp' | 'grosir' | 'tokopedia' | string;
+  sales_channel?: string;
+  items: Array<{ sku: string; name?: string; qty: number; unit_price: number; subtotal: number }>;
+  subtotal: number;
+  shipping_fee?: number;
+  total: number;
+}
+
+export type CreateTempoInvoiceResult =
+  | { kind: 'ok'; order_id: string }
+  | { kind: 'credit_limit_exceeded'; outstanding: number; new_amount: number; limit: number; shortage: number }
+  | { kind: 'tempo_not_enabled' }
+  | { kind: 'invalid'; message: string };
+
+export interface PiutangTier {
+  key: 'overdue' | 'today' | 'h3' | 'future';
+  label: string;
+  rowBg: string;
+  badgeClass: string;
+}
+
+export interface PiutangRow {
+  order: DbOrder;
+  customer?: DbCustomer;
+  daysToDue: number; // negative = overdue
+  tier: PiutangTier['key'];
 }
