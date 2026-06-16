@@ -1,5 +1,35 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-16 — Pembelian Phase 2a (Foundation) — IMPLEMENTATION COMPLETE + migrations applied
+
+- **What:** Full implementation of `docs/superpowers/plans/2026-06-16-pembelian-phase2a-foundation.md`. PO refactored into 3-entity model (Pesanan + Tagihan + Pembayaran) with junction-table partial/consolidated payment support. Existing PO data big-bang migrated. New BerandaPembelian dashboard (lite — KPI strip + per-supplier outstanding). Existing BNL Phase 1 + old PO module untouched.
+- **Branch:** `feat/pembelian-phase2` (worktree `.claude/worktrees/pembelian-phase2`)
+- **8 SQL migrations applied to Supabase production:**
+  - `20260620000001_phase2_pesanan_schema.sql` — pesanan + pesanan_items tables, RLS, trigger
+  - `20260620000002_phase2_pembayaran_schema.sql` — pembayaran + pembayaran_items junction
+  - `20260620000003_phase2_pi_extend.sql` — purchase_invoices: pesanan_id, tukar_faktur_id, paid_amount, DIBAYAR_SEBAGIAN status, CHECK constraint enforcing STOCK requires pesanan_id (PASSTHROUGH requires order_id)
+  - `20260620000004_phase2_rpcs_pesanan.sql` — generate_pesanan_number / record / mark_ordered / update / void / auto-close on fulfillment
+  - `20260620000005_phase2_rpcs_tagihan_extend.sql` — extend record_pi for type='STOCK' with pesanan_id required, auto stock_lots + stocks.stock increment + warehouse routing + qty_received_total trigger
+  - `20260620000006_phase2_rpcs_pembayaran.sql` — record_pembayaran (atomic: insert + Tagihan paid_amount recompute + Kasir expense) + void with reversal
+  - `20260620000007_phase2_rpcs_smart_helpers.sql` — pembayaran_suggest_outstanding + ap_dashboard_lite (KPI strip + per-supplier)
+  - `20260620000010_phase2_migrate_po_data.sql` — big-bang split existing PO data (DRAFT/ORDERED → Pesanan; RECEIVED/PAID → Pesanan+CLOSED + Tagihan STOCK; PAID → +Pembayaran). Initially failed FK on pesanan_item_id; fix commit `39bb447` switched to (pesanan_id, sku) lookup.
+- **Frontend (Tasks 14-19):**
+  - `src/components/pembelian/pesanan/` — List + Form + Detail with status-driven actions (Mark Ordered / Edit / Void / Buat Tagihan)
+  - `src/components/pembelian/tagihan/` — List + Form (Pesanan picker required, items pre-fill from Pesanan, warehouse routing) + Detail with paid_amount progress bar
+  - `src/components/pembelian/pembayaran/` — List + Form (suggest_outstanding integration, smart-suggest pre-select, per-row editable amount for partial) + Detail
+  - `src/components/pembelian/beranda/BerandaPembelian.tsx` — KPI strip + per-supplier outstanding with "Bayar" → Pembayaran form pre-filled
+  - `src/components/PembelianScreen.tsx` — menu refactor (Beranda default; Beranda/Pesanan/Tagihan/BNL/Pembayaran/Supplier sub-tabs); legacy `'orders'` tab preserved in code for `?po=` deep-link backward compat but hidden from UI
+  - `src/App.tsx` — deep-link routing for `?pesanan/?tagihan/?pembayaran`
+- **3 integration test files added** (pesanan-rpcs, tagihan-stock-rpcs, pembayaran-rpcs) — run via `npx vitest run tests/integration/` with `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` env
+- **TypeScript:** clean (`npx tsc --noEmit` exit 0). New types in `src/types.ts` Phase 2 section: `DbPesanan/DbPesananItem/PesananStatus/RecordPesananPayload`, `DbPembayaran/DbPembayaranItem/PembayaranStatus/RecordPembayaranPayload`, `SuggestOutstandingTagihanRow`, `ApDashboardLite`, `TagihanStatus`
+- **Subagent-driven execution:** 9 subagent dispatches (mostly batched across tasks 4-7, 8-11, 15-17, 18-19). No orphan commit issues this time (each subagent verified `git log -1 feat/pembelian-phase2` before returning).
+- **Carry-over from subagent caveats:** (1) `purchase_invoices.fetchAll` doesn't JOIN pesanan, so TagihanList shows short id ref instead of pesanan_number — minor cosmetic, defer to Phase 2b. (2) `DbPurchaseInvoice` type kept minimal at Phase 1 shape; new pages use local Row-cast extension for paid_amount + pesanan_id. Tightening when wiring Tagihan ↔ Pesanan join later.
+- **Out of Phase 2a scope:** Tukar Faktur (Phase 2b) + full AP Dashboard with aging + cash flow forecast (Phase 2c)
+- **Next steps:**
+  1. Manual browser smoke test: Pembelian → Beranda → KPI shows; → Pesanan → buat DRAFT → mark ordered → buat Tagihan from it → verify stocks.stock increment → record Pembayaran → verify status LUNAS
+  2. After smoke pass: merge to main + deploy Cloud Run
+  3. Then Phase 2b brainstorm session (Tukar Faktur entity + reconciliation panel)
+
 ## 2026-06-16 — Pembelian Phase 2a — Task 3: extend purchase_invoices for Tagihan type=STOCK — DONE (apply pending)
 
 - **What:** Created `supabase/migrations/20260620000003_phase2_pi_extend.sql` to extend `purchase_invoices` for the Phase 2a Tagihan flow (STOCK type). Adds `pesanan_id uuid NULL REFERENCES public.pesanan(id) ON DELETE RESTRICT` (REQUIRED for STOCK type — references the parent Pesanan), `tukar_faktur_id uuid NULL` (left dangling without FK until Phase 2b lands the `tukar_faktur` table), and `paid_amount numeric NOT NULL DEFAULT 0 CHECK (paid_amount >= 0)` (partial-payment tracking). Expands `pi_status_check` to allow `DIBAYAR_SEBAGIAN` alongside `BELUM_LUNAS`/`LUNAS` (drop-then-re-add pattern via `DROP CONSTRAINT IF EXISTS`). New `pi_type_linkage_check` enforces mutual exclusivity: `PASSTHROUGH` requires `order_id` + `pesanan_id IS NULL`; `STOCK` requires `pesanan_id` + `order_id IS NULL`. `purchase_invoice_items` gains `pesanan_item_id uuid NULL REFERENCES public.pesanan_items(id) ON DELETE SET NULL` so each PI line can trace back to the Pesanan line it was committed against. Three partial indexes (`pi_pesanan_idx`, `pi_tukar_faktur_idx`, `pi_items_pesanan_item_idx`) keep nullable FK lookups cheap.
