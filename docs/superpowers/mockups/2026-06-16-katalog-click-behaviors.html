@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Klik Foto Thumb: 3 Behavior Comparison</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; }
+  .thumb-mcb { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
+  .thumb-cable { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+  .thumb-panel { background: linear-gradient(135deg, #e5e7eb 0%, #cbd5e1 100%); }
+  .thumb-switch { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+  .thumb-lamp { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); }
+  .photo-card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.12); }
+  .row-thumb { cursor: pointer; transition: box-shadow 0.15s; }
+  .row-thumb:hover { box-shadow: 0 0 0 3px #2d8a4e80; }
+  .focus-ring { box-shadow: 0 0 0 3px #2d8a4e; }
+  /* Browser tab visualization */
+  .browser-frame { border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden; }
+  .browser-chrome { background: #e2e8f0; padding: 8px 12px; display: flex; gap: 6px; align-items: center; font-size: 11px; }
+  .browser-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body class="text-[#1e3d60]">
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1500px] mx-auto px-8 py-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">touch_app</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup — Behavior klik foto thumb di mode List</h1>
+        <p class="text-[11px] text-[#43474e]">2026-06-16 • 3 opsi side-by-side: Lightbox vs Tab Baru vs Inline Expand</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1500px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- INSTRUCTION -->
+  <div class="bg-blue-50 border border-blue-200 rounded-3xl p-5">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined">info</span>
+      </div>
+      <div>
+        <p class="text-sm text-[#012749] font-bold mb-1">Skenario: user klik thumbnail foto di baris MCB (yang ada outline emerald)</p>
+        <p class="text-xs text-[#012749]">Tiap kolom di bawah menunjukkan apa yang user lihat <strong>setelah klik kiri</strong>. Tabel di atas tiap kolom sama persis (mode List, baris MCB highlighted). Yang beda adalah <strong>respons UI</strong> setelah klik.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- 3-COLUMN COMPARISON                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- ─────────────── COLUMN 1: LIGHTBOX MODAL ─────────────── -->
+    <section class="space-y-3">
+      <div>
+        <span class="text-[10px] font-black tracking-widest text-pink-700 uppercase bg-pink-50 border border-pink-200 px-2 py-1 rounded-full">Opsi 1 · Lightbox Modal</span>
+        <h2 class="text-base font-extrabold text-[#012749] mt-2">Pop-up overlay di atas tabel</h2>
+        <p class="text-[11.5px] text-[#43474e] mt-1">User tetap di halaman Katalog. Foto besar muncul overlay, tabel tetap di background.</p>
+      </div>
+
+      <!-- Mini browser frame -->
+      <div class="browser-frame bg-white">
+        <div class="browser-chrome">
+          <span class="browser-dot bg-red-400"></span>
+          <span class="browser-dot bg-yellow-400"></span>
+          <span class="browser-dot bg-green-400"></span>
+          <span class="ml-2 text-[10px] text-slate-500 font-mono">erp.app/?screen=produk-stok</span>
+        </div>
+        <div class="relative" style="height: 480px;">
+          <!-- Table behind (blurred/dimmed) -->
+          <div class="p-4" style="filter: blur(2px); opacity: 0.6;">
+            <table class="w-full text-[11px]">
+              <thead>
+                <tr class="border-b-2 border-slate-200 text-left">
+                  <th class="pb-1.5 pr-2 text-[9px] font-extrabold text-slate-500 uppercase">Foto</th>
+                  <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase">SKU</th>
+                  <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase">Nama</th>
+                  <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase text-right">Harga</th>
+                  <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase text-center">Stok</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-mcb rounded-md"></div></td>
+                  <td class="py-1.5 px-2 font-mono text-[10px]">MCB-EZ9-1P6A</td>
+                  <td class="py-1.5 px-2 font-bold">MCB Easy9 1P 6A</td>
+                  <td class="py-1.5 px-2 text-right font-bold">48.500</td>
+                  <td class="py-1.5 px-2 text-center font-bold text-emerald-700">142</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-cable rounded-md"></div></td>
+                  <td class="py-1.5 px-2 font-mono text-[10px]">KBL-NYM3X25</td>
+                  <td class="py-1.5 px-2 font-bold">Kabel NYM 3x2.5</td>
+                  <td class="py-1.5 px-2 text-right font-bold">685.000</td>
+                  <td class="py-1.5 px-2 text-center font-bold text-amber-700">8</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-panel rounded-md"></div></td>
+                  <td class="py-1.5 px-2 font-mono text-[10px]">PNL-SLM-3040</td>
+                  <td class="py-1.5 px-2 font-bold">Panel Box 30x40</td>
+                  <td class="py-1.5 px-2 text-right font-bold">425.000</td>
+                  <td class="py-1.5 px-2 text-center font-bold text-emerald-700">23</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-switch rounded-md"></div></td>
+                  <td class="py-1.5 px-2 font-mono text-[10px]">SKL-PNS-WD1</td>
+                  <td class="py-1.5 px-2 font-bold">Saklar Tunggal</td>
+                  <td class="py-1.5 px-2 text-right font-bold">32.000</td>
+                  <td class="py-1.5 px-2 text-center font-bold text-emerald-700">87</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-lamp rounded-md"></div></td>
+                  <td class="py-1.5 px-2 font-mono text-[10px]">LMP-PHL-ES9W</td>
+                  <td class="py-1.5 px-2 font-bold">Lampu LED 9W</td>
+                  <td class="py-1.5 px-2 text-right font-bold">28.500</td>
+                  <td class="py-1.5 px-2 text-center font-bold text-emerald-700">215</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-[#012749]/80" style="backdrop-filter: blur(3px);"></div>
+
+          <!-- Lightbox -->
+          <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl p-5 max-w-sm w-full relative photo-card-shadow">
+              <!-- Close -->
+              <button class="absolute top-2 right-2 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
+                <span class="material-symbols-outlined text-base">close</span>
+              </button>
+              <p class="text-[9px] font-extrabold text-emerald-700 uppercase tracking-widest">MCB · Schneider</p>
+              <h3 class="text-sm font-extrabold text-[#012749] mt-0.5">MCB Easy9 1P 6A 4.5kA</h3>
+
+              <!-- Main photo -->
+              <div class="thumb-mcb w-full aspect-square rounded-xl mt-3 flex items-center justify-center">
+                <span class="material-symbols-outlined text-7xl text-sky-700/40">bolt</span>
+              </div>
+
+              <!-- Gallery thumbs -->
+              <div class="flex gap-1.5 mt-2">
+                <div class="w-12 h-12 thumb-mcb rounded-md border-2 border-emerald-500 flex items-center justify-center">
+                  <span class="material-symbols-outlined text-base text-sky-700/60">bolt</span>
+                </div>
+                <div class="w-12 h-12 thumb-mcb opacity-60 rounded-md border-2 border-transparent flex items-center justify-center">
+                  <span class="material-symbols-outlined text-base text-sky-700/60">image</span>
+                </div>
+                <div class="w-12 h-12 thumb-mcb opacity-60 rounded-md border-2 border-transparent flex items-center justify-center">
+                  <span class="material-symbols-outlined text-base text-sky-700/60">image</span>
+                </div>
+              </div>
+
+              <button class="mt-3 w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#012749] rounded-full text-[11px] font-extrabold inline-flex items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-sm">open_in_new</span> Buka detail di tab baru
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-pink-50 border border-pink-200 rounded-2xl p-3 text-[11px]">
+        <p class="font-extrabold text-pink-900 mb-1">✓ Pro</p>
+        <ul class="text-pink-900 list-disc ml-5 space-y-0.5">
+          <li>User tidak kehilangan posisi scroll di tabel</li>
+          <li>Bisa show gallery multi-foto (3-5 foto produk)</li>
+          <li>ESC untuk tutup, klik backdrop → tutup</li>
+          <li>Tombol explicit "Buka detail di tab baru" untuk navigasi lanjut</li>
+        </ul>
+        <p class="font-extrabold text-pink-900 mt-2 mb-1">✗ Con</p>
+        <ul class="text-pink-900 list-disc ml-5 space-y-0.5">
+          <li>Butuh komponen Lightbox baru (reusable kelak)</li>
+          <li>1 extra interaction kalau user maunya langsung ke detail produk</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ─────────────── COLUMN 2: NEW TAB ─────────────── -->
+    <section class="space-y-3">
+      <div>
+        <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">Opsi 2 · Tab Baru Langsung</span>
+        <h2 class="text-base font-extrabold text-[#012749] mt-2">Klik → buka detail produk di tab baru</h2>
+        <p class="text-[11.5px] text-[#43474e] mt-1">Tabel Katalog tetap utuh di tab asal. Detail produk lengkap (foto + form) muncul di tab baru.</p>
+      </div>
+
+      <!-- Two browser tabs side-by-side (stacked actually) -->
+      <div class="space-y-2">
+        <!-- Tab asal (Katalog) -->
+        <div class="browser-frame bg-white">
+          <div class="browser-chrome">
+            <span class="browser-dot bg-red-400"></span>
+            <span class="browser-dot bg-yellow-400"></span>
+            <span class="browser-dot bg-green-400"></span>
+            <div class="ml-2 flex gap-1">
+              <span class="px-2 py-0.5 bg-white rounded-t-md text-[9px] font-bold border-t border-x border-slate-300">Katalog</span>
+              <span class="px-2 py-0.5 bg-emerald-100 rounded-t-md text-[9px] font-bold text-emerald-800 border-t border-x border-emerald-300">Produk · MCB Easy9 ← BARU</span>
+            </div>
+          </div>
+          <div class="p-3" style="height: 195px;">
+            <p class="text-[9px] text-slate-500 uppercase font-extrabold mb-1">Tab asal — Katalog (tetap utuh, posisi scroll tersimpan)</p>
+            <table class="w-full text-[10.5px]">
+              <thead>
+                <tr class="border-b border-slate-200 text-left">
+                  <th class="pb-1 pr-2 text-[8px] font-extrabold text-slate-500 uppercase">Foto</th>
+                  <th class="pb-1 px-2 text-[8px] font-extrabold text-slate-500 uppercase">SKU</th>
+                  <th class="pb-1 px-2 text-[8px] font-extrabold text-slate-500 uppercase">Nama</th>
+                  <th class="pb-1 px-2 text-[8px] font-extrabold text-slate-500 uppercase text-right">Hrg</th>
+                  <th class="pb-1 px-2 text-[8px] font-extrabold text-slate-500 uppercase text-center">Stk</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-b border-slate-100 bg-emerald-50/50">
+                  <td class="py-1 pr-2"><div class="w-6 h-6 thumb-mcb rounded-md ring-2 ring-emerald-500"></div></td>
+                  <td class="py-1 px-2 font-mono text-[9px]">MCB-EZ9-1P6A</td>
+                  <td class="py-1 px-2 font-bold">MCB Easy9 1P 6A</td>
+                  <td class="py-1 px-2 text-right font-bold">48.500</td>
+                  <td class="py-1 px-2 text-center font-bold text-emerald-700">142</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1 pr-2"><div class="w-6 h-6 thumb-cable rounded-md"></div></td>
+                  <td class="py-1 px-2 font-mono text-[9px]">KBL-NYM3X25</td>
+                  <td class="py-1 px-2 font-bold">Kabel NYM 3x2.5</td>
+                  <td class="py-1 px-2 text-right font-bold">685.000</td>
+                  <td class="py-1 px-2 text-center font-bold text-amber-700">8</td>
+                </tr>
+                <tr class="border-b border-slate-100">
+                  <td class="py-1 pr-2"><div class="w-6 h-6 thumb-panel rounded-md"></div></td>
+                  <td class="py-1 px-2 font-mono text-[9px]">PNL-SLM-3040</td>
+                  <td class="py-1 px-2 font-bold">Panel Box 30x40</td>
+                  <td class="py-1 px-2 text-right font-bold">425.000</td>
+                  <td class="py-1 px-2 text-center font-bold text-emerald-700">23</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Arrow -->
+        <div class="text-center text-[#012749]">
+          <span class="material-symbols-outlined text-2xl">south</span>
+          <p class="text-[10px] font-bold">Tab baru auto-open</p>
+        </div>
+
+        <!-- Tab baru (Produk Detail) -->
+        <div class="browser-frame bg-white ring-2 ring-emerald-400">
+          <div class="browser-chrome bg-emerald-100">
+            <span class="browser-dot bg-red-400"></span>
+            <span class="browser-dot bg-yellow-400"></span>
+            <span class="browser-dot bg-green-400"></span>
+            <span class="ml-2 text-[10px] text-emerald-800 font-mono">erp.app/?screen=produk&id=mcb-ez9-1p6a</span>
+          </div>
+          <div class="p-3" style="height: 195px;">
+            <p class="text-[9px] text-emerald-700 uppercase font-extrabold mb-1">Tab baru — Detail Produk</p>
+            <div class="flex gap-3">
+              <div class="thumb-mcb w-24 h-24 rounded-xl flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-4xl text-sky-700/40">bolt</span>
+              </div>
+              <div class="flex-1">
+                <p class="text-[9px] font-bold text-slate-400 uppercase">MCB · Schneider</p>
+                <h3 class="text-xs font-extrabold text-[#012749]">MCB Easy9 1P 6A 4.5kA</h3>
+                <p class="text-[9px] text-slate-500 font-mono mt-0.5">SKU-MCB-EZ9-1P6A</p>
+                <div class="flex gap-2 mt-1.5">
+                  <span class="text-[10px] font-extrabold text-[#012749]">Rp 48.500</span>
+                  <span class="text-[10px] font-extrabold text-emerald-700">· 142 stok</span>
+                </div>
+                <p class="text-[9px] text-slate-400 mt-1.5 italic">+ form Edit · gallery foto · history stok…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-[11px]">
+        <p class="font-extrabold text-emerald-900 mb-1">✓ Pro</p>
+        <ul class="text-emerald-900 list-disc ml-5 space-y-0.5">
+          <li>Konsisten 100% dengan URL routing yang baru ship</li>
+          <li>Gak butuh komponen baru — re-use halaman detail produk</li>
+          <li>User bisa bandingin 2 produk dengan buka 2 tab</li>
+          <li>Implementasi paling cepat</li>
+        </ul>
+        <p class="font-extrabold text-emerald-900 mt-2 mb-1">✗ Con</p>
+        <ul class="text-emerald-900 list-disc ml-5 space-y-0.5">
+          <li>Numpuk tab kalau user banyak klik buat lihat foto saja</li>
+          <li>Overkill kalau user cuma mau "lihat foto" tanpa edit/detail</li>
+          <li>Browser tab limit di mobile/tablet</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ─────────────── COLUMN 3: INLINE EXPAND ─────────────── -->
+    <section class="space-y-3">
+      <div>
+        <span class="text-[10px] font-black tracking-widest text-violet-700 uppercase bg-violet-50 border border-violet-200 px-2 py-1 rounded-full">Opsi 3 · Inline Expand</span>
+        <h2 class="text-base font-extrabold text-[#012749] mt-2">Foto besar muncul di bawah baris</h2>
+        <p class="text-[11.5px] text-[#43474e] mt-1">Baris yang di-klik "membuka" panel foto di bawahnya. Klik lagi untuk tutup. Tidak ada navigasi.</p>
+      </div>
+
+      <!-- Mini browser frame -->
+      <div class="browser-frame bg-white">
+        <div class="browser-chrome">
+          <span class="browser-dot bg-red-400"></span>
+          <span class="browser-dot bg-yellow-400"></span>
+          <span class="browser-dot bg-green-400"></span>
+          <span class="ml-2 text-[10px] text-slate-500 font-mono">erp.app/?screen=produk-stok</span>
+        </div>
+        <div class="p-3" style="height: 480px; overflow: hidden;">
+          <table class="w-full text-[11px]">
+            <thead>
+              <tr class="border-b-2 border-slate-200 text-left">
+                <th class="pb-1.5 pr-2 text-[9px] font-extrabold text-slate-500 uppercase">Foto</th>
+                <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase">SKU</th>
+                <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase">Nama</th>
+                <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase text-right">Harga</th>
+                <th class="pb-1.5 px-2 text-[9px] font-extrabold text-slate-500 uppercase text-center">Stok</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 — expanded -->
+              <tr class="border-b border-slate-100 bg-violet-50/30">
+                <td class="py-1.5 pr-2">
+                  <div class="w-7 h-7 thumb-mcb rounded-md ring-2 ring-violet-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-xs text-sky-700/60">bolt</span>
+                  </div>
+                </td>
+                <td class="py-1.5 px-2 font-mono text-[10px]">MCB-EZ9-1P6A</td>
+                <td class="py-1.5 px-2 font-bold">MCB Easy9 1P 6A</td>
+                <td class="py-1.5 px-2 text-right font-bold">48.500</td>
+                <td class="py-1.5 px-2 text-center font-bold text-emerald-700">142</td>
+              </tr>
+              <!-- Expanded panel row -->
+              <tr class="bg-violet-50/30 border-b border-violet-200">
+                <td colspan="5" class="py-3 px-3">
+                  <div class="flex gap-3 items-start bg-white rounded-xl p-3 border border-violet-200">
+                    <div class="thumb-mcb w-32 h-32 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span class="material-symbols-outlined text-5xl text-sky-700/40">bolt</span>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex justify-between items-start">
+                        <p class="text-[9px] font-extrabold text-violet-700 uppercase tracking-widest">Foto Produk</p>
+                        <button class="text-violet-700 hover:bg-violet-100 rounded-full p-0.5">
+                          <span class="material-symbols-outlined text-sm">close</span>
+                        </button>
+                      </div>
+                      <div class="flex gap-1.5 mt-2">
+                        <div class="w-10 h-10 thumb-mcb rounded-md border-2 border-violet-500"></div>
+                        <div class="w-10 h-10 thumb-mcb opacity-60 rounded-md"></div>
+                        <div class="w-10 h-10 thumb-mcb opacity-60 rounded-md"></div>
+                      </div>
+                      <button class="mt-2 text-[10px] font-bold text-violet-700 hover:underline inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs">open_in_new</span> Detail produk
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <!-- Subsequent rows pushed down -->
+              <tr class="border-b border-slate-100">
+                <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-cable rounded-md"></div></td>
+                <td class="py-1.5 px-2 font-mono text-[10px]">KBL-NYM3X25</td>
+                <td class="py-1.5 px-2 font-bold">Kabel NYM 3x2.5</td>
+                <td class="py-1.5 px-2 text-right font-bold">685.000</td>
+                <td class="py-1.5 px-2 text-center font-bold text-amber-700">8</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-panel rounded-md"></div></td>
+                <td class="py-1.5 px-2 font-mono text-[10px]">PNL-SLM-3040</td>
+                <td class="py-1.5 px-2 font-bold">Panel Box 30x40</td>
+                <td class="py-1.5 px-2 text-right font-bold">425.000</td>
+                <td class="py-1.5 px-2 text-center font-bold text-emerald-700">23</td>
+              </tr>
+              <tr class="border-b border-slate-100">
+                <td class="py-1.5 pr-2"><div class="w-7 h-7 thumb-switch rounded-md"></div></td>
+                <td class="py-1.5 px-2 font-mono text-[10px]">SKL-PNS-WD1</td>
+                <td class="py-1.5 px-2 font-bold">Saklar Tunggal</td>
+                <td class="py-1.5 px-2 text-right font-bold">32.000</td>
+                <td class="py-1.5 px-2 text-center font-bold text-emerald-700">87</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-[9px] text-slate-400 italic mt-2 text-center">↑ Baris MCB "membuka" panel foto di bawahnya · baris-baris lain "ter-push" ke bawah</p>
+        </div>
+      </div>
+
+      <div class="bg-violet-50 border border-violet-200 rounded-2xl p-3 text-[11px]">
+        <p class="font-extrabold text-violet-900 mb-1">✓ Pro</p>
+        <ul class="text-violet-900 list-disc ml-5 space-y-0.5">
+          <li>Tidak ada modal/overlay — paling "non-disruptive"</li>
+          <li>User bisa expand banyak baris sekaligus untuk bandingin foto</li>
+          <li>Gak butuh komponen Lightbox</li>
+        </ul>
+        <p class="font-extrabold text-violet-900 mt-2 mb-1">✗ Con</p>
+        <ul class="text-violet-900 list-disc ml-5 space-y-0.5">
+          <li>Baris-baris di bawahnya ter-push, posisi visual berubah</li>
+          <li>Foto kecil (terbatas lebar tabel), jelek untuk produk yang foto-nya detail</li>
+          <li>Susah show gallery multi-foto dengan layout yang bagus</li>
+          <li>Tabel jadi "tidak rapi" kalau banyak baris di-expand bersamaan</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- DECISION TABLE                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section class="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
+    <h2 class="text-base font-extrabold text-[#012749] mb-3">Quick decision matrix</h2>
+    <table class="w-full text-[12px]">
+      <thead>
+        <tr class="border-b-2 border-slate-200 text-left">
+          <th class="pb-2 pr-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Skenario user</th>
+          <th class="pb-2 px-3 text-[10px] font-extrabold text-pink-700 uppercase tracking-wider text-center">1. Lightbox</th>
+          <th class="pb-2 px-3 text-[10px] font-extrabold text-emerald-700 uppercase tracking-wider text-center">2. Tab Baru</th>
+          <th class="pb-2 pl-3 text-[10px] font-extrabold text-violet-700 uppercase tracking-wider text-center">3. Inline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">"Foto-nya yang mana ya, pastikan barang yang benar"</td>
+          <td class="text-center text-emerald-700">★ Cepat</td>
+          <td class="text-center text-amber-700">Overkill</td>
+          <td class="text-center text-emerald-700">★ Cepat</td>
+        </tr>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">"Bandingin 2-3 foto produk sekaligus"</td>
+          <td class="text-center text-amber-700">Tutup-buka modal</td>
+          <td class="text-center text-emerald-700">★ Multi-tab</td>
+          <td class="text-center text-emerald-700">★ Multi-expand</td>
+        </tr>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">"Mau lihat semua foto produk (gallery)"</td>
+          <td class="text-center text-emerald-700">★ Gallery view</td>
+          <td class="text-center">Detail page</td>
+          <td class="text-center text-rose-700">Sempit</td>
+        </tr>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">"Mau edit produk setelah lihat foto"</td>
+          <td class="text-center">Klik tombol "tab baru"</td>
+          <td class="text-center text-emerald-700">★ Langsung</td>
+          <td class="text-center">Klik link "detail"</td>
+        </tr>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">Posisi scroll tabel tersimpan?</td>
+          <td class="text-center text-emerald-700">★ Ya</td>
+          <td class="text-center text-emerald-700">★ Ya (tab asal)</td>
+          <td class="text-center text-emerald-700">★ Ya</td>
+        </tr>
+        <tr class="border-b border-slate-100">
+          <td class="py-2 pr-3">Implementasi effort</td>
+          <td class="text-center text-amber-700">Sedang (1 komponen baru)</td>
+          <td class="text-center text-emerald-700">★ Rendah (re-use)</td>
+          <td class="text-center text-amber-700">Sedang (state per row)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
+
+</body>
+</html>

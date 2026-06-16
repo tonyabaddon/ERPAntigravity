@@ -48,6 +48,7 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'pipeline',
   'order-history',
   'pelanggan',
+  'piutang',
   'laporan',
   'pembelian',
   'kasir',

@@ -6,7 +6,8 @@ import {
   ActivePage,
 } from '../types';
 import type { DbCustomerWithStats, RakitServiceType } from '../types';
-import { stockService, customersService, kasirService } from '../lib/supabaseClient';
+import { stockService, customersService, kasirService, supabase } from '../lib/supabaseClient';
+import { createTempoInvoice } from '../lib/piutangService';
 import type { SupabaseStockItem } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
 import { useWarehouses } from '../hooks/useWarehouses';
@@ -77,6 +78,13 @@ export default function PenjualanBaruScreen({
   // Invoice modal after save
   const [savedTx, setSavedTx] = useState<KasirTransaction | null>(null);
 
+  // Tempo: outstanding lookup per selected customer (sum of open INVOICE_TEMPO)
+  const [tempoOutstanding, setTempoOutstanding] = useState<number>(0);
+  // Tempo: over-limit hard-block modal
+  const [overLimitModal, setOverLimitModal] = useState<null | {
+    outstanding: number; new_amount: number; limit: number; shortage: number;
+  }>(null);
+
   // Rakit lines
   const [rakitLines, setRakitLines] = useState<Array<{
     id: string;
@@ -140,6 +148,35 @@ export default function PenjualanBaruScreen({
       .catch(err => showToast(`Gagal memuat data: ${err.message ?? 'unknown'}`, 'warning'))
       .finally(() => setLoading(false));
   }, []);
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerId) ?? null;
+  // Reset payment type to FULL if user clears the customer while on TEMPO
+  useEffect(() => {
+    if (paymentType === 'TEMPO' && !selectedCustomer?.allows_tempo) {
+      setPaymentType('FULL');
+    }
+  }, [paymentType, selectedCustomer?.allows_tempo]);
+
+  // Tempo outstanding refresh when customer changes (and they allow tempo).
+  useEffect(() => {
+    if (!selectedCustomer?.allows_tempo || !supabase) {
+      setTempoOutstanding(0);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('total')
+        .eq('customer_id', selectedCustomer.id)
+        .eq('payment_type', 'TEMPO')
+        .eq('status', 'INVOICE_TEMPO');
+      if (cancelled) return;
+      const sum = (data ?? []).reduce((a: number, o: { total: number }) => a + Number(o.total ?? 0), 0);
+      setTempoOutstanding(sum);
+    })();
+    return () => { cancelled = true; };
+  }, [selectedCustomer?.id, selectedCustomer?.allows_tempo]);
 
   // Rakit derived values
   const hasRakit = rakitLines.length > 0;
@@ -205,7 +242,7 @@ export default function PenjualanBaruScreen({
     if (channel === 'whatsapp' && !waPhone.trim()) {
       showToast('Nomor WhatsApp wajib diisi untuk channel WhatsApp Manual.', 'warning'); return;
     }
-    if (paymentMethod === 'edc' && !paymentSubtype) {
+    if (paymentType !== 'TEMPO' && paymentMethod === 'edc' && !paymentSubtype) {
       showToast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning'); return;
     }
     if (paymentType === 'DP' && dpInputType === 'PERCENT' && (dpAmount <= 0 || dpAmount > 100)) {
@@ -213,6 +250,51 @@ export default function PenjualanBaruScreen({
     }
     if (paymentType === 'DP' && (effectiveDp <= 0 || effectiveDp >= totalInvoice)) {
       showToast('Jumlah DP harus > 0 dan < Total Invoice.', 'warning'); return;
+    }
+
+    // TEMPO branch — calls atomic create_tempo_invoice RPC
+    if (paymentType === 'TEMPO') {
+      if (!selectedCustomer) { showToast('Pilih pelanggan terdaftar untuk Tempo.', 'warning'); return; }
+      if (!selectedCustomer.allows_tempo) { showToast('Pelanggan ini belum diaktifkan untuk Tempo.', 'warning'); return; }
+      if (isMixedCart) {
+        showToast('Tempo tidak boleh dicampur SKU + jasa. Pisahkan jasa di transaksi terpisah.', 'warning'); return;
+      }
+      setSaving(true);
+      try {
+        const result = await createTempoInvoice({
+          customer_id: selectedCustomer.id,
+          customer_name: customerName,
+          customer_phone: customerPhone || undefined,
+          customer_company: customerCompany || undefined,
+          delivery_address: deliveryAddress.trim() || undefined,
+          channel,
+          sales_channel: channel,
+          delivery_type: deliveryAddress.trim() ? 'DELIVERY' : 'PICKUP',
+          items: cart.map(({ _key, ...rest }) => rest),
+          subtotal,
+          shipping_fee: ongkirOn ? ongkirAmount : 0,
+          total: totalInvoice,
+        });
+        if (result.kind === 'ok') {
+          showToast(`Faktur tempo dibuat (Jatuh tempo ${selectedCustomer.term_days} hari).`, 'success');
+          resetForm();
+          if (onNavigate) onNavigate('piutang'); else onBack();
+        } else if (result.kind === 'credit_limit_exceeded') {
+          setOverLimitModal({
+            outstanding: result.outstanding, new_amount: result.new_amount,
+            limit: result.limit, shortage: result.shortage,
+          });
+        } else if (result.kind === 'tempo_not_enabled') {
+          showToast('Tempo belum aktif untuk pelanggan ini.', 'warning');
+        } else {
+          showToast(`Gagal: ${result.message}`, 'warning');
+        }
+      } catch (e: any) {
+        showToast(`Gagal membuat faktur tempo: ${e?.message ?? 'unknown'}`, 'warning');
+      } finally {
+        setSaving(false);
+      }
+      return;
     }
 
     // WIP branch: mixed carts (SKU + jasa) go through lock-approval so SKU
@@ -453,6 +535,11 @@ export default function PenjualanBaruScreen({
                     totalInvoice={totalInvoice}
                     effectiveDp={effectiveDp}
                     sisaPelunasan={sisaPelunasan}
+                    allowsTempo={!!selectedCustomer?.allows_tempo}
+                    termDays={selectedCustomer?.term_days ?? null}
+                    creditLimit={selectedCustomer?.credit_limit ?? null}
+                    outstanding={tempoOutstanding}
+                    customerSelected={!!selectedCustomerId}
                     saving={saving}
                     onSave={handleSave}
                     onCancel={onBack}
@@ -472,6 +559,48 @@ export default function PenjualanBaruScreen({
           onClose={() => { setSavedTx(null); onSaved(savedTx.id); }}
         />
       )}
+      {overLimitModal && (
+        <OverLimitModal
+          {...overLimitModal}
+          customerName={customerName || selectedCustomer?.name || ''}
+          onClose={() => setOverLimitModal(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function OverLimitModal({ outstanding, new_amount, limit, shortage, customerName, onClose }: {
+  outstanding: number; new_amount: number; limit: number; shortage: number; customerName: string;
+  onClose: () => void;
+}) {
+  const fmt = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl border border-rose-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="bg-rose-50 border-b border-rose-200 px-5 py-4">
+          <h2 className="text-sm font-extrabold text-rose-800">⛔ Plafon Kredit Terlampaui</h2>
+          <div className="text-[12px] text-rose-700 mt-1">Faktur tempo untuk <strong>{customerName}</strong> tidak dapat dibuat.</div>
+        </div>
+        <div className="px-5 py-4 space-y-1.5 text-[12px]">
+          <div className="flex justify-between"><span className="text-slate-500">Plafon kredit</span><span className="font-bold">{fmt(limit)}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Outstanding saat ini</span><span className="font-bold">{fmt(outstanding)}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Invoice ini</span><span className="font-bold">{fmt(new_amount)}</span></div>
+          <div className="border-t border-slate-200 my-1.5" />
+          <div className="flex justify-between text-rose-700">
+            <span className="font-bold">Kelebihan</span><span className="font-extrabold">{fmt(shortage)}</span>
+          </div>
+        </div>
+        <div className="px-5 py-4 bg-slate-50 border-t border-slate-200">
+          <div className="text-[11px] text-slate-600 mb-3">
+            Minta pelanggan untuk melunasi faktur tempo yang masih outstanding, atau ajukan kenaikan plafon kredit di menu Pelanggan.
+          </div>
+          <button onClick={onClose}
+            className="w-full py-2.5 rounded-lg bg-slate-800 text-white text-[13px] font-bold hover:bg-slate-900">
+            Mengerti
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

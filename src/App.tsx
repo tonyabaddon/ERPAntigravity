@@ -32,6 +32,7 @@ import PengaturanScreen from './components/PengaturanScreen';
 import PipelineScreen from './components/PipelineScreen';
 import OrderHistoryScreen from './components/OrderHistoryScreen';
 import PelangganScreen from './components/PelangganScreen';
+import PiutangScreen from './components/piutang/PiutangScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
@@ -450,6 +451,13 @@ export default function App() {
           <PelangganScreen
             openCustomerId={openCustomerId}
             onNavigate={(page) => navigate(page)}
+            showToast={triggerToast}
+          />
+        );
+      case 'piutang':
+        return (
+          <PiutangScreen
+            currentUserId={currentUser?.id ?? ''}
             showToast={triggerToast}
           />
         );

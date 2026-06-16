@@ -17,6 +17,7 @@ export interface PermissionSet {
   settings: boolean;
   pembelian: boolean;
   kasir: boolean;
+  piutang?: boolean;
   reconciliation?: boolean;
   // Action permissions (Phase 2 anti-fraud foundation)
   can_create_po?: boolean;
@@ -72,6 +73,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  piutang: true,
   reconciliation: true,
   can_create_po: true,
   can_edit_po: true,
@@ -277,7 +279,9 @@ export interface DbOrder {
     | 'PAYMENT_VERIFIED'
     | 'PAYMENT_REJECTED'
     | 'CANCELLED'
-    | 'COMPLETED';
+    | 'COMPLETED'
+    | 'INVOICE_TEMPO'
+    | 'INVOICE_WRITTEN_OFF';
   leads_id?: string;
   booking_expires_at: string;
   gjp_order_id?: string;
@@ -285,7 +289,11 @@ export interface DbOrder {
   delivery_type?: 'PICKUP' | 'DELIVERY';
   full_proof_url?: string | null;
   dp_proof_url?: string | null;
-  payment_type?: 'FULL' | 'DP';
+  payment_type?: 'FULL' | 'DP' | 'TEMPO';
+  due_date?: string | null;
+  written_off_at?: string | null;
+  written_off_by?: string | null;
+  write_off_reason?: string | null;
   dp_input_type?: 'AMOUNT' | 'PERCENTAGE' | null;
   dp_value?: number | null;
   dp_amount?: number | null;
@@ -428,7 +436,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'wip-list' | 'penjualan';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'wip-list' | 'penjualan';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -443,7 +451,7 @@ export type KasirChannel = SalesChannel;
 export type OrdersChannel = Extract<SalesChannel, 'whatsapp' | 'walkin'>;
 export type KasirPaymentMethod = 'cash' | 'transfer' | 'qris' | 'edc';
 export type KasirPaymentSubtype = 'debit' | 'qris' | null;
-export type KasirPaymentType = 'FULL' | 'DP';
+export type KasirPaymentType = 'FULL' | 'DP' | 'TEMPO';
 export type KasirDpInputType = 'AMOUNT' | 'PERCENT' | null;
 export type KasirStatus = 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED' | 'WIP' | 'PENDING_LOCK_APPROVAL';
 export type WarehouseLocation = 'atas' | 'bawah';
@@ -954,4 +962,40 @@ export interface OrderCogsBreakdownRow {
   pi_unit_cost: number | null;
   qty_from_pi: number;
   qty_from_stock: number;
+}
+
+// ── Piutang Phase 1B — Tempo invoice + Piutang screen ──
+export interface CreateTempoInvoicePayload {
+  customer_id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_company?: string;
+  delivery_address?: string;
+  delivery_type?: 'PICKUP' | 'DELIVERY';
+  channel?: 'walkin' | 'whatsapp' | 'grosir' | 'tokopedia' | string;
+  sales_channel?: string;
+  items: Array<{ sku: string; name?: string; qty: number; unit_price: number; subtotal: number }>;
+  subtotal: number;
+  shipping_fee?: number;
+  total: number;
+}
+
+export type CreateTempoInvoiceResult =
+  | { kind: 'ok'; order_id: string }
+  | { kind: 'credit_limit_exceeded'; outstanding: number; new_amount: number; limit: number; shortage: number }
+  | { kind: 'tempo_not_enabled' }
+  | { kind: 'invalid'; message: string };
+
+export interface PiutangTier {
+  key: 'overdue' | 'today' | 'h3' | 'future';
+  label: string;
+  rowBg: string;
+  badgeClass: string;
+}
+
+export interface PiutangRow {
+  order: DbOrder;
+  customer?: DbCustomer;
+  daysToDue: number; // negative = overdue
+  tier: PiutangTier['key'];
 }

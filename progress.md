@@ -6953,3 +6953,69 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - `CatalogGridView.tsx`, `ProductForm.tsx`, `StockTableView.tsx`, `BulkUploadSection.tsx`, `PreviewCard.tsx`
 - **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
 - **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view
+
+## 2026-06-16 — Piutang/Tempo Phase 1B: frontend + RPC wiring (branch `feat/piutang-phase-1b`)
+
+- **Scope shipped**:
+  - Migrations `20260615000010_orders_tempo_fields.sql` + `20260615000011_create_tempo_invoice_rpc.sql` — adds `INVOICE_TEMPO` / `INVOICE_WRITTEN_OFF` enum values, widens `payment_type` CHECK to accept TEMPO on `orders` + `kasir_transactions`, adds `due_date`/`written_off_at`/`written_off_by`/`write_off_reason` columns, partial index `idx_orders_tempo_open`. RPC `create_tempo_invoice(p_payload jsonb)` is atomic — locks customer row FOR UPDATE, sums existing open INVOICE_TEMPO inside lock, hard-blocks over-limit with `credit_limit_exceeded: outstanding=X, new=Y, limit=Z`, calls `deduct_stock_fifo` per line. (Pending: apply to Supabase — IPv6 unreachable from current network.)
+  - `src/lib/piutangService.ts` — `PIUTANG_TIERS` constant (overdue / today / h3 / future with row tint + badge class), `classifyTier()` by daysToDue, `createTempoInvoice()` wraps RPC with discriminated `CreateTempoInvoiceResult` (`ok` | `credit_limit_exceeded` | `tempo_not_enabled` | `invalid`), `markTempoInvoicePaid()` direct UPDATE with INVOICE_TEMPO guard, `fetchPiutangRows()` joins orders + customers, `computeKpi()` aggregator, `computeAging()` with configurable buckets (default 30/60/90), `fetchOverdueCount()` for the sidebar badge.
+  - `src/components/piutang/PiutangScreen.tsx` — KPI strip (Total / Overdue / Hari Ini / H-3) + AR aging horizontal stacked bar + filter pills + search + invoice table with tier-tinted rows + Catat Bayar modal (upload placeholder for Phase 1C) + WA button disabled with Phase 1C tooltip.
+  - `src/components/piutang/PiutangBadge.tsx` — red overdue count chip; 2 s-debounced Supabase Realtime subscription on `orders` table. Renders nothing when count == 0.
+  - Sidebar entry between Pelanggan and Pipeline with `Wallet` icon, badge wired for both collapsed (corner dot) and expanded (right-side chip) states.
+  - `PenjualanBaruScreen` + `PaymentPanel`: `KasirPaymentType` extended to include `TEMPO`; 3-up toggle when customer.allows_tempo; payment method picker hidden in TEMPO mode (DB doesn't need it); credit breakdown card with plafon/terpakai/sisa + utilization progress bar + over-limit warning; `OverLimitModal` hard-block with shortage breakdown.
+  - Type system: `ActivePage += 'piutang'`, `PermissionSet.piutang?`, `ALL_PERMISSIONS.piutang = true`, `urlRoute.ACTIVE_PAGES` whitelist updated; `App.tsx` route case wired to `PiutangScreen`.
+- **Pending Phase 1B**:
+  - Apply migrations 20260615000010+20260615000011 to Supabase production.
+  - Add per-tenant `piutang_settings` row (aging buckets currently hardcoded to [30,60,90]).
+  - Replace placeholder upload UI in CatatBayarModal with the existing payment-proof storage uploader.
+- **Deferred to Phase 1C**: write-off RPC pair, backend-go WA send endpoint via whatsmeow, WA preview modal, write-off UI, Pengaturan page for piutang_settings.
+- **Branch**: `feat/piutang-phase-1b` head `3005631`. Awaiting Supabase migration apply before PR to main.
+
+## 2026-06-16 — Piutang Phase 1B: smoke test PASSED + 2 RPC bug fixes
+
+End-to-end MCP Chrome smoke test ran against live Supabase via Management API (PAT path; IPv6 still unreachable from this network):
+
+1. **Piutang screen empty state**: KPIs zero, AR aging "Tidak ada invoice overdue", empty table. ✓
+2. **Happy-path tempo invoice creation** via Penjualan → Walk-in → Kabel 100mm² × 1 @ Rp 120k → QA Tempo Customer (1jt limit, 7-day term) → click Tempo button → credit breakdown shows Plafon 1jt / Terpakai 120k / Sisa 880k / Setelah dibebani 240k (24%) → Save → RPC fires (445 ms) → navigate to Piutang. DB confirmed INVOICE_TEMPO row, due_date=2026-06-23. ✓
+3. **Piutang screen reflects new row**: Total Rp 240rb / 2 invoice, both H-7 with "Akan Datang" badge, WA button disabled with Phase 1C tooltip, Catat Bayar button present. ✓
+4. **Over-limit hard-block**: bump cart to 8 × 120k = Rp 960k → with 240k outstanding = Rp 1.2jt (100%) → client-side red warning "⚠ Melebihi plafon — invoice tempo akan diblok di backend" + Save button **disabled**. Server-side RAISE also verified directly: `credit_limit_exceeded: outstanding=240000.00, new=900000, limit=1000000.00` (matches piutangService regex parser). ✓
+5. **Catat Bayar → Lunas**: open modal → confirm → DB shows status='PAYMENT_VERIFIED' + payment_verified_at timestamp → row leaves Piutang list → Total drops to Rp 120rb / 1 invoice. ✓
+
+**Bugs found + fixed during smoke test** (commit c7465b4):
+- `(p_payload->>'customer_id')::uuid` — customers.id is text (legacy `GJP-CUST-XXXX` IDs), not UUID. Dropped cast.
+- `COALESCE(...)::public.kasir_channel` for orders.channel — column type is `sales_channel`, not `kasir_channel`. Fixed cast.
+
+Both bugs surfaced because Phase 1B was written without running RPC integration tests first; future tempo migrations should ship with a vitest that calls the RPC against a seed customer end-to-end.
+
+**Migrations now live in production Supabase** (applied via Management API at api.supabase.com — IPv6 direct connection still unreachable from this network):
+- 20260615000010_orders_tempo_fields.sql
+- 20260615000011_create_tempo_invoice_rpc.sql (with two fix-ups re-applied)
+
+**Phase 1B status**: ready to PR `feat/piutang-phase-1b` → `main`. No remaining blockers.
+
+---
+
+## 2026-06-16 — Spec + Plan: Katalog View Modes (Foto + List + Inline Expand)
+
+- **Spec**: `docs/superpowers/specs/2026-06-16-katalog-view-modes-design.md` (commit `aca5f9f`)
+- **Plan**: `docs/superpowers/plans/2026-06-16-katalog-view-modes-plan.md` (commit `fb50b7f`)
+- **Mockups**:
+  - `docs/superpowers/mockups/2026-06-16-katalog-view-modes.html` (3-mode comparison; Mode "Padat" dropped per user)
+  - `docs/superpowers/mockups/2026-06-16-katalog-click-behaviors.html` (lightbox vs new-tab vs inline expand)
+  - `docs/superpowers/mockups/2026-06-16-katalog-inline-expand.html` (chosen: 280×280 photo + gallery + bonus stok breakdown)
+
+**Locked decisions**:
+- **2 view modes** only — Foto (existing) + List (new). Mode "Padat" dropped.
+- **Default = List**, no persistence (every fresh mount starts as List).
+- **List columns**: Foto / SKU / Nama / Kategori / Harga / **Stok total + top-3 gudang inline by sort_order** / Chevron / Aksi.
+- **Klik foto thumb behavior = inline expand** (not lightbox, not new tab). Panel: 280×280 foto + gallery thumb strip + all-gudang breakdown + Edit/Tambah Foto/Riwayat Stok buttons.
+- **Multi-expand allowed** (user can open many panels at once).
+- **Open triggers**: foto thumb + chevron `expand_more`.
+- **Close triggers**: ikon X + foto thumb same row + toolbar "Tutup N panel" button.
+- **Animation**: slide-down ~120ms via plain CSS keyframes (no framer-motion).
+
+**Dependency**: must ship spec `2026-06-14-product-photo-search-design.md` Phase 1 first (creates `src/components/produk/` folder, `CatalogView` orchestrator, `StockItem.photos` field, `StockItem.stockByWarehouseId` map). Plan flagged this as a hard prereq.
+
+**Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
+
+**Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.
