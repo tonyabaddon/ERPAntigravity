@@ -17,6 +17,7 @@ export interface PermissionSet {
   settings: boolean;
   pembelian: boolean;
   kasir: boolean;
+  piutang?: boolean;
   reconciliation?: boolean;
   // Action permissions (Phase 2 anti-fraud foundation)
   can_create_po?: boolean;
@@ -72,6 +73,7 @@ export const ALL_PERMISSIONS: PermissionSet = {
   settings: true,
   pembelian: true,
   kasir: true,
+  piutang: true,
   reconciliation: true,
   can_create_po: true,
   can_edit_po: true,
@@ -419,7 +421,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'wip-list' | 'penjualan';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'wip-list' | 'penjualan';
 
 // ─── Kasir types ────────────────────────────────────────────
 
