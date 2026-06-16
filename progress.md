@@ -6411,3 +6411,45 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - `CatalogGridView.tsx`, `ProductForm.tsx`, `StockTableView.tsx`, `BulkUploadSection.tsx`, `PreviewCard.tsx`
 - **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
 - **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view
+
+---
+
+## 2026-06-16 — Spec amendment: foto-search pivot Gemini → CLIP local
+
+- **Spec amended** (commit `2c439bf`): `docs/superpowers/specs/2026-06-14-product-photo-search-design.md`
+- **Final mockup** (commit `5809c43`): `docs/superpowers/mockups/2026-06-16-final-katalog-foto-search.html` (6 sections + arch diagram)
+
+### Locked architectural pivots (brainstorming session 2026-06-16)
+
+1. **Foto-search pipeline: Gemini Vision → CLIP local (ONNX, backend-go)**
+   - Model: `clip-vit-base-patch32` (~150MB bundled di Docker image)
+   - Vector(512) di `stock_photo_embeddings` (was vector(768) text embedding)
+   - Pipeline: image → preprocess 224x224 → CLIP encoder → pgvector similarity
+   - Latency target: p95 < 500ms warm (vs 4s Gemini Vision indirect)
+   - Zero external API calls forever → no quota risk
+
+2. **Drop tombol `✨ Generate dari Foto`** — manual deskripsi input, zero Gemini call di seluruh foto-search functionality
+
+3. **Cari by Foto modal: 3 entry points** — Kamera + Upload File + **drag-and-drop zone**
+
+4. **Cloud Run free tier constraint** — no `min-instances=1` per `cost_upgrade_approval` memory
+   - Konsekuensi: cold start ~5-10s setelah idle
+   - Mitigasi: banner inline `"⏱️ Menyiapkan AI… 5 detik"` (bukan toast error)
+   - Keep-warm dari existing kasir traffic saat jam buka toko
+
+5. **Monitoring panel renamed** `ai_call_log` → `clip_inference_log`
+   - Track: search count, indexing count, p50/p95 latency, cold-start hit
+   - No more Vision/Embedding cards (gak ada Gemini call)
+
+6. **Future hybrid path** documented (§5.5 spec) — trigger kalau CLIP murni < 80% top-1 minggu 4 post-launch, +2 hari dev di spec terpisah
+
+### Pushback yang user accept (honest correction)
+
+- "Calista pakai 2.0 + 2.5" → corrected to "Calista cuma pakai `gemini-2.5-flash-lite`" (verified `chain.go:84`)
+- "Gemini 3.5 Flash exists?" → verified via Google docs (saya tadinya skeptis karena knowledge cutoff Jan 2026, user benar — model release antara Feb–Jun 2026)
+- "Cari by Foto akan campur quota Calista" → fakta: different model name = separate quota bucket di Google, sudah isolated by-design. Tidak butuh pivot untuk isolation; pivot CLIP untuk akurasi visual + zero-quota guarantee
+
+### Effort impact
+
+- Foto-search spec estimate: 9.5-10.5 → **10.5-11.5 hari** (+1 CLIP integration, +0.5 drag-drop, 0 saving dari drop Generate dari Foto)
+- Implementation status: spec amended + mockup ready, BELUM mulai coding
