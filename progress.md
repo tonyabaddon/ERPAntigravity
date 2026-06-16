@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-16 — Prod regression recovery — Produk & Stok overwritten by main deploy
+
+**Root cause (parallel-session desync):**
+- Revision `garindo-jaya-panel-msme-erp-frontend-00063-2qn` deployed 2026-06-15 15:12 UTC via `gcloud run deploy --source` from local-only branch `feat/produk-stok-photo-impl` (Produk & Stok + Katalog UI, ~30 commits ahead of main).
+- Subsequent push to `main` triggered Cloud Build → revisions `00064-8jw` (16:00 UTC) + `00065-25z` (16:02 UTC) built from `main` HEAD (URL routing landed, but Produk & Stok NOT yet merged) → traffic shifted to `00065-25z` → Produk & Stok disappeared from prod.
+- Not a code regression: a state-restoration regression. Direct `gcloud run deploy --source` from an unmerged branch makes prod state diverge from `main`; any subsequent `main` deploy silently overwrites it.
+
+**Recovery:**
+1. Backup: `git push origin feat/produk-stok-photo-impl` — branch was local-only (30+ commits at risk).
+2. Cloud Run traffic shift back to `00063-2qn` (100%) via `gcloud run services update-traffic` — prod restored instantly without rebuilding.
+3. Permanent merge handoff: `feat/produk-stok-photo-impl` → `main` has 5 conflicts (`src/types.ts`, `src/components/approval/ApprovalRequestRow.tsx`, `backend-go/internal/llm/chain.go`, `scripts/apply-pending-migrations.sh`, `progress.md`) — needs domain context from both branches; deferred to PR review in the owning session. PR: https://github.com/tonyabaddon/ERPAntigravity/pull/new/feat/produk-stok-photo-impl
+
+**Open follow-ups:**
+- Resolve the 5 merge conflicts and merge PR. After Cloud Build deploys the merge revision, verify Produk & Stok parity vs `00063-2qn` BEFORE shifting traffic off `00063-2qn`.
+- `cloudbuild.frontend.yaml` deploys without `--no-traffic`, so every push to `main` auto-shifts 100% traffic to the new revision. This is what made the regression silent. Consider adding `--no-traffic` as a future hardening (separate decision — changes deploy ergonomics).
+- Process guardrail: stop using `gcloud run deploy --source` from feature branches directly to prod — every prod deploy should be a `main` merge + Cloud Build trigger. Parallel sessions on different features must isolate via `.claude/worktrees/` and PR-merge before deploying.
+
 ## 2026-06-15 — URL Routing & "Buka di Tab Baru" — SHIPPED
 
 - **Spec**: `docs/superpowers/specs/2026-06-15-url-routing-new-tab-design.md`
