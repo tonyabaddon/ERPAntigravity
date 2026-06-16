@@ -30,7 +30,11 @@ steps:
       - '--platform=$_PLATFORM'
       - '--allow-unauthenticated'
       # Deploy new revisions at 0% traffic, addressable via a per-commit tag URL:
-      #   https://preview-<SHORT_SHA>---<service>.run.app
+      #   https://c<SHORT_SHA>---<service>.run.app
+      # Cloud Run constraint: combined tag + service name ≤ 46 chars; the
+      # service name 'garindo-jaya-panel-msme-erp-frontend' is 36 chars so the
+      # tag must be ≤10 chars. 'c$SHORT_SHA' is 8 chars (leading letter required
+      # by some tooling for tag names that start with a digit).
       # Smoke-test the tag URL, then promote with:
       #   gcloud run services update-traffic $_SERVICE_NAME \
       #     --region=$_DEPLOY_REGION --to-revisions=<rev>=100
@@ -38,7 +42,7 @@ steps:
       # --no-traffic auto-shifted traffic to revisions built from main HEAD
       # before all feature branches were merged. See progress.md post-mortem.
       - '--no-traffic'
-      - '--tag=preview-$SHORT_SHA'
+      - '--tag=c$SHORT_SHA'
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
