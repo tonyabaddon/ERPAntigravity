@@ -31,9 +31,9 @@ Refactor the existing monolithic PO into a **4-entity model** that matches Jurna
 |---|---|---|
 | **2a — Foundation** | Schema: pesanan + tagihan (already exists, add type='STOCK') + pembayaran + junction. Migration: split PO data. Basic CRUD pages. Backward URL redirects. | ~1.5 sprint |
 | **2b — Tukar Faktur** | tukar_faktur table + reconciliation panel + PDF tanda terima | ~1 sprint |
-| **2c — AP Report + WA** | Beranda dashboard (KPI + aging + cash flow forecast). WA reminder via whatsmeow (3 triggers) | ~1 sprint |
+| **2c — AP Report** | Beranda dashboard (KPI + aging + cash flow forecast). | ~0.5 sprint |
 
-Total: ~3-4 sprint = 1.5-2 bulan.
+Total: ~3 sprint = ~1.5 bulan.
 
 ## 3. Entity model
 
@@ -415,23 +415,17 @@ See mockup Layar 3. Implementation flow:
 
 PDF tanda terima layout: A4 with supplier letterhead, list of Tagihan, total, payment due date, signature line. Auto-archived to Storage.
 
-## 10. WA reminder integration (whatsmeow)
+## 10. WA reminder to suppliers — REMOVED from Phase 2
 
-**3 trigger points:**
+Originally proposed 3 trigger points (payment reminder / payment confirmation / TF tanda terima). All three taken out after critique:
 
-| Trigger | When | Template |
-|---|---|---|
-| Payment reminder | 3 days before `payment_due_at` (cron daily Jakarta midnight) | "Halo {supplier_name}, mengingatkan tagihan {tagihan_number} Rp {amount} jatuh tempo {date}." |
-| Payment confirmation | Pembayaran created with proof_url | "Tagihan {tagihan_number} sudah dibayar Rp {amount} via {method} pada {date}." |
-| Tanda terima TF | Tukar Faktur status → TERTANDA | "Tanda terima Tukar Faktur {tf_number} terlampir. Total Rp {total}. Jatuh tempo bayar: {date}." (with PDF attachment) |
+1. **Payment reminder to supplier is backwards.** Buyer reminding supplier about money owed — suppliers remind buyers, not vice versa. Use case doesn't exist in real ops.
+2. **Internal reminder is already covered by AP Dashboard** (Beranda Pembelian KPI + cash flow forecast 7-day). Owner sees what to pay each morning; no need for WA push.
+3. **Manual operator WA forward is more polite + contextual** than auto-template (relationship-driven supplier comms).
+4. **whatsmeow integration already loaded with Calista (customer chat).** Adding supplier WA = identity mismatch, separate phone matrix, opt-in templates editor — scope creep not proportionate to value.
+5. **Not requested by current operator.** Sinar Elektrik / Garindo Jaya runs without WA reminder today, zero complaint.
 
-**Implementation:**
-- Backend Go service: `backend-go/internal/whatsmeow/sender.go` (new package) — sends via whatsmeow library
-- Supabase webhooks → backend HTTP endpoint OR backend polls cron table
-- Templates stored in `pembelian_wa_templates` table (editable from Pengaturan)
-- Operator override: each trigger has manual "Kirim WA" button on entity detail page (no full automation; opt-in per send)
-
-**Phase 2 deliverable:** webhook + backend sender + manual-trigger button. Auto-cron deferred to Phase 3.
+If demand surfaces post-launch (specific tenant asks), re-evaluate in Phase 3.
 
 ## 11. Business rules
 
@@ -488,14 +482,13 @@ supabase/migrations/
   20260622000003_phase2_quick_create_tagihan_for_tf.sql
 ```
 
-## 14. Phase 2c additions (AP Report + WA)
+## 14. Phase 2c additions (AP Report only)
 
 ```
   20260625000001_phase2_ap_dashboard_rpc.sql
-  20260625000002_phase2_pembelian_wa_templates.sql
 ```
 
-Plus backend-go changes for whatsmeow sender.
+No backend-go changes. Frontend reads RPC result, renders Beranda Pembelian (4 panels).
 
 ## 15. Out of scope (Phase 3 / future)
 
@@ -506,7 +499,7 @@ Plus backend-go changes for whatsmeow sender.
 - Multi-currency
 - PPN / Faktur Pajak formal compliance
 - 3-way match enforcement
-- Auto-WA cron (Phase 2c ships manual-trigger only)
+- **WA reminder to suppliers (any direction)** — internal AP dashboard covers reminder need
 - Bank account master + reconciliation
 
 ## 16. Rollout checklist
@@ -517,7 +510,7 @@ Plus backend-go changes for whatsmeow sender.
 4. Verify URL redirects work (`?po=PO-2026-XXXX` → Pesanan detail)
 5. Verify existing reports still work (Laporan, Rekonsiliasi)
 6. Phase 2b: ship Tukar Faktur after 1 week of Phase 2a stability
-7. Phase 2c: ship AP Report + WA after Phase 2b validated by founder
+7. Phase 2c: ship AP Report after Phase 2b validated by founder
 
 ## 17. Backward compatibility checklist
 
