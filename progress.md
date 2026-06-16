@@ -6411,3 +6411,25 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - Replace placeholder upload UI in CatatBayarModal with the existing payment-proof storage uploader.
 - **Deferred to Phase 1C**: write-off RPC pair, backend-go WA send endpoint via whatsmeow, WA preview modal, write-off UI, Pengaturan page for piutang_settings.
 - **Branch**: `feat/piutang-phase-1b` head `3005631`. Awaiting Supabase migration apply before PR to main.
+
+## 2026-06-16 — Piutang Phase 1B: smoke test PASSED + 2 RPC bug fixes
+
+End-to-end MCP Chrome smoke test ran against live Supabase via Management API (PAT path; IPv6 still unreachable from this network):
+
+1. **Piutang screen empty state**: KPIs zero, AR aging "Tidak ada invoice overdue", empty table. ✓
+2. **Happy-path tempo invoice creation** via Penjualan → Walk-in → Kabel 100mm² × 1 @ Rp 120k → QA Tempo Customer (1jt limit, 7-day term) → click Tempo button → credit breakdown shows Plafon 1jt / Terpakai 120k / Sisa 880k / Setelah dibebani 240k (24%) → Save → RPC fires (445 ms) → navigate to Piutang. DB confirmed INVOICE_TEMPO row, due_date=2026-06-23. ✓
+3. **Piutang screen reflects new row**: Total Rp 240rb / 2 invoice, both H-7 with "Akan Datang" badge, WA button disabled with Phase 1C tooltip, Catat Bayar button present. ✓
+4. **Over-limit hard-block**: bump cart to 8 × 120k = Rp 960k → with 240k outstanding = Rp 1.2jt (100%) → client-side red warning "⚠ Melebihi plafon — invoice tempo akan diblok di backend" + Save button **disabled**. Server-side RAISE also verified directly: `credit_limit_exceeded: outstanding=240000.00, new=900000, limit=1000000.00` (matches piutangService regex parser). ✓
+5. **Catat Bayar → Lunas**: open modal → confirm → DB shows status='PAYMENT_VERIFIED' + payment_verified_at timestamp → row leaves Piutang list → Total drops to Rp 120rb / 1 invoice. ✓
+
+**Bugs found + fixed during smoke test** (commit c7465b4):
+- `(p_payload->>'customer_id')::uuid` — customers.id is text (legacy `GJP-CUST-XXXX` IDs), not UUID. Dropped cast.
+- `COALESCE(...)::public.kasir_channel` for orders.channel — column type is `sales_channel`, not `kasir_channel`. Fixed cast.
+
+Both bugs surfaced because Phase 1B was written without running RPC integration tests first; future tempo migrations should ship with a vitest that calls the RPC against a seed customer end-to-end.
+
+**Migrations now live in production Supabase** (applied via Management API at api.supabase.com — IPv6 direct connection still unreachable from this network):
+- 20260615000010_orders_tempo_fields.sql
+- 20260615000011_create_tempo_invoice_rpc.sql (with two fix-ups re-applied)
+
+**Phase 1B status**: ready to PR `feat/piutang-phase-1b` → `main`. No remaining blockers.
