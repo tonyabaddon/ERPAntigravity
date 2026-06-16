@@ -99,6 +99,40 @@ export async function createTempoInvoice(payload: CreateTempoInvoicePayload): Pr
   return { kind: 'invalid', message: msg };
 }
 
+// ── Upload payment proof to storage ──
+// Pattern matches purchaseInvoiceService.uploadAttachment but writes to the
+// `payment-proofs` bucket (existing — see 20260604000012_storage_authenticated_policies.sql),
+// path prefix tempo-payments/{orderId}/ so audit is trivial.
+export const TEMPO_PROOF_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const TEMPO_PROOF_ACCEPT = '.pdf,.jpg,.jpeg,.png';
+const TEMPO_PROOF_MIME = /^(image\/(jpe?g|png)|application\/pdf)$/i;
+
+export function validateTempoProofFile(file: File): string | null {
+  if (file.size > TEMPO_PROOF_MAX_BYTES) {
+    return `File terlalu besar (max 5 MB, file ini ${(file.size / 1024 / 1024).toFixed(1)} MB).`;
+  }
+  if (!TEMPO_PROOF_MIME.test(file.type) && !/\.(pdf|jpe?g|png)$/i.test(file.name)) {
+    return 'Tipe file tidak didukung. Gunakan PDF, JPG, atau PNG.';
+  }
+  return null;
+}
+
+export async function uploadTempoPaymentProof(file: File, orderId: string): Promise<string> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const err = validateTempoProofFile(file);
+  if (err) throw new Error(err);
+  // Sanitize filename: keep ext, replace any non-[A-Za-z0-9._-] with _
+  const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
+  const path = `tempo-payments/${orderId}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from('payment-proofs').upload(path, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 // ── Mark tempo invoice paid ──
 // No new RPC needed; reuse existing payment-verify path via direct UPDATE.
 // (RLS allows authenticated UPDATE on orders for verifiers; matches existing
