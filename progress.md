@@ -1,5 +1,52 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-16 — ProductForm — OS-folder drag-drop multi-file photo upload SHIPPED
+
+Follow-up to today's Produk & Stok Phase 2 ship (entry below). User flagged
+that "drag-and-drop foto dari folder laptop" — the wording from the original
+brainstorm — was not actually working: clicking a photo slot opened the file
+picker, and the only `onDrop` handler on slots was for INTRA-form reordering
+(`draggingIdx !== null` branch). Dragging an image from Finder/Explorer onto
+the form did nothing.
+
+**Fix (PR #12 — merge `6445fa4`):** wrap the 5-slot photo grid in a dedicated
+drop zone that reads `e.dataTransfer.files`, filters by `image/*`, builds a
+`FileList` via the `DataTransfer` API trick, and forwards to the existing
+`handleFilesPicked` (which already iterates + slices to `MAX_PHOTOS - photos.length`,
+so multi-file drop respects the 5-slot cap automatically).
+
+**Intra-form reorder preservation:** outer drop handler is gated on
+`e.dataTransfer.types.includes('Files')`. Files-type only appears when the
+drag originates from the OS; intra-form drags don't carry it, so they bubble
+through to the per-slot `onDrop` for reordering unchanged.
+
+**Visual cue:** during a Files-type drag-over, the grid gets an emerald ring
++ light tint and a centered pill reading "Lepas untuk upload (sisa N slot)"
+or "(slot penuh)" once 5 are filled. Pill is `pointer-events: none` so it
+doesn't intercept the drop event.
+
+**Edge cases handled:**
+- Non-image file dropped (e.g. PDF) → `showToast('Hanya file gambar yang
+  didukung', 'warning')`, nothing added.
+- `dragLeave` flicker when cursor passes over child slot — guarded with
+  `e.currentTarget.contains(e.relatedTarget as Node)` early-return so the
+  highlight only clears when leaving the wrapper itself.
+- Cap enforcement — handled by existing `handleFilesPicked` slicing.
+
+**Verify:**
+- `npm run lint` (tsc, exit 0), `npm run test` (44/44 vitest).
+- Build deploys via permanent `--no-traffic` hardening; preview tag URL
+  `https://c6445fa4---<service>.run.app` used for smoke.
+- Smoke (Chrome DevTools MCP, console clean): helper text under "📷 Foto Produk"
+  now reads "Min 1 wajib · max 5 · **drop dari folder atau drag slot untuk
+  urutan**". User-led functional test (drop 1, drop 3, drop non-image, reorder
+  existing) confirmed pass. Screenshot: `docs/screenshots/smoke-drop-zone-c6445fa4.png`.
+
+**Cutover:** prod shifted from rev `00067-bes` → `00070-viq` (caadfe68 →
+c6445fa4). Both prod URL and preview tag URL return etag `18227914…` confirming
+serving the same revision. `00067-bes` and `00069-juj` retained at 0% for
+fast rollback.
+
 ## 2026-06-16 — Produk & Stok Phase 2 — RECOVERY MERGED + SHIPPED + DEPLOY HARDENED
 
 Follow-up to the same-day prod regression post-mortem (entry below). Branch
