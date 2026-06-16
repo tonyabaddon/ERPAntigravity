@@ -6433,3 +6433,30 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - 20260615000011_create_tempo_invoice_rpc.sql (with two fix-ups re-applied)
 
 **Phase 1B status**: ready to PR `feat/piutang-phase-1b` → `main`. No remaining blockers.
+
+---
+
+## 2026-06-16 — Spec + Plan: Katalog View Modes (Foto + List + Inline Expand)
+
+- **Spec**: `docs/superpowers/specs/2026-06-16-katalog-view-modes-design.md` (commit `aca5f9f`)
+- **Plan**: `docs/superpowers/plans/2026-06-16-katalog-view-modes-plan.md` (commit `fb50b7f`)
+- **Mockups**:
+  - `docs/superpowers/mockups/2026-06-16-katalog-view-modes.html` (3-mode comparison; Mode "Padat" dropped per user)
+  - `docs/superpowers/mockups/2026-06-16-katalog-click-behaviors.html` (lightbox vs new-tab vs inline expand)
+  - `docs/superpowers/mockups/2026-06-16-katalog-inline-expand.html` (chosen: 280×280 photo + gallery + bonus stok breakdown)
+
+**Locked decisions**:
+- **2 view modes** only — Foto (existing) + List (new). Mode "Padat" dropped.
+- **Default = List**, no persistence (every fresh mount starts as List).
+- **List columns**: Foto / SKU / Nama / Kategori / Harga / **Stok total + top-3 gudang inline by sort_order** / Chevron / Aksi.
+- **Klik foto thumb behavior = inline expand** (not lightbox, not new tab). Panel: 280×280 foto + gallery thumb strip + all-gudang breakdown + Edit/Tambah Foto/Riwayat Stok buttons.
+- **Multi-expand allowed** (user can open many panels at once).
+- **Open triggers**: foto thumb + chevron `expand_more`.
+- **Close triggers**: ikon X + foto thumb same row + toolbar "Tutup N panel" button.
+- **Animation**: slide-down ~120ms via plain CSS keyframes (no framer-motion).
+
+**Dependency**: must ship spec `2026-06-14-product-photo-search-design.md` Phase 1 first (creates `src/components/produk/` folder, `CatalogView` orchestrator, `StockItem.photos` field, `StockItem.stockByWarehouseId` map). Plan flagged this as a hard prereq.
+
+**Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
+
+**Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.
