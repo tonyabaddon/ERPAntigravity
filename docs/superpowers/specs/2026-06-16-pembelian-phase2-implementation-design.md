@@ -85,11 +85,8 @@ Operator boleh campur: 3 Tagihan loose + 1 TF dalam 1 Pembayaran. Junction table
 | `tax_amount` | numeric | |
 | `subtotal` | numeric | Sum item subtotals |
 | `total` | numeric | subtotal + tax_amount |
-| `supplier_doc_number` | text | NEW — supplier's PO confirmation reference (optional) |
-| `supplier_doc_photo_url` | text | NEW — photo of supplier confirmation |
 | `created_by_user_id` | uuid FK → auth.users | |
 | `created_at`, `updated_at`, `voided_at`, `voided_by_user_id`, `void_reason` | | |
-| `legacy_po_number` | text | NEW — backref to old PO-YYYY-NNNN for URL redirects |
 
 `pesanan_items`:
 | Column | Type | Notes |
@@ -126,9 +123,8 @@ Already exists from Phase 1. Phase 2 changes:
 | `payment_due_at` | date NOT NULL | When buyer commits to pay |
 | `total_amount` | numeric | Sum of bundled Tagihan totals |
 | `tanda_terima_pdf_url` | text | Auto-generated when status → TERTANDA |
-| `tagihan_photos` | jsonb | `[{tagihan_id, photo_url, taken_at}]` bulk upload of Faktur asli |
-| `discrepancies` | jsonb | `[{type: 'supplier_brought_unknown', invoice_no, amount} \| {type: 'in_system_not_brought', tagihan_id}]` — reconciliation audit trail |
-| `notes` | text | |
+| `photo_urls` | text[] | Bulk upload Faktur asli — array of Storage URLs, no per-Tagihan attribution (operator labels by hand if needed) |
+| `notes` | text | Free-text — includes any discrepancy notes operator wants to record |
 | `created_by_user_id` | uuid FK → auth.users | |
 | `created_at`, `updated_at`, `voided_at`, `voided_by_user_id`, `void_reason` | | |
 
@@ -180,9 +176,8 @@ Already exists from Phase 1. Phase 2 changes:
 - `generate_pesanan_number() returns text`
 - `record_pesanan(payload jsonb) returns text` — creates Pesanan as DRAFT or ORDERED based on payload
 - `mark_pesanan_ordered(p_pesanan_id uuid) returns void` — DRAFT → ORDERED, sets ordered_at
-- `close_pesanan(p_pesanan_id uuid, reason text) returns void` — force-close even with partial receipt
 - `update_pesanan(p_pesanan_id uuid, payload jsonb) returns void` — edit only DRAFT
-- `void_pesanan(p_pesanan_id uuid, reason text) returns void`
+- `void_pesanan(p_pesanan_id uuid, reason text) returns void` — also used for force-close (no separate close RPC)
 
 ### 5.2 Tagihan (extends existing `record_pi`)
 - `record_tagihan(payload jsonb) returns jsonb` — payload includes `pesanan_id` (optional). Auto-increments stocks + creates stock_lots (for type='STOCK'). BNL-style payload (type='PASSTHROUGH') still supported.
@@ -195,8 +190,9 @@ Trigger: after Tagihan insert/update with `pesanan_item_id`, update `pesanan_ite
 - `generate_tf_number() returns text`
 - `record_tukar_faktur(payload jsonb) returns jsonb` — bundles Tagihan IDs, sets tukar_faktur_id on each. Validates same-supplier.
 - `sign_tukar_faktur(p_tf_id uuid, photos jsonb) returns text (pdf_url)` — DRAFT → TERTANDA, stores photos, generates PDF
-- `unbundle_tagihan_from_tf(p_tf_id uuid, p_tagihan_id uuid, reason text) returns void` — remove specific Tagihan from bundle (e.g., supplier didn't bring its Faktur)
-- `void_tf(p_tf_id uuid, reason text) returns void`
+- `void_tf(p_tf_id uuid, reason text) returns void` — also used to unbundle (void + recreate if operator needs different Tagihan composition)
+
+**Foreign-faktur handling:** if supplier brings a Faktur not yet in the system during TF ritual, operator skips it from current TF, creates Tagihan via normal Tagihan flow afterward, and creates the next TF including the missed faktur. Phase 2 doesn't auto-quick-create from within TF panel (defer to Phase 3 if demand surfaces).
 
 ### 5.4 Pembayaran
 - `generate_pembayaran_number() returns text`
@@ -213,6 +209,8 @@ Strategy: **big-bang split during maintenance window**.
 
 ### 6.1 Migration script outline (`20260620000010_pembelian_phase2_migrate_po.sql`)
 
+**Note:** no `purchase_orders_archive` table is created. Postgres point-in-time recovery + git history of migration scripts provides sufficient rollback path. No `legacy_po_number` column on Pesanan (URL backward compat dropped — small audience of 2-3 admin staff can re-bookmark).
+
 ```sql
 BEGIN;
 
@@ -220,7 +218,7 @@ BEGIN;
 -- ... [DDL] ...
 
 -- Step 2: For each PO row, derive Pesanan + Tagihan + Pembayaran:
-INSERT INTO pesanan (id, pesanan_number, supplier_id, status, ordered_at, closed_at, tax_rate, tax_amount, subtotal, total, notes, created_by_user_id, created_at, legacy_po_number)
+INSERT INTO pesanan (id, pesanan_number, supplier_id, status, ordered_at, closed_at, tax_rate, tax_amount, subtotal, total, notes, created_by_user_id, created_at)
 SELECT
   gen_random_uuid(),
   'PSN-' || to_char(created_at, 'YYYY-MM') || '-' || lpad(row_number() over (partition by to_char(created_at, 'YYYY-MM') order by created_at)::text, 3, '0'),
@@ -233,8 +231,7 @@ SELECT
   END,
   ordered_at,
   CASE WHEN status IN ('RECEIVED','PAID') THEN received_at ELSE NULL END,
-  tax_rate, tax_amount, subtotal, total, notes, created_by_user_id, created_at,
-  po_number  -- preserve for URL redirect
+  tax_rate, tax_amount, subtotal, total, notes, created_by_user_id, created_at
 FROM purchase_orders;
 
 -- pesanan_items derived from purchase_order_items
@@ -274,9 +271,9 @@ UPDATE stock_lots SET source_id = tagihan_lookup.new_tagihan_id, source_type = '
 ALTER TABLE kasir_transactions ADD COLUMN pembayaran_id uuid REFERENCES pembayaran(id);
 UPDATE kasir_transactions SET pembayaran_id = pembayaran_lookup.id FROM pembayaran_lookup WHERE kasir_transactions.po_id = pembayaran_lookup.legacy_po_id;
 
--- Step 5: Snapshot existing purchase_orders to archive (don't drop yet)
-CREATE TABLE purchase_orders_archive AS SELECT * FROM purchase_orders;
-CREATE TABLE purchase_order_items_archive AS SELECT * FROM purchase_order_items;
+-- Step 5: After verification (1 week post-cutover), drop old purchase_orders + items.
+-- Don't drop in this migration — that's a separate phase 2-cleanup migration.
+-- Recovery path: Postgres PITR + git history of this migration script.
 
 COMMIT;
 ```
@@ -288,13 +285,9 @@ COMMIT;
   - Total AP outstanding (BELUM_LUNAS) unchanged
   - Total Kasir expense (Pembelian Stok category) unchanged
   - Stock_lots count unchanged
-- **Rollback plan:** restore from purchase_orders_archive, drop new tables
+- **Rollback plan:** Postgres point-in-time recovery (PITR) to pre-migration timestamp + re-deploy old frontend
 - **Maintenance window:** Sunday 02:00 WIB (low traffic)
 - **Frontend deploy:** after migration verified, deploy new frontend that reads from new tables
-
-### 6.3 URL backward compat
-- `?screen=pembelian&po=PO-2026-0042` → redirect to Pesanan detail page via `legacy_po_number` lookup
-- Old PO row visible in `purchase_orders_archive` for forensics
 
 ## 7. Frontend file structure
 
@@ -326,12 +319,11 @@ src/components/pembelian/
   shared/
     SupplierPicker.tsx           — already exists
     PaymentMethodPicker.tsx      — already exists from BNL Phase 1
-    StatusBadge.tsx              — generalize per entity
 src/lib/
   pembelianService.ts            — extend with pesananService + pembayaranService + tukarFakturService (or split)
   pdf/
     tukarFakturTandaTerima.ts    — A4 PDF generator
-    pesananPdf.ts                — already exists, rename from purchaseOrderPdf
+    purchaseOrderPdf.ts          — existing, kept as-is (rename deferred to avoid touching unrelated code)
 ```
 
 ### 7.1 Sidebar / menu structure
@@ -465,13 +457,11 @@ Same warning logic for Tagihan (type=STOCK) `supplier_invoice_number`. Operator 
 supabase/migrations/
   20260620000001_phase2_pesanan_schema.sql
   20260620000002_phase2_pembayaran_schema.sql
-  20260620000003_phase2_tukar_faktur_schema.sql
-  20260620000004_phase2_pi_extend.sql              -- add pesanan_id, tukar_faktur_id, paid_amount cols
-  20260620000005_phase2_rpcs_pesanan.sql
-  20260620000006_phase2_rpcs_tagihan_extend.sql
-  20260620000007_phase2_rpcs_pembayaran.sql
+  20260620000003_phase2_pi_extend.sql              -- add pesanan_id, tukar_faktur_id, paid_amount cols on existing purchase_invoices
+  20260620000004_phase2_rpcs_pesanan.sql
+  20260620000005_phase2_rpcs_tagihan_extend.sql
+  20260620000006_phase2_rpcs_pembayaran.sql
   20260620000010_phase2_migrate_po_data.sql        -- big-bang split
-  20260620000011_phase2_url_redirect_lookup.sql    -- backward compat
 ```
 
 ## 13. Phase 2b additions (Tukar Faktur)
@@ -479,7 +469,6 @@ supabase/migrations/
 ```
   20260622000001_phase2_tukar_faktur_schema.sql
   20260622000002_phase2_rpcs_tukar_faktur.sql
-  20260622000003_phase2_quick_create_tagihan_for_tf.sql
 ```
 
 ## 14. Phase 2c additions (AP Report only)
@@ -515,7 +504,7 @@ No backend-go changes. Frontend reads RPC result, renders Beranda Pembelian (4 p
 ## 17. Backward compatibility checklist
 
 - ✅ Phase 1 BNL unchanged (`purchase_invoices type='PASSTHROUGH'` preserved)
-- ✅ Existing PO URLs redirect via `legacy_po_number`
+- ⚠️ Existing PO URLs (`?po=PO-2026-XXXX`) will 404 — admin staff (2-3 people) re-bookmark to new Pesanan URL. Internal announcement banner first week.
 - ✅ Existing Kasir expense entries cross-referenced to new Pembayaran
 - ✅ Existing stock_lots re-attributed to Tagihan via `source_id`/`source_type`
 - ✅ Existing reports (Laporan, Rekonsiliasi) — UPDATE QUERIES needed to read from Pesanan+Tagihan instead of purchase_orders
