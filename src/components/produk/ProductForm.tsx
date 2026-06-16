@@ -83,6 +83,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
     (initial?.photo_urls ?? []).map(p => ({ ...p, status: 'uploaded' as const }))
   );
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
+  const [dragOverFiles, setDragOverFiles] = useState(false);
 
   // ─── Harga & Stok state (Task 2.7) ───
   const [price, setPrice] = useState<number>(initial?.price ?? 0);
@@ -293,13 +294,55 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           <div className="flex items-center justify-between mb-3">
             <div>
               <h5 className="text-sm font-extrabold text-[#012749]">📷 Foto Produk <span className="w-1.5 h-1.5 bg-rose-500 rounded-full inline-block ml-1" /></h5>
-              <p className="text-[10.5px] text-slate-500">Min 1 wajib · max 5 · drag untuk urutan</p>
+              <p className="text-[10.5px] text-slate-500">Min 1 wajib · max 5 · drop dari folder atau drag slot untuk urutan</p>
             </div>
             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
               {photos.length} / {MAX_PHOTOS} terisi
             </span>
           </div>
-          <div className="grid grid-cols-12 gap-3">
+          <div
+            className={`relative grid grid-cols-12 gap-3 rounded-2xl transition-colors ${dragOverFiles ? 'ring-2 ring-emerald-500 ring-offset-2 bg-emerald-50/60' : ''}`}
+            onDragEnter={e => {
+              if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+                setDragOverFiles(true);
+              }
+            }}
+            onDragOver={e => {
+              if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+              }
+            }}
+            onDragLeave={e => {
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setDragOverFiles(false);
+            }}
+            onDrop={e => {
+              if (!e.dataTransfer.types.includes('Files')) return;
+              e.preventDefault();
+              setDragOverFiles(false);
+              const allFiles = e.dataTransfer.files;
+              const images: File[] = [];
+              for (let i = 0; i < allFiles.length; i++) {
+                const f = allFiles.item(i);
+                if (f && f.type.startsWith('image/')) images.push(f);
+              }
+              if (images.length === 0) {
+                showToast('Hanya file gambar yang didukung', 'warning');
+                return;
+              }
+              const dt = new DataTransfer();
+              images.forEach(f => dt.items.add(f));
+              handleFilesPicked(dt.files, skuForUpload);
+            }}
+          >
+            {dragOverFiles && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/10 rounded-2xl z-10">
+                <div className="bg-white px-4 py-2 rounded-full border-2 border-dashed border-emerald-500 text-[12px] font-extrabold text-emerald-700 uppercase tracking-widest">
+                  Lepas untuk upload {photos.length < MAX_PHOTOS ? `(sisa ${MAX_PHOTOS - photos.length} slot)` : '(slot penuh)'}
+                </div>
+              </div>
+            )}
             {/* HERO slot 1 */}
             <div className="col-span-12 sm:col-span-7">
               <PhotoSlot
