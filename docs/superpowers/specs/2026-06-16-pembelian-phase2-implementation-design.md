@@ -55,10 +55,22 @@ Pesanan ──► Tagihan ──┬───────────────
 
 **Relations:**
 - 1 Pesanan : N Tagihan (partial delivery)
-- 1 Tagihan : 1 Pesanan (optional FK, NULL for ad-hoc)
+- 1 Tagihan : 1 Pesanan — **REQUIRED untuk type='STOCK'** (no ad-hoc Tagihan). Operator wajib buat Pesanan dulu, baru catat Tagihan saat barang datang.
 - 1 Tukar Faktur : N Tagihan (same supplier only) — **opsional**
 - 1 Pembayaran : N PembayaranItem (junction, points to Tagihan ATAU Tukar Faktur)
-- Existing `purchase_invoices` row with `type='PASSTHROUGH'` (BNL Phase 1) → unchanged; new rows with `type='STOCK'` = Tagihan
+- Existing `purchase_invoices` row with `type='PASSTHROUGH'` (BNL Phase 1) → unchanged (links ke Sales Order, NOT Pesanan); new rows with `type='STOCK'` = Tagihan with mandatory pesanan_id
+
+**Mandatory PO-first flow untuk stocking:**
+```
+Step 1: Buat Pesanan (PO ke supplier)        ← TRIGGER
+Step 2: Barang datang                         ← real-world event
+Step 3: Buat Tagihan dari Pesanan tsb         ← +stok + masuk AP
+Step 4: Bayar (langsung atau via Tukar Faktur opsional)
+```
+
+Kalau operator butuh "cash pickup di pasar" yang tidak punya Pesanan formal:
+- Untuk stok permanen → buat Pesanan singkat dulu (status ORDERED, ordered_at=today), lalu Tagihan
+- Untuk customer tertentu pass-through → pakai Belanja Numpang Lewat (Phase 1, no Pesanan needed)
 
 **Implikasi: form Pembayaran punya 2 mode sekaligus**
 
@@ -103,10 +115,11 @@ Operator boleh campur: 3 Tagihan loose + 1 TF dalam 1 Pembayaran. Junction table
 ### 4.2 `purchase_invoices` (existing, extended)
 
 Already exists from Phase 1. Phase 2 changes:
-- Add column `pesanan_id` uuid NULL FK → pesanan (NULL for BNL pass-through OR ad-hoc Tagihan)
+- Add column `pesanan_id` uuid NULL FK → pesanan (NULL for BNL pass-through; **REQUIRED for type='STOCK'**)
 - Add column `tukar_faktur_id` uuid NULL FK → tukar_faktur (set when Tagihan bundled into TF)
 - Add column `paid_amount` numeric DEFAULT 0 (sum from pembayaran_items for partial payment tracking)
 - Extend `status` enum: `BELUM_LUNAS` / `DIBAYAR_SEBAGIAN` / `LUNAS` / `VOIDED` (new: DIBAYAR_SEBAGIAN)
+- **CHECK constraint:** `(type = 'PASSTHROUGH' AND pesanan_id IS NULL AND order_id IS NOT NULL) OR (type = 'STOCK' AND pesanan_id IS NOT NULL AND order_id IS NULL)` — enforce mutually-exclusive linkage per type
 
 `purchase_invoice_items` — already has `sku, qty, unit_cost, subtotal`. Add:
 - `pesanan_item_id` uuid NULL FK → pesanan_items (optional link to specific Pesanan line)
@@ -180,11 +193,13 @@ Already exists from Phase 1. Phase 2 changes:
 - `void_pesanan(p_pesanan_id uuid, reason text) returns void` — also used for force-close (no separate close RPC)
 
 ### 5.2 Tagihan (extends existing `record_pi`)
-- `record_tagihan(payload jsonb) returns jsonb` — payload includes `pesanan_id` (optional). Auto-increments stocks + creates stock_lots (for type='STOCK'). BNL-style payload (type='PASSTHROUGH') still supported.
+- `record_tagihan(payload jsonb) returns jsonb` — payload requires `pesanan_id` when type='STOCK'; rejects with error if missing. Auto-increments stocks + creates stock_lots (for type='STOCK'). BNL-style payload (type='PASSTHROUGH') validates `order_id` (Sales Order) instead.
 - Extend existing `mark_pi_paid` → also handle DIBAYAR_SEBAGIAN status when partial
 - `void_pi` extended to reverse stock_lots for type='STOCK'
 
 Trigger: after Tagihan insert/update with `pesanan_item_id`, update `pesanan_items.qty_received_total`. When all items fulfilled, auto-close Pesanan.
+
+**Validation rule:** `record_tagihan` with `type='STOCK'` rejects payload where `pesanan_id IS NULL` with explicit error message: "Tagihan stocking wajib dari Pesanan. Buat Pesanan dulu, atau pakai Belanja Numpang Lewat untuk pass-through customer." (Operator's UX: form Buat Tagihan tidak punya jalur ad-hoc; Pesanan picker required.)
 
 ### 5.3 Tukar Faktur
 - `generate_tf_number() returns text`
@@ -421,8 +436,8 @@ If demand surfaces post-launch (specific tenant asks), re-evaluate in Phase 3.
 
 ## 11. Business rules
 
-### BR1 — Partial delivery
-1 Pesanan : N Tagihan. `pesanan_items.qty_received_total` updated by trigger from Tagihan items. Pesanan auto-CLOSED when all items.qty_received_total ≥ items.qty. Manual force-close allowed (supplier cancels sisa).
+### BR1 — Partial delivery (Pesanan REQUIRED)
+1 Pesanan : N Tagihan. **Tagihan type='STOCK' wajib dari Pesanan** — no ad-hoc Tagihan. `pesanan_items.qty_received_total` updated by trigger from Tagihan items. Pesanan auto-CLOSED when all items.qty_received_total ≥ items.qty. Manual force-close via `void_pesanan(reason)` (supplier cancels sisa, etc.). Tagihan type='PASSTHROUGH' (BNL) tetap link ke Sales Order (order_id), bukan Pesanan.
 
 ### BR2 — Partial + consolidated payment
 1 Pembayaran : N Tagihan via junction. Per-item amount editable. Tagihan.paid_amount = SUM of pembayaran_items.amount WHERE tagihan_id=this AND pembayaran NOT voided. Status: BELUM_LUNAS (0) → DIBAYAR_SEBAGIAN (0 < paid < total) → LUNAS (paid ≥ total).
