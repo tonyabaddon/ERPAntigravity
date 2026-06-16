@@ -16,6 +16,9 @@ import {
   computeKpi,
   computeAging,
   PIUTANG_TIERS,
+  uploadTempoPaymentProof,
+  validateTempoProofFile,
+  TEMPO_PROOF_ACCEPT,
 } from '../../lib/piutangService';
 import type { PiutangRow, PiutangTier } from '../../types';
 
@@ -273,22 +276,40 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   currentUserId: string;
 }) {
-  const [_proofFile, setProofFile] = useState<File | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'uploading' | 'verifying'>('idle');
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null;
+    if (!f) { setProofFile(null); return; }
+    const err = validateTempoProofFile(f);
+    if (err) { showToast(err, 'warning'); return; }
+    setProofFile(f);
+  }
 
   async function handleConfirm() {
     setSaving(true);
     try {
-      // Phase 1B simplification: skip upload (use existing payment-proof bucket as
-      // follow-up). Pass null proof URL — operator can upload later via existing
-      // payment-verify path. Future enhancement: same uploader pattern as MarkPaidModal.
-      await markTempoInvoicePaid(row.order.id, null, currentUserId);
-      showToast(`Invoice ${row.order.id.slice(0, 8)} ditandai Lunas.`, 'success');
+      let proofUrl: string | null = null;
+      if (proofFile) {
+        setPhase('uploading');
+        proofUrl = await uploadTempoPaymentProof(proofFile, row.order.id);
+      }
+      setPhase('verifying');
+      await markTempoInvoicePaid(row.order.id, proofUrl, currentUserId);
+      showToast(`Invoice ${row.order.id.slice(0, 8)} ditandai Lunas${proofUrl ? ' (bukti tersimpan)' : ''}.`, 'success');
       onPaid();
     } catch (e: any) {
       showToast(e?.message ?? 'Gagal mark lunas', 'warning');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+      setPhase('idle');
+    }
   }
+
+  const isImage = proofFile?.type.startsWith('image/');
+  const previewUrl = isImage && proofFile ? URL.createObjectURL(proofFile) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
@@ -304,19 +325,34 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
             <div className="flex justify-between"><span className="text-gray-500">Jatuh Tempo</span><span className="font-semibold">{fmtDate(row.order.due_date)}</span></div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-600 block mb-1">Upload Bukti Bayar (opsional)</label>
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg px-4 py-4 text-xs text-gray-400 hover:border-indigo-300 cursor-pointer">
-              <Upload className="w-6 h-6 mb-1 text-gray-300" />
-              Phase 1B — upload akan terhubung di Phase 1C
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setProofFile(e.target.files?.[0] ?? null)} />
-            </label>
+            <label className="text-xs font-semibold text-gray-600 block mb-1">Upload Bukti Bayar (opsional, max 5 MB)</label>
+            {proofFile ? (
+              <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+                {previewUrl ? (
+                  <img src={previewUrl} alt={proofFile.name} className="max-h-32 w-full object-contain rounded" />
+                ) : (
+                  <div className="text-xs text-gray-600 flex items-center gap-1">📄 {proofFile.name}</div>
+                )}
+                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                  <span>{(proofFile.size / 1024).toFixed(0)} KB</span>
+                  <button onClick={() => setProofFile(null)} className="text-rose-600 hover:underline">Ganti</button>
+                </div>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg px-4 py-4 text-xs text-gray-400 hover:border-indigo-300 cursor-pointer">
+                <Upload className="w-6 h-6 mb-1 text-gray-300" />
+                Klik untuk upload bukti
+                <span className="text-[10px] mt-0.5">PDF / JPG / PNG</span>
+                <input type="file" accept={TEMPO_PROOF_ACCEPT} className="hidden" onChange={handleFileSelect} />
+              </label>
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
-          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Batal</button>
+          <button onClick={onClose} disabled={saving} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50">Batal</button>
           <button onClick={handleConfirm} disabled={saving}
             className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">
-            {saving ? 'Memproses...' : 'Konfirmasi Lunas'}
+            {phase === 'uploading' ? 'Mengupload bukti...' : phase === 'verifying' ? 'Menyimpan...' : 'Konfirmasi Lunas'}
           </button>
         </div>
       </div>

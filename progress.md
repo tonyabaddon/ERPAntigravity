@@ -7019,3 +7019,17 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 **Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
 
 **Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.
+
+## 2026-06-16 — Piutang Phase 1C task 1: foto upload bukti pembayaran wired in Catat Bayar
+
+User-asked: "lets build foto upload bukti pembayaran untuk tempo di menu piutang." Replaces the Phase 1B placeholder in `CatatBayarModal` with a real upload.
+
+- `src/lib/piutangService.ts`: adds `uploadTempoPaymentProof(file, orderId)` writing to existing `payment-proofs` bucket (path `tempo-payments/{order_id}/{ts}-{name}`), plus `validateTempoProofFile` (size + MIME) and constants `TEMPO_PROOF_MAX_BYTES`, `TEMPO_PROOF_ACCEPT`.
+- `src/components/piutang/PiutangScreen.tsx`: rewrites `CatatBayarModal` — real file input with `handleFileSelect` running validation pre-set, in-modal thumbnail (image) or filename (PDF), "Ganti" link to swap selection, two-phase loading label ("Mengupload bukti..." → "Menyimpan...") so the user sees what's happening on slow uploads. Upload is still optional; URL is passed to existing `markTempoInvoicePaid(orderId, url, userId)`.
+- Bucket `payment-proofs` already has authenticated RW RLS via `20260604000012_storage_authenticated_policies.sql` — no new migration.
+
+**Out of scope (still pending for Phase 1C):**
+- WA reminder send (whatsmeow integration on backend-go)
+- Write-off RPC pair + UI
+- Per-tenant `piutang_settings` Pengaturan page (aging buckets hardcoded)
+- "Lihat bukti" link on paid invoices (not currently visible after the row leaves the Piutang list — could be added to a future Riwayat Lunas tab or to the existing Order History page)
