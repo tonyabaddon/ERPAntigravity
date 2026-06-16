@@ -6453,3 +6453,39 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 
 - Foto-search spec estimate: 9.5-10.5 → **10.5-11.5 hari** (+1 CLIP integration, +0.5 drag-drop, 0 saving dari drop Generate dari Foto)
 - Implementation status: spec amended + mockup ready, BELUM mulai coding
+
+---
+
+## 2026-06-16 — All 4 implementation plans written (foto-search + katalog view modes)
+
+User picked "tulis semua plan sekaligus" approach. 4 sibling plans committed, total 4 markdown files covering full 10.5-11.5 hari foto-search sprint + 2-3 hari katalog view modes.
+
+### Plans index
+
+| Plan | File (commit) | Effort | Scope |
+|---|---|---|---|
+| **A · Foundation** | `2026-06-16-foto-search-plan-A-foundation.md` (`55083b6`) | ~5 hari | DB migrations + StockItem extension + StockManagerScreen refactor (1051→~40 lines) + ProductForm + tabs |
+| **B · Katalog View Modes** | `2026-06-16-katalog-view-modes-plan.md` (`fb50b7f`) | ~3 hari | View switcher Foto/List + inline expand panel + multi-expand |
+| **C · CLIP Backend + Kasir UI** | `2026-06-16-foto-search-plan-C-clip-backend-kasir.md` (`55083b6`) | ~5 hari | backend-go internal/clip/, ONNX runtime in Dockerfile, CariByFotoModal with drag-drop, cold-start UX |
+| **D · Settings + Tests** | `2026-06-16-foto-search-plan-D-settings-tests.md` (`55083b6`) | ~2-3 hari | Costing radio + CLIP monitor + initial_stock approval + bulk CSV + e2e smoke |
+
+### Dependency chain
+
+```
+Plan A (foundation) ──┬─→ Plan B (view modes; depends on produk/ folder + StockItem.photos)
+                      └─→ Plan C (CLIP + kasir; depends on produk-photos bucket + photo_urls column)
+                            └─→ Plan D (settings + tests; depends on clip_inference_log populated)
+```
+
+Plan B and Plan C **can run in parallel** since they touch different files. Plan D is final integration + polish.
+
+### Self-review notes
+
+- Spec coverage check passed: all goals §1.1–§1.9 mapped to tasks.
+- Form Produk skips multi-satuan card + Deskripsi textarea + "Stok per Gudang" read-only card — minor enhancements, ship without first.
+- 2 implementer notes flagged: ONNX Go binding API surface is approximate (will need adjustment during impl), `sed -i ''` is macOS-only.
+
+### Status
+
+- 4 plans written, committed, ready for execution.
+- Implementation NOT YET STARTED. User to pick execution mode (subagent-driven vs inline) and starting plan.
