@@ -37,20 +37,36 @@ Total: ~3-4 sprint = 1.5-2 bulan.
 
 ## 3. Entity model
 
+**Tukar Faktur adalah OPSIONAL** — bukan step wajib sebelum Pembayaran. Operator bisa langsung bayar Tagihan tanpa pernah lewat Tukar Faktur.
+
 ```
-Pesanan ──────► Tagihan ──────► [Tukar Faktur] ──────► Pembayaran
-(PO, no stock)  (Faktur,        (consolidation         (cash out,
-                 stok +X,        N Tagihan              M:N with
-                 to AP)          same supplier)         Tagihan
-                                                        or TF)
+Pesanan ──► Tagihan ──┬──────────────────────────► Pembayaran  ← jalur langsung (paling umum)
+(PO, no    (Faktur,   │                                          (toko ritel, MSME kecil,
+ stock)     stok +X,  │                                           cash purchase)
+            to AP)    │
+                      └──► Tukar Faktur ──────────► Pembayaran  ← jalur via TF (opsional)
+                           (consolidation N         (distributor B2B yang punya
+                            Tagihan same-supplier)   jadwal tukar faktur formal)
 ```
+
+**Operator tenant kecil/menengah:** Bayar langsung dari list Tagihan → klik "Bayar" → Pembayaran form, skip Tukar Faktur sepenuhnya. UI menu "Tukar Faktur" tetap visible (per "no SOP Profile" decision), tapi operator tidak wajib pakai.
+
+**Operator distributor B2B:** Bundling N Tagihan ke TF saat sales supplier datang Rabu untuk tukar faktur ritual, lalu bayar TF (yang otomatis tutup semua Tagihan bundled-nya) 30 hari kemudian.
 
 **Relations:**
 - 1 Pesanan : N Tagihan (partial delivery)
 - 1 Tagihan : 1 Pesanan (optional FK, NULL for ad-hoc)
-- 1 Tukar Faktur : N Tagihan (same supplier only)
+- 1 Tukar Faktur : N Tagihan (same supplier only) — **opsional**
 - 1 Pembayaran : N PembayaranItem (junction, points to Tagihan ATAU Tukar Faktur)
 - Existing `purchase_invoices` row with `type='PASSTHROUGH'` (BNL Phase 1) → unchanged; new rows with `type='STOCK'` = Tagihan
+
+**Implikasi: form Pembayaran punya 2 mode sekaligus**
+
+Saat operator buka Pembayaran form dan pilih supplier, `pembayaran_suggest_outstanding(supplier_id)` mengembalikan **gabungan**:
+- Tagihan outstanding yang BELUM di-bundle (tukar_faktur_id IS NULL) — bisa centang individu / batch
+- Tukar Faktur outstanding yang status=TERTANDA — centang TF = otomatis cover semua Tagihan di dalamnya
+
+Operator boleh campur: 3 Tagihan loose + 1 TF dalam 1 Pembayaran. Junction table mendukung both.
 
 ## 4. Schema
 
@@ -427,6 +443,11 @@ PDF tanda terima layout: A4 with supplier letterhead, list of Tagihan, total, pa
 
 ### BR3 — Tukar Faktur same-supplier
 All Tagihan bundled into a TF must share `supplier_id` with the TF. Enforce in `record_tukar_faktur` RPC.
+
+### BR3a — Tukar Faktur is OPTIONAL
+Tagihan can transition directly to Pembayaran WITHOUT being bundled into Tukar Faktur first. The TF entity exists for distributor B2B tenants that follow formal tukar-faktur ritual; tenants without that workflow simply pay Tagihan directly. No constraint requires `tukar_faktur_id` to be set before Pembayaran can reference a Tagihan.
+
+UI affordance: Tagihan list shows "Bayar" button inline for any BELUM_LUNAS row regardless of whether it's bundled. Pembayaran form's outstanding picker shows BOTH unbundled Tagihan AND bundled Tukar Faktur as selectable rows.
 
 ### BR4 — Stock impact only on STOCK Tagihan
 Phase 1 BR2 (PASSTHROUGH = zero stock) preserved. New STOCK Tagihan creates stock_lots + increments stocks.stock — same as existing PO RECEIVED behavior.
