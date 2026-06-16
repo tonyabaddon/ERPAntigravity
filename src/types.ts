@@ -149,10 +149,21 @@ export interface ChatItem {
   messages: Message[];
 }
 
+export interface ProductPhoto {
+  url: string;
+  path: string;
+  order: number;
+  uploaded_at: string;
+}
+
 export interface StockItem {
   sku: string;
   name: string;
   category: string;
+  subcategory?: string | null;
+  unit?: string;
+  unit_alt?: string | null;
+  unit_alt_factor?: number | null;
   price: number;
   stock: number;
   stock_atas?: number;
@@ -160,6 +171,10 @@ export interface StockItem {
   status: 'Sinkron' | 'Stok Tipis';
   specs: Record<string, string | number>;
   harga_modal?: number | null;
+  photo_urls?: ProductPhoto[];
+  description?: string | null;
+  min_stock_per_product?: number | null;
+  initial_stock_approved?: boolean;
 }
 
 export interface NotificationConfig {
@@ -552,7 +567,8 @@ export type ApprovalRequestType =
   | 'rakit_lock'
   | 'customer_credit_activate'
   | 'customer_credit_limit_change'
-  | 'customer_credit_deactivate';
+  | 'customer_credit_deactivate'
+  | 'initial_stock';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
@@ -791,6 +807,70 @@ export interface WarehouseAuditLogRow {
   after: Record<string, unknown> | null;
   reason_note: string | null;
   created_at: string;
+}
+
+// ─── Product Registry (M2) ─────────────────────────────────────────────────
+export interface ProductCategory {
+  id: string;
+  tenant_id: string | null;
+  name: string;
+  parent_id: string | null;
+  created_at: string;
+}
+
+export interface ProductBrand {
+  id: string;
+  tenant_id: string | null;
+  name: string;
+  created_at: string;
+}
+
+export interface ProductUnit {
+  id: string;
+  tenant_id: string | null;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+}
+
+// ─── Cari by Foto result ───────────────────────────────────────────────────
+export interface WarehouseStockSlice {
+  warehouse_id: string;
+  code: string;
+  name: string;
+  qty: number;
+}
+
+export interface ProductPhotoSearchResult {
+  sku: string;
+  name: string;
+  category: string;
+  similarity: number;
+  thumbnail_url: string | null;
+  total_stock: number;
+  warehouse_stock: WarehouseStockSlice[];
+  price: number;
+  unit: string;
+  min_stock: number;
+}
+
+export interface ProductPhotoSearchResponse {
+  query_description: string;
+  results: ProductPhotoSearchResult[];
+}
+
+// ─── Costing method (Pengaturan) ──────────────────────────────────────────
+export type CostingMethod = 'FIFO' | 'Average';
+
+// ─── AI Call Log ──────────────────────────────────────────────────────────
+export interface AiCallLogStat {
+  model: 'flash-2.5-vision' | 'text-embedding-004';
+  success: number;
+  error: number;
+  rate_limit: number;
+  p50_ms: number | null;
+  p95_ms: number | null;
+  last_error_at: string | null;
 }
 
 // ── Belanja Numpang Lewat (Phase 1) ──

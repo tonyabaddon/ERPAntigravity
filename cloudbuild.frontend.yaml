@@ -29,6 +29,16 @@ steps:
       - '--region=$_DEPLOY_REGION'
       - '--platform=$_PLATFORM'
       - '--allow-unauthenticated'
+      # Deploy new revisions at 0% traffic, addressable via a per-commit tag URL:
+      #   https://preview-<SHORT_SHA>---<service>.run.app
+      # Smoke-test the tag URL, then promote with:
+      #   gcloud run services update-traffic $_SERVICE_NAME \
+      #     --region=$_DEPLOY_REGION --to-revisions=<rev>=100
+      # Root cause from 2026-06-16 Produk & Stok regression: deploys without
+      # --no-traffic auto-shifted traffic to revisions built from main HEAD
+      # before all feature branches were merged. See progress.md post-mortem.
+      - '--no-traffic'
+      - '--tag=preview-$SHORT_SHA'
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'

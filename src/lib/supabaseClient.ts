@@ -16,6 +16,11 @@ import type {
   RakitServiceType,
   Warehouse,
   WarehouseAuditLogRow,
+  ProductCategory,
+  ProductBrand,
+  ProductUnit,
+  ProductPhoto,
+  StockItem,
 } from '../types';
 
 const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
@@ -57,6 +62,10 @@ export interface SupabaseStockItem {
   sku: string;
   name: string;
   category: string;
+  subcategory?: string | null;
+  unit?: string;
+  unit_alt?: string | null;
+  unit_alt_factor?: number | null;
   price: number;
   stock: number;
   stock_atas?: number;
@@ -65,6 +74,10 @@ export interface SupabaseStockItem {
   specs: Record<string, string | number>;
   updated_at?: string;
   harga_modal?: number | null;
+  photo_urls?: ProductPhoto[];
+  description?: string | null;
+  min_stock_per_product?: number | null;
+  initial_stock_approved?: boolean;
 }
 
 // Resilient API services with local fallback
@@ -1001,6 +1014,42 @@ export const companySettingsService = {
       .update({ logo_url: null })
       .eq('id', 1);
   },
+
+  // Costing method is stored as a column on the single-row company_settings table
+  // (added by migration 20260615000020). The original M4 spec used a key/value row
+  // model that didn't match this codebase — see fix migration header for context.
+  async getCostingMethod(): Promise<'FIFO' | 'Average'> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('company_settings').select('costing_method').eq('id', 1).maybeSingle();
+    if (error) throw error;
+    const v = (data as { costing_method?: string } | null)?.costing_method ?? 'FIFO';
+    return (v === 'Average' ? 'Average' : 'FIFO');
+  },
+
+  async setCostingMethod(m: 'FIFO' | 'Average'): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('company_settings')
+      .update({ costing_method: m, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    if (error) throw error;
+  },
+};
+
+// ─── stockLotsService ───────────────────────────────────────────────────────
+// Cheap reads against the stock_lots ledger (per migration 20260604000014).
+// Used by ProductForm to decide whether Harga Modal is "Awal" (editable) or
+// "Aktual" (locked from PO ledger).
+
+export const stockLotsService = {
+  async countForSku(sku: string): Promise<number> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { count, error } = await supabase
+      .from('stock_lots').select('id', { count: 'exact', head: true }).eq('sku', sku);
+    if (error) throw error;
+    return count ?? 0;
+  },
 };
 
 // ─── warehousesService ──────────────────────────────────────────────────────
@@ -1205,6 +1254,91 @@ export const stockService = {
         { onConflict: 'sku' }
       );
     if (error) throw error;
+  },
+
+  async upsertProduct(input: {
+    sku: string;
+    name: string;
+    category: string;
+    subcategory: string | null;
+    unit: string;
+    unit_alt: string | null;
+    unit_alt_factor: number | null;
+    price: number;
+    harga_modal: number | null;
+    description: string | null;
+    min_stock_per_product: number | null;
+    photo_urls: ProductPhoto[];
+    specs: Record<string, string | number>;
+    initial_stock_approved: boolean;
+  }): Promise<StockItem> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase
+      .from('stocks')
+      .upsert({
+        ...input,
+        status: 'Sinkron',
+        stock: 0,           // M5 search RPC reads stock_levels; stocks.stock is derived
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'sku' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as StockItem;
+  },
+};
+
+export const registryService = {
+  async listCategories(): Promise<ProductCategory[]> {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductCategory[];
+  },
+  async addCategory(name: string, parentId: string | null = null): Promise<ProductCategory> {
+    const { data, error } = await supabase
+      .from('product_categories')
+      .insert({ name: name.trim(), parent_id: parentId })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductCategory;
+  },
+  async listBrands(): Promise<ProductBrand[]> {
+    const { data, error } = await supabase
+      .from('product_brands')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductBrand[];
+  },
+  async addBrand(name: string): Promise<ProductBrand> {
+    const { data, error } = await supabase
+      .from('product_brands')
+      .insert({ name: name.trim() })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductBrand;
+  },
+  async listUnits(): Promise<ProductUnit[]> {
+    const { data, error } = await supabase
+      .from('product_units')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return (data ?? []) as ProductUnit[];
+  },
+  async addUnit(name: string): Promise<ProductUnit> {
+    const { data, error } = await supabase
+      .from('product_units')
+      .insert({ name: name.trim(), is_default: false })
+      .select()
+      .single();
+    if (error) throw error;
+    return data as ProductUnit;
   },
 };
 
@@ -1509,6 +1643,38 @@ export const salesEntriesService = {
       .order('created_at', { ascending: false });
     if (error) throw error;
     return (data ?? []) as DbOrder[];
+  },
+};
+
+// ============================================================================
+// Phase 2 — approvalService (direct-insert namespace)
+// ============================================================================
+// Convention note: most Phase 2 approval requests go through SECURITY DEFINER
+// RPCs (see `requestAdjustment`, `requestPriceChange` below). Initial-stock
+// approval has no dedicated RPC — the row is inserted directly via PostgREST
+// because the `approval_request_type` enum already includes 'initial_stock'
+// (migration 20260614000024) and RLS lets authenticated users insert their
+// own pending requests. Column names mirror the DB (`request_type`,
+// `requested_by`, `payload`) — same casing used by `toApprovalRequest`.
+export const approvalService = {
+  async requestInitialStock(
+    payload: {
+      sku: string;
+      sku_name: string;
+      qty: number;
+      unit: string;
+      warehouse_id: string;
+      requested_cost_per_unit?: number;
+    },
+    requestedBy: string,
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.from('approval_requests').insert({
+      request_type: 'initial_stock',
+      payload,
+      requested_by: requestedBy,
+    });
+    if (error) throw error;
   },
 };
 
