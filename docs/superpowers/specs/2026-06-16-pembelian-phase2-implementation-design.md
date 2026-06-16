@@ -334,6 +334,7 @@ src/components/pembelian/
   shared/
     SupplierPicker.tsx           — already exists
     PaymentMethodPicker.tsx      — already exists from BNL Phase 1
+    SkuPickerWithInlineCreate.tsx — already exists from BNL Phase 1 (reused for Pesanan + Tagihan)
 src/lib/
   pembelianService.ts            — extend with pesananService + pembayaranService + tukarFakturService (or split)
   pdf/
