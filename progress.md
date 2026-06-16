@@ -6394,3 +6394,20 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
   - `CatalogGridView.tsx`, `ProductForm.tsx`, `StockTableView.tsx`, `BulkUploadSection.tsx`, `PreviewCard.tsx`
 - **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
 - **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view
+
+## 2026-06-16 — Piutang/Tempo Phase 1B: frontend + RPC wiring (branch `feat/piutang-phase-1b`)
+
+- **Scope shipped**:
+  - Migrations `20260615000010_orders_tempo_fields.sql` + `20260615000011_create_tempo_invoice_rpc.sql` — adds `INVOICE_TEMPO` / `INVOICE_WRITTEN_OFF` enum values, widens `payment_type` CHECK to accept TEMPO on `orders` + `kasir_transactions`, adds `due_date`/`written_off_at`/`written_off_by`/`write_off_reason` columns, partial index `idx_orders_tempo_open`. RPC `create_tempo_invoice(p_payload jsonb)` is atomic — locks customer row FOR UPDATE, sums existing open INVOICE_TEMPO inside lock, hard-blocks over-limit with `credit_limit_exceeded: outstanding=X, new=Y, limit=Z`, calls `deduct_stock_fifo` per line. (Pending: apply to Supabase — IPv6 unreachable from current network.)
+  - `src/lib/piutangService.ts` — `PIUTANG_TIERS` constant (overdue / today / h3 / future with row tint + badge class), `classifyTier()` by daysToDue, `createTempoInvoice()` wraps RPC with discriminated `CreateTempoInvoiceResult` (`ok` | `credit_limit_exceeded` | `tempo_not_enabled` | `invalid`), `markTempoInvoicePaid()` direct UPDATE with INVOICE_TEMPO guard, `fetchPiutangRows()` joins orders + customers, `computeKpi()` aggregator, `computeAging()` with configurable buckets (default 30/60/90), `fetchOverdueCount()` for the sidebar badge.
+  - `src/components/piutang/PiutangScreen.tsx` — KPI strip (Total / Overdue / Hari Ini / H-3) + AR aging horizontal stacked bar + filter pills + search + invoice table with tier-tinted rows + Catat Bayar modal (upload placeholder for Phase 1C) + WA button disabled with Phase 1C tooltip.
+  - `src/components/piutang/PiutangBadge.tsx` — red overdue count chip; 2 s-debounced Supabase Realtime subscription on `orders` table. Renders nothing when count == 0.
+  - Sidebar entry between Pelanggan and Pipeline with `Wallet` icon, badge wired for both collapsed (corner dot) and expanded (right-side chip) states.
+  - `PenjualanBaruScreen` + `PaymentPanel`: `KasirPaymentType` extended to include `TEMPO`; 3-up toggle when customer.allows_tempo; payment method picker hidden in TEMPO mode (DB doesn't need it); credit breakdown card with plafon/terpakai/sisa + utilization progress bar + over-limit warning; `OverLimitModal` hard-block with shortage breakdown.
+  - Type system: `ActivePage += 'piutang'`, `PermissionSet.piutang?`, `ALL_PERMISSIONS.piutang = true`, `urlRoute.ACTIVE_PAGES` whitelist updated; `App.tsx` route case wired to `PiutangScreen`.
+- **Pending Phase 1B**:
+  - Apply migrations 20260615000010+20260615000011 to Supabase production.
+  - Add per-tenant `piutang_settings` row (aging buckets currently hardcoded to [30,60,90]).
+  - Replace placeholder upload UI in CatatBayarModal with the existing payment-proof storage uploader.
+- **Deferred to Phase 1C**: write-off RPC pair, backend-go WA send endpoint via whatsmeow, WA preview modal, write-off UI, Pengaturan page for piutang_settings.
+- **Branch**: `feat/piutang-phase-1b` head `3005631`. Awaiting Supabase migration apply before PR to main.
