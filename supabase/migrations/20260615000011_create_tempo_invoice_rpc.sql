@@ -46,9 +46,10 @@ BEGIN
   END IF;
 
   -- 2. Lock customer row + read credit fields
+  -- customers.id is TEXT (legacy GJP-CUST-XXXX format), not UUID — compare directly.
   SELECT * INTO v_customer
   FROM public.customers
-  WHERE id = (p_payload->>'customer_id')::uuid
+  WHERE id = p_payload->>'customer_id'
   FOR UPDATE;
 
   IF NOT FOUND THEN
@@ -120,7 +121,7 @@ BEGIN
     v_total,
     v_hpp_total,
     'TEMPO',
-    COALESCE(p_payload->>'channel', 'walkin')::public.kasir_channel,
+    COALESCE(p_payload->>'channel', 'walkin')::public.sales_channel,
     COALESCE(p_payload->>'sales_channel', p_payload->>'channel', 'walkin')::public.sales_channel,
     'INVOICE_TEMPO',
     v_due_date,
