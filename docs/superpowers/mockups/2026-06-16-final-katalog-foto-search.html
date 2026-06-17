@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup Final — Katalog View Modes + Cari by Foto (CLIP)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; }
+  .thumb-mcb { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
+  .thumb-cable { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+  .thumb-panel { background: linear-gradient(135deg, #e5e7eb 0%, #cbd5e1 100%); }
+  .thumb-switch { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+  .thumb-lamp { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); }
+  .thumb-socket { background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%); }
+  .thumb-mccb { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
+  .photo-card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.12); }
+  .row-thumb { cursor: pointer; transition: box-shadow 0.15s; }
+  .row-thumb:hover { box-shadow: 0 0 0 3px #2d8a4e80; }
+  .dropzone-violet {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='24' ry='24' stroke='%237c3aed99' stroke-width='3' stroke-dasharray='12,8' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+  .dropzone-violet-active {
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='24' ry='24' stroke='%237c3aed' stroke-width='3' stroke-dasharray='12,8' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+  .pulse-emerald {
+    background: linear-gradient(90deg, transparent, rgba(45,138,78,0.18), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body class="text-[#1e3d60]">
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-50 text-[#2d8a4e] flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">inventory_2</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup Final — Produk &amp; Stok + Cari by Foto (CLIP local)</h1>
+        <p class="text-[11px] text-[#43474e]">2026-06-16 • Consolidated review: Katalog view modes + CariByFotoModal + CLIP monitoring</p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">1. Katalog List</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">2. Inline Expand</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">3. Cari by Foto</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-pink-50 text-pink-800">4. Cold Start</a>
+      <a href="#m5" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">5. Hasil</a>
+      <a href="#m6" class="px-3 py-2 rounded-full bg-slate-100 text-slate-700">6. Monitoring</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- DECISION SUMMARY                                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section class="bg-emerald-50 border border-emerald-200 rounded-3xl p-6">
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-2xl">check_circle</span>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-base font-extrabold text-emerald-900 mb-3">Locked decisions — semua dari brainstorming 2026-06-16</h2>
+        <div class="grid md:grid-cols-2 gap-3 text-[12px] text-emerald-900">
+          <div>
+            <p class="font-extrabold uppercase text-[10px] tracking-widest text-emerald-700 mb-1">Katalog view modes</p>
+            <ul class="list-disc ml-5 space-y-0.5">
+              <li>2 mode: Foto + List, default <strong>List</strong>, no persist</li>
+              <li>List kolom: Foto thumb + SKU + Nama + Kategori + Harga + Stok total + breakdown top 3 gudang</li>
+              <li>Inline expand panel: 280×280 foto + gallery + breakdown stok + actions</li>
+              <li>Multi-expand allowed, slide-down ~120ms</li>
+              <li>Open: foto thumb / chevron. Close: X / foto thumb sama / "Tutup N panel"</li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-extrabold uppercase text-[10px] tracking-widest text-emerald-700 mb-1">Cari by Foto (CLIP)</p>
+            <ul class="list-disc ml-5 space-y-0.5">
+              <li>Pipeline: <strong>CLIP ViT-Base-32 local (ONNX di backend-go)</strong>, no Gemini call</li>
+              <li>3 entry: Kamera + Upload File + <strong>drag-drop zone</strong></li>
+              <li>Cold start UX: banner inline "⏱️ Menyiapkan AI… 5 detik"</li>
+              <li>Drop tombol "Generate dari Foto" (zero Gemini dep)</li>
+              <li>Future hybrid (CLIP+Gemini re-rank) defer kalau akurasi &lt; 80%</li>
+              <li>Cloud Run free tier, no min-instances=1</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M1: KATALOG LIST VIEW (default)                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">M1 · Katalog · List (default)</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Tab Katalog — mode List sebagai default</h2>
+      <p class="text-xs text-[#43474e] mt-1">Toolbar: search + filter chips + view switcher (List active) + "+ Tambah Barang". Tabel padat, foto sebagai thumb 40px, stok total + breakdown gudang top-3.</p>
+    </div>
+
+    <!-- Tab pills -->
+    <div class="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm mb-3">
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button class="px-4 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+          <span class="material-symbols-outlined text-base">inventory_2</span> Katalog
+          <span class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">487</span>
+        </button>
+        <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">warehouse</span> Stok per Gudang
+        </button>
+        <button class="px-4 py-2 bg-slate-100 text-slate-700 rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">upload_file</span> Bulk Upload
+        </button>
+        <button class="px-4 py-2 bg-amber-50 text-amber-900 border border-amber-200 rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">warning</span> Stok Tipis
+          <span class="text-[9px] bg-amber-600 text-white px-1.5 py-0.5 rounded-full">12</span>
+        </button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="flex flex-col md:flex-row gap-3 md:items-center">
+        <div class="flex-1 relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          <input type="text" placeholder="Cari SKU, nama, atau brand…"
+                 class="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-medium placeholder:text-slate-400" />
+        </div>
+        <button class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-xs font-bold inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-base">category</span> Kategori
+        </button>
+        <div class="flex bg-slate-100 rounded-full p-1 gap-0.5">
+          <button class="px-3 py-1.5 rounded-full text-xs font-bold text-slate-600 hover:bg-white inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">grid_view</span> Foto
+          </button>
+          <button class="px-3 py-1.5 rounded-full text-xs font-extrabold bg-[#012749] text-white inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">view_list</span> List
+          </button>
+        </div>
+        <button class="px-4 py-2.5 bg-[#012749] text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">add</span> Tambah Barang
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-3xl border border-[#e5eeff] shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b-2 border-slate-200 bg-slate-50/50">
+            <th class="py-2.5 pl-3 pr-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-14">Foto</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">SKU</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Kategori</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
+            <th class="py-2.5 pr-3 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="text-[13px]">
+          <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-mcb rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-sky-700/60">bolt</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-MCB-EZ9-1P6A</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">MCB Easy9 1P 6A 4.5kA</td>
+            <td class="py-2 px-2 text-slate-600">MCB · <span class="text-[#012749] font-semibold">Schneider</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 48.500</td>
+            <td class="py-2 px-2 text-center">
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-sm font-extrabold text-emerald-700">142</span>
+                <span class="text-[10.5px] text-slate-500 mt-0.5">Atas 87 · Bawah 55</span>
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center"><button class="p-1 rounded-full hover:bg-slate-100"><span class="material-symbols-outlined text-base text-slate-500">expand_more</span></button></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-cable rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-amber-700/60">cable</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-KBL-NYM3X25</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Kabel NYM 3x2.5 50m Roll</td>
+            <td class="py-2 px-2 text-slate-600">Kabel · <span class="text-[#012749] font-semibold">Eterna</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 685.000</td>
+            <td class="py-2 px-2 text-center">
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-sm font-extrabold text-amber-700">8</span>
+                <span class="text-[10.5px] text-slate-500 mt-0.5">Atas 5 · Bawah 3</span>
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center"><button class="p-1 rounded-full hover:bg-slate-100"><span class="material-symbols-outlined text-base text-slate-500">expand_more</span></button></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-panel rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-slate-700/60">developer_board</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-PNL-SLM-3040</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Panel Box 30x40x15 IP55</td>
+            <td class="py-2 px-2 text-slate-600">Panel · <span class="text-[#012749] font-semibold">Salim</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 425.000</td>
+            <td class="py-2 px-2 text-center">
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-sm font-extrabold text-emerald-700">23</span>
+                <span class="text-[10.5px] text-slate-500 mt-0.5">Atas 15 · Bawah 8</span>
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center"><button class="p-1 rounded-full hover:bg-slate-100"><span class="material-symbols-outlined text-base text-slate-500">expand_more</span></button></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-lamp rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-yellow-700/60">lightbulb</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-LMP-PHL-ES9W</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Lampu LED Essential 9W E27</td>
+            <td class="py-2 px-2 text-slate-600">Lampu · <span class="text-[#012749] font-semibold">Philips</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 28.500</td>
+            <td class="py-2 px-2 text-center">
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-sm font-extrabold text-emerald-700">215</span>
+                <span class="text-[10.5px] text-slate-500 mt-0.5">Atas 120 · Bawah 95</span>
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center"><button class="p-1 rounded-full hover:bg-slate-100"><span class="material-symbols-outlined text-base text-slate-500">expand_more</span></button></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-switch rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-pink-700/60">toggle_on</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-SKL-PNS-WD1</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Saklar Tunggal Wide WEJ5531</td>
+            <td class="py-2 px-2 text-slate-600">Saklar · <span class="text-[#012749] font-semibold">Panasonic</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 32.000</td>
+            <td class="py-2 px-2 text-center">
+              <div class="flex flex-col items-center leading-tight">
+                <span class="text-sm font-extrabold text-emerald-700">87</span>
+                <span class="text-[10.5px] text-slate-500 mt-0.5">Atas 52 · Bawah 35</span>
+              </div>
+            </td>
+            <td class="py-2 px-2 text-center"><button class="p-1 rounded-full hover:bg-slate-100"><span class="material-symbols-outlined text-base text-slate-500">expand_more</span></button></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M2: INLINE EXPAND (multi-expand)                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-violet-700 uppercase bg-violet-50 border border-violet-200 px-2 py-1 rounded-full">M2 · Inline Expand (multi-expand, foto besar)</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Inline expand panel — 280×280 + gallery + bonus actions</h2>
+      <p class="text-xs text-[#43474e] mt-1">Klik foto thumb / chevron → panel slide-down ~120ms. Multi-row expand allowed. Toolbar "Tutup N panel" muncul kalau ≥1 panel terbuka.</p>
+    </div>
+
+    <!-- Toolbar with "Tutup N panel" -->
+    <div class="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm mb-3">
+      <div class="flex flex-col md:flex-row gap-3 md:items-center">
+        <div class="flex-1 relative">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          <input type="text" placeholder="Cari SKU, nama, atau brand…" class="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm" />
+        </div>
+        <button class="px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">unfold_less</span> Tutup 2 panel
+        </button>
+        <div class="flex bg-slate-100 rounded-full p-1 gap-0.5">
+          <button class="px-3 py-1.5 rounded-full text-xs font-bold text-slate-600 inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">grid_view</span> Foto
+          </button>
+          <button class="px-3 py-1.5 rounded-full text-xs font-extrabold bg-[#012749] text-white inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">view_list</span> List
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table dengan 2 panel expand -->
+    <div class="bg-white rounded-3xl border border-[#e5eeff] shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left border-b-2 border-slate-200 bg-slate-50/50">
+            <th class="py-2.5 pl-3 pr-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-14">Foto</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">SKU</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Kategori</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok</th>
+            <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
+            <th class="py-2.5 pr-3 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="text-[13px]">
+          <!-- Row 1: MCB EXPANDED -->
+          <tr class="bg-violet-50/40 border-t-2 border-violet-300">
+            <td class="py-2.5 pl-3 pr-2"><button class="w-10 h-10 thumb-mcb rounded-lg ring-2 ring-violet-500 flex items-center justify-center"><span class="material-symbols-outlined text-xl text-sky-700/60">bolt</span></button></td>
+            <td class="py-2.5 px-2 font-mono text-[12px] text-slate-700">SKU-MCB-EZ9-1P6A</td>
+            <td class="py-2.5 px-2 font-extrabold text-[#012749]">MCB Easy9 1P 6A 4.5kA</td>
+            <td class="py-2.5 px-2 text-slate-600">MCB · <span class="text-[#012749] font-semibold">Schneider</span></td>
+            <td class="py-2.5 px-2 text-right font-extrabold text-[#012749]">Rp 48.500</td>
+            <td class="py-2.5 px-2 text-center"><div class="flex flex-col items-center leading-tight"><span class="text-sm font-extrabold text-emerald-700">142</span><span class="text-[10.5px] text-slate-500 mt-0.5">Atas 87 · Bawah 55</span></div></td>
+            <td class="py-2.5 px-2 text-center"><span class="material-symbols-outlined text-base text-violet-700">expand_less</span></td>
+            <td class="py-2.5 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="bg-violet-50/40 border-b-2 border-violet-300">
+            <td colspan="8" class="px-3 pb-5 pt-1">
+              <div class="bg-white rounded-2xl border border-violet-200 p-5 photo-card-shadow">
+                <div class="flex gap-6">
+                  <div class="thumb-mcb rounded-2xl flex items-center justify-center flex-shrink-0" style="width: 280px; height: 280px;">
+                    <span class="material-symbols-outlined" style="font-size: 160px; color: rgba(7, 89, 133, 0.35);">bolt</span>
+                  </div>
+                  <div class="flex-1 flex flex-col">
+                    <div class="flex items-start justify-between mb-3">
+                      <div>
+                        <p class="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">Foto Produk · 1 dari 3</p>
+                        <h3 class="text-base font-extrabold text-[#012749] mt-0.5">MCB Easy9 1P 6A 4.5kA</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5"><span class="font-mono">SKU-MCB-EZ9-1P6A</span> · Schneider · MCB</p>
+                      </div>
+                      <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-base">close</span> Tutup
+                      </button>
+                    </div>
+                    <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Foto lain — klik untuk ganti foto utama</p>
+                    <div class="flex gap-2 mb-4">
+                      <button class="w-16 h-16 thumb-mcb rounded-xl border-2 border-violet-500 flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span></button>
+                      <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-sky-700/60">inventory_2</span></button>
+                      <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-sky-700/60">cable</span></button>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl px-3 py-2 mb-3">
+                      <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Stok per Gudang</p>
+                      <div class="flex gap-4 text-[12px]">
+                        <span class="font-bold"><span class="text-slate-500">Atas:</span> <span class="text-emerald-700">87</span></span>
+                        <span class="font-bold"><span class="text-slate-500">Bawah:</span> <span class="text-emerald-700">55</span></span>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 mt-auto flex-wrap">
+                      <button class="px-4 py-2 bg-[#012749] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">edit</span> Edit Produk</button>
+                      <button class="px-4 py-2 bg-slate-100 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">add_a_photo</span> Tambah Foto</button>
+                      <button class="px-4 py-2 bg-slate-100 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">history</span> Riwayat Stok</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 2: Kabel collapsed -->
+          <tr class="border-b border-slate-100">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-cable rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-amber-700/60">cable</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-KBL-NYM3X25</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Kabel NYM 3x2.5 50m Roll</td>
+            <td class="py-2 px-2 text-slate-600">Kabel · <span class="text-[#012749] font-semibold">Eterna</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 685.000</td>
+            <td class="py-2 px-2 text-center"><div class="flex flex-col items-center leading-tight"><span class="text-sm font-extrabold text-amber-700">8</span><span class="text-[10.5px] text-slate-500 mt-0.5">Atas 5 · Bawah 3</span></div></td>
+            <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+
+          <!-- Row 3: Panel EXPANDED (multi-expand demo) -->
+          <tr class="bg-violet-50/40 border-t-2 border-violet-300">
+            <td class="py-2.5 pl-3 pr-2"><button class="w-10 h-10 thumb-panel rounded-lg ring-2 ring-violet-500 flex items-center justify-center"><span class="material-symbols-outlined text-xl text-slate-700/60">developer_board</span></button></td>
+            <td class="py-2.5 px-2 font-mono text-[12px] text-slate-700">SKU-PNL-SLM-3040</td>
+            <td class="py-2.5 px-2 font-extrabold text-[#012749]">Panel Box 30x40x15 IP55</td>
+            <td class="py-2.5 px-2 text-slate-600">Panel · <span class="text-[#012749] font-semibold">Salim</span></td>
+            <td class="py-2.5 px-2 text-right font-extrabold text-[#012749]">Rp 425.000</td>
+            <td class="py-2.5 px-2 text-center"><div class="flex flex-col items-center leading-tight"><span class="text-sm font-extrabold text-emerald-700">23</span><span class="text-[10.5px] text-slate-500 mt-0.5">Atas 15 · Bawah 8</span></div></td>
+            <td class="py-2.5 px-2 text-center"><span class="material-symbols-outlined text-base text-violet-700">expand_less</span></td>
+            <td class="py-2.5 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+          <tr class="bg-violet-50/40 border-b-2 border-violet-300">
+            <td colspan="8" class="px-3 pb-5 pt-1">
+              <div class="bg-white rounded-2xl border border-violet-200 p-5 photo-card-shadow">
+                <div class="flex gap-6">
+                  <div class="thumb-panel rounded-2xl flex items-center justify-center flex-shrink-0" style="width: 280px; height: 280px;">
+                    <span class="material-symbols-outlined" style="font-size: 160px; color: rgba(51, 65, 85, 0.4);">developer_board</span>
+                  </div>
+                  <div class="flex-1 flex flex-col">
+                    <div class="flex items-start justify-between mb-3">
+                      <div>
+                        <p class="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">Foto Produk · 1 dari 4</p>
+                        <h3 class="text-base font-extrabold text-[#012749] mt-0.5">Panel Box 30x40x15 IP55</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5"><span class="font-mono">SKU-PNL-SLM-3040</span> · Salim · Panel</p>
+                      </div>
+                      <button class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
+                        <span class="material-symbols-outlined text-base">close</span> Tutup
+                      </button>
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                      <button class="w-16 h-16 thumb-panel rounded-xl border-2 border-violet-500 flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-slate-700/60">developer_board</span></button>
+                      <button class="w-16 h-16 thumb-panel rounded-xl opacity-60 border-2 border-transparent flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-slate-700/60">interests</span></button>
+                      <button class="w-16 h-16 thumb-panel rounded-xl opacity-60 border-2 border-transparent flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-slate-700/60">visibility</span></button>
+                      <button class="w-16 h-16 thumb-panel rounded-xl opacity-60 border-2 border-transparent flex items-center justify-center"><span class="material-symbols-outlined text-2xl text-slate-700/60">image</span></button>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl px-3 py-2 mb-3">
+                      <div class="flex gap-4 text-[12px]">
+                        <span class="font-bold"><span class="text-slate-500">Atas:</span> <span class="text-emerald-700">15</span></span>
+                        <span class="font-bold"><span class="text-slate-500">Bawah:</span> <span class="text-emerald-700">8</span></span>
+                      </div>
+                    </div>
+                    <div class="flex gap-2 mt-auto flex-wrap">
+                      <button class="px-4 py-2 bg-[#012749] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">edit</span> Edit Produk</button>
+                      <button class="px-4 py-2 bg-slate-100 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">add_a_photo</span> Tambah Foto</button>
+                      <button class="px-4 py-2 bg-slate-100 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5"><span class="material-symbols-outlined text-base">history</span> Riwayat Stok</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <tr class="border-b border-slate-100">
+            <td class="py-2 pl-3 pr-2"><button class="row-thumb w-10 h-10 thumb-lamp rounded-lg flex items-center justify-center"><span class="material-symbols-outlined text-xl text-yellow-700/60">lightbulb</span></button></td>
+            <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-LMP-PHL-ES9W</td>
+            <td class="py-2 px-2 font-bold text-[#012749]">Lampu LED Essential 9W E27</td>
+            <td class="py-2 px-2 text-slate-600">Lampu · <span class="text-[#012749] font-semibold">Philips</span></td>
+            <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 28.500</td>
+            <td class="py-2 px-2 text-center"><div class="flex flex-col items-center leading-tight"><span class="text-sm font-extrabold text-emerald-700">215</span><span class="text-[10.5px] text-slate-500 mt-0.5">Atas 120 · Bawah 95</span></div></td>
+            <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+            <td class="py-2 pr-3 px-2 text-right"><button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60"><span class="material-symbols-outlined text-lg">edit</span></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="text-[10.5px] text-slate-500 italic mt-3 text-center">2 row expanded sekaligus · animasi slide-down ~120ms · "Tutup 2 panel" di toolbar</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M3: CARI BY FOTO MODAL (3 entry points)                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-[#012749] uppercase bg-blue-50 border border-blue-200 px-2 py-1 rounded-full">M3 · Kasir · Cari by Foto modal (3 entry points)</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">CariByFotoModal — Kamera / Upload / Drag-drop</h2>
+      <p class="text-xs text-[#43474e] mt-1">Tombol di header KasirScreen. Modal punya 3 cara input: 2 card (Kamera + Upload File) di atas + 1 drag-drop zone besar di bawah.</p>
+    </div>
+
+    <!-- Modal frame -->
+    <div class="bg-slate-900/5 rounded-3xl p-8 border border-slate-200" style="background: radial-gradient(circle at 30% 50%, rgba(1,39,73,0.06), transparent 60%);">
+      <!-- Header simulating Kasir -->
+      <div class="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Kasir Screen</p>
+            <h3 class="text-base font-extrabold text-[#012749] mt-0.5">Transaksi baru — Walk-in</h3>
+          </div>
+          <div class="flex gap-2">
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+              <input type="text" placeholder="Cari SKU…" class="pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm w-48" />
+            </div>
+            <button class="px-5 py-2 bg-gradient-to-br from-[#2d8a4e] to-emerald-700 text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-lg">
+              <span class="material-symbols-outlined text-base">photo_camera</span> Cari by Foto [AI]
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal content -->
+      <div class="bg-white rounded-3xl max-w-2xl mx-auto p-6 photo-card-shadow">
+        <div class="flex items-start justify-between mb-5">
+          <div>
+            <p class="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
+            <h3 class="text-base font-extrabold text-[#012749] mt-0.5">Pilih sumber foto produk</h3>
+            <p class="text-[11px] text-slate-500 mt-1">AI akan cari produk paling mirip di katalog (top 5).</p>
+          </div>
+          <button class="w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center">
+            <span class="material-symbols-outlined text-base text-slate-600">close</span>
+          </button>
+        </div>
+
+        <!-- 2 cards: Kamera + Upload File -->
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <button class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-2xl p-5 transition-colors text-left group">
+            <div class="w-12 h-12 bg-emerald-200 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-2xl text-emerald-800">photo_camera</span>
+            </div>
+            <p class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">Opsi 1</p>
+            <h4 class="text-sm font-extrabold text-emerald-900 mt-0.5">Pakai Kamera</h4>
+            <p class="text-[11px] text-emerald-800 mt-1 leading-snug">Snap foto produk langsung dari kamera HP/tablet.</p>
+          </button>
+          <button class="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-2xl p-5 transition-colors text-left group">
+            <div class="w-12 h-12 bg-blue-200 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-2xl text-blue-800">folder_open</span>
+            </div>
+            <p class="text-[10px] font-extrabold uppercase tracking-widest text-blue-700">Opsi 2</p>
+            <h4 class="text-sm font-extrabold text-blue-900 mt-0.5">Upload File</h4>
+            <p class="text-[11px] text-blue-800 mt-1 leading-snug">Pilih foto dari folder pakai file picker browser.</p>
+          </button>
+        </div>
+
+        <!-- Drag-drop zone (NEW) -->
+        <button class="dropzone-violet w-full bg-violet-50/50 hover:bg-violet-100 rounded-2xl p-5 transition-colors text-left group">
+          <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-violet-200 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+              <span class="material-symbols-outlined text-3xl text-violet-800">cloud_upload</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-[10px] font-extrabold uppercase tracking-widest text-violet-700">Opsi 3 · BARU</p>
+              <h4 class="text-sm font-extrabold text-violet-900 mt-0.5">Tarik &amp; lepas foto ke sini</h4>
+              <p class="text-[11px] text-violet-800 mt-1 leading-snug">Drag foto langsung dari File Explorer / Finder. Cepat dan tidak perlu klik file picker.</p>
+            </div>
+          </div>
+        </button>
+
+        <!-- Tip -->
+        <div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <p class="text-[11px] text-amber-900">
+            <span class="font-extrabold">💡 Tip:</span> Foto produk dari angle depan / label paling jelas memberi hasil paling akurat.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M4: COLD START BANNER UX                                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m4">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-pink-700 uppercase bg-pink-50 border border-pink-200 px-2 py-1 rounded-full">M4 · Cold-start UX (free tier Cloud Run)</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Cold start banner — saat instance baru wake up</h2>
+      <p class="text-xs text-[#43474e] mt-1">Free tier Cloud Run scale-to-zero. First request after idle ~5-10s load model CLIP. Banner inline, BUKAN error toast.</p>
+    </div>
+
+    <div class="bg-slate-900/5 rounded-3xl p-8 border border-slate-200">
+      <div class="bg-white rounded-3xl max-w-2xl mx-auto p-6 photo-card-shadow">
+        <!-- Cold start banner -->
+        <div class="bg-amber-50 border border-amber-300 rounded-2xl p-4 mb-5">
+          <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-amber-200 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-amber-800 animate-spin">progress_activity</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-[10px] font-extrabold uppercase tracking-widest text-amber-700">Cold start</p>
+              <h4 class="text-sm font-extrabold text-amber-900 mt-0.5">⏱️ Menyiapkan AI… 5 detik</h4>
+              <p class="text-[11px] text-amber-800 mt-1">CLIP model lagi di-load ke memory. Setelah ini search selanjutnya akan langsung cepat (~150ms).</p>
+              <div class="mt-2 bg-amber-200 rounded-full h-1 overflow-hidden">
+                <div class="bg-amber-600 h-full pulse-emerald" style="width: 65%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto query preview while loading -->
+        <div class="text-center">
+          <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-2">Foto yang sedang di-analisis</p>
+          <div class="thumb-mcb w-32 h-32 mx-auto rounded-2xl flex items-center justify-center">
+            <span class="material-symbols-outlined text-5xl text-sky-700/40">bolt</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">mcb-easy9.jpg • 1.2 MB</p>
+        </div>
+      </div>
+
+      <p class="text-[10.5px] text-slate-500 italic mt-4 text-center max-w-2xl mx-auto">
+        Note: ini banner inline di modal, BUKAN error toast. User edukated bahwa first request = wait, subsequent searches = fast.
+        Cold start exceed 15s → switch ke toast error "AI tidak siap, coba lagi atau cari via teks."
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M5: HASIL CARI by FOTO (no AI describe banner)                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m5">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-emerald-700 uppercase bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">M5 · Hasil Cari by Foto</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">HasilCariFotoModal — top 5 dengan similarity %</h2>
+      <p class="text-xs text-[#43474e] mt-1">Banner atas: thumbnail foto query + tombol "Ganti foto" — <strong>TANPA</strong> AI deskripsi text (CLIP gak generate text). Per card: stok per gudang inline.</p>
+    </div>
+
+    <div class="bg-slate-900/5 rounded-3xl p-8 border border-slate-200">
+      <div class="bg-white rounded-3xl max-w-3xl mx-auto p-6 photo-card-shadow">
+        <!-- Banner foto query -->
+        <div class="flex items-center justify-between gap-4 mb-5 bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
+          <div class="flex items-center gap-3">
+            <div class="thumb-mcb w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+            </div>
+            <div>
+              <p class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">Foto yang dicari</p>
+              <p class="text-[12.5px] font-bold text-emerald-900">mcb-easy9-query.jpg</p>
+              <p class="text-[10px] text-emerald-700 italic">Top 5 produk paling mirip berdasarkan visual similarity (CLIP)</p>
+            </div>
+          </div>
+          <button class="px-3 py-2 bg-white hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-base">refresh</span> Ganti foto
+          </button>
+        </div>
+
+        <!-- Top 5 results -->
+        <div class="space-y-2">
+          <!-- Result 1: best match -->
+          <div class="bg-emerald-50/40 border border-emerald-300 rounded-2xl p-3 flex items-center gap-3">
+            <div class="thumb-mcb w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase">Best match</span>
+                <span class="text-[9px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">MCB</span>
+              </div>
+              <h4 class="text-sm font-extrabold text-[#012749] mt-1">MCB Easy9 1P 6A 4.5kA</h4>
+              <p class="text-[10.5px] font-mono text-slate-500">SKU-MCB-EZ9-1P6A · Schneider</p>
+              <p class="text-[11px] text-slate-600 mt-1">
+                <span class="font-bold text-[#012749]">Rp 48.500</span> ·
+                <span class="text-emerald-700 font-semibold">Atas 87 · Bawah 55</span>
+              </p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[11px] font-extrabold text-emerald-700">92%</div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-widest">similarity</div>
+              <button class="mt-1 px-3 py-1.5 bg-[#2d8a4e] text-white rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Tambah
+              </button>
+            </div>
+          </div>
+
+          <!-- Result 2 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
+            <div class="thumb-mcb w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-[9px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">MCB</span>
+              <h4 class="text-sm font-extrabold text-[#012749] mt-1">MCB Easy9 1P 10A 4.5kA</h4>
+              <p class="text-[10.5px] font-mono text-slate-500">SKU-MCB-EZ9-1P10A · Schneider</p>
+              <p class="text-[11px] text-slate-600 mt-1">
+                <span class="font-bold text-[#012749]">Rp 52.000</span> ·
+                <span class="text-emerald-700 font-semibold">Atas 60 · Bawah 38</span>
+              </p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[11px] font-extrabold text-emerald-600">85%</div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-widest">similarity</div>
+              <button class="mt-1 px-3 py-1.5 bg-white border border-emerald-300 text-emerald-700 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Tambah
+              </button>
+            </div>
+          </div>
+
+          <!-- Result 3 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-3">
+            <div class="thumb-mcb w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1">
+                <span class="text-[9px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">MCB</span>
+                <span class="text-[9px] font-extrabold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full uppercase">Tipis</span>
+              </div>
+              <h4 class="text-sm font-extrabold text-[#012749] mt-1">MCB Easy9 1P 16A 4.5kA</h4>
+              <p class="text-[10.5px] font-mono text-slate-500">SKU-MCB-EZ9-1P16A · Schneider</p>
+              <p class="text-[11px] text-slate-600 mt-1">
+                <span class="font-bold text-[#012749]">Rp 56.000</span> ·
+                <span class="text-amber-700 font-semibold">Atas 3 · Bawah 4</span>
+              </p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[11px] font-extrabold text-emerald-600">78%</div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-widest">similarity</div>
+              <button class="mt-1 px-3 py-1.5 bg-white border border-emerald-300 text-emerald-700 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Tambah
+              </button>
+            </div>
+          </div>
+
+          <!-- Result 4 -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center gap-3 opacity-80">
+            <div class="thumb-mcb w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-[9px] font-extrabold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full uppercase">MCB</span>
+              <h4 class="text-sm font-extrabold text-[#012749] mt-1">MCB Compact NSX160F 3P 100A</h4>
+              <p class="text-[10.5px] font-mono text-slate-500">SKU-MCB-NSX-3P100 · Schneider</p>
+              <p class="text-[11px] text-slate-600 mt-1">
+                <span class="font-bold text-[#012749]">Rp 1.250.000</span> ·
+                <span class="text-emerald-700 font-semibold">Atas 5 · Bawah 2</span>
+              </p>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="text-[11px] font-extrabold text-emerald-500">73%</div>
+              <div class="text-[9px] text-slate-500 uppercase tracking-widest">similarity</div>
+              <button class="mt-1 px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-full text-[10px] font-extrabold uppercase inline-flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add</span> Tambah
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer link -->
+        <div class="mt-5 pt-4 border-t border-slate-200 text-center">
+          <a href="#" class="text-[11.5px] font-bold text-[#012749] hover:underline inline-flex items-center gap-1">
+            <span class="material-symbols-outlined text-base">search</span>
+            Tidak ada yang cocok? Cari manual via teks
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M6: CLIP MONITORING PANEL                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m6">
+    <div class="mb-5">
+      <span class="text-[10px] font-black tracking-widest text-slate-700 uppercase bg-slate-100 border border-slate-200 px-2 py-1 rounded-full">M6 · Pengaturan · CLIP Inference Monitor</span>
+      <h2 class="text-2xl font-extrabold text-[#012749] mt-2">Panel monitoring CLIP — honest, tidak ada quota fake</h2>
+      <p class="text-xs text-[#43474e] mt-1">Renamed dari "AI Activity Monitor" (Gemini-based). Sekarang track CLIP inference (search + indexing), latency p50/p95, cold-start count. <strong>Tidak ada</strong> Vision/Embedding call counter — gak ada Gemini call.</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-[#e5eeff] shadow-sm p-6">
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
+          <span class="material-symbols-outlined">monitoring</span>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-[#012749]">Aktivitas CLIP Inference — Hari Ini</h3>
+          <p class="text-[10.5px] text-slate-500">Reset 00:00 WIB · update real-time dari `clip_inference_log`</p>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4">
+        <p class="text-[11px] text-[#012749]">
+          <span class="font-extrabold">ℹ️ CLIP berjalan di server kita.</span> Angka di bawah adalah jumlah inference hari ini. Tidak ada quota eksternal — kapasitas dibatasi oleh CPU instance Cloud Run.
+        </p>
+      </div>
+
+      <!-- 2 main cards -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700">Search Kasir</p>
+            <span class="material-symbols-outlined text-emerald-700 text-base">search</span>
+          </div>
+          <p class="text-2xl font-black text-emerald-900 mt-1">47</p>
+          <div class="flex gap-3 mt-1.5 text-[10.5px]">
+            <span class="text-emerald-700"><strong>46</strong> success</span>
+            <span class="text-rose-700"><strong>1</strong> error</span>
+          </div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-[10px] font-extrabold uppercase tracking-widest text-blue-700">Indexing Upload</p>
+            <span class="material-symbols-outlined text-blue-700 text-base">cloud_upload</span>
+          </div>
+          <p class="text-2xl font-black text-blue-900 mt-1">12</p>
+          <div class="flex gap-3 mt-1.5 text-[10.5px]">
+            <span class="text-blue-700"><strong>12</strong> success</span>
+            <span class="text-slate-500"><strong>0</strong> error</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Latency + cold start -->
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p50</p>
+          <p class="text-lg font-black text-[#012749] mt-1">142 ms</p>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p95</p>
+          <p class="text-lg font-black text-[#012749] mt-1">203 ms</p>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-center">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-amber-700">Cold start hit</p>
+          <p class="text-lg font-black text-amber-900 mt-1">3 ×</p>
+        </div>
+      </div>
+
+      <!-- Sinyal -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+        <p class="text-[10.5px] font-extrabold uppercase tracking-widest text-amber-700 mb-1">Sinyal kapan tindak lanjut</p>
+        <ul class="text-[11px] text-amber-900 list-disc ml-5 space-y-0.5">
+          <li><strong>Latency p95 &gt; 3 detik konsisten</strong> → mungkin perlu bump CPU 1→2 vCPU di Cloud Run config (cek apakah masih free tier).</li>
+          <li><strong>Cold start &gt; 5/hari</strong> → instance terlalu sering scale-to-zero. Evaluasi keep-warm.</li>
+          <li><strong>Akurasi &lt; 80% top-1 (smoke test minggu 4)</strong> → eval Hybrid (CLIP + Gemini Vision re-rank), spec terpisah.</li>
+        </ul>
+      </div>
+
+      <p class="text-[10.5px] text-slate-500 italic mt-3">Last error: 2026-06-16 11:42:31 WIB · cold_start_timeout (>15s) — auto-cleared setelah retry sukses 11:42:48</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- ARCHITECTURE SUMMARY                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section>
+    <div class="bg-white rounded-3xl border border-[#e5eeff] shadow-sm p-6">
+      <h2 class="text-base font-extrabold text-[#012749] mb-4">Architecture summary — CLIP local pipeline</h2>
+      <div class="bg-slate-50 rounded-2xl p-5 font-mono text-[11px] text-[#012749] leading-relaxed">
+<pre>┌─────────────────────────────────────────────────────────────────────┐
+│  Frontend (React + Vite, di Cloud Run)                              │
+│  ├─ KasirScreen → CariByFotoModal (Camera / Upload / Drag-drop)     │
+│  ├─ Client compress (canvas, 1024px, q=75)                          │
+│  └─ POST multipart/form-data → backend                              │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────────┐
+│  Backend Go (Cloud Run, free tier, no min-instances=1)              │
+│  ├─ POST /api/products/search-by-photo                              │
+│  │  ├─ Validate image (≤5MB, image/*)                               │
+│  │  ├─ Preprocess: decode → resize 224x224 → normalize RGB float32  │
+│  │  ├─ <strong>CLIP encoder ONNX (ViT-Base-32, 150MB, ~150ms CPU)</strong>          │
+│  │  │  └─ In-process, no external API call                          │
+│  │  ├─ pgvector similarity search → top 5 (threshold 0.70)          │
+│  │  └─ Return JSON results (NO query_description)                   │
+│  ├─ POST /api/products/index-photos (sama CLIP, kind='index')       │
+│  └─ Log clip_inference_log (kind, latency_ms, status)               │
+└────────────────────────────┬────────────────────────────────────────┘
+                             │
+┌────────────────────────────▼────────────────────────────────────────┐
+│  Supabase Postgres + pgvector                                       │
+│  ├─ stock_photo_embeddings (sku, photo_path, <strong>embedding vector(512)</strong>)   │
+│  ├─ RPC search_products_by_embedding(query, threshold, limit)       │
+│  └─ clip_inference_log (kind, latency_ms, status, called_at)        │
+└─────────────────────────────────────────────────────────────────────┘
+
+Zero calls ke: Gemini · OpenAI · Google APIs · any external AI provider</pre>
+      </div>
+
+      <div class="mt-4 grid md:grid-cols-3 gap-3 text-[11.5px]">
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+          <p class="font-extrabold text-emerald-900 uppercase text-[10px] tracking-widest">✓ Pro</p>
+          <ul class="text-emerald-900 mt-1 ml-4 list-disc space-y-0.5">
+            <li>Zero quota, zero rate limit</li>
+            <li>Latency ~150ms (vs 2s Gemini)</li>
+            <li>Privacy: foto stay di server kita</li>
+            <li>Free forever (server cost ada, tapi tidak per-call)</li>
+          </ul>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <p class="font-extrabold text-amber-900 uppercase text-[10px] tracking-widest">⚠ Trade-off</p>
+          <ul class="text-amber-900 mt-1 ml-4 list-disc space-y-0.5">
+            <li>Akurasi label spec (mis. 6A vs 10A MCB) lebih rendah dari Gemini Vision</li>
+            <li>Cold start 5-10s di Cloud Run free tier</li>
+            <li>Effort +1 hari dev untuk ONNX integration</li>
+          </ul>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+          <p class="font-extrabold text-[#012749] uppercase text-[10px] tracking-widest">→ Future upgrade</p>
+          <ul class="text-[#012749] mt-1 ml-4 list-disc space-y-0.5">
+            <li>Trigger kalau akurasi &lt; 80% top-1 minggu 4 post-launch</li>
+            <li>Hybrid: CLIP (top-20) + Gemini Vision re-rank → top-5</li>
+            <li>Spec terpisah, +2 hari dev</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

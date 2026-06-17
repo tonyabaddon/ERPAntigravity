@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Calendar, AlertTriangle, FileText, CalendarRange, ChevronDown, SearchX, Plus } from 'lucide-react';
 import { StockItem, PermissionSet } from '../types';
 import { purchaseOrderService, supplierService } from '../lib/pembelianService';
-import type { DbPurchaseOrder, DbSupplier } from '../types';
+import type { DbPurchaseOrder, DbSupplier, DbPesanan } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { wibDateString } from '../lib/format';
 import { type FilterState, resolveRange, periodLabel, resolvedRangeShort, inRange } from '../lib/dateRange';
@@ -15,6 +15,16 @@ import PembelianDetailPage from './pembelian/PembelianDetailPage';
 import BelanjaNumpangLewatList from './pembelian/bnl/BelanjaNumpangLewatList';
 import BelanjaNumpangLewatFormPage from './pembelian/bnl/BelanjaNumpangLewatFormPage';
 import BelanjaNumpangLewatDetailPage from './pembelian/bnl/BelanjaNumpangLewatDetailPage';
+import BerandaPembelian from './pembelian/beranda/BerandaPembelian';
+import PesananList from './pembelian/pesanan/PesananList';
+import PesananFormPage from './pembelian/pesanan/PesananFormPage';
+import PesananDetailPage from './pembelian/pesanan/PesananDetailPage';
+import TagihanList from './pembelian/tagihan/TagihanList';
+import TagihanFormPage from './pembelian/tagihan/TagihanFormPage';
+import TagihanDetailPage from './pembelian/tagihan/TagihanDetailPage';
+import PembayaranList from './pembelian/pembayaran/PembayaranList';
+import PembayaranFormPage from './pembelian/pembayaran/PembayaranFormPage';
+import PembayaranDetailPage from './pembelian/pembayaran/PembayaranDetailPage';
 import type { DbPurchaseInvoice } from '../types';
 
 interface PembelianScreenProps {
@@ -28,9 +38,27 @@ interface PembelianScreenProps {
   initialBnlPiNumber?: string | null;
   onBnlDetailConsumed?: () => void;
   initialBnlPrefill?: { orderId: string; customerName?: string } | null;
+  initialPesananNumber?: string | null;
+  onPesananDetailConsumed?: () => void;
+  initialTagihanNumber?: string | null;
+  onTagihanDetailConsumed?: () => void;
+  initialPembayaranNumber?: string | null;
+  onPembayaranDetailConsumed?: () => void;
 }
 
-type Tab = 'orders' | 'bnl' | 'suppliers';
+// 'orders' is the legacy PO tab — kept in the type union so existing
+// `?po=` deep links + PO detail view still work, but no longer rendered
+// as a top-level tab button (Phase 2a moved the canonical PO flow into
+// Pesanan / Tagihan / Pembayaran).
+type Tab =
+  | 'beranda'
+  | 'orders'
+  | 'pesanan'
+  | 'tagihan'
+  | 'bnl'
+  | 'pembayaran'
+  | 'suppliers';
+
 type ViewMode =
   | { kind: 'list' }
   | { kind: 'create' }
@@ -39,7 +67,18 @@ type ViewMode =
   | { kind: 'bnl-list' }
   | { kind: 'bnl-create'; prefill?: { orderId?: string; customerName?: string } }
   | { kind: 'bnl-edit'; pi: DbPurchaseInvoice }
-  | { kind: 'bnl-detail'; piNumber: string };
+  | { kind: 'bnl-detail'; piNumber: string }
+  | { kind: 'pesanan-list' }
+  | { kind: 'pesanan-create' }
+  | { kind: 'pesanan-edit'; pesanan: DbPesanan }
+  | { kind: 'pesanan-detail'; pesananNumber: string }
+  | { kind: 'tagihan-list' }
+  | { kind: 'tagihan-create'; prefillPesanan?: DbPesanan }
+  | { kind: 'tagihan-edit'; pi: DbPurchaseInvoice }
+  | { kind: 'tagihan-detail'; tghNumber: string }
+  | { kind: 'pembayaran-list' }
+  | { kind: 'pembayaran-create'; prefillSupplierId?: string }
+  | { kind: 'pembayaran-detail'; pembayaranNumber: string };
 
 function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -62,8 +101,11 @@ export default function PembelianScreen({
   stockList, showToast, onStockRefresh, currentUserId, currentUserPermissions,
   initialDetailPoNumber, onDetailConsumed,
   initialBnlPiNumber, onBnlDetailConsumed, initialBnlPrefill,
+  initialPesananNumber, onPesananDetailConsumed,
+  initialTagihanNumber, onTagihanDetailConsumed,
+  initialPembayaranNumber, onPembayaranDetailConsumed,
 }: PembelianScreenProps) {
-  const [tab, setTab] = useState<Tab>('orders');
+  const [tab, setTab] = useState<Tab>('beranda');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,6 +157,33 @@ export default function PembelianScreen({
       setViewMode({ kind: 'bnl-create', prefill: { orderId: initialBnlPrefill.orderId, customerName: initialBnlPrefill.customerName } });
     }
   }, [initialBnlPrefill?.orderId]);
+
+  // Pesanan deep-link (?pesanan=PSN-...) — switch tab + open detail
+  useEffect(() => {
+    if (initialPesananNumber) {
+      setTab('pesanan');
+      setViewMode({ kind: 'pesanan-detail', pesananNumber: initialPesananNumber });
+      onPesananDetailConsumed?.();
+    }
+  }, [initialPesananNumber, onPesananDetailConsumed]);
+
+  // Tagihan deep-link (?tagihan=TGH-...) — switch tab + open detail
+  useEffect(() => {
+    if (initialTagihanNumber) {
+      setTab('tagihan');
+      setViewMode({ kind: 'tagihan-detail', tghNumber: initialTagihanNumber });
+      onTagihanDetailConsumed?.();
+    }
+  }, [initialTagihanNumber, onTagihanDetailConsumed]);
+
+  // Pembayaran deep-link (?pembayaran=PMB-...) — switch tab + open detail
+  useEffect(() => {
+    if (initialPembayaranNumber) {
+      setTab('pembayaran');
+      setViewMode({ kind: 'pembayaran-detail', pembayaranNumber: initialPembayaranNumber });
+      onPembayaranDetailConsumed?.();
+    }
+  }, [initialPembayaranNumber, onPembayaranDetailConsumed]);
 
   // Tab-sync: when the list tab regains focus (e.g., after the user took an action
   // in a detail tab), re-fetch so the list reflects the latest state.
@@ -275,56 +344,78 @@ export default function PembelianScreen({
           />
         ) : (
           <>
-            {/* KPI cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <KpiCard
-                icon={<ShoppingCart className="w-6 h-6" />}
-                iconBg="bg-blue-50" iconColor="text-[#1e3d60]"
-                badge={pLabel} badgeClass="bg-blue-50 text-[#1e3d60]"
-                label="Total PO" value={formatRupiah(total)}
-                sub={count > 0 ? `${count} purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
-              />
-              <KpiCard
-                icon={<Calendar className="w-6 h-6" />}
-                iconBg="bg-amber-50" iconColor="text-amber-600"
-                badge={`${dueCount} PO`} badgeClass="bg-amber-50 text-amber-700"
-                label="Jatuh Tempo" value={formatRupiah(dueAmount)}
-                sub={dueCount > 0 ? `Belum dibayar, jatuh tempo di ${pLabel.toLowerCase()}` : 'Tidak ada PO jatuh tempo di periode ini'}
-              />
-              <KpiCard
-                icon={<AlertTriangle className="w-6 h-6" />}
-                iconBg={overdueAmount > 0 ? 'bg-rose-100' : 'bg-gray-50'}
-                iconColor={overdueAmount > 0 ? 'text-rose-700' : 'text-gray-400'}
-                badge={overdueAmount > 0 ? 'Tindakan!' : 'Aman'}
-                badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-[#2d8a4e]'}
-                label="Terlambat Bayar" value={formatRupiah(overdueAmount)}
-                sub={overdueAmount > 0
-                  ? `${overdueCount} PO melewati jatuh tempo — selalu hari ini, tidak ikut filter`
-                  : 'Semua PO dilunasi tepat waktu'}
-                alarming={overdueAmount > 0}
-              />
-              <KpiCard
-                icon={<FileText className="w-6 h-6" />}
-                iconBg="bg-emerald-50" iconColor="text-[#2d8a4e]"
-                badge={pLabel} badgeClass="bg-emerald-50 text-[#2d8a4e]"
-                label="Jumlah PO" value={`${count}`}
-                sub={count > 0 ? `Purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
-              />
-            </div>
+            {/* Legacy PO KPI cards — only on the legacy Purchase Orders tab.
+                Beranda owns its own KPI strip; new entity tabs have their own headers. */}
+            {tab === 'orders' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <KpiCard
+                  icon={<ShoppingCart className="w-6 h-6" />}
+                  iconBg="bg-blue-50" iconColor="text-[#1e3d60]"
+                  badge={pLabel} badgeClass="bg-blue-50 text-[#1e3d60]"
+                  label="Total PO" value={formatRupiah(total)}
+                  sub={count > 0 ? `${count} purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
+                />
+                <KpiCard
+                  icon={<Calendar className="w-6 h-6" />}
+                  iconBg="bg-amber-50" iconColor="text-amber-600"
+                  badge={`${dueCount} PO`} badgeClass="bg-amber-50 text-amber-700"
+                  label="Jatuh Tempo" value={formatRupiah(dueAmount)}
+                  sub={dueCount > 0 ? `Belum dibayar, jatuh tempo di ${pLabel.toLowerCase()}` : 'Tidak ada PO jatuh tempo di periode ini'}
+                />
+                <KpiCard
+                  icon={<AlertTriangle className="w-6 h-6" />}
+                  iconBg={overdueAmount > 0 ? 'bg-rose-100' : 'bg-gray-50'}
+                  iconColor={overdueAmount > 0 ? 'text-rose-700' : 'text-gray-400'}
+                  badge={overdueAmount > 0 ? 'Tindakan!' : 'Aman'}
+                  badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-[#2d8a4e]'}
+                  label="Terlambat Bayar" value={formatRupiah(overdueAmount)}
+                  sub={overdueAmount > 0
+                    ? `${overdueCount} PO melewati jatuh tempo — selalu hari ini, tidak ikut filter`
+                    : 'Semua PO dilunasi tepat waktu'}
+                  alarming={overdueAmount > 0}
+                />
+                <KpiCard
+                  icon={<FileText className="w-6 h-6" />}
+                  iconBg="bg-emerald-50" iconColor="text-[#2d8a4e]"
+                  badge={pLabel} badgeClass="bg-emerald-50 text-[#2d8a4e]"
+                  label="Jumlah PO" value={`${count}`}
+                  sub={count > 0 ? `Purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
+                />
+              </div>
+            )}
 
-            {/* Tabs (unchanged structure) */}
+            {/* Tabs — order: Beranda | Pesanan | Tagihan | BNL | Pembayaran | Supplier.
+                Legacy 'orders' (Purchase Orders) preserved as a hidden tab for deep links. */}
             <div className="flex gap-1 border-b border-gray-200">
               <button
-                onClick={() => { setTab('orders'); setViewMode({ kind: 'list' }); }}
-                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'orders' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => { setTab('beranda'); setViewMode({ kind: 'list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'beranda' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Purchase Orders
+                Beranda
+              </button>
+              <button
+                onClick={() => { setTab('pesanan'); setViewMode({ kind: 'pesanan-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'pesanan' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Pesanan
+              </button>
+              <button
+                onClick={() => { setTab('tagihan'); setViewMode({ kind: 'tagihan-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'tagihan' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Tagihan
               </button>
               <button
                 onClick={() => { setTab('bnl'); setViewMode({ kind: 'bnl-list' }); }}
                 className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'bnl' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Belanja Numpang Lewat
+              </button>
+              <button
+                onClick={() => { setTab('pembayaran'); setViewMode({ kind: 'pembayaran-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'pembayaran' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Pembayaran
               </button>
               <button
                 onClick={() => { setTab('suppliers'); setViewMode({ kind: 'list' }); }}
@@ -334,7 +425,120 @@ export default function PembelianScreen({
               </button>
             </div>
 
-            {/* BNL views (rendered when tab='bnl', overrides orders/suppliers rendering) */}
+            {/* Beranda — supplier AP snapshot KPI strip + per-supplier outstanding */}
+            {tab === 'beranda' && (
+              <BerandaPembelian
+                showToast={showToast}
+                onOpenPembayaran={(supplierId) => {
+                  setTab('pembayaran');
+                  setViewMode({ kind: 'pembayaran-create', prefillSupplierId: supplierId });
+                }}
+              />
+            )}
+
+            {/* Pesanan views */}
+            {tab === 'pesanan' && viewMode.kind === 'pesanan-list' && (
+              <PesananList
+                showToast={showToast}
+                onCreate={() => setViewMode({ kind: 'pesanan-create' })}
+                onOpenDetail={(psn) => setViewMode({ kind: 'pesanan-detail', pesananNumber: psn })}
+              />
+            )}
+            {tab === 'pesanan' && viewMode.kind === 'pesanan-create' && (
+              <PesananFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'pesanan-list' })}
+                onSaved={(psn) => setViewMode({ kind: 'pesanan-detail', pesananNumber: psn })}
+              />
+            )}
+            {tab === 'pesanan' && viewMode.kind === 'pesanan-edit' && (
+              <PesananFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'pesanan-detail', pesananNumber: viewMode.pesanan.pesanan_number })}
+                onSaved={(psn) => setViewMode({ kind: 'pesanan-detail', pesananNumber: psn })}
+                editing={viewMode.pesanan}
+              />
+            )}
+            {tab === 'pesanan' && viewMode.kind === 'pesanan-detail' && (
+              <PesananDetailPage
+                pesananNumber={viewMode.pesananNumber}
+                showToast={showToast}
+                onBack={() => setViewMode({ kind: 'pesanan-list' })}
+                onEdit={(pesanan) => setViewMode({ kind: 'pesanan-edit', pesanan })}
+                onCreateTagihan={(pesanan) => {
+                  setTab('tagihan');
+                  setViewMode({ kind: 'tagihan-create', prefillPesanan: pesanan });
+                }}
+              />
+            )}
+
+            {/* Tagihan views */}
+            {tab === 'tagihan' && viewMode.kind === 'tagihan-list' && (
+              <TagihanList
+                showToast={showToast}
+                onCreate={() => setViewMode({ kind: 'tagihan-create' })}
+                onOpenDetail={(tghNumber) => setViewMode({ kind: 'tagihan-detail', tghNumber })}
+                onOpenPembayaran={(supplierId) => {
+                  setTab('pembayaran');
+                  setViewMode({ kind: 'pembayaran-create', prefillSupplierId: supplierId });
+                }}
+              />
+            )}
+            {tab === 'tagihan' && viewMode.kind === 'tagihan-create' && (
+              <TagihanFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'tagihan-list' })}
+                onSaved={(tghNumber) => setViewMode({ kind: 'tagihan-detail', tghNumber })}
+                prefillPesanan={viewMode.prefillPesanan}
+              />
+            )}
+            {tab === 'tagihan' && viewMode.kind === 'tagihan-detail' && (
+              <TagihanDetailPage
+                tghNumber={viewMode.tghNumber}
+                showToast={showToast}
+                onBack={() => setViewMode({ kind: 'tagihan-list' })}
+                onOpenPesanan={(_pesananId) => {
+                  // future: navigate to Pesanan detail by id (need a number lookup)
+                  setTab('pesanan');
+                  setViewMode({ kind: 'pesanan-list' });
+                }}
+                onOpenPembayaran={(supplierId) => {
+                  setTab('pembayaran');
+                  setViewMode({ kind: 'pembayaran-create', prefillSupplierId: supplierId });
+                }}
+              />
+            )}
+
+            {/* Pembayaran views */}
+            {tab === 'pembayaran' && viewMode.kind === 'pembayaran-list' && (
+              <PembayaranList
+                showToast={showToast}
+                onCreate={() => setViewMode({ kind: 'pembayaran-create' })}
+                onOpenDetail={(pmbNumber) => setViewMode({ kind: 'pembayaran-detail', pembayaranNumber: pmbNumber })}
+              />
+            )}
+            {tab === 'pembayaran' && viewMode.kind === 'pembayaran-create' && (
+              <PembayaranFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'pembayaran-list' })}
+                onSaved={(pmbNumber) => setViewMode({ kind: 'pembayaran-detail', pembayaranNumber: pmbNumber })}
+                prefillSupplierId={viewMode.prefillSupplierId}
+              />
+            )}
+            {tab === 'pembayaran' && viewMode.kind === 'pembayaran-detail' && (
+              <PembayaranDetailPage
+                pembayaranNumber={viewMode.pembayaranNumber}
+                showToast={showToast}
+                onBack={() => setViewMode({ kind: 'pembayaran-list' })}
+                onOpenTagihan={(_tagihanId) => {
+                  // future: navigate to Tagihan detail by id (need number lookup)
+                  setTab('tagihan');
+                  setViewMode({ kind: 'tagihan-list' });
+                }}
+              />
+            )}
+
+            {/* BNL views (preserved unchanged) */}
             {tab === 'bnl' && viewMode.kind === 'bnl-list' && (
               <BelanjaNumpangLewatList
                 showToast={showToast}
@@ -368,9 +572,10 @@ export default function PembelianScreen({
               />
             )}
 
-            {tab !== 'bnl' && (loading ? (
+            {/* Legacy PO Orders tab + Suppliers tab */}
+            {tab === 'orders' && (loading ? (
               <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
-            ) : tab === 'orders' ? (
+            ) : (
               <OrdersTab
                 orders={orders}
                 suppliers={suppliers}
@@ -384,6 +589,9 @@ export default function PembelianScreen({
                 periodLabel={pLabel}
                 buildDetailUrl={(poNumber) => `${window.location.origin}/?screen=pembelian&po=${encodeURIComponent(poNumber)}`}
               />
+            ))}
+            {tab === 'suppliers' && (loading ? (
+              <div className="text-center py-12 text-sm text-gray-400">Memuat data...</div>
             ) : (
               <SuppliersTab
                 suppliers={suppliers}

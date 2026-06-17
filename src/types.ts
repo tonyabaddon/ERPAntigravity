@@ -964,6 +964,136 @@ export interface OrderCogsBreakdownRow {
   qty_from_stock: number;
 }
 
+// ── Phase 2: Pesanan + Pembayaran ──
+export type PesananStatus = 'DRAFT' | 'ORDERED' | 'CLOSED';
+export type TagihanStatus = 'BELUM_LUNAS' | 'DIBAYAR_SEBAGIAN' | 'LUNAS';
+export type PembayaranStatus = 'LUNAS' | 'VOIDED';
+
+export interface DbPesananItem {
+  id: string;
+  pesanan_id: string;
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+  subtotal: number;
+  qty_received_total: number;
+  created_at: string;
+}
+
+export interface DbPesanan {
+  id: string;
+  pesanan_number: string;
+  supplier_id: string;
+  status: PesananStatus;
+  notes: string | null;
+  ordered_at: string | null;
+  expected_receive_at: string | null;
+  closed_at: string | null;
+  tax_rate: number;
+  tax_amount: number;
+  subtotal: number;
+  total: number;
+  created_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  voided_at: string | null;
+  voided_by_user_id: string | null;
+  void_reason: string | null;
+  supplier?: DbSupplier;
+  items?: DbPesananItem[];
+}
+
+export interface PesananItemDraft {
+  sku: string;
+  product_name: string;
+  qty: number;
+  unit_cost: number;
+}
+
+export interface RecordPesananPayload {
+  supplier_id: string;
+  initial_status: 'DRAFT' | 'ORDERED';
+  notes?: string;
+  expected_receive_at?: string;
+  tax_rate?: number;
+  items: PesananItemDraft[];
+}
+
+export interface DbPembayaranItem {
+  id: string;
+  pembayaran_id: string;
+  tagihan_id: string | null;
+  tukar_faktur_id: string | null;
+  amount: number;
+  created_at: string;
+}
+
+export interface DbPembayaran {
+  id: string;
+  pembayaran_number: string;
+  supplier_id: string;
+  paid_at: string;
+  payment_method: 'CASH' | 'TRANSFER' | 'CHEQUE' | 'EDC';
+  account_id: string | null;
+  account_label: string | null;
+  amount_total: number;
+  discount_amount: number;
+  proof_url: string | null;
+  status: PembayaranStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+  supplier?: DbSupplier;
+  items?: DbPembayaranItem[];
+}
+
+export interface PembayaranItemDraft {
+  tagihan_id?: string;
+  tukar_faktur_id?: string;
+  amount: number;
+}
+
+export interface RecordPembayaranPayload {
+  supplier_id: string;
+  paid_at?: string;
+  payment_method: 'CASH' | 'TRANSFER' | 'CHEQUE' | 'EDC';
+  account_id?: string;
+  account_label?: string;
+  discount_amount?: number;
+  proof_url?: string;
+  notes?: string;
+  items: PembayaranItemDraft[];
+}
+
+export interface SuggestOutstandingTagihanRow {
+  id: string;
+  pi_number: string;
+  total: number;
+  paid_amount: number;
+  outstanding: number;
+  payment_due_at: string | null;
+  supplier_invoice_number: string | null;
+}
+
+export interface ApDashboardLite {
+  kpi: {
+    total_outstanding: number;
+    due_this_month: number;
+    next_7_days: number;
+    overdue: { amount: number; count: number };
+  };
+  per_supplier: Array<{
+    supplier_id: string;
+    supplier_name: string;
+    outstanding: number;
+    tagihan_count: number;
+    due_soonest: string | null;
+  }>;
+}
+
 // ── Piutang Phase 1B — Tempo invoice + Piutang screen ──
 export interface CreateTempoInvoicePayload {
   customer_id: string;

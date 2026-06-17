@@ -1,5 +1,68 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-17 — Pembelian Phase 2a — E2E backend smoke test PASS + 4 hotfix migrations
+
+- **What:** End-to-end backend smoke test executed via REST API + Supabase Management API (because user's IPv6 routing to Supabase was down, fell back to PAT-authenticated Management API). All 8 backend smoke steps PASS after 4 hotfix migrations were applied:
+  1. Buat Pesanan DRAFT (PSN-2026-06-041) ✓
+  2. Mark Ordered → status ORDERED, ordered_at set ✓
+  3. Buat Tagihan (PI-2026-06-001) type=STOCK partial receipt (3 of 5 qty) ✓
+  4. Pesanan stays ORDERED on partial (not auto-CLOSED) ✓
+  5. pembayaran_suggest_outstanding returns Tagihan correctly ✓
+  6. record_pembayaran (PMB-2026-06-003) ✓
+  7. Tagihan auto-LUNAS via _recompute_tagihan_status ✓
+  8. Kasir expense auto-inserted ("Pembelian Stok", Rp 30,000) ✓
+  Bonus: 2nd Tagihan (LUNAS, CASH) receives remaining 2 → Pesanan auto-CLOSED via set_pesanan_closed_if_fulfilled ✓
+- **4 hotfix migrations discovered + applied to Supabase live:**
+  - `20260620000020_stock_lots_source_tracking.sql` — add source_id + source_type to stock_lots, backfill from existing po_id (spec §17 had assumed but no migration was authored)
+  - `20260620000021_record_pi_fix_stock_lots_columns.sql` — rewrite record_pi to use qty_received + qty_remaining (not "qty" which doesn't exist) for FIFO ledger
+  - `20260620000022_record_pi_drop_stock_lots_warehouse_col.sql` — drop warehouse_id from stock_lots INSERT (no such column — warehouse routing lives in stock_levels)
+  - `20260620000023_record_pi_cast_kasir_enum.sql` — explicit ::kasir_expense_category cast (Postgres won't implicit-cast CASE-returned text to enum type)
+- **Network observation:** IPv6 to db.ekhhojaezdfjfwuxyjkl.supabase.co was unreachable from local machine throughout smoke test. Pooler (Supavisor) routing requires paid Supabase tier (free-tier project rejected with "tenant not found"). User provided PAT (`sbp_...`) so Management API HTTP path worked — applied 4 hotfix migrations + diagnostic queries via Management API.
+- **Coverage gaps (UI not tested):** browser smoke not executed because chrome MCP server was disconnected from this Claude session. Phase 1 BNL regression check returned 0 rows (no PASSTHROUGH data exists in this Supabase project — operator hasn't used BNL menu yet; not a bug, just no data to verify against). Visual rendering of Pesanan / Tagihan / Pembayaran list/form/detail pages remains user's manual responsibility before deploying frontend.
+- **Branch:** `feat/pembelian-phase2` (worktree `.claude/worktrees/pembelian-phase2`), tip after hotfix commits
+- **Smoke fixtures cleaned up:** test Pesanan + Tagihan + Pembayaran + stock_lots + Kasir entries deleted post-test to leave DB clean
+- **Next:**
+  1. User runs UI smoke manually OR retries Chrome MCP after full Claude Code restart
+  2. After UI verified: merge feat/pembelian-phase2 → main + deploy Cloud Run
+  3. Then Phase 2b brainstorm (Tukar Faktur entity + reconciliation panel)
+
+## 2026-06-16 — Pembelian Phase 2a (Foundation) — IMPLEMENTATION COMPLETE + migrations applied
+
+- **What:** Full implementation of `docs/superpowers/plans/2026-06-16-pembelian-phase2a-foundation.md`. PO refactored into 3-entity model (Pesanan + Tagihan + Pembayaran) with junction-table partial/consolidated payment support. Existing PO data big-bang migrated. New BerandaPembelian dashboard (lite — KPI strip + per-supplier outstanding). Existing BNL Phase 1 + old PO module untouched.
+- **Branch:** `feat/pembelian-phase2` (worktree `.claude/worktrees/pembelian-phase2`)
+- **8 SQL migrations applied to Supabase production:**
+  - `20260620000001_phase2_pesanan_schema.sql` — pesanan + pesanan_items tables, RLS, trigger
+  - `20260620000002_phase2_pembayaran_schema.sql` — pembayaran + pembayaran_items junction
+  - `20260620000003_phase2_pi_extend.sql` — purchase_invoices: pesanan_id, tukar_faktur_id, paid_amount, DIBAYAR_SEBAGIAN status, CHECK constraint enforcing STOCK requires pesanan_id (PASSTHROUGH requires order_id)
+  - `20260620000004_phase2_rpcs_pesanan.sql` — generate_pesanan_number / record / mark_ordered / update / void / auto-close on fulfillment
+  - `20260620000005_phase2_rpcs_tagihan_extend.sql` — extend record_pi for type='STOCK' with pesanan_id required, auto stock_lots + stocks.stock increment + warehouse routing + qty_received_total trigger
+  - `20260620000006_phase2_rpcs_pembayaran.sql` — record_pembayaran (atomic: insert + Tagihan paid_amount recompute + Kasir expense) + void with reversal
+  - `20260620000007_phase2_rpcs_smart_helpers.sql` — pembayaran_suggest_outstanding + ap_dashboard_lite (KPI strip + per-supplier)
+  - `20260620000010_phase2_migrate_po_data.sql` — big-bang split existing PO data (DRAFT/ORDERED → Pesanan; RECEIVED/PAID → Pesanan+CLOSED + Tagihan STOCK; PAID → +Pembayaran). Initially failed FK on pesanan_item_id; fix commit `39bb447` switched to (pesanan_id, sku) lookup.
+- **Frontend (Tasks 14-19):**
+  - `src/components/pembelian/pesanan/` — List + Form + Detail with status-driven actions (Mark Ordered / Edit / Void / Buat Tagihan)
+  - `src/components/pembelian/tagihan/` — List + Form (Pesanan picker required, items pre-fill from Pesanan, warehouse routing) + Detail with paid_amount progress bar
+  - `src/components/pembelian/pembayaran/` — List + Form (suggest_outstanding integration, smart-suggest pre-select, per-row editable amount for partial) + Detail
+  - `src/components/pembelian/beranda/BerandaPembelian.tsx` — KPI strip + per-supplier outstanding with "Bayar" → Pembayaran form pre-filled
+  - `src/components/PembelianScreen.tsx` — menu refactor (Beranda default; Beranda/Pesanan/Tagihan/BNL/Pembayaran/Supplier sub-tabs); legacy `'orders'` tab preserved in code for `?po=` deep-link backward compat but hidden from UI
+  - `src/App.tsx` — deep-link routing for `?pesanan/?tagihan/?pembayaran`
+- **3 integration test files added** (pesanan-rpcs, tagihan-stock-rpcs, pembayaran-rpcs) — run via `npx vitest run tests/integration/` with `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` env
+- **TypeScript:** clean (`npx tsc --noEmit` exit 0). New types in `src/types.ts` Phase 2 section: `DbPesanan/DbPesananItem/PesananStatus/RecordPesananPayload`, `DbPembayaran/DbPembayaranItem/PembayaranStatus/RecordPembayaranPayload`, `SuggestOutstandingTagihanRow`, `ApDashboardLite`, `TagihanStatus`
+- **Subagent-driven execution:** 9 subagent dispatches (mostly batched across tasks 4-7, 8-11, 15-17, 18-19). No orphan commit issues this time (each subagent verified `git log -1 feat/pembelian-phase2` before returning).
+- **Carry-over from subagent caveats:** (1) `purchase_invoices.fetchAll` doesn't JOIN pesanan, so TagihanList shows short id ref instead of pesanan_number — minor cosmetic, defer to Phase 2b. (2) `DbPurchaseInvoice` type kept minimal at Phase 1 shape; new pages use local Row-cast extension for paid_amount + pesanan_id. Tightening when wiring Tagihan ↔ Pesanan join later.
+- **Out of Phase 2a scope:** Tukar Faktur (Phase 2b) + full AP Dashboard with aging + cash flow forecast (Phase 2c)
+- **Next steps:**
+  1. Manual browser smoke test: Pembelian → Beranda → KPI shows; → Pesanan → buat DRAFT → mark ordered → buat Tagihan from it → verify stocks.stock increment → record Pembayaran → verify status LUNAS
+  2. After smoke pass: merge to main + deploy Cloud Run
+  3. Then Phase 2b brainstorm session (Tukar Faktur entity + reconciliation panel)
+
+## 2026-06-16 — Pembelian Phase 2a — Task 3: extend purchase_invoices for Tagihan type=STOCK — DONE (apply pending)
+
+- **What:** Created `supabase/migrations/20260620000003_phase2_pi_extend.sql` to extend `purchase_invoices` for the Phase 2a Tagihan flow (STOCK type). Adds `pesanan_id uuid NULL REFERENCES public.pesanan(id) ON DELETE RESTRICT` (REQUIRED for STOCK type — references the parent Pesanan), `tukar_faktur_id uuid NULL` (left dangling without FK until Phase 2b lands the `tukar_faktur` table), and `paid_amount numeric NOT NULL DEFAULT 0 CHECK (paid_amount >= 0)` (partial-payment tracking). Expands `pi_status_check` to allow `DIBAYAR_SEBAGIAN` alongside `BELUM_LUNAS`/`LUNAS` (drop-then-re-add pattern via `DROP CONSTRAINT IF EXISTS`). New `pi_type_linkage_check` enforces mutual exclusivity: `PASSTHROUGH` requires `order_id` + `pesanan_id IS NULL`; `STOCK` requires `pesanan_id` + `order_id IS NULL`. `purchase_invoice_items` gains `pesanan_item_id uuid NULL REFERENCES public.pesanan_items(id) ON DELETE SET NULL` so each PI line can trace back to the Pesanan line it was committed against. Three partial indexes (`pi_pesanan_idx`, `pi_tukar_faktur_idx`, `pi_items_pesanan_item_idx`) keep nullable FK lookups cheap.
+- **Pattern:** Same as Tasks 1 (`20260620000001_phase2_pesanan_schema.sql`) and 2 (`20260620000002_phase2_pembayaran_schema.sql`) — write migration file, do NOT apply to Supabase yet (apply-pending list will batch all Phase 2a migrations), single-file commit on `feat/pembelian-phase2`.
+- **Files:** `supabase/migrations/20260620000003_phase2_pi_extend.sql` (new, 34 LOC).
+- **Commit:** `69264ae feat(pembelian): extend purchase_invoices for Tagihan type=STOCK + paid_amount tracking (Phase 2a Task 3)`.
+- **Branch:** `feat/pembelian-phase2`. Plan progress: Tasks 1-3 done (3/20). Next: Tasks 4-7 — RPC migrations.
 ## 2026-06-16 — ProductForm — OS-folder drag-drop multi-file photo upload SHIPPED
 
 Follow-up to today's Produk & Stok Phase 2 ship (entry below). User flagged
@@ -6954,6 +7017,83 @@ QR code tidak muncul di halaman WhatsApp AI. Daemon online tapi `qr: ""` di resp
 - **Estimasi sprint**: 9.5-10.5 hari (+0.5 hari untuk rename + tab + refactor)
 - **Multi-tenant impact**: tab structure tetap pakai pola yang sama untuk semua tenant; Katalog tab adalah generic catalog view, Stok tab generic warehouse view
 
+---
+
+## 2026-06-16 — Spec amendment: foto-search pivot Gemini → CLIP local
+
+- **Spec amended** (commit `2c439bf`): `docs/superpowers/specs/2026-06-14-product-photo-search-design.md`
+- **Final mockup** (commit `5809c43`): `docs/superpowers/mockups/2026-06-16-final-katalog-foto-search.html` (6 sections + arch diagram)
+
+### Locked architectural pivots (brainstorming session 2026-06-16)
+
+1. **Foto-search pipeline: Gemini Vision → CLIP local (ONNX, backend-go)**
+   - Model: `clip-vit-base-patch32` (~150MB bundled di Docker image)
+   - Vector(512) di `stock_photo_embeddings` (was vector(768) text embedding)
+   - Pipeline: image → preprocess 224x224 → CLIP encoder → pgvector similarity
+   - Latency target: p95 < 500ms warm (vs 4s Gemini Vision indirect)
+   - Zero external API calls forever → no quota risk
+
+2. **Drop tombol `✨ Generate dari Foto`** — manual deskripsi input, zero Gemini call di seluruh foto-search functionality
+
+3. **Cari by Foto modal: 3 entry points** — Kamera + Upload File + **drag-and-drop zone**
+
+4. **Cloud Run free tier constraint** — no `min-instances=1` per `cost_upgrade_approval` memory
+   - Konsekuensi: cold start ~5-10s setelah idle
+   - Mitigasi: banner inline `"⏱️ Menyiapkan AI… 5 detik"` (bukan toast error)
+   - Keep-warm dari existing kasir traffic saat jam buka toko
+
+5. **Monitoring panel renamed** `ai_call_log` → `clip_inference_log`
+   - Track: search count, indexing count, p50/p95 latency, cold-start hit
+   - No more Vision/Embedding cards (gak ada Gemini call)
+
+6. **Future hybrid path** documented (§5.5 spec) — trigger kalau CLIP murni < 80% top-1 minggu 4 post-launch, +2 hari dev di spec terpisah
+
+### Pushback yang user accept (honest correction)
+
+- "Calista pakai 2.0 + 2.5" → corrected to "Calista cuma pakai `gemini-2.5-flash-lite`" (verified `chain.go:84`)
+- "Gemini 3.5 Flash exists?" → verified via Google docs (saya tadinya skeptis karena knowledge cutoff Jan 2026, user benar — model release antara Feb–Jun 2026)
+- "Cari by Foto akan campur quota Calista" → fakta: different model name = separate quota bucket di Google, sudah isolated by-design. Tidak butuh pivot untuk isolation; pivot CLIP untuk akurasi visual + zero-quota guarantee
+
+### Effort impact
+
+- Foto-search spec estimate: 9.5-10.5 → **10.5-11.5 hari** (+1 CLIP integration, +0.5 drag-drop, 0 saving dari drop Generate dari Foto)
+- Implementation status: spec amended + mockup ready, BELUM mulai coding
+
+---
+
+## 2026-06-16 — All 4 implementation plans written (foto-search + katalog view modes)
+
+User picked "tulis semua plan sekaligus" approach. 4 sibling plans committed, total 4 markdown files covering full 10.5-11.5 hari foto-search sprint + 2-3 hari katalog view modes.
+
+### Plans index
+
+| Plan | File (commit) | Effort | Scope |
+|---|---|---|---|
+| **A · Foundation** | `2026-06-16-foto-search-plan-A-foundation.md` (`55083b6`) | ~5 hari | DB migrations + StockItem extension + StockManagerScreen refactor (1051→~40 lines) + ProductForm + tabs |
+| **B · Katalog View Modes** | `2026-06-16-katalog-view-modes-plan.md` (`fb50b7f`) | ~3 hari | View switcher Foto/List + inline expand panel + multi-expand |
+| **C · CLIP Backend + Kasir UI** | `2026-06-16-foto-search-plan-C-clip-backend-kasir.md` (`55083b6`) | ~5 hari | backend-go internal/clip/, ONNX runtime in Dockerfile, CariByFotoModal with drag-drop, cold-start UX |
+| **D · Settings + Tests** | `2026-06-16-foto-search-plan-D-settings-tests.md` (`55083b6`) | ~2-3 hari | Costing radio + CLIP monitor + initial_stock approval + bulk CSV + e2e smoke |
+
+### Dependency chain
+
+```
+Plan A (foundation) ──┬─→ Plan B (view modes; depends on produk/ folder + StockItem.photos)
+                      └─→ Plan C (CLIP + kasir; depends on produk-photos bucket + photo_urls column)
+                            └─→ Plan D (settings + tests; depends on clip_inference_log populated)
+```
+
+Plan B and Plan C **can run in parallel** since they touch different files. Plan D is final integration + polish.
+
+### Self-review notes
+
+- Spec coverage check passed: all goals §1.1–§1.9 mapped to tasks.
+- Form Produk skips multi-satuan card + Deskripsi textarea + "Stok per Gudang" read-only card — minor enhancements, ship without first.
+- 2 implementer notes flagged: ONNX Go binding API surface is approximate (will need adjustment during impl), `sed -i ''` is macOS-only.
+
+### Status
+
+- 4 plans written, committed, ready for execution.
+- Implementation NOT YET STARTED. User to pick execution mode (subagent-driven vs inline) and starting plan.
 ## 2026-06-16 — Piutang/Tempo Phase 1B: frontend + RPC wiring (branch `feat/piutang-phase-1b`)
 
 - **Scope shipped**:

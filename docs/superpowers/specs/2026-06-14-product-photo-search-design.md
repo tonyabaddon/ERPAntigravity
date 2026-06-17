@@ -1,9 +1,24 @@
 # Product Module Enhancement — Multi-Photo Upload &amp; Cari by Foto (Kasir)
 
-**Status:** Approved (brainstormed 2026-06-13/14)
+**Status:** Approved (brainstormed 2026-06-13/14, amended 2026-06-16 — CLIP pivot)
 **Owner:** tonywei
-**Mockups:** `docs/superpowers/specs/2026-06-13-product-photo-search-mockups/index.html`
-**Estimated effort:** Medium (1 sprint, ~9.5-10.5 hari dev)
+**Mockups:** `docs/superpowers/specs/2026-06-13-product-photo-search-mockups/index.html` (original)
+**Mockups (amended):** `docs/superpowers/mockups/2026-06-16-foto-search-clip-final.html` (CLIP pipeline + drag-drop)
+**Estimated effort:** Medium (1 sprint, ~10.5-11.5 hari dev — +1 hari dari CLIP ONNX integration, -0 hari dari drop Generate-dari-Foto)
+
+---
+
+### ⚠️ AMENDMENT 2026-06-16 — Foto-search pipeline pivot: Gemini → CLIP local
+
+Setelah brainstorming session 2026-06-16, beberapa keputusan arsitektural berubah:
+
+1. **Foto-search pipeline pakai CLIP local** (ONNX runtime di backend-go), **bukan** Gemini Vision describe → text-embedding-004. Alasan: zero quota dependency forever, latency ~150ms vs ~2s, image-to-image similarity lebih natural untuk visual product search.
+2. **Tombol `✨ Generate dari Foto` di-DROP** dari form Tambah Barang. Konsekuensinya zero Gemini call untuk seluruh foto-search functionality.
+3. **Cari by Foto modal tambah drag-and-drop entry point** (selain Camera + File picker).
+4. **Cloud Run free tier constraint** — deployment harus stay di free tier (no `min-instances=1`). Implikasinya: cold start risk (~5-10s first request after idle) yang di-mitigate dengan keep-warm via existing kasir traffic.
+5. **Future upgrade path Hybrid (CLIP + Gemini re-rank)** di-document sebagai fallback kalau akurasi CLIP murni < 80% di smoke test minggu 4 post-launch.
+
+Section-section yang ter-amend ditandai `[AMENDED 2026-06-16]` di sub-heading. Section yang gak ter-amend tetap relevant.
 **Menu rename:** "Stok" → **"Produk &amp; Stok"** (mengikuti convention MSME tools: Jurnal Mekari "Produk &amp; Layanan", Moka/Pawoon "Produk"). Label match isi (catalog + stock ops dalam satu screen).
 
 ---
@@ -14,13 +29,13 @@
 
 1. **Form Stok lebih lengkap (Jurnal-parity)** — extend form "Tambah Barang Baru" yang sudah ada di `StockManagerScreen.tsx:683` dengan field tambahan: SKU editable (auto-suggest + override), Sub-Kategori, Satuan (UoM), multi-satuan konversi opsional, Harga Beli/Modal eksplisit, Batas Stok Min per produk, Stok Awal opsional, Merek "+ Tambah baru", Kategori &amp; Sub-Kategori "+ Buat baru".
 2. **Foto Produk multi-upload** — section baru "Foto Produk" (min 1 wajib, max 5), drag-drop reorder, slot pertama otomatis = thumbnail.
-3. **Deskripsi Produk** — textarea opsional + tombol `✨ Generate dari Foto` (Gemini Vision).
-4. **AI indexing pipeline otomatis** — setiap foto yang di-upload → background job Gemini Flash 2.5 Vision describe → `text-embedding-004` embed → simpan di `pgvector`. Free tier Gemini.
-5. **Kasir: tombol "Cari by Foto"** — di header `KasirScreen.tsx`. Modal pilih Kamera/Upload File → top 5 hasil dengan thumbnail, SKU, stok, harga, similarity %. Threshold 70%; di bawah threshold tampilkan warning + fallback search teks.
+3. **Deskripsi Produk [AMENDED 2026-06-16]** — textarea opsional, input manual. **Tombol `✨ Generate dari Foto` di-DROP** untuk hilangkan dependency ke Gemini.
+4. **Image indexing pipeline otomatis [AMENDED 2026-06-16]** — setiap foto yang di-upload → background job **CLIP ViT-Base-32 image encoder (ONNX, di backend-go)** → vector(512) → simpan di `pgvector`. Zero external API calls, zero quota dependency.
+5. **Kasir: tombol "Cari by Foto"** — di header `KasirScreen.tsx`. Modal **3 entry points: Kamera / Upload File / Drag-drop zone** → top 5 hasil dengan thumbnail, SKU, stok, harga, similarity %. Threshold 70%; di bawah threshold tampilkan warning + fallback search teks.
 6. **Costing Method setting** — radio FIFO/Average di `PengaturanScreen`, default FIFO, berlaku toko-wide.
 7. **Stok Awal approval flow** — kalau Stok Awal &gt; 0 diisi, buat `approval_request` tipe `initial_stock` ke owner (WhatsApp / app inbox), produk tetap dibuat tapi stok belum aktif sampai approve.
 8. **Auto-compress foto** — client-side resize max 1024px + JPEG q=75 sebelum upload ke Supabase Storage.
-9. **Monitoring AI call activity** — panel honest di `PengaturanScreen` menampilkan jumlah call Gemini hari ini (Vision + Embedding), 429 hit count, latency p50/p95. Tanpa progress bar palsu "X/1500"; disclaimer eksplisit bahwa Google tidak expose sisa kuota real-time.
+9. **Monitoring CLIP inference activity [AMENDED 2026-06-16]** — panel honest di `PengaturanScreen` menampilkan: jumlah CLIP inference hari ini (indexing + search), latency p50/p95, error count (model load fail / inference timeout). **Tidak ada Gemini call counter** karena pipeline gak panggil Gemini.
 
 ### Non-goals (definitif skip di spec ini)
 
@@ -33,8 +48,9 @@
 - **Default Supplier per produk** — nice-to-have, tunda.
 - **GL accounts mapping** (Pendapatan/HPP/Persediaan) — ERP ini tidak punya general ledger akuntansi; `stock_movements` adalah ledger stok bukan GL.
 - **Expiry / Serial / Batch tracking** — tidak relevan untuk MCB/Kabel/Panel.
-- **Rerank step di image search** — sprint berikutnya kalau akurasi kurang.
-- **Upgrade ke paid Gemini** — sistem hanya notify, tidak auto-upgrade billing (sesuai feedback `cost_upgrade_approval`).
+- **Hybrid CLIP + Gemini Vision re-rank [AMENDED 2026-06-16]** — di-defer ke spec terpisah, di-trigger kalau benchmark CLIP murni < 80% akurasi top-1 di minggu 4 post-launch. Dokumentasi di §10.
+- **Generate-dari-Foto auto-describe [AMENDED 2026-06-16]** — fitur di-drop, deskripsi produk input manual. Future bisa di-add kembali sebagai opt-in setting kalau user request.
+- **Upgrade ke paid Cloud Run tier [AMENDED 2026-06-16]** — deploy stay di free tier (no `min-instances=1`). Cold start risk di-accept (per memory `cost_upgrade_approval`).
 - **Katalog publik / katalog cetak** — non-goal.
 - **Schema Builder UI per tenant** — tunda ke spec terpisah saat tenant non-elektrik onboard (lihat Section "Multi-tenant readiness" di bawah).
 
@@ -52,8 +68,8 @@ Spec ini siap untuk multi-tenant rollout (lihat `2026-06-13-multi-tenant-prerequ
 Semua perubahan masuk ke modul existing:
 - Frontend: **`StockManagerScreen.tsx` di-refactor** (1051 baris → screen orchestrator + 5 child components untuk maintainability), `KasirScreen.tsx`, `PengaturanScreen.tsx`, `Sidebar.tsx` (rename label).
 - Service: `src/lib/supabaseClient.ts` (stockService extension), new `src/lib/productPhotoService.ts`
-- Backend Go: new `internal/gemini/embed.go` (Vision + embedding) + new Edge Function alternative
-- DB: extend tabel `stocks` (kolom baru), tabel baru `stock_photo_embeddings`, `product_brands`, `product_categories`, `product_units`, extend enum `approval_request_type` dengan `initial_stock`.
+- Backend Go [AMENDED 2026-06-16]: new `internal/clip/encoder.go` (ONNX runtime wrapper untuk `clip-vit-base-patch32`) + `internal/clip/model.go` (singleton model loader). Model file (~150MB) di-bundle ke Docker image. **No Gemini package added** untuk foto-search.
+- DB: extend tabel `stocks` (kolom baru), tabel baru `stock_photo_embeddings` (vector(512) **[AMENDED: was 768]**), `product_brands`, `product_categories`, `product_units`, extend enum `approval_request_type` dengan `initial_stock`.
 
 ### Menu &amp; Tab Structure (post-pivot)
 
@@ -335,11 +351,11 @@ Form di-organize jadi 4 section visual (divider pill style mengikuti pola "Spesi
 - Per-slot states: empty / uploading (spinner + %) / uploaded / indexing (emerald pulse banner).
 - Validation submit: minimal 1 foto. Kalau kurang → block submit + toast `"Minimal 1 foto produk wajib."`.
 - Client compress sebelum upload: `&lt;canvas&gt;` resize longest dim ke 1024px, `toBlob('image/jpeg', 0.75)`. Reject file &gt; 5MB pre-compress.
-- Helper info: *"Min 1 foto wajib — foto pertama jadi thumbnail. Drag untuk reorder. Foto akan di-index AI ~5 detik setelah simpan dan langsung bisa dipakai untuk Cari by Foto di kasir."*
+- Helper info [AMENDED 2026-06-16]: *"Min 1 foto wajib — foto pertama jadi thumbnail. Drag untuk reorder. Foto akan di-index CLIP ~150ms per foto setelah simpan dan langsung bisa dipakai untuk Cari by Foto di kasir."*
 
-#### Section "Deskripsi Produk" (opsional)
+#### Section "Deskripsi Produk" (opsional) [AMENDED 2026-06-16]
 - Textarea, max 500 char (counter di kanan bawah).
-- Tombol `✨ Generate dari Foto` — enabled kalau ≥ 1 foto di-upload. Click → call `POST /gemini/describe-product` (lihat 4.1) → fill textarea dengan respon (user dapat edit).
+- **Tombol `✨ Generate dari Foto` DIHAPUS** — input manual oleh admin. Field tetap optional; kalau kosong, di-list view fallback ke nama produk auto-generate.
 
 ### 3.2. Submit flow (client → server)
 
@@ -371,29 +387,40 @@ Di header KasirScreen (samping search box teks existing), tambah tombol:
 ```
 Open modal `CariByFotoModal`.
 
-### 4.2. Modal: pilih sumber foto
+### 4.2. Modal: pilih sumber foto [AMENDED 2026-06-16]
 
-- 2 card besar:
-  - **Pakai Kamera** (emerald) — open kamera live preview (HTML5 `&lt;input type="file" accept="image/*" capture="environment"&gt;` atau MediaDevices API untuk live preview).
-  - **Upload File** (biru) — file picker `accept="image/*"`.
+3 entry points di dalam modal (layout: 2 card di atas + drag-drop zone besar di bawah):
+
+- **Pakai Kamera** (card emerald, kiri-atas) — open kamera live preview (HTML5 `&lt;input type="file" accept="image/*" capture="environment"&gt;` atau MediaDevices API untuk live preview).
+- **Upload File** (card biru, kanan-atas) — file picker `accept="image/*"`.
+- **Drag-drop zone** (full-width, di bawah 2 card) — area dashed border violet, icon `cloud_upload`, text *"Tarik foto dari folder ke sini"*. Handle event `onDragOver` (prevent default + visual highlight `bg-violet-100`) + `onDrop` (extract `event.dataTransfer.files[0]`, validate `image/*` MIME, lanjut pipeline yang sama dengan file picker).
 - Tip kuning: *"Foto produk dari angle depan / label paling jelas memberi hasil paling akurat."*
 - ESC / klik luar = close.
 
-### 4.3. Pipeline pencarian (client → backend → DB)
+**Drag-drop behavior detail:**
+- Drag dari OS file manager (Finder/Explorer/Files) langsung → drop ke zone → pre-fill ke pipeline existing.
+- Drag dari web page lain (mis. WhatsApp Web image) → kalau browser allow (CORS-dependent), terima. Kalau enggak, tetap fallback ke file picker.
+- Validate first file only (skip kalau drop multi-file — toast info *"Cuma 1 foto per search"*).
+- Reject kalau file `&gt; 5MB` (sama dengan file picker path).
 
-1. User pick/snap foto → client compress (resize 1024px, JPEG q=75).
+### 4.3. Pipeline pencarian (client → backend → DB) [AMENDED 2026-06-16]
+
+1. User pick/snap/drag foto → client compress (resize 1024px, JPEG q=75).
 2. POST `multipart/form-data` ke backend endpoint `POST /api/products/search-by-photo`.
-3. Backend Go (atau Edge Function):
-   - Call Gemini Flash 2.5 Vision → describe foto → string `desc`.
-   - Call `text-embedding-004` dengan `desc` → vector 768-dim.
+3. Backend Go:
+   - Validate image (size ≤ 5MB, valid `image/*` MIME).
+   - Preprocess: decode JPEG/PNG, resize 224×224 (CLIP input spec), normalize ke RGB float32 dengan mean/std CLIP standard.
+   - Call **CLIP image encoder (ONNX runtime)** → vector(512). In-process inference, no external API.
    - Call RPC `search_products_by_embedding(query_embedding, 0.70, 5)`.
-   - Log call counts ke `ai_call_log` (lihat 6.2).
-4. Response: array `[{sku, name, category, similarity, thumbnail_url, stock, price, unit, min_stock}]` + `query_description` (string yang AI generate dari foto query, di-show ke user).
+   - Log inference ke `clip_inference_log` (lihat 6.2).
+4. Response: array `[{sku, name, category, similarity, thumbnail_url, stock_per_warehouse, price, unit, min_stock}]`. **No `query_description` field** (CLIP gak generate text deskripsi).
 5. Frontend tampilkan modal hasil.
 
-### 4.4. Modal hasil
+**Latency target [AMENDED]:** p95 &lt; 500ms total saat warm. Breakdown: CLIP inference ~150ms (CPU), DB query ~50ms, network + marshaling ~50ms, client overhead ~250ms. Saat cold start (Cloud Run scale-to-zero recovery): first request bisa 5-10 detik akibat model load — UX di-mitigate dengan banner *"⏱️ Menyiapkan AI… 5 detik"*.
 
-- Banner atas: thumbnail foto query + `AI deskripsi: "{query_description}"` + tombol `🔄 Ganti`.
+### 4.4. Modal hasil [AMENDED 2026-06-16]
+
+- Banner atas [AMENDED]: thumbnail foto query (foto yang barusan di-drop / snap / upload) + tombol `🔄 Ganti foto`. **Tidak ada AI deskripsi text** — CLIP murni visual similarity, gak generate description.
 - List 5 card produk:
   - Thumbnail dari `thumbnail_url`.
   - Pill kategori (color-coded).
@@ -412,23 +439,44 @@ Open modal `CariByFotoModal`.
 - Top 5 tetap ditampilkan dengan opacity 60% (untuk near-miss confirmation visual).
 - Tombol `Cari Manual` prominent.
 
-### 4.6. Error states
+### 4.6. Error states [AMENDED 2026-06-16]
 
 - Kamera tidak diijinkan → fallback ke File picker, toast info.
+- Drag-drop file bukan image (`text/plain`, dll) → toast *"Hanya foto yang didukung."*
+- Drag multi-file → toast info *"Cuma 1 foto per search. Ambil yang pertama."* (terima file pertama, drop sisanya).
 - Backend error 500 → toast *"Server AI tidak respons. Coba lagi atau cari via teks."*
-- Backend 429 (Gemini rate-limited) → toast *"AI sedang sibuk. Tunggu 30 detik atau cari via teks."*
+- Cold start in-progress (model loading) → banner inline *"⏱️ Menyiapkan AI… 5 detik"* — JANGAN tampilkan sebagai error, ini expected behavior di free tier Cloud Run.
+- Cold start exceed 15s (model load fail) → toast *"AI tidak siap, coba lagi atau cari via teks"* + log ke `clip_inference_log` dengan `status='cold_start_timeout'`.
 - Foto &gt; 5MB pre-compress → reject di client + toast.
+- **Note [AMENDED]**: tidak ada 429 / quota error karena CLIP local — semua tergantung server compute, bukan quota external.
 
 ---
 
-## 5. AI Pipeline (Backend)
+## 5. Image Embedding Pipeline (CLIP Local) [AMENDED 2026-06-16]
 
 ### 5.1. Architecture choice
 
-- **Backend Go existing** (`backend-go/internal/gemini/`) atau **Supabase Edge Function**?
-  - **Pilih: Backend Go existing**. Alasan: API key `GEMINI_API_KEY` sudah di-config di `backend-go/.env`, ada pola `gemini.NewClient` di `backend-go/main.go:201`, Document Client juga sudah ada di `backend-go/internal/gemini/document.go`. Konsisten + reuse client.
+**Pilih: CLIP ViT-Base-32 via ONNX runtime di backend-go existing.**
 
-### 5.2. Indexing pipeline (saat foto upload)
+Alasan:
+- **Zero quota**: tidak panggil API external sama sekali, lepas dari rate limit Google/OpenAI/dll.
+- **Latency**: ~150ms CPU inference per image vs ~2s Gemini Vision describe.
+- **Privacy**: foto produk gak keluar server kita, tidak di-share ke Google/third-party.
+- **Cost**: free forever; cuma tambahan ~500MB RAM working set di Cloud Run instance existing.
+- **Bundled**: model file `clip-vit-base-patch32.onnx` (~150MB) di-bundle di Docker image saat build (`Dockerfile`: `COPY models/clip-vit-base-patch32.onnx /models/`). Gak download saat runtime.
+
+**Architecture detail:**
+- `backend-go/internal/clip/model.go` — singleton model loader. Load saat first request (lazy), cache in-process selamanya. Process lifetime = container lifetime.
+- `backend-go/internal/clip/encoder.go` — `EncodeImage(imgBytes []byte) ([]float32, error)` wrapper. Pakai library `github.com/yalue/onnxruntime_go` atau alternatif Go ONNX binding.
+- `backend-go/internal/clip/preprocess.go` — decode JPEG/PNG → resize 224×224 (CLIP standard) → normalize ke RGB float32 dengan CLIP mean `[0.48145466, 0.4578275, 0.40821073]` dan std `[0.26862954, 0.26130258, 0.27577711]`.
+
+**Cloud Run free tier constraint:**
+- No `min-instances=1` (akan exceed free tier 360k vCPU-sec/bulan dalam ~4 hari kalau warm 24/7).
+- Konsekuensi: scale-to-zero saat idle, cold start ~5-10s untuk load 150MB model.
+- Mitigasi: keep-warm via existing kasir traffic (kalau toko transaksi 30-50x/hari, instance jarang scale to zero saat jam kerja).
+- Fallback UX: banner *"⏱️ Menyiapkan AI… 5 detik"* di Cari by Foto modal saat first request after idle.
+
+### 5.2. Indexing pipeline (saat foto upload) [AMENDED 2026-06-16]
 
 Trigger: setelah `stocks` UPDATE/INSERT, frontend call `POST /api/products/index-photos` dengan `{sku, photo_paths: []}`.
 
@@ -437,53 +485,58 @@ Backend handler `index-product-photos`:
 for each photo_path in body.photo_paths:
   1. Skip kalau sudah ada di stock_photo_embeddings (idempotent on retry).
   2. Download image dari Supabase Storage (signed URL atau direct via service role key).
-  3. Call Gemini Flash 2.5 Vision dengan prompt:
-     "Describe this electrical product photo concisely in Indonesian + English mix
-      for inventory search. Include: brand, type, key specs (ampere, phase, mm²,
-      color, size), and visible labels. Max 60 words. Output deskripsi saja, no preamble."
-  4. Call text-embedding-004 dengan deskripsi → vector(768).
-  5. Upsert ke stock_photo_embeddings (sku, photo_path, description, embedding).
-  6. Log ke ai_call_log (model='flash-2.5-vision', kind='index', status).
-  7. Log ke ai_call_log (model='text-embedding-004', kind='index', status).
+  3. Preprocess: decode → resize 224×224 → normalize.
+  4. Call CLIP encoder ONNX → vector(512).
+  5. Upsert ke stock_photo_embeddings (sku, photo_path, embedding).
+  6. Log ke clip_inference_log (kind='index', latency_ms, status).
 ```
 
-**Concurrency:** sequential per request (max 5 foto = ~5 detik). Beberapa request paralel = OK.
-**Retry policy:** kalau 429 → exponential backoff 2s/4s/8s, max 3 retry, lalu mark `error_at` di log.
-**Throttle:** kalau ai_call_log menunjukkan &gt; 10 panggilan dalam 60 detik untuk Vision, queue extra ke background.
+**Concurrency:** sequential per request (max 5 foto = ~750ms dengan CLIP 150ms/foto). Multiple request paralel = OK (CLIP encoder thread-safe asal ONNX runtime di-configure dengan multi-threading).
 
-### 5.3. Search pipeline (saat kasir search)
+**Retry policy [AMENDED]:** **Tidak ada retry external** (gak ada API call yang bisa 429). Kalau ONNX inference error (mis. corrupt image), log error sekali, mark `error_at`, lanjut foto berikutnya.
+
+**Throttle [AMENDED]:** tidak perlu — CPU bound, kalau melebihi capacity instance Cloud Run akan auto-scale up (sampai max instances default 100 di free tier).
+
+### 5.3. Search pipeline (saat kasir search) [AMENDED 2026-06-16]
 
 Handler `search-products-by-photo`:
 ```
 1. Validate input image (≤ 5MB, valid image/*).
-2. Compress kalau perlu (server-side belt-and-suspenders).
-3. Call Gemini Flash 2.5 Vision (same prompt as indexing) → query_description.
-4. Call text-embedding-004 dengan query_description → vector.
+2. Compress server-side kalau perlu (belt-and-suspenders).
+3. Preprocess: decode → resize 224×224 → normalize.
+4. Call CLIP encoder ONNX → vector(512).
 5. Call RPC search_products_by_embedding via Supabase client (service role).
-6. Log ke ai_call_log (2 rows: 1 vision, 1 embedding, kind='search').
-7. Return JSON: { query_description, results: [...] }.
+6. Log ke clip_inference_log (kind='search', latency_ms, status).
+7. Return JSON: { results: [...] }.   // no query_description
 ```
 
-**Latency target:** p95 &lt; 4s total. Breakdown: Vision ~2s, Embedding ~0.3s, DB query ~0.1s, marshaling ~0.05s.
+### 5.4. CLIP model details [AMENDED 2026-06-16]
 
-### 5.4. Prompt tuning (Gemini Vision)
+**Model**: `clip-vit-base-patch32` (OpenAI CLIP)
+- Image encoder ViT-Base, patch size 32
+- Output dim: 512
+- Input: 224×224 RGB normalized
+- File size: ~150MB (image encoder portion)
+- License: MIT (OpenAI CLIP)
 
-```
-You are an inventory matcher. Describe this electrical product photo for search.
+**Source**: https://huggingface.co/openai/clip-vit-base-patch32
+- Convert ke ONNX via `optimum-cli` atau pre-converted `Xenova/clip-vit-base-patch32` ONNX export.
+- Verify ONNX checksum di Dockerfile saat build.
 
-Output a single line description in mixed Indonesian/English, including:
-- Product type (MCB, Panel, Kabel, Aksesori, dll)
-- Brand if visible on label (Schneider, ABB, Chint, dll)
-- Key specs: ampere, phase, mm², color, size
-- Distinctive visible features
+**Why not larger CLIP variant** (ViT-Large, ViT-G)?
+- ViT-Base sudah cukup akurat untuk product matching skala MSME (~487 SKU per tenant).
+- ViT-Large ~600MB + CPU inference ~500ms — over-spec untuk Sinar.
+- Bisa upgrade nanti kalau benchmark menunjukkan butuh.
 
-Format: "[Type] [Brand] [specs] [color] [features]"
-Max 60 words. No preamble, no markdown, output description only.
-```
+### 5.5. Future: Hybrid CLIP + Gemini upgrade path (deferred)
 
-Examples expected:
-- "MCB Schneider iC60H 16A 1P warna biru-putih, label ic60h, single pole, body putih"
-- "Kabel NYM 3×2.5 mm² warna abu-abu, merek Supreme, ujung kuningan terlihat"
+Kalau smoke test minggu 4 post-launch menunjukkan akurasi CLIP murni < 80% top-1:
+
+- **Stage 1 (CLIP)**: query embed → ambil top-20 visual candidates.
+- **Stage 2 (Gemini Vision re-rank)**: describe query foto + describe top-20 candidates (cached dari indexing time), apply text similarity → re-rank.
+- **Final**: return top 5.
+
+Trigger sebagai spec terpisah `YYYY-MM-DD-foto-search-hybrid-rerank-design.md`. Estimasi tambahan: 2 hari dev (1 hari indexing tambah Gemini describe + cache, 1 hari Stage 2 + smoke test).
 
 ---
 
@@ -497,46 +550,44 @@ Examples expected:
 - Tombol Simpan → update `company_settings.value` untuk key `costing_method`.
 - Trigger: kalau metode berubah, panggil background job `recompute_hpp_from(timestamp)` (out of scope spec ini — flag TODO).
 
-### 6.2. Panel "Aktivitas AI Call — Hari Ini"
+### 6.2. Panel "Aktivitas CLIP Inference — Hari Ini" [AMENDED 2026-06-16]
 
 Tabel baru:
 ```sql
-CREATE TABLE IF NOT EXISTS public.ai_call_log (
+CREATE TABLE IF NOT EXISTS public.clip_inference_log (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  model       TEXT NOT NULL,             -- 'flash-2.5-vision' | 'text-embedding-004'
-  kind        TEXT NOT NULL,             -- 'index' | 'search' | 'describe'
-  status      TEXT NOT NULL,             -- 'success' | 'error' | 'rate_limit'
-  http_status INT,
+  kind        TEXT NOT NULL,             -- 'index' | 'search'
+  status      TEXT NOT NULL,             -- 'success' | 'error' | 'cold_start_timeout'
   latency_ms  INT,
   error_msg   TEXT,
   called_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_ai_call_log_today
-  ON public.ai_call_log (called_at DESC);
+CREATE INDEX IF NOT EXISTS idx_clip_inference_log_today
+  ON public.clip_inference_log (called_at DESC);
 ```
 
 Panel UI menampilkan (data per-hari, reset 00:00 WIB):
-- **Disclaimer banner**: *"Google tidak expose sisa kuota Gemini real-time. Angka di bawah hanya menghitung call yang sistem kita lakukan hari ini — bukan sisa kuota Google."*
-- **2 card**: Vision call count (success/fail), Embedding call count (success/fail). Tanpa progress bar palsu.
-- **3 mini stat**: Search Kasir (kind='search'), Foto Upload (kind='index'), 429 Rate-Limit hit (status='rate_limit').
-- **Latency p50/p95** untuk Vision (dari `latency_ms` percentile).
+- **Disclaimer banner [AMENDED]**: *"CLIP berjalan di server kita. Angka di bawah adalah jumlah inference hari ini. Tidak ada quota eksternal — kapasitas dibatasi oleh CPU instance Cloud Run."*
+- **2 card**: Search Kasir count (success/fail), Indexing Upload count (success/fail). Tanpa progress bar palsu (gak ada quota Google).
+- **2 mini stat**: Average latency (ms), Cold-start hit count.
+- **Latency p50/p95** untuk Search (dari `latency_ms` percentile). Target p95 &lt; 500ms warm; &gt; 5s konsisten = sinyal Cloud Run instance kewalahan.
 - **Last Error timestamp**.
-- **Note "Sinyal kapan upgrade"**: 429 berulang, latency p95 &gt; 5s konsisten. Sistem hanya notify, never auto-upgrade billing.
+- **Note "Sinyal kapan upgrade"**: latency p95 &gt; 3s konsisten ATAU error rate &gt; 5% → mungkin perlu bump CPU dari 1 ke 2 vCPU di Cloud Run config (masih free tier kalau total vCPU-sec tidak exceed budget). Atau evaluasi hybrid path (lihat §5.5).
 
 Query:
 ```sql
 SELECT
-  model,
+  kind,
   COUNT(*) FILTER (WHERE status='success') AS success,
   COUNT(*) FILTER (WHERE status='error')   AS error,
-  COUNT(*) FILTER (WHERE status='rate_limit') AS rate_limit,
+  COUNT(*) FILTER (WHERE status='cold_start_timeout') AS cold_start,
   PERCENTILE_DISC(0.5)  WITHIN GROUP (ORDER BY latency_ms) AS p50,
   PERCENTILE_DISC(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95,
   MAX(called_at) FILTER (WHERE status='error') AS last_error_at
-FROM public.ai_call_log
+FROM public.clip_inference_log
 WHERE called_at &gt;= date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta')
-GROUP BY model;
+GROUP BY kind;
 ```
 
 ---
@@ -553,7 +604,7 @@ GROUP BY model;
 RLS policy stocks (existing) tetap; tambah policy untuk:
 - `product_categories`, `product_brands`, `product_units`: insert oleh admin/staff, read semua authenticated.
 - `stock_photo_embeddings`: insert/update oleh service role saja (dari backend); read oleh authenticated.
-- `ai_call_log`: insert service role; read owner/admin.
+- `clip_inference_log` [AMENDED 2026-06-16]: insert service role; read owner/admin. (Renamed from `ai_call_log`.)
 
 ---
 
@@ -563,8 +614,11 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 |---|---|
 | Foto &gt; 5MB pre-compress | Reject di client, toast `"File terlalu besar. Max 5MB sebelum compress."` |
 | Upload Storage gagal (network) | Retry x2; kalau fail, toast `"Gagal upload foto X. Cek koneksi."` Form tidak submit. |
-| AI indexing gagal saat upload | Foto tetap tersimpan; row di stocks tetap created; `stock_photo_embeddings` row absent. UI menampilkan badge `Indexing gagal — Retry`. Manual retry button. |
-| Gemini 429 saat search kasir | Toast `"AI sibuk, tunggu 30 detik atau cari via teks."` Modal tetap terbuka. |
+| CLIP indexing gagal saat upload [AMENDED 2026-06-16] | Foto tetap tersimpan; row di stocks tetap created; `stock_photo_embeddings` row absent. UI menampilkan badge `Indexing gagal — Retry`. Manual retry button. Log ke `clip_inference_log` dengan `status='error'`. |
+| Cold start saat search kasir [AMENDED 2026-06-16] | Banner inline `"⏱️ Menyiapkan AI… 5 detik"` di modal (bukan toast error). Auto-retry sekali setelah model loaded. |
+| Cold start exceed 15s [AMENDED 2026-06-16] | Toast `"AI tidak siap, coba lagi atau cari via teks."` Modal tetap terbuka. |
+| Drag-drop file bukan image [AMENDED 2026-06-16] | Toast `"Hanya foto yang didukung."` Drop diabaikan. |
+| Drag multi-file [AMENDED 2026-06-16] | Terima file pertama, toast info `"Cuma 1 foto per search."` |
 | Tidak ada produk dengan similarity ≥ 0.70 | Show empty-state variant (banner + top 5 opacity 60%). |
 | Produk dihapus tapi foto masih di Storage | Backend job `cleanup_orphaned_photos` (nightly cron) — out of scope; flag TODO. |
 | Approval initial_stock expired (30 menit) | Status `expired`, produk tetap ada tapi stok = 0 selamanya kecuali admin re-request adjustment. |
@@ -590,7 +644,9 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Submit Stok Awal &gt; 0 → assert `approval_requests` row created with `request_type='initial_stock'`.
 - Kasir search dengan foto MCB Schneider → assert top result similarity &gt; 0.70.
 - Search foto bukan electrical (mis. kucing) → assert empty state.
-- Gemini 429 mock → assert toast muncul, modal tetap terbuka.
+- Cold start simulation [AMENDED 2026-06-16] → kill backend-go container, restart, fire search request → assert banner `"⏱️ Menyiapkan AI… 5 detik"` muncul, lalu hasil muncul setelah model loaded.
+- Drag-drop foto JPG dari folder local [AMENDED 2026-06-16] → assert search pipeline ke-trigger, hasil muncul. Test juga PNG, JPEG, GIF (terima static frame), HEIC (toast unsupported kalau browser gak decode).
+- Drop file bukan image (mis. PDF) [AMENDED 2026-06-16] → assert toast `"Hanya foto yang didukung."` muncul, gak trigger pipeline.
 
 ### 9.3. Manual / smoke (per superpowers:verification-before-completion)
 - Buka `StockManagerScreen` di browser, klik "Tambah Barang Baru", isi semua field termasuk foto 3 buah, submit. Assert:
@@ -615,7 +671,9 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 
 - **Recompute HPP saat costing method berubah** — flag TODO, perlu spec terpisah.
 - **Cleanup orphaned photos** dari Storage saat produk hard-delete — nightly cron, out of scope.
-- **Rerank step Vision di hasil search** — sprint berikutnya kalau akurasi top-5 kurang puas.
+- **Hybrid CLIP + Gemini Vision re-rank [AMENDED 2026-06-16]** — defer ke spec terpisah, di-trigger kalau benchmark CLIP murni &lt; 80% top-1 akurasi pada minggu 4 post-launch. Estimasi tambahan 2 hari dev. Lihat §5.5 untuk arsitektur.
+- **CLIP larger variant (ViT-Large / ViT-G) [AMENDED 2026-06-16]** — kalau ViT-Base-32 akurasi belum cukup, upgrade ke ViT-Base-16 (512-dim sama, ~600MB, ~250ms CPU) sebelum jump ke ViT-Large. Out of scope sekarang.
+- **min-instances=1 Cloud Run untuk hilangkan cold start [AMENDED 2026-06-16]** — cost ~$15/bulan, butuh founder approval per `cost_upgrade_approval`. Defer sampai pain dari cold start measurable.
 - **Multi-warehouse stock per produk dengan foto sama** — saat ini stok dilacak per produk (stocks.stock_atas + stock_bawah). Sudah cukup untuk scope ini.
 - **Bundle / Composite produk** — spec terpisah untuk masa depan.
 - **Default supplier per produk** — spec terpisah.
@@ -646,25 +704,31 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Sticky bottom action bar
 - Submit flow + validation (min 1 foto, required fields, multi-satuan factor &gt; 1, unit ≠ unit_alt)
 
-**Fase 3 — AI Pipeline Backend (2 hari)**
-- `backend-go/internal/gemini/embed.go`: Vision describe + Embedding wrapper
+**Fase 3 — CLIP Pipeline Backend (3 hari) [AMENDED 2026-06-16]**
+- `backend-go/internal/clip/model.go`: singleton ONNX model loader (lazy load on first request)
+- `backend-go/internal/clip/preprocess.go`: image decode + resize 224×224 + normalize
+- `backend-go/internal/clip/encoder.go`: `EncodeImage([]byte) ([]float32, error)` wrapper
+- Bundle `clip-vit-base-patch32.onnx` ke Docker image (verify checksum)
 - Endpoint `POST /api/products/index-photos`
-- Endpoint `POST /api/products/describe-product` (untuk tombol Generate)
 - Endpoint `POST /api/products/search-by-photo`
-- AI call logging ke `ai_call_log`
+- ~~Endpoint `POST /api/products/describe-product`~~ **DROPPED** (no Generate dari Foto)
+- CLIP inference logging ke `clip_inference_log` (was `ai_call_log`)
+- Smoke test: load model, encode 1 foto, verify vector(512) output
 
-**Fase 4 — Kasir Cari by Foto UI + Multi-warehouse stock display (1.5 hari)**
+**Fase 4 — Kasir Cari by Foto UI + Multi-warehouse stock display (2 hari) [AMENDED 2026-06-16]**
 - Tombol di KasirScreen header
-- `CariByFotoModal` + `HasilCariFotoModal`
+- `CariByFotoModal` dengan **3 entry points**: Kamera card + Upload File card + **Drag-drop zone** (full-width dashed border violet)
+- `HasilCariFotoModal` (tanpa AI deskripsi banner — CLIP gak generate text)
 - Per-warehouse stock breakdown di card hasil (parse `warehouse_stock` JSONB dari RPC response)
-- Empty state + error states
+- Cold-start banner inline `"⏱️ Menyiapkan AI… 5 detik"` saat first request after idle
+- Empty state + error states (drag-drop validation, cold-start timeout)
 - Integration dengan add-to-cart existing
 - StockManagerScreen: section "Stok per Gudang" di edit form (read-only) + badge per-warehouse di list row
 - Update kategori filter di StockManagerScreen kalau perlu
 
-**Fase 5 — Pengaturan &amp; Approval (1 hari)**
+**Fase 5 — Pengaturan &amp; Approval (1 hari) [AMENDED 2026-06-16]**
 - Panel Costing Method
-- Panel AI Activity Monitor
+- Panel **CLIP Inference Monitor** (was AI Activity Monitor) — search/index count, latency p50/p95, cold-start hit count
 - `initial_stock` approval type + WhatsApp template + handler
 
 **Fase 6 — Testing &amp; Polish (1 hari)**
@@ -672,9 +736,12 @@ RLS policy stocks (existing) tetap; tambah policy untuk:
 - Manual smoke per checklist
 - Update `progress.md`
 
-Total estimasi: **9.5-10.5 hari kerja** (1 sprint dengan buffer). Berdasarkan beberapa revisi:
+Total estimasi: **10.5-11.5 hari kerja** [AMENDED 2026-06-16] (1 sprint dengan buffer). Berdasarkan revisi:
 - 8 hari (estimasi awal)
 - +1.5 hari (harga modal dynamic + multi-warehouse stock display)
 - +0.5 hari (rename menu + tab structure + file refactor untuk maintainability)
 - +0 hari (multi-tenant Change A + B — generalisasi tanpa extra effort)
 - +0 hari (Variant produk — tunda ke sprint berikut)
+- **+1 hari [AMENDED 2026-06-16]: CLIP ONNX integration** — model bundling, preprocess pipeline, smoke test cold-start latency
+- **+0.5 hari [AMENDED 2026-06-16]: Drag-drop zone di Cari by Foto modal**
+- **−0 hari [AMENDED 2026-06-16]: Drop Generate dari Foto button** — save sedikit dev time tapi balanced oleh effort tambahan di CLIP integration
