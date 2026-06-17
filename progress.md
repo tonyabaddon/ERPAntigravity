@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-17 — Pembelian Phase 2a — E2E backend smoke test PASS + 4 hotfix migrations
+
+- **What:** End-to-end backend smoke test executed via REST API + Supabase Management API (because user's IPv6 routing to Supabase was down, fell back to PAT-authenticated Management API). All 8 backend smoke steps PASS after 4 hotfix migrations were applied:
+  1. Buat Pesanan DRAFT (PSN-2026-06-041) ✓
+  2. Mark Ordered → status ORDERED, ordered_at set ✓
+  3. Buat Tagihan (PI-2026-06-001) type=STOCK partial receipt (3 of 5 qty) ✓
+  4. Pesanan stays ORDERED on partial (not auto-CLOSED) ✓
+  5. pembayaran_suggest_outstanding returns Tagihan correctly ✓
+  6. record_pembayaran (PMB-2026-06-003) ✓
+  7. Tagihan auto-LUNAS via _recompute_tagihan_status ✓
+  8. Kasir expense auto-inserted ("Pembelian Stok", Rp 30,000) ✓
+  Bonus: 2nd Tagihan (LUNAS, CASH) receives remaining 2 → Pesanan auto-CLOSED via set_pesanan_closed_if_fulfilled ✓
+- **4 hotfix migrations discovered + applied to Supabase live:**
+  - `20260620000020_stock_lots_source_tracking.sql` — add source_id + source_type to stock_lots, backfill from existing po_id (spec §17 had assumed but no migration was authored)
+  - `20260620000021_record_pi_fix_stock_lots_columns.sql` — rewrite record_pi to use qty_received + qty_remaining (not "qty" which doesn't exist) for FIFO ledger
+  - `20260620000022_record_pi_drop_stock_lots_warehouse_col.sql` — drop warehouse_id from stock_lots INSERT (no such column — warehouse routing lives in stock_levels)
+  - `20260620000023_record_pi_cast_kasir_enum.sql` — explicit ::kasir_expense_category cast (Postgres won't implicit-cast CASE-returned text to enum type)
+- **Network observation:** IPv6 to db.ekhhojaezdfjfwuxyjkl.supabase.co was unreachable from local machine throughout smoke test. Pooler (Supavisor) routing requires paid Supabase tier (free-tier project rejected with "tenant not found"). User provided PAT (`sbp_...`) so Management API HTTP path worked — applied 4 hotfix migrations + diagnostic queries via Management API.
+- **Coverage gaps (UI not tested):** browser smoke not executed because chrome MCP server was disconnected from this Claude session. Phase 1 BNL regression check returned 0 rows (no PASSTHROUGH data exists in this Supabase project — operator hasn't used BNL menu yet; not a bug, just no data to verify against). Visual rendering of Pesanan / Tagihan / Pembayaran list/form/detail pages remains user's manual responsibility before deploying frontend.
+- **Branch:** `feat/pembelian-phase2` (worktree `.claude/worktrees/pembelian-phase2`), tip after hotfix commits
+- **Smoke fixtures cleaned up:** test Pesanan + Tagihan + Pembayaran + stock_lots + Kasir entries deleted post-test to leave DB clean
+- **Next:**
+  1. User runs UI smoke manually OR retries Chrome MCP after full Claude Code restart
+  2. After UI verified: merge feat/pembelian-phase2 → main + deploy Cloud Run
+  3. Then Phase 2b brainstorm (Tukar Faktur entity + reconciliation panel)
+
 ## 2026-06-16 — Pembelian Phase 2a (Foundation) — IMPLEMENTATION COMPLETE + migrations applied
 
 - **What:** Full implementation of `docs/superpowers/plans/2026-06-16-pembelian-phase2a-foundation.md`. PO refactored into 3-entity model (Pesanan + Tagihan + Pembayaran) with junction-table partial/consolidated payment support. Existing PO data big-bang migrated. New BerandaPembelian dashboard (lite — KPI strip + per-supplier outstanding). Existing BNL Phase 1 + old PO module untouched.
