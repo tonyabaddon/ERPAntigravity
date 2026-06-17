@@ -82,6 +82,11 @@ func (h *SearchHandler) publicURL(path string) string {
 // inference, then calls public.search_products_by_embedding to return the
 // top-5 matches at similarity >= 0.70.
 func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	start := time.Now()
 
 	if err := r.ParseMultipartForm(6 * 1024 * 1024); err != nil {
@@ -171,6 +176,11 @@ func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
 // it with CLIP, and upserts the resulting embedding into
 // public.stock_photo_embeddings keyed by (sku, photo_path).
 func (h *SearchHandler) IndexPhotos(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	start := time.Now()
 
 	var body struct {
