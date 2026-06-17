@@ -63,6 +63,142 @@
 - **Files:** `supabase/migrations/20260620000003_phase2_pi_extend.sql` (new, 34 LOC).
 - **Commit:** `69264ae feat(pembelian): extend purchase_invoices for Tagihan type=STOCK + paid_amount tracking (Phase 2a Task 3)`.
 - **Branch:** `feat/pembelian-phase2`. Plan progress: Tasks 1-3 done (3/20). Next: Tasks 4-7 — RPC migrations.
+## 2026-06-16 — ProductForm — OS-folder drag-drop multi-file photo upload SHIPPED
+
+Follow-up to today's Produk & Stok Phase 2 ship (entry below). User flagged
+that "drag-and-drop foto dari folder laptop" — the wording from the original
+brainstorm — was not actually working: clicking a photo slot opened the file
+picker, and the only `onDrop` handler on slots was for INTRA-form reordering
+(`draggingIdx !== null` branch). Dragging an image from Finder/Explorer onto
+the form did nothing.
+
+**Fix (PR #12 — merge `6445fa4`):** wrap the 5-slot photo grid in a dedicated
+drop zone that reads `e.dataTransfer.files`, filters by `image/*`, builds a
+`FileList` via the `DataTransfer` API trick, and forwards to the existing
+`handleFilesPicked` (which already iterates + slices to `MAX_PHOTOS - photos.length`,
+so multi-file drop respects the 5-slot cap automatically).
+
+**Intra-form reorder preservation:** outer drop handler is gated on
+`e.dataTransfer.types.includes('Files')`. Files-type only appears when the
+drag originates from the OS; intra-form drags don't carry it, so they bubble
+through to the per-slot `onDrop` for reordering unchanged.
+
+**Visual cue:** during a Files-type drag-over, the grid gets an emerald ring
++ light tint and a centered pill reading "Lepas untuk upload (sisa N slot)"
+or "(slot penuh)" once 5 are filled. Pill is `pointer-events: none` so it
+doesn't intercept the drop event.
+
+**Edge cases handled:**
+- Non-image file dropped (e.g. PDF) → `showToast('Hanya file gambar yang
+  didukung', 'warning')`, nothing added.
+- `dragLeave` flicker when cursor passes over child slot — guarded with
+  `e.currentTarget.contains(e.relatedTarget as Node)` early-return so the
+  highlight only clears when leaving the wrapper itself.
+- Cap enforcement — handled by existing `handleFilesPicked` slicing.
+
+**Verify:**
+- `npm run lint` (tsc, exit 0), `npm run test` (44/44 vitest).
+- Build deploys via permanent `--no-traffic` hardening; preview tag URL
+  `https://c6445fa4---<service>.run.app` used for smoke.
+- Smoke (Chrome DevTools MCP, console clean): helper text under "📷 Foto Produk"
+  now reads "Min 1 wajib · max 5 · **drop dari folder atau drag slot untuk
+  urutan**". User-led functional test (drop 1, drop 3, drop non-image, reorder
+  existing) confirmed pass. Screenshot: `docs/screenshots/smoke-drop-zone-c6445fa4.png`.
+
+**Cutover:** prod shifted from rev `00067-bes` → `00070-viq` (caadfe68 →
+c6445fa4). Both prod URL and preview tag URL return etag `18227914…` confirming
+serving the same revision. `00067-bes` and `00069-juj` retained at 0% for
+fast rollback.
+
+## 2026-06-16 — Produk & Stok Phase 2 — RECOVERY MERGED + SHIPPED + DEPLOY HARDENED
+
+Follow-up to the same-day prod regression post-mortem (entry below). Branch
+`feat/produk-stok-photo-impl` permanently merged into `main` after pre-merge
+verification confirmed prod was safe to redeploy.
+
+**Pre-merge verification (advisor-flagged assumptions, both validated):**
+- Cloud Run rev `00063-2qn` serving 100% traffic — confirmed via
+  `gcloud run services describe`. Prod safe-by-default during merge.
+- M1–M5 + M-Fix product-photo migrations already applied to prod DB —
+  confirmed via Supabase MCP `execute_sql` against `ekhhojaezdfjfwuxyjkl`
+  (`ERP MSME AI Studio`): 16/16 schema checks pass (`stocks.photo_urls`,
+  `stocks.initial_stock_approved`, `product_categories`/`brands`/`units`,
+  `stock_photo_embeddings`, `vector` extension, `company_settings.costing_method`,
+  `product-photos` bucket, `initial_stock` enum value,
+  `search_products_by_embedding` RPC, `ai_call_log` table, both
+  `product_photos_select` + `product_photos_insert` storage policies).
+
+**Conflict resolution (PR #9 — merge `dccfee8`):**
+- `src/types.ts` — union `ApprovalRequestType` keeps both `customer_credit_*`
+  (main) AND `initial_stock` (branch). Concatenate Product Registry (M2) +
+  Cari-by-Foto + CostingMethod + AiCallLogStat types (branch) with BNL Phase 1
+  types (main).
+- `src/components/approval/ApprovalRequestRow.tsx` — add branch's
+  `initial_stock` label + icon entries (main side empty diff).
+- `backend-go/internal/llm/chain.go` — prefer main entirely. Main's
+  reasoning-demote chain ordering + Gemini direct backend + slug fix is a
+  strict superset of branch's slug fix (which main already had via cherry-pick).
+- `progress.md` — stack: header → main's 2026-06-16 post-mortem → branch's
+  Phase 2 entries → common older history (no information dropped).
+- `scripts/apply-pending-migrations.sh` — chronological union: Product Photo
+  M1–M5b (20260614000020–25) → BNL T1–T4 (20260615000001–5) → Product Photo
+  M-Fix (20260615000020–22).
+
+**Cleanup:** dropped duplicate `20260614000015_change_owner_pin.sql` (identical
+content to main's already-applied `20260614000009`).
+
+**Local verify pre-push:** `npm run lint` (tsc, exit 0), `npm run test` (vitest
+44/44 across 7 files), `go build ./...` clean, `go test ./internal/llm/…`
+pass (15.7s), `git grep` for conflict markers = 0 hits.
+
+**Deploy hardening (PR #10 — merge `aadfe68`):**
+Root cause of yesterday's regression was `cloudbuild.frontend.yaml` running
+`gcloud run deploy` without `--no-traffic`, so every main push auto-shifts
+100% traffic to the new revision. Permanent fix shipped today:
+- `--no-traffic` — Cloud Build creates revisions at 0% serving.
+- `--tag=c$SHORT_SHA` — addressable per-commit preview URL
+  (`https://c<sha>---<service>.run.app`). First attempt used
+  `preview-$SHORT_SHA` which exceeded Cloud Run's 46-char tag+service-name
+  limit (51 chars); shortened to `c$SHORT_SHA` (44 chars total). Letter prefix
+  retained as guard against any tooling that rejects digit-leading tag names.
+- New deploy flow now requires a manual `update-traffic` step — prevents
+  silent prod overwrite during parallel-feature work.
+
+**Smoke test on preview URL (`caadfe68`, rev `00067-bes`):**
+HTTP layer green (HTTP 200, 1.9 MB bundle delivered, `photo_urls` ×8,
+`initial_stock` ×8, `BelanjaNumpangLewat` ×1 in bundle confirms both
+branches' code merged). Browser-level smoke via Chrome DevTools MCP after
+clearing a stale browser-profile lock:
+- Login OTP flow works; zero console errors throughout.
+- Dashboard renders real data (Rp 18.366.000 omset 7-hari, 32 transaksi,
+  266 stok tipis, channel + AI activity charts populate).
+- Sidebar "Produk & Stok" entry visible (rename from "Stok" landed).
+- Produk & Stok 4-tab structure renders: 📋 KATALOG 293, 🏬 STOK PER GUDANG,
+  📥 BULK UPLOAD, ⚠️ STOK TIPIS 243.
+- CatalogGridView shows 293 real products with category badges
+  (MCB/Panel/Aksesori/Kabel/QA), thumbnails, price, stock.
+- ProductForm modal opens with all 5 sections: 📋 Identitas, ⚙ Spesifikasi
+  (MCB dynamic — Merek/Ampere/Phase), 📷 Foto (5 slots, "Min 1 wajib · max 5 ·
+  drag untuk urutan"), 💰 Harga & Stok (3 gudang: Jakarta/Atas/Bawah), ⚙
+  Pengaturan Lanjutan. Live Preview rail populated.
+- Pembelian → 3 sub-tabs render (Purchase Orders 40 rows, Belanja Numpang
+  Lewat, Supplier) — BNL Phase 1 from main NOT regressed.
+- BNL Phase 1 page: heading + 5 KPIs (TOTAL PI, TOTAL BELANJA, BELUM LUNAS,
+  JATUH TEMPO ≤3 HARI from BR7, TERLAMBAT), filters + search render.
+- Console clean throughout (zero errors/warns).
+- Screenshots: `docs/screenshots/smoke-login-caadfe68.png`,
+  `docs/screenshots/smoke-productform-caadfe68.png`.
+
+**Cutover:** `gcloud run services update-traffic ... --to-revisions=
+garindo-jaya-panel-msme-erp-frontend-00067-bes=100`. Both prod URL and
+preview tag URL now return matching etag `22ec9373…` confirming serving the
+same revision. Rollback path remains `--to-revisions=00063-2qn=100` (10s)
+since the old revision is retained.
+
+**Open follow-ups (not blocking, not in this entry's scope):**
+- Phase 3 "Cari by Foto" Kasir modal (Gemini Vision search frontend) — backend
+  RPC + pgvector index already deployed.
+- AI `✨ Generate Deskripsi dari Foto` button.
 
 ## 2026-06-16 — Prod regression recovery — Produk & Stok overwritten by main deploy
 
@@ -324,6 +460,411 @@ All 8 remaining flows validated against production Cloud Run URL with live Supab
 **Deploy:** Both commits pushed to `main` (fast-forward). Cloud Build builds 4fb20bba (Fix 1) + 59d31f66 (Fix 2) processed in sequence. Cloud Run auto-rolls to latest revision.
 
 **Pending verification:** Send a real WA message post-deploy and confirm Calista returns clean Bahasa reply (not FallbackReply, not reasoning-monologue text).
+## 2026-06-15 — Product Photo Phase 2 — hotfix: catalog refresh after ProductForm submit — DONE
+
+User reported "products saved by Jenny user not showing up". Root cause: `StockManagerScreen` `onSubmit` callback closed the modal after `stockService.upsertProduct` resolved, but `stockList` in `App.tsx` was never refreshed and there is no realtime subscription on `stocks`. The row was in the DB; the UI just didn't re-fetch.
+
+- **Files modified:**
+  - `src/components/StockManagerScreen.tsx` — added `onStocksRefresh?: () => Promise<void> | void` to props; both ProductForm `onSubmit` handlers (add + edit) now `await onStocksRefresh?.()` between `upsertProduct` and modal close.
+  - `src/App.tsx` — pass existing `handleStockRefresh` (line 219, already does `fetchStocks` + map + `setStockList`) as `onStocksRefresh` to `<StockManagerScreen>`.
+- **Verification:** `npm run lint` → exit 0.
+- **Commit:** `0286772` on `feat/produk-stok-photo-impl`.
+- **Deploy:** Cloud Build `6b2e693c` SUCCESS (3m25s) → Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00063-2qn` serving 100% traffic at https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app.
+- **User action needed:** hard-refresh existing tabs to pull the new bundle + see the previously-saved products.
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.11: CatalogGridView + tab pill structure — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified/created:**
+  - `src/components/produk/CatalogGridView.tsx` (new, 66 lines) — grid card view of products with thumbnail (first `photo_urls[0].url` or `image` icon fallback), category badge, name (line-clamp-2), price formatted `Rp {n} / {unit}`, stock. Header row has search input (matches `name` or `sku` case-insensitive), category select (auto-derived from `stockList`, prefixed with `Semua`), and a green `+ Tambah Barang` button that fires `onAdd`. Clicking any card fires `onEdit(sku)`. Empty state: "Tidak ada produk yang cocok".
+  - `src/components/StockManagerScreen.tsx` — major rewrite. Removed the entire local add-form path: dead helpers `SpecFieldDef`, `CATEGORY_SPECS`, `generateName`, `PILL_COLORS`, `generateSkuId`, `renderSpecForm` (all only used by the old inline add-form; `StockTableView` carries its own copies); state `showAddForm`, `newCategory`, `newPrice`, `newStock`, `newSpecs`; handler `handleAddNewItem`; and JSX blocks `{showAddForm && <section>...}` and the `<button>Tambah Baris Barang Baru</button>` trigger. Trimmed lucide import: dropped `PlusCircle` (kept `Save`). Added imports: `CatalogGridView`, `ProductForm`, `stockService` (from `supabaseClient`). New state: `activeTab: 'katalog'|'stok'|'bulk'|'tipis'` (default `katalog`), `editingSku: string|null`, `showAddProductModal: boolean`. New memo `thinCount` counts items where `stock <= (min_stock_per_product ?? 5)` for the badge on the Tipis tab. New render structure: tab-pill bar (green active for non-amber tabs, amber-100 active for `tipis`) immediately under the header card → conditional content per tab (Katalog → `<CatalogGridView />`, Stok → `<StockTableView />` with full prop set, Bulk → `<BulkUploadSection />` with `companyName`/`onUploaded={refreshPending}`/`onStockUpdate`, Tipis → `<StockTableView thinOnly />` reusing the same prop set). Two new modals: `showAddProductModal` mounts `<ProductForm>` (no `initial`); `editingSku` mounts `<ProductForm initial={stockList.find(s => s.sku === editingSku)} />`. Both wire `warehouses`, `currentUserId={currentUser?.id ?? ''}`, `showToast`, and an `onSubmit` that calls `stockService.upsertProduct(data as Parameters<typeof stockService.upsertProduct>[0])` then closes the modal. Backdrop click closes; inner panel `stopPropagation`. File shrank from **509 → 360 lines** (−149).
+- **Verification:** `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics.
+- **Next:** Task 2.12 — Phase 2 smoke checkpoint (MCP Chrome verification of the new tabbed UI + ProductForm modal end-to-end with photo upload + initial-stock approval round-trip).
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.10: Initial stock approval flow — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/lib/supabaseClient.ts` — added new `approvalService` object export (placed just before the "Phase 2 — Approval / adjustment / opname / price-change / seed RPC wrappers" section). Single method: `requestInitialStock(payload, requestedBy)` → `Promise<void>`. Payload shape `{ sku, sku_name, qty, unit, warehouse_id, requested_cost_per_unit? }`. Calls `supabase.from('approval_requests').insert({ request_type: 'initial_stock', payload, requested_by: requestedBy })` and throws on error. Snake_case column names match the `approval_requests` DB schema and the `toApprovalRequest` mapper (`request_type`, `requested_by`, `payload`). No SECURITY DEFINER RPC exists for initial-stock requests — the enum value `'initial_stock'` was added in migration `20260614000024_initial_stock_and_search_rpc.sql` (M5), and RLS permits authenticated users to insert pending approval rows directly, so this path is a deliberate direct insert (a comment block above the export records this convention divergence from the RPC-based adjustment/price-change wrappers).
+  - `src/components/produk/ProductForm.tsx` — extended Props with `currentUserId: string` and destructured it in the component signature (caller wires this in Task 2.11). Added `approvalService` to the `supabaseClient` import. In `handleSubmit`, after `await onSubmit(...)` succeeds and BEFORE the success toast, added a guarded branch: when `stokAwal > 0 && gudangTujuanId`, calls `approvalService.requestInitialStock({ sku: finalSku, sku_name: generateName(category, specs), qty: stokAwal, unit, warehouse_id: gudangTujuanId, requested_cost_per_unit: hargaModal ?? undefined }, currentUserId)` inside a try/catch. Success → info toast `'Stok {n} {unit} dikirim ke owner untuk approval'`. Failure → warning toast `'Approval gagal: …'` (product save itself is NOT rolled back — the row was already inserted with `initial_stock_approved=false` in Task 2.9, so the owner can retry approval via the inbox).
+- **Verification:** `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics.
+- **Next:** Task 2.11 — CatalogGridView + tab pill structure (also wires `currentUserId` prop into `<ProductForm>` from the parent screen).
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.9: ProductForm submit + validation — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified/created:**
+  - `src/lib/supabaseClient.ts` — added `stockService.upsertProduct(input)` that writes to `stocks` via upsert-on-`sku` with `status: 'Sinkron'`, `stock: 0` (real qty derived from `stock_levels` via M5 search RPC) and `updated_at: now()`. Returns the inserted/updated `StockItem` via `.select().single()`. Imports `ProductPhoto` and `StockItem` from `../types`. Input shape is the full new-product payload: sku, name, category, subcategory, unit, unit_alt, unit_alt_factor, price, harga_modal, description, min_stock_per_product, photo_urls, specs, initial_stock_approved.
+  - `src/components/produk/ProductForm.tsx` — added top-level `validate(input)` helper that returns a `ValidationError[]` (field-tagged): rejects empty category/unit, `price ≤ 0`, `photos < 1`, half-filled multi-satuan (only one of `unitAlt`/`unitAltFactor` set), `unitAlt === unit`, and `unitAltFactor ≤ 1`. Removed the `void onSubmit` placeholder. Added `submitting` state and `handleSubmit()` that (a) counts only `status === 'uploaded'` photos toward the min-1-foto check, (b) shows the first validation error as a `warning` toast and bails, (c) builds the `Partial<StockItem>` payload using `finalSku = sku.trim() || autoSku` (same value used during photo upload), `name` from `generateName(category, specs)`, `subcategory || null`, only uploaded photos mapped to bare `{url, path, order, uploaded_at}` (drops localUrl/status/progress), `initial_stock_approved = (stokAwal === 0)` (zero stock auto-approved; nonzero stock pending owner approval per Task 2.10), and awaits `onSubmit`. Success → `'✅ Produk berhasil ditambahkan'` toast; failure → `'Gagal menyimpan: …'` warning. Submit button now uses `type="button"`, `onClick={handleSubmit}`, `disabled={submitting}`, emerald `#2d8a4e`/hover-emerald-700 styling, label flips to `'Menyimpan…'` while submitting. File grew from **633 → 695 lines** (+62).
+  - `src/components/produk/productFormValidate.test.ts` (new) — 5 vitest cases verifying: minimal valid input passes (empty errors), 0 photos → `photos` field error, `factor=1` → `unit_alt_factor` error, `unitAlt === unit` → `unit_alt` error, half-multi-satuan (`unitAlt` set, factor null) → `multi_satuan` error. Validator is a local copy of the production helper (kept in-test so it's a pure unit test with no React/jsdom dependency).
+- **Verification:** `npx vitest run src/components/produk/productFormValidate.test.ts` → 5/5 passing in 80ms. `npm run lint` (tsc --noEmit) → exit 0, zero diagnostics. Full `npm run test` → 25/25 across 6 files.
+- **Next:** Task 2.10 — initial stock approval flow (wire the `initial_stock_approved = false` branch to create an `approval_request` for owner sign-off on first-time stock counts).
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.8: ProductForm Pengaturan Lanjutan — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/components/produk/ProductForm.tsx` — added collapsible `<details>` "Pengaturan Lanjutan" card between Harga & Stok and the action-buttons row. New state: `unitAlt` / `unitAltFactor` / `multiSatuanOn` (multi-satuan konversi — secondary unit + factor; checkbox toggles section, dropdown filters out the primary `unit`, factor input has `min={2}`), `minStockPerProduct` (per-product low-stock threshold; empty = use global setting), `description` (max 500 chars, hard-clamped via `.slice(0, 500)` on each change with `n / 500` counter). Includes a stub "✨ Generate dari Foto" button — disabled when `photos.length === 0`, otherwise shows an info toast (real backend wiring lands in Phase 3 Task 3.6). Card uses `group group-open:rotate-180` on the chevron for the open/close affordance. State is read in Task 2.9's submit handler. File grew from **546 → 633 lines** (+87).
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.9 — ProductForm submit + validation.
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.6: ProductForm Foto card — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/ProductForm.tsx` — added Foto Produk card (hero slot + 2x2 small slots = 5 total) with drag-to-reorder, per-slot delete, and a counter pill. New state: `autoSku` (stable random 8-hex generated at mount via `crypto.getRandomValues`, used for upload path so photos land in the right folder before the user fills SKU at submit), `photos` (`Array<ProductPhoto & { localUrl?, status, progress? }>`), `draggingIdx`. Handlers: `handleFilesPicked(files, sku)` slices to remaining slots, optimistically inserts an `uploading` placeholder per file with a local `URL.createObjectURL` thumbnail, then calls `compressImage` + `uploadProductPhoto(sku, order, blob)`, swapping to `uploaded` status on success or `failed` on error with a warning toast. `handleDeletePhoto(order)` calls `deleteProductPhoto(path)` then re-indexes remaining photos. `reorderPhotos(from, to)` splice-moves then re-indexes. `previewState` now feeds `hasPhoto` and `thumbnailDataUrl` from `photos[0]`. New inline `PhotoSlot: React.FC<PhotoSlotProps>` helper renders either an empty `<label>` (dashed border, file input for picking) or a `draggable` div with thumbnail + Thumbnail badge (slot 0) + spinner overlay (uploading) + red banner (failed) + delete button (uploaded, hover). `React.FC` used so `key={i}` in the `.map([1,2,3,4])` typechecks. File grew from **304 → 460 lines**.
+  - `src/components/produk/photoValidation.test.ts` (new) — pure-function `validatePhotoCount(n)` covering 0 (reject), 1 (accept), 5 (accept), 6 (reject). Pulls `MIN_PHOTOS` / `MAX_PHOTOS` from `productPhotoService` to lock the contract.
+- **SKU upload path note:** photos upload to `{skuForUpload}/{order}.jpg` where `skuForUpload = sku.trim() || autoSku`. This avoids the "user types SKU after uploading photos → path mismatch" trap. At submit (Task 2.9), `finalSku = sku.trim() || autoSku` keeps paths aligned.
+- **Verification:** `npm run test -- src/components/produk/photoValidation.test.ts` → **20 passed** (4 new + 16 prior). `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.7 — ProductForm Harga & Stok card.
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.4: Create PreviewCard component — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added:**
+  - `src/components/produk/PreviewCard.tsx` (new) — presentational component for the live preview rail beside `ProductForm` (consumed in Task 2.5+). Exports `ProductPreviewState` interface (name, sku, category, unit, price, hargaModal, stokAwal, gudangTujuanId, hasPhoto, thumbnailDataUrl, isPendingApproval) and a default-exported `PreviewCard({ state, warehouses })`. Renders two cards: (1) **Di Daftar Stok** mock row showing the thumbnail (or `image` icon fallback), category pill, SKU, name, and `Rp price / unit · Margin X%` line (only when both `price` and `hargaModal` are set); (2) **Stok per Gudang** list filtered by `w.is_active`, where the warehouse matching `state.gudangTujuanId` shows `state.stokAwal` in emerald and all others show `0` in slate. Pending Approval pill appears in the second card header when `isPendingApproval` is true. `lg:sticky lg:top-6` wrapper so the rail stays visible on scroll.
+  - `src/components/produk/PreviewCard.test.tsx` (new) — vitest unit test for the `computeMargin(price, modal)` helper covering three cases: null modal → null, modal < price → positive margin (~21.2%), modal > price → negative margin (~−20%).
+- **Warehouse type verified:** `src/types.ts` exports `interface Warehouse { id, tenant_id, code, name, address, is_active, is_default, sort_order }` — matches the JSX access pattern (`w.id`, `w.name`, `w.is_active`); no adaptation needed.
+- **Verification:** `npx vitest run src/components/produk/PreviewCard.test.tsx` → **3 passed**, 1 file. `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.5 — ProductForm scaffold (Identitas + Spesifikasi cards).
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.3: Extract StockTableView — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/StockTableView.tsx` (new) — 479 lines. Owns local UI state for the table: `searchQuery`, `selectedCategory`, `editingSkus`, `editValues`, plus the `startEdit`/`cancelEdit`/`saveEdit` inline-edit helpers. Receives `stockList`, `warehouses`, `currentUser`, `pendingIndex`, `showToast`, and five callbacks (`onDelete`, `onTransfer`, `onInlineUpdate`, `onRequestPriceChange`, `onRequestAdjustment`) plus optional `onOpname` from parent. The row map JSX (thumbnail/badge, name+spec pills, price button, harga_modal button, stock-per-gudang buttons, status pill, Edit/Transfer/Penyesuaian/Delete cluster, expand-spec edit block) moved verbatim — same Tailwind classes, toasts, and approval-gated disabled logic. Helpers `CATEGORY_SPECS` / `generateName` / `renderSpecForm` / `PILL_COLORS` duplicated inside with `// TODO(Task 2.11): consolidate with ProductForm` comment because parent still uses them for the add form. Optional `thinOnly` / `thinThreshold` props plumbed but unused (for the Stok Tipis tab in Task 2.11).
+  - `src/components/StockManagerScreen.tsx` — dropped `searchQuery` / `selectedCategory` / `uniqueCategories` / `filteredStock` / `editingSkus` / `editValues` / `startEdit` / `cancelEdit` / `saveEdit` / `handleCellEdit` (the last was dead code). Added `handleInlineSave(item)` that re-stamps `status` from `stock < 10` and merges into `stockList`. Replaced the table `<section>` block with `<StockTableView ...>` and lifted the add-form `{showAddForm && (...)}` and "Tambah Baris Barang Baru" trigger out as sibling `<section>` blocks (per task instruction to keep the add form in parent until Task 2.11). Trimmed lucide imports: dropped `Search`, `ChevronDown`, `ChevronUp`, `CheckCircle`, `AlertTriangle`, `Trash2`, `ClipboardCheck`; kept `PlusCircle` (add form) and `Save` (floating save button). File shrank from **808 → 509 lines** (−299).
+- **Handler-name mismatches resolved:** The task sketch's `onEdit(sku)` was misleading — the row's Edit button is a local expand/collapse toggle, not navigation. Dropped `onEdit` from props entirely; `editingSkus`/`startEdit`/`cancelEdit` live inside `StockTableView`. Expanded Props beyond the sketch to also accept `warehouses` / `currentUser` / `pendingIndex` / `onRequestPriceChange(item, field)` / `onRequestAdjustment(item, warehouseId)` because the approval-gated cells need them (the sketch's flat `onInlineUpdate` could not carry the warehouse / field info).
+- **Behavior preserved:** parent still owns `stockList`, modals (`transferItem`, `adjustmentTarget`, `priceTarget`), pending-approvals fetch + `pendingIndex` build, `currentUser`, and `warehouses` hook. `handleInlineSave` matches the old `saveEdit` semantics (price/harga_modal/specs/name merge + status re-stamp). The add form, "Tambah Baris" trigger, save-all floating button, and all three approval modals stay in parent verbatim. Minor visual reflow: add-form panel is now a sibling block above the table section instead of nested inside it — this is the change the brief flagged as acceptable.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.4 — create `PreviewCard` component.
+
+---
+
+## 2026-06-15 — Product Photo Phase 2 — Task 2.2: Extract BulkUploadSection — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files added/modified:**
+  - `src/components/produk/BulkUploadSection.tsx` (new) — 313 lines. Owns `uploadProgress`/`isUploading` state, `CSV_SPEC_COLS`/`CSV_HEADER` constants, and the four handlers (`handleDownloadTemplate`, `handleExportStock`, `parseAndUploadCSV`, `handleFileUpload`). Receives `stockList`, `companyName`, `showToast`, `onStockUpdate`, `onUploaded` as props. CSV parsing/validation/bulk-upsert flow preserved verbatim — same Tailwind classes, same toast strings, same `stockService.bulkUpsert(changedItems)` call surrounded by `isSupabaseConfigured` guard.
+  - `src/components/StockManagerScreen.tsx` — replaced inlined `<section>...</section>` (~75 lines) with `<BulkUploadSection ...>`; removed `uploadProgress`/`isUploading` state, `filenameSafeCompany` derivation, the four handler functions, the CSV constants block, and the now-unused `Download` + `FileCheck` lucide-react imports + `stockService` + `SupabaseStockItem` imports. File shrank from **1051 → 808 lines** (−243).
+- **Behavior preserved:** parent `StockManagerScreen` still owns `stockList` via `onStockUpdate`; child calls it inside `parseAndUploadCSV` exactly like before. `onUploaded` callback wired to `refreshPending` so pending-approvals badge refreshes after import.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 2.3 — extract `StockTableView`.
+
+---
+
+## 2026-06-14 — Piutang & Tempo Phase 1A implementation — READY FOR MCP-CHROME QA
+
+**Status:** All 13 tasks committed; integration tests written (deferred until DB apply); local stack runs clean.
+
+**Migrations to apply (via Supabase Studio SQL editor, in order):**
+1. `20260614000008_customers_tempo_fields.sql` (T1)
+2. `20260614000009_approval_types_tempo.sql` (T2)
+3. `20260614000010_piutang_settings.sql` (T3)
+4. `20260614000011_resolve_tenant_helper.sql` (T4)
+5. `20260614000012_customer_credit_activate_rpcs.sql` (T5)
+6. `20260614000013_customer_credit_limit_change_rpcs.sql` (T6)
+7. `20260614000014_customer_credit_deactivate_rpcs.sql` (T7)
+
+**Then run seed SQL** to create the QA fixture:
+
+```sql
+-- Ensure a test customer exists (idempotent)
+INSERT INTO public.customers (id, wa_number, name, company)
+VALUES ('GJP-CUST-QATEST', '+628111000001', 'QA Tempo Customer', 'CV Test Grosir')
+ON CONFLICT (id) DO UPDATE
+  SET allows_tempo = false,
+      term_days    = 0,
+      credit_limit = 0,
+      tempo_activated_at = NULL,
+      tempo_activated_by = NULL;
+
+-- Clear any prior approval requests for this customer
+DELETE FROM public.approval_requests
+WHERE request_type IN ('customer_credit_activate','customer_credit_limit_change','customer_credit_deactivate')
+  AND payload->>'customer_id' = 'GJP-CUST-QATEST';
+
+-- Verify piutang_settings sentinel row exists
+SELECT tenant_id, term_days_allowed, aging_buckets FROM public.piutang_settings;
+```
+
+**Seed customer:** `GJP-CUST-QATEST` (CV Test Grosir, +628111000001) — reset to inactive state at start of QA.
+
+**QA scenarios for founder to execute via MCP Chrome (chrome-devtools):**
+
+1. **Scenario A — Happy path activation**
+   - Open Pelanggan screen, select GJP-CUST-QATEST
+   - In "Tempo & Limit Kredit" section: pick Net 30, limit 50000000, reason "langganan grosir baru" → click Minta Persetujuan Owner
+   - Verify: state changes to "Menunggu Persetujuan Owner"
+   - Switch to owner login → Persetujuan screen → verify violet "AKTIVASI TEMPO CUSTOMER" card appears with summary
+   - Click Setujui → enter PIN → confirm
+   - Switch back to admin → reload customer profile → verify state shows "AKTIF" with Net 30 hari + Rp 50.000.000 + usage 0%
+
+2. **Scenario B — term_days outside allowed list**
+   - Edit `piutang_settings.term_days_allowed` to a narrower set via Supabase Studio (e.g. `{7,14,30}`)
+   - From Scenario A's UI, try Net 60 → expect error toast "term_days_not_allowed"
+
+3. **Scenario C — Wrong PIN at approve**
+   - Repeat Scenario A through Setujui; enter wrong PIN twice → expect rejection toast with `pin_invalid`. Verify customer remains inactive after both attempts.
+
+4. **Scenario D — Re-activation blocked**
+   - Customer already active (from Scenario A) → admin tries to call activate again from UI → expect `customer_already_activated`.
+
+5. **Scenario E — Limit change happy path**
+   - Customer active → in profile, enter new limit `100000000` + reason "pesanan baru besar" → Ubah Limit
+   - Owner approves with PIN → customer credit_limit becomes 100jt
+
+6. **Scenario F — Limit change rejected reason too short**
+   - Enter reason "xx" (under 5 chars) → expect `reason_required`
+
+7. **Scenario G — Deactivate happy path**
+   - Customer active → reason "customer pindah supplier" → Nonaktifkan
+   - Owner approves → allows_tempo=false; verify term_days/credit_limit retained as audit history (shown in admin SQL view)
+
+**Integration test status:**
+- 8 vitest tests written at `tests/integration/piutang-tempo-phase1a.test.ts` (T8 commit `8948d90`)
+- Tests deferred until migrations applied + test env vars set (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, OWNER_PIN)
+- Run: `npx vitest run tests/integration/piutang-tempo-phase1a.test.ts`
+
+**What's NOT in Phase 1A:**
+- Sidebar "Piutang" menu (Phase 1B)
+- Outstanding usage meter showing real number (Phase 1B)
+- "Catat Bayar" button (Phase 1B)
+- WA send & write-off (Phase 1C)
+- piutang_settings Pengaturan UI (Phase 1C; for now edit via Supabase Studio)
+
+---
+
+## 2026-06-15 — Product Photo Phase 1 — Task 1.6: types.ts updates + ApprovalRequestRow exhaustive-map fix — DONE
+
+- **Branch:** `feat/produk-stok-photo-impl` (isolated worktree)
+- **Files modified:**
+  - `src/types.ts` — added `ProductPhoto` interface; extended `StockItem` with `subcategory`, `unit`, `unit_alt`, `unit_alt_factor`, `photo_urls`, `description`, `min_stock_per_product`, `initial_stock_approved`; appended `| 'initial_stock'` to `ApprovalRequestType`; appended Product Registry (M2) types (`ProductCategory`, `ProductBrand`, `ProductUnit`), Cari-by-Foto types (`WarehouseStockSlice`, `ProductPhotoSearchResult`, `ProductPhotoSearchResponse`), `CostingMethod`, and `AiCallLogStat`.
+  - `src/components/approval/ApprovalRequestRow.tsx` — added `initial_stock: 'Stok Awal'` to `TYPE_LABEL` and `initial_stock: { icon: '📦', bg: 'bg-slate-50', fg: 'text-slate-700' }` to `TYPE_ICON` to preserve exhaustive `Record<ApprovalRequestType, ...>` coverage. Matched existing emoji-string schema (not Lucide components) — previous-attempt note about `Package` icon was inaccurate for this file.
+- **Verification:** `npm run lint` → exit 0, zero diagnostics.
+- **Next:** Task 1.7 — registryService in supabaseClient.
+
+---
+
+## 2026-06-14 — Product Photo Phase 1 — Task 1.1 (M1): extend stocks columns — DONE
+
+- **Commit:** `421bcb6`
+- **Files added/modified:**
+  - `supabase/migrations/20260614000020_stocks_product_columns.sql` (new)
+  - `scripts/apply-pending-migrations.sh` (appended M1 entry)
+- **Schema additions to `public.stocks`** (all `ADD COLUMN IF NOT EXISTS`):
+  - `subcategory TEXT`
+  - `unit TEXT NOT NULL DEFAULT 'pcs'` (base UoM)
+  - `unit_alt TEXT`, `unit_alt_factor INT` (alternate UoM + conversion factor)
+  - `photo_urls JSONB NOT NULL DEFAULT '[]'::jsonb`
+  - `description TEXT`
+  - `min_stock_per_product INT`
+  - `initial_stock_approved BOOLEAN NOT NULL DEFAULT TRUE`
+- **Constraints (idempotent via `pg_constraint` lookup):**
+  - `chk_stocks_unit_alt` — both alt fields NULL OR both non-NULL with factor > 1
+  - `chk_stocks_photo_urls_array` — must be JSONB array of length ≤ 5
+- **Migration filename:** prefix `20260614000020` (renumbered from planned `000010` to avoid Piutang T3–T7 collision)
+- **Manual verification needed by user:** apply migration via `./scripts/apply-pending-migrations.sh`, then run plan §1.1 Step 4 verification queries.
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 12: TempoCreditSection component + mount — DONE
+
+- **Files changed:**
+  - `src/components/pelanggan/TempoCreditSection.tsx` (new)
+  - `src/components/PelangganScreen.tsx` (modified)
+- **Component:** `TempoCreditSection` — 3-state UI for customer credit/tempo management:
+  - **State 1 (pending request):** Amber banner "Menunggu Persetujuan Owner" — shown when `approval_requests` table has a pending credit request for this customer
+  - **State 2 (not activated):** Form to request activation — term selector (from `piutang_settings`), limit input, optional reason, "Minta Persetujuan Owner" button
+  - **State 3 (activated):** Shows Net term, credit limit, placeholder usage bar (0% — Phase 1B), + buttons to request limit change or deactivation
+- **Mount in PelangganScreen:** Added after Leads section with `onChanged` reloading profile via `customersService.fetchProfile(selectedId)`, `showToast` passed through
+- **TypeScript fix:** Wrapped Supabase chain in `Promise.resolve()` to expose full `.catch()` (PromiseLike → Promise)
+- **TypeScript:** `npx tsc --noEmit` — zero errors
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 10: customerCreditService in supabaseClient — DONE
+
+- **File changed:** `src/lib/supabaseClient.ts`
+- **Commit:** (see below)
+- **Added:** `customerCreditService` export with 6 RPC wrapper methods inserted after `customersService` (line 850):
+  - `requestActivate(customerId, termDays, creditLimit, reason)` → `number` (request ID)
+  - `approveActivate(requestId, ownerPin)` → `void`
+  - `requestLimitChange(customerId, newLimit, reason)` → `number`
+  - `approveLimitChange(requestId, ownerPin)` → `void`
+  - `requestDeactivate(customerId, reason)` → `number`
+  - `approveDeactivate(requestId, ownerPin)` → `void`
+- **`customersService` selects:** Both use `select('*')` — no column list changes needed; new tempo columns auto-included.
+- **TypeScript:** `npx tsc --noEmit` — 1 pre-existing error in `PengaturanScreen.tsx` (OwnerPinCard), zero new errors.
+- **Supabase guard:** Each method has `if (!supabase) throw new Error('Supabase not configured')` consistent with existing patterns.
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 9: Frontend types extension — DONE
+
+- **Files changed:** `src/types.ts` + `src/components/approval/ApprovalRequestRow.tsx`
+- **Commit:** `0792e1c`
+- **Changes in `src/types.ts`:**
+  - `DbCustomer`: +5 fields (`allows_tempo: boolean`, `term_days: number`, `credit_limit: number`, `tempo_activated_at?: string | null`, `tempo_activated_by?: string | null`)
+  - `ApprovalRequestType`: +3 union values (`customer_credit_activate`, `customer_credit_limit_change`, `customer_credit_deactivate`)
+  - `PermissionSet`: +6 optional keys (`can_request_credit_activate`, `can_approve_credit_activate`, `can_request_limit_change`, `can_approve_limit_change`, `can_request_deactivate`, `can_approve_deactivate`)
+  - `ALL_PERMISSIONS`: +6 keys all set to `true`
+- **Companion fix in `ApprovalRequestRow.tsx`:** Added 3 new entries to `TYPE_LABEL` and `TYPE_ICON` Record maps to satisfy exhaustive `Record<ApprovalRequestType, ...>` typing — needed to keep `tsc --noEmit` clean.
+- **TypeScript:** `npx tsc --noEmit` — zero errors
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 8: Vitest integration tests — DONE (deferred run)
+
+- **File written:** `tests/integration/piutang-tempo-phase1a.test.ts`
+- **8 tests** across 3 describe blocks:
+  - `piutang phase 1A — customer credit activate` (5 tests): happy path, rejects term_days=45, rejects credit_limit≤0, rejects wrong PIN, rejects re-activation
+  - `piutang phase 1A — limit change` (2 tests): happy path, rejects reason <5 chars
+  - `piutang phase 1A — deactivate` (1 test): happy path (retains term_days/credit_limit as history)
+- **Two-client design:** `admin` (service-role, bypasses RLS for setup/teardown) + `user` (anon key, exercises real RPC auth path)
+- **Error tokens verified** against migration SQL: `term_days_not_allowed`, `credit_limit_must_be_positive`, `pin_invalid`, `customer_already_activated`, `reason_required`
+- **TypeScript check:** `npx tsc --noEmit` — zero errors
+- **Run deferred** until founder applies migrations T1-T7 (20260614000008 through 20260614000014) via Supabase Studio SQL editor. DB is unreachable from this host (IPv6-only endpoint).
+- **Run command:** `npx vitest run --no-file-parallelism tests/integration/piutang-tempo-phase1a.test.ts`
+- **Required env vars** (either naming convention works):
+  - `SUPABASE_URL` or `VITE_SUPABASE_URL`
+  - `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`
+  - `SUPABASE_SERVICE_ROLE` or `SUPABASE_SERVICE_KEY`
+  - `OWNER_PIN` (defaults to `0000` for dev)
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 7: customer_credit_deactivate RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000014_customer_credit_deactivate_rpcs.sql`
+  - `request_customer_credit_deactivate(p_customer_id text, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors T5/T6 pattern
+    - 2 validations in order: customer_not_activated (checks `allows_tempo = true`) → reason_required (≥5 chars via `coalesce(length(p_reason), 0) < 5`)
+    - Inserts `approval_requests` row with type `customer_credit_deactivate` and JSON payload (`customer_id`, `reason`)
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_deactivate(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with two args; raises `pin_invalid` on FALSE return
+    - On approval: extracts `customer_id` from payload, locks customer row (`FOR UPDATE`), sets `allows_tempo = false`
+    - Intentionally does NOT reset `term_days` / `credit_limit` — values retained as audit trail for re-activation
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000014`, following T6 at `000013`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T7 entry after T6
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000014_customer_credit_deactivate_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_deactivate', 'approve_customer_credit_deactivate');
+  -- Expected: 2 rows
+  ```
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 6: customer_credit_limit_change RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000013_customer_credit_limit_change_rpcs.sql`
+  - `request_customer_credit_limit_change(p_customer_id text, p_new_limit numeric, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors T5 pattern
+    - 3 validations in order: customer_not_activated (checks `allows_tempo = true`) → credit_limit_must_be_positive → reason_required (≥5 chars via `coalesce(length(p_reason), 0) < 5`)
+    - Inserts `approval_requests` row with type `customer_credit_limit_change` and JSON payload (`customer_id`, `new_limit`, `reason`)
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_limit_change(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with two args; raises `pin_invalid` on FALSE return
+    - `_transition_approval` NOT called directly — verify_owner_pin handles it atomically
+    - On approval: extracts `customer_id` + `new_limit` from payload, locks customer row (`FOR UPDATE`), updates `customers.credit_limit`
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000013`, following T5 at `000012`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T6 entry after T5
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000013_customer_credit_limit_change_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_limit_change', 'approve_customer_credit_limit_change');
+  -- Expected: 2 rows
+  ```
+
+## 2026-06-14 — Calista Phase 1A: end-to-end smoke PASSED + production-ready — DONE
+
+- **What:** Built `backend-go/cmd/smoke-calista` — a non-daemon end-to-end harness that exercises engine → router → real OpenRouter → sticky-pin + tone-seeding without touching the whatsmeow daemon. Runs entirely from CLI with stub DB stores, so failures isolate to the production code path (not infra plumbing).
+- **Smoke result (run on 2026-06-14):**
+  - ✅ OpenRouter API: reachable, key valid, attribution headers accepted
+  - ✅ Primary `google/gemma-4-31b-it:free`: serving requests in Bahasa Indonesia
+  - ✅ Reply quality: Calista persona + Garindo Jaya Panel SOP fully intact (C.1 fix verified — embedded `assets.CalistaSystemPrompt` reaches the model, not the 18-line abbreviated version)
+  - ✅ Sticky pinning: identical model used across 2 calls in same conversation
+  - ✅ First-reply tone extraction: `Greeting="Halo"`, `Formality="formal_bapak_ibu"`, `ModelUsed="google/gemma-4-31b-it:free"` captured and persistable
+  - ✅ New conversation: pinned to primary correctly (fresh pin assignment)
+  - ⚠️ **Latency p50: 5,238ms** — above the spec target of <3s. Persona prompt is ~11,196 input tokens, which is the dominant inference cost on free-tier providers. Functional but slow — flag for shadow-soak monitoring.
+- **Material fix surfaced during smoke (committed):** all 10 OpenRouter model slugs in `DefaultCalistaAgent` were wrong format — needed `:free` suffix and some needed `-it` variants. Without this fix, `ENABLE_OPENROUTER=true` would have 400'd every model → universal escalation to admin on first customer message. Verified `google/gemma-4-31b-it:free` works against the live catalog. (commit `b01a651`)
+- **Earlier-in-session security fix:** `.env` was world-readable mode 644 AND NOT gitignored. Verified key never committed to git history. `chmod 600`, added `.env` + `backend-go/.env` to `.gitignore`. (commit `8613ff5`)
+- **3 Phase 1A migrations applied to live Supabase** via management API (port 5432 direct DB connection IPv6-resets from this machine; Supabase REST endpoint works): `public.llm_calls` (13 cols, 3 indexes), `public.model_cooldowns` (5 cols), `public.conversations` +4 columns (`pinned_model_slug`, `pinned_at`, `swap_count`, `first_reply_tone`) + 1 partial index. Verified via post-apply `information_schema` query.
+- **Phase 1A criticals final state:** ALL CLOSED.
+  - ✅ C.1 persona prompt parity
+  - ✅ C.2 tone seeding wire-up
+  - ✅ I.3 401 fast-fail boot probe
+  - ✅ I.4 OpenRouter attribution headers
+  - ✅ M.1 retry short-circuit on ChainExhausted
+  - ✅ (NEW) Correct OpenRouter model slugs verified against live catalog
+  - ✅ (NEW) End-to-end smoke against real OpenRouter
+  - ⏭️ I.1 StateBoundary signal — Phase 1B
+  - ⏭️ I.2 inbound tripwires from handler — Phase 1B
+- **Founder action items remaining (production deploy):**
+  - [ ] **Rotate Supabase project access token** `sbp_cb539...` at https://supabase.com/dashboard/account/tokens — still pending despite multiple reminders. Token used twice during this session (migrations + management API queries) and is in conversation logs + scrollback.
+  - [ ] Deploy `feat/calista-phase-1a` branch (merge or push directly per your CI conventions)
+  - [ ] Set Cloud Run env vars: `OPENROUTER_API_KEY=<your-key>`, `ENABLE_OPENROUTER=true`
+  - [ ] After first real customer message lands, query `llm_calls` to verify telemetry rows: `psql -c "SELECT model_slug, status, latency_ms, was_forced_swap FROM llm_calls ORDER BY created_at DESC LIMIT 5"`
+  - [ ] Verify `conversations.first_reply_tone IS NOT NULL` populates after first conversation
+  - [ ] Shadow-soak ≥3 days monitoring (a) latency p95 against 3s target — likely will exceed, flag for Phase 1A-bis persona-trim consideration, (b) `escalated_chain_exhausted` rate — expect <0.5% per spec, (c) customer complaints about voice consistency or reply quality
+  - [ ] (Optional Phase 1A-bis) Persona prompt trim to bring latency below 3s — current ~11K input tokens is the dominant inference cost. Realistic target ~3-5K tokens by removing rarely-triggered SOP branches and consolidating examples.
+- **Branch:** `feat/calista-phase-1a` — Phase 1A complete + verified. Ready for merge.
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 5: customer_credit_activate RPCs (request + approve) — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000012_customer_credit_activate_rpcs.sql`
+  - `request_customer_credit_activate(p_customer_id text, p_term_days int, p_credit_limit numeric, p_reason text, p_actor_user_id uuid) RETURNS bigint`
+    - Actor: COALESCE(explicit arg → auth.uid() → sentinel UUID) — mirrors request_adjustment pattern
+    - 4 validations in order: customer_not_found → term_days_not_allowed (checks piutang_settings.term_days_allowed, fallback ARRAY[7,14,30,60,90]) → credit_limit_must_be_positive → customer_already_activated
+    - Inserts `approval_requests` row with type `customer_credit_activate` and JSON payload
+    - GRANT to `anon`, `authenticated`
+  - `approve_customer_credit_activate(p_request_id bigint, p_owner_pin text) RETURNS void`
+    - 3 guards before PIN: request_not_found → wrong_request_type → request_not_pending
+    - Calls `verify_owner_pin(p_request_id, p_owner_pin)` with TWO args; raises `pin_invalid` on FALSE return
+    - `_transition_approval` NOT called directly — verify_owner_pin handles it atomically
+    - On approval: extracts payload, locks customer row (`FOR UPDATE`), updates `allows_tempo`, `term_days`, `credit_limit`, `tempo_activated_at`, `tempo_activated_by` (resolved Owner uuid from admin_users)
+    - GRANT to `anon`, `authenticated`
+  - **Slot:** `000012`, following T4 at `000011`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T5 entry after T4
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000012_customer_credit_activate_rpcs.sql` via Supabase Studio SQL editor. Both functions are `CREATE OR REPLACE` — idempotent and safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT proname FROM pg_proc WHERE proname IN ('request_customer_credit_activate', 'approve_customer_credit_activate');
+  -- Expected: 2 rows
+  ```
+
+## 2026-06-14 — Piutang & Tempo Phase 1A — Task 4: _resolve_tenant_id() helper — DONE (apply pending)
+
+- **Migration written:** `supabase/migrations/20260614000011_resolve_tenant_helper.sql`
+  - `CREATE OR REPLACE FUNCTION public._resolve_tenant_id() RETURNS uuid` — STABLE, plpgsql
+  - Reads `app.current_tenant_id` GUC via `current_setting('app.current_tenant_id', true)` (missing=ok variant)
+  - Returns sentinel `00000000-0000-0000-0000-000000000000` when GUC is NULL/empty (pre-Layer-A)
+  - Returns `v_setting::uuid` when GUC is set (post-Layer-A)
+  - `EXCEPTION WHEN OTHERS` block catches malformed UUID values — never raises
+  - GRANT to `anon`, `authenticated`, `service_role`
+  - COMMENT documents sentinel-fallback contract
+  - **Slot:** `000011`, following T3 at `000010`
+- **Apply script:** `scripts/apply-pending-migrations.sh` updated with T4 entry after T3
+- **Apply status: NOT YET APPLIED** — DB connectivity block; founder applies via Supabase Studio SQL editor.
+- **Action needed from founder:** Apply `20260614000011_resolve_tenant_helper.sql` via Supabase Studio SQL editor. Idempotent (`CREATE OR REPLACE`) — safe to paste and run.
+- **Verification queries (run after apply):**
+  ```sql
+  SELECT public._resolve_tenant_id();
+  -- Pre-Layer-A: expected 00000000-0000-0000-0000-000000000000
+
+  SET app.current_tenant_id = '11111111-1111-1111-1111-111111111111';
+  SELECT public._resolve_tenant_id();
+  -- Expected: 11111111-1111-1111-1111-111111111111
+  ```
 
 ## 2026-06-14 — Piutang & Tempo Phase 1A — Task 3: piutang_settings per-tenant config table — DONE (apply pending)
 
@@ -6553,3 +7094,68 @@ Plan B and Plan C **can run in parallel** since they touch different files. Plan
 
 - 4 plans written, committed, ready for execution.
 - Implementation NOT YET STARTED. User to pick execution mode (subagent-driven vs inline) and starting plan.
+## 2026-06-16 — Piutang/Tempo Phase 1B: frontend + RPC wiring (branch `feat/piutang-phase-1b`)
+
+- **Scope shipped**:
+  - Migrations `20260615000010_orders_tempo_fields.sql` + `20260615000011_create_tempo_invoice_rpc.sql` — adds `INVOICE_TEMPO` / `INVOICE_WRITTEN_OFF` enum values, widens `payment_type` CHECK to accept TEMPO on `orders` + `kasir_transactions`, adds `due_date`/`written_off_at`/`written_off_by`/`write_off_reason` columns, partial index `idx_orders_tempo_open`. RPC `create_tempo_invoice(p_payload jsonb)` is atomic — locks customer row FOR UPDATE, sums existing open INVOICE_TEMPO inside lock, hard-blocks over-limit with `credit_limit_exceeded: outstanding=X, new=Y, limit=Z`, calls `deduct_stock_fifo` per line. (Pending: apply to Supabase — IPv6 unreachable from current network.)
+  - `src/lib/piutangService.ts` — `PIUTANG_TIERS` constant (overdue / today / h3 / future with row tint + badge class), `classifyTier()` by daysToDue, `createTempoInvoice()` wraps RPC with discriminated `CreateTempoInvoiceResult` (`ok` | `credit_limit_exceeded` | `tempo_not_enabled` | `invalid`), `markTempoInvoicePaid()` direct UPDATE with INVOICE_TEMPO guard, `fetchPiutangRows()` joins orders + customers, `computeKpi()` aggregator, `computeAging()` with configurable buckets (default 30/60/90), `fetchOverdueCount()` for the sidebar badge.
+  - `src/components/piutang/PiutangScreen.tsx` — KPI strip (Total / Overdue / Hari Ini / H-3) + AR aging horizontal stacked bar + filter pills + search + invoice table with tier-tinted rows + Catat Bayar modal (upload placeholder for Phase 1C) + WA button disabled with Phase 1C tooltip.
+  - `src/components/piutang/PiutangBadge.tsx` — red overdue count chip; 2 s-debounced Supabase Realtime subscription on `orders` table. Renders nothing when count == 0.
+  - Sidebar entry between Pelanggan and Pipeline with `Wallet` icon, badge wired for both collapsed (corner dot) and expanded (right-side chip) states.
+  - `PenjualanBaruScreen` + `PaymentPanel`: `KasirPaymentType` extended to include `TEMPO`; 3-up toggle when customer.allows_tempo; payment method picker hidden in TEMPO mode (DB doesn't need it); credit breakdown card with plafon/terpakai/sisa + utilization progress bar + over-limit warning; `OverLimitModal` hard-block with shortage breakdown.
+  - Type system: `ActivePage += 'piutang'`, `PermissionSet.piutang?`, `ALL_PERMISSIONS.piutang = true`, `urlRoute.ACTIVE_PAGES` whitelist updated; `App.tsx` route case wired to `PiutangScreen`.
+- **Pending Phase 1B**:
+  - Apply migrations 20260615000010+20260615000011 to Supabase production.
+  - Add per-tenant `piutang_settings` row (aging buckets currently hardcoded to [30,60,90]).
+  - Replace placeholder upload UI in CatatBayarModal with the existing payment-proof storage uploader.
+- **Deferred to Phase 1C**: write-off RPC pair, backend-go WA send endpoint via whatsmeow, WA preview modal, write-off UI, Pengaturan page for piutang_settings.
+- **Branch**: `feat/piutang-phase-1b` head `3005631`. Awaiting Supabase migration apply before PR to main.
+
+## 2026-06-16 — Piutang Phase 1B: smoke test PASSED + 2 RPC bug fixes
+
+End-to-end MCP Chrome smoke test ran against live Supabase via Management API (PAT path; IPv6 still unreachable from this network):
+
+1. **Piutang screen empty state**: KPIs zero, AR aging "Tidak ada invoice overdue", empty table. ✓
+2. **Happy-path tempo invoice creation** via Penjualan → Walk-in → Kabel 100mm² × 1 @ Rp 120k → QA Tempo Customer (1jt limit, 7-day term) → click Tempo button → credit breakdown shows Plafon 1jt / Terpakai 120k / Sisa 880k / Setelah dibebani 240k (24%) → Save → RPC fires (445 ms) → navigate to Piutang. DB confirmed INVOICE_TEMPO row, due_date=2026-06-23. ✓
+3. **Piutang screen reflects new row**: Total Rp 240rb / 2 invoice, both H-7 with "Akan Datang" badge, WA button disabled with Phase 1C tooltip, Catat Bayar button present. ✓
+4. **Over-limit hard-block**: bump cart to 8 × 120k = Rp 960k → with 240k outstanding = Rp 1.2jt (100%) → client-side red warning "⚠ Melebihi plafon — invoice tempo akan diblok di backend" + Save button **disabled**. Server-side RAISE also verified directly: `credit_limit_exceeded: outstanding=240000.00, new=900000, limit=1000000.00` (matches piutangService regex parser). ✓
+5. **Catat Bayar → Lunas**: open modal → confirm → DB shows status='PAYMENT_VERIFIED' + payment_verified_at timestamp → row leaves Piutang list → Total drops to Rp 120rb / 1 invoice. ✓
+
+**Bugs found + fixed during smoke test** (commit c7465b4):
+- `(p_payload->>'customer_id')::uuid` — customers.id is text (legacy `GJP-CUST-XXXX` IDs), not UUID. Dropped cast.
+- `COALESCE(...)::public.kasir_channel` for orders.channel — column type is `sales_channel`, not `kasir_channel`. Fixed cast.
+
+Both bugs surfaced because Phase 1B was written without running RPC integration tests first; future tempo migrations should ship with a vitest that calls the RPC against a seed customer end-to-end.
+
+**Migrations now live in production Supabase** (applied via Management API at api.supabase.com — IPv6 direct connection still unreachable from this network):
+- 20260615000010_orders_tempo_fields.sql
+- 20260615000011_create_tempo_invoice_rpc.sql (with two fix-ups re-applied)
+
+**Phase 1B status**: ready to PR `feat/piutang-phase-1b` → `main`. No remaining blockers.
+
+---
+
+## 2026-06-16 — Spec + Plan: Katalog View Modes (Foto + List + Inline Expand)
+
+- **Spec**: `docs/superpowers/specs/2026-06-16-katalog-view-modes-design.md` (commit `aca5f9f`)
+- **Plan**: `docs/superpowers/plans/2026-06-16-katalog-view-modes-plan.md` (commit `fb50b7f`)
+- **Mockups**:
+  - `docs/superpowers/mockups/2026-06-16-katalog-view-modes.html` (3-mode comparison; Mode "Padat" dropped per user)
+  - `docs/superpowers/mockups/2026-06-16-katalog-click-behaviors.html` (lightbox vs new-tab vs inline expand)
+  - `docs/superpowers/mockups/2026-06-16-katalog-inline-expand.html` (chosen: 280×280 photo + gallery + bonus stok breakdown)
+
+**Locked decisions**:
+- **2 view modes** only — Foto (existing) + List (new). Mode "Padat" dropped.
+- **Default = List**, no persistence (every fresh mount starts as List).
+- **List columns**: Foto / SKU / Nama / Kategori / Harga / **Stok total + top-3 gudang inline by sort_order** / Chevron / Aksi.
+- **Klik foto thumb behavior = inline expand** (not lightbox, not new tab). Panel: 280×280 foto + gallery thumb strip + all-gudang breakdown + Edit/Tambah Foto/Riwayat Stok buttons.
+- **Multi-expand allowed** (user can open many panels at once).
+- **Open triggers**: foto thumb + chevron `expand_more`.
+- **Close triggers**: ikon X + foto thumb same row + toolbar "Tutup N panel" button.
+- **Animation**: slide-down ~120ms via plain CSS keyframes (no framer-motion).
+
+**Dependency**: must ship spec `2026-06-14-product-photo-search-design.md` Phase 1 first (creates `src/components/produk/` folder, `CatalogView` orchestrator, `StockItem.photos` field, `StockItem.stockByWarehouseId` map). Plan flagged this as a hard prereq.
+
+**Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
+
+**Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.

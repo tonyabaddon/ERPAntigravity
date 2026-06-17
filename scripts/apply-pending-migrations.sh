@@ -108,6 +108,24 @@ MIGRATIONS=(
   # verify_owner_pin; UPDATE allows_tempo=false (retains term_days/credit_limit as audit).
   "20260614000014_customer_credit_deactivate_rpcs.sql"
 
+  # ─── Product Photo Phase 1 — M1: stocks UoM + photo_urls + min_stock + initial_stock_approved ───
+  "20260614000020_stocks_product_columns.sql"
+
+  # ─── Product Photo Phase 1 — M2: product_categories/brands/units registries + seeds ───
+  "20260614000021_product_registries.sql"
+
+  # ─── Product Photo Phase 1 — M3: pgvector + stock_photo_embeddings + HNSW cosine index ───
+  "20260614000022_stock_photo_embeddings.sql"
+
+  # ─── Product Photo Phase 1 — M4: costing_method setting + product-photos Storage bucket ───
+  "20260614000023_costing_and_storage.sql"
+
+  # ─── Product Photo Phase 1 — M5: initial_stock enum + search_products_by_embedding RPC ───
+  "20260614000024_initial_stock_and_search_rpc.sql"
+
+  # ─── Product Photo Phase 1 — M5b: ai_call_log table for activity monitoring ───
+  "20260614000025_ai_call_log.sql"
+
   # ─── BNL Phase 1 (Belanja Numpang Lewat) — 5 migrations ───
   # T1: purchase_invoices + purchase_invoice_items schema + indexes + RLS +
   # set_updated_at trigger. type='PASSTHROUGH' (Phase 1) vs 'STOCK' (Phase 2 reserved).
@@ -122,6 +140,23 @@ MIGRATIONS=(
   # T4: order_cogs_breakdown view — allocates PI cost to Order items via
   # jsonb_array_elements(orders.items) since there's no order_items table.
   "20260615000005_order_cogs_breakdown_view.sql"
+
+  # ─── Product Photo M4-fix — costing_method column + product-photos bucket ───
+  # Original M4 (20260614000023) assumed key/value company_settings; real schema
+  # is single-row. This patch adds costing_method TEXT column + bucket creation.
+  "20260615000020_costing_method_column.sql"
+
+  # ─── Product Photo M4-fix-2 — Storage RLS policies for product-photos ───
+  # The 4 storage.objects policies documented in the M4 NOTE comment; applied
+  # via DB tool now that we know Postgres role has sufficient privilege.
+  "20260615000021_product_photos_storage_policies.sql"
+
+  # ─── Product Photo Phase 2 — GRANTs on stocks + registries to authenticated ───
+  # ProductForm submit hit 42501 "permission denied" — registry tables and
+  # stocks lacked INSERT/UPDATE grants to authenticated role. Bulk upload path
+  # ran under a less-restricted role. This grant matches the existing RLS
+  # policies' intent.
+  "20260615000022_authenticated_grants.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

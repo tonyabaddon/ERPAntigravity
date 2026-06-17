@@ -22,11 +22,13 @@ import {
   PackageSearch,
   BookCheck,
   Warehouse,
+  Wallet,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { buildHref, handleSPAClick } from '../lib/urlRoute';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
+import PiutangBadge from './piutang/PiutangBadge';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -69,9 +71,10 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'penjualan', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
     { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
+    { id: 'piutang', label: 'Piutang', icon: Wallet, category: 'operasional', permKey: 'piutang' },
     { id: 'pipeline', label: 'Pipeline', icon: TrendingUp, category: 'operasional', permKey: 'pipeline' },
     // Inventory
-    { id: 'ai-stock', label: 'Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
+    { id: 'ai-stock', label: 'Produk & Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingBag, category: 'inventory', permKey: 'pembelian' },
     { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, category: 'inventory', permKey: 'can_manage_warehouses' },
@@ -214,6 +217,11 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                           <PendingApprovalBadge count={pendingCount} size="sm" />
                         </span>
                       )}
+                      {item.id === 'piutang' && !isExpanded && (
+                        <span className="absolute -top-1.5 -right-1.5">
+                          <PiutangBadge size="sm" />
+                        </span>
+                      )}
                     </div>
                     <span className={`text-sm font-semibold flex-1 whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                       {item.label}
@@ -221,6 +229,11 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                     {item.id === 'persetujuan' && pendingCount > 0 && isExpanded && (
                       <span className="transition-opacity duration-300 opacity-100 shrink-0">
                         <PendingApprovalBadge count={pendingCount} size="md" />
+                      </span>
+                    )}
+                    {item.id === 'piutang' && isExpanded && (
+                      <span className="transition-opacity duration-300 opacity-100 shrink-0">
+                        <PiutangBadge size="md" />
                       </span>
                     )}
                   </a>

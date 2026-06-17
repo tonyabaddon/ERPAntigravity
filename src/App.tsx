@@ -32,6 +32,7 @@ import PengaturanScreen from './components/PengaturanScreen';
 import PipelineScreen from './components/PipelineScreen';
 import OrderHistoryScreen from './components/OrderHistoryScreen';
 import PelangganScreen from './components/PelangganScreen';
+import PiutangScreen from './components/piutang/PiutangScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
@@ -199,12 +200,21 @@ export default function App() {
             sku: item.sku,
             name: item.name,
             category: item.category,
+            subcategory: item.subcategory ?? null,
+            unit: item.unit ?? 'pcs',
+            unit_alt: item.unit_alt ?? null,
+            unit_alt_factor: item.unit_alt_factor ?? null,
             price: Number(item.price),
             stock: Number(item.stock),
             stock_atas: Number(item.stock_atas ?? item.stock),
             stock_bawah: Number(item.stock_bawah ?? 0),
             status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
             specs: (item.specs as Record<string, string | number>) ?? {},
+            harga_modal: item.harga_modal ?? null,
+            photo_urls: item.photo_urls ?? [],
+            description: item.description ?? null,
+            min_stock_per_product: item.min_stock_per_product ?? null,
+            initial_stock_approved: item.initial_stock_approved ?? true,
           }));
           setStockList(mapped);
           triggerToast('🌐 Database Supabase Sinkron! Ketersediaan stok live dimuat.', 'success');
@@ -235,12 +245,21 @@ export default function App() {
           sku: item.sku,
           name: item.name,
           category: item.category,
+          subcategory: item.subcategory ?? null,
+          unit: item.unit ?? 'pcs',
+          unit_alt: item.unit_alt ?? null,
+          unit_alt_factor: item.unit_alt_factor ?? null,
           price: Number(item.price),
           stock: Number(item.stock),
           stock_atas: Number(item.stock_atas ?? item.stock),
           stock_bawah: Number(item.stock_bawah ?? 0),
           status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
           specs: (item.specs as Record<string, string | number>) ?? {},
+          harga_modal: item.harga_modal ?? null,
+          photo_urls: item.photo_urls ?? [],
+          description: item.description ?? null,
+          min_stock_per_product: item.min_stock_per_product ?? null,
+          initial_stock_approved: item.initial_stock_approved ?? true,
         }));
         setStockList(mapped);
       }
@@ -353,6 +372,7 @@ export default function App() {
           <StockManagerScreen
             stockList={stockList}
             onStockUpdate={handleStockUpdate}
+            onStocksRefresh={handleStockRefresh}
             showToast={triggerToast}
             currentUser={currentUser}
             onNavigateToOpname={() => navigate('stok-opname')}
@@ -435,6 +455,13 @@ export default function App() {
           <PelangganScreen
             openCustomerId={openCustomerId}
             onNavigate={(page) => navigate(page)}
+            showToast={triggerToast}
+          />
+        );
+      case 'piutang':
+        return (
+          <PiutangScreen
+            currentUserId={currentUser?.id ?? ''}
             showToast={triggerToast}
           />
         );

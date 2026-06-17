@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Inline Expand (Foto Gede)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; }
+  .thumb-mcb { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
+  .thumb-cable { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+  .thumb-panel { background: linear-gradient(135deg, #e5e7eb 0%, #cbd5e1 100%); }
+  .thumb-switch { background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+  .thumb-lamp { background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%); }
+  .photo-card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.12); }
+  .row-thumb { cursor: pointer; transition: box-shadow 0.15s; }
+  .row-thumb:hover { box-shadow: 0 0 0 3px #2d8a4e80; }
+</style>
+</head>
+<body class="text-[#1e3d60]">
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">unfold_more</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup — Inline Expand (Foto Besar)</h1>
+        <p class="text-[11px] text-[#43474e]">2026-06-16 • Klik foto thumb → baris membuka panel besar di bawahnya</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-8">
+
+  <!-- Instruction -->
+  <div class="bg-violet-50 border border-violet-200 rounded-3xl p-5">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined">touch_app</span>
+      </div>
+      <div>
+        <p class="text-sm text-[#012749] font-bold mb-1">Skenario: Mode List · user klik thumbnail foto di baris MCB (yang highlighted)</p>
+        <p class="text-xs text-[#012749]">Baris MCB "terbuka" — panel foto besar muncul di bawahnya dengan layout split: foto utama di kiri (~280x280px), gallery thumbs + quick actions di kanan. Klik foto thumb yang sama, klik X, atau Esc untuk tutup.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar context -->
+  <div class="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="flex-1 relative">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+        <input type="text" placeholder="Cari SKU, nama, atau brand…"
+               class="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm placeholder:text-slate-400" />
+      </div>
+      <div class="flex bg-slate-100 rounded-full p-1 gap-0.5">
+        <button class="px-3 py-1.5 rounded-full text-xs font-bold text-slate-600 hover:bg-white inline-flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base">grid_view</span> Foto
+        </button>
+        <button class="px-3 py-1.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5 bg-[#012749] text-white">
+          <span class="material-symbols-outlined text-base">view_list</span> List
+        </button>
+      </div>
+      <button class="px-4 py-2 bg-[#012749] text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-base">add</span> Tambah Barang
+      </button>
+    </div>
+  </div>
+
+  <!-- ─────────────── MAIN TABLE WITH EXPANDED ROW ─────────────── -->
+  <div class="bg-white rounded-3xl border border-[#e5eeff] shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left border-b-2 border-slate-200 bg-slate-50/50">
+          <th class="py-2.5 pl-3 pr-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-14">Foto</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">SKU</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Kategori / Brand</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok Total</th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
+          <th class="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right pr-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody class="text-[13px]">
+        <!-- Row 1 — normal -->
+        <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+          <td class="py-2 pl-3 pr-2">
+            <button class="row-thumb w-10 h-10 thumb-cable rounded-lg flex items-center justify-center" title="Klik untuk lihat foto">
+              <span class="material-symbols-outlined text-xl text-amber-700/60">cable</span>
+            </button>
+          </td>
+          <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-KBL-NYM3X25</td>
+          <td class="py-2 px-2 font-bold text-[#012749]">Kabel NYM 3x2.5 50m Roll</td>
+          <td class="py-2 px-2 text-slate-600">Kabel · <span class="text-[#012749] font-semibold">Eterna</span></td>
+          <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 685.000</td>
+          <td class="py-2 px-2 text-center font-extrabold text-amber-700">8</td>
+          <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+          <td class="py-2 pr-3 px-2 text-right">
+            <button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button>
+          </td>
+        </tr>
+
+        <!-- Row 2 — MCB, EXPANDED -->
+        <tr class="bg-violet-50/40 border-t-2 border-violet-300">
+          <td class="py-2.5 pl-3 pr-2">
+            <button class="w-10 h-10 thumb-mcb rounded-lg flex items-center justify-center ring-2 ring-violet-500" title="Klik lagi untuk tutup">
+              <span class="material-symbols-outlined text-xl text-sky-700/60">bolt</span>
+            </button>
+          </td>
+          <td class="py-2.5 px-2 font-mono text-[12px] text-slate-700">SKU-MCB-EZ9-1P6A</td>
+          <td class="py-2.5 px-2 font-extrabold text-[#012749]">MCB Easy9 1P 6A 4.5kA</td>
+          <td class="py-2.5 px-2 text-slate-600">MCB · <span class="text-[#012749] font-semibold">Schneider</span></td>
+          <td class="py-2.5 px-2 text-right font-extrabold text-[#012749]">Rp 48.500</td>
+          <td class="py-2.5 px-2 text-center font-extrabold text-emerald-700">142</td>
+          <td class="py-2.5 px-2 text-center"><span class="material-symbols-outlined text-base text-violet-700">expand_less</span></td>
+          <td class="py-2.5 pr-3 px-2 text-right">
+            <button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button>
+          </td>
+        </tr>
+        <!-- Expanded panel — BIG PHOTO -->
+        <tr class="bg-violet-50/40 border-b-2 border-violet-300">
+          <td colspan="8" class="px-3 pb-5 pt-1">
+            <div class="bg-white rounded-2xl border border-violet-200 p-5 photo-card-shadow">
+              <div class="flex gap-6">
+                <!-- Foto utama gede -->
+                <div class="thumb-mcb rounded-2xl flex items-center justify-center flex-shrink-0" style="width: 280px; height: 280px;">
+                  <span class="material-symbols-outlined" style="font-size: 160px; color: rgba(7, 89, 133, 0.35);">bolt</span>
+                </div>
+
+                <!-- Right: gallery + actions -->
+                <div class="flex-1 flex flex-col">
+                  <!-- Header row -->
+                  <div class="flex items-start justify-between mb-3">
+                    <div>
+                      <p class="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">Foto Produk · 3 dari 5</p>
+                      <h3 class="text-base font-extrabold text-[#012749] mt-0.5">MCB Easy9 1P 6A 4.5kA</h3>
+                      <p class="text-[11px] text-slate-500 mt-0.5">
+                        <span class="font-mono">SKU-MCB-EZ9-1P6A</span> · Schneider · MCB
+                      </p>
+                    </div>
+                    <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-[11px] font-extrabold inline-flex items-center gap-1" title="Tutup panel (atau klik foto thumb di baris)">
+                      <span class="material-symbols-outlined text-base">close</span> Tutup
+                    </button>
+                  </div>
+
+                  <!-- Gallery thumb strip -->
+                  <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Foto lain — klik untuk ganti foto utama</p>
+                  <div class="flex gap-2 mb-4">
+                    <button class="w-16 h-16 thumb-mcb rounded-xl border-2 border-violet-500 flex items-center justify-center" title="Foto 1 — terlihat sekarang">
+                      <span class="material-symbols-outlined text-2xl text-sky-700/60">bolt</span>
+                    </button>
+                    <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center" title="Foto 2 — packaging">
+                      <span class="material-symbols-outlined text-2xl text-sky-700/60">inventory_2</span>
+                    </button>
+                    <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center" title="Foto 3 — detail terminal">
+                      <span class="material-symbols-outlined text-2xl text-sky-700/60">cable</span>
+                    </button>
+                    <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center" title="Foto 4">
+                      <span class="material-symbols-outlined text-2xl text-sky-700/60">photo_library</span>
+                    </button>
+                    <button class="w-16 h-16 thumb-mcb rounded-xl opacity-60 hover:opacity-100 border-2 border-transparent hover:border-violet-300 flex items-center justify-center" title="Foto 5">
+                      <span class="material-symbols-outlined text-2xl text-sky-700/60">photo</span>
+                    </button>
+                  </div>
+
+                  <!-- Breakdown stok per gudang (bonus — fit di sini karena ada ruang) -->
+                  <div class="bg-slate-50 rounded-xl px-3 py-2 mb-3">
+                    <p class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Stok per Gudang</p>
+                    <div class="flex gap-4 text-[12px]">
+                      <span class="font-bold"><span class="text-slate-500">Atas:</span> <span class="text-emerald-700">87</span></span>
+                      <span class="font-bold"><span class="text-slate-500">Bawah:</span> <span class="text-emerald-700">55</span></span>
+                    </div>
+                  </div>
+
+                  <!-- Action buttons -->
+                  <div class="flex gap-2 mt-auto">
+                    <button class="px-4 py-2 bg-[#012749] hover:bg-[#01345f] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-base">edit</span> Edit Produk
+                    </button>
+                    <button class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-base">add_a_photo</span> Tambah Foto
+                    </button>
+                    <button class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+                      <span class="material-symbols-outlined text-base">history</span> Riwayat Stok
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Row 3 — normal (pushed down by expansion) -->
+        <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+          <td class="py-2 pl-3 pr-2">
+            <button class="row-thumb w-10 h-10 thumb-panel rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-xl text-slate-700/60">developer_board</span>
+            </button>
+          </td>
+          <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-PNL-SLM-3040</td>
+          <td class="py-2 px-2 font-bold text-[#012749]">Panel Box 30x40x15 IP55</td>
+          <td class="py-2 px-2 text-slate-600">Panel · <span class="text-[#012749] font-semibold">Salim</span></td>
+          <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 425.000</td>
+          <td class="py-2 px-2 text-center font-extrabold text-emerald-700">23</td>
+          <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+          <td class="py-2 pr-3 px-2 text-right">
+            <button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button>
+          </td>
+        </tr>
+
+        <!-- Row 4 -->
+        <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+          <td class="py-2 pl-3 pr-2">
+            <button class="row-thumb w-10 h-10 thumb-switch rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-xl text-pink-700/60">toggle_on</span>
+            </button>
+          </td>
+          <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-SKL-PNS-WD1</td>
+          <td class="py-2 px-2 font-bold text-[#012749]">Saklar Tunggal Wide WEJ5531</td>
+          <td class="py-2 px-2 text-slate-600">Saklar · <span class="text-[#012749] font-semibold">Panasonic</span></td>
+          <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 32.000</td>
+          <td class="py-2 px-2 text-center font-extrabold text-emerald-700">87</td>
+          <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+          <td class="py-2 pr-3 px-2 text-right">
+            <button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button>
+          </td>
+        </tr>
+
+        <!-- Row 5 -->
+        <tr class="border-b border-slate-100 hover:bg-blue-50/40 group">
+          <td class="py-2 pl-3 pr-2">
+            <button class="row-thumb w-10 h-10 thumb-lamp rounded-lg flex items-center justify-center">
+              <span class="material-symbols-outlined text-xl text-yellow-700/60">lightbulb</span>
+            </button>
+          </td>
+          <td class="py-2 px-2 font-mono text-[12px] text-slate-600">SKU-LMP-PHL-ES9W</td>
+          <td class="py-2 px-2 font-bold text-[#012749]">Lampu Essential LED 9W E27</td>
+          <td class="py-2 px-2 text-slate-600">Lampu · <span class="text-[#012749] font-semibold">Philips</span></td>
+          <td class="py-2 px-2 text-right font-extrabold text-[#012749]">Rp 28.500</td>
+          <td class="py-2 px-2 text-center font-extrabold text-emerald-700">215</td>
+          <td class="py-2 px-2 text-center"><span class="material-symbols-outlined text-base text-slate-400">expand_more</span></td>
+          <td class="py-2 pr-3 px-2 text-right">
+            <button class="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"><span class="material-symbols-outlined text-lg">edit</span></button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Annotations -->
+  <div class="grid md:grid-cols-3 gap-3">
+    <div class="bg-violet-50 border border-violet-200 rounded-2xl p-3">
+      <p class="text-[10px] font-extrabold text-violet-800 uppercase tracking-wider">📐 Ukuran foto utama</p>
+      <p class="text-[11.5px] text-violet-900 mt-1 leading-snug"><strong>280 x 280px</strong> (1:1). Cukup gede untuk lihat detail terminal/packaging. Total tinggi panel ~340px termasuk gallery thumbs + actions.</p>
+    </div>
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-3">
+      <p class="text-[10px] font-extrabold text-[#012749] uppercase tracking-wider">🖼️ Gallery thumbs</p>
+      <p class="text-[11.5px] text-[#012749] mt-1 leading-snug">5 thumb 64x64 sebelahan di kanan. Klik thumb → foto utama berganti (gak buka panel baru). Layout horizontal hemat space.</p>
+    </div>
+    <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
+      <p class="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider">⚡ Bonus inline</p>
+      <p class="text-[11.5px] text-emerald-900 mt-1 leading-snug">Karena ada ruang, panel sekaligus show: <strong>stok per gudang breakdown</strong> + tombol "Edit Produk / Tambah Foto / Riwayat Stok" tanpa user perlu klik kemana-mana.</p>
+    </div>
+  </div>
+
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+    <p class="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider mb-2">⚠️ Behavior detail yang perlu di-confirm</p>
+    <ol class="text-[12px] text-amber-900 ml-5 list-decimal space-y-1">
+      <li><strong>Single-row expand</strong> — kalau user klik baris lain, panel sebelumnya auto-tutup (cuma 1 row expanded at a time). Atau allow multi-expand sekaligus untuk bandingin?</li>
+      <li><strong>Animasi</strong> — slide down halus (~150ms) supaya gak kaget atau langsung jump? (Saran: slide ~120ms biar smooth tapi gak lambat)</li>
+      <li><strong>Close trigger</strong> — klik thumb yang sama lagi, klik tombol "Tutup", tekan Esc. Cukup atau perlu yang lain?</li>
+    </ol>
+  </div>
+
+</div>
+
+</body>
+</html>
