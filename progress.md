@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-17 — Pembelian Phase 2a — DEPLOYED TO PRODUCTION (100% traffic)
+
+- **Merge:** PR #16 squash-merged `feat/pembelian-phase2` → `main` as commit `10a8e81`. Merge conflicts in `progress.md` (additive log — both markers stripped) and `src/types.ts` (Piutang Phase 1B + Phase 2 types concatenated). Production build PASS post-merge.
+- **Cloud Build:** Frontend + backend builds both SUCCESS off `10a8e81`. New revision `garindo-jaya-panel-msme-erp-frontend-00077-pin` produced (tagged `c10a8e81`).
+- **Traffic promotion:** `gcloud run services update-traffic … --to-revisions 00077-pin=100`. Old revision `00071-sjj` (no tag, prior 100%) demoted to 0%; tagged previews retained at 0% each for rollback.
+- **Production bundle verification:** Fetched `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` → `assets/index-DCZh8s-q.js` (≈2.0 MB). Grep confirms all 7 Phase 2 identifiers present: `Beranda Pembelian`, `Buat Pesanan`, `pembayaran_number`, `pesanan_number`, `tukar_faktur`, `qty_received_total`, `payment_due_at`.
+- **DB schema state in prod:** 7 spec migrations (`20260620000001`–`007`) + big-bang split (`010`) + 4 hotfixes (`020`–`023`) all applied via Supabase Management API earlier. Backend E2E REST smoke caught 4 critical bugs (stock_lots missing `source_id`/`source_type`/`qty_received`/`qty_remaining` cols; `warehouse_id` mis-routed; missing `kasir_expense_category` cast) before production exposure.
+- **Phase 2 surface live in prod:** Pesanan / Tagihan / Pembayaran CRUD pages, Beranda Pembelian lite dashboard, sidebar refactor with 4 sub-tabs, deep-link routing (`?pesanan`, `?tagihan`, `?pembayaran`).
+- **Out of scope (deferred):** Phase 2b — Tukar Faktur entity + reconciliation panel. Phase 2c — full AP Dashboard with aging chart + cash-flow forecast.
+- **Open follow-up:** UI smoke verification in production (Beranda widgets, create-Pesanan flow, partial receipt → auto-CLOSE, Pembayaran multi-allocation) — defer until founder has time to walk through; backend E2E already validated the 8 critical steps.
+- **Rollback path:** revision `00073-baz` (commit `a499403`, pre-Phase-2 main HEAD) still warm at 0% traffic. To roll back: `gcloud run services update-traffic … --to-revisions 00073-baz=100`. Note: DB schema additions are forward-compatible (additive columns + new tables); rolling frontend back does not break old-PI flows but Phase 2 records become inaccessible from UI until re-roll-forward.
+
 ## 2026-06-17 — Pembelian Phase 2a — E2E backend smoke test PASS + 4 hotfix migrations
 
 - **What:** End-to-end backend smoke test executed via REST API + Supabase Management API (because user's IPv6 routing to Supabase was down, fell back to PAT-authenticated Management API). All 8 backend smoke steps PASS after 4 hotfix migrations were applied:
