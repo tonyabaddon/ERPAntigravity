@@ -16,6 +16,8 @@ import BulkUploadSection from './produk/BulkUploadSection';
 import StockTableView from './produk/StockTableView';
 import CatalogGridView from './produk/CatalogGridView';
 import ProductForm from './produk/ProductForm';
+import ViewModeSwitcher, { type ViewMode } from './produk/ViewModeSwitcher';
+import CatalogListView from './produk/CatalogListView';
 
 interface StockManagerScreenProps {
   stockList: StockItem[];
@@ -32,6 +34,26 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
   const [activeTab, setActiveTab] = useState<Tab>('katalog');
   const [editingSku, setEditingSku] = useState<string | null>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  // View mode (Plan B foto-search) — fresh List default per visit, no persistence.
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<Map<string, number>>(new Map());
+  const toggleRow = (sku: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(sku)) next.delete(sku); else next.add(sku);
+      return next;
+    });
+    setCurrentPhotoIndex(prev => {
+      if (prev.has(sku)) return prev;
+      const next = new Map(prev); next.set(sku, 0); return next;
+    });
+  };
+  const closeRow = (sku: string) => setExpandedRows(prev => {
+    const next = new Set(prev); next.delete(sku); return next;
+  });
+  const closeAll = () => { setExpandedRows(new Set()); setCurrentPhotoIndex(new Map()); };
+  const selectPhoto = (sku: string, idx: number) => setCurrentPhotoIndex(prev => new Map(prev).set(sku, idx));
 
   const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
@@ -187,6 +209,24 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
 
       {/* Tab pills */}
       <div className="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          {activeTab === 'katalog' && (
+            <div className="flex items-center gap-2">
+              <ViewModeSwitcher value={viewMode} onChange={(next) => { setViewMode(next); closeAll(); }} />
+              {viewMode === 'list' && expandedRows.size > 0 && (
+                <button
+                  type="button"
+                  onClick={closeAll}
+                  className="px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-full text-xs font-bold inline-flex items-center gap-1.5"
+                  aria-label={`Tutup ${expandedRows.size} panel terbuka`}
+                >
+                  <span className="material-symbols-outlined text-base">unfold_less</span>
+                  Tutup {expandedRows.size} panel
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           {([
             { id: 'katalog', label: '📋 Katalog', count: stockList.length, color: 'emerald' },
@@ -214,13 +254,27 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
         </div>
       </div>
 
-      {activeTab === 'katalog' && (
+      {activeTab === 'katalog' && (viewMode === 'foto' ? (
         <CatalogGridView
           stockList={stockList}
           onAdd={() => setShowAddProductModal(true)}
           onEdit={setEditingSku}
         />
-      )}
+      ) : (
+        <CatalogListView
+          items={stockList}
+          warehouses={warehouses}
+          minStockThreshold={10}
+          expandedRows={expandedRows}
+          currentPhotoIndex={currentPhotoIndex}
+          onToggleRow={toggleRow}
+          onPhotoSelect={selectPhoto}
+          onCloseRow={closeRow}
+          onEdit={setEditingSku}
+          onAddPhoto={setEditingSku}
+          onHistory={(sku) => showToast(`Riwayat stok ${sku} — TODO`, 'info')}
+        />
+      ))}
 
       {activeTab === 'stok' && (
         <StockTableView

@@ -1,0 +1,18 @@
+# Backend-specific docker ignore — used by BuildKit when building with
+# `-f backend-go/Dockerfile`. Overrides the root `.dockerignore` (which
+# excludes `backend-go` for frontend builds).
+#
+# This file is intentionally minimal: we want to INCLUDE backend-go/ in
+# the build context (the root .dockerignore would exclude it).
+
+.git
+.gitignore
+node_modules
+dist
+.claude
+docs
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

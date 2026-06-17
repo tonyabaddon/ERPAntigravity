@@ -1,8 +1,10 @@
 node_modules
 dist
-backend-go
 .env
 .env.*
 !.env.example
 *.log
 .git
+# Note: backend-go used to be excluded (frontend doesn't need it), but the
+# backend Dockerfile now uses repo-root context to access models/ for the
+# CLIP ONNX bundle. Multistage frontend build discards backend-go anyway.

@@ -17,6 +17,9 @@ import { formatRp } from '../lib/format';
 import KasirInvoiceModal from './KasirInvoiceModal';
 import MarkLunasModal from './penjualan/MarkLunasModal';
 import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
+import CariByFotoModal from './kasir/CariByFotoModal';
+import HasilCariFotoModal from './kasir/HasilCariFotoModal';
+import type { SearchResult } from '../lib/cariByFotoService';
 
 interface KasirScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -111,6 +114,21 @@ type Entry = { _src: 'kasir'; tx: KasirTransaction; order: null } | { _src: 'wa'
 
 export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBaru }: KasirScreenProps) {
   const isOwner = currentUser?.role?.toLowerCase() === 'owner';
+  // Cari by Foto (Plan C)
+  const [isFotoOpen, setIsFotoOpen] = useState(false);
+  const [isHasilOpen, setIsHasilOpen] = useState(false);
+  const [fotoResults, setFotoResults] = useState<SearchResult[]>([]);
+  const [queryBlobUrl, setQueryBlobUrl] = useState<string | null>(null);
+  const handleFotoResults = (rs: SearchResult[], blob: Blob) => {
+    setFotoResults(rs);
+    if (queryBlobUrl) URL.revokeObjectURL(queryBlobUrl);
+    setQueryBlobUrl(URL.createObjectURL(blob));
+    setIsHasilOpen(true);
+  };
+  const handleAddToCartFromFoto = (r: SearchResult) => {
+    showToast(`✅ ${r.name} ditambahkan ke kasir (TODO: wire to cart).`, 'success');
+    setIsHasilOpen(false);
+  };
 
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [transactions, setTransactions] = useState<KasirTransaction[]>([]);
@@ -222,6 +240,13 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               <Printer className="w-3.5 h-3.5" /> Cetak Laporan
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => setIsFotoOpen(true)}
+            className="px-5 py-2 bg-gradient-to-br from-[#2d8a4e] to-emerald-700 text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-lg"
+          >
+            <span className="material-symbols-outlined text-base">photo_camera</span> Cari by Foto [AI]
+          </button>
           <button
             type="button"
             onClick={onOpenPenjualanBaru}
@@ -532,6 +557,23 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           onClose={() => setLunasInvoice(null)}
         />
       )}
+      <CariByFotoModal
+        isOpen={isFotoOpen}
+        onClose={() => setIsFotoOpen(false)}
+        onResults={handleFotoResults}
+        showToast={showToast}
+      />
+      <HasilCariFotoModal
+        isOpen={isHasilOpen}
+        onClose={() => {
+          setIsHasilOpen(false);
+          if (queryBlobUrl) { URL.revokeObjectURL(queryBlobUrl); setQueryBlobUrl(null); }
+        }}
+        results={fotoResults}
+        queryBlobUrl={queryBlobUrl}
+        onChangePhoto={() => { setIsHasilOpen(false); setIsFotoOpen(true); }}
+        onAddToCart={handleAddToCartFromFoto}
+      />
     </div>
   );
 }
