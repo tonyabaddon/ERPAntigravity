@@ -43,6 +43,8 @@ import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 import WipListScreen from './components/WipListScreen';
 import ManajemenGudangScreen from './components/ManajemenGudangScreen';
+import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
+import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
 
 import {
   INITIAL_STOCK,
@@ -538,6 +540,10 @@ export default function App() {
             showToast={triggerToast}
           />
         );
+      case 'salesLanding':
+        return <SalesLandingScreen />;
+      case 'daftarPesanan':
+        return <DaftarPesananScreen />;
       default:
         return null;
     }

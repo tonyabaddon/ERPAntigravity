@@ -1,5 +1,98 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel — Code Review Blockers + Important Fixes — DONE
+
+- **What:** Addressed 4 BLOCKERS + 3 IMPORTANT issues from code review on `feat/sales-landing-funnel-2i`
+- **BLOCKER 1 — Bucket public:** Created migration `20260625000006_payment_proofs_bucket_public.sql` — sets `payment-proofs` bucket public so `getPublicUrl` works
+- **BLOCKER 2 — Audit identity spoofable:** Created migration `20260625000007_transition_rpc_use_auth_uid.sql` — replaces `transition_order_stage` dropping `p_actor_user_id` param; actor now from `auth.uid()` server-side. Updated `mutations.ts` to remove `auth.getUser()` + `p_actor_user_id` from RPC call. Updated `mutations.test.ts` to remove `auth` mock.
+- **BLOCKER 3 — Upload→verify chain:** Updated `DaftarPesananScreen.tsx` with `pendingVerify` state; after upload completes, refreshes orders and auto-opens `PaymentProofLightbox` for the same order. Added `handleOpenProof` + `handleUploadProof` handlers.
+- **BLOCKER 4 — ActionPanel dead code:** Created `ActionPanel.tsx` showing proof thumbnail + upload CTA. Wired into `SubStageSection.tsx` (new `onOpenProof` + `onUploadProof` props, rendered when row is expanded). Handlers threaded from `DaftarPesananScreen`.
+- **IMPORTANT 1 — payment_type normalization:** `normalizePaymentType` helper in new `orderMapper.ts` (DB already uppercase so safety net only)
+- **IMPORTANT 2 — rowToOrder mapper:** `orderMapper.ts` exports `rowToOrder` computing `status_label`, `time_ago`, `stuck`, `hari_progress` from raw DB row. `queries.ts` updated to use it in `fetchActiveOrders`, `fetchArchiveOrders`, and `subscribeOrders`.
+- **IMPORTANT 3 — Path traversal:** Filename sanitized in `mutations.ts:uploadPaymentProof` with `replace(/[^a-zA-Z0-9._-]/g, '_')`
+- **TypeScript:** clean (0 errors)
+- **Tests:** 72/72 passing (14 test files)
+- **Files changed:** `supabase/migrations/20260625000006_payment_proofs_bucket_public.sql` (new), `supabase/migrations/20260625000007_transition_rpc_use_auth_uid.sql` (new), `src/lib/sales/mutations.ts`, `src/lib/sales/mutations.test.ts`, `src/lib/sales/queries.ts`, `src/lib/sales/orderMapper.ts` (new), `src/components/sales/ActionPanel.tsx` (new), `src/components/sales/SubStageSection.tsx`, `src/components/sales/DaftarPesananScreen.tsx`
+
+## 2026-06-18 — Sales Funnel — Milestone F (F1): Routing + Sidebar wire-up — DONE
+
+- **Files modified:**
+  - `src/App.tsx` — added named imports for `SalesLandingScreen` + `DaftarPesananScreen`; added two new `renderPage()` switch cases for `'salesLanding'` and `'daftarPesanan'`
+  - `src/components/Sidebar.tsx` — changed `penjualan` menu entry id to `salesLanding` (so clicking "Penjualan" in sidebar navigates to new Sales landing); updated `isActive` logic to highlight Sales menu item for both `salesLanding` and `daftarPesanan` pages
+- **Commit:** `b686e76` — "feat(sales): wire SalesLanding + DaftarPesanan into App router + Sidebar"
+- **TypeScript:** clean
+- **Tests:** 72/72 passing (14 test files)
+- **Note:** The old `penjualan` page (PenjualanScreen) remains accessible via programmatic navigation (`navigate('penjualan')`) but no longer has a sidebar entry. `wip-list`, `notifications`, `order-history` follow the same pattern of sidebar-less pages. Feature implementation complete — ready for branch finishing review.
+
+## 2026-06-18 — Sales Funnel Milestone D (D1-D4): Daftar Pesanan funnel components — DONE
+
+- **What:** Created 6 React components under `src/components/sales/`:
+  - `TypeTabs.tsx` — 3-tab strip (Komponen / Workshop / Semua) with order counts and hint text
+  - `StageStrip.tsx` — 6-stage horizontal pill strip; disabled + faded when count=0, scrollable on mobile
+  - `QuickActionPill.tsx` — reusable navy pill button with stopPropagation for quick actions
+  - `OrderRow.tsx` — per-order list row: customer, channel icon, payment badge, total, stuck badge, quick action pill
+  - `SubStageSection.tsx` — collapsible sub-stage section header + OrderRow list; urgent sections styled amber
+  - `DaftarPesananScreen.tsx` — orchestrator: realtime subscription, auto-expand urgent subs, quick action handler with alert + refresh
+- **TS fix:** Added `JSX.IntrinsicAttributes { key }` shim to `src/vite-env.d.ts`. React 19 ships no `.d.ts`; TS 5.8 with `jsx: react-jsx` validates `key` against component Props without an ambient `IntrinsicAttributes` declaration.
+- **Type fix:** `shortPaymentType` accepts `PaymentType` union, not plain string (matches `Order.payment_type` type).
+- **Test results:** 72 tests, 14 files, all passing (no new tests — components only). TypeScript: clean (0 errors).
+- **Commit:** `6a4746e feat(sales): Daftar Pesanan funnel components (TypeTabs, StageStrip, OrderRow, SubStageSection, Screen)`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
+## 2026-06-18 — Sales Funnel Milestone C (C1+C2): Section 1 Sales landing components — DONE
+
+- **What:** Created 4 React components under `src/components/sales/` + utility + tests:
+  - `src/lib/sales/format.ts` — `formatJuta(n)` compact Rupiah formatter (M/K/raw) extracted for testability
+  - `src/lib/sales/format.test.ts` — 3 Vitest tests (millions/thousands/sub-thousand), all pass
+  - `StatsCards.tsx` — 4-column stats grid (urgent, tunggu, revenue pending, selesai bulan ini)
+  - `SalesTabStrip.tsx` — tab strip with "Catat Penjualan → wizard" + "Daftar Pesanan → funnel" tabs
+  - `UrgentOrdersPreview.tsx` — top-3 urgent orders panel; uses defensive `SUB_STAGES.find()` guard against unknown sub-stages
+  - `SalesLandingScreen.tsx` — orchestrates stats + tab strip + preview; fetches via `fetchDashboardStats` + `fetchActiveOrders`
+- **Type prereq:** Added `'salesLanding' | 'daftarPesanan'` to `ActivePage` union in `src/types.ts` + `ACTIVE_PAGES` set in `urlRoute.ts`. F1 only needs to add render dispatch in App.tsx + Sidebar entries.
+- **navigate API:** `navigate(screen: ActivePage, params?)` from `src/lib/urlRoute.ts` — no React Router.
+- **Brand tokens:** `var(--color-primary)` / `var(--color-secondary)` from `src/index.css @theme {}`.
+- **Test results:** 72 tests, 14 files, all passing. TypeScript: clean (npx tsc --noEmit, 0 errors).
+- **Commit:** `3df9cc9 feat(sales): Section 1 Sales landing components (StatsCards, TabStrip, UrgentPreview, Screen)`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
+## 2026-06-18 — Sales Funnel Milestone B (B1-B6): lib/sales TypeScript modules — DONE
+
+- **What:** Created 6 TypeScript module + test pairs under `src/lib/sales/`:
+  - `types.ts` — `OrderType`, `FunnelStage`, `FunnelSubStage`, `DeliveryMethod`, `PaymentType`, `ProofSource`, `Order`, `SalesDashboardStats` interfaces (type-only, no runtime)
+  - `typeTabConfig.ts` — `TypeTab` union, `TYPE_TAB_CFG` (3 tabs with label/hint/orderTypes), `filterOrdersByTypeTab`, `subStageBelongsToTab`
+  - `stageMapping.ts` — 20-entry `SUB_STAGES` array with full metadata, `STAGE_NAMES`, `getSubStageMeta`, `isUrgentSubStage`, `getSubStagesForStage`
+  - `quickActionMap.ts` — `getQuickAction` maps funnel sub-stage + delivery_method to primary CTA
+  - `queries.ts` — `fetchActiveOrders`, `fetchArchiveOrders`, `fetchDashboardStats`, `subscribeOrders` (all typed against Supabase)
+  - `mutations.ts` — `transitionOrder` (wraps `transition_order_stage` RPC with optimistic-lock params), `uploadPaymentProof` (storage upload + `kasir_transactions` update)
+- **Test results:** 31 Vitest unit tests across 7 test files, all passing. TDD: test → fail → implement → pass for each pair.
+- **Mock fix:** `queries.test.ts` mock needed `.order()` to return a thenable-chainable object so `.limit()` could chain after it.
+- **Commit:** `fbc35bc feat(sales): add lib/sales types + config + mapping + queries + mutations`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
+## 2026-06-18 — Sales Funnel Task A4: get_sales_dashboard_stats RPC — DONE
+
+- **What:** Created migration `20260625000004_sales_stats_rpc.sql` — a STABLE RPC `get_sales_dashboard_stats() RETURNS jsonb` returning 5 keys: `urgent_count`, `tunggu_count`, `revenue_pending`, `completed_this_month`, `revenue_this_month`.
+- **Key findings:**
+  - `kasir_transactions.total` does not exist as a column; revenue computed via `COALESCE(subtotal, 0)`.
+  - Urgent sub-stages: `2b,2d,3a,3b,3c,3f,3g,4b,4d`. Tunggu sub-stages: `1a,2a,2c,2e,3d,3e,3h,4a`.
+  - `funnel_stage` and `funnel_sub_stage` columns confirmed from `20260625000001`.
+  - Revenue pending covers `funnel_stage BETWEEN 1 AND 4`; revenue this month covers `funnel_stage = 5` + current month.
+- **Security:** STABLE + `SET search_path = public` + REVOKE ALL from PUBLIC + GRANT EXECUTE to authenticated.
+- **Commit:** `cbf864a feat(sales): get_sales_dashboard_stats RPC for landing dashboard`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
+## 2026-06-18 — Sales Funnel Task A3: atomic transition_order_stage RPC — DONE
+
+- **What:** Created migration `20260625000003_transition_order_stage_rpc.sql` — a SECURITY DEFINER RPC `transition_order_stage(uuid, text, text, int, uuid, text) RETURNS jsonb` that performs an atomic funnel stage transition with optimistic locking and audit logging.
+- **Key findings:**
+  - `kasir_audit_logs` does NOT exist in the schema. The project uses a generic `public.audit_log` table (no `kasir_` prefix, no `s`), created in `20260614000003_audit_log_table.sql`. Columns: `id (BIGSERIAL)`, `event_type (TEXT)`, `actor_user_id (UUID)`, `payload (JSONB)`, `created_at (TIMESTAMPTZ)`. No `transaction_id` column.
+  - Adapted the audit INSERT: logs to `audit_log` with `order_id` embedded in `payload` JSONB.
+  - `version` and `funnel_sub_stage` columns confirmed present from `20260625000001_funnel_stage_columns.sql`.
+- **Error codes:** `NOT_FOUND`, `STALE_VERSION`, `STAGE_MISMATCH`.
+- **wip_started_at** auto-set on entry to sub-stages `3a` or `3f` (if not already set).
+- **Security:** SECURITY DEFINER + `SET search_path = public` + REVOKE ALL from PUBLIC + GRANT EXECUTE to authenticated.
+- **Commit:** `90f48db feat(sales): atomic transition_order_stage RPC with optimistic lock + audit log`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
 ## 2026-06-18 — Foto Search — auto-index hook on photo upload + merged to main
 
 - **Merge:** PR #18 (`feat/foto-search-on-main` → `main`) merged as `f5cb526`. Backend image `:e6838b4` (CORS fix) + frontend `:672a15d` (cart wire + mockup alignment) are now the trigger-rebuilt source-of-truth. Auto-trigger fired on merge and rebuilt both services off the merge SHA. Removes the silent-regression risk where the next unrelated main push would have rebuilt backend without the CORS fix.
@@ -7230,3 +7323,45 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 **Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
 
 **Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.
+
+## 2026-06-18 — Sales Funnel — Task A1: Migration funnel_stage_columns DONE_WITH_CONCERNS
+
+- **File created:** `supabase/migrations/20260625000001_funnel_stage_columns.sql`
+- **Commit:** `d705fed` — "feat(sales): add funnel_stage + order_type + version columns to kasir_transactions"
+- **What the migration does:**
+  - Creates two new enums: `order_type_enum` ('KOMPONEN', 'CUSTOM_PANEL', 'RAKIT_PANEL') and `delivery_method_enum` ('PICKUP', 'DELIVERY', 'MARKETPLACE_COURIER') — both idempotent via DO/EXCEPTION block
+  - Adds 8 columns to `kasir_transactions` (all IF NOT EXISTS): `order_type`, `funnel_stage`, `funnel_sub_stage`, `estimated_completion_days`, `estimated_completion_date`, `wip_started_at`, `delivery_method`, `version`
+  - Creates 3 indexes (all IF NOT EXISTS): `idx_kasir_funnel_sub_stage`, `idx_kasir_order_type`, `idx_kasir_funnel_stage_active` (partial, WHERE 1–4)
+  - Column comments for `funnel_sub_stage` and `version`
+- **Migration slot:** `20260625000001` — 5+ day buffer from latest existing `20260620000030` ✓
+- **Concern:** Local supabase stack could not be started (Docker daemon not running) — migration was NOT locally applied/tested. Will be validated when applied to Supabase remote via Management API or when Docker is available.
+
+## 2026-06-18 — Sales Funnel — Task A2: Migration payment_proof_columns DONE
+
+- **File created:** `supabase/migrations/20260625000002_payment_proof_columns.sql`
+- **Commit:** `49e185a` — "feat(sales): payment proof columns (pelunasan/marketplace) + payment-proofs storage bucket"
+- **What the migration does:**
+  - Adds 5 columns to `kasir_transactions` (all IF NOT EXISTS): `pelunasan_proof_url`, `marketplace_proof_url`, `proof_source` (with CHECK constraint for 3 valid values), `proof_uploaded_at`, `proof_uploaded_by` (FK to auth.users, nullable)
+  - Does NOT redefine existing columns: `payment_proof_url`, `full_proof_url`, `dp_proof_url` ✓
+  - Creates `payment-proofs` storage bucket (private, ON CONFLICT DO NOTHING)
+  - Two RLS policies on `storage.objects`: INSERT + SELECT for authenticated users scoped to `payment-proofs` bucket (DROP+CREATE for idempotency)
+  - COMMENT statements on 3 new columns for traceability
+- **Migration slot:** `20260625000002` ✓
+- **Note:** Not locally applied (Docker not running); same validation caveat as A1.
+
+## 2026-06-18 — Sales Funnel — Milestone E: Payment Proof Verification (E1-E3) DONE
+
+- **Files created:**
+  - `src/components/sales/PaymentProofThumbnail.tsx` — thumbnail with empty-state fallback, source label, "Lihat ukuran penuh" link
+  - `src/components/sales/PaymentProofLightbox.tsx` — full-size overlay; ESC + outside-click to close; Approve (→ toSubStage) + Reject (→ 2e with reason via window.prompt)
+  - `src/components/sales/ProofUploadModal.tsx` — 3-source radio selector (WA_CALISTA / ADMIN_UPLOAD / MARKETPLACE_SCREENSHOT); file picker; busy/error states; calls `uploadPaymentProof()`
+- **File modified:** `src/components/sales/DaftarPesananScreen.tsx`
+  - Added imports for `getQuickAction`, `PaymentProofLightbox`, `ProofUploadModal`
+  - Removed unused `FunnelSubStage` type import
+  - Added `proofModal` + `uploadModal` state
+  - Replaced `handleQuickAction`: proof-required actions route to upload modal (no URL) or lightbox (URL present); non-proof actions transition directly
+  - Pelunasan path (sub-stage 3b) uses `pelunasan_proof_url` field; transfer/payment path uses `payment_proof_url ?? marketplace_proof_url`
+  - Modal renders appended to JSX before closing `</div>`
+- **Commit:** `2b11782` — "feat(sales): payment proof thumbnail + lightbox + upload modal wired into Daftar Pesanan"
+- **TypeScript:** clean (fixed `React.ChangeEvent` namespace error by importing React in ProofUploadModal)
+- **Tests:** 72/72 passing
