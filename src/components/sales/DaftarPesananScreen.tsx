@@ -30,14 +30,18 @@ export function DaftarPesananScreen() {
     return () => { sub.unsubscribe?.(); };
   }, []);
 
-  // auto-expand urgent sub-stages when stage/tab changes
+  // auto-expand urgent sub-stages when stage/tab changes — also include orphan urgent
+  // sub-stages where orders for this tab exist (e.g. KOMPONEN order at 3g from backfill)
   useEffect(() => {
     const next = new Set<string>();
+    const ordersForTab = filterOrdersByTypeTab(orders, typeTab);
+    const subsWithOrders = new Set(ordersForTab.filter(o => o.funnel_stage === stage).map(o => o.funnel_sub_stage));
     getSubStagesForStage(stage).forEach(s => {
-      if (subStageBelongsToTab(s.id, typeTab) && isUrgentSubStage(s.id)) next.add(s.id);
+      const isVisible = subStageBelongsToTab(s.id, typeTab) || subsWithOrders.has(s.id);
+      if (isVisible && isUrgentSubStage(s.id)) next.add(s.id);
     });
     setExpandedSubs(next);
-  }, [stage, typeTab]);
+  }, [stage, typeTab, orders]);
 
   const filteredOrders = useMemo(() => filterOrdersByTypeTab(orders, typeTab), [orders, typeTab]);
 
@@ -62,7 +66,15 @@ export function DaftarPesananScreen() {
     6: ordersByStage[6].length,
   };
 
-  const subsForStage = getSubStagesForStage(stage).filter(s => subStageBelongsToTab(s.id, typeTab));
+  // Show sub-stages that belong to the tab + any sub-stage that has orders for this tab
+  // (handles backfill anomalies where order_type=KOMPONEN but sub_stage is workshop-only e.g. 3g).
+  // Without this, the stage count and visible rows can desync.
+  const subsForStage = (() => {
+    const allSubs = getSubStagesForStage(stage);
+    const ordersAtStage = ordersByStage[stage] ?? [];
+    const subsWithOrders = new Set(ordersAtStage.map(o => o.funnel_sub_stage));
+    return allSubs.filter(s => subStageBelongsToTab(s.id, typeTab) || subsWithOrders.has(s.id));
+  })();
 
   async function handleQuickAction(order: Order, toSubStage: string) {
     const action = getQuickAction(order);
