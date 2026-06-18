@@ -157,6 +157,38 @@ MIGRATIONS=(
   # ran under a less-restricted role. This grant matches the existing RLS
   # policies' intent.
   "20260615000022_authenticated_grants.sql"
+
+  # ─── Sales Funnel — Phase 1 (Sales landing + Daftar Pesanan 2-I) ───
+  # 7 migrations. ALL idempotent (ADD COLUMN IF NOT EXISTS, CREATE OR REPLACE,
+  # ON CONFLICT DO NOTHING). Distant slot 20260625000xxx claimed per parallel-
+  # terminal isolation rule (latest existing was 20260620000023).
+  #
+  # 001: 8 new columns on kasir_transactions (funnel_stage, funnel_sub_stage,
+  #      order_type enum, version int for optimistic lock, delivery_method,
+  #      wip_started_at, estimated_completion_days/_date) + 3 indexes.
+  # 002: 5 new columns for payment proof tracking (pelunasan_proof_url,
+  #      marketplace_proof_url, proof_source, proof_uploaded_at/_by) + creates
+  #      payment-proofs storage bucket + RLS policies for authenticated.
+  # 003: Atomic transition_order_stage RPC (initial version). Will be replaced
+  #      by 007 — keep 003 in apply order so 007's REPLACE works idempotently.
+  # 004: STABLE get_sales_dashboard_stats() RPC returns urgent_count,
+  #      tunggu_count, revenue_pending, completed_this_month, revenue_this_month.
+  # 005: Backfill funnel_stage/funnel_sub_stage from legacy status enum
+  #      (WIP→3a, PENDING_LOCK_APPROVAL→3g, AWAITING_LUNAS→3d,
+  #       LUNAS/PAID/COMPLETED→5a, CANCELLED→6a, INVOICE_TEMPO→3a).
+  #      WHERE clause prevents re-touching rows already on new state.
+  # 006: Sets payment-proofs bucket public so client getPublicUrl works
+  #      (filenames are random-named, URL unguessable in practice).
+  # 007: REPLACES 003's transition RPC with version that uses auth.uid()
+  #      server-side (drops spoofable p_actor_user_id parameter). Client
+  #      `mutations.transitionOrder` was updated to match new signature.
+  "20260625000001_funnel_stage_columns.sql"
+  "20260625000002_payment_proof_columns.sql"
+  "20260625000003_transition_order_stage_rpc.sql"
+  "20260625000004_sales_stats_rpc.sql"
+  "20260625000005_backfill_funnel_stage.sql"
+  "20260625000006_payment_proofs_bucket_public.sql"
+  "20260625000007_transition_rpc_use_auth_uid.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
