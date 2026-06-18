@@ -6,7 +6,7 @@ import CariByFotoDropzone from './CariByFotoDropzone';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onResults: (results: SearchResult[], queryBlob: Blob) => void;
+  onResults: (results: SearchResult[], queryBlob: Blob, filename?: string) => void;
   showToast: (msg: string, kind?: 'success' | 'info' | 'warning') => void;
 }
 
@@ -26,7 +26,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
       const { results } = await searchByPhoto(blob);
       clearTimeout(coldTimer);
       setColdStart(false);
-      onResults(results, blob);
+      onResults(results, blob, file.name);
       onClose();
     } catch (e) {
       clearTimeout(coldTimer);

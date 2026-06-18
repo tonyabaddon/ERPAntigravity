@@ -26,7 +26,8 @@ interface KasirScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   // Optional channel selects which strip is pre-filled on PenjualanBaruScreen.
   // Omitted → default walkin (e.g. the green header quick-action button).
-  onOpenPenjualanBaru?: (channel?: KasirChannel) => void;
+  // Optional prefillSku auto-adds that SKU to the cart on mount (Cari by Foto).
+  onOpenPenjualanBaru?: (channel?: KasirChannel, prefillSku?: string) => void;
 }
 
 // ─── helpers ─────────────────────────────────────────────────
@@ -119,15 +120,19 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
   const [isHasilOpen, setIsHasilOpen] = useState(false);
   const [fotoResults, setFotoResults] = useState<SearchResult[]>([]);
   const [queryBlobUrl, setQueryBlobUrl] = useState<string | null>(null);
-  const handleFotoResults = (rs: SearchResult[], blob: Blob) => {
+  const [queryFilename, setQueryFilename] = useState<string | null>(null);
+  const handleFotoResults = (rs: SearchResult[], blob: Blob, filename?: string) => {
     setFotoResults(rs);
     if (queryBlobUrl) URL.revokeObjectURL(queryBlobUrl);
     setQueryBlobUrl(URL.createObjectURL(blob));
+    setQueryFilename(filename ?? null);
     setIsHasilOpen(true);
   };
   const handleAddToCartFromFoto = (r: SearchResult) => {
-    showToast(`✅ ${r.name} ditambahkan ke kasir (TODO: wire to cart).`, 'success');
+    if (queryBlobUrl) { URL.revokeObjectURL(queryBlobUrl); setQueryBlobUrl(null); }
     setIsHasilOpen(false);
+    setIsFotoOpen(false);
+    onOpenPenjualanBaru?.(undefined, r.sku);
   };
 
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -571,6 +576,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
         }}
         results={fotoResults}
         queryBlobUrl={queryBlobUrl}
+        queryFilename={queryFilename}
         onChangePhoto={() => { setIsHasilOpen(false); setIsFotoOpen(true); }}
         onAddToCart={handleAddToCartFromFoto}
       />

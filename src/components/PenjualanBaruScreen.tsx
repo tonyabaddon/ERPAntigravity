@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import {
   KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, KasirPaymentType,
@@ -30,11 +30,13 @@ export interface PenjualanBaruScreenProps {
   onBack: () => void;            // navigate back to kasir
   onSaved: (txId: string) => void; // after save, parent can refresh + open invoice
   initialChannel?: KasirChannel;
+  // SKU to auto-add once stocks load (set when navigating from Cari by Foto).
+  initialPrefillSku?: string;
   onNavigate?: (page: ActivePage) => void; // optional: navigate to another page after WIP save
 }
 
 export default function PenjualanBaruScreen({
-  currentUser, showToast, onBack, onSaved, initialChannel, onNavigate,
+  currentUser, showToast, onBack, onSaved, initialChannel, initialPrefillSku, onNavigate,
 }: PenjualanBaruScreenProps) {
   // Channel
   const [channel, setChannel] = useState<KasirChannel>(initialChannel ?? 'walkin');
@@ -211,6 +213,22 @@ export default function PenjualanBaruScreen({
       },
     ]);
   }
+
+  // Auto-add SKU from Cari by Foto: runs once after master data loads.
+  const prefillAppliedRef = useRef(false);
+  useEffect(() => {
+    if (prefillAppliedRef.current) return;
+    if (!initialPrefillSku || loading || stocks.length === 0) return;
+    const match = stocks.find(s => s.sku === initialPrefillSku);
+    if (match) {
+      addItem(match);
+      showToast(`✅ ${match.name} ditambahkan ke kasir.`, 'success');
+    } else {
+      showToast(`SKU ${initialPrefillSku} tidak ditemukan di master stok.`, 'warning');
+    }
+    prefillAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrefillSku, loading, stocks]);
 
   function updateQty(key: number, qty: number) {
     setCart(prev => prev.map(i =>
