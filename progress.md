@@ -1,12 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
-## 2026-06-19 — Sales Phase 1B PR A — 4 migrations created (Pengaturan + stock + numbering + transition v3)
+## 2026-06-19 — Sales Phase 1B PR A backbone — 2 migrations (Pengaturan + invoice numbering)
 
-- **010 pengaturan_tables.sql** — store_settings (singleton), operating_hours (7-day grid), bank_accounts; RLS authenticated read + Owner write.
-- **011 reserve_stock_rpc.sql** — reserve_stock + restore_stock atomic RPCs with idempotency via stock_movements log lookup. **Shipped as STUB (RAISE EXCEPTION)** — plan draft assumed wrong schema (stocks.qty, stocks.warehouse text, stock_movements.kind/order_id); actual canonical is stock_levels(sku, warehouse_id, qty) + stock_movements with source enum + related_doc_type/related_doc_id. File header documents 5 open questions (enum extension, target table, items[] warehouse resolution, idempotency key shape, log_stock_movement helper reuse) that the controller must resolve before the real implementation lands.
+- **010 pengaturan_tables.sql** — store_settings (singleton), operating_hours (7-day grid), bank_accounts; RLS authenticated read + Owner write on all three.
 - **014 invoice_numbering_counters.sql** — invoice_counters table + next_invoice_number(p_doc_type) RPC for SO/INV-DP/INV-PEL/INV-LUNAS/SJ/CANCEL.
-- **015 transition_rpc_v3_with_stock_only.sql** — replaces transition_order_stage; adds reserve_stock on 3a entry (KOMPONEN) + restore_stock on Stage 6 cancel from 3a-3e. **WA hooks deferred to Phase 1C** (no queue_wa_notification calls). 015 compiles even with 011 as a stub (function name resolution is deferred) but the 3a/cancel paths will raise feature_not_supported until 011 is finalized.
-- Migrations not yet applied to live Supabase; will be applied via apply-pending-migrations.sh after PR A review + 011 spec resolution.
+
+**Stock reservation deferred to Phase 1C.** The Phase 1B plan draft assumed a `(stocks.qty, stocks.warehouse text, stock_movements.kind/order_id)` shape; the real schema is `stock_levels(sku, warehouse_id, qty)` + `stock_movements(source enum, related_doc_type/related_doc_id, qty_delta/qty_before/qty_after)` and the `stock_movement_source` enum has no `reserve`/`restore` values. Rewriting reserve_stock against the canonical schema also needs an enum extension migration. Splitting that into its own integration in Phase 1C lets PR A ship a clean Pengaturan backbone.
+
+**Transition RPC v3 also deferred.** With stock hooks gone, v3 collapses into v2 (already shipped as `20260625000007`). No need to ship a no-op migration 015.
+
+**WA notifications also deferred to Phase 1C** — the codebase routes WA through backend-Go `whatsapp/sender`, not a `wa_outbox` queue. Wiring that belongs in its own integration.
+
+Migrations not yet applied to live Supabase; will be applied via apply-pending-migrations.sh as part of PR A deploy.
 
 ---
 

@@ -190,27 +190,18 @@ MIGRATIONS=(
   "20260625000006_payment_proofs_bucket_public.sql"
   "20260625000007_transition_rpc_use_auth_uid.sql"
 
-  # ─── Sales Funnel — Phase 1B PR A (Pengaturan + stock + numbering + transition v3) ───
-  # 4 migrations. WhatsApp notifications deferred to Phase 1C (no
-  # queue_wa_notification calls). Migration 011 ships as a STUB pending
-  # schema decisions (Q1-Q5 in its header) — the actual stocks /
-  # stock_movements schema differs materially from the Phase 1B plan
-  # draft. 015 still compiles; the 3a-entry / stage-6-cancel paths will
-  # raise feature_not_supported until 011 is finalized.
+  # ─── Sales Funnel — Phase 1B PR A (Pengaturan + numbering) ───
+  # 2 migrations. Stock reservation deferred to Phase 1C (stocks /
+  # stock_movements schema mismatch; see commit history for context).
+  # WhatsApp notifications also deferred to Phase 1C — Phase 1B is
+  # explicitly Pengaturan + PDFs + EditOrderModal only.
   #
   # 010: store_settings (singleton) + operating_hours (7-day grid) +
   #      bank_accounts; RLS authenticated read + Owner write on all three.
-  # 011: STUB reserve_stock + restore_stock RPCs (RAISE EXCEPTION) —
-  #      see file header for the 5 open schema questions.
   # 014: invoice_counters table + next_invoice_number(p_doc_type) RPC for
   #      SO / INV-DP / INV-PEL / INV-LUNAS / SJ / CANCEL.
-  # 015: REPLACES transition_order_stage with v3 that calls reserve_stock
-  #      on 3a entry (KOMPONEN order_type) and restore_stock on Stage 6
-  #      cancel from 3a-3e. v2 lives in 20260625000007 — v3 supersedes it.
   "20260625000010_pengaturan_tables.sql"
-  "20260625000011_reserve_stock_rpc.sql"
   "20260625000014_invoice_numbering_counters.sql"
-  "20260625000015_transition_rpc_v3_with_stock_only.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
