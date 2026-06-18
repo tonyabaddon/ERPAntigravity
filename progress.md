@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR B/2 — 5 PDF generators (Invoice DP/Lunas/Pelunasan + Surat Jalan + Catatan Pembatalan)
+
+- `src/lib/sales/pdf/invoiceDpPdf.ts` — payment breakdown box (Subtotal/Ongkir/TOTAL + DP diterima/Sisa).
+- `src/lib/sales/pdf/invoiceLunasPdf.ts` — LUNAS banner; standard totals.
+- `src/lib/sales/pdf/invoicePelunasanPdf.ts` — Pelunasan summary box with DP recap.
+- `src/lib/sales/pdf/suratJalanPdf.ts` — qty-only items table + delivery meta + two-column signature block.
+- `src/lib/sales/pdf/catatanPembatalanPdf.ts` — light-red cancel summary + optional refund block; inline single-column customer callout (no Pengiriman) per spec.
+- `src/lib/sales/pdf/types.ts` — shared `ItemRow`, `PdfResult`, `OrderForPdf` types reused by all 6 generators. `salesOrderPdf.ts` refactored to import `PdfResult` + `ItemRow`.
+- `src/lib/sales/pdf/common.ts` — lifted `sanitizeDocNumber` + `customerInitial` helpers so every generator reuses one filename idiom.
+- `src/lib/sales/pdf/invoiceNumber.ts` — extended `SalesDocType` union with `'INV'` + `'CAN'` (spec lines 121 + 208 require them).
+- One smoke test per generator (2 cases each: happy path + edge case); all assert `blob.size > 2000` and correct filename format. Tests: 70 total (was 60).
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR B/1 — PDF common + Sales Order generator
 
 - `src/lib/sales/pdf/common.ts` — shared header / customer block / doc title / bank block / footer renderers plus Rupiah and Indonesian-date formatters.

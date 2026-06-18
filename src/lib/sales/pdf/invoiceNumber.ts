@@ -11,11 +11,13 @@ import { supabase } from '../../supabaseClient';
 
 export type SalesDocType =
   | 'SO'
+  | 'INV'
   | 'INV-DP'
   | 'INV-PEL'
   | 'INV-LUNAS'
   | 'INV-TEMPO'
   | 'SJ'
+  | 'CAN'
   | 'CANCEL';
 
 /**

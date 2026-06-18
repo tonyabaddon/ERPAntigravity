@@ -53,6 +53,16 @@ export function formatRupiah(n: number, withPrefix: boolean = false): string {
   return withPrefix ? `Rp ${formatted}` : formatted;
 }
 
+/** Replace `/` with `-` so the doc number is safe to drop into a filename. */
+export function sanitizeDocNumber(docNumber: string): string {
+  return docNumber.replace(/\//g, '-');
+}
+
+/** Two-letter uppercase initial from the customer name (`Jenny` → `JE`). */
+export function customerInitial(name: string): string {
+  return (name || 'XX').slice(0, 2).toUpperCase();
+}
+
 // ---------- Header ----------
 
 const LOGO_SIZE_MM = 21;          // ~60pt rounded square

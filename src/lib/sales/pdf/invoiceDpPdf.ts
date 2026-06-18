@@ -1,12 +1,14 @@
-// Sales Order PDF — first of the six Phase 1B generators. Issues a fresh
-// SO/YYYY/NNNNN doc number via `next_invoice_number` and lays out the
-// document per `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`
-// § 1 Sales Order. The remaining five PDFs reuse the same primitives in
-// `common.ts` so visual identity stays consistent.
+// Invoice DP / Tanda Jadi PDF — second of the six Phase 1B generators.
+// Issued when a customer has paid the down payment (Stage 3a komponen or
+// 3c CP/RP). Layout follows § Invoice DP in
+// `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`:
+// Header → Customer/Pengiriman → Items table → payment breakdown box
+// (Subtotal / Ongkir / TOTAL → hairline → DP diterima green / Sisa amber) →
+// payment instruction → footer T&C.
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Order, DeliveryMethod } from '../types';
+import type { DeliveryMethod } from '../types';
 import type { StoreSettings, BankAccount } from '../../pengaturan/types';
 import {
   renderHeader,
@@ -21,16 +23,7 @@ import {
   PAGE_WIDTH_MM,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
-import type { ItemRow, PdfResult } from './types';
-
-export type SalesOrderPdfItem = ItemRow;
-
-export interface SalesOrderPdfOrder extends Order {
-  items?: SalesOrderPdfItem[];
-  ongkir_amount?: number;
-  customer_phone?: string;
-  customer_address?: string;
-}
+import type { ItemRow, OrderForPdf, PdfResult } from './types';
 
 const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
   PICKUP: 'Pickup',
@@ -39,19 +32,21 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const NAVY_HEX = '#012749';
 const GREEN_HEX = '#2d8a4e';
+const AMBER_HEX = '#b45309';
+const HAIRLINE_HEX = '#d0d7e2';
 
 /**
- * Generate the Sales Order PDF. Returns a Blob (application/pdf), the freshly
- * minted doc number, and the conventional filename so callers can hand both
- * to PdfPreviewModal or to `pdf.save()`.
+ * Generate the Invoice DP / Tanda Jadi PDF. Returns `{ blob, docNumber,
+ * filename }` matching the contract the SO generator already established.
  */
-export async function generateSalesOrderPdf(
-  order: SalesOrderPdfOrder,
+export async function generateInvoiceDpPdf(
+  order: OrderForPdf,
   settings: StoreSettings,
   banks: BankAccount[],
 ): Promise<PdfResult> {
-  const docNumber = await nextInvoiceNumber('SO');
+  const docNumber = await nextInvoiceNumber('INV-DP');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
   // ----- 1. Header -----
@@ -59,7 +54,7 @@ export async function generateSalesOrderPdf(
   let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'PESANAN PENJUALAN', cursorY);
+  cursorY = renderDocTitle(doc, 'INVOICE DP / TANDA JADI', cursorY);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -80,7 +75,7 @@ export async function generateSalesOrderPdf(
   );
 
   // ----- 4. Items table -----
-  const items = order.items ?? [];
+  const items: ItemRow[] = order.items ?? [];
   autoTable(doc, {
     startY: cursorY,
     head: [['No', 'Produk', 'Qty', 'Harga', 'Subtotal']],
@@ -97,7 +92,7 @@ export async function generateSalesOrderPdf(
       fontSize: 9,
       cellPadding: 2,
       textColor: '#222222',
-      lineColor: '#d0d7e2',
+      lineColor: HAIRLINE_HEX,
       lineWidth: 0.15,
     },
     headStyles: {
@@ -119,13 +114,15 @@ export async function generateSalesOrderPdf(
 
   cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
 
-  // ----- 5. Totals block (right-aligned) -----
+  // ----- 5. Payment breakdown box (right-aligned) -----
   const totalsValueX = PAGE_WIDTH_MM - MARGIN_MM;
   const totalsLabelX = PAGE_WIDTH_MM - MARGIN_MM - 60;
 
   const ongkir = order.ongkir_amount ?? 0;
   const subtotal = items.reduce((acc, it) => acc + (it.subtotal || 0), 0);
   const grandTotal = order.total ?? subtotal + ongkir;
+  const dpAmount = order.dp_amount ?? 0;
+  const sisa = Math.max(0, grandTotal - dpAmount);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
@@ -141,7 +138,7 @@ export async function generateSalesOrderPdf(
   }
 
   // Divider above TOTAL line
-  doc.setDrawColor('#012749');
+  doc.setDrawColor(NAVY_HEX);
   doc.setLineWidth(0.4);
   doc.line(totalsLabelX, cursorY - 2, totalsValueX, cursorY - 2);
   doc.setFont('helvetica', 'bold');
@@ -149,6 +146,27 @@ export async function generateSalesOrderPdf(
   doc.setTextColor(GREEN_HEX);
   doc.text('TOTAL', totalsLabelX, cursorY + 3);
   doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
+  cursorY += 9;
+
+  // Hairline divider before DP / Sisa rows
+  doc.setDrawColor(HAIRLINE_HEX);
+  doc.setLineWidth(0.2);
+  doc.line(totalsLabelX, cursorY - 1, totalsValueX, cursorY - 1);
+
+  // DP diterima — green bold 10pt
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(GREEN_HEX);
+  doc.text('DP diterima', totalsLabelX, cursorY + 4);
+  doc.text(formatRupiah(dpAmount, true), totalsValueX, cursorY + 4, { align: 'right' });
+  cursorY += 6;
+
+  // Sisa — amber bold 11pt
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(AMBER_HEX);
+  doc.text('Sisa', totalsLabelX, cursorY + 4);
+  doc.text(formatRupiah(sisa, true), totalsValueX, cursorY + 4, { align: 'right' });
   cursorY += 10;
 
   // ----- 6. Bank instruction block -----
@@ -156,13 +174,13 @@ export async function generateSalesOrderPdf(
 
   // ----- 7. Footer T&C -----
   renderFooter(doc, 'SYARAT & KETENTUAN', [
-    'Barang yang telah dibeli tidak dapat dikembalikan',
-    'Pembayaran dianggap sah setelah dana masuk ke rekening kami',
-    'Komplain barang rusak/kurang harap disampaikan saat barang diterima',
+    'DP yang sudah dibayar tidak dapat dikembalikan (kecuali force majeure)',
+    'Sisa pembayaran wajib dilunasi sebelum barang dikirim/diserahkan',
+    'Estimasi pengerjaan: berlaku setelah DP dikonfirmasi',
   ]);
 
   const blob = doc.output('blob');
-  const filename = `Sales_Order_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;
+  const filename = `Invoice_DP_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;
 
   return { blob, docNumber, filename };
 }

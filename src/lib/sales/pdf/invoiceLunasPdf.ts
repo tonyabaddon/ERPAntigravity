@@ -1,36 +1,29 @@
-// Sales Order PDF — first of the six Phase 1B generators. Issues a fresh
-// SO/YYYY/NNNNN doc number via `next_invoice_number` and lays out the
-// document per `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`
-// § 1 Sales Order. The remaining five PDFs reuse the same primitives in
-// `common.ts` so visual identity stays consistent.
+// Invoice Lunas / Kwitansi PDF — third generator. Issued when an order is
+// paid in full from the start (Bayar Penuh flow, Stage 3 → 4). Layout per
+// § Invoice Lunas in `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`:
+// Header → Customer/Pengiriman → Items table → Totals → LUNAS banner → footer.
+//
+// Difference vs Sales Order: no bank instruction block (already paid); a green
+// LUNAS banner replaces it with the payment method + receipt date.
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Order, DeliveryMethod } from '../types';
+import type { DeliveryMethod } from '../types';
 import type { StoreSettings, BankAccount } from '../../pengaturan/types';
 import {
   renderHeader,
   renderDocTitle,
   renderCustomerBlock,
-  renderBankBlock,
   renderFooter,
   formatRupiah,
+  formatTanggal,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
-import type { ItemRow, PdfResult } from './types';
-
-export type SalesOrderPdfItem = ItemRow;
-
-export interface SalesOrderPdfOrder extends Order {
-  items?: SalesOrderPdfItem[];
-  ongkir_amount?: number;
-  customer_phone?: string;
-  customer_address?: string;
-}
+import type { ItemRow, OrderForPdf, PdfResult } from './types';
 
 const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
   PICKUP: 'Pickup',
@@ -39,19 +32,28 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const NAVY_HEX = '#012749';
 const GREEN_HEX = '#2d8a4e';
+// 10% opacity green over white ≈ #e7f3ec — jsPDF doesn't support alpha
+// natively for fills, so we use a pre-mixed pastel.
+const GREEN_BANNER_BG = '#e7f3ec';
+const HAIRLINE_HEX = '#d0d7e2';
 
 /**
- * Generate the Sales Order PDF. Returns a Blob (application/pdf), the freshly
- * minted doc number, and the conventional filename so callers can hand both
- * to PdfPreviewModal or to `pdf.save()`.
+ * Generate the Invoice Lunas / Kwitansi PDF. The order is expected to carry
+ * `payment_method` (e.g. "Transfer BCA", "Tunai") which surfaces inside the
+ * LUNAS banner.
  */
-export async function generateSalesOrderPdf(
-  order: SalesOrderPdfOrder,
+export async function generateInvoiceLunasPdf(
+  order: OrderForPdf,
   settings: StoreSettings,
-  banks: BankAccount[],
+  _banks: BankAccount[],
 ): Promise<PdfResult> {
-  const docNumber = await nextInvoiceNumber('SO');
+  // `_banks` accepted for signature parity with the other generators even
+  // though this PDF doesn't render bank instructions.
+  void _banks;
+
+  const docNumber = await nextInvoiceNumber('INV');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
   // ----- 1. Header -----
@@ -59,7 +61,7 @@ export async function generateSalesOrderPdf(
   let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'PESANAN PENJUALAN', cursorY);
+  cursorY = renderDocTitle(doc, 'INVOICE / KWITANSI', cursorY);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -80,7 +82,7 @@ export async function generateSalesOrderPdf(
   );
 
   // ----- 4. Items table -----
-  const items = order.items ?? [];
+  const items: ItemRow[] = order.items ?? [];
   autoTable(doc, {
     startY: cursorY,
     head: [['No', 'Produk', 'Qty', 'Harga', 'Subtotal']],
@@ -97,7 +99,7 @@ export async function generateSalesOrderPdf(
       fontSize: 9,
       cellPadding: 2,
       textColor: '#222222',
-      lineColor: '#d0d7e2',
+      lineColor: HAIRLINE_HEX,
       lineWidth: 0.15,
     },
     headStyles: {
@@ -119,7 +121,7 @@ export async function generateSalesOrderPdf(
 
   cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
 
-  // ----- 5. Totals block (right-aligned) -----
+  // ----- 5. Totals block -----
   const totalsValueX = PAGE_WIDTH_MM - MARGIN_MM;
   const totalsLabelX = PAGE_WIDTH_MM - MARGIN_MM - 60;
 
@@ -140,8 +142,7 @@ export async function generateSalesOrderPdf(
     cursorY += 5;
   }
 
-  // Divider above TOTAL line
-  doc.setDrawColor('#012749');
+  doc.setDrawColor(NAVY_HEX);
   doc.setLineWidth(0.4);
   doc.line(totalsLabelX, cursorY - 2, totalsValueX, cursorY - 2);
   doc.setFont('helvetica', 'bold');
@@ -151,18 +152,32 @@ export async function generateSalesOrderPdf(
   doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
   cursorY += 10;
 
-  // ----- 6. Bank instruction block -----
-  cursorY = renderBankBlock(doc, banks, cursorY);
+  // ----- 6. LUNAS banner -----
+  const bannerX = MARGIN_MM;
+  const bannerWidth = PAGE_WIDTH_MM - MARGIN_MM * 2;
+  const bannerHeight = 11;
+  doc.setFillColor(GREEN_BANNER_BG);
+  doc.roundedRect(bannerX, cursorY, bannerWidth, bannerHeight, 2.2, 2.2, 'F');
+
+  const paymentMethod = order.payment_method ?? 'Tunai';
+  const bannerText = `✓ LUNAS — diterima ${formatTanggal(issueDate)} · via ${paymentMethod}`;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(NAVY_HEX);
+  doc.text(bannerText, bannerX + bannerWidth / 2, cursorY + bannerHeight / 2 + 1.4, {
+    align: 'center',
+  });
+  cursorY += bannerHeight + 4;
 
   // ----- 7. Footer T&C -----
   renderFooter(doc, 'SYARAT & KETENTUAN', [
+    'Invoice ini berlaku sebagai kwitansi sah setelah pembayaran diterima',
     'Barang yang telah dibeli tidak dapat dikembalikan',
-    'Pembayaran dianggap sah setelah dana masuk ke rekening kami',
-    'Komplain barang rusak/kurang harap disampaikan saat barang diterima',
+    'Klaim garansi mengikuti ketentuan supplier masing-masing',
   ]);
 
   const blob = doc.output('blob');
-  const filename = `Sales_Order_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;
+  const filename = `Invoice_Lunas_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;
 
   return { blob, docNumber, filename };
 }
