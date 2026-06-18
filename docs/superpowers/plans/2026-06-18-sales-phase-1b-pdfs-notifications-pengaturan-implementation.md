@@ -2,6 +2,42 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+---
+
+## Revision 2026-06-19 — Scope + Chunking Update
+
+After pre-flight dep check + user product decisions, this plan is revised vs the original draft:
+
+**A. WA notifications deferred to Phase 1C.** The original plan assumed a `wa_outbox` table that does not exist; the real codebase routes WhatsApp through backend-Go `whatsapp/sender.go` (e.g. `HandleDPVerified` in `backend-go/internal/whatsapp/handler.go`) driven by Go handlers, not a DB queue. Wiring stage transitions to the Go side is its own integration; not appropriate for the same PR as Pengaturan + PDFs.
+
+**Deferred to Phase 1C:**
+- Migration `20260625000012_notification_templates_table.sql` — SKIP
+- Migration `20260625000013_send_wa_notification_helper.sql` — SKIP
+- The "WA hooks" part of migration `20260625000015_transition_rpc_v3_with_stock_and_wa.sql` — RPC still gets revised to call `reserve_stock` / `restore_stock`, but **without** any WA enqueue/call. Rename: `20260625000015_transition_rpc_v3_with_stock_only.sql`.
+
+**B. Split into two PRs.** Single PR was too large to review safely.
+
+- **PR A — Backbone + Pengaturan UI** (target ≤ 12 files)
+  - Migrations: 010 (pengaturan tables), 011 (reserve_stock RPC), 014 (invoice_counters + next_invoice_number RPC), 015 (transition_v3 stock-only)
+  - `src/lib/pengaturan/` (types + queries + mutations + tests)
+  - `src/components/pengaturan/IdentitasTokoCard.tsx`, `JamOperasionalCard.tsx`, `RekeningBankCard.tsx`
+  - `PengaturanScreen.tsx` integration of the three cards
+  - Smoke target: Owner edits Identitas Toko + adds a bank row + sees changes persist; placing a komponen order through Stage 3a reserves stock; cancelling restores.
+
+- **PR B — PDF generators + EditOrderModal** (target ≤ 14 files)
+  - `src/lib/sales/pdf/` (common + 6 generators + invoiceNumber wrapper + tests)
+  - `src/components/sales/PdfPreviewModal.tsx`
+  - `src/components/sales/EditOrderModal.tsx`
+  - `ActionPanel.tsx` PDF download buttons
+  - `DaftarPesananScreen.tsx` wiring for the new buttons
+  - Smoke target: download each of the 6 PDFs from a real order, open in viewer; admin edits ongkir on an order pre-payment and the audit_log row appears.
+
+**C. PDF design spec.** PDF layouts now have a written spec: `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`. All PDF generator tasks in Milestone D must conform to that spec — the spec is the source of truth for layout, doc numbering format, and shared conventions.
+
+---
+
+
+
 **Goal:** Ship Phase 1B critical path (PDFs, WA notifications, Pengaturan UI, stock reservation) + remaining Phase 1A items (EditOrderModal, settings seed) so the Daftar Pesanan funnel is fully production-usable for daily ops at Sinar Elektrik / Garindo Jaya Panel.
 
 **Architecture:** Continue the pattern from Phase 1A — DB RPCs for state-machine atomicity, lib/sales for typed wrappers, React components under `src/components/sales/`. Add PDF generation via existing jsPDF + jspdf-autotable (already in package.json from kasir invoice work). WA notifications go through existing Calista WhatsApp integration. Pengaturan tables for store identity used by all PDFs.
