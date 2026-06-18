@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Foto Search — Browser-driven smoke (Upload File) PASS + null-guard fix
+
+- **What:** Browser-driven MCP smoke of Cari by Foto Upload File flow on Cloud Run prod after CORS preflight fix landed (commit `e6838b4`). Backend pipeline confirmed working end-to-end; frontend crash on empty results fixed.
+- **Smoke result:**
+  - Promoted backend revision `00085-5sl` (image `:e6838b4`) to 100% traffic.
+  - Curl preflight test: `OPTIONS /api/products/search-by-photo` → HTTP 204 with `access-control-allow-*` headers. CORS working.
+  - MCP browser: opened Cari by Foto modal, used `upload_file` with workspace-local `docs/superpowers/screenshots/smoke.jpg`, request fired.
+  - Network: `POST /api/products/search-by-photo` → HTTP 200 (full CLIP pipeline works in browser).
+  - Console: `Uncaught TypeError: Cannot read properties of null (reading 'length')` — backend returned `{"results": null}` (no embeddings indexed yet) and `HasilCariFotoModal` deref'd `.length` without a guard.
+- **Fix:** `src/lib/cariByFotoService.ts` — `searchByPhoto` now returns `{...data, results: data.results ?? []}`. Single point of defense at the service boundary so consumers always get `SearchResult[]`.
+- **Commit:** `6ad1df5` on branch `feat/foto-search-on-main` (worktree).
+- **Frontend rebuild:** `gcloud builds submit --config=cloudbuild.frontend.yaml --substitutions=SHORT_SHA=6ad1df5` — in flight.
+- **Outstanding caveats (deferred, not blocking):**
+  - 294 existing products' photos are not indexed. Search returns `[]` until operator runs the index-photos endpoint for product catalog. UI now shows the empty-state instead of crashing.
+  - Backend `cloudbuild.yaml` does not use `--no-traffic` + tag pattern; next push to main will auto-deploy and could overwrite this revision. Frontend already uses the safe pattern.
+  - Merge `feat/foto-search-on-main` → `main` to make backend image `:e6838b4` the trigger-built artifact and remove the manual-deploy risk.
+- **Branch:** `feat/foto-search-on-main` (worktree `.claude/worktrees/foto-search-on-main`)
+
 ## 2026-06-17 — Pembelian Phase 2a — E2E backend smoke test PASS + 4 hotfix migrations
 
 - **What:** End-to-end backend smoke test executed via REST API + Supabase Management API (because user's IPv6 routing to Supabase was down, fell back to PAT-authenticated Management API). All 8 backend smoke steps PASS after 4 hotfix migrations were applied:
