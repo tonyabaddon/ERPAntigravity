@@ -25,6 +25,18 @@ export async function fetchArchiveOrders(stage: 5 | 6, limit: number = 5): Promi
   return (data ?? []).map(rowToOrder);
 }
 
+// Fetches active orders + most recent N archive orders for stages 5 & 6 in a single
+// merged list. Used by DaftarPesananScreen so clicking Stage 5/6 in the strip shows
+// the recently completed/cancelled rows. Archive limit kept small to bound payload.
+export async function fetchOrdersWithArchive(archiveLimit: number = 20): Promise<Order[]> {
+  const [active, archive5, archive6] = await Promise.all([
+    fetchActiveOrders(),
+    fetchArchiveOrders(5, archiveLimit),
+    fetchArchiveOrders(6, archiveLimit),
+  ]);
+  return [...active, ...archive5, ...archive6];
+}
+
 export async function fetchDashboardStats(): Promise<SalesDashboardStats> {
   const { data, error } = await supabase.rpc('get_sales_dashboard_stats');
   if (error) throw error;
