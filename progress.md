@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Foto Search — auto-index hook on photo upload + merged to main
+
+- **Merge:** PR #18 (`feat/foto-search-on-main` → `main`) merged as `f5cb526`. Backend image `:e6838b4` (CORS fix) + frontend `:672a15d` (cart wire + mockup alignment) are now the trigger-rebuilt source-of-truth. Auto-trigger fired on merge and rebuilt both services off the merge SHA. Removes the silent-regression risk where the next unrelated main push would have rebuilt backend without the CORS fix.
+- **Auto-index on photo upload:** `src/components/produk/ProductForm.tsx` — after `uploadProductPhoto()` succeeds, fire-and-forget `indexPhotos(sku, [path])` to embed the photo via backend CLIP. Non-blocking on failure (photo stored regardless; can re-index later via `/api/products/index-photos`). Makes Cari by Foto self-sustaining as the catalog grows — no manual curl needed for new uploads.
+- **E2E verified earlier today:** downloaded `AA201712OD/0.jpg` (Panel Besi Outdoor) from Katalog → uploaded via Cari by Foto → returned Top 2 results: SKU AA201712OD at **100% similarity** (exact match) + SKU AA201712ID (Indoor variant) at **90%**. Clicking +Tambah navigated to `?screen=penjualanBaru&prefillSku=AA201712OD` with cart populated + success toast.
+- **Caveat unchanged:** only 3 of 294 products have photos. Auto-index covers new uploads going forward, but the 291 photo-less SKUs need photos uploaded by ops before they become searchable.
+
 ## 2026-06-18 — Foto Search — +Tambah → cart wire + visual mockup alignment
 
 - **What:** Two follow-ups on Cari by Foto live in Kasir:

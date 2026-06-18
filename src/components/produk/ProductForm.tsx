@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto } from '../../types';
 import { registryService, companySettingsService, stockLotsService, approvalService } from '../../lib/supabaseClient';
 import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '../../lib/productPhotoService';
+import { indexPhotos } from '../../lib/cariByFotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
 
@@ -182,6 +183,10 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         setPhotos(curr => curr.map(p => p.order === order
           ? { ...p, url, path, uploaded_at: new Date().toISOString(), status: 'uploaded', localUrl: undefined }
           : p));
+        // Fire-and-forget CLIP embedding so Cari by Foto can find this product.
+        // A failure here is non-blocking — the photo is stored either way and
+        // can be re-indexed later via the backend index-photos endpoint.
+        void indexPhotos(targetSku, [path]).catch(() => {});
       } catch (e) {
         showToast('Gagal upload foto: ' + (e as Error).message, 'warning');
         setPhotos(curr => curr.map(p => p.order === order ? { ...p, status: 'failed' } : p));
