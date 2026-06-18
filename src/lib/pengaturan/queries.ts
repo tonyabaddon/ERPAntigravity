@@ -21,7 +21,7 @@ export async function fetchOperatingHours(): Promise<OperatingHour[]> {
 }
 
 export async function fetchBankAccounts(activeOnly: boolean = false): Promise<BankAccount[]> {
-  let q = supabase.from('bank_accounts').select('*').order('sort_order', { ascending: true });
+  let q = supabase.from('store_bank_accounts').select('*').order('sort_order', { ascending: true });
   if (activeOnly) q = q.eq('is_active', true);
   const { data, error } = await q;
   if (error) throw error;

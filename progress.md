@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — rename bank_accounts → store_bank_accounts (collision with reconciliation feature)
+
+**Collision discovered when applying migrations:** the bank reconciliation feature (migration `20260607000001_recon_bank_accounts.sql`) had already created a `bank_accounts` table with a different shape (`bank_code` enum + `purpose` enum + `account_label`). Phase 1B's `CREATE TABLE IF NOT EXISTS bank_accounts (...)` short-circuited, then `CREATE INDEX ... ON bank_accounts(is_active, sort_order)` failed because `sort_order` didn't exist on the reconciliation row.
+
+**Fix:** renamed every occurrence of `bank_accounts` to `store_bank_accounts` in the Phase 1B PR A files: migrations 010 + 016, `src/lib/pengaturan/{queries,mutations,mutations.test}.ts`. The reconciliation `bank_accounts` table is untouched. Live Supabase now has both:
+- `bank_accounts` — reconciliation (id, bank_code, account_number, account_label, purpose, is_active, created_at)
+- `store_bank_accounts` — invoice/PDF display (id, bank_name, account_number, account_holder, is_active, sort_order, created_at, updated_at)
+
+**Migrations applied to live Supabase via `/tmp/apply-migration`:**
+- 010 pengaturan_tables.sql — OK
+- 014 invoice_numbering_counters.sql — OK
+- 016 seed_pengaturan_from_legacy.sql — OK (copies legacy company_settings + bank_config into the new tables)
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A — legacy → new seed migration + heading consistency
 
 - `supabase/migrations/20260625000016_seed_pengaturan_from_legacy.sql` — one-shot, idempotent: copies `company_settings.{company_name, address, phone}` → `store_settings.{nama_toko, alamat_lengkap, telp_wa}` only if the new row is still at migration-010 defaults; copies every `bank_config` row into `bank_accounts` keyed by (bank_name, account_number). Prevents the new Pengaturan cards from opening blank.

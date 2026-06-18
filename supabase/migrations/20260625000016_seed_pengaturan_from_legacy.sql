@@ -1,4 +1,4 @@
--- Phase 1B PR A — one-shot seed of store_settings + bank_accounts from
+-- Phase 1B PR A — one-shot seed of store_settings + store_bank_accounts from
 -- legacy company_settings + bank_config so the new Pengaturan cards open
 -- with the user's existing data instead of blank defaults.
 --
@@ -6,7 +6,7 @@
 --   * store_settings: only update when the row is still at migration-010
 --     defaults (nama_toko='Sinar Elektrik' AND alamat_lengkap='') so a
 --     subsequent Owner edit through the new card is never overwritten.
---   * bank_accounts: only insert rows from bank_config whose
+--   * store_bank_accounts: only insert rows from bank_config whose
 --     (bank_name, account_number) pair isn't already present.
 
 DO $$
@@ -33,8 +33,8 @@ BEGIN
   END IF;
 END $$;
 
--- bank_accounts copy
-INSERT INTO bank_accounts (bank_name, account_number, account_holder, is_active, sort_order)
+-- store_bank_accounts copy
+INSERT INTO store_bank_accounts (bank_name, account_number, account_holder, is_active, sort_order)
 SELECT
   bc.bank_name,
   bc.account_number,
@@ -43,7 +43,7 @@ SELECT
   bc.id AS sort_order
 FROM bank_config bc
 WHERE NOT EXISTS (
-  SELECT 1 FROM bank_accounts ba
+  SELECT 1 FROM store_bank_accounts ba
   WHERE ba.bank_name = bc.bank_name
     AND ba.account_number = bc.account_number
 );

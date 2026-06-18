@@ -3,7 +3,7 @@
 -- signature blocks. All three follow the same RLS pattern:
 --   * authenticated SELECT to anyone (read-only public store info)
 --   * Owner-only writes (UPDATE for the two singleton tables, ALL for
---     bank_accounts which needs INSERT/DELETE for adding new accounts)
+--     store_bank_accounts which needs INSERT/DELETE for adding new accounts)
 
 -- store_settings: single-row identitas toko
 CREATE TABLE IF NOT EXISTS store_settings (
@@ -38,7 +38,7 @@ INSERT INTO operating_hours(day_of_week, is_open, open_time, close_time) VALUES
   (6, false, NULL, NULL)
 ON CONFLICT (day_of_week) DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS bank_accounts (
+CREATE TABLE IF NOT EXISTS store_bank_accounts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   bank_name text NOT NULL,
   account_number text NOT NULL,
@@ -49,11 +49,11 @@ CREATE TABLE IF NOT EXISTS bank_accounts (
   updated_at timestamptz NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_bank_accounts_active_order ON bank_accounts(is_active, sort_order);
+CREATE INDEX IF NOT EXISTS idx_store_bank_accounts_active_order ON store_bank_accounts(is_active, sort_order);
 
 ALTER TABLE store_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE operating_hours ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE store_bank_accounts ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Authenticated read store_settings" ON store_settings;
 CREATE POLICY "Authenticated read store_settings" ON store_settings FOR SELECT TO authenticated USING (true);
@@ -71,14 +71,14 @@ CREATE POLICY "Owner write operating_hours" ON operating_hours FOR UPDATE TO aut
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid() AND role = 'Owner')
 );
 
-DROP POLICY IF EXISTS "Authenticated read bank_accounts" ON bank_accounts;
-CREATE POLICY "Authenticated read bank_accounts" ON bank_accounts FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Authenticated read store_bank_accounts" ON store_bank_accounts;
+CREATE POLICY "Authenticated read store_bank_accounts" ON store_bank_accounts FOR SELECT TO authenticated USING (true);
 
-DROP POLICY IF EXISTS "Owner all bank_accounts" ON bank_accounts;
-CREATE POLICY "Owner all bank_accounts" ON bank_accounts FOR ALL TO authenticated USING (
+DROP POLICY IF EXISTS "Owner all store_bank_accounts" ON store_bank_accounts;
+CREATE POLICY "Owner all store_bank_accounts" ON store_bank_accounts FOR ALL TO authenticated USING (
   EXISTS (SELECT 1 FROM admin_users WHERE id = auth.uid() AND role = 'Owner')
 );
 
 COMMENT ON TABLE store_settings IS 'Single-row store identity used by all PDFs + WA signature';
 COMMENT ON TABLE operating_hours IS '7-day open/close grid; 0=Senin per Indonesian convention';
-COMMENT ON TABLE bank_accounts IS 'Bank accounts rendered in invoices for customer transfers';
+COMMENT ON TABLE store_bank_accounts IS 'Bank accounts rendered in invoices for customer transfers';

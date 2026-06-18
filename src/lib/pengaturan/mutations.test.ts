@@ -124,7 +124,7 @@ describe('pengaturan/mutations', () => {
       is_active: true,
       sort_order: 0,
     });
-    expect(fromSpy).toHaveBeenCalledWith('bank_accounts');
+    expect(fromSpy).toHaveBeenCalledWith('store_bank_accounts');
     expect(insertSpy).toHaveBeenCalledTimes(1);
     expect(row.id).toBe('uuid-1');
     expect(row.bank_name).toBe('BCA');
@@ -143,7 +143,7 @@ describe('pengaturan/mutations', () => {
       error: null,
     };
     const row = await updateBankAccount('uuid-2', { is_active: false });
-    expect(fromSpy).toHaveBeenCalledWith('bank_accounts');
+    expect(fromSpy).toHaveBeenCalledWith('store_bank_accounts');
     expect(updateSpy).toHaveBeenCalledTimes(1);
     expect(eqSpy).toHaveBeenCalledWith('id', 'uuid-2');
     expect(row.is_active).toBe(false);
@@ -151,7 +151,7 @@ describe('pengaturan/mutations', () => {
 
   test('deleteBankAccount calls delete().eq() and resolves', async () => {
     await deleteBankAccount('uuid-3');
-    expect(fromSpy).toHaveBeenCalledWith('bank_accounts');
+    expect(fromSpy).toHaveBeenCalledWith('store_bank_accounts');
     expect(deleteSpy).toHaveBeenCalledTimes(1);
     expect(eqSpy).toHaveBeenCalledWith('id', 'uuid-3');
   });

@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { StoreSettings, OperatingHour, BankAccount } from './types';
 
-// RLS on store_settings / operating_hours / bank_accounts restricts writes to
+// RLS on store_settings / operating_hours / store_bank_accounts restricts writes to
 // admin_users with role='Owner' (migration 010). These helpers do not pre-check;
 // non-Owner callers will receive a PostgREST permission error which the caller
 // surfaces via the standard error toast.
@@ -29,7 +29,7 @@ export async function updateOperatingHour(
 
 export async function createBankAccount(account: Omit<BankAccount, 'id'>): Promise<BankAccount> {
   const { data, error } = await supabase
-    .from('bank_accounts')
+    .from('store_bank_accounts')
     .insert(account)
     .select()
     .single();
@@ -42,7 +42,7 @@ export async function updateBankAccount(
   patch: Partial<Omit<BankAccount, 'id'>>,
 ): Promise<BankAccount> {
   const { data, error } = await supabase
-    .from('bank_accounts')
+    .from('store_bank_accounts')
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
@@ -52,6 +52,6 @@ export async function updateBankAccount(
 }
 
 export async function deleteBankAccount(id: string): Promise<void> {
-  const { error } = await supabase.from('bank_accounts').delete().eq('id', id);
+  const { error } = await supabase.from('store_bank_accounts').delete().eq('id', id);
   if (error) throw error;
 }
