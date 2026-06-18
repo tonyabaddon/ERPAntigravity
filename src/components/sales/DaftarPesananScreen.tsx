@@ -110,22 +110,23 @@ export function DaftarPesananScreen() {
       ? order.pelunasan_proof_url
       : (order.payment_proof_url ?? order.marketplace_proof_url);
     if (!proofUrl) return;
-    // Determine toSub for verify-stage orders
-    const toSub = order.funnel_sub_stage === '2d' ? '3a' : '4a';
+    const action = getQuickAction(order);
+    if (!action?.toSubStage) return;
     setProofModal({
       url: proofUrl,
       orderId: order.id,
       version: order.version,
       fromSub: order.funnel_sub_stage,
-      toSub,
+      toSub: action.toSubStage,
     });
   }
 
   function handleUploadProof(order: Order) {
     const proofField: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' =
       order.funnel_sub_stage === '3b' ? 'pelunasan_proof_url' : 'payment_proof_url';
-    const toSub = order.funnel_sub_stage === '2d' ? '3a' : '4a';
-    setPendingVerify({ orderId: order.id, toSub });
+    const action = getQuickAction(order);
+    if (!action?.toSubStage) return;
+    setPendingVerify({ orderId: order.id, toSub: action.toSubStage });
     setUploadModal({ orderId: order.id, field: proofField });
   }
 
