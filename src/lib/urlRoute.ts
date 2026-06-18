@@ -57,6 +57,8 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'rekonsiliasi',
   'wip-list',
   'penjualan',
+  'salesLanding',
+  'daftarPesanan',
 ]);
 
 export interface RouteState {
