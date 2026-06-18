@@ -28,6 +28,42 @@
   - Merge `feat/foto-search-on-main` → `main` to make backend image `:e6838b4` the trigger-built artifact and remove the manual-deploy risk.
 - **Branch:** `feat/foto-search-on-main` (worktree `.claude/worktrees/foto-search-on-main`)
 
+## 2026-06-17 — Pembelian Phase 2a — E2E PRODUCTION UI SMOKE — PASS (Chrome MCP)
+
+Drove full happy path against production URL with live Supabase. All 4 entities + state transitions verified UI ↔ DB.
+
+| Step | UI action | DB invariant verified |
+|---|---|---|
+| 1 Beranda | Click Pembelian → Beranda Pembelian renders | 4 KPI tiles + per-supplier table (32 suppliers) populated from migrated PO data |
+| 2 Pesanan list | Click Pesanan tab | 40 migrated POs (PSN-001…040) split correctly across ORDERED/CLOSED |
+| 3 Buat Pesanan | Supplier=GTA, SKU=TEST-IMM qty=10 × Rp 1.000, status=Ordered, save | `PSN-2026-06-041` created, status=ORDERED, total=10.000 |
+| 4 Buat Tagihan (partial qty=6) | Click Buat Tagihan from PSN detail → qty 6/10, invoice SMOKE-INV-001, save | `PI-2026-06-001` BELUM_LUNAS, type=STOCK, pesanan_id linked, total=6.000, payment_due_at=2026-07-17. `stock_lots` row: source_type=TAGIHAN, qty_received=6, qty_remaining=6, unit_cost=1000. `pesanan_items.qty_received_total`=6. Pesanan stays ORDERED |
+| 5 Partial UI | PSN-041 detail | Shows "6 / 10 diterima (60%)" |
+| 6 Buat Tagihan (remaining qty=4) | Buat Tagihan from PSN detail → qty auto=4, SMOKE-INV-002, save | `PI-2026-06-002` created. **`PSN-2026-06-041` auto-CLOSED** (closed_at set, qty_received_total=10), confirms `set_pesanan_closed_if_fulfilled` trigger fires |
+| 7 Pembayaran multi-allocation | Catat Pembayaran → supplier=GTA → check PI-001 + PI-002 → TRANSFER BCA-SMOKE → save | `PMB-2026-06-004` LUNAS, both PI-001 + PI-002 → status=LUNAS, paid_amount fully reconciled (6.000 + 4.000). Kasir entry created: category="Pembelian Stok", description="Pembayaran PMB-2026-06-004 — GTA", subtotal=10.000 |
+
+**Bugs caught by smoke (none blocking):**
+- Beranda per-supplier table renders 31 test suppliers with "⚠ Terlambat 9-10 hari" badge + "Rp 0" outstanding — looks like JT computed from migrated header date even when no outstanding remains. Follow-up: filter rows where outstanding=0, OR suppress badge when amount=0.
+
+**Test artifacts left in prod:**
+- 1 Pesanan PSN-2026-06-041 (CLOSED), 2 Tagihans PI-2026-06-001/002 (LUNAS), 1 Pembayaran PMB-2026-06-004 (LUNAS), 1 Kasir expense row, 1 stock_lots row (10 units TEST-IMM on Gudang Jakarta), all tagged "SMOKE-INV-001/002" / "BCA-SMOKE" / supplier=GTA for easy filter/cleanup. Net stock effect: +10 units of TEST-IMM on Gudang Jakarta (existing test SKU, no production catalog pollution).
+
+**Screenshots:** `tmp/phase2-smoke/01-pembelian-landing.png` through `07-pembayaran-detail-multi.png`
+
+**Conclusion:** Phase 2a backend (7 spec migrations + 4 hotfixes), frontend (BerandaPembelian + Pesanan/Tagihan/Pembayaran CRUD + sidebar), and the critical Pesanan → Tagihan → Pembayaran state machine all work correctly in production under real user click flow. Phase 2a deploy verified complete.
+
+## 2026-06-17 — Pembelian Phase 2a — DEPLOYED TO PRODUCTION (100% traffic)
+
+- **Merge:** PR #16 squash-merged `feat/pembelian-phase2` → `main` as commit `10a8e81`. Merge conflicts in `progress.md` (additive log — both markers stripped) and `src/types.ts` (Piutang Phase 1B + Phase 2 types concatenated). Production build PASS post-merge.
+- **Cloud Build:** Frontend + backend builds both SUCCESS off `10a8e81`. New revision `garindo-jaya-panel-msme-erp-frontend-00077-pin` produced (tagged `c10a8e81`).
+- **Traffic promotion:** `gcloud run services update-traffic … --to-revisions 00077-pin=100`. Old revision `00071-sjj` (no tag, prior 100%) demoted to 0%; tagged previews retained at 0% each for rollback.
+- **Production bundle verification:** Fetched `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` → `assets/index-DCZh8s-q.js` (≈2.0 MB). Grep confirms all 7 Phase 2 identifiers present: `Beranda Pembelian`, `Buat Pesanan`, `pembayaran_number`, `pesanan_number`, `tukar_faktur`, `qty_received_total`, `payment_due_at`.
+- **DB schema state in prod:** 7 spec migrations (`20260620000001`–`007`) + big-bang split (`010`) + 4 hotfixes (`020`–`023`) all applied via Supabase Management API earlier. Backend E2E REST smoke caught 4 critical bugs (stock_lots missing `source_id`/`source_type`/`qty_received`/`qty_remaining` cols; `warehouse_id` mis-routed; missing `kasir_expense_category` cast) before production exposure.
+- **Phase 2 surface live in prod:** Pesanan / Tagihan / Pembayaran CRUD pages, Beranda Pembelian lite dashboard, sidebar refactor with 4 sub-tabs, deep-link routing (`?pesanan`, `?tagihan`, `?pembayaran`).
+- **Out of scope (deferred):** Phase 2b — Tukar Faktur entity + reconciliation panel. Phase 2c — full AP Dashboard with aging chart + cash-flow forecast.
+- **Open follow-up:** UI smoke verification in production (Beranda widgets, create-Pesanan flow, partial receipt → auto-CLOSE, Pembayaran multi-allocation) — defer until founder has time to walk through; backend E2E already validated the 8 critical steps.
+- **Rollback path:** revision `00073-baz` (commit `a499403`, pre-Phase-2 main HEAD) still warm at 0% traffic. To roll back: `gcloud run services update-traffic … --to-revisions 00073-baz=100`. Note: DB schema additions are forward-compatible (additive columns + new tables); rolling frontend back does not break old-PI flows but Phase 2 records become inaccessible from UI until re-roll-forward.
+
 ## 2026-06-17 — Pembelian Phase 2a — E2E backend smoke test PASS + 4 hotfix migrations
 
 - **What:** End-to-end backend smoke test executed via REST API + Supabase Management API (because user's IPv6 routing to Supabase was down, fell back to PAT-authenticated Management API). All 8 backend smoke steps PASS after 4 hotfix migrations were applied:
