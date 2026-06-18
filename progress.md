@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — 4 migrations created (Pengaturan + stock + numbering + transition v3)
+
+- **010 pengaturan_tables.sql** — store_settings (singleton), operating_hours (7-day grid), bank_accounts; RLS authenticated read + Owner write.
+- **011 reserve_stock_rpc.sql** — reserve_stock + restore_stock atomic RPCs with idempotency via stock_movements log lookup. **Shipped as STUB (RAISE EXCEPTION)** — plan draft assumed wrong schema (stocks.qty, stocks.warehouse text, stock_movements.kind/order_id); actual canonical is stock_levels(sku, warehouse_id, qty) + stock_movements with source enum + related_doc_type/related_doc_id. File header documents 5 open questions (enum extension, target table, items[] warehouse resolution, idempotency key shape, log_stock_movement helper reuse) that the controller must resolve before the real implementation lands.
+- **014 invoice_numbering_counters.sql** — invoice_counters table + next_invoice_number(p_doc_type) RPC for SO/INV-DP/INV-PEL/INV-LUNAS/SJ/CANCEL.
+- **015 transition_rpc_v3_with_stock_only.sql** — replaces transition_order_stage; adds reserve_stock on 3a entry (KOMPONEN) + restore_stock on Stage 6 cancel from 3a-3e. **WA hooks deferred to Phase 1C** (no queue_wa_notification calls). 015 compiles even with 011 as a stub (function name resolution is deferred) but the 3a/cancel paths will raise feature_not_supported until 011 is finalized.
+- Migrations not yet applied to live Supabase; will be applied via apply-pending-migrations.sh after PR A review + 011 spec resolution.
+
+---
+
 ## 2026-06-19 — Sales Funnel 2-I — HOTFIX Stage 5/6 invisible after Diterima click
 
 **Bug:** User reported "Saya udah pencet yang terima, kenapa tidak muncul di tab diterima?"
