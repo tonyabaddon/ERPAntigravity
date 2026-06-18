@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel Milestone D (D1-D4): Daftar Pesanan funnel components — DONE
+
+- **What:** Created 6 React components under `src/components/sales/`:
+  - `TypeTabs.tsx` — 3-tab strip (Komponen / Workshop / Semua) with order counts and hint text
+  - `StageStrip.tsx` — 6-stage horizontal pill strip; disabled + faded when count=0, scrollable on mobile
+  - `QuickActionPill.tsx` — reusable navy pill button with stopPropagation for quick actions
+  - `OrderRow.tsx` — per-order list row: customer, channel icon, payment badge, total, stuck badge, quick action pill
+  - `SubStageSection.tsx` — collapsible sub-stage section header + OrderRow list; urgent sections styled amber
+  - `DaftarPesananScreen.tsx` — orchestrator: realtime subscription, auto-expand urgent subs, quick action handler with alert + refresh
+- **TS fix:** Added `JSX.IntrinsicAttributes { key }` shim to `src/vite-env.d.ts`. React 19 ships no `.d.ts`; TS 5.8 with `jsx: react-jsx` validates `key` against component Props without an ambient `IntrinsicAttributes` declaration.
+- **Type fix:** `shortPaymentType` accepts `PaymentType` union, not plain string (matches `Order.payment_type` type).
+- **Test results:** 72 tests, 14 files, all passing (no new tests — components only). TypeScript: clean (0 errors).
+- **Commit:** `6a4746e feat(sales): Daftar Pesanan funnel components (TypeTabs, StageStrip, OrderRow, SubStageSection, Screen)`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
 ## 2026-06-18 — Sales Funnel Milestone C (C1+C2): Section 1 Sales landing components — DONE
 
 - **What:** Created 4 React components under `src/components/sales/` + utility + tests:
