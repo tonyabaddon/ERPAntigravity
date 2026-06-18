@@ -6,7 +6,7 @@ steps:
       - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
       - '-f'
       - 'backend-go/Dockerfile'
-      - 'backend-go'
+      - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -23,7 +23,10 @@ steps:
       - '--region=$_DEPLOY_REGION'
       - '--platform=$_PLATFORM'
       - '--allow-unauthenticated'
-      - '--update-env-vars=SUPABASE_URL=https://ekhhojaezdfjfwuxyjkl.supabase.co,SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGhvamFlemRmamZ3dXh5amtsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3NjUzMSwiZXhwIjoyMDk1NzUyNTMxfQ.lQNcQcpZRngHtfDxkNjLne9zGZlvyiofWHUP19HRA20,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS'
+      - '--memory=4Gi'
+      - '--cpu=2'
+      - '--timeout=60s'
+      - '--update-env-vars=SUPABASE_URL=https://ekhhojaezdfjfwuxyjkl.supabase.co,SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGhvamFlemRmamZ3dXh5amtsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3NjUzMSwiZXhwIjoyMDk1NzUyNTMxfQ.lQNcQcpZRngHtfDxkNjLne9zGZlvyiofWHUP19HRA20,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=ekhhojaezdfjfwuxyjkl,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS'
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'

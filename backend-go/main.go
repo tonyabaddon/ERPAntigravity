@@ -222,6 +222,11 @@ func main() {
 	closerHandler := &recon.CloserHandler{DB: dbClient}
 	mux.HandleFunc("/api/recon/upload", reconHandler.Upload)
 	mux.HandleFunc("/api/recon/close", closerHandler.Close)
+
+	// Plan C: Cari by Foto — CLIP image-similarity search.
+	searchH := NewSearchHandler(dbClient.DB)
+	mux.HandleFunc("/api/products/search-by-photo", searchH.SearchByPhoto)
+	mux.HandleFunc("/api/products/index-photos", searchH.IndexPhotos)
 	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
 
 	// State machine — wire LLMClient based on LLM_BACKEND + ENABLE_OPENROUTER.

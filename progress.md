@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Foto Search — +Tambah → cart wire + visual mockup alignment
+
+- **What:** Two follow-ups on Cari by Foto live in Kasir:
+  1. **+Tambah now actually adds to cart.** Click +Tambah on a result → navigates to Catat Penjualan (PenjualanBaruScreen) with that SKU auto-added. URL-driven via new `prefillSku` route param; PenjualanBaruScreen runs a once-only effect after stocks load that calls `addItem(match)` + success toast (or warning if SKU not found in master).
+  2. **HasilCariFotoModal visually aligned to 2026-06-16 mockup** — query filename + italic "Top N produk paling mirip…" subtitle in banner; similarity color gradient (≥90% emerald-700, ≥80% emerald-600, <80% emerald-500) + uppercase "similarity" mini-label; amber "Tipis" chip when stock ≤ min_stock; bullet `·` separator between price and per-warehouse stock; last row opacity-80 fade to emphasize stronger matches.
+- **Files:** `src/App.tsx` (route param + prop thread), `src/components/KasirScreen.tsx` (handleAddToCartFromFoto wires to `onOpenPenjualanBaru(undefined, sku)`), `src/components/PenjualanBaruScreen.tsx` (initialPrefillSku prop + auto-add effect), `src/components/kasir/CariByFotoModal.tsx` (thread file.name through onResults), `src/components/kasir/HasilCariFotoModal.tsx` (visual rewrite).
+- **Type-check:** clean.
+- **Commit:** `672a15d` on branch `feat/foto-search-on-main`.
+- **Deferred:** brand chip per card (mockup gap #6) needs RPC + SearchResult extension; not done this round per user preference for visual-only scope.
+
+## 2026-06-18 — Foto Search — Browser-driven smoke (Upload File) PASS + null-guard fix
+
+- **What:** Browser-driven MCP smoke of Cari by Foto Upload File flow on Cloud Run prod after CORS preflight fix landed (commit `e6838b4`). Backend pipeline confirmed working end-to-end; frontend crash on empty results fixed.
+- **Smoke result:**
+  - Promoted backend revision `00085-5sl` (image `:e6838b4`) to 100% traffic.
+  - Curl preflight test: `OPTIONS /api/products/search-by-photo` → HTTP 204 with `access-control-allow-*` headers. CORS working.
+  - MCP browser: opened Cari by Foto modal, used `upload_file` with workspace-local `docs/superpowers/screenshots/smoke.jpg`, request fired.
+  - Network: `POST /api/products/search-by-photo` → HTTP 200 (full CLIP pipeline works in browser).
+  - Console: `Uncaught TypeError: Cannot read properties of null (reading 'length')` — backend returned `{"results": null}` (no embeddings indexed yet) and `HasilCariFotoModal` deref'd `.length` without a guard.
+- **Fix:** `src/lib/cariByFotoService.ts` — `searchByPhoto` now returns `{...data, results: data.results ?? []}`. Single point of defense at the service boundary so consumers always get `SearchResult[]`.
+- **Commit:** `6ad1df5` on branch `feat/foto-search-on-main` (worktree).
+- **Frontend rebuild:** `gcloud builds submit --config=cloudbuild.frontend.yaml --substitutions=SHORT_SHA=6ad1df5` — in flight.
+- **Outstanding caveats (deferred, not blocking):**
+  - 294 existing products' photos are not indexed. Search returns `[]` until operator runs the index-photos endpoint for product catalog. UI now shows the empty-state instead of crashing.
+  - Backend `cloudbuild.yaml` does not use `--no-traffic` + tag pattern; next push to main will auto-deploy and could overwrite this revision. Frontend already uses the safe pattern.
+  - Merge `feat/foto-search-on-main` → `main` to make backend image `:e6838b4` the trigger-built artifact and remove the manual-deploy risk.
+- **Branch:** `feat/foto-search-on-main` (worktree `.claude/worktrees/foto-search-on-main`)
+
 ## 2026-06-17 — Pembelian Phase 2a — E2E PRODUCTION UI SMOKE — PASS (Chrome MCP)
 
 Drove full happy path against production URL with live Supabase. All 4 entities + state transitions verified UI ↔ DB.

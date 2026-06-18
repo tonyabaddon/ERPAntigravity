@@ -88,6 +88,8 @@ export default function App() {
   const penjualanInitialChannel: KasirChannel | undefined = isKasirChannel(route.params.channel)
     ? route.params.channel
     : undefined;
+  // Optional SKU to pre-fill cart (set when navigating from Cari by Foto).
+  const penjualanInitialPrefillSku: string | undefined = route.params.prefillSku || undefined;
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
 
   // General state databases loaded from templates or LocalStorage
@@ -493,8 +495,8 @@ export default function App() {
           <KasirScreen
             currentUser={currentUser}
             showToast={triggerToast}
-            onOpenPenjualanBaru={(channel) => {
-              navigate('penjualanBaru', { channel });
+            onOpenPenjualanBaru={(channel, prefillSku) => {
+              navigate('penjualanBaru', { channel, prefillSku });
             }}
           />
         );
@@ -516,6 +518,7 @@ export default function App() {
             currentUser={currentUser}
             showToast={triggerToast}
             initialChannel={penjualanInitialChannel}
+            initialPrefillSku={penjualanInitialPrefillSku}
             onBack={() => navigate('kasir')}
             onSaved={(_txId) => navigate('kasir')}
             onNavigate={(page) => navigate(page)}
