@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — Pengaturan UI cards (Identitas / Jam Operasional / Rekening Bank)
+
+- `src/components/pengaturan/IdentitasTokoCard.tsx` — 8 fields backed by `store_settings` (nama_toko, nama_legal, tagline, alamat_lengkap, kota, telp_wa, google_maps_url, npwp + logo_url). Owner-only writes via RLS; mutations surface "Anda harus Owner…" toast on 42501.
+- `src/components/pengaturan/JamOperasionalCard.tsx` — 7-day grid (0=Senin..6=Minggu) with Buka/Tutup toggle + time inputs. Single "Simpan Semua" submits all 7 rows.
+- `src/components/pengaturan/RekeningBankCard.tsx` — multi-row bank list with inline add/edit form, active toggle (green ToggleRight when on), delete with confirm. Empty state CTA.
+- `src/components/PengaturanScreen.tsx` — three new cards rendered at the top of the Umum tab, above the legacy single-row bank/company sections (relabeled "(lama)" — Phase 1C will dedupe).
+- TypeScript clean; lib tests 71/71 passing (no regression).
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A — lib/pengaturan module (types + queries + mutations + tests)
 
 - `src/lib/pengaturan/types.ts` — `StoreSettings`, `OperatingHour`, `BankAccount` interfaces matching migration 010 schema (0=Senin..6=Minggu, Postgres `time` as `'HH:MM:SS'`).
