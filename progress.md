@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Funnel 2-I — HOTFIX Stage 5/6 invisible after Diterima click
+
+**Bug:** User reported "Saya udah pencet yang terima, kenapa tidak muncul di tab diterima?"
+
+**Root cause:** `fetchActiveOrders` filters `funnel_stage IN (1, 2, 3, 4)` — Stage 5 (Diterima/Selesai) and Stage 6 (Batal) rows are excluded. When the user clicks "Diterima" at sub-stage 4a/4b, the `transition_order_stage` RPC moves the order to 5a, then the next `fetchActiveOrders` no longer returns it. Stage 5 in the StageStrip always shows count=0 because nothing in `orders` state ever has `funnel_stage=5`.
+
+**Fix:** New `fetchOrdersWithArchive(archiveLimit=20)` helper in `src/lib/sales/queries.ts` runs `fetchActiveOrders` in parallel with `fetchArchiveOrders(5, 20)` and `fetchArchiveOrders(6, 20)` and merges. `DaftarPesananScreen.tsx` now calls the merged fetcher in all six places (initial load, realtime refresh, post-action refresh, post-approve/reject/upload refresh). The 20-row archive cap bounds payload while still surfacing recently completed/cancelled orders for the natural drill-down flow.
+
+**Verification:** TypeScript clean; sales test suite 34/34 passing. Branch `fix/sales-stage5-archive-load`.
+
+---
+
 ## 2026-06-18 — Sales Funnel 2-I — HOTFIX sub-stage count desync (PR #21)
 
 **Bug:** User reported "Daftar pesanan ada 2, tapi kenapa saya klik cuma ada 1 di tunggu pelunasan."

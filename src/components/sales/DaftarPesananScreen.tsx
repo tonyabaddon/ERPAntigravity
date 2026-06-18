@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchActiveOrders, subscribeOrders } from '../../lib/sales/queries';
+import { fetchOrdersWithArchive, subscribeOrders } from '../../lib/sales/queries';
 import type { Order, FunnelStage } from '../../lib/sales/types';
 import { filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
@@ -23,9 +23,9 @@ export function DaftarPesananScreen() {
 
   // initial load + realtime
   useEffect(() => {
-    fetchActiveOrders().then(setOrders).catch(err => console.error('fetchActiveOrders failed', err));
+    fetchOrdersWithArchive().then(setOrders).catch(err => console.error('fetchOrdersWithArchive failed', err));
     const sub = subscribeOrders(() => {
-      fetchActiveOrders().then(setOrders).catch(err => console.error('refresh fetch failed', err));
+      fetchOrdersWithArchive().then(setOrders).catch(err => console.error('refresh fetch failed', err));
     });
     return () => { sub.unsubscribe?.(); };
   }, []);
@@ -112,7 +112,7 @@ export function DaftarPesananScreen() {
       // eslint-disable-next-line no-alert
       alert('Gagal: network/server error.');
     } finally {
-      const fresh = await fetchActiveOrders().catch(() => null);
+      const fresh = await fetchOrdersWithArchive().catch(() => null);
       if (fresh) setOrders(fresh);
     }
   }
@@ -190,7 +190,7 @@ export function DaftarPesananScreen() {
               console.error('approve failed', err);
             }
             setProofModal(null);
-            const fresh = await fetchActiveOrders().catch(() => null);
+            const fresh = await fetchOrdersWithArchive().catch(() => null);
             if (fresh) setOrders(fresh);
           }}
           onReject={async (reason) => {
@@ -206,7 +206,7 @@ export function DaftarPesananScreen() {
               console.error('reject failed', err);
             }
             setProofModal(null);
-            const fresh = await fetchActiveOrders().catch(() => null);
+            const fresh = await fetchOrdersWithArchive().catch(() => null);
             if (fresh) setOrders(fresh);
           }}
           onClose={() => setProofModal(null)}
@@ -219,7 +219,7 @@ export function DaftarPesananScreen() {
           onUploaded={async () => {
             setUploadModal(null);
             // Refresh + re-open lightbox for verify
-            const fresh = await fetchActiveOrders().catch(() => null);
+            const fresh = await fetchOrdersWithArchive().catch(() => null);
             if (fresh) {
               setOrders(fresh);
               if (pendingVerify) {
