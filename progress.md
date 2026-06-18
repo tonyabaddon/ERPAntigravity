@@ -7207,3 +7207,16 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
   - Column comments for `funnel_sub_stage` and `version`
 - **Migration slot:** `20260625000001` — 5+ day buffer from latest existing `20260620000030` ✓
 - **Concern:** Local supabase stack could not be started (Docker daemon not running) — migration was NOT locally applied/tested. Will be validated when applied to Supabase remote via Management API or when Docker is available.
+
+## 2026-06-18 — Sales Funnel — Task A2: Migration payment_proof_columns DONE
+
+- **File created:** `supabase/migrations/20260625000002_payment_proof_columns.sql`
+- **Commit:** `49e185a` — "feat(sales): payment proof columns (pelunasan/marketplace) + payment-proofs storage bucket"
+- **What the migration does:**
+  - Adds 5 columns to `kasir_transactions` (all IF NOT EXISTS): `pelunasan_proof_url`, `marketplace_proof_url`, `proof_source` (with CHECK constraint for 3 valid values), `proof_uploaded_at`, `proof_uploaded_by` (FK to auth.users, nullable)
+  - Does NOT redefine existing columns: `payment_proof_url`, `full_proof_url`, `dp_proof_url` ✓
+  - Creates `payment-proofs` storage bucket (private, ON CONFLICT DO NOTHING)
+  - Two RLS policies on `storage.objects`: INSERT + SELECT for authenticated users scoped to `payment-proofs` bucket (DROP+CREATE for idempotency)
+  - COMMENT statements on 3 new columns for traceability
+- **Migration slot:** `20260625000002` ✓
+- **Note:** Not locally applied (Docker not running); same validation caveat as A1.
