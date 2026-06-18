@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR B/1 — PDF common + Sales Order generator
+
+- `src/lib/sales/pdf/common.ts` — shared header / customer block / doc title / bank block / footer renderers plus Rupiah and Indonesian-date formatters.
+- `src/lib/sales/pdf/invoiceNumber.ts` — `nextInvoiceNumber(docType)` wrapper over the `next_invoice_number` RPC from migration 014.
+- `src/lib/sales/pdf/salesOrderPdf.ts` — `generateSalesOrderPdf(order, settings, banks)` returns `{ blob, docNumber, filename }` matching the layout in `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md` § Sales Order.
+- Tests: `common.test.ts` + `salesOrderPdf.test.ts`; PDF blob smoke verifies `size > 2000` and filename contains the doc number.
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A — rename bank_accounts → store_bank_accounts (collision with reconciliation feature)
 
 **Collision discovered when applying migrations:** the bank reconciliation feature (migration `20260607000001_recon_bank_accounts.sql`) had already created a `bank_accounts` table with a different shape (`bank_code` enum + `purpose` enum + `account_label`). Phase 1B's `CREATE TABLE IF NOT EXISTS bank_accounts (...)` short-circuited, then `CREATE INDEX ... ON bank_accounts(is_active, sort_order)` failed because `sort_order` didn't exist on the reconciliation row.
