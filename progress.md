@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel 2-I — HOTFIX sub-stage count desync (PR #21)
+
+**Bug:** User reported "Daftar pesanan ada 2, tapi kenapa saya klik cuma ada 1 di tunggu pelunasan."
+
+**Root cause:** Backfill migration `20260625000005_backfill_funnel_stage.sql` mapped legacy `PENDING_LOCK_APPROVAL` → sub-stage `3g` (workshop-only) but kept rows' original `order_type=KOMPONEN`. Under the Komponen tab, Stage 3 count included that row but the 3g section was hidden (filter says 3g is workshop-only), so count=2 with only 1 row visible.
+
+**Fix:** `src/components/sales/DaftarPesananScreen.tsx` — `subsForStage` (and the urgent auto-expand effect) now show any sub-stage that EITHER belongs to the current tab OR has at least one order in the current tab+stage filter. Orphan rows from backfill anomalies are now reachable without forcing users to the Semua tab.
+
+**Verification:** 79/79 tests passing, TypeScript clean. Branch `fix/sales-orphan-substage`, PR #21 open.
+
+---
+
 ## 2026-06-18 — Sales Funnel — Code Review Blockers + Important Fixes — DONE
 
 - **What:** Addressed 4 BLOCKERS + 3 IMPORTANT issues from code review on `feat/sales-landing-funnel-2i`
