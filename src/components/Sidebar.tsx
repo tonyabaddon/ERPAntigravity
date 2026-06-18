@@ -68,7 +68,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     // Operasional
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'operasional', permKey: 'dashboard' },
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, category: 'operasional', permKey: 'salesInbox' },
-    { id: 'penjualan', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
+    { id: 'salesLanding', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
     { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
     { id: 'piutang', label: 'Piutang', icon: Wallet, category: 'operasional', permKey: 'piutang' },
@@ -188,7 +188,10 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
 
               {itemsInCategory.map(item => {
                 const IconComponent = item.icon;
-                const isActive = activePage === item.id;
+                // salesLanding entry should also highlight when on the daftarPesanan child page
+                const isActive = item.id === 'salesLanding'
+                  ? activePage === 'salesLanding' || activePage === 'daftarPesanan'
+                  : activePage === item.id;
                 return (
                   <a
                     key={item.id}
