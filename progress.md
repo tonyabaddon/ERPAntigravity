@@ -1,5 +1,64 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — rename bank_accounts → store_bank_accounts (collision with reconciliation feature)
+
+**Collision discovered when applying migrations:** the bank reconciliation feature (migration `20260607000001_recon_bank_accounts.sql`) had already created a `bank_accounts` table with a different shape (`bank_code` enum + `purpose` enum + `account_label`). Phase 1B's `CREATE TABLE IF NOT EXISTS bank_accounts (...)` short-circuited, then `CREATE INDEX ... ON bank_accounts(is_active, sort_order)` failed because `sort_order` didn't exist on the reconciliation row.
+
+**Fix:** renamed every occurrence of `bank_accounts` to `store_bank_accounts` in the Phase 1B PR A files: migrations 010 + 016, `src/lib/pengaturan/{queries,mutations,mutations.test}.ts`. The reconciliation `bank_accounts` table is untouched. Live Supabase now has both:
+- `bank_accounts` — reconciliation (id, bank_code, account_number, account_label, purpose, is_active, created_at)
+- `store_bank_accounts` — invoice/PDF display (id, bank_name, account_number, account_holder, is_active, sort_order, created_at, updated_at)
+
+**Migrations applied to live Supabase via `/tmp/apply-migration`:**
+- 010 pengaturan_tables.sql — OK
+- 014 invoice_numbering_counters.sql — OK
+- 016 seed_pengaturan_from_legacy.sql — OK (copies legacy company_settings + bank_config into the new tables)
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR A — legacy → new seed migration + heading consistency
+
+- `supabase/migrations/20260625000016_seed_pengaturan_from_legacy.sql` — one-shot, idempotent: copies `company_settings.{company_name, address, phone}` → `store_settings.{nama_toko, alamat_lengkap, telp_wa}` only if the new row is still at migration-010 defaults; copies every `bank_config` row into `bank_accounts` keyed by (bank_name, account_number). Prevents the new Pengaturan cards from opening blank.
+- `src/components/PengaturanScreen.tsx` — relabeled the legacy Profil Perusahaan section to "Profil Perusahaan (lama)" to match the "Rekening Bank (lama)" treatment from the previous commit.
+- `npm run build` → clean (2.71s, 2756 modules).
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR A — Pengaturan UI cards (Identitas / Jam Operasional / Rekening Bank)
+
+- `src/components/pengaturan/IdentitasTokoCard.tsx` — 8 fields backed by `store_settings` (nama_toko, nama_legal, tagline, alamat_lengkap, kota, telp_wa, google_maps_url, npwp + logo_url). Owner-only writes via RLS; mutations surface "Anda harus Owner…" toast on 42501.
+- `src/components/pengaturan/JamOperasionalCard.tsx` — 7-day grid (0=Senin..6=Minggu) with Buka/Tutup toggle + time inputs. Single "Simpan Semua" submits all 7 rows.
+- `src/components/pengaturan/RekeningBankCard.tsx` — multi-row bank list with inline add/edit form, active toggle (green ToggleRight when on), delete with confirm. Empty state CTA.
+- `src/components/PengaturanScreen.tsx` — three new cards rendered at the top of the Umum tab, above the legacy single-row bank/company sections (relabeled "(lama)" — Phase 1C will dedupe).
+- TypeScript clean; lib tests 71/71 passing (no regression).
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR A — lib/pengaturan module (types + queries + mutations + tests)
+
+- `src/lib/pengaturan/types.ts` — `StoreSettings`, `OperatingHour`, `BankAccount` interfaces matching migration 010 schema (0=Senin..6=Minggu, Postgres `time` as `'HH:MM:SS'`).
+- `src/lib/pengaturan/queries.ts` — `fetchStoreSettings()`, `fetchOperatingHours()`, `fetchBankAccounts(activeOnly?)`. Mirrors `src/lib/sales/queries.ts` patterns; no null-guard on `supabase` (matches existing sales idiom under TS strict-off).
+- `src/lib/pengaturan/mutations.ts` — `updateStoreSettings`, `updateOperatingHour`, `createBankAccount`, `updateBankAccount`, `deleteBankAccount`. RLS enforces Owner-only writes server-side (migration 010); helpers surface Postgres errors via `throw`.
+- `src/lib/pengaturan/queries.test.ts` — 7 Vitest tests, mock pattern adapted from `src/lib/sales/queries.test.ts` (thenable `.order()` + chainable `.eq()`/`.single()`).
+- `src/lib/pengaturan/mutations.test.ts` — 6 tests covering update/insert/delete spy assertions and error propagation.
+- Verification: `npx tsc --noEmit` clean; `npx vitest run src/lib/sales src/lib/pengaturan` → 47/47 passing (34 sales + 13 pengaturan).
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR A backbone — 2 migrations (Pengaturan + invoice numbering)
+
+- **010 pengaturan_tables.sql** — store_settings (singleton), operating_hours (7-day grid), bank_accounts; RLS authenticated read + Owner write on all three.
+- **014 invoice_numbering_counters.sql** — invoice_counters table + next_invoice_number(p_doc_type) RPC for SO/INV-DP/INV-PEL/INV-LUNAS/SJ/CANCEL.
+
+**Stock reservation deferred to Phase 1C.** The Phase 1B plan draft assumed a `(stocks.qty, stocks.warehouse text, stock_movements.kind/order_id)` shape; the real schema is `stock_levels(sku, warehouse_id, qty)` + `stock_movements(source enum, related_doc_type/related_doc_id, qty_delta/qty_before/qty_after)` and the `stock_movement_source` enum has no `reserve`/`restore` values. Rewriting reserve_stock against the canonical schema also needs an enum extension migration. Splitting that into its own integration in Phase 1C lets PR A ship a clean Pengaturan backbone.
+
+**Transition RPC v3 also deferred.** With stock hooks gone, v3 collapses into v2 (already shipped as `20260625000007`). No need to ship a no-op migration 015.
+
+**WA notifications also deferred to Phase 1C** — the codebase routes WA through backend-Go `whatsapp/sender`, not a `wa_outbox` queue. Wiring that belongs in its own integration.
+
+Migrations not yet applied to live Supabase; will be applied via apply-pending-migrations.sh as part of PR A deploy.
+
+---
+
 ## 2026-06-19 — Sales Funnel 2-I — HOTFIX Stage 5/6 invisible after Diterima click
 
 **Bug:** User reported "Saya udah pencet yang terima, kenapa tidak muncul di tab diterima?"

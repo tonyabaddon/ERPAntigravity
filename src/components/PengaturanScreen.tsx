@@ -8,6 +8,9 @@ import ClipMonitorPanel from './pengaturan/ClipMonitorPanel';
 import NotificationSettingsScreen from './NotificationSettingsScreen';
 import WhatsappAiScreen from './WhatsappAiScreen';
 import SalesChannelConfigPanel from './pengaturan/SalesChannelConfigPanel';
+import IdentitasTokoCard from './pengaturan/IdentitasTokoCard';
+import JamOperasionalCard from './pengaturan/JamOperasionalCard';
+import RekeningBankCard from './pengaturan/RekeningBankCard';
 
 type PengaturanTab = 'umum' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan';
 
@@ -267,12 +270,18 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         </div>
       ) : (
         <div className="space-y-6 animate-fadeIn">
-          {/* Bank config card */}
+          {/* New Phase 1B Pengaturan cards — source of truth for PDFs + WA. Coexists with the
+              older single-row bank/company forms below until Phase 1C deduplication. */}
+          <IdentitasTokoCard showToast={showToast} />
+          <JamOperasionalCard showToast={showToast} />
+          <RekeningBankCard showToast={showToast} />
+
+          {/* Bank config card (legacy single-row — Phase 1C will remove) */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-gray-600" />
-                <h2 className="text-lg font-bold text-gray-800">Rekening Bank</h2>
+                <h2 className="text-lg font-bold text-gray-800">Rekening Bank (lama)</h2>
               </div>
               {bankConfig && !bankEditing && (
                 <button onClick={startEdit} className="p-2 rounded-lg hover:bg-gray-100" title="Edit rekening">
@@ -368,7 +377,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-gray-600" />
-                <h2 className="text-lg font-bold text-gray-800">Profil Perusahaan</h2>
+                <h2 className="text-lg font-bold text-gray-800">Profil Perusahaan (lama)</h2>
               </div>
               {company && !companyEditing && (
                 <button onClick={startCompanyEdit} className="p-2 rounded-lg hover:bg-gray-100" title="Edit profil">
