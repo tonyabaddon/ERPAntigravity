@@ -49,22 +49,11 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
       const subtotal = items.reduce((acc, it) => acc + (it.subtotal || 0), 0);
       const newTotal = subtotal + ongkir;
 
-      // 1. UPDATE kasir_transactions
-      // NOTE: `kasir_transactions` has no `updated_at` column today (see
-      // 20260604000008_kasir_transactions.sql). If/when added, include it here.
-      const { error: updateErr } = await supabase
-        .from('kasir_transactions')
-        .update({
-          ongkir_amount: ongkir,
-          delivery_address: address || null,
-          items,
-          subtotal,
-          total_amount: newTotal,
-        })
-        .eq('id', order.id);
-      if (updateErr) throw updateErr;
-
-      // 2. INSERT audit_log row capturing before/after.
+      // Audit-log first, mutation second. If the audit INSERT fails we abort
+      // without touching kasir_transactions — no untracked mutations possible.
+      // (kasir_transactions has no updated_at column, see migration
+      //  20260604000008_kasir_transactions.sql; UPDATE list intentionally omits
+      //  it.)
       const { data: userRes } = await supabase.auth.getUser();
       const actorId = userRes?.user?.id ?? null;
       const { error: auditErr } = await supabase.from('audit_log').insert({
@@ -86,14 +75,21 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
         },
       });
       if (auditErr) {
-        // Audit is mandatory: surface failure to the user rather than silently
-        // leaving an unrecorded mutation behind. The UPDATE above already
-        // committed — caller will refetch and see the new row, but we warn the
-        // admin so they can flag it for follow-up (a SECURITY DEFINER RPC
-        // wrapping both in one tx is the future hardening).
         console.error('audit_log insert failed', auditErr);
-        throw new Error('Data tersimpan tetapi audit log gagal — laporkan ke tim.');
+        throw new Error('Gagal mencatat audit. Edit dibatalkan.');
       }
+
+      const { error: updateErr } = await supabase
+        .from('kasir_transactions')
+        .update({
+          ongkir_amount: ongkir,
+          delivery_address: address || null,
+          items,
+          subtotal,
+          total_amount: newTotal,
+        })
+        .eq('id', order.id);
+      if (updateErr) throw updateErr;
 
       onSaved();
       // eslint-disable-next-line no-alert
