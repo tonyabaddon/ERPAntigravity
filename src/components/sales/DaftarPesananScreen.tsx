@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchActiveOrders, subscribeOrders } from '../../lib/sales/queries';
-import type { Order, FunnelStage, FunnelSubStage } from '../../lib/sales/types';
+import type { Order, FunnelStage } from '../../lib/sales/types';
 import { TYPE_TAB_CFG, filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
+import { getQuickAction } from '../../lib/sales/quickActionMap';
 import { transitionOrder } from '../../lib/sales/mutations';
 import { TypeTabs } from './TypeTabs';
 import { StageStrip } from './StageStrip';
 import { SubStageSection } from './SubStageSection';
+import { PaymentProofLightbox } from './PaymentProofLightbox';
+import { ProofUploadModal } from './ProofUploadModal';
 
 export function DaftarPesananScreen() {
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
@@ -14,6 +17,8 @@ export function DaftarPesananScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [proofModal, setProofModal] = useState<{ url: string; orderId: string; version: number; fromSub: string; toSub: string } | null>(null);
+  const [uploadModal, setUploadModal] = useState<{ orderId: string; field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' } | null>(null);
 
   // initial load + realtime
   useEffect(() => {
@@ -59,11 +64,29 @@ export function DaftarPesananScreen() {
   const subsForStage = getSubStagesForStage(stage).filter(s => subStageBelongsToTab(s.id, typeTab));
 
   async function handleQuickAction(order: Order, toSubStage: string) {
+    const action = getQuickAction(order);
+    if (action?.requiresProof) {
+      const proofField: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' =
+        order.funnel_sub_stage === '3b' ? 'pelunasan_proof_url' : 'payment_proof_url';
+      const proofUrl =
+        proofField === 'pelunasan_proof_url'
+          ? order.pelunasan_proof_url
+          : (order.payment_proof_url ?? order.marketplace_proof_url);
+
+      if (!proofUrl) {
+        setUploadModal({ orderId: order.id, field: proofField });
+        return;
+      }
+      setProofModal({ url: proofUrl, orderId: order.id, version: order.version, fromSub: order.funnel_sub_stage, toSub: toSubStage });
+      return;
+    }
+
+    // Non-proof actions: transition directly
     try {
       const result = await transitionOrder({
         id: order.id,
         fromSubStage: order.funnel_sub_stage,
-        toSubStage: toSubStage as FunnelSubStage,
+        toSubStage: toSubStage as Order['funnel_sub_stage'],
         expectedVersion: order.version,
       });
       if (!result.ok) {
@@ -110,6 +133,55 @@ export function DaftarPesananScreen() {
           ))}
         </div>
       </div>
+      {proofModal && (
+        <PaymentProofLightbox
+          proofUrl={proofModal.url}
+          orderId={proofModal.orderId}
+          onApprove={async () => {
+            try {
+              await transitionOrder({
+                id: proofModal.orderId,
+                fromSubStage: proofModal.fromSub as Order['funnel_sub_stage'],
+                toSubStage: proofModal.toSub as Order['funnel_sub_stage'],
+                expectedVersion: proofModal.version,
+              });
+            } catch (err) {
+              console.error('approve failed', err);
+            }
+            setProofModal(null);
+            const fresh = await fetchActiveOrders().catch(() => null);
+            if (fresh) setOrders(fresh);
+          }}
+          onReject={async (reason) => {
+            try {
+              await transitionOrder({
+                id: proofModal.orderId,
+                fromSubStage: proofModal.fromSub as Order['funnel_sub_stage'],
+                toSubStage: '2e',
+                expectedVersion: proofModal.version,
+                reason,
+              });
+            } catch (err) {
+              console.error('reject failed', err);
+            }
+            setProofModal(null);
+            const fresh = await fetchActiveOrders().catch(() => null);
+            if (fresh) setOrders(fresh);
+          }}
+          onClose={() => setProofModal(null)}
+        />
+      )}
+      {uploadModal && (
+        <ProofUploadModal
+          orderId={uploadModal.orderId}
+          field={uploadModal.field}
+          onUploaded={async () => {
+            const fresh = await fetchActiveOrders().catch(() => null);
+            if (fresh) setOrders(fresh);
+          }}
+          onClose={() => setUploadModal(null)}
+        />
+      )}
     </div>
   );
 }
