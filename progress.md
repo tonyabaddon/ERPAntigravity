@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — lib/pengaturan module (types + queries + mutations + tests)
+
+- `src/lib/pengaturan/types.ts` — `StoreSettings`, `OperatingHour`, `BankAccount` interfaces matching migration 010 schema (0=Senin..6=Minggu, Postgres `time` as `'HH:MM:SS'`).
+- `src/lib/pengaturan/queries.ts` — `fetchStoreSettings()`, `fetchOperatingHours()`, `fetchBankAccounts(activeOnly?)`. Mirrors `src/lib/sales/queries.ts` patterns; no null-guard on `supabase` (matches existing sales idiom under TS strict-off).
+- `src/lib/pengaturan/mutations.ts` — `updateStoreSettings`, `updateOperatingHour`, `createBankAccount`, `updateBankAccount`, `deleteBankAccount`. RLS enforces Owner-only writes server-side (migration 010); helpers surface Postgres errors via `throw`.
+- `src/lib/pengaturan/queries.test.ts` — 7 Vitest tests, mock pattern adapted from `src/lib/sales/queries.test.ts` (thenable `.order()` + chainable `.eq()`/`.single()`).
+- `src/lib/pengaturan/mutations.test.ts` — 6 tests covering update/insert/delete spy assertions and error propagation.
+- Verification: `npx tsc --noEmit` clean; `npx vitest run src/lib/sales src/lib/pengaturan` → 47/47 passing (34 sales + 13 pengaturan).
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A backbone — 2 migrations (Pengaturan + invoice numbering)
 
 - **010 pengaturan_tables.sql** — store_settings (singleton), operating_hours (7-day grid), bank_accounts; RLS authenticated read + Owner write on all three.
