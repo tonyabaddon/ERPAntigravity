@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel Milestone C (C1+C2): Section 1 Sales landing components — DONE
+
+- **What:** Created 4 React components under `src/components/sales/` + utility + tests:
+  - `src/lib/sales/format.ts` — `formatJuta(n)` compact Rupiah formatter (M/K/raw) extracted for testability
+  - `src/lib/sales/format.test.ts` — 3 Vitest tests (millions/thousands/sub-thousand), all pass
+  - `StatsCards.tsx` — 4-column stats grid (urgent, tunggu, revenue pending, selesai bulan ini)
+  - `SalesTabStrip.tsx` — tab strip with "Catat Penjualan → wizard" + "Daftar Pesanan → funnel" tabs
+  - `UrgentOrdersPreview.tsx` — top-3 urgent orders panel; uses defensive `SUB_STAGES.find()` guard against unknown sub-stages
+  - `SalesLandingScreen.tsx` — orchestrates stats + tab strip + preview; fetches via `fetchDashboardStats` + `fetchActiveOrders`
+- **Type prereq:** Added `'salesLanding' | 'daftarPesanan'` to `ActivePage` union in `src/types.ts` + `ACTIVE_PAGES` set in `urlRoute.ts`. F1 only needs to add render dispatch in App.tsx + Sidebar entries.
+- **navigate API:** `navigate(screen: ActivePage, params?)` from `src/lib/urlRoute.ts` — no React Router.
+- **Brand tokens:** `var(--color-primary)` / `var(--color-secondary)` from `src/index.css @theme {}`.
+- **Test results:** 72 tests, 14 files, all passing. TypeScript: clean (npx tsc --noEmit, 0 errors).
+- **Commit:** `3df9cc9 feat(sales): Section 1 Sales landing components (StatsCards, TabStrip, UrgentPreview, Screen)`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
 ## 2026-06-18 — Sales Funnel Milestone B (B1-B6): lib/sales TypeScript modules — DONE
 
 - **What:** Created 6 TypeScript module + test pairs under `src/lib/sales/`:
