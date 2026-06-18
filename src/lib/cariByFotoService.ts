@@ -23,7 +23,8 @@ export async function searchByPhoto(blob: Blob): Promise<{ results: SearchResult
     const text = await resp.text();
     throw new Error(`search-by-photo ${resp.status}: ${text}`);
   }
-  return resp.json();
+  const data = await resp.json();
+  return { ...data, results: data.results ?? [] };
 }
 
 export async function indexPhotos(sku: string, photoPaths: string[]): Promise<{ indexed: number; error?: string }> {
