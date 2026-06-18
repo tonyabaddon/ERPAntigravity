@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel — Milestone F (F1): Routing + Sidebar wire-up — DONE
+
+- **Files modified:**
+  - `src/App.tsx` — added named imports for `SalesLandingScreen` + `DaftarPesananScreen`; added two new `renderPage()` switch cases for `'salesLanding'` and `'daftarPesanan'`
+  - `src/components/Sidebar.tsx` — changed `penjualan` menu entry id to `salesLanding` (so clicking "Penjualan" in sidebar navigates to new Sales landing); updated `isActive` logic to highlight Sales menu item for both `salesLanding` and `daftarPesanan` pages
+- **Commit:** `b686e76` — "feat(sales): wire SalesLanding + DaftarPesanan into App router + Sidebar"
+- **TypeScript:** clean
+- **Tests:** 72/72 passing (14 test files)
+- **Note:** The old `penjualan` page (PenjualanScreen) remains accessible via programmatic navigation (`navigate('penjualan')`) but no longer has a sidebar entry. `wip-list`, `notifications`, `order-history` follow the same pattern of sidebar-less pages. Feature implementation complete — ready for branch finishing review.
+
 ## 2026-06-18 — Sales Funnel Milestone D (D1-D4): Daftar Pesanan funnel components — DONE
 
 - **What:** Created 6 React components under `src/components/sales/`:
@@ -7290,3 +7300,20 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
   - COMMENT statements on 3 new columns for traceability
 - **Migration slot:** `20260625000002` ✓
 - **Note:** Not locally applied (Docker not running); same validation caveat as A1.
+
+## 2026-06-18 — Sales Funnel — Milestone E: Payment Proof Verification (E1-E3) DONE
+
+- **Files created:**
+  - `src/components/sales/PaymentProofThumbnail.tsx` — thumbnail with empty-state fallback, source label, "Lihat ukuran penuh" link
+  - `src/components/sales/PaymentProofLightbox.tsx` — full-size overlay; ESC + outside-click to close; Approve (→ toSubStage) + Reject (→ 2e with reason via window.prompt)
+  - `src/components/sales/ProofUploadModal.tsx` — 3-source radio selector (WA_CALISTA / ADMIN_UPLOAD / MARKETPLACE_SCREENSHOT); file picker; busy/error states; calls `uploadPaymentProof()`
+- **File modified:** `src/components/sales/DaftarPesananScreen.tsx`
+  - Added imports for `getQuickAction`, `PaymentProofLightbox`, `ProofUploadModal`
+  - Removed unused `FunnelSubStage` type import
+  - Added `proofModal` + `uploadModal` state
+  - Replaced `handleQuickAction`: proof-required actions route to upload modal (no URL) or lightbox (URL present); non-proof actions transition directly
+  - Pelunasan path (sub-stage 3b) uses `pelunasan_proof_url` field; transfer/payment path uses `payment_proof_url ?? marketplace_proof_url`
+  - Modal renders appended to JSX before closing `</div>`
+- **Commit:** `2b11782` — "feat(sales): payment proof thumbnail + lightbox + upload modal wired into Daftar Pesanan"
+- **TypeScript:** clean (fixed `React.ChangeEvent` namespace error by importing React in ProofUploadModal)
+- **Tests:** 72/72 passing
