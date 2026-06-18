@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel Milestone B (B1-B6): lib/sales TypeScript modules — DONE
+
+- **What:** Created 6 TypeScript module + test pairs under `src/lib/sales/`:
+  - `types.ts` — `OrderType`, `FunnelStage`, `FunnelSubStage`, `DeliveryMethod`, `PaymentType`, `ProofSource`, `Order`, `SalesDashboardStats` interfaces (type-only, no runtime)
+  - `typeTabConfig.ts` — `TypeTab` union, `TYPE_TAB_CFG` (3 tabs with label/hint/orderTypes), `filterOrdersByTypeTab`, `subStageBelongsToTab`
+  - `stageMapping.ts` — 20-entry `SUB_STAGES` array with full metadata, `STAGE_NAMES`, `getSubStageMeta`, `isUrgentSubStage`, `getSubStagesForStage`
+  - `quickActionMap.ts` — `getQuickAction` maps funnel sub-stage + delivery_method to primary CTA
+  - `queries.ts` — `fetchActiveOrders`, `fetchArchiveOrders`, `fetchDashboardStats`, `subscribeOrders` (all typed against Supabase)
+  - `mutations.ts` — `transitionOrder` (wraps `transition_order_stage` RPC with optimistic-lock params), `uploadPaymentProof` (storage upload + `kasir_transactions` update)
+- **Test results:** 31 Vitest unit tests across 7 test files, all passing. TDD: test → fail → implement → pass for each pair.
+- **Mock fix:** `queries.test.ts` mock needed `.order()` to return a thenable-chainable object so `.limit()` could chain after it.
+- **Commit:** `fbc35bc feat(sales): add lib/sales types + config + mapping + queries + mutations`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
 ## 2026-06-18 — Sales Funnel Task A4: get_sales_dashboard_stats RPC — DONE
 
 - **What:** Created migration `20260625000004_sales_stats_rpc.sql` — a STABLE RPC `get_sales_dashboard_stats() RETURNS jsonb` returning 5 keys: `urgent_count`, `tunggu_count`, `revenue_pending`, `completed_this_month`, `revenue_this_month`.
