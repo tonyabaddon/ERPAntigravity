@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel Task A3: atomic transition_order_stage RPC — DONE
+
+- **What:** Created migration `20260625000003_transition_order_stage_rpc.sql` — a SECURITY DEFINER RPC `transition_order_stage(uuid, text, text, int, uuid, text) RETURNS jsonb` that performs an atomic funnel stage transition with optimistic locking and audit logging.
+- **Key findings:**
+  - `kasir_audit_logs` does NOT exist in the schema. The project uses a generic `public.audit_log` table (no `kasir_` prefix, no `s`), created in `20260614000003_audit_log_table.sql`. Columns: `id (BIGSERIAL)`, `event_type (TEXT)`, `actor_user_id (UUID)`, `payload (JSONB)`, `created_at (TIMESTAMPTZ)`. No `transaction_id` column.
+  - Adapted the audit INSERT: logs to `audit_log` with `order_id` embedded in `payload` JSONB.
+  - `version` and `funnel_sub_stage` columns confirmed present from `20260625000001_funnel_stage_columns.sql`.
+- **Error codes:** `NOT_FOUND`, `STALE_VERSION`, `STAGE_MISMATCH`.
+- **wip_started_at** auto-set on entry to sub-stages `3a` or `3f` (if not already set).
+- **Security:** SECURITY DEFINER + `SET search_path = public` + REVOKE ALL from PUBLIC + GRANT EXECUTE to authenticated.
+- **Commit:** `90f48db feat(sales): atomic transition_order_stage RPC with optimistic lock + audit log`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
 ## 2026-06-17 — Pembelian Phase 2a — E2E PRODUCTION UI SMOKE — PASS (Chrome MCP)
 
 Drove full happy path against production URL with live Supabase. All 4 entities + state transitions verified UI ↔ DB.
