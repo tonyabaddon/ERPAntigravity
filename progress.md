@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel Task A4: get_sales_dashboard_stats RPC — DONE
+
+- **What:** Created migration `20260625000004_sales_stats_rpc.sql` — a STABLE RPC `get_sales_dashboard_stats() RETURNS jsonb` returning 5 keys: `urgent_count`, `tunggu_count`, `revenue_pending`, `completed_this_month`, `revenue_this_month`.
+- **Key findings:**
+  - `kasir_transactions.total` does not exist as a column; revenue computed via `COALESCE(subtotal, 0)`.
+  - Urgent sub-stages: `2b,2d,3a,3b,3c,3f,3g,4b,4d`. Tunggu sub-stages: `1a,2a,2c,2e,3d,3e,3h,4a`.
+  - `funnel_stage` and `funnel_sub_stage` columns confirmed from `20260625000001`.
+  - Revenue pending covers `funnel_stage BETWEEN 1 AND 4`; revenue this month covers `funnel_stage = 5` + current month.
+- **Security:** STABLE + `SET search_path = public` + REVOKE ALL from PUBLIC + GRANT EXECUTE to authenticated.
+- **Commit:** `cbf864a feat(sales): get_sales_dashboard_stats RPC for landing dashboard`
+- **Branch:** `feat/sales-landing-funnel-2i` (worktree `.claude/worktrees/sales-funnel`)
+
 ## 2026-06-18 — Sales Funnel Task A3: atomic transition_order_stage RPC — DONE
 
 - **What:** Created migration `20260625000003_transition_order_stage_rpc.sql` — a SECURITY DEFINER RPC `transition_order_stage(uuid, text, text, int, uuid, text) RETURNS jsonb` that performs an atomic funnel stage transition with optimistic locking and audit logging.
