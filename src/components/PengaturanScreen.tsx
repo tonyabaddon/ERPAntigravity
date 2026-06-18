@@ -377,7 +377,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-gray-600" />
-                <h2 className="text-lg font-bold text-gray-800">Profil Perusahaan</h2>
+                <h2 className="text-lg font-bold text-gray-800">Profil Perusahaan (lama)</h2>
               </div>
               {company && !companyEditing && (
                 <button onClick={startCompanyEdit} className="p-2 rounded-lg hover:bg-gray-100" title="Edit profil">

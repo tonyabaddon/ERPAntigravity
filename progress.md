@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR A — legacy → new seed migration + heading consistency
+
+- `supabase/migrations/20260625000016_seed_pengaturan_from_legacy.sql` — one-shot, idempotent: copies `company_settings.{company_name, address, phone}` → `store_settings.{nama_toko, alamat_lengkap, telp_wa}` only if the new row is still at migration-010 defaults; copies every `bank_config` row into `bank_accounts` keyed by (bank_name, account_number). Prevents the new Pengaturan cards from opening blank.
+- `src/components/PengaturanScreen.tsx` — relabeled the legacy Profil Perusahaan section to "Profil Perusahaan (lama)" to match the "Rekening Bank (lama)" treatment from the previous commit.
+- `npm run build` → clean (2.71s, 2756 modules).
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A — Pengaturan UI cards (Identitas / Jam Operasional / Rekening Bank)
 
 - `src/components/pengaturan/IdentitasTokoCard.tsx` — 8 fields backed by `store_settings` (nama_toko, nama_legal, tagline, alamat_lengkap, kota, telp_wa, google_maps_url, npwp + logo_url). Owner-only writes via RLS; mutations surface "Anda harus Owner…" toast on 42501.

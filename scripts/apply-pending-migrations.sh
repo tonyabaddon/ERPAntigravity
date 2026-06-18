@@ -200,8 +200,12 @@ MIGRATIONS=(
   #      bank_accounts; RLS authenticated read + Owner write on all three.
   # 014: invoice_counters table + next_invoice_number(p_doc_type) RPC for
   #      SO / INV-DP / INV-PEL / INV-LUNAS / SJ / CANCEL.
+  # 016: one-shot seed of store_settings + bank_accounts from legacy
+  #      company_settings + bank_config so the new Pengaturan cards
+  #      open with user's existing data. Idempotent.
   "20260625000010_pengaturan_tables.sql"
   "20260625000014_invoice_numbering_counters.sql"
+  "20260625000016_seed_pengaturan_from_legacy.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
