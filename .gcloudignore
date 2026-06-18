@@ -1,0 +1,16 @@
+# .gcloudignore — Cloud Build upload exclusions
+# Override .gitignore so the CLIP model file gets uploaded to Cloud Build context.
+
+.git
+.gitignore
+node_modules
+.claude
+docs
+__pycache__
+*.pyc
+.env
+.env.local
+.DS_Store
+
+# CLIP model IS included for Cloud Build (overrides .gitignore exclusion).
+!models/clip-vit-base-patch32.onnx

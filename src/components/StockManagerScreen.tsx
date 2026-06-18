@@ -16,6 +16,8 @@ import BulkUploadSection from './produk/BulkUploadSection';
 import StockTableView from './produk/StockTableView';
 import CatalogGridView from './produk/CatalogGridView';
 import ProductForm from './produk/ProductForm';
+import ViewModeSwitcher, { type ViewMode } from './produk/ViewModeSwitcher';
+import CatalogListView from './produk/CatalogListView';
 
 interface StockManagerScreenProps {
   stockList: StockItem[];
@@ -32,6 +34,41 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
   const [activeTab, setActiveTab] = useState<Tab>('katalog');
   const [editingSku, setEditingSku] = useState<string | null>(null);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  // View mode (Plan B foto-search) — fresh List default per visit, no persistence.
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<Map<string, number>>(new Map());
+  // Search + category filter lifted from CatalogGridView — shared across both modes.
+  const [katalogSearch, setKatalogSearch] = useState('');
+  const [katalogCategory, setKatalogCategory] = useState<string>('Semua');
+  const katalogCategories = useMemo(
+    () => ['Semua', ...Array.from(new Set(stockList.map(s => s.category)))],
+    [stockList]
+  );
+  const filteredKatalog = useMemo(() => stockList.filter(s => {
+    if (katalogCategory !== 'Semua' && s.category !== katalogCategory) return false;
+    if (katalogSearch) {
+      const q = katalogSearch.toLowerCase();
+      if (!s.name.toLowerCase().includes(q) && !s.sku.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }), [stockList, katalogSearch, katalogCategory]);
+  const toggleRow = (sku: string) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(sku)) next.delete(sku); else next.add(sku);
+      return next;
+    });
+    setCurrentPhotoIndex(prev => {
+      if (prev.has(sku)) return prev;
+      const next = new Map(prev); next.set(sku, 0); return next;
+    });
+  };
+  const closeRow = (sku: string) => setExpandedRows(prev => {
+    const next = new Set(prev); next.delete(sku); return next;
+  });
+  const closeAll = () => { setExpandedRows(new Set()); setCurrentPhotoIndex(new Map()); };
+  const selectPhoto = (sku: string, idx: number) => setCurrentPhotoIndex(prev => new Map(prev).set(sku, idx));
 
   const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
@@ -187,6 +224,42 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
 
       {/* Tab pills */}
       <div className="bg-white rounded-3xl border border-[#e5eeff] p-4 shadow-sm">
+        {activeTab === 'katalog' && (
+          <div className="flex flex-col lg:flex-row gap-3 mb-3">
+            <input
+              value={katalogSearch}
+              onChange={e => setKatalogSearch(e.target.value)}
+              placeholder="Cari nama atau SKU…"
+              className="flex-1 px-4 py-2 bg-[#eff4ff] rounded-full text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-300"
+            />
+            <select
+              value={katalogCategory}
+              onChange={e => setKatalogCategory(e.target.value)}
+              className="px-4 py-2 bg-[#eff4ff] rounded-full text-xs font-black"
+            >
+              {katalogCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <ViewModeSwitcher value={viewMode} onChange={(next) => { setViewMode(next); closeAll(); }} />
+            {viewMode === 'list' && expandedRows.size > 0 && (
+              <button
+                type="button"
+                onClick={closeAll}
+                className="px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-full text-xs font-bold inline-flex items-center gap-1.5"
+                aria-label={`Tutup ${expandedRows.size} panel terbuka`}
+              >
+                <span className="material-symbols-outlined text-base">unfold_less</span>
+                Tutup {expandedRows.size} panel
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowAddProductModal(true)}
+              className="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-700"
+            >
+              + Tambah Barang
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {([
             { id: 'katalog', label: '📋 Katalog', count: stockList.length, color: 'emerald' },
@@ -214,13 +287,28 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
         </div>
       </div>
 
-      {activeTab === 'katalog' && (
+      {activeTab === 'katalog' && (viewMode === 'foto' ? (
         <CatalogGridView
-          stockList={stockList}
+          stockList={filteredKatalog}
           onAdd={() => setShowAddProductModal(true)}
           onEdit={setEditingSku}
+          hideToolbar
         />
-      )}
+      ) : (
+        <CatalogListView
+          items={filteredKatalog}
+          warehouses={warehouses}
+          minStockThreshold={10}
+          expandedRows={expandedRows}
+          currentPhotoIndex={currentPhotoIndex}
+          onToggleRow={toggleRow}
+          onPhotoSelect={selectPhoto}
+          onCloseRow={closeRow}
+          onEdit={setEditingSku}
+          onAddPhoto={setEditingSku}
+          onHistory={(sku) => showToast(`Riwayat stok ${sku} — TODO`, 'info')}
+        />
+      ))}
 
       {activeTab === 'stok' && (
         <StockTableView

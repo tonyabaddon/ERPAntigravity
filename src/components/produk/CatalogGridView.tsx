@@ -5,33 +5,40 @@ interface Props {
   stockList: StockItem[];
   onAdd: () => void;
   onEdit: (sku: string) => void;
+  /** When true, parent owns the search/filter/add toolbar (e.g. lifted to StockManagerScreen). */
+  hideToolbar?: boolean;
 }
 
-export default function CatalogGridView({ stockList, onAdd, onEdit }: Props) {
+export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar }: Props) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('Semua');
   const categories = useMemo(() =>
     ['Semua', ...Array.from(new Set(stockList.map(s => s.category)))], [stockList]);
-  const filtered = useMemo(() => stockList.filter(s => {
-    if (cat !== 'Semua' && s.category !== cat) return false;
-    if (q && !s.name.toLowerCase().includes(q.toLowerCase()) && !s.sku.toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  }), [stockList, q, cat]);
+  const filtered = useMemo(() => {
+    if (hideToolbar) return stockList; // parent already filtered
+    return stockList.filter(s => {
+      if (cat !== 'Semua' && s.category !== cat) return false;
+      if (q && !s.name.toLowerCase().includes(q.toLowerCase()) && !s.sku.toLowerCase().includes(q.toLowerCase())) return false;
+      return true;
+    });
+  }, [stockList, q, cat, hideToolbar]);
 
   return (
     <section className="bg-white rounded-[2.5rem] p-6 border border-[#e5eeff] shadow-xl">
-      <div className="flex flex-col lg:flex-row gap-3 mb-5">
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama atau SKU…"
-               className="flex-1 px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-bold" />
-        <select value={cat} onChange={e => setCat(e.target.value)}
-                className="px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-black">
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <button onClick={onAdd}
-                className="px-5 py-3 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider">
-          + Tambah Barang
-        </button>
-      </div>
+      {!hideToolbar && (
+        <div className="flex flex-col lg:flex-row gap-3 mb-5">
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama atau SKU…"
+                 className="flex-1 px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-bold" />
+          <select value={cat} onChange={e => setCat(e.target.value)}
+                  className="px-4 py-3 bg-[#eff4ff] rounded-full text-xs font-black">
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <button onClick={onAdd}
+                  className="px-5 py-3 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider">
+            + Tambah Barang
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map(item => (

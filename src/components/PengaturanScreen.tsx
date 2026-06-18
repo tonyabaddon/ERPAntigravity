@@ -3,6 +3,8 @@ import { Settings, Building2, Users, Plus, Trash2, ToggleLeft, ToggleRight, Edit
 import { DbBankConfig, DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
 import { bankConfigService, waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import TabBar, { TabDef } from './ui/TabBar';
+import CostingMethodPanel from './pengaturan/CostingMethodPanel';
+import ClipMonitorPanel from './pengaturan/ClipMonitorPanel';
 import NotificationSettingsScreen from './NotificationSettingsScreen';
 import WhatsappAiScreen from './WhatsappAiScreen';
 import SalesChannelConfigPanel from './pengaturan/SalesChannelConfigPanel';
@@ -648,6 +650,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           {currentUserRole === 'Owner' && (
             <OwnerPinCard showToast={showToast} />
           )}
+
+          {/* Plan D: Costing method + CLIP inference monitor */}
+          <CostingMethodPanel showToast={showToast} />
+          <ClipMonitorPanel />
         </div>
       )}
     </>
