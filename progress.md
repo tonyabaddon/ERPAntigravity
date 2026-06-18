@@ -7195,3 +7195,15 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 **Out of scope** (deferred to future specs): keyboard navigation, persistence, lightbox modal, detail-page tab-baru, table virtualization, mode Padat dense grid.
 
 **Implementation status**: plan written + committed, NOT yet executed. Blocked on foto-search Phase 1.
+
+## 2026-06-18 — Sales Funnel — Task A1: Migration funnel_stage_columns DONE_WITH_CONCERNS
+
+- **File created:** `supabase/migrations/20260625000001_funnel_stage_columns.sql`
+- **Commit:** `d705fed` — "feat(sales): add funnel_stage + order_type + version columns to kasir_transactions"
+- **What the migration does:**
+  - Creates two new enums: `order_type_enum` ('KOMPONEN', 'CUSTOM_PANEL', 'RAKIT_PANEL') and `delivery_method_enum` ('PICKUP', 'DELIVERY', 'MARKETPLACE_COURIER') — both idempotent via DO/EXCEPTION block
+  - Adds 8 columns to `kasir_transactions` (all IF NOT EXISTS): `order_type`, `funnel_stage`, `funnel_sub_stage`, `estimated_completion_days`, `estimated_completion_date`, `wip_started_at`, `delivery_method`, `version`
+  - Creates 3 indexes (all IF NOT EXISTS): `idx_kasir_funnel_sub_stage`, `idx_kasir_order_type`, `idx_kasir_funnel_stage_active` (partial, WHERE 1–4)
+  - Column comments for `funnel_sub_stage` and `version`
+- **Migration slot:** `20260625000001` — 5+ day buffer from latest existing `20260620000030` ✓
+- **Concern:** Local supabase stack could not be started (Docker daemon not running) — migration was NOT locally applied/tested. Will be validated when applied to Supabase remote via Management API or when Docker is available.
