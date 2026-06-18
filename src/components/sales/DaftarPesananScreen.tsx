@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchActiveOrders, subscribeOrders } from '../../lib/sales/queries';
 import type { Order, FunnelStage } from '../../lib/sales/types';
-import { TYPE_TAB_CFG, filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
+import { filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
 import { getQuickAction } from '../../lib/sales/quickActionMap';
 import { transitionOrder } from '../../lib/sales/mutations';
@@ -19,6 +19,7 @@ export function DaftarPesananScreen() {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [proofModal, setProofModal] = useState<{ url: string; orderId: string; version: number; fromSub: string; toSub: string } | null>(null);
   const [uploadModal, setUploadModal] = useState<{ orderId: string; field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' } | null>(null);
+  const [pendingVerify, setPendingVerify] = useState<{ orderId: string; toSub: string } | null>(null);
 
   // initial load + realtime
   useEffect(() => {
@@ -74,6 +75,7 @@ export function DaftarPesananScreen() {
           : (order.payment_proof_url ?? order.marketplace_proof_url);
 
       if (!proofUrl) {
+        setPendingVerify({ orderId: order.id, toSub: toSubStage });
         setUploadModal({ orderId: order.id, field: proofField });
         return;
       }
@@ -103,6 +105,30 @@ export function DaftarPesananScreen() {
     }
   }
 
+  function handleOpenProof(order: Order) {
+    const proofUrl = order.funnel_sub_stage === '3b'
+      ? order.pelunasan_proof_url
+      : (order.payment_proof_url ?? order.marketplace_proof_url);
+    if (!proofUrl) return;
+    // Determine toSub for verify-stage orders
+    const toSub = order.funnel_sub_stage === '2d' ? '3a' : '4a';
+    setProofModal({
+      url: proofUrl,
+      orderId: order.id,
+      version: order.version,
+      fromSub: order.funnel_sub_stage,
+      toSub,
+    });
+  }
+
+  function handleUploadProof(order: Order) {
+    const proofField: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' =
+      order.funnel_sub_stage === '3b' ? 'pelunasan_proof_url' : 'payment_proof_url';
+    const toSub = order.funnel_sub_stage === '2d' ? '3a' : '4a';
+    setPendingVerify({ orderId: order.id, toSub });
+    setUploadModal({ orderId: order.id, field: proofField });
+  }
+
   function toggleSection(subId: string) {
     setExpandedSubs(prev => {
       const next = new Set(prev);
@@ -129,6 +155,8 @@ export function DaftarPesananScreen() {
               onToggleSection={() => toggleSection(sub.id)}
               onToggleRow={(id) => setExpandedRowId(prev => prev === id ? null : id)}
               onQuickAction={handleQuickAction}
+              onOpenProof={handleOpenProof}
+              onUploadProof={handleUploadProof}
             />
           ))}
         </div>
@@ -176,10 +204,32 @@ export function DaftarPesananScreen() {
           orderId={uploadModal.orderId}
           field={uploadModal.field}
           onUploaded={async () => {
+            setUploadModal(null);
+            // Refresh + re-open lightbox for verify
             const fresh = await fetchActiveOrders().catch(() => null);
-            if (fresh) setOrders(fresh);
+            if (fresh) {
+              setOrders(fresh);
+              if (pendingVerify) {
+                const refreshed = fresh.find(o => o.id === pendingVerify.orderId);
+                if (refreshed) {
+                  const url = refreshed.funnel_sub_stage === '3b'
+                    ? refreshed.pelunasan_proof_url
+                    : (refreshed.payment_proof_url ?? refreshed.marketplace_proof_url);
+                  if (url) {
+                    setProofModal({
+                      url,
+                      orderId: refreshed.id,
+                      version: refreshed.version,
+                      fromSub: refreshed.funnel_sub_stage,
+                      toSub: pendingVerify.toSub,
+                    });
+                  }
+                }
+                setPendingVerify(null);
+              }
+            }
           }}
-          onClose={() => setUploadModal(null)}
+          onClose={() => { setUploadModal(null); setPendingVerify(null); }}
         />
       )}
     </div>

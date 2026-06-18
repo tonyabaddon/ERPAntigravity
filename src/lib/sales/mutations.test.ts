@@ -3,7 +3,6 @@ import { describe, test, expect, vi } from 'vitest';
 vi.mock('../supabaseClient', () => ({
   supabase: {
     rpc: vi.fn().mockResolvedValue({ data: { ok: true, new_version: 2, new_sub_stage: '2c' }, error: null }),
-    auth: { getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }) },
   },
 }));
 

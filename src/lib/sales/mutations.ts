@@ -17,14 +17,11 @@ export async function transitionOrder(params: {
   expectedVersion: number;
   reason?: string;
 }): Promise<TransitionResult> {
-  const { data: userResp } = await supabase.auth.getUser();
-  const actorId = userResp.user?.id ?? null;
   const { data, error } = await supabase.rpc('transition_order_stage', {
     p_order_id: params.id,
     p_from_sub_stage: params.fromSubStage,
     p_to_sub_stage: params.toSubStage,
     p_expected_version: params.expectedVersion,
-    p_actor_user_id: actorId,
     p_reason: params.reason ?? null,
   });
   if (error) throw error;
@@ -44,7 +41,8 @@ export async function uploadPaymentProof(params: {
   source: ProofSource;
   field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url';
 }): Promise<string> {
-  const filename = `${params.orderId}/${Date.now()}-${params.file.name}`;
+  const safeName = params.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filename = `${params.orderId}/${Date.now()}-${safeName}`;
   const { error: upErr } = await supabase.storage.from('payment-proofs').upload(filename, params.file);
   if (upErr) throw upErr;
   const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(filename);

@@ -2,6 +2,7 @@ import type { Order } from '../../lib/sales/types';
 import type { TypeTab } from '../../lib/sales/typeTabConfig';
 import type { SubStageMeta } from '../../lib/sales/stageMapping';
 import { OrderRow } from './OrderRow';
+import { ActionPanel } from './ActionPanel';
 
 interface Props {
   sub: SubStageMeta;
@@ -12,9 +13,11 @@ interface Props {
   onToggleSection: () => void;
   onToggleRow: (id: string) => void;
   onQuickAction: (order: Order, toSubStage: string) => void;
+  onOpenProof: (order: Order) => void;
+  onUploadProof: (order: Order) => void;
 }
 
-export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab, onToggleSection, onToggleRow, onQuickAction }: Props) {
+export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab, onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof }: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
 
@@ -49,14 +52,22 @@ export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab,
         orders.length === 0
           ? <div style={{ padding: '20px 24px', textAlign: 'center', color: '#9ca3af', fontSize: 12, fontStyle: 'italic', background: '#fafbff' }}>Kosong 🎉</div>
           : orders.map(o => (
-            <OrderRow
-              key={o.id}
-              order={o}
-              expanded={expandedRowId === o.id}
-              typeTab={typeTab}
-              onToggle={() => onToggleRow(o.id)}
-              onQuickAction={(_label, toSubStage) => onQuickAction(o, toSubStage)}
-            />
+            <div key={o.id}>
+              <OrderRow
+                order={o}
+                expanded={expandedRowId === o.id}
+                typeTab={typeTab}
+                onToggle={() => onToggleRow(o.id)}
+                onQuickAction={(_label, toSubStage) => onQuickAction(o, toSubStage)}
+              />
+              {expandedRowId === o.id && (
+                <ActionPanel
+                  order={o}
+                  onOpenProof={() => onOpenProof(o)}
+                  onUploadProof={() => onUploadProof(o)}
+                />
+              )}
+            </div>
           ))
       )}
     </>

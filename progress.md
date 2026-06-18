@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-18 — Sales Funnel — Code Review Blockers + Important Fixes — DONE
+
+- **What:** Addressed 4 BLOCKERS + 3 IMPORTANT issues from code review on `feat/sales-landing-funnel-2i`
+- **BLOCKER 1 — Bucket public:** Created migration `20260625000006_payment_proofs_bucket_public.sql` — sets `payment-proofs` bucket public so `getPublicUrl` works
+- **BLOCKER 2 — Audit identity spoofable:** Created migration `20260625000007_transition_rpc_use_auth_uid.sql` — replaces `transition_order_stage` dropping `p_actor_user_id` param; actor now from `auth.uid()` server-side. Updated `mutations.ts` to remove `auth.getUser()` + `p_actor_user_id` from RPC call. Updated `mutations.test.ts` to remove `auth` mock.
+- **BLOCKER 3 — Upload→verify chain:** Updated `DaftarPesananScreen.tsx` with `pendingVerify` state; after upload completes, refreshes orders and auto-opens `PaymentProofLightbox` for the same order. Added `handleOpenProof` + `handleUploadProof` handlers.
+- **BLOCKER 4 — ActionPanel dead code:** Created `ActionPanel.tsx` showing proof thumbnail + upload CTA. Wired into `SubStageSection.tsx` (new `onOpenProof` + `onUploadProof` props, rendered when row is expanded). Handlers threaded from `DaftarPesananScreen`.
+- **IMPORTANT 1 — payment_type normalization:** `normalizePaymentType` helper in new `orderMapper.ts` (DB already uppercase so safety net only)
+- **IMPORTANT 2 — rowToOrder mapper:** `orderMapper.ts` exports `rowToOrder` computing `status_label`, `time_ago`, `stuck`, `hari_progress` from raw DB row. `queries.ts` updated to use it in `fetchActiveOrders`, `fetchArchiveOrders`, and `subscribeOrders`.
+- **IMPORTANT 3 — Path traversal:** Filename sanitized in `mutations.ts:uploadPaymentProof` with `replace(/[^a-zA-Z0-9._-]/g, '_')`
+- **TypeScript:** clean (0 errors)
+- **Tests:** 72/72 passing (14 test files)
+- **Files changed:** `supabase/migrations/20260625000006_payment_proofs_bucket_public.sql` (new), `supabase/migrations/20260625000007_transition_rpc_use_auth_uid.sql` (new), `src/lib/sales/mutations.ts`, `src/lib/sales/mutations.test.ts`, `src/lib/sales/queries.ts`, `src/lib/sales/orderMapper.ts` (new), `src/components/sales/ActionPanel.tsx` (new), `src/components/sales/SubStageSection.tsx`, `src/components/sales/DaftarPesananScreen.tsx`
+
 ## 2026-06-18 — Sales Funnel — Milestone F (F1): Routing + Sidebar wire-up — DONE
 
 - **Files modified:**

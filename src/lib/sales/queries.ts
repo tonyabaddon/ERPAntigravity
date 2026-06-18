@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import type { Order, SalesDashboardStats } from './types';
+import { rowToOrder } from './orderMapper';
 
 export async function fetchActiveOrders(): Promise<Order[]> {
   const { data, error } = await supabase
@@ -9,7 +10,7 @@ export async function fetchActiveOrders(): Promise<Order[]> {
     .in('funnel_stage', [1, 2, 3, 4])
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []) as unknown as Order[];
+  return (data ?? []).map(rowToOrder);
 }
 
 export async function fetchArchiveOrders(stage: 5 | 6, limit: number = 5): Promise<Order[]> {
@@ -21,7 +22,7 @@ export async function fetchArchiveOrders(stage: 5 | 6, limit: number = 5): Promi
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []) as unknown as Order[];
+  return (data ?? []).map(rowToOrder);
 }
 
 export async function fetchDashboardStats(): Promise<SalesDashboardStats> {
@@ -34,7 +35,7 @@ export function subscribeOrders(callback: (order: Order) => void) {
   return supabase
     .channel('kasir-orders-funnel')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'kasir_transactions' }, (payload) => {
-      callback(payload.new as Order);
+      callback(rowToOrder(payload.new));
     })
     .subscribe();
 }
