@@ -2108,6 +2108,13 @@ export async function approveRakitLock(
   if (error) throw error;
 }
 
+// approveAndAmendRakitLock lives in ./sales/rakitLockOwnerEdit so it can be
+// unit-tested via the standard vi.mock('../supabaseClient') idiom (functions
+// defined IN supabaseClient.ts close over the actual `supabase` const, which
+// vi.mock cannot intercept). Re-exported here for path consistency with the
+// other rakit wrappers.
+export { approveAndAmendRakitLock } from './sales/rakitLockOwnerEdit';
+
 export async function rejectRakitLock(
   approvalId: number,
   reason: string,
