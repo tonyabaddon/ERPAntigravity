@@ -1,12 +1,13 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier, DbCompanySettings } from '../../types';
+import { DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier } from '../../types';
+import type { StoreSettings } from '../pengaturan/types';
 
 interface GeneratePoPdfArgs {
   po: DbPurchaseOrder;
   supplier: DbSupplier;
   items: DbPurchaseOrderItem[];
-  companySettings: DbCompanySettings | null;
+  storeSettings: StoreSettings | null;
   createdByName: string;
 }
 
@@ -28,7 +29,7 @@ function formatDateID(iso?: string): string {
 }
 
 export function generatePoPdf(args: GeneratePoPdfArgs): Blob {
-  const { po, supplier, items, companySettings, createdByName } = args;
+  const { po, supplier, items, storeSettings, createdByName } = args;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -49,7 +50,7 @@ export function generatePoPdf(args: GeneratePoPdfArgs): Blob {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(TEXT_DARK);
-  const companyName = companySettings?.company_name ?? 'Garindo Jaya Panel';
+  const companyName = storeSettings?.nama_toko ?? 'Garindo Jaya Panel';
   doc.text(companyName, margin + 48, margin + 16);
 
   doc.setFont('helvetica', 'bold');
@@ -62,13 +63,13 @@ export function generatePoPdf(args: GeneratePoPdfArgs): Blob {
   doc.setFontSize(9);
   doc.setTextColor(TEXT_MUTED);
   let infoY = margin + 42;
-  if (companySettings?.address) {
-    doc.text(companySettings.address, margin + 48, infoY);
+  if (storeSettings?.alamat_lengkap) {
+    doc.text(storeSettings.alamat_lengkap, margin + 48, infoY);
     infoY += 11;
   }
   const contactParts: string[] = [];
-  if (companySettings?.phone) contactParts.push(companySettings.phone);
-  if (companySettings?.email) contactParts.push(companySettings.email);
+  if (storeSettings?.telp_wa) contactParts.push(storeSettings.telp_wa);
+  if (storeSettings?.email) contactParts.push(storeSettings.email);
   if (contactParts.length > 0) {
     doc.text(contactParts.join(' · '), margin + 48, infoY);
   }

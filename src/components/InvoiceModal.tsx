@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { X, Download, FileText } from 'lucide-react';
-import { DbOrder, DbBankConfig, DbCompanySettings } from '../types';
-import { bankConfigService, companySettingsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { DbOrder } from '../types';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { fetchStoreSettings, fetchBankAccounts } from '../lib/pengaturan/queries';
+import type { StoreSettings, BankAccount } from '../lib/pengaturan/types';
 
 interface InvoiceModalProps {
   order: DbOrder;
@@ -22,14 +24,14 @@ function formatDateTime(iso: string): string {
 }
 
 export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
-  const [company, setCompany] = useState<DbCompanySettings | null>(null);
-  const [bank, setBank]       = useState<DbBankConfig | null>(null);
+  const [store, setStore] = useState<StoreSettings | null>(null);
+  const [bank, setBank]   = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
-    Promise.all([companySettingsService.fetch(), bankConfigService.fetch()])
-      .then(([co, bk]) => { setCompany(co); setBank(bk); })
+    Promise.all([fetchStoreSettings(), fetchBankAccounts(true)])
+      .then(([st, accounts]) => { setStore(st); setBank(accounts[0] ?? null); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -82,13 +84,13 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   {/* Invoice header */}
                   <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
                     <div>
-                      <div className="text-xl font-black text-[#012749] tracking-tight">{company?.company_name ?? 'Garindo Jaya Panel'}</div>
+                      <div className="text-xl font-black text-[#012749] tracking-tight">{store?.nama_toko ?? 'Garindo Jaya Panel'}</div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1 flex items-center gap-1.5 flex-wrap">
-                        {company?.address || 'Alamat belum diisi'}
+                        {store?.alamat_lengkap || 'Alamat belum diisi'}
                         <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
                       </div>
                       <div className="text-[11px] text-gray-500 font-sans">
-                        {company?.phone && `${company.phone} · `}{company?.email ?? ''}
+                        {store?.telp_wa && `${store.telp_wa} · `}{store?.email ?? ''}
                       </div>
                     </div>
                     <div className="text-right">
@@ -164,7 +166,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                     </div>
                     <div className="text-xs text-gray-700">
                       {bank ? (
-                        <>Bank {bank.bank_name} · No. Rek: <strong>{bank.account_number}</strong> · a/n <strong>{bank.account_name}</strong></>
+                        <>Bank {bank.bank_name} · No. Rek: <strong>{bank.account_number}</strong> · a/n <strong>{bank.account_holder}</strong></>
                       ) : (
                         <span className="text-gray-400">Rekening belum dikonfigurasi di Pengaturan.</span>
                       )}
@@ -183,8 +185,8 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
 
                   {/* Footer */}
                   <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3">
-                    Terima kasih atas kepercayaan Anda kepada {company?.company_name ?? 'Garindo Jaya Panel'} 🙏<br />
-                    Dokumen ini diterbitkan secara otomatis oleh sistem ERP {company?.company_name ?? 'Garindo Jaya Panel'}.
+                    Terima kasih atas kepercayaan Anda kepada {store?.nama_toko ?? 'Garindo Jaya Panel'} 🙏<br />
+                    Dokumen ini diterbitkan secara otomatis oleh sistem ERP {store?.nama_toko ?? 'Garindo Jaya Panel'}.
                   </div>
                 </>
               )}

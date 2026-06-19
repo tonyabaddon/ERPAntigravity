@@ -10,11 +10,13 @@ import {
   X, Printer, FileText, ShoppingCart, ArrowLeft, SearchX, Trash2, CheckCircle2,
 } from 'lucide-react';
 import {
-  DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier, DbCompanySettings,
+  DbPurchaseOrder, DbPurchaseOrderItem, DbSupplier,
   StockItem, PermissionSet,
 } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
-import { companySettingsService, adminUsersService } from '../../lib/supabaseClient';
+import { adminUsersService } from '../../lib/supabaseClient';
+import { fetchStoreSettings } from '../../lib/pengaturan/queries';
+import type { StoreSettings } from '../../lib/pengaturan/types';
 import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
 import MarkAsPaidModal from './MarkAsPaidModal';
@@ -66,7 +68,7 @@ export default function PembelianDetailPage({
   const [editMode, setEditMode] = useState(false);
 
   // PDF/print helpers
-  const [companySettings, setCompanySettings] = useState<DbCompanySettings | null>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
@@ -94,7 +96,7 @@ export default function PembelianDetailPage({
   useEffect(() => {
     document.title = `${poNumber} — Pembelian`;
     fetchPo();
-    companySettingsService.fetch().then(setCompanySettings).catch(() => {});
+    fetchStoreSettings().then(setStoreSettings).catch(() => {});
   }, [poNumber]);
 
   async function handleDownloadPdf() {
@@ -103,7 +105,7 @@ export default function PembelianDetailPage({
       showToast('Data supplier tidak lengkap. Reload halaman.', 'warning');
       return;
     }
-    if (!companySettings?.address || !companySettings?.phone) {
+    if (!storeSettings?.alamat_lengkap || !storeSettings?.telp_wa) {
       const proceed = confirm('Alamat atau nomor telepon toko belum diisi di Pengaturan. PDF akan tampil tanpa info tersebut. Tetap generate?');
       if (!proceed) return;
     }
@@ -121,7 +123,7 @@ export default function PembelianDetailPage({
         po,
         supplier: po.supplier,
         items: po.items ?? [],
-        companySettings,
+        storeSettings,
         createdByName,
       });
       const url = URL.createObjectURL(blob);
@@ -327,8 +329,8 @@ export default function PembelianDetailPage({
 
       {/* Print-only header (visible only on print) */}
       <div className="hidden print:block px-5 py-4 border-b border-gray-200">
-        {companySettings?.company_name && (
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{companySettings.company_name}</p>
+        {storeSettings?.nama_toko && (
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{storeSettings.nama_toko}</p>
         )}
         <h1 className="text-lg font-bold text-gray-900">Purchase Order</h1>
         <p className="text-sm text-gray-600">{po.po_number} · {formatDate(po.ordered_at ?? po.created_at)}</p>

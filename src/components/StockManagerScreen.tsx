@@ -6,7 +6,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
 import { StockItem, ApprovalRequest } from '../types';
-import { isSupabaseConfigured, listPendingApprovals, companySettingsService, stockService } from '../lib/supabaseClient';
+import { isSupabaseConfigured, listPendingApprovals, stockService } from '../lib/supabaseClient';
+import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { useWarehouses } from '../hooks/useWarehouses';
 import WarehouseTransferModal from './WarehouseTransferModal';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
@@ -99,16 +100,16 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
     return () => { cancelled = true; };
   }, [pendingRefreshTick]);
 
-  // One-shot company-name fetch for the CSV filename. Done separately from
+  // One-shot store-name fetch for the CSV filename. Done separately from
   // the pending-approvals effect so the latter's tick doesn't refetch.
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     let cancelled = false;
     void (async () => {
       try {
-        const row = await companySettingsService.fetch();
+        const row = await fetchStoreSettings();
         if (cancelled) return;
-        if (row?.company_name && row.company_name.trim()) setCompanyName(row.company_name.trim());
+        if (row?.nama_toko && row.nama_toko.trim()) setCompanyName(row.nama_toko.trim());
       } catch {
         // silent: hardcoded fallback used
       }

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { X, Printer } from 'lucide-react';
-import { KasirTransaction, DbCompanySettings } from '../../types';
-import type { DbBankConfig, SalesChannel } from '../../types';
-import { companySettingsService, bankConfigService, isSupabaseConfigured } from '../../lib/supabaseClient';
+import { KasirTransaction } from '../../types';
+import type { SalesChannel } from '../../types';
+import { isSupabaseConfigured } from '../../lib/supabaseClient';
+import { fetchStoreSettings, fetchBankAccounts } from '../../lib/pengaturan/queries';
+import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { formatRp } from '../../lib/format';
 import { CHANNEL_VISUAL } from '../../lib/salesChannels';
 
@@ -22,14 +24,14 @@ export interface SalesInvoicePDFProps {
 }
 
 export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, onClose }: SalesInvoicePDFProps) {
-  const [company, setCompany] = useState<DbCompanySettings | null>(null);
-  const [bank, setBank] = useState<DbBankConfig | null>(null);
+  const [store, setStore] = useState<StoreSettings | null>(null);
+  const [bank, setBank] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
-    Promise.all([companySettingsService.fetch(), bankConfigService.fetch()])
-      .then(([co, bk]) => { setCompany(co); setBank(bk); })
+    Promise.all([fetchStoreSettings(), fetchBankAccounts(true)])
+      .then(([st, accounts]) => { setStore(st); setBank(accounts[0] ?? null); })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -94,7 +96,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
           ) : (
-            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} company={company} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} />
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} />
           )}
         </div>
       </div>
@@ -106,15 +108,15 @@ interface InvoiceBodyProps {
   transaction: KasirTransaction;
   variant: InvoiceVariant;
   adminName?: string;
-  company: DbCompanySettings | null;
-  bank: DbBankConfig | null;
+  store: StoreSettings | null;
+  bank: BankAccount | null;
   channelLabel: string;
   paymentLabel: string;
 }
 
 // Body extracted to its own function for clarity (still in the same file).
 function InvoiceBody({
-  transaction: t, variant, adminName, company, bank, channelLabel, paymentLabel,
+  transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel,
 }: InvoiceBodyProps) {
   const subtotal = t.subtotal;
   const ongkir = t.ongkir_amount ?? 0;
@@ -135,15 +137,15 @@ function InvoiceBody({
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr] gap-4 pb-3 border-b-2 border-slate-900 mb-3">
         <div className="w-16 h-16 bg-slate-900 text-white flex items-center justify-center font-sans font-extrabold text-[10px] text-center">
-          {company?.logo_url
-            ? <img src={company.logo_url} alt="Logo" className="w-full h-full object-contain" />
-            : (company?.company_name ?? 'GARINDO').split(' ').slice(0,3).join(' ')}
+          {store?.logo_url
+            ? <img src={store.logo_url} alt="Logo" className="w-full h-full object-contain" />
+            : (store?.nama_toko ?? 'GARINDO').split(' ').slice(0,3).join(' ')}
         </div>
         <div>
-          <div className="font-extrabold font-sans text-[15px]">{company?.company_name ?? 'GARINDO JAYA PANEL'}</div>
-          <div className="text-[11px] mt-0.5">{company?.address ?? '—'}</div>
-          <div className="text-[11px]">{company?.phone && `Telp ${company.phone}`} {company?.email && `· ${company.email}`}</div>
-          {company?.npwp && <div className="text-[11px]">NPWP {company.npwp}</div>}
+          <div className="font-extrabold font-sans text-[15px]">{store?.nama_toko ?? 'GARINDO JAYA PANEL'}</div>
+          <div className="text-[11px] mt-0.5">{store?.alamat_lengkap ?? '—'}</div>
+          <div className="text-[11px]">{store?.telp_wa && `Telp ${store.telp_wa}`} {store?.email && `· ${store.email}`}</div>
+          {store?.npwp && <div className="text-[11px]">NPWP {store.npwp}</div>}
         </div>
       </div>
 
@@ -240,7 +242,7 @@ function InvoiceBody({
       <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-[11px]">
         <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">Rekening Pembayaran</div>
         <div>
-          <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_name ?? '—'}</strong>
+          <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_holder ?? '—'}</strong>
         </div>
         <div className="text-[10px] text-slate-500 mt-0.5">
           {variant === 'lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
@@ -268,7 +270,7 @@ function InvoiceBody({
             )}
           </div>
           <div className="font-bold text-[10px]">Hormat Kami</div>
-          <div className="text-[9px] text-slate-500 italic mt-0.5">{company?.company_name ?? 'Garindo Jaya Panel'}</div>
+          <div className="text-[9px] text-slate-500 italic mt-0.5">{store?.nama_toko ?? 'Garindo Jaya Panel'}</div>
         </div>
       </div>
     </div>

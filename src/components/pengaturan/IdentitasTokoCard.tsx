@@ -11,6 +11,7 @@ type StoreFormState = {
   alamat_lengkap: string;
   kota: string;
   telp_wa: string;
+  email: string;
   google_maps_url: string;
   npwp: string;
   logo_url: string;
@@ -23,6 +24,7 @@ const EMPTY_FORM: StoreFormState = {
   alamat_lengkap: '',
   kota: '',
   telp_wa: '',
+  email: '',
   google_maps_url: '',
   npwp: '',
   logo_url: '',
@@ -54,6 +56,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
           alamat_lengkap: data.alamat_lengkap ?? '',
           kota: data.kota ?? '',
           telp_wa: data.telp_wa ?? '',
+          email: data.email ?? '',
           google_maps_url: data.google_maps_url ?? '',
           npwp: data.npwp ?? '',
           logo_url: data.logo_url ?? '',
@@ -100,6 +103,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
         alamat_lengkap: form.alamat_lengkap.trim(),
         kota: form.kota.trim(),
         telp_wa: form.telp_wa.trim(),
+        email: form.email.trim() || undefined,
         logo_url: form.logo_url.trim() || undefined,
         google_maps_url: form.google_maps_url.trim() || undefined,
         npwp: form.npwp.trim() || undefined,
@@ -213,6 +217,18 @@ export default function IdentitasTokoCard({ showToast }: Props) {
                 placeholder="628xxxx"
                 value={form.telp_wa}
                 onChange={e => updateField('telp_wa', e.target.value)}
+                disabled={saving}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1">Email</label>
+              <input
+                type="email"
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                placeholder="toko@email.com"
+                value={form.email}
+                onChange={e => updateField('email', e.target.value)}
                 disabled={saving}
               />
             </div>

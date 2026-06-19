@@ -305,15 +305,6 @@ export interface DbOrder {
   hpp_total?: number;
 }
 
-export interface DbBankConfig {
-  id: number;
-  bank_name: string;
-  account_number: string;
-  account_name: string;
-  is_active: boolean;
-  updated_at: string;
-}
-
 export interface DbWaRecipient {
   id: number;
   role: 'admin' | 'owner';
@@ -374,15 +365,19 @@ export interface DbNotificationConfig {
   updated_at: string;
 }
 
+// Trimmed in the legacy Pengaturan cleanup: display fields
+// (company_name, address, phone, email, npwp) no longer drive any UI —
+// store_settings + store_bank_accounts are the new source of truth.
+// What remains here are the columns that companySettingsService still
+// reads/writes: logo_url (uploadLogo/clearLogo), opname_require_witness
+// (Stok Opname witness toggle), costing_method (FIFO/Average panel).
+// The `company_settings` table still exists in Postgres; we just no
+// longer surface the legacy display columns to TypeScript callers.
 export interface DbCompanySettings {
   id: number;
-  company_name: string;
-  address: string;
-  phone: string;
-  email: string;
   logo_url?: string | null;
-  npwp?: string | null;
   opname_require_witness?: boolean;
+  costing_method?: 'FIFO' | 'Average';
   updated_at: string;
 }
 
