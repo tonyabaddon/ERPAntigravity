@@ -7683,3 +7683,23 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Tests:** `npx vitest run src/lib` — 25 files, 174 passed (no regressions; no new tests added at this milestone — UI wiring covered by manual smoke in Milestone G)
 - **Build:** `npm run build` clean (2770 modules; same chunk-size warnings as baseline)
 - **Git status:** clean; 2 commits land on `feat/owner-biaya-final-inbox-spec`. Not pushed to remote.
+
+## 2026-06-19 — Piutang Write-Off — T1 DONE (migration 020)
+
+- **Branch:** `feat/piutang-write-off` (worktree `.claude/worktrees/piutang-write-off`)
+- **Plan:** `docs/superpowers/plans/2026-06-19-piutang-write-off-implementation.md` Task T1
+- **File created:** `supabase/migrations/20260626000020_extend_approval_for_piutang_write_off.sql`
+  - Adds `'piutang_write_off'` value to `public.approval_request_type` enum (idempotent via IF NOT EXISTS).
+  - Creates `public.piutang_write_off_requests` satellite: `approval_id BIGINT PK FK→approval_requests(ON DELETE CASCADE)`, `order_id UUID NOT NULL FK→orders`, `reason TEXT NOT NULL CHECK(length(btrim(reason)) >= 10)`, `created_at TIMESTAMPTZ DEFAULT now()`.
+  - Index `idx_piutang_write_off_requests_order` on `order_id` for lookup.
+  - `GRANT SELECT, INSERT ... TO authenticated`.
+- **Fallback triggered:** Planned partial unique index used a subquery in its WHERE predicate, which Postgres rejects (`SQLSTATE 0A000: cannot use subquery in index predicate`). Per plan, replaced with `BEFORE INSERT` trigger `trg_piutang_write_off_guard_pending` calling `public.piutang_write_off_guard_pending()` which raises `WRITE_OFF_ALREADY_PENDING` (SQLSTATE 23505 unique_violation) when another satellite row for the same `order_id` is still linked to a `pending` approval. Comment in migration documents the fallback rationale.
+- **Applied via:** Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` → `{"success": true}`.
+- **Smoke checks:**
+  - Enum present: `SELECT 'piutang_write_off'::public.approval_request_type` → `ok=piutang_write_off`.
+  - Table present: `SELECT to_regclass('public.piutang_write_off_requests')` → `piutang_write_off_requests`.
+  - CHECK fires on short reason: insert of `reason='short'` → SQLSTATE 23514 (`piutang_write_off_requests_reason_check`).
+  - Trigger fires on duplicate pending: second insert for same `order_id` with a different pending approval → SQLSTATE 23505 message `WRITE_OFF_ALREADY_PENDING`.
+- **Residue from smoke tests:** three `approval_requests` rows (ids 731/734/735) live in the table — `approval_requests` is append-only by design (`deny_approval_mutation` guard), so they cannot be deleted. They have no satellite rows attached, will expire in ~24h via `expires_at`, and do not affect the trigger guard.
+- **Commit:** `e86a0bb` — "feat(piutang): migration 020 — extend approval_request_type + write-off satellite table"
+- **Next:** T2 — migration 021 `request_tempo_write_off` RPC (depends on the schema landed here).

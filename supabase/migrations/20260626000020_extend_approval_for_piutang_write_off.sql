@@ -31,6 +31,7 @@ CREATE INDEX IF NOT EXISTS idx_piutang_write_off_requests_order
 CREATE OR REPLACE FUNCTION public.piutang_write_off_guard_pending()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 BEGIN
   IF EXISTS (
