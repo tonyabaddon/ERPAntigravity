@@ -22,6 +22,7 @@ import {
   fetchRakitJobLinesForOrder,
 } from '../../lib/supabaseClient';
 import { buildWhatsAppReminderUrl } from '../../lib/sales/waReminder';
+import { fetchRecentRejectsByOrder, type RejectInfo } from '../../lib/sales/recentRejects';
 
 interface DaftarPesananScreenProps {
   /** Reserved for future Owner-only gating; currently unused. */
@@ -65,6 +66,10 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
   // and shows "Lengkapi Pengaturan dulu" tooltip in that case.
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [banks, setBanks] = useState<BankAccount[] | null>(null);
+  // Map order_id → recent rakit_lock_rejected audit entry. Used to render
+  // the ⚠️ Owner reject-reason chip on 3f rows so admin sees why a
+  // submission was bounced back without opening RiwayatPersetujuanPanel.
+  const [rejectInfoMap, setRejectInfoMap] = useState<Record<string, RejectInfo>>({});
 
   // initial load + realtime
   useEffect(() => {
@@ -82,6 +87,20 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
     });
     return () => { sub.unsubscribe?.(); };
   }, []);
+
+  // Refresh reject-reason map whenever orders change. Filter to CP/RP at 3f
+  // (the only sub-stage that can carry a recent rakit_lock_rejected) so we
+  // don't fetch audit_log unnecessarily on every keystroke / realtime push.
+  useEffect(() => {
+    const threeFIds = orders
+      .filter(o => o.funnel_sub_stage === '3f' && (o.order_type === 'CUSTOM_PANEL' || o.order_type === 'RAKIT_PANEL'))
+      .map(o => o.id);
+    if (threeFIds.length === 0) {
+      setRejectInfoMap({});
+      return;
+    }
+    fetchRecentRejectsByOrder(threeFIds).then(setRejectInfoMap);
+  }, [orders]);
 
   // auto-expand urgent sub-stages when stage/tab changes — also include orphan urgent
   // sub-stages where orders for this tab exist (e.g. KOMPONEN order at 3g from backfill)
@@ -372,6 +391,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
               onResolveReceived={handleResolveReceived}
               onCancelOrder={handleCancelOrder}
               onWithdrawRakitLock={handleWithdrawRakitLock}
+              rejectInfoMap={rejectInfoMap}
             />
           ))}
         </div>
