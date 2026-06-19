@@ -571,7 +571,8 @@ export type ApprovalRequestType =
   | 'customer_credit_activate'
   | 'customer_credit_limit_change'
   | 'customer_credit_deactivate'
-  | 'initial_stock';
+  | 'initial_stock'
+  | 'piutang_write_off';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
@@ -586,6 +587,13 @@ export interface ApprovalRequest {
   decidedBy?: string | null;
   decidedAt?: string | null;
   decisionChannel?: 'wa_button' | 'owner_pin' | 'app_inbox' | 'auto_expire' | null;
+}
+
+export interface DbPiutangWriteOffRequest {
+  approval_id: number;
+  order_id: string;
+  reason: string;
+  created_at: string;
 }
 
 export type StockAdjustmentReason =
