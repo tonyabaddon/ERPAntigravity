@@ -160,8 +160,12 @@ export default function LockSubmissionModal({
       .slice(0, 8);
   };
 
+  // Description is metadata set when the rakit_job_line was originally created
+  // (e.g. by admin during CP/RP order creation); it isn't part of the snapshot
+  // payload that owner-amend mode hydrates from, so requiring it would
+  // permanently disable Submit in the inbox edit flow. Drop the description
+  // gate — admin-submit drafts inherit description from props anyway.
   const canSubmit = useMemo(() => drafts.every(d =>
-    d.description.trim().length > 0 &&
     d.finalPrice > 0 &&
     (d.trackingMode === 'detail'
       ? d.components.length > 0 && d.components.every(c => c.sku && c.qty > 0)
