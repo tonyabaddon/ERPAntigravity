@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Legacy Pengaturan cleanup
+
+Migrate display consumers from legacy `company_settings` + `bank_config` to `store_settings` + `store_bank_accounts`. Removed (lama) sections from PengaturanScreen. Dropped `bankConfigService` entirely; `companySettingsService` retained for non-display settings (`costing_method`, `opname_require_witness`, logo upload).
+
+- Migration 20260626000009: add `email` column to `store_settings` + one-shot seed from `company_settings.email`. Applied to live Supabase.
+- 5 consumers refactored: SalesInvoicePDF, InvoiceModal, KasirInvoiceModal, pembelian/PembelianDetailPage, StockManagerScreen.
+- IdentitasTokoCard gains email field input.
+- `src/lib/pdf/purchaseOrderPdf.ts` (transitive consumer) updated to take `storeSettings: StoreSettings | null` instead of `companySettings: DbCompanySettings | null`. Fields swap accordingly (`nama_toko` / `alamat_lengkap` / `telp_wa`).
+- PengaturanScreen surgery: removed `Rekening Bank (lama)` + `Profil Perusahaan (lama)` cards and their state (`bankConfig`, `bankForm`, `bankEditing`, `bankSaving`, `bankLoading`, `startEdit`, `saveBank`, `companyForm`, `companyEditing`, `companySaving`, `startCompanyEdit`, `saveCompany`). Logo upload panel preserved as a standalone card (still backed by `company_settings.logo_url`). `company` state + `companySettingsService.fetch()` retained because the witness toggle reads/writes `opname_require_witness`.
+- `src/types.ts`: `DbBankConfig` deleted. `DbCompanySettings` trimmed to `{ id, logo_url?, opname_require_witness?, costing_method?, updated_at }` — the only fields any surviving consumer still touches.
+- `src/lib/supabaseClient.ts`: `bankConfigService` deleted. `companySettingsService.save()` deleted (no remaining callers). `fetch`, `setCostingMethod`, `getCostingMethod`, `updateOpnameRequireWitness`, `uploadLogo`, `clearLogo` retained.
+
+After this PR, `company_settings` table stays in the schema but no longer drives any invoice/opname/PI display. `bank_config` table is fully orphaned from the app — left in place for safety; can be dropped in a future migration after the soak.
+
+**Verification:** `npx tsc --noEmit` clean, `npx vitest run src/lib` 174/174 pass, `npm run build` clean.
+
+---
+
 ## 2026-06-19 — Owner Biaya Final Inbox — Milestone G (final tests, smoke, PR)
 
 End-to-end completion of the spec/plan at `docs/superpowers/specs/2026-06-19-owner-biaya-final-inbox-integration-design.md` + `docs/superpowers/plans/2026-06-19-owner-biaya-final-inbox-implementation.md`. 4 migrations applied to live Supabase; 174/174 lib tests green (+10 from baseline); TypeScript clean; vite build clean (2.62s).

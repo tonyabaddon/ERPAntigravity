@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { X, Download, FileText } from 'lucide-react';
 import { KasirTransaction } from '../types';
-import { DbCompanySettings } from '../types';
-import { companySettingsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { fetchStoreSettings } from '../lib/pengaturan/queries';
+import type { StoreSettings } from '../lib/pengaturan/types';
 import { CHANNEL_VISUAL } from '../lib/salesChannels';
 
 interface KasirInvoiceModalProps {
@@ -23,13 +24,13 @@ const PAYMENT_LABEL: Record<string, string> = {
 };
 
 export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoiceModalProps) {
-  const [company, setCompany] = useState<DbCompanySettings | null>(null);
+  const [store, setStore] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
-    companySettingsService.fetch()
-      .then(setCompany)
+    fetchStoreSettings()
+      .then(setStore)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -81,13 +82,13 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
                     <div>
                       <div className="text-xl font-black text-[#012749] tracking-tight">
-                        {company?.company_name ?? 'Garindo Jaya Panel'}
+                        {store?.nama_toko ?? 'Garindo Jaya Panel'}
                       </div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1">
-                        {company?.address ?? 'Alamat belum diisi'}
+                        {store?.alamat_lengkap ?? 'Alamat belum diisi'}
                       </div>
                       <div className="text-[11px] text-gray-500 font-sans">
-                        {company?.phone && `${company.phone} · `}{company?.email ?? ''}
+                        {store?.telp_wa && `${store.telp_wa} · `}{store?.email ?? ''}
                       </div>
                     </div>
                     <div className="text-right">
@@ -165,7 +166,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
 
                   {/* Footer */}
                   <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3 mt-2">
-                    Terima kasih atas kepercayaan Anda · {company?.company_name ?? 'Garindo Jaya Panel'}
+                    Terima kasih atas kepercayaan Anda · {store?.nama_toko ?? 'Garindo Jaya Panel'}
                   </div>
                 </>
               )}

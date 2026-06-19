@@ -5,7 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
-import type { DbConversation, DbMessage, DbOrder, DbBankConfig, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -716,34 +716,9 @@ export const reportsService = {
   },
 };
 
-export const bankConfigService = {
-  async fetch(): Promise<DbBankConfig | null> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('bank_config')
-      .select('*')
-      .eq('is_active', true)
-      .maybeSingle();
-    if (error) throw error;
-    return data ?? null;
-  },
-
-  async save(values: { bank_name: string; account_number: string; account_name: string }, existingId?: number): Promise<void> {
-    if (!supabase) throw new Error('Supabase not configured');
-    if (existingId !== undefined) {
-      const { error } = await supabase
-        .from('bank_config')
-        .update({ ...values, updated_at: new Date().toISOString() })
-        .eq('id', existingId);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from('bank_config')
-        .insert({ ...values, is_active: true });
-      if (error) throw error;
-    }
-  },
-};
+// bankConfigService was removed in the legacy Pengaturan cleanup.
+// Bank account display now sources from store_bank_accounts via
+// fetchBankAccounts() in src/lib/pengaturan/queries.ts.
 
 export const waRecipientsService = {
   async fetchAll(): Promise<DbWaRecipient[]> {
@@ -958,15 +933,6 @@ export const companySettingsService = {
       .maybeSingle();
     if (error) throw error;
     return data ?? null;
-  },
-
-  async save(values: Omit<DbCompanySettings, 'id' | 'updated_at'>): Promise<void> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('company_settings')
-      .update({ ...values, updated_at: new Date().toISOString() })
-      .eq('id', 1);
-    if (error) throw error;
   },
 
   async uploadLogo(file: File): Promise<string> {

@@ -9,6 +9,7 @@ export interface StoreSettings {
   alamat_lengkap: string;
   kota: string;
   telp_wa: string;
+  email?: string;
   logo_url?: string;
   google_maps_url?: string;
   npwp?: string;

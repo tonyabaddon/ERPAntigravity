@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, Building2, Users, Plus, Trash2, ToggleLeft, ToggleRight, Edit2, Save, X, MapPin, Upload, Image as ImageIcon } from 'lucide-react';
-import { DbBankConfig, DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
-import { bankConfigService, waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
+import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import TabBar, { TabDef } from './ui/TabBar';
 import CostingMethodPanel from './pengaturan/CostingMethodPanel';
 import ClipMonitorPanel from './pengaturan/ClipMonitorPanel';
@@ -49,19 +49,11 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     return 'umum';
   });
 
-  // Bank config state
-  const [bankConfig, setBankConfig] = useState<DbBankConfig | null>(null);
-  const [bankLoading, setBankLoading] = useState(true);
-  const [bankEditing, setBankEditing] = useState(false);
-  const [bankForm, setBankForm] = useState({ bank_name: '', account_number: '', account_name: '' });
-  const [bankSaving, setBankSaving] = useState(false);
-
-  // Company settings state
+  // Company settings state — retained (non-display use only):
+  // - witness toggle reads opname_require_witness + sets it back
+  // - logo upload (via dedicated logoUrl mirror below)
   const [company, setCompany]           = useState<DbCompanySettings | null>(null);
   const [companyLoading, setCompanyLoading] = useState(true);
-  const [companyEditing, setCompanyEditing] = useState(false);
-  const [companyForm, setCompanyForm]   = useState({ company_name: '', address: '', phone: '', email: '' });
-  const [companySaving, setCompanySaving] = useState(false);
 
   // Logo state
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -81,19 +73,14 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
-      setBankLoading(false);
       setRecipientsLoading(false);
       setCompanyLoading(false);
       return;
     }
     Promise.allSettled([
-      bankConfigService.fetch(),
       waRecipientsService.fetchAll(),
       companySettingsService.fetch(),
-    ]).then(([bankResult, recipsResult, coResult]) => {
-      if (bankResult.status === 'fulfilled') setBankConfig(bankResult.value);
-      else console.error('bank_config load error:', bankResult.reason);
-
+    ]).then(([recipsResult, coResult]) => {
       if (recipsResult.status === 'fulfilled') setRecipients(recipsResult.value);
       else console.error('wa_recipients load error:', recipsResult.reason);
 
@@ -105,77 +92,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         showToast('Gagal memuat sebagian pengaturan. Coba refresh.', 'warning');
       }
     }).finally(() => {
-      setBankLoading(false);
       setRecipientsLoading(false);
       setCompanyLoading(false);
     });
   }, []);
-
-  // Bank config handlers
-  const startEdit = () => {
-    setBankForm({
-      bank_name: bankConfig?.bank_name ?? '',
-      account_number: bankConfig?.account_number ?? '',
-      account_name: bankConfig?.account_name ?? '',
-    });
-    setBankEditing(true);
-  };
-
-  const cancelEdit = () => {
-    setBankEditing(false);
-  };
-
-  const startCompanyEdit = () => {
-    setCompanyForm({
-      company_name: company?.company_name ?? '',
-      address:      company?.address ?? '',
-      phone:        company?.phone ?? '',
-      email:        company?.email ?? '',
-    });
-    setCompanyEditing(true);
-  };
-
-  const cancelCompanyEdit = () => setCompanyEditing(false);
-
-  const saveCompany = async (): Promise<void> => {
-    if (!companyForm.company_name) {
-      showToast('Nama perusahaan wajib diisi.', 'warning');
-      return;
-    }
-    setCompanySaving(true);
-    try {
-      await companySettingsService.save(companyForm);
-      const updated = await companySettingsService.fetch();
-      setCompany(updated);
-      setCompanyEditing(false);
-      showToast('Profil perusahaan berhasil disimpan.', 'success');
-    } catch (err) {
-      console.error('saveCompany error:', err);
-      showToast('Gagal menyimpan profil perusahaan.', 'warning');
-    } finally {
-      setCompanySaving(false);
-    }
-  };
-
-  const saveBank = async (): Promise<void> => {
-    if (!bankForm.bank_name || !bankForm.account_number || !bankForm.account_name) {
-      showToast('Semua kolom rekening wajib diisi.', 'warning');
-      return;
-    }
-    setBankSaving(true);
-    try {
-      await bankConfigService.save(bankForm, bankConfig?.id);
-      const updated = await bankConfigService.fetch();
-      setBankConfig(updated);
-      setBankEditing(false);
-      showToast('Rekening bank berhasil disimpan.', 'success');
-    } catch (err) {
-      console.error('saveBank error:', err);
-      showToast('Gagal menyimpan rekening bank.', 'warning');
-    } finally {
-      setBankSaving(false);
-    }
-  };
 
   // WA recipients handlers
   const handleToggleRecipient = async (id: number, currentActive: boolean): Promise<void> => {
@@ -270,228 +190,59 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         </div>
       ) : (
         <div className="space-y-6 animate-fadeIn">
-          {/* New Phase 1B Pengaturan cards — source of truth for PDFs + WA. Coexists with the
-              older single-row bank/company forms below until Phase 1C deduplication. */}
+          {/* Phase 1B Pengaturan cards — source of truth for PDFs + WA. */}
           <IdentitasTokoCard showToast={showToast} />
           <JamOperasionalCard showToast={showToast} />
           <RekeningBankCard showToast={showToast} />
 
-          {/* Bank config card (legacy single-row — Phase 1C will remove) */}
+          {/* Logo Toko — used by invoice PDFs and on-screen invoices.
+              Kept on company_settings.logo_url for now; not yet migrated
+              to store_settings.logo_url (which exists but is unused). */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-gray-600" />
-                <h2 className="text-lg font-bold text-gray-800">Rekening Bank (lama)</h2>
+            <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
+              Logo Toko (untuk invoice PDF)
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-slate-300" />
+                )}
               </div>
-              {bankConfig && !bankEditing && (
-                <button onClick={startEdit} className="p-2 rounded-lg hover:bg-gray-100" title="Edit rekening">
-                  <Edit2 className="w-4 h-4 text-gray-600" />
-                </button>
-              )}
-            </div>
-
-            {bankLoading ? (
-              <p className="text-sm text-gray-400">Memuat...</p>
-            ) : bankEditing ? (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Bank</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: BCA"
-                    value={bankForm.bank_name}
-                    onChange={e => setBankForm(prev => ({ ...prev, bank_name: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor Rekening</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: 1234567890"
-                    value={bankForm.account_number}
-                    onChange={e => setBankForm(prev => ({ ...prev, account_number: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Pemilik Rekening</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Contoh: PT Garindo Jaya Panel"
-                    value={bankForm.account_name}
-                    onChange={e => setBankForm(prev => ({ ...prev, account_name: e.target.value }))}
-                  />
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={saveBank}
-                    disabled={bankSaving}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    {bankSaving ? 'Menyimpan...' : 'Simpan'}
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    disabled={bankSaving}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <X className="w-4 h-4" />
-                    Batal
-                  </button>
-                </div>
-              </div>
-            ) : bankConfig ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="w-40 text-gray-500 font-medium">Nama Bank</span>
-                  <span className="font-semibold text-gray-800">{bankConfig.bank_name}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="w-40 text-gray-500 font-medium">Nomor Rekening</span>
-                  <span className="font-mono font-semibold text-gray-800">{bankConfig.account_number}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="w-40 text-gray-500 font-medium">Atas Nama</span>
-                  <span className="font-semibold text-gray-800">{bankConfig.account_name}</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  Detail ini tampil di setiap invoice yang dikirim ke pelanggan.
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <p className="text-sm text-gray-500 mb-3">Belum ada rekening tersimpan.</p>
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={logoFileRef}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
                 <button
-                  onClick={startEdit}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 mx-auto"
+                  type="button"
+                  onClick={() => logoFileRef.current?.click()}
+                  disabled={logoUploading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:bg-[#01365e] disabled:opacity-60"
                 >
-                  <Plus className="w-4 h-4" />
-                  Tambah Rekening
+                  <Upload className="w-3.5 h-3.5" />
+                  {logoUploading ? 'Mengunggah...' : (logoUrl ? 'Ganti Logo' : 'Upload Logo')}
                 </button>
-              </div>
-            )}
-          </div>
-
-          {/* Company profile card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-gray-600" />
-                <h2 className="text-lg font-bold text-gray-800">Profil Perusahaan (lama)</h2>
-              </div>
-              {company && !companyEditing && (
-                <button onClick={startCompanyEdit} className="p-2 rounded-lg hover:bg-gray-100" title="Edit profil">
-                  <Edit2 className="w-4 h-4 text-gray-600" />
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mb-4">Data ini tampil di setiap invoice yang diterbitkan.</p>
-
-            {companyLoading ? (
-              <p className="text-sm text-gray-400">Memuat...</p>
-            ) : companyEditing ? (
-              <div className="space-y-3">
-                {[
-                  { key: 'company_name', label: 'Nama Perusahaan', placeholder: 'Garindo Jaya Panel' },
-                  { key: 'address',      label: 'Alamat',          placeholder: 'Jl. Contoh No. 1, Jakarta' },
-                  { key: 'phone',        label: 'Telepon',         placeholder: '+62 21-xxxx-xxxx' },
-                  { key: 'email',        label: 'Email',           placeholder: 'toko@email.com' },
-                ].map(field => (
-                  <div key={field.key}>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">{field.label}</label>
-                    <input
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={field.placeholder}
-                      value={companyForm[field.key as keyof typeof companyForm]}
-                      onChange={e => setCompanyForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                    />
-                  </div>
-                ))}
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={saveCompany}
-                    disabled={companySaving}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" />
-                    {companySaving ? 'Menyimpan...' : 'Simpan'}
-                  </button>
-                  <button
-                    onClick={cancelCompanyEdit}
-                    disabled={companySaving}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    <X className="w-4 h-4" />
-                    Batal
-                  </button>
-                </div>
-              </div>
-            ) : company ? (
-              <div className="space-y-2">
-                {[
-                  { label: 'Nama Perusahaan', value: company.company_name },
-                  { label: 'Alamat',          value: company.address || '—' },
-                  { label: 'Telepon',         value: company.phone || '—' },
-                  { label: 'Email',           value: company.email || '—' },
-                ].map(row => (
-                  <div key={row.label} className="flex items-start gap-3 text-sm">
-                    <span className="w-40 text-gray-500 font-medium shrink-0">{row.label}</span>
-                    <span className="font-semibold text-gray-800">{row.value}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-sm text-gray-500 mb-3">Profil perusahaan belum diisi.</p>
-                <button onClick={startCompanyEdit} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 mx-auto">
-                  <Plus className="w-4 h-4" /> Isi Profil
-                </button>
-              </div>
-            )}
-
-            <div className="border-t border-slate-100 pt-5 mt-5">
-              <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
-                Logo Toko (untuk invoice PDF)
-              </label>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
-                  {logoUrl ? (
-                    <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-slate-300" />
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <input
-                    ref={logoFileRef}
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    className="hidden"
-                    onChange={handleLogoUpload}
-                  />
+                {logoUrl && (
                   <button
                     type="button"
-                    onClick={() => logoFileRef.current?.click()}
-                    disabled={logoUploading}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:bg-[#01365e] disabled:opacity-60"
+                    onClick={handleLogoClear}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50"
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    {logoUploading ? 'Mengunggah...' : (logoUrl ? 'Ganti Logo' : 'Upload Logo')}
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Hapus Logo
                   </button>
-                  {logoUrl && (
-                    <button
-                      type="button"
-                      onClick={handleLogoClear}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Hapus Logo
-                    </button>
-                  )}
-                  <p className="text-[10px] text-slate-400">PNG / JPG, maks 1 MB. Rekomendasi 200×200 px (akan ter-dithered di printout dotmatrix).</p>
-                </div>
+                )}
+                <p className="text-[10px] text-slate-400">PNG / JPG, maks 1 MB. Rekomendasi 200×200 px (akan ter-dithered di printout dotmatrix).</p>
               </div>
             </div>
+            {companyLoading && (
+              <p className="text-[10px] text-slate-400 mt-2">Memuat status logo...</p>
+            )}
           </div>
 
           {/* WA recipients card */}
