@@ -85,6 +85,17 @@ describe('buildWhatsAppReminderUrl', () => {
     expect(message).not.toContain('380.000');
   });
 
+  test('emoji 🙏 is preserved through encodeURIComponent (not corrupted to U+FFFD)', () => {
+    const order = baseOrder({ customer_phone: '08123' });
+    const { url, message } = buildWhatsAppReminderUrl(order, baseSettings, baseBanks);
+    // Source-level assertion: greeting contains the actual emoji
+    expect(message).toContain('\u{1F64F}');
+    // Bundle-corruption assertion: encoded URL must not contain U+FFFD's UTF-8
+    expect(url).not.toMatch(/%EF%BF%BD/);
+    // And SHOULD contain the correct UTF-8 of U+1F64F → %F0%9F%99%8F
+    expect(url).toMatch(/%F0%9F%99%8F/);
+  });
+
   test('falls back to generic message when no active bank rows', () => {
     const order = baseOrder({ customer_phone: '08123' });
     const inactive: BankAccount[] = [

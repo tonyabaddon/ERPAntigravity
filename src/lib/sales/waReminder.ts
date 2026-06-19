@@ -49,7 +49,7 @@ function shortId(order: Order): string {
 }
 
 function buildReminderMessage(order: Order, settings: StoreSettings, banks: BankAccount[]): string {
-  const greeting = `Halo ${order.customer} 🙏`;
+  const greeting = `Halo ${order.customer} \u{1F64F}`;
   const store = settings.nama_toko || 'Sinar Elektrik';
   const bank = bankLine(banks);
   const sid = shortId(order);
@@ -73,7 +73,7 @@ function buildReminderMessage(order: Order, settings: StoreSettings, banks: Bank
         greeting,
         `Pesanan #${sid} sebesar ${rupiah(amount)} mohon ditransfer ${label}-nya ya.`,
         `Bank: ${bank}.`,
-        `Terima kasih dari tim ${store} 🙏`,
+        `Terima kasih dari tim ${store} \u{1F64F}`,
       ].join('\n');
     }
     case '3d': {
