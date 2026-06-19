@@ -48,7 +48,7 @@ BEGIN
     RAISE EXCEPTION 'WRONG_TYPE: id=% type=%', p_approval_id, v_ar.request_type;
   END IF;
 
-  SELECT * INTO v_rr FROM public.rakit_lock_requests WHERE approval_id = p_approval_id;
+  SELECT * INTO v_rr FROM public.rakit_lock_requests WHERE approval_request_id = p_approval_id;
   IF v_rr.id IS NULL THEN
     RAISE EXCEPTION 'RAKIT_LOCK_REQUEST_NOT_FOUND for approval %', p_approval_id;
   END IF;
