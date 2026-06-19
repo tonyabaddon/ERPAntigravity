@@ -2108,6 +2108,13 @@ export async function approveRakitLock(
   if (error) throw error;
 }
 
+// approveAndAmendRakitLock lives in ./sales/rakitLockOwnerEdit so it can be
+// unit-tested via the standard vi.mock('../supabaseClient') idiom (functions
+// defined IN supabaseClient.ts close over the actual `supabase` const, which
+// vi.mock cannot intercept). Re-exported here for path consistency with the
+// other rakit wrappers.
+export { approveAndAmendRakitLock } from './sales/rakitLockOwnerEdit';
+
 export async function rejectRakitLock(
   approvalId: number,
   reason: string,
@@ -2120,6 +2127,68 @@ export async function rejectRakitLock(
     p_actor_user_id: actorUserId,
   });
   if (error) throw error;
+}
+
+// Admin self-withdraw of a pending rakit_lock approval. RPC flips the
+// approval back to 'withdrawn' and resets the order's funnel_sub_stage
+// from '3g' to '3f' atomically (migration 20260626000001).
+export async function withdrawRakitLock(
+  approvalId: number,
+  actorUserId?: string,
+): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('withdraw_rakit_lock', {
+    p_approval_id: approvalId,
+    p_actor_user_id: actorUserId ?? null,
+  });
+  if (error) throw error;
+}
+
+// Returns the approval_request_id of the single pending_approval rakit_lock
+// for this order, or null if none is currently pending. Used by the 3g
+// 'Tarik Pengajuan' handler to locate the row to withdraw.
+export async function findPendingRakitLockApprovalForOrder(
+  orderId: string,
+): Promise<number | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('rakit_lock_requests')
+    .select('approval_request_id, status')
+    .eq('transaction_id', orderId)
+    .eq('status', 'pending_approval')
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { approval_request_id: number }).approval_request_id;
+}
+
+// Fetches the rakit_job_lines for one order in camelCase shape so the
+// 3f Selesai handler can pass them straight into LockSubmissionModal.
+// Mirrors the snake→camel mapping used by fetchWipList.
+export async function fetchRakitJobLinesForOrder(
+  transactionId: string,
+): Promise<RakitJobLine[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('rakit_job_lines')
+    .select('*')
+    .eq('transaction_id', transactionId)
+    .order('line_number');
+  if (error) throw error;
+  return (data ?? []).map((l: any) => ({
+    id: l.id,
+    transactionId: l.transaction_id,
+    lineNumber: l.line_number,
+    serviceType: l.service_type,
+    description: l.description,
+    estimatedPrice: Number(l.estimated_price ?? 0),
+    finalPrice: l.final_price == null ? null : Number(l.final_price),
+    trackingMode: l.tracking_mode,
+    laborCost: Number(l.labor_cost ?? 0),
+    lumpSumHpp: Number(l.lump_sum_hpp ?? 0),
+    hppOwnerOverride: l.hpp_owner_override == null ? null : Number(l.hpp_owner_override),
+    hppFinal: l.hpp_final == null ? null : Number(l.hpp_final),
+  }));
 }
 
 export async function fetchWipList(): Promise<Array<{

@@ -9,6 +9,14 @@ interface Props {
   typeTab: TypeTab;
   onToggle: () => void;
   onQuickAction: (label: string, toSubStage: string) => void;
+  /**
+   * Map of order_id → recent rakit_lock_rejected info. When present and
+   * matching the current row's order at sub-stage 3f, OrderRow renders a
+   * ⚠️ Owner reject-reason chip next to the customer name. Structural type
+   * (no audit_log dependency) — populated by DaftarPesananScreen via
+   * fetchRecentRejectsByOrder.
+   */
+  rejectInfoMap?: Record<string, { reason: string; rejected_at: string }>;
 }
 
 const CHANNEL_DISPLAY: Record<string, { icon: string; label: string }> = {
@@ -27,7 +35,7 @@ function shortPaymentType(pt: PaymentType): string {
   return '';
 }
 
-export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction }: Props) {
+export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, rejectInfoMap }: Props) {
   const action = getQuickAction(order);
   const ch = CHANNEL_DISPLAY[order.channel] ?? { icon: '📱', label: order.channel };
   const payment = shortPaymentType(order.payment_type);
@@ -36,6 +44,16 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction }: 
     order.order_type === 'CUSTOM_PANEL' ? 'Custom Panel' :
     order.order_type === 'RAKIT_PANEL' ? 'Rakit Panel' : 'Komponen';
 
+  // Reject-reason chip: only shown when the order is at 3f AND there's a
+  // recent rakit_lock_rejected audit entry in the map. Snippet truncates
+  // to ~33 chars + ellipsis to keep the chip compact; full text lives in
+  // the tooltip alongside the formatted reject date.
+  const rejectInfo = rejectInfoMap?.[order.id];
+  const showRejectChip = order.funnel_sub_stage === '3f' && !!rejectInfo;
+  const rejectSnippet = rejectInfo?.reason
+    ? (rejectInfo.reason.length > 36 ? rejectInfo.reason.slice(0, 33) + '…' : rejectInfo.reason)
+    : '';
+
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #e5eeff' }}>
       <div onClick={onToggle} style={{ padding: '14px 24px 14px 60px', cursor: 'pointer' }}>
@@ -43,6 +61,23 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction }: 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: 14 }}>{order.customer}</span>
+              {showRejectChip && (
+                <span
+                  title={`Direject ${new Date(rejectInfo!.rejected_at).toLocaleDateString('id-ID')}: ${rejectInfo!.reason}`}
+                  style={{
+                    fontSize: 10,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: '#fef3c7',
+                    color: '#92400e',
+                    border: '1px solid #fde68a',
+                    fontWeight: 700,
+                    marginLeft: 8,
+                  }}
+                >
+                  ⚠️ Owner: {rejectSnippet}
+                </span>
+              )}
               <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 10, color: '#9ca3af', marginLeft: 8 }}>#{order.id.slice(0, 8)}</span>
               {showTypeBadge && (
                 <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: '#eff4ff', color: 'var(--color-primary)', fontWeight: 600, marginLeft: 8, border: '1px solid #c7d7f5' }}>{typeLabel}</span>

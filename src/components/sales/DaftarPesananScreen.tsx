@@ -14,19 +14,26 @@ import { PaymentProofLightbox } from './PaymentProofLightbox';
 import { ProofUploadModal } from './ProofUploadModal';
 import { EditOrderModal } from './EditOrderModal';
 import { ReasonInputModal } from './ReasonInputModal';
+import LockSubmissionModal from '../penjualan/LockSubmissionModal';
+import type { RakitJobLine } from '../../types';
+import {
+  withdrawRakitLock,
+  findPendingRakitLockApprovalForOrder,
+  fetchRakitJobLinesForOrder,
+} from '../../lib/supabaseClient';
 import { buildWhatsAppReminderUrl } from '../../lib/sales/waReminder';
+import { fetchRecentRejectsByOrder, type RejectInfo } from '../../lib/sales/recentRejects';
 
 interface DaftarPesananScreenProps {
-  /**
-   * Used to gate Owner-only buttons (e.g. "Setujui Biaya Final" at 3g).
-   * Server-side RLS is still authoritative; this just hides the button
-   * for non-Owners so they don't see a click that always fails.
-   */
+  /** Reserved for future Owner-only gating; currently unused. */
   currentUserRole?: string;
+  /** Required to pass auth context into LockSubmissionModal at 3f. */
+  currentUserId?: string;
+  /** Display name for LockSubmissionModal's audit-trail header. */
+  currentUserName?: string;
 }
 
-export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProps = {}) {
-  const isOwner = currentUserRole === 'Owner';
+export function DaftarPesananScreen({ currentUserRole: _currentUserRole, currentUserId, currentUserName }: DaftarPesananScreenProps = {}) {
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
   const [stage, setStage] = useState<FunnelStage>(2);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,6 +43,9 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
   const [uploadModal, setUploadModal] = useState<{ orderId: string; field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' } | null>(null);
   const [pendingVerify, setPendingVerify] = useState<{ orderId: string; toSub: string } | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // Driven by the 3f Selesai click for CP/RP orders. Holds the order id plus
+  // pre-fetched rakit_job_lines so LockSubmissionModal can render synchronously.
+  const [lockModalOrder, setLockModalOrder] = useState<{ id: string; rakitLines: RakitJobLine[] } | null>(null);
   // ReasonInputModal driver: title/prompt/confirmLabel/tone come from the
   // action that was clicked; perform() captures the transition target +
   // any side-effect (e.g. dropping to 6a vs 4d).
@@ -56,6 +66,10 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
   // and shows "Lengkapi Pengaturan dulu" tooltip in that case.
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [banks, setBanks] = useState<BankAccount[] | null>(null);
+  // Map order_id → recent rakit_lock_rejected audit entry. Used to render
+  // the ⚠️ Owner reject-reason chip on 3f rows so admin sees why a
+  // submission was bounced back without opening RiwayatPersetujuanPanel.
+  const [rejectInfoMap, setRejectInfoMap] = useState<Record<string, RejectInfo>>({});
 
   // initial load + realtime
   useEffect(() => {
@@ -73,6 +87,20 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
     });
     return () => { sub.unsubscribe?.(); };
   }, []);
+
+  // Refresh reject-reason map whenever orders change. Filter to CP/RP at 3f
+  // (the only sub-stage that can carry a recent rakit_lock_rejected) so we
+  // don't fetch audit_log unnecessarily on every keystroke / realtime push.
+  useEffect(() => {
+    const threeFIds = orders
+      .filter(o => o.funnel_sub_stage === '3f' && (o.order_type === 'CUSTOM_PANEL' || o.order_type === 'RAKIT_PANEL'))
+      .map(o => o.id);
+    if (threeFIds.length === 0) {
+      setRejectInfoMap({});
+      return;
+    }
+    fetchRecentRejectsByOrder(threeFIds).then(setRejectInfoMap);
+  }, [orders]);
 
   // auto-expand urgent sub-stages when stage/tab changes — also include orphan urgent
   // sub-stages where orders for this tab exist (e.g. KOMPONEN order at 3g from backfill)
@@ -137,6 +165,30 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
         window.open(url, '_blank', 'noopener,noreferrer');
       } else {
         setWaMessage(message);
+      }
+      return;
+    }
+
+    // Funnel 3f Selesai for CP/RP → open LockSubmissionModal so admin records
+    // material/labor costs. Submission calls request_rakit_lock which sets
+    // funnel_sub_stage='3g' atomically (migration 20260626000001).
+    if (
+      order.funnel_sub_stage === '3f' &&
+      action?.label === 'Selesai' &&
+      (order.order_type === 'CUSTOM_PANEL' || order.order_type === 'RAKIT_PANEL')
+    ) {
+      try {
+        const lines = await fetchRakitJobLinesForOrder(order.id);
+        if (lines.length === 0) {
+          // eslint-disable-next-line no-alert
+          alert('Belum ada line item rakit untuk pesanan ini. Hubungi tech support.');
+          return;
+        }
+        setLockModalOrder({ id: order.id, rakitLines: lines });
+      } catch (err) {
+        console.error('fetchRakitJobLinesForOrder failed', err);
+        // eslint-disable-next-line no-alert
+        alert('Gagal memuat detail pesanan.');
       }
       return;
     }
@@ -271,16 +323,23 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
     runTransition(order, '5a');
   }
 
-  function handleApproveBiayaFinal(order: Order) {
-    if (!isOwner) return;
-    setReasonModal({
-      title: 'Setujui Biaya Final',
-      prompt: `Setujui biaya final untuk pesanan #${order.id.slice(0, 8)} (${order.customer})? Pesanan masuk ke "Biaya Final OK · Tunggu Pelunasan" dan invoice pelunasan bisa dikirim.`,
-      confirmLabel: 'Setujui',
-      tone: 'primary',
-      hint: 'Catatan tersimpan di audit log sebagai persetujuan Owner.',
-      perform: async (reason) => { await runTransition(order, '3h', reason); },
-    });
+  async function handleWithdrawRakitLock(order: Order) {
+    try {
+      const approvalId = await findPendingRakitLockApprovalForOrder(order.id);
+      if (!approvalId) {
+        // eslint-disable-next-line no-alert
+        alert('Tidak ada permintaan persetujuan yang pending untuk pesanan ini.');
+        return;
+      }
+      await withdrawRakitLock(approvalId, currentUserId);
+    } catch (err) {
+      console.error('withdrawRakitLock failed', err);
+      // eslint-disable-next-line no-alert
+      alert('Gagal menarik pengajuan. Coba lagi.');
+    } finally {
+      const fresh = await fetchOrdersWithArchive().catch(() => null);
+      if (fresh) setOrders(fresh);
+    }
   }
 
   function handleCancelOrder(order: Order) {
@@ -331,7 +390,8 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
               onResolveContinue={handleResolveContinue}
               onResolveReceived={handleResolveReceived}
               onCancelOrder={handleCancelOrder}
-              onApproveBiayaFinal={isOwner ? handleApproveBiayaFinal : undefined}
+              onWithdrawRakitLock={handleWithdrawRakitLock}
+              rejectInfoMap={rejectInfoMap}
             />
           ))}
         </div>
@@ -414,6 +474,23 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
           onSaved={async () => {
             const fresh = await fetchOrdersWithArchive().catch(() => null);
             if (fresh) setOrders(fresh);
+          }}
+        />
+      )}
+      {lockModalOrder && (
+        <LockSubmissionModal
+          transactionId={lockModalOrder.id}
+          rakitLines={lockModalOrder.rakitLines}
+          currentUser={{ id: currentUserId ?? '', name: currentUserName ?? '' }}
+          onClose={() => setLockModalOrder(null)}
+          onSubmitted={async () => {
+            setLockModalOrder(null);
+            const fresh = await fetchOrdersWithArchive().catch(() => null);
+            if (fresh) setOrders(fresh);
+          }}
+          showToast={(msg) => {
+            // eslint-disable-next-line no-alert
+            alert(msg);
           }}
         />
       )}

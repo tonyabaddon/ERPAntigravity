@@ -25,15 +25,21 @@ interface Props {
   onResolveContinue: (order: Order) => void;
   onResolveReceived: (order: Order) => void;
   onCancelOrder: (order: Order) => void;
-  /** Owner-only — undefined for non-Owner; ActionPanel hides button. */
-  onApproveBiayaFinal?: (order: Order) => void;
+  /** Admin self-withdraw at 3g for CP/RP orders with a pending approval. */
+  onWithdrawRakitLock: (order: Order) => void;
+  /**
+   * Map of order_id → recent rakit_lock_rejected info. Threaded to OrderRow
+   * so 3f rows can render a ⚠️ Owner reject-reason chip. Structural type
+   * (not RejectInfo) to keep this leaf component free of audit_log imports.
+   */
+  rejectInfoMap?: Record<string, { reason: string; rejected_at: string }>;
 }
 
 export function SubStageSection({
   sub, orders, expanded, expandedRowId, typeTab, settings, banks,
   onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit,
   onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
-  onApproveBiayaFinal,
+  onWithdrawRakitLock, rejectInfoMap,
 }: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
@@ -76,6 +82,7 @@ export function SubStageSection({
                 typeTab={typeTab}
                 onToggle={() => onToggleRow(o.id)}
                 onQuickAction={(_label, toSubStage) => onQuickAction(o, toSubStage)}
+                rejectInfoMap={rejectInfoMap}
               />
               {expandedRowId === o.id && (
                 <ActionPanel
@@ -91,7 +98,7 @@ export function SubStageSection({
                   onResolveContinue={() => onResolveContinue(o)}
                   onResolveReceived={() => onResolveReceived(o)}
                   onCancelOrder={() => onCancelOrder(o)}
-                  onApproveBiayaFinal={onApproveBiayaFinal ? () => onApproveBiayaFinal(o) : undefined}
+                  onWithdrawRakitLock={() => onWithdrawRakitLock(o)}
                 />
               )}
             </div>

@@ -1,7 +1,7 @@
 // src/components/penjualan/LockSubmissionModal.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { requestRakitLock, supabaseService } from '../../lib/supabaseClient';
-import type { RakitJobLine, RakitTrackingMode } from '../../types';
+import { requestRakitLock, approveAndAmendRakitLock, supabaseService } from '../../lib/supabaseClient';
+import type { RakitJobLine, RakitTrackingMode, RakitComponent } from '../../types';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 
@@ -12,6 +12,15 @@ interface LockSubmissionModalProps {
   onClose: () => void;
   onSubmitted: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  /**
+   * 'admin-submit' (default): Submit calls requestRakitLock (creates approval).
+   * 'owner-amend': Submit calls approveAndAmendRakitLock (Owner edits + approves
+   * in one tx). When set, `approvalId` is required and `rakitLines` is expected
+   * to be seeded from the approval snapshot (components already populated).
+   */
+  mode?: 'admin-submit' | 'owner-amend';
+  /** Required when mode === 'owner-amend' — the approval row to amend + approve. */
+  approvalId?: number;
 }
 
 type ComponentDraft = {
@@ -57,6 +66,8 @@ export default function LockSubmissionModal({
   onClose,
   onSubmitted,
   showToast,
+  mode = 'admin-submit',
+  approvalId,
 }: LockSubmissionModalProps) {
   const [drafts, setDrafts] = useState<LineDraft[]>(() =>
     rakitLines.map(l => ({
@@ -66,7 +77,18 @@ export default function LockSubmissionModal({
       trackingMode: l.trackingMode ?? 'detail',
       laborCost: l.laborCost ?? 0,
       lumpSumHpp: l.lumpSumHpp ?? 0,
-      components: [],
+      // In owner-amend mode the parent seeds `l.components` from the approval
+      // snapshot (which already stores warehouse_id + fifo_cost). In
+      // admin-submit mode the parent doesn't seed components — Admin picks
+      // them via the SKU search. Empty array on absent for both paths.
+      components: (l.components ?? []).map(c => ({
+        key: newKey(),
+        sku: c.sku,
+        name: c.name,
+        qty: c.qty,
+        warehouse_id: (c as RakitComponent & { warehouse_id?: string }).warehouse_id ?? '',
+        fifo_cost: (c as RakitComponent & { fifo_cost?: number }).fifo_cost ?? c.fifoCostSnapshot ?? 0,
+      })),
     }))
   );
   const [submitting, setSubmitting] = useState(false);
@@ -173,28 +195,38 @@ export default function LockSubmissionModal({
 
     setSubmitting(true);
     try {
-      await requestRakitLock({
-        transaction_id: transactionId,
-        lines: drafts.map(d => ({
-          id: d.id,
-          final_price: d.finalPrice,
-          tracking_mode: d.trackingMode,
-          labor_cost: d.trackingMode === 'detail' ? d.laborCost : 0,
-          lump_sum_hpp: d.trackingMode === 'lumpsum' ? d.lumpSumHpp : 0,
-          components: d.trackingMode === 'detail' ? d.components.map(c => {
-            const wh = warehouses.find(w => w.id === c.warehouse_id);
-            return {
-              sku: c.sku,
-              name: c.name,
-              qty: c.qty,
-              warehouse: wh?.code.toLowerCase() ?? 'atas',  // legacy text — current RPC reads this
-              warehouse_id: c.warehouse_id,                  // future: when RPC migrates
-              fifo_cost: c.fifo_cost,
-            };
-          }) : [],
-        })),
-        actor_user_id: currentUser.id,
-      });
+      const linesPayload = drafts.map(d => ({
+        id: d.id,
+        final_price: d.finalPrice,
+        tracking_mode: d.trackingMode,
+        labor_cost: d.trackingMode === 'detail' ? d.laborCost : 0,
+        lump_sum_hpp: d.trackingMode === 'lumpsum' ? d.lumpSumHpp : 0,
+        components: d.trackingMode === 'detail' ? d.components.map(c => {
+          const wh = warehouses.find(w => w.id === c.warehouse_id);
+          return {
+            sku: c.sku,
+            name: c.name,
+            qty: c.qty,
+            warehouse: (wh?.code.toLowerCase() ?? 'atas') as 'atas' | 'bawah',  // legacy text — current RPC reads this
+            warehouse_id: c.warehouse_id,                  // future: when RPC migrates
+            fifo_cost: c.fifo_cost,
+          };
+        }) : [],
+      }));
+
+      if (mode === 'owner-amend') {
+        if (!approvalId) {
+          throw new Error('approvalId required in owner-amend mode');
+        }
+        await approveAndAmendRakitLock(approvalId, linesPayload);
+        showToast('Biaya final di-approve dengan edit.', 'success');
+      } else {
+        await requestRakitLock({
+          transaction_id: transactionId,
+          lines: linesPayload,
+          actor_user_id: currentUser.id,
+        });
+      }
       onSubmitted();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Gagal submit lock', 'warning');
@@ -208,9 +240,13 @@ export default function LockSubmissionModal({
       <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="font-extrabold text-lg text-[#012749]">🔒 Submit Lock untuk Approval</h2>
+            <h2 className="font-extrabold text-lg text-[#012749]">
+              {mode === 'owner-amend' ? '✏️ Edit Biaya Final (Owner)' : '🔒 Submit Lock untuk Approval'}
+            </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Isi komponen + harga final. Owner akan review &amp; approve / reject.
+              {mode === 'owner-amend'
+                ? 'Edit nilai jika perlu, lalu Submit untuk approve sekaligus.'
+                : 'Isi komponen + harga final. Owner akan review & approve / reject.'}
             </p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-rose-500 text-2xl leading-none">✕</button>
@@ -366,7 +402,11 @@ export default function LockSubmissionModal({
             disabled={!canSubmit || submitting}
             className="px-4 py-2 rounded-lg text-[13px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Mengirim…' : '🔒 Submit untuk Approval'}
+            {submitting
+              ? 'Mengirim…'
+              : mode === 'owner-amend'
+              ? '✅ Approve dengan Edit'
+              : '🔒 Submit untuk Approval'}
           </button>
         </div>
       </div>
