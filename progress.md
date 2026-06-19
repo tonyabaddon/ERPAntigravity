@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone E (RiwayatPersetujuanPanel at 3g/3h)
+
+Renders the Milestone B `fetchRakitLockHistory` event timeline inside ActionPanel for CP/RP orders parked at sub-stage 3g (pending owner approval) or 3h (approved, awaiting customer pelunasan). Each event row shows an emoji + label + Indonesian-locale timestamp; `approved_with_edit` and `rejected` rows are click-to-expand to reveal the diff field list or the reject reason respectively.
+
+**Files touched:**
+- `src/components/sales/RiwayatPersetujuanPanel.tsx` (new) — fetches the history on mount via `useEffect`, renders a "Memuat riwayat…" placeholder while loading, no-ops to `null` when the list is empty. Per-event card uses white bg + `#e5eeff` border to nest visually inside the surrounding `#fafbff` ActionPanel surface; expand toggle is local `expandedIdx` state.
+- `src/components/sales/ActionPanel.tsx` — imports the new panel; derives `showRiwayat = (3g|3h) && (CUSTOM_PANEL|RAKIT_PANEL)`; extends the early-return visibility guard with `!showRiwayat` so the panel surfaces even when no PDFs / edit / extra-row actions are present (e.g. 3h with the customer not yet paid); renders `{showRiwayat && <RiwayatPersetujuanPanel orderId={order.id} />}` after the Aksi Lain block and before the PDF preview modal.
+
+**Verification:** `npx tsc --noEmit` clean. `npx vitest run src/lib` — 174/174 passing (no regression). `npm run build` clean (2.68s). 2 commits: `066faa6` (E1 component) + `199b282` (E2 mount + visibility guard).
+
+---
+
 ## 2026-06-19 — Owner Biaya Final Inbox — Milestone D (Reject-reason chip at 3f)
 
 Wires the Milestone B `fetchRecentRejectsByOrder` lib into the funnel list so admin sees an at-a-glance ⚠️ Owner reject-reason chip on 3f rows when a biaya-final submission was bounced back within the last 7 days.
