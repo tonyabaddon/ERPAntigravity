@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Piutang Phase 1C task 1: foto upload bukti pembayaran (re-cherry-pick of stale PR #15)
+
+Original commit (`10331c3`, 2026-06-16) sat behind 32 commits of main on PR #15. A direct merge would have catastrophically deleted ~29k lines of more-recent work. Resolved by cherry-picking the small +99/-15 src change onto fresh branch off `origin/main`; src files (`piutangService.ts`, `piutang/PiutangScreen.tsx`) had not been touched in main during the 32 commits so they applied cleanly. Stale PR #15 closed; this re-cherry-pick is the replacement PR.
+
+Original work content (unchanged):
+
+- `src/lib/piutangService.ts`: adds `uploadTempoPaymentProof(file, orderId)` writing to existing `payment-proofs` bucket (path `tempo-payments/{order_id}/{ts}-{name}`), plus `validateTempoProofFile` (size + MIME) and constants `TEMPO_PROOF_MAX_BYTES`, `TEMPO_PROOF_ACCEPT`.
+- `src/components/piutang/PiutangScreen.tsx`: rewrites `CatatBayarModal` — real file input with `handleFileSelect` running validation pre-set, in-modal thumbnail (image) or filename (PDF), "Ganti" link to swap selection, two-phase loading label ("Mengupload bukti..." → "Menyimpan..."). Upload is optional; URL is passed to existing `markTempoInvoicePaid(orderId, url, userId)`.
+- Bucket `payment-proofs` already has authenticated RW RLS via `20260604000012_storage_authenticated_policies.sql` — no new migration.
+
+**Verification:** vitest pass, `npx tsc --noEmit` clean, `npm run build` clean.
+
+---
+
 ## 2026-06-19 — `verify_owner_pin` security fix (auth.uid + status)
 
 Closes the security gap recorded in `project_verify_owner_pin_security_gap` memory. The previous RPC body (20260607000019) selected the Owner row by `WHERE role='Owner' ORDER BY id LIMIT 1` with no caller validation and no status filter. In production with 4 Owner rows (2 Aktif, 2 Tidak Aktif), LIMIT 1 resolved to `T11 Owner` — a deactivated test account — so any PIN attempt was checked against that row and any successful match attributed audit to that row.
