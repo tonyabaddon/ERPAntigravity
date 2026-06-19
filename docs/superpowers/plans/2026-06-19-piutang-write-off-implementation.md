@@ -433,8 +433,12 @@ BEGIN
      AND status = 'Aktif';
 END $$;
 
+-- approve returns a discriminated JSONB result. We DO NOT raise on the race
+-- branch because PL/pgSQL rolls back all in-function writes when the function
+-- raises (subtransaction semantics). Returning a status code keeps the
+-- auto-reject + audit writes committed atomically with the race detection.
 CREATE OR REPLACE FUNCTION public.approve_tempo_write_off(p_approval_id BIGINT)
-RETURNS VOID
+RETURNS JSONB
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public AS $$
 DECLARE
@@ -473,7 +477,9 @@ BEGIN
     RAISE EXCEPTION 'ORDER_NOT_FOUND: %', v_satellite.order_id;
   END IF;
 
-  -- Race: customer paid between request and approve. Auto-reject + raise.
+  -- Race: customer paid between request and approve. Atomically auto-reject
+  -- + return a status code; DO NOT raise — raising would roll back the
+  -- auto-reject (PL/pgSQL subtransaction semantics).
   IF v_order.status <> 'INVOICE_TEMPO' THEN
     PERFORM public._transition_approval(
       p_approval_id, 'rejected'::public.approval_status, v_admin_id,
@@ -490,7 +496,10 @@ BEGIN
         'auto', true
       )
     );
-    RAISE EXCEPTION 'ORDER_NO_LONGER_TEMPO: status=%', v_order.status;
+    RETURN jsonb_build_object(
+      'status', 'auto_rejected_race',
+      'new_order_status', v_order.status::text
+    );
   END IF;
 
   -- Flip order to INVOICE_WRITTEN_OFF + stamp metadata
@@ -519,6 +528,8 @@ BEGIN
       'reason', v_satellite.reason
     )
   );
+
+  RETURN jsonb_build_object('status', 'approved');
 END $$;
 
 CREATE OR REPLACE FUNCTION public.reject_tempo_write_off(
@@ -592,8 +603,8 @@ Reuse the smoke helper pattern from Task 2 but for `approve_tempo_write_off`. Ca
 |---|---|---|---|
 | A | Seed INVOICE_TEMPO order + request approval (Tony auth.uid as admin) | non-existent uid `00000000-0000-0000-0000-deadbeef0000` | raises `OWNER_ONLY: caller has no auth email` |
 | B | Same seed; pending approval | Tony1993 (deactivated Owner) `651e9d0d-034d-48d2-8897-09c64e78f5d0` | raises `OWNER_ONLY: caller is not an active Owner` |
-| C | Same seed; pending approval | Tony Aktif Owner `227c28f4-09f6-4dc9-af7a-01b0feb2c194` | success; order status='INVOICE_WRITTEN_OFF'; written_off_* stamped; audit row `tempo_write_off_approved` present |
-| D | Seed INVOICE_TEMPO order + request approval, then flip order to PAYMENT_VERIFIED before approve | Tony Aktif | raises `ORDER_NO_LONGER_TEMPO:`; approval auto-marked rejected; audit row `tempo_write_off_rejected` with auto=true |
+| C | Same seed; pending approval | Tony Aktif Owner `227c28f4-09f6-4dc9-af7a-01b0feb2c194` | helper returns `ok jsonb={"status":"approved"}`; order status='INVOICE_WRITTEN_OFF'; written_off_* stamped; audit row `tempo_write_off_approved` present |
+| D | Seed INVOICE_TEMPO order + request approval, then flip order to PAYMENT_VERIFIED before approve | Tony Aktif | helper returns `ok jsonb={"status":"auto_rejected_race","new_order_status":"PAYMENT_VERIFIED"}`; approval status='rejected'; audit row `tempo_write_off_rejected` with auto=true |
 | E | Seed pending approval | Tony Aktif calls `reject_tempo_write_off(id, 'reason')` | approval status='rejected'; order untouched; audit row `tempo_write_off_rejected` with auto=false |
 
 Implementation: extend the smoke helper to take a function-call mode parameter so it can call either `approve_tempo_write_off(p_approval_id)` or `reject_tempo_write_off(p_approval_id, p_reason)`.
@@ -858,10 +869,20 @@ describe('requestTempoWriteOff', () => {
 describe('approveTempoWriteOff', () => {
   beforeEach(() => mockRpc.mockReset());
 
-  test('calls approve_tempo_write_off with approval id', async () => {
-    mockRpc.mockResolvedValueOnce({ data: null, error: null });
-    await approveTempoWriteOff(99);
+  test('returns {status:approved} on happy path', async () => {
+    mockRpc.mockResolvedValueOnce({ data: { status: 'approved' }, error: null });
+    const result = await approveTempoWriteOff(99);
     expect(mockRpc).toHaveBeenCalledWith('approve_tempo_write_off', { p_approval_id: 99 });
+    expect(result).toEqual({ status: 'approved' });
+  });
+
+  test('returns {status:auto_rejected_race} on race', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: { status: 'auto_rejected_race', new_order_status: 'PAYMENT_VERIFIED' },
+      error: null,
+    });
+    const result = await approveTempoWriteOff(99);
+    expect(result).toEqual({ status: 'auto_rejected_race', new_order_status: 'PAYMENT_VERIFIED' });
   });
 
   test('throws on OWNER_ONLY', async () => {
@@ -936,12 +957,19 @@ export async function requestTempoWriteOff(
   return { approval_id: data as number };
 }
 
-export async function approveTempoWriteOff(approvalId: number): Promise<void> {
+export type ApproveTempoWriteOffResult =
+  | { status: 'approved' }
+  | { status: 'auto_rejected_race'; new_order_status: string };
+
+export async function approveTempoWriteOff(
+  approvalId: number,
+): Promise<ApproveTempoWriteOffResult> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase.rpc('approve_tempo_write_off', {
+  const { data, error } = await supabase.rpc('approve_tempo_write_off', {
     p_approval_id: approvalId,
   });
   if (error) throw error;
+  return data as ApproveTempoWriteOffResult;
 }
 
 export async function rejectTempoWriteOff(
@@ -1876,8 +1904,12 @@ Find the existing handleApprove block. Right BEFORE the `if (req.requestType ===
 if (req.requestType === 'piutang_write_off') {
   setBusyId(id);
   try {
-    await approveTempoWriteOff(id);
-    showToast('Tulis-off disetujui', 'success');
+    const result = await approveTempoWriteOff(id);
+    if (result.status === 'auto_rejected_race') {
+      showToast('Invoice sudah dibayar sebelum disetujui — pengajuan dibatalkan otomatis', 'info');
+    } else {
+      showToast('Tulis-off disetujui', 'success');
+    }
     await refresh();
   } catch (e) {
     showToast(e instanceof Error ? e.message : 'Gagal menyetujui', 'warning');
