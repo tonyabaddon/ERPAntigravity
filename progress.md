@@ -1,5 +1,38 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Funnel — Action completeness fix-up (Batalkan / Tolak / Buka Lagi / Ada Masalah)
+
+After Phase 1B PR B shipped, an audit of every sub-stage's available admin actions surfaced six gaps:
+
+1. No universal Batalkan anywhere in the funnel — admin physically couldn't move an order to Stage 6 via the UI.
+2. No Tolak button at 2b (Setujui only, no reject path).
+3. Sub-stages 2e (Ditolak) and 3e (Pelunasan Ditolak) were dead-ends — no recovery action.
+4. No "ada masalah" path from 4a/4b into 4d.
+5. 4d (Ada Masalah Pengiriman) itself had no resolve buttons.
+6. The Reminder buttons at 2c/3d/3h and the Persetujuan button at 3g were dead — `getQuickAction` returned a transition to the same sub-stage so clicks did nothing visible.
+
+**Fix:**
+- `src/components/sales/ReasonInputModal.tsx` — generic reason-capture modal used by Tolak, Ada Masalah, Batalkan. Min length 5 chars, optional hint line, tone-coloured confirm button.
+- `src/lib/sales/waReminder.ts` — builds a `wa.me/<phone>?text=<message>` URL with templated reminder copy per sub-stage (2c initial, 3d pelunasan after DP komponen, 3h pelunasan after biaya final CP/RP). Falls back to a copy-to-clipboard modal when `customer_phone` is missing. 7 unit tests in `waReminder.test.ts`.
+- `src/lib/sales/quickActionMap.ts` — added optional `intent?: 'transition' | 'wa-reminder'`; 2c/3d/3h Reminder pills now use `intent: 'wa-reminder'`; the dead 3g Persetujuan entry is dropped (returns null — owner cek manual until Phase 1C inbox lands).
+- `src/components/sales/ActionPanel.tsx` — new "Aksi Lain" row with conditional buttons:
+  - Tolak Order (2b only) → 2e with reason
+  - Buka Lagi (2e/3e only) → 2d or 3b respectively, no reason needed
+  - Ada Masalah Kirim (4a/4b only) → 4d with reason
+  - Lanjut Kirim / Sudah Diterima (4d only) → 4a or 5a
+  - Batalkan Pesanan (every non-terminal sub-stage) → 6a with reason
+- `src/components/sales/DaftarPesananScreen.tsx` — `handleQuickAction` branches on `intent === 'wa-reminder'` and opens `window.open(url, '_blank')` instead of calling `transitionOrder`. New handlers for the 6 ActionPanel callbacks wire to `ReasonInputModal` + `runTransition`. Inline `WhatsAppFallbackModal` surfaces the message text when no phone is on file.
+- `src/components/sales/SubStageSection.tsx` — forwards the 6 new callbacks.
+
+**Verification:** 163/163 lib tests passing (+8 from waReminder); TypeScript clean; `npm run build` clean.
+
+**Advisor follow-ups landed in the same PR:**
+
+- Added Owner-only "✓ Setujui Biaya Final" button at 3g → 3h with reason capture. `App.tsx` now passes `currentUserRole` into `DaftarPesananScreen`; the handler is plumbed through SubStageSection only when `isOwner === true`. Without this, CP/RP orders that landed at 3g had no forward path before the Phase 1C Owner Inbox UI ships — admin's only option was Batalkan.
+- Hardened `waReminder.ts`: a DP order with `dp_amount` null/0/undefined now produces a "jumlah DP belum di-set" warning message instead of asking the customer for the full total. Test case added.
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR B/3 — EditOrderModal + ActionPanel PDF buttons + screen wiring
 
 - `src/lib/sales/pdf/availablePdfs.ts` — pure helper deciding which PDFs are visible per sub-stage + payment_type. Tested against full sub-stage matrix.

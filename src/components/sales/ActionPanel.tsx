@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { Order, FunnelSubStage } from '../../lib/sales/types';
 import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { PaymentProofThumbnail } from './PaymentProofThumbnail';
@@ -18,12 +18,40 @@ interface Props {
   onOpenProof: () => void;
   onUploadProof: () => void;
   onEdit?: () => void;
+  /** Tolak Order at 2b → 2e (with reason). */
+  onReject?: () => void;
+  /** Buka Lagi 2e → 2d, or 3e → 3b. */
+  onReopen?: () => void;
+  /** 4a / 4b → 4d (with reason). */
+  onMarkProblem?: () => void;
+  /** 4d → 4a (continue delivery after problem solved). */
+  onResolveContinue?: () => void;
+  /** 4d → 5a (close out after problem resolved + handed over). */
+  onResolveReceived?: () => void;
+  /** Batalkan Pesanan → 6a (with reason). Hidden on terminal stages. */
+  onCancelOrder?: () => void;
+  /** Owner-only — 3g → 3h after manual biaya-final review. */
+  onApproveBiayaFinal?: () => void;
 }
 
 // Pre-payment sub-stages where the Edit button is shown. Mirrors the spec
 // in "Task 4 — EditOrderModal" — admin can still tweak ongkir / items before
 // the customer pays.
 const EDITABLE_SUBS = new Set<FunnelSubStage>(['2a', '2b', '2c', '2d']);
+
+// Sub-stages where the universal Batalkan button is visible (i.e. anywhere
+// except the terminal ones).
+const TERMINAL_SUBS = new Set<FunnelSubStage>(['5a', '6a', '6b']);
+
+// Sub-stages where Tolak (→ 2e) is offered as a manual escalation.
+const REJECTABLE_SUBS = new Set<FunnelSubStage>(['2b']);
+
+// Sub-stages where a Buka Lagi action is offered (manual recovery from a
+// dead-end "ditolak" state once the customer comes back).
+const REOPEN_SUBS = new Set<FunnelSubStage>(['2e', '3e']);
+
+// Sub-stages where Ada Masalah → 4d is offered (in-flight delivery).
+const PROBLEM_SUBS = new Set<FunnelSubStage>(['4a', '4b']);
 
 const PDF_LABELS: Record<AvailablePdf, { emoji: string; label: string; bg: string; fg: string; border: string }> = {
   'SO':        { emoji: '📄', label: 'Sales Order',        bg: '#f3f4f6', fg: '#374151', border: '#e5e7eb' },
@@ -34,7 +62,11 @@ const PDF_LABELS: Record<AvailablePdf, { emoji: string; label: string; bg: strin
   'CAN':       { emoji: '📝', label: 'Catatan Pembatalan', bg: '#fee2e2', fg: '#991b1b', border: '#fecaca' },
 };
 
-export function ActionPanel({ order, settings, banks, onOpenProof, onUploadProof, onEdit }: Props) {
+export function ActionPanel({
+  order, settings, banks, onOpenProof, onUploadProof, onEdit,
+  onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
+  onApproveBiayaFinal,
+}: Props) {
   const [generating, setGenerating] = useState<AvailablePdf | null>(null);
   const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
@@ -42,9 +74,16 @@ export function ActionPanel({ order, settings, banks, onOpenProof, onUploadProof
   const isVerifyStage = order.funnel_sub_stage === '2d' || order.funnel_sub_stage === '3b';
   const pdfs = availablePdfsForOrder(order);
   const showEdit = EDITABLE_SUBS.has(order.funnel_sub_stage) && !!onEdit;
+  const showReject = REJECTABLE_SUBS.has(order.funnel_sub_stage) && !!onReject;
+  const showReopen = REOPEN_SUBS.has(order.funnel_sub_stage) && !!onReopen;
+  const showProblem = PROBLEM_SUBS.has(order.funnel_sub_stage) && !!onMarkProblem;
+  const showResolve = order.funnel_sub_stage === '4d' && (!!onResolveContinue || !!onResolveReceived);
+  const showCancel = !TERMINAL_SUBS.has(order.funnel_sub_stage) && !!onCancelOrder;
+  const showApproveBiayaFinal = order.funnel_sub_stage === '3g' && !!onApproveBiayaFinal;
+  const showExtraRow = showReject || showReopen || showProblem || showResolve || showCancel || showApproveBiayaFinal;
 
-  // Hide the whole panel if there's nothing to show (no proof step, no PDFs, no edit).
-  if (!isVerifyStage && pdfs.length === 0 && !showEdit) return null;
+  // Hide the whole panel if there's nothing to show.
+  if (!isVerifyStage && pdfs.length === 0 && !showEdit && !showExtraRow) return null;
 
   const proofUrl = order.funnel_sub_stage === '3b'
     ? order.pelunasan_proof_url
@@ -173,6 +212,51 @@ export function ActionPanel({ order, settings, banks, onOpenProof, onUploadProof
         </div>
       )}
 
+      {showExtraRow && (
+        <div style={{ marginTop: (pdfs.length > 0 || showEdit || isVerifyStage) ? 14 : 0 }}>
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            Aksi Lain
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {showApproveBiayaFinal && (
+              <button type="button" onClick={onApproveBiayaFinal} style={pillStyle('#dcfce7', '#166534', '#bbf7d0')}>
+                ✓ Setujui Biaya Final
+              </button>
+            )}
+            {showReject && (
+              <button type="button" onClick={onReject} style={pillStyle('#fee2e2', '#991b1b', '#fecaca')}>
+                ❌ Tolak Order
+              </button>
+            )}
+            {showReopen && (
+              <button type="button" onClick={onReopen} style={pillStyle('#e0e7ff', '#3730a3', '#c7d2fe')}>
+                🔄 Buka Lagi
+              </button>
+            )}
+            {showProblem && (
+              <button type="button" onClick={onMarkProblem} style={pillStyle('#fef3c7', '#92400e', '#fde68a')}>
+                🆘 Ada Masalah Kirim
+              </button>
+            )}
+            {showResolve && onResolveContinue && (
+              <button type="button" onClick={onResolveContinue} style={pillStyle('#e0e7ff', '#3730a3', '#c7d2fe')}>
+                🚚 Lanjut Kirim
+              </button>
+            )}
+            {showResolve && onResolveReceived && (
+              <button type="button" onClick={onResolveReceived} style={pillStyle('#dcfce7', '#166534', '#bbf7d0')}>
+                ✓ Sudah Diterima
+              </button>
+            )}
+            {showCancel && (
+              <button type="button" onClick={onCancelOrder} style={pillStyle('#fef2f2', '#b91c1c', '#fca5a5')}>
+                🗑 Batalkan Pesanan
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {preview && (
         <PdfPreviewModal
           blob={preview.blob}
@@ -182,4 +266,17 @@ export function ActionPanel({ order, settings, banks, onOpenProof, onUploadProof
       )}
     </div>
   );
+}
+
+function pillStyle(bg: string, fg: string, border: string): React.CSSProperties {
+  return {
+    fontSize: 11,
+    padding: '4px 10px',
+    borderRadius: 8,
+    background: bg,
+    color: fg,
+    border: `1px solid ${border}`,
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
 }

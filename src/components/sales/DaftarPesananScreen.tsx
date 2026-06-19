@@ -13,8 +13,20 @@ import { SubStageSection } from './SubStageSection';
 import { PaymentProofLightbox } from './PaymentProofLightbox';
 import { ProofUploadModal } from './ProofUploadModal';
 import { EditOrderModal } from './EditOrderModal';
+import { ReasonInputModal } from './ReasonInputModal';
+import { buildWhatsAppReminderUrl } from '../../lib/sales/waReminder';
 
-export function DaftarPesananScreen() {
+interface DaftarPesananScreenProps {
+  /**
+   * Used to gate Owner-only buttons (e.g. "Setujui Biaya Final" at 3g).
+   * Server-side RLS is still authoritative; this just hides the button
+   * for non-Owners so they don't see a click that always fails.
+   */
+  currentUserRole?: string;
+}
+
+export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProps = {}) {
+  const isOwner = currentUserRole === 'Owner';
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
   const [stage, setStage] = useState<FunnelStage>(2);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -24,6 +36,21 @@ export function DaftarPesananScreen() {
   const [uploadModal, setUploadModal] = useState<{ orderId: string; field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' } | null>(null);
   const [pendingVerify, setPendingVerify] = useState<{ orderId: string; toSub: string } | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // ReasonInputModal driver: title/prompt/confirmLabel/tone come from the
+  // action that was clicked; perform() captures the transition target +
+  // any side-effect (e.g. dropping to 6a vs 4d).
+  const [reasonModal, setReasonModal] = useState<
+    | null
+    | {
+        title: string;
+        prompt: string;
+        confirmLabel: string;
+        tone: 'danger' | 'warning' | 'primary';
+        hint?: string;
+        perform: (reason: string) => Promise<void>;
+      }
+  >(null);
+  const [waMessage, setWaMessage] = useState<string | null>(null);
   // Store settings + active bank accounts gate PDF generation. Either being null
   // means "still loading or load failed" — ActionPanel disables PDF buttons
   // and shows "Lengkapi Pengaturan dulu" tooltip in that case.
@@ -95,6 +122,25 @@ export function DaftarPesananScreen() {
 
   async function handleQuickAction(order: Order, toSubStage: string) {
     const action = getQuickAction(order);
+
+    // WhatsApp reminder buttons (2c / 3d / 3h): open wa.me in a new tab
+    // (or surface the message text if customer_phone is not on file). Does
+    // NOT change funnel_sub_stage.
+    if (action?.intent === 'wa-reminder') {
+      if (!settings || !banks) {
+        // eslint-disable-next-line no-alert
+        alert('Lengkapi Identitas Toko + Rekening Bank di Pengaturan dulu supaya isi pesan lengkap.');
+        return;
+      }
+      const { url, message } = buildWhatsAppReminderUrl(order, settings, banks);
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        setWaMessage(message);
+      }
+      return;
+    }
+
     if (action?.requiresProof) {
       const proofField: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' =
         order.funnel_sub_stage === '3b' ? 'pelunasan_proof_url' : 'payment_proof_url';
@@ -163,6 +209,91 @@ export function DaftarPesananScreen() {
     setEditingOrder(order);
   }
 
+  // Direct transition helper used by all the new "recovery" actions
+  // (Buka Lagi, Lanjut Kirim, Sudah Diterima). Returns a promise that
+  // resolves after the orders refetch so callers can chain refresh logic.
+  async function runTransition(order: Order, toSubStage: Order['funnel_sub_stage'], reason?: string) {
+    try {
+      const result = await transitionOrder({
+        id: order.id,
+        fromSubStage: order.funnel_sub_stage,
+        toSubStage,
+        expectedVersion: order.version,
+        reason,
+      });
+      if (!result.ok) {
+        // eslint-disable-next-line no-alert
+        alert(`Gagal: ${result.code}. Refresh dan coba lagi.`);
+      }
+    } catch (err) {
+      console.error('transitionOrder failed', err);
+      // eslint-disable-next-line no-alert
+      alert('Gagal: network/server error.');
+    } finally {
+      const fresh = await fetchOrdersWithArchive().catch(() => null);
+      if (fresh) setOrders(fresh);
+    }
+  }
+
+  function handleReject(order: Order) {
+    setReasonModal({
+      title: 'Tolak Order',
+      prompt: `Tolak pesanan #${order.id.slice(0, 8)} (${order.customer})? Pesanan masuk ke status Ditolak; customer bisa upload bukti ulang nanti.`,
+      confirmLabel: 'Tolak Order',
+      tone: 'warning',
+      hint: 'Alasan disimpan di audit log dan jadi catatan untuk follow-up.',
+      perform: async (reason) => { await runTransition(order, '2e', reason); },
+    });
+  }
+
+  function handleReopen(order: Order) {
+    // 2e → 2d (cek bukti baru). 3e → 3b (cek bukti pelunasan baru).
+    const target: Order['funnel_sub_stage'] = order.funnel_sub_stage === '3e' ? '3b' : '2d';
+    runTransition(order, target);
+  }
+
+  function handleMarkProblem(order: Order) {
+    setReasonModal({
+      title: 'Tandai Bermasalah',
+      prompt: `Tandai pesanan #${order.id.slice(0, 8)} sebagai bermasalah saat dikirim? Pesanan pindah ke "Ada Masalah Pengiriman".`,
+      confirmLabel: 'Tandai Bermasalah',
+      tone: 'warning',
+      hint: 'Contoh: alamat tidak ketemu, customer minta reschedule, paket rusak.',
+      perform: async (reason) => { await runTransition(order, '4d', reason); },
+    });
+  }
+
+  function handleResolveContinue(order: Order) {
+    runTransition(order, '4a');
+  }
+
+  function handleResolveReceived(order: Order) {
+    runTransition(order, '5a');
+  }
+
+  function handleApproveBiayaFinal(order: Order) {
+    if (!isOwner) return;
+    setReasonModal({
+      title: 'Setujui Biaya Final',
+      prompt: `Setujui biaya final untuk pesanan #${order.id.slice(0, 8)} (${order.customer})? Pesanan masuk ke "Biaya Final OK · Tunggu Pelunasan" dan invoice pelunasan bisa dikirim.`,
+      confirmLabel: 'Setujui',
+      tone: 'primary',
+      hint: 'Catatan tersimpan di audit log sebagai persetujuan Owner.',
+      perform: async (reason) => { await runTransition(order, '3h', reason); },
+    });
+  }
+
+  function handleCancelOrder(order: Order) {
+    setReasonModal({
+      title: 'Batalkan Pesanan',
+      prompt: `Batalkan pesanan #${order.id.slice(0, 8)} (${order.customer})? Pesanan pindah ke Stage 6 (Dibatalkan).`,
+      confirmLabel: 'Batalkan',
+      tone: 'danger',
+      hint: 'Aksi ini tercatat di audit log. Stok / refund follow up manual untuk sekarang.',
+      perform: async (reason) => { await runTransition(order, '6a', reason); },
+    });
+  }
+
   function toggleSection(subId: string) {
     setExpandedSubs(prev => {
       const next = new Set(prev);
@@ -194,6 +325,13 @@ export function DaftarPesananScreen() {
               onOpenProof={handleOpenProof}
               onUploadProof={handleUploadProof}
               onEdit={handleEdit}
+              onReject={handleReject}
+              onReopen={handleReopen}
+              onMarkProblem={handleMarkProblem}
+              onResolveContinue={handleResolveContinue}
+              onResolveReceived={handleResolveReceived}
+              onCancelOrder={handleCancelOrder}
+              onApproveBiayaFinal={isOwner ? handleApproveBiayaFinal : undefined}
             />
           ))}
         </div>
@@ -279,6 +417,77 @@ export function DaftarPesananScreen() {
           }}
         />
       )}
+      {reasonModal && (
+        <ReasonInputModal
+          title={reasonModal.title}
+          prompt={reasonModal.prompt}
+          confirmLabel={reasonModal.confirmLabel}
+          tone={reasonModal.tone}
+          hint={reasonModal.hint}
+          onConfirm={async (reason) => { await reasonModal.perform(reason); }}
+          onClose={() => setReasonModal(null)}
+        />
+      )}
+      {waMessage && (
+        <WhatsAppFallbackModal message={waMessage} onClose={() => setWaMessage(null)} />
+      )}
+    </div>
+  );
+}
+
+function WhatsAppFallbackModal({ message, onClose }: { message: string; onClose: () => void }) {
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(message);
+      // eslint-disable-next-line no-alert
+      alert('Pesan disalin ke clipboard.');
+    } catch (err) {
+      console.error('clipboard write failed', err);
+    }
+  }
+  return (
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      }}
+    >
+      <div style={{
+        background: 'white', borderRadius: 16, maxWidth: 480, width: '100%',
+        padding: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+      }}>
+        <h3 style={{ margin: 0, marginBottom: 6, color: 'var(--color-primary)', fontSize: 16 }}>Tidak ada nomor HP di pesanan</h3>
+        <p style={{ margin: 0, marginBottom: 12, color: '#4b5563', fontSize: 13 }}>
+          Salin pesan di bawah, buka WhatsApp manual, dan kirim ke customer.
+        </p>
+        <textarea
+          value={message}
+          readOnly
+          rows={6}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: 10, fontSize: 13, lineHeight: 1.4,
+            border: '1px solid #d1d5db', borderRadius: 10, fontFamily: 'inherit',
+          }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{ padding: '8px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: 'white', color: '#374151', border: '1px solid #d1d5db', cursor: 'pointer' }}
+          >
+            Tutup
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            style={{ padding: '8px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700, background: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer' }}
+          >
+            Salin Pesan
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
