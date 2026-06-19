@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — `verify_owner_pin` security fix (auth.uid + status)
+
+Closes the security gap recorded in `project_verify_owner_pin_security_gap` memory. The previous RPC body (20260607000019) selected the Owner row by `WHERE role='Owner' ORDER BY id LIMIT 1` with no caller validation and no status filter. In production with 4 Owner rows (2 Aktif, 2 Tidak Aktif), LIMIT 1 resolved to `T11 Owner` — a deactivated test account — so any PIN attempt was checked against that row and any successful match attributed audit to that row.
+
+**Fix (migration 20260626000010):** bind to `auth.uid()`. Map the auth user to their `admin_users` Owner row via `lower(email)` because `admin_users.id` is not always the auth uid (Tony's row was provisioned that way but Jenny's was not). Add `status = 'Aktif'` filter so deactivated Owners cannot approve. Add `OWNER_AMBIGUOUS` guard for the edge case of duplicate Aktif Owner rows sharing the same email. Lockout counter now isolates per Owner.
+
+**Live SQL smoke (5 cases, all green):**
+- No auth → `OWNER_ONLY: no authenticated user`
+- Random uid not in `auth.users` → `OWNER_ONLY: caller has no auth email`
+- Tony Wei (Aktif) → passes Owner check, fails at ar lookup (synthetic ar id)
+- Jenny Setiawan (Aktif, admin_users.id ≠ auth.uid) → resolves via email mapping, passes Owner check
+- Tony1993 (Tidak Aktif) → `OWNER_ONLY: caller is not an active Owner` (deactivated Owner blocked)
+
+**Verification:** 195/195 vitest pass; `npx tsc --noEmit` clean; `npm run build` clean (3.07s). Migration applied to live Supabase via MCP `apply_migration`.
+
+**Memory follow-up:** Mark `project_verify_owner_pin_security_gap` resolved after PR merges to main.
+
+---
+
 ## 2026-06-19 — WipListScreen deprecation
 
 Phase 1B funnel (Daftar Pesanan → Workshop → Stage 3 → 3f Sedang Dirakit → LockSubmissionModal) handles CP/RP cost-lock end-to-end. The legacy WipListScreen was the duplicate path — removed.
