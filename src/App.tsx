@@ -41,7 +41,6 @@ import PenjualanScreen from './components/PenjualanScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
-import WipListScreen from './components/WipListScreen';
 import ManajemenGudangScreen from './components/ManajemenGudangScreen';
 import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
 import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
@@ -529,13 +528,6 @@ export default function App() {
       case 'rekonsiliasi':
         return (
           <RekonsiliasiScreen
-            currentUser={currentUser}
-            showToast={triggerToast}
-          />
-        );
-      case 'wip-list':
-        return (
-          <WipListScreen
             currentUser={currentUser}
             showToast={triggerToast}
           />

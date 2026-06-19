@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — WipListScreen deprecation
+
+Phase 1B funnel (Daftar Pesanan → Workshop → Stage 3 → 3f Sedang Dirakit → LockSubmissionModal) handles CP/RP cost-lock end-to-end. The legacy WipListScreen was the duplicate path — removed.
+
+- Deleted `src/components/WipListScreen.tsx`.
+- Removed "WIP Rakit" tab from PenjualanScreen.tsx (now 2 tabs: Input Baru + Riwayat).
+- Removed `case 'wip-list'` from App.tsx routing + dropped the import.
+- Removed `'wip-list'` from `ActivePage` type (src/types.ts) and from `urlRoute.ts`.
+- PenjualanBaruScreen's `onNavigate('wip-list')` after WIP-transaction save now redirects to `'daftarPesanan'` with updated toast message.
+
+Tests still 174/174; TypeScript clean; build clean. No DB change.
+
+---
+
 ## 2026-06-19 — Legacy Pengaturan cleanup
 
 Migrate display consumers from legacy `company_settings` + `bank_config` to `store_settings` + `store_bank_accounts`. Removed (lama) sections from PengaturanScreen. Dropped `bankConfigService` entirely; `companySettingsService` retained for non-display settings (`costing_method`, `opname_require_witness`, logo upload).

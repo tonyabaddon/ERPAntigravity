@@ -55,7 +55,6 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'penjualanBaru',
   'persetujuan',
   'rekonsiliasi',
-  'wip-list',
   'penjualan',
   'salesLanding',
   'daftarPesanan',
