@@ -16,8 +16,10 @@ import {
 } from '../../lib/supabaseClient';
 import ApprovalRequestRow from './ApprovalRequestRow';
 import RakitLockApprovalRequestRow from './RakitLockApprovalRequestRow';
+import TempoWriteOffApprovalRequestRow from './TempoWriteOffApprovalRequestRow';
 import OwnerPinPad from './OwnerPinPad';
 import { approveRakitLock, rejectRakitLock } from '../../lib/supabaseClient';
+import { approveTempoWriteOff, rejectTempoWriteOff } from '../../lib/piutang/writeOff';
 import LockSubmissionModal from '../penjualan/LockSubmissionModal';
 
 /**
@@ -45,15 +47,16 @@ interface ApprovalInboxScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'rakit_lock' | 'kasir';
+type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'rakit_lock' | 'kasir' | 'piutang_write_off';
 
 const PILLS: { key: FilterPill; label: string }[] = [
-  { key: 'all',           label: 'Semua' },
-  { key: 'adjustment',    label: 'Adjustment' },
-  { key: 'price_change',  label: 'Harga' },
-  { key: 'opname',        label: 'Opname' },
-  { key: 'rakit_lock',    label: 'Rakit Lock' },
-  { key: 'kasir',         label: 'Kasir' },
+  { key: 'all',                label: 'Semua' },
+  { key: 'adjustment',         label: 'Adjustment' },
+  { key: 'price_change',       label: 'Harga' },
+  { key: 'opname',             label: 'Opname' },
+  { key: 'rakit_lock',         label: 'Rakit Lock' },
+  { key: 'kasir',              label: 'Kasir' },
+  { key: 'piutang_write_off',  label: 'Tulis-off' },
 ];
 
 function matchesFilter(req: ApprovalRequest, filter: FilterPill): boolean {
@@ -179,6 +182,28 @@ export default function ApprovalInboxScreen({
     const req = requests.find((r) => r.id === id);
     if (!req) return;
 
+    // piutang_write_off has a one-shot RPC pair (approve / reject) that
+    // commit inside the RPC. Approve may auto-reject if the invoice was
+    // paid between request + approval — surface that distinct race path
+    // with an `info` toast rather than a generic success.
+    if (req.requestType === 'piutang_write_off') {
+      setBusyId(id);
+      try {
+        const result = await approveTempoWriteOff(id);
+        if (result.status === 'auto_rejected_race') {
+          showToast('Invoice sudah dibayar sebelum disetujui — pengajuan dibatalkan otomatis', 'info');
+        } else {
+          showToast('Tulis-off disetujui', 'success');
+        }
+        await refresh();
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : 'Gagal menyetujui', 'warning');
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
+
     // rakit_lock has a one-shot RPC that wraps _transition_approval + commit
     // in one txn and gates on auth.uid()'s admin_users.role='Owner'. PIN does
     // not gate this path today — keep the existing direct call.
@@ -240,6 +265,10 @@ export default function ApprovalInboxScreen({
         });
         if (error) throw error;
         showToast('Permintaan ditolak', 'info');
+        await refresh();
+      } else if (req.requestType === 'piutang_write_off') {
+        await rejectTempoWriteOff(id, reason ?? 'Owner reject from Persetujuan inbox');
+        showToast('Tulis-off ditolak', 'info');
         await refresh();
       } else if (req.requestType === 'rakit_lock') {
         if (!currentUser) {
@@ -315,6 +344,15 @@ export default function ApprovalInboxScreen({
                 onEditAndApprove={(id, txId, lines) =>
                   setOwnerAmendTarget({ approvalId: id, transactionId: txId, rakitLines: lines })
                 }
+              />
+            ) : r.requestType === 'piutang_write_off' ? (
+              <TempoWriteOffApprovalRequestRow
+                request={r}
+                isOwner={isOwner}
+                disabled={busyId !== null && busyId !== r.id}
+                actorName={actorNames[r.requestedBy]}
+                onApprove={handleApprove}
+                onReject={handleReject}
               />
             ) : (
               <ApprovalRequestRow
