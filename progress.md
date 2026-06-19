@@ -7517,3 +7517,24 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Commit:** `2b11782` — "feat(sales): payment proof thumbnail + lightbox + upload modal wired into Daftar Pesanan"
 - **TypeScript:** clean (fixed `React.ChangeEvent` namespace error by importing React in ProofUploadModal)
 - **Tests:** 72/72 passing
+
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone B (B1-B3): 3 lib modules + tests DONE
+
+- **Branch:** `feat/owner-biaya-final-inbox-spec` (worktree `.claude/worktrees/owner-biaya-final`)
+- **B1 — `approveAndAmendRakitLock` wrapper**
+  - **File created:** `src/lib/sales/rakitLockOwnerEdit.ts` — wraps the `approve_and_amend_rakit_lock` RPC (Milestone A migration `20260619100002`)
+  - **File modified:** `src/lib/supabaseClient.ts` — re-exports the wrapper for path-consistency with `approveRakitLock`/`rejectRakitLock`/`requestRakitLock`
+  - **Deviation from spec:** wrapper lives in a sibling module rather than directly in `supabaseClient.ts` so the standard `vi.mock('../supabaseClient')` idiom (used 10+ times in this codebase) can intercept `supabase` — functions defined IN `supabaseClient.ts` close over their own module-scope `supabase` const which `vi.mock` cannot redirect
+  - **Test file created:** `src/lib/__tests__/rakitLockWrappers.test.ts` — 2 tests (RPC params + error propagation)
+  - **Commit:** `30dfe69` — "feat(sales/lib): approveAndAmendRakitLock supabase wrapper"
+- **B2 — `fetchRecentRejectsByOrder` helper**
+  - **File created:** `src/lib/sales/recentRejects.ts` — batch-fetches the most-recent `rakit_lock_rejected` audit_log entry per order within last 7 days; short-circuits to `{}` on empty input
+  - **Test file created:** `src/lib/sales/recentRejects.test.ts` — 4 tests (empty input, no rejects, dedup-by-order most-recent, filter unrelated orders)
+  - **Commit:** `a3469cd` — "feat(sales/lib): fetchRecentRejectsByOrder for 3f reject-reason chips"
+- **B3 — `fetchRakitLockHistory` + `RakitLockHistoryEvent` type**
+  - **File modified:** `src/lib/sales/queries.ts` — added discriminated union `RakitLockHistoryEvent` (requested/approved/approved_with_edit/rejected) and `fetchRakitLockHistory(orderId)` which over-fetches by event_type and filters by `payload.order_id` in JS (bounded volume)
+  - **Test file created:** `src/lib/sales/rakitLockHistory.test.ts` — 4 tests (DESC order, cross-order filter, rejected mapping with reason, error → empty array)
+  - **Commit:** `a691efd` — "feat(sales/lib): fetchRakitLockHistory typed event reader from audit_log"
+- **TypeScript:** `npx tsc --noEmit` clean
+- **Tests:** `npx vitest run src/lib` — 25 files, 174 passed (baseline 22 files / 164 → +3 files / +10 tests)
+- **Git status:** clean; 3 commits land on `feat/owner-biaya-final-inbox-spec`. Not pushed to remote.
