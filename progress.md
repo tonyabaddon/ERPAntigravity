@@ -1,5 +1,18 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone D (Reject-reason chip at 3f)
+
+Wires the Milestone B `fetchRecentRejectsByOrder` lib into the funnel list so admin sees an at-a-glance ⚠️ Owner reject-reason chip on 3f rows when a biaya-final submission was bounced back within the last 7 days.
+
+**Files touched:**
+- `src/components/sales/DaftarPesananScreen.tsx` — added `rejectInfoMap` state + a `useEffect` that batch-fetches recent rejects for CP/RP orders at 3f whenever `orders` changes (skips audit_log entirely when there are no candidates). Threads the map into `SubStageSection`.
+- `src/components/sales/SubStageSection.tsx` — accepts `rejectInfoMap` (structural type, no `RejectInfo` import to keep the leaf component free of audit_log deps) and forwards to each `OrderRow`.
+- `src/components/sales/OrderRow.tsx` — new optional `rejectInfoMap` prop. When the row is at `funnel_sub_stage === '3f'` AND the map has an entry for the order, renders a compact amber chip ("⚠️ Owner: <reason snippet>") right after the customer name. Snippet truncates to ~33 chars + ellipsis; tooltip shows the full reason plus formatted reject date.
+
+**Verification:** `npx tsc --noEmit` clean. `npx vitest run src/lib` — 174/174 passing (no regression from Milestone B baseline). 2 commits: `96ce32c` (D1 fetch + thread) + `fa00ebb` (D2 chip render).
+
+---
+
 ## 2026-06-19 — Sales Funnel — Action completeness fix-up (Batalkan / Tolak / Buka Lagi / Ada Masalah)
 
 After Phase 1B PR B shipped, an audit of every sub-stage's available admin actions surfaced six gaps:
