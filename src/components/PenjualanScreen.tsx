@@ -9,9 +9,12 @@ import { ActivePage, PermissionSet, KasirChannel } from '../types';
 import TabBar, { TabDef } from './ui/TabBar';
 import PenjualanBaruScreen from './PenjualanBaruScreen';
 import OrderHistoryScreen from './OrderHistoryScreen';
-import WipListScreen from './WipListScreen';
 
-type PenjualanTab = 'input' | 'riwayat' | 'wip';
+// WIP Rakit tab + WipListScreen removed. Phase 1B funnel
+// (Daftar Pesanan → Workshop → Stage 3 → 3f Sedang Dirakit) handles the
+// CP/RP cost-lock workflow end-to-end via LockSubmissionModal; the legacy
+// list view here was duplicate work.
+type PenjualanTab = 'input' | 'riwayat';
 
 interface PenjualanScreenProps {
   currentUser: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null;
@@ -28,8 +31,7 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
   const perms = props.currentUser?.permissions;
 
   // Tabs filtered by permission: Input gated by kasir (matches sidebar perm
-  // for `penjualanBaru` entry); Riwayat by orderHistory; WIP by aiStock
-  // (matches existing perm key used by `wip-list` sidebar entry).
+  // for `penjualanBaru` entry); Riwayat by orderHistory.
   const tabs = useMemo<TabDef<PenjualanTab>[]>(() => {
     const isVisible = (key: keyof PermissionSet): boolean => {
       if (!perms) return true;
@@ -40,7 +42,6 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
     const list: TabDef<PenjualanTab>[] = [];
     if (isVisible('kasir')) list.push({ id: 'input', label: 'Input Baru' });
     if (isVisible('orderHistory')) list.push({ id: 'riwayat', label: 'Riwayat' });
-    if (isVisible('aiStock')) list.push({ id: 'wip', label: 'WIP Rakit' });
     return list;
   }, [perms]);
 
@@ -61,7 +62,7 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
         </div>
         <div>
           <h2 className="text-xl font-extrabold text-[#0b1c30]">Penjualan</h2>
-          <p className="text-xs text-[#0b1c30]/50">Input transaksi baru, riwayat pesanan, dan rakit WIP</p>
+          <p className="text-xs text-[#0b1c30]/50">Input transaksi baru dan riwayat pesanan</p>
         </div>
       </div>
 
@@ -82,12 +83,6 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
           <OrderHistoryScreen
             currentUser={props.currentUser}
             onOpenCustomer={props.onOpenCustomer}
-            showToast={props.showToast}
-          />
-        )}
-        {activeTab === 'wip' && (
-          <WipListScreen
-            currentUser={props.currentUser}
             showToast={props.showToast}
           />
         )}

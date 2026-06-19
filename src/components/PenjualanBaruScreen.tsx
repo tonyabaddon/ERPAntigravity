@@ -350,9 +350,9 @@ export default function PenjualanBaruScreen({
             estimatedPrice: l.estimatedPrice,
           })),
         });
-        showToast('✅ Transaksi WIP tersimpan. Lanjutkan ke WIP list untuk submit lock.', 'success');
+        showToast('✅ Transaksi WIP tersimpan. Buka Daftar Pesanan untuk submit biaya final.', 'success');
         if (onNavigate) {
-          onNavigate('wip-list');
+          onNavigate('daftarPesanan');
         } else {
           onBack();
         }
