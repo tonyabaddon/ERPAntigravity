@@ -262,13 +262,13 @@ export default function IdentitasTokoCard({ showToast }: Props) {
               <input
                 type="url"
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
-                placeholder="https://...  (upload via Profil Perusahaan card di bawah)"
+                placeholder="https://..."
                 value={form.logo_url}
                 onChange={e => updateField('logo_url', e.target.value)}
                 disabled={saving}
               />
               <p className="text-[11px] text-slate-400 mt-1">
-                Untuk sekarang isi URL manual. Form upload file masih di card &quot;Profil Perusahaan&quot; di bawah; Phase 1C akan menggabungkannya ke sini.
+                Isi URL manual, atau upload file via card &quot;Logo Toko&quot; di bawah.
               </p>
             </div>
           </div>
