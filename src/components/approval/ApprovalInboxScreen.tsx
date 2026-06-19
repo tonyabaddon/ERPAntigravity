@@ -3,6 +3,7 @@ import type {
   ApprovalRequest,
   ApprovalRequestType,
   PermissionSet,
+  RakitJobLine,
 } from '../../types';
 import {
   listPendingApprovals,
@@ -17,6 +18,7 @@ import ApprovalRequestRow from './ApprovalRequestRow';
 import RakitLockApprovalRequestRow from './RakitLockApprovalRequestRow';
 import OwnerPinPad from './OwnerPinPad';
 import { approveRakitLock, rejectRakitLock } from '../../lib/supabaseClient';
+import LockSubmissionModal from '../penjualan/LockSubmissionModal';
 
 /**
  * Owner-facing inbox of pending `approval_requests`. Subscribes to Supabase
@@ -78,6 +80,13 @@ export default function ApprovalInboxScreen({
   // transition path is verify_owner_pin → _transition_approval). Track the
   // request waiting on PIN here; null means no PIN modal is open.
   const [pinTarget, setPinTarget] = useState<{ id: number; type: ApprovalRequestType } | null>(null);
+  // Owner-amend target — when set, opens LockSubmissionModal in owner-amend
+  // mode so the Owner can edit snapshot values then approve in one tx.
+  const [ownerAmendTarget, setOwnerAmendTarget] = useState<{
+    approvalId: number;
+    transactionId: string;
+    rakitLines: RakitJobLine[];
+  } | null>(null);
 
   const perms = currentUser?.permissions;
   const isOwner = !!(
@@ -303,6 +312,9 @@ export default function ApprovalInboxScreen({
                 disabled={busyId !== null && busyId !== r.id}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                onEditAndApprove={(id, txId, lines) =>
+                  setOwnerAmendTarget({ approvalId: id, transactionId: txId, rakitLines: lines })
+                }
               />
             ) : (
               <ApprovalRequestRow
@@ -334,6 +346,24 @@ export default function ApprovalInboxScreen({
             />
           </div>
         </div>
+      )}
+
+      {ownerAmendTarget && currentUser && (
+        <LockSubmissionModal
+          mode="owner-amend"
+          approvalId={ownerAmendTarget.approvalId}
+          transactionId={ownerAmendTarget.transactionId}
+          rakitLines={ownerAmendTarget.rakitLines}
+          currentUser={{ id: currentUser.id, name: currentUser.name }}
+          onClose={() => setOwnerAmendTarget(null)}
+          onSubmitted={() => {
+            setOwnerAmendTarget(null);
+            // Realtime subscription on approval_requests will refresh the
+            // inbox list automatically; backstop poll covers Realtime-off.
+            void refresh();
+          }}
+          showToast={showToast}
+        />
       )}
     </div>
   );

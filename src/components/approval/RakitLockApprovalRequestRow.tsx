@@ -1,6 +1,6 @@
 // src/components/approval/RakitLockApprovalRequestRow.tsx
 import React, { useEffect, useState } from 'react';
-import type { ApprovalRequest, RakitLockRequest } from '../../types';
+import type { ApprovalRequest, RakitJobLine, RakitLockRequest } from '../../types';
 import { fetchRakitLockRequestByApprovalId } from '../../lib/supabaseClient';
 
 interface RakitLockApprovalRequestRowProps {
@@ -9,10 +9,55 @@ interface RakitLockApprovalRequestRowProps {
   disabled: boolean;
   onApprove: (id: number) => void | Promise<void>;
   onReject: (id: number, reason?: string) => void | Promise<void>;
+  /**
+   * Owner-only: opens LockSubmissionModal in owner-amend mode. Receives the
+   * approval id plus the snapshot already converted to RakitJobLine shape
+   * (so the modal can seed its component drafts directly).
+   */
+  onEditAndApprove?: (id: number, transactionId: string, lines: RakitJobLine[]) => void;
 }
 
 function formatRp(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+/**
+ * Convert a stored linesSnapshot entry (snake_case JSONB as written by
+ * requestRakitLock) into a RakitJobLine (camelCase) suitable for seeding
+ * LockSubmissionModal in owner-amend mode. transactionId/lineNumber/serviceType
+ * are not present in the snapshot but are not used by the modal's seed path —
+ * fill with safe placeholders to satisfy the type.
+ */
+function snapshotToRakitJobLine(transactionId: string, raw: any, idx: number): RakitJobLine {
+  const components = Array.isArray(raw.components)
+    ? raw.components.map((c: any) => ({
+        sku: String(c.sku ?? ''),
+        name: String(c.name ?? ''),
+        qty: Number(c.qty ?? 0),
+        warehouse: (c.warehouse ?? 'atas') as 'atas' | 'bawah',
+        fifoCostSnapshot: Number(c.fifo_cost ?? 0),
+        // Modal's seed reads `warehouse_id` + `fifo_cost` off the component via
+        // a structural cast — attach them as extra fields so the modal can pick
+        // them up without losing the warehouse UUID stored in the snapshot.
+        warehouse_id: c.warehouse_id,
+        fifo_cost: Number(c.fifo_cost ?? 0),
+      }))
+    : [];
+  return {
+    id: String(raw.id ?? `snapshot-${idx}`),
+    transactionId,
+    lineNumber: idx + 1,
+    serviceType: 'rakit' as any, // not used by modal's seed; placeholder
+    description: String(raw.description ?? ''),
+    estimatedPrice: Number(raw.final_price ?? 0),
+    finalPrice: Number(raw.final_price ?? 0),
+    trackingMode: (raw.tracking_mode ?? 'detail') as 'detail' | 'lumpsum',
+    laborCost: Number(raw.labor_cost ?? 0),
+    lumpSumHpp: Number(raw.lump_sum_hpp ?? 0),
+    hppOwnerOverride: null,
+    hppFinal: null,
+    components: components as any,
+  };
 }
 
 export default function RakitLockApprovalRequestRow({
@@ -21,6 +66,7 @@ export default function RakitLockApprovalRequestRow({
   disabled,
   onApprove,
   onReject,
+  onEditAndApprove,
 }: RakitLockApprovalRequestRowProps) {
   const [snapshot, setSnapshot] = useState<RakitLockRequest | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -134,6 +180,24 @@ export default function RakitLockApprovalRequestRow({
               >
                 {busy === 'reject' ? 'Menolak…' : 'Tolak'}
               </button>
+              {isOwner && onEditAndApprove && snapshot && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onEditAndApprove(
+                      request.id,
+                      snapshot.transactionId,
+                      (snapshot.linesSnapshot as any[]).map((l, idx) =>
+                        snapshotToRakitJobLine(snapshot.transactionId, l, idx),
+                      ),
+                    )
+                  }
+                  disabled={disabled || !!busy}
+                  className="px-4 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-800 text-xs font-extrabold hover:bg-amber-100 disabled:opacity-50"
+                >
+                  ✏️ Edit &amp; Setujui
+                </button>
+              )}
               <button
                 type="button"
                 onClick={doApprove}
