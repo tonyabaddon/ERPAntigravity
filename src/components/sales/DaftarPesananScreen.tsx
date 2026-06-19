@@ -5,11 +5,14 @@ import { filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../..
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
 import { getQuickAction } from '../../lib/sales/quickActionMap';
 import { transitionOrder } from '../../lib/sales/mutations';
+import { fetchStoreSettings, fetchBankAccounts } from '../../lib/pengaturan/queries';
+import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { TypeTabs } from './TypeTabs';
 import { StageStrip } from './StageStrip';
 import { SubStageSection } from './SubStageSection';
 import { PaymentProofLightbox } from './PaymentProofLightbox';
 import { ProofUploadModal } from './ProofUploadModal';
+import { EditOrderModal } from './EditOrderModal';
 
 export function DaftarPesananScreen() {
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
@@ -20,10 +23,24 @@ export function DaftarPesananScreen() {
   const [proofModal, setProofModal] = useState<{ url: string; orderId: string; version: number; fromSub: string; toSub: string } | null>(null);
   const [uploadModal, setUploadModal] = useState<{ orderId: string; field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url' } | null>(null);
   const [pendingVerify, setPendingVerify] = useState<{ orderId: string; toSub: string } | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  // Store settings + active bank accounts gate PDF generation. Either being null
+  // means "still loading or load failed" — ActionPanel disables PDF buttons
+  // and shows "Lengkapi Pengaturan dulu" tooltip in that case.
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [banks, setBanks] = useState<BankAccount[] | null>(null);
 
   // initial load + realtime
   useEffect(() => {
     fetchOrdersWithArchive().then(setOrders).catch(err => console.error('fetchOrdersWithArchive failed', err));
+    fetchStoreSettings().then(setSettings).catch(err => {
+      console.error('fetchStoreSettings failed', err);
+      setSettings(null);
+    });
+    fetchBankAccounts(true).then(setBanks).catch(err => {
+      console.error('fetchBankAccounts failed', err);
+      setBanks(null);
+    });
     const sub = subscribeOrders(() => {
       fetchOrdersWithArchive().then(setOrders).catch(err => console.error('refresh fetch failed', err));
     });
@@ -142,6 +159,10 @@ export function DaftarPesananScreen() {
     setUploadModal({ orderId: order.id, field: proofField });
   }
 
+  function handleEdit(order: Order) {
+    setEditingOrder(order);
+  }
+
   function toggleSection(subId: string) {
     setExpandedSubs(prev => {
       const next = new Set(prev);
@@ -165,11 +186,14 @@ export function DaftarPesananScreen() {
               expanded={expandedSubs.has(sub.id)}
               expandedRowId={expandedRowId}
               typeTab={typeTab}
+              settings={settings}
+              banks={banks}
               onToggleSection={() => toggleSection(sub.id)}
               onToggleRow={(id) => setExpandedRowId(prev => prev === id ? null : id)}
               onQuickAction={handleQuickAction}
               onOpenProof={handleOpenProof}
               onUploadProof={handleUploadProof}
+              onEdit={handleEdit}
             />
           ))}
         </div>
@@ -243,6 +267,16 @@ export function DaftarPesananScreen() {
             }
           }}
           onClose={() => { setUploadModal(null); setPendingVerify(null); }}
+        />
+      )}
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSaved={async () => {
+            const fresh = await fetchOrdersWithArchive().catch(() => null);
+            if (fresh) setOrders(fresh);
+          }}
         />
       )}
     </div>

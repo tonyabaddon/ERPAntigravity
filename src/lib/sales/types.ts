@@ -11,6 +11,13 @@ export type DeliveryMethod = 'PICKUP' | 'DELIVERY' | 'MARKETPLACE_COURIER';
 export type PaymentType = 'FULL' | 'DP' | 'TEMPO';
 export type ProofSource = 'WA_CALISTA' | 'ADMIN_UPLOAD' | 'MARKETPLACE_SCREENSHOT';
 
+export interface OrderItem {
+  name: string;
+  qty: number;
+  unit_price?: number;
+  subtotal: number;
+}
+
 export interface Order {
   id: string;
   customer: string;
@@ -32,6 +39,16 @@ export interface Order {
   time_ago: string;
   stuck: boolean;
   stage_label_override?: string;
+  // Optional fields consumed by PDF generators + EditOrderModal. Populated by
+  // rowToOrder from kasir_transactions when present; PDF generators only read
+  // what they need and tolerate missing values.
+  items?: OrderItem[];
+  ongkir_amount?: number;
+  dp_amount?: number;
+  payment_method?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  delivery_address?: string;
 }
 
 export interface SalesDashboardStats {

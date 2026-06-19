@@ -1,5 +1,41 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Sales Phase 1B PR B/3 — EditOrderModal + ActionPanel PDF buttons + screen wiring
+
+- `src/lib/sales/pdf/availablePdfs.ts` — pure helper deciding which PDFs are visible per sub-stage + payment_type. Tested against full sub-stage matrix.
+- `src/components/sales/PdfPreviewModal.tsx` — reusable iframe preview + Download/Tutup buttons; uses `URL.createObjectURL` with cleanup.
+- `src/components/sales/ActionPanel.tsx` — extended with PDF download button row visible across all applicable sub-stages; clicking generates the PDF via the corresponding `generateXxxPdf` and opens the preview modal. Existing 2d/3b proof verification UI untouched. Adds an "✏️ Edit" button for pre-payment sub-stages 2a–2d.
+- `src/components/sales/EditOrderModal.tsx` — modal for pre-payment edits (ongkir, delivery address, item qty) with mandatory audit reason (≥5 chars); UPDATE kasir_transactions + INSERT audit_log via client calls.
+- `src/components/sales/SubStageSection.tsx` — forwards new `settings`, `banks`, `onEdit` props.
+- `src/components/sales/DaftarPesananScreen.tsx` — loads `StoreSettings` + active `BankAccount[]` on mount, threads through to ActionPanel. When either is missing, PDF buttons are disabled with a "Lengkapi Pengaturan dulu" tooltip.
+- `src/lib/sales/types.ts` + `src/lib/sales/orderMapper.ts` — extend `Order` with the optional PDF/edit-friendly fields (`items`, `ongkir_amount`, `dp_amount`, `payment_method`, `customer_phone`, `customer_address`, `delivery_address`) and populate them from `kasir_transactions` rows. PDF generators see real data now instead of empty optionals.
+- TypeScript clean; lib tests 131/131 passing.
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR B/2 — 5 PDF generators (Invoice DP/Lunas/Pelunasan + Surat Jalan + Catatan Pembatalan)
+
+- `src/lib/sales/pdf/invoiceDpPdf.ts` — payment breakdown box (Subtotal/Ongkir/TOTAL + DP diterima/Sisa).
+- `src/lib/sales/pdf/invoiceLunasPdf.ts` — LUNAS banner; standard totals.
+- `src/lib/sales/pdf/invoicePelunasanPdf.ts` — Pelunasan summary box with DP recap.
+- `src/lib/sales/pdf/suratJalanPdf.ts` — qty-only items table + delivery meta + two-column signature block.
+- `src/lib/sales/pdf/catatanPembatalanPdf.ts` — light-red cancel summary + optional refund block; inline single-column customer callout (no Pengiriman) per spec.
+- `src/lib/sales/pdf/types.ts` — shared `ItemRow`, `PdfResult`, `OrderForPdf` types reused by all 6 generators. `salesOrderPdf.ts` refactored to import `PdfResult` + `ItemRow`.
+- `src/lib/sales/pdf/common.ts` — lifted `sanitizeDocNumber` + `customerInitial` helpers so every generator reuses one filename idiom.
+- `src/lib/sales/pdf/invoiceNumber.ts` — extended `SalesDocType` union with `'INV'` + `'CAN'` (spec lines 121 + 208 require them).
+- One smoke test per generator (2 cases each: happy path + edge case); all assert `blob.size > 2000` and correct filename format. Tests: 70 total (was 60).
+
+---
+
+## 2026-06-19 — Sales Phase 1B PR B/1 — PDF common + Sales Order generator
+
+- `src/lib/sales/pdf/common.ts` — shared header / customer block / doc title / bank block / footer renderers plus Rupiah and Indonesian-date formatters.
+- `src/lib/sales/pdf/invoiceNumber.ts` — `nextInvoiceNumber(docType)` wrapper over the `next_invoice_number` RPC from migration 014.
+- `src/lib/sales/pdf/salesOrderPdf.ts` — `generateSalesOrderPdf(order, settings, banks)` returns `{ blob, docNumber, filename }` matching the layout in `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md` § Sales Order.
+- Tests: `common.test.ts` + `salesOrderPdf.test.ts`; PDF blob smoke verifies `size > 2000` and filename contains the doc number.
+
+---
+
 ## 2026-06-19 — Sales Phase 1B PR A — rename bank_accounts → store_bank_accounts (collision with reconciliation feature)
 
 **Collision discovered when applying migrations:** the bank reconciliation feature (migration `20260607000001_recon_bank_accounts.sql`) had already created a `bank_accounts` table with a different shape (`bank_code` enum + `purpose` enum + `account_label`). Phase 1B's `CREATE TABLE IF NOT EXISTS bank_accounts (...)` short-circuited, then `CREATE INDEX ... ON bank_accounts(is_active, sort_order)` failed because `sort_order` didn't exist on the reconciliation row.

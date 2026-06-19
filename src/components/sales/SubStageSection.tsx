@@ -1,6 +1,7 @@
 import type { Order } from '../../lib/sales/types';
 import type { TypeTab } from '../../lib/sales/typeTabConfig';
 import type { SubStageMeta } from '../../lib/sales/stageMapping';
+import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { OrderRow } from './OrderRow';
 import { ActionPanel } from './ActionPanel';
 
@@ -10,14 +11,17 @@ interface Props {
   expanded: boolean;
   expandedRowId: string | null;
   typeTab: TypeTab;
+  settings: StoreSettings | null;
+  banks: BankAccount[] | null;
   onToggleSection: () => void;
   onToggleRow: (id: string) => void;
   onQuickAction: (order: Order, toSubStage: string) => void;
   onOpenProof: (order: Order) => void;
   onUploadProof: (order: Order) => void;
+  onEdit: (order: Order) => void;
 }
 
-export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab, onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof }: Props) {
+export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab, settings, banks, onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit }: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
 
@@ -63,8 +67,11 @@ export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab,
               {expandedRowId === o.id && (
                 <ActionPanel
                   order={o}
+                  settings={settings}
+                  banks={banks}
                   onOpenProof={() => onOpenProof(o)}
                   onUploadProof={() => onUploadProof(o)}
+                  onEdit={() => onEdit(o)}
                 />
               )}
             </div>

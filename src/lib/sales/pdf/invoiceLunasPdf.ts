@@ -1,0 +1,183 @@
+// Invoice Lunas / Kwitansi PDF — third generator. Issued when an order is
+// paid in full from the start (Bayar Penuh flow, Stage 3 → 4). Layout per
+// § Invoice Lunas in `docs/superpowers/specs/2026-06-18-sales-pdf-layout-design.md`:
+// Header → Customer/Pengiriman → Items table → Totals → LUNAS banner → footer.
+//
+// Difference vs Sales Order: no bank instruction block (already paid); a green
+// LUNAS banner replaces it with the payment method + receipt date.
+
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type { DeliveryMethod } from '../types';
+import type { StoreSettings, BankAccount } from '../../pengaturan/types';
+import {
+  renderHeader,
+  renderDocTitle,
+  renderCustomerBlock,
+  renderFooter,
+  formatRupiah,
+  formatTanggal,
+  sanitizeDocNumber,
+  customerInitial,
+  MARGIN_MM,
+  PAGE_WIDTH_MM,
+} from './common';
+import { nextInvoiceNumber } from './invoiceNumber';
+import type { ItemRow, OrderForPdf, PdfResult } from './types';
+
+const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
+  PICKUP: 'Pickup',
+  DELIVERY: 'Delivery',
+  MARKETPLACE_COURIER: 'Marketplace Courier',
+};
+
+const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const NAVY_HEX = '#012749';
+const GREEN_HEX = '#2d8a4e';
+// 10% opacity green over white ≈ #e7f3ec — jsPDF doesn't support alpha
+// natively for fills, so we use a pre-mixed pastel.
+const GREEN_BANNER_BG = '#e7f3ec';
+const HAIRLINE_HEX = '#d0d7e2';
+
+/**
+ * Generate the Invoice Lunas / Kwitansi PDF. The order is expected to carry
+ * `payment_method` (e.g. "Transfer BCA", "Tunai") which surfaces inside the
+ * LUNAS banner.
+ */
+export async function generateInvoiceLunasPdf(
+  order: OrderForPdf,
+  settings: StoreSettings,
+  _banks: BankAccount[],
+): Promise<PdfResult> {
+  // `_banks` accepted for signature parity with the other generators even
+  // though this PDF doesn't render bank instructions.
+  void _banks;
+
+  const docNumber = await nextInvoiceNumber('INV');
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+  // ----- 1. Header -----
+  const issueDate = new Date().toISOString();
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+
+  // ----- 2. Doc title -----
+  cursorY = renderDocTitle(doc, 'INVOICE / KWITANSI', cursorY);
+
+  // ----- 3. Customer + Pengiriman -----
+  const deliveryLabel = order.delivery_method
+    ? DELIVERY_LABEL[order.delivery_method] ?? String(order.delivery_method)
+    : '—';
+  cursorY = renderCustomerBlock(
+    doc,
+    {
+      name: order.customer,
+      phone: order.customer_phone,
+      address: order.customer_address,
+    },
+    {
+      method: deliveryLabel,
+      destination: order.customer_address,
+    },
+    cursorY,
+  );
+
+  // ----- 4. Items table -----
+  const items: ItemRow[] = order.items ?? [];
+  autoTable(doc, {
+    startY: cursorY,
+    head: [['No', 'Produk', 'Qty', 'Harga', 'Subtotal']],
+    body: items.map((it, i) => [
+      String(i + 1),
+      it.name,
+      String(it.qty),
+      formatRupiah(it.unit_price ?? (it.qty > 0 ? it.subtotal / it.qty : it.subtotal)),
+      formatRupiah(it.subtotal),
+    ]),
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 9,
+      cellPadding: 2,
+      textColor: '#222222',
+      lineColor: HAIRLINE_HEX,
+      lineWidth: 0.15,
+    },
+    headStyles: {
+      fillColor: NAVY_RGB,
+      textColor: '#ffffff',
+      fontStyle: 'bold',
+      fontSize: 9,
+      halign: 'left',
+    },
+    columnStyles: {
+      0: { halign: 'left', cellWidth: 10 },
+      1: { halign: 'left' },
+      2: { halign: 'right', cellWidth: 18 },
+      3: { halign: 'right', cellWidth: 32 },
+      4: { halign: 'right', cellWidth: 32 },
+    },
+    margin: { left: MARGIN_MM, right: MARGIN_MM },
+  });
+
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
+
+  // ----- 5. Totals block -----
+  const totalsValueX = PAGE_WIDTH_MM - MARGIN_MM;
+  const totalsLabelX = PAGE_WIDTH_MM - MARGIN_MM - 60;
+
+  const ongkir = order.ongkir_amount ?? 0;
+  const subtotal = items.reduce((acc, it) => acc + (it.subtotal || 0), 0);
+  const grandTotal = order.total ?? subtotal + ongkir;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor('#222222');
+  doc.text('Subtotal', totalsLabelX, cursorY);
+  doc.text(formatRupiah(subtotal), totalsValueX, cursorY, { align: 'right' });
+  cursorY += 5;
+
+  if (ongkir > 0) {
+    doc.text('Ongkir', totalsLabelX, cursorY);
+    doc.text(formatRupiah(ongkir), totalsValueX, cursorY, { align: 'right' });
+    cursorY += 5;
+  }
+
+  doc.setDrawColor(NAVY_HEX);
+  doc.setLineWidth(0.4);
+  doc.line(totalsLabelX, cursorY - 2, totalsValueX, cursorY - 2);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(GREEN_HEX);
+  doc.text('TOTAL', totalsLabelX, cursorY + 3);
+  doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
+  cursorY += 10;
+
+  // ----- 6. LUNAS banner -----
+  const bannerX = MARGIN_MM;
+  const bannerWidth = PAGE_WIDTH_MM - MARGIN_MM * 2;
+  const bannerHeight = 11;
+  doc.setFillColor(GREEN_BANNER_BG);
+  doc.roundedRect(bannerX, cursorY, bannerWidth, bannerHeight, 2.2, 2.2, 'F');
+
+  const paymentMethod = order.payment_method ?? 'Tunai';
+  const bannerText = `✓ LUNAS — diterima ${formatTanggal(issueDate)} · via ${paymentMethod}`;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(NAVY_HEX);
+  doc.text(bannerText, bannerX + bannerWidth / 2, cursorY + bannerHeight / 2 + 1.4, {
+    align: 'center',
+  });
+  cursorY += bannerHeight + 4;
+
+  // ----- 7. Footer T&C -----
+  renderFooter(doc, 'SYARAT & KETENTUAN', [
+    'Invoice ini berlaku sebagai kwitansi sah setelah pembayaran diterima',
+    'Barang yang telah dibeli tidak dapat dikembalikan',
+    'Klaim garansi mengikuti ketentuan supplier masing-masing',
+  ]);
+
+  const blob = doc.output('blob');
+  const filename = `Invoice_Lunas_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;
+
+  return { blob, docNumber, filename };
+}

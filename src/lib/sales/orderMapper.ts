@@ -1,10 +1,26 @@
-import type { Order, PaymentType } from './types';
+import type { Order, OrderItem, PaymentType } from './types';
 import { getSubStageMeta } from './stageMapping';
 
 export function normalizePaymentType(s: unknown): PaymentType {
   const v = String(s ?? 'FULL').toUpperCase();
   if (v === 'DP' || v === 'TEMPO') return v;
   return 'FULL';
+}
+
+// Items column on kasir_transactions is JSONB defaulting to []. Defensive
+// normalize so PDF generators see a clean array of {name, qty, subtotal} rows.
+function normalizeItems(raw: unknown): OrderItem[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items = (raw as any[])
+    .filter(it => it && typeof it === 'object')
+    .map(it => ({
+      name: String(it.name ?? it.product_name ?? ''),
+      qty: Number(it.qty ?? it.quantity ?? 0),
+      unit_price: it.unit_price != null ? Number(it.unit_price) : undefined,
+      subtotal: Number(it.subtotal ?? 0),
+    }));
+  return items.length > 0 ? items : undefined;
 }
 
 export function formatTimeAgo(ms: number): string {
@@ -45,5 +61,12 @@ export function rowToOrder(row: any): Order {
     status_label: meta?.name ?? 'Status',
     time_ago: formatTimeAgo(ageMs),
     stuck: isStuck,
+    items: normalizeItems(row.items),
+    ongkir_amount: row.ongkir_amount != null ? Number(row.ongkir_amount) : undefined,
+    dp_amount: row.dp_amount != null ? Number(row.dp_amount) : undefined,
+    payment_method: row.payment_method ?? undefined,
+    customer_phone: row.customer_phone ?? undefined,
+    customer_address: row.customer_address ?? undefined,
+    delivery_address: row.delivery_address ?? undefined,
   };
 }
