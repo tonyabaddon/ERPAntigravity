@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Critical hotfix-batch 20260628000001-005 APPLIED + smoke PASS
+
+All 5 migrations applied to live Supabase project `ekhhojaezdfjfwuxyjkl` via MCP `apply_migration`. Verification: `pg_get_functiondef` returns expected strings for all three patched RPCs; `pesanan_items` CHECK constraints both present.
+
+**Live smoke results (Critical #1, #2, #5):**
+- **Critical #1 — cross-supplier guard:** `record_pembayaran` with `supplier_id=PT GJP` and `items[*].tagihan_id` pointing at a GTA-owned Tagihan returned `TAGIHAN_SUPPLIER_MISMATCH: tagihan ... does not belong to supplier ...`. ✓
+- **Critical #2 — over-receive guard:** created `PSN-2026-06-042` qty=1, attempted `record_pi` STOCK with qty=2 against the pesanan_item → `OVER_RECEIVE: sku=TEST-IMM ... qty_ordered=1 qty_already_received=0 qty_in_this_tagihan=2 (would exceed by 1)`. ✓
+- **Critical #5 — LUNAS synthesizes pembayaran:** initial `record_pi` call with `initial_status='LUNAS'` failed with `pi_belum_lunas_requires_due` CHECK violation. Root cause: the migration `20260628000004` insert-then-flip pattern (spec design) tripped a pre-existing CHECK that requires `payment_due_at IS NOT NULL` when `status='BELUM_LUNAS'`. Spec didn't account for the CHECK. Hotfix migration `20260628000005_record_pi_lunas_direct_insert_fix.sql` inserts the Tagihan directly in its target state (LUNAS-at-create with `paid_at = now()`, BELUM_LUNAS with `payment_due_at` as before), then synthesizes the Pembayaran rows. `_recompute_tagihan_status` still runs at the end for idempotency with the void path. End state identical to the spec design; only intermediate-state ordering differs. After hotfix: `record_pi(initial_status='LUNAS')` produced PSN-043 → PI-2026-06-003 (LUNAS, paid_amount=2500, paid_at set) → PMB-2026-06-005 (account_id NULL, link amount 2500) → kasir row `"Pembayaran PMB-2026-06-005 — GTA (otomatis dari TGH PI-2026-06-003)"` → Pesanan auto-CLOSED. ✓
+
+**Smoke deferred (manual):**
+- **Critical #3 — EditOrderModal optimistic locking:** needs two concurrent browser sessions editing the same kasir_transactions row; single Chrome MCP can't do this reliably. Manual two-tab test recommended post-deploy.
+- **Critical #4 — Aktif-Owner gate on approve_and_amend_rakit_lock:** would require mutating an Owner row to Tidak Aktif then back. Too risky against prod admin_users for an MCP smoke; deactivate-an-Owner test should be run against a staging clone if available.
+
+**Smoke artifacts left in prod (tagged for cleanup):**
+- `PSN-2026-06-042` (ORDERED, qty=1 unfilled — over-receive attempt blocked at RPC, no PI created)
+- `PSN-2026-06-043` (CLOSED) + `PI-2026-06-003` (LUNAS) + `PMB-2026-06-005` (LUNAS) + 1 stock_lot row + 1 kasir expense row + 1 unit of `TEST-IMM` added to stock_levels for the warehouse assigned. All filter via `supplier_invoice_number LIKE 'SMOKE-%'` or `notes LIKE '%SMOKE-OVER-RECEIVE-001%'`.
+
 ## 2026-06-19 — Critical #5 fix: record_pi LUNAS-at-create now synthesizes pembayaran
 
 Closes the silent-data-fork gap recorded in the end-to-end code review. Before this change `record_pi` with `initial_status='LUNAS'` wrote `purchase_invoices.paid_amount` directly + a kasir expense, but created no `pembayaran` / `pembayaran_items` row. Every report joining through `pembayaran_items` (cash-flow forecasts, payment-method breakdowns, void-reversal accounting, per-account reconciliation) silently skipped LUNAS-at-create Tagihans. Prod scan at the time of the fix found 0 orphan rows (all 4 historical LUNAS Tagihans had been created by the legacy-PO migration 010 which DID write pembayaran rows), so no backfill was needed — but the bug surface was live and reachable from the "Bayar Sekarang" radio in TagihanFormPage.
