@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone F (Owner Edit & Approve in one tx)
+
+Owner can now edit-then-approve a `rakit_lock` submission directly from the Persetujuan inbox. The existing `LockSubmissionModal` is now polymorphic on a `mode` prop; in `owner-amend` mode Submit routes to `approveAndAmendRakitLock(approvalId, lines)` instead of `requestRakitLock`, atomically updating the snapshot and committing the approval (audit row `rakit_lock_approved_with_edit`).
+
+**Files touched:**
+- `src/components/penjualan/LockSubmissionModal.tsx` — added `mode?: 'admin-submit' | 'owner-amend'` (default `admin-submit`) and `approvalId?: number` props. Header text + subtitle + Submit button label switch on mode. The component-draft seed now reads pre-populated `components` off the supplied `RakitJobLine[]` (was always empty) so the Owner sees existing snapshot components to edit; keyed off `warehouse_id` + `fifo_cost` which the snapshot already stores from `requestRakitLock`'s original write.
+- `src/components/approval/RakitLockApprovalRequestRow.tsx` — added `onEditAndApprove?: (id, transactionId, lines) => void` prop. Local `snapshotToRakitJobLine()` converts the snake_case `linesSnapshot` JSONB into `RakitJobLine` (camelCase) with components attached. Amber `✏️ Edit & Setujui` button renders between Reject and Approve only when `isOwner && onEditAndApprove && snapshot` (i.e. snapshot has hydrated).
+- `src/components/approval/ApprovalInboxScreen.tsx` — added `ownerAmendTarget` state + import of `LockSubmissionModal` + `RakitJobLine` type. Threads `onEditAndApprove` into `RakitLockApprovalRequestRow`; renders `LockSubmissionModal` in `owner-amend` mode at the bottom of the screen when the target is set; `onSubmitted` clears the target and triggers `refresh()` (Realtime + 30s poll backstop covers list updates).
+
+**Deviation from spec:**
+- The spec assumed `RakitLockRequest.transaction_id` (snake_case) — actual field is `transactionId` (camelCase, mapped in `fetchRakitLockRequestByApprovalId`); `lines` is actually `linesSnapshot: unknown[]`. Used the actual names.
+- The spec passed `snapshot.lines` directly as `rakitLines: RakitJobLine[]`, but the snapshot is raw JSONB (snake_case, no `RakitJobLine` shape). Added a local `snapshotToRakitJobLine()` adapter inside `RakitLockApprovalRequestRow` — keeps the conversion close to the only consumer that needs it. `transactionId` / `lineNumber` / `serviceType` are filled with placeholders since the modal's seed/submit paths don't reference them.
+- Snapshot stores no `description` field today (existing minor gap surfaced by row code `lines.map(l => l.description)`) — Owner-amend modal inherits blank-description rendering for now; out of scope to backfill snapshot shape.
+
+**Verification:** `npx tsc --noEmit` clean. `npx vitest run src/lib` — 25 files / 174 tests passing (no regression). `npm run build` clean (2.67s). 2 commits: `0a3aefd` (F1 modal mode prop) + `c3a78ca` (F2 inbox wiring). Not pushed.
+
+---
+
 ## 2026-06-19 — Owner Biaya Final Inbox — Milestone E (RiwayatPersetujuanPanel at 3g/3h)
 
 Renders the Milestone B `fetchRakitLockHistory` event timeline inside ActionPanel for CP/RP orders parked at sub-stage 3g (pending owner approval) or 3h (approved, awaiting customer pelunasan). Each event row shows an emoji + label + Indonesian-locale timestamp; `approved_with_edit` and `rejected` rows are click-to-expand to reveal the diff field list or the reject reason respectively.
