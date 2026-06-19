@@ -543,7 +543,13 @@ export default function App() {
       case 'salesLanding':
         return <SalesLandingScreen />;
       case 'daftarPesanan':
-        return <DaftarPesananScreen currentUserRole={currentUser?.role} />;
+        return (
+          <DaftarPesananScreen
+            currentUserRole={currentUser?.role}
+            currentUserId={currentUser?.id}
+            currentUserName={currentUser?.name}
+          />
+        );
       default:
         return null;
     }

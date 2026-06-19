@@ -25,12 +25,15 @@ interface Props {
   onResolveContinue: (order: Order) => void;
   onResolveReceived: (order: Order) => void;
   onCancelOrder: (order: Order) => void;
+  /** Admin self-withdraw at 3g for CP/RP orders with a pending approval. */
+  onWithdrawRakitLock: (order: Order) => void;
 }
 
 export function SubStageSection({
   sub, orders, expanded, expandedRowId, typeTab, settings, banks,
   onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit,
   onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
+  onWithdrawRakitLock,
 }: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
@@ -88,6 +91,7 @@ export function SubStageSection({
                   onResolveContinue={() => onResolveContinue(o)}
                   onResolveReceived={() => onResolveReceived(o)}
                   onCancelOrder={() => onCancelOrder(o)}
+                  onWithdrawRakitLock={() => onWithdrawRakitLock(o)}
                 />
               )}
             </div>

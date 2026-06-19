@@ -7538,3 +7538,23 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **TypeScript:** `npx tsc --noEmit` clean
 - **Tests:** `npx vitest run src/lib` — 25 files, 174 passed (baseline 22 files / 164 → +3 files / +10 tests)
 - **Git status:** clean; 3 commits land on `feat/owner-biaya-final-inbox-spec`. Not pushed to remote.
+
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone C (C1-C2): ActionPanel cleanup + 3f Selesai wire DONE
+
+- **Branch:** `feat/owner-biaya-final-inbox-spec` (worktree `.claude/worktrees/owner-biaya-final`)
+- **C1 — ActionPanel cleanup**
+  - **File modified:** `src/components/sales/ActionPanel.tsx` — dropped `onApproveBiayaFinal` prop + inline `✓ Setujui Biaya Final` button (the 3g stopgap from PR #25); added `onWithdrawRakitLock` prop + amber `↩ Tarik Pengajuan` pill visible only at 3g for CUSTOM_PANEL/RAKIT_PANEL orders
+  - **File modified:** `src/components/sales/SubStageSection.tsx` — removed dead `onApproveBiayaFinal` prop plumbing
+  - **File modified:** `src/components/sales/DaftarPesananScreen.tsx` — deleted dead `handleApproveBiayaFinal` helper (now routed through LockSubmissionModal → Owner Inbox)
+  - **Deviation from spec:** Step 3 of C1 ("verify TS clean") is unattainable if only `ActionPanel.tsx` changes — removing the prop strands `SubStageSection` + `DaftarPesananScreen`. Bundled the matching cleanup into C1 so HEAD is always TS-clean rather than splitting them across the C1/C2 boundary.
+  - **Commit:** `7144ecc` — "refactor(sales): drop inline Setujui Biaya Final; add Tarik Pengajuan at 3g"
+- **C2 — Wire 3f Selesai to LockSubmissionModal + Withdraw handler**
+  - **File modified:** `src/lib/supabaseClient.ts` — added `withdrawRakitLock` (RPC wrapper), `findPendingRakitLockApprovalForOrder` (queries `rakit_lock_requests.status='pending_approval'`), and `fetchRakitJobLinesForOrder` (loads `rakit_job_lines` and maps snake→camel so LockSubmissionModal's `RakitJobLine[]` prop accepts it directly — mirrors the mapping in `fetchWipList`)
+  - **File modified:** `src/components/sales/DaftarPesananScreen.tsx` — props now include `currentUserId` / `currentUserName`; new `lockModalOrder` state; `handleQuickAction` branches on `3f + Selesai + CP/RP` to fetch lines then open `<LockSubmissionModal />` (whose submission calls `request_rakit_lock` → flips order to `3g` atomically via migration `20260626000001`); new `handleWithdrawRakitLock` finds the pending approval and calls `withdrawRakitLock`; `<LockSubmissionModal />` rendered at bottom alongside `EditOrderModal`
+  - **File modified:** `src/components/sales/SubStageSection.tsx` — added `onWithdrawRakitLock` prop plumbing through to `ActionPanel`
+  - **File modified:** `src/App.tsx` — `daftarPesanan` switch case now passes `currentUserId` and `currentUserName`
+  - **Commit:** `<pending>` — "feat(sales): wire 3f Selesai to LockSubmissionModal + add Tarik Pengajuan handler"
+- **TypeScript:** `npx tsc --noEmit` clean
+- **Tests:** `npx vitest run src/lib` — 25 files, 174 passed (no regressions; no new tests added at this milestone — UI wiring covered by manual smoke in Milestone G)
+- **Build:** `npm run build` clean (2770 modules; same chunk-size warnings as baseline)
+- **Git status:** clean; 2 commits land on `feat/owner-biaya-final-inbox-spec`. Not pushed to remote.
