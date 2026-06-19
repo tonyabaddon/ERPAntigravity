@@ -10,6 +10,7 @@ import { generateInvoiceLunasPdf } from '../../lib/sales/pdf/invoiceLunasPdf';
 import { generateInvoicePelunasanPdf } from '../../lib/sales/pdf/invoicePelunasanPdf';
 import { generateSuratJalanPdf } from '../../lib/sales/pdf/suratJalanPdf';
 import { generateCatatanPembatalanPdf } from '../../lib/sales/pdf/catatanPembatalanPdf';
+import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
 
 interface Props {
   order: Order;
@@ -84,9 +85,12 @@ export function ActionPanel({
     !!onWithdrawRakitLock;
   const showCancel = !TERMINAL_SUBS.has(order.funnel_sub_stage) && !!onCancelOrder;
   const showExtraRow = showReject || showReopen || showProblem || showResolve || showCancel || showWithdrawRakit;
+  const showRiwayat =
+    (order.funnel_sub_stage === '3g' || order.funnel_sub_stage === '3h') &&
+    (order.order_type === 'CUSTOM_PANEL' || order.order_type === 'RAKIT_PANEL');
 
   // Hide the whole panel if there's nothing to show.
-  if (!isVerifyStage && pdfs.length === 0 && !showEdit && !showExtraRow) return null;
+  if (!isVerifyStage && pdfs.length === 0 && !showEdit && !showExtraRow && !showRiwayat) return null;
 
   const proofUrl = order.funnel_sub_stage === '3b'
     ? order.pelunasan_proof_url
@@ -259,6 +263,8 @@ export function ActionPanel({
           </div>
         </div>
       )}
+
+      {showRiwayat && <RiwayatPersetujuanPanel orderId={order.id} />}
 
       {preview && (
         <PdfPreviewModal
