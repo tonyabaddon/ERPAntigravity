@@ -466,6 +466,12 @@ export default function App() {
           <PiutangScreen
             currentUserId={currentUser?.id ?? ''}
             showToast={triggerToast}
+            isOwner={!!(currentUser?.permissions?.can_approve_adjustment
+              || currentUser?.permissions?.can_approve_price_change
+              || currentUser?.permissions?.can_commit_opname
+              || currentUser?.permissions?.can_approve_kasir_price_override
+              || currentUser?.permissions?.can_approve_kasir_void
+              || currentUser?.permissions?.can_approve_kasir_refund)}
           />
         );
       case 'laporan':
