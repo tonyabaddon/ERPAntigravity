@@ -19,9 +19,22 @@ interface Props {
   onOpenProof: (order: Order) => void;
   onUploadProof: (order: Order) => void;
   onEdit: (order: Order) => void;
+  onReject: (order: Order) => void;
+  onReopen: (order: Order) => void;
+  onMarkProblem: (order: Order) => void;
+  onResolveContinue: (order: Order) => void;
+  onResolveReceived: (order: Order) => void;
+  onCancelOrder: (order: Order) => void;
+  /** Owner-only — undefined for non-Owner; ActionPanel hides button. */
+  onApproveBiayaFinal?: (order: Order) => void;
 }
 
-export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab, settings, banks, onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit }: Props) {
+export function SubStageSection({
+  sub, orders, expanded, expandedRowId, typeTab, settings, banks,
+  onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit,
+  onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
+  onApproveBiayaFinal,
+}: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
 
@@ -72,6 +85,13 @@ export function SubStageSection({ sub, orders, expanded, expandedRowId, typeTab,
                   onOpenProof={() => onOpenProof(o)}
                   onUploadProof={() => onUploadProof(o)}
                   onEdit={() => onEdit(o)}
+                  onReject={() => onReject(o)}
+                  onReopen={() => onReopen(o)}
+                  onMarkProblem={() => onMarkProblem(o)}
+                  onResolveContinue={() => onResolveContinue(o)}
+                  onResolveReceived={() => onResolveReceived(o)}
+                  onCancelOrder={() => onCancelOrder(o)}
+                  onApproveBiayaFinal={onApproveBiayaFinal ? () => onApproveBiayaFinal(o) : undefined}
                 />
               )}
             </div>
