@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Owner Biaya Final Inbox — Milestone G (final tests, smoke, PR)
+
+End-to-end completion of the spec/plan at `docs/superpowers/specs/2026-06-19-owner-biaya-final-inbox-integration-design.md` + `docs/superpowers/plans/2026-06-19-owner-biaya-final-inbox-implementation.md`. 4 migrations applied to live Supabase; 174/174 lib tests green (+10 from baseline); TypeScript clean; vite build clean (2.62s).
+
+**Advisor catches addressed before PR:**
+- `pg_proc` verified: each rakit_lock RPC has exactly one signature in prod — no overload risk from extending `withdraw_rakit_lock(BIGINT)` to `(BIGINT, UUID DEFAULT NULL)`. The original 1-arg form was correctly superseded.
+- Function compile verified via successful `apply_migration` for all 4 slots (001/002/003/004).
+
+**Deferred (documented as v1 acceptable):**
+- **Live SQL smoke against a real CP/RP order at funnel 3f → 3g → approve → 3h.** No CP/RP orders exist in prod today (`SELECT … WHERE order_type IN ('CUSTOM_PANEL','RAKIT_PANEL')` returns 0 rows). First real CP/RP order will validate the flow in production; if any RPC errors, hotfix on a follow-up branch.
+- **`fetchRakitLockHistory` over-fetches** by querying all rakit_lock_* events then filtering by `payload.order_id` in JS. Wire payload includes other orders' admin/owner snapshots. Volume + tenant model make this acceptable for v1; tighten to `payload->>'order_id' = $1` if/when wire traffic matters.
+- **`approve_and_amend_rakit_lock` audit log isn't durable on commit failure** — entire transaction rolls back including the audit row. PR #25's "audit-first" precedent was looser cross-table coupling; here the failure mode is rare (stock insufficient mid-Owner-approve). Note as known gap; revisit if it surfaces.
+
+**Sign-off:** Ready to push + open PR.
+
+---
+
 ## 2026-06-19 — Owner Biaya Final Inbox — Milestone F (Owner Edit & Approve in one tx)
 
 Owner can now edit-then-approve a `rakit_lock` submission directly from the Persetujuan inbox. The existing `LockSubmissionModal` is now polymorphic on a `mode` prop; in `owner-amend` mode Submit routes to `approveAndAmendRakitLock(approvalId, lines)` instead of `requestRakitLock`, atomically updating the snapshot and committing the approval (audit row `rakit_lock_approved_with_edit`).
