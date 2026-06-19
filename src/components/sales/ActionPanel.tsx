@@ -30,8 +30,8 @@ interface Props {
   onResolveReceived?: () => void;
   /** Batalkan Pesanan → 6a (with reason). Hidden on terminal stages. */
   onCancelOrder?: () => void;
-  /** Owner-only — 3g → 3h after manual biaya-final review. */
-  onApproveBiayaFinal?: () => void;
+  /** Admin withdraws own pending rakit_lock approval at 3g. CP/RP only. */
+  onWithdrawRakitLock?: () => void;
 }
 
 // Pre-payment sub-stages where the Edit button is shown. Mirrors the spec
@@ -65,7 +65,7 @@ const PDF_LABELS: Record<AvailablePdf, { emoji: string; label: string; bg: strin
 export function ActionPanel({
   order, settings, banks, onOpenProof, onUploadProof, onEdit,
   onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
-  onApproveBiayaFinal,
+  onWithdrawRakitLock,
 }: Props) {
   const [generating, setGenerating] = useState<AvailablePdf | null>(null);
   const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
@@ -78,9 +78,12 @@ export function ActionPanel({
   const showReopen = REOPEN_SUBS.has(order.funnel_sub_stage) && !!onReopen;
   const showProblem = PROBLEM_SUBS.has(order.funnel_sub_stage) && !!onMarkProblem;
   const showResolve = order.funnel_sub_stage === '4d' && (!!onResolveContinue || !!onResolveReceived);
+  const showWithdrawRakit =
+    order.funnel_sub_stage === '3g' &&
+    (order.order_type === 'CUSTOM_PANEL' || order.order_type === 'RAKIT_PANEL') &&
+    !!onWithdrawRakitLock;
   const showCancel = !TERMINAL_SUBS.has(order.funnel_sub_stage) && !!onCancelOrder;
-  const showApproveBiayaFinal = order.funnel_sub_stage === '3g' && !!onApproveBiayaFinal;
-  const showExtraRow = showReject || showReopen || showProblem || showResolve || showCancel || showApproveBiayaFinal;
+  const showExtraRow = showReject || showReopen || showProblem || showResolve || showCancel || showWithdrawRakit;
 
   // Hide the whole panel if there's nothing to show.
   if (!isVerifyStage && pdfs.length === 0 && !showEdit && !showExtraRow) return null;
@@ -218,11 +221,6 @@ export function ActionPanel({
             Aksi Lain
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {showApproveBiayaFinal && (
-              <button type="button" onClick={onApproveBiayaFinal} style={pillStyle('#dcfce7', '#166534', '#bbf7d0')}>
-                ✓ Setujui Biaya Final
-              </button>
-            )}
             {showReject && (
               <button type="button" onClick={onReject} style={pillStyle('#fee2e2', '#991b1b', '#fecaca')}>
                 ❌ Tolak Order
@@ -246,6 +244,11 @@ export function ActionPanel({
             {showResolve && onResolveReceived && (
               <button type="button" onClick={onResolveReceived} style={pillStyle('#dcfce7', '#166534', '#bbf7d0')}>
                 ✓ Sudah Diterima
+              </button>
+            )}
+            {showWithdrawRakit && (
+              <button type="button" onClick={onWithdrawRakitLock} style={pillStyle('#fef3c7', '#92400e', '#fde68a')}>
+                ↩ Tarik Pengajuan
               </button>
             )}
             {showCancel && (

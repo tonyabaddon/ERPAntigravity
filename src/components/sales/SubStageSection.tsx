@@ -25,15 +25,12 @@ interface Props {
   onResolveContinue: (order: Order) => void;
   onResolveReceived: (order: Order) => void;
   onCancelOrder: (order: Order) => void;
-  /** Owner-only — undefined for non-Owner; ActionPanel hides button. */
-  onApproveBiayaFinal?: (order: Order) => void;
 }
 
 export function SubStageSection({
   sub, orders, expanded, expandedRowId, typeTab, settings, banks,
   onToggleSection, onToggleRow, onQuickAction, onOpenProof, onUploadProof, onEdit,
   onReject, onReopen, onMarkProblem, onResolveContinue, onResolveReceived, onCancelOrder,
-  onApproveBiayaFinal,
 }: Props) {
   const isUrgent = sub.actionType === 'urgent';
   const totalRp = orders.reduce((acc, o) => acc + o.total, 0);
@@ -91,7 +88,6 @@ export function SubStageSection({
                   onResolveContinue={() => onResolveContinue(o)}
                   onResolveReceived={() => onResolveReceived(o)}
                   onCancelOrder={() => onCancelOrder(o)}
-                  onApproveBiayaFinal={onApproveBiayaFinal ? () => onApproveBiayaFinal(o) : undefined}
                 />
               )}
             </div>

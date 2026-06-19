@@ -271,18 +271,6 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
     runTransition(order, '5a');
   }
 
-  function handleApproveBiayaFinal(order: Order) {
-    if (!isOwner) return;
-    setReasonModal({
-      title: 'Setujui Biaya Final',
-      prompt: `Setujui biaya final untuk pesanan #${order.id.slice(0, 8)} (${order.customer})? Pesanan masuk ke "Biaya Final OK · Tunggu Pelunasan" dan invoice pelunasan bisa dikirim.`,
-      confirmLabel: 'Setujui',
-      tone: 'primary',
-      hint: 'Catatan tersimpan di audit log sebagai persetujuan Owner.',
-      perform: async (reason) => { await runTransition(order, '3h', reason); },
-    });
-  }
-
   function handleCancelOrder(order: Order) {
     setReasonModal({
       title: 'Batalkan Pesanan',
@@ -331,7 +319,6 @@ export function DaftarPesananScreen({ currentUserRole }: DaftarPesananScreenProp
               onResolveContinue={handleResolveContinue}
               onResolveReceived={handleResolveReceived}
               onCancelOrder={handleCancelOrder}
-              onApproveBiayaFinal={isOwner ? handleApproveBiayaFinal : undefined}
             />
           ))}
         </div>
