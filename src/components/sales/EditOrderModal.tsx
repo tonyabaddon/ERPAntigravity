@@ -13,9 +13,10 @@ interface Props {
  * and item quantities BEFORE the customer has paid (sub-stages 2a..2d). Records
  * a mandatory reason into `audit_log` so changes are traceable.
  *
- * Why client-side, not an RPC: the audit_log table has no RLS, the kasir_transactions
- * policy is permissive (`anon_all_kasir`), so a single transaction of UPDATE + INSERT
- * is enough. If this graduates to multi-admin tenancy, swap to a SECURITY DEFINER RPC.
+ * Concurrency: the update is guarded by `version` optimistic locking — same
+ * contract as `transition_order_stage` — so a concurrent edit or stage
+ * transition won't silently clobber the values that downstream PDFs (Sales
+ * Order / Invoice DP / Invoice Pelunasan) render against.
  */
 export function EditOrderModal({ order, onClose, onSaved }: Props) {
   const initialItems: OrderItem[] = order.items ?? [];
@@ -79,7 +80,14 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
         throw new Error('Gagal mencatat audit. Edit dibatalkan.');
       }
 
-      const { error: updateErr } = await supabase
+      // Optimistic locking. transition_order_stage and other writers also
+      // check `version`, so we must read-then-write under the same contract:
+      // include the version we loaded with in the WHERE, bump it in the SET,
+      // and reject if zero rows were updated (someone else wrote first).
+      // Without this, a concurrent edit silently clobbers and downstream
+      // PDFs (2c invoice DP / 3d invoice pelunasan / 3h Sales Order)
+      // render against whichever write landed last.
+      const { data: updatedRows, error: updateErr } = await supabase
         .from('kasir_transactions')
         .update({
           ongkir_amount: ongkir,
@@ -87,9 +95,17 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
           items,
           subtotal,
           total_amount: newTotal,
+          version: order.version + 1,
         })
-        .eq('id', order.id);
+        .eq('id', order.id)
+        .eq('version', order.version)
+        .select('id');
       if (updateErr) throw updateErr;
+      if (!updatedRows || updatedRows.length === 0) {
+        throw new Error(
+          'Pesanan sudah diubah oleh sesi lain. Tutup modal, refresh daftar, lalu coba lagi.'
+        );
+      }
 
       onSaved();
       // eslint-disable-next-line no-alert

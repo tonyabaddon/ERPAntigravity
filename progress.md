@@ -1,5 +1,49 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Code-review hotfix batch: 4 Critical findings (security + silent data corruption)
+
+End-to-end code review (post-Pembelian-Phase-2a + Sales Phase 1B + Owner inbox + Pengaturan refactor) surfaced 5 Critical findings. Fixed 4 in this batch on branch `fix/code-review-critical` (worktree `.claude/worktrees/code-review-fixes`). #5 (record_pi LUNAS shortcut bypassing pembayaran table) is deferred to a separate PR — bigger blast radius, design discussion needed first.
+
+**Migrations added (slot 20260628*, distant from origin's 20260626* tail to leave room for parallel work):**
+
+1. `20260628000001_approve_and_amend_aktif_owner_and_tx_check.sql` — fixes Critical #4 (security) + bundled Important #9 (per-order line guard).
+   - **Critical #4**: `approve_and_amend_rakit_lock` no longer checks Owner is `status='Aktif'`. Sister gap to `verify_owner_pin` (fixed in PR #34 / migration 20260626000010), same root cause: PR #28 hotfix migration 20260626000006 dropped the over-strict `status='active'` check (wrong English casing) and explicitly deferred hardening to a cross-cutting fix. PR #34 landed the fix for `verify_owner_pin` but didn't propagate to this RPC. Net: a deactivated Owner could Edit-and-Approve a rakit lock; stock movements + HPP locks were attributed to a disabled account.
+   - **Important #9**: Amend loop did `UPDATE rakit_job_lines WHERE id = v_line_id` with no order constraint — a malicious client could amend lines from a different order by supplying foreign UUIDs. Added `AND transaction_id = v_rr.transaction_id` + raise if zero rows updated.
+   - Pattern matches PR #34: resolve caller via `auth.uid → auth.users.email → admin_users(email, role='Owner', status='Aktif')`. Defensive multiplicity check. `decided_by` now stores the resolved Owner's `admin_users.id` (not raw `auth.uid()`).
+
+2. `20260628000002_record_pembayaran_supplier_guard.sql` — fixes Critical #1.
+   - Per-item loop in `record_pembayaran` selected `purchase_invoices` by `id` only, no supplier filter. A Pembayaran nominally for Supplier B could be applied against Supplier A's outstanding Tagihan, silently corrupting per-supplier AP totals while the kasir expense description still mentioned Supplier B.
+   - Frontend (PembayaranFormPage) only fetches the picked supplier's Tagihans so the UI happy path never triggered it, but any malformed payload or future caller could cross suppliers.
+   - Fix: `WHERE id = v_tagihan_id AND supplier_id = v_supplier_id` + `IF NOT FOUND THEN RAISE EXCEPTION 'TAGIHAN_SUPPLIER_MISMATCH'`.
+
+3. `20260628000003_pesanan_items_overreceive_guard.sql` — fixes Critical #2.
+   - Two concurrent Tagihan submissions for the same `pesanan_item_id` both passed the client gate, then both ran `UPDATE pesanan_items SET qty_received_total = qty_received_total + v_qty`. No `CHECK`, no row lock, no delta validation. Result: over-receive into `stock_lots` + `stock_levels`, plus `set_pesanan_closed_if_fulfilled` mistakenly firing.
+   - Two-part fix:
+     a. `ALTER TABLE pesanan_items ADD CHECK (qty_received_total >= 0)` and `… <= qty)`, `NOT VALID` first then `VALIDATE`. Hard DB backstop.
+     b. `SELECT … FOR UPDATE` the pesanan_items row in `record_pi` BEFORE any stock-side mutation, then `IF v_pi_qty_received + v_qty > v_pi_qty_ordered THEN RAISE EXCEPTION 'OVER_RECEIVE: …'`. Structured error with sku + running totals.
+   - VALIDATE pass may fail loudly at apply time if any historical pesanan_item has `qty_received_total > qty` — desired behavior so the data issue surfaces before deploy.
+
+**Frontend change (Critical #3):**
+
+4. `src/components/sales/EditOrderModal.tsx` — added optimistic-locking contract.
+   - Pre-fix: `UPDATE kasir_transactions SET … WHERE id=order.id` with no `version` filter. `transition_order_stage` and other writers DO check `version`, so a concurrent admin edit silently clobbered (and a concurrent stage transition succeeded against the stale version even though items + total changed underneath it). Downstream PDFs at 2c/3d/3h then rendered against whichever write landed last.
+   - Fix: include `version: order.version + 1` in the SET, `.eq('version', order.version)` in the WHERE, `.select('id')` to detect the conflict. Zero rows updated → throw with a user-readable Indonesian message asking to refresh.
+   - Updated the docstring — old reasoning ("client-side is fine because policy is permissive") now incorrect.
+
+**TypeScript:** `npx tsc --noEmit` exit 0.
+
+**Integration tests:** not run here (require live `SUPABASE_URL` + `SUPABASE_SERVICE_KEY`). Spot-checked `tests/integration/{pembayaran,tagihan-stock}-rpcs.test.ts` — happy paths all use correctly-bound supplier_id and `qty=60` vs `qty=100` (well under the new over-receive ceiling). Should pass as-is.
+
+**Deferred to next PR:**
+- Critical #5: `record_pi` LUNAS shortcut bypasses `pembayaran` / `pembayaran_items`. Needs design call: synthesize a Pembayaran row vs. require two-step record-then-pay. Affects historical-migrated data (`20260620000010_migrate_po_data.sql` already produced Pembayarans for legacy PAID rows; new LUNAS-at-creation doesn't). Cash-flow + payment-method reports are blind to LUNAS-at-create Tagihans until fixed.
+- All 12 Important findings from the reviewer (audit_log gap on `withdraw_rakit_lock`, race in number generation RPCs, `fetchRakitLockHistory` over-fetch, etc.).
+- Smoke findings (PR #33 hint not deployed, Owner action UI missing on Komponen 3-h, Tagihan zero-outstanding filter, PI/TGH prefix split, etc.).
+
+**Deploy steps (next):**
+1. Apply migrations 20260628000001-3 to Supabase via MCP `apply_migration` or `apply-pending-migrations.sh`.
+2. Cloud Run frontend rebuild + traffic promotion (will also pick up PR #33 hint fix that's already on origin/main but apparently not in current 100% revision).
+3. Browser smoke: re-test the 4 critical paths (Owner Edit-and-Approve from deactivated account → should now reject; cross-supplier Pembayaran payload → should now reject; concurrent over-receive → second submit should reject; concurrent EditOrderModal save → second should reject with refresh prompt).
+
 ## 2026-06-19 — `verify_owner_pin` security fix (auth.uid + status)
 
 Closes the security gap recorded in `project_verify_owner_pin_security_gap` memory. The previous RPC body (20260607000019) selected the Owner row by `WHERE role='Owner' ORDER BY id LIMIT 1` with no caller validation and no status filter. In production with 4 Owner rows (2 Aktif, 2 Tidak Aktif), LIMIT 1 resolved to `T11 Owner` — a deactivated test account — so any PIN attempt was checked against that row and any successful match attributed audit to that row.
