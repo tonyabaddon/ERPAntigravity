@@ -62,4 +62,56 @@ describe('record_pembayaran', () => {
     });
     expect(error).not.toBeNull();
   });
+
+  test('void_pembayaran on synthesized (LUNAS-shortcut) Pembayaran reverses Tagihan to BELUM_LUNAS', async () => {
+    // Create a Tagihan via LUNAS shortcut — this synthesizes a Pembayaran inline
+    const sku2 = (await sb.from('stocks').select('sku').limit(1).single()).data!.sku;
+    const { data: psn3 } = await sb.rpc('record_pesanan', {
+      payload: { supplier_id: supplierId, initial_status: 'ORDERED',
+        items: [{ sku: sku2, product_name: 'X', qty: 1, unit_cost: 3333 }] },
+    });
+    const psn3Id = (psn3 as any).pesanan_id;
+    const { data: items3 } = await sb.from('pesanan_items').select('id').eq('pesanan_id', psn3Id);
+    const { data: tgh } = await sb.rpc('record_pi', {
+      payload: {
+        type: 'STOCK',
+        supplier_id: supplierId,
+        pesanan_id: psn3Id,
+        payment_method: 'CASH',
+        initial_status: 'LUNAS',
+        items: [{ sku: sku2, product_name: 'X', qty: 1, unit_cost: 3333, sell_price: 0, pesanan_item_id: items3![0].id }],
+      },
+    });
+    const synthTagihanId = (tgh as any).pi_id;
+
+    // Look up the synthesized Pembayaran via the join
+    const { data: link } = await sb.from('pembayaran_items')
+      .select('pembayaran_id').eq('tagihan_id', synthTagihanId).single();
+    const synthPmbId = link!.pembayaran_id;
+
+    // Pre-void sanity
+    const { data: tPre } = await sb.from('purchase_invoices').select('status, paid_amount').eq('id', synthTagihanId).single();
+    expect(tPre!.status).toBe('LUNAS');
+    expect(Number(tPre!.paid_amount)).toBe(3333);
+
+    // Void it
+    const { error: voidErr } = await sb.rpc('void_pembayaran', {
+      p_pembayaran_id: synthPmbId,
+      p_reason: 'integration test reversal of synthesized PMB',
+    });
+    expect(voidErr).toBeNull();
+
+    // Tagihan back to BELUM_LUNAS, paid_amount=0
+    const { data: tPost } = await sb.from('purchase_invoices').select('status, paid_amount').eq('id', synthTagihanId).single();
+    expect(tPost!.status).toBe('BELUM_LUNAS');
+    expect(Number(tPost!.paid_amount)).toBe(0);
+
+    // Reverse kasir entry inserted (negative subtotal, description prefix 'VOID Pembayaran')
+    const { data: pmb } = await sb.from('pembayaran').select('pembayaran_number').eq('id', synthPmbId).single();
+    const { data: reverseKasir } = await sb.from('kasir_transactions')
+      .select('subtotal, description')
+      .like('description', `%VOID Pembayaran ${pmb!.pembayaran_number}%`);
+    expect(reverseKasir).toHaveLength(1);
+    expect(Number(reverseKasir![0].subtotal)).toBeLessThan(0);
+  });
 });

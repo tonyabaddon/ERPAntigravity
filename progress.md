@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-19 — Critical #5 fix: record_pi LUNAS-at-create now synthesizes pembayaran
+
+Closes the silent-data-fork gap recorded in the end-to-end code review. Before this change `record_pi` with `initial_status='LUNAS'` wrote `purchase_invoices.paid_amount` directly + a kasir expense, but created no `pembayaran` / `pembayaran_items` row. Every report joining through `pembayaran_items` (cash-flow forecasts, payment-method breakdowns, void-reversal accounting, per-account reconciliation) silently skipped LUNAS-at-create Tagihans. Prod scan at the time of the fix found 0 orphan rows (all 4 historical LUNAS Tagihans had been created by the legacy-PO migration 010 which DID write pembayaran rows), so no backfill was needed — but the bug surface was live and reachable from the "Bayar Sekarang" radio in TagihanFormPage.
+
+**Migration `20260628000004_record_pi_lunas_synthesize_pembayaran.sql`:** rewrites `record_pi` so the LUNAS branch always inserts the Tagihan as `BELUM_LUNAS` first, then generates a `pembayaran_number`, inserts `pembayaran` (with `account_id = NULL` — TagihanFormPage doesn't capture an account today; Approach C upgrade can add an `AccountPicker` later), inserts `pembayaran_items(tagihan_id, amount=subtotal)`, calls `_recompute_tagihan_status` (the same sum-of-truth helper `record_pembayaran` and `void_pembayaran` use) to flip the Tagihan to LUNAS, and inserts a single kasir expense row tied to the synthesized PMB with description suffix `(otomatis dari TGH <pi_number>)` for ledger traceability. All inserts run in the same transaction so any failure rolls back the entire `record_pi` call. The migration also bundles the over-receive guard from `20260628000003` per the spec's last-writer-wins decision — `_004`'s body is a complete superset, deploy-order-independent.
+
+**Frontend: zero change.** The "Bayar Sekarang" radio in `TagihanFormPage.tsx` keeps single-click UX. RPC signature + return shape (`{ pi_number, pi_id }`) unchanged.
+
+**Integration tests added:**
+- `tests/integration/tagihan-stock-rpcs.test.ts` — `initial_status=LUNAS synthesizes pembayaran + pembayaran_items + flips Tagihan to LUNAS` (asserts every row shape including kasir description).
+- `tests/integration/pembayaran-rpcs.test.ts` — `void_pembayaran on synthesized (LUNAS-shortcut) Pembayaran reverses Tagihan to BELUM_LUNAS` (proves void path works against synthesized rows with no change to `void_pembayaran`).
+
+**Spec + plan:**
+- `docs/superpowers/specs/2026-06-19-record-pi-lunas-synthesize-pembayaran-design.md`
+- `docs/superpowers/plans/2026-06-19-record-pi-lunas-synthesize-pembayaran-plan.md`
+
+**Deferred:** captures one of the open questions from the spec — add an `AccountPicker` to TagihanFormPage's LUNAS branch so synthesized Pembayarans can capture `account_id`. Will land as a separate UI-only PR if reports demand per-account reconciliation for shortcut payments.
+
 ## 2026-06-19 — Code-review hotfix batch: 4 Critical findings (security + silent data corruption)
 
 End-to-end code review (post-Pembelian-Phase-2a + Sales Phase 1B + Owner inbox + Pengaturan refactor) surfaced 5 Critical findings. Fixed 4 in this batch on branch `fix/code-review-critical` (worktree `.claude/worktrees/code-review-fixes`). #5 (record_pi LUNAS shortcut bypassing pembayaran table) is deferred to a separate PR — bigger blast radius, design discussion needed first.
