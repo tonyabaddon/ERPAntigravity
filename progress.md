@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Pembelian Phase 2b — DEPLOYED TO PRODUCTION (100% traffic)
+
+PR #38 squash-merged as commit `43fb7c8`. Tasks 1-16 complete in PR + Task 17 (integration tests) follow-up commit `19f14f6` on main.
+
+**Deploy:**
+- Cloud Run frontend revision `garindo-jaya-panel-msme-erp-frontend-00122-yim` built from `c43fb7c8` (SUCCESS in Cloud Build).
+- Traffic promoted via `gcloud run services update-traffic … --to-revisions=00122-yim=100`. Old rev `00121-fuj` (Piutang Phase 1C from `c6f53eb7`) demoted to 0%.
+- Production bundle (`assets/index-M7zMMrFu.js`, ≈2.2 MB) verified: contains all 8 Phase 2b identifiers (`Tukar Faktur`, `tf_number`, `is_tf_quick_add`, `TANDA TERIMA` PDF header, `Tambah ke Tukar Faktur`, `fetchOutstandingTagihansForTf`, `Buat Tukar Faktur`, `prefill_tf`).
+- Backend build (`rmgpgab-…`) failed but pre-existing pattern (Piutang Phase 1C and earlier commits also failed) — independent issue, not Phase 2b regression.
+
+**5 DB migrations applied to live Supabase** (applied during Phase 2b development, before merge):
+- `20260627000001` — tukar_faktur table + is_tf_quick_add flag + relaxed pi_type_linkage_check
+- `20260627000002` — _tf_recompute_paid_amount trigger
+- `20260627000003` — generate_tf_number + record_tukar_faktur
+- `20260627000004` — update/add/remove/delete TF RPCs (cascade soft-delete)
+- `20260627000005` — extended pembayaran_suggest_outstanding to return {tagihan, tukar_faktur}
+
+**Open follow-up:**
+- Task 18: production E2E smoke via Chrome MCP (10-step happy path per spec §12.2) — pending after this commit
+- Out of scope (Phase 2c): bulk-select Tagihan list + full AP Dashboard with aging chart + cash-flow forecast
+
+**Rollback path:** `00121-fuj` (commit `c6f53eb7`, Piutang Phase 1C state) warm at 0%. To roll back: `gcloud run services update-traffic … --to-revisions=00121-fuj=100`.
+
 ## 2026-06-20 — Piutang Phase 1C task 2: write-off RPC + UI
 
 Closes the "no write-off flow" gap. Two-step Owner approval mirroring rakit_lock workflow: admin clicks Tulis-off → modal collects required reason → `request_tempo_write_off` creates pending approval + satellite → Owner opens Persetujuan inbox → approves or rejects via the new TempoWriteOffApprovalRequestRow → on approve, order flips to `INVOICE_WRITTEN_OFF` (schema columns already existed per migration `20260615000010`); Owner can revert in one click from a new `Tulis-off` filter pill in PiutangScreen.
