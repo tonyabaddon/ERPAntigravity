@@ -26,6 +26,28 @@ Closes the "no write-off flow" gap. Two-step Owner approval mirroring rakit_lock
 **Verification:** 205/205 vitest (baseline 195 + 10 new = 8 wrapper + 2 fetchPiutangRows), `npx tsc --noEmit` clean, `npm run build` clean (~2.6s). SQL smoke 11 scenarios via Supabase MCP (request 3, approve 5 incl. race-as-jsonb-return, revert 3) — all green with post-condition verification.
 
 **Deferred (per spec non-goals):** Bad Debt YTD KPI card; auto-write-off policy; bulk write-off; WA notification to customer.
+## 2026-06-20 — Pembelian Phase 2b — Frontend layer (Tasks 6-12) COMPLETE on `feat/pembelian-phase2b`
+
+Backend (Tasks 1-5: schema + trigger + 4 RPCs + extended `pembayaran_suggest_outstanding`) already applied to production Supabase last session. This session built the frontend layer in the same worktree (`.claude/worktrees/pembelian-phase2b`).
+
+**Commits on `feat/pembelian-phase2b`:**
+- `01b6681` Task 6: `src/types.ts` — added `TukarFakturStatus`, `DbTukarFaktur`, `TfQuickAddTagihanDraft`, `RecordTukarFakturPayload`, `UpdateTukarFakturPayload`, `SuggestOutstandingTukarFakturRow`, `SuggestOutstandingResult` (new wrapper type).
+- `a9aaea7` Task 7: `src/lib/tukarFakturService.ts` — `fetchAll`/`fetchByNumber`/`record`/`update`/`addTagihan`/`removeTagihan`/`delete`/`markPrinted`/`fetchOutstandingTagihansForTf`. Status derived client-side via `deriveStatus()` from `paid_amount`/`total_amount`/`voided_at`.
+- `b992164` Task 8: `TukarFakturList.tsx` — status filter pills (Belum Lunas/Dibayar Sebagian/Lunas/Semua), search by TF/supplier, due-soon row highlight (`border-l-4 border-l-amber-400` when JT ≤ 7d), footer Outstanding subtotal.
+- `f440a71` Task 9: `TfQuickAddTagihanModal.tsx` — 4-field modal (supplier_invoice_number, purchase_date, total, payment_due_at) with sky info box explaining `is_tf_quick_add=true` + cascade-delete rule. Auto-fills JT from supplier Net N.
+- `1d7ff84` Task 10: `TukarFakturFormPage.tsx` — CREATE-only (per Q3 decision; edit-header is on Detail). Supplier picker → auto-fill JT; search-and-add dropdown with "Tidak ada? Buat Tagihan baru" → opens quick-add modal; selected items table w/ × remove; "Baru" pill on quick-add rows; 2-tile Ringkasan (JT Bayar + Total Bundle). Supplier change clears selected. `prefillSupplierId` / `prefillTagihanId` props for secondary-entry flow.
+- `bbddc63` Task 12: `src/lib/tandaTerimaPdf.ts` — `generateTandaTerima(tf): Blob` + `printTandaTerima(tf)`. A5 portrait, courier monospace, dashed-line separators, signature blocks. Calls `tukarFakturService.markPrinted` after open (non-fatal).
+- `277cbed` Task 11: `TukarFakturDetailPage.tsx` — header w/ status badge + actions row (Cetak · Edit Header · Hapus · Bayar TF); 3 header cards (Supplier · JT Countdown with amber/red progress bar · Total Bundle); Daftar Faktur table with conditional JT-asli strikethrough (only when overridden); Lampiran + Riwayat 2-col grid; collapsible Tanda Terima preview; inline `EditHeaderModal` (matches VoidPesananModal pattern) calling `tukarFakturService.update`; `DeleteTfModal` with ≥10-char reason. Bayar uses `onBayar(tfId)` callback prop (not hard reload).
+
+**Verification:** `npx tsc --noEmit` clean after every task. All 7 commits land on `feat/pembelian-phase2b`, none on main.
+
+**Deviations from plan:**
+- Swapped Task 11/12 order — Task 12 (PDF generator) committed before Task 11 (Detail page) because Detail imports `printTandaTerima`. Plan order would have failed tsc transiently.
+- Task 11 Bayar TF button uses callback prop `onBayar(tfId)` instead of `window.location.href` hard reload — preserves SPA flow; routing to Pembayaran form with `?prefill_tf=` happens in the parent (Task 14).
+- Task 10 CREATE-only (no `editing?` prop) — per spec §16 Q3 "split actions" decision, edit-header lives on Detail page.
+- `SuggestOutstandingResult` introduced as new named wrapper type (plan said "extend existing", but no such wrapper existed; `pembayaranService.suggestOutstanding` returns `SuggestOutstandingTagihanRow[]` directly today). Existing call sites unchanged; new type ready for Task 16.
+
+**Pending:** Tasks 13-16 (PembelianScreen tab integration + App.tsx routing + TagihanDetail secondary entry + PembayaranForm TF support) and Task 17-18 (integration tests + production smoke).
 
 ---
 
