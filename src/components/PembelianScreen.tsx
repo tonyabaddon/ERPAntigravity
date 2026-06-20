@@ -592,15 +592,27 @@ export default function PembelianScreen({
             {tab === 'tukar-faktur' && viewMode.kind === 'tukar-faktur-list' && (
               <TukarFakturList
                 showToast={showToast}
-                onCreate={() => setViewMode({ kind: 'tukar-faktur-create' })}
-                onOpenDetail={(tfNumber) => setViewMode({ kind: 'tukar-faktur-detail', tfNumber })}
+                onCreate={() => {
+                  navigate('pembelian', { tf: 'new' });
+                  setViewMode({ kind: 'tukar-faktur-create' });
+                }}
+                onOpenDetail={(tfNumber) => {
+                  navigate('pembelian', { tf: tfNumber });
+                  setViewMode({ kind: 'tukar-faktur-detail', tfNumber });
+                }}
               />
             )}
             {tab === 'tukar-faktur' && viewMode.kind === 'tukar-faktur-create' && (
               <TukarFakturFormPage
                 showToast={showToast}
-                onCancel={() => setViewMode({ kind: 'tukar-faktur-list' })}
-                onSaved={(tfNumber) => setViewMode({ kind: 'tukar-faktur-detail', tfNumber })}
+                onCancel={() => {
+                  navigate('pembelian', { tab: 'tukar-faktur' });
+                  setViewMode({ kind: 'tukar-faktur-list' });
+                }}
+                onSaved={(tfNumber) => {
+                  navigate('pembelian', { tf: tfNumber });
+                  setViewMode({ kind: 'tukar-faktur-detail', tfNumber });
+                }}
                 prefillTagihanId={viewMode.prefillTagihanId}
               />
             )}
@@ -608,7 +620,10 @@ export default function PembelianScreen({
               <TukarFakturDetailPage
                 tfNumber={viewMode.tfNumber}
                 showToast={showToast}
-                onBack={() => setViewMode({ kind: 'tukar-faktur-list' })}
+                onBack={() => {
+                  navigate('pembelian', { tab: 'tukar-faktur' });
+                  setViewMode({ kind: 'tukar-faktur-list' });
+                }}
                 onBayar={(tfId) => {
                   // Navigate via URL so back-button + cmd-click semantics stay consistent.
                   navigate('pembelian', { pembayaran: 'new', prefill_tf: tfId });
