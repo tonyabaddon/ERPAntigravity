@@ -926,6 +926,11 @@ export interface DbPurchaseInvoice {
   voided_at: string | null;
   voided_by_user_id: string | null;
   void_reason: string | null;
+  // Phase 2: extended columns
+  pesanan_id?: string | null;
+  tukar_faktur_id?: string | null;
+  paid_amount?: number;
+  is_tf_quick_add?: boolean;
   // joined
   supplier?: DbSupplier;
   order?: { id: string; customer_name?: string };
