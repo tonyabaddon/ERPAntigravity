@@ -1,5 +1,30 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Piutang Phase 1C task 2 — PRODUCTION VERIFIED via Chrome DevTools MCP
+
+End-to-end browser verification of PR #37 (commit `6f53eb7`, write-off RPC + UI) against live prod. All 6 spec-plan test-plan cases pass; race scenario empirically proves the JSONB contract correction made during T3 implementation (PL/pgSQL subtxn rollback semantics) was necessary.
+
+**Pre-verification deploy:** Frontend Cloud Build for PR #37 had succeeded but revision `00121-fuj` was at 0% traffic per the `--no-traffic` deploy pattern. Promoted to 100% via `gcloud run services update-traffic --to-revisions=00121-fuj=100` so the canonical URL would serve the new bundle. Subsequently superseded by parallel session's `00122-yim` (Phase 2b) promotion — both revisions include PR #37 code.
+
+**Test data:** Seeded 3 INVOICE_TEMPO orders named `PT Smoke Verify Alpha/Bravo/Charlie` for the verification flow. Cleaned up at end via direct UPDATE to INVOICE_WRITTEN_OFF with reason `'smoke cleanup 2026-06-20 (PR #37 verification)'`.
+
+**6 cases — all PASS:**
+
+| # | Case | UI evidence | DB evidence |
+|---|---|---|---|
+| 1 | Admin submit Tulis-off on Alpha | Modal opened, char counter `5 / 10 minimum` blocked submit; valid reason enabled Ajukan; toast `Tulis-off diajukan ke Owner` | approval #745 pending, satellite reason exact match, order unchanged |
+| 2 | Owner approve Alpha #745 in inbox | TempoWriteOffApprovalRequestRow renders Customer/Invoice/Total/reason; click Setujui → toast `Tulis-off disetujui`; row gone from inbox; sidebar Piutang badge dropped 2→1 | order→INVOICE_WRITTEN_OFF, written_off_at/by/reason all stamped to Tony, approval status=`approved`, decision_channel=`piutang_write_off_approve`, audit `tempo_write_off_approved` |
+| 3 | Owner revert Alpha (Batal Tulis-off) | Click Tulis-off pill → Alpha row appears with inline `Tulis-off 20 Jun 2026 · <reason>`; click Batal Tulis-off → destructive red confirm modal with original reason; toast `Tulis-off dibatalkan`; row returned to aging bucket | order→INVOICE_TEMPO, written_off_* all NULL, audit `tempo_write_off_reverted` payload contains `previous_reason` + `previous_written_off_at` + `previous_written_off_by` |
+| 4 | Owner reject Bravo #746 + admin re-submit | Inline reject reason textarea + Konfirmasi Tolak; row removed from inbox; re-click Tulis-off on same Bravo → new approval #747 created | partial unique trigger correctly allowed re-submit (only blocks PENDING, not REJECTED) |
+| 5 | Negative paths | Counter `5 / 10 karakter minimum` keeps Ajukan disabled (verified Case 1); WRITTEN_OFF row in Case 3 showed only `Batal Tulis-off`, no WA/Catat Bayar/Tulis-off (status discriminator works) | n/a |
+| 6 | Race auto-reject (Charlie #748) | Pre-flipped Charlie order to PAYMENT_VERIFIED via SQL while approval pending; Owner click Setujui → info toast spec-exact: `Invoice sudah dibayar sebelum disetujui — pengajuan dibatalkan otomatis` | approval status=`rejected`, decision_channel=`race: order status changed to PAYMENT_VERIFIED`, order untouched (PAYMENT_VERIFIED, written_off_at NULL), audit `tempo_write_off_rejected` payload `{auto:true, reject_reason:"race: ..."}` |
+
+**Race result is the critical finding:** the JSONB return + no-raise pattern committed both the rejection AND the audit row atomically with the race detection, exactly as the corrected spec called for. The original `RETURNS VOID + RAISE ORDER_NO_LONGER_TEMPO` would have rolled back both writes per PL/pgSQL subtransaction semantics.
+
+**Cleanup:** 3 stranded T1-smoke approvals (#731/734/735) + this verification's residue (#747 pending Bravo) all transitioned to `rejected` via `_transition_approval(..., 'smoke cleanup 2026-06-20')`. Smoke orders Alpha/Bravo/Charlie marked INVOICE_WRITTEN_OFF. Inbox now clean of piutang_write_off entries; no pending residue.
+
+---
+
 ## 2026-06-20 — Pembelian Phase 2b — DEPLOYED TO PRODUCTION (100% traffic)
 
 PR #38 squash-merged as commit `43fb7c8`. Tasks 1-16 complete in PR + Task 17 (integration tests) follow-up commit `19f14f6` on main.
