@@ -164,6 +164,19 @@ function summarisePayload(req: ApprovalRequest): string {
       if (total !== undefined) parts.push(formatRupiah(total));
       return parts.join(' · ');
     }
+    case 'initial_stock': {
+      const sku = str('sku');
+      const skuName = str('sku_name');
+      const qty = num('qty');
+      const unit = str('unit') ?? 'pcs';
+      const cost = num('requested_cost_per_unit');
+      const parts: string[] = [];
+      if (skuName) parts.push(skuName); else if (sku) parts.push(sku);
+      if (sku && skuName) parts.push(`(${sku})`);
+      if (qty !== undefined) parts.push(`+${qty} ${unit}`);
+      if (cost !== undefined && cost > 0) parts.push(`HPP ${formatRupiah(cost)}/${unit}`);
+      return parts.join(' · ') || 'Stok awal produk baru';
+    }
     case 'customer_credit_activate':
       return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;
 

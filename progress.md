@@ -1,5 +1,43 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Produk & Stok — `initial_stock` approval close-out RPCs SHIPPED to prod DB (frontend at 0% pending promote)
+
+Closes a long-standing dispatch gap in ApprovalInboxScreen: ProductForm has been writing `approval_requests` rows with `request_type='initial_stock'` since Phase 2 ship (2026-06-15), but Owner Setujui click ran verify_owner_pin to flip status='approved' then fell into the switch's `default: 'Tipe permintaan tidak dikenali'` branch. Products with `Stok Awal > 0` ended up with `stocks.initial_stock_approved=false` forever (invisible in Kasir search via `search_products_by_embedding`) until the 30-min approval TTL expired the row.
+
+**Discovered + recovered 2 stuck products in live prod:**
+| SKU | Name | Recovery |
+|---|---|---|
+| `AA201712OD` | Panel Besi Outdoor 20×17×12cm 1mm RAL7032 | Manual SQL flip `initial_stock_approved=TRUE` |
+| `b02fc958` | MCB Chint 1A 1P | Manual SQL flip `initial_stock_approved=TRUE` |
+No qty added to stock_levels — original qty in the expired approval_request payload was never counted into inventory, and the user opted for flag-flip-only recovery (Pengaturan opname can correct qty if needed).
+
+**Migration** (`supabase/migrations/20260620000050_commit_initial_stock_rpc.sql`, applied to live):
+- `commit_initial_stock(approval_id BIGINT) → BIGINT` (returns stock_movements.id of the seed ledger row): row-lock approval + assert `request_type='initial_stock' AND status='approved'`, extract `{sku, qty, warehouse_id, requested_cost_per_unit}` from payload JSONB, idempotency-guard on `stocks.initial_stock_approved=false` (prevent double-commit), UPSERT `stock_levels` (qty += payload.qty), INSERT `stock_lots` (source NULL — matches original seed migration 20260604000014 shape), call `_log_stock_movement(source='seed', related_doc_type='approval_request', related_doc_id=p_approval_id::text)` then stamp warehouse_id via BIGINT-id pattern, flip `stocks.initial_stock_approved=TRUE`.
+- `reject_initial_stock(approval_id BIGINT, reason_note TEXT)`: type-guarded, status='pending' assertion, `_transition_approval` to 'rejected', stash reason in `payload.rejection_note` (UPDATE allowed via SECURITY DEFINER since `deny_ar_update` trigger was permanently disabled in migration 007).
+- Both `GRANT EXECUTE ... TO authenticated`. `CREATE OR REPLACE` idempotent.
+
+**Frontend** (4 files):
+- `src/lib/supabaseClient.ts` — `commitInitialStock(approvalId)` + `rejectInitialStock(approvalId, reasonNote)` wrappers in the Phase 2 RPC-wrappers section.
+- `src/components/approval/ApprovalInboxScreen.tsx` — `'initial_stock'` added to `FilterPill` union + PILLS list (label "Stok Awal", positioned between Opname and Rakit Lock). `runCommitAfterPin` switch gets a `case 'initial_stock': await commitInitialStock(id);` branch. `handleReject` gets `else if (req.requestType === 'initial_stock') { await rejectInitialStock(id, reason ?? null); showToast('Stok awal ditolak', 'info'); }`.
+- `src/components/approval/ApprovalRequestRow.tsx` — `case 'initial_stock'` in `paragraph(req)` renders `"<sku_name> (<sku>) · +<qty> <unit> · HPP <cost>/<unit>"`. Falls back to `'Stok awal produk baru'` if payload is sparse.
+
+**Advisor pre-check passed:**
+- `verify_owner_pin` (both 20260607000019 + 20260626000010 versions) is type-agnostic — only checks `status='pending'`, no `request_type` whitelist. PIN flow chains end-to-end into the new commit RPC.
+- `related_doc_type='approval_request'` in the ledger row breaks the satellite-pointer convention used by adjustment/opname, but no frontend code reads `related_doc_type` so the ledger drill-down isn't affected.
+
+**Verification (live DB):**
+- `SELECT proname, pronargs FROM pg_proc WHERE proname IN ('commit_initial_stock','reject_initial_stock')` → 2 rows. ✅
+- `SELECT count(*) FROM stocks WHERE initial_stock_approved=FALSE` → 0 (post flag-flip). ✅
+- `SELECT count(*) FROM approval_requests WHERE request_type='initial_stock' AND status='pending'` → 0 (no in-flight rows for end-to-end smoke yet).
+
+**Build + deploy state:**
+- Cloud Build `ee767717` SUCCESS (2m59s) for commit `e250bae` on branch `feat/initial-stock-approval-rpc`.
+- Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00131-piw` at **0% traffic** (per cloudbuild.frontend.yaml `--no-traffic` pattern shipped in commit aadfe68).
+- Preview URL: `https://ce250bae6---garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app`.
+- Promote-to-100% step pending user go-ahead (and ideally a smoke-test through the new flow).
+
+**Branch:** `feat/initial-stock-approval-rpc` (worktree `.claude/worktrees/initial-stock-approval`), commit `e250bae`. Not merged to main yet — separate PR after smoke verification.
+
 ## 2026-06-20 — Pembelian Phase 2b — BACKEND E2E SMOKE PASS + 2 HOTFIXES + DEPLOYED
 
 Full E2E backend smoke executed against live production Supabase. Caught + fixed 2 critical bugs before any user-facing usage. UI bundle verified in latest prod revision. Chrome MCP unavailable in this session (server connected but tool schemas didn't surface); browser smoke deferred to user-driven verification later.
