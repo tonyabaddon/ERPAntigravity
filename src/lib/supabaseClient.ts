@@ -1741,6 +1741,30 @@ export async function commitApprovedAdjustment(approvalId: number): Promise<numb
   return data as number;
 }
 
+// --- Initial stock (new SKU initial qty approval) ---
+// Migration: 20260620000050_commit_initial_stock_rpc.sql.
+// Counterpart to approvalService.requestInitialStock (created earlier in this
+// file). commit returns the stock_movements.id of the seed ledger row so
+// callers can deep-link to the audit drawer; reject takes the same shape as
+// reject_adjustment for symmetry with the inbox handler.
+export async function commitInitialStock(approvalId: number): Promise<number> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.rpc('commit_initial_stock', {
+    p_approval_id: approvalId,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function rejectInitialStock(approvalId: number, reasonNote?: string | null): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('reject_initial_stock', {
+    p_approval_id: approvalId,
+    p_reason_note: reasonNote ?? null,
+  });
+  if (error) throw error;
+}
+
 // --- Opname ---
 
 export async function startOpnameSession(args: {

@@ -11,6 +11,8 @@ import {
   commitApprovedAdjustment,
   commitApprovedPriceChange,
   commitOpname,
+  commitInitialStock,
+  rejectInitialStock,
   adminUsersService,
   supabase,
 } from '../../lib/supabaseClient';
@@ -29,10 +31,11 @@ import LockSubmissionModal from '../penjualan/LockSubmissionModal';
  * disabled (T22 critical context). A 4-user MSME finds 30s acceptable.
  *
  * Approve/Reject dispatch is per request_type:
- *   - adjustment   → commit_approved_adjustment(id)
- *   - price_change → commit_approved_price_change(id)
- *   - opname       → commit_opname(id)
- *   - kasir_*      → deferred to Phase 3b; rows render but action buttons no-op
+ *   - adjustment    → commit_approved_adjustment(id)
+ *   - price_change  → commit_approved_price_change(id)
+ *   - opname        → commit_opname(id)
+ *   - initial_stock → commit_initial_stock(id) / reject_initial_stock(id, reason)
+ *   - kasir_*       → deferred to Phase 3b; rows render but action buttons no-op
  *
  * Reject is a generic UPDATE on `approval_requests` to keep this screen
  * self-contained for Phase 2 (per-type reject RPCs land in later phases).
@@ -47,13 +50,14 @@ interface ApprovalInboxScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'rakit_lock' | 'kasir' | 'piutang_write_off';
+type FilterPill = 'all' | 'adjustment' | 'price_change' | 'opname' | 'rakit_lock' | 'kasir' | 'piutang_write_off' | 'initial_stock';
 
 const PILLS: { key: FilterPill; label: string }[] = [
   { key: 'all',                label: 'Semua' },
   { key: 'adjustment',         label: 'Adjustment' },
   { key: 'price_change',       label: 'Harga' },
   { key: 'opname',             label: 'Opname' },
+  { key: 'initial_stock',      label: 'Stok Awal' },
   { key: 'rakit_lock',         label: 'Rakit Lock' },
   { key: 'kasir',              label: 'Kasir' },
   { key: 'piutang_write_off',  label: 'Tulis-off' },
@@ -164,6 +168,9 @@ export default function ApprovalInboxScreen({
           break;
         case 'opname':
           await commitOpname(id);
+          break;
+        case 'initial_stock':
+          await commitInitialStock(id);
           break;
         default:
           showToast('Tipe permintaan tidak dikenali', 'warning');
@@ -277,6 +284,10 @@ export default function ApprovalInboxScreen({
         }
         await rejectRakitLock(id, reason ?? 'Owner reject from Persetujuan inbox', currentUser.id);
         showToast('Permintaan ditolak', 'info');
+        await refresh();
+      } else if (req.requestType === 'initial_stock') {
+        await rejectInitialStock(id, reason ?? null);
+        showToast('Stok awal ditolak', 'info');
         await refresh();
       } else {
         showToast(

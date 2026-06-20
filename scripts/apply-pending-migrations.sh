@@ -206,6 +206,13 @@ MIGRATIONS=(
   "20260625000010_pengaturan_tables.sql"
   "20260625000014_invoice_numbering_counters.sql"
   "20260625000016_seed_pengaturan_from_legacy.sql"
+
+  # ─── Produk & Stok — initial_stock approval close-out RPCs ───
+  # commit_initial_stock + reject_initial_stock. Closes the loop on the
+  # 'initial_stock' approval_request_type that ProductForm has been writing
+  # since Phase 2; until now the ApprovalInboxScreen had no handler and rows
+  # stayed pending forever. Idempotent on schema (CREATE OR REPLACE FUNCTION).
+  "20260620000050_commit_initial_stock_rpc.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
