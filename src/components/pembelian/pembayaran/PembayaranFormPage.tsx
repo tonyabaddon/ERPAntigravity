@@ -21,6 +21,8 @@ interface Props {
   onCancel: () => void;
   onSaved: (pembayaranNumber: string) => void;
   prefillSupplierId?: string;
+  /** Phase 2b: pre-check a TF outstanding row + scroll to it (set when navigating from TF Detail). */
+  prefillTfId?: string;
 }
 
 interface SelectedRow {
