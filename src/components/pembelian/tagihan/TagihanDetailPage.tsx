@@ -4,14 +4,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   ChevronRight, Printer, ArrowLeft, Store, CalendarClock, Link as LinkIcon,
-  AlertTriangle, XOctagon, X, Wallet,
+  AlertTriangle, XOctagon, X, Wallet, Layers,
 } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
+import { supabase } from '../../../lib/supabaseClient';
+import { navigate } from '../../../lib/urlRoute';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 
 type TagihanRow = DbPurchaseInvoice & {
   pesanan_id?: string | null;
   paid_amount?: number;
+  tukar_faktur_id?: string | null;
 };
 
 interface Props {
@@ -60,6 +63,10 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
   const [tgh, setTgh] = useState<TagihanRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [showVoid, setShowVoid] = useState(false);
+  // Phase 2b: if this Tagihan is bundled into a TF, show the linked TF number badge.
+  // We use a separate fetch (no FK constraint exists on purchase_invoices.tukar_faktur_id
+  // — Supabase's relationship embed wouldn't infer it).
+  const [tfNumber, setTfNumber] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -71,6 +78,28 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
     } finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, [tghNumber]);
+
+  // Resolve linked TF number when tukar_faktur_id is present.
+  useEffect(() => {
+    const tfId = tgh?.tukar_faktur_id;
+    if (!tfId || !supabase) { setTfNumber(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('tukar_faktur')
+        .select('tf_number')
+        .eq('id', tfId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        console.error('Failed to fetch linked tf_number:', error);
+        setTfNumber(null);
+        return;
+      }
+      setTfNumber((data as { tf_number?: string } | null)?.tf_number ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [tgh?.tukar_faktur_id]);
 
   if (loading) return <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>;
   if (!tgh) return <div className="p-8 text-center text-sm text-gray-500">Tagihan tidak ditemukan.</div>;
@@ -100,6 +129,25 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
           <div className="text-xs text-gray-500">Tanggal Faktur {fmtDate(tgh.purchase_date)} • {tgh.supplier?.name ?? '—'}</div>
         </div>
         <div className="flex gap-2">
+          {/* Phase 2b: secondary entry to Tukar Faktur form (BELUM_LUNAS + not yet bundled). */}
+          {tgh.status === 'BELUM_LUNAS' && !tgh.tukar_faktur_id && !isVoided && (
+            <button
+              onClick={() => navigate('pembelian', { tf: 'new', prefill_tagihan: tgh.id })}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              <Layers className="w-4 h-4" /> Tambah ke Tukar Faktur
+            </button>
+          )}
+          {/* Phase 2b: if already bundled, show TF badge linking to TF detail. */}
+          {tgh.tukar_faktur_id && tfNumber && (
+            <button
+              onClick={() => navigate('pembelian', { tf: tfNumber })}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 px-2.5 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100"
+              title="Buka Tukar Faktur"
+            >
+              <Layers className="w-3.5 h-3.5" /> Bagian dari {tfNumber}
+            </button>
+          )}
           {canPay && onOpenPembayaran && (
             <button onClick={() => onOpenPembayaran(tgh.supplier_id)}
               className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-green-600 px-3 py-2 rounded-lg hover:bg-green-700">

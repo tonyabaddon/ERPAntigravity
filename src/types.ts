@@ -926,6 +926,11 @@ export interface DbPurchaseInvoice {
   voided_at: string | null;
   voided_by_user_id: string | null;
   void_reason: string | null;
+  // Phase 2: extended columns
+  pesanan_id?: string | null;
+  tukar_faktur_id?: string | null;
+  paid_amount?: number;
+  is_tf_quick_add?: boolean;
   // joined
   supplier?: DbSupplier;
   order?: { id: string; customer_name?: string };
@@ -1095,6 +1100,77 @@ export interface ApDashboardLite {
     tagihan_count: number;
     due_soonest: string | null;
   }>;
+}
+
+// ── Phase 2b: Tukar Faktur ──
+export type TukarFakturStatus = 'BELUM_LUNAS' | 'DIBAYAR_SEBAGIAN' | 'LUNAS' | 'VOIDED';
+
+export interface DbTukarFaktur {
+  id: string;
+  tf_number: string;
+  supplier_id: string;
+  supplier?: { id: string; name: string; payment_term_days: number | null };
+  tukar_date: string;                       // ISO date
+  payment_due_at: string;
+  total_amount: number;
+  paid_amount: number;
+  photo_urls: string[];
+  tanda_terima_printed_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  voided_at: string | null;
+  status: TukarFakturStatus;                // computed client-side
+  tagihans?: Array<{
+    id: string;
+    pi_number: string;
+    supplier_invoice_number: string | null;
+    purchase_date: string;
+    payment_due_at: string;                  // JT asli (display strikethrough)
+    total: number;
+    paid_amount: number;
+    is_tf_quick_add: boolean;
+  }>;
+}
+
+export interface TfQuickAddTagihanDraft {
+  supplier_invoice_number: string;
+  purchase_date: string;
+  total: number;
+  payment_due_at: string;
+}
+
+export interface RecordTukarFakturPayload {
+  supplier_id: string;
+  tukar_date: string;
+  payment_due_at: string;
+  tagihan_ids: string[];
+  quick_add_tagihans?: TfQuickAddTagihanDraft[];
+  photo_urls?: string[];
+  notes?: string;
+}
+
+export interface UpdateTukarFakturPayload {
+  tukar_date?: string;
+  payment_due_at?: string;
+  notes?: string;
+  photo_urls?: string[];
+}
+
+export interface SuggestOutstandingTukarFakturRow {
+  id: string;
+  tf_number: string;
+  total: number;
+  paid_amount: number;
+  outstanding: number;
+  payment_due_at: string;
+  tagihan_count: number;
+}
+
+/** Result shape returned by `pembayaran_suggest_outstanding` after Phase 2b extension. */
+export interface SuggestOutstandingResult {
+  tagihan: SuggestOutstandingTagihanRow[];
+  tukar_faktur: SuggestOutstandingTukarFakturRow[];
 }
 
 // ── Piutang Phase 1B — Tempo invoice + Piutang screen ──

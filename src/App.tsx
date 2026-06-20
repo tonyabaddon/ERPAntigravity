@@ -84,7 +84,14 @@ export default function App() {
   // Phase 2a deep-links — open Pesanan / Tagihan / Pembayaran detail by number.
   const initialPesananNumber: string | null = route.params.pesanan ?? null;
   const initialTagihanNumber: string | null = route.params.tagihan ?? null;
+  // `?pembayaran=PMB-...` opens detail; `?pembayaran=new` opens create form
+  // (Phase 2b uses this when "Bayar Tukar Faktur" navigates with `?prefill_tf=<id>`).
   const initialPembayaranNumber: string | null = route.params.pembayaran ?? null;
+  const initialPembayaranPrefillTfId: string | null = route.params.prefill_tf ?? null;
+  // Phase 2b: `?tf=TF-...` opens TF detail; `?tf=new` opens TF create form
+  // (with optional `?prefill_tagihan=<id>` for the secondary entry from Tagihan Detail).
+  const initialTfQuery: string | null = route.params.tf ?? null;
+  const initialTfPrefillTagihanId: string | null = route.params.prefill_tagihan ?? null;
   // Validate channel param against KasirChannel; invalid → undefined.
   const penjualanInitialChannel: KasirChannel | undefined = isKasirChannel(route.params.channel)
     ? route.params.channel
@@ -495,6 +502,10 @@ export default function App() {
             onTagihanDetailConsumed={() => { /* no-op: URL is source of truth */ }}
             initialPembayaranNumber={initialPembayaranNumber}
             onPembayaranDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+            initialPembayaranPrefillTfId={initialPembayaranPrefillTfId}
+            initialTfQuery={initialTfQuery}
+            initialTfPrefillTagihanId={initialTfPrefillTagihanId}
+            onTfDetailConsumed={() => { /* no-op: URL is source of truth */ }}
           />
         );
       case 'kasir':

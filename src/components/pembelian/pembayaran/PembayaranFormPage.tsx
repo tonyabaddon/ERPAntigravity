@@ -7,13 +7,17 @@
 //     Smart buttons: Pilih semua outstanding / Pilih JT ≤ 7 hari.
 //  3. Payment method + account_label + discount + proof upload
 //  4. Running total = sum(selected amounts). Submit via pembayaranService.record.
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Upload, ArrowLeft } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronRight, Upload, ArrowLeft, Layers } from 'lucide-react';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import { supplierService } from '../../../lib/pembelianService';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
+import { supabase } from '../../../lib/supabaseClient';
 import type {
-  DbSupplier, RecordPembayaranPayload, SuggestOutstandingTagihanRow,
+  DbSupplier,
+  RecordPembayaranPayload,
+  SuggestOutstandingTagihanRow,
+  SuggestOutstandingTukarFakturRow,
 } from '../../../types';
 
 interface Props {
@@ -21,15 +25,26 @@ interface Props {
   onCancel: () => void;
   onSaved: (pembayaranNumber: string) => void;
   prefillSupplierId?: string;
+  /** Phase 2b: pre-check a TF outstanding row + scroll to it (set when navigating from TF Detail). */
+  prefillTfId?: string;
 }
 
+/**
+ * Phase 2b: rows can represent either a Tagihan (loose) or a Tukar Faktur (bundle).
+ * Submit serializes to `tagihan_id` OR `tukar_faktur_id` (XOR enforced by DB CHECK).
+ */
 interface SelectedRow {
-  tagihan_id: string;
-  pi_number: string;
+  kind: 'TAGIHAN' | 'TF';
+  /** uuid of the underlying row — Tagihan id when kind=TAGIHAN, TF id when kind=TF. */
+  ref_id: string;
+  /** Display label — `pi_number` for Tagihan, `tf_number` for TF. */
+  display_number: string;
   outstanding: number;
   payment_due_at: string | null;
   selected: boolean;
   amount: number;
+  /** Only for TF rows — number of Tagihans bundled, shown as badge. */
+  tagihan_count?: number;
 }
 
 const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -39,13 +54,19 @@ const fmtDate = (s?: string | null) =>
 type Method = 'CASH' | 'TRANSFER' | 'CHEQUE' | 'EDC';
 const METHODS: Method[] = ['CASH', 'TRANSFER', 'CHEQUE', 'EDC'];
 
-export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefillSupplierId }: Props) {
+export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefillSupplierId, prefillTfId }: Props) {
   const [supplier, setSupplier] = useState<DbSupplier | null>(null);
   const [supplierQuery, setSupplierQuery] = useState('');
   const [supplierResults, setSupplierResults] = useState<DbSupplier[]>([]);
-  const [outstanding, setOutstanding] = useState<SuggestOutstandingTagihanRow[]>([]);
+  const [outstandingTagihan, setOutstandingTagihan] = useState<SuggestOutstandingTagihanRow[]>([]);
+  const [outstandingTf, setOutstandingTf] = useState<SuggestOutstandingTukarFakturRow[]>([]);
   const [rows, setRows] = useState<SelectedRow[]>([]);
   const [loadingOutstanding, setLoadingOutstanding] = useState(false);
+  // After prefillTfId-driven supplier resolution + outstanding load, we apply the
+  // pre-check + scroll-into-view exactly once. Tracked via ref to survive re-renders
+  // without retriggering.
+  const prefillTfAppliedRef = useRef(false);
+  const tfRowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState<Method>('TRANSFER');
@@ -75,22 +96,60 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
     })();
   }, [prefillSupplierId]);
 
-  // Load outstanding when supplier changes
+  // Phase 2b: prefillTfId — resolve supplier from TF, then load outstanding.
+  // The actual pre-check + scroll happens in a separate effect once `rows` settle.
   useEffect(() => {
-    if (!supplier) { setOutstanding([]); setRows([]); return; }
+    if (!prefillTfId || supplier || !supabase) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('tukar_faktur')
+        .select('supplier_id')
+        .eq('id', prefillTfId)
+        .maybeSingle();
+      if (error || !data) {
+        showToast('Tukar Faktur tidak ditemukan untuk pre-fill.', 'warning');
+        return;
+      }
+      const all = await supplierService.fetchAll();
+      const found = all.find(s => s.id === (data as { supplier_id: string }).supplier_id);
+      if (found) setSupplier(found);
+    })();
+  }, [prefillTfId, supplier]);
+
+  // Load outstanding (Tagihan + TF) when supplier changes
+  useEffect(() => {
+    if (!supplier) {
+      setOutstandingTagihan([]);
+      setOutstandingTf([]);
+      setRows([]);
+      return;
+    }
     setLoadingOutstanding(true);
     (async () => {
       try {
         const data = await pembayaranService.suggestOutstanding(supplier.id);
-        setOutstanding(data);
-        setRows(data.map(t => ({
-          tagihan_id: t.id,
-          pi_number: t.pi_number,
+        setOutstandingTagihan(data.tagihan);
+        setOutstandingTf(data.tukar_faktur);
+        const tagihanRows: SelectedRow[] = data.tagihan.map(t => ({
+          kind: 'TAGIHAN',
+          ref_id: t.id,
+          display_number: t.pi_number,
           outstanding: t.outstanding,
           payment_due_at: t.payment_due_at,
           selected: false,
           amount: t.outstanding,
-        })));
+        }));
+        const tfRows: SelectedRow[] = data.tukar_faktur.map(t => ({
+          kind: 'TF',
+          ref_id: t.id,
+          display_number: t.tf_number,
+          outstanding: t.outstanding,
+          payment_due_at: t.payment_due_at,
+          selected: false,
+          amount: t.outstanding,
+          tagihan_count: t.tagihan_count,
+        }));
+        setRows([...tagihanRows, ...tfRows]);
       } catch (e: any) {
         showToast(e?.message ?? 'Gagal load outstanding', 'warning');
       } finally {
@@ -98,6 +157,21 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
       }
     })();
   }, [supplier]);
+
+  // Apply prefillTfId pre-check + scroll once rows are loaded.
+  useEffect(() => {
+    if (!prefillTfId || prefillTfAppliedRef.current) return;
+    if (rows.length === 0) return;
+    const idx = rows.findIndex(r => r.kind === 'TF' && r.ref_id === prefillTfId);
+    if (idx === -1) return;
+    setRows(prev => prev.map((r, i) => i === idx ? { ...r, selected: true, amount: r.outstanding } : r));
+    prefillTfAppliedRef.current = true;
+    // Defer scroll until DOM updates with the highlighted row.
+    setTimeout(() => {
+      const node = tfRowRefs.current.get(prefillTfId);
+      node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  }, [rows, prefillTfId]);
 
   const runningTotal = useMemo(
     () => rows.filter(r => r.selected).reduce((a, r) => a + (Number(r.amount) || 0), 0),
@@ -130,14 +204,14 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
   async function handleSubmit() {
     if (!supplier) { showToast('Pilih supplier dulu', 'warning'); return; }
     const selectedRows = rows.filter(r => r.selected);
-    if (selectedRows.length === 0) { showToast('Pilih minimal 1 Tagihan', 'warning'); return; }
+    if (selectedRows.length === 0) { showToast('Pilih minimal 1 Tagihan / Tukar Faktur', 'warning'); return; }
     for (const r of selectedRows) {
       if (!r.amount || r.amount <= 0) {
-        showToast(`Jumlah ${r.pi_number} harus > 0`, 'warning');
+        showToast(`Jumlah ${r.display_number} harus > 0`, 'warning');
         return;
       }
       if (r.amount > r.outstanding + 0.01) {
-        showToast(`Jumlah ${r.pi_number} (${fmtRp(r.amount)}) lebih dari sisa (${fmtRp(r.outstanding)})`, 'warning');
+        showToast(`Jumlah ${r.display_number} (${fmtRp(r.amount)}) lebih dari sisa (${fmtRp(r.outstanding)})`, 'warning');
         return;
       }
     }
@@ -156,13 +230,13 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         discount_amount: discount || 0,
         proof_url: proofUrl,
         notes: notes || undefined,
-        items: selectedRows.map(r => ({
-          tagihan_id: r.tagihan_id,
-          amount: r.amount,
-        })),
+        // Each item is either a Tagihan or TF row — XOR enforced by DB CHECK.
+        items: selectedRows.map(r => r.kind === 'TAGIHAN'
+          ? { tagihan_id: r.ref_id, amount: r.amount }
+          : { tukar_faktur_id: r.ref_id, amount: r.amount }),
       };
       const result = await pembayaranService.record(payload);
-      showToast(`${result.pembayaran_number} dicatat. ${selectedRows.length} Tagihan ter-update.`, 'success');
+      showToast(`${result.pembayaran_number} dicatat. ${selectedRows.length} baris ter-update.`, 'success');
       onSaved(result.pembayaran_number);
     } catch (e: any) {
       showToast(e?.message ?? 'Gagal simpan Pembayaran', 'warning');
@@ -215,11 +289,11 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         )}
       </div>
 
-      {/* 2. Tagihan picker */}
+      {/* 2. Outstanding picker — Tagihan + Tukar Faktur sections (Phase 2b) */}
       {supplier && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Tagihan yang Dibayar</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Yang Dibayar</div>
             <div className="flex gap-2">
               <button type="button" onClick={selectAll}
                 className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
@@ -237,50 +311,125 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           </div>
           {loadingOutstanding ? (
             <div className="p-6 text-center text-sm text-gray-500">Memuat outstanding...</div>
-          ) : outstanding.length === 0 ? (
-            <div className="p-6 text-center text-sm text-gray-500">Supplier ini tidak punya Tagihan outstanding.</div>
+          ) : (rows.length === 0) ? (
+            <div className="p-6 text-center text-sm text-gray-500">Supplier ini tidak punya Tagihan / Tukar Faktur outstanding.</div>
           ) : (
-            <table className="w-full">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="w-8"></th>
-                  <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
-                  <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
-                  <th className="text-right py-2 text-[11px] font-semibold text-gray-500 uppercase">Sisa</th>
-                  <th className="text-right py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Bayar *</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, idx) => {
-                  const overpay = r.selected && r.amount > r.outstanding + 0.01;
-                  return (
-                    <tr key={r.tagihan_id} className={`border-b border-gray-100 ${r.selected ? 'bg-indigo-50/30' : ''}`}>
-                      <td className="py-2 pl-2">
-                        <input type="checkbox" checked={r.selected}
-                          onChange={e => updateRow(idx, { selected: e.target.checked })}
-                          className="w-4 h-4 accent-indigo-600" />
-                      </td>
-                      <td className="py-2">
-                        <div className="font-bold text-sm text-indigo-800">{r.pi_number}</div>
-                      </td>
-                      <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
-                      <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
-                      <td className="py-2">
-                        <input type="number" min="0" disabled={!r.selected} value={r.amount}
-                          onChange={e => updateRow(idx, { amount: Number(e.target.value) || 0 })}
-                          className={`w-full text-sm text-right py-1 px-2 rounded-lg border ${overpay ? 'border-red-400 bg-red-50' : 'border-gray-200'} disabled:bg-gray-50 disabled:text-gray-400`} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td colSpan={3} className="py-3 text-right text-xs font-semibold text-gray-500">SUBTOTAL ({selectedCount} Tagihan)</td>
-                  <td colSpan={2} className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(runningTotal)}</td>
-                </tr>
-              </tfoot>
-            </table>
+            <div className="space-y-5">
+              {/* --- Tagihan section --- */}
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 mb-2">
+                  Tagihan Outstanding <span className="text-gray-400 font-semibold">({outstandingTagihan.length})</span>
+                </div>
+                {outstandingTagihan.length === 0 ? (
+                  <div className="text-xs text-gray-400 italic py-2">Tidak ada Tagihan loose (semua sudah ter-bundle ke TF atau lunas).</div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200">
+                      <tr>
+                        <th className="w-8"></th>
+                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">Tagihan</th>
+                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
+                        <th className="text-right py-2 text-[11px] font-semibold text-gray-500 uppercase">Sisa</th>
+                        <th className="text-right py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Bayar *</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, idx) => {
+                        if (r.kind !== 'TAGIHAN') return null;
+                        const overpay = r.selected && r.amount > r.outstanding + 0.01;
+                        return (
+                          <tr key={`tag-${r.ref_id}`} className={`border-b border-gray-100 ${r.selected ? 'bg-indigo-50/30' : ''}`}>
+                            <td className="py-2 pl-2">
+                              <input type="checkbox" checked={r.selected}
+                                onChange={e => updateRow(idx, { selected: e.target.checked })}
+                                className="w-4 h-4 accent-indigo-600" />
+                            </td>
+                            <td className="py-2">
+                              <div className="font-bold text-sm text-indigo-800">{r.display_number}</div>
+                            </td>
+                            <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
+                            <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
+                            <td className="py-2">
+                              <input type="number" min="0" disabled={!r.selected} value={r.amount}
+                                onChange={e => updateRow(idx, { amount: Number(e.target.value) || 0 })}
+                                className={`w-full text-sm text-right py-1 px-2 rounded-lg border ${overpay ? 'border-red-400 bg-red-50' : 'border-gray-200'} disabled:bg-gray-50 disabled:text-gray-400`} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* --- Tukar Faktur section --- */}
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-600 mb-2 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-amber-700" />
+                  Tukar Faktur Outstanding <span className="text-gray-400 font-semibold">({outstandingTf.length})</span>
+                </div>
+                {outstandingTf.length === 0 ? (
+                  <div className="text-xs text-gray-400 italic py-2">Tidak ada Tukar Faktur outstanding untuk supplier ini.</div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200">
+                      <tr>
+                        <th className="w-8"></th>
+                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">Tukar Faktur</th>
+                        <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">JT</th>
+                        <th className="text-right py-2 text-[11px] font-semibold text-gray-500 uppercase">Sisa</th>
+                        <th className="text-right py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Bayar *</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, idx) => {
+                        if (r.kind !== 'TF') return null;
+                        const overpay = r.selected && r.amount > r.outstanding + 0.01;
+                        const highlighted = prefillTfId === r.ref_id;
+                        return (
+                          <tr
+                            key={`tf-${r.ref_id}`}
+                            ref={node => {
+                              if (node) tfRowRefs.current.set(r.ref_id, node);
+                              else tfRowRefs.current.delete(r.ref_id);
+                            }}
+                            className={`border-b border-gray-100 ${r.selected ? 'bg-amber-50/40' : ''} ${highlighted ? 'ring-2 ring-amber-300 rounded' : ''}`}
+                          >
+                            <td className="py-2 pl-2">
+                              <input type="checkbox" checked={r.selected}
+                                onChange={e => updateRow(idx, { selected: e.target.checked })}
+                                className="w-4 h-4 accent-amber-600" />
+                            </td>
+                            <td className="py-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-sm text-amber-800">{r.display_number}</span>
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                  {r.tagihan_count ?? 0} faktur
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
+                            <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
+                            <td className="py-2">
+                              <input type="number" min="0" disabled={!r.selected} value={r.amount}
+                                onChange={e => updateRow(idx, { amount: Number(e.target.value) || 0 })}
+                                className={`w-full text-sm text-right py-1 px-2 rounded-lg border ${overpay ? 'border-red-400 bg-red-50' : 'border-gray-200'} disabled:bg-gray-50 disabled:text-gray-400`} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2 border-t border-gray-200">
+                <div className="text-right">
+                  <div className="text-[11px] font-semibold text-gray-500">SUBTOTAL ({selectedCount} baris)</div>
+                  <div className="text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(runningTotal)}</div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -344,7 +493,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">4. Ringkasan</div>
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-2xl p-4">
-              <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} Tagihan)</div>
+              <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} baris)</div>
               <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(runningTotal)}</div>
             </div>
             <div className="bg-amber-50 rounded-2xl p-4">

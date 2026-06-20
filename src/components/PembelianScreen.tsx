@@ -25,6 +25,10 @@ import TagihanDetailPage from './pembelian/tagihan/TagihanDetailPage';
 import PembayaranList from './pembelian/pembayaran/PembayaranList';
 import PembayaranFormPage from './pembelian/pembayaran/PembayaranFormPage';
 import PembayaranDetailPage from './pembelian/pembayaran/PembayaranDetailPage';
+import TukarFakturList from './pembelian/tukar-faktur/TukarFakturList';
+import TukarFakturFormPage from './pembelian/tukar-faktur/TukarFakturFormPage';
+import TukarFakturDetailPage from './pembelian/tukar-faktur/TukarFakturDetailPage';
+import { navigate } from '../lib/urlRoute';
 import type { DbPurchaseInvoice } from '../types';
 
 interface PembelianScreenProps {
@@ -44,6 +48,14 @@ interface PembelianScreenProps {
   onTagihanDetailConsumed?: () => void;
   initialPembayaranNumber?: string | null;
   onPembayaranDetailConsumed?: () => void;
+  // Phase 2b: Tukar Faktur deep links
+  /** `?tf=TF-...` opens TF detail; `?tf=new` opens TF create form. */
+  initialTfQuery?: string | null;
+  /** `?prefill_tagihan=<id>` pre-selects a Tagihan in the TF create form. */
+  initialTfPrefillTagihanId?: string | null;
+  onTfDetailConsumed?: () => void;
+  /** `?pembayaran=new&prefill_tf=<id>` opens Pembayaran create form with TF row pre-checked. */
+  initialPembayaranPrefillTfId?: string | null;
 }
 
 // 'orders' is the legacy PO tab — kept in the type union so existing
@@ -55,6 +67,7 @@ type Tab =
   | 'orders'
   | 'pesanan'
   | 'tagihan'
+  | 'tukar-faktur'
   | 'bnl'
   | 'pembayaran'
   | 'suppliers';
@@ -77,8 +90,11 @@ type ViewMode =
   | { kind: 'tagihan-edit'; pi: DbPurchaseInvoice }
   | { kind: 'tagihan-detail'; tghNumber: string }
   | { kind: 'pembayaran-list' }
-  | { kind: 'pembayaran-create'; prefillSupplierId?: string }
-  | { kind: 'pembayaran-detail'; pembayaranNumber: string };
+  | { kind: 'pembayaran-create'; prefillSupplierId?: string; prefillTfId?: string }
+  | { kind: 'pembayaran-detail'; pembayaranNumber: string }
+  | { kind: 'tukar-faktur-list' }
+  | { kind: 'tukar-faktur-create'; prefillTagihanId?: string }
+  | { kind: 'tukar-faktur-detail'; tfNumber: string };
 
 function formatRupiah(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
@@ -104,6 +120,8 @@ export default function PembelianScreen({
   initialPesananNumber, onPesananDetailConsumed,
   initialTagihanNumber, onTagihanDetailConsumed,
   initialPembayaranNumber, onPembayaranDetailConsumed,
+  initialTfQuery, initialTfPrefillTagihanId, onTfDetailConsumed,
+  initialPembayaranPrefillTfId,
 }: PembelianScreenProps) {
   const [tab, setTab] = useState<Tab>('beranda');
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
@@ -176,14 +194,38 @@ export default function PembelianScreen({
     }
   }, [initialTagihanNumber, onTagihanDetailConsumed]);
 
-  // Pembayaran deep-link (?pembayaran=PMB-...) — switch tab + open detail
+  // Pembayaran deep-link (?pembayaran=PMB-... | ?pembayaran=new) — switch tab + open detail OR create form
   useEffect(() => {
-    if (initialPembayaranNumber) {
-      setTab('pembayaran');
+    if (!initialPembayaranNumber) return;
+    setTab('pembayaran');
+    if (initialPembayaranNumber === 'new') {
+      // ?pembayaran=new (+ optional ?prefill_tf=<id>) → open create form
+      setViewMode({ kind: 'pembayaran-create', prefillTfId: initialPembayaranPrefillTfId ?? undefined });
+    } else {
       setViewMode({ kind: 'pembayaran-detail', pembayaranNumber: initialPembayaranNumber });
-      onPembayaranDetailConsumed?.();
     }
-  }, [initialPembayaranNumber, onPembayaranDetailConsumed]);
+    onPembayaranDetailConsumed?.();
+  }, [initialPembayaranNumber, initialPembayaranPrefillTfId, onPembayaranDetailConsumed]);
+
+  // Tukar Faktur deep-link (?tf=TF-... | ?tf=new[&prefill_tagihan=<id>]) — switch tab + open
+  useEffect(() => {
+    if (!initialTfQuery) return;
+    setTab('tukar-faktur');
+    if (initialTfQuery === 'new') {
+      setViewMode({ kind: 'tukar-faktur-create', prefillTagihanId: initialTfPrefillTagihanId ?? undefined });
+    } else {
+      setViewMode({ kind: 'tukar-faktur-detail', tfNumber: initialTfQuery });
+    }
+    onTfDetailConsumed?.();
+  }, [initialTfQuery, initialTfPrefillTagihanId, onTfDetailConsumed]);
+
+  // 1-time toast announcing tab re-arrangement (BNL → right of Pembayaran in Phase 2b).
+  // Guard via localStorage so it shows exactly once per browser profile.
+  useEffect(() => {
+    if (localStorage.getItem('pembelian_tab_reorder_v2b_shown') === 'true') return;
+    showToast('Tab Pembelian sudah re-arrange — BNL sekarang di kanan Pembayaran.', 'info');
+    localStorage.setItem('pembelian_tab_reorder_v2b_shown', 'true');
+  }, []);
 
   // Tab-sync: when the list tab regains focus (e.g., after the user took an action
   // in a detail tab), re-fetch so the list reflects the latest state.
@@ -384,7 +426,8 @@ export default function PembelianScreen({
               </div>
             )}
 
-            {/* Tabs — order: Beranda | Pesanan | Tagihan | BNL | Pembayaran | Supplier.
+            {/* Tabs — Phase 2b order: Beranda | Pesanan | Tagihan | Tukar Faktur | Pembayaran | BNL | Supplier.
+                BNL moved right of Pembayaran (pass-through alternate, not main stock flow).
                 Legacy 'orders' (Purchase Orders) preserved as a hidden tab for deep links. */}
             <div className="flex gap-1 border-b border-gray-200">
               <button
@@ -406,16 +449,22 @@ export default function PembelianScreen({
                 Tagihan
               </button>
               <button
-                onClick={() => { setTab('bnl'); setViewMode({ kind: 'bnl-list' }); }}
-                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'bnl' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => { setTab('tukar-faktur'); setViewMode({ kind: 'tukar-faktur-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'tukar-faktur' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Belanja Numpang Lewat
+                Tukar Faktur
               </button>
               <button
                 onClick={() => { setTab('pembayaran'); setViewMode({ kind: 'pembayaran-list' }); }}
                 className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'pembayaran' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Pembayaran
+              </button>
+              <button
+                onClick={() => { setTab('bnl'); setViewMode({ kind: 'bnl-list' }); }}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'bnl' ? 'text-violet-600 border-b-2 border-violet-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Belanja Numpang Lewat
               </button>
               <button
                 onClick={() => { setTab('suppliers'); setViewMode({ kind: 'list' }); }}
@@ -523,6 +572,7 @@ export default function PembelianScreen({
                 onCancel={() => setViewMode({ kind: 'pembayaran-list' })}
                 onSaved={(pmbNumber) => setViewMode({ kind: 'pembayaran-detail', pembayaranNumber: pmbNumber })}
                 prefillSupplierId={viewMode.prefillSupplierId}
+                prefillTfId={viewMode.prefillTfId}
               />
             )}
             {tab === 'pembayaran' && viewMode.kind === 'pembayaran-detail' && (
@@ -534,6 +584,34 @@ export default function PembelianScreen({
                   // future: navigate to Tagihan detail by id (need number lookup)
                   setTab('tagihan');
                   setViewMode({ kind: 'tagihan-list' });
+                }}
+              />
+            )}
+
+            {/* Tukar Faktur views (Phase 2b) */}
+            {tab === 'tukar-faktur' && viewMode.kind === 'tukar-faktur-list' && (
+              <TukarFakturList
+                showToast={showToast}
+                onCreate={() => setViewMode({ kind: 'tukar-faktur-create' })}
+                onOpenDetail={(tfNumber) => setViewMode({ kind: 'tukar-faktur-detail', tfNumber })}
+              />
+            )}
+            {tab === 'tukar-faktur' && viewMode.kind === 'tukar-faktur-create' && (
+              <TukarFakturFormPage
+                showToast={showToast}
+                onCancel={() => setViewMode({ kind: 'tukar-faktur-list' })}
+                onSaved={(tfNumber) => setViewMode({ kind: 'tukar-faktur-detail', tfNumber })}
+                prefillTagihanId={viewMode.prefillTagihanId}
+              />
+            )}
+            {tab === 'tukar-faktur' && viewMode.kind === 'tukar-faktur-detail' && (
+              <TukarFakturDetailPage
+                tfNumber={viewMode.tfNumber}
+                showToast={showToast}
+                onBack={() => setViewMode({ kind: 'tukar-faktur-list' })}
+                onBayar={(tfId) => {
+                  // Navigate via URL so back-button + cmd-click semantics stay consistent.
+                  navigate('pembelian', { pembayaran: 'new', prefill_tf: tfId });
                 }}
               />
             )}
