@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Pembelian Phase 2b — CHROME MCP BROWSER SMOKE PASS + 3 MORE HOTFIXES
+
+End-to-end browser smoke via Chrome DevTools MCP against live production caught **3 additional bugs** that backend-only smoke missed. All fixed inline + verified.
+
+### Hotfixes shipped (commit `ea8adae`)
+
+- **#3** (mig `_022`): `purchase_invoices.tukar_faktur_id` had no FK because column was created in Phase 2a `_003` before `tukar_faktur` table existed. PostgREST embedded-select `tagihans:purchase_invoices(...)` failed 400. Fix: `ADD CONSTRAINT FK ON DELETE SET NULL`.
+- **#4** (mig `_023`): Hotfix #3's FK broke `record_tukar_faktur` insert ordering (quick-add Tagihans inserted before parent TF → 23503). Fix: rewrote RPC to INSERT TF first with placeholder total=0, then quick-add Tagihans, then UPDATE TF total.
+- **#5** (mig `_024`): `tukar_faktur` had RLS enabled but no policies → all authenticated reads returned `[]`, frontend showed "tidak ditemukan". Backend smoke missed because MCP uses service_role. Fix: mirror Phase 2a pesanan — authenticated read + no_direct_write policies.
+
+### Browser smoke flow validated (12 steps)
+
+1. ✅ Beranda renders, GTA shown Rp 11.2M outstanding
+2. ✅ Tab order: `Beranda · Pesanan · Tagihan · Tukar Faktur · Pembayaran · BNL · Supplier` (Phase 2b reorder live)
+3. ✅ Click TF tab → list loads cleanly (post hotfix #3+#5)
+4. ✅ Buat Tukar Faktur → form renders 3 sections
+5. ✅ Pick supplier GTA → JT auto-fill `20 Jul 2026`, outstanding faktur TGH-003 appears
+6. ✅ Add TGH-003 to bundle → Ringkasan total Rp 11.2M
+7. ✅ Search non-existent `INV-CHROME-001` → "Tidak ada? Buat Tagihan baru" → modal opens → fill 2.5M → save → row with "Baru" badge, total Rp 13.7M
+8. ✅ Simpan → `TF-2026-06-003` created (post hotfix #4)
+9. ✅ Detail page renders: 3 header cards + Daftar Faktur with JT-override visible (07 Jul → 20 Jul strikethrough)
+10. ✅ Cetak Tanda Terima → PDF blob opens new tab (A5 thermal)
+11. ✅ Bayar TF → `?prefill_tf=...` URL routes → form prefilled, **TUKAR FAKTUR OUTSTANDING (1)** section shows TF-003 checked Rp 13.7M
+12. ✅ Submit TRANSFER `BCA-CHROME-SMOKE` → PMB-008 created → trigger fires → TF LUNAS → cascade soft-delete on cleanup
+
+### Frontend issue NOT caught (minor)
+
+After save, `TukarFakturFormPage.onSaved` doesn't trigger URL navigation to detail — URL stays `?screen=pembelian`. User manually navigated via address bar. Non-blocking (re-clicking row in list works). Follow-up: trace onSaved in PembelianScreen TF case.
+
+### Production state after smoke
+
+Clean. 0 active TFs. All smoke fixtures voided/cascade-deleted with audit trail. Original GTA Tagihan TGH-2026-06-003 restored to outstanding (Rp 11.2M, ready for real use).
+
+### Total Phase 2b hotfix count: **5**
+
+(2 backend via Supabase MCP smoke + 3 via Chrome MCP browser smoke). All applied to prod DB and committed.
+
 ## 2026-06-20 — Produk & Stok — `initial_stock` approval close-out RPCs SHIPPED to prod DB (frontend at 0% pending promote)
 
 Closes a long-standing dispatch gap in ApprovalInboxScreen: ProductForm has been writing `approval_requests` rows with `request_type='initial_stock'` since Phase 2 ship (2026-06-15), but Owner Setujui click ran verify_owner_pin to flip status='approved' then fell into the switch's `default: 'Tipe permintaan tidak dikenali'` branch. Products with `Stok Awal > 0` ended up with `stocks.initial_stock_approved=false` forever (invisible in Kasir search via `search_products_by_embedding`) until the 30-min approval TTL expired the row.
