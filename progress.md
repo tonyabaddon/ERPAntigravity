@@ -26,6 +26,30 @@ Closes the "no write-off flow" gap. Two-step Owner approval mirroring rakit_lock
 **Verification:** 205/205 vitest (baseline 195 + 10 new = 8 wrapper + 2 fetchPiutangRows), `npx tsc --noEmit` clean, `npm run build` clean (~2.6s). SQL smoke 11 scenarios via Supabase MCP (request 3, approve 5 incl. race-as-jsonb-return, revert 3) — all green with post-condition verification.
 
 **Deferred (per spec non-goals):** Bad Debt YTD KPI card; auto-write-off policy; bulk write-off; WA notification to customer.
+
+---
+
+## 2026-06-20 — Pembelian Phase 2b — Integration layer (Tasks 13-16) COMPLETE on `feat/pembelian-phase2b`
+
+Tasks 6-12 (frontend components) already on branch. This session wired them into the existing Pembelian shell + URL router + TagihanDetailPage + PembayaranFormPage.
+
+**Commits on `feat/pembelian-phase2b`:**
+- `204a92b` Task 13 (`src/components/PembelianScreen.tsx` + `src/components/pembelian/pembayaran/PembayaranFormPage.tsx`): new `'tukar-faktur'` sub-tab inserted between Tagihan and Pembayaran; BNL moved right of Pembayaran (pass-through alt, not main stock flow). ViewMode union extended with `tukar-faktur-list` / `tukar-faktur-create` (with `prefillTagihanId?`) / `tukar-faktur-detail` (with `tfNumber`), plus `pembayaran-create.prefillTfId?`. Deep-link useEffects for `?tf=` (`new` | TF-number) and `?pembayaran=new` (special-cases `'new'` → create form, otherwise number-by-detail). `TukarFakturDetailPage.onBayar(tfId)` callback navigates via `urlRoute.navigate('pembelian', { pembayaran: 'new', prefill_tf: tfId })`. 1-time `localStorage`-guarded toast announces tab re-arrangement. PembayaranFormPage Props gains optional `prefillTfId` (type-only; consumed in Task 16).
+- `07512da` Task 14 (`src/App.tsx`): extract new URL params `?tf=`, `?prefill_tagihan=`, `?prefill_tf=` and plumb them through to both PembelianScreen mounts (main + chromeless `?po=` detail). Mirrors Phase 2a `?pesanan=` / `?tagihan=` / `?pembayaran=` pattern. cmd-click / middle-click compatibility preserved via existing `urlRoute.buildHref` (no special handling needed). Did NOT extend `isDetailTab` for `?tf=` — chromeless shell stays `?po=` only (legacy); TF follows Phase 2a (normal chrome).
+- `5942dbc` Task 15 (`src/types.ts` + `src/components/pembelian/tagihan/TagihanDetailPage.tsx`): `DbPurchaseInvoice` TS type gains `tukar_faktur_id` / `pesanan_id` / `paid_amount` / `is_tf_quick_add` (DB columns existed since Phase 2a migration `20260620000003`; types lagged). TagihanDetailPage: when `status==='BELUM_LUNAS' && !tukar_faktur_id && !voided`, render amber "Tambah ke Tukar Faktur" button navigating to `?tf=new&prefill_tagihan=<id>`. When `tukar_faktur_id` set, fetch TF number via separate query (no FK constraint on `purchase_invoices.tukar_faktur_id` so Supabase relationship embed wouldn't infer it) and render "Bagian dari TF-XXX" badge linking to TF detail.
+- `2382fdb` Task 16 (`src/lib/pembayaranService.ts` + `src/components/pembelian/pembayaran/PembayaranFormPage.tsx`): `pembayaranService.suggestOutstanding` return type changed from `SuggestOutstandingTagihanRow[]` to `SuggestOutstandingResult` (`{ tagihan, tukar_faktur }`) — only consumer was PembayaranFormPage. PembayaranFormPage `SelectedRow` interface refactored to `{ kind: 'TAGIHAN' | 'TF', ref_id, display_number, outstanding, payment_due_at, selected, amount, tagihan_count? }`. Renders two sections inside "Yang Dibayar" card: "Tagihan Outstanding" + "Tukar Faktur Outstanding" (with `tagihan_count` pill). Submit payload serializes each selected row to `{ tagihan_id, amount }` OR `{ tukar_faktur_id, amount }` (XOR enforced by DB CHECK). `prefillTfId` flow: fetch TF supplier_id, auto-select supplier, then once `rows` settle apply pre-check + `scrollIntoView` exactly once (tracked via `useRef` flag).
+
+**Verification:** `npx tsc --noEmit` clean after every task. All 4 commits land on `feat/pembelian-phase2b`, none on main.
+
+**Deviations from plan:**
+- Task 13 vs 14 split: PembelianScreen optional props go on 13, App.tsx wiring goes on 14. Optional props mean 13 compiles standalone — neither commit transiently broke tsc.
+- Task 15: chose option (b) — separate fetch for TF number — over option (a) — embedded JOIN — because `purchase_invoices.tukar_faktur_id` has no FK constraint (only index), so Supabase's `tukar_faktur:tukar_faktur_id(tf_number)` syntax wouldn't infer the relationship. Pattern mirrors existing TF service `fetchByNumber` which also uses separate query for tagihans.
+- Task 16 spec said "service-layer return type was already updated by Task 6 (yes — `SuggestOutstandingResult` wrapper)" but the actual `pembayaranService.suggestOutstanding` still stripped to `.tagihan ?? []` — the wrapper type existed in `types.ts` since Task 6 but the service method wasn't switched over. Switched it here in Task 16 (only consumer is the form, no other call sites).
+
+**Phase 2b status:** Tasks 1-16 done. Pending: Tasks 17-18 (integration tests + production smoke).
+
+---
+
 ## 2026-06-20 — Pembelian Phase 2b — Frontend layer (Tasks 6-12) COMPLETE on `feat/pembelian-phase2b`
 
 Backend (Tasks 1-5: schema + trigger + 4 RPCs + extended `pembayaran_suggest_outstanding`) already applied to production Supabase last session. This session built the frontend layer in the same worktree (`.claude/worktrees/pembelian-phase2b`).
