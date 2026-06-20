@@ -1,5 +1,57 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Pembelian Phase 2b — BACKEND E2E SMOKE PASS + 2 HOTFIXES + DEPLOYED
+
+Full E2E backend smoke executed against live production Supabase. Caught + fixed 2 critical bugs before any user-facing usage. UI bundle verified in latest prod revision. Chrome MCP unavailable in this session (server connected but tool schemas didn't surface); browser smoke deferred to user-driven verification later.
+
+**5 RPCs + table + flag + relaxed CHECK + trigger all live in prod:**
+- `tukar_faktur` table (16 columns), `purchase_invoices.is_tf_quick_add` flag, relaxed `pi_type_linkage_check`
+- `generate_tf_number` → returns `TF-2026-06-NNN` monotonic
+- `record_tukar_faktur` (atomic with quick-add cascade INSERT)
+- `update_tukar_faktur` / `add_tagihan_to_tf` / `remove_tagihan_from_tf` (all guarded by paid_amount=0)
+- `delete_tukar_faktur` (cascade soft-delete tf_quick_add Tagihans, unlink normals)
+- `pembayaran_suggest_outstanding` extended → returns `{tagihan, tukar_faktur}` arrays
+- 2 triggers: `_tf_recompute_after_pembayaran_items` (record path) + `_tf_recompute_after_pembayaran_void` (void path)
+
+**2 production hotfixes shipped during smoke:**
+
+### Hotfix #1 — `payment_method` NOT NULL violation (`20260627000020`, commit `dbdd63d`)
+- Symptom: `record_tukar_faktur` quick-add INSERT failed with `ERROR 23502: null value in column "payment_method"`.
+- Root cause: `purchase_invoices.payment_method` is NOT NULL; quick-add INSERT omitted it.
+- Fix: include `payment_method` in INSERT, default `'TRANSFER'` matching all 32 existing BELUM_LUNAS rows; accept `quick_item.payment_method` override.
+
+### Hotfix #2 — `void_pembayaran` not propagating to `tf.paid_amount` (`20260627000021`, commit `2374db5`)
+- Symptom: voided 2 payments on TF-001 but `tf.paid_amount` stayed at 13.7M (LUNAS).
+- Root cause: trigger `_tf_recompute_after_pembayaran_items` only fires on `pembayaran_items` I/U/D, never on parent `pembayaran` row updates. `void_pembayaran` only touches the parent row. Phase 2a's `_recompute_tagihan_status` was called from `void_pembayaran` for Tagihan items, but no equivalent existed for TF items.
+- Fix: new trigger `_tf_recompute_after_pembayaran_void` on `pembayaran` UPDATE that recomputes affected TFs when `voided_at` or `status` changes. Backfilled stale data on apply.
+
+**E2E smoke loops (2 cycles, all pass):**
+
+| Step | Loop 1 | Loop 2 |
+|---|---|---|
+| Create TF | TF-001 with 1 existing Tagihan (GTA TGH-003 Rp 11.2M) + 1 quick-add (INV-SMOKE-P2B-001 Rp 2.5M) → total 13.7M ✓ | TF-002 with only quick-add (INV-LOOP2-FOREIGN Rp 1M) ✓ |
+| `pembayaran_suggest_outstanding` | Returns `{tagihan:[], tukar_faktur:[TF-001]}` — bundled excluded ✓ | — |
+| `add_tagihan_to_tf` (Loop 2) | — | Added TGH-003 → total 12.2M ✓ |
+| `remove_tagihan_from_tf` (Loop 2) | — | TGH-003 unlinked but `voided_at=NULL` (back to outstanding) ✓ |
+| `record_pembayaran` partial | 5M on TF-001 → trigger fires, status DIBAYAR_SEBAGIAN ✓ | 300k on TF-002 → trigger fires ✓ |
+| `cannot_delete_paid_tf` guard | — | Tried delete on partially-paid TF-002 → raises `cannot_delete_paid_tf` ✓ |
+| `record_pembayaran` final | 8.7M → status LUNAS ✓ | — |
+| Kasir auto-entry | 2 entries: PMB-005 (5M), PMB-006 (8.7M) ✓ | 1 entry: PMB-007 (300k) ✓ |
+| `void_pembayaran` propagation | After hotfix #2: voided 2 payments → `tf.paid_amount = 0` ✓ | After hotfix #2: voided payment → `tf.paid_amount = 0` ✓ |
+| `delete_tukar_faktur` cascade | TF-001 soft-deleted, quick-add PI-003 cascaded with reason `cascade from TF deletion`, TGH-003 unlinked but preserved ✓ | TF-002 soft-deleted same pattern ✓ |
+| Restoration state | TGH-003 (`tukar_faktur_id=NULL`, `voided_at=NULL`) → back in outstanding list ✓ | — |
+
+**Production state after smoke:** active TFs=0, voided TFs=2 (smoke fixtures, soft-delete preserves audit), original GTA Tagihan TGH-2026-06-003 restored to clean outstanding state — production data unaffected.
+
+**Cloud Run state:** Latest revision `00129-hof` (commit `2374db5`, includes both hotfixes) promoted to 100% traffic. All 8 Phase 2b identifiers verified in bundle (`Tukar Faktur`, `tf_number`, `is_tf_quick_app`, `TANDA TERIMA`, `Tambah ke Tukar Faktur`, `fetchOutstandingTagihansForTf`, `prefill_tf`, `Buat Tukar Faktur`). Note: hotfixes were DB-only (no React changes) so frontend code identical to `00122-yim`.
+
+**Rollback path:** `00122-yim` (PR #38 merge commit `43fb7c8`) and `00121-fuj` (pre-Phase-2b) both warm at 0%.
+
+**Open follow-ups:**
+- User-driven UI smoke via Chrome browser (manual): Pembelian → Tukar Faktur tab → Buat Baru → cari faktur → tambah → Cetak Tanda Terima → Bayar TF. Bundle verified, RPCs verified, no expected runtime issues.
+- Backend Cloud Build trigger (`rmgpgab-…`) has been failing pre-Phase 2b (Piutang Phase 1C task 2 also failed) — independent issue. Frontend builds (the user-facing pipeline) all SUCCESS.
+- Phase 2c brainstorm: bulk-select Tagihan list + full AP Dashboard (aging chart + cash-flow forecast) per spec §13.
+
 ## 2026-06-20 — Piutang Phase 1C task 2 — PRODUCTION VERIFIED via Chrome DevTools MCP
 
 End-to-end browser verification of PR #37 (commit `6f53eb7`, write-off RPC + UI) against live prod. All 6 spec-plan test-plan cases pass; race scenario empirically proves the JSONB contract correction made during T3 implementation (PL/pgSQL subtxn rollback semantics) was necessary.
