@@ -1,5 +1,12 @@
 import { supabase } from './supabaseClient';
-import type { DbPembayaran, RecordPembayaranPayload, SuggestOutstandingTagihanRow, ApDashboardLite } from '../types';
+import type {
+  DbPembayaran,
+  RecordPembayaranPayload,
+  ApDashboardLite,
+  SuggestOutstandingResult,
+  SuggestOutstandingTagihanRow,
+  SuggestOutstandingTukarFakturRow,
+} from '../types';
 
 export const pembayaranService = {
   async fetchAll(filter: { supplierId?: string; status?: string } = {}): Promise<DbPembayaran[]> {
@@ -33,11 +40,19 @@ export const pembayaranService = {
     const { error } = await supabase.rpc('void_pembayaran', { p_pembayaran_id: id, p_reason: reason });
     if (error) throw error;
   },
-  async suggestOutstanding(supplierId: string): Promise<SuggestOutstandingTagihanRow[]> {
+  /**
+   * Phase 2b: RPC returns both Tagihan (outstanding, not bundled into TF) and
+   * TukarFaktur (outstanding) lists. Callers can mix-check either kind.
+   */
+  async suggestOutstanding(supplierId: string): Promise<SuggestOutstandingResult> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase.rpc('pembayaran_suggest_outstanding', { p_supplier_id: supplierId });
     if (error) throw error;
-    return (data as any)?.tagihan ?? [];
+    const raw = (data as any) ?? {};
+    return {
+      tagihan: (raw.tagihan ?? []) as SuggestOutstandingTagihanRow[],
+      tukar_faktur: (raw.tukar_faktur ?? []) as SuggestOutstandingTukarFakturRow[],
+    };
   },
   async fetchDashboardLite(): Promise<ApDashboardLite> {
     if (!supabase) throw new Error('Supabase not configured');
