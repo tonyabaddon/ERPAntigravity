@@ -153,17 +153,21 @@ export async function markTempoInvoicePaid(orderId: string, proofUrl: string | n
 }
 
 // ── Query: outstanding tempo orders + their customers ──
-export async function fetchPiutangRows(): Promise<PiutangRow[]> {
+export async function fetchPiutangRows(
+  opts?: { includeWrittenOff?: boolean },
+): Promise<PiutangRow[]> {
   if (!supabase) return [];
-  // Fetch open tempo orders. Customer joined via a 2nd query keyed by id (since
-  // orders.customer_id is text, not always uuid-clean; we fetch all referenced
-  // customers in a single IN query).
-  const { data: orders, error: oErr } = await supabase
+  // Fetch tempo orders. Default to open-only (INVOICE_TEMPO). When opts.includeWrittenOff
+  // is set, also pull INVOICE_WRITTEN_OFF so the Tulis-off filter pill in
+  // PiutangScreen can show history + offer the Owner-only Batal Tulis-off action.
+  const baseSelect = supabase
     .from('orders')
     .select('*')
-    .eq('payment_type', 'TEMPO')
-    .eq('status', 'INVOICE_TEMPO')
-    .order('due_date', { ascending: true });
+    .eq('payment_type', 'TEMPO');
+  const filtered = opts?.includeWrittenOff
+    ? baseSelect.in('status', ['INVOICE_TEMPO', 'INVOICE_WRITTEN_OFF'])
+    : baseSelect.eq('status', 'INVOICE_TEMPO');
+  const { data: orders, error: oErr } = await filtered.order('due_date', { ascending: true });
   if (oErr) throw oErr;
 
   const orderRows = (orders ?? []) as DbOrder[];

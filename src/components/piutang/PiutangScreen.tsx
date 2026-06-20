@@ -21,6 +21,8 @@ import {
   TEMPO_PROOF_ACCEPT,
 } from '../../lib/piutangService';
 import type { PiutangRow, PiutangTier } from '../../types';
+import WriteOffRequestModal from './WriteOffRequestModal';
+import RevertWriteOffConfirmModal from './RevertWriteOffConfirmModal';
 
 const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = (n: number) =>
@@ -32,33 +34,43 @@ const fmtDate = (s?: string | null) =>
 interface Props {
   currentUserId: string;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  isOwner?: boolean;
 }
 
-type FilterKey = 'all' | PiutangTier['key'];
+type FilterKey = 'all' | PiutangTier['key'] | 'written_off';
 
-export default function PiutangScreen({ currentUserId, showToast }: Props) {
+export default function PiutangScreen({ currentUserId, showToast, isOwner = false }: Props) {
   const [rows, setRows] = useState<PiutangRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [payTarget, setPayTarget] = useState<PiutangRow | null>(null);
+  const [writeOffTarget, setWriteOffTarget] = useState<PiutangRow | null>(null);
+  const [revertTarget, setRevertTarget] = useState<PiutangRow | null>(null);
 
   async function reload() {
     setLoading(true);
     try {
-      setRows(await fetchPiutangRows());
+      setRows(await fetchPiutangRows({ includeWrittenOff: filter === 'written_off' }));
     } catch (e: any) {
       showToast(e?.message ?? 'Gagal load piutang', 'warning');
     } finally { setLoading(false); }
   }
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filter]);
 
   const kpi = useMemo(() => computeKpi(rows), [rows]);
   const aging = useMemo(() => computeAging(rows), [rows]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter(r => {
-      if (filter !== 'all' && r.tier !== filter) return false;
+      if (filter === 'all') {
+        if (r.order.status !== 'INVOICE_TEMPO') return false;
+      } else if (filter === 'written_off') {
+        if (r.order.status !== 'INVOICE_WRITTEN_OFF') return false;
+      } else {
+        if (r.order.status !== 'INVOICE_TEMPO') return false;
+        if (r.tier !== filter) return false;
+      }
       if (q) {
         const name = (r.customer?.name ?? r.order.customer_name ?? '').toLowerCase();
         const phone = (r.customer?.wa_number ?? r.order.customer_phone ?? '').toLowerCase();
@@ -117,15 +129,16 @@ export default function PiutangScreen({ currentUserId, showToast }: Props) {
       {/* Filter pills + search */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-2">
-          {(['all', 'overdue', 'today', 'h3', 'future'] as FilterKey[]).map(k => {
+          {(['all', 'overdue', 'today', 'h3', 'future', 'written_off'] as FilterKey[]).map(k => {
             const active = filter === k;
-            const tier = k === 'all' ? null : PIUTANG_TIERS[k];
-            const label = k === 'all' ? 'Semua' : tier!.label;
-            const count = k === 'all' ? rows.length :
+            const tier = (k === 'all' || k === 'written_off') ? null : PIUTANG_TIERS[k];
+            const label = k === 'all' ? 'Semua' : k === 'written_off' ? 'Tulis-off' : tier!.label;
+            const count = k === 'all' ? rows.filter(r => r.order.status === 'INVOICE_TEMPO').length :
               k === 'overdue' ? kpi.overdueCount :
               k === 'today' ? kpi.todayCount :
               k === 'h3' ? kpi.h3Count :
-              rows.filter(r => r.tier === 'future').length;
+              k === 'written_off' ? rows.filter(r => r.order.status === 'INVOICE_WRITTEN_OFF').length :
+              rows.filter(r => r.tier === 'future' && r.order.status === 'INVOICE_TEMPO').length;
             return (
               <button key={k} onClick={() => setFilter(k)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold ${active ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
@@ -178,6 +191,11 @@ export default function PiutangScreen({ currentUserId, showToast }: Props) {
                     <td className="px-5 py-3">
                       <div className="font-mono text-[11px] text-gray-700">{r.order.id.slice(0, 8)}</div>
                       <div className="text-[11px] text-gray-500">Dibuat {fmtDate(r.order.created_at)}</div>
+                      {r.order.status === 'INVOICE_WRITTEN_OFF' && (
+                        <div className="text-[11px] text-red-700 italic mt-0.5" title={r.order.write_off_reason ?? undefined}>
+                          Tulis-off {r.order.written_off_at ? fmtDate(r.order.written_off_at) : ''} · {r.order.write_off_reason ?? '—'}
+                        </div>
+                      )}
                     </td>
                     <td className="px-5 py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(r.order.total)}</td>
                     <td className="px-5 py-3 text-right">
@@ -191,17 +209,32 @@ export default function PiutangScreen({ currentUserId, showToast }: Props) {
                     </td>
                     <td className="px-5 py-3 text-right">
                       <div className="inline-flex gap-1">
-                        <button
-                          disabled
-                          title="Phase 1C — WA reminder otomatis"
-                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
-                          <MessageSquare className="w-3 h-3" /> WA
-                        </button>
-                        <button
-                          onClick={() => setPayTarget(r)}
-                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
-                          ✓ Catat Bayar
-                        </button>
+                        {r.order.status === 'INVOICE_TEMPO' ? (
+                          <>
+                            <button
+                              disabled
+                              title="Phase 1C — WA reminder otomatis"
+                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
+                              <MessageSquare className="w-3 h-3" /> WA
+                            </button>
+                            <button
+                              onClick={() => setPayTarget(r)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                              ✓ Catat Bayar
+                            </button>
+                            <button
+                              onClick={() => setWriteOffTarget(r)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
+                              Tulis-off
+                            </button>
+                          </>
+                        ) : r.order.status === 'INVOICE_WRITTEN_OFF' && isOwner ? (
+                          <button
+                            onClick={() => setRevertTarget(r)}
+                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                            Batal Tulis-off
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -219,6 +252,22 @@ export default function PiutangScreen({ currentUserId, showToast }: Props) {
           onPaid={() => { setPayTarget(null); reload(); }}
           showToast={showToast}
           currentUserId={currentUserId}
+        />
+      )}
+      {writeOffTarget && (
+        <WriteOffRequestModal
+          row={writeOffTarget}
+          onClose={() => setWriteOffTarget(null)}
+          onSubmitted={() => { setWriteOffTarget(null); reload(); }}
+          showToast={showToast}
+        />
+      )}
+      {revertTarget && (
+        <RevertWriteOffConfirmModal
+          row={revertTarget}
+          onClose={() => setRevertTarget(null)}
+          onReverted={() => { setRevertTarget(null); reload(); }}
+          showToast={showToast}
         />
       )}
     </div>

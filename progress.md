@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Piutang Phase 1C task 2: write-off RPC + UI
+
+Closes the "no write-off flow" gap. Two-step Owner approval mirroring rakit_lock workflow: admin clicks Tulis-off → modal collects required reason → `request_tempo_write_off` creates pending approval + satellite → Owner opens Persetujuan inbox → approves or rejects via the new TempoWriteOffApprovalRequestRow → on approve, order flips to `INVOICE_WRITTEN_OFF` (schema columns already existed per migration `20260615000010`); Owner can revert in one click from a new `Tulis-off` filter pill in PiutangScreen.
+
+**Migrations applied to live Supabase:**
+- `20260626000020` — `'piutang_write_off'` added to `approval_request_type` enum; satellite `piutang_write_off_requests(approval_id PK FK, order_id FK, reason TEXT CHECK len>=10, created_at)`. Partial unique index attempted; Postgres rejected subquery-in-predicate (`SQLSTATE 0A000`), fell back to BEFORE INSERT trigger raising `WRITE_OFF_ALREADY_PENDING` per plan.
+- `20260626000021` — `request_tempo_write_off(p_order_id, p_reason) → BIGINT`. Validates order is `INVOICE_TEMPO`, reason ≥ 10 chars trimmed. Far-future `expires_at='9999-12-31'` because founder chose no auto-expiry and the column is NOT NULL.
+- `20260626000022` — `approve_tempo_write_off(p_approval_id) → JSONB` + `reject_tempo_write_off(p_approval_id, p_reason) → VOID` + `_piutang_write_off_resolve_owner()` helper. **Contract correction from original spec:** approve returns a discriminated JSONB result (`{status:'approved'} | {status:'auto_rejected_race', new_order_status}`) instead of `RETURNS VOID + RAISE` on the race branch — PL/pgSQL subtxn semantics roll back in-function writes when the function raises, which would have discarded the atomic auto-reject. Empirically proven via probe.
+- `20260626000023` — `revert_tempo_write_off(p_order_id) → VOID`. Captures previous `write_off_*` values in audit payload before nulling them.
+
+**Security:** All RPCs `SECURITY DEFINER` + `SET search_path = public` + `auth.uid()` binding. Owner identity mapped via `lower(email)` → `admin_users WHERE role='Owner' AND status='Aktif'` (PR #34 lesson: admin_users.id != auth.uid for some Owners; status='Aktif' blocks deactivated; `OWNER_AMBIGUOUS` guard for duplicate emails).
+
+**Frontend:**
+- `src/lib/piutang/writeOff.ts` (NEW) — 4 thin RPC wrappers + `ApproveTempoWriteOffResult` discriminated union type. Sibling-module pattern for `vi.mock` interception.
+- `src/lib/piutangService.ts` — `fetchPiutangRows` accepts `{ includeWrittenOff?: boolean }`. Default behaviour unchanged.
+- `src/components/piutang/WriteOffRequestModal.tsx` (NEW) — reason input ≥ 10 chars, live counter, error→toast mapping.
+- `src/components/piutang/RevertWriteOffConfirmModal.tsx` (NEW) — destructive red styling, shows original write_off_reason for forensics.
+- `src/components/piutang/PiutangScreen.tsx` — 6th `Tulis-off` filter pill, per-row Tulis-off button (TEMPO rows) + Batal Tulis-off button (WRITTEN_OFF rows, Owner only), inline written-off date+reason on Tulis-off pill. New `isOwner` prop.
+- `src/App.tsx` — passes `isOwner` to PiutangScreen using the same permission-OR pattern as ApprovalInboxScreen.
+- `src/components/approval/TempoWriteOffApprovalRequestRow.tsx` (NEW) — fetches satellite + order summary, amber Tulis-off badge, inline reject-reason textarea.
+- `src/components/approval/ApprovalInboxScreen.tsx` — Tulis-off filter pill, handleApprove dispatches on `result.status` (race shows info toast, approved shows success), handleReject calls `rejectTempoWriteOff`, new row render arm.
+- `src/types.ts` — `ApprovalRequestType` union extended; `DbPiutangWriteOffRequest` row type added; `ApprovalRequestRow.tsx` TYPE_LABEL/TYPE_ICON exhaustive Records gained 'Hapus Piutang' + 🗑️ rose entries as fallbacks (live render routes to TempoWriteOffApprovalRequestRow).
+
+**Verification:** 205/205 vitest (baseline 195 + 10 new = 8 wrapper + 2 fetchPiutangRows), `npx tsc --noEmit` clean, `npm run build` clean (~2.6s). SQL smoke 11 scenarios via Supabase MCP (request 3, approve 5 incl. race-as-jsonb-return, revert 3) — all green with post-condition verification.
+
+**Deferred (per spec non-goals):** Bad Debt YTD KPI card; auto-write-off policy; bulk write-off; WA notification to customer.
+
+---
+
 ## 2026-06-19 — Piutang Phase 1C task 1: foto upload bukti pembayaran (re-cherry-pick of stale PR #15)
 
 Original commit (`10331c3`, 2026-06-16) sat behind 32 commits of main on PR #15. A direct merge would have catastrophically deleted ~29k lines of more-recent work. Resolved by cherry-picking the small +99/-15 src change onto fresh branch off `origin/main`; src files (`piutangService.ts`, `piutang/PiutangScreen.tsx`) had not been touched in main during the 32 commits so they applied cleanly. Stale PR #15 closed; this re-cherry-pick is the replacement PR.
@@ -7683,3 +7712,23 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Tests:** `npx vitest run src/lib` — 25 files, 174 passed (no regressions; no new tests added at this milestone — UI wiring covered by manual smoke in Milestone G)
 - **Build:** `npm run build` clean (2770 modules; same chunk-size warnings as baseline)
 - **Git status:** clean; 2 commits land on `feat/owner-biaya-final-inbox-spec`. Not pushed to remote.
+
+## 2026-06-19 — Piutang Write-Off — T1 DONE (migration 020)
+
+- **Branch:** `feat/piutang-write-off` (worktree `.claude/worktrees/piutang-write-off`)
+- **Plan:** `docs/superpowers/plans/2026-06-19-piutang-write-off-implementation.md` Task T1
+- **File created:** `supabase/migrations/20260626000020_extend_approval_for_piutang_write_off.sql`
+  - Adds `'piutang_write_off'` value to `public.approval_request_type` enum (idempotent via IF NOT EXISTS).
+  - Creates `public.piutang_write_off_requests` satellite: `approval_id BIGINT PK FK→approval_requests(ON DELETE CASCADE)`, `order_id UUID NOT NULL FK→orders`, `reason TEXT NOT NULL CHECK(length(btrim(reason)) >= 10)`, `created_at TIMESTAMPTZ DEFAULT now()`.
+  - Index `idx_piutang_write_off_requests_order` on `order_id` for lookup.
+  - `GRANT SELECT, INSERT ... TO authenticated`.
+- **Fallback triggered:** Planned partial unique index used a subquery in its WHERE predicate, which Postgres rejects (`SQLSTATE 0A000: cannot use subquery in index predicate`). Per plan, replaced with `BEFORE INSERT` trigger `trg_piutang_write_off_guard_pending` calling `public.piutang_write_off_guard_pending()` which raises `WRITE_OFF_ALREADY_PENDING` (SQLSTATE 23505 unique_violation) when another satellite row for the same `order_id` is still linked to a `pending` approval. Comment in migration documents the fallback rationale.
+- **Applied via:** Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` → `{"success": true}`.
+- **Smoke checks:**
+  - Enum present: `SELECT 'piutang_write_off'::public.approval_request_type` → `ok=piutang_write_off`.
+  - Table present: `SELECT to_regclass('public.piutang_write_off_requests')` → `piutang_write_off_requests`.
+  - CHECK fires on short reason: insert of `reason='short'` → SQLSTATE 23514 (`piutang_write_off_requests_reason_check`).
+  - Trigger fires on duplicate pending: second insert for same `order_id` with a different pending approval → SQLSTATE 23505 message `WRITE_OFF_ALREADY_PENDING`.
+- **Residue from smoke tests:** three `approval_requests` rows (ids 731/734/735) live in the table — `approval_requests` is append-only by design (`deny_approval_mutation` guard), so they cannot be deleted. They have no satellite rows attached, will expire in ~24h via `expires_at`, and do not affect the trigger guard.
+- **Commit:** `e86a0bb` — "feat(piutang): migration 020 — extend approval_request_type + write-off satellite table"
+- **Next:** T2 — migration 021 `request_tempo_write_off` RPC (depends on the schema landed here).
