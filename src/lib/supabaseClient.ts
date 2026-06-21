@@ -2362,3 +2362,7 @@ export const reconciliationService = {
     if (error) throw error;
   },
 };
+
+// ─── Pengaturan MSME Configurability (Phase 1) Services ────────────────
+// Implemented in ./pengaturan/pengaturanServices.ts
+// (Not re-exported here to avoid circular dep: supabaseClient → pengaturanServices → supabaseClient)
