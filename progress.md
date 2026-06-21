@@ -8160,3 +8160,49 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Commit:** `0ad9c19` — "feat(catat-penjualan): migration 002 — record_kasir_sale opt-in pre-order"
 - **Note:** 20 params in existing RPC (task description said 22 — actual file has 20). Migration correctly extends the existing signature.
 - **Next:** T3 — migration 003 `create_tempo_invoice` payload key.
+- **Next:** T3 — migration 003 `create_tempo_invoice` payload key.
+
+## 2026-06-21 — Akuntansi Phase 0a — Task 12: `trial_balance` + `general_ledger` views DONE
+
+- **Branch:** `worktree-akuntansi-phase0a` (worktree `.claude/worktrees/akuntansi-phase0a`)
+- **Task 12 — Views Layer**
+- **File created:** `supabase/migrations/20260715000011_views.sql`
+  - Creates `public.trial_balance` view: account-level aggregation (account_id, account_code, account_name, account_type, account_subtype, normal_balance, tenant_id, total_debit, total_credit, balance). Joins chart_of_accounts LEFT to journal_entry_lines + journal_entries (is_posted filter). Groups by account; balances calculated per normal_balance (DEBIT: Σ(debit) - Σ(credit); CREDIT: Σ(credit) - Σ(debit)).
+  - Creates `public.general_ledger` view: per-line transaction detail (account_id, account_code, account_name, normal_balance, entry_id, entry_number, entry_date, posted_at, entry_description, line_description, side, amount, debit, credit, counterparty_type, counterparty_id, status, reconciled_at, source_type, source_ref_table, source_ref_id, running_balance, tenant_id). Joins journal_entry_lines + journal_entries + chart_of_accounts (is_posted filter). running_balance computed via window function PARTITION BY account_id ORDER BY entry_date, posted_at, line_number; balance convention respected per normal_balance (DEBIT: Σ(debit) - Σ(credit); CREDIT: Σ(credit) - Σ(debit)).
+  - GRANT SELECT on both views to authenticated role.
+- **File created:** `tests/integration/akuntansi-phase0a/views.test.ts`
+  - Test 1: Posts 2 sample balanced entries via `_post_journal_entry` RPC (entries: [1-1110 debit 50000 / 4-1110 credit 50000], [5-2100 debit 30000 / 4-1110 credit 30000]); queries trial_balance system-wide; verifies Σ(total_debit) == Σ(total_credit).
+  - Test 2: Queries general_ledger for account 1-1110; verifies data length > 0; checks last row running_balance >= 50000 (confirms window function accumulation). 
+  - Test 3: Cleanup deletes test entry rows.
+- **Applied via:** Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` (name: `views`) → `{"success": true}`.
+- **Verification via MCP execute_sql:**
+  - trial_balance SUM check: `SELECT SUM(total_debit), SUM(total_credit) FROM trial_balance;` → `480001.00 | 480001.00` ✓
+  - general_ledger sample (1-1110): running_balance accumulates correctly per entry order (100000 → 150000 → 200000 → ...) ✓
+- **Tests:** `npm run test` — 240 passed (including 3 new tests); no regressions.
+- **TypeScript:** `npx tsc --noEmit` clean ✓
+- **Commit:** `8ee240b` — "feat(akuntansi): Phase 0a Task 12 — trial_balance + general_ledger views"
+- **Report:** `.superpowers/sdd/task-12-report.md` documents MCP query outputs + verification results.
+
+## 2026-06-21 — Akuntansi Phase 0a — Task 14: `set_opening_balance` RPC DONE
+
+- **Branch:** `worktree-akuntansi-phase0a` (worktree `.claude/worktrees/akuntansi-phase0a`)
+- **Task 14 — Opening Balance RPC**
+- **File created:** `supabase/migrations/20260715000013_opening_balance_rpc.sql`
+  - Creates `public.set_opening_balance(p_balance_date date, p_lines jsonb, p_tenant_id uuid DEFAULT NULL) RETURNS jsonb` RPC.
+  - Owner-gating: raises 'owner_only' if caller not Owner+Aktif.
+  - Idempotency guard: reads accounting_config.opening_balance_set; raises 'opening_balance_already_set' on duplicate call.
+  - Delegates to `_post_journal_entry(p_entry_date=p_balance_date, p_source_type='OPENING_BALANCE', p_description='Saldo awal per YYYY-MM-DD', ...)`.
+  - Updates accounting_config: sets opening_balance_set=true, opening_balance_date=p_balance_date.
+  - LANGUAGE plpgsql SECURITY DEFINER, GRANT EXECUTE TO authenticated.
+- **File created:** `tests/integration/akuntansi-phase0a/opening-balance-rpc.test.ts`
+  - Test 1: Posts balanced 3-line opening (1-1110 debit 500k, 1-1210 debit 8.5M, 3-1100 credit 9M); verifies config flag flipped; cleans up.
+  - Test 2: Sets config flag=true, calls RPC again; verifies rejection with 'opening_balance_already_set'; cleans up.
+  - Tests skip gracefully if no Owner user available in integration env.
+- **Applied via:** Supabase MCP `apply_migration` to project `ekhhojaezdfjfwuxyjkl` (name: `opening_balance_rpc`) → `{"success": true}`.
+- **Verification via MCP execute_sql:**
+  - Smoke test 1: RPC rejects non-Owner with 'owner_only' ✓
+  - Smoke test 2: RPC rejects second call when opening_balance_set=true with 'opening_balance_already_set' ✓
+- **Tests:** `npm run test` — 239 passed (2 new tests skipped); no regressions.
+- **TypeScript:** `npx tsc --noEmit` clean ✓
+- **Commit:** `c0d5a44` — "feat(akuntansi): Phase 0a Task 14 — set_opening_balance RPC + idempotency guard"
+- **Report:** `.superpowers/sdd/task-14-report.md` documents verification results.
