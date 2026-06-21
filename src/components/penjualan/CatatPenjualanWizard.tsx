@@ -18,7 +18,6 @@
 // T17 InvoicePreviewScreen therefore only handles non-TEMPO transactions.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import type {
   ActivePage,
   DbCustomer,
@@ -40,7 +39,7 @@ import {
 } from '../../lib/supabaseClient';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
-import { CHANNEL_REQUIRES_ORDER_NO } from '../../lib/salesChannels';
+import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { createTempoInvoice } from '../../lib/piutangService';
 import WizardStepper from './wizard/WizardStepper';
@@ -483,34 +482,73 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const stepSlug = currentStep === 1
+    ? 'Pilih channel & customer'
+    : currentStep === 2
+    ? 'Tambah produk & jasa'
+    : 'Pembayaran & finalisasi';
+
+  // Channel label for the context recap bar (Steps 2 & 3).
+  const channelDef = getChannelDef(channel);
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
-      <div className="bg-[#012749] text-white rounded-t-2xl px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="text-white/80 hover:text-white">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="font-extrabold text-sm">📋 Catat Penjualan</div>
-            <div className="text-[11px] opacity-65">Step {currentStep} dari 3</div>
-          </div>
+      {/* Header — white per mockup. Date/user pills dropped; replaced with Batal link. */}
+      <div className="bg-white border border-slate-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Step {currentStep} dari 3 — {stepSlug}</p>
         </div>
-        <div className="flex gap-2 text-[11px]">
-          <span className="bg-white/15 px-3 py-1 rounded-full font-bold">
-            📅 {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
-          <span className="bg-white/15 px-3 py-1 rounded-full font-bold">
-            👤 {currentUser?.name ?? 'Admin'}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs text-slate-500 hover:text-slate-700 font-semibold"
+        >
+          Batal
+        </button>
       </div>
 
-      <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm overflow-hidden">
         <WizardStepper
           currentStep={currentStep}
           completedSteps={completedSteps}
           onJumpBack={onJumpBack}
         />
+
+        {/* Context recap bar — show on Steps 2 & 3 once Step 1 is complete. */}
+        {currentStep > 1 && customer && (
+          <div className="px-6 py-3 bg-[#012749]/5 border-b border-slate-100 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-slate-600">🏪 <strong>{channelDef.label}</strong></span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-600">👤 <strong>{customer.name}</strong></span>
+              {customer.allows_tempo && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                  TEMPO OK · Limit {Math.round((customer.credit_limit ?? 0) / 1_000_000)}jt
+                </span>
+              )}
+              {currentStep === 3 && (
+                <>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-slate-600">
+                    📦 {cart.length} item{rakitLines.length > 0 ? ` + ${rakitLines.length} jasa` : ''}
+                  </span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-bold text-[#012749]">
+                    Rp {Math.round(subtotal).toLocaleString('id-ID')}
+                  </span>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => { setCurrentStep(1); }}
+              className="text-[#012749] font-semibold hover:underline"
+            >
+              Ubah
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <p className="text-center text-slate-400 py-12 text-sm">Memuat data...</p>
