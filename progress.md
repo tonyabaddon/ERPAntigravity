@@ -1,5 +1,63 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Task 6: Frontend dropdown + lock countdown UI (worktree)
+
+Completed Task 6 of Pipeline Revamp in `feat/pipeline-revamp` worktree (commit `e0f7298`). Frontend scaffold for manual state override — migration not yet applied to prod, smoke deferred to pause gate.
+
+**Delivered:**
+- `src/types.ts`: `DbConversation.state_locked_until` + `state_locked_by_admin_id` (null-able ISO timestamp)
+- `src/lib/supabaseClient.ts`: `conversationService.manuallyOverrideConversationState` (rpc call) + `clearConversationLock` (direct update). `ConversationState` added to imports.
+- `src/App.tsx`: `userRole={currentUser?.role ?? null}` prop injected into `<SalesInboxScreen>`
+- `src/components/SalesInboxScreen.tsx`: state badge → ChevronDown/Up clickable button (lucide-react), `StateOverrideDropdown` component (14 states, terminals disabled, current highlighted, Esc+click-outside close), `canOverride` gate (`Owner|Staff Admin Toko`), `setInterval(60s)` countdown tick, `getModeBanner` lock branch + "Aktifkan AI Sekarang" early-resume, `ADD_MORE`/`DELIVERY` added to `CONV_STATE_DISPLAY`
+- Build: `npm run build` PASS (0 errors). Tests: 248/248 PASS.
+
+**Next:** Task 7 (Go backend lazy resume + state lock guard) → PAUSE GATE (apply migration + prod smoke)
+
+---
+
+## 2026-06-21 — Akuntansi 6 mockup final GL-derived (rev3) lengkap
+
+User minta semua mockup di-update reflect GL pivot. 5 mockup baru landed (Phase 1-5) + Phase 0d existing = 6 final mockups GL-derived. Naming `2026-06-21-akuntansi-phase{0d,1,2,3,4,5}-*.html`.
+
+**Files landed:**
+- `phase0d-gl-ui.html` (sebelumnya) — Opening Balance Wizard, Trial Balance, Buku Besar, Journal Detail HPP-paired, COA Management, Period Close + Tax Accrual, Year-End Closing
+- `phase1-cash-bank.html` ✨ NEW — Saldo derive dari journal_entry_lines, Riwayat dengan running balance (format akuntan), picker akun show COA code
+- `phase2-settlement.html` ✨ NEW — PENDING/CLEARED di journal_entry_lines.status, Belum Cair list, Konfirmasi Cair flow
+- `phase3-manual-entry.html` ✨ NEW — 6 modal manual entry dengan Journal Entry Preview (transparency debit/credit lines sebelum submit)
+- `phase4-laporan.html` ✨ NEW BIG — 6 tab termasuk Trial Balance + **Laporan Laba Rugi format SAK EMKM** + **Neraca format SAK EMKM** (persamaan akuntansi Aset = Liab + Ekuitas terverifikasi)
+- `phase5-recon.html` ✨ NEW — Match bank_statement_lines ke journal_entry_lines (filter account_subtype=BANK), auto-clear PENDING settlement saat match
+
+Pre-pivot mockups (`2026-06-20-kas-bank-phase*.html`) tidak dihapus — preserved sebagai historical reference saat pre-GL pivot.
+
+**Next:** User review 6 mockup final → kalau approved, invoke writing-plans skill untuk Phase 0a implementation plan → execute.
+
+---
+
+## 2026-06-21 — Catat Penjualan wizard mockup-match rewrite (PR #48) + 4 UI defects (#46) + pre-order map (#47)
+
+Founder caught that the wizard implementation reused legacy components instead of building to the approved HTML mockup (`docs/superpowers/mockups/2026-06-20-catat-penjualan-3-step-wizard.html`). Rebuilt all 4 frames + global chrome to match the mockup, on top of fixing 4 UI defects from the smoke session.
+
+**PR #48 (mockup-match rewrite, 5 commits)** — deployed as revision 00151-moj:
+- **Step 1**: Replaced grouped pill rows in `ChannelSelector` with flat 4/7-col tile grid (icon over label). Added TEMPO/CASH-ONLY chips to `CustomerPanel` dropdown rows + selected chip restyled navy-themed. `NewCustomerInlineForm` TEMPO request block now matches mockup copy exactly + adds amber "⚠️ Untuk transaksi sekarang… pakai LUNAS atau DP" warning that was missing.
+- **Step 2**: Rewrote `Step2Items` as 12-col grid (search col-span-5 / cart col-span-7). Inline search panel drops amber `ItemSearchPanel` wrapper. KERANJANG header + × Kosongkan link. Slate-50 totals panel (Subtotal Produk + Subtotal Jasa + Total Pesanan). `RakitButtonsRow` swapped to mockup palette (Custom=purple-50 tinted-bg, Wiring=sky-50 tinted-bg).
+- **Step 3**: Rewrote `Step3Payment` as 12-col grid (payment col-span-7 / right col-span-5). 3 large payment-type cards replace pill toggle (LUNAS navy / DP amber / TEMPO amber). Amber 3-col TEMPO context box (Limit / Outstanding / Sisa Tersedia + jatuh-tempo + ✓/⚠️ over-limit). DP detail box with AMOUNT/PERCENT toggle. Payment-method 4-button row faded for TEMPO. **Dark navy summary card** (signature mockup element) with mode-aware footnote. Full-width green save button. Dropped `PaymentPanel` dependency.
+- **Invoice Preview**: White header (was navy), inline invoice preview card on slate-100 backdrop (col-span-8), 3-step workflow stepper (col-span-4) — FULL = 3 green checks, DP = ✓/⌛/N.
+- **Global chrome**: White header bar with per-step subtitle slug ("Pilih channel & customer" / "Tambah produk & jasa" / "Pembayaran & finalisasi") + plain Batal link (dropped date/user pills). Context recap bar on Steps 2 & 3 with channel + customer + TEMPO chip + item/jasa count (Step 3) + Ubah jump-back link.
+
+**PR #47 (pre-order stock map wiring)**: PR #46 fixed the default-warehouse picker but the PRE-ORDER badge still fired for every row because the wizard was passing an empty `stockByWarehouseSku` map. Map now built at render time using the warehouse.code → stock_atas/stock_bawah mapping. No new fetch.
+
+**PR #46 (4 UI defects from production smoke)**:
+- + Customer Baru chip showed "undefined (dipilih)" — `setCustomer` now upserts new customer into local list.
+- WIP/jasa save left InvoicePreviewScreen stuck on "Memuat invoice…" — WIP path now navigates to `/pipeline` (semantically correct: WIP awaits Owner Lock, not a finalized invoice).
+- Cart default warehouse picked `is_default` even when 0 stock — now picks warehouse with most stock; falls back to is_default only when all zero.
+- "Jasa Rakit" label → "Wiring Panel" in 4 places. Internal `jasa_rakit` type key unchanged.
+
+**Full smoke after #48 deploy (revision 00151-moj)**: All 4 frames match the mockup. Channel tile grid renders 14 channels. Customer dropdown shows TEMPO chips (TEMPO OK + Limit/term, or CASH ONLY). Step 2 2-col layout with totals panel. Step 3 dark navy summary card with TEMPO footnote ("Jatuh tempo 05 Jul 2026 · Outstanding setelah Rp 90.000"). Invoice preview inline with 3-step workflow stepper. Walk-in customer correctly hides TEMPO payment-type card (CASH ONLY).
+
+**Files no longer imported by wizard** (left in tree for potential reuse): `ItemSearchPanel.tsx`, `PaymentPanel.tsx` (305 LOC).
+
+---
+
 ## 2026-06-21 — Catat Penjualan wizard smoke + 2 routing PRs + 2 DB hotfix migrations
 
 End-to-end production smoke of the 3-step wizard (PR #40). All 4 happy paths green after fixing 2 routing bugs + 2 DB-side gaps.
