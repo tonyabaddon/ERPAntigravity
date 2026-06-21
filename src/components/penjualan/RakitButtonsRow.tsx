@@ -34,7 +34,7 @@ export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitBut
               : 'bg-amber-500 hover:bg-amber-600 disabled:opacity-50'
           }`}
         >
-          ⚡ + Tambah Jasa Rakit
+          ⚡ + Tambah Wiring Panel
         </button>
         <button
           type="button"
