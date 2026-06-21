@@ -194,7 +194,9 @@ func main() {
 			json.NewEncoder(w).Encode(map[string]string{"error": "device already paired; logout first"})
 			return
 		}
-		code, err := waClient.WA.PairPhone(r.Context(), cleaned, true, whatsmeow.PairClientChrome, "Garindo ERP (Cloud Run)")
+		// Display name MUST match `Browser (OS)` pattern with common browsers/OS,
+		// else WA server returns 400 (see whatsmeow pair-code.go:88-89).
+		code, err := waClient.WA.PairPhone(r.Context(), cleaned, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 		if err != nil {
 			log.Printf("[WA] PairPhone error for %s: %v", cleaned, err)
 			w.WriteHeader(http.StatusInternalServerError)
