@@ -381,8 +381,11 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     const today = wibDateString();
 
     if (path === 'wip') {
-      // TODO(T18+): plumb allow_negative_stock through insertWipWithRakit's
-      // tx typing. Cast at call site for now so the field travels through.
+      // NOTE: WIP path does NOT pass allow_negative_stock. insertWipWithRakit
+      // is a direct INSERT into kasir_transactions (status='WIP', items=[]),
+      // not an RPC — passing the column would trip PostgREST with "column does
+      // not exist". Stock decrement happens later at lock-approval time, so
+      // the pre-order flag is implicitly satisfied (no stock check runs here).
       const txId = await kasirService.insertWipWithRakit({
         tx: {
           date: today,
@@ -404,8 +407,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           marketplace_order_no: CHANNEL_REQUIRES_ORDER_NO.has(channel) ? marketplaceOrderNo : null,
           wa_phone: channel === 'whatsapp' ? waPhone : null,
           wa_chat_url: channel === 'whatsapp' ? waChatUrl : null,
-          allow_negative_stock: true,
-        } as any,
+        },
         rakitLines: rakitLines.map((l) => ({
           serviceType: l.type,
           description: l.description,
@@ -430,9 +432,14 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       hpp_subtotal: l.hppEstimate,
       warehouse: null,
     }));
-    // TODO(T18+): plumb p_allow_negative_stock through kasirService.recordSale
-    // wrapper + RecordKasirSaleInput typing. For now cast so the param reaches
-    // the RPC body (migration 002 accepts it).
+    // TODO(T18+): the kasirService.recordSale wrapper picks specific keys
+    // (p_date, p_channel, ... p_customer_id) and does NOT forward arbitrary
+    // extras — the `p_allow_negative_stock` field below is SILENTLY DROPPED
+    // before reaching supabase.rpc(). Functionally OK today (per T2 audit,
+    // record_kasir_sale already permits silent underflow via the
+    // deduct_stock_fifo RAISE WARNING fallback), but the wizard's intent
+    // never reaches the DB. T18 must extend RecordKasirSaleInput +
+    // recordSale's rpc(...) arg map to actually forward the flag.
     const tx = await kasirService.recordSale({
       date: today,
       channel,

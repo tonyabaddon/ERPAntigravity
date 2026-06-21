@@ -40,6 +40,10 @@ export default function InvoicePreviewScreen({
   const [transaction, setTransaction] = useState<KasirTransaction | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  // When true, the SalesInvoicePDF modal opens with `autoPrint` so its own
+  // internal "wait until store/bank fetched, then print" gate fires the dialog
+  // instead of our racey 200ms setTimeout. Reset to false on next manual open.
+  const [autoPrintOnOpen, setAutoPrintOnOpen] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -77,11 +81,12 @@ export default function InvoicePreviewScreen({
       showToast('Invoice belum termuat, coba sebentar lagi.', 'warning');
       return;
     }
-    // Open the SalesInvoicePDF modal which has @media print rules that
-    // isolate #sales-invoice-root for printing. The modal also exposes a
-    // Cetak Ulang button; opening it via state is the minimal hook today.
+    // Open SalesInvoicePDF with autoPrint=true so its internal gate fires
+    // window.print() AFTER fetchStoreSettings + fetchBankAccounts resolve.
+    // A raw setTimeout here would race the modal's own data load on cold
+    // cache and print before the store header renders.
+    setAutoPrintOnOpen(true);
     setShowPdfModal(true);
-    setTimeout(() => window.print(), 200);
   };
 
   const onBagikanWA = () => {
@@ -110,6 +115,7 @@ export default function InvoicePreviewScreen({
     // SalesInvoicePDF doesn't expose a programmatic download — the print
     // dialog ("Save as PDF") is the existing UX. Surface the modal so the
     // user can either Cetak Ulang or use the browser's Save as PDF.
+    setAutoPrintOnOpen(false);
     setShowPdfModal(true);
     showToast('Pilih "Save as PDF" pada dialog cetak browser.', 'info');
   };
@@ -185,7 +191,7 @@ export default function InvoicePreviewScreen({
                   <div className="font-semibold text-right">{transaction.payment_type ?? 'FULL'}</div>
                 </div>
                 <button
-                  onClick={() => setShowPdfModal(true)}
+                  onClick={() => { setAutoPrintOnOpen(false); setShowPdfModal(true); }}
                   className="mt-3 w-full px-3 py-2 text-xs font-bold rounded-lg bg-white text-[#012749] border border-slate-300 hover:bg-slate-50"
                 >
                   👁️ Lihat Preview Invoice
@@ -231,7 +237,8 @@ export default function InvoicePreviewScreen({
           transaction={transaction}
           variant={variant}
           adminName={adminName}
-          onClose={() => setShowPdfModal(false)}
+          autoPrint={autoPrintOnOpen}
+          onClose={() => { setShowPdfModal(false); setAutoPrintOnOpen(false); }}
         />
       )}
     </div>
