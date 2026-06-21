@@ -1840,7 +1840,7 @@ Create `src/components/pengaturan/ModulSwitchesPanel.tsx`:
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { tenantSettingsService } from '../../lib/supabaseClient';
+import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
 import { cascadeImpactSummary, type UsageStats } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings, ModulSwitchKey } from '../../types';
 import SettingCard from './SettingCard';
@@ -1954,7 +1954,7 @@ Create `src/components/pengaturan/JenisJasaCrudPanel.tsx`:
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { serviceTypesService } from '../../lib/supabaseClient';
+import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
 import type { DbServiceType, PricingModel } from '../../types';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
@@ -2188,7 +2188,7 @@ Create `src/components/pengaturan/ApprovalRulesPanel.tsx`:
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { approvalSettingsService, tenantSettingsService } from '../../lib/supabaseClient';
+import { approvalSettingsService, tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
 import { isApprovalGateVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbApprovalSettings, DbTenantSettings, ApprovalRequestType } from '../../types';
 
@@ -2382,7 +2382,7 @@ Create `src/components/pengaturan/PajakSettingsPanel.tsx`:
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { tenantSettingsService } from '../../lib/supabaseClient';
+import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
 import type { DbTenantSettings, PajakMode, JenisBadan } from '../../types';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
@@ -2753,7 +2753,7 @@ Expected: menu item array + filtering logic. Identify the predicate.
 Add to Sidebar.tsx:
 
 ```typescript
-import { tenantSettingsService } from '../lib/supabaseClient';
+import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { isMenuVisible, type MenuKey } from '../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings } from '../types';
 
@@ -2845,7 +2845,7 @@ Read the file. Identify:
 
 ```typescript
 import { useEffect, useState } from 'react';
-import { serviceTypesService } from '../../lib/supabaseClient';
+import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
 import type { DbServiceType } from '../../types';
 
 // Inside Step2Items component (or RakitButtonsRow component):
