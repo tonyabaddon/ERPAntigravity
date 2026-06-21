@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { statsService, reportsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import PreOrderFulfillmentsCard from './dashboard/PreOrderFulfillmentsCard';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -274,6 +275,9 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
           </div>
         </div>
       </div>
+
+      {/* Pre-order fulfillments — last 7 days */}
+      <PreOrderFulfillmentsCard showToast={showToast} />
 
       {/* Recent Activity Log */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl">
