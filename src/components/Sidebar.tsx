@@ -136,8 +136,14 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
 
   useEffect(() => {
     if (currentUser?.permissions) {
-      const isVisible = visibleItems.some(item => item.id === activePage);
-      if (!isVisible) {
+      // Only kick to dashboard if the user is on a TOP-LEVEL menu page
+      // they lack permission for (e.g. perms were revoked). Sub-pages like
+      // penjualanBaru / invoicePreview / daftarPesanan are not in menuItems
+      // and must be trusted — otherwise direct-URL reload on a sub-page
+      // gets evicted.
+      const isMenuPage = menuItems.some(item => item.id === activePage);
+      const isVisibleMenuPage = visibleItems.some(item => item.id === activePage);
+      if (isMenuPage && !isVisibleMenuPage) {
         onPageChange('dashboard');
       }
     }
