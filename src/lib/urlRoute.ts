@@ -45,7 +45,6 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'auth',
   'whatsapp-ai',
   'settings',
-  'pipeline',
   'order-history',
   'pelanggan',
   'piutang',
@@ -73,6 +72,13 @@ export interface RouteState {
 export function parseSearch(search: string): RouteState {
   const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
   const rawScreen = params.get('screen') ?? '';
+  // Deprecated: Pipeline menu dihapus 2026-06-21; redirect bookmark lama ke sales-inbox
+  if (rawScreen === 'pipeline') {
+    params.delete('screen');
+    const out: Record<string, string> = {};
+    params.forEach((value, key) => { out[key] = value; });
+    return { screen: 'sales-inbox', params: out };
+  }
   const screen: ActivePage = ACTIVE_PAGES.has(rawScreen as ActivePage)
     ? (rawScreen as ActivePage)
     : 'dashboard';

@@ -5,7 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
-import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel, ConversationState } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -230,6 +230,28 @@ export const conversationService = {
     if (error) throw error;
   },
 
+  async manuallyOverrideConversationState(
+    convId: string,
+    newState: ConversationState,
+    lockMinutes: number = 15
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('manually_override_conversation_state', {
+      p_conv_id: convId,
+      p_new_state: newState,
+      p_lock_minutes: lockMinutes,
+    });
+    if (error) throw error;
+  },
+
+  async clearConversationLock(convId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('clear_conversation_lock', {
+      p_conv_id: convId,
+    });
+    if (error) throw error;
+  },
+
   async uploadChatMedia(file: File): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const path = `${Date.now()}_${file.name}`;
@@ -408,21 +430,6 @@ export const orderService = {
       .single();
     if (error) throw error;
     return data as DbOrder;
-  },
-
-  async markWalkinPaid(
-    orderId: string,
-    paymentMethod: 'cash' | 'transfer' | 'qris' | 'edc',
-    invoiceNumber: string
-  ): Promise<KasirTransaction> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase.rpc('mark_walkin_order_paid', {
-      p_order_id:       orderId,
-      p_payment_method: paymentMethod,
-      p_invoice_number: invoiceNumber,
-    });
-    if (error) throw error;
-    return data as KasirTransaction;
   },
 
   async rejectOrder(orderId: string): Promise<void> {
@@ -1602,20 +1609,6 @@ export const salesEntriesService = {
     };
   },
 
-  async fetchOpenWalkinDrafts(): Promise<DbOrder[]> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('sales_channel', 'walkin')
-      .in('status', [
-        'WAITING_PAYMENT', 'PAYMENT_UPLOADED',
-        'WAITING_DP',      'DP_UPLOADED', 'DP_VERIFIED',
-      ])
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as DbOrder[];
-  },
 };
 
 // ============================================================================

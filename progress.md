@@ -1,5 +1,54 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 3 Task 7: Backend Go lazy resume + state lock guard
+
+- `models/types.go`: Added `StateLockedUntil *time.Time` to `Conversation` struct.
+- `db/conversations.go`: Updated `findActiveConversation` + `createConversation` SELECTs to include `state_locked_until` column + scan via `sql.NullTime`. Added `AutoResumeConv(ctx, convID)` method (flips ai_active=true for single expired-lock conv). Added SQL WHERE guard to `UpdateConversationState` to block writes when locked (race-safe defense-in-depth).
+- `whatsapp/handler.go`: Added lazy resume block (4b) + AI-off early-return guard (4c) in `ProcessJoinedMessage`, after admin escalation check and before Gemini/machine calls. Added Go-level state write guard around step-10 persist block.
+- Brief deviations: struct was in models/types.go (not db/), DB uses `c.DB.ExecContext` (not `c.pool.Exec`), `!AIActive` check was absent so added alongside lazy resume, state writes are in handler.go not machine.go.
+- `go build ./...` PASS, `go test ./...` 12/12 packages PASS.
+- Commit: c00e21e
+
+## 2026-06-21 — Pipeline Revamp Phase 3 Task 5 (partial): Migration file conversation state lock
+
+- Migration file written: `supabase/migrations/20260621090000_conversation_state_lock.sql` (5313 bytes).
+- ALTER conversations: add `state_locked_until TIMESTAMPTZ`, `state_locked_by_admin_id UUID FK admin_users`.
+- RPC `manually_override_conversation_state()`: role gate via email lookup (pattern from 20260626000010), terminal guard, pause AI, set lock window, emit system message in chat.
+- RPC `auto_resume_expired_locks()`: bulk flip ai_active=true on expired locks.
+- pg_cron job `auto_resume_locked_conversations` every 1 minute (CREATE EXTENSION IF NOT EXISTS inline).
+- Verified: `message_sender` enum already includes `'system'` — INSERT valid.
+- NOT applied to prod. File only. Apply + smoke deferred to controller.
+- Commit: 724a8b4
+
+## 2026-06-21 — Pipeline Revamp Phase 2 (Delta C1): Sales Inbox Slack-style kategori filter
+
+- Helper `salesInboxCategorize.ts` + unit tests (9 cases).
+- SalesInboxScreen filter diganti dari 3-tab (Semua/Admin/AI) ke 4 kategori verb-driven.
+- Sidebar badge Sales Inbox hitung dari "Butuh Aksi" predicate (escalated + booked + timeout + !ai_active non-terminal).
+- TypeScript build PASS, unit tests PASS, dev smoke PASS.
+
+## 2026-06-21 — Pipeline Revamp Phase 2 Task 3: SalesInboxScreen Slack-style 4-kategori filter
+
+- Replace 3-tab Semua/Admin/AI filter dengan 4-row Slack-style vertical list.
+- 4 kategori: 🔴 Butuh Aksi · 🔵 AI Aktif · 🟡 Menunggu · ✅ Riwayat.
+- Default aktif: butuhAksi (most urgent). Each row shows count badge.
+- activeCategory state (InboxCategory) replaces activeFilter ('Semua'|'Admin'|'AI').
+- categoryCounts() replaces adminCount/aiCount derivations.
+- Filter predicate: `categorize(conv) !== activeCategory` (delegates to helper from Task 2).
+- border-l-[3px] accent + per-color bg highlight on active row (verbatim from brief).
+- Build PASS, 248/248 tests PASS, dev server confirmed up.
+- Commit: 4deaee3
+
+## 2026-06-21 — Pipeline Revamp Phase 1 (Delta A+B): menu Pipeline + walk-in markPaid path DIHAPUS
+
+- Hapus file PipelineScreen.tsx + entry sidebar + case App.tsx + literal types.
+- Hapus orderService.markWalkinPaid + salesEntriesService.fetchOpenWalkinDrafts (0 caller lain).
+- Redirect /pipeline → /sales-inbox preserve bookmark.
+- DB intact: tabel leads + RPC mark_walkin_order_paid + enum 'walkin' dibiarkan untuk drop phase terpisah.
+- Justifikasi data: query prod 2026-06-21 → 0 walk-in orders, 0 backfill risk.
+- Augmented: hapus PERM_LABELS row pipeline di UserManagementScreen + hapus button "Kelola di Pipeline" di PelangganScreen.
+- TypeScript build PASS, unit tests PASS (1118/1118).
+
 ## 2026-06-21 — Pipeline Revamp Task 6: Frontend dropdown + lock countdown UI (worktree)
 
 Completed Task 6 of Pipeline Revamp in `feat/pipeline-revamp` worktree (commit `e0f7298`). Frontend scaffold for manual state override — migration not yet applied to prod, smoke deferred to pause gate.
@@ -8160,3 +8209,40 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Commit:** `0ad9c19` — "feat(catat-penjualan): migration 002 — record_kasir_sale opt-in pre-order"
 - **Note:** 20 params in existing RPC (task description said 22 — actual file has 20). Migration correctly extends the existing signature.
 - **Next:** T3 — migration 003 `create_tempo_invoice` payload key.
+
+## 2026-06-21 — Pipeline Revamp — Task 2: categorize helper + tests DONE
+
+- **Branch:** `feat/pipeline-revamp` (worktree `.claude/worktrees/pipeline-revamp`)
+- **Plan:** Phase 2 of Pipeline Revamp. Task 2: helper to categorize conversations into 4 verb-driven inbox categories.
+- **Files created:**
+  - `src/lib/salesInboxCategorize.ts` — exports `categorize()` and `categoryCounts()` functions.
+  - `src/lib/salesInboxCategorize.test.ts` — 10 test cases covering all 4 categories + categoryCounts aggregation.
+- **Type extension:** Added `ADD_MORE` and `DELIVERY` states to `ConversationState` in `src/types.ts`.
+- **Implementation:**
+  - `categorize(conv)` maps `{ state: ConversationState; ai_active: boolean }` to `InboxCategory` using 4 ReadonlySet constants for terminal/escalated/ai-stages/menunggu states.
+  - Logic: terminal (COMPLETED|CANCELLED) → riwayat; escalated (ESCALATED_ADMIN|ESCALATED_WIRING|BOOKED|TIMEOUT_REMINDER) → butuhAksi; ai_active=false non-terminal → butuhAksi (manual override); DELIVERY → menunggu; ai_active=true ai-stages → aiAktif.
+  - `categoryCounts(convs)` aggregates conversations by calling `categorize()` for each, returns `Record<InboxCategory, number>` with 0-initialized counts.
+- **Test results:** All 10 test cases PASS:
+  - ESCALATED_ADMIN, ESCALATED_WIRING, BOOKED, TIMEOUT_REMINDER → butuhAksi (4 tests).
+  - ai_active=false non-terminal (CONFIRMING, COLLECTING) → butuhAksi (1 test + manual override assertion).
+  - COMPLETED ai_active=false → riwayat (1 test).
+  - CANCELLED → riwayat (1 test).
+  - ai_active=true ai-stages (GREETING, COLLECTING, CLARIFYING, STOCK_CHECK, CONFIRMING, ADD_MORE, APPROVED) → aiAktif (1 loop test).
+  - DELIVERY → menunggu (1 test).
+  - categoryCounts: multi-state aggregation (1 test) + empty array (1 test).
+- **Full test suite:** 248 tests PASS, no warnings.
+- **TDD evidence:**
+  - RED: `npm test -- salesInboxCategorize` failed with "Cannot find module './salesInboxCategorize'" before implementation.
+  - GREEN: `npm test -- salesInboxCategorize` passed all cases after implementation.
+- **Commit:** `6b29064` — "feat(sales-inbox): categorize helper + tests for 4 verb-driven groups"
+- **Next:** Task 3 — SalesInboxScreen Slack-style categori list UI.
+
+## 2026-06-21 — Pipeline Revamp: behavior change on followup-disabled conversations
+
+Task 7's added `!conv.AIActive` early-return in `handler.go` has a side effect on the existing follow-up cool-off flow:
+
+Pre-Task-7: `followup.go` set `ai_active=false` after 6 cumulative follow-ups without reply. The handler never read this flag, so AI auto-reply still fired on the eventual customer reply.
+
+Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply after cool-off → AI no longer auto-responds. `ResetFollowupCounter` clears the counter but does NOT flip `ai_active=true`. Conv lands in Sales Inbox "Butuh Aksi" category (per `categorize()` helper).
+
+**Decision (founder, 2026-06-21):** Accept as intended behavior. The "cool-off → admin handle" model is consistent with the override design ("AI off = admin take over"). No code change. Owner/admin sees these convs in the "Butuh Aksi" filter and can re-enable AI manually or take over the chat directly.

@@ -187,6 +187,23 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 		return
 	}
 
+	// 4b. Lazy resume: if lock expired but pg_cron hasn't run yet, flip ai_active now.
+	if conv.StateLockedUntil != nil && conv.StateLockedUntil.Before(time.Now()) {
+		if err := h.db.AutoResumeConv(ctx, conv.ID); err == nil {
+			conv.AIActive = true
+			conv.StateLockedUntil = nil
+		} else {
+			log.Printf("[HANDLER] AutoResumeConv failed for %s: %v", conv.ID, err)
+		}
+	}
+
+	// 4c. AI-off guard: admin locked this conversation, skip auto-reply.
+	if !conv.AIActive {
+		log.Printf("[HANDLER] AI off for conv %s (locked until %v), skip auto-reply",
+			conv.ID, conv.StateLockedUntil)
+		return
+	}
+
 	// 5a. Post-booking holding states — send static status message, never invoke Gemini.
 	//     Without this, the machine is called with an unknown-state prompt, Gemini returns
 	//     an empty response, and FallbackReply fires ("kendala teknis").
@@ -277,20 +294,27 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 		return
 	}
 
-	// 10. Persist state + data before sending reply
-	if result.NewData != nil {
-		if err := h.db.UpdateCollectedData(conv.ID, *result.NewData, result.ClarificationRound); err != nil {
-			log.Printf("[HANDLER] UpdateCollectedData error: %v", err)
+	// 10. Persist state + data before sending reply.
+	// Concurrency guard: if admin locked the conversation after we loaded conv (race window),
+	// skip the AI state recompute write so we don't overwrite the admin's decision.
+	if conv.StateLockedUntil != nil && conv.StateLockedUntil.After(time.Now()) {
+		log.Printf("[HANDLER] State locked until %v, skip recompute for conv %s",
+			*conv.StateLockedUntil, conv.ID)
+	} else {
+		if result.NewData != nil {
+			if err := h.db.UpdateCollectedData(conv.ID, *result.NewData, result.ClarificationRound); err != nil {
+				log.Printf("[HANDLER] UpdateCollectedData error: %v", err)
+			}
 		}
-	}
-	if result.Language != conv.Language {
-		if err := h.db.UpdateLanguage(conv.ID, result.Language); err != nil {
-			log.Printf("[HANDLER] UpdateLanguage error: %v", err)
+		if result.Language != conv.Language {
+			if err := h.db.UpdateLanguage(conv.ID, result.Language); err != nil {
+				log.Printf("[HANDLER] UpdateLanguage error: %v", err)
+			}
 		}
-	}
-	if result.NextState != conv.State {
-		if err := h.db.UpdateConversationState(conv.ID, result.NextState); err != nil {
-			log.Printf("[HANDLER] UpdateConversationState error: %v", err)
+		if result.NextState != conv.State {
+			if err := h.db.UpdateConversationState(conv.ID, result.NextState); err != nil {
+				log.Printf("[HANDLER] UpdateConversationState error: %v", err)
+			}
 		}
 	}
 

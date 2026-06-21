@@ -1,8 +1,10 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -27,10 +29,12 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 	var dataJSON []byte
 	var lastAIAt sql.NullTime
 	var lastFollowupDate sql.NullTime
+	var stateLockedUntil sql.NullTime
 	err := c.DB.QueryRow(`
 		SELECT id, wa_number_id, customer_phone, state, language,
 		       collected_data, clarification_round, ai_active, created_at, updated_at,
-		       last_ai_message_at, followup_count_today, last_followup_date
+		       last_ai_message_at, followup_count_today, last_followup_date,
+		       state_locked_until
 		FROM conversations
 		WHERE customer_phone = $1 AND wa_number_id = $2
 		  AND state NOT IN ('CANCELLED','COMPLETED')
@@ -40,6 +44,7 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
+		&stateLockedUntil,
 	)
 	if err != nil {
 		return nil, err
@@ -50,6 +55,9 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 	}
 	if lastFollowupDate.Valid {
 		conv.LastFollowupDate = &lastFollowupDate.Time
+	}
+	if stateLockedUntil.Valid {
+		conv.StateLockedUntil = &stateLockedUntil.Time
 	}
 	return &conv, nil
 }
@@ -59,17 +67,20 @@ func (c *Client) createConversation(phone, waNumberID string) (*models.Conversat
 	var dataJSON []byte
 	var lastAIAt sql.NullTime
 	var lastFollowupDate sql.NullTime
+	var stateLockedUntil sql.NullTime
 	err := c.DB.QueryRow(`
 		INSERT INTO conversations (wa_number_id, customer_phone, state, language, collected_data, clarification_round)
 		VALUES ($1, $2, 'GREETING', 'id', '{}', 0)
 		RETURNING id, wa_number_id, customer_phone, state, language,
 		          collected_data, clarification_round, ai_active, created_at, updated_at,
-		          last_ai_message_at, followup_count_today, last_followup_date
+		          last_ai_message_at, followup_count_today, last_followup_date,
+		          state_locked_until
 	`, waNumberID, phone).Scan(
 		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
+		&stateLockedUntil,
 	)
 	if err != nil {
 		return nil, err
@@ -81,14 +92,26 @@ func (c *Client) createConversation(phone, waNumberID string) (*models.Conversat
 	if lastFollowupDate.Valid {
 		conv.LastFollowupDate = &lastFollowupDate.Time
 	}
+	if stateLockedUntil.Valid {
+		conv.StateLockedUntil = &stateLockedUntil.Time
+	}
 	return &conv, nil
 }
 
 func (c *Client) UpdateConversationState(id string, state models.ConversationState) error {
-	_, err := c.DB.Exec(`
-		UPDATE conversations SET state = $1, updated_at = $2 WHERE id = $3
+	result, err := c.DB.Exec(`
+		UPDATE conversations SET state = $1, updated_at = $2
+		WHERE id = $3
+		  AND (state_locked_until IS NULL OR state_locked_until < NOW())
 	`, string(state), time.Now(), id)
-	return err
+	if err != nil {
+		return err
+	}
+	rows, raErr := result.RowsAffected()
+	if raErr == nil && rows == 0 {
+		log.Printf("[HANDLER] UpdateConversationState skipped for conv %s (state_locked_until active or row missing)", id)
+	}
+	return nil
 }
 
 func (c *Client) UpdateCollectedData(id string, data models.CollectedData, clarificationRound int) error {
@@ -112,7 +135,8 @@ func (c *Client) UpdateLanguage(id, language string) error {
 func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation, error) {
 	rows, err := c.DB.Query(`
 		SELECT id, wa_number_id, customer_phone, state, language,
-		       collected_data, clarification_round, ai_active, created_at, updated_at
+		       collected_data, clarification_round, ai_active, created_at, updated_at,
+		       state_locked_until
 		FROM conversations WHERE customer_phone = $1 ORDER BY created_at DESC
 	`, phone)
 	if err != nil {
@@ -123,18 +147,40 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 	for rows.Next() {
 		var conv models.Conversation
 		var dataJSON []byte
+		var stateLockedUntil sql.NullTime
 		if err := rows.Scan(
 			&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 			&conv.Language, &dataJSON, &conv.ClarificationRound,
 			&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
+			&stateLockedUntil,
 		); err != nil {
 			return nil, err
 		}
 		json.Unmarshal(dataJSON, &conv.CollectedData)
+		if stateLockedUntil.Valid {
+			conv.StateLockedUntil = &stateLockedUntil.Time
+		}
 		result = append(result, &conv)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return result, nil
+}
+
+// AutoResumeConv flips ai_active=true + clears lock for a single conversation.
+// Used as defense-in-depth saat pg_cron telat / failed.
+// The WHERE guard ensures we only touch rows where the lock has actually expired.
+func (c *Client) AutoResumeConv(ctx context.Context, convID string) error {
+	_, err := c.DB.ExecContext(ctx, `
+		UPDATE conversations SET
+		    ai_active = true,
+		    state_locked_until = NULL,
+		    state_locked_by_admin_id = NULL,
+		    updated_at = NOW()
+		WHERE id = $1
+		  AND state_locked_until IS NOT NULL
+		  AND state_locked_until < NOW()
+	`, convID)
+	return err
 }

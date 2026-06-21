@@ -8,7 +8,6 @@ export interface PermissionSet {
   salesInbox: boolean;
   laporan: boolean;
   aiStock: boolean;
-  pipeline: boolean;
   pelanggan: boolean;
   orderHistory: boolean;
   userManagement: boolean;
@@ -64,7 +63,6 @@ export const ALL_PERMISSIONS: PermissionSet = {
   salesInbox: true,
   laporan: true,
   aiStock: true,
-  pipeline: true,
   pelanggan: true,
   orderHistory: true,
   userManagement: true,
@@ -207,7 +205,7 @@ export interface WhatsappAiNumber {
 export type ConversationState =
   | 'GREETING' | 'COLLECTING' | 'CLARIFYING' | 'STOCK_CHECK' | 'CONFIRMING'
   | 'BOOKED' | 'TIMEOUT_REMINDER' | 'CANCELLED' | 'APPROVED' | 'COMPLETED'
-  | 'ESCALATED_ADMIN' | 'ESCALATED_WIRING';
+  | 'ESCALATED_ADMIN' | 'ESCALATED_WIRING' | 'ADD_MORE' | 'DELIVERY';
 
 export interface DbConversation {
   id: string;
@@ -228,6 +226,8 @@ export interface DbConversation {
   last_ai_message_at?: string;
   followup_count_today: number;
   last_followup_date?: string;
+  state_locked_until: string | null;       // ISO timestamp; NULL = no lock
+  state_locked_by_admin_id: string | null; // admin who set the lock
   created_at: string;
   updated_at: string;
 }
@@ -432,7 +432,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview';
 
 // ─── Kasir types ────────────────────────────────────────────
 
