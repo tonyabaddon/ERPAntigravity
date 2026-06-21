@@ -557,14 +557,23 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onCancelRakitForm={cancelRakitForm}
                 onAddRakitLine={addRakitLine}
                 onRemoveRakitLine={removeRakitLine}
-                // Per-warehouse stock map for pre-order detection.
-                // SupabaseStockItem only carries stock_atas/stock_bawah without
-                // warehouse_id mapping, so a faithful per-warehouse lookup
-                // requires either a stock_lots aggregation query or a
-                // warehouse↔legacy-column dictionary. Both are follow-up scope.
-                // Passing {} degrades the pre-order banner to no-op; the
-                // backend still accepts negative stock via the new flag.
-                stockByWarehouseSku={{}}
+                // Per-warehouse stock map for pre-order detection. Mirrors
+                // the warehouse.code → stock_atas/stock_bawah mapping used
+                // by CartRows + addItem so the PRE-ORDER chip only fires
+                // when the picked warehouse actually has insufficient stock.
+                stockByWarehouseSku={(() => {
+                  const map: Record<string, number> = {};
+                  for (const s of stocks) {
+                    for (const w of warehouses) {
+                      const code = w.code.toLowerCase();
+                      const qty = code === 'atas' ? (s.stock_atas ?? 0)
+                        : code === 'bawah' ? (s.stock_bawah ?? 0)
+                        : 0;
+                      map[`${s.sku}|${w.id}`] = qty;
+                    }
+                  }
+                  return map;
+                })()}
                 showToast={showToast}
               />
             )}
