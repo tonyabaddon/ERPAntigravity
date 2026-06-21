@@ -432,14 +432,11 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       hpp_subtotal: l.hppEstimate,
       warehouse: null,
     }));
-    // TODO(T18+): the kasirService.recordSale wrapper picks specific keys
-    // (p_date, p_channel, ... p_customer_id) and does NOT forward arbitrary
-    // extras — the `p_allow_negative_stock` field below is SILENTLY DROPPED
-    // before reaching supabase.rpc(). Functionally OK today (per T2 audit,
-    // record_kasir_sale already permits silent underflow via the
-    // deduct_stock_fifo RAISE WARNING fallback), but the wizard's intent
-    // never reaches the DB. T18 must extend RecordKasirSaleInput +
-    // recordSale's rpc(...) arg map to actually forward the flag.
+    // T20 extended RecordKasirSaleInput + the recordSale wrapper to actually
+    // forward p_allow_negative_stock to the RPC (previously the key was
+    // silently dropped — functionally OK because deduct_stock_fifo permits
+    // silent underflow via RAISE WARNING fallback, but the wizard's intent
+    // never reached the DB for downstream T25 pre-order audit).
     const tx = await kasirService.recordSale({
       date: today,
       channel,
@@ -462,7 +459,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       delivery_address: deliveryAddress.trim() || undefined,
       customer_id: customer.id,
       p_allow_negative_stock: true,
-    } as any);
+    });
     onSaved(tx.id);
     if (onNavigate) onNavigate('invoicePreview'); else onBack();
   };
