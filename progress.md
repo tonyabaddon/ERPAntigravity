@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Backend Cloud Build infra fix + Pipeline Revamp Go guards LIVE
+
+Backend Cloud Run revision `garindo-jaya-panel-msme-erp-00086-pbh` (image tag `37d3d5e`) deployed at 100% traffic.
+
+**Infrastructure fix (commit `37d3d5e`):**
+- Backend Cloud Build trigger has been failing since ~2026-06-18 (last SUCCESS 2026-06-18 03:13 UTC, post foto-search commit `5a2d9b8`).
+- Root cause: Dockerfile Step 15/17 `COPY models/clip-vit-base-patch32.onnx` — file is gitignored (~150MB), `scripts/download-clip-model.sh` exists but `cloudbuild.yaml` never ran it.
+- Fix: add Step 0 to `cloudbuild.yaml` that runs the download script before Docker build. Build time impact: +10-30 sec.
+- Verified: build `7ae4f89e-d2ae-4081-8e3e-63422edd49cd` SUCCESS, deploy auto-promoted.
+
+**Pipeline Revamp backend Go now LIVE (commits in deployed chain):**
+- `c00e21e` — lazy resume in handler.go + state write guard in machine.go + `db.AutoResumeConv` + SQL guard in `UpdateConversationState`.
+- `0550fbc` — `RowsAffected()` observability log + `ListConversationsByPhone` SELECT consistency + `[ENGINE]→[HANDLER]` log prefix fix.
+- Container startup logs clean: DB connected, Calista Gemini auth OK, all pollers started, LISTEN/NOTIFY active.
+
+**⚠️ Pre-existing issue surfaced (NOT from Pipeline Revamp):**
+- Garindo's WhatsApp session unpaired since 2026-06-20 15:22 UTC.
+- `[FOLLOWUP] SendText error: the store doesn't contain a device JID` errors started yesterday, persist through today's redeploy.
+- New backend instance starts with `Store.ID=<nil>` → enters QR mode waiting for re-scan.
+- Manual operational action needed: scan QR via `WhatsApp AI` UI page to re-pair Garindo's number.
+- Backend deploy did NOT cause this — error logs predate today's instance.
+
 ## 2026-06-21 — Pipeline Revamp DEPLOYED 100% (PR #50 + #52)
 
 Cloud Run frontend revision `garindo-jaya-panel-msme-erp-frontend-00157-fem` (tag `c96e02c9`) promoted to 100% traffic. Live URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` now serves bundle `index-BKiHvuf3.js`.
