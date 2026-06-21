@@ -28,6 +28,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
+	"go.mau.fi/whatsmeow"
 )
 
 // approvalStoreAdapter bridges *db.Client (which returns sql.ErrNoRows for
@@ -148,6 +149,60 @@ func main() {
 			return
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "logged_out"})
+	})
+	mux.HandleFunc("/api/wa/pair-code", func(w http.ResponseWriter, r *http.Request) {
+		enableCors(&w)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			json.NewEncoder(w).Encode(map[string]string{"error": "POST only"})
+			return
+		}
+		if waClient == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			json.NewEncoder(w).Encode(map[string]string{"error": "WhatsApp client not initialized"})
+			return
+		}
+		var body struct {
+			Phone string `json:"phone"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "invalid JSON"})
+			return
+		}
+		// Phone must be E.164 digits only (no +, no spaces). Strip common chars.
+		phone := body.Phone
+		cleaned := ""
+		for _, c := range phone {
+			if c >= '0' && c <= '9' {
+				cleaned += string(c)
+			}
+		}
+		if len(cleaned) < 10 || len(cleaned) > 15 {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "phone must be 10-15 digits (E.164 without +)"})
+			return
+		}
+		// WhatsApp pair-code requires an active WebSocket connection in QR mode.
+		if waClient.WA.Store.ID != nil {
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "device already paired; logout first"})
+			return
+		}
+		code, err := waClient.WA.PairPhone(r.Context(), cleaned, true, whatsmeow.PairClientChrome, "Garindo ERP (Cloud Run)")
+		if err != nil {
+			log.Printf("[WA] PairPhone error for %s: %v", cleaned, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		log.Printf("[WA] Pair code generated for %s: %s", cleaned, code)
+		json.NewEncoder(w).Encode(map[string]string{"code": code, "phone": cleaned})
 	})
 	mux.HandleFunc("/api/wa/debug", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)

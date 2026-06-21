@@ -49,6 +49,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   const [daemonOnline, setDaemonOnline] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const qrPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Phone-pair fallback (alternative to QR scan — generates 8-char code)
+  const [pairPhone, setPairPhone] = useState('62');
+  const [pairCode, setPairCode] = useState('');
+  const [pairCodeError, setPairCodeError] = useState('');
+  const [pairCodeLoading, setPairCodeLoading] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     '[SYSTEM] Initializing whatsmeow framework package... READY',
     '[SYSTEM] Client logged out. Secure session SQLite DB detected.',
@@ -366,6 +372,83 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                       >
                         Minta QR Baru
                       </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Alternative: pair-by-phone-number (no camera scan) */}
+                {!waConnected && (
+                  <div className="mt-6 pt-4 border-t-2 border-dashed border-slate-200">
+                    <div className="text-center mb-3">
+                      <p className="text-[10px] font-black text-[#012749] uppercase tracking-widest">
+                        ATAU: Pairing via Nomor HP (tanpa scan QR)
+                      </p>
+                      <p className="text-[9px] text-gray-500 mt-1">
+                        Masukkan nomor WA bisnis Garindo (format E.164 tanpa +)
+                      </p>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={pairPhone}
+                        onChange={(e) => setPairPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                        placeholder="6281234567890"
+                        className="flex-1 px-3 py-2 text-[11px] font-mono border-2 border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                      />
+                      <button
+                        onClick={async () => {
+                          setPairCodeLoading(true);
+                          setPairCodeError('');
+                          setPairCode('');
+                          try {
+                            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wa/pair-code`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ phone: pairPhone }),
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                              setPairCodeError(data.error || `HTTP ${res.status}`);
+                            } else {
+                              setPairCode(data.code);
+                              pushTerminalLog(`Pair code generated for ${data.phone}: ${data.code}`);
+                            }
+                          } catch (e) {
+                            setPairCodeError(e instanceof Error ? e.message : String(e));
+                          } finally {
+                            setPairCodeLoading(false);
+                          }
+                        }}
+                        disabled={pairCodeLoading || pairPhone.length < 10}
+                        className="bg-[#2d8a4e] hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-[10px] font-extrabold disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+                      >
+                        {pairCodeLoading ? '...' : 'Kirim Kode'}
+                      </button>
+                    </div>
+                    {pairCodeError && (
+                      <p className="text-[10px] text-rose-600 font-bold mt-2 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100">
+                        ⚠ {pairCodeError}
+                      </p>
+                    )}
+                    {pairCode && (
+                      <div className="mt-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 text-center">
+                        <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest mb-2">
+                          KODE PAIRING (BERLAKU ~2 MENIT)
+                        </p>
+                        <p className="text-3xl font-black tracking-[0.3em] text-[#012749] font-mono select-all">
+                          {pairCode}
+                        </p>
+                        <div className="mt-3 text-[10px] text-gray-600 text-left space-y-1">
+                          <p className="font-bold text-emerald-800">Cara pakai di HP:</p>
+                          <ol className="list-decimal list-inside space-y-0.5">
+                            <li>Buka WhatsApp → Setelan → Perangkat Tertaut</li>
+                            <li>Tap <strong>Tautkan Perangkat</strong></li>
+                            <li>Tap <strong>Tautkan dengan nomor telepon</strong> (link bawah QR scanner)</li>
+                            <li>Ketik kode di atas (huruf besar)</li>
+                            <li>Tunggu hingga status berubah ke TERHUBUNG</li>
+                          </ol>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
