@@ -1,5 +1,39 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp DEPLOYED 100% (PR #50 + #52)
+
+Cloud Run frontend revision `garindo-jaya-panel-msme-erp-frontend-00157-fem` (tag `c96e02c9`) promoted to 100% traffic. Live URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` now serves bundle `index-BKiHvuf3.js`.
+
+**Migration (already live, applied pre-merge via MCP):**
+- `supabase/migrations/20260701000001_conversation_state_lock.sql` — 2 cols + 3 RPCs (`manually_override_conversation_state`, `auto_resume_expired_locks`, `clear_conversation_lock`) + pg_cron job `auto_resume_locked_conversations` every 1 min.
+- DB smoke pre-deploy: 1 positive + 4 negative cases ALL PASS via DO-block rollback (zero side effect).
+
+**E2E browser smoke against tag URL c8adfe07 (Chrome MCP):**
+- 6/8 scenarios verified live, 1 bug found + fixed, 1 N/A.
+- ✅ Sidebar: 15 menu entries, zero Pipeline.
+- ✅ Sales Inbox: Slack-style 4 kategori (Butuh Aksi 9 / AI Aktif 2 / Menunggu 0 / Riwayat 6) sync sidebar badge (9 percakapan butuh aksi).
+- ✅ State badge dropdown: 14 states render, COMPLETED+CANCELLED+current disabled.
+- ✅ Override flow: 🔒 countdown badge + green mode banner "Mode Admin · di-lock sampai 22.02" + system message "Tony Wei mengubah status ke CONFIRMING, AI di-pause 15 menit, pada 21:47 WIB" + stepper marker ◀ moved.
+- ✅ "Aktifkan AI Sekarang" early-resume: state preserved, ai_active flipped true, lock cleared, kategori re-classify Butuh Aksi 9→8 + AI Aktif 2→3 (categorize helper correct).
+- ✅ Sidebar badge sync: realtime mirror Butuh Aksi count.
+- N/A Kasir perm gate: no Kasir role in `admin_users` (only Owner + Staff Admin Toko); gate logic verified in bundle.
+- Smoke trace cleaned: conv `243245707706585@lid` direstore ke ESCALATED_ADMIN + ai_active=false + lock=NULL; 2 system messages dihapus dari `messages` table.
+
+**Bug found mid-smoke → PR #52 hotfix:**
+- `src/components/penjualan/CatatPenjualanWizard.tsx:434-436` masih reference deleted Pipeline menu di toast text + `onNavigate('pipeline')`. Wizard PR #46/#48 introduce baris baru AFTER Task 1 grep, sebelum PR #50 merge. Vite build tidak run tsc → dead reference shipped.
+- Fix: toast → "Cek di Daftar Pesanan untuk lock + approval", nav → `'daftarPesanan'` (Phase 1B funnel LockSubmissionModal).
+- Verified in deployed bundle: "Daftar Pesanan untuk lock" present, "Pipeline untuk lock" gone.
+
+**Backend Go not yet re-deployed:**
+- `c00e21e` (lazy resume + state lock guards + AutoResumeConv) + `0550fbc` (observability fix) committed but image build pending.
+- Defense-in-depth still intact via SQL guard in `UpdateConversationState` (atomic, DB-side, active now) + pg_cron auto-resume (DB-side, active now).
+- Max conv-stuck-locked window without lazy-resume: 1 minute (pg_cron interval). Acceptable.
+
+**Screenshots:**
+- `docs/screenshots/smoke-pipeline-revamp-1-kategori.png`
+- `docs/screenshots/smoke-pipeline-revamp-2-lock-active.png`
+- `docs/screenshots/smoke-pipeline-revamp-3-lock-cleared.png`
+
 ## 2026-06-21 — Pipeline Revamp Phase 3 Task 7: Backend Go lazy resume + state lock guard
 
 - `models/types.go`: Added `StateLockedUntil *time.Time` to `Conversation` struct.
