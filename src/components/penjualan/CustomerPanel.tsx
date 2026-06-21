@@ -1,35 +1,28 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search, Lock, X } from 'lucide-react';
 import type { DbCustomerWithStats } from '../../types';
 import { formatRp } from '../../lib/format';
 
-// Audit note (Catat Penjualan T9, feedback_no_adhoc_customers):
-// This component still exposes a manual "Daftar Pelanggan Baru" entry block
-// (customerName/customerPhone/customerCompany props) consumed only by the
-// legacy PenjualanBaruScreen. The new Catat Penjualan wizard does NOT reuse
-// CustomerPanel — it uses NewCustomerInlineForm + insertNewCustomer
-// (src/lib/customers/customerWrappers.ts) to persist every new customer
-// before the order is recorded. T22 will retire the manual-entry block here
-// when PenjualanBaruScreen is deprecated.
+/**
+ * CustomerPanel — search-and-select only. Per `feedback_no_adhoc_customers`
+ * memory: every customer in a sale must persist to `customers`. New
+ * customers go through `NewCustomerInlineForm` + `insertNewCustomer`
+ * (src/lib/customers/customerWrappers.ts), surfaced by the wizard's
+ * Step1ChannelCustomer "+ Customer Baru" button.
+ *
+ * The previous manual-entry fallback block was retired with PR #40's
+ * PenjualanBaruScreen deletion (the only consumer that needed it).
+ */
 
 export interface CustomerPanelProps {
   customers: DbCustomerWithStats[];
   selectedCustomerId: string | null;
-  customerName: string;
-  customerPhone: string;
-  customerCompany: string;
   onSelectExisting: (c: DbCustomerWithStats) => void;
   onClearSelection: () => void;
-  onNameChange: (v: string) => void;
-  onPhoneChange: (v: string) => void;
-  onCompanyChange: (v: string) => void;
 }
 
 export default function CustomerPanel(props: CustomerPanelProps) {
-  const {
-    customers, selectedCustomerId, customerName, customerPhone, customerCompany,
-    onSelectExisting, onClearSelection, onNameChange, onPhoneChange, onCompanyChange,
-  } = props;
+  const { customers, selectedCustomerId, onSelectExisting, onClearSelection } = props;
   const [search, setSearch] = useState('');
 
   const isSelected = !!selectedCustomerId;
@@ -92,6 +85,13 @@ export default function CustomerPanel(props: CustomerPanelProps) {
         </div>
       )}
 
+      {/* No results — hint to use + Customer Baru button (rendered by parent) */}
+      {search.trim().length > 0 && filtered.length === 0 && !isSelected && (
+        <div className="text-[11px] text-slate-500 italic px-1 mb-2">
+          Tidak ketemu di daftar. Gunakan "+ Customer Baru" di bawah untuk daftarkan customer baru.
+        </div>
+      )}
+
       {/* Selected customer chip */}
       {isSelected && selected && (
         <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2.5 flex justify-between items-center mb-2">
@@ -113,47 +113,6 @@ export default function CustomerPanel(props: CustomerPanelProps) {
           </button>
         </div>
       )}
-
-      {/* New customer block (disabled when selected) */}
-      <div className={`mt-2 rounded-xl p-3 ${
-        isSelected
-          ? 'bg-slate-50 border border-dashed border-slate-200 opacity-60 pointer-events-none'
-          : 'bg-yellow-50 border border-dashed border-yellow-300'
-      }`}>
-        <label className={`text-[11px] font-extrabold uppercase tracking-widest block mb-2 ${
-          isSelected ? 'text-slate-400' : 'text-amber-700'
-        }`}>
-          + Daftar Pelanggan Baru
-        </label>
-        <input
-          value={customerName}
-          onChange={e => onNameChange(e.target.value)}
-          placeholder="Nama lengkap *"
-          disabled={isSelected}
-          className="w-full mb-2 bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] disabled:bg-slate-100 disabled:text-slate-400"
-        />
-        <div className="grid grid-cols-[1.4fr_1fr] gap-2">
-          <input
-            value={customerPhone}
-            onChange={e => onPhoneChange(e.target.value)}
-            placeholder="Nomor HP / WA *"
-            disabled={isSelected}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] disabled:bg-slate-100 disabled:text-slate-400"
-          />
-          <input
-            value={customerCompany}
-            onChange={e => onCompanyChange(e.target.value)}
-            placeholder="Nama perusahaan"
-            disabled={isSelected}
-            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px] disabled:bg-slate-100 disabled:text-slate-400"
-          />
-        </div>
-        <p className="text-[11px] mt-1 font-semibold text-slate-500">
-          {isSelected
-            ? '🔒 Nonaktif — sudah pilih pelanggan terdaftar. Klik ✕ Ganti untuk reset.'
-            : '* wajib · Nama perusahaan opsional'}
-        </p>
-      </div>
     </div>
   );
 }
