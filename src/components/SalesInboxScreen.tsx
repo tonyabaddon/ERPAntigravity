@@ -3,6 +3,7 @@ import { MessageSquare, Search, Send, PlusCircle } from 'lucide-react';
 import { useRealtimeConversations, ConversationWithMessages } from '../hooks/useRealtimeConversations';
 import type { DbMessage } from '../types';
 import type { ActivePage } from '../types';
+import { categorize, categoryCounts, type InboxCategory } from '../lib/salesInboxCategorize';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -73,7 +74,7 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
 
   const [activeChatId, setActiveChatId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'Semua' | 'Admin' | 'AI'>('Semua');
+  const [activeCategory, setActiveCategory] = useState<InboxCategory>('butuhAksi');
   const [inputText, setInputText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -92,21 +93,13 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages.length, activeChatId]);
 
-  const adminCount = conversations.filter(
-    c => c.state === 'ESCALATED_ADMIN' || c.state === 'ESCALATED_WIRING' || !c.ai_active
-  ).length;
-  const aiCount = conversations.filter(
-    c => c.ai_active && c.state !== 'ESCALATED_ADMIN' && c.state !== 'ESCALATED_WIRING'
-  ).length;
+  const counts = categoryCounts(conversations);
 
   const filteredConvs = conversations.filter(conv => {
     const name = (conv.collected_data.name ?? '').toLowerCase();
     const q = searchQuery.toLowerCase();
     if (q && !conv.customer_phone.includes(q) && !name.includes(q)) return false;
-    if (activeFilter === 'Admin')
-      return conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING' || !conv.ai_active;
-    if (activeFilter === 'AI')
-      return conv.ai_active && conv.state !== 'ESCALATED_ADMIN' && conv.state !== 'ESCALATED_WIRING';
+    if (categorize(conv) !== activeCategory) return false;
     return true;
   });
 
@@ -158,25 +151,37 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 px-2 py-2 border-b border-gray-100 shrink-0">
-          {([
-            { key: 'Semua', label: 'Semua' },
-            { key: 'Admin', label: `Admin (${adminCount})` },
-            { key: 'AI', label: `AI (${aiCount})` },
-          ] as const).map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveFilter(key)}
-              className={`flex-1 text-[10px] font-bold px-1.5 py-1 rounded-full whitespace-nowrap ${
-                activeFilter === key
-                  ? 'bg-[#012749] text-white'
-                  : 'bg-white border border-gray-200 text-gray-500'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        {/* Kategori list (Slack-style) */}
+        <div className="border-b border-gray-100 shrink-0">
+          <div className="px-3 pt-2 pb-1 text-[9px] font-bold uppercase tracking-widest text-gray-400">
+            Kategori
+          </div>
+          {(
+            [
+              { id: 'butuhAksi', label: '🔴 Butuh Aksi', accent: 'red',     active: 'bg-red-50 border-l-red-500 text-red-700',         badge: 'bg-red-500 text-white' },
+              { id: 'aiAktif',   label: '🔵 AI Aktif',   accent: 'blue',    active: 'bg-blue-50 border-l-blue-500 text-blue-700',      badge: 'bg-blue-500 text-white' },
+              { id: 'menunggu',  label: '🟡 Menunggu',   accent: 'amber',   active: 'bg-amber-50 border-l-amber-500 text-amber-700',    badge: 'bg-amber-500 text-white' },
+              { id: 'riwayat',   label: '✅ Riwayat',    accent: 'gray',    active: 'bg-gray-100 border-l-gray-400 text-gray-600',       badge: 'bg-gray-400 text-white' },
+            ] as const
+          ).map(({ id, label, active, badge }) => {
+            const isActive = activeCategory === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveCategory(id)}
+                className={`w-full px-3 py-2 flex items-center justify-between text-left border-l-[3px] ${
+                  isActive ? active : 'border-l-transparent hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <span className={`text-xs ${isActive ? 'font-bold' : ''}`}>{label}</span>
+                <span className={`text-[10px] font-bold px-1.5 rounded-full ${
+                  isActive ? badge : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {counts[id]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Conversation list */}
