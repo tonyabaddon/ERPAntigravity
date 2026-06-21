@@ -8083,3 +8083,13 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
   - GREEN: `npm test -- salesInboxCategorize` passed all cases after implementation.
 - **Commit:** `6b29064` — "feat(sales-inbox): categorize helper + tests for 4 verb-driven groups"
 - **Next:** Task 3 — SalesInboxScreen Slack-style categori list UI.
+
+## 2026-06-21 — Pipeline Revamp: behavior change on followup-disabled conversations
+
+Task 7's added `!conv.AIActive` early-return in `handler.go` has a side effect on the existing follow-up cool-off flow:
+
+Pre-Task-7: `followup.go` set `ai_active=false` after 6 cumulative follow-ups without reply. The handler never read this flag, so AI auto-reply still fired on the eventual customer reply.
+
+Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply after cool-off → AI no longer auto-responds. `ResetFollowupCounter` clears the counter but does NOT flip `ai_active=true`. Conv lands in Sales Inbox "Butuh Aksi" category (per `categorize()` helper).
+
+**Decision (founder, 2026-06-21):** Accept as intended behavior. The "cool-off → admin handle" model is consistent with the override design ("AI off = admin take over"). No code change. Owner/admin sees these convs in the "Butuh Aksi" filter and can re-enable AI manually or take over the chat directly.

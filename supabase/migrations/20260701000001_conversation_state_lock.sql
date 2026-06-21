@@ -142,6 +142,78 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION auto_resume_expired_locks() FROM PUBLIC;
 
+-- ─── Clear-lock RPC (early-resume by admin) ─────────────────────────────────
+CREATE OR REPLACE FUNCTION clear_conversation_lock(
+  p_conv_id UUID
+) RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+  v_caller       UUID;
+  v_caller_email TEXT;
+  v_admin_id     UUID;
+  v_admin_name   TEXT;
+  v_admin_count  INT;
+BEGIN
+  -- Role gate via email lookup (same pattern as manually_override_conversation_state).
+  v_caller := auth.uid();
+  IF v_caller IS NULL THEN
+    RAISE EXCEPTION 'not authorized: no authenticated user'
+      USING ERRCODE = '42501';
+  END IF;
+
+  SELECT email INTO v_caller_email FROM auth.users WHERE id = v_caller;
+  IF v_caller_email IS NULL OR v_caller_email = '' THEN
+    RAISE EXCEPTION 'not authorized: caller has no email'
+      USING ERRCODE = '42501';
+  END IF;
+
+  SELECT COUNT(*) INTO v_admin_count
+    FROM admin_users
+   WHERE lower(email) = lower(v_caller_email)
+     AND role IN ('Owner', 'Staff Admin Toko')
+     AND status = 'Aktif';
+
+  IF v_admin_count = 0 THEN
+    RAISE EXCEPTION 'not authorized: hanya Owner / Staff Admin Toko aktif yang boleh clear lock'
+      USING ERRCODE = '42501';
+  ELSIF v_admin_count > 1 THEN
+    RAISE EXCEPTION 'AMBIGUOUS_ADMIN: % active admin rows match caller email', v_admin_count
+      USING ERRCODE = '42501';
+  END IF;
+
+  SELECT id, name INTO v_admin_id, v_admin_name
+    FROM admin_users
+   WHERE lower(email) = lower(v_caller_email)
+     AND role IN ('Owner', 'Staff Admin Toko')
+     AND status = 'Aktif';
+
+  UPDATE conversations SET
+    ai_active                = true,
+    state_locked_until       = NULL,
+    state_locked_by_admin_id = NULL,
+    updated_at               = NOW()
+  WHERE id = p_conv_id;
+
+  -- Audit (system message in chat).
+  INSERT INTO messages (conversation_id, sender, text, created_at)
+  VALUES (
+    p_conv_id,
+    'system',
+    format(
+      '%s mengaktifkan AI lebih awal (cabut lock) pada %s WIB',
+      v_admin_name,
+      to_char(NOW() AT TIME ZONE 'Asia/Jakarta', 'HH24:MI')
+    ),
+    NOW()
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION clear_conversation_lock(UUID) TO authenticated;
+
 -- ─── pg_cron schedule ───────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 

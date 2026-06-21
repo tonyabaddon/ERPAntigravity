@@ -246,15 +246,9 @@ export const conversationService = {
 
   async clearConversationLock(convId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('conversations')
-      .update({
-        ai_active: true,
-        state_locked_until: null,
-        state_locked_by_admin_id: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', convId);
+    const { error } = await supabase.rpc('clear_conversation_lock', {
+      p_conv_id: convId,
+    });
     if (error) throw error;
   },
 
