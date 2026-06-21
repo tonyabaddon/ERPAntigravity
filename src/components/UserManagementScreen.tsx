@@ -49,20 +49,20 @@ function defaultPermissions(role: string): PermissionSet {
   if (role === 'Owner') return { ...ALL_PERMISSIONS };
   if (role === 'Supervisor Gudang') return {
     dashboard: true, salesInbox: false, laporan: true, aiStock: true,
-    pipeline: false, pelanggan: false, orderHistory: false,
+    pelanggan: false, orderHistory: false,
     userManagement: false, whatsappAi: false, notifications: false, settings: false,
     pembelian: false, kasir: false,
   };
   if (role === 'Staff Admin Toko') return {
     dashboard: true, salesInbox: true, laporan: true, aiStock: false,
-    pipeline: true, pelanggan: true, orderHistory: true,
+    pelanggan: true, orderHistory: true,
     userManagement: false, whatsappAi: false, notifications: false, settings: false,
     pembelian: false, kasir: false,
   };
   // Finance Manager
   return {
     dashboard: true, salesInbox: true, laporan: true, aiStock: false,
-    pipeline: true, pelanggan: true, orderHistory: true,
+    pelanggan: true, orderHistory: true,
     userManagement: false, whatsappAi: false, notifications: false, settings: false,
     pembelian: false, kasir: false,
   };
