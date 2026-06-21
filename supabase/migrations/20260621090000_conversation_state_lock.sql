@@ -35,6 +35,7 @@ DECLARE
   v_caller_email TEXT;
   v_admin_id     UUID;
   v_admin_name   TEXT;
+  v_admin_count  INT;
   v_old_state    conversation_state;
 BEGIN
   -- Role gate via email lookup (admin_users.id != auth.uid in all cases).
@@ -50,17 +51,25 @@ BEGIN
       USING ERRCODE = '42501';
   END IF;
 
+  SELECT COUNT(*) INTO v_admin_count
+    FROM admin_users
+   WHERE lower(email) = lower(v_caller_email)
+     AND role IN ('Owner', 'Staff Admin Toko')
+     AND status = 'Aktif';
+
+  IF v_admin_count = 0 THEN
+    RAISE EXCEPTION 'not authorized: hanya Owner / Staff Admin Toko aktif yang boleh override state'
+      USING ERRCODE = '42501';
+  ELSIF v_admin_count > 1 THEN
+    RAISE EXCEPTION 'AMBIGUOUS_ADMIN: % active admin rows match caller email', v_admin_count
+      USING ERRCODE = '42501';
+  END IF;
+
   SELECT id, name INTO v_admin_id, v_admin_name
     FROM admin_users
    WHERE lower(email) = lower(v_caller_email)
      AND role IN ('Owner', 'Staff Admin Toko')
-     AND status = 'Aktif'
-   LIMIT 1;
-
-  IF v_admin_id IS NULL THEN
-    RAISE EXCEPTION 'not authorized: hanya Owner / Staff Admin Toko aktif yang boleh override state'
-      USING ERRCODE = '42501';
-  END IF;
+     AND status = 'Aktif';
 
   -- Terminal-state guards.
   IF p_new_state IN ('COMPLETED','CANCELLED') THEN
@@ -109,7 +118,9 @@ GRANT EXECUTE ON FUNCTION manually_override_conversation_state(UUID, conversatio
 -- ─── Auto-resume RPC ────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION auto_resume_expired_locks()
 RETURNS INT
-LANGUAGE plpgsql AS $$
+LANGUAGE plpgsql
+SET search_path = public, extensions
+AS $$
 DECLARE
   v_count INT;
 BEGIN
@@ -129,6 +140,8 @@ BEGIN
 END;
 $$;
 
+REVOKE EXECUTE ON FUNCTION auto_resume_expired_locks() FROM PUBLIC;
+
 -- ─── pg_cron schedule ───────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
@@ -143,7 +156,7 @@ END $$;
 SELECT cron.schedule(
   'auto_resume_locked_conversations',
   '* * * * *',
-  $cron$ SELECT auto_resume_expired_locks(); $cron$
+  $cron$ SELECT public.auto_resume_expired_locks(); $cron$
 );
 
 COMMIT;
