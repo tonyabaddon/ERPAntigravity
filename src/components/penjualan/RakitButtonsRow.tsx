@@ -1,11 +1,24 @@
 // src/components/penjualan/RakitButtonsRow.tsx
 //
-// Wizard Step 2 jasa-type picker. Header + framing now live on the parent
-// (Step2Items renders the "Tambah Jasa (Optional)" label + skip-hint above
-// this row), so this component is just the 2 tinted-button row matching
-// the approved mockup palette: Custom Panel = purple, Wiring Panel = sky.
-import React from 'react';
+// Wizard Step 2 jasa-type picker. Renders dynamically from serviceTypesService.fetchActive()
+// so that toggling is_active in Pengaturan → Jenis Jasa immediately affects the wizard.
+//
+// Backwards-compat: each DbServiceType.code is mapped to the legacy RakitServiceType union
+// so the existing cart state / RPC payload layer stays unchanged in Phase 1.
+//
+// Known limitation: tenant-added service_types whose code doesn't match the map are skipped
+// with a console.warn. Full wiring (widen union → service_type_id in RakitJobLine) is Phase 2.
+import React, { useEffect, useState } from 'react';
 import type { RakitServiceType } from '../../types';
+import type { DbServiceType } from '../../types';
+import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
+
+// Map from seeded service_types.code → legacy RakitServiceType union value.
+// Seeded codes: 'custom_panel', 'wiring_panel'.
+const CODE_TO_RAKIT: Record<string, RakitServiceType> = {
+  custom_panel: 'jasa_custom_panel',
+  wiring_panel: 'jasa_rakit',
+};
 
 interface RakitButtonsRowProps {
   formOpen: boolean;
@@ -14,33 +27,58 @@ interface RakitButtonsRowProps {
 }
 
 export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitButtonsRowProps) {
+  const [serviceTypes, setServiceTypes] = useState<DbServiceType[]>([]);
   const disabled = formOpen;
+
+  useEffect(() => {
+    serviceTypesService.fetchActive()
+      .then(setServiceTypes)
+      .catch((err: unknown) => console.error('serviceTypes fetch:', err));
+  }, []);
+
+  // Filter to only service types whose code maps to a known RakitServiceType.
+  const knownTypes = serviceTypes.filter((st) => {
+    if (st.code in CODE_TO_RAKIT) return true;
+    console.warn(`RakitButtonsRow: unknown service_type code "${st.code}" — skipped until Phase 2 wiring`);
+    return false;
+  });
+
+  if (knownTypes.length === 0) {
+    // Loading or all deactivated
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <div className="h-9 rounded-lg bg-slate-100 animate-pulse" />
+        <div className="h-9 rounded-lg bg-slate-100 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <button
-        type="button"
-        onClick={() => onOpen('jasa_custom_panel')}
-        disabled={disabled}
-        className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
-          disabled && formType === 'jasa_custom_panel'
-            ? 'bg-purple-100 text-purple-800 border-purple-300 opacity-60 cursor-not-allowed'
-            : 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100 disabled:opacity-50'
-        }`}
-      >
-        + Custom Panel
-      </button>
-      <button
-        type="button"
-        onClick={() => onOpen('jasa_rakit')}
-        disabled={disabled}
-        className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
-          disabled && formType === 'jasa_rakit'
-            ? 'bg-sky-100 text-sky-800 border-sky-300 opacity-60 cursor-not-allowed'
-            : 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100 disabled:opacity-50'
-        }`}
-      >
-        + Wiring Panel
-      </button>
+    <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${knownTypes.length}, 1fr)` }}>
+      {knownTypes.map((st) => {
+        const rakitType = CODE_TO_RAKIT[st.code];
+        const color = st.color_hex ?? '#012749';
+        const isActive = disabled && formType === rakitType;
+        return (
+          <button
+            key={st.id}
+            type="button"
+            onClick={() => onOpen(rakitType)}
+            disabled={disabled}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg border transition disabled:opacity-50`}
+            style={{
+              backgroundColor: isActive
+                ? `${color}22`
+                : `${color}10`,
+              color,
+              borderColor: isActive ? color : `${color}44`,
+              cursor: disabled ? 'not-allowed' : 'pointer',
+            }}
+          >
+            + {st.name}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -8457,3 +8457,58 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - Backfill: COUNT(*)=0 rakit_lock rows with service_type_id (no pre-existing records in ekhhojaezdfjfwuxyjkl development tenant) ✓
 - **Commit:** `1234973` — "feat(pengaturan): service_types master + Garindo seed Custom/Wiring Panel"
 - **Next:** Task 5 — `approval_reason_types` table + seed for 5 reason categories (Retur/Diskon/Garansi/BatasAirflow/Lainnya).
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 9 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Plan:** Phase 1 Pengaturan MSME Configurability — 20-task implementation. Docs/specs at `docs/superpowers/specs/2026-06-21-pengaturan-msme-configurability-design.md`
+- **Task 9:** Per-gate approval matrix smoke (documentation + execution)
+- **File created:** `tests/integration/approval-matrix.test.sql` (164 lines)
+  - DO-block with 25 test cases across 6 key gates (adjustment, opname, price_change, customer_credit_activate, kasir_refund, rakit_lock, purchase_order_create)
+  - Covers: bypass on approval_required=FALSE, threshold qty/amount, self-bypass (requestor_bypass_self=TRUE), verification method routing (PIN, APP_INBOX, WA_BUTTON)
+  - Test pattern: set_config('request.jwt.claim.sub') → UPDATE approval_settings → call _check_approval_required → IF decision <> expected THEN RAISE EXCEPTION → RAISE NOTICE 'All 25 matrix tests PASS' → RAISE EXCEPTION 'rollback'
+- **Execution via:** Supabase MCP `execute_sql` with full DO-block
+  - Expected: ERROR P0001: rollback (side effects zeroed by transaction rollback)
+  - NOTICE raised before rollback: "All 25 matrix tests PASS"
+- **Post-execution verification:**
+  - SELECT approval_settings (tenant_id IS NULL) verified unchanged:
+    - 12 rows with approval_required=TRUE, verification_method='PIN' (adjustment, opname, price_change, kasir_price_override, kasir_void, kasir_refund, rakit_lock, customer_credit_activate, customer_credit_limit_change, customer_credit_deactivate, initial_stock, piutang_write_off)
+    - 7 rows with approval_required=FALSE, verification_method='NONE' (purchase_order_create, purchase_order_amend, tagihan_create, supplier_payment, bnl_create, tukar_faktur, purchase_return)
+  - Garindo seed unchanged: Y
+- **Commit:** `68aa43a` — "test(pengaturan): per-gate approval matrix smoke (25 cases)"
+- **Report:** `.superpowers/sdd/task-9-report.md` (documented execution output + verification)
+- **Next:** Task 10 — UI configurability screen for approval_settings (read-only display).
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 17: Sidebar cascade wiring
+
+**DONE.** Sidebar now reads tenant_settings on mount and hides menu items when their corresponding modul switch is OFF.
+
+**Changes (`src/components/Sidebar.tsx`, +34 / -3 LOC):**
+- 3 new imports: `DbTenantSettings` (type), `tenantSettingsService`, `isMenuVisible + MenuKey`
+- `useState<DbTenantSettings | null>(null)` + `useEffect` fetch placed before early return (hooks rules)
+- `ACTIVEPAGE_TO_MENUKEY` partial map: kasir→kasir, piutang→piutang, tukar-faktur→tukarFaktur, transfer-gudang→transferGudang, pesanan-wip→pesananWip, akuntansi→akuntansi
+- Modul gate AND-composed into existing `visibleItems.filter()` — single pass, optimistic when settings=null
+
+**Verification:**
+- `npm run lint` (tsc --noEmit): PASS (no output)
+- `npm run build`: PASS (2798 modules, 3.01s; pre-existing warnings only)
+- **Commit:** `c1b6c03` — "feat(sidebar): wire cascade map for modul-based menu visibility"
+- **Report:** `.superpowers/sdd/task-17-report.md`
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 18: Dynamic RakitButtonsRow
+
+**DONE (backwards-compat).** RakitButtonsRow now renders buttons dynamically from `serviceTypesService.fetchActive()`.
+
+**Key finding:** Seeded `service_types.code` values (`custom_panel`, `wiring_panel`) don't match legacy `RakitServiceType` union (`jasa_custom_panel`, `jasa_rakit`). A `CODE_TO_RAKIT` map bridges the gap while keeping downstream state/RPC payload unchanged.
+
+**Changes:**
+- `src/components/penjualan/RakitButtonsRow.tsx` (+17 LOC net) — full rewrite: useEffect fetch, dynamic buttons with DB color_hex, CODE_TO_RAKIT map, skeleton loading state
+- `src/components/penjualan/CartRows.tsx` (+20 LOC net) — new `serviceTypes?: DbServiceType[]` prop, getRakitLabel() helper, dynamic labels in rakit cart rows
+- `src/components/penjualan/wizard/Step2Items.tsx` (+12 LOC net) — serviceTypes prop wired through to CartRows + RakitInlineForm
+- `src/components/penjualan/RakitInlineForm.tsx` (+2 LOC net) — serviceTypeName?: string prop with fallback
+- `src/components/penjualan/CatatPenjualanWizard.tsx` (+11 LOC net) — serviceTypes state + useEffect fetch, passed to Step2Items
+
+**Verification:**
+- `npm run lint` (tsc --noEmit): PASS
+- `npm run build`: PASS (2798 modules; pre-existing warnings only)
+- **Report:** `.superpowers/sdd/task-18-report.md`

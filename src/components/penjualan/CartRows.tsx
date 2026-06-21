@@ -1,11 +1,23 @@
 import React from 'react';
 import { KasirItem } from '../../types';
-import type { RakitServiceType } from '../../types';
+import type { RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { isPreOrder } from '../../lib/wizard/validation';
+
+// Map from seeded service_types.code → legacy RakitServiceType union value (mirrors RakitButtonsRow).
+const CODE_TO_RAKIT: Record<string, RakitServiceType> = {
+  custom_panel: 'jasa_custom_panel',
+  wiring_panel: 'jasa_rakit',
+};
+
+// Fallback label when serviceTypes prop is not supplied or code not seeded.
+const RAKIT_LABEL_FALLBACK: Record<RakitServiceType, string> = {
+  jasa_custom_panel: 'Jasa Custom Panel',
+  jasa_rakit: 'Wiring Panel',
+};
 
 export interface CartRowsProps {
   items: (KasirItem & { _key: number })[];
@@ -16,6 +28,12 @@ export interface CartRowsProps {
   rakitLines?: Array<{ id: string; type: RakitServiceType; description: string; estimatedPrice: number }>;
   onRemoveRakit?: (id: string) => void;
   /**
+   * Active service_types from serviceTypesService.fetchActive(). When provided,
+   * cart rakit rows display st.name instead of hardcoded labels.
+   * Optional — falls back to RAKIT_LABEL_FALLBACK when omitted.
+   */
+  serviceTypes?: DbServiceType[];
+  /**
    * Per-warehouse stock keyed by `${sku}|${warehouse_id}`. When qty > the
    * looked-up stock, the row renders a "PRE-ORDER · kurang N" chip inline.
    * Optional — when omitted / empty (current wizard behavior — the
@@ -25,7 +43,17 @@ export interface CartRowsProps {
   stockByWarehouseSku?: Record<string, number>;
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit, stockByWarehouseSku }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes }: CartRowsProps) {
+  // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
+  const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
+  if (serviceTypes && serviceTypes.length > 0) {
+    for (const st of serviceTypes) {
+      const legacyType = CODE_TO_RAKIT[st.code];
+      if (legacyType) rakitLabelMap[legacyType] = st.name;
+    }
+  }
+  const getRakitLabel = (type: RakitServiceType): string =>
+    rakitLabelMap[type] ?? RAKIT_LABEL_FALLBACK[type] ?? type;
   const stockMap = stockByWarehouseSku ?? {};
   const { warehouses } = useWarehouses();
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
@@ -137,45 +165,49 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
       {rakitLines && rakitLines.length > 0 && (
         <>
           <div className="text-[10px] font-extrabold text-orange-700 uppercase tracking-widest mb-2 mt-3 flex items-center gap-2">
-            <span>🛠 Wiring Panel</span>
+            <span>🛠 Jasa</span>
             <span className="flex-1 border-t border-dotted border-slate-300" />
           </div>
-          {rakitLines.map(r => (
-            <div
-              key={r.id}
-              className="rounded-xl p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-[12px]"
-              style={{
-                background: r.type === 'jasa_custom_panel'
-                  ? 'linear-gradient(90deg, rgba(14,165,233,0.08), rgba(14,165,233,0.02) 80%)'
-                  : 'linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02) 80%)',
-                borderLeft: r.type === 'jasa_custom_panel' ? '3px solid #0ea5e9' : '3px solid #f59e0b',
-              }}
-            >
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                    r.type === 'jasa_custom_panel'
-                      ? 'bg-sky-50 text-sky-700 border border-sky-200'
-                      : 'bg-orange-50 text-orange-700 border border-orange-200'
-                  }`}>
-                    {r.type === 'jasa_custom_panel' ? '📦 Jasa Custom Panel' : '⚡ Wiring Panel'}
-                  </span>
-                  <span className="font-extrabold text-[13px]">{r.description}</span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
-              </div>
-              <div className={`font-extrabold text-[14px] ${r.type === 'jasa_custom_panel' ? 'text-sky-700' : 'text-amber-700'}`}>
-                {formatRp(r.estimatedPrice)}
-              </div>
-              <button
-                type="button"
-                onClick={() => onRemoveRakit?.(r.id)}
-                className="text-slate-300 hover:text-rose-500 text-lg"
+          {rakitLines.map(r => {
+            const isCustom = r.type === 'jasa_custom_panel';
+            const label = getRakitLabel(r.type);
+            return (
+              <div
+                key={r.id}
+                className="rounded-xl p-3 mb-2 grid grid-cols-[1fr_auto_auto] gap-3 items-center text-[12px]"
+                style={{
+                  background: isCustom
+                    ? 'linear-gradient(90deg, rgba(14,165,233,0.08), rgba(14,165,233,0.02) 80%)'
+                    : 'linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02) 80%)',
+                  borderLeft: isCustom ? '3px solid #0ea5e9' : '3px solid #f59e0b',
+                }}
               >
-                ✕
-              </button>
-            </div>
-          ))}
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                      isCustom
+                        ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                        : 'bg-orange-50 text-orange-700 border border-orange-200'
+                    }`}>
+                      {isCustom ? '📦' : '⚡'} {label}
+                    </span>
+                    <span className="font-extrabold text-[13px]">{r.description}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Estimasi · final di-adjust admin saat lock</div>
+                </div>
+                <div className={`font-extrabold text-[14px] ${isCustom ? 'text-sky-700' : 'text-amber-700'}`}>
+                  {formatRp(r.estimatedPrice)}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemoveRakit?.(r.id)}
+                  className="text-slate-300 hover:text-rose-500 text-lg"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
         </>
       )}
     </>
