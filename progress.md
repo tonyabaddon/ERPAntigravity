@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 2 Task 3: SalesInboxScreen Slack-style 4-kategori filter
+
+- Replace 3-tab Semua/Admin/AI filter dengan 4-row Slack-style vertical list.
+- 4 kategori: 🔴 Butuh Aksi · 🔵 AI Aktif · 🟡 Menunggu · ✅ Riwayat.
+- Default aktif: butuhAksi (most urgent). Each row shows count badge.
+- activeCategory state (InboxCategory) replaces activeFilter ('Semua'|'Admin'|'AI').
+- categoryCounts() replaces adminCount/aiCount derivations.
+- Filter predicate: `categorize(conv) !== activeCategory` (delegates to helper from Task 2).
+- border-l-[3px] accent + per-color bg highlight on active row (verbatim from brief).
+- Build PASS, 248/248 tests PASS, dev server confirmed up.
+- Commit: 4deaee3
+
 ## 2026-06-21 — Pipeline Revamp Phase 1 (Delta A+B): menu Pipeline + walk-in markPaid path DIHAPUS
 
 - Hapus file PipelineScreen.tsx + entry sidebar + case App.tsx + literal types.
@@ -8017,3 +8029,30 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Commit:** `0ad9c19` — "feat(catat-penjualan): migration 002 — record_kasir_sale opt-in pre-order"
 - **Note:** 20 params in existing RPC (task description said 22 — actual file has 20). Migration correctly extends the existing signature.
 - **Next:** T3 — migration 003 `create_tempo_invoice` payload key.
+
+## 2026-06-21 — Pipeline Revamp — Task 2: categorize helper + tests DONE
+
+- **Branch:** `feat/pipeline-revamp` (worktree `.claude/worktrees/pipeline-revamp`)
+- **Plan:** Phase 2 of Pipeline Revamp. Task 2: helper to categorize conversations into 4 verb-driven inbox categories.
+- **Files created:**
+  - `src/lib/salesInboxCategorize.ts` — exports `categorize()` and `categoryCounts()` functions.
+  - `src/lib/salesInboxCategorize.test.ts` — 10 test cases covering all 4 categories + categoryCounts aggregation.
+- **Type extension:** Added `ADD_MORE` and `DELIVERY` states to `ConversationState` in `src/types.ts`.
+- **Implementation:**
+  - `categorize(conv)` maps `{ state: ConversationState; ai_active: boolean }` to `InboxCategory` using 4 ReadonlySet constants for terminal/escalated/ai-stages/menunggu states.
+  - Logic: terminal (COMPLETED|CANCELLED) → riwayat; escalated (ESCALATED_ADMIN|ESCALATED_WIRING|BOOKED|TIMEOUT_REMINDER) → butuhAksi; ai_active=false non-terminal → butuhAksi (manual override); DELIVERY → menunggu; ai_active=true ai-stages → aiAktif.
+  - `categoryCounts(convs)` aggregates conversations by calling `categorize()` for each, returns `Record<InboxCategory, number>` with 0-initialized counts.
+- **Test results:** All 10 test cases PASS:
+  - ESCALATED_ADMIN, ESCALATED_WIRING, BOOKED, TIMEOUT_REMINDER → butuhAksi (4 tests).
+  - ai_active=false non-terminal (CONFIRMING, COLLECTING) → butuhAksi (1 test + manual override assertion).
+  - COMPLETED ai_active=false → riwayat (1 test).
+  - CANCELLED → riwayat (1 test).
+  - ai_active=true ai-stages (GREETING, COLLECTING, CLARIFYING, STOCK_CHECK, CONFIRMING, ADD_MORE, APPROVED) → aiAktif (1 loop test).
+  - DELIVERY → menunggu (1 test).
+  - categoryCounts: multi-state aggregation (1 test) + empty array (1 test).
+- **Full test suite:** 248 tests PASS, no warnings.
+- **TDD evidence:**
+  - RED: `npm test -- salesInboxCategorize` failed with "Cannot find module './salesInboxCategorize'" before implementation.
+  - GREEN: `npm test -- salesInboxCategorize` passed all cases after implementation.
+- **Commit:** `6b29064` — "feat(sales-inbox): categorize helper + tests for 4 verb-driven groups"
+- **Next:** Task 3 — SalesInboxScreen Slack-style categori list UI.
