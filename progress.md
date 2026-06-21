@@ -1,5 +1,12 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 2 (Delta C1): Sales Inbox Slack-style kategori filter
+
+- Helper `salesInboxCategorize.ts` + unit tests (9 cases).
+- SalesInboxScreen filter diganti dari 3-tab (Semua/Admin/AI) ke 4 kategori verb-driven.
+- Sidebar badge Sales Inbox hitung dari "Butuh Aksi" predicate (escalated + booked + timeout + !ai_active non-terminal).
+- TypeScript build PASS, unit tests PASS, dev smoke PASS.
+
 ## 2026-06-21 — Pipeline Revamp Phase 2 Task 3: SalesInboxScreen Slack-style 4-kategori filter
 
 - Replace 3-tab Semua/Admin/AI filter dengan 4-row Slack-style vertical list.

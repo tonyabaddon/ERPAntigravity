@@ -28,6 +28,7 @@ import { buildHref, handleSPAClick } from '../lib/urlRoute';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import PiutangBadge from './piutang/PiutangBadge';
+import SalesInboxBadge from './sales/SalesInboxBadge';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -229,6 +230,11 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                           <PiutangBadge size="sm" />
                         </span>
                       )}
+                      {item.id === 'sales-inbox' && !isExpanded && (
+                        <span className="absolute -top-1.5 -right-1.5">
+                          <SalesInboxBadge size="sm" />
+                        </span>
+                      )}
                     </div>
                     <span className={`text-sm font-semibold flex-1 whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                       {item.label}
@@ -241,6 +247,11 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
                     {item.id === 'piutang' && isExpanded && (
                       <span className="transition-opacity duration-300 opacity-100 shrink-0">
                         <PiutangBadge size="md" />
+                      </span>
+                    )}
+                    {item.id === 'sales-inbox' && isExpanded && (
+                      <span className="transition-opacity duration-300 opacity-100 shrink-0">
+                        <SalesInboxBadge size="md" />
                       </span>
                     )}
                   </a>
