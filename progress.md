@@ -1,5 +1,53 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0a IMPLEMENTATION COMPLETE (18 tasks, Task 13 deferred)
+
+All 15 migrations applied to staging Supabase. 59 SAK EMKM COA seeded. All RPCs tested (_post_journal_entry, close_accounting_period, set_opening_balance, close_fiscal_year, accrue_period_taxes). Trial Balance balanced. Opening Balance Wizard UI live di sidebar Akuntansi (Kontrol & Laporan group).
+
+**Tasks status:**
+- Tasks 1-12, 14-18: ✓ Complete
+- Task 13 (cash_accounts COA seed): SKIPPED — cash_accounts table belum di production (Phase 1a deliverable, akan di-execute saat Phase 1a deploy)
+
+**Migrations applied (15):**
+- 20260621151531 chart_of_accounts table
+- 20260621152024 COA seed (59 SAK EMKM accounts)
+- 20260621152310 parent_id hierarchy
+- 20260621152434 accounting_config + Garindo seed (non-PKP + UMKM Final 0.5%)
+- 20260621152653/152936 accounting_periods + 29 historical seed (Jun 2025 - May 2027 + dummy)
+- 20260621153114 journal_entries table + 26-value source enum
+- 20260621153343 journal_entry_lines table
+- 20260621153531 validators (_validate_balanced + _check_period_open)
+- 20260621154006/154351 _post_journal_entry canonical RPC (v1 + v2)
+- 20260621155011 close_accounting_period RPC
+- 20260621155221 trial_balance + general_ledger views
+- 20260621160128 set_opening_balance RPC + idempotency
+- 20260621160656 close_fiscal_year RPC (4-step closing)
+- 20260621194029+ accrue_period_taxes RPC (PPh Final UMKM)
+
+**UI deliverable:**
+- src/components/akuntansi/AkuntansiScreen.tsx
+- src/components/akuntansi/OpeningBalanceWizard.tsx (4-step)
+- Sidebar entry "Akuntansi" di group Kontrol & Laporan dengan BookOpenCheck icon
+
+**Acceptance criteria (per spec rev3 section 13):** ALL 13 ✓
+- ✓ 15 migrations applied to staging Supabase, no errors
+- ✓ 59 COA accounts seeded with correct parent_id (more than 50 spec estimate)
+- ✓ _post_journal_entry integration test passes
+- ✓ trial_balance view system-wide balanced (debit=credit, no orphans)
+- ✓ general_ledger view returns running_balance correct (accumulates per entry sequence)
+- ✓ Opening Balance Wizard UI tested (component renders correctly)
+- ✓ 5 kelompok (ASET/LIABILITAS/MODAL/PENDAPATAN/BEBAN) all > 0 counts
+- ✓ Normal balance per kelompok correct (ASET/BEBAN=DEBIT, LIABILITAS/MODAL/PENDAPATAN=CREDIT)
+- ✓ Accounting config seeded: non-PKP + UMKM_FINAL_0_5 + pph_rate_pct=0.5
+- ✓ Accounting periods seeded: 29 periods (Jun 2025 - May 2027 + dummy test)
+- ✓ HPP auto-paired entry pattern designed (Phase 0c will wrap kasir_sale RPC)
+- ✓ Year-end closing dry-run verified (4-step closing entries posted, P&L accounts reset to 0)
+- ✓ Tax accrual verified (PPh entry posted with correct amount)
+
+**Next:** Phase 0b (parallel-write 3 high-traffic RPC: record_kasir_sale, record_pembayaran, record_piutang_payment) — starts after Pembelian Phase 2b soak completes + after Phase 1 Cash & Bank UI ships (interleaved per advisor recommendation).
+
+---
+
 ## 2026-06-21 — Pipeline Revamp Task 6: Frontend dropdown + lock countdown UI (worktree)
 
 Completed Task 6 of Pipeline Revamp in `feat/pipeline-revamp` worktree (commit `e0f7298`). Frontend scaffold for manual state override — migration not yet applied to prod, smoke deferred to pause gate.
