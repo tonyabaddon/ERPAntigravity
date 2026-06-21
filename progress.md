@@ -20,6 +20,12 @@ Garindo's WhatsApp bot (`+6285264787775`) successfully re-paired to backend afte
 
 **Side benefit:** pair-via-phone-number flow now ships in repo permanently. Future re-pair (if session lost again) takes ~30 seconds via phone code instead of fragile QR scan workflow.
 
+**Frontend pair-code UI promoted to 100% traffic:**
+- Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00163-viz` (tag `c4185650`, bundle `index-BDCl9MnA.js`) promoted from 0% → 100%.
+- Previous 100% rev `00157-fem` (no pair-code input) demoted to 0%.
+- Verified: main URL serves new bundle, "Kirim Kode" string present, bundle hash matches tag URL.
+- Effect: future re-pair (if WA session lost again) can be done entirely via UI at `/whatsapp-ai` — Owner/admin masuk page → masukin nomor di input bawah QR fallback section → klik "Kirim Kode" → 8-char code muncul → ketik di WA HP. No more backend curl needed.
+
 ## 2026-06-21 — Backend Cloud Build infra fix + Pipeline Revamp Go guards LIVE
 
 Backend Cloud Run revision `garindo-jaya-panel-msme-erp-00086-pbh` (image tag `37d3d5e`) deployed at 100% traffic.
