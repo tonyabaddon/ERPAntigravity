@@ -18,14 +18,31 @@ import {
 describe('insertNewCustomer', () => {
   beforeEach(() => { mockRpc.mockReset(); mockFrom.mockReset(); });
 
-  test('inserts with allows_tempo=false default', async () => {
+  test('inserts with id + allows_tempo=false default + company="" coercion', async () => {
     const insert = vi.fn().mockReturnValue({
       select: () => ({ single: () => Promise.resolve({ data: { id: 'c-1', name: 'X', wa_number: '081', allows_tempo: false }, error: null }) }),
     });
     mockFrom.mockReturnValue({ insert });
     const result = await insertNewCustomer({ name: 'X', wa_number: '081' });
-    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ name: 'X', wa_number: '081', allows_tempo: false }));
+    // customers.id is NOT NULL with no default — wrapper MUST generate one
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      id: expect.any(String),
+      name: 'X',
+      wa_number: '081',
+      // customers.company is NOT NULL with default '' — null violates the constraint
+      company: '',
+      allows_tempo: false,
+    }));
     expect(result).toEqual(expect.objectContaining({ id: 'c-1' }));
+  });
+
+  test('passes company when provided', async () => {
+    const insert = vi.fn().mockReturnValue({
+      select: () => ({ single: () => Promise.resolve({ data: { id: 'c-1' }, error: null }) }),
+    });
+    mockFrom.mockReturnValue({ insert });
+    await insertNewCustomer({ name: 'X', wa_number: '081', company: 'PT Y' });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ company: 'PT Y' }));
   });
 
   test('throws on insert error', async () => {

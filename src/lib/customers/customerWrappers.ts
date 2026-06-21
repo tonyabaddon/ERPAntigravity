@@ -13,10 +13,15 @@ export async function insertNewCustomer(args: {
   address?: string;
 }): Promise<DbCustomer> {
   if (!supabase) throw new Error('Supabase not configured');
+  // customers.id is TEXT NOT NULL with no default; matches existing
+  // customersService.createCustomer pattern (crypto.randomUUID).
+  // customers.company is NOT NULL with default '' — passing null violates
+  // the constraint, so coerce to ''.
   const row = {
+    id: crypto.randomUUID(),
     name: args.name,
     wa_number: args.wa_number,
-    company: args.company ?? null,
+    company: args.company ?? '',
     address: args.address ?? null,
     allows_tempo: false,
   };
