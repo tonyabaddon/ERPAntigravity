@@ -179,7 +179,24 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   // ── Cart handlers (mirrors PenjualanBaruScreen) ───────────────────────────
   function addItem(stock: SupabaseStockItem) {
-    const defaultWh = warehouses.find((w) => w.is_default) ?? warehouses[0];
+    // Pick the warehouse with the most stock for this SKU. Falls back to
+    // is_default (then sort_order) only if no warehouse has positive stock —
+    // the true pre-order case. Mirrors the per-warehouse balance derivation
+    // in CartRows.tsx that maps warehouse.code → stock.stock_atas/stock_bawah.
+    const balances = warehouses.map((w) => {
+      const code = w.code.toLowerCase();
+      const qty = code === 'atas' ? (stock.stock_atas ?? 0)
+        : code === 'bawah' ? (stock.stock_bawah ?? 0)
+        : 0;
+      return { w, qty };
+    });
+    const maxBalance = balances.reduce(
+      (best, cur) => (cur.qty > best.qty ? cur : best),
+      balances[0] ?? { w: warehouses[0], qty: 0 },
+    );
+    const defaultWh = maxBalance && maxBalance.qty > 0
+      ? maxBalance.w
+      : (warehouses.find((w) => w.is_default) ?? warehouses[0]);
     setCart((prev) => [
       ...prev,
       {
@@ -414,9 +431,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           estimatedPrice: l.estimatedPrice,
         })),
       });
-      showToast('✅ Transaksi WIP tersimpan.', 'success');
+      showToast('✅ Transaksi WIP tersimpan. Cek di Pipeline untuk lock + approval.', 'success');
       onSaved(txId);
-      if (onNavigate) onNavigate('invoicePreview'); else onBack();
+      if (onNavigate) onNavigate('pipeline'); else onBack();
       return;
     }
 
@@ -503,7 +520,16 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 channel={channel}
                 setChannel={setChannel}
                 customer={customer as DbCustomer | undefined}
-                setCustomer={(c) => setCustomer(c as DbCustomerWithStats | undefined)}
+                setCustomer={(c) => {
+                  setCustomer(c as DbCustomerWithStats | undefined);
+                  // Inline form returns a fresh customer that isn't in the
+                  // initial fetch yet — upsert so CustomerPanel can render
+                  // the selected chip by id lookup. No-op for picks from
+                  // the existing list.
+                  if (c && !customers.some((x) => x.id === c.id)) {
+                    setCustomers((prev) => [...prev, c as DbCustomerWithStats]);
+                  }
+                }}
                 customers={customers}
                 marketplaceOrderNo={marketplaceOrderNo}
                 setMarketplaceOrderNo={setMarketplaceOrderNo}

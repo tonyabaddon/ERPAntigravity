@@ -39,7 +39,7 @@ export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFo
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
             isCustom ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-orange-50 text-orange-700 border border-orange-200'
           }`}>
-            {isCustom ? '📦 Jasa Custom Panel' : '⚡ Jasa Rakit'}
+            {isCustom ? '📦 Jasa Custom Panel' : '⚡ Wiring Panel'}
           </span>
           <span className="text-[11px] text-slate-500">isi detail di bawah</span>
         </div>
