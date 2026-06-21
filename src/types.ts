@@ -205,7 +205,7 @@ export interface WhatsappAiNumber {
 export type ConversationState =
   | 'GREETING' | 'COLLECTING' | 'CLARIFYING' | 'STOCK_CHECK' | 'CONFIRMING'
   | 'BOOKED' | 'TIMEOUT_REMINDER' | 'CANCELLED' | 'APPROVED' | 'COMPLETED'
-  | 'ESCALATED_ADMIN' | 'ESCALATED_WIRING';
+  | 'ESCALATED_ADMIN' | 'ESCALATED_WIRING' | 'ADD_MORE' | 'DELIVERY';
 
 export interface DbConversation {
   id: string;
