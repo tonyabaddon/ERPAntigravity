@@ -123,7 +123,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   // ── Derived totals ────────────────────────────────────────────────────────
   const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
-  const subtotal = cart.reduce((s, i) => s + i.subtotal, 0) + rakitTotal;
+  const skuSubtotal = cart.reduce((s, i) => s + i.subtotal, 0);
+  const subtotal = skuSubtotal + rakitTotal;
   const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
   const effectiveDp = paymentType === 'DP'
     ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
@@ -549,7 +550,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onQtyChange={updateQty}
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
-                subtotal={subtotal}
+                onClearCart={() => { setCart([]); setRakitLines([]); }}
+                subtotal={skuSubtotal}
+                rakitSubtotal={rakitTotal}
                 rakitLines={rakitLines}
                 rakitFormOpen={rakitFormOpen}
                 rakitFormType={rakitFormType}
