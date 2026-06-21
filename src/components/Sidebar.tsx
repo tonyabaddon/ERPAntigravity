@@ -24,7 +24,10 @@ import {
   Wallet,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
+import type { DbTenantSettings } from '../types';
 import { buildHref, handleSPAClick } from '../lib/urlRoute';
+import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
+import { isMenuVisible, type MenuKey } from '../lib/pengaturan/cascadeMap';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import PiutangBadge from './piutang/PiutangBadge';
@@ -60,6 +63,13 @@ type MenuItem = {
 export default function Sidebar({ activePage, onPageChange, currentUser, onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
+
+  useEffect(() => {
+    tenantSettingsService.fetch()
+      .then(setTenantSettings)
+      .catch(err => console.error('tenant settings fetch:', err));
+  }, []);
 
   // If user is not logged in / is on auth screen, we don't render standard sidebar
   if (activePage === 'auth' || !currentUser) return null;
@@ -86,6 +96,18 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'settings', label: 'Pengaturan', icon: Settings, category: 'sistem', permKey: 'settings' },
   ];
 
+  // Map ActivePage ids to cascadeMap MenuKey for modul-based visibility.
+  // Only entries that have a corresponding modul switch are listed here;
+  // unlisted items are always visible regardless of modul state.
+  const ACTIVEPAGE_TO_MENUKEY: Partial<Record<string, MenuKey>> = {
+    'kasir':           'kasir',
+    'piutang':         'piutang',
+    'tukar-faktur':    'tukarFaktur',
+    'transfer-gudang': 'transferGudang',
+    'pesanan-wip':     'pesananWip',
+    'akuntansi':       'akuntansi',
+  };
+
   const perms = currentUser?.permissions;
   // Some perm keys are defaulted-on (legacy boolean keys treat "missing" as visible),
   // while Phase 2 action keys (can_*) are opt-in and only visible when truthy.
@@ -99,10 +121,19 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   };
 
   const visibleItems = menuItems.filter(item => {
-    if (Array.isArray(item.permKey)) {
-      return item.permKey.some(isPermVisible);
+    // Permission gate
+    const permVisible = Array.isArray(item.permKey)
+      ? item.permKey.some(isPermVisible)
+      : isPermVisible(item.permKey);
+    if (!permVisible) return false;
+
+    // Modul gate — optimistic (show all) while settings are loading
+    if (tenantSettings != null) {
+      const menuKey = ACTIVEPAGE_TO_MENUKEY[item.id];
+      if (menuKey && !isMenuVisible(menuKey, tenantSettings)) return false;
     }
-    return isPermVisible(item.permKey);
+
+    return true;
   });
 
   // Subscribe to pending approvals so the Persetujuan badge stays fresh.
