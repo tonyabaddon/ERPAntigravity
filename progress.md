@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 3 Task 5 (partial): Migration file conversation state lock
+
+- Migration file written: `supabase/migrations/20260621090000_conversation_state_lock.sql` (5313 bytes).
+- ALTER conversations: add `state_locked_until TIMESTAMPTZ`, `state_locked_by_admin_id UUID FK admin_users`.
+- RPC `manually_override_conversation_state()`: role gate via email lookup (pattern from 20260626000010), terminal guard, pause AI, set lock window, emit system message in chat.
+- RPC `auto_resume_expired_locks()`: bulk flip ai_active=true on expired locks.
+- pg_cron job `auto_resume_locked_conversations` every 1 minute (CREATE EXTENSION IF NOT EXISTS inline).
+- Verified: `message_sender` enum already includes `'system'` — INSERT valid.
+- NOT applied to prod. File only. Apply + smoke deferred to controller.
+- Commit: 724a8b4
+
 ## 2026-06-21 — Pipeline Revamp Phase 2 (Delta C1): Sales Inbox Slack-style kategori filter
 
 - Helper `salesInboxCategorize.ts` + unit tests (9 cases).
