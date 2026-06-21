@@ -66,6 +66,12 @@ export default function Step2Items(props: Props) {
             onRemove={props.onRemoveItem}
             rakitLines={props.rakitLines}
             onRemoveRakit={props.onRemoveRakitLine}
+            // T21: per-row pre-order chip uses the same map that powers the
+            // banner totaler above. Empty today (the orchestrator passes {}
+            // until the warehouse↔legacy-column dictionary lands), so the
+            // chip stays dormant; once the map is wired, no further changes
+            // needed here.
+            stockByWarehouseSku={props.stockByWarehouseSku}
           />
         </ItemSearchPanel>
         <div className="mt-3">
