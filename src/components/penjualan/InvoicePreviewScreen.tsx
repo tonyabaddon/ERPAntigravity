@@ -18,7 +18,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import type { KasirTransaction } from '../../types';
 import { supabase } from '../../lib/supabaseClient';
-import SalesInvoicePDF, { type InvoiceVariant } from './SalesInvoicePDF';
+import SalesInvoicePDF, { type InvoiceVariant, type InvoicePrintMode } from './SalesInvoicePDF';
 
 interface Props {
   orderId: string;
@@ -44,6 +44,10 @@ export default function InvoicePreviewScreen({
   // internal "wait until store/bank fetched, then print" gate fires the dialog
   // instead of our racey 200ms setTimeout. Reset to false on next manual open.
   const [autoPrintOnOpen, setAutoPrintOnOpen] = useState(false);
+  // Drives the SalesInvoicePDF printMode prop. The two Cetak buttons set this
+  // before opening the modal so @page size + monospace stylesheet match the
+  // operator's chosen printer family.
+  const [pdfPrintMode, setPdfPrintMode] = useState<InvoicePrintMode>('normal');
 
   useEffect(() => {
     if (!supabase) {
@@ -74,9 +78,9 @@ export default function InvoicePreviewScreen({
     return () => { cancelled = true; };
   }, [orderId]);
 
-  // Cetak buttons: T18 will introduce printMode prop for A4 vs dot-matrix
-  // stylesheet split. Today both share the same SalesInvoicePDF print CSS.
-  const onCetak = (_mode: 'normal' | 'dot_matrix') => {
+  // Cetak buttons: T18 wired the printMode prop on SalesInvoicePDF — selecting
+  // a mode here drives both the modal's @page size and the monospace fallback.
+  const onCetak = (mode: InvoicePrintMode) => {
     if (!transaction) {
       showToast('Invoice belum termuat, coba sebentar lagi.', 'warning');
       return;
@@ -85,6 +89,7 @@ export default function InvoicePreviewScreen({
     // window.print() AFTER fetchStoreSettings + fetchBankAccounts resolve.
     // A raw setTimeout here would race the modal's own data load on cold
     // cache and print before the store header renders.
+    setPdfPrintMode(mode);
     setAutoPrintOnOpen(true);
     setShowPdfModal(true);
   };
@@ -115,6 +120,7 @@ export default function InvoicePreviewScreen({
     // SalesInvoicePDF doesn't expose a programmatic download — the print
     // dialog ("Save as PDF") is the existing UX. Surface the modal so the
     // user can either Cetak Ulang or use the browser's Save as PDF.
+    setPdfPrintMode('normal');
     setAutoPrintOnOpen(false);
     setShowPdfModal(true);
     showToast('Pilih "Save as PDF" pada dialog cetak browser.', 'info');
@@ -191,7 +197,7 @@ export default function InvoicePreviewScreen({
                   <div className="font-semibold text-right">{transaction.payment_type ?? 'FULL'}</div>
                 </div>
                 <button
-                  onClick={() => { setAutoPrintOnOpen(false); setShowPdfModal(true); }}
+                  onClick={() => { setPdfPrintMode('normal'); setAutoPrintOnOpen(false); setShowPdfModal(true); }}
                   className="mt-3 w-full px-3 py-2 text-xs font-bold rounded-lg bg-white text-[#012749] border border-slate-300 hover:bg-slate-50"
                 >
                   👁️ Lihat Preview Invoice
@@ -238,6 +244,7 @@ export default function InvoicePreviewScreen({
           variant={variant}
           adminName={adminName}
           autoPrint={autoPrintOnOpen}
+          printMode={pdfPrintMode}
           onClose={() => { setShowPdfModal(false); setAutoPrintOnOpen(false); }}
         />
       )}
