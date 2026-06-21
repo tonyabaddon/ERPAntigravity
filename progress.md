@@ -7953,3 +7953,18 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Residue from smoke tests:** three `approval_requests` rows (ids 731/734/735) live in the table — `approval_requests` is append-only by design (`deny_approval_mutation` guard), so they cannot be deleted. They have no satellite rows attached, will expire in ~24h via `expires_at`, and do not affect the trigger guard.
 - **Commit:** `e86a0bb` — "feat(piutang): migration 020 — extend approval_request_type + write-off satellite table"
 - **Next:** T2 — migration 021 `request_tempo_write_off` RPC (depends on the schema landed here).
+
+## 2026-06-21 — Catat Penjualan Wizard — T2: Migration 002 DONE
+
+- **Branch:** `feat/catat-penjualan-wizard` (worktree `.claude/worktrees/catat-penjualan-wizard`)
+- **Plan:** Phase Catat Penjualan wizard. Opt-in pre-order behavior.
+- **File created:** `supabase/migrations/20260630000002_record_kasir_sale_allow_negative_stock.sql`
+  - Recreates `public.record_kasir_sale()` RPC with new param `p_allow_negative_stock BOOLEAN DEFAULT false` appended to the 20 existing params.
+  - Body copied verbatim from migration 001 — no logic changes. The param documents intent for future strict enforcement; today's `deduct_stock_fifo` RAISE WARNING permits silent underflow already.
+  - Re-grants EXECUTE to anon, authenticated with new signature including `boolean` at end.
+  - No stock_lots CHECK constraints on `qty_remaining` were found (only `stock_lots_source_type_check` on `source_type`).
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`.
+- **Signature verified:** `pg_get_function_identity_arguments()` confirms new signature ends with `p_allow_negative_stock boolean` ✓
+- **Commit:** `0ad9c19` — "feat(catat-penjualan): migration 002 — record_kasir_sale opt-in pre-order"
+- **Note:** 20 params in existing RPC (task description said 22 — actual file has 20). Migration correctly extends the existing signature.
+- **Next:** T3 — migration 003 `create_tempo_invoice` payload key.
