@@ -57,14 +57,8 @@ export default function Step1ChannelCustomer(props: Props) {
         <CustomerPanel
           customers={props.customers}
           selectedCustomerId={props.customer?.id ?? null}
-          customerName=""
-          customerPhone=""
-          customerCompany=""
           onSelectExisting={(c) => props.setCustomer(c)}
           onClearSelection={() => props.setCustomer(undefined)}
-          onNameChange={() => {}}
-          onPhoneChange={() => {}}
-          onCompanyChange={() => {}}
         />
         <p className="text-[11px] text-slate-500 mt-1.5 italic">
           💡 Tip: cari pakai nomor HP untuk auto-detect repeat-buyer.
