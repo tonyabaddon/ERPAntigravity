@@ -40,13 +40,19 @@ export default function PajakSettingsPanel({ showToast }: Props) {
   const save = async (patch: Partial<DbTenantSettings>) => {
     if (!settings) return;
     const next = { ...settings, ...patch };
-    // Auto-recompute expires_at if jenis_badan or terdaftar_at changed
+    // Auto-recompute expires_at if jenis_badan or terdaftar_at changed.
+    // C2 fix: the computed value MUST be forwarded to the DB call below, otherwise
+    // local state and persisted row diverge (UMKM expiry tracking would be NULL/stale).
     if (next.pajak_umkm_jenis_badan && next.pajak_umkm_terdaftar_at) {
       next.pajak_umkm_expires_at = computeExpiresAt(next.pajak_umkm_jenis_badan, next.pajak_umkm_terdaftar_at);
     }
     setSettings(next);
     try {
-      await tenantSettingsService.updatePajak(patch);
+      const finalPatch: Partial<DbTenantSettings> = { ...patch };
+      if (next.pajak_umkm_expires_at !== settings.pajak_umkm_expires_at) {
+        finalPatch.pajak_umkm_expires_at = next.pajak_umkm_expires_at;
+      }
+      await tenantSettingsService.updatePajak(finalPatch);
       showToast('Pengaturan pajak disimpan', 'success');
     } catch (err) {
       console.error(err);

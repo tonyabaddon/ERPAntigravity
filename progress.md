@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Final-review fixes (C1 + C2)
+
+**DONE.** Whole-branch review found 2 Critical merge-blockers; both fixed in single commit.
+
+**C1 — All 4 Pengaturan panels could READ but not WRITE.** Migrations 1/3/4 `REVOKE INSERT/UPDATE/DELETE FROM authenticated` on the 3 settings tables, but services used direct PostgREST `.update()/.insert()` — every save would 403 at runtime. Masked by mocked unit tests.
+
+Fix: new migration `20260622000007_pengaturan_write_rpcs.sql` adds 5 SECURITY DEFINER mutation RPCs (`set_approval_setting`, `set_tenant_modul`, `set_tenant_pajak`, `upsert_service_type`, `deactivate_service_type`) with `NOT_AUTHENTICATED` + `INSUFFICIENT_ROLE` fail-closed role gate (Owner / Staff Admin Toko via `admin_users`). Defense-in-depth matches mig 5/6 pattern. `pengaturanServices.ts` swaps the 6 mutate methods to `supabase.rpc(...)`; `create()` keeps full-row signature by re-fetching the inserted row.
+
+**C2 — PajakSettingsPanel.save() dropped computed expires_at.** `save()` recomputed `pajak_umkm_expires_at` for local state then sent the original `patch` to DB → UMKM expiry tracking would persist as NULL/stale. Fix: build `finalPatch` that forwards the computed value when it changed.
+
+**Verification:**
+- MCP `apply_migration` x2: initial apply + v2 fail-closed patch — both `{success:true}`.
+- DB smoke 5/5 RPC mutations PASS with real `auth.uid()` via `set_config('request.jwt.claims', json{sub})`. Bonus: role-gate-blocks-unknown-user smoke PASS (`INSUFFICIENT_ROLE` fires when authed UUID has no admin_users row); NOT_AUTHENTICATED smoke PASS (when `auth.uid()` is NULL).
+- `npm run lint`: clean (tsc --noEmit).
+- `npm test --run`: 268/268 PASS across 37 files (test file restructured for `.rpc()` mock signature with call-tracking).
+- `npm run build`: 2.67s OK.
+
+**Files:**
+- `supabase/migrations/20260622000007_pengaturan_write_rpcs.sql` (247 LOC)
+- `src/lib/pengaturan/pengaturanServices.ts` — 6 methods swapped to RPC, signatures preserved
+- `src/lib/pengaturan/pengaturanServices.test.ts` — mock now tracks `rpc(fn, args)` calls; assertions verify exact RPC name + args
+- `src/components/pengaturan/PajakSettingsPanel.tsx` — `save()` forwards `pajak_umkm_expires_at` when changed
+- `.superpowers/sdd/final-review-fix-report.md`
+
+---
+
 ## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 7: Patch 8 approval RPCs
 
 **DONE_WITH_CONCERNS.** Re-dispatch after first attempt BLOCKED on 12→8 scope mismatch. Patched 8 of 12 brief gates (4 kasir + initial_stock deferred to V1.5 — no server-side request RPC exists yet).
