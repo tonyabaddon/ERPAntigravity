@@ -319,6 +319,7 @@ export interface DbCustomer {
   wa_number: string;
   name: string;
   company: string;
+  address?: string | null;
   created_at: string;
   // Phase 1A — tempo whitelist
   allows_tempo: boolean;
@@ -431,7 +432,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview';
 
 // ─── Kasir types ────────────────────────────────────────────
 
