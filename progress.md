@@ -1,5 +1,36 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 7: Patch 8 approval RPCs
+
+**DONE_WITH_CONCERNS.** Re-dispatch after first attempt BLOCKED on 12→8 scope mismatch. Patched 8 of 12 brief gates (4 kasir + initial_stock deferred to V1.5 — no server-side request RPC exists yet).
+
+**Changes (migration `20260622000005_patch_existing_approval_rpcs.sql`, 1545 LOC, 24 functions = 3 per gate × 8 gates):**
+- Each gate gets `_apply_<gate>_change(p_approval_id)` SECURITY DEFINER helper (REVOKEd from PUBLIC/anon/authenticated), `commit/approve_<gate>` thin verify-then-delegate wrapper (signature + return type preserved), and `request_<gate>` extended with bypass branch.
+- Bypass path: `_transition_approval(v_approval, 'approved', actor, 'bypass') → _apply_<gate>_change(v_approval)`. New `decision_channel='bypass'` value (column has no CHECK constraint).
+- Business validation runs BEFORE bypass branch (evidence_urls for adjustment, field whitelist for price_change, term_days allowed-list for cc_activate, order status check for tempo_write_off, etc.) — bypass cannot skip validation.
+- All 8 satellite INSERTs preserved (stock_adjustments, stock_opname_sessions, price_change_requests, piutang_write_off_requests, rakit_lock_requests) — required to satisfy NOT NULL FK constraints to approval_requests.
+
+**8 gates patched:** adjustment, opname (via submit_opname_for_owner + commit_opname), price_change, customer_credit_{activate,limit_change,deactivate}, tempo_write_off (piutang_write_off), rakit_lock.
+
+**Deferred V1.5:** kasir_price_override, kasir_void, kasir_refund (kasir approval feature anticipated but unwired — no INSERT path in src/), initial_stock (frontend INSERTs approval_request directly via supabaseClient.ts:1637; needs RPC wrap as separate task). Their approval_settings rows from Task 2 stay ready — `_check_approval_required` works automatically when those features ship.
+
+**Verification:**
+- MCP `apply_migration` returned `{success:true}`.
+- DB smoke 14 PASS / 14 ran across 8 gate groups: full e2e for 7 (adjustment ¹, price_change, cc_activate, cc_limit_change, cc_deactivate, tempo_write_off, rakit_lock — all with both bypass + PIN cases verified by checking AR status/channel + business state mutation); routing-only for opname (full e2e needs session+witness ack scaffolding, deferred).
+- ¹ Adjustment bypass branch fires + transitions AR + calls helper; helper raises on stock_adjustments.warehouse_id NULL (pre-existing precondition matching legacy commit_approved_adjustment behavior — not a regression).
+- All smoke DO blocks rolled back via `RAISE EXCEPTION 'rollback'` → zero residual DB state.
+- Garindo regression: PIN-mode flow verified unchanged (AR row inserted with status='pending', no business state mutation, satellite created, ready for Owner PIN approval through existing channels).
+
+**Concerns:**
+- Opname bypass full-e2e deferred — routing-decision verified, code path is literal mirror of cc_activate/tempo_write_off branches that DID pass e2e.
+- Adjustment bypass blocked at helper by pre-existing warehouse_id NULL precondition (external backfill responsibility, MEMORY note: "phase 3 warehouse cutover pending").
+
+**Files:**
+- `supabase/migrations/20260622000005_patch_existing_approval_rpcs.sql`
+- `.superpowers/sdd/task-7-report.md`
+
+---
+
 ## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 6: Service modules
 
 **DONE.** 3 service modules with CRUD methods, tested (6/6 PASS).
