@@ -49,6 +49,159 @@
 - Augmented: hapus PERM_LABELS row pipeline di UserManagementScreen + hapus button "Kelola di Pipeline" di PelangganScreen.
 - TypeScript build PASS, unit tests PASS (1118/1118).
 
+## 2026-06-21 — Pipeline Revamp Task 6: Frontend dropdown + lock countdown UI (worktree)
+
+Completed Task 6 of Pipeline Revamp in `feat/pipeline-revamp` worktree (commit `e0f7298`). Frontend scaffold for manual state override — migration not yet applied to prod, smoke deferred to pause gate.
+
+**Delivered:**
+- `src/types.ts`: `DbConversation.state_locked_until` + `state_locked_by_admin_id` (null-able ISO timestamp)
+- `src/lib/supabaseClient.ts`: `conversationService.manuallyOverrideConversationState` (rpc call) + `clearConversationLock` (direct update). `ConversationState` added to imports.
+- `src/App.tsx`: `userRole={currentUser?.role ?? null}` prop injected into `<SalesInboxScreen>`
+- `src/components/SalesInboxScreen.tsx`: state badge → ChevronDown/Up clickable button (lucide-react), `StateOverrideDropdown` component (14 states, terminals disabled, current highlighted, Esc+click-outside close), `canOverride` gate (`Owner|Staff Admin Toko`), `setInterval(60s)` countdown tick, `getModeBanner` lock branch + "Aktifkan AI Sekarang" early-resume, `ADD_MORE`/`DELIVERY` added to `CONV_STATE_DISPLAY`
+- Build: `npm run build` PASS (0 errors). Tests: 248/248 PASS.
+
+**Next:** Task 7 (Go backend lazy resume + state lock guard) → PAUSE GATE (apply migration + prod smoke)
+
+---
+
+## 2026-06-21 — Akuntansi 6 mockup final GL-derived (rev3) lengkap
+
+User minta semua mockup di-update reflect GL pivot. 5 mockup baru landed (Phase 1-5) + Phase 0d existing = 6 final mockups GL-derived. Naming `2026-06-21-akuntansi-phase{0d,1,2,3,4,5}-*.html`.
+
+**Files landed:**
+- `phase0d-gl-ui.html` (sebelumnya) — Opening Balance Wizard, Trial Balance, Buku Besar, Journal Detail HPP-paired, COA Management, Period Close + Tax Accrual, Year-End Closing
+- `phase1-cash-bank.html` ✨ NEW — Saldo derive dari journal_entry_lines, Riwayat dengan running balance (format akuntan), picker akun show COA code
+- `phase2-settlement.html` ✨ NEW — PENDING/CLEARED di journal_entry_lines.status, Belum Cair list, Konfirmasi Cair flow
+- `phase3-manual-entry.html` ✨ NEW — 6 modal manual entry dengan Journal Entry Preview (transparency debit/credit lines sebelum submit)
+- `phase4-laporan.html` ✨ NEW BIG — 6 tab termasuk Trial Balance + **Laporan Laba Rugi format SAK EMKM** + **Neraca format SAK EMKM** (persamaan akuntansi Aset = Liab + Ekuitas terverifikasi)
+- `phase5-recon.html` ✨ NEW — Match bank_statement_lines ke journal_entry_lines (filter account_subtype=BANK), auto-clear PENDING settlement saat match
+
+Pre-pivot mockups (`2026-06-20-kas-bank-phase*.html`) tidak dihapus — preserved sebagai historical reference saat pre-GL pivot.
+
+**Next:** User review 6 mockup final → kalau approved, invoke writing-plans skill untuk Phase 0a implementation plan → execute.
+
+---
+
+## 2026-06-21 — Catat Penjualan wizard mockup-match rewrite (PR #48) + 4 UI defects (#46) + pre-order map (#47)
+
+Founder caught that the wizard implementation reused legacy components instead of building to the approved HTML mockup (`docs/superpowers/mockups/2026-06-20-catat-penjualan-3-step-wizard.html`). Rebuilt all 4 frames + global chrome to match the mockup, on top of fixing 4 UI defects from the smoke session.
+
+**PR #48 (mockup-match rewrite, 5 commits)** — deployed as revision 00151-moj:
+- **Step 1**: Replaced grouped pill rows in `ChannelSelector` with flat 4/7-col tile grid (icon over label). Added TEMPO/CASH-ONLY chips to `CustomerPanel` dropdown rows + selected chip restyled navy-themed. `NewCustomerInlineForm` TEMPO request block now matches mockup copy exactly + adds amber "⚠️ Untuk transaksi sekarang… pakai LUNAS atau DP" warning that was missing.
+- **Step 2**: Rewrote `Step2Items` as 12-col grid (search col-span-5 / cart col-span-7). Inline search panel drops amber `ItemSearchPanel` wrapper. KERANJANG header + × Kosongkan link. Slate-50 totals panel (Subtotal Produk + Subtotal Jasa + Total Pesanan). `RakitButtonsRow` swapped to mockup palette (Custom=purple-50 tinted-bg, Wiring=sky-50 tinted-bg).
+- **Step 3**: Rewrote `Step3Payment` as 12-col grid (payment col-span-7 / right col-span-5). 3 large payment-type cards replace pill toggle (LUNAS navy / DP amber / TEMPO amber). Amber 3-col TEMPO context box (Limit / Outstanding / Sisa Tersedia + jatuh-tempo + ✓/⚠️ over-limit). DP detail box with AMOUNT/PERCENT toggle. Payment-method 4-button row faded for TEMPO. **Dark navy summary card** (signature mockup element) with mode-aware footnote. Full-width green save button. Dropped `PaymentPanel` dependency.
+- **Invoice Preview**: White header (was navy), inline invoice preview card on slate-100 backdrop (col-span-8), 3-step workflow stepper (col-span-4) — FULL = 3 green checks, DP = ✓/⌛/N.
+- **Global chrome**: White header bar with per-step subtitle slug ("Pilih channel & customer" / "Tambah produk & jasa" / "Pembayaran & finalisasi") + plain Batal link (dropped date/user pills). Context recap bar on Steps 2 & 3 with channel + customer + TEMPO chip + item/jasa count (Step 3) + Ubah jump-back link.
+
+**PR #47 (pre-order stock map wiring)**: PR #46 fixed the default-warehouse picker but the PRE-ORDER badge still fired for every row because the wizard was passing an empty `stockByWarehouseSku` map. Map now built at render time using the warehouse.code → stock_atas/stock_bawah mapping. No new fetch.
+
+**PR #46 (4 UI defects from production smoke)**:
+- + Customer Baru chip showed "undefined (dipilih)" — `setCustomer` now upserts new customer into local list.
+- WIP/jasa save left InvoicePreviewScreen stuck on "Memuat invoice…" — WIP path now navigates to `/pipeline` (semantically correct: WIP awaits Owner Lock, not a finalized invoice).
+- Cart default warehouse picked `is_default` even when 0 stock — now picks warehouse with most stock; falls back to is_default only when all zero.
+- "Jasa Rakit" label → "Wiring Panel" in 4 places. Internal `jasa_rakit` type key unchanged.
+
+**Full smoke after #48 deploy (revision 00151-moj)**: All 4 frames match the mockup. Channel tile grid renders 14 channels. Customer dropdown shows TEMPO chips (TEMPO OK + Limit/term, or CASH ONLY). Step 2 2-col layout with totals panel. Step 3 dark navy summary card with TEMPO footnote ("Jatuh tempo 05 Jul 2026 · Outstanding setelah Rp 90.000"). Invoice preview inline with 3-step workflow stepper. Walk-in customer correctly hides TEMPO payment-type card (CASH ONLY).
+
+**Files no longer imported by wizard** (left in tree for potential reuse): `ItemSearchPanel.tsx`, `PaymentPanel.tsx` (305 LOC).
+
+---
+
+## 2026-06-21 — Catat Penjualan wizard smoke + 2 routing PRs + 2 DB hotfix migrations
+
+End-to-end production smoke of the 3-step wizard (PR #40). All 4 happy paths green after fixing 2 routing bugs + 2 DB-side gaps.
+
+**Smoke results (deployed revision 00145-yer):**
+- ✅ Walk-in LUNAS → `record_kasir_sale` → Invoice WLK-20260621-001 + InvoicePreviewScreen with Cetak/Share/Download
+- ✅ TEMPO sale (Grosir channel, customer with allows_tempo=true) → `create_tempo_invoice` → routed to /piutang → row visible (4c3584a7, Due 05 Jul, H-14)
+- ✅ Lump-sum jasa Custom Panel (Rp 2.5M, HPP 1.5M, no SKU) → WIP path via `insertWipWithRakit` → toast "Transaksi WIP tersimpan"
+- ✅ + Customer Baru with TEMPO request → customer row inserted (`2a472b34...`) + `approval_requests` row #758 pending (limit 10M, term 30d, reason logged)
+
+**Routing fixes (2 PRs):**
+- **PR #43** `fix/deep-link-preservation` — App.tsx unconditional `replaceRoute('dashboard')` after session restore clobbered every logged-in page reload. Now: preserve URL when it carries a valid non-auth screen.
+- **PR #44** `fix/sidebar-subpage-eviction` — Sidebar permission useEffect was kicking ANY activePage not in top-level menuItems to dashboard. Sub-pages (penjualanBaru, invoicePreview, daftarPesanan, order-history, whatsapp-ai, notifications) were getting evicted ~4ms after stash-restore. Now: only kick when activePage IS a menu item user can't see.
+
+**DB hotfixes (applied directly to remote via Supabase MCP):**
+- `20260630000007_record_kasir_sale_consolidate_overloads` — Production drifted into 3 record_kasir_sale overloads (p_marketplace_order_no vs p_tokped_order_no + parallel-session p_actor_user_id variant). Wizard's 21-param call matched none → PGRST202 404. Dropped all 3, recreated single canonical with p_marketplace_order_no + p_allow_negative_stock (the only signature any caller uses).
+- `20260630000008_orders_sales_channel_check_expand` — Legacy CHECK constraint only allowed `walkin|whatsapp`. Wizard exposes 14 channels via sales_channel_settings; TEMPO inserts into orders directly. Expanded CHECK to full multi-channel list (walkin, grosir, sales, expo, tokopedia, shopee, lazada, blibli, bukalapak, ralali, bhinneka, whatsapp, instagram, website).
+
+**Known UI defects (not blockers, file for follow-up):**
+- + Customer Baru: after Simpan, search input chip shows "undefined (dipilih)" instead of customer name. Customer IS saved + selected (Lanjut button enables, DB row correct, approval_requests created); only display label broken. Likely lookup-by-id race because new customer not yet in local customers list.
+- Lump-sum jasa: InvoicePreviewScreen shows Invoice number "—" + "Memuat invoice…" indefinitely after WIP save. Toast and totals correct, but ID resolution fails for WIP path.
+- Item warehouse default: Cart's first row defaults to "Gudang Jakarta" (0 stock) instead of the warehouse that actually has stock; triggers spurious PRE-ORDER badge until user manually switches. (Pre-order is supported, but default selection is wrong.)
+- Jasa labels: spec says "Custom Panel" + "Wiring Panel"; UI shows "Custom Panel" + "Jasa Rakit". `Jasa Rakit` should be renamed to `Wiring Panel` per founder decision.
+
+---
+
+## 2026-06-21 — Akuntansi mockup final rev3 (reflect 5 critical additions)
+
+Mockup `2026-06-21-akuntansi-phase0d-gl-ui.html` di-update untuk reflect spec rev3 dengan 5 critical additions. Structure berubah dari 5 → 7 sections:
+
+1. **NEW Opening Balance Wizard** — 4-step wizard mandatory first-time, auto-plug Laba Ditahan untuk balance, breakdown per kelompok (Aset/Liabilitas/Modal)
+2. Trial Balance — updated dengan rev3 accounts (2-1500 DP, 3-1900 Ikhtisar, 4-1230 Untung Opname, 5-3150 Rugi Opname) + AUTO-ACCRUAL/AUTO-PAIRED tags
+3. Buku Besar — example pakai akun DP (2-1500), demonstrate DP_RECEIVE/DP_RECOGNIZE/DP_REFUND pattern
+4. **NEW HPP Auto-Paired Journal Detail** — show 2 entries (Sale + HPP_RECOGNITION) atomic, pair indicator
+5. COA Management — 50 akun lengkap, rev3 NEW chips di accounts baru
+6. **UPDATED Period Close + Tax Accrual** — preview auto-generated PPh entry saat close (omzet × 0.5%)
+7. **NEW Year-End Closing** — full year FY 2025 P&L summary + 4 closing entries via Ikhtisar Laba Rugi, irreversible warning
+
+**File:** `docs/superpowers/mockups/2026-06-21-akuntansi-phase0d-gl-ui.html` (rev3 banner)
+
+**Next:** User review mockup + spec rev3 → approve → invoke writing-plans skill untuk Phase 0a implementation plan.
+
+---
+
+## 2026-06-21 — Akuntansi Phase 0a spec rev3 (5 critical gap closure)
+
+Advisor audit catched 5 critical gap di Phase 0a rev2 + 2 process gap. User setuju rencana fix. Spec di-rev3 dengan 5 additions:
+
+1. **Inventory + HPP + Persediaan flow** — auto-paired entries pattern (sale entry + HPP_RECOGNITION entry). PI receive → D Persediaan, K Hutang. Stock opname adjustment GL impact spec'd (kurang → Kerugian, lebih → Keuntungan).
+2. **Opening balance wizard** — mandatory first-time setup, block business RPC sampai set. Auto-plug diff ke Laba Ditahan. Single OPENING_BALANCE journal entry multi-line balanced.
+3. **DP / Pendapatan Diterima Dimuka** — added `2-1500` COA + 3 source types (DP_RECEIVE/DP_RECOGNIZE/DP_REFUND).
+4. **Year-end closing procedure** — `close_fiscal_year` RPC + Ikhtisar Laba Rugi (3-1900) closing entries. Move P&L → Laba Ditahan + close Prive.
+5. **Tax accrual auto-entries** — `accrue_period_taxes` RPC, hooked ke `close_accounting_period`. PPh Final 0.5% monthly accrual. PPN PKP support placeholder.
+
+**Migrations:** 12 → 15 (added #13 opening_balance_rpc, #14 year_end_close_rpc, #15 tax_accrual_rpc).
+**OQ:** 6 → 10 (added O7 opening plug, O8 year-end trigger, O9 tax accrual auto vs manual, O10 DP detection in record_kasir_sale).
+**Estimate:** 3-4 hari → 4-5 hari.
+
+**Process gaps acknowledged:** (1) Phase 0b stagger — `record_kasir_sale` dulu, `record_pembayaran` di 0c after Pembelian Phase 2b soak 2+ minggu. (2) Staging validation MANDATORY sebelum lock — apply 15 migrations via MCP, post 10 sample entries, verify Trial Balance system-wide balanced.
+
+**File:** `docs/superpowers/specs/2026-06-21-akuntansi-phase0a-design.md` (rev3 marker section 14)
+
+**Next:** User review rev3 → kalau approved, invoke writing-plans skill untuk Phase 0a implementation plan → execute (write 15 .sql migration files + apply to staging + validate + write integration tests).
+
+---
+
+## 2026-06-21 — Akuntansi MSME pivot — Roadmap v2 + Phase 0a spec + Phase 0d mockup
+
+User pilih full General Ledger (interpretasi B) untuk bangun proper accounting system MSME, bukan cuma cash sub-ledger. Major scope expansion dari 5 phase Kas & Bank → 10 sub-phase (Phase 0a/0b/0c/0d + Phase 1-5) modul Akuntansi MSME.
+
+**Locked decisions:**
+- Full double-entry GL dengan COA SAK EMKM standard
+- PPN configurable per tenant (Garindo default non-PKP)
+- PPh dual-mode (Garindo default UMKM Final 0.5%)
+- Skip depreciation
+- Manual period close oleh Owner
+- Phase 0 decomposed 0a/0b/0c/0d dengan parallel-write feature flag
+- Phase 1 Cash & Bank UI interleave setelah 0a (minggu 1-2, bukan tunggu seluruh Phase 0 selesai)
+- COA validation via SAK EMKM template + AI assist (no human akuntan)
+- Phase 5 auto bank feed DROPPED — manual PDF upload Rekonsiliasi existing cukup
+- Phase 1-5 spec/mockup TIDAK di-revise sekarang — tunggu Phase 0a lock contract dulu
+
+**Deliverables landed:**
+- `docs/superpowers/specs/2026-06-21-kas-bank-gl-roadmap.md` — Roadmap v2 (supersede roadmap v1)
+- `docs/superpowers/specs/2026-06-21-akuntansi-phase0a-design.md` — Phase 0a spec lengkap (45 COA seed, journal_entries + journal_entry_lines schema, validators, period close)
+- `docs/superpowers/mockups/2026-06-21-akuntansi-phase0d-gl-ui.html` — UI mockup Trial Balance + Buku Besar + Journal Entry detail + COA Management + Period Close
+- `docs/superpowers/specs/2026-06-20-kas-bank-phase5-design.md` — deprecation banner added (preserve history)
+- `docs/superpowers/mockups/2026-06-20-kas-bank-phase5.html` — deprecation banner added
+
+**Estimasi revisi:** Total Phase 0a-5 = ~32-46 hari kerja (vs roadmap v1 ~20-25 hari). 1.5-2x more untuk proper accounting foundation.
+
+**Next:** User review Phase 0a spec + Phase 0d mockup → kalau approved, lock + lanjut Phase 0a implementation plan + execute (3-4 hari).
+
+---
+
 ## 2026-06-20 — Catat Penjualan 3-step wizard
 
 Replaces 624-line monolithic PenjualanBaruScreen with guided 3-step wizard

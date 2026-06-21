@@ -137,7 +137,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
       {rakitLines && rakitLines.length > 0 && (
         <>
           <div className="text-[10px] font-extrabold text-orange-700 uppercase tracking-widest mb-2 mt-3 flex items-center gap-2">
-            <span>🛠 Jasa Rakit</span>
+            <span>🛠 Wiring Panel</span>
             <span className="flex-1 border-t border-dotted border-slate-300" />
           </div>
           {rakitLines.map(r => (
@@ -158,7 +158,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
                       ? 'bg-sky-50 text-sky-700 border border-sky-200'
                       : 'bg-orange-50 text-orange-700 border border-orange-200'
                   }`}>
-                    {r.type === 'jasa_custom_panel' ? '📦 Jasa Custom Panel' : '⚡ Jasa Rakit'}
+                    {r.type === 'jasa_custom_panel' ? '📦 Jasa Custom Panel' : '⚡ Wiring Panel'}
                   </span>
                   <span className="font-extrabold text-[13px]">{r.description}</span>
                 </div>

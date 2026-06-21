@@ -31,6 +31,7 @@ export default function Step1ChannelCustomer(props: Props) {
           Channel Penjualan <span className="text-red-500">*</span>
         </label>
         <ChannelSelector value={props.channel} onChange={props.setChannel} />
+        <p className="text-[11px] text-slate-400 mt-2 italic">Atur kanal aktif di Pengaturan → Kanal Penjualan.</p>
         {CHANNEL_REQUIRES_ORDER_NO.has(props.channel) && (
           <div className="mt-4">
             <TokpedStrip value={props.marketplaceOrderNo} onChange={props.setMarketplaceOrderNo} />
@@ -61,7 +62,7 @@ export default function Step1ChannelCustomer(props: Props) {
           onClearSelection={() => props.setCustomer(undefined)}
         />
         <p className="text-[11px] text-slate-500 mt-1.5 italic">
-          💡 Tip: cari pakai nomor HP untuk auto-detect repeat-buyer.
+          💡 Tip: cari pakai nomor HP untuk auto-detect kalau customer pernah belanja sebelumnya — bantu repeat-buyer recognition.
         </p>
         {!props.customer && !showNewCustomerForm && (
           <div className="mt-3 flex items-center justify-between text-[11px]">

@@ -18,7 +18,6 @@
 // T17 InvoicePreviewScreen therefore only handles non-TEMPO transactions.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import type {
   ActivePage,
   DbCustomer,
@@ -40,7 +39,7 @@ import {
 } from '../../lib/supabaseClient';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
-import { CHANNEL_REQUIRES_ORDER_NO } from '../../lib/salesChannels';
+import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { createTempoInvoice } from '../../lib/piutangService';
 import WizardStepper from './wizard/WizardStepper';
@@ -123,7 +122,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   // ── Derived totals ────────────────────────────────────────────────────────
   const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
-  const subtotal = cart.reduce((s, i) => s + i.subtotal, 0) + rakitTotal;
+  const skuSubtotal = cart.reduce((s, i) => s + i.subtotal, 0);
+  const subtotal = skuSubtotal + rakitTotal;
   const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
   const effectiveDp = paymentType === 'DP'
     ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
@@ -179,7 +179,24 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   // ── Cart handlers (mirrors PenjualanBaruScreen) ───────────────────────────
   function addItem(stock: SupabaseStockItem) {
-    const defaultWh = warehouses.find((w) => w.is_default) ?? warehouses[0];
+    // Pick the warehouse with the most stock for this SKU. Falls back to
+    // is_default (then sort_order) only if no warehouse has positive stock —
+    // the true pre-order case. Mirrors the per-warehouse balance derivation
+    // in CartRows.tsx that maps warehouse.code → stock.stock_atas/stock_bawah.
+    const balances = warehouses.map((w) => {
+      const code = w.code.toLowerCase();
+      const qty = code === 'atas' ? (stock.stock_atas ?? 0)
+        : code === 'bawah' ? (stock.stock_bawah ?? 0)
+        : 0;
+      return { w, qty };
+    });
+    const maxBalance = balances.reduce(
+      (best, cur) => (cur.qty > best.qty ? cur : best),
+      balances[0] ?? { w: warehouses[0], qty: 0 },
+    );
+    const defaultWh = maxBalance && maxBalance.qty > 0
+      ? maxBalance.w
+      : (warehouses.find((w) => w.is_default) ?? warehouses[0]);
     setCart((prev) => [
       ...prev,
       {
@@ -414,9 +431,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           estimatedPrice: l.estimatedPrice,
         })),
       });
-      showToast('✅ Transaksi WIP tersimpan.', 'success');
+      showToast('✅ Transaksi WIP tersimpan. Cek di Pipeline untuk lock + approval.', 'success');
       onSaved(txId);
-      if (onNavigate) onNavigate('invoicePreview'); else onBack();
+      if (onNavigate) onNavigate('pipeline'); else onBack();
       return;
     }
 
@@ -465,34 +482,73 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const stepSlug = currentStep === 1
+    ? 'Pilih channel & customer'
+    : currentStep === 2
+    ? 'Tambah produk & jasa'
+    : 'Pembayaran & finalisasi';
+
+  // Channel label for the context recap bar (Steps 2 & 3).
+  const channelDef = getChannelDef(channel);
+
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
-      <div className="bg-[#012749] text-white rounded-t-2xl px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={onCancel} className="text-white/80 hover:text-white">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="font-extrabold text-sm">📋 Catat Penjualan</div>
-            <div className="text-[11px] opacity-65">Step {currentStep} dari 3</div>
-          </div>
+      {/* Header — white per mockup. Date/user pills dropped; replaced with Batal link. */}
+      <div className="bg-white border border-slate-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <p className="text-xs text-slate-500 mt-0.5">Step {currentStep} dari 3 — {stepSlug}</p>
         </div>
-        <div className="flex gap-2 text-[11px]">
-          <span className="bg-white/15 px-3 py-1 rounded-full font-bold">
-            📅 {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
-          <span className="bg-white/15 px-3 py-1 rounded-full font-bold">
-            👤 {currentUser?.name ?? 'Admin'}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs text-slate-500 hover:text-slate-700 font-semibold"
+        >
+          Batal
+        </button>
       </div>
 
-      <div className="bg-white rounded-b-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm overflow-hidden">
         <WizardStepper
           currentStep={currentStep}
           completedSteps={completedSteps}
           onJumpBack={onJumpBack}
         />
+
+        {/* Context recap bar — show on Steps 2 & 3 once Step 1 is complete. */}
+        {currentStep > 1 && customer && (
+          <div className="px-6 py-3 bg-[#012749]/5 border-b border-slate-100 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-slate-600">🏪 <strong>{channelDef.label}</strong></span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-600">👤 <strong>{customer.name}</strong></span>
+              {customer.allows_tempo && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                  TEMPO OK · Limit {Math.round((customer.credit_limit ?? 0) / 1_000_000)}jt
+                </span>
+              )}
+              {currentStep === 3 && (
+                <>
+                  <span className="text-slate-400">·</span>
+                  <span className="text-slate-600">
+                    📦 {cart.length} item{rakitLines.length > 0 ? ` + ${rakitLines.length} jasa` : ''}
+                  </span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-bold text-[#012749]">
+                    Rp {Math.round(subtotal).toLocaleString('id-ID')}
+                  </span>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => { setCurrentStep(1); }}
+              className="text-[#012749] font-semibold hover:underline"
+            >
+              Ubah
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <p className="text-center text-slate-400 py-12 text-sm">Memuat data...</p>
@@ -503,7 +559,16 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 channel={channel}
                 setChannel={setChannel}
                 customer={customer as DbCustomer | undefined}
-                setCustomer={(c) => setCustomer(c as DbCustomerWithStats | undefined)}
+                setCustomer={(c) => {
+                  setCustomer(c as DbCustomerWithStats | undefined);
+                  // Inline form returns a fresh customer that isn't in the
+                  // initial fetch yet — upsert so CustomerPanel can render
+                  // the selected chip by id lookup. No-op for picks from
+                  // the existing list.
+                  if (c && !customers.some((x) => x.id === c.id)) {
+                    setCustomers((prev) => [...prev, c as DbCustomerWithStats]);
+                  }
+                }}
                 customers={customers}
                 marketplaceOrderNo={marketplaceOrderNo}
                 setMarketplaceOrderNo={setMarketplaceOrderNo}
@@ -523,7 +588,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onQtyChange={updateQty}
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
-                subtotal={subtotal}
+                onClearCart={() => { setCart([]); setRakitLines([]); }}
+                subtotal={skuSubtotal}
+                rakitSubtotal={rakitTotal}
                 rakitLines={rakitLines}
                 rakitFormOpen={rakitFormOpen}
                 rakitFormType={rakitFormType}
@@ -531,14 +598,23 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onCancelRakitForm={cancelRakitForm}
                 onAddRakitLine={addRakitLine}
                 onRemoveRakitLine={removeRakitLine}
-                // Per-warehouse stock map for pre-order detection.
-                // SupabaseStockItem only carries stock_atas/stock_bawah without
-                // warehouse_id mapping, so a faithful per-warehouse lookup
-                // requires either a stock_lots aggregation query or a
-                // warehouse↔legacy-column dictionary. Both are follow-up scope.
-                // Passing {} degrades the pre-order banner to no-op; the
-                // backend still accepts negative stock via the new flag.
-                stockByWarehouseSku={{}}
+                // Per-warehouse stock map for pre-order detection. Mirrors
+                // the warehouse.code → stock_atas/stock_bawah mapping used
+                // by CartRows + addItem so the PRE-ORDER chip only fires
+                // when the picked warehouse actually has insufficient stock.
+                stockByWarehouseSku={(() => {
+                  const map: Record<string, number> = {};
+                  for (const s of stocks) {
+                    for (const w of warehouses) {
+                      const code = w.code.toLowerCase();
+                      const qty = code === 'atas' ? (s.stock_atas ?? 0)
+                        : code === 'bawah' ? (s.stock_bawah ?? 0)
+                        : 0;
+                      map[`${s.sku}|${w.id}`] = qty;
+                    }
+                  }
+                  return map;
+                })()}
                 showToast={showToast}
               />
             )}
