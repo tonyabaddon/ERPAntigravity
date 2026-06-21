@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, Search, Send, PlusCircle } from 'lucide-react';
+import { MessageSquare, Search, Send, PlusCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useRealtimeConversations, ConversationWithMessages } from '../hooks/useRealtimeConversations';
-import type { DbMessage } from '../types';
+import type { DbMessage, ConversationState } from '../types';
 import type { ActivePage } from '../types';
 import { categorize, categoryCounts, type InboxCategory } from '../lib/salesInboxCategorize';
+import { conversationService } from '../lib/supabaseClient';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -18,6 +19,8 @@ const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> 
   CANCELLED:        { label: 'Dibatalkan',         badgeClass: 'bg-gray-100 text-gray-500' },
   ESCALATED_ADMIN:  { label: 'Butuh Admin',        badgeClass: 'bg-red-100 text-red-700' },
   ESCALATED_WIRING: { label: 'Eskalasi Wiring',    badgeClass: 'bg-orange-100 text-orange-700' },
+  ADD_MORE:         { label: 'Tambah Item',         badgeClass: 'bg-indigo-100 text-indigo-700' },
+  DELIVERY:         { label: 'Pengiriman',          badgeClass: 'bg-lime-100 text-lime-700' },
 };
 
 const STEPPER_STEPS = [
@@ -32,24 +35,38 @@ const STEPPER_STEPS = [
 const OFF_PATH_STATES = new Set(['ESCALATED_ADMIN', 'ESCALATED_WIRING', 'CANCELLED']);
 
 function getModeBanner(conv: ConversationWithMessages): {
-  bg: string; text: string; btnLabel: string; makeActive: boolean;
+  bg: string; text: string; btnLabel: string; makeActive: boolean; isLocked: boolean;
 } {
+  const lockedUntil = conv.state_locked_until ? new Date(conv.state_locked_until) : null;
+  const isLocked = lockedUntil !== null && lockedUntil > new Date();
+
+  if (isLocked) {
+    return {
+      bg: 'bg-emerald-700',
+      text: `👤 Mode Admin · Status di-lock sampai ${lockedUntil!.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`,
+      btnLabel: 'Aktifkan AI Sekarang',
+      makeActive: true,
+      isLocked: true,
+    };
+  }
   if (conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING') {
     return {
       bg: 'bg-red-700',
       text: `🚨 ${CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state} — AI dijeda otomatis`,
       btnLabel: 'Kembalikan ke AI',
       makeActive: true,
+      isLocked: false,
     };
   }
   if (!conv.ai_active) {
-    return { bg: 'bg-emerald-700', text: '👤 Mode Admin — AI dinonaktifkan', btnLabel: 'Aktifkan AI', makeActive: true };
+    return { bg: 'bg-emerald-700', text: '👤 Mode Admin — AI dinonaktifkan', btnLabel: 'Aktifkan AI', makeActive: true, isLocked: false };
   }
   return {
     bg: 'bg-blue-700',
     text: `🤖 Dikelola AI · ${CONV_STATE_DISPLAY[conv.state]?.label ?? conv.state}`,
     btnLabel: 'Ambil Alih',
     makeActive: false,
+    isLocked: false,
   };
 }
 
@@ -68,14 +85,25 @@ function getInitials(conv: ConversationWithMessages): string {
   return getDisplayName(conv).slice(0, 2).toUpperCase();
 }
 
-export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: ActivePage) => void }) {
+export default function SalesInboxScreen({
+  onNavigate,
+  userRole,
+}: {
+  onNavigate?: (page: ActivePage) => void;
+  userRole: string | null;
+}) {
   const { conversations, orders, paymentUploadedOrders, sendAdminMessage, sendAdminMedia, toggleAiControl, loading } =
     useRealtimeConversations();
+
+  const canOverride = userRole === 'Owner' || userRole === 'Staff Admin Toko';
 
   const [activeChatId, setActiveChatId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<InboxCategory>('butuhAksi');
   const [inputText, setInputText] = useState('');
+  const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
+  // Force re-render every 60s to refresh lock countdown display
+  const [, forceTick] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +120,12 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages.length, activeChatId]);
+
+  // Re-render every 60 seconds to refresh lock countdown in header badge
+  useEffect(() => {
+    const id = setInterval(() => forceTick(t => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const counts = categoryCounts(conversations);
 
@@ -248,6 +282,45 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
                 <div className="font-bold text-sm truncate">{getDisplayName(activeChat)}</div>
                 <div className="text-[10px] opacity-60">{activeChat.customer_phone}</div>
               </div>
+              {/* State badge — clickable dropdown trigger for canOverride users */}
+              {(() => {
+                const stateInfo = CONV_STATE_DISPLAY[activeChat.state];
+                const lockedUntil = activeChat.state_locked_until ? new Date(activeChat.state_locked_until) : null;
+                const minutesLeft = lockedUntil && lockedUntil > new Date()
+                  ? Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000))
+                  : null;
+                return (
+                  <div className="relative">
+                    <button
+                      disabled={!canOverride}
+                      onClick={() => setStateDropdownOpen(o => !o)}
+                      className={`flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full ${stateInfo?.badgeClass ?? 'bg-gray-100 text-gray-600'} ${canOverride ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'}`}
+                    >
+                      {minutesLeft !== null && <span>🔒</span>}
+                      {stateInfo?.label ?? activeChat.state}
+                      {minutesLeft !== null && <span className="opacity-70">· {minutesLeft} min</span>}
+                      {canOverride && (stateDropdownOpen
+                        ? <ChevronUp className="w-3.5 h-3.5" />
+                        : <ChevronDown className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                    {stateDropdownOpen && canOverride && (
+                      <StateOverrideDropdown
+                        currentState={activeChat.state}
+                        onPick={async (newState) => {
+                          try {
+                            await conversationService.manuallyOverrideConversationState(activeChat.id, newState);
+                            setStateDropdownOpen(false);
+                          } catch (e) {
+                            alert(`Gagal ubah status: ${e instanceof Error ? e.message : String(e)}`);
+                          }
+                        }}
+                        onClose={() => setStateDropdownOpen(false)}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Mode banner */}
@@ -257,10 +330,18 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
                 <div className={`${banner.bg} text-white px-4 py-1.5 flex items-center justify-between text-xs shrink-0`}>
                   <span>{banner.text}</span>
                   <button
-                    onClick={() => {
-                      const isEscalated =
-                        activeChat.state === 'ESCALATED_ADMIN' || activeChat.state === 'ESCALATED_WIRING';
-                      toggleAiControl(activeChat.id, banner.makeActive, isEscalated ? 'COLLECTING' : undefined);
+                    onClick={async () => {
+                      if (banner.isLocked) {
+                        try {
+                          await conversationService.clearConversationLock(activeChat.id);
+                        } catch (e) {
+                          alert(`Gagal clear lock: ${e instanceof Error ? e.message : String(e)}`);
+                        }
+                      } else {
+                        const isEscalated =
+                          activeChat.state === 'ESCALATED_ADMIN' || activeChat.state === 'ESCALATED_WIRING';
+                        toggleAiControl(activeChat.id, banner.makeActive, isEscalated ? 'COLLECTING' : undefined);
+                      }
                     }}
                     className="bg-white/20 hover:bg-white/30 rounded-md px-2 py-1 text-[10px] font-bold"
                   >
@@ -322,6 +403,69 @@ export default function SalesInboxScreen({ onNavigate }: { onNavigate?: (page: A
         </div>
       )}
     </div>
+  );
+}
+
+// ─── State Override Dropdown ─────────────────────────────────────────────────
+
+const ALL_CONV_STATES: ConversationState[] = [
+  'GREETING', 'COLLECTING', 'CLARIFYING', 'STOCK_CHECK', 'CONFIRMING',
+  'BOOKED', 'TIMEOUT_REMINDER', 'APPROVED', 'ADD_MORE', 'DELIVERY',
+  'ESCALATED_ADMIN', 'ESCALATED_WIRING', 'COMPLETED', 'CANCELLED',
+];
+const TERMINAL_STATES: ConversationState[] = ['COMPLETED', 'CANCELLED'];
+
+function StateOverrideDropdown({
+  currentState,
+  onPick,
+  onClose,
+}: {
+  currentState: ConversationState;
+  onPick: (s: ConversationState) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onEsc);
+    return () => document.removeEventListener('keydown', onEsc);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="fixed inset-0 z-10" onClick={onClose} />
+      <div className="absolute top-full right-0 mt-1 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 w-64 z-20">
+        <div className="px-3 py-2 border-b border-gray-100">
+          <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400">Ubah Status Manual</div>
+          <div className="text-[10px] text-gray-500 mt-0.5">AI di-pause 15 menit. Admin handle balas. Auto-resume saat lock expire.</div>
+        </div>
+        <div className="max-h-56 overflow-y-auto py-1 text-xs">
+          {ALL_CONV_STATES.map(s => {
+            const info = CONV_STATE_DISPLAY[s];
+            const isCurrent = s === currentState;
+            const isTerminal = TERMINAL_STATES.includes(s);
+            return (
+              <button
+                key={s}
+                disabled={isTerminal || isCurrent}
+                onClick={() => !isTerminal && !isCurrent && onPick(s)}
+                className={`w-full text-left px-3 py-1.5 flex items-center gap-2 ${
+                  isTerminal ? 'opacity-40 cursor-not-allowed' :
+                  isCurrent ? 'bg-gray-100 cursor-default' :
+                  'hover:bg-gray-50'
+                }`}
+              >
+                <span className={`inline-block text-[8px] font-bold px-1.5 py-0.5 rounded-full ${info?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
+                  {info?.label ?? s}
+                </span>
+                <span className="text-gray-400 text-[9px] font-mono">
+                  {s}{isCurrent ? ' · saat ini' : isTerminal ? ' · terminal' : ''}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 }
 

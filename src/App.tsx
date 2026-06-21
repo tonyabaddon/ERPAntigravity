@@ -386,7 +386,10 @@ export default function App() {
         );
       case 'sales-inbox':
         return (
-          <SalesInboxScreen onNavigate={(page) => navigate(page)} />
+          <SalesInboxScreen
+            onNavigate={(page) => navigate(page)}
+            userRole={currentUser?.role ?? null}
+          />
         );
       case 'ai-stock':
         return (

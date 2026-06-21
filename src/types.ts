@@ -226,6 +226,8 @@ export interface DbConversation {
   last_ai_message_at?: string;
   followup_count_today: number;
   last_followup_date?: string;
+  state_locked_until: string | null;       // ISO timestamp; NULL = no lock
+  state_locked_by_admin_id: string | null; // admin who set the lock
   created_at: string;
   updated_at: string;
 }

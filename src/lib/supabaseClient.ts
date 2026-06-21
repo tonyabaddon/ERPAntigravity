@@ -5,7 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
-import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel, ConversationState } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -227,6 +227,34 @@ export const conversationService = {
       .from('conversations')
       .update(update)
       .eq('id', conversationId);
+    if (error) throw error;
+  },
+
+  async manuallyOverrideConversationState(
+    convId: string,
+    newState: ConversationState,
+    lockMinutes: number = 15
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('manually_override_conversation_state', {
+      p_conv_id: convId,
+      p_new_state: newState,
+      p_lock_minutes: lockMinutes,
+    });
+    if (error) throw error;
+  },
+
+  async clearConversationLock(convId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('conversations')
+      .update({
+        ai_active: true,
+        state_locked_until: null,
+        state_locked_by_admin_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', convId);
     if (error) throw error;
   },
 
