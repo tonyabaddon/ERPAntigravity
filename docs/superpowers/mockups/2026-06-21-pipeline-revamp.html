@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Pipeline Revamp v2 (Kill Pipeline + Slack-style filter + Override+TTL pause AI + Kill Tandai Lunas)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; color: #1e3d60; }
+  .card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.08); }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+  .mockup-stage { background: #ffffff; border: 1px solid #e5eeff; border-radius: 16px; padding: 24px; }
+  .stage-label { position: absolute; top: -10px; left: 16px; background: #012749; color: white; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 999px; letter-spacing: 0.5px; }
+  .diff-add { background: #ecfdf5; border-left: 3px solid #10b981; }
+  .diff-del { background: #fef2f2; border-left: 3px solid #ef4444; text-decoration: line-through; opacity: 0.55; }
+  .diff-edit { background: #fffbeb; border-left: 3px solid #f59e0b; }
+  /* Chip styles */
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; cursor: pointer; transition: all 0.1s; border: 1px solid transparent; }
+  .chip:hover { transform: translateY(-1px); }
+  .chip-active { box-shadow: 0 0 0 2px #012749 inset; }
+  .chip-red    { background: #fee2e2; color: #b91c1c; }
+  .chip-blue   { background: #dbeafe; color: #1d4ed8; }
+  .chip-yellow { background: #fef3c7; color: #92400e; }
+  .chip-gray   { background: #f3f4f6; color: #4b5563; }
+  .chip-emerald { background: #d1fae5; color: #065f46; }
+  /* State badge in chat row */
+  .state-badge { display: inline-block; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 999px; }
+  .modal-overlay { background: rgba(2, 39, 73, 0.4); backdrop-filter: blur(2px); }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">trending_up</span>
+      </div>
+      <div>
+        <h1 class="font-extrabold text-lg leading-tight">Pipeline Revamp <span class="text-emerald-600">v2</span></h1>
+        <p class="text-xs text-gray-500 leading-tight">Kill Pipeline · Slack-style filter · Override+TTL pause AI · Kill walk-in path</p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden md:flex items-center gap-1 text-xs font-bold">
+      <a href="#summary" class="px-3 py-1.5 rounded-full text-gray-600">Ringkasan</a>
+      <a href="#sidebar"  class="px-3 py-1.5 rounded-full text-gray-600">Sidebar</a>
+      <a href="#inbox"    class="px-3 py-1.5 rounded-full text-gray-600">Sales Inbox</a>
+      <a href="#override" class="px-3 py-1.5 rounded-full text-gray-600">Manual Override</a>
+      <a href="#walkin"   class="px-3 py-1.5 rounded-full text-gray-600">Walk-in Kill</a>
+    </nav>
+    <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-1 rounded-full">DESIGN MOCKUP · 2026-06-21 · v2</span>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- ============ SUMMARY ============ -->
+  <section id="summary" class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">Ringkasan Perubahan</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="mockup-stage card-shadow">
+        <h3 class="font-bold text-sm mb-2">Yang Dihapus</h3>
+        <ul class="text-xs space-y-1.5 text-gray-700">
+          <li class="diff-del px-2 py-1 rounded">Menu sidebar <code>Pipeline</code> (entry + perm + URL route)</li>
+          <li class="diff-del px-2 py-1 rounded">File <code>src/components/PipelineScreen.tsx</code></li>
+          <li class="diff-del px-2 py-1 rounded">Filter <code>Semua / Admin (5) / AI (42)</code> di Sales Inbox</li>
+          <li class="diff-del px-2 py-1 rounded"><code>orderService.markWalkinPaid</code> + <code>salesEntriesService.fetchOpenWalkinDrafts</code></li>
+          <li class="diff-del px-2 py-1 rounded">Tandai Lunas flow (data prod: 0 walk-in orders pernah pakai)</li>
+        </ul>
+      </div>
+      <div class="mockup-stage card-shadow">
+        <h3 class="font-bold text-sm mb-2">Yang Ditambah</h3>
+        <ul class="text-xs space-y-1.5 text-gray-700">
+          <li class="diff-add px-2 py-1 rounded">4 kategori Slack-style di Sales Inbox: <em>Butuh Aksi · AI Aktif · Menunggu · Riwayat</em></li>
+          <li class="diff-add px-2 py-1 rounded">Manual state override dropdown di chat header</li>
+          <li class="diff-add px-2 py-1 rounded">Kolom DB <code>conversations.state_locked_until</code> (TTL 15 menit)</li>
+          <li class="diff-add px-2 py-1 rounded">Override = <strong>AI auto-pause</strong>; auto-resume saat lock expire</li>
+          <li class="diff-add px-2 py-1 rounded">System message audit di chat saat override</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mockup-stage card-shadow border-l-4 border-amber-400">
+      <p class="text-xs text-gray-700">
+        <strong>Yang TIDAK disentuh</strong>: Tabel <code>leads</code> tetap ada (backend Go masih write, PelangganScreen baris 362 baca <code>LEAD_BADGE</code>). Hanya UI Pipeline yang dihapus. Drop-table di-defer ke phase berikutnya kalau memang sudah benar-benar tidak ada konsumen.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ SIDEBAR BEFORE/AFTER ============ -->
+  <section id="sidebar" class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">1. Sidebar — Hapus Menu Pipeline</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- BEFORE -->
+      <div class="relative">
+        <span class="stage-label">SEBELUM</span>
+        <div class="mockup-stage card-shadow">
+          <div class="bg-[#012749] text-white rounded-xl p-4 space-y-1 text-xs">
+            <div class="text-[9px] uppercase tracking-widest text-gray-400 font-bold pb-1 border-b border-white/10 mb-2">Operasional</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">dashboard</span> Dashboard</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">inbox</span> Sales Inbox <span class="ml-auto bg-red-500 text-white text-[9px] font-bold px-1.5 rounded-full">5</span></div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">shopping_cart</span> Penjualan</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">receipt</span> Kasir</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">group</span> Pelanggan</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">account_balance_wallet</span> Piutang</div>
+            <div class="diff-del px-2 py-1.5 rounded flex items-center gap-2 !opacity-100"><span class="material-symbols-outlined text-sm">trending_up</span> Pipeline</div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="relative">
+        <span class="stage-label" style="background:#10b981;">SESUDAH</span>
+        <div class="mockup-stage card-shadow">
+          <div class="bg-[#012749] text-white rounded-xl p-4 space-y-1 text-xs">
+            <div class="text-[9px] uppercase tracking-widest text-gray-400 font-bold pb-1 border-b border-white/10 mb-2">Operasional</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">dashboard</span> Dashboard</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">inbox</span> Sales Inbox <span class="ml-auto bg-red-500 text-white text-[9px] font-bold px-1.5 rounded-full">8</span></div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">shopping_cart</span> Penjualan</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">receipt</span> Kasir</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">group</span> Pelanggan</div>
+            <div class="px-2 py-1.5 rounded flex items-center gap-2"><span class="material-symbols-outlined text-sm">account_balance_wallet</span> Piutang</div>
+            <div class="text-[10px] text-emerald-300 italic px-2 py-1.5 border-t border-white/10 mt-1 pt-2">— "Pipeline" dihapus —</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2 italic">Sidebar badge count Sales Inbox dipromote (8) — sekarang termasuk semua "Butuh Aksi" (ESCALATED + BOOKED + TIMEOUT) bukan cuma ESCALATED.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SALES INBOX BEFORE/AFTER ============ -->
+  <section id="inbox" class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">2. Sales Inbox — Chip Row Per-State Group</h2>
+    <p class="text-sm text-gray-600">11 <code>conversation_state</code> dilipat jadi 4 verb-driven super-chip. Klik chip = filter list. Granularitas tetap di badge per-row.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- BEFORE -->
+      <div class="relative">
+        <span class="stage-label">SEBELUM — Filter 3 tab kasar</span>
+        <div class="mockup-stage card-shadow p-0 overflow-hidden">
+          <div class="flex h-[420px]">
+            <div class="w-56 shrink-0 flex flex-col border-r border-gray-200 bg-gray-50">
+              <div class="bg-[#012749] text-white px-3 py-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">inbox</span>
+                <span class="font-bold text-sm">Inbox AI</span>
+                <span class="ml-auto bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full">47</span>
+              </div>
+              <div class="p-2 border-b border-gray-100">
+                <div class="relative">
+                  <input class="w-full bg-white border border-gray-200 rounded-lg pl-7 pr-2 py-1.5 text-xs" placeholder="Cari..." />
+                  <span class="material-symbols-outlined text-xs absolute left-2 top-2 text-gray-400">search</span>
+                </div>
+              </div>
+              <div class="diff-del flex gap-1 px-2 py-2 border-b border-gray-100 !opacity-100">
+                <button class="flex-1 text-[10px] font-bold px-1.5 py-1 rounded-full bg-[#012749] text-white">Semua</button>
+                <button class="flex-1 text-[10px] font-bold px-1.5 py-1 rounded-full bg-white border border-gray-200 text-gray-500">Admin (5)</button>
+                <button class="flex-1 text-[10px] font-bold px-1.5 py-1 rounded-full bg-white border border-gray-200 text-gray-500">AI (42)</button>
+              </div>
+              <div class="flex-1 overflow-y-auto divide-y divide-gray-100">
+                <div class="px-3 py-2.5 flex items-start gap-2 hover:bg-gray-50">
+                  <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white text-xs font-bold">BU</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Budi Hartono</div>
+                    <p class="text-[10px] text-gray-400 truncate">Pak, ini mau pesen panel 3...</p>
+                    <span class="state-badge bg-red-100 text-red-700 mt-1">Butuh Admin</span>
+                  </div>
+                </div>
+                <div class="px-3 py-2.5 flex items-start gap-2 bg-indigo-50 border-l-[3px] border-l-[#012749]">
+                  <div class="w-8 h-8 rounded-full bg-[#012749] flex items-center justify-center text-white text-xs font-bold">SI</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Siti Aminah</div>
+                    <p class="text-[10px] text-gray-400 truncate">Stok MCB 1A masih ada?</p>
+                    <span class="state-badge bg-cyan-100 text-cyan-700 mt-1">Cek Stok</span>
+                  </div>
+                </div>
+                <div class="px-3 py-2.5 flex items-start gap-2">
+                  <div class="w-8 h-8 rounded-full bg-[#012749] flex items-center justify-center text-white text-xs font-bold">AN</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Andi Wijaya</div>
+                    <p class="text-[10px] text-gray-400 truncate">Lokasi kirim Tangerang...</p>
+                    <span class="state-badge bg-blue-100 text-blue-700 mt-1">Kumpul Data</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 bg-[#f8f9ff] flex items-center justify-center text-gray-300 text-xs">[chat panel]</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="relative">
+        <span class="stage-label" style="background:#10b981;">SESUDAH — Slack-style kategori list</span>
+        <div class="mockup-stage card-shadow p-0 overflow-hidden">
+          <div class="flex h-[420px]">
+            <div class="w-56 shrink-0 flex flex-col border-r border-gray-200 bg-gray-50">
+              <div class="bg-[#012749] text-white px-3 py-3 flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">inbox</span>
+                <span class="font-bold text-sm">Inbox AI</span>
+                <span class="ml-auto bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full">47</span>
+              </div>
+              <div class="p-2 border-b border-gray-100">
+                <div class="relative">
+                  <input class="w-full bg-white border border-gray-200 rounded-lg pl-7 pr-2 py-1.5 text-xs" placeholder="Cari..." />
+                  <span class="material-symbols-outlined text-xs absolute left-2 top-2 text-gray-400">search</span>
+                </div>
+              </div>
+              <div class="diff-add !opacity-100 border-b border-gray-100">
+                <div class="px-2 pt-2 pb-1 text-[8px] font-bold uppercase tracking-widest text-gray-400">Kategori</div>
+                <button class="w-full px-3 py-2 flex items-center justify-between bg-red-50 border-l-[3px] border-l-red-500 text-left">
+                  <span class="flex items-center gap-2 text-xs font-bold text-red-700">🔴 Butuh Aksi</span>
+                  <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">8</span>
+                </button>
+                <button class="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-100 border-l-[3px] border-l-transparent text-left">
+                  <span class="flex items-center gap-2 text-xs text-gray-700">🔵 AI Aktif</span>
+                  <span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 rounded-full">23</span>
+                </button>
+                <button class="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-100 border-l-[3px] border-l-transparent text-left">
+                  <span class="flex items-center gap-2 text-xs text-gray-700">🟡 Menunggu</span>
+                  <span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 rounded-full">5</span>
+                </button>
+                <button class="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-100 border-l-[3px] border-l-transparent text-left">
+                  <span class="flex items-center gap-2 text-xs text-gray-400">✅ Riwayat</span>
+                  <span class="bg-gray-200 text-gray-500 text-[10px] font-bold px-1.5 rounded-full">11</span>
+                </button>
+                <div class="text-[9px] text-gray-400 italic px-3 py-1.5 text-center">Klik kategori = filter list</div>
+              </div>
+              <div class="flex-1 overflow-y-auto divide-y divide-gray-100">
+                <div class="px-3 py-2.5 flex items-start gap-2 hover:bg-gray-50">
+                  <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white text-xs font-bold">BU</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Budi Hartono</div>
+                    <p class="text-[10px] text-gray-400 truncate">Pak, ini mau pesen panel 3...</p>
+                    <span class="state-badge bg-red-100 text-red-700 mt-1">Butuh Admin</span>
+                  </div>
+                </div>
+                <div class="px-3 py-2.5 flex items-start gap-2 hover:bg-gray-50">
+                  <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs font-bold">JO</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Joko Susilo</div>
+                    <p class="text-[10px] text-gray-400 truncate">Kabel NYY 4x10 stoknya?</p>
+                    <span class="state-badge bg-orange-100 text-orange-700 mt-1">Eskalasi Wiring</span>
+                  </div>
+                </div>
+                <div class="px-3 py-2.5 flex items-start gap-2 hover:bg-gray-50">
+                  <div class="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">FA</div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-bold text-xs">Farida Yanti</div>
+                    <p class="text-[10px] text-gray-400 truncate">Tolong konfirmasi panel...</p>
+                    <span class="state-badge bg-purple-100 text-purple-800 mt-1">Konfirmasi Admin</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 bg-[#f8f9ff] flex items-center justify-center text-gray-300 text-xs">[chat panel]</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2 italic">Chip "Butuh Aksi" lebih lengkap dari "Admin" lama (escalated + booked + timeout). Badge per-row tetap render label state asli (Eskalasi Wiring, Konfirmasi Admin) — granularitas nggak hilang.</p>
+      </div>
+    </div>
+
+    <!-- Hover tooltip example -->
+    <div class="mockup-stage card-shadow">
+      <h3 class="font-bold text-sm mb-3">Tooltip hover di kategori "Butuh Aksi"</h3>
+      <div class="flex items-start gap-6">
+        <button class="w-48 px-3 py-2 flex items-center justify-between bg-red-50 border-l-[3px] border-l-red-500 rounded-r-lg">
+          <span class="flex items-center gap-2 text-xs font-bold text-red-700">🔴 Butuh Aksi</span>
+          <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">8</span>
+        </button>
+        <div class="relative">
+          <div class="absolute -top-1 -left-3 w-3 h-3 rotate-45 bg-[#012749]"></div>
+          <div class="bg-[#012749] text-white text-[10px] rounded-lg px-3 py-2 shadow-xl">
+            <div class="font-bold mb-1">Breakdown</div>
+            <div>· 4 Butuh Admin (ESCALATED_ADMIN)</div>
+            <div>· 1 Eskalasi Wiring (ESCALATED_WIRING)</div>
+            <div>· 2 Konfirmasi Admin (BOOKED)</div>
+            <div>· 1 Follow-up (TIMEOUT_REMINDER)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MANUAL OVERRIDE ============ -->
+  <section id="override" class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">3. Manual State Override — AI pause + auto-resume 15 menit</h2>
+    <p class="text-sm text-gray-600">Klik badge state di chat header → popover dropdown 11 state. Pilih state → AI <strong>auto-pause</strong> + lock 15 menit. Admin handle reply sendiri selama lock. AI auto-resume saat lock expire. System message di chat sebagai audit.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Closed state -->
+      <div class="relative">
+        <span class="stage-label">Header chat — badge klik-able</span>
+        <div class="mockup-stage card-shadow p-0 overflow-hidden">
+          <div class="bg-[#012749] text-white px-4 py-2.5 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-[#2d8a4e] flex items-center justify-center text-xs font-bold">SI</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm truncate">Siti Aminah · PT Aneka Listrik</div>
+              <div class="text-[10px] opacity-60">6282114341213</div>
+            </div>
+            <button class="diff-add !opacity-100 flex items-center gap-1.5 bg-cyan-100 text-cyan-800 text-[10px] font-bold px-3 py-1.5 rounded-full hover:bg-cyan-200">
+              🟦 Cek Stok
+              <span class="material-symbols-outlined text-sm">expand_more</span>
+            </button>
+          </div>
+          <div class="bg-blue-700 text-white px-4 py-1.5 flex items-center justify-between text-xs">
+            <span>🤖 Dikelola AI · Cek Stok</span>
+            <button class="bg-white/20 rounded-md px-2 py-1 text-[10px] font-bold">Ambil Alih</button>
+          </div>
+          <div class="bg-[#f8f9ff] h-32 p-3 flex items-center justify-center text-gray-300 text-xs">[messages]</div>
+        </div>
+      </div>
+
+      <!-- Dropdown open -->
+      <div class="relative">
+        <span class="stage-label" style="background:#10b981;">Dropdown terbuka — pilih state baru</span>
+        <div class="mockup-stage card-shadow p-0 overflow-hidden">
+          <div class="bg-[#012749] text-white px-4 py-2.5 flex items-center gap-2.5 relative">
+            <div class="w-8 h-8 rounded-full bg-[#2d8a4e] flex items-center justify-center text-xs font-bold">SI</div>
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-sm truncate">Siti Aminah · PT Aneka Listrik</div>
+              <div class="text-[10px] opacity-60">6282114341213</div>
+            </div>
+            <button class="flex items-center gap-1.5 bg-cyan-200 text-cyan-900 text-[10px] font-bold px-3 py-1.5 rounded-full ring-2 ring-cyan-400">
+              🟦 Cek Stok
+              <span class="material-symbols-outlined text-sm">expand_less</span>
+            </button>
+            <!-- Popover -->
+            <div class="absolute top-12 right-4 bg-white text-gray-800 rounded-xl shadow-2xl border border-gray-200 w-64 z-10">
+              <div class="px-3 py-2 border-b border-gray-100">
+                <div class="text-[9px] font-bold uppercase tracking-wide text-gray-400">Ubah Status Manual</div>
+                <div class="text-[10px] text-gray-500 mt-0.5"><strong>AI di-pause</strong> 15 menit. Admin handle balas. Auto-resume saat lock expire.</div>
+              </div>
+              <div class="max-h-56 overflow-y-auto py-1 text-xs">
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-violet-100 text-violet-700">Sapa</span><span class="text-gray-400 text-[9px]">GREETING</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-blue-100 text-blue-700">Kumpul Data</span><span class="text-gray-400 text-[9px]">COLLECTING</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-sky-100 text-sky-700">Klarifikasi</span><span class="text-gray-400 text-[9px]">CLARIFYING</span></div>
+                <div class="px-3 py-1.5 bg-cyan-50 ring-1 ring-cyan-300 rounded flex items-center gap-2"><span class="state-badge bg-cyan-100 text-cyan-700">Cek Stok</span><span class="text-gray-400 text-[9px]">STOCK_CHECK · saat ini</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-amber-100 text-amber-700">Konfirmasi</span><span class="text-gray-400 text-[9px]">CONFIRMING</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-purple-100 text-purple-800">Konfirmasi Admin</span><span class="text-gray-400 text-[9px]">BOOKED</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-violet-100 text-violet-700">Follow-up</span><span class="text-gray-400 text-[9px]">TIMEOUT_REMINDER</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-teal-100 text-teal-700">Disetujui</span><span class="text-gray-400 text-[9px]">APPROVED</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-red-100 text-red-700">Butuh Admin</span><span class="text-gray-400 text-[9px]">ESCALATED_ADMIN</span></div>
+                <div class="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2"><span class="state-badge bg-orange-100 text-orange-700">Eskalasi Wiring</span><span class="text-gray-400 text-[9px]">ESCALATED_WIRING</span></div>
+                <div class="px-3 py-1.5 opacity-40 flex items-center gap-2 cursor-not-allowed"><span class="state-badge bg-emerald-100 text-emerald-700">Selesai</span><span class="text-gray-400 text-[9px]">terminal · disabled</span></div>
+                <div class="px-3 py-1.5 opacity-40 flex items-center gap-2 cursor-not-allowed"><span class="state-badge bg-gray-100 text-gray-500">Dibatalkan</span><span class="text-gray-400 text-[9px]">terminal · disabled</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-700 text-white px-4 py-1.5 flex items-center justify-between text-xs">
+            <span>🤖 Dikelola AI · Cek Stok</span>
+            <button class="bg-white/20 rounded-md px-2 py-1 text-[10px] font-bold">Ambil Alih</button>
+          </div>
+          <div class="bg-[#f8f9ff] h-32 p-3 flex items-center justify-center text-gray-300 text-xs">[messages]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- After override -->
+    <div class="mockup-stage card-shadow">
+      <h3 class="font-bold text-sm mb-3">Setelah override — AI dijeda, admin handle balas, lock countdown</h3>
+      <div class="border border-gray-200 rounded-xl overflow-hidden">
+        <div class="bg-[#012749] text-white px-4 py-2.5 flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#2d8a4e] flex items-center justify-center text-xs font-bold">SI</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-sm">Siti Aminah · PT Aneka Listrik</div>
+            <div class="text-[10px] opacity-60">6282114341213</div>
+          </div>
+          <button class="flex items-center gap-1.5 bg-amber-100 text-amber-900 text-[10px] font-bold px-3 py-1.5 rounded-full">
+            🔒 🟡 Konfirmasi · 14 min
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+          </button>
+        </div>
+        <div class="bg-emerald-700 text-white px-4 py-1.5 flex items-center justify-between text-xs">
+          <span>👤 Mode Admin · Tony override status & ambil alih sampai 14:38</span>
+          <button class="bg-white/20 rounded-md px-2 py-1 text-[10px] font-bold">Aktifkan AI Sekarang</button>
+        </div>
+        <div class="bg-[#f8f9ff] p-3 space-y-2">
+          <div class="flex justify-start"><div class="bg-white border border-gray-200 px-3 py-2 rounded-2xl text-xs max-w-[60%]">Stok MCB 1A 1P masih ada Bu?</div></div>
+          <div class="text-center text-[9px] text-gray-400 italic py-1">— Tony (Owner) mengubah status ke <strong>Konfirmasi</strong>, AI di-pause 15 menit, pada 14:23. —</div>
+          <div class="flex justify-end"><div class="bg-emerald-100 text-emerald-900 px-3 py-2 rounded-2xl text-xs max-w-[60%]">Iya Bu, ada 12 pcs siap kirim. Konfirmasi 10 pcs ya Bu, total Rp 2.45jt.</div></div>
+          <div class="text-center text-[9px] text-gray-400 italic py-1">Reply admin manual — bukan AI</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mt-4 text-xs">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div class="font-bold text-amber-800 mb-1">🔒 Lock countdown</div>
+          <div class="text-gray-600 leading-snug">Badge di header tampil sisa waktu lock. Klik "Aktifkan AI Sekarang" untuk akhiri lebih awal.</div>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+          <div class="font-bold text-emerald-800 mb-1">👤 AI di-pause</div>
+          <div class="text-gray-600 leading-snug">Saat override, <code>ai_active=false</code> & <code>state_locked_until=NOW+15min</code>. Pesan customer NGGAK trigger AI auto-reply.</div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div class="font-bold text-blue-800 mb-1">⏰ Auto-resume</div>
+          <div class="text-gray-600 leading-snug">Cron tiap 1 menit cek <code>state_locked_until &lt; NOW()</code> → flip <code>ai_active=true</code>. Admin nggak perlu inget toggle balik.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DB schema delta -->
+    <div class="mockup-stage card-shadow bg-gray-900 text-gray-100">
+      <h3 class="font-bold text-sm mb-2 text-emerald-300">DB delta</h3>
+<pre class="text-xs font-mono leading-relaxed"><code>-- Migration: 20260621NNNNNN_conversation_state_lock.sql
+ALTER TABLE conversations
+  ADD COLUMN state_locked_until TIMESTAMPTZ NULL,
+  ADD COLUMN state_locked_by_admin_id UUID NULL REFERENCES admin_users(id);
+
+CREATE INDEX idx_conversations_state_lock
+  ON conversations(state_locked_until)
+  WHERE state_locked_until IS NOT NULL;
+
+-- RPC baru
+CREATE FUNCTION manually_override_conversation_state(
+  p_conv_id UUID,
+  p_new_state conversation_state,
+  p_lock_minutes INT DEFAULT 15
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+  -- guard: bukan terminal state (COMPLETED, CANCELLED)
+  -- UPDATE conversations SET
+  --   state = p_new_state,
+  --   ai_active = false,                              -- ← key: pause AI
+  --   state_locked_until = NOW() + p_lock_minutes * interval '1 minute',
+  --   state_locked_by_admin_id = current_admin_id()
+  -- INSERT INTO messages (sender='system', text='Admin X mengubah status...')
+$$;
+
+-- Auto-resume RPC (dipanggil oleh cron tiap 1 menit)
+CREATE FUNCTION auto_resume_expired_locks() RETURNS INT
+LANGUAGE plpgsql AS $$
+  -- UPDATE conversations SET ai_active = true, state_locked_until = NULL
+  -- WHERE state_locked_until &lt; NOW() AND state_locked_until IS NOT NULL
+  -- RETURNING count(*)
+$$;</code></pre>
+    </div>
+
+    <div class="mockup-stage card-shadow bg-gray-900 text-gray-100">
+      <h3 class="font-bold text-sm mb-2 text-emerald-300">pg_cron schedule</h3>
+<pre class="text-xs font-mono leading-relaxed"><code>-- Migration tambahan: pg_cron job tiap 1 menit
+SELECT cron.schedule(
+  'auto_resume_locked_conversations',
+  '* * * * *',
+  $$ SELECT auto_resume_expired_locks() $$
+);</code></pre>
+    </div>
+
+    <div class="mockup-stage card-shadow bg-gray-900 text-gray-100">
+      <h3 class="font-bold text-sm mb-2 text-emerald-300">Backend Go — implikasi MINIMAL</h3>
+<pre class="text-xs font-mono leading-relaxed"><code>// internal/whatsapp/handler.go — sudah existing logic:
+if !conv.AIActive {
+    log.Printf("[HANDLER] AI off for conv %s, skip auto-reply", conv.ID)
+    return  // ← admin handle balas; AI silent
+}
+// Backend Go basically tidak perlu modifikasi:
+// override = set ai_active=false → existing AI-off path takeover.
+// state_locked_until cuma dipakai cron auto-resume + UI countdown.</code></pre>
+    </div>
+  </section>
+
+  <!-- ============ WALK-IN KILL ============ -->
+  <section id="walkin" class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">4. Walk-in Tandai Lunas — Kill (bukan relokasi)</h2>
+    <p class="text-sm text-gray-600">Verifikasi DB prod: <strong>0 walk-in orders pernah ada</strong>. Fitur defer-payment walk-in nggak pernah dipakai. Daripada relokasi, hapus saja.</p>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Query result -->
+      <div class="mockup-stage card-shadow bg-gray-900 text-gray-100">
+        <h3 class="font-bold text-sm mb-2 text-emerald-300">Query prod (2026-06-21)</h3>
+<pre class="text-xs font-mono leading-relaxed"><code>SELECT sales_channel, status, count(*) AS cnt
+FROM orders
+GROUP BY sales_channel, status
+ORDER BY sales_channel, cnt DESC;
+
+┌───────────────┬─────────────────────────┬─────┐
+│ sales_channel │ status                  │ cnt │
+├───────────────┼─────────────────────────┼─────┤
+│ whatsapp      │ INVOICE_WRITTEN_OFF     │   3 │
+│ whatsapp      │ COMPLETED               │   2 │
+└───────────────┴─────────────────────────┴─────┘
+
+▸ 5 orders total · 0 walk-in · 0 WAITING_PAYMENT
+▸ Tidak ada data yang harus di-backfill
+▸ Tidak ada user yang impact
+</code></pre>
+      </div>
+
+      <!-- What to delete -->
+      <div class="mockup-stage card-shadow">
+        <h3 class="font-bold text-sm mb-3">Yang dihapus (frontend)</h3>
+        <ul class="text-xs space-y-1.5">
+          <li class="diff-del px-2 py-1 rounded">PipelineScreen.handleMarkPaid (otomatis hilang saat Pipeline dihapus)</li>
+          <li class="diff-del px-2 py-1 rounded"><code>orderService.markWalkinPaid</code> di supabaseClient.ts</li>
+          <li class="diff-del px-2 py-1 rounded"><code>salesEntriesService.fetchOpenWalkinDrafts</code> (sudah orphan)</li>
+        </ul>
+        <h3 class="font-bold text-sm mt-4 mb-3">Yang dipertahankan (DB)</h3>
+        <ul class="text-xs space-y-1.5">
+          <li class="diff-edit px-2 py-1 rounded">RPC <code>mark_walkin_order_paid</code> di DB — biarkan dulu, drop di phase cleanup terpisah</li>
+          <li class="diff-edit px-2 py-1 rounded">Enum value <code>'walkin'</code> di <code>sales_channel</code> — biarkan, low-impact orphan</li>
+        </ul>
+        <h3 class="font-bold text-sm mt-4 mb-3">Yang DICEK ulang di plan</h3>
+        <ul class="text-xs space-y-1.5">
+          <li class="diff-edit px-2 py-1 rounded">Catat Penjualan flow: pastikan tidak ada UI path yang masih ngirim <code>sales_channel='walkin'</code> dengan <code>status='WAITING_PAYMENT'</code></li>
+          <li class="diff-edit px-2 py-1 rounded">PenjualanScreen / PenjualanBaruScreen branch logic untuk walk-in mode</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mockup-stage card-shadow border-l-4 border-emerald-400">
+      <p class="text-xs text-gray-700">
+        <strong>Kenapa kill lebih jujur dari relokasi:</strong> Data prod nunjukkin fitur ini ide bagus di kertas tapi nggak nyantol di lapangan. Customer Garindo bayar langsung di counter (atau lewat WA), bukan defer. Relokasi-untuk-relokasi cuma mindahin dead code dari satu screen ke screen lain. Hapus = lebih sedikit kode, lebih sedikit surface area untuk bug, satu modal kurang yang harus di-test.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ DEPLOY ORDER ============ -->
+  <section class="space-y-4">
+    <h2 class="text-2xl font-extrabold text-[#012749]">Urutan Deploy</h2>
+    <div class="mockup-stage card-shadow">
+      <div class="flex items-center gap-3 mb-4 text-xs">
+        <div class="flex-1 bg-blue-100 text-blue-800 px-4 py-3 rounded-lg font-bold">
+          <div class="text-[9px] uppercase tracking-widest opacity-70">Step 1 · Hari 1</div>
+          <div class="mt-1">Delta A+B — Hapus Pipeline + walk-in path</div>
+          <div class="text-[10px] font-normal opacity-80 mt-0.5">Sidebar + route + file + markWalkinPaid services. Pure delete.</div>
+        </div>
+        <span class="material-symbols-outlined text-gray-400">arrow_forward</span>
+        <div class="flex-1 bg-amber-100 text-amber-800 px-4 py-3 rounded-lg font-bold">
+          <div class="text-[9px] uppercase tracking-widest opacity-70">Step 2 · Hari 2-3</div>
+          <div class="mt-1">Delta C1 — Sales Inbox kategori list</div>
+          <div class="text-[10px] font-normal opacity-80 mt-0.5">Slack-style filter. UI only, no DB change.</div>
+        </div>
+        <span class="material-symbols-outlined text-gray-400">arrow_forward</span>
+        <div class="flex-1 bg-emerald-100 text-emerald-800 px-4 py-3 rounded-lg font-bold">
+          <div class="text-[9px] uppercase tracking-widest opacity-70">Step 3 · Hari 4-5</div>
+          <div class="mt-1">Delta C2 — Manual override + lock</div>
+          <div class="text-[10px] font-normal opacity-80 mt-0.5">DB migration + RPC + cron + UI dropdown.</div>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 italic">A+B bareng (pure delete, low risk) → C1 (UI shift) → C2 (paling berat: DB + cron + backend audit).</p>
+    </div>
+  </section>
+
+  <footer class="text-center text-xs text-gray-400 pt-8 pb-4 border-t border-gray-200">
+    Mockup · 2026-06-21 · Pipeline Revamp · Garindo Jaya Panel
+  </footer>
+
+</main>
+
+</body>
+</html>
