@@ -1407,6 +1407,12 @@ export const kasirService = {
       p_wa_phone:          input.wa_phone ?? null,
       p_wa_chat_url:       input.wa_chat_url ?? null,
       p_customer_id:       input.customer_id ?? null,
+      // T2 migration added p_allow_negative_stock (default false). Forward the
+      // wizard's opt-in pre-order flag so the DB can semantically distinguish
+      // an intentional pre-order from an underflow accident. Always pass
+      // explicit false when omitted to match the DB default + keep call sites
+      // that don't set the flag (legacy KasirScreen) on conservative behavior.
+      p_allow_negative_stock: input.p_allow_negative_stock ?? false,
     });
     if (error) throw error;
     if (!data) throw new Error('record_kasir_sale returned no row');

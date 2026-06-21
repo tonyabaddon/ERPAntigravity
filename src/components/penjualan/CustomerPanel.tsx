@@ -3,6 +3,15 @@ import { Search, Lock, X } from 'lucide-react';
 import type { DbCustomerWithStats } from '../../types';
 import { formatRp } from '../../lib/format';
 
+// Audit note (Catat Penjualan T9, feedback_no_adhoc_customers):
+// This component still exposes a manual "Daftar Pelanggan Baru" entry block
+// (customerName/customerPhone/customerCompany props) consumed only by the
+// legacy PenjualanBaruScreen. The new Catat Penjualan wizard does NOT reuse
+// CustomerPanel — it uses NewCustomerInlineForm + insertNewCustomer
+// (src/lib/customers/customerWrappers.ts) to persist every new customer
+// before the order is recorded. T22 will retire the manual-entry block here
+// when PenjualanBaruScreen is deprecated.
+
 export interface CustomerPanelProps {
   customers: DbCustomerWithStats[];
   selectedCustomerId: string | null;

@@ -319,6 +319,7 @@ export interface DbCustomer {
   wa_number: string;
   name: string;
   company: string;
+  address?: string | null;
   created_at: string;
   // Phase 1A — tempo whitelist
   allows_tempo: boolean;
@@ -431,7 +432,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -533,6 +534,14 @@ export interface RecordKasirSaleInput {
   customer_company?: string;
   delivery_address?: string;
   customer_id?: string;
+  /**
+   * Opt-in pre-order flag (T2 migration). When true, record_kasir_sale skips
+   * the abort-on-shortage check and tolerates negative stock at the lot level
+   * (the deduct_stock_fifo RAISE WARNING fallback already permits this — the
+   * flag exists so the wizard can semantically signal "intentional pre-order"
+   * for downstream T25 audit visibility). Defaults to FALSE at the DB layer.
+   */
+  p_allow_negative_stock?: boolean;
 }
 
 export interface NewExpense {

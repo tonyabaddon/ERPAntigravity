@@ -36,7 +36,8 @@ import PiutangScreen from './components/piutang/PiutangScreen';
 import LaporanScreen from './components/LaporanScreen';
 import PembelianScreen from './components/PembelianScreen';
 import KasirScreen from './components/KasirScreen';
-import PenjualanBaruScreen from './components/PenjualanBaruScreen';
+import CatatPenjualanWizard from './components/penjualan/CatatPenjualanWizard';
+import InvoicePreviewScreen from './components/penjualan/InvoicePreviewScreen';
 import PenjualanScreen from './components/PenjualanScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
@@ -99,6 +100,13 @@ export default function App() {
   // Optional SKU to pre-fill cart (set when navigating from Cari by Foto).
   const penjualanInitialPrefillSku: string | undefined = route.params.prefillSku || undefined;
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
+  // Holds the kasir_transactions.id of the just-saved wizard transaction so
+  // InvoicePreviewScreen can render its details after navigate('invoicePreview').
+  // Kept in App state (not URL) because it's a transient hand-off — a refresh
+  // on the invoicePreview route legitimately drops back to dashboard rather
+  // than re-opening a stale invoice. T17 explicitly scopes this screen to
+  // non-TEMPO transactions (TEMPO returns orders.id not kasir_transactions.id).
+  const [invoicePreviewOrderId, setInvoicePreviewOrderId] = useState<string | null>(null);
 
   // General state databases loaded from templates or LocalStorage
   const [stockList, setStockList] = useState<StockItem[]>(() => {
@@ -532,15 +540,39 @@ export default function App() {
         );
       case 'penjualanBaru':
         return (
-          <PenjualanBaruScreen
+          <CatatPenjualanWizard
             currentUser={currentUser}
             showToast={triggerToast}
             initialChannel={penjualanInitialChannel}
             initialPrefillSku={penjualanInitialPrefillSku}
             onBack={() => navigate('kasir')}
-            onSaved={(_txId) => navigate('kasir')}
+            onSaved={(txId) => {
+              // Park the id in App-scoped state so the next page (chosen
+              // separately by the orchestrator via onNavigate) can render it.
+              // Both wizard paths that flow to invoicePreview (standard, wip)
+              // call onSaved(txId) first then onNavigate('invoicePreview');
+              // for TEMPO the orchestrator routes to 'piutang' and the id
+              // is harmless (InvoicePreviewScreen would surface "not found"
+              // anyway, but we never get there).
+              setInvoicePreviewOrderId(txId);
+            }}
             onNavigate={(page) => navigate(page)}
           />
+        );
+      case 'invoicePreview':
+        return invoicePreviewOrderId ? (
+          <InvoicePreviewScreen
+            orderId={invoicePreviewOrderId}
+            adminName={currentUser?.name}
+            onCatatLagi={() => { setInvoicePreviewOrderId(null); navigate('penjualanBaru'); }}
+            onLihatDaftar={() => navigate('daftarPesanan')}
+            onBack={() => navigate('kasir')}
+            showToast={triggerToast}
+          />
+        ) : (
+          <div className="p-6 text-slate-500 text-sm">
+            Invoice tidak tersedia. Silakan catat penjualan baru.
+          </div>
         );
       case 'rekonsiliasi':
         return (

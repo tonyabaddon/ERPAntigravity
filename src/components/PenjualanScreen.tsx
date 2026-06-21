@@ -7,7 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { ActivePage, PermissionSet, KasirChannel } from '../types';
 import TabBar, { TabDef } from './ui/TabBar';
-import PenjualanBaruScreen from './PenjualanBaruScreen';
+import CatatPenjualanWizard from './penjualan/CatatPenjualanWizard';
 import OrderHistoryScreen from './OrderHistoryScreen';
 
 // WIP Rakit tab + WipListScreen removed. Phase 1B funnel
@@ -70,7 +70,7 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         {activeTab === 'input' && (
-          <PenjualanBaruScreen
+          <CatatPenjualanWizard
             currentUser={props.currentUser}
             showToast={props.showToast}
             initialChannel={props.initialChannel}

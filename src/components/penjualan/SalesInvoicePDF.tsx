@@ -14,16 +14,26 @@ function formatDateTime(iso: string) {
 }
 
 export type InvoiceVariant = 'dp' | 'lunas';
+export type InvoicePrintMode = 'normal' | 'dot_matrix';
 
 export interface SalesInvoicePDFProps {
   transaction: KasirTransaction;
   variant: InvoiceVariant;
   adminName?: string;
   autoPrint?: boolean;
+  /**
+   * 'normal' (default) → 9.5×11in continuous A4-ish layout (existing CSS).
+   * 'dot_matrix'       → narrow 58mm-ish layout, monospace fallback, tighter
+   *                      paddings, no background colors. Targets impact
+   *                      printers (Epson LX-310 family) that interpret CSS
+   *                      via a generic raster driver — colored fills and
+   *                      shadows just waste ribbon ink.
+   */
+  printMode?: InvoicePrintMode;
   onClose: () => void;
 }
 
-export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, onClose }: SalesInvoicePDFProps) {
+export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, printMode = 'normal', onClose }: SalesInvoicePDFProps) {
   const [store, setStore] = useState<StoreSettings | null>(null);
   const [bank, setBank] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,9 +73,28 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
     return 'Cash';
   })();
 
-  return (
-    <>
-      <style>{`
+  // Dot-matrix uses a single-column narrow page (58mm thermal-style continuous
+  // form is a decent stand-in for the 80-col fanfold that LX-310 / TM-U220
+  // operators print onto). We keep the same JSX tree and merely swap the
+  // print stylesheet + a root class so InvoiceBody can react with Tailwind
+  // conditionals (font, paddings) without two parallel render trees.
+  const printCss = printMode === 'dot_matrix'
+    ? `
+        @media print {
+          @page { size: 80mm auto; margin: 4mm 4mm; }
+          body * { visibility: hidden; }
+          #sales-invoice-root, #sales-invoice-root * { visibility: visible; }
+          #sales-invoice-root { position: fixed; top: 0; left: 0; width: 100%; background: white; box-shadow: none !important; border-radius: 0 !important; }
+          #sales-invoice-root, #sales-invoice-root * {
+            font-family: 'Courier New', 'Courier', monospace !important;
+            color: #000 !important;
+            background: #fff !important;
+            box-shadow: none !important;
+          }
+          .print\\:hidden { display: none !important; }
+        }
+      `
+    : `
         @media print {
           @page { size: 9.5in 11in; margin: 0.5in 0.5in; }
           body * { visibility: hidden; }
@@ -73,12 +102,16 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           #sales-invoice-root { position: fixed; top: 0; left: 0; width: 100%; background: white; }
           .print\\:hidden { display: none !important; }
         }
-      `}</style>
+      `;
+
+  return (
+    <>
+      <style>{printCss}</style>
 
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="sales-invoice-root"
-          className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-auto"
+          className={`bg-white rounded-xl shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} ${printMode === 'dot_matrix' ? 'max-w-md' : 'max-w-3xl'}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-2 bg-[#012749] text-white print:hidden">
@@ -96,7 +129,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
           ) : (
-            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} />
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} printMode={printMode} />
           )}
         </div>
       </div>
@@ -112,11 +145,12 @@ interface InvoiceBodyProps {
   bank: BankAccount | null;
   channelLabel: string;
   paymentLabel: string;
+  printMode: InvoicePrintMode;
 }
 
 // Body extracted to its own function for clarity (still in the same file).
 function InvoiceBody({
-  transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel,
+  transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel, printMode,
 }: InvoiceBodyProps) {
   const subtotal = t.subtotal;
   const ongkir = t.ongkir_amount ?? 0;
@@ -125,8 +159,15 @@ function InvoiceBody({
   const sisa = variant === 'dp' ? total - dp : 0;
   const sudahDibayar = variant === 'lunas' ? total : dp;
 
+  // Dot-matrix: trim padding so the layout fits a narrow 80mm fanfold and
+  // strip the rotated DP/LUNAS watermark (it doesn't render meaningfully in
+  // monochrome impact print and would only chew ribbon).
+  const containerCls = printMode === 'dot_matrix'
+    ? 'bg-white p-3 font-mono text-[11px] leading-[1.35] text-slate-900 relative'
+    : 'bg-white p-8 font-mono text-[12px] leading-[1.45] text-slate-800 relative';
+
   return (
-    <div className="bg-white p-8 font-mono text-[12px] leading-[1.45] text-slate-800 relative">
+    <div className={containerCls}>
       {/* Stamp */}
       <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
         variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
@@ -208,6 +249,18 @@ function InvoiceBody({
               <td className="px-1 py-1 border-b border-dotted border-slate-300">
                 <div className="font-bold">{item.name}</div>
                 {item.sku && <div className="text-[10px] text-slate-500">{item.sku}</div>}
+                {/*
+                 * Pre-order footnote — surfaces when the wizard tagged a row
+                 * during save (qty > stock at the picked warehouse). Today the
+                 * wizard's stockByWarehouseSku map is empty (warehouse↔legacy-
+                 * column lookup is follow-up work), so no row will be tagged
+                 * in practice. Forward-compatible: once T25 fulfillments card
+                 * lands, the wizard will populate is_pre_order during save and
+                 * this footnote will start rendering automatically.
+                 */}
+                {item.is_pre_order && (
+                  <div className="text-[10px] italic text-slate-500">*Pre-order, akan dikirim setelah barang tiba</div>
+                )}
               </td>
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{item.qty}</td>
               <td className="px-1 py-1 text-right border-b border-dotted border-slate-300">{formatRp(item.unit_price).replace('Rp', '').trim()}</td>

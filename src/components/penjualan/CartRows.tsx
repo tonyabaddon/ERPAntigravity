@@ -5,6 +5,7 @@ import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
+import { isPreOrder } from '../../lib/wizard/validation';
 
 export interface CartRowsProps {
   items: (KasirItem & { _key: number })[];
@@ -14,9 +15,18 @@ export interface CartRowsProps {
   onRemove: (key: number) => void;
   rakitLines?: Array<{ id: string; type: RakitServiceType; description: string; estimatedPrice: number }>;
   onRemoveRakit?: (id: string) => void;
+  /**
+   * Per-warehouse stock keyed by `${sku}|${warehouse_id}`. When qty > the
+   * looked-up stock, the row renders a "PRE-ORDER · kurang N" chip inline.
+   * Optional — when omitted / empty (current wizard behavior — the
+   * warehouse↔legacy-column dictionary is follow-up work), the chip stays
+   * dormant and rows render unchanged.
+   */
+  stockByWarehouseSku?: Record<string, number>;
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit, stockByWarehouseSku }: CartRowsProps) {
+  const stockMap = stockByWarehouseSku ?? {};
   const { warehouses } = useWarehouses();
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   const rakitSubtotal = (rakitLines ?? []).reduce((s, r) => s + r.estimatedPrice, 0);
@@ -56,13 +66,41 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             else if (lowerCode === 'bawah') skuQtyByWarehouseId[w.id] = stock.stock_bawah ?? 0;
           }
         }
+        // Pre-order detection: when qty exceeds the per-warehouse stock at
+        // the picked warehouse, surface a chip so the operator can confirm
+        // intent before saving. Powered by the shared isPreOrder validator
+        // (the same helper the future T25 audit will use server-side). If
+        // the parent doesn't pass stockByWarehouseSku (current wizard does
+        // not — warehouse↔legacy-column lookup is follow-up scope), the map
+        // is empty and the chip stays dormant.
+        const itemForCheck = {
+          sku: item.sku ?? '',
+          qty: item.qty,
+          warehouse_id: item.warehouse_id ?? undefined,
+        };
+        const preOrder = itemForCheck.sku
+          ? isPreOrder(itemForCheck, stockMap)
+          : false;
+        const stockAtWh = stockMap[`${itemForCheck.sku}|${itemForCheck.warehouse_id ?? ''}`] ?? 0;
+        const shortage = preOrder ? Math.max(0, item.qty - stockAtWh) : 0;
+
         return (
           <div
             key={item._key}
             className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-2 items-center text-[12px]"
           >
             <div>
-              <div className="font-extrabold">{item.name}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-extrabold">{item.name}</span>
+                {preOrder && (
+                  <span
+                    className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider"
+                    title={`Stok kurang ${shortage} unit di gudang ini`}
+                  >
+                    ⏳ Pre-order · kurang {shortage}
+                  </span>
+                )}
+              </div>
               <div className="text-[11px] text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
             </div>
             {/* Warehouse selector */}

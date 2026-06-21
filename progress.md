@@ -1,5 +1,44 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-20 — Catat Penjualan 3-step wizard
+
+Replaces 624-line monolithic PenjualanBaruScreen with guided 3-step wizard
+(Channel+Customer → Pesanan → Pembayaran) + post-save InvoicePreviewScreen.
+Spec: docs/superpowers/specs/2026-06-20-catat-penjualan-3-step-wizard-design.md
+(commit ab7a15f). Mockup: docs/superpowers/mockups/2026-06-20-catat-penjualan-3-step-wizard.html.
+
+**Backend (5 + 1 follow-up migrations, slot range 20260630000001-006):**
+- 001 customers.address column
+- 002 record_kasir_sale opt-in p_allow_negative_stock flag
+- 003 create_tempo_invoice opt-in allow_negative_stock payload key
+- 004 reject_customer_credit_activate RPC (Aktif Owner pattern from PR #34)
+- 005 record_pi emits preorder_fulfilled audit when SKU pre-call balance < 0
+- 006 follow-up: restore PR #36 record_pi extras (FOR UPDATE lock + structured RAISE
+  + LUNAS auto-synthesize-pembayaran) that 005 inadvertently overwrote. Final
+  record_pi has BOTH features. When PR #36 rebases, its 20260628000003/4/5
+  become inert no-ops.
+
+**Frontend new (8 files + dashboard card):**
+- src/components/penjualan/CatatPenjualanWizard.tsx (orchestrator)
+- src/components/penjualan/wizard/{WizardStepper,Step1ChannelCustomer,Step2Items,Step3Payment,NewCustomerInlineForm}.tsx
+- src/components/penjualan/InvoicePreviewScreen.tsx
+- src/components/approval/CustomerCreditActivateApprovalRequestRow.tsx
+- src/components/dashboard/PreOrderFulfillmentsCard.tsx (T25)
+- src/lib/customers/customerWrappers.ts + tests (T7)
+- src/lib/wizard/validation.ts + tests (T8)
+
+**Frontend modified:** App.tsx routing + invoicePreview key + recordSale wrapper extension; types.ts ActivePage + DbCustomer.address; SalesInvoicePDF (printMode prop + pre-order footnote); CartRows (pre-order chip — dormant pending stock map wiring); PaymentPanel/CustomerPanel (audit, untouched); ApprovalInboxScreen (dispatch + PIN modal for customer_credit_activate); urlRoute.ts (invoicePreview added to ACTIVE_PAGES); DashboardScreen (PreOrderFulfillmentsCard mount); PenjualanScreen.tsx (T22: legacy tabbed shell's "Input Baru" tab swapped to CatatPenjualanWizard).
+
+**Deleted:** PenjualanBaruScreen.tsx (624 LOC).
+
+**Decisions captured (brainstorming):** per-RPC allow_negative_stock flag (wizard true, Kasir false); no ad-hoc customers (wajib intake nama+HP); jasa hanya Custom Panel + Wiring Panel; TEMPO requires Owner approval via existing customer_credit_activate; full TEMPO infra additions (address + reject RPC + dedicated inbox row); 3 TEMPO fields (limit + term + reason); no PPN/discount; reuse `pelanggan` permission.
+
+**Verification:** 236 vitest pass (baseline 205 + customer 7 + validation 24 = 236). tsc clean. build clean. SQL smoke per migration green.
+
+**Follow-ups documented:** stockByWarehouseSku wiring for live pre-order chip; orchestrator's TEMPO path currently routes to 'piutang' not 'invoicePreview' (TEMPO returns orders.id, not kasir_transactions.id — InvoicePreviewScreen would need adapter to read from either source); CustomerPanel manual-entry block is now unreferenced (separate cleanup PR can remove it).
+
+---
+
 ## 2026-06-20 — Pembelian Phase 2b — CHROME MCP BROWSER SMOKE PASS + 3 MORE HOTFIXES
 
 End-to-end browser smoke via Chrome DevTools MCP against live production caught **3 additional bugs** that backend-only smoke missed. All fixed inline + verified.
@@ -7953,3 +7992,18 @@ Both bugs surfaced because Phase 1B was written without running RPC integration 
 - **Residue from smoke tests:** three `approval_requests` rows (ids 731/734/735) live in the table — `approval_requests` is append-only by design (`deny_approval_mutation` guard), so they cannot be deleted. They have no satellite rows attached, will expire in ~24h via `expires_at`, and do not affect the trigger guard.
 - **Commit:** `e86a0bb` — "feat(piutang): migration 020 — extend approval_request_type + write-off satellite table"
 - **Next:** T2 — migration 021 `request_tempo_write_off` RPC (depends on the schema landed here).
+
+## 2026-06-21 — Catat Penjualan Wizard — T2: Migration 002 DONE
+
+- **Branch:** `feat/catat-penjualan-wizard` (worktree `.claude/worktrees/catat-penjualan-wizard`)
+- **Plan:** Phase Catat Penjualan wizard. Opt-in pre-order behavior.
+- **File created:** `supabase/migrations/20260630000002_record_kasir_sale_allow_negative_stock.sql`
+  - Recreates `public.record_kasir_sale()` RPC with new param `p_allow_negative_stock BOOLEAN DEFAULT false` appended to the 20 existing params.
+  - Body copied verbatim from migration 001 — no logic changes. The param documents intent for future strict enforcement; today's `deduct_stock_fifo` RAISE WARNING permits silent underflow already.
+  - Re-grants EXECUTE to anon, authenticated with new signature including `boolean` at end.
+  - No stock_lots CHECK constraints on `qty_remaining` were found (only `stock_lots_source_type_check` on `source_type`).
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`.
+- **Signature verified:** `pg_get_function_identity_arguments()` confirms new signature ends with `p_allow_negative_stock boolean` ✓
+- **Commit:** `0ad9c19` — "feat(catat-penjualan): migration 002 — record_kasir_sale opt-in pre-order"
+- **Note:** 20 params in existing RPC (task description said 22 — actual file has 20). Migration correctly extends the existing signature.
+- **Next:** T3 — migration 003 `create_tempo_invoice` payload key.

@@ -1,0 +1,124 @@
+import { useState } from 'react';
+import type { DbCustomer } from '../../../types';
+import { insertNewCustomer, requestCustomerCreditActivate } from '../../../lib/customers/customerWrappers';
+
+interface Props {
+  onSaved: (customer: DbCustomer) => void;
+  onCancel: () => void;
+  showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+}
+
+export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: Props) {
+  const [name, setName] = useState('');
+  const [wa, setWa] = useState('');
+  const [company, setCompany] = useState('');
+  const [address, setAddress] = useState('');
+  const [requestTempo, setRequestTempo] = useState(false);
+  const [limit, setLimit] = useState('');
+  const [term, setTerm] = useState('');
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const canSubmit = name.trim().length > 0 && wa.trim().length > 0 && !submitting;
+
+  const onSubmit = async () => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    try {
+      const customer = await insertNewCustomer({
+        name: name.trim(),
+        wa_number: wa.trim(),
+        company: company.trim() || undefined,
+        address: address.trim() || undefined,
+      });
+      if (requestTempo) {
+        const parsedLimit = parseFloat(limit.replace(/[.,]/g, '')) || 0;
+        const parsedTerm = parseInt(term, 10) || 0;
+        if (parsedLimit > 0 && parsedTerm > 0) {
+          try {
+            await requestCustomerCreditActivate(customer.id, parsedTerm, parsedLimit, reason.trim() || undefined);
+            showToast('Customer tersimpan; request TEMPO terkirim ke Owner.', 'success');
+          } catch (e) {
+            showToast('Customer tersimpan, tapi gagal kirim request TEMPO. Coba dari menu Pelanggan.', 'warning');
+          }
+        } else {
+          showToast('Customer tersimpan. Limit/term TEMPO belum di-set; lewati.', 'info');
+        }
+      } else {
+        showToast('Customer baru tersimpan.', 'success');
+      }
+      onSaved(customer);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      showToast(`Gagal simpan customer: ${msg}`, 'warning');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 border-2 border-[#012749]/30 rounded-xl p-4 bg-[#012749]/5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="text-sm font-extrabold text-[#012749]">Customer Baru</div>
+          <div className="text-[11px] text-slate-600">Akan tersimpan ke daftar Pelanggan.</div>
+        </div>
+        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-700 text-sm">×</button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <div>
+          <label className="block text-[11px] font-bold text-slate-600 mb-1">Nama <span className="text-red-500">*</span></label>
+          <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-bold text-slate-600 mb-1">No HP / WhatsApp <span className="text-red-500">*</span></label>
+          <input value={wa} onChange={(e) => setWa(e.target.value)} placeholder="08xxx" className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-bold text-slate-600 mb-1">Perusahaan / PT</label>
+          <input value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+        <div>
+          <label className="block text-[11px] font-bold text-slate-600 mb-1">Alamat</label>
+          <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+        </div>
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-[#012749]/20">
+        <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+          <input type="checkbox" checked={requestTempo} onChange={(e) => setRequestTempo(e.target.checked)} className="rounded" />
+          Ajukan TEMPO (kredit) untuk customer ini
+        </label>
+        {requestTempo && (
+          <>
+            <p className="text-[11px] text-slate-500 mt-1 ml-6">Butuh approval Owner. Customer disimpan dulu; transaksi sekarang pakai LUNAS/DP.</p>
+            <div className="mt-2 ml-6 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit (Rp)</label>
+                  <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Term (hari)</label>
+                  <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
+                <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-3 flex justify-end gap-2">
+        <button type="button" onClick={onCancel} disabled={submitting} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
+        <button type="button" onClick={onSubmit} disabled={!canSubmit} className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
+          {submitting ? 'Menyimpan…' : '✓ Simpan & Pilih'}
+        </button>
+      </div>
+    </div>
+  );
+}
