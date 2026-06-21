@@ -1,5 +1,52 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 6: Service modules
+
+**DONE.** 3 service modules with CRUD methods, tested (6/6 PASS).
+
+**Changes (commit `35bb66b`):**
+- `src/lib/pengaturan/pengaturanServices.ts` (new, 109 lines):
+  - `approvalSettingsService`: `fetch()`, `updateOne(requestType, patch)`.
+  - `tenantSettingsService`: `fetch()`, `updateModul(key, value)`, `updatePajak(patch)`.
+  - `serviceTypesService`: `fetchActive()`, `fetchAll()`, `create(input)`, `update(id, patch)`, `deactivate(id)`.
+  - Singleton-row pattern via `.is('tenant_id', null)`.
+- `src/lib/pengaturan/pengaturanServices.test.ts` (new, 85 lines):
+  - 6 test cases covering fetch shape + non-throwing mutate calls.
+- `src/lib/supabaseClient.ts`: Added comment section header pointing to new file.
+
+**Deviation from brief:** Services placed in `src/lib/pengaturan/pengaturanServices.ts` (not appended to `supabaseClient.ts`) and test imports from `'./pengaturanServices'` (not `'../supabaseClient'`). Required to avoid circular dependency that would defeat `vi.mock`.
+
+**Verification:**
+- `npm run lint`: 0 errors.
+- `npm test`: 254/254 PASS.
+- Report: `.superpowers/sdd/task-6-report.md`.
+
+---
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 5: TypeScript types
+
+**DONE.** Added all type definitions for DB schema created in Tasks 1-4.
+
+**Changes (commit `36c38be`):**
+- `src/types.ts`: 
+  - Extended `ApprovalRequestType` union (12 existing → 19 with 7 new Pembelian gates: purchase_order_create, purchase_order_amend, tagihan_create, supplier_payment, bnl_create, tukar_faktur, purchase_return).
+  - Added `ApprovalVerificationMethod` union (NONE, PIN, WA_BUTTON, APP_INBOX).
+  - Added `DbApprovalSettings` interface (13 fields matching DB table).
+  - Added `PajakMode` union (PKP, NON_PKP, FINAL_UMKM).
+  - Added `JenisBadan` union (PT, CV, OP, KOPERASI, FIRMA).
+  - Added `ModulSwitchKey` union (7 modul switches).
+  - Added `DbTenantSettings` interface (24 fields: 7 modul + 13 pajak + 4 audit).
+  - Added `PricingModel` union (LUMP_SUM, PER_HOUR, PER_METER, PER_UNIT).
+  - Added `DbServiceType` interface (14 fields matching DB table).
+- `src/components/approval/ApprovalRequestRow.tsx`:
+  - Updated `TYPE_LABEL` + `TYPE_ICON` to include 7 new Pembelian gate types (labels in Indonesian, icons with orange-50 background for Pembelian vs. other domains).
+
+**Verification:**
+- `npm run lint`: 0 errors (tsc --noEmit).
+- Report: `.superpowers/sdd/task-5-report.md`.
+
+---
+
 ## 2026-06-21 — WA bot RE-PAIRED via phone-code (pair-via-phone-number scaffolded + shipped)
 
 Garindo's WhatsApp bot (`+6285264787775`) successfully re-paired to backend after losing session since 2026-06-20 15:22 UTC. Used new pair-via-phone-number flow (scaffolded in this session) instead of QR scan after multiple QR attempts failed.
@@ -8336,3 +8383,46 @@ Pre-Task-7: `followup.go` set `ai_active=false` after 6 cumulative follow-ups wi
 Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply after cool-off → AI no longer auto-responds. `ResetFollowupCounter` clears the counter but does NOT flip `ai_active=true`. Conv lands in Sales Inbox "Butuh Aksi" category (per `categorize()` helper).
 
 **Decision (founder, 2026-06-21):** Accept as intended behavior. The "cool-off → admin handle" model is consistent with the override design ("AI off = admin take over"). No code change. Owner/admin sees these convs in the "Butuh Aksi" filter and can re-enable AI manually or take over the chat directly.
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 1 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Plan:** Phase 1 Pengaturan MSME Configurability — 20-task implementation. Docs/specs at `docs/superpowers/specs/2026-06-21-pengaturan-msme-configurability-design.md`
+- **Task 1:** Create `approval_settings` table + `_check_approval_required` helper function
+- **File created:** `supabase/migrations/20260622000001_approval_settings_table.sql`
+  - Table `public.approval_settings`: 15 columns (id, tenant_id, request_type, approval_required, verification_method, threshold_amount, threshold_qty, threshold_percent, approver_role, requestor_bypass_self, reason_required, created_at, updated_at, updated_by)
+  - UNIQUE constraint on `(tenant_id, request_type)` for Phase 1 single-tenant singleton pattern (nullable tenant_id for future V2 multi-tenant)
+  - Index on `request_type` for fast lookups
+  - Security: SELECT granted to `authenticated`, INSERT/UPDATE/DELETE revoked from all
+  - Function `public._check_approval_required(p_type approval_request_type, p_amount NUMERIC, p_qty INTEGER, p_actor_role TEXT) RETURNS TEXT` — routing decision (bypass/pin/wa_button/app_inbox)
+  - Logic: checks approval_required, threshold_amount, threshold_qty, requestor_bypass_self, verification_method (in order); fallback to 'pin' if no setting row (legacy compatibility)
+  - Security: SECURITY DEFINER, EXECUTE revoked from all roles
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`
+- **Smoke tests:**
+  - RED (pre-migration): DO-block calling `_check_approval_required` → ERROR `42883: function does not exist` ✓
+  - GREEN (post-migration): DO-block inserts test rows, calls function with no row (expect 'pin') and OFF row (expect 'bypass'), asserts pass before RAISE EXCEPTION 'rollback' ✓
+- **Commit:** `a8345d3` — "feat(pengaturan): approval_settings table + _check_approval_required helper"
+- **Next:** Task 2 — seed approval_settings rows for all 12 approval_request_type values with Phase 1 defaults.
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 4 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Task 4:** Create `service_types` table + Garindo seed (Custom Panel + Wiring Panel) + backfill `rakit_lock` approval_requests payloads
+- **File created:** `supabase/migrations/20260622000004_service_types_table.sql` (44 lines)
+  - Table `public.service_types`: 12 columns (id, tenant_id, code, name, description, pricing_model, requires_material_lock, default_account_revenue, default_account_cogs, color_hex, is_active, display_order) + timestamps
+  - UNIQUE constraint on `(tenant_id, code)` for tenant-scoped service codes
+  - Index on `(is_active, display_order)` for filtering + display ordering
+  - pricing_model CHECK: 'LUMP_SUM' | 'PER_HOUR' | 'PER_METER' | 'PER_UNIT'
+  - Security: SELECT granted to `authenticated`, INSERT/UPDATE/DELETE revoked from all
+  - Garindo seed: 2 rows
+    - `custom_panel`: LUMP_SUM, requires_material_lock=TRUE, color_hex='#9333EA', display_order=1
+    - `wiring_panel`: LUMP_SUM, requires_material_lock=TRUE, color_hex='#0EA5E9', display_order=2
+  - Backfill UPDATE: existing `approval_requests` (request_type='rakit_lock') with payload->'jasa_type' → payload->'service_type_id' (idempotent, skips if already has service_type_id)
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`
+- **Smoke tests:**
+  - RED (pre-migration): `SELECT 1 FROM public.service_types` → ERROR `42P01: relation does not exist` ✓
+  - GREEN (post-migration): DO-block asserts custom_panel name='Custom Panel', requires_material_lock=TRUE, wiring_panel color_hex='#0EA5E9', then RAISE EXCEPTION 'rollback' ✓
+  - Persistent SELECT: 2 rows returned with correct fields (id=1,2; names; colors; lock=TRUE for both; display_order=1,2) ✓
+  - Backfill: COUNT(*)=0 rakit_lock rows with service_type_id (no pre-existing records in ekhhojaezdfjfwuxyjkl development tenant) ✓
+- **Commit:** `1234973` — "feat(pengaturan): service_types master + Garindo seed Custom/Wiring Panel"
+- **Next:** Task 5 — `approval_reason_types` table + seed for 5 reason categories (Retur/Diskon/Garansi/BatasAirflow/Lainnya).
