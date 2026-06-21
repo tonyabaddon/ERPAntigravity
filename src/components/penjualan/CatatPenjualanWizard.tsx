@@ -431,9 +431,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           estimatedPrice: l.estimatedPrice,
         })),
       });
-      showToast('✅ Transaksi WIP tersimpan. Cek di Pipeline untuk lock + approval.', 'success');
+      showToast('✅ Transaksi WIP tersimpan. Cek di Daftar Pesanan untuk lock + approval.', 'success');
       onSaved(txId);
-      if (onNavigate) onNavigate('pipeline'); else onBack();
+      if (onNavigate) onNavigate('daftarPesanan'); else onBack();
       return;
     }
 
