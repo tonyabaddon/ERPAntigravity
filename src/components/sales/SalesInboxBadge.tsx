@@ -3,8 +3,7 @@
 // the "Butuh Aksi" category shown in SalesInboxScreen.
 // Realtime subscription on conversations table (debounced 2s) — same pattern as PiutangBadge.
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { conversationService } from '../../lib/supabaseClient';
+import { supabase, conversationService } from '../../lib/supabaseClient';
 import { categoryCounts } from '../../lib/salesInboxCategorize';
 
 interface SalesInboxBadgeProps {
