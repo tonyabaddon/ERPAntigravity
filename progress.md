@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — WA bot RE-PAIRED via phone-code (pair-via-phone-number scaffolded + shipped)
+
+Garindo's WhatsApp bot (`+6285264787775`) successfully re-paired to backend after losing session since 2026-06-20 15:22 UTC. Used new pair-via-phone-number flow (scaffolded in this session) instead of QR scan after multiple QR attempts failed.
+
+**Root cause of QR failures:** QR rotates every 20 seconds at backend; Chrome frontend polls every 5 seconds. WhatsApp HP scan attempted at non-fresh QR → server rejected → "scan ulang" loop. Tony attempted 3+ scans, all timed out.
+
+**Scaffolded pair-via-phone-number (commits `cd4edeb` + `4185650`):**
+- Backend: new `POST /api/wa/pair-code` endpoint in `main.go` (~50 lines). Accepts `{phone: "62..."}`, validates 10-15 digits E.164, rejects if already paired (409), calls `whatsmeow.PairPhone()`, returns 8-char code `{"code":"XXXX-YYYY","phone":"..."}`.
+- Backend hotfix: PairPhone `clientDisplayName` parameter must match `Browser (OS)` pattern (per whatsmeow `pair-code.go:88-89`). Initial value `"Garindo ERP (Cloud Run)"` returned 400 from WA server. Fixed to `"Chrome (Linux)"`.
+- Frontend: `WhatsappAiScreen.tsx` adds phone input + button + code display section (~85 lines). Below QR fallback section. Tony bypassed this UI by using direct curl call — code from `/api/wa/pair-code` response.
+
+**Re-pair flow (worked end-to-end):**
+- `POST /api/wa/pair-code` with `{"phone":"6285264787775"}` returned `{"code":"75DM-7LHJ","phone":"6285264787775"}`.
+- Tony entered code in WhatsApp HP → Setelan → Perangkat Tertaut → Tautkan dengan nomor telepon → ketik 75DM7LHJ.
+- ~30 sec later, backend log: `Successfully paired 6285264787775:32@s.whatsapp.net` + `[WA] Pairing successful — connected`.
+- `whatsmeow_device` row count: 0 → 1 (registration_id=4117128573).
+- Backend `/api/wa/status` returns `{"connected":true}`, `/api/wa/qr` returns `{"connected":true,"phone":"6285264787775","qr":""}`.
+
+**Side benefit:** pair-via-phone-number flow now ships in repo permanently. Future re-pair (if session lost again) takes ~30 seconds via phone code instead of fragile QR scan workflow.
+
 ## 2026-06-21 — Backend Cloud Build infra fix + Pipeline Revamp Go guards LIVE
 
 Backend Cloud Run revision `garindo-jaya-panel-msme-erp-00086-pbh` (image tag `37d3d5e`) deployed at 100% traffic.
