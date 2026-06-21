@@ -368,12 +368,6 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
-                          <button
-                            onClick={() => onNavigate('pipeline')}
-                            className="text-[10px] text-gray-400 underline underline-offset-2 cursor-pointer"
-                          >
-                            Kelola di Pipeline →
-                          </button>
                         </div>
                       </div>
                     );

@@ -29,7 +29,6 @@ import UserManagementScreen from './components/UserManagementScreen';
 import NotificationSettingsScreen from './components/NotificationSettingsScreen';
 import WhatsappAiScreen from './components/WhatsappAiScreen';
 import PengaturanScreen from './components/PengaturanScreen';
-import PipelineScreen from './components/PipelineScreen';
 import OrderHistoryScreen from './components/OrderHistoryScreen';
 import PelangganScreen from './components/PelangganScreen';
 import PiutangScreen from './components/piutang/PiutangScreen';
@@ -454,14 +453,6 @@ export default function App() {
             onNavigate={(page) => navigate(page)}
             permissions={currentUser?.permissions}
             currentUserRole={currentUser?.role}
-          />
-        );
-      case 'pipeline':
-        return (
-          <PipelineScreen
-            onOpenCustomer={handleOpenCustomer}
-            onNavigate={(page) => navigate(page)}
-            showToast={triggerToast}
           />
         );
       case 'order-history':

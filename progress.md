@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 1 (Delta A+B): menu Pipeline + walk-in markPaid path DIHAPUS
+
+- Hapus file PipelineScreen.tsx + entry sidebar + case App.tsx + literal types.
+- Hapus orderService.markWalkinPaid + salesEntriesService.fetchOpenWalkinDrafts (0 caller lain).
+- Redirect /pipeline → /sales-inbox preserve bookmark.
+- DB intact: tabel leads + RPC mark_walkin_order_paid + enum 'walkin' dibiarkan untuk drop phase terpisah.
+- Justifikasi data: query prod 2026-06-21 → 0 walk-in orders, 0 backfill risk.
+- Augmented: hapus PERM_LABELS row pipeline di UserManagementScreen + hapus button "Kelola di Pipeline" di PelangganScreen.
+- TypeScript build PASS, unit tests PASS (1118/1118).
+
 ## 2026-06-20 — Catat Penjualan 3-step wizard
 
 Replaces 624-line monolithic PenjualanBaruScreen with guided 3-step wizard

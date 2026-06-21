@@ -83,7 +83,6 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     { key: 'salesInbox', label: 'Sales Inbox' },
     { key: 'laporan', label: 'Laporan' },
     { key: 'aiStock', label: 'AI Stock' },
-    { key: 'pipeline', label: 'Pipeline' },
     { key: 'pelanggan', label: 'Pelanggan' },
     { key: 'orderHistory', label: 'Riwayat Pesanan' },
     { key: 'userManagement', label: 'User Management' },

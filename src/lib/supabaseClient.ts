@@ -410,21 +410,6 @@ export const orderService = {
     return data as DbOrder;
   },
 
-  async markWalkinPaid(
-    orderId: string,
-    paymentMethod: 'cash' | 'transfer' | 'qris' | 'edc',
-    invoiceNumber: string
-  ): Promise<KasirTransaction> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase.rpc('mark_walkin_order_paid', {
-      p_order_id:       orderId,
-      p_payment_method: paymentMethod,
-      p_invoice_number: invoiceNumber,
-    });
-    if (error) throw error;
-    return data as KasirTransaction;
-  },
-
   async rejectOrder(orderId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
@@ -1602,20 +1587,6 @@ export const salesEntriesService = {
     };
   },
 
-  async fetchOpenWalkinDrafts(): Promise<DbOrder[]> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('sales_channel', 'walkin')
-      .in('status', [
-        'WAITING_PAYMENT', 'PAYMENT_UPLOADED',
-        'WAITING_DP',      'DP_UPLOADED', 'DP_VERIFIED',
-      ])
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data ?? []) as DbOrder[];
-  },
 };
 
 // ============================================================================
