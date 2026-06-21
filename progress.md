@@ -26,6 +26,14 @@ Garindo's WhatsApp bot (`+6285264787775`) successfully re-paired to backend afte
 - Verified: main URL serves new bundle, "Kirim Kode" string present, bundle hash matches tag URL.
 - Effect: future re-pair (if WA session lost again) can be done entirely via UI at `/whatsapp-ai` — Owner/admin masuk page → masukin nomor di input bawah QR fallback section → klik "Kirim Kode" → 8-char code muncul → ketik di WA HP. No more backend curl needed.
 
+**Pair-code UI Chrome MCP test (gap closure):**
+- Logout WA → reload page → pair UI rendered correctly (heading "ATAU: PAIRING VIA NOMOR HP", input "62" default, button "Kirim Kode" disabled at <10 digits).
+- Fill input `6285264787775` → button enables → click → fetch fires → code `QYPC-RTHX` displays prominently in green panel with 5-step Indonesian instruction.
+- Terminal log pushTerminalLog fired: "[22:50:09] Pair code generated for 6285264787775: QYPC-RTHX".
+- Tony entered code on WhatsApp HP → backend log "Successfully paired 6285264787775:33@s.whatsapp.net" + "Pairing successful — connected".
+- `whatsmeow_device` row count: 0 → 1 (post-logout/re-pair cycle). Backend `/api/wa/status` returns `{"connected":true}`.
+- Screenshot: `docs/screenshots/wa-pair-code-ui-verified.png`.
+
 ## 2026-06-21 — Backend Cloud Build infra fix + Pipeline Revamp Go guards LIVE
 
 Backend Cloud Run revision `garindo-jaya-panel-msme-erp-00086-pbh` (image tag `37d3d5e`) deployed at 100% traffic.
