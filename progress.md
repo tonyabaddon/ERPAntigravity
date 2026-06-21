@@ -1,5 +1,14 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-21 — Pipeline Revamp Phase 3 Task 7: Backend Go lazy resume + state lock guard
+
+- `models/types.go`: Added `StateLockedUntil *time.Time` to `Conversation` struct.
+- `db/conversations.go`: Updated `findActiveConversation` + `createConversation` SELECTs to include `state_locked_until` column + scan via `sql.NullTime`. Added `AutoResumeConv(ctx, convID)` method (flips ai_active=true for single expired-lock conv). Added SQL WHERE guard to `UpdateConversationState` to block writes when locked (race-safe defense-in-depth).
+- `whatsapp/handler.go`: Added lazy resume block (4b) + AI-off early-return guard (4c) in `ProcessJoinedMessage`, after admin escalation check and before Gemini/machine calls. Added Go-level state write guard around step-10 persist block.
+- Brief deviations: struct was in models/types.go (not db/), DB uses `c.DB.ExecContext` (not `c.pool.Exec`), `!AIActive` check was absent so added alongside lazy resume, state writes are in handler.go not machine.go.
+- `go build ./...` PASS, `go test ./...` 12/12 packages PASS.
+- Commit: c00e21e
+
 ## 2026-06-21 — Pipeline Revamp Phase 3 Task 5 (partial): Migration file conversation state lock
 
 - Migration file written: `supabase/migrations/20260621090000_conversation_state_lock.sql` (5313 bytes).
