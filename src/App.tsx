@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
-import { useURLRoute, navigate, replaceRoute } from './lib/urlRoute';
+import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES } from './lib/urlRoute';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -169,23 +169,27 @@ export default function App() {
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
-        // Default destination is dashboard; deep-link overrides if present.
+        // Restore deep-link if stashed by AuthScreen; otherwise preserve the
+        // current URL when it carries a valid screen (page reload while
+        // logged in). Only normalize to dashboard when the URL is empty,
+        // 'auth', or an unknown screen.
         try {
           const stashedSearch = sessionStorage.getItem('pendingDeepLink');
           if (stashedSearch) {
             sessionStorage.removeItem('pendingDeepLink');
-            // Restore the stashed route by replacing the URL. parseSearch in
-            // urlRoute.ts gates against unknown screens, so we don't need to
-            // pre-validate here.
             window.history.replaceState({}, '', stashedSearch);
             window.dispatchEvent(new Event('urlroute:change'));
           } else {
-            // No stash — go to dashboard (idempotent: if URL is already
-            // ?screen=dashboard, this is effectively a no-op).
-            replaceRoute('dashboard');
+            const rawScreen = new URLSearchParams(window.location.search).get('screen');
+            const isValidNonAuthScreen =
+              rawScreen != null
+              && rawScreen !== 'auth'
+              && ACTIVE_PAGES.has(rawScreen as ActivePage);
+            if (!isValidNonAuthScreen) {
+              replaceRoute('dashboard');
+            }
           }
         } catch {
-          // Stash unreadable — fall through to dashboard.
           replaceRoute('dashboard');
         }
       }
