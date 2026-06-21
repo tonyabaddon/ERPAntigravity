@@ -125,6 +125,7 @@ type Conversation struct {
 	LastAIMessageAt    *time.Time        `json:"last_ai_message_at,omitempty"`
 	FollowupCountToday int               `json:"followup_count_today"`
 	LastFollowupDate   *time.Time        `json:"last_followup_date,omitempty"`
+	StateLockedUntil   *time.Time        `json:"state_locked_until,omitempty"`
 }
 
 type Message struct {
