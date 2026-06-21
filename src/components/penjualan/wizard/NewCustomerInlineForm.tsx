@@ -92,23 +92,29 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
         </label>
         {requestTempo && (
           <>
-            <p className="text-[11px] text-slate-500 mt-1 ml-6">Butuh approval Owner. Customer disimpan dulu; transaksi sekarang pakai LUNAS/DP.</p>
+            <p className="text-[11px] text-slate-500 mt-1 ml-6">
+              Centang kalau customer mau bayar nanti. <strong>Butuh approval Owner dulu</strong> — request masuk ke Persetujuan, customer baru bisa pakai TEMPO setelah disetujui.
+            </p>
             <div className="mt-2 ml-6 space-y-2">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit (Rp)</label>
-                  <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit yang diminta (Rp)</label>
+                  <input value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="Mis: 5.000.000" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 mb-1">Term (hari)</label>
-                  <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  <input value={term} onChange={(e) => setTerm(e.target.value)} placeholder="Mis: 14" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
                 </div>
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
-                <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x" className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                <textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Mis: Customer regular, sudah belanja 3x via WA. Owner tetangga sebelah." className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                <p className="text-[10px] text-slate-500 mt-1 italic">Bantu Owner decide cepat. Tampil sebagai blockquote di Persetujuan inbox.</p>
               </div>
             </div>
+            <p className="text-[11px] text-amber-700 mt-2 ml-6 italic">
+              ⚠️ Untuk transaksi sekarang: customer baru saja dibuat & TEMPO belum di-approve, jadi pesanan ini harus pakai <strong>LUNAS</strong> atau <strong>DP</strong>. TEMPO bisa dipakai untuk pesanan berikutnya setelah Owner approve.
+            </p>
           </>
         )}
       </div>
