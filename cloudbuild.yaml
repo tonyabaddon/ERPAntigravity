@@ -1,4 +1,13 @@
 steps:
+  # 0. Download CLIP ONNX model (~150MB, gitignored).
+  #    Dockerfile Step 15/17 expects it at models/clip-vit-base-patch32.onnx
+  #    via repo-root build context. Without this, backend build fails at COPY.
+  #    Build trigger has been failing since ~2026-06-18 (post foto-search commit
+  #    5a2d9b8) until this step was added.
+  - name: 'gcr.io/cloud-builders/curl'
+    entrypoint: 'bash'
+    args: ['scripts/download-clip-model.sh']
+
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
