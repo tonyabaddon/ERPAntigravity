@@ -46,4 +46,16 @@ describe('SAK EMKM COA seed', () => {
     expect(map['5-2100']).toBe('DEBIT');   // Beban = Debit
     expect(map['3-1200']).toBe('DEBIT');   // Prive = Debit (contra-equity)
   });
+
+  it('parent_id links resolved (sample: 1-1110 parent = 1-1100, 4-1110 parent = 4-1100)', async () => {
+    const { data } = await supabaseAdmin
+      .from('chart_of_accounts')
+      .select('account_code, parent_id, parent:parent_id(account_code)')
+      .in('account_code', ['1-1110', '4-1110', '5-2100']);
+
+    const map = Object.fromEntries(data!.map((r: any) => [r.account_code, r.parent?.account_code]));
+    expect(map['1-1110']).toBe('1-1100');   // Kas Toko → Kas
+    expect(map['4-1110']).toBe('4-1100');   // Penjualan Walkin → Penjualan
+    expect(map['5-2100']).toBe('5-2000');   // Beban Gaji → Beban Operasional
+  });
 });
