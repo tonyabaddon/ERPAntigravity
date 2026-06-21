@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -98,12 +99,19 @@ func (c *Client) createConversation(phone, waNumberID string) (*models.Conversat
 }
 
 func (c *Client) UpdateConversationState(id string, state models.ConversationState) error {
-	_, err := c.DB.Exec(`
+	result, err := c.DB.Exec(`
 		UPDATE conversations SET state = $1, updated_at = $2
 		WHERE id = $3
 		  AND (state_locked_until IS NULL OR state_locked_until < NOW())
 	`, string(state), time.Now(), id)
-	return err
+	if err != nil {
+		return err
+	}
+	rows, raErr := result.RowsAffected()
+	if raErr == nil && rows == 0 {
+		log.Printf("[HANDLER] UpdateConversationState skipped for conv %s (state_locked_until active or row missing)", id)
+	}
+	return nil
 }
 
 func (c *Client) UpdateCollectedData(id string, data models.CollectedData, clarificationRound int) error {
@@ -127,7 +135,8 @@ func (c *Client) UpdateLanguage(id, language string) error {
 func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation, error) {
 	rows, err := c.DB.Query(`
 		SELECT id, wa_number_id, customer_phone, state, language,
-		       collected_data, clarification_round, ai_active, created_at, updated_at
+		       collected_data, clarification_round, ai_active, created_at, updated_at,
+		       state_locked_until
 		FROM conversations WHERE customer_phone = $1 ORDER BY created_at DESC
 	`, phone)
 	if err != nil {
@@ -138,14 +147,19 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 	for rows.Next() {
 		var conv models.Conversation
 		var dataJSON []byte
+		var stateLockedUntil sql.NullTime
 		if err := rows.Scan(
 			&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
 			&conv.Language, &dataJSON, &conv.ClarificationRound,
 			&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
+			&stateLockedUntil,
 		); err != nil {
 			return nil, err
 		}
 		json.Unmarshal(dataJSON, &conv.CollectedData)
+		if stateLockedUntil.Valid {
+			conv.StateLockedUntil = &stateLockedUntil.Time
+		}
 		result = append(result, &conv)
 	}
 	if err := rows.Err(); err != nil {

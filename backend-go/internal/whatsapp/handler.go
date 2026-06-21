@@ -298,7 +298,7 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	// Concurrency guard: if admin locked the conversation after we loaded conv (race window),
 	// skip the AI state recompute write so we don't overwrite the admin's decision.
 	if conv.StateLockedUntil != nil && conv.StateLockedUntil.After(time.Now()) {
-		log.Printf("[ENGINE] State locked until %v, skip recompute for conv %s",
+		log.Printf("[HANDLER] State locked until %v, skip recompute for conv %s",
 			*conv.StateLockedUntil, conv.ID)
 	} else {
 		if result.NewData != nil {
