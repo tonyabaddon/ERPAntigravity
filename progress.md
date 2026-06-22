@@ -1,5 +1,62 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d GL UI IMPLEMENTATION COMPLETE (10 tasks)
+
+Phase 0d complete. AkuntansiScreen sekarang punya 4 tabs (Trial Balance / Buku Besar / Tutup Buku / COA) — Owner bisa view full GL state, drill-down per akun, close monthly period dengan auto tax accrual, dan edit COA names. Backend 100% reuse Phase 0a infrastructure (zero schema changes selain 1 helper RPC `update_coa_account`).
+
+**Tasks status: 10/10 ✓**
+- Task 1: update_coa_account RPC + bucket (migration 20260722000005, smoke 3/3 PASS)
+- Task 2: glQueries.ts service (14/14 tests) — note: anomaly recovered, subagent first committed to main; relocated to worktree
+- Task 3: periodClose + coaUpdate services (8/8 tests)
+- Task 4: TrialBalanceTab component
+- Task 5: BukuBesarTab component
+- Task 6: TutupBukuTab + PeriodCloseModal
+- Task 7: COAManagementTab + COAEditModal
+- Task 8: AkuntansiScreen 4-tab refactor
+- Task 9: Integration tests (43/43 PASS)
+- Task 10: Final validation + this entry
+
+**Migrations applied (1):**
+- 20260722000005 update_coa_account RPC (SECURITY DEFINER + Owner gate + system-account protection)
+
+**UI deliverables:**
+- src/components/akuntansi/AkuntansiScreen.tsx (MODIFIED — 4 tabs replace placeholder)
+- src/components/akuntansi/gl/TrialBalanceTab.tsx
+- src/components/akuntansi/gl/BukuBesarTab.tsx
+- src/components/akuntansi/gl/TutupBukuTab.tsx
+- src/components/akuntansi/gl/PeriodCloseModal.tsx
+- src/components/akuntansi/gl/COAManagementTab.tsx
+- src/components/akuntansi/gl/COAEditModal.tsx
+
+**Service layer:**
+- src/lib/akuntansi/glQueries.ts + tests (14 tests)
+- src/lib/akuntansi/periodClose.ts + tests (3 tests)
+- src/lib/akuntansi/coaUpdate.ts + tests (5 tests)
+
+**Integration tests:** tests/integration/akuntansi-phase0d/ (4 files, 43 tests)
+
+**Decisions locked per brainstorm:**
+- Layout: 4 tabs di-satu-screen (NOT separate sidebar entries)
+- Export PDF/Excel: placeholder toast (defer Phase 4 Laporan)
+- COA Management: view+edit+disable only (NO add new account — SAK EMKM 59 fixed)
+- Buku Besar drill-down: tab switch + initialAccountId state (NO route change)
+
+**Spec drifts discovered + handled:**
+- Service signature: `closeAccountingPeriod(year, month)` not `(periodId)` (actual RPC sig)
+- Config field name: `pph_mode === 'UMKM_FINAL_0_5'` not `pajak_mode === 'FINAL_UMKM'`
+- `close_accounting_period` RPC does NOT auto-accrue taxes — separate `accruePeriodTaxes` call in PeriodCloseModal submit
+- COA join via `chart_of_accounts.id` UUID FK (not `account_code` text)
+
+**Verification (2026-06-22):**
+- npm test: **342/342 PASS** across 44 files
+- npx tsc --noEmit: clean
+- npm run build: ✓ 2.96s OK
+- MCP smoke (Task 1): 3/3 PASS (happy + INVALID_ACCOUNT_NAME + SYSTEM_ACCOUNT_PROTECTED)
+
+**Next:** Phase 4 Laporan (Profit & Loss + Neraca + Mutasi 6-tab) atau Phase 2 Settlement. Both have mockups ready.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0d Task 6: TutupBukuTab + PeriodCloseModal — DONE
 
 `src/components/akuntansi/gl/TutupBukuTab.tsx` + `src/components/akuntansi/gl/PeriodCloseModal.tsx`.
