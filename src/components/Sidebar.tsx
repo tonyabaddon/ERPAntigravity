@@ -23,6 +23,7 @@ import {
   BookOpenCheck,
   Warehouse,
   Wallet,
+  Coins,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import { buildHref, handleSPAClick } from '../lib/urlRoute';
@@ -73,6 +74,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
     { id: 'piutang', label: 'Piutang', icon: Wallet, category: 'operasional', permKey: 'piutang' },
+    { id: 'kasBank', label: 'Kas & Bank', icon: Coins, category: 'operasional', permKey: 'laporan' as keyof PermissionSet },
     // Inventory
     { id: 'ai-stock', label: 'Produk & Stok', icon: Package, category: 'inventory', permKey: 'aiStock' },
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
