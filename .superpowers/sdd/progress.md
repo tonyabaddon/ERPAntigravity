@@ -7,3 +7,5 @@ Started: 2026-06-23
 Task 1: complete (migration 20260723000001_phase0b_dual_write_infra.sql applied — gl_dual_write_anomalies table + accounting_config 4 default FK cols + orders.cash_account_id; Garindo default_kas_account_id seeded to Kas Toko)
 
 Task 1: complete (commits 313c9d9..6a4fad5, infra deployed)
+Task 2: complete (commits 6a4fad5..cb6fb8f, 4/4 smoke PASS, kasir dual-write live, channel lowercase corrected, account_code not account_id corrected)
+Task 3: complete (migration 20260723000003_phase0b_record_pembayaran_dual_write.sql applied — record_pembayaran COOR with soft-fail GL dual-write; 3/3 smoke PASS: A=JE D2-1100 K1-1110, B=anomaly NO_CASH_ACCOUNT, C=flag OFF no JE)
