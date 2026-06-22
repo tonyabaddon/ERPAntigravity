@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 10: ManualExpenseModal — DONE
+
+Created `src/components/akuntansi/manual/ManualExpenseModal.tsx` (457 lines).
+
+- Kategori Beban dropdown (fetchBebanCategories, sorted by code), Sumber dana dropdown (fetchCashAccountBalances filtered to active + non-OWNER_PERSONAL, displays emoji + code + label + balance).
+- Jumlah input with Rp formatting (parseRupiah/formatRupiah helpers), Tanggal (defaults today, future warns), Keterangan (required, min 3 char validation with live feedback).
+- Bukti pengeluaran visual dashed drop-zone (no upload, passes `proofUrl: null`).
+- JournalEntryPreview: 2 lines D Beban (orange-700) | K Source (rose-700), live update.
+- Orange-themed header (#ffedd5, #7c2d12, CreditCard icon).
+- Validation: bebanCoaId + sourceCashId selected, amount > 0, description.trim().length >= 3, date valid.
+- Calls `recordManualExpense({bebanCoaId, sourceCashId, amount, entryDate, description, proofUrl: null})`, success toast with entry_number, error handling for all RPC failures.
+- tsc --noEmit clean, commit `6cde0d5..08b4524`.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 8: BalanceAdjustmentModal — DONE
 
 Created `src/components/akuntansi/manual/BalanceAdjustmentModal.tsx` (546 lines).
