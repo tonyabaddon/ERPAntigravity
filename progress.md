@@ -1,5 +1,45 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 1 Cash & Bank UI IMPLEMENTATION COMPLETE (9 tasks)
+
+Phase 1 complete. NEW cash_accounts table linked to chart_of_accounts (Phase 0a). KasBankScreen + AccountDetailScreen + AccountFormModal live. Saldo derive from journal_entry_lines via cash_account_balances view.
+
+**Tasks status: 9/9 ✓**
+- Task 1: Test scaffolding (commit 5f7ddb0)
+- Task 2: cash_accounts table + Garindo seed (commit 6f1bf4f)
+- Task 3: cash_account_balances view (commit a65729c)
+- Task 4: TS service module + 9 unit tests (commit b71f850)
+- Task 5: KasBankScreen main page (commit c23a266)
+- Task 6: AccountDetailScreen with Riwayat running balance (commit c4a7333)
+- Task 7: AccountFormModal CRUD + COA auto-link (commit d743ae2)
+- Task 8: Sidebar + routing (this branch)
+- Task 9: Final validation (this commit)
+
+**Migrations applied (2):**
+- 20260720000001 cash_accounts table + Garindo Kas Toko seed
+- 20260720000002 cash_account_balances view
+
+**UI deliverable:**
+- src/components/kasbank/KasBankScreen.tsx — main page
+- src/components/kasbank/AccountDetailScreen.tsx — riwayat with running balance
+- src/components/kasbank/AccountFormModal.tsx — CRUD modal with COA auto-link
+- src/lib/kasbank/{types,service,service.test}.ts — TS service + 9 unit tests
+- Sidebar entry "Kas & Bank" di Operasional group dengan Coins icon
+
+**Scope per Phase 1 decisions:**
+- ✓ NEW cash_accounts table (decoupled from bank_accounts recon + store_bank_accounts invoice display)
+- ⏭️ Picker integration → Phase 0b (when business RPC wraps land)
+
+**Verification (2026-06-22):**
+- MCP execute_sql: cash_accounts seeded 1/1 PASS (Kas Toko ↔ 1-1110)
+- MCP execute_sql: cash_account_balances view PASS (1 row, current_balance = 4450001.00)
+- npm run build: ✓ 3.21s OK
+- npx tsc --noEmit: ✓ clean, zero errors
+
+**Next:** Phase 0b — parallel-write 3 high-traffic RPC (record_kasir_sale, record_pembayaran, record_piutang_payment) untuk hook GL writes ke kasir/pembelian/piutang existing flows.
+
+---
+
 ## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Final-review fixes (C1 + C2)
 
 **DONE.** Whole-branch review found 2 Critical merge-blockers; both fixed in single commit.
