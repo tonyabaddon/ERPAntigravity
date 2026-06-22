@@ -45,6 +45,8 @@ import ManajemenGudangScreen from './components/ManajemenGudangScreen';
 import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
 import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
 import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
+import KasBankScreen from './components/kasbank/KasBankScreen';
+import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
 
 import {
   INITIAL_STOCK,
@@ -107,6 +109,8 @@ export default function App() {
   // than re-opening a stale invoice. T17 explicitly scopes this screen to
   // non-TEMPO transactions (TEMPO returns orders.id not kasir_transactions.id).
   const [invoicePreviewOrderId, setInvoicePreviewOrderId] = useState<string | null>(null);
+  // Track which cash account to view in detail within KasBankDetail screen.
+  const [kasBankDetailAccountId, setKasBankDetailAccountId] = useState<string | null>(null);
 
   // General state databases loaded from templates or LocalStorage
   const [stockList, setStockList] = useState<StockItem[]>(() => {
@@ -585,6 +589,34 @@ export default function App() {
           <AkuntansiScreen
             currentUser={currentUser}
             showToast={triggerToast}
+          />
+        );
+      case 'kasBank':
+        return (
+          <KasBankScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+            onNavigate={(page, params) => {
+              if (page === 'kasBank-detail') {
+                setKasBankDetailAccountId(params as string);
+                navigate('kasBankDetail');
+              } else if (page === 'kasBank' || page === 'kasBankDetail') {
+                navigate(page as ActivePage);
+              }
+            }}
+          />
+        );
+      case 'kasBankDetail':
+        if (!kasBankDetailAccountId) {
+          navigate('kasBank');
+          return null;
+        }
+        return (
+          <AccountDetailScreen
+            cashAccountId={kasBankDetailAccountId}
+            currentUser={currentUser}
+            showToast={triggerToast}
+            onBack={() => navigate('kasBank')}
           />
         );
       case 'salesLanding':
