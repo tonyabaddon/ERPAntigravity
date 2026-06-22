@@ -158,7 +158,7 @@ describe('Neraca — cumulative (lte) date filtering', () => {
         const entry = Array.isArray(row.journal_entries)
           ? row.journal_entries[0]
           : row.journal_entries;
-        expect(entry.entry_date).toBeLessThanOrEqual(asOfDate);
+        expect(entry.entry_date <= asOfDate).toBe(true);
       }
     }
   });

@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 4 Final Review Fixes (4 fixes)
+
+Applied 4 fixes from final whole-branch code review:
+
+**Fix 1 (HIGH)** — `neraca.test.ts:161`: `toBeLessThanOrEqual(asOfDate)` failed type-check (string ≠ number). Replaced with `entry.entry_date <= asOfDate` (ISO lex order = chronological order).
+
+**Fix 2 (HIGH)** — `fetchNeraca` YTD balance bug: P&L accounts were excluded from the ASET/LIAB/MODAL query, causing mid-year Neraca to show "TIDAK SEIMBANG" (missing Laba Tahun Berjalan). Added second inline query (PENDAPATAN/BEBAN, yearStart to asOfDate) computing `netRevenue - netExpense`; result injected as `Laba Tahun Berjalan (YTD)` line item in ekuitas when non-zero. Unit test added verifying injection + balance.
+
+**Fix 3 (MEDIUM)** — `MutasiTab.tsx:346`: removed `as any` cast; introduced `PeriodPreset = 'bulan-ini' | '30-hari' | 'tahun-ini'` type alias used in state, handler, and select onChange.
+
+**Fix 4 (MEDIUM)** — `MutasiTab.tsx`: removed fake `'00:00'` `formatTime` function (fake number violation); `formatEntryDate` now returns only `DD/MM` (no spurious time portion).
+
+**Verification**: `npx tsc --noEmit` clean + tests pass + `npm run build` OK.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 4 Laporan IMPLEMENTATION COMPLETE (10 tasks)
 
 Phase 4 complete. LaporanScreen now has top tabs (Performa preserved + Akuntansi new). AkuntansiLaporanTab has 4 sub-tabs: Mutasi/Laba Rugi/Neraca/Cash Flow. Real PDF SAK EMKM export untuk P&L + Neraca via jspdf client-side. Zero schema changes — backend 100% reuse Phase 0a infrastructure (journal_entries + journal_entry_lines + chart_of_accounts).

@@ -548,7 +548,78 @@ export async function fetchNeraca(asOfDate: string): Promise<NeracaResult> {
   const totalLiabJkPanjang = sum(liabJkPjgAccs);
   const totalLiabilitas = totalLiabLancar + totalLiabJkPanjang;
 
-  const totalEkuitas = sum(ekuitasAccs);
+  const ekuitas: LineItem[] = ekuitasAccs.map(toLineItem);
+  let totalEkuitas = sum(ekuitasAccs);
+
+  // ── YTD Laba Tahun Berjalan ────────────────────────────────────────────────
+  // P&L accounts are excluded from the main ASET/LIAB/MODAL query.  To prevent
+  // a mid-year "TIDAK SEIMBANG" false alarm we compute net income YTD inline.
+  const asOfYear = asOfDate.slice(0, 4);
+  const yearStart = `${asOfYear}-01-01`;
+
+  const { data: ytdData, error: ytdError } = await sb
+    .from('journal_entry_lines')
+    .select(LINE_SELECT)
+    .in('chart_of_accounts.account_type', ['PENDAPATAN', 'BEBAN'])
+    .gte('journal_entries.entry_date', yearStart)
+    .lte('journal_entries.entry_date', asOfDate);
+
+  if (ytdError) throw new Error(ytdError.message);
+
+  type YtdRec = { account_type: string; account_subtype: string | null; normal_balance: string; total_debit: number; total_credit: number };
+  const ytdMap = new Map<string, YtdRec>();
+
+  for (const raw of (ytdData ?? []) as RawLine[]) {
+    const coa = unwrapCoa(raw);
+    if (!coa) continue;
+    if (coa.account_type !== 'PENDAPATAN' && coa.account_type !== 'BEBAN') continue;
+
+    let rec = ytdMap.get(raw.account_id);
+    if (!rec) {
+      rec = {
+        account_type: coa.account_type,
+        account_subtype: coa.account_subtype,
+        normal_balance: coa.normal_balance,
+        total_debit: 0,
+        total_credit: 0,
+      };
+      ytdMap.set(raw.account_id, rec);
+    }
+    const amt = Number(raw.amount);
+    if (raw.side === 'DEBIT') rec.total_debit += amt;
+    else rec.total_credit += amt;
+  }
+
+  let netRevenue = 0;
+  let netExpense = 0;
+
+  for (const rec of ytdMap.values()) {
+    if (rec.account_type === 'PENDAPATAN') {
+      // CREDIT-normal: netBalance = credit - debit (positive = revenue earned)
+      const net = rec.total_credit - rec.total_debit;
+      if (rec.account_subtype === 'KONTRA') {
+        // Kontra pendapatan reduces revenue
+        netRevenue -= net;
+      } else {
+        netRevenue += net;
+      }
+    } else {
+      // BEBAN: DEBIT-normal: netBalance = debit - credit (positive = expense incurred)
+      netExpense += rec.total_debit - rec.total_credit;
+    }
+  }
+
+  const labaTahunBerjalan = netRevenue - netExpense;
+
+  // Only inject if there is YTD activity (avoids a zero-line on empty periods)
+  if (labaTahunBerjalan !== 0) {
+    ekuitas.push({
+      code: 'YTD',
+      name: 'Laba Tahun Berjalan (YTD)',
+      amount: labaTahunBerjalan,
+    });
+    totalEkuitas += labaTahunBerjalan;
+  }
 
   const diff = totalAset - (totalLiabilitas + totalEkuitas);
   const isBalanced = Math.abs(diff) < 0.01;
@@ -565,7 +636,7 @@ export async function fetchNeraca(asOfDate: string): Promise<NeracaResult> {
     liabilitasJkPanjang: liabJkPjgAccs.map(toLineItem),
     totalLiabJkPanjang,
     totalLiabilitas,
-    ekuitas: ekuitasAccs.map(toLineItem),
+    ekuitas,
     totalEkuitas,
     balanceCheck: { isBalanced, diff },
   };

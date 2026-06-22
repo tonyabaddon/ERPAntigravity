@@ -517,6 +517,96 @@ describe('fetchNeraca', () => {
     await expect(reportQueries.fetchNeraca('2026-06-30'))
       .rejects.toThrow('Neraca query failed');
   });
+
+  it('YTD Laba Tahun Berjalan — injected into ekuitas, balance holds', async () => {
+    // Balance sheet: Kas 10jt, Modal 7jt, Hutang 3jt → aset=10jt, liab+modal=10jt
+    // But without YTD net income the equation only balances if we include it.
+    // Scenario: revenue 5jt, expense 3jt → labaTahunBerjalan = 2jt
+    // Aset: 10jt (DEBIT-normal, DEBIT side)
+    // Liab: 3jt (CREDIT-normal, CREDIT side)
+    // Modal: 5jt (CREDIT-normal, CREDIT side)  → totalEkuitas = 5jt + 2jt YTD = 7jt
+    // Balance: 10jt = 3jt + 7jt ✓
+    const mainData = [
+      {
+        id: 'line-kas',
+        entry_id: 'entry-kas',
+        account_id: 'coa-kas',
+        side: 'DEBIT' as const,
+        amount: 10000000,
+        description: null,
+        journal_entries: [{ entry_date: '2026-01-01', entry_number: 'JE-1', source_type: 'OPENING_BALANCE', description: null }],
+        chart_of_accounts: [{ id: 'coa-kas', account_code: '1-1100', account_name: 'Kas', account_type: 'ASET', account_subtype: 'KAS', normal_balance: 'DEBIT' }],
+      },
+      {
+        id: 'line-liab',
+        entry_id: 'entry-liab',
+        account_id: 'coa-liab',
+        side: 'CREDIT' as const,
+        amount: 3000000,
+        description: null,
+        journal_entries: [{ entry_date: '2026-01-01', entry_number: 'JE-2', source_type: 'OPENING_BALANCE', description: null }],
+        chart_of_accounts: [{ id: 'coa-liab', account_code: '2-1100', account_name: 'Hutang Usaha', account_type: 'LIABILITAS', account_subtype: 'HUTANG_USAHA', normal_balance: 'CREDIT' }],
+      },
+      {
+        id: 'line-modal',
+        entry_id: 'entry-modal',
+        account_id: 'coa-modal',
+        side: 'CREDIT' as const,
+        amount: 5000000,
+        description: null,
+        journal_entries: [{ entry_date: '2026-01-01', entry_number: 'JE-3', source_type: 'OPENING_BALANCE', description: null }],
+        chart_of_accounts: [{ id: 'coa-modal', account_code: '3-1100', account_name: 'Modal Disetor', account_type: 'MODAL', account_subtype: 'MODAL_DISETOR', normal_balance: 'CREDIT' }],
+      },
+    ];
+
+    const ytdData = [
+      // Pendapatan 5jt (CREDIT on CREDIT-normal)
+      {
+        id: 'line-pend',
+        entry_id: 'entry-pend',
+        account_id: 'coa-pend',
+        side: 'CREDIT' as const,
+        amount: 5000000,
+        description: null,
+        journal_entries: [{ entry_date: '2026-06-15', entry_number: 'JE-P1', source_type: 'KASIR_SALE', description: null }],
+        chart_of_accounts: [{ id: 'coa-pend', account_code: '4-1100', account_name: 'Penjualan', account_type: 'PENDAPATAN', account_subtype: 'PENJUALAN', normal_balance: 'CREDIT' }],
+      },
+      // Beban 3jt (DEBIT on DEBIT-normal)
+      {
+        id: 'line-beban',
+        entry_id: 'entry-beban',
+        account_id: 'coa-beban',
+        side: 'DEBIT' as const,
+        amount: 3000000,
+        description: null,
+        journal_entries: [{ entry_date: '2026-06-20', entry_number: 'JE-B1', source_type: 'KASIR_EXPENSE', description: null }],
+        chart_of_accounts: [{ id: 'coa-beban', account_code: '5-2100', account_name: 'Beban Gaji', account_type: 'BEBAN', account_subtype: 'BEBAN_OPERASIONAL', normal_balance: 'DEBIT' }],
+      },
+    ];
+
+    (supabase.from as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(makeChain(mainData))  // main ASET/LIAB/MODAL query
+      .mockReturnValueOnce(makeChain(ytdData));   // YTD PENDAPATAN/BEBAN query
+
+    const result = await reportQueries.fetchNeraca('2026-06-30');
+
+    // Aset: 10jt
+    expect(result.totalAset).toBe(10000000);
+    // Liab: 3jt
+    expect(result.totalLiabilitas).toBe(3000000);
+    // Ekuitas: 5jt modal + 2jt YTD = 7jt
+    expect(result.totalEkuitas).toBe(7000000);
+
+    // Laba Tahun Berjalan line injected
+    const ytdLine = result.ekuitas.find(e => e.code === 'YTD');
+    expect(ytdLine).toBeDefined();
+    expect(ytdLine!.name).toBe('Laba Tahun Berjalan (YTD)');
+    expect(ytdLine!.amount).toBe(2000000); // 5jt revenue - 3jt expense
+
+    // Balance: 10jt = 3jt + 7jt → balanced
+    expect(result.balanceCheck.isBalanced).toBe(true);
+    expect(result.balanceCheck.diff).toBeCloseTo(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

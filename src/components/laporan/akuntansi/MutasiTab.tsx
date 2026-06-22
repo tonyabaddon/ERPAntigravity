@@ -18,6 +18,7 @@ export interface MutasiTabProps {
 }
 
 type DirectionFilter = 'ALL' | 'IN' | 'OUT';
+type PeriodPreset = 'bulan-ini' | '30-hari' | 'tahun-ini';
 
 interface PeriodRange {
   fromDate: string;
@@ -52,13 +53,7 @@ function idMonthYear(isoDate: string): string {
 function formatEntryDate(isoDate: string): string {
   const parts = isoDate.split('-');
   if (parts.length < 3) return isoDate;
-  return `${parts[2]}/${parts[1]} ${formatTime(isoDate)}`;
-}
-
-function formatTime(isoDate: string): string {
-  // If entry_date includes time, parse it; otherwise return empty
-  // For now, assuming entry_date is YYYY-MM-DD format
-  return '00:00';
+  return `${parts[2]}/${parts[1]}`;
 }
 
 function formatNum(n: number): string {
@@ -95,7 +90,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
   // Filters
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
   const [period, setPeriod] = useState<PeriodRange>(() => getMonthBounds(new Date()));
-  const [periodPreset, setPeriodPreset] = useState<'bulan-ini' | '30-hari' | 'tahun-ini'>('bulan-ini');
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>('bulan-ini');
   const [direction, setDirection] = useState<DirectionFilter>('ALL');
   const [category, setCategory] = useState<string>('ALL');
   const [includePersonal, setIncludePersonal] = useState(false);
@@ -167,7 +162,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  function handlePeriodPreset(preset: 'bulan-ini' | '30-hari' | 'tahun-ini') {
+  function handlePeriodPreset(preset: PeriodPreset) {
     setPeriodPreset(preset);
     const now = new Date();
     if (preset === 'bulan-ini') {
@@ -343,7 +338,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
           <select
             className="w-full border border-[#c7d7f5] rounded-lg px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[#c7d7f5]"
             value={periodPreset}
-            onChange={e => handlePeriodPreset(e.target.value as any)}
+            onChange={e => handlePeriodPreset(e.target.value as PeriodPreset)}
           >
             <option value="bulan-ini">Bulan ini ({idMonthYear(period.fromDate).split(' ')[0]})</option>
             <option value="30-hari">30 hari</option>
