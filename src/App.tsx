@@ -44,6 +44,7 @@ import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 import ManajemenGudangScreen from './components/ManajemenGudangScreen';
 import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
 import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
+import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
 
 import {
   INITIAL_STOCK,
@@ -575,6 +576,13 @@ export default function App() {
       case 'rekonsiliasi':
         return (
           <RekonsiliasiScreen
+            currentUser={currentUser}
+            showToast={triggerToast}
+          />
+        );
+      case 'akuntansi':
+        return (
+          <AkuntansiScreen
             currentUser={currentUser}
             showToast={triggerToast}
           />
