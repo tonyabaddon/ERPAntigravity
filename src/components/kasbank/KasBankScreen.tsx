@@ -14,9 +14,10 @@ import {
   AlertTriangle,
   Activity,
 } from 'lucide-react';
-import { fetchCashAccountBalances } from '../../lib/kasbank/service';
-import type { CashAccountBalance, CashAccountType } from '../../lib/kasbank/types';
+import { fetchCashAccountBalances, fetchCashAccounts } from '../../lib/kasbank/service';
+import type { CashAccount, CashAccountBalance, CashAccountType } from '../../lib/kasbank/types';
 import { formatRp } from '../../lib/format';
+import AccountFormModal from './AccountFormModal';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -223,8 +224,31 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
   const [accounts, setAccounts] = useState<CashAccountBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [timestamp] = useState(() => wibTimestamp());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<CashAccount | null>(null);
 
   const isOwner = currentUser?.role?.toLowerCase() === 'owner';
+
+  function openAddModal() {
+    setEditingAccount(null);
+    setShowAddModal(true);
+  }
+
+  async function openEditModal(cashAccountId: string) {
+    try {
+      const all = await fetchCashAccounts();
+      const found = all.find(a => a.id === cashAccountId);
+      if (!found) {
+        showToast('Akun tidak ditemukan', 'warning');
+        return;
+      }
+      setEditingAccount(found);
+      setShowAddModal(true);
+    } catch (err) {
+      console.error('[KasBankScreen] fetchCashAccounts error', err);
+      showToast('Gagal memuat detail akun', 'warning');
+    }
+  }
 
   function loadAccounts() {
     setLoading(true);
@@ -284,7 +308,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
         {isOwner && (
           <button
-            onClick={() => showToast('Form Tambah Akun hadir di Task 7', 'info')}
+            onClick={openAddModal}
             className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -329,7 +353,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
             Belum ada akun bisnis.{' '}
             {isOwner && (
               <button
-                onClick={() => showToast('Form Tambah Akun hadir di Task 7', 'info')}
+                onClick={openAddModal}
                 className="text-[#012749] font-bold hover:underline"
               >
                 + Tambah Akun
@@ -387,7 +411,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
           </p>
           {isOwner && (
             <button
-              onClick={() => showToast('Form Tambah Akun hadir di Task 7', 'info')}
+              onClick={openAddModal}
               className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -396,6 +420,15 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
           )}
         </div>
       )}
+
+      {/* Add/Edit Account Modal (Task 7) */}
+      <AccountFormModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSaved={loadAccounts}
+        editingAccount={editingAccount}
+        showToast={showToast}
+      />
     </div>
   );
 }
