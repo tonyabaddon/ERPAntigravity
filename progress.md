@@ -8619,3 +8619,30 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **TypeScript:** `npx tsc --noEmit` clean ✓
 - **Commit:** `c0d5a44` — "feat(akuntansi): Phase 0a Task 14 — set_opening_balance RPC + idempotency guard"
 - **Report:** `.superpowers/sdd/task-14-report.md` documents verification results.
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 DEPLOYED 100% (PR #53 merged + Cloud Run promoted)
+
+**Branch merged**: `feat/pengaturan-msme-configurability` → main via merge commit `0b83a2c` (`gh pr merge 53 --merge`). 24 Pengaturan commits + 1 merge-resolution commit + V1.5 hygiene follow-up `e2d0a03`. All 8 migrations live on `ekhhojaezdfjfwuxyjkl`.
+
+**Cloud Run frontend**: revision `garindo-jaya-panel-msme-erp-frontend-00169-qoq` (commit tag `c0b83a2c`, image sha256 `f01984b1...`) promoted to 100% traffic. Live URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` serves bundle `index-CNh630b0.js`. HTTP 200.
+
+**Cloud Build chain**:
+- `67b8ffc6...` (frontend, PR #53 merge commit) SUCCESS at 06:26:12 → produced rev `00169-qoq`
+- `2ddc2a7e...` (backend, PR #53 merge commit) SUCCESS at 06:26 → no backend code change (Pengaturan was frontend+SQL only) so backend rev unchanged
+- `8ade0559...` + `0ad534ff...` (V1.5 hygiene push `e2d0a03`) WORKING → will produce rev `00170`+ but no functional change (SQL-only migration)
+
+**Post-merge cleanup**:
+- Worktree `.claude/worktrees/pengaturan-msme` removed (`git worktree remove`).
+- Local main fast-forwarded `222f0b7 → e2d0a03`.
+- Dev server on port 3000 killed.
+
+**V1.5 backlog hygiene fix applied**: `supabase/migrations/20260622000008_pembelian_wrappers_grant_execute.sql` (18 lines). Final-review concern was a false positive — 14 wrappers already inherit `EXECUTE TO PUBLIC` default. Migration adds explicit `GRANT EXECUTE TO authenticated` for parity with Task 7 RPC pattern + to silence future code-review false positives.
+
+**V1.5 backlog remaining** (documented for separate spec):
+- Build real INSERT bodies in 7 `_apply_<pembelian-gate>` stubs when frontend wires actual callers
+- Add `FOR UPDATE` to 7 `commit_approved_<pembelian-gate>` AR reads (race guard, must land before stubs become real)
+- Wire 4 phantom approval gates (kasir_void/refund/price_override + initial_stock RPC wrap)
+- Resolve service_types code naming (`custom_panel`/`wiring_panel` vs legacy TS union `jasa_custom_panel`/`jasa_rakit`) — currently bridged via `CODE_TO_RAKIT` map
+- Cosmetic cleanups (`!=` → `<>` consistency, `_apply_*` add `_change` suffix per brief)
+
+**Smoke evidence on PR**: https://github.com/tonyabaddon/ERPAntigravity/pull/53 — 10/10 live browser smoke PASS (5 panel renderings + 2 critical fixes verified end-to-end + Garindo backward-compat OwnerPinPad intact). 9 inline screenshots committed at `b6f3bbb` + `fb4e871`.
