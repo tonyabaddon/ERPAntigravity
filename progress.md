@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 11: Wire AksiDropdown + 5 modals into AccountDetailScreen — DONE
+
+Modified `src/components/kasbank/AccountDetailScreen.tsx` (158 lines added).
+
+- Imports: AksiDropdown + AksiAction type, ManualTransferModal, OwnerDrawingModal, BalanceAdjustmentModal, ManualExpenseModal, WalletSpendModal.
+- State: `const [aksi, setAksi] = useState<AksiAction | null>(null)`.
+- `handleAksi` callback: intercepts `edit_akun` → showToast hint; all other actions → setAksi.
+- `handlePosted` callback (useCallback): closes modal, reloads ledger via `loadLedger()`, refreshes balance hero via `fetchCashAccountBalances()`.
+- AksiDropdown placed top-right in hero header flex row alongside back-link (w-36 wrapper).
+- 8 modal renderings before tab content: transfer (variant="transfer"), setor_bank (variant="cash_deposit"), setor_dari_kas (variant="transfer" for full source flexibility), wallet_topup (variant="wallet_topup"), tarik_pribadi (OwnerDrawingModal), manual_expense (ManualExpenseModal), penyesuaian (BalanceAdjustmentModal cashAccount prop), wallet_spend (WalletSpendModal walletAccount prop).
+- tsc --noEmit clean, build OK, commit `05eb2ec..5271ef9`.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 10: ManualExpenseModal — DONE
 
 Created `src/components/akuntansi/manual/ManualExpenseModal.tsx` (457 lines).
