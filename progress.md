@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d Task 6: TutupBukuTab + PeriodCloseModal — DONE
+
+`src/components/akuntansi/gl/TutupBukuTab.tsx` + `src/components/akuntansi/gl/PeriodCloseModal.tsx`.
+Period list card (last 12 periods, DESC) with status chips: OPEN emerald / CLOSED gray+Lock / REOPENED blue+RotateCcw. Current month row shows "(berjalan)" suffix; closeable periods (OPEN + past month) show red "Tutup Buku" button.
+PeriodCloseModal: rose header, snapshot sub-card (total entries count, trial balance balanced check, omzet sum of PENDAPATAN CREDIT lines), amber tax accrual sub-card gated on `pph_mode === 'UMKM_FINAL_0_5'`. Submit flow: accruePeriodTaxes → closeAccountingPeriod (year, month). Imbalanced TB blocks submit.
+Key corrections from brief: pph_mode not pajak_mode; closeAccountingPeriod(year,month) not (periodId); journal_entry_lines.account_id is UUID FK to coa.id (not account_code).
+npx tsc --noEmit: clean.
+Commit: e1f431f..HEAD
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0d Task 5: BukuBesarTab component — DONE
 
 `src/components/akuntansi/gl/BukuBesarTab.tsx` (562 lines).
