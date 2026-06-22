@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 1 mockup-alignment polish — DONE
+
+After Phase 1 complete (9/9 tasks committed on `worktree-akuntansi-phase1`), did design-system audit vs approved mockup `docs/superpowers/mockups/2026-06-21-akuntansi-phase1-cash-bank.html`. Implementation matches mockup ~98% (M1 KasBankScreen, M3 AccountFormModal both pixel-equivalent). Two minor color tweaks applied di AccountDetailScreen:
+
+- Hero gradient `#2563eb → #1d4ed8` (lighter blue-600/700) → `#1e40af → #1e3a8a` (mockup spec)
+- Pending banner `border-amber-200 bg-amber-50` (muted) → `background: #fef3c7 / border: #fbbf24` (mockup spec — warmer warning tone)
+
+M4 picker integration (Penjualan / Catat Bayar Pembelian / Catat Bayar Piutang) tetap deferred ke Phase 0b sesuai plan scope.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 1 Task 6: AccountDetailScreen — COMPLETE
 
 `src/components/kasbank/AccountDetailScreen.tsx` created. Hero header (gradient blue-600→blue-700), 4-stat cards (saldo awal/debit/kredit/saldo akhir), Riwayat tab with running balance table (general_ledger view), filter bar (Bulan ini / 30 hari / Tahun ini), status chips derived from source_type (Cleared/Recon), pending banner, client-side pagination 50/page. COA metadata fetched in separate query for subtitle. tsc clean, 273/273 tests pass.

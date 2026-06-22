@@ -310,7 +310,7 @@ export default function AccountDetailScreen({
       {/* Hero header */}
       <div
         className="p-6 text-white"
-        style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+        style={{ background: 'linear-gradient(135deg, #1e40af, #1e3a8a)' }}
       >
         {/* Back link */}
         <button
@@ -415,7 +415,10 @@ export default function AccountDetailScreen({
         <div className="bg-white">
           {/* Pending banner */}
           {balance.pending_in > 0 && (
-            <div className="mx-6 mt-6 border border-amber-200 bg-amber-50 rounded-xl p-3 flex items-center gap-3">
+            <div
+              className="mx-6 mt-6 rounded-xl p-3 flex items-center gap-3 border"
+              style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
+            >
               <AlertTriangle className="w-5 h-5 text-amber-700 flex-shrink-0" />
               <p className="text-[12px] text-amber-900">
                 <strong>Saldo termasuk {formatRp(balance.pending_in)} marketplace PENDING.</strong>{' '}
