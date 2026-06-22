@@ -8,6 +8,7 @@ import { Lock, X, Receipt, CheckCircle, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { closeAccountingPeriod } from '../../../lib/akuntansi/periodClose';
 import { accruePeriodTaxes, fetchAccountingConfig } from '../../../lib/akuntansi/service';
+import { fetchTrialBalanceAsOf } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod, AccountingConfig } from '../../../lib/akuntansi/types';
 import { formatRp } from '../../../lib/format';
 
@@ -60,15 +61,12 @@ async function fetchSnapshot(year: number, month: number): Promise<SnapshotData>
     .lte('entry_date', end);
   if (countError) throw new Error(countError.message);
 
-  // Trial balance check: compare total debit vs total credit from trial_balance view
-  const { data: tbData, error: tbError } = await sb
-    .from('trial_balance')
-    .select('total_debit, total_credit');
-  if (tbError) throw new Error(tbError.message);
-
-  const tbRows = (tbData ?? []) as Array<{ total_debit: number; total_credit: number }>;
-  const totalDebit = tbRows.reduce((s, r) => s + Number(r.total_debit), 0);
-  const totalCredit = tbRows.reduce((s, r) => s + Number(r.total_credit), 0);
+  // Trial balance check: scoped to entries up to period end date.
+  // By double-entry invariant this is mathematically always balanced; the check is a
+  // sanity guard — the real enforcement is inside the close_accounting_period RPC.
+  const tbRows = await fetchTrialBalanceAsOf(end);
+  const totalDebit = tbRows.reduce((s, r) => s + r.total_debit, 0);
+  const totalCredit = tbRows.reduce((s, r) => s + r.total_credit, 0);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
   // Omzet: sum credit of PENDAPATAN accounts in the period

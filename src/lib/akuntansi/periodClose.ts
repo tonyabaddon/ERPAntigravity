@@ -46,5 +46,5 @@ export async function closeAccountingPeriod(
 
   if (error) throw new Error(error.message);
 
-  return (data as any) as PeriodCloseResult;
+  return (data as { ok: true; closed_at: string }) as PeriodCloseResult;
 }

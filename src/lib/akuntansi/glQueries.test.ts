@@ -48,83 +48,102 @@ describe('glQueries', () => {
     vi.clearAllMocks();
   });
 
-  describe('fetchTrialBalance', () => {
-    it('should fetch trial balance with COA metadata', async () => {
+  describe('fetchTrialBalanceAsOf', () => {
+    it('should aggregate journal lines into trial balance rows as of a date', async () => {
+      // Two DEBIT lines for account 123 and one CREDIT line for account 456
       const mockData = [
         {
           account_id: '123',
-          account_code: '1001',
-          account_name: 'Kas',
-          account_type: 'ASET',
-          account_subtype: 'CURRENT_ASSET',
-          normal_balance: 'DEBIT',
-          total_debit: 1000000,
-          total_credit: 0,
-          balance: 1000000,
-          coa: [
+          side: 'DEBIT',
+          amount: 1000000,
+          journal_entries: [{ entry_date: '2026-05-15' }],
+          chart_of_accounts: [
             {
+              id: '123',
+              account_code: '1001',
+              account_name: 'Kas',
+              account_type: 'ASET',
+              account_subtype: 'CURRENT_ASSET',
               parent_id: null,
               is_system: false,
               is_active: true,
+              normal_balance: 'DEBIT',
             },
           ],
         },
         {
           account_id: '456',
-          account_code: '1002',
-          account_name: 'Bank',
-          account_type: 'ASET',
-          account_subtype: 'CURRENT_ASSET',
-          normal_balance: 'DEBIT',
-          total_debit: 5000000,
-          total_credit: 0,
-          balance: 5000000,
-          coa: [
+          side: 'CREDIT',
+          amount: 500000,
+          journal_entries: [{ entry_date: '2026-05-20' }],
+          chart_of_accounts: [
             {
+              id: '456',
+              account_code: '2001',
+              account_name: 'Hutang',
+              account_type: 'LIABILITAS',
+              account_subtype: null,
               parent_id: '999',
               is_system: false,
               is_active: true,
+              normal_balance: 'CREDIT',
             },
           ],
         },
       ];
 
-      const mockChain = createMockChain(mockData);
+      // fetchTrialBalanceAsOf uses .from().select().lte() chain
+      const mockChain: any = {};
+      const thenable = Promise.resolve({ data: mockData, error: null });
+      (thenable as any).lte = vi.fn().mockReturnValue(thenable);
+      mockChain.select = vi.fn().mockReturnValue({ lte: vi.fn().mockReturnValue(thenable) });
       (supabase.from as any) = vi.fn().mockReturnValue(mockChain);
 
-      const result = await glQueries.fetchTrialBalance();
+      const result = await glQueries.fetchTrialBalanceAsOf('2026-05-31');
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toMatchObject({
+      const kasRow = result.find(r => r.account_code === '1001');
+      expect(kasRow).toMatchObject({
         account_id: '123',
         account_code: '1001',
         account_name: 'Kas',
         account_type: 'ASET',
         total_debit: 1000000,
+        total_credit: 0,
         balance: 1000000,
         parent_id: null,
         is_system: false,
         is_active: true,
       });
-      expect(result[1]).toMatchObject({
-        account_code: '1002',
+      const hutangRow = result.find(r => r.account_code === '2001');
+      expect(hutangRow).toMatchObject({
+        account_id: '456',
+        total_debit: 0,
+        total_credit: 500000,
+        balance: 500000,
         parent_id: '999',
       });
     });
 
     it('should throw error when supabase fails', async () => {
       const mockError = { message: 'Database connection failed' };
-      const mockChain = createMockChain(null, mockError);
+      const thenable = Promise.resolve({ data: null, error: mockError });
+      const mockChain: any = {
+        select: vi.fn().mockReturnValue({ lte: vi.fn().mockReturnValue(thenable) }),
+      };
       (supabase.from as any) = vi.fn().mockReturnValue(mockChain);
 
-      await expect(glQueries.fetchTrialBalance()).rejects.toThrow('Database connection failed');
+      await expect(glQueries.fetchTrialBalanceAsOf('2026-05-31')).rejects.toThrow('Database connection failed');
     });
 
-    it('should return empty array when no data', async () => {
-      const mockChain = createMockChain([]);
+    it('should return empty array when no lines exist', async () => {
+      const thenable = Promise.resolve({ data: [], error: null });
+      const mockChain: any = {
+        select: vi.fn().mockReturnValue({ lte: vi.fn().mockReturnValue(thenable) }),
+      };
       (supabase.from as any) = vi.fn().mockReturnValue(mockChain);
 
-      const result = await glQueries.fetchTrialBalance();
+      const result = await glQueries.fetchTrialBalanceAsOf('2026-05-31');
 
       expect(result).toEqual([]);
     });

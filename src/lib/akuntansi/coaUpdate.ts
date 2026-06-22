@@ -53,5 +53,5 @@ export async function updateCoaAccount(input: CoaUpdateInput): Promise<CoaUpdate
 
   if (error) throw new Error(error.message);
 
-  return (data as any) as CoaUpdateResult;
+  return (data as { ok: true; updated_at: string }) as CoaUpdateResult;
 }

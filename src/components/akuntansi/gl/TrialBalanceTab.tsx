@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { Scale, FileDown, Grid, CheckCircle, AlertTriangle } from 'lucide-react';
 import {
-  fetchTrialBalance,
+  fetchTrialBalanceAsOf,
   fetchAccountingPeriods,
 } from '../../../lib/akuntansi/glQueries';
 import type { TrialBalanceRowWithMetadata } from '../../../lib/akuntansi/glQueries';
@@ -99,6 +99,23 @@ function periodLabel(p: AccountingPeriod): string {
   return `${MONTH_NAMES_ID[p.period_month - 1]} ${p.period_year} (${p.status === 'OPEN' ? 'Berjalan' : 'Closed'})`;
 }
 
+/**
+ * Compute the "as-of date" for a trial balance query from a given period.
+ * - OPEN period → today (WIB), so the TB includes all entries up to now.
+ * - CLOSED/REOPENED period → last calendar day of that month.
+ */
+function asOfDateForPeriod(period: AccountingPeriod): string {
+  if (period.status === 'OPEN') {
+    // Use today in WIB timezone
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  }
+  // Last day of period month
+  const lastDay = new Date(period.period_year, period.period_month, 0);
+  const mm = String(lastDay.getMonth() + 1).padStart(2, '0');
+  const dd = String(lastDay.getDate()).padStart(2, '0');
+  return `${period.period_year}-${mm}-${dd}`;
+}
+
 /** Find the period matching today's WIB year/month, or fall back to first in list. */
 function findCurrentPeriod(periods: AccountingPeriod[]): AccountingPeriod | undefined {
   const now = new Date();
@@ -140,14 +157,14 @@ export default function TrialBalanceTab({
     async function loadInitial() {
       setLoading(true);
       try {
-        const [periodsData, balanceData] = await Promise.all([
-          fetchAccountingPeriods(),
-          // TODO: filter by periodId once fetchTrialBalance supports it
-          fetchTrialBalance(),
-        ]);
+        const periodsData = await fetchAccountingPeriods();
+        const current = findCurrentPeriod(periodsData);
+        const asOfDate = current
+          ? asOfDateForPeriod(current)
+          : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+        const balanceData = await fetchTrialBalanceAsOf(asOfDate);
         if (!cancelled) {
           setPeriods(periodsData);
-          const current = findCurrentPeriod(periodsData);
           setSelectedPeriod(current ?? null);
           setRows(balanceData);
         }
@@ -166,13 +183,15 @@ export default function TrialBalanceTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-fetch when selected period changes (after initial mount)
+  // Re-fetch when selected period changes
   function handlePeriodChange(periodId: string) {
     const period = periods.find(p => p.id === periodId) ?? null;
     setSelectedPeriod(period);
     setLoading(true);
-    // TODO: pass periodId once fetchTrialBalance accepts it
-    fetchTrialBalance()
+    const asOfDate = period
+      ? asOfDateForPeriod(period)
+      : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    fetchTrialBalanceAsOf(asOfDate)
       .then(data => {
         setRows(data);
       })

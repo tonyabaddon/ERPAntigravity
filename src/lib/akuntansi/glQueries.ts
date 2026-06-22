@@ -9,6 +9,7 @@ import type {
   GeneralLedgerRow,
   TrialBalanceRow,
   NormalBalance,
+  AccountType,
 } from './types';
 
 /**
@@ -48,49 +49,142 @@ export interface CoaTreeRow {
 }
 
 /**
- * Fetch trial balance with COA metadata.
- * Joins trial_balance view with chart_of_accounts to include parent_id, is_system, is_active.
- * Returns all active accounts with their debit/credit totals and net balance.
+ * Raw line row returned from journal_entry_lines joined with journal_entries + chart_of_accounts.
+ * The embedded relations may be an array or object depending on supabase-js inference.
+ */
+interface RawJournalLine {
+  account_id: string;
+  side: 'DEBIT' | 'CREDIT';
+  amount: number;
+  journal_entries: Array<{ entry_date: string }> | { entry_date: string } | null;
+  chart_of_accounts:
+    | Array<{
+        id: string;
+        account_code: string;
+        account_name: string;
+        account_type: string;
+        account_subtype: string | null;
+        parent_id: string | null;
+        is_system: boolean;
+        is_active: boolean;
+        normal_balance: NormalBalance;
+      }>
+    | {
+        id: string;
+        account_code: string;
+        account_name: string;
+        account_type: string;
+        account_subtype: string | null;
+        parent_id: string | null;
+        is_system: boolean;
+        is_active: boolean;
+        normal_balance: NormalBalance;
+      }
+    | null;
+}
+
+/**
+ * Fetch trial balance as of a given date, filtering entries with entry_date <= asOfDate.
+ * Queries journal_entry_lines directly (bypasses the all-time trial_balance view) so that
+ * period selection in the UI actually changes which entries are aggregated.
+ *
+ * @param asOfDate - ISO date string (YYYY-MM-DD); only entries on or before this date are included
  * @returns Array of trial balance rows sorted by account code
  */
-export async function fetchTrialBalance(): Promise<TrialBalanceRowWithMetadata[]> {
+export async function fetchTrialBalanceAsOf(asOfDate: string): Promise<TrialBalanceRowWithMetadata[]> {
   const sb = requireSupabase();
+
   const { data, error } = await sb
-    .from('trial_balance')
+    .from('journal_entry_lines')
     .select(
       `
       account_id,
-      account_code,
-      account_name,
-      account_type,
-      account_subtype,
-      normal_balance,
-      total_debit,
-      total_credit,
-      balance,
-      coa:chart_of_accounts!account_id(parent_id, is_system, is_active)
-      `
+      side,
+      amount,
+      journal_entries!inner(entry_date),
+      chart_of_accounts!inner(id, account_code, account_name, account_type, account_subtype, parent_id, is_system, is_active, normal_balance)
+      `,
     )
-    .order('account_code', { ascending: true });
+    .lte('journal_entries.entry_date', asOfDate);
 
   if (error) throw new Error(error.message);
 
-  // Transform flat response into typed objects
-  const rows = (data ?? []) as any[];
-  return rows.map(row => ({
-    account_id: row.account_id,
-    account_code: row.account_code,
-    account_name: row.account_name,
-    account_type: row.account_type,
-    account_subtype: row.account_subtype,
-    normal_balance: row.normal_balance,
-    total_debit: Number(row.total_debit),
-    total_credit: Number(row.total_credit),
-    balance: Number(row.balance),
-    parent_id: row.coa?.[0]?.parent_id ?? null,
-    is_system: row.coa?.[0]?.is_system ?? false,
-    is_active: row.coa?.[0]?.is_active ?? true,
-  })) as TrialBalanceRowWithMetadata[];
+  const lines = (data ?? []) as RawJournalLine[];
+
+  // Aggregate per account_id
+  type AccMap = {
+    account_id: string;
+    account_code: string;
+    account_name: string;
+    account_type: AccountType;
+    account_subtype: string | null;
+    normal_balance: NormalBalance;
+    parent_id: string | null;
+    is_system: boolean;
+    is_active: boolean;
+    total_debit: number;
+    total_credit: number;
+  };
+  const accMap = new Map<string, AccMap>();
+
+  for (const line of lines) {
+    const coa = Array.isArray(line.chart_of_accounts)
+      ? line.chart_of_accounts[0]
+      : line.chart_of_accounts;
+    if (!coa) continue;
+
+    let acc = accMap.get(line.account_id);
+    if (!acc) {
+      acc = {
+        account_id: line.account_id,
+        account_code: coa.account_code,
+        account_name: coa.account_name,
+        account_type: coa.account_type as AccountType,
+        account_subtype: coa.account_subtype,
+        normal_balance: coa.normal_balance,
+        parent_id: coa.parent_id,
+        is_system: coa.is_system,
+        is_active: coa.is_active,
+        total_debit: 0,
+        total_credit: 0,
+      };
+      accMap.set(line.account_id, acc);
+    }
+
+    const amount = Number(line.amount);
+    if (line.side === 'DEBIT') {
+      acc.total_debit += amount;
+    } else {
+      acc.total_credit += amount;
+    }
+  }
+
+  // Build final rows with balance
+  const rows: TrialBalanceRowWithMetadata[] = Array.from(accMap.values()).map(acc => {
+    const balance =
+      acc.normal_balance === 'DEBIT'
+        ? acc.total_debit - acc.total_credit
+        : acc.total_credit - acc.total_debit;
+    return {
+      account_id: acc.account_id,
+      account_code: acc.account_code,
+      account_name: acc.account_name,
+      account_type: acc.account_type,
+      account_subtype: acc.account_subtype,
+      normal_balance: acc.normal_balance,
+      total_debit: acc.total_debit,
+      total_credit: acc.total_credit,
+      balance,
+      parent_id: acc.parent_id,
+      is_system: acc.is_system,
+      is_active: acc.is_active,
+    };
+  });
+
+  // Sort by account_code ascending (mimic the old view behavior)
+  rows.sort((a, b) => a.account_code.localeCompare(b.account_code));
+
+  return rows;
 }
 
 /**
