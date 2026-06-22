@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingBag, Receipt, Zap } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Receipt, Zap, BarChart2 } from 'lucide-react';
 import KpiCard from './ui/KpiCard';
+import AkuntansiLaporanTab from './laporan/akuntansi/AkuntansiLaporanTab';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -19,6 +20,7 @@ function colorForChannel(name: string): string {
 }
 
 type Period = '7d' | '30d' | '90d';
+type LaporanTab = 'performa' | 'akuntansi';
 
 function periodStart(p: Period): string {
   const d = new Date();
@@ -44,7 +46,13 @@ interface Summary {
   aiConvCount: number;
 }
 
-export default function LaporanScreen() {
+interface LaporanScreenProps {
+  showToast?: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+}
+
+export default function LaporanScreen(props: LaporanScreenProps) {
+  const showToast = props.showToast ?? (() => {});
+  const [activeTab, setActiveTab] = useState<LaporanTab>('performa');
   const [period, setPeriod] = useState<Period>('30d');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dailyRevenueByChannel, setDailyRevenueByChannel] = useState<Array<{
@@ -85,28 +93,51 @@ export default function LaporanScreen() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header + period selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded-3xl border border-white/60 shadow-sm">
-        <div>
-          <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, pesanan, dan efisiensi AI</p>
-        </div>
-        <div className="flex gap-2">
-          {(['7d', '30d', '90d'] as Period[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                period === p
-                  ? 'bg-[#012749] text-white shadow'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749]'
-              }`}
-            >
-              {p === '7d' ? '7 Hari' : p === '30d' ? '30 Hari' : '90 Hari'}
-            </button>
-          ))}
-        </div>
+      {/* Top tab strip */}
+      <div className="flex gap-2 bg-white p-2 rounded-3xl border border-[#c7d7f5] w-fit">
+        <button
+          onClick={() => setActiveTab('performa')}
+          className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
+            activeTab === 'performa' ? 'bg-[#012749] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" /> Performa
+        </button>
+        <button
+          onClick={() => setActiveTab('akuntansi')}
+          className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
+            activeTab === 'akuntansi' ? 'bg-[#012749] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+          }`}
+        >
+          <BarChart2 className="w-3.5 h-3.5" /> Akuntansi
+        </button>
       </div>
+
+      {/* Performa Tab */}
+      {activeTab === 'performa' && (
+      <div className="space-y-6">
+        {/* Header + period selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded-3xl border border-white/60 shadow-sm">
+          <div>
+            <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, pesanan, dan efisiensi AI</p>
+          </div>
+          <div className="flex gap-2">
+            {(['7d', '30d', '90d'] as Period[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                  period === p
+                    ? 'bg-[#012749] text-white shadow'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749]'
+                }`}
+              >
+                {p === '7d' ? '7 Hari' : p === '30d' ? '30 Hari' : '90 Hari'}
+              </button>
+            ))}
+          </div>
+        </div>
 
       {!isSupabaseConfigured && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-sm text-yellow-800">
@@ -246,36 +277,41 @@ export default function LaporanScreen() {
         </div>
       </div>
 
-      {/* Top products */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#e5eeff] shadow-xl">
-        <h4 className="text-lg font-bold text-[#012749] mb-4">Produk Terlaris</h4>
-        {topProducts.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">
-            {isSupabaseConfigured ? 'Belum ada data produk untuk periode ini.' : '—'}
-          </p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-400 uppercase border-b border-gray-100">
-                <th className="text-left pb-3 font-bold">#</th>
-                <th className="text-left pb-3 font-bold">Produk</th>
-                <th className="text-right pb-3 font-bold">Qty</th>
-                <th className="text-right pb-3 font-bold">Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topProducts.map((p, i) => (
-                <tr key={i} className="border-b border-gray-50 hover:bg-[#f8f9ff] transition-colors">
-                  <td className="py-3 text-gray-300 font-bold w-8">{i + 1}</td>
-                  <td className="py-3 text-[#012749] font-semibold">{p.name}</td>
-                  <td className="py-3 text-right text-gray-600">{p.qty}</td>
-                  <td className="py-3 text-right font-bold text-[#2d8a4e]">{formatRupiah(p.revenue)}</td>
+        {/* Top products */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+          <h4 className="text-lg font-bold text-[#012749] mb-4">Produk Terlaris</h4>
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">
+              {isSupabaseConfigured ? 'Belum ada data produk untuk periode ini.' : '—'}
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gray-400 uppercase border-b border-gray-100">
+                  <th className="text-left pb-3 font-bold">#</th>
+                  <th className="text-left pb-3 font-bold">Produk</th>
+                  <th className="text-right pb-3 font-bold">Qty</th>
+                  <th className="text-right pb-3 font-bold">Revenue</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {topProducts.map((p, i) => (
+                  <tr key={i} className="border-b border-gray-50 hover:bg-[#f8f9ff] transition-colors">
+                    <td className="py-3 text-gray-300 font-bold w-8">{i + 1}</td>
+                    <td className="py-3 text-[#012749] font-semibold">{p.name}</td>
+                    <td className="py-3 text-right text-gray-600">{p.qty}</td>
+                    <td className="py-3 text-right font-bold text-[#2d8a4e]">{formatRupiah(p.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
+      )}
+
+      {/* Akuntansi Tab */}
+      {activeTab === 'akuntansi' && <AkuntansiLaporanTab showToast={showToast} />}
     </div>
   );
 }

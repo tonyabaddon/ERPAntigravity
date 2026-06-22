@@ -493,7 +493,7 @@ export default function App() {
           />
         );
       case 'laporan':
-        return <LaporanScreen />;
+        return <LaporanScreen showToast={triggerToast} />;
       case 'pembelian':
         return (
           <PembelianScreen
