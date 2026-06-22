@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 4 Task 8: NeracaTab + PDF SAK EMKM wiring — DONE
+
+`src/components/laporan/akuntansi/NeracaTab.tsx` created (307 lines).
+- Violet gradient hero header (linear-gradient 6b21a8 → 5b21b6)
+- As-of date picker default = WIB today; fetches `fetchNeraca(asOfDate)` on each change
+- 2-col grid (lg:grid-cols-2): LEFT = ASET sub-card (blue bg #dbeafe header, asetLancar + asetTetap sections, Akumulasi Penyusutan italic gray negative, TOTAL ASET border-t-4 footer); RIGHT stacked: LIABILITAS sub-card (rose bg #fee2e2) + EKUITAS sub-card (violet bg #e9d5ff) + balance confirmation card (emerald bg #d1fae5 border #059669, CheckCircle ✓ or AlertTriangle ⚠ diff)
+- Amber verification banner (SAK EMKM Section 4 persamaan akuntansi)
+- PDF export wired to `generateNeracaPDF(pdfData, options)` → Blob download via URL.createObjectURL
+- Excel → placeholder toast
+- `AkuntansiLaporanTab.tsx` stub replaced with `<NeracaTab showToast={props.showToast} />`
+- tsc --noEmit: clean (zero errors)
+- Commit: `55dc685..27d9368`
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0d Final Review Fixes (3 fixes)
 
 Applied 3 fixes from final whole-branch code review (commit `4d818b3`):
