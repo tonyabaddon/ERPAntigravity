@@ -3,6 +3,7 @@ import { List, TrendingUp, Layout, Droplet } from 'lucide-react';
 import MutasiTab from './MutasiTab';
 import LabaRugiTab from './LabaRugiTab';
 import NeracaTab from './NeracaTab';
+import CashFlowTab from './CashFlowTab';
 
 export interface AkuntansiLaporanTabProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -58,12 +59,9 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
         <NeracaTab showToast={props.showToast} />
       )}
 
-      {/* Cash Flow Tab Stub */}
+      {/* Cash Flow Tab */}
       {activeSubTab === 'cash-flow' && (
-        <div className="bg-white p-8 rounded-3xl border border-[#c7d7f5] text-center mt-4">
-          <Droplet className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-          <p className="text-sm text-gray-600">Laporan Cash Flow — Task 9</p>
-        </div>
+        <CashFlowTab showToast={props.showToast} />
       )}
     </div>
   );
