@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, ShoppingBag, Receipt, Zap, BarChart2 } from 'lucide-react';
 import KpiCard from './ui/KpiCard';
+import AkuntansiLaporanTab from './laporan/akuntansi/AkuntansiLaporanTab';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -45,7 +46,12 @@ interface Summary {
   aiConvCount: number;
 }
 
-export default function LaporanScreen() {
+interface LaporanScreenProps {
+  showToast?: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+}
+
+export default function LaporanScreen(props: LaporanScreenProps) {
+  const showToast = props.showToast ?? (() => {});
   const [activeTab, setActiveTab] = useState<LaporanTab>('performa');
   const [period, setPeriod] = useState<Period>('30d');
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -305,13 +311,7 @@ export default function LaporanScreen() {
       )}
 
       {/* Akuntansi Tab */}
-      {activeTab === 'akuntansi' && (
-      <div className="bg-white p-8 rounded-3xl border border-[#c7d7f5] text-center">
-        <BarChart2 className="w-12 h-12 mx-auto text-[#012749] mb-3" />
-        <h2 className="text-xl font-extrabold text-[#012749] mb-1">Laporan Akuntansi</h2>
-        <p className="text-sm text-gray-600">Mutasi · Laba Rugi · Neraca · Cash Flow — coming in Task 5</p>
-      </div>
-      )}
+      {activeTab === 'akuntansi' && <AkuntansiLaporanTab showToast={showToast} />}
     </div>
   );
 }
