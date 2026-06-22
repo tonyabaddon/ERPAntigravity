@@ -1,5 +1,19 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d Final Review Fixes (3 fixes)
+
+Applied 3 fixes from final whole-branch code review (commit `4d818b3`):
+
+**Fix 1 (CRITICAL)** — TrialBalance period selector was decorative; replaced `fetchTrialBalance()` (all-time view) with `fetchTrialBalanceAsOf(asOfDate)` that queries `journal_entry_lines` directly with `entry_date <= asOfDate`. `TrialBalanceTab` now computes `asOfDate` per period (today for OPEN, last-day-of-month for CLOSED). Period selector now actually changes displayed data.
+
+**Fix 2 (HIGH)** — Removed all `(data as any)` casts in `coaUpdate.ts` and `periodClose.ts`; replaced with explicit inline types `{ ok: true; updated_at: string }` and `{ ok: true; closed_at: string }`. Zero `any` in Phase 0d files.
+
+**Fix 3 (MEDIUM)** — `PeriodCloseModal` balance check was querying unfiltered `trial_balance` view (always balanced). Now calls `fetchTrialBalanceAsOf(periodEndDate)` scoped to period; comment documents double-entry invariant and that RPC enforces the real constraint.
+
+**Verification**: `npx tsc --noEmit` clean + 342/342 tests pass + `glQueries.test.ts` updated to test `fetchTrialBalanceAsOf`.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0d GL UI IMPLEMENTATION COMPLETE (10 tasks)
 
 Phase 0d complete. AkuntansiScreen sekarang punya 4 tabs (Trial Balance / Buku Besar / Tutup Buku / COA) — Owner bisa view full GL state, drill-down per akun, close monthly period dengan auto tax accrual, dan edit COA names. Backend 100% reuse Phase 0a infrastructure (zero schema changes selain 1 helper RPC `update_coa_account`).
