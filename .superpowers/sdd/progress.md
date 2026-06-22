@@ -15,3 +15,6 @@ Task 5: complete (commits bee4f27..4435ee5, tsc + build OK, 378 tests, branch ve
 Task 6: in progress (MutasiTab.tsx + wire into AkuntansiLaporanTab, tsc clean)
 Task 6: complete (commits 4435ee5..97ad719, tsc clean)
 Task 7: complete (LabaRugiTab.tsx created + wired into AkuntansiLaporanTab, PDF SAK EMKM wired, tsc clean, branch verified)
+Task 7: complete (commits 97ad719..55dc685, tsc clean, PDF wired)
+Task 8: complete (commits 55dc685..efe3c26, tsc clean, PDF wired)
+Task 9: complete (commits efe3c26..6509120, tsc clean)

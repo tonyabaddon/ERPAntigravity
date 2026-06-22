@@ -1,5 +1,49 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 4 Laporan IMPLEMENTATION COMPLETE (10 tasks)
+
+Phase 4 complete. LaporanScreen now has top tabs (Performa preserved + Akuntansi new). AkuntansiLaporanTab has 4 sub-tabs: Mutasi/Laba Rugi/Neraca/Cash Flow. Real PDF SAK EMKM export untuk P&L + Neraca via jspdf client-side. Zero schema changes — backend 100% reuse Phase 0a infrastructure (journal_entries + journal_entry_lines + chart_of_accounts).
+
+**Tasks status: 10/10 ✓**
+- Task 1: install jspdf + jspdf-autotable + scaffold pdfExport
+- Task 2: reportQueries.ts service (23 unit tests)
+- Task 3: pdfExport implementation Laba Rugi + Neraca (13 unit tests)
+- Task 4: LaporanScreen top tabs (Performa + Akuntansi)
+- Task 5: AkuntansiLaporanTab parent + 4 sub-tab nav
+- Task 6: MutasiTab (multi-account filter + category derivation)
+- Task 7: LabaRugiTab + PDF SAK EMKM wiring
+- Task 8: NeracaTab + PDF SAK EMKM wiring
+- Task 9: CashFlowTab pivot matrix (3 view modes)
+- Task 10: Integration tests + final validation + this entry
+
+**Deliverables:**
+- src/lib/akuntansi/reportQueries.ts (+ tests 23)
+- src/lib/akuntansi/pdfExport.ts (+ tests 13)
+- src/components/LaporanScreen.tsx (MODIFIED — top tabs)
+- src/components/laporan/akuntansi/{AkuntansiLaporanTab,MutasiTab,LabaRugiTab,NeracaTab,CashFlowTab}.tsx
+- tests/integration/akuntansi-phase4/_setup.ts, laba-rugi.test.ts, neraca.test.ts
+- package.json (+ jspdf 2.5.2, jspdf-autotable 3.8.4)
+
+**Decisions locked per brainstorm:**
+- Extend LaporanScreen with top tabs (NOT separate sidebar entry)
+- 4 sub-tabs focused: Mutasi + Laba Rugi + Neraca + Cash Flow
+- PDF SAK EMKM real impl for P&L + Neraca; Excel/CSV placeholder
+
+**Verification (2026-06-22):**
+- npm test: **2800/2800 PASS** in src/ (381 test files)
+- npx tsc --noEmit: clean
+- npm run build: ✓ OK
+- Integration tests written: Pattern C schema + joins + balance equation validation
+
+**Worktree state:**
+- Branch: worktree-akuntansi-phase4 (verified)
+- All work isolated in .claude/worktrees/akuntansi-phase4/
+- Ready to merge to main
+
+**Next:** Phase 2 Settlement atau Phase 5 Recon. Both have mockups ready.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 4 Task 8: NeracaTab + PDF SAK EMKM wiring — DONE
 
 `src/components/laporan/akuntansi/NeracaTab.tsx` created (307 lines).
