@@ -20,6 +20,7 @@ import {
   ClipboardCheck,
   PackageSearch,
   BookCheck,
+  BookOpenCheck,
   Warehouse,
   Wallet,
 } from 'lucide-react';
@@ -80,6 +81,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     // Kontrol & Laporan
     { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
     { id: 'rekonsiliasi', label: 'Rekonsiliasi & Tutup Buku', icon: BookCheck, category: 'kontrol', permKey: 'reconciliation' as keyof PermissionSet },
+    { id: 'akuntansi', label: 'Akuntansi', icon: BookOpenCheck, category: 'kontrol', permKey: 'laporan' as keyof PermissionSet },
     { id: 'laporan', label: 'Laporan', icon: BarChart2, category: 'kontrol', permKey: 'laporan' },
     // Sistem
     { id: 'user-management', label: 'User Management', icon: UserCheck, category: 'sistem', permKey: 'userManagement' },
