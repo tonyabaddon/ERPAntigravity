@@ -29,7 +29,7 @@ function requireSupabase() {
 // Source-type → category mapping
 // ---------------------------------------------------------------------------
 
-const CATEGORY_MAP: Record<string, string> = {
+export const CATEGORY_MAP: Record<string, string> = {
   KASIR_SALE: 'Penjualan',
   PEMBAYARAN: 'Bayar Pembelian',
   PIUTANG_PAYMENT: 'Pelunasan Piutang',

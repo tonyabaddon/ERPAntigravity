@@ -8,3 +8,8 @@ Task 1: complete (commits 29f98b1..61ba98f, jspdf 2.5.2 + autotable 3.8.4 instal
 Task 2: complete (commit a9becc2, reportQueries.ts 4 functions + 23 tests, tsc clean)
 Task 2: complete (commits 61ba98f..687dc01, 23/23 tests + tsc clean, branch verified)
 Task 3: complete (commit pending, generateLabaRugiPDF + generateNeracaPDF full SAK EMKM impl, 13/13 tests + 378/378 total + tsc clean, branch verified)
+Task 3: complete (commits 687dc01..a3e9738, 13/13 PDF tests + 378/378 total, tsc clean, branch verified)
+Task 4: complete (commits a3e9738..bee4f27, tsc + build OK, 378 tests still PASS, branch verified)
+Task 5: complete (commit 4435ee5, AkuntansiLaporanTab.tsx parent + 4 sub-tab nav, tsc + build OK, branch verified)
+Task 5: complete (commits bee4f27..4435ee5, tsc + build OK, 378 tests, branch verified)
+Task 6: in progress (MutasiTab.tsx + wire into AkuntansiLaporanTab, tsc clean)

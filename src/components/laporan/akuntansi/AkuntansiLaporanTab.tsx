@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { List, TrendingUp, Layout, Droplet } from 'lucide-react';
+import MutasiTab from './MutasiTab';
 
 export interface AkuntansiLaporanTabProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -40,12 +41,9 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
         })}
       </div>
 
-      {/* Mutasi Tab Stub */}
+      {/* Mutasi Tab */}
       {activeSubTab === 'mutasi' && (
-        <div className="bg-white p-8 rounded-3xl border border-[#c7d7f5] text-center mt-4">
-          <List className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-          <p className="text-sm text-gray-600">Mutasi Akun — Task 6</p>
-        </div>
+        <MutasiTab showToast={props.showToast} />
       )}
 
       {/* Laba Rugi Tab Stub */}
