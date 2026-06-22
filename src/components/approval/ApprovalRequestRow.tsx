@@ -26,6 +26,13 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   customer_credit_deactivate: 'Nonaktifkan Kredit',
   initial_stock: 'Stok Awal',
   piutang_write_off: 'Hapus Piutang',
+  purchase_order_create: 'Buat PO',
+  purchase_order_amend: 'Ubah PO',
+  tagihan_create: 'Buat Tagihan',
+  supplier_payment: 'Bayar Supplier',
+  bnl_create: 'Buat BNL',
+  tukar_faktur: 'Tukar Faktur',
+  purchase_return: 'Retur Pembelian',
 };
 
 const TYPE_ICON: Record<
@@ -44,6 +51,13 @@ const TYPE_ICON: Record<
   customer_credit_deactivate:   { icon: '🚫', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
   initial_stock:                { icon: '📦', bg: 'bg-slate-50',   fg: 'text-slate-700'   },
   piutang_write_off:            { icon: '🗑️', bg: 'bg-rose-50',    fg: 'text-rose-700'    },
+  purchase_order_create:        { icon: '📋', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  purchase_order_amend:         { icon: '✏️', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  tagihan_create:               { icon: '🧾', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  supplier_payment:             { icon: '💳', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  bnl_create:                   { icon: '📄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  tukar_faktur:                 { icon: '🔄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  purchase_return:              { icon: '↩️', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {

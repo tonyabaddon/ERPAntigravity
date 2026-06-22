@@ -4,6 +4,8 @@ import type { RakitServiceType } from '../../types';
 
 interface RakitInlineFormProps {
   type: RakitServiceType;
+  /** Display name from serviceTypes DB lookup. Falls back to hardcoded labels when omitted. */
+  serviceTypeName?: string;
   onAdd: (line: {
     type: RakitServiceType;
     description: string;
@@ -13,11 +15,13 @@ interface RakitInlineFormProps {
   onCancel: () => void;
 }
 
-export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFormProps) {
+export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel }: RakitInlineFormProps) {
   const [description, setDescription] = useState('');
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
   const [hppEstimate, setHppEstimate] = useState<number>(0);
   const isCustom = type === 'jasa_custom_panel';
+  // Use DB name when provided, fall back to hardcoded labels.
+  const displayName = serviceTypeName ?? (isCustom ? 'Jasa Custom Panel' : 'Wiring Panel');
 
   const canSubmit = description.trim().length > 0 && estimatedPrice > 0;
   const submit = () => {
@@ -39,7 +43,7 @@ export default function RakitInlineForm({ type, onAdd, onCancel }: RakitInlineFo
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
             isCustom ? 'bg-sky-50 text-sky-700 border border-sky-200' : 'bg-orange-50 text-orange-700 border border-orange-200'
           }`}>
-            {isCustom ? '📦 Jasa Custom Panel' : '⚡ Wiring Panel'}
+            {isCustom ? '📦' : '⚡'} {displayName}
           </span>
           <span className="text-[11px] text-slate-500">isi detail di bawah</span>
         </div>

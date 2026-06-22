@@ -11,8 +11,12 @@ import SalesChannelConfigPanel from './pengaturan/SalesChannelConfigPanel';
 import IdentitasTokoCard from './pengaturan/IdentitasTokoCard';
 import JamOperasionalCard from './pengaturan/JamOperasionalCard';
 import RekeningBankCard from './pengaturan/RekeningBankCard';
+import ModulSwitchesPanel from './pengaturan/ModulSwitchesPanel';
+import JenisJasaCrudPanel from './pengaturan/JenisJasaCrudPanel';
+import ApprovalRulesPanel from './pengaturan/ApprovalRulesPanel';
+import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
 
-type PengaturanTab = 'umum' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -37,7 +41,12 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       if (typeof key === 'string' && key.startsWith('can_')) return value === true;
       return value !== false;
     };
-    const list: TabDef<PengaturanTab>[] = [{ id: 'umum', label: 'Umum' }];
+    const list: TabDef<PengaturanTab>[] = [
+      { id: 'umum', label: 'Umum' },
+      { id: 'modul-jasa', label: 'Modul & Jasa' },
+      { id: 'approval', label: 'Approval' },
+      { id: 'pajak', label: 'Pajak' },
+    ];
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
     if (isVisible('whatsappAi')) list.push({ id: 'whatsapp-ai', label: 'WhatsApp AI' });
     if (isVisible('canConfigureSalesChannels')) list.push({ id: 'kanal-penjualan', label: 'Kanal Penjualan' });
@@ -435,6 +444,22 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         {activeTab === 'umum' && umumContent}
+        {activeTab === 'modul-jasa' && (
+          <div className="space-y-6 animate-fadeIn">
+            <section>
+              <h3 className="text-base font-bold text-[#012749] mb-3">📦 Modul ERP</h3>
+              <p className="text-xs text-slate-500 mb-4">Modul yang aktif di toko. Mematikan modul = menu & fitur terkait disembunyikan.</p>
+              <ModulSwitchesPanel showToast={showToast} />
+            </section>
+            <section>
+              <h3 className="text-base font-bold text-[#012749] mb-3">🛠️ Master Jenis Jasa</h3>
+              <p className="text-xs text-slate-500 mb-4">Jasa yang ditawarkan toko. Yang aktif muncul di Catat Penjualan Step 2.</p>
+              <JenisJasaCrudPanel showToast={showToast} />
+            </section>
+          </div>
+        )}
+        {activeTab === 'approval' && <ApprovalRulesPanel showToast={showToast} />}
+        {activeTab === 'pajak' && <PajakSettingsPanel showToast={showToast} />}
         {activeTab === 'notifikasi' && (
           <NotificationSettingsScreen
             config={props.notificationConfig}

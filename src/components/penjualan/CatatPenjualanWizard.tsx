@@ -22,6 +22,7 @@ import type {
   ActivePage,
   DbCustomer,
   DbCustomerWithStats,
+  DbServiceType,
   KasirChannel,
   KasirDpInputType,
   KasirItem,
@@ -37,6 +38,7 @@ import {
   stockService,
   supabase,
 } from '../../lib/supabaseClient';
+import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
 import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
@@ -108,6 +110,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const [customers, setCustomers] = useState<DbCustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [tempoOutstanding, setTempoOutstanding] = useState<number>(0);
+  // Active service_types: fetched once on mount, passed to Step2Items → CartRows
+  // so cart rakit rows display dynamic names from DB instead of hardcoded labels.
+  const [serviceTypes, setServiceTypes] = useState<DbServiceType[]>([]);
 
   const { warehouses } = useWarehouses();
 
@@ -118,6 +123,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       .catch((err) => showToast(`Gagal memuat data: ${err?.message ?? 'unknown'}`, 'warning'))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Load active service_types for dynamic RakitButtonsRow labels in CartRows.
+  useEffect(() => {
+    serviceTypesService.fetchActive()
+      .then(setServiceTypes)
+      .catch((err: unknown) => console.error('serviceTypes fetch (wizard):', err));
   }, []);
 
   // ── Derived totals ────────────────────────────────────────────────────────
@@ -616,6 +628,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   return map;
                 })()}
                 showToast={showToast}
+                serviceTypes={serviceTypes}
               />
             )}
 

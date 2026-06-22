@@ -1,5 +1,109 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Final-review fixes (C1 + C2)
+
+**DONE.** Whole-branch review found 2 Critical merge-blockers; both fixed in single commit.
+
+**C1 — All 4 Pengaturan panels could READ but not WRITE.** Migrations 1/3/4 `REVOKE INSERT/UPDATE/DELETE FROM authenticated` on the 3 settings tables, but services used direct PostgREST `.update()/.insert()` — every save would 403 at runtime. Masked by mocked unit tests.
+
+Fix: new migration `20260622000007_pengaturan_write_rpcs.sql` adds 5 SECURITY DEFINER mutation RPCs (`set_approval_setting`, `set_tenant_modul`, `set_tenant_pajak`, `upsert_service_type`, `deactivate_service_type`) with `NOT_AUTHENTICATED` + `INSUFFICIENT_ROLE` fail-closed role gate (Owner / Staff Admin Toko via `admin_users`). Defense-in-depth matches mig 5/6 pattern. `pengaturanServices.ts` swaps the 6 mutate methods to `supabase.rpc(...)`; `create()` keeps full-row signature by re-fetching the inserted row.
+
+**C2 — PajakSettingsPanel.save() dropped computed expires_at.** `save()` recomputed `pajak_umkm_expires_at` for local state then sent the original `patch` to DB → UMKM expiry tracking would persist as NULL/stale. Fix: build `finalPatch` that forwards the computed value when it changed.
+
+**Verification:**
+- MCP `apply_migration` x2: initial apply + v2 fail-closed patch — both `{success:true}`.
+- DB smoke 5/5 RPC mutations PASS with real `auth.uid()` via `set_config('request.jwt.claims', json{sub})`. Bonus: role-gate-blocks-unknown-user smoke PASS (`INSUFFICIENT_ROLE` fires when authed UUID has no admin_users row); NOT_AUTHENTICATED smoke PASS (when `auth.uid()` is NULL).
+- `npm run lint`: clean (tsc --noEmit).
+- `npm test --run`: 268/268 PASS across 37 files (test file restructured for `.rpc()` mock signature with call-tracking).
+- `npm run build`: 2.67s OK.
+
+**Files:**
+- `supabase/migrations/20260622000007_pengaturan_write_rpcs.sql` (247 LOC)
+- `src/lib/pengaturan/pengaturanServices.ts` — 6 methods swapped to RPC, signatures preserved
+- `src/lib/pengaturan/pengaturanServices.test.ts` — mock now tracks `rpc(fn, args)` calls; assertions verify exact RPC name + args
+- `src/components/pengaturan/PajakSettingsPanel.tsx` — `save()` forwards `pajak_umkm_expires_at` when changed
+- `.superpowers/sdd/final-review-fix-report.md`
+
+---
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 7: Patch 8 approval RPCs
+
+**DONE_WITH_CONCERNS.** Re-dispatch after first attempt BLOCKED on 12→8 scope mismatch. Patched 8 of 12 brief gates (4 kasir + initial_stock deferred to V1.5 — no server-side request RPC exists yet).
+
+**Changes (migration `20260622000005_patch_existing_approval_rpcs.sql`, 1545 LOC, 24 functions = 3 per gate × 8 gates):**
+- Each gate gets `_apply_<gate>_change(p_approval_id)` SECURITY DEFINER helper (REVOKEd from PUBLIC/anon/authenticated), `commit/approve_<gate>` thin verify-then-delegate wrapper (signature + return type preserved), and `request_<gate>` extended with bypass branch.
+- Bypass path: `_transition_approval(v_approval, 'approved', actor, 'bypass') → _apply_<gate>_change(v_approval)`. New `decision_channel='bypass'` value (column has no CHECK constraint).
+- Business validation runs BEFORE bypass branch (evidence_urls for adjustment, field whitelist for price_change, term_days allowed-list for cc_activate, order status check for tempo_write_off, etc.) — bypass cannot skip validation.
+- All 8 satellite INSERTs preserved (stock_adjustments, stock_opname_sessions, price_change_requests, piutang_write_off_requests, rakit_lock_requests) — required to satisfy NOT NULL FK constraints to approval_requests.
+
+**8 gates patched:** adjustment, opname (via submit_opname_for_owner + commit_opname), price_change, customer_credit_{activate,limit_change,deactivate}, tempo_write_off (piutang_write_off), rakit_lock.
+
+**Deferred V1.5:** kasir_price_override, kasir_void, kasir_refund (kasir approval feature anticipated but unwired — no INSERT path in src/), initial_stock (frontend INSERTs approval_request directly via supabaseClient.ts:1637; needs RPC wrap as separate task). Their approval_settings rows from Task 2 stay ready — `_check_approval_required` works automatically when those features ship.
+
+**Verification:**
+- MCP `apply_migration` returned `{success:true}`.
+- DB smoke 14 PASS / 14 ran across 8 gate groups: full e2e for 7 (adjustment ¹, price_change, cc_activate, cc_limit_change, cc_deactivate, tempo_write_off, rakit_lock — all with both bypass + PIN cases verified by checking AR status/channel + business state mutation); routing-only for opname (full e2e needs session+witness ack scaffolding, deferred).
+- ¹ Adjustment bypass branch fires + transitions AR + calls helper; helper raises on stock_adjustments.warehouse_id NULL (pre-existing precondition matching legacy commit_approved_adjustment behavior — not a regression).
+- All smoke DO blocks rolled back via `RAISE EXCEPTION 'rollback'` → zero residual DB state.
+- Garindo regression: PIN-mode flow verified unchanged (AR row inserted with status='pending', no business state mutation, satellite created, ready for Owner PIN approval through existing channels).
+
+**Concerns:**
+- Opname bypass full-e2e deferred — routing-decision verified, code path is literal mirror of cc_activate/tempo_write_off branches that DID pass e2e.
+- Adjustment bypass blocked at helper by pre-existing warehouse_id NULL precondition (external backfill responsibility, MEMORY note: "phase 3 warehouse cutover pending").
+
+**Files:**
+- `supabase/migrations/20260622000005_patch_existing_approval_rpcs.sql`
+- `.superpowers/sdd/task-7-report.md`
+
+---
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 6: Service modules
+
+**DONE.** 3 service modules with CRUD methods, tested (6/6 PASS).
+
+**Changes (commit `35bb66b`):**
+- `src/lib/pengaturan/pengaturanServices.ts` (new, 109 lines):
+  - `approvalSettingsService`: `fetch()`, `updateOne(requestType, patch)`.
+  - `tenantSettingsService`: `fetch()`, `updateModul(key, value)`, `updatePajak(patch)`.
+  - `serviceTypesService`: `fetchActive()`, `fetchAll()`, `create(input)`, `update(id, patch)`, `deactivate(id)`.
+  - Singleton-row pattern via `.is('tenant_id', null)`.
+- `src/lib/pengaturan/pengaturanServices.test.ts` (new, 85 lines):
+  - 6 test cases covering fetch shape + non-throwing mutate calls.
+- `src/lib/supabaseClient.ts`: Added comment section header pointing to new file.
+
+**Deviation from brief:** Services placed in `src/lib/pengaturan/pengaturanServices.ts` (not appended to `supabaseClient.ts`) and test imports from `'./pengaturanServices'` (not `'../supabaseClient'`). Required to avoid circular dependency that would defeat `vi.mock`.
+
+**Verification:**
+- `npm run lint`: 0 errors.
+- `npm test`: 254/254 PASS.
+- Report: `.superpowers/sdd/task-6-report.md`.
+
+---
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 5: TypeScript types
+
+**DONE.** Added all type definitions for DB schema created in Tasks 1-4.
+
+**Changes (commit `36c38be`):**
+- `src/types.ts`: 
+  - Extended `ApprovalRequestType` union (12 existing → 19 with 7 new Pembelian gates: purchase_order_create, purchase_order_amend, tagihan_create, supplier_payment, bnl_create, tukar_faktur, purchase_return).
+  - Added `ApprovalVerificationMethod` union (NONE, PIN, WA_BUTTON, APP_INBOX).
+  - Added `DbApprovalSettings` interface (13 fields matching DB table).
+  - Added `PajakMode` union (PKP, NON_PKP, FINAL_UMKM).
+  - Added `JenisBadan` union (PT, CV, OP, KOPERASI, FIRMA).
+  - Added `ModulSwitchKey` union (7 modul switches).
+  - Added `DbTenantSettings` interface (24 fields: 7 modul + 13 pajak + 4 audit).
+  - Added `PricingModel` union (LUMP_SUM, PER_HOUR, PER_METER, PER_UNIT).
+  - Added `DbServiceType` interface (14 fields matching DB table).
+- `src/components/approval/ApprovalRequestRow.tsx`:
+  - Updated `TYPE_LABEL` + `TYPE_ICON` to include 7 new Pembelian gate types (labels in Indonesian, icons with orange-50 background for Pembelian vs. other domains).
+
+**Verification:**
+- `npm run lint`: 0 errors (tsc --noEmit).
+- Report: `.superpowers/sdd/task-5-report.md`.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0a IMPLEMENTATION COMPLETE (18 tasks, Task 13 deferred)
 
 All 15 migrations applied to staging Supabase. 59 SAK EMKM COA seeded. All RPCs tested (_post_journal_entry, close_accounting_period, set_opening_balance, close_fiscal_year, accrue_period_taxes). Trial Balance balanced. Opening Balance Wizard UI live di sidebar Akuntansi (Kontrol & Laporan group).
@@ -8372,6 +8476,104 @@ Pre-Task-7: `followup.go` set `ai_active=false` after 6 cumulative follow-ups wi
 Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply after cool-off → AI no longer auto-responds. `ResetFollowupCounter` clears the counter but does NOT flip `ai_active=true`. Conv lands in Sales Inbox "Butuh Aksi" category (per `categorize()` helper).
 
 **Decision (founder, 2026-06-21):** Accept as intended behavior. The "cool-off → admin handle" model is consistent with the override design ("AI off = admin take over"). No code change. Owner/admin sees these convs in the "Butuh Aksi" filter and can re-enable AI manually or take over the chat directly.
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 1 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Plan:** Phase 1 Pengaturan MSME Configurability — 20-task implementation. Docs/specs at `docs/superpowers/specs/2026-06-21-pengaturan-msme-configurability-design.md`
+- **Task 1:** Create `approval_settings` table + `_check_approval_required` helper function
+- **File created:** `supabase/migrations/20260622000001_approval_settings_table.sql`
+  - Table `public.approval_settings`: 15 columns (id, tenant_id, request_type, approval_required, verification_method, threshold_amount, threshold_qty, threshold_percent, approver_role, requestor_bypass_self, reason_required, created_at, updated_at, updated_by)
+  - UNIQUE constraint on `(tenant_id, request_type)` for Phase 1 single-tenant singleton pattern (nullable tenant_id for future V2 multi-tenant)
+  - Index on `request_type` for fast lookups
+  - Security: SELECT granted to `authenticated`, INSERT/UPDATE/DELETE revoked from all
+  - Function `public._check_approval_required(p_type approval_request_type, p_amount NUMERIC, p_qty INTEGER, p_actor_role TEXT) RETURNS TEXT` — routing decision (bypass/pin/wa_button/app_inbox)
+  - Logic: checks approval_required, threshold_amount, threshold_qty, requestor_bypass_self, verification_method (in order); fallback to 'pin' if no setting row (legacy compatibility)
+  - Security: SECURITY DEFINER, EXECUTE revoked from all roles
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`
+- **Smoke tests:**
+  - RED (pre-migration): DO-block calling `_check_approval_required` → ERROR `42883: function does not exist` ✓
+  - GREEN (post-migration): DO-block inserts test rows, calls function with no row (expect 'pin') and OFF row (expect 'bypass'), asserts pass before RAISE EXCEPTION 'rollback' ✓
+- **Commit:** `a8345d3` — "feat(pengaturan): approval_settings table + _check_approval_required helper"
+- **Next:** Task 2 — seed approval_settings rows for all 12 approval_request_type values with Phase 1 defaults.
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 4 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Task 4:** Create `service_types` table + Garindo seed (Custom Panel + Wiring Panel) + backfill `rakit_lock` approval_requests payloads
+- **File created:** `supabase/migrations/20260622000004_service_types_table.sql` (44 lines)
+  - Table `public.service_types`: 12 columns (id, tenant_id, code, name, description, pricing_model, requires_material_lock, default_account_revenue, default_account_cogs, color_hex, is_active, display_order) + timestamps
+  - UNIQUE constraint on `(tenant_id, code)` for tenant-scoped service codes
+  - Index on `(is_active, display_order)` for filtering + display ordering
+  - pricing_model CHECK: 'LUMP_SUM' | 'PER_HOUR' | 'PER_METER' | 'PER_UNIT'
+  - Security: SELECT granted to `authenticated`, INSERT/UPDATE/DELETE revoked from all
+  - Garindo seed: 2 rows
+    - `custom_panel`: LUMP_SUM, requires_material_lock=TRUE, color_hex='#9333EA', display_order=1
+    - `wiring_panel`: LUMP_SUM, requires_material_lock=TRUE, color_hex='#0EA5E9', display_order=2
+  - Backfill UPDATE: existing `approval_requests` (request_type='rakit_lock') with payload->'jasa_type' → payload->'service_type_id' (idempotent, skips if already has service_type_id)
+- **Applied via:** Supabase MCP `apply_migration` → `{"success": true}`
+- **Smoke tests:**
+  - RED (pre-migration): `SELECT 1 FROM public.service_types` → ERROR `42P01: relation does not exist` ✓
+  - GREEN (post-migration): DO-block asserts custom_panel name='Custom Panel', requires_material_lock=TRUE, wiring_panel color_hex='#0EA5E9', then RAISE EXCEPTION 'rollback' ✓
+  - Persistent SELECT: 2 rows returned with correct fields (id=1,2; names; colors; lock=TRUE for both; display_order=1,2) ✓
+  - Backfill: COUNT(*)=0 rakit_lock rows with service_type_id (no pre-existing records in ekhhojaezdfjfwuxyjkl development tenant) ✓
+- **Commit:** `1234973` — "feat(pengaturan): service_types master + Garindo seed Custom/Wiring Panel"
+- **Next:** Task 5 — `approval_reason_types` table + seed for 5 reason categories (Retur/Diskon/Garansi/BatasAirflow/Lainnya).
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 9 DONE
+
+- **Branch:** `feat/pengaturan-msme-configurability` (worktree `.claude/worktrees/pengaturan-msme`)
+- **Plan:** Phase 1 Pengaturan MSME Configurability — 20-task implementation. Docs/specs at `docs/superpowers/specs/2026-06-21-pengaturan-msme-configurability-design.md`
+- **Task 9:** Per-gate approval matrix smoke (documentation + execution)
+- **File created:** `tests/integration/approval-matrix.test.sql` (164 lines)
+  - DO-block with 25 test cases across 6 key gates (adjustment, opname, price_change, customer_credit_activate, kasir_refund, rakit_lock, purchase_order_create)
+  - Covers: bypass on approval_required=FALSE, threshold qty/amount, self-bypass (requestor_bypass_self=TRUE), verification method routing (PIN, APP_INBOX, WA_BUTTON)
+  - Test pattern: set_config('request.jwt.claim.sub') → UPDATE approval_settings → call _check_approval_required → IF decision <> expected THEN RAISE EXCEPTION → RAISE NOTICE 'All 25 matrix tests PASS' → RAISE EXCEPTION 'rollback'
+- **Execution via:** Supabase MCP `execute_sql` with full DO-block
+  - Expected: ERROR P0001: rollback (side effects zeroed by transaction rollback)
+  - NOTICE raised before rollback: "All 25 matrix tests PASS"
+- **Post-execution verification:**
+  - SELECT approval_settings (tenant_id IS NULL) verified unchanged:
+    - 12 rows with approval_required=TRUE, verification_method='PIN' (adjustment, opname, price_change, kasir_price_override, kasir_void, kasir_refund, rakit_lock, customer_credit_activate, customer_credit_limit_change, customer_credit_deactivate, initial_stock, piutang_write_off)
+    - 7 rows with approval_required=FALSE, verification_method='NONE' (purchase_order_create, purchase_order_amend, tagihan_create, supplier_payment, bnl_create, tukar_faktur, purchase_return)
+  - Garindo seed unchanged: Y
+- **Commit:** `68aa43a` — "test(pengaturan): per-gate approval matrix smoke (25 cases)"
+- **Report:** `.superpowers/sdd/task-9-report.md` (documented execution output + verification)
+- **Next:** Task 10 — UI configurability screen for approval_settings (read-only display).
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 17: Sidebar cascade wiring
+
+**DONE.** Sidebar now reads tenant_settings on mount and hides menu items when their corresponding modul switch is OFF.
+
+**Changes (`src/components/Sidebar.tsx`, +34 / -3 LOC):**
+- 3 new imports: `DbTenantSettings` (type), `tenantSettingsService`, `isMenuVisible + MenuKey`
+- `useState<DbTenantSettings | null>(null)` + `useEffect` fetch placed before early return (hooks rules)
+- `ACTIVEPAGE_TO_MENUKEY` partial map: kasir→kasir, piutang→piutang, tukar-faktur→tukarFaktur, transfer-gudang→transferGudang, pesanan-wip→pesananWip, akuntansi→akuntansi
+- Modul gate AND-composed into existing `visibleItems.filter()` — single pass, optimistic when settings=null
+
+**Verification:**
+- `npm run lint` (tsc --noEmit): PASS (no output)
+- `npm run build`: PASS (2798 modules, 3.01s; pre-existing warnings only)
+- **Commit:** `c1b6c03` — "feat(sidebar): wire cascade map for modul-based menu visibility"
+- **Report:** `.superpowers/sdd/task-17-report.md`
+
+## 2026-06-22 — Pengaturan MSME Configurability Phase 1 — Task 18: Dynamic RakitButtonsRow
+
+**DONE (backwards-compat).** RakitButtonsRow now renders buttons dynamically from `serviceTypesService.fetchActive()`.
+
+**Key finding:** Seeded `service_types.code` values (`custom_panel`, `wiring_panel`) don't match legacy `RakitServiceType` union (`jasa_custom_panel`, `jasa_rakit`). A `CODE_TO_RAKIT` map bridges the gap while keeping downstream state/RPC payload unchanged.
+
+**Changes:**
+- `src/components/penjualan/RakitButtonsRow.tsx` (+17 LOC net) — full rewrite: useEffect fetch, dynamic buttons with DB color_hex, CODE_TO_RAKIT map, skeleton loading state
+- `src/components/penjualan/CartRows.tsx` (+20 LOC net) — new `serviceTypes?: DbServiceType[]` prop, getRakitLabel() helper, dynamic labels in rakit cart rows
+- `src/components/penjualan/wizard/Step2Items.tsx` (+12 LOC net) — serviceTypes prop wired through to CartRows + RakitInlineForm
+- `src/components/penjualan/RakitInlineForm.tsx` (+2 LOC net) — serviceTypeName?: string prop with fallback
+- `src/components/penjualan/CatatPenjualanWizard.tsx` (+11 LOC net) — serviceTypes state + useEffect fetch, passed to Step2Items
+
+**Verification:**
+- `npm run lint` (tsc --noEmit): PASS
+- `npm run build`: PASS (2798 modules; pre-existing warnings only)
+- **Report:** `.superpowers/sdd/task-18-report.md`
 
 ## 2026-06-21 — Akuntansi Phase 0a — Task 12: `trial_balance` + `general_ledger` views DONE
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { KasirItem, RakitServiceType } from '../../../types';
+import type { KasirItem, RakitServiceType, DbServiceType } from '../../../types';
 import type { SupabaseStockItem } from '../../../lib/supabaseClient';
 import { formatRp } from '../../../lib/format';
 import CartRows from '../CartRows';
@@ -35,6 +35,12 @@ interface Props {
   onRemoveRakitLine: (id: string) => void;
   stockByWarehouseSku: Record<string, number>;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  /**
+   * Active service_types from serviceTypesService.fetchActive(). Passed down
+   * to CartRows so it can display st.name instead of hardcoded labels.
+   * RakitButtonsRow fetches independently on its own useEffect.
+   */
+  serviceTypes?: DbServiceType[];
 }
 
 export default function Step2Items(props: Props) {
@@ -119,6 +125,18 @@ export default function Step2Items(props: Props) {
           <div className="mt-3">
             <RakitInlineForm
               type={props.rakitFormType}
+              serviceTypeName={(() => {
+                // Resolve dynamic name from serviceTypes for form header.
+                // code→RakitServiceType reverse map mirrors RakitButtonsRow.
+                const CODE_TO_RAKIT: Record<string, string> = {
+                  custom_panel: 'jasa_custom_panel',
+                  wiring_panel: 'jasa_rakit',
+                };
+                const match = (props.serviceTypes ?? []).find(
+                  st => CODE_TO_RAKIT[st.code] === props.rakitFormType,
+                );
+                return match?.name;
+              })()}
               onAdd={props.onAddRakitLine}
               onCancel={props.onCancelRakitForm}
             />
@@ -152,6 +170,7 @@ export default function Step2Items(props: Props) {
           rakitLines={props.rakitLines}
           onRemoveRakit={props.onRemoveRakitLine}
           stockByWarehouseSku={props.stockByWarehouseSku}
+          serviceTypes={props.serviceTypes}
         />
 
         {preOrderCount > 0 && (

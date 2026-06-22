@@ -570,18 +570,27 @@ export interface SalesEntry {
 // Phase 2: Approval data shapes ----------------------------------------------
 
 export type ApprovalRequestType =
+  // Existing 12 gates
   | 'adjustment'
   | 'opname'
-  | 'price_change'
+  | 'initial_stock'
   | 'kasir_price_override'
   | 'kasir_void'
   | 'kasir_refund'
-  | 'rakit_lock'
+  | 'price_change'
   | 'customer_credit_activate'
   | 'customer_credit_limit_change'
   | 'customer_credit_deactivate'
-  | 'initial_stock'
-  | 'piutang_write_off';
+  | 'piutang_write_off'
+  | 'rakit_lock'
+  // 7 Pembelian gates (Phase 1 baru)
+  | 'purchase_order_create'
+  | 'purchase_order_amend'
+  | 'tagihan_create'
+  | 'supplier_payment'
+  | 'bnl_create'
+  | 'tukar_faktur'
+  | 'purchase_return';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
@@ -1216,4 +1225,85 @@ export interface PiutangRow {
   customer?: DbCustomer;
   daysToDue: number; // negative = overdue
   tier: PiutangTier['key'];
+}
+
+// ─── Pengaturan MSME Configurability (Phase 1) ─────────────────────────
+// See docs/superpowers/specs/2026-06-21-pengaturan-msme-configurability-design.md
+
+export type ApprovalVerificationMethod = 'NONE' | 'PIN' | 'WA_BUTTON' | 'APP_INBOX';
+
+export interface DbApprovalSettings {
+  id: number;
+  tenant_id: string | null;
+  request_type: ApprovalRequestType;
+  approval_required: boolean;
+  verification_method: ApprovalVerificationMethod;
+  threshold_amount: number | null;
+  threshold_qty: number | null;
+  threshold_percent: number | null;
+  approver_role: string;
+  requestor_bypass_self: boolean;
+  reason_required: boolean;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type PajakMode = 'PKP' | 'NON_PKP' | 'FINAL_UMKM';
+export type JenisBadan = 'PT' | 'CV' | 'OP' | 'KOPERASI' | 'FIRMA';
+
+export type ModulSwitchKey =
+  | 'modul_kasir'
+  | 'modul_tempo'
+  | 'modul_pengiriman'
+  | 'modul_multi_warehouse'
+  | 'modul_akuntansi'
+  | 'modul_jasa_layanan'
+  | 'modul_bom_recipe';
+
+export interface DbTenantSettings {
+  id: number;
+  tenant_id: string | null;
+  modul_kasir: boolean;
+  modul_tempo: boolean;
+  modul_pengiriman: boolean;
+  modul_multi_warehouse: boolean;
+  modul_akuntansi: boolean;
+  modul_jasa_layanan: boolean;
+  modul_bom_recipe: boolean;
+  pajak_mode: PajakMode;
+  pajak_ppn_rate_umum: number;
+  pajak_ppn_rate_mewah: number;
+  pajak_final_rate: number;
+  pajak_umkm_jenis_badan: JenisBadan | null;
+  pajak_umkm_terdaftar_at: string | null;
+  pajak_umkm_expires_at: string | null;
+  pajak_npwp: string | null;
+  pajak_nik_as_npwp: boolean;
+  pajak_efaktur_enabled: boolean;
+  pajak_pkp_registered_at: string | null;
+  pajak_coretax_id: string | null;
+  pajak_regulation_year: number;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export type PricingModel = 'LUMP_SUM' | 'PER_HOUR' | 'PER_METER' | 'PER_UNIT';
+
+export interface DbServiceType {
+  id: number;
+  tenant_id: string | null;
+  code: string;
+  name: string;
+  description: string | null;
+  pricing_model: PricingModel;
+  requires_material_lock: boolean;
+  default_account_revenue: number | null;
+  default_account_cogs: number | null;
+  color_hex: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
