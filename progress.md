@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 1 Task 6: AccountDetailScreen — COMPLETE
+
+`src/components/kasbank/AccountDetailScreen.tsx` created. Hero header (gradient blue-600→blue-700), 4-stat cards (saldo awal/debit/kredit/saldo akhir), Riwayat tab with running balance table (general_ledger view), filter bar (Bulan ini / 30 hari / Tahun ini), status chips derived from source_type (Cleared/Recon), pending banner, client-side pagination 50/page. COA metadata fetched in separate query for subtitle. tsc clean, 273/273 tests pass.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0a IMPLEMENTATION COMPLETE (18 tasks, Task 13 deferred)
 
 All 15 migrations applied to staging Supabase. 59 SAK EMKM COA seeded. All RPCs tested (_post_journal_entry, close_accounting_period, set_opening_balance, close_fiscal_year, accrue_period_taxes). Trial Balance balanced. Opening Balance Wizard UI live di sidebar Akuntansi (Kontrol & Laporan group).
