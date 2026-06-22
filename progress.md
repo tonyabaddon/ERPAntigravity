@@ -1,5 +1,13 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d Task 1: update_coa_account RPC — DONE
+
+Migration `20260722000005_update_coa_account_rpc.sql` applied to production.
+RPC `update_coa_account(p_id, p_account_name, p_description, p_is_active) RETURNS jsonb`
+gated by `_assert_owner_active()`, SECURITY DEFINER, GRANT to authenticated.
+Smoke tests: 3/3 PASS (happy path, INVALID_ACCOUNT_NAME, SYSTEM_ACCOUNT_PROTECTED).
+Commit: ed268cc
+
 ## 2026-06-22 — Akuntansi Phase 3 Manual Entry IMPLEMENTATION COMPLETE (13 tasks)
 
 Phase 3 complete. 5 SECURITY DEFINER RPCs (record_internal_transfer, record_owner_drawing, record_balance_adjustment, record_wallet_spend, record_manual_expense) + 6 modal components + AksiDropdown context-aware menu + JournalEntryPreview shared component. All wired into AccountDetailScreen — Owner can now post manual journal entries end-to-end (Transfer Internal / Setor Kas / Tarik Pribadi / Penyesuaian Saldo PIN / Wallet Top-Up + Spend / Catat Pengeluaran).
