@@ -19,6 +19,13 @@ import { supabase } from '../../lib/supabaseClient';
 import type { CashAccountBalance } from '../../lib/kasbank/types';
 import type { GeneralLedgerRow, JournalSource } from '../../lib/akuntansi/types';
 import { formatRp, wibDateString } from '../../lib/format';
+import AksiDropdown from '../akuntansi/manual/AksiDropdown';
+import type { AksiAction } from '../akuntansi/manual/AksiDropdown';
+import ManualTransferModal from '../akuntansi/manual/ManualTransferModal';
+import OwnerDrawingModal from '../akuntansi/manual/OwnerDrawingModal';
+import BalanceAdjustmentModal from '../akuntansi/manual/BalanceAdjustmentModal';
+import ManualExpenseModal from '../akuntansi/manual/ManualExpenseModal';
+import WalletSpendModal from '../akuntansi/manual/WalletSpendModal';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -192,6 +199,9 @@ export default function AccountDetailScreen({
   // Active tab
   const [activeTab, setActiveTab] = useState<'riwayat' | 'belum-cair' | 'info'>('riwayat');
 
+  // Active aksi (drives modal visibility)
+  const [aksi, setAksi] = useState<AksiAction | null>(null);
+
   // ---------------------------------------------------------------------------
   // Load balance meta on mount
   // ---------------------------------------------------------------------------
@@ -240,6 +250,42 @@ export default function AccountDetailScreen({
       loadLedger(balance.coa_account_id, period.fromDate, period.toDate);
     }
   }, [balance, period, loadLedger]);
+
+  // ---------------------------------------------------------------------------
+  // Aksi action handler
+  // ---------------------------------------------------------------------------
+
+  const handleAksi = useCallback(
+    (action: AksiAction) => {
+      if (action === 'edit_akun') {
+        showToast('Tutup detail → klik tombol edit di kartu akun', 'info');
+        return;
+      }
+      setAksi(action);
+    },
+    [showToast],
+  );
+
+  // ---------------------------------------------------------------------------
+  // After posting: refresh ledger + balance, close modal
+  // ---------------------------------------------------------------------------
+
+  const handlePosted = useCallback(() => {
+    setAksi(null);
+    // Refresh ledger rows for current period
+    if (balance?.coa_account_id) {
+      loadLedger(balance.coa_account_id, period.fromDate, period.toDate);
+    }
+    // Also refresh the balance hero stats
+    fetchCashAccountBalances()
+      .then((balances) => {
+        const found = balances.find(b => b.cash_account_id === cashAccountId) ?? null;
+        setBalance(found);
+      })
+      .catch(err => {
+        console.error('[AccountDetailScreen] refresh balance error', err);
+      });
+  }, [balance, period, loadLedger, cashAccountId]);
 
   // ---------------------------------------------------------------------------
   // Period filter handlers
@@ -312,14 +358,21 @@ export default function AccountDetailScreen({
         className="p-6 text-white"
         style={{ background: 'linear-gradient(135deg, #1e40af, #1e3a8a)' }}
       >
-        {/* Back link */}
-        <button
-          onClick={onBack}
-          className="text-[11px] text-blue-100 hover:underline inline-flex items-center gap-1 mb-2"
-        >
-          <ArrowLeft className="w-3 h-3" />
-          Kas &amp; Bank
-        </button>
+        {/* Back link row + Aksi dropdown */}
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <button
+            onClick={onBack}
+            className="text-[11px] text-blue-100 hover:underline inline-flex items-center gap-1"
+          >
+            <ArrowLeft className="w-3 h-3" />
+            Kas &amp; Bank
+          </button>
+
+          {/* Context-aware action dropdown */}
+          <div className="w-36 flex-shrink-0">
+            <AksiDropdown account={balance} onAction={handleAksi} />
+          </div>
+        </div>
 
         {/* Account title */}
         <h3 className="text-2xl font-extrabold mt-1">
@@ -409,6 +462,103 @@ export default function AccountDetailScreen({
           Info Akun
         </button>
       </div>
+
+      {/* -----------------------------------------------------------------------
+        Manual entry modals — rendered outside tab content so they can overlay
+        the full screen regardless of scroll position.
+      ----------------------------------------------------------------------- */}
+
+      {/* Transfer Internal (BANK ↔ BANK or any) */}
+      {aksi === 'transfer' && (
+        <ManualTransferModal
+          open
+          variant="transfer"
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Setor ke Bank (from KAS view) — source = current KAS account */}
+      {aksi === 'setor_bank' && (
+        <ManualTransferModal
+          open
+          variant="cash_deposit"
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Setor dari Kas (from BANK view) — use transfer variant for full flexibility */}
+      {aksi === 'setor_dari_kas' && (
+        <ManualTransferModal
+          open
+          variant="transfer"
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Top-Up Wallet (E_WALLET only) */}
+      {aksi === 'wallet_topup' && (
+        <ManualTransferModal
+          open
+          variant="wallet_topup"
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Tarik Pribadi / Owner Drawing */}
+      {aksi === 'tarik_pribadi' && (
+        <OwnerDrawingModal
+          open
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Catat Pengeluaran */}
+      {aksi === 'manual_expense' && (
+        <ManualExpenseModal
+          open
+          sourceAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Penyesuaian Saldo (PIN protected) */}
+      {aksi === 'penyesuaian' && (
+        <BalanceAdjustmentModal
+          open
+          cashAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
+
+      {/* Catat Spending (E_WALLET only) */}
+      {aksi === 'wallet_spend' && (
+        <WalletSpendModal
+          open
+          walletAccount={balance}
+          onClose={() => setAksi(null)}
+          onPosted={handlePosted}
+          showToast={showToast}
+        />
+      )}
 
       {/* Tab content */}
       {activeTab === 'riwayat' && (
