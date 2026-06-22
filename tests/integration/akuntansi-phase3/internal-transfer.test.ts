@@ -92,8 +92,10 @@ describe('record_internal_transfer — structural: _resolve_cash_coa helper', ()
     expect(data!.account_type).toBe('KAS');
     expect(data!.coa_account_id).not.toBeNull();
 
-    const coa = (data as { chart_of_accounts: { account_code: string; is_active: boolean } | null })
-      .chart_of_accounts;
+    const coaJoin = (data as unknown as {
+      chart_of_accounts: { account_code: string; is_active: boolean } | { account_code: string; is_active: boolean }[] | null
+    }).chart_of_accounts;
+    const coa = Array.isArray(coaJoin) ? coaJoin[0] : coaJoin;
     expect(coa).not.toBeNull();
     expect(coa!.account_code).toBe('1-1110');
     expect(coa!.is_active).toBe(true);

@@ -1,5 +1,67 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 3 Manual Entry IMPLEMENTATION COMPLETE (13 tasks)
+
+Phase 3 complete. 5 SECURITY DEFINER RPCs (record_internal_transfer, record_owner_drawing, record_balance_adjustment, record_wallet_spend, record_manual_expense) + 6 modal components + AksiDropdown context-aware menu + JournalEntryPreview shared component. All wired into AccountDetailScreen — Owner can now post manual journal entries end-to-end (Transfer Internal / Setor Kas / Tarik Pribadi / Penyesuaian Saldo PIN / Wallet Top-Up + Spend / Catat Pengeluaran).
+
+**Tasks status: 13/13 ✓**
+- Task 1: 5 RPCs migration + 2 helpers + bucket (commits a4eab83..e930815, 17+2/19 smoke PASS, fix wave 1 C1+I3 applied)
+- Task 2: TS service src/lib/akuntansi/manualEntry.ts (16/16 tests)
+- Task 3: COA queries src/lib/akuntansi/coaQueries.ts (11/11 tests)
+- Task 4: JournalEntryPreview shared component
+- Task 5: AksiDropdown context-aware menu
+- Task 6: ManualTransferModal 3 variants (Transfer/Setor/Top-Up)
+- Task 7: OwnerDrawingModal single-leg D Prive K source
+- Task 8: BalanceAdjustmentModal PIN-gated (inlined PIN due to OwnerPinPad approval-coupled API; fix wave 1 PIN array state)
+- Task 9: WalletSpendModal
+- Task 10: ManualExpenseModal
+- Task 11: Wire AksiDropdown + 5 modals into AccountDetailScreen + auto-refresh
+- Task 12: Integration tests (29/29 PASS, Pattern C — schema+deployment+sanity since Owner auth not injectable)
+- Task 13: Final validation + this entry
+
+**Migrations applied (3):**
+- 20260722000001 5 manual entry RPCs + 2 helpers (_resolve_cash_coa, _assert_owner_active)
+- 20260722000002 accounting-proofs storage bucket
+- 20260722000003 review fixes C1+I3 (min-length validation + helper volatility)
+
+**UI deliverables:**
+- src/components/akuntansi/manual/JournalEntryPreview.tsx
+- src/components/akuntansi/manual/AksiDropdown.tsx
+- src/components/akuntansi/manual/ManualTransferModal.tsx
+- src/components/akuntansi/manual/OwnerDrawingModal.tsx
+- src/components/akuntansi/manual/BalanceAdjustmentModal.tsx
+- src/components/akuntansi/manual/WalletSpendModal.tsx
+- src/components/akuntansi/manual/ManualExpenseModal.tsx
+- src/components/kasbank/AccountDetailScreen.tsx (MODIFIED — wired)
+
+**Service layer:**
+- src/lib/akuntansi/manualEntry.ts + manualEntry.test.ts
+- src/lib/akuntansi/coaQueries.ts + coaQueries.test.ts
+
+**Integration tests:** tests/integration/akuntansi-phase3/ (6 files, 29 tests)
+
+**Decisions locked per brainstorm:**
+- Owner drawing: single-leg D Prive K source (personal account update manual)
+- Wallet spend order link: memo only (no COGS allocation)
+- + Aksi trigger: AccountDetailScreen top-right only
+- PIN: raw to RPC (atomic verify-then-post)
+- Negative balance: ALLOWED (UI warn only)
+
+**Spec drifts documented:**
+- Prive account code: brief said 3-3000, seed uses 3-1200 — used seed value
+- PIN lockout: brief said 3× attempts, migration deploys 5× — kept 5× (more lenient)
+- record_balance_adjustment integration tests are deployment-only (Owner auth not injectable via service-role client)
+
+**Verification (2026-06-22):**
+- npm test: 320/320 PASS across 41 files
+- npx tsc --noEmit: clean
+- npm run build: ✓ 3.82s OK
+- MCP smoke (Task 1): 17+2/19 PASS (happy + negative paths via DO blocks + rollback)
+
+**Next:** Phase 0d (GL UI — Buku Besar / Trial Balance / COA Management) or Phase 4 Laporan — both have mockups ready. Phase 0b/0c (dual-write + backfill) deferred to enable Phase 3 GL data first.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 11: Wire AksiDropdown + 5 modals into AccountDetailScreen — DONE
 
 Modified `src/components/kasbank/AccountDetailScreen.tsx` (158 lines added).
