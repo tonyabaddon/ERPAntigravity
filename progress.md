@@ -1,5 +1,17 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Akuntansi Phase 0b Task 2: record_kasir_sale dual-write
+
+Migration `20260723000002_phase0b_record_kasir_sale_dual_write.sql` applied.
+
+- Added helper `_resolve_kasir_pendapatan_coa(channel)` (walkin→4-1110, marketplace→4-1120, grosir→4-1130)
+- Extended `record_kasir_sale` from 21 to 22 params: added `p_cash_account_id uuid DEFAULT NULL`
+- Soft-fail GL dual-write block: resolves cash account → COA → calls `_post_journal_entry`
+- Anomaly logging to `gl_dual_write_anomalies` when cash account missing or GL error
+- Smoke tests 4/4 PASS (cash default, no-bank anomaly, flag-off bypass, shopee marketplace COA)
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 4 Final Review Fixes (4 fixes)
 
 Applied 4 fixes from final whole-branch code review:

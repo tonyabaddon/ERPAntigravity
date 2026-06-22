@@ -1,85 +1,81 @@
-### Task 2 Report: reportQueries.ts service + unit tests
+### Task 2 Report — record_kasir_sale dual-write + p_cash_account_id
 
-**Status:** COMPLETE
-**Commit:** a9becc2
-**Branch:** worktree-akuntansi-phase4 ✓
-
----
-
-#### Schema Verification
-
-Confirmed column names from Supabase `ekhhojaezdfjfwuxyjkl`:
-
-| Table | Key columns used |
-|---|---|
-| `journal_entry_lines` | id, entry_id, account_id, side, amount, description |
-| `journal_entries` | entry_date, entry_number, source_type, description |
-| `chart_of_accounts` | id, account_code, account_name, account_type, account_subtype, normal_balance |
-| `cash_accounts` | id, coa_account_id, internal_label, account_type, purpose |
-
-Actual subtype values verified from live seed data. Key findings that affected implementation:
-
-- `cash_accounts.purpose` only has `PETTY_CASH` — `includePersonal` is a reserved stub (no OWNER_PERSONAL purpose exists)
-- `ASET/KONTRA` = single account `1-2900 "Akumulasi Penyusutan"` (CREDIT-normal)
-- Liabilitas split: `2-1xxx` = Lancar, `2-2xxx` = Jangka Panjang (confirmed by account_code prefix)
-- `PENDAPATAN/KONTRA` subtype exists (Retur Penjualan) — handled in `pendapatanBersih` computation
-- `BEBAN/HPP` subtype confirmed (not a separate account_type)
+**Status:** DONE  
+**Date:** 2026-06-23  
+**Branch:** worktree-akuntansi-phase0b ✓
 
 ---
 
-#### Files Created
+## Current RPC Signature (before migration)
 
-- `src/lib/akuntansi/reportQueries.ts` — 4 fetch functions + shared helpers
-- `src/lib/akuntansi/reportQueries.test.ts` — 23 unit tests
+21 params — confirmed via `pg_get_function_arguments`:
+```
+p_date date, p_channel text, p_items jsonb, p_subtotal numeric,
+p_payment_method text, p_payment_subtype text, p_payment_type text,
+p_dp_amount numeric, p_dp_input_type text, p_ongkir_amount numeric,
+p_notes text, p_total_amount numeric, p_customer_name text,
+p_customer_phone text, p_customer_company text, p_delivery_address text,
+p_marketplace_order_no text, p_wa_phone text, p_wa_chat_url text,
+p_customer_id text, p_allow_negative_stock boolean DEFAULT false
+```
 
----
+## Channel Value Distribution (production)
 
-#### Function Summary
+Only `walkin` and `null` in current data. Full kasir_channel enum is lowercase:
+walkin, tokopedia, shopee, lazada, blibli, bukalapak, ralali, bhinneka, grosir, sales, expo, whatsapp, instagram, website.
 
-**`fetchMutasi(filters)`**
-- Resolves cash COA IDs (BANK/KAS/E_WALLET) when `accountIds` is empty
-- Fetches `cash_accounts.internal_label` for display label (falls back to account_name)
-- Classifies IN/OUT based on `normal_balance` vs `side` (not hardcoded DEBIT=IN)
-- Applies direction + category filters client-side
-- Sorted by entry_date ASC, entry_number ASC
+Note: task brief used uppercase WALK_IN/MARKETPLACE_* — corrected to actual enum values in implementation.
 
-**`fetchLabaRugi(fromDate, toDate)`**
-- Single query: PENDAPATAN + BEBAN accounts for date range
-- Pending breakdown: PENJUALAN, KONTRA (subtracted), PENDAPATAN_LAIN
-- HPP, BEBAN_OPERASIONAL, BEBAN_NON_OPERASIONAL (excl. 5-3300)
-- `beban_pajak` = account_code '5-3300' extracted separately
+## Key Pre-migration Discoveries
 
-**`fetchNeraca(asOfDate)`**
-- Cumulative query: all ASET/LIABILITAS/MODAL entries ≤ asOfDate
-- Aset Lancar: subtypes BANK/KAS/E_WALLET/PERSEDIAAN/PIUTANG/PIUTANG_USAHA
-- Aset Tetap gross − akumulasiPenyusutan (KONTRA subtype)
-- Liabilitas split by account_code prefix (2-1 vs 2-2)
-- `balanceCheck.diff = totalAset − (totalLiabilitas + totalEkuitas)`, balanced if |diff| < 0.01
-- Header/group rows (null subtype) excluded from line items
+- `_post_journal_entry` lines JSONB key is `account_code` (text), NOT `account_id` (UUID) — task brief snippet was wrong
+- All 4 COA codes (4-1110, 4-1120, 4-1130, 4-1140) exist and are active in production
+- `accounting_config.default_kas_account_id` → COA `1-1110` (Kas Toko)
+- `accounting_config.default_bank_account_id` = NULL in production (relevant for Test B)
+- No TEMPO channel in kasir_channel enum; grosir→4-1130, rest default to 4-1110
 
-**`fetchCashFlow(endYear, endMonth, trailingMonths)`**
-- Builds trailing-month window with year-boundary handling
-- Two-query approach: COA resolve → journal lines for date range
-- Category pivot: `inMap` (DEBIT on DEBIT-normal) / `outMap` (CREDIT)
-- `CashFlowCategory.totalNet` = totalIn for uangMasuk, totalOut for uangKeluar
+## Migration Applied
 
----
+**File:** `supabase/migrations/20260723000002_phase0b_record_kasir_sale_dual_write.sql`
 
-#### Design Decisions
+Changes:
+1. Created helper `_resolve_kasir_pendapatan_coa(p_channel text) RETURNS text` — IMMUTABLE SQL function mapping channel→COA code
+2. DROPped 21-param `record_kasir_sale` (Postgres requires drop+recreate when adding params)
+3. Created 22-param `record_kasir_sale` with `p_cash_account_id uuid DEFAULT NULL` appended
+4. GL dual-write block (soft-fail EXCEPTION handler) added after INSERT to kasir_transactions
+5. Anomaly logged to `gl_dual_write_anomalies` when: no cash account resolved OR any GL error
+6. GRANT EXECUTE on both functions to anon, authenticated
 
-- `is_posted` NOT filtered — conscious parity with `fetchTrialBalanceAsOf` in glQueries.ts
-- `any` used only in test helper mock setup (eslint-disable comment)
-- `supabase-js` relational fields unwrapped via `Array.isArray()` guard (matches glQueries pattern)
+**Channel→Pendapatan COA mapping:**
+- walkin → 4-1110
+- tokopedia, shopee, lazada, blibli, bukalapak, ralali, bhinneka → 4-1120
+- grosir → 4-1130
+- sales, expo, whatsapp, instagram, website → 4-1110 (default)
 
----
+## Post-migration Signature (confirmed)
 
-#### Tests: 23/23 PASS
+22 params:
+```
+..., p_allow_negative_stock boolean DEFAULT false, p_cash_account_id uuid DEFAULT NULL::uuid
+```
 
-| Suite | Tests |
-|---|---|
-| fetchMutasi | 5 (happy, direction filter, explicit IDs, empty, error, no-cash-COA) |
-| fetchLabaRugi | 5 (happy, KONTRA, pajak extraction, empty, error) |
-| fetchNeraca | 5 (happy balanced, imbalanced diff, empty, jk-panjang split, error) |
-| fetchCashFlow | 8 (happy 2-month pivot, year boundary, no cash, empty, 2x error, OWNER_DRAWING) |
+Single overload confirmed — no ambiguity risk.
 
-`npx tsc --noEmit` → 0 errors, 0 warnings.
+## Smoke Test Results — 4/4 PASS
+
+All tests run via DO blocks with `RAISE EXCEPTION 'rollback'` — zero DB side effects.
+
+| Test | Scenario | je_delta | anomaly_delta | Result |
+|------|----------|----------|---------------|--------|
+| A | flag=true, payment=cash, NULL cash_account_id → default kas (1-1110) | +1 | 0 | PASS |
+| B | flag=true, payment=transfer, no default_bank, no picker → anomaly, tx succeeds | 0 | +1 | PASS |
+| C | flag=false → GL bypass entirely | 0 | 0 | PASS |
+| D | flag=true, channel=shopee, explicit cash_account_id picker, marketplace_order_no | +1 | 0 | PASS |
+
+Test D additionally verified:
+- Credit COA = `4-1120` (correct for shopee/marketplace channel)
+- JE description = `Penjualan shopee · MP-999` (includes marketplace order no)
+
+## Commit Hash
+
+See git log — commit `feat(akuntansi): Phase 0b Task 2 — record_kasir_sale dual-write + p_cash_account_id`
