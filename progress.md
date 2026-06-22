@@ -1,5 +1,105 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d Final Review Fixes (3 fixes)
+
+Applied 3 fixes from final whole-branch code review (commit `4d818b3`):
+
+**Fix 1 (CRITICAL)** — TrialBalance period selector was decorative; replaced `fetchTrialBalance()` (all-time view) with `fetchTrialBalanceAsOf(asOfDate)` that queries `journal_entry_lines` directly with `entry_date <= asOfDate`. `TrialBalanceTab` now computes `asOfDate` per period (today for OPEN, last-day-of-month for CLOSED). Period selector now actually changes displayed data.
+
+**Fix 2 (HIGH)** — Removed all `(data as any)` casts in `coaUpdate.ts` and `periodClose.ts`; replaced with explicit inline types `{ ok: true; updated_at: string }` and `{ ok: true; closed_at: string }`. Zero `any` in Phase 0d files.
+
+**Fix 3 (MEDIUM)** — `PeriodCloseModal` balance check was querying unfiltered `trial_balance` view (always balanced). Now calls `fetchTrialBalanceAsOf(periodEndDate)` scoped to period; comment documents double-entry invariant and that RPC enforces the real constraint.
+
+**Verification**: `npx tsc --noEmit` clean + 342/342 tests pass + `glQueries.test.ts` updated to test `fetchTrialBalanceAsOf`.
+
+---
+
+## 2026-06-22 — Akuntansi Phase 0d GL UI IMPLEMENTATION COMPLETE (10 tasks)
+
+Phase 0d complete. AkuntansiScreen sekarang punya 4 tabs (Trial Balance / Buku Besar / Tutup Buku / COA) — Owner bisa view full GL state, drill-down per akun, close monthly period dengan auto tax accrual, dan edit COA names. Backend 100% reuse Phase 0a infrastructure (zero schema changes selain 1 helper RPC `update_coa_account`).
+
+**Tasks status: 10/10 ✓**
+- Task 1: update_coa_account RPC + bucket (migration 20260722000005, smoke 3/3 PASS)
+- Task 2: glQueries.ts service (14/14 tests) — note: anomaly recovered, subagent first committed to main; relocated to worktree
+- Task 3: periodClose + coaUpdate services (8/8 tests)
+- Task 4: TrialBalanceTab component
+- Task 5: BukuBesarTab component
+- Task 6: TutupBukuTab + PeriodCloseModal
+- Task 7: COAManagementTab + COAEditModal
+- Task 8: AkuntansiScreen 4-tab refactor
+- Task 9: Integration tests (43/43 PASS)
+- Task 10: Final validation + this entry
+
+**Migrations applied (1):**
+- 20260722000005 update_coa_account RPC (SECURITY DEFINER + Owner gate + system-account protection)
+
+**UI deliverables:**
+- src/components/akuntansi/AkuntansiScreen.tsx (MODIFIED — 4 tabs replace placeholder)
+- src/components/akuntansi/gl/TrialBalanceTab.tsx
+- src/components/akuntansi/gl/BukuBesarTab.tsx
+- src/components/akuntansi/gl/TutupBukuTab.tsx
+- src/components/akuntansi/gl/PeriodCloseModal.tsx
+- src/components/akuntansi/gl/COAManagementTab.tsx
+- src/components/akuntansi/gl/COAEditModal.tsx
+
+**Service layer:**
+- src/lib/akuntansi/glQueries.ts + tests (14 tests)
+- src/lib/akuntansi/periodClose.ts + tests (3 tests)
+- src/lib/akuntansi/coaUpdate.ts + tests (5 tests)
+
+**Integration tests:** tests/integration/akuntansi-phase0d/ (4 files, 43 tests)
+
+**Decisions locked per brainstorm:**
+- Layout: 4 tabs di-satu-screen (NOT separate sidebar entries)
+- Export PDF/Excel: placeholder toast (defer Phase 4 Laporan)
+- COA Management: view+edit+disable only (NO add new account — SAK EMKM 59 fixed)
+- Buku Besar drill-down: tab switch + initialAccountId state (NO route change)
+
+**Spec drifts discovered + handled:**
+- Service signature: `closeAccountingPeriod(year, month)` not `(periodId)` (actual RPC sig)
+- Config field name: `pph_mode === 'UMKM_FINAL_0_5'` not `pajak_mode === 'FINAL_UMKM'`
+- `close_accounting_period` RPC does NOT auto-accrue taxes — separate `accruePeriodTaxes` call in PeriodCloseModal submit
+- COA join via `chart_of_accounts.id` UUID FK (not `account_code` text)
+
+**Verification (2026-06-22):**
+- npm test: **342/342 PASS** across 44 files
+- npx tsc --noEmit: clean
+- npm run build: ✓ 2.96s OK
+- MCP smoke (Task 1): 3/3 PASS (happy + INVALID_ACCOUNT_NAME + SYSTEM_ACCOUNT_PROTECTED)
+
+**Next:** Phase 4 Laporan (Profit & Loss + Neraca + Mutasi 6-tab) atau Phase 2 Settlement. Both have mockups ready.
+
+---
+
+## 2026-06-22 — Akuntansi Phase 0d Task 6: TutupBukuTab + PeriodCloseModal — DONE
+
+`src/components/akuntansi/gl/TutupBukuTab.tsx` + `src/components/akuntansi/gl/PeriodCloseModal.tsx`.
+Period list card (last 12 periods, DESC) with status chips: OPEN emerald / CLOSED gray+Lock / REOPENED blue+RotateCcw. Current month row shows "(berjalan)" suffix; closeable periods (OPEN + past month) show red "Tutup Buku" button.
+PeriodCloseModal: rose header, snapshot sub-card (total entries count, trial balance balanced check, omzet sum of PENDAPATAN CREDIT lines), amber tax accrual sub-card gated on `pph_mode === 'UMKM_FINAL_0_5'`. Submit flow: accruePeriodTaxes → closeAccountingPeriod (year, month). Imbalanced TB blocks submit.
+Key corrections from brief: pph_mode not pajak_mode; closeAccountingPeriod(year,month) not (periodId); journal_entry_lines.account_id is UUID FK to coa.id (not account_code).
+npx tsc --noEmit: clean.
+Commit: e1f431f..HEAD
+
+---
+
+## 2026-06-22 — Akuntansi Phase 0d Task 5: BukuBesarTab component — DONE
+
+`src/components/akuntansi/gl/BukuBesarTab.tsx` (562 lines).
+COA account picker (fetchCoaTree grouped by type as optgroup), period presets (Bulan ini / 30 hari / Tahun ini / Custom placeholder), 3 stat sub-cards (Saldo Awal / Movement / Saldo Akhir — emerald highlight), running-balance table (6 columns per mockup M4), export PDF/Excel placeholders.
+Saldo Awal formula verified against general_ledger view window-function definition in migration 20260715000011_views.sql.
+npx tsc --noEmit: clean.
+Commit: bbdb01e (abfc8c4..bbdb01e)
+
+---
+
+## 2026-06-22 — Akuntansi Phase 0d Task 1: update_coa_account RPC — DONE
+
+Migration `20260722000005_update_coa_account_rpc.sql` applied to production.
+RPC `update_coa_account(p_id, p_account_name, p_description, p_is_active) RETURNS jsonb`
+gated by `_assert_owner_active()`, SECURITY DEFINER, GRANT to authenticated.
+Smoke tests: 3/3 PASS (happy path, INVALID_ACCOUNT_NAME, SYSTEM_ACCOUNT_PROTECTED).
+Commit: ed268cc
+
 ## 2026-06-22 — Akuntansi Phase 3 Manual Entry IMPLEMENTATION COMPLETE (13 tasks)
 
 Phase 3 complete. 5 SECURITY DEFINER RPCs (record_internal_transfer, record_owner_drawing, record_balance_adjustment, record_wallet_spend, record_manual_expense) + 6 modal components + AksiDropdown context-aware menu + JournalEntryPreview shared component. All wired into AccountDetailScreen — Owner can now post manual journal entries end-to-end (Transfer Internal / Setor Kas / Tarik Pribadi / Penyesuaian Saldo PIN / Wallet Top-Up + Spend / Catat Pengeluaran).
