@@ -91,7 +91,7 @@ export default function BalanceAdjustmentModal({
   const [counterpartCoaId, setCounterpartCoaId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [entryDate, setEntryDate] = useState<string>(today());
-  const [pin, setPin] = useState<string>('');
+  const [pin, setPin] = useState<string[]>(Array(PIN_LENGTH).fill(''));
   const [saving, setSaving] = useState<boolean>(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -109,7 +109,7 @@ export default function BalanceAdjustmentModal({
     setCounterpartCoaId('');
     setReason('');
     setEntryDate(today());
-    setPin('');
+    setPin(Array(PIN_LENGTH).fill(''));
     setSaving(false);
     setFetchError(null);
     setCounterparts([]);
@@ -209,11 +209,9 @@ export default function BalanceAdjustmentModal({
     const val = e.target.value.replace(/\D/g, '');
     if (!val) return;
     const digit = val[val.length - 1]; // take the last digit if multiple pasted
-    setPin((prev) => {
-      const arr = prev.split('');
-      arr[idx] = digit;
-      return arr.slice(0, PIN_LENGTH).join('');
-    });
+    const next = [...pin];
+    next[idx] = digit;
+    setPin(next);
     // Advance focus to next cell
     if (idx < PIN_LENGTH - 1) {
       pinRefs.current[idx + 1]?.focus();
@@ -223,16 +221,14 @@ export default function BalanceAdjustmentModal({
   function handlePinKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Backspace') {
       e.preventDefault();
-      setPin((prev) => {
-        const arr = prev.split('');
-        if (arr[idx]) {
-          arr[idx] = '';
-        } else if (idx > 0) {
-          arr[idx - 1] = '';
-          pinRefs.current[idx - 1]?.focus();
-        }
-        return arr.slice(0, PIN_LENGTH).join('').padEnd(0);
-      });
+      const next = [...pin];
+      if (next[idx]) {
+        next[idx] = '';
+      } else if (idx > 0) {
+        next[idx - 1] = '';
+        pinRefs.current[idx - 1]?.focus();
+      }
+      setPin(next);
     } else if (e.key === 'ArrowLeft' && idx > 0) {
       pinRefs.current[idx - 1]?.focus();
     } else if (e.key === 'ArrowRight' && idx < PIN_LENGTH - 1) {
@@ -241,7 +237,7 @@ export default function BalanceAdjustmentModal({
   }
 
   function clearPin() {
-    setPin('');
+    setPin(Array(PIN_LENGTH).fill(''));
     pinRefs.current[0]?.focus();
   }
 
@@ -250,7 +246,7 @@ export default function BalanceAdjustmentModal({
     amount > 0 &&
     reason.trim().length >= 10 &&
     counterpartCoaId !== '' &&
-    pin.length === PIN_LENGTH &&
+    pin.every(c => c.length === 1) &&
     !saving;
 
   // ------- Submit -----------------------------------------------------------
@@ -267,7 +263,7 @@ export default function BalanceAdjustmentModal({
       showToast('Pilih akun lawan terlebih dahulu', 'warning');
       return;
     }
-    if (pin.length !== PIN_LENGTH) {
+    if (!pin.every(c => c.length === 1)) {
       showToast('Masukkan 6 digit PIN Owner', 'warning');
       return;
     }
@@ -280,7 +276,7 @@ export default function BalanceAdjustmentModal({
         amount,
         counterpartCoaId,
         reason: reason.trim(),
-        pin,
+        pin: pin.join(''),
         entryDate,
       });
       showToast(`✓ Penyesuaian dicatat — ${result.entry_number}`, 'success');
@@ -498,7 +494,7 @@ export default function BalanceAdjustmentModal({
                   key={idx}
                   ref={(el) => { pinRefs.current[idx] = el; }}
                   type="password"
-                  maxLength={2}
+                  maxLength={1}
                   value={pin[idx] ?? ''}
                   onChange={(e) => handlePinInput(idx, e)}
                   onKeyDown={(e) => handlePinKeyDown(idx, e)}

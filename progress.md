@@ -1,5 +1,16 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 3 Manual Entry — Task 8: BalanceAdjustmentModal — DONE
+
+Created `src/components/akuntansi/manual/BalanceAdjustmentModal.tsx` (546 lines).
+
+- Direction toggle UP/DOWN (emerald/rose pill), counterpart picker (PENDAPATAN sorted first for UP, BEBAN first for DOWN), reason textarea with `n / 10 min` counter, JE Preview live, 6-cell PIN grid inlined (OwnerPinPad incompatible — requires `approvalId` and verifies internally, we need raw PIN for `recordBalanceAdjustment` atomic verify).
+- Error routing: `INVALID_PIN` → clear PIN + toast, `PIN_LOCKED` → toast + close, `INVALID_REASON` → toast, other → raw message.
+- Submit gated by `amount>0 && reason.length>=10 && counterpartCoaId && pin.length===6`.
+- tsc --noEmit clean, commit `91fc073..c124572`.
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 1 mockup-alignment polish — DONE
 
 After Phase 1 complete (9/9 tasks committed on `worktree-akuntansi-phase1`), did design-system audit vs approved mockup `docs/superpowers/mockups/2026-06-21-akuntansi-phase1-cash-bank.html`. Implementation matches mockup ~98% (M1 KasBankScreen, M3 AccountFormModal both pixel-equivalent). Two minor color tweaks applied di AccountDetailScreen:
