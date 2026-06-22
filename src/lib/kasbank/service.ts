@@ -37,16 +37,50 @@ export async function fetchCashAccounts(): Promise<CashAccount[]> {
 
 /**
  * Fetch all cash account balances from the view, ordered by sort_order.
- * @returns Array of cash account balance rows
+ * Also merges in coa_account_id and account_code from cash_accounts +
+ * chart_of_accounts so the UI can display COA codes on account cards.
+ * @returns Array of cash account balance rows (enriched with COA info)
  */
 export async function fetchCashAccountBalances(): Promise<CashAccountBalance[]> {
   const sb = requireSupabase();
-  const { data, error } = await sb
-    .from('cash_account_balances')
-    .select('*')
-    .order('sort_order', { ascending: true });
-  if (error) throw error;
-  return (data ?? []) as CashAccountBalance[];
+
+  // Parallel fetch: balances view + cash_accounts (for coa_account_id)
+  const [balancesRes, accountsRes] = await Promise.all([
+    sb.from('cash_account_balances').select('*').order('sort_order', { ascending: true }),
+    sb.from('cash_accounts').select('id, coa_account_id'),
+  ]);
+  if (balancesRes.error) throw balancesRes.error;
+  if (accountsRes.error) throw accountsRes.error;
+
+  const balances = (balancesRes.data ?? []) as Omit<CashAccountBalance, 'coa_account_id' | 'account_code'>[];
+  const accounts = (accountsRes.data ?? []) as { id: string; coa_account_id: string | null }[];
+
+  // Build map: cash_account_id → coa_account_id
+  const coaIdMap = new Map<string, string | null>();
+  for (const a of accounts) {
+    coaIdMap.set(a.id, a.coa_account_id);
+  }
+
+  // Collect distinct non-null coa_account_ids to look up account_code
+  const coaIds = [...new Set(accounts.map(a => a.coa_account_id).filter(Boolean))] as string[];
+  let codeMap = new Map<string, string>();
+  if (coaIds.length > 0) {
+    const { data: coaRows, error: coaErr } = await sb
+      .from('chart_of_accounts')
+      .select('id, account_code')
+      .in('id', coaIds);
+    if (!coaErr && coaRows) {
+      for (const row of coaRows as { id: string; account_code: string }[]) {
+        codeMap.set(row.id, row.account_code);
+      }
+    }
+  }
+
+  return balances.map(b => {
+    const coaId = coaIdMap.get(b.cash_account_id) ?? null;
+    const accountCode = coaId ? (codeMap.get(coaId) ?? null) : null;
+    return { ...b, coa_account_id: coaId, account_code: accountCode };
+  });
 }
 
 /**

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Mockup — Phase 1 Cash & Bank UI (design-system aligned)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --color-primary: #1e3d60; --color-secondary: #2d8a4e; --color-on-surface: #0b1c30; --color-background-soft: #f8f9ff; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--color-background-soft); color: var(--color-on-surface); }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .card-hover { transition: all 0.15s; cursor: pointer; }
+  .card-hover:hover { box-shadow: 0 8px 20px -4px rgba(2,32,71,0.18); transform: translateY(-2px); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary { background: #012749; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; transition: background 0.15s; }
+  .btn-primary:hover { background: #01365e; }
+  .btn-secondary { border: 1px solid #c7d7f5; background: white; color: #1e3d60; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-secondary:hover { background: #eff4ff; }
+  .btn-danger { background: #dc2626; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #eff4ff; color: #012749; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon-tile-emerald { background: #d1fae5; color: #065f46; }
+  .icon-tile-amber { background: #fef3c7; color: #92400e; }
+  .icon-tile-orange { background: #ffedd5; color: #9a3412; }
+  .icon-tile-blue { background: #dbeafe; color: #1e40af; }
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 8px 12px; font-size: 14px; outline: none; }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="icon-tile icon-tile-emerald"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+      <div>
+        <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Mockup — Phase 1 Cash & Bank UI (GL-derived)</h1>
+        <p class="text-[11px] text-gray-600">Saldo + riwayat dari journal_entry_lines · running balance per akun · picker COA-aware · <strong class="text-amber-700">Placeholder data</strong></p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">1. Main</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">2. Detail</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">3. Add Account</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">4. Pickers</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- M1: Main Cash & Bank screen -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">1. Halaman utama — Saldo per akun (live dari GL)</h2>
+      <span class="chip-soft bg-emerald-100 text-emerald-800">Phase 1 ship</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="icon-tile"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-xl font-extrabold" style="color: var(--color-primary)">Kas & Bank</h3>
+            <p class="text-xs text-gray-600 mt-0.5">Saldo per 21 Jun 2026 14:32 WIB · auto-update real-time · <a href="#" class="text-emerald-700 font-bold hover:underline">⛁ derive dari General Ledger →</a></p>
+          </div>
+        </div>
+        <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Akun</button>
+      </div>
+
+      <!-- Total liquid hero -->
+      <div class="m-6 rounded-3xl p-6 text-white" style="background: linear-gradient(135deg, #065f46, #047857);">
+        <div class="text-[11px] uppercase tracking-widest text-emerald-100 font-extrabold mb-1">Total liquid (akun bisnis · cleared)</div>
+        <div class="text-4xl font-black tracking-tight">Rp 19.070.000</div>
+        <div class="text-[12px] text-emerald-100 mt-2 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+          Termasuk Rp 8.500.000 marketplace PENDING (gak masuk saldo cleared)
+        </div>
+      </div>
+
+      <!-- Akun Bisnis section -->
+      <div class="px-6 pb-6">
+        <div class="flex items-baseline justify-between mb-3">
+          <h4 class="text-sm font-extrabold uppercase tracking-widest" style="color: var(--color-primary)">Akun Bisnis</h4>
+          <span class="text-xs text-gray-500">4 akun aktif</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 relative placeholder-badge">
+
+          <!-- BCA -->
+          <div class="card-hover sub-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="icon-tile icon-tile-blue"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="text-[14px] font-extrabold" style="color: var(--color-primary)">BCA Operasional</div>
+                  <div class="text-[11px] text-gray-500"><span class="font-mono font-bold">1-1210</span> · BCA · 1234567890</div>
+                </div>
+              </div>
+              <span class="chip-soft bg-blue-100 text-blue-800">Bank</span>
+            </div>
+            <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 12.500.000</div>
+            <div class="flex items-center justify-between mt-3 text-[11px] text-gray-500">
+              <span class="flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> 124 mutasi GL</span>
+              <span class="text-amber-700 font-bold">⚠ Rp 5.2jt PENDING</span>
+            </div>
+          </div>
+
+          <!-- Mandiri -->
+          <div class="card-hover sub-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="icon-tile icon-tile-orange"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="text-[14px] font-extrabold" style="color: var(--color-primary)">Mandiri Toko</div>
+                  <div class="text-[11px] text-gray-500"><span class="font-mono font-bold">1-1220</span> · MANDIRI · 9876543210</div>
+                </div>
+              </div>
+              <span class="chip-soft bg-blue-100 text-blue-800">Bank</span>
+            </div>
+            <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 5.300.000</div>
+            <div class="flex items-center justify-between mt-3 text-[11px] text-gray-500">
+              <span class="flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> 32 mutasi GL</span>
+              <span class="text-amber-700 font-bold">⚠ Rp 3.3jt PENDING</span>
+            </div>
+          </div>
+
+          <!-- Kas Toko -->
+          <div class="card-hover sub-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="icon-tile icon-tile-emerald"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="text-[14px] font-extrabold" style="color: var(--color-primary)">Kas Toko</div>
+                  <div class="text-[11px] text-gray-500"><span class="font-mono font-bold">1-1110</span> · Cash · dipegang kasir</div>
+                </div>
+              </div>
+              <span class="chip-soft bg-emerald-100 text-emerald-800">Kas</span>
+            </div>
+            <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 850.000</div>
+            <div class="flex items-center justify-between mt-3 text-[11px] text-gray-500">
+              <span class="flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> 18 mutasi GL</span>
+              <span class="text-emerald-700 font-bold">✓ Real-time</span>
+            </div>
+          </div>
+
+          <!-- Lalamove -->
+          <div class="card-hover sub-card p-5">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="icon-tile icon-tile-amber"><i data-lucide="bike" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="text-[14px] font-extrabold" style="color: var(--color-primary)">Lalamove Balance</div>
+                  <div class="text-[11px] text-gray-500"><span class="font-mono font-bold">1-1310</span> · E-Wallet</div>
+                </div>
+              </div>
+              <span class="chip-soft bg-amber-100 text-amber-800">Wallet</span>
+            </div>
+            <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 420.000</div>
+            <div class="flex items-center justify-between mt-3 text-[11px] text-gray-500">
+              <span class="flex items-center gap-1"><i data-lucide="hand" class="w-3 h-3"></i> Manual update</span>
+              <span class="text-gray-400">Phase 3 top-up</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Akun Pribadi -->
+        <div class="flex items-baseline justify-between mt-8 mb-3">
+          <h4 class="text-sm font-extrabold uppercase tracking-widest text-gray-600">Akun Pribadi <span class="chip-soft bg-gray-200 text-gray-700 ml-2">Excluded dari laporan bisnis</span></h4>
+          <span class="text-xs text-gray-500">1 akun</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 relative placeholder-badge">
+          <div class="sub-card p-5" style="background: #f9fafb; border-color: #e5e7eb;">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <div class="icon-tile" style="background: #f3f4f6; color: #6b7280;"><i data-lucide="user" class="w-5 h-5"></i></div>
+                <div>
+                  <div class="text-[14px] font-extrabold text-gray-700">BCA Pribadi (Tony)</div>
+                  <div class="text-[11px] text-gray-500"><span class="font-mono font-bold">1-1230</span> · BCA · 5555444433</div>
+                </div>
+              </div>
+              <span class="chip-soft bg-gray-300 text-gray-700">Pribadi</span>
+            </div>
+            <div class="text-2xl font-black text-gray-700">Rp 35.000.000</div>
+            <div class="text-[11px] text-gray-500 mt-3">6 mutasi GL (dari Owner Drawing)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M2: Account Detail with Riwayat (running balance, format akuntan) -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">2. Account Detail — Riwayat dengan Running Balance</h2>
+      <span class="chip-soft bg-blue-100 text-[#012749]">Klik kartu akun di M1</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <!-- Hero header -->
+      <div class="p-6 text-white" style="background: linear-gradient(135deg, #1e40af, #1e3a8a);">
+        <a href="#m1" class="text-[11px] text-blue-100 hover:underline inline-flex items-center gap-1"><i data-lucide="arrow-left" class="w-3 h-3"></i> Kas & Bank</a>
+        <h3 class="text-2xl font-extrabold mt-1">BCA Operasional <span class="text-[14px] font-bold text-blue-200 font-mono ml-2">1-1210</span></h3>
+        <p class="text-[12px] text-blue-100 mt-1">Aset / Bank · BCA · 1234567890 · PT Garindo Jaya Panel · normal balance: <strong>Debit</strong></p>
+        <div class="mt-4 grid grid-cols-4 gap-3 text-[12px]">
+          <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase text-blue-100">Saldo Awal</div><div class="font-extrabold text-base">Rp 0</div></div>
+          <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase text-blue-100">Total Debit (in)</div><div class="font-extrabold text-base text-emerald-200">+ Rp 35.450.000</div></div>
+          <div class="bg-white/10 rounded-xl p-3"><div class="text-[10px] uppercase text-blue-100">Total Kredit (out)</div><div class="font-extrabold text-base text-rose-200">− Rp 22.950.000</div></div>
+          <div class="bg-white/15 rounded-xl p-3 ring-2 ring-emerald-300"><div class="text-[10px] uppercase text-emerald-100">Saldo Akhir</div><div class="font-extrabold text-base text-emerald-200">Rp 12.500.000</div></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="border-b border-gray-200 px-6 flex gap-1 overflow-x-auto">
+        <button class="px-4 py-3 text-[13px] font-extrabold border-b-2 border-emerald-600" style="color: var(--color-primary)">
+          <i data-lucide="list" class="inline w-3.5 h-3.5"></i> Riwayat <span class="chip-soft bg-emerald-100 text-emerald-700 ml-1">124</span>
+        </button>
+        <button class="px-4 py-3 text-[13px] font-bold text-gray-500">
+          <i data-lucide="hourglass" class="inline w-3.5 h-3.5"></i> Belum Cair <span class="chip-soft bg-amber-100 text-amber-800 ml-1">5</span>
+        </button>
+        <button class="px-4 py-3 text-[13px] font-bold text-gray-500"><i data-lucide="info" class="inline w-3.5 h-3.5"></i> Info Akun</button>
+      </div>
+
+      <!-- Banner pending -->
+      <div class="m-6 sub-card p-3 flex items-center gap-3" style="background: #fef3c7; border-color: #fbbf24;">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-700"></i>
+        <p class="text-[12px] text-amber-900">
+          <strong>Saldo termasuk Rp 5.200.000 marketplace PENDING.</strong> Lines dengan status='PENDING' tidak dihitung di saldo cleared. <a href="#" class="font-bold underline">Lihat 5 pending →</a>
+        </p>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="px-6 pb-4 flex items-center gap-3 text-[12px]">
+        <span class="font-bold text-gray-600">Periode:</span>
+        <button class="btn-primary py-1.5 text-[11px]">Bulan ini</button>
+        <button class="btn-secondary py-1.5 text-[11px]">30 hari</button>
+        <button class="btn-secondary py-1.5 text-[11px]">Tahun ini</button>
+        <button class="btn-secondary py-1.5 text-[11px]">Custom...</button>
+        <div class="ml-auto flex gap-2">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3 h-3"></i> PDF</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3 h-3"></i> Excel</button>
+        </div>
+      </div>
+
+      <!-- Running balance table -->
+      <div class="border-t border-gray-200 relative placeholder-badge">
+        <table class="w-full text-[12px]">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="text-left py-2 px-3">Tanggal</th>
+              <th class="text-left py-2 px-3">No. Entry</th>
+              <th class="text-left py-2 px-3">Keterangan</th>
+              <th class="text-right py-2 px-3">Debit</th>
+              <th class="text-right py-2 px-3">Kredit</th>
+              <th class="text-right py-2 px-3">Saldo</th>
+              <th class="text-center py-2 px-3">Status</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr class="hover:bg-blue-50/30">
+              <td class="py-2 px-3 font-mono">20/06 13:45</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0021</a></td>
+              <td class="py-2 px-3">Penjualan Tokopedia INV-241 <span class="text-[10px] text-violet-700 ml-1">pair: HPP</span></td>
+              <td class="text-right font-bold text-emerald-700">1.250.000</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold italic text-gray-400">PENDING</td>
+              <td class="text-center"><span class="chip-soft bg-amber-100 text-amber-800">Pending</span></td>
+            </tr>
+            <tr class="hover:bg-blue-50/30">
+              <td class="py-2 px-3 font-mono">20/06 11:12</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0019</a></td>
+              <td class="py-2 px-3">Bayar Pembelian PI-89 · CV Sinar Jaya</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold text-rose-700">3.500.000</td>
+              <td class="text-right font-bold text-blue-700">10.250.000</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">Cleared</span></td>
+            </tr>
+            <tr class="hover:bg-blue-50/30">
+              <td class="py-2 px-3 font-mono">20/06 10:33</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0016</a></td>
+              <td class="py-2 px-3">Penjualan Grosir INV-156 · Toko Maju Jaya</td>
+              <td class="text-right font-bold text-emerald-700">8.700.000</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold text-blue-700">13.750.000</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">Cleared</span></td>
+            </tr>
+            <tr class="hover:bg-blue-50/30">
+              <td class="py-2 px-3 font-mono">19/06 16:20</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0012</a></td>
+              <td class="py-2 px-3">Pelunasan Piutang INV-TMP-73 · PT Mega Konstruksi</td>
+              <td class="text-right font-bold text-emerald-700">4.500.000</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold text-blue-700">5.050.000</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">Cleared</span></td>
+            </tr>
+            <tr class="bg-amber-50/30 hover:bg-amber-50">
+              <td class="py-2 px-3 font-mono">19/06 03:00</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0011</a></td>
+              <td class="py-2 px-3"><i data-lucide="settings-2" class="inline w-3 h-3"></i> Penyesuaian admin BCA bulanan</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold text-rose-700">17.500</td>
+              <td class="text-right font-bold text-blue-700">550.000</td>
+              <td class="text-center"><span class="chip-soft bg-violet-100 text-violet-800">Recon</span></td>
+            </tr>
+            <tr class="hover:bg-blue-50/30">
+              <td class="py-2 px-3 font-mono">19/06 18:45</td>
+              <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0008</a></td>
+              <td class="py-2 px-3">Setor kasir batch CB-58 (pair: 1-1110)</td>
+              <td class="text-right font-bold text-emerald-700">2.150.000</td>
+              <td class="text-right">—</td>
+              <td class="text-right font-bold text-blue-700">567.500</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">Cleared</span></td>
+            </tr>
+          </tbody>
+          <tfoot class="border-t-2" style="background: #eff4ff; border-color: #1e40af;">
+            <tr class="font-extrabold" style="color: var(--color-primary)">
+              <td colspan="3" class="py-3 px-3 text-right">TOTAL JUN 2026 (cleared only)</td>
+              <td class="py-3 px-3 text-right text-emerald-700">35.450.000</td>
+              <td class="py-3 px-3 text-right text-rose-700">22.950.000</td>
+              <td class="py-3 px-3 text-right text-blue-700">Rp 12.500.000</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="px-6 py-3 text-[11px] text-center text-gray-500">Menampilkan 6 dari 124 entries · <a href="#" class="text-blue-700 font-bold hover:underline">Muat lebih banyak ↓</a></div>
+    </div>
+  </section>
+
+  <!-- M3: Add/Edit Account Modal -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">3. Form Akun — Add/Edit (Owner only)</h2>
+      <span class="chip-soft bg-violet-100 text-violet-800">3 type variant: BANK / KAS / E_WALLET</span>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- BANK variant -->
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #dbeafe;">
+          <div class="icon-tile icon-tile-blue"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-base font-bold" style="color: var(--color-primary)">Tambah Akun — Type BANK</h3>
+            <p class="text-xs text-gray-600 mt-0.5">All bank fields visible</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Jenis akun *</label>
+            <select class="input"><option>🏦 Bank</option><option>💵 Kas</option><option>👛 E-Wallet</option></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold mb-1" style="color: var(--color-primary)">Bank *</label>
+              <select class="input"><option>BCA</option><option>MANDIRI</option><option>BRI</option><option>BNI</option></select>
+            </div>
+            <div>
+              <label class="block font-bold mb-1" style="color: var(--color-primary)">Nomor rekening *</label>
+              <input class="input" placeholder="1234567890" />
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Nama di buku tabungan *</label>
+            <input class="input" placeholder="PT Garindo Jaya Panel" />
+            <p class="text-[11px] text-gray-500 mt-1">Tampil di Invoice PDF ke customer</p>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Nickname internal *</label>
+            <input class="input" placeholder="BCA Operasional" />
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Peruntukan *</label>
+            <select class="input"><option>Operasional bisnis</option><option>Tabungan bisnis</option><option>Pribadi owner</option></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold mb-1" style="color: var(--color-primary)">Saldo awal</label>
+              <input class="input text-right" placeholder="0" />
+            </div>
+            <div>
+              <label class="block font-bold mb-1" style="color: var(--color-primary)">Tanggal saldo awal</label>
+              <input type="date" class="input" value="2025-05-31" />
+            </div>
+          </div>
+          <div class="sub-card p-3 flex items-center gap-2" style="background: #eff4ff;">
+            <input type="checkbox" checked class="w-4 h-4" />
+            <span class="text-[12px]"><strong>Tampilkan di Invoice PDF</strong> ke customer</span>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="btn-primary flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Akun</button>
+            <button class="btn-secondary">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- E_WALLET variant -->
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #fef3c7;">
+          <div class="icon-tile icon-tile-amber"><i data-lucide="bike" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-base font-bold" style="color: var(--color-primary)">Tambah Akun — Type E-WALLET</h3>
+            <p class="text-xs text-gray-600 mt-0.5">Provider dropdown · bank fields hidden</p>
+          </div>
+        </div>
+        <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Jenis akun *</label>
+            <select class="input"><option>🏦 Bank</option><option>💵 Kas</option><option selected>👛 E-Wallet</option></select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Provider *</label>
+            <select class="input">
+              <option>Lalamove</option><option>GoSend</option><option>Grab</option>
+              <option>OVO</option><option>DANA</option><option>GoPay</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Nickname internal *</label>
+            <input class="input" value="Lalamove Balance" />
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Peruntukan *</label>
+            <select class="input"><option>Operasional bisnis</option><option>Pribadi owner</option></select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Saldo awal (terkini)</label>
+            <input class="input text-right" value="420.000" />
+            <p class="text-[11px] text-gray-500 mt-1">Phase 3: Top Up + Spend manual entry</p>
+          </div>
+          <div class="sub-card p-3 text-[11px] text-gray-600 italic" style="background: #f9fafb; border-style: dashed;">
+            Fields "Bank", "Nomor rekening", "Nama buku tabungan", "Tampil di Invoice" — hidden untuk type E-Wallet
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="btn-primary flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Akun</button>
+            <button class="btn-secondary">Batal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4: Picker integration di 3 flow existing -->
+  <section id="m4">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">4. Picker Akun di Flow Existing (3 modal)</h2>
+      <span class="chip-soft bg-amber-100 text-amber-800">Modifikasi PenjualanBaru/PembayaranForm/CatatBayarPiutang</span>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4">
+      <div class="card overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex items-start gap-3" style="background: #d1fae5;">
+          <div class="icon-tile icon-tile-emerald"><i data-lucide="shopping-cart" class="w-5 h-5"></i></div>
+          <div><h3 class="text-[13px] font-extrabold" style="color: var(--color-primary)">Penjualan Transfer</h3><p class="text-[10px] text-gray-600">PenjualanBaruScreen.tsx</p></div>
+        </div>
+        <div class="p-4 space-y-3 text-[12px] relative placeholder-badge">
+          <div class="sub-card p-3" style="background: #d1fae5; border-color: #6ee7b7;">
+            <label class="block font-bold text-emerald-900 mb-1">Masuk ke akun *</label>
+            <select class="input text-xs">
+              <option>🏦 1-1210 BCA Operasional · 1234567890</option>
+              <option>🏦 1-1220 Mandiri Toko · 9876543210</option>
+            </select>
+            <p class="text-[10px] text-emerald-700 mt-1 font-mono">→ D 1-1210 BCA · K 4-1110 Penjualan Walkin</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex items-start gap-3" style="background: #fee2e2;">
+          <div class="icon-tile" style="background: #fecaca; color: #991b1b;"><i data-lucide="shopping-bag" class="w-5 h-5"></i></div>
+          <div><h3 class="text-[13px] font-extrabold" style="color: var(--color-primary)">Catat Bayar Pembelian</h3><p class="text-[10px] text-gray-600">PembayaranFormPage.tsx</p></div>
+        </div>
+        <div class="p-4 space-y-3 text-[12px] relative placeholder-badge">
+          <div class="sub-card p-3" style="background: #fee2e2; border-color: #fca5a5;">
+            <label class="block font-bold text-red-900 mb-1">Bayar dari akun *</label>
+            <select class="input text-xs">
+              <option>🏦 1-1210 BCA Operasional</option>
+              <option>🏦 1-1220 Mandiri Toko</option>
+              <option>💵 1-1110 Kas Toko</option>
+            </select>
+            <p class="text-[10px] text-red-700 mt-1 font-mono">→ D 2-1100 Hutang Usaha · K 1-1210 BCA</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex items-start gap-3" style="background: #dbeafe;">
+          <div class="icon-tile icon-tile-blue"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+          <div><h3 class="text-[13px] font-extrabold" style="color: var(--color-primary)">Catat Bayar Piutang</h3><p class="text-[10px] text-gray-600">CatatBayarModal.tsx</p></div>
+        </div>
+        <div class="p-4 space-y-3 text-[12px] relative placeholder-badge">
+          <div class="sub-card p-3" style="background: #dbeafe; border-color: #93c5fd;">
+            <label class="block font-bold text-blue-900 mb-1">Masuk ke akun *</label>
+            <select class="input text-xs">
+              <option>🏦 1-1210 BCA Operasional</option>
+              <option>🏦 1-1220 Mandiri Toko</option>
+              <option>💵 1-1110 Kas Toko</option>
+            </select>
+            <p class="text-[10px] text-blue-700 mt-1 font-mono">→ D 1-1210 BCA · K 1-1400 Piutang Usaha</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">
+    Mockup Phase 1 Cash & Bank · design-system aligned · 2026-06-21
+  </footer>
+
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

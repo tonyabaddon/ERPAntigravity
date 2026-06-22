@@ -45,6 +45,8 @@ export interface CashAccount {
 /**
  * Cash account balance row from cash_account_balances view.
  * Aggregates balance information with journal entries.
+ * coa_account_id and account_code are merged in by the service layer
+ * (not in the DB view) so the UI can show COA codes on account cards.
  */
 export interface CashAccountBalance {
   cash_account_id: string;
@@ -65,6 +67,10 @@ export interface CashAccountBalance {
   current_balance: number;
   last_movement_date: string | null;
   movements_this_month: number;
+  /** COA account ID — merged from cash_accounts table by service layer */
+  coa_account_id: string | null;
+  /** COA account_code (e.g. "1-1210") — merged from chart_of_accounts by service layer */
+  account_code: string | null;
 }
 
 /**
