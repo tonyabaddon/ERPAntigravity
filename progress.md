@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-22 — Akuntansi Phase 0d Task 5: BukuBesarTab component — DONE
+
+`src/components/akuntansi/gl/BukuBesarTab.tsx` (562 lines).
+COA account picker (fetchCoaTree grouped by type as optgroup), period presets (Bulan ini / 30 hari / Tahun ini / Custom placeholder), 3 stat sub-cards (Saldo Awal / Movement / Saldo Akhir — emerald highlight), running-balance table (6 columns per mockup M4), export PDF/Excel placeholders.
+Saldo Awal formula verified against general_ledger view window-function definition in migration 20260715000011_views.sql.
+npx tsc --noEmit: clean.
+Commit: bbdb01e (abfc8c4..bbdb01e)
+
+---
+
 ## 2026-06-22 — Akuntansi Phase 0d Task 1: update_coa_account RPC — DONE
 
 Migration `20260722000005_update_coa_account_rpc.sql` applied to production.
