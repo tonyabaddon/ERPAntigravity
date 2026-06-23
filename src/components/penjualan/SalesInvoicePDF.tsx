@@ -13,7 +13,7 @@ function formatDateTime(iso: string) {
   return `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} · ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
 }
 
-export type InvoiceVariant = 'dp' | 'lunas';
+export type InvoiceVariant = 'dp' | 'lunas' | 'quotation';
 export type InvoicePrintMode = 'normal' | 'dot_matrix';
 
 export interface SalesInvoicePDFProps {
@@ -152,6 +152,7 @@ interface InvoiceBodyProps {
 function InvoiceBody({
   transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel, printMode,
 }: InvoiceBodyProps) {
+  const isQuotation = variant === 'quotation';
   const subtotal = t.subtotal;
   const ongkir = t.ongkir_amount ?? 0;
   const total = t.total_amount ?? subtotal + ongkir;
@@ -169,11 +170,18 @@ function InvoiceBody({
   return (
     <div className={containerCls}>
       {/* Stamp */}
-      <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
-        variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
-      }`}>
-        {variant === 'lunas' ? 'LUNAS' : 'DP'}
-      </div>
+      {isQuotation ? (
+        <div className="absolute right-8 top-32 rotate-[-12deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 border-amber-600 text-amber-600"
+          style={{ background: 'rgba(255,255,255,0.7)', zIndex: 10 }}>
+          PENAWARAN
+        </div>
+      ) : (
+        <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
+          variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
+        }`}>
+          {variant === 'lunas' ? 'LUNAS' : 'DP'}
+        </div>
+      )}
 
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr] gap-4 pb-3 border-b-2 border-slate-900 mb-3">
@@ -193,42 +201,53 @@ function InvoiceBody({
       {/* Title */}
       <div className="grid grid-cols-[1fr_auto] gap-3 mb-3">
         <div>
-          <div className="font-sans font-extrabold text-[17px] tracking-wider">SALES INVOICE</div>
-          <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
-            {variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
+          <div className="font-sans font-extrabold text-[17px] tracking-wider">
+            {isQuotation ? 'SALES ORDER' : 'SALES INVOICE'}
           </div>
+          {!isQuotation && (
+            <div className={`text-[11px] font-bold uppercase tracking-wide mt-0.5 ${variant === 'lunas' ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {variant === 'lunas' ? 'Pelunasan / Lunas' : 'Tanda Terima Uang Muka (DP)'}
+            </div>
+          )}
         </div>
         <div className="text-right text-[11px]">
           <div className="font-extrabold text-[13px]">{t.invoice_number}</div>
-          <div>{formatDateTime(variant === 'lunas' && t.lunas_at ? t.lunas_at : t.created_at)}</div>
+          <div>{formatDateTime(!isQuotation && variant === 'lunas' && t.lunas_at ? t.lunas_at : t.created_at)}</div>
           <div>Channel: {channelLabel.toUpperCase()}</div>
         </div>
       </div>
 
       {/* Bill-to */}
-      <div className="grid grid-cols-2 gap-4 py-2 border-b border-dashed border-slate-400 mb-2 text-[11px]">
+      <div className={`grid ${isQuotation ? 'grid-cols-1' : 'grid-cols-2'} gap-4 py-2 border-b border-dashed border-slate-400 mb-2 text-[11px]`}>
         <div>
           <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Pelanggan</div>
           <div><strong>{t.customer_name ?? '—'}</strong></div>
           {t.customer_company && <div>{t.customer_company}</div>}
           <div>{t.customer_phone ?? '—'}</div>
-          {t.delivery_address && (
+          {!isQuotation && t.delivery_address && (
             <div className="mt-1">
               <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">📍 Kirim ke: </span>
               <span className="whitespace-pre-wrap">{t.delivery_address}</span>
             </div>
           )}
-        </div>
-        <div>
-          <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
-          <div><strong>{paymentLabel}</strong></div>
-          {adminName && (
-            <div className="mt-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">Admin: </span>
-              <span>{adminName}</span>
+          {isQuotation && (
+            <div className="mt-1 italic text-slate-500" style={{ fontSize: 10 }}>
+              Alamat pengiriman ditentukan saat Sales Invoice diterbitkan.
             </div>
           )}
         </div>
+        {!isQuotation && (
+          <div>
+            <div className="font-extrabold text-[10px] uppercase tracking-widest text-slate-600 mb-1">Metode Bayar</div>
+            <div><strong>{paymentLabel}</strong></div>
+            {adminName && (
+              <div className="mt-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-600">Admin: </span>
+                <span>{adminName}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Items table */}
@@ -281,31 +300,52 @@ function InvoiceBody({
       {/* Totals */}
       <div className="ml-auto w-3/5 text-[12px] mt-2">
         <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(subtotal)}</span></div>
-        {ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
+        {!isQuotation && ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
         <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-[13px]">
-          <span>TOTAL TAGIHAN</span><span>{formatRp(total)}</span>
+          <span>{isQuotation ? 'TOTAL PENAWARAN' : 'TOTAL TAGIHAN'}</span>
+          <span>{formatRp(isQuotation ? subtotal : total)}</span>
         </div>
-        <div className="flex justify-between py-0.5 font-bold"><span>{variant === 'lunas' ? 'Sudah Dibayar' : 'Uang Muka (DP) Diterima'}</span><span>{formatRp(sudahDibayar)}</span></div>
-        <div className={`flex justify-between py-0.5 font-extrabold ${variant === 'lunas' ? '' : ''}`}>
-          <span>{variant === 'lunas' ? 'SISA' : 'SISA PELUNASAN'}</span><span>{formatRp(sisa)}</span>
-        </div>
+        {isQuotation && (
+          <div className="py-0.5 text-[10px] italic text-slate-500">
+            * Belum termasuk ongkir. Final total saat Sales Invoice.
+          </div>
+        )}
+        {!isQuotation && (
+          <>
+            <div className="flex justify-between py-0.5 font-bold"><span>{variant === 'lunas' ? 'Sudah Dibayar' : 'Uang Muka (DP) Diterima'}</span><span>{formatRp(sudahDibayar)}</span></div>
+            <div className="flex justify-between py-0.5 font-extrabold">
+              <span>{variant === 'lunas' ? 'SISA' : 'SISA PELUNASAN'}</span><span>{formatRp(sisa)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Payment block */}
-      <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-[11px]">
-        <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">Rekening Pembayaran</div>
-        <div>
-          <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_holder ?? '—'}</strong>
+      {!isQuotation && (
+        <div className="mt-4 pt-2 border-t border-dashed border-slate-400 text-[11px]">
+          <div className="font-extrabold text-[10px] uppercase tracking-widest mb-1">Rekening Pembayaran</div>
+          <div>
+            <strong>{bank?.bank_name ?? '—'}</strong> · {bank?.account_number ?? '—'} a/n <strong>{bank?.account_holder ?? '—'}</strong>
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">
+            {variant === 'lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
+          </div>
         </div>
-        <div className="text-[10px] text-slate-500 mt-0.5">
-          {variant === 'lunas' ? 'Terima kasih atas pembayaran Anda.' : 'Sisa pelunasan ditransfer sebelum pengambilan/pengiriman barang.'}
-        </div>
-      </div>
+      )}
 
       {/* Disclaimer */}
-      <div className="mt-3 border border-slate-900 px-2 py-1.5 text-center text-[10px] font-extrabold tracking-wide">
-        ⚠ BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN
-      </div>
+      {!isQuotation && (
+        <div className="mt-3 border border-slate-900 px-2 py-1.5 text-center text-[10px] font-extrabold tracking-wide">
+          ⚠ BARANG YANG SUDAH DIBELI TIDAK DAPAT DIKEMBALIKAN
+        </div>
+      )}
+
+      {/* Quotation footer disclaimer */}
+      {isQuotation && (
+        <div className="mt-4 pt-3 border-t border-slate-300 text-[10px] text-slate-500 italic">
+          Dokumen ini bukan invoice resmi. Untuk pemesanan, konfirmasi ke admin untuk diteruskan menjadi Sales Invoice.
+        </div>
+      )}
 
       {/* Footer signatures */}
       <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-dashed border-slate-400 text-[11px]">
