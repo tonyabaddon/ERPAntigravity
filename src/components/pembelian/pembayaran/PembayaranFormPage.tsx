@@ -13,6 +13,7 @@ import { pembayaranService } from '../../../lib/pembayaranService';
 import { supplierService } from '../../../lib/pembelianService';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import { supabase } from '../../../lib/supabaseClient';
+import CashAccountPicker from '../../akuntansi/CashAccountPicker';
 import type {
   DbSupplier,
   RecordPembayaranPayload,
@@ -71,6 +72,9 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState<Method>('TRANSFER');
   const [accountLabel, setAccountLabel] = useState('');
+  // Phase 0b dual-write: cash_accounts.id where the payment leaves from.
+  // Required for GL post — passed as payload.account_id to record_pembayaran RPC.
+  const [cashAccountId, setCashAccountId] = useState<string | null>(null);
   const [discount, setDiscount] = useState<number>(0);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
@@ -203,6 +207,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
 
   async function handleSubmit() {
     if (!supplier) { showToast('Pilih supplier dulu', 'warning'); return; }
+    if (!cashAccountId) { showToast('Pilih akun sumber pembayaran (Kas/Bank)', 'warning'); return; }
     const selectedRows = rows.filter(r => r.selected);
     if (selectedRows.length === 0) { showToast('Pilih minimal 1 Tagihan / Tukar Faktur', 'warning'); return; }
     for (const r of selectedRows) {
@@ -226,6 +231,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         supplier_id: supplier.id,
         paid_at: paidAt,
         payment_method: paymentMethod,
+        account_id: cashAccountId ?? undefined,
         account_label: accountLabel || undefined,
         discount_amount: discount || 0,
         proof_url: proofUrl,
@@ -458,10 +464,24 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-1.5">Akun Sumber (opsional)</label>
-              <input value={accountLabel} onChange={e => setAccountLabel(e.target.value)}
-                placeholder="Misal: BCA -1234, Kas Toko"
-                className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
+              <CashAccountPicker
+                value={cashAccountId}
+                onChange={(id) => {
+                  setCashAccountId(id);
+                  // Backward-compat: keep account_label text in sync from picker selection.
+                  // (Existing reports/exports may read account_label as display string.)
+                  if (!id) setAccountLabel('');
+                }}
+                paymentMethod={paymentMethod === 'CASH' ? 'cash' : paymentMethod === 'TRANSFER' ? 'transfer' : paymentMethod === 'EDC' ? 'edc' : undefined}
+                purposeFilter="business-only"
+                label="Akun Sumber *"
+              />
+              <input
+                value={accountLabel}
+                onChange={e => setAccountLabel(e.target.value)}
+                placeholder="Catatan tambahan akun (opsional)"
+                className="mt-2 w-full text-[11px] py-1.5 px-2 rounded-lg border border-gray-200 text-gray-600"
+              />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Diskon (opsional)</label>

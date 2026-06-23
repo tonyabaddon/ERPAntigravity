@@ -96,6 +96,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   // ── Step 3: payment fields ────────────────────────────────────────────────
   const [paymentMethod, setPaymentMethod] = useState<KasirPaymentMethod>('cash');
+  // Phase 0b: cash_account_id picker selection for transfer/qris/edc flows.
+  // Reset to null when method flips back to 'cash' (auto-routes to default Kas).
+  const [cashAccountId, setCashAccountId] = useState<string | null>(null);
   const [paymentSubtype, setPaymentSubtype] = useState<KasirPaymentSubtype>(null);
   const [paymentType, setPaymentType] = useState<KasirPaymentType>('FULL');
   const [dpAmount, setDpAmount] = useState(0);
@@ -350,6 +353,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       showToast('Pilih sub-tipe EDC (Debit / QRIS).', 'warning');
       throw new Error('edc_subtype_missing');
     }
+    // Phase 0b: non-cash methods require explicit cash account selection
+    // (GL dual-write needs to know which account receives the funds).
+    if (paymentType !== 'TEMPO' && paymentMethod !== 'cash' && !cashAccountId) {
+      showToast('Pilih akun tujuan transfer/QRIS/EDC.', 'warning');
+      throw new Error('cash_account_missing');
+    }
 
     if (path === 'tempo') {
       if (!customer.allows_tempo) {
@@ -488,6 +497,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       delivery_address: deliveryAddress.trim() || undefined,
       customer_id: customer.id,
       p_allow_negative_stock: true,
+      cash_account_id: paymentMethod === 'cash' ? null : cashAccountId,
     });
     onSaved(tx.id);
     if (onNavigate) onNavigate('invoicePreview'); else onBack();
@@ -639,8 +649,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 rakitLines={rakitLines}
                 method={paymentMethod}
                 subtype={paymentSubtype}
-                onMethodChange={setPaymentMethod}
+                onMethodChange={(m) => {
+                  setPaymentMethod(m);
+                  if (m === 'cash') setCashAccountId(null);
+                }}
                 onSubtypeChange={setPaymentSubtype}
+                cashAccountId={cashAccountId}
+                onCashAccountIdChange={setCashAccountId}
                 paymentType={paymentType}
                 onPaymentTypeChange={setPaymentType}
                 dpAmount={dpAmount}

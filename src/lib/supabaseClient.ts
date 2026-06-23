@@ -1420,6 +1420,9 @@ export const kasirService = {
       // explicit false when omitted to match the DB default + keep call sites
       // that don't set the flag (legacy KasirScreen) on conservative behavior.
       p_allow_negative_stock: input.p_allow_negative_stock ?? false,
+      // Phase 0b dual-write: cash_account_id where the sale lands. Null = RPC
+      // falls back to accounting_config defaults by payment_method.
+      p_cash_account_id: input.cash_account_id ?? null,
     });
     if (error) throw error;
     if (!data) throw new Error('record_kasir_sale returned no row');
