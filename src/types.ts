@@ -549,6 +549,12 @@ export interface RecordKasirSaleInput {
    * accounting_config defaults by payment_method.
    */
   cash_account_id?: string | null;
+  /**
+   * Diskon fitur (Task 10): optional order-level discount triple.
+   * When omitted, defaults to no discount (null/null/0). Per-line discounts
+   * are embedded in the items JSONB as discount_amount_rp fields.
+   */
+  discount?: DiscountTriple;
 }
 
 export interface NewExpense {
