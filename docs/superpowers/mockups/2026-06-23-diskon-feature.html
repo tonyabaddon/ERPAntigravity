@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fitur Diskon — UI Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: #012749; --secondary: #2d8a4e; --accent: #c2410c; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f8fafc; }
+    .mockup-frame { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .annotation { background: #fff7ed; border-left: 3px solid #c2410c; }
+    .ann-callout { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    .field-master { color: #94a3b8; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
+    /* Segmented pill toggle for Rp / % */
+    .seg-pill { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: white; }
+    .seg-pill button { font-size: 11px; padding: 2px 7px; font-weight: 700; line-height: 1.2; border: none; background: white; color: #64748b; cursor: pointer; }
+    .seg-pill button.active { background: #c2410c; color: white; }
+    .seg-pill button:not(.active):hover { background: #f1f5f9; }
+    .disc-toggle { font-size: 10px; padding: 1px 5px; border-radius: 4px; }  /* legacy, retained for unused refs */
+    .pulse-dot { animation: pulse 1.6s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .bind-arrow { color: #c2410c; font-weight: 700; }
+    .scrollx::-webkit-scrollbar { height: 6px; }
+    .scrollx::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+</head>
+<body class="text-slate-800">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Mockup · 2026-06-23</div>
+      <h1 class="text-base font-extrabold text-[#012749]">Fitur Diskon — Manual Per-Transaksi</h1>
+    </div>
+    <div class="text-xs text-slate-500">
+      8 frame · scroll: Pengaturan → Kasir → Wizard → Tagihan PI → Invoice PDF → Pengawasan
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8 space-y-14">
+
+  <!-- ============================================== -->
+  <!-- INTRO -->
+  <!-- ============================================== -->
+  <section class="bg-white rounded-2xl border border-slate-200 p-6">
+    <div class="flex items-start gap-4">
+      <div class="text-3xl">🏷️</div>
+      <div class="flex-1">
+        <h2 class="text-lg font-extrabold text-[#012749] mb-2">Tujuan Mockup</h2>
+        <p class="text-sm text-slate-600 mb-3">Visualisasi UI fitur diskon manual sebelum implementation. Cakup: <strong>Pengaturan</strong> (3 toggle), <strong>Kasir cart + total bar</strong>, <strong>Wizard Step 2 + 3</strong>, <strong>Tagihan PI form</strong>, <strong>Invoice PDF render</strong>, <strong>Pengawasan view</strong>. Fokus pertanyaan review:</p>
+        <ul class="text-sm text-slate-700 space-y-1 list-disc pl-5">
+          <li>Apakah <strong>bidirectional Harga ↔ Diskon</strong> (default AMOUNT) intuitif untuk kasir?</li>
+          <li>Apakah label "List Rp …" di atas Harga membantu, atau ribut?</li>
+          <li>Apakah <strong>3 toggle di ModulSwitchesPanel</strong> cukup, atau perlu panel dedikasi?</li>
+          <li>Layout baris "Diskon" di PDF invoice — posisi & format OK?</li>
+          <li>Ada UX yang menurut Anda misleading / akan disalahgunakan kasir?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 1: PENGATURAN — ModulSwitchesPanel append -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 1 / 8 — Pengaturan · ModulSwitchesPanel (append)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200">
+        <h1 class="text-lg font-extrabold text-[#012749]">Pengaturan · Modul</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Saklar global per modul ERP. OFF = hide UI dari menu impacted.</p>
+      </div>
+      <div class="p-6">
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+          <!-- Existing rows (samar) -->
+          <div class="flex items-center justify-between px-4 py-3 opacity-40">
+            <div>
+              <div class="text-sm font-semibold text-slate-700">Modul Kasir</div>
+              <div class="text-xs text-slate-500">Counter sale, transaksi cepat tanpa wizard.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 opacity-40">
+            <div>
+              <div class="text-sm font-semibold text-slate-700">Modul TEMPO</div>
+              <div class="text-xs text-slate-500">Penjualan kredit dengan jatuh tempo.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 opacity-40">
+            <div>
+              <div class="text-sm font-semibold text-slate-700">Modul Multi-Warehouse</div>
+              <div class="text-xs text-slate-500">Pisah stok per gudang fisik.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+
+          <!-- NEW SECTION HEADER -->
+          <div class="px-4 py-2 bg-[#fff7ed] flex items-center gap-2">
+            <span class="text-[10px] uppercase tracking-wider font-bold text-[#c2410c]">Baru</span>
+            <span class="text-xs font-bold text-[#c2410c]">Modul Diskon</span>
+            <span class="text-[11px] text-slate-500">— append 3 baris ke panel existing</span>
+          </div>
+
+          <!-- NEW: 3 discount toggles -->
+          <div class="flex items-center justify-between px-4 py-3 bg-orange-50/40">
+            <div>
+              <div class="text-sm font-semibold text-slate-800">Diskon di Kasir</div>
+              <div class="text-xs text-slate-500">Tampilkan kolom Diskon di cart + baris Diskon Order di total bar Kasir.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 bg-orange-50/40">
+            <div>
+              <div class="text-sm font-semibold text-slate-800">Diskon di Penjualan (Wizard)</div>
+              <div class="text-xs text-slate-500">Tampilkan kolom Diskon di Step 2 dan baris Diskon Order di Step 3 wizard Catat Penjualan.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+          <div class="flex items-center justify-between px-4 py-3 bg-orange-50/40">
+            <div>
+              <div class="text-sm font-semibold text-slate-800">Diskon di Tagihan PI</div>
+              <div class="text-xs text-slate-500">Tampilkan kolom Diskon di items + baris Diskon Tagihan saat input Tagihan PI dari supplier.</div>
+            </div>
+            <div class="relative w-11 h-6 rounded-full bg-[#2d8a4e]"><div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white shadow"></div></div>
+          </div>
+        </div>
+
+        <div class="annotation rounded-md p-3 mt-4 text-xs text-slate-700">
+          <strong class="text-[#c2410c]">Catatan:</strong> Saat OFF, RPC backend tetap accept payload diskon untuk backward-compat data lama (tidak corrupt invoice history). Hanya input UI baru yang di-hide.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 2: KASIR — Cart + Discount Columns -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 2 / 8 — Kasir Cart · 3 kolom (Harga · Diskon · Subtotal) + bidirectional binding</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Kasir · Counter Sale</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Walk-in · Pembayaran CASH · 23 Jun 2026</p>
+        </div>
+        <span class="text-xs text-slate-500">3 item · Subtotal Rp 1.200.000</span>
+      </div>
+
+      <div class="p-6">
+        <!-- Cart header -->
+        <div class="grid grid-cols-12 gap-2 text-[11px] uppercase tracking-wider font-bold text-slate-500 px-2 pb-2 border-b border-slate-200">
+          <div class="col-span-4">Produk</div>
+          <div class="col-span-1 text-right">Qty</div>
+          <div class="col-span-3 text-right">Harga</div>
+          <div class="col-span-2 text-right">Diskon</div>
+          <div class="col-span-2 text-right">Subtotal</div>
+        </div>
+
+        <!-- Row 1: normal item (no discount) -->
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Kabel NYM 2.5mm</div>
+            <div class="text-[11px] text-slate-500">SKU: KBL-001</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">10</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 25.000</div>
+            <input type="text" value="25.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">&nbsp;</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" placeholder="0" class="w-16 text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-400" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 250.000</div>
+        </div>
+
+        <!-- Row 2: PATH B — user edit Harga -->
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100 bg-orange-50/30 -mx-2 px-2 rounded">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">MCB Schneider 10A</div>
+            <div class="text-[11px] text-slate-500">SKU: MCB-S10 · <span class="text-[#c2410c] font-bold">Path B</span></div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">2</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 80.000</div>
+            <input type="text" value="70.000" class="w-full text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase pulse-dot">↔ auto</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" value="20.000" class="w-16 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 140.000</div>
+        </div>
+
+        <!-- Row 3: PATH A — user input Diskon % -->
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100 bg-orange-50/30 -mx-2 px-2 rounded">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Lampu Philips LED 9W</div>
+            <div class="text-[11px] text-slate-500">SKU: LMP-P9W · <span class="text-[#c2410c] font-bold">Path A</span></div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">5</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 60.000</div>
+            <input type="text" value="54.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-500" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">&nbsp;</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" value="10" class="w-16 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+              <span class="seg-pill"><button>Rp</button><button class="active">%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 270.000</div>
+        </div>
+
+        <!-- TOTAL BAR with order-level discount -->
+        <div class="mt-4 pt-3 border-t-2 border-slate-300">
+          <div class="space-y-1 text-sm max-w-md ml-auto">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal (3 item)</span>
+              <span class="font-mono">Rp 660.000</span>
+            </div>
+            <!-- NEW order-level discount row -->
+            <div class="flex justify-between items-center bg-orange-50 -mx-2 px-2 py-1.5 rounded">
+              <span class="font-semibold text-[#c2410c]">⊖ Diskon Order</span>
+              <div class="flex items-center gap-1">
+                <input type="text" value="30.000" class="w-24 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+                <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+              </div>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Ongkir</span>
+              <span class="font-mono">Rp 0</span>
+            </div>
+            <div class="flex justify-between font-extrabold text-lg pt-2 border-t border-slate-200 text-[#012749]">
+              <span>TOTAL</span>
+              <span class="font-mono">Rp 630.000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <button class="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-300 rounded-lg">Batal</button>
+          <button class="px-6 py-2 text-sm font-bold bg-[#012749] text-white rounded-lg">Simpan & Cetak</button>
+        </div>
+
+        <!-- Annotation -->
+        <div class="annotation rounded-md p-4 mt-6 text-xs text-slate-700 space-y-2">
+          <div class="font-bold text-[#c2410c]">UX Notes (highlighted rows):</div>
+          <div><span class="ann-callout bg-white px-1.5 py-0.5 rounded border border-orange-200">Path A</span> = user ketik di kolom <strong>Diskon</strong>; toggle %/Rp. Harga auto-update.</div>
+          <div><span class="ann-callout bg-white px-1.5 py-0.5 rounded border border-orange-200">Path B</span> = user ketik di kolom <strong>Harga</strong> (UX kasir lama, dipertahankan). Diskon auto-fill ke AMOUNT, format toggle reset ke "Rp".</div>
+          <div>Label kecil <strong>"List Rp …"</strong> di atas Harga = snapshot master price saat item ditambah. Tidak ikut berubah meskipun harga master diupdate di kemudian hari (fix latent bug `v_pengawasan_kasir_discount_7d`).</div>
+          <div>Markup (Harga &gt; List) → border merah + tombol Simpan disabled, error <span class="ann-callout">MARKUP_NOT_ALLOWED</span>.</div>
+        </div>
+
+        <!-- TOGGLE BEHAVIOR EXPLAINER -->
+        <div class="annotation rounded-md p-4 mt-3 text-xs text-slate-700 space-y-2">
+          <div class="font-bold text-[#c2410c]">Cara ubah Diskon Rp ↔ %:</div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <span>Klik segment yang ingin diaktifkan di pill toggle:</span>
+            <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            <span>→ klik <strong>%</strong> →</span>
+            <span class="seg-pill"><button>Rp</button><button class="active">%</button></span>
+          </div>
+          <div><strong>Konversi otomatis & equivalent:</strong> nilai diskon ikut dikonversi supaya hasil Rupiah sama.
+            <ul class="list-disc pl-5 mt-1 space-y-0.5">
+              <li>Contoh: input <code class="ann-callout">Rp 20.000</code> di line MCB qty 2 (List Rp 80.000 × 2 = 160.000). Klik <strong>%</strong> → input berubah ke <code class="ann-callout">12.5%</code> (= 20.000 / 160.000). Subtotal tetap Rp 140.000.</li>
+              <li>Sebaliknya: input <code class="ann-callout">10%</code>. Klik <strong>Rp</strong> → input berubah ke nilai Rp absolut equivalent. Subtotal tetap.</li>
+            </ul>
+          </div>
+          <div><strong>Catatan:</strong> kolom Subtotal &amp; Total tidak berubah saat toggle. Field <code class="ann-callout">discount_amount_rp</code> yang disimpan ke database juga sama. Yang berubah cuma representasi yang ditampilkan (raw input + type).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 3: WIZARD STEP 2 (Items + Line Discount) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 3 / 8 — Penjualan Wizard · Step 2 Pesanan (line discount)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200">
+        <h1 class="text-lg font-extrabold text-[#012749]">Catat Penjualan · Step 2 / 3</h1>
+        <p class="text-xs text-slate-500 mt-0.5">PT Mitra Indah · Tokopedia · TEMPO 14 hari</p>
+      </div>
+      <div class="p-6">
+
+        <!-- Search add -->
+        <div class="flex gap-2 mb-4">
+          <input placeholder="Cari produk/SKU…" class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg" />
+          <button class="px-3 py-2 text-sm bg-slate-100 border border-slate-300 rounded-lg font-semibold">+ Jasa</button>
+        </div>
+
+        <!-- Cart header -->
+        <div class="grid grid-cols-12 gap-2 text-[11px] uppercase tracking-wider font-bold text-slate-500 px-2 pb-2 border-b border-slate-200">
+          <div class="col-span-4">Produk / Jasa</div>
+          <div class="col-span-1 text-right">Qty</div>
+          <div class="col-span-3 text-right">Harga</div>
+          <div class="col-span-2 text-right">Diskon</div>
+          <div class="col-span-2 text-right">Subtotal</div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Stop Kontak Broco 2-gang</div>
+            <div class="text-[11px] text-slate-500">SKU: STK-B2G</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">20</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 35.000</div>
+            <input type="text" value="35.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">&nbsp;</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" placeholder="0" class="w-16 text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-400" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 700.000</div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100 bg-orange-50/30 -mx-2 px-2 rounded">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Saklar Schneider 1-gang</div>
+            <div class="text-[11px] text-slate-500">SKU: SKL-S1G</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">50</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 28.000</div>
+            <input type="text" value="25.200" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-500" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">↔ auto</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" value="140.000" class="w-20 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 1.260.000</div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Jasa Custom Panel 3-line</div>
+            <div class="text-[11px] text-slate-500">JASA-CP3 · 1 unit</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">1</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 850.000</div>
+            <input type="text" value="850.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">&nbsp;</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" placeholder="0" class="w-16 text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-400" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 850.000</div>
+        </div>
+
+        <!-- Step 2 subtotal preview -->
+        <div class="mt-4 pt-3 border-t border-slate-200">
+          <div class="flex justify-between text-sm max-w-md ml-auto">
+            <span class="text-slate-600">Subtotal Pesanan</span>
+            <span class="font-mono font-semibold">Rp 2.810.000</span>
+          </div>
+          <div class="text-[11px] text-slate-500 max-w-md ml-auto text-right mt-1">Diskon Order &amp; Ongkir di Step 3</div>
+        </div>
+
+        <div class="flex justify-between mt-6">
+          <button class="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-300 rounded-lg">← Kembali</button>
+          <button class="px-6 py-2 text-sm font-bold bg-[#012749] text-white rounded-lg">Lanjut Step 3 →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 4: WIZARD STEP 3 (Order Discount + Payment) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 4 / 8 — Penjualan Wizard · Step 3 Pembayaran (order discount)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200">
+        <h1 class="text-lg font-extrabold text-[#012749]">Catat Penjualan · Step 3 / 3</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Tipe pembayaran &amp; total invoice</p>
+      </div>
+      <div class="p-6 grid grid-cols-12 gap-6">
+
+        <!-- Left: payment selector -->
+        <div class="col-span-7 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tipe Pembayaran</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="p-3 rounded-xl bg-[#012749]/5 border-2 border-[#012749] text-[#012749]">
+                <div class="text-sm font-bold">TEMPO</div>
+                <div class="text-[11px] text-slate-500">14 hari</div>
+              </button>
+              <button class="p-3 rounded-xl bg-white border border-slate-200 text-slate-600">
+                <div class="text-sm font-semibold">DP</div>
+                <div class="text-[11px] text-slate-500">Sebagian</div>
+              </button>
+              <button class="p-3 rounded-xl bg-white border border-slate-200 text-slate-600">
+                <div class="text-sm font-semibold">Lunas</div>
+                <div class="text-[11px] text-slate-500">100%</div>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Jatuh Tempo</label>
+            <input type="text" value="07 Jul 2026" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" />
+            <div class="text-[11px] text-slate-500 mt-1">Default = +14 hari dari hari ini (per credit term customer)</div>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900">
+            ✓ Pesanan Rp 2.660.000 cukup di sisa kredit PT Mitra Indah (Rp 8.500.000 available).
+          </div>
+        </div>
+
+        <!-- Right: TOTAL BAR with order discount -->
+        <div class="col-span-5">
+          <div class="rounded-xl border border-slate-200 p-4 space-y-1.5 text-sm">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal pesanan</span>
+              <span class="font-mono">Rp 2.810.000</span>
+            </div>
+
+            <!-- ORDER DISCOUNT ROW -->
+            <div class="flex justify-between items-center bg-orange-50 -mx-1 px-2 py-1.5 rounded">
+              <span class="font-semibold text-[#c2410c]">⊖ Diskon Order</span>
+              <div class="flex items-center gap-1">
+                <input type="text" value="5" class="w-14 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+                <span class="seg-pill"><button>Rp</button><button class="active">%</button></span>
+              </div>
+            </div>
+            <div class="flex justify-between text-[11px] text-orange-700 -mt-1">
+              <span></span>
+              <span class="font-mono">= − Rp 140.500</span>
+            </div>
+
+            <div class="flex justify-between text-slate-600 pt-1">
+              <span>Ongkir</span>
+              <span class="font-mono">Rp 0</span>
+            </div>
+            <div class="flex justify-between font-extrabold text-base pt-2 border-t border-slate-200 text-[#012749]">
+              <span>TOTAL (TEMPO)</span>
+              <span class="font-mono">Rp 2.669.500</span>
+            </div>
+          </div>
+
+          <button class="w-full mt-4 px-6 py-3 text-sm font-bold bg-[#012749] text-white rounded-lg">Simpan Invoice TEMPO</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 5: PEMBELIAN TAGIHAN PI -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 5 / 8 — Pembelian · Tagihan PI form (line + order discount dari supplier)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Tagihan PI · PT Sumber Lestari</h1>
+          <p class="text-xs text-slate-500 mt-0.5">PI-2026-0612 · TEMPO 30 hari · Invoice supplier: INV/SL/06/214</p>
+        </div>
+        <span class="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded font-bold">STOCK</span>
+      </div>
+      <div class="p-6">
+
+        <div class="grid grid-cols-12 gap-2 text-[11px] uppercase tracking-wider font-bold text-slate-500 px-2 pb-2 border-b border-slate-200">
+          <div class="col-span-4">Produk</div>
+          <div class="col-span-1 text-right">Qty</div>
+          <div class="col-span-3 text-right">Unit Cost</div>
+          <div class="col-span-2 text-right">Diskon</div>
+          <div class="col-span-2 text-right">Subtotal</div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">Kabel NYM 2.5mm (roll 100m)</div>
+            <div class="text-[11px] text-slate-500">SKU: KBL-001 · listed master Rp 200.000/roll</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">50</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 200.000</div>
+            <input type="text" value="180.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-500" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">↔ auto</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" value="1.000.000" class="w-24 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 9.000.000</div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center py-3 border-b border-slate-100">
+          <div class="col-span-4">
+            <div class="text-sm font-semibold text-slate-800">MCB Schneider 10A</div>
+            <div class="text-[11px] text-slate-500">SKU: MCB-S10</div>
+          </div>
+          <div class="col-span-1 text-right text-sm font-mono">100</div>
+          <div class="col-span-3 text-right">
+            <div class="field-master uppercase">List Rp 50.000</div>
+            <input type="text" value="50.000" class="w-full text-right text-sm font-mono border border-slate-200 rounded px-2 py-1" />
+          </div>
+          <div class="col-span-2 text-right">
+            <div class="field-master uppercase">&nbsp;</div>
+            <div class="flex items-center gap-1 justify-end">
+              <input type="text" placeholder="0" class="w-16 text-right text-sm font-mono border border-slate-200 rounded px-2 py-1 text-slate-400" />
+              <span class="seg-pill"><button class="active">Rp</button><button>%</button></span>
+            </div>
+          </div>
+          <div class="col-span-2 text-right text-sm font-mono font-semibold">Rp 5.000.000</div>
+        </div>
+
+        <!-- TOTAL BAR -->
+        <div class="mt-4 pt-3 border-t-2 border-slate-300">
+          <div class="space-y-1 text-sm max-w-md ml-auto">
+            <div class="flex justify-between text-slate-600">
+              <span>Subtotal (2 item)</span>
+              <span class="font-mono">Rp 14.000.000</span>
+            </div>
+            <div class="flex justify-between items-center bg-orange-50 -mx-2 px-2 py-1.5 rounded">
+              <span class="font-semibold text-[#c2410c]">⊖ Diskon Tagihan</span>
+              <div class="flex items-center gap-1">
+                <input type="text" value="3" class="w-14 text-right text-sm font-mono border-2 border-[#c2410c] rounded px-2 py-1 font-bold text-[#c2410c]" />
+                <span class="seg-pill"><button>Rp</button><button class="active">%</button></span>
+              </div>
+            </div>
+            <div class="flex justify-between text-[11px] text-orange-700 -mt-1">
+              <span></span>
+              <span class="font-mono">= − Rp 420.000</span>
+            </div>
+            <div class="flex justify-between font-extrabold text-lg pt-2 border-t border-slate-200 text-[#012749]">
+              <span>TOTAL TAGIHAN</span>
+              <span class="font-mono">Rp 13.580.000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <button class="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-300 rounded-lg">Batal</button>
+          <button class="px-6 py-2 text-sm font-bold bg-[#012749] text-white rounded-lg">Simpan Tagihan</button>
+        </div>
+
+        <div class="annotation rounded-md p-3 mt-6 text-xs text-slate-700">
+          <strong class="text-[#c2410c]">Akuntansi:</strong> jurnal otomatis 1-1300 Persediaan Dr 14.000.000 · 2-1100 Hutang Usaha Cr 13.580.000 · <strong>5-1900 Diskon Pembelian Cr 420.000</strong> (akun baru, seed). Pembayaran existing (early-payment discount) tetap as-is — additive dengan diskon ini.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 6: INVOICE PDF Render -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 6 / 8 — Invoice PDF render (Kasir &amp; Sales)</div>
+    <div class="grid grid-cols-2 gap-4">
+
+      <div class="mockup-frame bg-white rounded-xl p-6 text-xs">
+        <div class="text-center mb-3 pb-3 border-b border-slate-300">
+          <div class="font-extrabold text-base text-[#012749]">GARINDO ELEKTRIKAL</div>
+          <div class="text-[10px] text-slate-500">LTC Glodok Lt. 2 Blok C No. 12</div>
+        </div>
+        <div class="flex justify-between text-[11px] mb-2">
+          <div>No: KSR-20260623-0042</div>
+          <div>Tgl: 23-06-2026</div>
+        </div>
+        <div class="text-[11px] mb-2">Customer: Bp. Hendra (Walk-in)</div>
+        <table class="w-full text-[11px] border-t border-b border-slate-300 my-2">
+          <thead><tr class="text-slate-500 uppercase text-[10px]">
+            <th class="text-left py-1">Item</th><th class="text-right">Qty</th><th class="text-right">Harga</th><th class="text-right">Subtotal</th>
+          </tr></thead>
+          <tbody class="text-slate-800">
+            <tr class="border-t border-slate-100"><td class="py-1">Kabel NYM 2.5mm</td><td class="text-right">10</td><td class="text-right font-mono">25.000</td><td class="text-right font-mono">250.000</td></tr>
+            <tr class="border-t border-slate-100"><td class="py-1">MCB Schneider 10A</td><td class="text-right">2</td><td class="text-right font-mono">70.000</td><td class="text-right font-mono">140.000</td></tr>
+            <tr class="border-t border-slate-100"><td class="py-1">Lampu Philips LED 9W</td><td class="text-right">5</td><td class="text-right font-mono">54.000</td><td class="text-right font-mono">270.000</td></tr>
+          </tbody>
+        </table>
+        <div class="space-y-0.5 text-[11px]">
+          <div class="flex justify-between"><span>Subtotal</span><span class="font-mono">Rp 660.000</span></div>
+          <!-- DISCOUNT ROW in PDF -->
+          <div class="flex justify-between text-[#c2410c]"><span>Diskon Order</span><span class="font-mono">− Rp 30.000</span></div>
+          <div class="flex justify-between font-bold text-sm border-t border-slate-300 pt-1 mt-1 text-[#012749]"><span>TOTAL</span><span class="font-mono">Rp 630.000</span></div>
+        </div>
+        <div class="text-center text-[10px] text-slate-400 mt-4">Terima kasih — barang dibeli tidak dapat dikembalikan</div>
+      </div>
+
+      <div class="mockup-frame bg-white rounded-xl p-6 text-xs">
+        <div class="flex justify-between mb-3 pb-3 border-b border-slate-300">
+          <div>
+            <div class="font-extrabold text-sm text-[#012749]">INVOICE</div>
+            <div class="text-[10px] text-slate-500">PT GARINDO ELEKTRIKAL — LTC Glodok</div>
+          </div>
+          <div class="text-right text-[10px]">
+            <div>No: INV/26/06/0148</div>
+            <div>Tgl: 23-06-2026</div>
+            <div>Jth Tempo: 07-07-2026</div>
+          </div>
+        </div>
+        <div class="text-[11px] mb-2"><strong>Kepada:</strong> PT Mitra Indah · Jl. Pemuda 45, Surabaya</div>
+        <table class="w-full text-[11px] border-t border-b border-slate-300 my-2">
+          <thead><tr class="text-slate-500 uppercase text-[10px]">
+            <th class="text-left py-1">Item</th><th class="text-right">Qty</th><th class="text-right">Harga</th><th class="text-right">Subtotal</th>
+          </tr></thead>
+          <tbody class="text-slate-800">
+            <tr class="border-t border-slate-100"><td class="py-1">Stop Kontak Broco 2-gang</td><td class="text-right">20</td><td class="text-right font-mono">35.000</td><td class="text-right font-mono">700.000</td></tr>
+            <tr class="border-t border-slate-100"><td class="py-1">Saklar Schneider 1-gang</td><td class="text-right">50</td><td class="text-right font-mono">25.200</td><td class="text-right font-mono">1.260.000</td></tr>
+            <tr class="border-t border-slate-100"><td class="py-1">Jasa Custom Panel 3-line</td><td class="text-right">1</td><td class="text-right font-mono">850.000</td><td class="text-right font-mono">850.000</td></tr>
+          </tbody>
+        </table>
+        <div class="space-y-0.5 text-[11px]">
+          <div class="flex justify-between"><span>Subtotal</span><span class="font-mono">Rp 2.810.000</span></div>
+          <div class="flex justify-between text-[#c2410c]"><span>Diskon Order (5%)</span><span class="font-mono">− Rp 140.500</span></div>
+          <div class="flex justify-between font-bold text-sm border-t border-slate-300 pt-1 mt-1 text-[#012749]"><span>TOTAL (TEMPO)</span><span class="font-mono">Rp 2.669.500</span></div>
+        </div>
+        <div class="text-[10px] text-slate-500 mt-4">Pembayaran: Transfer BCA 1234567890 a/n PT Garindo Elektrikal</div>
+      </div>
+    </div>
+
+    <div class="annotation rounded-md p-3 mt-4 text-xs text-slate-700">
+      <strong class="text-[#c2410c]">PDF rules:</strong> Baris "Diskon" hanya muncul saat <code class="ann-callout">discount_amount_rp &gt; 0</code>. Untuk PERCENT, prefix dengan persentase ("Diskon Order (5%)"); untuk AMOUNT, label saja ("Diskon Order"). Line-level discount sudah ter-baked di kolom Harga di table item (typed_price = master − per_unit_discount), tidak ada kolom Diskon terpisah di table PDF (hemat space invoice).
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 7: PENGAWASAN VIEW -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 7 / 8 — Pengawasan Kasir Diskon 7 Hari (view rewrite)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200">
+        <h1 class="text-lg font-extrabold text-[#012749]">Pengawasan · Diskon Kasir (7 hari terakhir)</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Sumber: <code class="ann-callout">v_pengawasan_kasir_discount_7d</code> (rewritten — sum explicit discount_amount_rp)</p>
+      </div>
+      <div class="p-6">
+        <table class="w-full text-sm">
+          <thead class="text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+            <tr>
+              <th class="text-left py-2">Kasir</th>
+              <th class="text-right">Revenue 7d</th>
+              <th class="text-right">Diskon 7d</th>
+              <th class="text-right">% Diskon</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr>
+              <td class="py-3 font-semibold text-slate-800">Tono</td>
+              <td class="text-right font-mono">Rp 12.430.000</td>
+              <td class="text-right font-mono text-slate-600">Rp 145.000</td>
+              <td class="text-right font-mono"><span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">1.17%</span></td>
+              <td class="text-right"><a class="text-[#012749] text-xs font-semibold">Detail →</a></td>
+            </tr>
+            <tr>
+              <td class="py-3 font-semibold text-slate-800">Siti</td>
+              <td class="text-right font-mono">Rp 8.910.000</td>
+              <td class="text-right font-mono text-slate-600">Rp 420.000</td>
+              <td class="text-right font-mono"><span class="px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 text-xs">4.71%</span></td>
+              <td class="text-right"><a class="text-[#012749] text-xs font-semibold">Detail →</a></td>
+            </tr>
+            <tr class="bg-red-50/40">
+              <td class="py-3 font-semibold text-slate-800">Budi</td>
+              <td class="text-right font-mono">Rp 6.200.000</td>
+              <td class="text-right font-mono text-red-700 font-semibold">Rp 1.180.000</td>
+              <td class="text-right font-mono"><span class="px-2 py-0.5 rounded bg-red-100 text-red-800 text-xs font-bold">19.03%</span></td>
+              <td class="text-right"><a class="text-[#c2410c] text-xs font-bold">⚠ Review →</a></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="annotation rounded-md p-3 mt-6 text-xs text-slate-700 space-y-2">
+          <div><strong class="text-[#c2410c]">Yang berubah:</strong> view lama derive diskon dari <code class="ann-callout">stocks.price − kti.unit_price</code> (current price). Bug: kalau owner ubah harga master, "diskon" historis ikut bergeser. View baru baca explicit <code class="ann-callout">discount_amount_rp</code> dari JSONB items + kolom top-level. Snapshot stabil.</div>
+          <div><strong>Atribusi order-level discount:</strong> dijumlah utuh ke cashier (tidak di-prorate ke per-line). Sederhana dan defensible.</div>
+          <div><strong>Trade-off accepted:</strong> founder pilih tanpa cap %. Mitigasi = pengawasan retrospective ini. Kasir Budi 19% → owner reach-out manual.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 8: REVIEW CHECKLIST -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 8 / 8 — Review Checklist</div>
+    <div class="mockup-frame bg-white rounded-2xl p-6">
+      <h2 class="text-lg font-extrabold text-[#012749] mb-4">Apa yang perlu di-validasi sebelum lanjut implementation plan</h2>
+
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">UX</div>
+          <ul class="space-y-1.5 text-slate-700">
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Bidirectional Harga ↔ Diskon intuitif untuk kasir?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Label "List Rp …" di atas Harga membantu, atau ribut?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Toggle %/Rp posisi di kanan input OK?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Highlight orange untuk row dengan diskon — terlalu loud?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Markup ditolak hard — pengaruh ke alur kasir lapangan?</li>
+          </ul>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">Settings &amp; Scope</div>
+          <ul class="space-y-1.5 text-slate-700">
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> 3 toggle di ModulSwitchesPanel cukup?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Default semua ON OK?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Apakah perlu juga toggle di PO (Purchase Order), bukan cuma Tagihan?</li>
+          </ul>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">PDF / Invoice</div>
+          <ul class="space-y-1.5 text-slate-700">
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Baris "Diskon" warna orange — terlalu mencolok di customer print?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Line-level discount disembunyikan (baked ke Harga column) — atau perlu kolom "Diskon" terpisah?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Format "Diskon Order (5%)" vs "Diskon Order" tanpa %?</li>
+          </ul>
+        </div>
+
+        <div class="rounded-xl border border-slate-200 p-4">
+          <div class="text-xs uppercase tracking-wider text-slate-500 font-bold mb-2">Akuntansi &amp; Audit</div>
+          <ul class="space-y-1.5 text-slate-700">
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Akun 5-1900 Diskon Pembelian (seed baru) — nama OK?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> View pengawasan threshold warna (green &lt;2%, yellow &lt;10%, red ≥10%) — angka cocok?</li>
+            <li class="flex gap-2"><span class="text-slate-400">☐</span> Tanpa cap %, tanpa PIN — masih oke untuk go-live?</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-6 p-4 bg-slate-50 rounded-lg text-sm text-slate-700">
+        <strong class="text-[#012749]">Next:</strong> kalau semua approved → invoke <code class="ann-callout">writing-plans</code> skill untuk break design ini ke task-task discrete (ALTER migrations, RPC patch order, frontend shared components, smoke test matrix). Estimated work ~6.5 hari kerja per spec §2.1.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-slate-400">
+  Mockup · Fitur Diskon · 2026-06-23 · spec: <code>docs/superpowers/specs/2026-06-23-diskon-design.md</code>
+</footer>
+
+</body>
+</html>
