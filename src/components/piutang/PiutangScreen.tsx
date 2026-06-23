@@ -12,7 +12,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Wallet, Search, Upload, X, MessageSquare, AlertTriangle, Clock, CalendarClock, ChartPie } from 'lucide-react';
 import {
   fetchPiutangRows,
-  markTempoInvoicePaid,
   computeKpi,
   computeAging,
   PIUTANG_TIERS,
@@ -20,9 +19,11 @@ import {
   validateTempoProofFile,
   TEMPO_PROOF_ACCEPT,
 } from '../../lib/piutangService';
+import { recordPiutangPayment } from '../../lib/akuntansi/dualWrite';
 import type { PiutangRow, PiutangTier } from '../../types';
 import WriteOffRequestModal from './WriteOffRequestModal';
 import RevertWriteOffConfirmModal from './RevertWriteOffConfirmModal';
+import CashAccountPicker from '../akuntansi/CashAccountPicker';
 
 const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = (n: number) =>
@@ -328,6 +329,9 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'verifying'>('idle');
+  // Phase 0b dual-write: cash_account_id is REQUIRED for piutang payment.
+  // record_piutang_payment RPC replaces direct UPDATE pattern and posts to GL.
+  const [cashAccountId, setCashAccountId] = useState<string | null>(null);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -338,6 +342,10 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   }
 
   async function handleConfirm() {
+    if (!cashAccountId) {
+      showToast('Pilih akun penerima pembayaran', 'warning');
+      return;
+    }
     setSaving(true);
     try {
       let proofUrl: string | null = null;
@@ -346,7 +354,12 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         proofUrl = await uploadTempoPaymentProof(proofFile, row.order.id);
       }
       setPhase('verifying');
-      await markTempoInvoicePaid(row.order.id, proofUrl, currentUserId);
+      await recordPiutangPayment({
+        orderId: row.order.id,
+        cashAccountId,
+        proofUrl,
+        verifiedByUserId: currentUserId,
+      });
       showToast(`Invoice ${row.order.id.slice(0, 8)} ditandai Lunas${proofUrl ? ' (bukti tersimpan)' : ''}.`, 'success');
       onPaid();
     } catch (e: any) {
@@ -373,6 +386,13 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
             <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{fmtRp(row.order.total)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Jatuh Tempo</span><span className="font-semibold">{fmtDate(row.order.due_date)}</span></div>
           </div>
+          <CashAccountPicker
+            value={cashAccountId}
+            onChange={setCashAccountId}
+            purposeFilter="business-only"
+            required
+            label="Masuk ke akun *"
+          />
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1">Upload Bukti Bayar (opsional, max 5 MB)</label>
             {proofFile ? (

@@ -15,3 +15,4 @@ Task 4: complete (commits 3767388..ac66f30, 4/4 smoke PASS, record_piutang_payme
 Task 5: complete (commits ac66f30..d61f04d, 4/4 tests + tsc clean)
 Task 6: complete (commits d61f04d..595baf2, tsc clean)
 Task 7: complete (commits 595baf2..3d2310e, tsc clean; ANOMALY: 4 edits initially landed in main repo path, recovered via cp + amend; worktree has 5-file commit, main reverted)
+Task 8: complete (commits 3d2310e..49713e1, tsc clean, branch verified)
