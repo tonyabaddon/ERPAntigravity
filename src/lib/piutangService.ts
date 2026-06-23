@@ -15,6 +15,7 @@ import type {
   CreateTempoInvoiceResult,
   DbCustomer,
   DbOrder,
+  DiscountTriple,
   PiutangRow,
   PiutangTier,
 } from '../types';
@@ -69,9 +70,26 @@ function daysBetween(fromISO: string, toISO: string): number {
 // ── RPC: create_tempo_invoice ──
 // Parses the credit_limit_exceeded error message ("outstanding=X, new=Y, limit=Z")
 // into a typed result the over-limit modal can render directly.
-export async function createTempoInvoice(payload: CreateTempoInvoicePayload): Promise<CreateTempoInvoiceResult> {
+//
+// `discount` is an optional order-level DiscountTriple (Task 11). When provided,
+// its fields are merged into the payload before the RPC call. Per-item discount
+// fields (master_price_at_sale, discount_*) are expected to already be present
+// in each payload.items entry (shaped by the wizard caller, Task 15).
+// Defaults to all-null / 0 when omitted for backward-compat.
+export async function createTempoInvoice(
+  payload: CreateTempoInvoicePayload,
+  discount?: DiscountTriple,
+): Promise<CreateTempoInvoiceResult> {
   if (!supabase) return { kind: 'invalid', message: 'Supabase not configured' };
-  const { data, error } = await supabase.rpc('create_tempo_invoice', { p_payload: payload });
+  const enriched: CreateTempoInvoicePayload = discount
+    ? {
+        ...payload,
+        discount_type: discount.discount_type,
+        discount_value: discount.discount_value,
+        discount_amount_rp: discount.discount_amount_rp,
+      }
+    : payload;
+  const { data, error } = await supabase.rpc('create_tempo_invoice', { p_payload: enriched });
 
   if (!error) {
     return { kind: 'ok', order_id: String(data) };

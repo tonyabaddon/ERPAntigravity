@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 11 DONE — create_tempo_invoice RPC + discount validation + piutangService wrapper
+
+- ✅ Diskon Task 11: `create_tempo_invoice` RPC extended with discount triples (per-line + order-level). Migration 20260801000005 applied. No GL dual-write present (TODO Phase 0c). 3 smokes PASS: happy path total=950000, MARKUP_NOT_ALLOWED, DISCOUNT_EXCEEDS_SUBTOTAL. Frontend wrapper `createTempoInvoice(payload, discount?)` backward-compat. `npm run lint` clean.
+
+---
+
 ## 2026-06-23 — Diskon Fitur Task 10 DONE — record_kasir_sale RPC + discount validation + journal 4-1900
 
 - ✅ Diskon Task 10: `record_kasir_sale` RPC patched to 25-param with discount (3 params + per-line validation + server recompute + GL 4-1900 debit). Migration 20260801000004 applied. 3 smokes PASS. Frontend wrapper updated.

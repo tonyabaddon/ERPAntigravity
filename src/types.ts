@@ -1205,6 +1205,19 @@ export interface SuggestOutstandingResult {
 }
 
 // ── Piutang Phase 1B — Tempo invoice + Piutang screen ──
+export interface CreateTempoInvoiceItemPayload {
+  sku: string;
+  name?: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+  // Discount fields (optional — defaults to no discount for backward-compat)
+  master_price_at_sale?: number;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
+}
+
 export interface CreateTempoInvoicePayload {
   customer_id: string;
   customer_name?: string;
@@ -1214,10 +1227,14 @@ export interface CreateTempoInvoicePayload {
   delivery_type?: 'PICKUP' | 'DELIVERY';
   channel?: 'walkin' | 'whatsapp' | 'grosir' | 'tokopedia' | string;
   sales_channel?: string;
-  items: Array<{ sku: string; name?: string; qty: number; unit_price: number; subtotal: number }>;
+  items: CreateTempoInvoiceItemPayload[];
   subtotal: number;
   shipping_fee?: number;
   total: number;
+  // Order-level discount fields (optional — defaults to no discount for backward-compat)
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export type CreateTempoInvoiceResult =
