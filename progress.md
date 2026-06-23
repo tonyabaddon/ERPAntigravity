@@ -9201,3 +9201,18 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **Commit:** (pending).
 - **Report:** `.superpowers/sdd/task-8-report.md` documents TDD RED + GREEN evidence + full suite PASS.
 
+
+---
+
+**Task 9 — Pengaturan UI ModulSwitchesPanel 3 toggle diskon (COMPLETE)**
+- **File modified:** `src/components/pengaturan/ModulSwitchesPanel.tsx`
+  - MODULS array expanded from 7 entries to 10 entries.
+  - 3 new entries appended after `modul_bom_recipe`:
+    - `modul_diskon_kasir` (icon 🏷️, title "Diskon di Kasir")
+    - `modul_diskon_penjualan` (icon 🏷️, title "Diskon di Penjualan")
+    - `modul_diskon_tagihan` (icon 🏷️, title "Diskon di Tagihan PI")
+  - All 7 existing entries preserved unchanged.
+- **TypeScript verification:** `npm run lint` → tsc --noEmit PASS (zero errors). ModulSwitchKey widened in Task 4; tenantSettingsService.updateModul accepts new keys (RPC whitelist extended Task 3).
+- **Manual smoke test:** Deferred (no dev server in subagent environment). In production, would verify 10 toggles render in Pengaturan UI, toggle defaults ON, persist correctly across refresh.
+- **Commit:** (pending).
+- **Report:** `.superpowers/sdd/task-9-report.md` documents lint output + status.

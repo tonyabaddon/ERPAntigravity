@@ -17,6 +17,9 @@ const MODULS: Array<{ key: ModulSwitchKey; icon: string; title: string; descript
   { key: 'modul_akuntansi',       icon: '🧾', title: 'Modul Akuntansi',           description: 'Buku Besar, Trial Balance, Laporan SAK EMKM.' },
   { key: 'modul_jasa_layanan',    icon: '🛠️', title: 'Modul Jasa & Layanan',     description: 'Tawarkan jasa selain produk fisik (tenant-defined types).' },
   { key: 'modul_bom_recipe',      icon: '🍳', title: 'Modul Resep / BOM',         description: 'Produk dengan komposisi material (untuk F&B / manufaktur).' },
+  { key: 'modul_diskon_kasir',    icon: '🏷️', title: 'Diskon di Kasir',           description: 'Kolom Diskon di cart + baris Diskon Order di total bar Kasir.' },
+  { key: 'modul_diskon_penjualan',icon: '🏷️', title: 'Diskon di Penjualan',       description: 'Kolom Diskon di Step 2 + Diskon Order di Step 3 wizard Catat Penjualan.' },
+  { key: 'modul_diskon_tagihan',  icon: '🏷️', title: 'Diskon di Tagihan PI',      description: 'Kolom Diskon per item + Diskon Tagihan di total Pembelian Tagihan.' },
 ];
 
 export default function ModulSwitchesPanel({ showToast }: Props) {
