@@ -4,13 +4,17 @@
 // Each row preserves pesanan_item_id for the RPC trigger to bump
 // qty_received_total. Payment section: method + due date + Bayar Sekarang
 // (LUNAS) / Bayar Nanti (BELUM_LUNAS) radio.
+// Task 16: per-item Diskon column + order-level DiscountRow in total bar;
+// gated by tenant_settings.modul_diskon_tagihan.
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Upload, ArrowLeft } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import { pesananService } from '../../../lib/pesananService';
 import { warehousesService } from '../../../lib/supabaseClient';
-import type { DbPesanan, PiPaymentMethod, Warehouse } from '../../../types';
+import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanServices';
+import type { DbPesanan, PiPaymentMethod, Warehouse, DiscountType } from '../../../types';
 import PaymentMethodPicker from '../bnl/PaymentMethodPicker';
+import { DiscountInlineInput, DiscountRow, useDiscountBinding, computeDiscountAmount } from '../../ui/discount';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -27,12 +31,133 @@ interface ItemRow {
   qty_received_already: number;
   qty: number;          // Diterima this Tagihan
   unit_cost: number;
+  master_unit_cost: number;  // original pesanan unit_cost (List price)
   warehouse_id: string;
+  discount_type: DiscountType;
+  discount_value: number | null;
+  discount_amount_rp: number;
 }
 
 const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+// ── Per-row sub-component (isolates useDiscountBinding hook) ────────────────
+interface TagihanItemRowProps {
+  it: ItemRow;
+  idx: number;
+  warehouses: Warehouse[];
+  modulOn: boolean;
+  onChange: (idx: number, patch: Partial<ItemRow>) => void;
+}
+
+function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemRowProps) {
+  const binding = useDiscountBinding(it.master_unit_cost, it.qty, {
+    discount_type: it.discount_type ?? null,
+    discount_value: it.discount_value ?? null,
+    discount_amount_rp: it.discount_amount_rp ?? 0,
+  });
+
+  const remaining = it.qty_ordered - it.qty_received_already;
+  const overReceive = it.qty > remaining;
+
+  // When user edits the unit_cost input directly (Path B: typed price → infer discount)
+  const handleUnitCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const typed = Number(e.target.value) || 0;
+    if (modulOn) {
+      binding.setTypedPrice(typed);
+      const perUnitOff = it.master_unit_cost - typed;
+      const lineTotal = perUnitOff * it.qty;
+      if (!Number.isFinite(typed) || typed < 0 || typed > it.master_unit_cost) {
+        // Out of range — just update unit_cost, clear discount
+        onChange(idx, { unit_cost: typed, discount_type: null, discount_value: null, discount_amount_rp: 0 });
+        return;
+      }
+      if (lineTotal <= 0) {
+        onChange(idx, { unit_cost: typed, discount_type: null, discount_value: null, discount_amount_rp: 0 });
+      } else {
+        onChange(idx, { unit_cost: typed, discount_type: 'AMOUNT', discount_value: lineTotal, discount_amount_rp: lineTotal });
+      }
+    } else {
+      onChange(idx, { unit_cost: typed });
+    }
+  };
+
+  // When user edits discount inline
+  const handleDiscountChange = (value: number | null, type: DiscountType) => {
+    binding.setDiscountFromInput(value, type);
+    let amount = 0;
+    if (type !== null && value != null && Number.isFinite(value) && value > 0) {
+      const base = it.master_unit_cost * it.qty;
+      if (type === 'AMOUNT') amount = Math.min(value, base);
+      else amount = Math.min(Math.round((base * value) / 100), base);
+    }
+    // Derive effective unit_cost = master - (discount_amount_rp / qty)
+    const perUnitOff = it.qty > 0 ? Math.round(amount / it.qty) : 0;
+    const newUnitCost = it.master_unit_cost - perUnitOff;
+    onChange(idx, { unit_cost: newUnitCost, discount_type: type, discount_value: value, discount_amount_rp: amount });
+  };
+
+  const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQty = Number(e.target.value) || 0;
+    // Recompute discount amount for new qty
+    const newBase = it.master_unit_cost * newQty;
+    const newAmount = computeDiscountAmount(it.discount_value, it.discount_type, newBase);
+    const perUnitOff = newQty > 0 ? Math.round(newAmount / newQty) : 0;
+    const newUnitCost = it.master_unit_cost - perUnitOff;
+    onChange(idx, { qty: newQty, unit_cost: newUnitCost, discount_amount_rp: newAmount });
+  };
+
+  return (
+    <tr key={it.pesanan_item_id} className="border-b border-gray-100">
+      <td className="py-3">
+        <div className="flex items-center gap-2">
+          <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">{it.sku}</span>
+          <span className="text-sm">{it.product_name}</span>
+        </div>
+      </td>
+      <td className="py-3 text-center font-semibold">{it.qty_ordered}</td>
+      <td className="py-3 text-center text-gray-500">{it.qty_received_already}</td>
+      <td className="py-3">
+        <input type="number" min="0" max={remaining} value={it.qty}
+          onChange={handleQtyChange}
+          className={`w-full text-sm text-center py-1 px-2 rounded-lg border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+        <div className="text-[10px] text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
+      </td>
+      <td className="py-3">
+        {modulOn && it.master_unit_cost > 0 && (
+          <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">
+            List {fmtRp(it.master_unit_cost)}
+          </div>
+        )}
+        <input type="number" min="0"
+          value={modulOn ? (it.master_unit_cost - Math.round((it.discount_amount_rp ?? 0) / Math.max(1, it.qty))) : it.unit_cost}
+          onChange={handleUnitCostChange}
+          className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" />
+      </td>
+      {modulOn && (
+        <td className="py-3">
+          <DiscountInlineInput
+            value={it.discount_value ?? null}
+            type={it.discount_type ?? null}
+            base={it.master_unit_cost * it.qty}
+            onChange={handleDiscountChange}
+          />
+        </td>
+      )}
+      <td className="py-3">
+        <select value={it.warehouse_id}
+          onChange={e => onChange(idx, { warehouse_id: e.target.value })}
+          className="w-full text-xs py-1 px-2 rounded-lg border border-gray-200">
+          {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+        </select>
+      </td>
+      <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
+        {fmtRp((it.qty * it.unit_cost) - (it.discount_amount_rp ?? 0))}
+      </td>
+    </tr>
+  );
+}
 
 export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillPesanan }: Props) {
   const [pesanan, setPesanan] = useState<DbPesanan | null>(prefillPesanan ?? null);
@@ -50,8 +175,13 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [defaultWh, setDefaultWh] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  // Task 16: order-level discount state
+  const [orderDiscountValue, setOrderDiscountValue] = useState<number | null>(null);
+  const [orderDiscountType, setOrderDiscountType] = useState<DiscountType>(null);
+  // Task 16: modul gate
+  const [modulOn, setModulOn] = useState(true);
 
-  // Load warehouses on mount
+  // Load warehouses + tenant settings on mount
   useEffect(() => {
     (async () => {
       try {
@@ -63,6 +193,10 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         showToast(e?.message ?? 'Gagal load gudang', 'warning');
       }
     })();
+    // Fetch modul gate (soft-fail: default true)
+    tenantSettingsService.fetch()
+      .then(s => setModulOn(s?.modul_diskon_tagihan ?? true))
+      .catch(() => { /* default true */ });
   }, []);
 
   // Pesanan picker — search ORDERED only
@@ -92,7 +226,11 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
       qty_received_already: i.qty_received_total,
       qty: Math.max(0, i.qty - i.qty_received_total),
       unit_cost: i.unit_cost,
+      master_unit_cost: i.unit_cost,  // pesanan price = list price
       warehouse_id: defaultWh,
+      discount_type: null,
+      discount_value: null,
+      discount_amount_rp: 0,
     }));
     setItems(rows);
     // payment due auto-fill from supplier
@@ -103,7 +241,20 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
     }
   }, [pesanan, defaultWh]);
 
-  const subtotal = useMemo(() => items.reduce((a, i) => a + i.qty * i.unit_cost, 0), [items]);
+  const updateItem = (idx: number, patch: Partial<ItemRow>) => {
+    setItems(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));
+  };
+
+  // Subtotals
+  const subtotalAfterLine = useMemo(
+    () => items.reduce((a, it) => a + (it.qty * it.unit_cost) - (it.discount_amount_rp ?? 0), 0),
+    [items],
+  );
+  const orderDiscountAmountRp = useMemo(
+    () => computeDiscountAmount(orderDiscountValue, orderDiscountType, subtotalAfterLine),
+    [orderDiscountValue, orderDiscountType, subtotalAfterLine],
+  );
+  const totalFinal = subtotalAfterLine - orderDiscountAmountRp;
 
   async function handleSubmit() {
     if (!pesanan) { showToast('Pilih Pesanan dulu', 'warning'); return; }
@@ -146,6 +297,10 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         initial_status: initialStatus,
         payment_proof_url: payProof,
         notes: notes || undefined,
+        // Task 16: order-level discount triple
+        discount_type: orderDiscountType ?? undefined,
+        discount_value: orderDiscountValue ?? undefined,
+        discount_amount_rp: orderDiscountAmountRp > 0 ? orderDiscountAmountRp : undefined,
         items: items
           .filter(i => i.qty > 0)
           .map(i => ({
@@ -156,6 +311,11 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
             sell_price: 0,
             pesanan_item_id: i.pesanan_item_id,
             warehouse_id: i.warehouse_id || undefined,
+            // Task 16: per-item discount fields
+            master_unit_cost: i.master_unit_cost,
+            discount_type: i.discount_type ?? undefined,
+            discount_value: i.discount_value ?? undefined,
+            discount_amount_rp: i.discount_amount_rp > 0 ? i.discount_amount_rp : undefined,
           })),
       };
       const result = await purchaseInvoiceService.record(payload);
@@ -181,7 +341,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
       </div>
 
       <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>Buat Tagihan (Terima Barang + Faktur)</h1>
-      <p className="text-xs text-gray-500">Step 2 dari alur Pembelian Stok: catat barang datang & faktur supplier. Stok otomatis bertambah.</p>
+      <p className="text-xs text-gray-500">Step 2 dari alur Pembelian Stok: catat barang datang &amp; faktur supplier. Stok otomatis bertambah.</p>
 
       {/* 1. Pesanan picker */}
       <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
@@ -242,51 +402,48 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                 <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Sudah</th>
                 <th className="text-center py-2 w-24 text-[11px] font-semibold text-gray-500 uppercase">Diterima *</th>
                 <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
+                {modulOn && (
+                  <th className="text-right py-2 w-36 text-[11px] font-semibold text-gray-500 uppercase">Diskon</th>
+                )}
                 <th className="text-left py-2 w-40 text-[11px] font-semibold text-gray-500 uppercase">Gudang</th>
                 <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((it, idx) => {
-                const remaining = it.qty_ordered - it.qty_received_already;
-                const overReceive = it.qty > remaining;
-                return (
-                  <tr key={it.pesanan_item_id} className="border-b border-gray-100">
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">{it.sku}</span>
-                        <span className="text-sm">{it.product_name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 text-center font-semibold">{it.qty_ordered}</td>
-                    <td className="py-3 text-center text-gray-500">{it.qty_received_already}</td>
-                    <td className="py-3">
-                      <input type="number" min="0" max={remaining} value={it.qty}
-                        onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: Number(e.target.value) || 0 } : p))}
-                        className={`w-full text-sm text-center py-1 px-2 rounded-lg border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-                      <div className="text-[10px] text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
-                    </td>
-                    <td className="py-3">
-                      <input type="number" min="0" value={it.unit_cost}
-                        onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: Number(e.target.value) || 0 } : p))}
-                        className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" />
-                    </td>
-                    <td className="py-3">
-                      <select value={it.warehouse_id}
-                        onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, warehouse_id: e.target.value } : p))}
-                        className="w-full text-xs py-1 px-2 rounded-lg border border-gray-200">
-                        {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                      </select>
-                    </td>
-                    <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(it.qty * it.unit_cost)}</td>
-                  </tr>
-                );
-              })}
+              {items.map((it, idx) => (
+                <TagihanItemRow
+                  key={it.pesanan_item_id}
+                  it={it}
+                  idx={idx}
+                  warehouses={warehouses}
+                  modulOn={modulOn}
+                  onChange={updateItem}
+                />
+              ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={6} className="py-3 text-right text-xs font-semibold text-gray-500">SUBTOTAL TAGIHAN</td>
-                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(subtotal)}</td>
+                <td colSpan={modulOn ? 7 : 6} className="py-2 text-right text-xs font-semibold text-gray-500">
+                  SUBTOTAL (setelah diskon item)
+                </td>
+                <td className="py-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(subtotalAfterLine)}</td>
+              </tr>
+              {modulOn && (
+                <tr>
+                  <td colSpan={8} className="py-2">
+                    <DiscountRow
+                      label="Diskon Tagihan"
+                      value={orderDiscountValue}
+                      type={orderDiscountType}
+                      base={subtotalAfterLine}
+                      onChange={(v, t) => { setOrderDiscountValue(v); setOrderDiscountType(t); }}
+                    />
+                  </td>
+                </tr>
+              )}
+              <tr>
+                <td colSpan={modulOn ? 7 : 6} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
+                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(totalFinal)}</td>
               </tr>
             </tfoot>
           </table>
@@ -296,7 +453,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
       {/* 3. Faktur & Pembayaran */}
       {pesanan && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
-          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Faktur & Pembayaran</div>
+          <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Faktur &amp; Pembayaran</div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Tanggal Faktur</label>

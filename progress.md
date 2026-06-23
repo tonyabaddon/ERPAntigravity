@@ -9253,3 +9253,10 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - Note: brief targets KasirScreen.tsx (the daily log dashboard) but actual cart/checkout is in CatatPenjualanWizard.tsx — correctly pivoted to wizard files.
   - lint: `npm run lint` PASS (tsc --noEmit). Tests: 410/410 PASS.
   - Manual smoke: deferred (no dev server in subagent env).
+
+## 2026-06-23 — Diskon Fitur Task 16 — Tagihan PI UI DONE
+- ✅ Diskon Task 16: Tagihan PI form + detail dengan diskon.
+  - `TagihanFormPage.tsx`: extracted `TagihanItemRow` sub-component (isolates `useDiscountBinding` hook per row), per-item Diskon column (gated by `modulOn`), "List Rp …" label above unit_cost when modulOn, order-level `DiscountRow` in tfoot between subtotal-after-line and total, `tenantSettingsService.fetch()` gate on `modul_diskon_tagihan`, submit payload includes `master_unit_cost` + per-item discount triple + top-level order discount triple.
+  - `TagihanDetailPage.tsx`: shows Diskon Item column in items table when any item has `discount_amount_rp > 0`; shows SUBTOTAL + Diskon Tagihan rows in tfoot when discount present; backward-compat (old PIs without discount render unchanged).
+  - `types.ts`: `DbPurchaseInvoiceItem` extended with `master_unit_cost?`, `discount_type?`, `discount_value?`, `discount_amount_rp?`; `DbPurchaseInvoice` extended with order-level discount triple.
+  - `npm run lint` PASS (tsc --noEmit clean). Branch worktree-diskon.

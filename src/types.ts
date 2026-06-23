@@ -941,6 +941,11 @@ export interface DbPurchaseInvoiceItem {
   sell_price: number;
   subtotal: number;
   created_at: string;
+  // Task 16: discount fields (optional, backward-compat with old PIs)
+  master_unit_cost?: number | null;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface DbPurchaseInvoice {
@@ -971,6 +976,10 @@ export interface DbPurchaseInvoice {
   tukar_faktur_id?: string | null;
   paid_amount?: number;
   is_tf_quick_add?: boolean;
+  // Task 16: order-level discount fields (optional, backward-compat with old PIs)
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
   // joined
   supplier?: DbSupplier;
   order?: { id: string; customer_name?: string };
