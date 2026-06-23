@@ -9231,3 +9231,12 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 
 ## 2026-06-23 — Diskon Fitur Task 12 — record_pi RPC with Discount DONE
 - ✅ Diskon Task 12: record_pi extended with per-item + order-level discount, 3-line JE on discount (5-1900 CREDIT). 3 smokes PASS (happy/markup/over-discount). Branch worktree-diskon. Migration 20260801000006.
+
+## 2026-06-23 — Diskon Fitur Task 13 — Pengawasan view rewrite DONE
+- ✅ Diskon Task 13: pengawasan view v2 — latent bug fixed (explicit discount_amount_rp snapshot vs derived from stocks.price). 
+  - Migration: `20260801000007_pengawasan_kasir_discount_view_v2.sql`
+  - View rewritten with CTE pattern: line_agg (per-item discounts via JSONB) → kt_agg (per-cashier totals) → final SELECT with admin_users join
+  - Handles backward-compat: COALESCE for NULL discount_amount_rp in pre-migration rows
+  - Smoke test PASS: 5 columns returned (cashier_user_id, cashier_name, total_discount_rp, total_revenue_rp, discount_pct_of_revenue)
+  - Regression: View stable across stocks.price mutations (JSONB snapshot reads, not live price derivation)
+  - Branch worktree-diskon. Migration applied successfully.
