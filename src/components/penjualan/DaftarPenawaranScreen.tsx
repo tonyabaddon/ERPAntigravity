@@ -17,6 +17,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
   const [search, setSearch] = useState('');
   const [closeModal, setCloseModal] = useState<{ so: DbSalesOrder; reason: string } | null>(null);
   const [closing, setClosing] = useState(false);
+  const [viewSo, setViewSo] = useState<DbSalesOrder | null>(null);
 
   const reload = async () => {
     setLoading(true);
@@ -185,6 +186,10 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1.5">
+                          <button onClick={() => setViewSo(r)}
+                            className="px-2.5 py-1 text-[10px] font-bold rounded bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200">
+                            Lihat
+                          </button>
                           {r.status === 'OPEN' && (
                             <>
                               <button onClick={() => onConvert(r)}
@@ -219,6 +224,124 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
           </p>
         </div>
       </div>
+
+      {/* SO summary modal (Lihat) */}
+      {viewSo && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            {/* Modal header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-base font-extrabold text-[#012749]">{viewSo.so_number}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  viewSo.status === 'OPEN' ? 'bg-amber-100 text-amber-800'
+                  : viewSo.status === 'CONVERTED' ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-slate-200 text-slate-600'
+                }`}>{viewSo.status}</span>
+              </div>
+              <button onClick={() => setViewSo(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+            </div>
+
+            {/* Modal body */}
+            <div className="px-6 py-4 space-y-4">
+              {/* Channel + customer */}
+              <div className="bg-slate-50 rounded-xl p-3 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 font-semibold">Channel</span>
+                  <span className="font-bold text-slate-700">{viewSo.channel}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 font-semibold">Customer</span>
+                  <span className="font-bold text-slate-700">{viewSo.customer_name}</span>
+                </div>
+                {viewSo.customer_phone && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500 font-semibold">HP</span>
+                    <span className="text-slate-700">{viewSo.customer_phone}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500 font-semibold">Tanggal</span>
+                  <span className="text-slate-700">{new Date(viewSo.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+
+              {/* Items table */}
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Item</div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <tr>
+                        <th className="px-3 py-1.5 text-left">SKU</th>
+                        <th className="px-3 py-1.5 text-left">Nama</th>
+                        <th className="px-3 py-1.5 text-right">Qty</th>
+                        <th className="px-3 py-1.5 text-right">Harga</th>
+                        <th className="px-3 py-1.5 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewSo.items.map((item, idx) => (
+                        <tr key={idx} className="border-t border-slate-100">
+                          <td className="px-3 py-2 text-slate-400">{item.sku ?? '—'}</td>
+                          <td className="px-3 py-2 font-semibold text-slate-700">{item.name}</td>
+                          <td className="px-3 py-2 text-right text-slate-600">{item.qty}</td>
+                          <td className="px-3 py-2 text-right text-slate-600">{formatRp(item.unit_price)}</td>
+                          <td className="px-3 py-2 text-right font-bold text-[#012749]">{formatRp(item.subtotal)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Subtotal row */}
+                <div className="flex justify-between text-xs font-bold text-[#012749] px-1 mt-2">
+                  <span>TOTAL PENAWARAN</span>
+                  <span>{formatRp(Number(viewSo.subtotal))}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 italic px-1 mt-0.5">Belum termasuk ongkir</div>
+              </div>
+
+              {/* Notes */}
+              {viewSo.notes && (
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Catatan</div>
+                  <p className="text-xs text-slate-700 whitespace-pre-wrap">{viewSo.notes}</p>
+                </div>
+              )}
+
+              {/* CONVERTED info */}
+              {viewSo.status === 'CONVERTED' && (viewSo.converted_to_kasir_tx_id || viewSo.converted_to_order_id) && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Konversi ke</div>
+                  {viewSo.converted_to_kasir_tx_id && (
+                    <p className="text-xs font-bold text-emerald-800">{viewSo.converted_to_kasir_tx_id}</p>
+                  )}
+                  {viewSo.converted_to_order_id && (
+                    <p className="text-xs font-bold text-emerald-800">TEMPO: {viewSo.converted_to_order_id}</p>
+                  )}
+                </div>
+              )}
+
+              {/* CLOSED info */}
+              {viewSo.status === 'CLOSED' && viewSo.closed_reason && (
+                <div className="bg-slate-100 border border-slate-200 rounded-xl p-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Alasan Tutup</div>
+                  <p className="text-xs text-slate-700">{viewSo.closed_reason}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center">
+              <p className="text-[10px] text-slate-400 italic">PDF preview tersedia di Phase 2</p>
+              <button onClick={() => setViewSo(null)}
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Close modal */}
       {closeModal && (

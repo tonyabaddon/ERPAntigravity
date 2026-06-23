@@ -11,9 +11,14 @@ export interface InsertNewProductInput {
   brand?: string;
 }
 
+// TODO Phase 2: route through seed_stock_row RPC so stock_price_history
+// + stock_movements get seed rows (audit ledger continuity). Direct INSERT
+// is acceptable for MVP because Owner-gate enforcement is intentionally
+// skipped per spec §12 (reuse `kasir` perm — no new permissions).
+
 /**
  * Lite-create a new product from the wizard's Step 2 inline form.
- * stocks defaults: stock_atas=0, stock_bawah=0, status='aktif', initial_stock_approved=true.
+ * stocks defaults: stock_atas=0, stock_bawah=0, status='Sinkron', initial_stock_approved=true.
  * Photos/specs/min_stock left at column defaults — set later via Produk & Stok screen.
  */
 export async function insertNewProduct(args: InsertNewProductInput): Promise<SupabaseStockItem> {
@@ -34,7 +39,7 @@ export async function insertNewProduct(args: InsertNewProductInput): Promise<Sup
     stock: 0,
     stock_atas: 0,
     stock_bawah: 0,
-    status: 'aktif',
+    status: 'Sinkron',
     unit: args.unit?.trim() || 'pcs',
   };
   if (typeof args.harga_modal === 'number') row.harga_modal = args.harga_modal;

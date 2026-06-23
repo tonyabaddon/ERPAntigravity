@@ -34,7 +34,7 @@ describe('insertNewProduct', () => {
       stock_atas: 0,
       stock_bawah: 0,
       stock: 0,
-      status: 'aktif',
+      status: 'Sinkron',
       unit: 'pcs',
     }));
   });
