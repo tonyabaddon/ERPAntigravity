@@ -85,3 +85,4 @@ Files:
 - Anomalies table accessible + schema complete
 
 Task 4: complete (26/26 tests PASS, npx tsc clean, ready for deploy)
+Task 4: complete (commits 2e596af..78317f6, 26/26 tests, branch verified)
