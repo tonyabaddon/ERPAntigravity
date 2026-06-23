@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 6 DONE — useDiscountBinding Hook + RTL Tests
+
+- ✅ Diskon Task 6: `useDiscountBinding(master_price, qty, initial?)` hook + 8 bidirectional sync tests.
+- ✅ Tests: RTL renderHook + @testing-library/react (installed). Vitest jsdom env configured (vite.config.ts).
+- ✅ Verification: 8/8 tests PASS. Hook handles AMOUNT/PERCENT toggle, silent ignore on markup (typed_price > master), preserves Rupiah equivalent.
+- ✅ Implementation file: `src/components/ui/discount/useDiscountBinding.ts` (84 lines, strict TDD).
+
+**Files created:**
+- `src/components/ui/discount/useDiscountBinding.ts` — hook implementation
+- `src/components/ui/discount/useDiscountBinding.test.ts` — 8 unit tests
+
+**Dependencies installed:**
+- @testing-library/react (16.3.2)
+- @testing-library/dom (10.4.1)
+- jsdom (dev)
+
+**Verification:**
+- `npx vitest run src/components/ui/discount/useDiscountBinding.test.ts`: 8/8 PASS
+- tsc type check: clean
+- vite.config.ts: test.environment = 'jsdom' added
+
+---
+
 ## 2026-06-23 — Akuntansi Phase 0c IMPLEMENTATION COMPLETE (5 tasks)
 
 Phase 0c complete. 3 critical GL fixes deployed:
