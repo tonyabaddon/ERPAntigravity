@@ -4,6 +4,10 @@
 
 Phase 0c complete. 3 critical GL fixes deployed:
 
+## 2026-06-23 — Diskon Fitur Task 1 — Schema Migration DONE
+
+- ✅ Diskon Task 1: schema migration applied (4 tables, 13 cols + triple-CHECKs). Branch worktree-diskon, commit c30a155.
+
 1. **HPP recognition** extension to record_kasir_sale (CRITICAL bug fix from Phase 0b — Pendapatan without HPP made Laba Kotor inflated)
 2. **record_pi** dual-write for Tagihan creation (D Persediaan K Hutang Usaha)
 3. **Historical backfill** 78 JEs from existing kasir_transactions (69) + purchase_invoices (5) + pembayaran (4) since Juni 2025. Trial Balance balanced 0.00.
@@ -9086,3 +9090,24 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - Cosmetic cleanups (`!=` → `<>` consistency, `_apply_*` add `_change` suffix per brief)
 
 **Smoke evidence on PR**: https://github.com/tonyabaddon/ERPAntigravity/pull/53 — 10/10 live browser smoke PASS (5 panel renderings + 2 critical fixes verified end-to-end + Garindo backward-compat OwnerPinPad intact). 9 inline screenshots committed at `b6f3bbb` + `fb4e871`.
+
+
+## 2026-06-23 — Diskon Fitur Task 1 — Schema Migration DONE
+
+**Branch:** `worktree-diskon` (worktree `.claude/worktrees/diskon`)
+**Task 1 — Schema Migration (4 tables + triple-CHECK)**
+- **File created:** `supabase/migrations/20260801000001_diskon_schema.sql`
+  - Adds 3 columns to each of 4 tables (discount_type TEXT NULL, discount_value NUMERIC NULL, discount_amount_rp NUMERIC NOT NULL DEFAULT 0).
+  - Adds triple-CHECK constraint per table: (type IS NULL AND value IS NULL AND amount=0) OR (type IS NOT NULL AND value IS NOT NULL).
+  - `purchase_invoice_items` additionally adds `master_unit_cost NUMERIC NOT NULL DEFAULT 0` backfilled from `unit_cost`.
+  - All 4 tables have individual type/value/amount CHECKs plus triple-state enforcement.
+- **Migration applied via MCP** `apply_migration` to project `ekhhojaezdfjfwuxyjkl` (name: `20260801000001_diskon_schema`) → `{"success": true}`.
+- **Step 4 verification:** Column enumeration returned 13 expected rows (3 discount cols × 4 tables + 1 master_unit_cost).
+- **Step 5 verification:** All existing rows pass triple-CHECK:
+  - orders: 7 total, 7 clean (all have discount_amount_rp=0, discount_type IS NULL)
+  - kasir_transactions: 83 total, 83 clean
+  - purchase_invoices: 39 total, 39 clean
+  - purchase_invoice_items: 36 total, 36 clean (master_unit_cost backfilled from unit_cost)
+- **Existing CHECKs enumerated:** No conflicts detected. 4 tables had 23 existing CHECKs; new triple-CHECKs are orthogonal (do not reference any existing constraint patterns).
+- **Commit:** (pending git add/commit in next step)
+- **Report:** `.superpowers/sdd/task-1-report.md` documents full enumeration + verification results.
