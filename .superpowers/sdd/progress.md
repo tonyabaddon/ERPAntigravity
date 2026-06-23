@@ -8,3 +8,5 @@ Task 1: complete (commits d50376b..b0a989c, 3 RPCs deployed, smoke deferred — 
 Task 2: complete (journalReconService.ts + 18 unit tests, vitest PASS, tsc clean)
 Task 2: complete (commits b0a989c..52a3c36, 18/18 tests, tsc clean)
 Task 3: complete (MappingDrawer: 'journal' type + multiAllocation prop + checkbox UI + onPickMulti callback; 401 tests PASS, tsc clean)
+Task 3: complete (commits 52a3c36..ba99a85, 401/401 tests, tsc clean)
+Task 4: complete (RekonsiliasiScreen GL mode + JournalColumn; glMode toggle, multiAllocation drawer, auto-match button; 401/401 tests, tsc clean)
