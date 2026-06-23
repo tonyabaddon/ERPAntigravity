@@ -9176,3 +9176,28 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - PERCENT rounding to nearest Rupiah (no fractional cents)
 - **Commit:** (pending in next step)
 - **Report:** `.superpowers/sdd/task-5-report.md` documents TDD RED + GREEN evidence.
+
+---
+
+**Task 8 — DiscountRow component + index barrel (5/5 PASS + 410/410 full suite PASS)**
+- **Files created:**
+  - `src/components/ui/discount/DiscountRow.tsx` — React component: label + DiscountInlineInput + computed Rp amount display.
+  - `src/components/ui/discount/DiscountRow.test.tsx` — 5 test cases covering label default/custom, computed amounts, onChange forwarding.
+  - `src/components/ui/discount/index.ts` — barrel exporting all 6 named items (3 components + 3 types).
+- **TDD discipline followed:**
+  - Step 1: Test file created with 5 test cases (RED).
+  - Step 2: Test run FAIL — "Cannot find module './DiscountRow'" (RED evidence).
+  - Step 3: Implementation created (DiscountRow.tsx) with flex layout, orange styling, Rp formatting.
+  - Step 4: Test run PASS — 5/5 DiscountRow tests pass (GREEN evidence).
+  - Step 5: Barrel created with 6 exports (computeDiscountAmount, useDiscountBinding, DiscountBindingState/Api, DiscountInlineInput, DiscountInlineInputProps, DiscountRow, DiscountRowProps).
+  - Step 6: Full discount test suite run — 410/410 PASS (all 51 test files). Lint clean (tsc --noEmit, no errors).
+- **Component semantics verified:**
+  - Default label "Diskon Order" when not provided.
+  - Custom label accepted via `label` prop.
+  - Computed Rp amount displayed below input (via computeDiscountAmount).
+  - Shows "= − Rp 0" when no discount selected (value=null, type=null).
+  - Shows "= − Rp 100.000" when PERCENT=10, base=1000000.
+  - onChange handler forwarded to DiscountInlineInput without modification.
+- **Commit:** (pending).
+- **Report:** `.superpowers/sdd/task-8-report.md` documents TDD RED + GREEN evidence + full suite PASS.
+
