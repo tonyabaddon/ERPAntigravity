@@ -1,11 +1,12 @@
 import React from 'react';
 import { KasirItem } from '../../types';
-import type { RakitServiceType, DbServiceType } from '../../types';
+import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { isPreOrder } from '../../lib/wizard/validation';
+import { DiscountInlineInput, useDiscountBinding } from '../ui/discount';
 
 // Map from seeded service_types.code → legacy RakitServiceType union value (mirrors RakitButtonsRow).
 const CODE_TO_RAKIT: Record<string, RakitServiceType> = {
@@ -25,6 +26,7 @@ export interface CartRowsProps {
   onQtyChange: (key: number, qty: number) => void;
   onWarehouseChange: (key: number, warehouseId: string) => void;
   onRemove: (key: number) => void;
+  onDiscountChange?: (key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) => void;
   rakitLines?: Array<{ id: string; type: RakitServiceType; description: string; estimatedPrice: number }>;
   onRemoveRakit?: (id: string) => void;
   /**
@@ -41,9 +43,179 @@ export interface CartRowsProps {
    * dormant and rows render unchanged.
    */
   stockByWarehouseSku?: Record<string, number>;
+  /**
+   * Task 14: when false, the Diskon column is hidden entirely.
+   * Defaults to true (shown) so existing callers are unaffected.
+   */
+  modulDiskonOn?: boolean;
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes }: CartRowsProps) {
+// ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
+interface CartRowProps {
+  item: KasirItem & { _key: number };
+  stock: SupabaseStockItem | undefined;
+  warehouses: ReturnType<typeof useWarehouses>['warehouses'];
+  stockMap: Record<string, number>;
+  onQtyChange: (key: number, qty: number) => void;
+  onWarehouseChange: (key: number, warehouseId: string) => void;
+  onRemove: (key: number) => void;
+  onDiscountChange?: (key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) => void;
+  modulDiskonOn: boolean;
+}
+
+function CartRow({
+  item, stock, warehouses, stockMap,
+  onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
+}: CartRowProps) {
+  const masterPrice = item.master_price_at_sale ?? item.unit_price;
+
+  const binding = useDiscountBinding(masterPrice, item.qty, {
+    discount_type: item.discount_type ?? null,
+    discount_value: item.discount_value ?? null,
+    discount_amount_rp: item.discount_amount_rp ?? 0,
+  });
+
+  // Build a qty map keyed by warehouse id using the warehouse code
+  // to match stock_atas / stock_bawah fields on SupabaseStockItem.
+  const skuQtyByWarehouseId: Record<string, number> = {};
+  if (stock) {
+    for (const w of warehouses) {
+      const lowerCode = w.code.toLowerCase();
+      if (lowerCode === 'atas') skuQtyByWarehouseId[w.id] = stock.stock_atas ?? 0;
+      else if (lowerCode === 'bawah') skuQtyByWarehouseId[w.id] = stock.stock_bawah ?? 0;
+    }
+  }
+
+  const itemForCheck = {
+    sku: item.sku ?? '',
+    qty: item.qty,
+    warehouse_id: item.warehouse_id ?? undefined,
+  };
+  const preOrder = itemForCheck.sku ? isPreOrder(itemForCheck, stockMap) : false;
+  const stockAtWh = stockMap[`${itemForCheck.sku}|${itemForCheck.warehouse_id ?? ''}`] ?? 0;
+  const shortage = preOrder ? Math.max(0, item.qty - stockAtWh) : 0;
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    binding.setTypedPrice(v);
+    if (onDiscountChange) {
+      // After setTypedPrice the binding state hasn't flushed yet (React batch),
+      // so recompute inline the same way the hook does.
+      const perUnitOff = masterPrice - v;
+      const lineTotal = perUnitOff * item.qty;
+      if (!Number.isFinite(v) || v < 0 || v > masterPrice) return;
+      if (lineTotal === 0) {
+        onDiscountChange(item._key, null, null, 0);
+      } else {
+        onDiscountChange(item._key, 'AMOUNT', lineTotal, lineTotal);
+      }
+    }
+  };
+
+  const handleDiscountChange = (value: number | null, type: DiscountType) => {
+    binding.setDiscountFromInput(value, type);
+    if (onDiscountChange) {
+      // Recompute amount inline (same logic as hook) so parent state stays
+      // in sync within the same render cycle.
+      let amount = 0;
+      if (type !== null && value != null && Number.isFinite(value) && value > 0) {
+        const base = masterPrice * item.qty;
+        if (type === 'AMOUNT') amount = Math.min(value, base);
+        else amount = Math.min(Math.round((base * value) / 100), base);
+      }
+      onDiscountChange(item._key, type, value, amount);
+    }
+  };
+
+  const lineAfterDiscount = masterPrice * item.qty - binding.state.discount_amount_rp;
+
+  return (
+    <div
+      key={item._key}
+      className={`p-3 bg-slate-50 border border-slate-200 rounded-xl mb-2 items-start text-[12px] ${
+        modulDiskonOn
+          ? 'grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2'
+          : 'grid grid-cols-[1fr_auto_auto_auto_auto] gap-2'
+      }`}
+    >
+      <div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-extrabold">{item.name}</span>
+          {preOrder && (
+            <span
+              className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider"
+              title={`Stok kurang ${shortage} unit di gudang ini`}
+            >
+              ⏳ Pre-order · kurang {shortage}
+            </span>
+          )}
+        </div>
+        {/* Harga input with List label above */}
+        <div className="mt-1">
+          {modulDiskonOn && masterPrice > 0 && (
+            <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">
+              List {formatRp(masterPrice)}
+            </div>
+          )}
+          {modulDiskonOn ? (
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              value={binding.state.typed_price}
+              onChange={handlePriceChange}
+              className="w-28 text-right text-[12px] font-mono border border-slate-200 rounded px-2 py-1 bg-white"
+            />
+          ) : (
+            <div className="text-[11px] text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
+          )}
+        </div>
+      </div>
+      {/* Warehouse selector */}
+      <div className="flex gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5">
+        <WarehousePicker
+          mode="single"
+          warehouses={warehouses}
+          skuQtyByWarehouseId={skuQtyByWarehouseId}
+          value={item.warehouse_id ?? null}
+          onChange={(id) => onWarehouseChange(item._key, id)}
+        />
+      </div>
+      {/* Qty stepper */}
+      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
+        <button type="button" onClick={() => onQtyChange(item._key, Math.max(1, item.qty - 1))} className="w-6 h-6 rounded bg-slate-100 font-extrabold">−</button>
+        <input
+          type="number"
+          min={1}
+          value={item.qty}
+          onChange={e => {
+            const n = Number(e.target.value);
+            if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n);
+          }}
+          className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button type="button" onClick={() => onQtyChange(item._key, item.qty + 1)} className="w-6 h-6 rounded bg-slate-100 font-extrabold">+</button>
+      </div>
+      {/* Diskon column — gated by modulDiskonOn */}
+      {modulDiskonOn && (
+        <div className="min-w-[120px]">
+          <DiscountInlineInput
+            value={binding.state.discount_value}
+            type={binding.state.discount_type}
+            base={masterPrice * item.qty}
+            onChange={handleDiscountChange}
+          />
+        </div>
+      )}
+      <div className="font-extrabold text-[#012749] min-w-[90px] text-right text-[13px] pt-1">
+        {formatRp(modulDiskonOn ? lineAfterDiscount : item.subtotal)}
+      </div>
+      <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-rose-500 text-lg leading-none pt-1">✕</button>
+    </div>
+  );
+}
+
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true }: CartRowsProps) {
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -84,81 +256,19 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
 
       {items.map(item => {
         const stock = stocks.find(s => s.sku === item.sku);
-        // Build a qty map keyed by warehouse id using the warehouse code
-        // to match stock_atas / stock_bawah fields on SupabaseStockItem.
-        const skuQtyByWarehouseId: Record<string, number> = {};
-        if (stock) {
-          for (const w of warehouses) {
-            const lowerCode = w.code.toLowerCase();
-            if (lowerCode === 'atas') skuQtyByWarehouseId[w.id] = stock.stock_atas ?? 0;
-            else if (lowerCode === 'bawah') skuQtyByWarehouseId[w.id] = stock.stock_bawah ?? 0;
-          }
-        }
-        // Pre-order detection: when qty exceeds the per-warehouse stock at
-        // the picked warehouse, surface a chip so the operator can confirm
-        // intent before saving. Powered by the shared isPreOrder validator
-        // (the same helper the future T25 audit will use server-side). If
-        // the parent doesn't pass stockByWarehouseSku (current wizard does
-        // not — warehouse↔legacy-column lookup is follow-up scope), the map
-        // is empty and the chip stays dormant.
-        const itemForCheck = {
-          sku: item.sku ?? '',
-          qty: item.qty,
-          warehouse_id: item.warehouse_id ?? undefined,
-        };
-        const preOrder = itemForCheck.sku
-          ? isPreOrder(itemForCheck, stockMap)
-          : false;
-        const stockAtWh = stockMap[`${itemForCheck.sku}|${itemForCheck.warehouse_id ?? ''}`] ?? 0;
-        const shortage = preOrder ? Math.max(0, item.qty - stockAtWh) : 0;
-
         return (
-          <div
+          <CartRow
             key={item._key}
-            className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl mb-2 items-center text-[12px]"
-          >
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-extrabold">{item.name}</span>
-                {preOrder && (
-                  <span
-                    className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider"
-                    title={`Stok kurang ${shortage} unit di gudang ini`}
-                  >
-                    ⏳ Pre-order · kurang {shortage}
-                  </span>
-                )}
-              </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
-            </div>
-            {/* Warehouse selector */}
-            <div className="flex gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5">
-              <WarehousePicker
-                mode="single"
-                warehouses={warehouses}
-                skuQtyByWarehouseId={skuQtyByWarehouseId}
-                value={item.warehouse_id ?? null}
-                onChange={(id) => onWarehouseChange(item._key, id)}
-              />
-            </div>
-            {/* Qty stepper */}
-            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
-              <button type="button" onClick={() => onQtyChange(item._key, Math.max(1, item.qty - 1))} className="w-6 h-6 rounded bg-slate-100 font-extrabold">−</button>
-              <input
-                type="number"
-                min={1}
-                value={item.qty}
-                onChange={e => {
-                  const n = Number(e.target.value);
-                  if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n);
-                }}
-                className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <button type="button" onClick={() => onQtyChange(item._key, item.qty + 1)} className="w-6 h-6 rounded bg-slate-100 font-extrabold">+</button>
-            </div>
-            <div className="font-extrabold text-[#012749] min-w-[90px] text-right text-[13px]">{formatRp(item.subtotal)}</div>
-            <button type="button" onClick={() => onRemove(item._key)} className="text-slate-300 hover:text-rose-500 text-lg leading-none">✕</button>
-          </div>
+            item={item}
+            stock={stock}
+            warehouses={warehouses}
+            stockMap={stockMap}
+            onQtyChange={onQtyChange}
+            onWarehouseChange={onWarehouseChange}
+            onRemove={onRemove}
+            onDiscountChange={onDiscountChange}
+            modulDiskonOn={modulDiskonOn}
+          />
         );
       })}
 

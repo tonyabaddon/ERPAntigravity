@@ -9240,3 +9240,10 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - Smoke test PASS: 5 columns returned (cashier_user_id, cashier_name, total_discount_rp, total_revenue_rp, discount_pct_of_revenue)
   - Regression: View stable across stocks.price mutations (JSONB snapshot reads, not live price derivation)
   - Branch worktree-diskon. Migration applied successfully.
+
+## 2026-06-23 — Diskon Fitur Task 14 — Kasir UI integration DONE
+- ✅ Diskon Task 14: Kasir UI cart/total/struk integrated. Per-line + order-level discount wired end-to-end.
+  - Files modified: `types.ts` (KasirItem + KasirTransaction discount fields), `CatatPenjualanWizard.tsx` (modulDiskonOn, order discount state, updateLineDiscount, pass discount to recordSale), `CartRows.tsx` (extracted CartRow subcomponent with useDiscountBinding, bidirectional Harga/Diskon), `wizard/Step2Items.tsx` (onDiscountChange + modulDiskonOn props), `wizard/Step3Payment.tsx` (DiscountRow above summary card), `KasirInvoiceModal.tsx` (Diskon row in totals, font 11px).
+  - Note: brief targets KasirScreen.tsx (the daily log dashboard) but actual cart/checkout is in CatatPenjualanWizard.tsx — correctly pivoted to wizard files.
+  - lint: `npm run lint` PASS (tsc --noEmit). Tests: 410/410 PASS.
+  - Manual smoke: deferred (no dev server in subagent env).

@@ -464,6 +464,11 @@ export interface KasirItem {
   hpp_subtotal: number;
   warehouse: WarehouseLocation | null;   // legacy — Task 22 removes
   warehouse_id?: string | null;            // new — populated by Task 14 onwards
+  // Diskon fitur (Task 14): per-line discount fields. Optional for backward-compat.
+  master_price_at_sale?: number;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface KasirTransaction {
@@ -500,6 +505,10 @@ export interface KasirTransaction {
   po_id?: string | null;
   created_by?: string | null;
   created_at: string;
+  // Diskon fitur (Task 14): order-level discount read from DB. Optional for backward-compat.
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface DailySummary {

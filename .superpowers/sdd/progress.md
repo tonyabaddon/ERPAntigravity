@@ -23,3 +23,17 @@ Base commit: 01853b0
 - ✅ Task 8: complete (commits c934568..72885a7). DiscountRow + barrel; 410/410 suite + lint clean. All Phase 2 shared primitives ready.
 - ✅ Task 9: complete (commits 72885a7..f51986c). ModulSwitchesPanel 10 entries; lint clean.
 - ✅ Task 10: complete. record_kasir_sale RPC patched: 25-param (3 diskon params before p_cash_account_id), server-recompute subtotal/total, markup guard, line/order over-discount guard, 4-1900 journal debit (soft-fail pattern preserved, balanced JE: D cash + D 4-1900 = C pendapatan gross). Migration 20260801000004 applied. 3 smokes PASS (happy subtotal=950000 total=850000, markup rejected, DISCOUNT_EXCEEDS_SUBTOTAL rejected). Frontend RecordKasirSaleInput.discount field + supabaseClient.ts wrapper updated. lint clean.
+- ✅ Task 10: complete (commits f51986c..2c359a4). record_kasir_sale 25-param + 4-1900 journal + 3 smokes PASS. 
+  - Minor 10a: `(NULL, NULL, >0)` triple bypasses RPC check → DB CHECK catches with 23514 instead of clean DISCOUNT_TRIPLE_INVALID.
+  - Minor 10b: rollback reference points to predecessor migration instead of inlined captured body.
+  - Pre-existing (out-of-scope this task): `p_allow_negative_stock` declared but never used in stock-deduct path; same gap exists in Phase 0c migration. Track as follow-up.
+- ✅ Task 11: complete (commits 2c359a4..0d91843, 3 smokes PASS). create_tempo_invoice extended: per-line + order-level discount triples, server recompute, MARKUP_NOT_ALLOWED + DISCOUNT_EXCEEDS_SUBTOTAL guards. No GL dual-write (TODO Phase 0c). Credit limit check fixed to use recomputed total. piutangService.createTempoInvoice(payload, discount?) backward-compat. types.ts CreateTempoInvoiceItemPayload + payload fields extended. lint clean.
+- ✅ Task 11: complete (commits 2c359a4..0d91843). create_tempo_invoice + 3 smokes PASS. No dual-write present in this RPC; TODO comment added for Phase 0c sales follow-up.
+  - Minor 11a: 2 separate item-loop passes (validation, then stock deduct) — inefficiency, not bug.
+  - Minor 11b: `v_total <= 0` guard fires on 100% discount + 0 ongkir edge case (UX caveat for wizard).
+- ✅ Task 12: complete (commits 0d91843..1a64357). record_pi + 3 smokes PASS (happy/markup/over-discount). 3-line JE on discount.
+  - Minor 12a: migration file lacks explicit BEGIN/COMMIT wrapper (functionally safe for CREATE OR REPLACE-only DDL, but inconsistent with project pattern).
+  - Minor 12b: 5-1900 journal line not smoke-verified live (deferred to Task 17 E2E per Task 10 precedent).
+  - Minor 12c: master_unit_cost fallback uses NULLIF(...,0) which treats 0 as "not provided"; legitimate zero-cost master would fall back to unit_cost.
+- ✅ Task 13: complete (commits 1a64357..0dcd1fc). Pengawasan view v2 (CTE pattern, latent bug fixed). All 13 backend tasks done.
+- ✅ Task 14: complete (commits 0dcd1fc..<head>). Kasir UI integrated: CartRow bidirectional binding, DiscountRow in Step3, struk PDF Diskon row. lint clean, 410/410 tests.

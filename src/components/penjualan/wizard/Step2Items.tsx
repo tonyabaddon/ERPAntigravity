@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { KasirItem, RakitServiceType, DbServiceType } from '../../../types';
+import type { DiscountType, KasirItem, RakitServiceType, DbServiceType } from '../../../types';
 import type { SupabaseStockItem } from '../../../lib/supabaseClient';
 import { formatRp } from '../../../lib/format';
 import CartRows from '../CartRows';
@@ -23,8 +23,10 @@ interface Props {
   onQtyChange: (key: number, qty: number) => void;
   onWarehouseChange: (key: number, warehouseId: string) => void;
   onRemoveItem: (key: number) => void;
+  onDiscountChange?: (key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) => void;
   onClearCart: () => void;
-  subtotal: number;          // SKU subtotal only
+  subtotal: number;          // SKU subtotal only (before line discounts)
+  subtotalAfterLineDiscount: number; // SKU subtotal after per-line discounts
   rakitSubtotal: number;     // jasa subtotal only
   rakitLines: RakitLine[];
   rakitFormOpen: boolean;
@@ -41,6 +43,8 @@ interface Props {
    * RakitButtonsRow fetches independently on its own useEffect.
    */
   serviceTypes?: DbServiceType[];
+  /** Task 14: when false, Diskon column is hidden in CartRows. */
+  modulDiskonOn?: boolean;
 }
 
 export default function Step2Items(props: Props) {
@@ -63,7 +67,9 @@ export default function Step2Items(props: Props) {
 
   const skuCount = props.cart.length;
   const jasaCount = props.rakitLines.length;
-  const totalAll = props.subtotal + props.rakitSubtotal;
+  // Use subtotalAfterLineDiscount when modulDiskonOn so summary reflects discounted totals.
+  const subtotalDisplay = props.modulDiskonOn ? props.subtotalAfterLineDiscount : props.subtotal;
+  const totalAll = subtotalDisplay + props.rakitSubtotal;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
@@ -167,10 +173,12 @@ export default function Step2Items(props: Props) {
           onQtyChange={props.onQtyChange}
           onWarehouseChange={props.onWarehouseChange}
           onRemove={props.onRemoveItem}
+          onDiscountChange={props.onDiscountChange}
           rakitLines={props.rakitLines}
           onRemoveRakit={props.onRemoveRakitLine}
           stockByWarehouseSku={props.stockByWarehouseSku}
           serviceTypes={props.serviceTypes}
+          modulDiskonOn={props.modulDiskonOn}
         />
 
         {preOrderCount > 0 && (
@@ -189,7 +197,7 @@ export default function Step2Items(props: Props) {
               <span className="text-slate-600">
                 Subtotal Produk ({skuCount} item{preOrderCount > 0 ? `, ${preOrderCount} pre-order` : ''})
               </span>
-              <span className="font-semibold">{formatRp(props.subtotal)}</span>
+              <span className="font-semibold">{formatRp(subtotalDisplay)}</span>
             </div>
             {jasaCount > 0 && (
               <div className="flex justify-between text-xs">
