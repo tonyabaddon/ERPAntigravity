@@ -38,3 +38,26 @@ Smoke tests: 3/3 PASS (real writes, cleaned up after):
 - Test C: closed period (strict mode) → anomaly logged (period_closed), PI returned ✓
 
 Task 2: complete (3/3 smoke PASS)
+Task 2: complete (commits 0e9f6f2..8c41d99, 3/3 smoke PASS, record_pi dual-write deployed)
+
+## Task 3 — DONE (2026-06-23)
+
+**Historical backfill function + auto-execute.**
+
+Migration: `supabase/migrations/20260724000003_phase0c_historical_backfill.sql`
+
+Function `public._phase0c_backfill_historical()` loops 3 source tables with NOT EXISTS
+idempotency guard, posts BACKFILL JEs, logs anomalies to gl_dual_write_anomalies (soft-fail).
+
+**Actual results (applied 2026-06-23):**
+- kasir_transactions (income): 69 posted, 2 anomalies (qris/edc — no default_bank configured)
+- purchase_invoices: 5 posted, 31 anomalies (subtotal=0 test PIs — validator rejects zero-amount JEs)
+- pembayaran: 4 posted (COALESCE→default_kas), 0 anomalies
+- Total posted: 78 JEs; total anomalies: 33
+
+**Smoke verification:**
+- backfill_jes: 91 (78 new + 13 pre-existing test data)
+- Trial Balance imbalance: 0.00 — BALANCED ✓
+- total_jes: 93
+
+Task 3: complete (TB balanced, 78 JEs posted, 33 anomalies logged for review)
