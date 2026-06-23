@@ -14,3 +14,5 @@ Base commit: 01853b0
 
 - ✅ Task 2: complete (commits c022ad8..876dd1c). 5-1900 seeded. **Spec hint**: actual `chart_of_accounts` schema uses `account_type`/`account_subtype` (NOT `category`/`sub_category`); composite UNIQUE on `(tenant_id, account_code)`. Future tasks referencing COA columns should use these names.
 - ✅ Task 3: complete (migration 20260801000003 created). 3 toggle columns `modul_diskon_kasir`, `modul_diskon_penjualan`, `modul_diskon_tagihan` (all DEFAULT TRUE). RPC whitelist extended 7→10 keys. Migration ready for deployment (remote connectivity timeout prevented live execution, but SQL verified correct).
+- ✅ Task 3: complete (commits 876dd1c..e86e805). 3 toggles + whitelist widened. Migration applied + smoke PASS via controller (implementer hit MCP timeout, fixed by controller).
+- ✅ Task 4: complete (types extended; tsc clean). Frontend types + ModulSwitchKey/DbTenantSettings extended. `DiscountType`, `DiscountTriple`, `CartItemWithDiscount` added. 3 discount module keys + fields in settings. cascadeMap.ts exhaustive switch covered. Test fixtures updated.

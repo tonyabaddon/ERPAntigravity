@@ -93,6 +93,10 @@ export function cascadeImpactSummary(key: ModulSwitchKey, stats: UsageStats): Im
       if ((stats.bomRecipeCount ?? 0) > 0)
         return { level: 'warn', message: `${stats.bomRecipeCount} resep aktif; SKU dengan komposisi akan break` };
       return { level: 'info', message: 'Tidak ada resep — defer ke V3' };
+    case 'modul_diskon_kasir':
+    case 'modul_diskon_penjualan':
+    case 'modul_diskon_tagihan':
+      return { level: 'info', message: 'No cascade impact — discount module' };
     default:
       return { level: 'info', message: '' };
   }

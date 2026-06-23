@@ -1266,7 +1266,10 @@ export type ModulSwitchKey =
   | 'modul_multi_warehouse'
   | 'modul_akuntansi'
   | 'modul_jasa_layanan'
-  | 'modul_bom_recipe';
+  | 'modul_bom_recipe'
+  | 'modul_diskon_kasir'
+  | 'modul_diskon_penjualan'
+  | 'modul_diskon_tagihan';
 
 export interface DbTenantSettings {
   id: number;
@@ -1278,6 +1281,9 @@ export interface DbTenantSettings {
   modul_akuntansi: boolean;
   modul_jasa_layanan: boolean;
   modul_bom_recipe: boolean;
+  modul_diskon_kasir: boolean;
+  modul_diskon_penjualan: boolean;
+  modul_diskon_tagihan: boolean;
   pajak_mode: PajakMode;
   pajak_ppn_rate_umum: number;
   pajak_ppn_rate_mewah: number;
@@ -1313,4 +1319,17 @@ export interface DbServiceType {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+// ─── Diskon (2026-06-23) ────────────────────────────────────────────────
+export type DiscountType = 'PERCENT' | 'AMOUNT' | null;
+
+export interface DiscountTriple {
+  discount_type: DiscountType;
+  discount_value: number | null;
+  discount_amount_rp: number;
+}
+
+export interface CartItemWithDiscount extends DiscountTriple {
+  master_price_at_sale: number;
 }
