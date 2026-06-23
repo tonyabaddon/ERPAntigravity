@@ -4,9 +4,10 @@
 
 Phase 0c complete. 3 critical GL fixes deployed:
 
-## 2026-06-23 — Diskon Fitur Task 1 — Schema Migration DONE
+## 2026-06-23 — Diskon Fitur Task 1-2 DONE — Schema + COA Seed
 
-- ✅ Diskon Task 1: schema migration applied (4 tables, 13 cols + triple-CHECKs). Branch worktree-diskon, commit c30a155.
+- ✅ Diskon Task 1: schema migration applied (4 tables, 13 cols + triple-CHECKs). Commit c30a155.
+- ✅ Diskon Task 2: COA seed 5-1900 Diskon Pembelian (kontra) seeded. account_type='BEBAN', account_subtype='KONTRA', normal_balance='CREDIT'. Commit incoming.
 
 1. **HPP recognition** extension to record_kasir_sale (CRITICAL bug fix from Phase 0b — Pendapatan without HPP made Laba Kotor inflated)
 2. **record_pi** dual-write for Tagihan creation (D Persediaan K Hutang Usaha)
