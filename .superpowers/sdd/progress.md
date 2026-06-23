@@ -1,20 +1,19 @@
-# SDD Progress Ledger — Akuntansi Phase 0b Dual-Write
+# SDD Progress Ledger — Akuntansi Phase 0c
 
-Plan: docs/superpowers/plans/2026-06-23-akuntansi-phase0b-dual-write-implementation.md
-Branch: worktree-akuntansi-phase0b
+Plan: docs/superpowers/plans/2026-06-23-akuntansi-phase0c-hpp-pi-backfill.md
+Branch: worktree-akuntansi-phase0c
 Started: 2026-06-23
 
-Task 1: complete (migration 20260723000001_phase0b_dual_write_infra.sql applied — gl_dual_write_anomalies table + accounting_config 4 default FK cols + orders.cash_account_id; Garindo default_kas_account_id seeded to Kas Toko)
+## Task 1 — DONE (2026-06-23)
 
-Task 1: complete (commits 313c9d9..6a4fad5, infra deployed)
-Task 2: complete (commits 6a4fad5..cb6fb8f, 4/4 smoke PASS, kasir dual-write live, channel lowercase corrected, account_code not account_id corrected)
-Task 3: complete (migration 20260723000003_phase0b_record_pembayaran_dual_write.sql applied — record_pembayaran COOR with soft-fail GL dual-write; 3/3 smoke PASS: A=JE D2-1100 K1-1110, B=anomaly NO_CASH_ACCOUNT, C=flag OFF no JE)
-Task 3: complete (commits cb6fb8f..3767388, 3/3 smoke PASS, pembayaran dual-write live)
-Task 4: complete (migration 20260723000004_phase0b_record_piutang_payment_rpc.sql applied — NEW record_piutang_payment RPC replacing direct UPDATE in markTempoInvoicePaid; 4/4 smoke PASS: A=JE D1-1110 K1-1400, B=INVALID_STATE, C=CASH_ACCOUNT_REQUIRED, D=ORDER_NOT_FOUND)
-Task 4: complete (commits 3767388..ac66f30, 4/4 smoke PASS, record_piutang_payment NEW deployed)
-Task 5: complete (commits ac66f30..d61f04d, 4/4 tests + tsc clean)
-Task 6: complete (commits d61f04d..595baf2, tsc clean)
-Task 7: complete (commits 595baf2..3d2310e, tsc clean; ANOMALY: 4 edits initially landed in main repo path, recovered via cp + amend; worktree has 5-file commit, main reverted)
-Task 8: complete (commits 3d2310e..49713e1, tsc clean, branch verified)
-Task 9: complete (commits 49713e1..9c4512b, tsc clean, branch verified)
-Task 10: complete (commits 9c4512b..724c762, 47/47 tests + flag enabled in prod, branch verified)
+**HPP extension to record_kasir_sale dual-write block.**
+
+Migration: `supabase/migrations/20260724000001_phase0c_kasir_hpp_extension.sql`
+
+Change: added `v_lines jsonb` to inner DECLARE; conditionally appends D 5-1100 / K 1-1510 lines when `v_kasir.hpp_total > 0`. Base 2-line JE unchanged when hpp=0 (back-compat).
+
+Smoke tests: 3/3 PASS (rollback-via-RAISE pattern, zero data leakage):
+- Test A: 4-line JE, balanced, hpp>0 ✓
+- Test B: 2-line JE when hpp=0 ✓
+- Test C: 0 JEs when flag=false ✓
+

@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Akuntansi Phase 0c Task 1 DONE: kasir_sale HPP recognition
+
+Migration `20260724000001_phase0c_kasir_hpp_extension.sql` extends `record_kasir_sale` dual-write block to post D 5-1100 HPP / K 1-1510 Persediaan when hpp_total > 0 (4-line JE). Back-compat: 2-line JE when hpp=0. Smoke 3/3 PASS.
+
+---
+
 ## 2026-06-23 — Akuntansi Phase 0b Dual-Write IMPLEMENTATION COMPLETE (11 tasks)
 
 Phase 0b complete. THE critical gap dari smoke test audit closed: 3 business RPCs (kasir_sale, pembayaran, piutang_payment NEW) sekarang dual-write ke GL ketika flag `enable_dual_write_to_gl=true`. Picker M4 deferred dari Phase 1 juga shipped — CashAccountPicker live di 3 modals (CatatPenjualan, PembayaranForm, CatatBayar). Owner sekarang bisa create real transactions yang muncul di Trial Balance / P&L / Neraca / Cash Flow.
