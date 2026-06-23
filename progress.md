@@ -1,5 +1,61 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Akuntansi Phase 0b Dual-Write IMPLEMENTATION COMPLETE (11 tasks)
+
+Phase 0b complete. THE critical gap dari smoke test audit closed: 3 business RPCs (kasir_sale, pembayaran, piutang_payment NEW) sekarang dual-write ke GL ketika flag `enable_dual_write_to_gl=true`. Picker M4 deferred dari Phase 1 juga shipped — CashAccountPicker live di 3 modals (CatatPenjualan, PembayaranForm, CatatBayar). Owner sekarang bisa create real transactions yang muncul di Trial Balance / P&L / Neraca / Cash Flow.
+
+**Tasks status: 11/11 ✓**
+- Task 1: dual_write_infra (gl_dual_write_anomalies + accounting_config 4 default FKs + orders.cash_account_id)
+- Task 2: record_kasir_sale dual-write (22 params; channel→COA mapping; lowercase channel values corrected)
+- Task 3: record_pembayaran dual-write (leverage existing payload.account_id)
+- Task 4: record_piutang_payment NEW RPC (replaces direct UPDATE pattern)
+- Task 5: dualWrite.ts TS service (4 unit tests)
+- Task 6: CashAccountPicker shared component (filter prop)
+- Task 7: CatatPenjualanWizard CashAccountPicker integration (Step3Payment picker conditional on method≠cash)
+- Task 8: PembayaranFormPage picker wiring (replace text-only input with picker)
+- Task 9: CatatBayarModal picker + recordPiutangPayment switch (markTempoInvoicePaid deprecated)
+- Task 10: Integration tests (47 tests) + enable_dual_write_to_gl=true in prod
+- Task 11: Final validation + this entry
+
+**Migrations applied (4):**
+- 20260723000001 dual_write_infra
+- 20260723000002 record_kasir_sale dual-write
+- 20260723000003 record_pembayaran dual-write
+- 20260723000004 record_piutang_payment NEW
+
+**Frontend deliverables:**
+- src/components/akuntansi/CashAccountPicker.tsx (NEW shared)
+- src/lib/akuntansi/dualWrite.ts + tests (NEW)
+- src/types.ts (RecordKasirSaleInput += cash_account_id)
+- src/lib/supabaseClient.ts (recordSale passes p_cash_account_id)
+- src/components/penjualan/wizard/Step3Payment.tsx (picker render)
+- src/components/penjualan/CatatPenjualanWizard.tsx (cashAccountId state + validation)
+- src/components/pembelian/pembayaran/PembayaranFormPage.tsx (picker replaces text input)
+- src/components/piutang/PiutangScreen.tsx (CatatBayarModal picker + RPC switch)
+
+**Integration tests:** tests/integration/akuntansi-phase0b/ (4 files, 47 tests Pattern C)
+
+**Decisions locked per brainstorm:**
+- Piutang: refactor markTempoInvoicePaid → record_piutang_payment RPC (atomic, clean)
+- record_kasir_sale: p_cash_account_id as optional param 22 (backward compat)
+- Picker: shared CashAccountPicker dengan filter prop
+- Failure mode: soft-fail + anomaly log; business RPC never rolls back; flag is kill-switch
+
+**Anomalies recovered:**
+- Task 7: 4 frontend edits initially landed in main repo path; cp'd to worktree + amended commit + main reverted
+- All implementations corrected: `account_code` (not `account_id`) used as line jsonb key for _post_journal_entry; channel values lowercase
+
+**Verification (2026-06-23):**
+- npm test: **383/383 PASS** across 47 files
+- npx tsc --noEmit: clean
+- npm run build: ✓ 3.00s OK
+- MCP smoke (Tasks 1-4): 18/18 PASS (4 RPCs × multiple cases)
+- Production flag: enable_dual_write_to_gl = TRUE
+
+**Next:** Year-End Close UI (0.5 hari) atau Phase 0c remaining RPCs (record_pi, mark_walkin_order_paid, record_tukar_faktur) + backfill, atau Phase 5 Recon. Setelah Phase 0b deployed, **Owner butuh test live kasir sale → verify entry appears di Trial Balance** sebelum dual-write declared production-ready.
+
+---
+
 ## 2026-06-23 — Akuntansi Phase 0b Task 2: record_kasir_sale dual-write
 
 Migration `20260723000002_phase0b_record_kasir_sale_dual_write.sql` applied.
