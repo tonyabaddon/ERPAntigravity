@@ -432,7 +432,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail' | 'daftarPenawaran';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -1313,4 +1313,31 @@ export interface DbServiceType {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Sales Order (Penawaran) — pre-commit quote to customer.
+ * No stock movement, no payment fields. Items shape mirrors kasir_transactions.items.
+ * Convert path: status='OPEN' → 'CONVERTED' (with either converted_to_kasir_tx_id
+ * for LUNAS/DP/WIP, or converted_to_order_id for TEMPO; never both) OR
+ * 'CLOSED' (manual, with closed_reason). Terminal once non-OPEN.
+ */
+export interface DbSalesOrder {
+  id: string;
+  so_number: string;
+  date: string;                  // ISO date
+  channel: string;               // OrdersChannel-compatible
+  items: KasirItem[];            // sku nullable for jasa lump-sum
+  subtotal: number;              // products + jasa, no ongkir
+  customer_id: string | null;
+  customer_name: string;
+  customer_phone: string | null;
+  customer_company: string | null;
+  notes: string | null;
+  status: 'OPEN' | 'CONVERTED' | 'CLOSED';
+  converted_to_kasir_tx_id: string | null;
+  converted_to_order_id: string | null;
+  closed_reason: string | null;
+  created_at: string;            // ISO timestamp
+  created_by: string | null;     // uuid
 }

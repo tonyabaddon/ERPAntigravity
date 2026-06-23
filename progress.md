@@ -1,5 +1,86 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Sales Order (Penawaran) Task 20 — Final-review fixes DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `2816c72`
+- **Fix 1:** `productWrappers.ts` + `productWrappers.test.ts`: `stocks.status='aktif'` → `'Sinkron'` (canonical DB value per seed_stock_row RPC).
+- **Fix 2:** Added TODO comment above `insertNewProduct` documenting seed_stock_row bypass (audit ledger continuity — defer to Phase 2).
+- **Fix 3:** `DaftarPenawaranScreen.tsx`: Added "Lihat" button (slate-themed) to every row; opens read-only SO summary modal (channel, customer, items table, total, notes, CONVERTED/CLOSED info, "PDF preview tersedia di Phase 2" footer).
+- **Fix 4:** `Step3Payment.tsx` invoice mode: `'✓ Simpan Penjualan'` → `'✓ Simpan Sales Invoice'` (wording rename per spec §11).
+- **`npx tsc --noEmit`: clean.** Unit tests: 50 files / 408 tests PASS.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 14 — SalesInvoicePDF quotation variant DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `580a82b`
+- **File modified:** `src/components/penjualan/SalesInvoicePDF.tsx`
+- Extended `InvoiceVariant = 'dp' | 'lunas' | 'quotation'`; added `isQuotation` derived flag in `InvoiceBody`.
+- PENAWARAN stamp (amber, rotated -12deg) replaces DP/LUNAS stamp when `isQuotation`; DP/LUNAS stamp guarded so quotation doesn't fall into DP branch.
+- Title: 'SALES ORDER' (not 'SALES INVOICE') + subtitle "Tanda Terima..." suppressed for quotation.
+- Bill-to grid collapses to 1 col for quotation: alamat replaced with italic "ditentukan saat Sales Invoice", Metode Bayar column hidden.
+- Totals: ongkir row hidden; total label → 'TOTAL PENAWARAN'; total value → `subtotal` (not `total`); italic footnote about ongkir added; Sudah Dibayar/Sisa rows hidden.
+- Payment block (Rekening Pembayaran) entirely hidden for quotation.
+- Disclaimer "BARANG TIDAK DAPAT DIKEMBALIKAN" hidden; replaced by quotation footer "bukan invoice resmi".
+- Signature footer kept (acceptable to leave "Penerima Barang" on quotation for pre-sign confirmation).
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 pre-existing failures in unrelated `.claude/worktrees/diskon/` only).
+
+## 2026-06-23 — Sales Order (Penawaran) Task 13 — DaftarPenawaranScreen DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `51f6c86`
+- **File created:** `src/components/penjualan/DaftarPenawaranScreen.tsx` (251 lines)
+- Summary cards: SO Open (count + Rp total), Converted 7d, Closed 7d, Conversion Rate %.
+- Tab strip: Semua / Open / Converted / Closed with live counts.
+- Search input: filters by SO number, customer name, or phone.
+- Per-row actions: OPEN → "→ Jadi Sales Invoice" (navigate fromSo=id) + "Tutup" (open close modal). CLOSED shows closed_reason. CONVERTED shows FK slice to kasir_tx or tempo orders.
+- Close modal: non-empty reason required; calls `closeSalesOrder`; reloads on success.
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 pre-existing failures in unrelated `.claude/worktrees/diskon/` only).
+
+## 2026-06-23 — Sales Order (Penawaran) Task 11 — Step3Payment mode='quote' branch DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `c676e1f`
+- **File modified:** `src/components/penjualan/wizard/Step3Payment.tsx`
+- Added `mode?: 'invoice' | 'quote'` prop to Props interface (default `'invoice'`).
+- Existing JSX extracted verbatim into `renderInvoiceMode()` closure; no JSX changes.
+- New `renderQuoteMode()` closure: info banner (blue-50) + catatan textarea (4 rows, extended placeholder) + amber summary card (subtotal only, ongkir disclaimer) + amber Simpan button.
+- Branch at bottom: `if (mode === 'quote') return renderQuoteMode(); return renderInvoiceMode();`
+- `formatRp` already imported — no new import needed.
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 failures pre-existing in unrelated worktree `.claude/worktrees/diskon/`).
+
+## 2026-06-23 — Sales Order (Penawaran) Task 9 — NewProductInlineForm + validator DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `99d6318`
+- **Files created:** `src/lib/wizard/newProductValidation.ts`, `src/lib/wizard/newProductValidation.test.ts`, `src/components/penjualan/wizard/NewProductInlineForm.tsx`
+- Pure validator `validateNewProductForm` + `parsePriceLike` helper (accepts Rp notation: "45.000", "45,000", "45000").
+- React component `<NewProductInlineForm>` wires validator + `insertNewProduct` from T8; datalist for categories, unit select, optional HPP, subcategory/brand fields.
+- **Tests: 7/7 PASS** (TDD: test-first). `npx tsc --noEmit`: clean.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 7 — salesOrderService wrappers + vitest DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `1b5f930`
+- **Files created:** `src/lib/salesOrderService.ts`, `src/lib/salesOrderService.test.ts`
+- 5 wrapper functions: `createSalesOrder`, `fetchSalesOrderById`, `fetchSalesOrders`, `markSalesOrderConverted`, `closeSalesOrder`
+- Client-side guard rails: `markSalesOrderConverted` enforces exactly-one-target XOR; `closeSalesOrder` requires non-empty trimmed reason.
+- **Tests: 12/12 PASS** (TDD: test-first, then impl). Pre-existing 20 failures in unrelated worktree unchanged.
+- `npx tsc --noEmit`: clean.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 5 — close_sales_order RPC DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `3ff8739`
+- **File created:** `supabase/migrations/20260725000005_close_sales_order_rpc.sql`
+- `public.close_sales_order(p_so_id text, p_reason text) RETURNS public.sales_orders` — SECURITY DEFINER, terminal CLOSED state.
+- Validates reason is non-empty (btrim), locks row FOR UPDATE, asserts status=OPEN before flip.
+- Updates status→CLOSED, closed_reason set to trimmed reason; returns full row.
+- **Smoke tests 3/3 PASS:** happy path (OPEN→CLOSED + reason stored), empty reason rejected, already-CLOSED rejected.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 3 — create_sales_order RPC DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `bccebea`
+- **File created:** `supabase/migrations/20260725000003_create_sales_order_rpc.sql`
+- `public.create_sales_order(p_payload jsonb) RETURNS public.sales_orders` — SECURITY DEFINER, no stock movement.
+- Validates channel via `validate_sales_channel`, rejects empty items, requires customer_name.
+- Find-or-create customer pattern (mirror `record_kasir_sale`): lookup by `wa_number`, insert on miss with `ON CONFLICT DO UPDATE`.
+- Reserves SO number via `next_sales_order_number(channel, date)`, formats as `SO-<PREFIX>-YYYYMMDD-NNN`.
+- **Smoke tests 3/3 PASS:** happy path (SO-WLK-20991201-002, status=OPEN, customer linked, 0 stock_movements), invalid channel rejected, empty items rejected.
+
 ## 2026-06-23 — Akuntansi Phase 0c IMPLEMENTATION COMPLETE (5 tasks)
 
 Phase 0c complete. 3 critical GL fixes deployed:
