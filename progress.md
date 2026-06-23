@@ -1,5 +1,26 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 17 DONE — Integration tests + regression sweep
+
+- ✅ Diskon Task 17: Integration E2E tests + final regression sweep COMPLETE.
+  - Files added: `tests/integration/diskon/_setup.ts`, `kasir-wizard.test.ts`, `tagihan-pi.test.ts`, `toggle-bc.test.ts`
+  - 3 test files, 43 tests — all PASS.
+  - Scenarios covered:
+    - Kasir Path B: record_kasir_sale discount validation guards (TRIPLE_INVALID, MARKUP_NOT_ALLOWED, EXCESSIVE_LINE_DISCOUNT, DISCOUNT_EXCEEDS_SUBTOTAL) + 25-param signature.
+    - Wizard TEMPO: create_tempo_invoice discount validation guards + orders table schema (3 new columns).
+    - Tagihan PI: record_pi discount validation guards + purchase_invoices + purchase_invoice_items schema + COA 5-1900.
+    - Toggle backward-compat: tenant_settings 3 new columns + set_tenant_modul deployment + legacy RPC calls without discount params still work.
+  - Unit suite: 410/410 PASS (no regression).
+  - Lint: `npm run lint` PASS (tsc --noEmit clean).
+  - PDF visual checks: DEFERRED (manual founder smoke). Founder should run `npm run dev` and:
+    1. Kasir: create a discounted sale → verify struk shows Diskon row (11-12px font, §feedback_font_sizing).
+    2. Wizard TEMPO: create TEMPO order with discount → verify SalesInvoicePDF Diskon row.
+    3. Tagihan PI: record PI with supplier discount → verify TagihanDetailPage Diskon row.
+  - Note: Integration suite pre-existing failures (46 failing files) are unrelated to diskon — they include stale schema cache issues (tokped_order_no), SUPABASE_SERVICE_KEY missing in some test file setups (vite loadEnv vs dotenv), and data-dependent tests. Diskon tests use dotenv pattern (warehouse-style) which works correctly.
+  - Branch: worktree-diskon.
+
+---
+
 ## 2026-06-23 — Diskon Fitur Task 15 DONE — TEMPO RPC discount path + SalesInvoicePDF Diskon row + InvoicePreviewScreen Diskon row
 
 - ✅ Diskon Task 15: TEMPO submit in `CatatPenjualanWizard` now passes `discount` 2nd arg to `createTempoInvoice` (order-level triple) + `subtotal` corrected to post-line value. `SalesInvoicePDF` Diskon row added before TOTAL TAGIHAN (hidden when 0, label includes `(N%)` for PERCENT type). `InvoicePreviewScreen` mini-preview card gains matching Diskon row. Gate: single `modul_diskon_kasir` covers all flows (option a — Kasir + TEMPO through same wizard). `npm run lint` clean.
