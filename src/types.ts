@@ -542,6 +542,13 @@ export interface RecordKasirSaleInput {
    * for downstream T25 audit visibility). Defaults to FALSE at the DB layer.
    */
   p_allow_negative_stock?: boolean;
+  /**
+   * Phase 0b dual-write: cash_accounts.id where the sale proceeds land.
+   * Required when payment_method != 'cash' (picker selection from
+   * PenjualanBaru wizard). When null/omitted, the RPC falls back to
+   * accounting_config defaults by payment_method.
+   */
+  cash_account_id?: string | null;
 }
 
 export interface NewExpense {

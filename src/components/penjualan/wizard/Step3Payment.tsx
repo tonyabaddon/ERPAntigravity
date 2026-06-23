@@ -10,6 +10,7 @@ import type {
 } from '../../../types';
 import { formatRp } from '../../../lib/format';
 import { dispatchSave, validateStep3, type WizardState } from '../../../lib/wizard/validation';
+import CashAccountPicker from '../../akuntansi/CashAccountPicker';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -29,6 +30,14 @@ interface Props {
   subtype: KasirPaymentSubtype;
   onMethodChange: (m: KasirPaymentMethod) => void;
   onSubtypeChange: (s: KasirPaymentSubtype) => void;
+
+  /**
+   * Phase 0b: required when method != 'cash'. Cash flows auto-route to
+   * default Kas account via accounting_config; transfer/qris/edc need
+   * explicit picker selection.
+   */
+  cashAccountId: string | null;
+  onCashAccountIdChange: (id: string | null) => void;
 
   paymentType: KasirPaymentType;
   onPaymentTypeChange: (t: KasirPaymentType) => void;
@@ -267,6 +276,18 @@ export default function Step3Payment(props: Props) {
             <p className="text-[11px] text-slate-500 mt-1.5 italic">Optional — bisa di-set saat pelunasan via Catat Bayar.</p>
           )}
         </div>
+
+        {/* Cash account picker — Phase 0b dual-write target. Hidden for cash (auto-routes to Kas Toko via accounting_config default). */}
+        {!isTempo && props.method !== 'cash' && (
+          <CashAccountPicker
+            value={props.cashAccountId}
+            onChange={props.onCashAccountIdChange}
+            paymentMethod={props.method}
+            purposeFilter="business-only"
+            required
+            label="Masuk ke akun *"
+          />
+        )}
       </div>
 
       {/* RIGHT: ongkir + notes + summary */}
