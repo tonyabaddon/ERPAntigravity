@@ -24,6 +24,7 @@ import {
   Warehouse,
   Wallet,
   Coins,
+  FileText,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import type { DbTenantSettings } from '../types';
@@ -81,6 +82,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'operasional', permKey: 'dashboard' },
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, category: 'operasional', permKey: 'salesInbox' },
     { id: 'salesLanding', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
+    { id: 'daftarPenawaran', label: 'Penawaran', icon: FileText, category: 'operasional', permKey: 'kasir' },
     { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
     { id: 'piutang', label: 'Piutang', icon: Wallet, category: 'operasional', permKey: 'piutang' },
