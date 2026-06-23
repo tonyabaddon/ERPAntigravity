@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Mockup — Phase 4 Laporan (Trial Balance + P&L + Neraca + Cash Flow)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --color-primary: #1e3d60; --color-on-surface: #0b1c30; --color-background-soft: #f8f9ff; }
+  body { font-family: 'Inter', sans-serif; background: var(--color-background-soft); color: var(--color-on-surface); }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary { background: #012749; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-secondary { border: 1px solid #c7d7f5; background: white; color: #1e3d60; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #dbeafe; color: #1e40af; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 8px 12px; font-size: 14px; outline: none; }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 700; border-radius: 9999px; transition: all 0.15s; }
+  .tab-btn-active { background: #012749; color: white; }
+  .tab-btn-inactive { background: white; border: 1px solid #c7d7f5; color: #1e3d60; }
+  .tab-btn-inactive:hover { background: #eff4ff; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="icon-tile"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
+      <div>
+        <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Phase 4 — Laporan (6 tab)</h1>
+        <p class="text-[11px] text-gray-600">Mutasi · Saldo Trailing · Cash Flow · Trial Balance · Laba Rugi · Neraca · format SAK EMKM</p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">Mutasi</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">Laba Rugi</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">Neraca</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">Cash Flow</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- Top tab bar (shows on every section) -->
+  <section>
+    <div class="card p-4 flex items-center gap-2 overflow-x-auto">
+      <button class="tab-btn tab-btn-active inline-flex items-center gap-1.5"><i data-lucide="list" class="w-3.5 h-3.5"></i> Mutasi</button>
+      <button class="tab-btn tab-btn-inactive inline-flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Saldo Trailing</button>
+      <button class="tab-btn tab-btn-inactive inline-flex items-center gap-1.5"><i data-lucide="droplet" class="w-3.5 h-3.5"></i> Cash Flow</button>
+      <button class="tab-btn tab-btn-inactive inline-flex items-center gap-1.5"><i data-lucide="scale" class="w-3.5 h-3.5"></i> Trial Balance</button>
+      <button class="tab-btn tab-btn-inactive inline-flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Laba Rugi</button>
+      <button class="tab-btn tab-btn-inactive inline-flex items-center gap-1.5"><i data-lucide="layout" class="w-3.5 h-3.5"></i> Neraca</button>
+      <span class="ml-auto text-[11px] text-gray-500">Sidebar → Laporan → Akuntansi (sub-tab)</span>
+    </div>
+  </section>
+
+  <!-- M1: Mutasi -->
+  <section id="m1">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">1. Tab Mutasi (filter + tabel)</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-baseline justify-between">
+        <div>
+          <h3 class="text-base font-bold" style="color: var(--color-primary)">Mutasi Akun</h3>
+          <p class="text-xs text-gray-600">Juni 2026 · 156 entries</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Excel</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> CSV</button>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="p-6 grid grid-cols-12 gap-3 text-[12px]">
+        <div class="col-span-4">
+          <label class="block font-bold text-[10px] uppercase text-gray-600 mb-1">Akun (multi-select)</label>
+          <div class="sub-card p-2 flex flex-wrap gap-1.5">
+            <span class="chip-soft bg-blue-100 text-blue-800">BCA Operasional ×</span>
+            <span class="chip-soft bg-orange-100 text-orange-800">Mandiri Toko ×</span>
+            <span class="chip-soft bg-emerald-100 text-emerald-800">Kas Toko ×</span>
+            <button class="text-[10px] text-blue-700 font-bold">+ Pilih</button>
+          </div>
+        </div>
+        <div class="col-span-3">
+          <label class="block font-bold text-[10px] uppercase text-gray-600 mb-1">Periode</label>
+          <select class="input text-xs"><option>Bulan ini (Jun 2026)</option><option>30 hari</option><option>Custom...</option></select>
+        </div>
+        <div class="col-span-2">
+          <label class="block font-bold text-[10px] uppercase text-gray-600 mb-1">Arah</label>
+          <select class="input text-xs"><option>Semua</option><option>IN saja</option><option>OUT saja</option></select>
+        </div>
+        <div class="col-span-3">
+          <label class="block font-bold text-[10px] uppercase text-gray-600 mb-1">Kategori</label>
+          <select class="input text-xs"><option>Semua</option><option>Penjualan</option><option>Bayar Pembelian</option></select>
+        </div>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="px-6 pb-4 flex items-center gap-6 text-[13px]">
+        <span><strong class="text-gray-600">Total IN:</strong> <strong class="text-emerald-700">Rp 35.450.000</strong></span>
+        <span><strong class="text-gray-600">Total OUT:</strong> <strong class="text-rose-700">Rp 18.200.000</strong></span>
+        <span><strong class="text-gray-600">Net:</strong> <strong style="color: var(--color-primary)">+ Rp 17.250.000</strong></span>
+        <span class="text-gray-500">· 156 mutasi</span>
+        <label class="ml-auto flex items-center gap-2 text-[11px]">
+          <input type="checkbox" class="w-4 h-4 rounded" />
+          <span>Include akun Pribadi</span>
+        </label>
+      </div>
+
+      <div class="border-t border-gray-200 relative placeholder-badge">
+        <table class="w-full text-[12px]">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="text-left py-2 px-3">Tanggal</th>
+              <th class="text-left py-2 px-3">Akun</th>
+              <th class="text-left py-2 px-3">Kategori</th>
+              <th class="text-left py-2 px-3">Keterangan</th>
+              <th class="text-right py-2 px-3">IN</th>
+              <th class="text-right py-2 px-3">OUT</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr><td class="py-2 px-3 font-mono">20/06 13:45</td><td><span class="chip-soft bg-blue-100 text-blue-800">BCA Op</span></td><td>Penjualan</td><td>Tokopedia INV-241</td><td class="text-right font-bold text-emerald-700">1.250.000</td><td></td></tr>
+            <tr><td class="py-2 px-3 font-mono">20/06 11:12</td><td><span class="chip-soft bg-blue-100 text-blue-800">BCA Op</span></td><td>Bayar Pembelian</td><td>PI-89 · CV Sinar Jaya</td><td></td><td class="text-right font-bold text-rose-700">3.500.000</td></tr>
+            <tr><td class="py-2 px-3 font-mono">19/06 16:20</td><td><span class="chip-soft bg-blue-100 text-blue-800">BCA Op</span></td><td>Pelunasan Piutang</td><td>INV-TMP-73 · PT Mega</td><td class="text-right font-bold text-emerald-700">4.500.000</td><td></td></tr>
+            <tr><td class="py-2 px-3 font-mono">19/06 09:15</td><td><span class="chip-soft bg-emerald-100 text-emerald-800">Kas Toko</span></td><td>Penjualan</td><td>Walkin cash · 5 produk</td><td class="text-right font-bold text-emerald-700">450.000</td><td></td></tr>
+            <tr><td class="py-2 px-3 font-mono">18/06 14:00</td><td><span class="chip-soft bg-orange-100 text-orange-800">Mandiri</span></td><td>Transfer Internal</td><td>Pindah dari BCA Op</td><td class="text-right font-bold text-emerald-700">5.000.000</td><td></td></tr>
+            <tr><td class="py-2 px-3 font-mono">18/06 14:00</td><td><span class="chip-soft bg-blue-100 text-blue-800">BCA Op</span></td><td>Transfer Internal</td><td>Pindah ke Mandiri</td><td></td><td class="text-right font-bold text-rose-700">5.000.000</td></tr>
+            <tr class="bg-amber-50/30"><td class="py-2 px-3 font-mono">17/06 16:30</td><td><span class="chip-soft bg-blue-100 text-blue-800">BCA Op</span></td><td>Penyesuaian</td><td>⚖ Koreksi +50rb (bunga)</td><td class="text-right font-bold text-emerald-700">50.000</td><td></td></tr>
+          </tbody>
+          <tfoot class="border-t-2" style="background: #eff4ff; border-color: #1e40af;">
+            <tr class="font-extrabold" style="color: var(--color-primary)">
+              <td colspan="4" class="py-3 px-3 text-right">TOTAL</td>
+              <td class="text-right text-emerald-700">35.450.000</td>
+              <td class="text-right text-rose-700">18.200.000</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="px-6 py-3 text-[11px] text-center text-gray-500">Menampilkan 7 dari 156 · <a href="#" class="text-blue-700 font-bold">Muat lebih banyak ↓</a></div>
+    </div>
+  </section>
+
+  <!-- M2: Laba Rugi -->
+  <section id="m2">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">2. Laporan Laba Rugi (Profit & Loss) — Format SAK EMKM</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 text-white text-center" style="background: linear-gradient(135deg, #065f46, #047857);">
+        <h3 class="text-xl font-extrabold">PT Garindo Jaya Panel</h3>
+        <p class="text-[12px] text-emerald-100">Laporan Laba Rugi · Periode 1-30 Juni 2026 · (dalam Rupiah)</p>
+      </div>
+
+      <div class="p-6 relative placeholder-badge">
+        <table class="w-full text-[13px]">
+          <tbody class="row-divider">
+            <tr class="bg-emerald-50/30"><td class="py-2 px-4 font-extrabold text-emerald-900" colspan="2">PENDAPATAN</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Penjualan Walkin <span class="font-mono text-[10px] text-gray-500">(4-1110)</span></td><td class="text-right">45.300.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Penjualan Marketplace <span class="font-mono text-[10px] text-gray-500">(4-1120)</span></td><td class="text-right">38.500.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Penjualan Grosir <span class="font-mono text-[10px] text-gray-500">(4-1130)</span></td><td class="text-right">98.250.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Penjualan Tempo <span class="font-mono text-[10px] text-gray-500">(4-1140)</span></td><td class="text-right">15.200.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10 text-gray-500 italic">(Diskon Penjualan)</td><td class="text-right text-rose-600">(2.500.000)</td></tr>
+            <tr class="bg-emerald-50 border-t border-emerald-200 font-bold"><td class="py-2 px-4">Pendapatan Bersih</td><td class="text-right text-emerald-800">194.750.000</td></tr>
+
+            <tr class="bg-orange-50/30 mt-2"><td class="py-2 px-4 font-extrabold text-orange-900" colspan="2">HARGA POKOK PENJUALAN</td></tr>
+            <tr><td class="py-2 px-4 pl-10">HPP Penjualan <span class="font-mono text-[10px] text-gray-500">(5-1100)</span></td><td class="text-right">(125.300.000)</td></tr>
+
+            <tr class="border-t-2 font-extrabold" style="background: #dbeafe; border-color: #1e40af; color: var(--color-primary)"><td class="py-3 px-4">LABA KOTOR</td><td class="text-right">69.450.000</td></tr>
+
+            <tr class="bg-orange-50/30"><td class="py-2 px-4 font-extrabold text-orange-900" colspan="2">BEBAN OPERASIONAL</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Gaji <span class="font-mono text-[10px] text-gray-500">(5-2100)</span></td><td class="text-right">(18.000.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Sewa Tempat <span class="font-mono text-[10px] text-gray-500">(5-2200)</span></td><td class="text-right">(5.000.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Utilitas <span class="font-mono text-[10px] text-gray-500">(5-2300)</span></td><td class="text-right">(1.250.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Marketing <span class="font-mono text-[10px] text-gray-500">(5-2400)</span></td><td class="text-right">(2.500.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Transportasi <span class="font-mono text-[10px] text-gray-500">(5-2500)</span></td><td class="text-right">(3.450.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban ATK <span class="font-mono text-[10px] text-gray-500">(5-2600)</span></td><td class="text-right">(450.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Beban Komunikasi <span class="font-mono text-[10px] text-gray-500">(5-2700)</span></td><td class="text-right">(750.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">MDR / Bank Fee <span class="font-mono text-[10px] text-gray-500">(5-2800)</span></td><td class="text-right">(125.000)</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Lain-lain <span class="font-mono text-[10px] text-gray-500">(5-2950)</span></td><td class="text-right">(875.000)</td></tr>
+            <tr class="bg-orange-50 border-t border-orange-200 font-bold"><td class="py-2 px-4">Total Beban Operasional</td><td class="text-right text-orange-800">(32.400.000)</td></tr>
+
+            <tr class="border-t-2 font-extrabold" style="background: #dbeafe; border-color: #1e40af; color: var(--color-primary)"><td class="py-3 px-4">LABA OPERASIONAL</td><td class="text-right">37.050.000</td></tr>
+
+            <tr class="bg-gray-50"><td class="py-2 px-4 font-extrabold text-gray-700" colspan="2">PENDAPATAN / (BEBAN) LAIN-LAIN</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Pendapatan Bunga</td><td class="text-right">50.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10">Keuntungan Selisih Opname</td><td class="text-right">125.000</td></tr>
+            <tr><td class="py-2 px-4 pl-10">(Kerugian Selisih Opname)</td><td class="text-right text-rose-600">(450.000)</td></tr>
+
+            <tr class="border-t-2 font-extrabold" style="background: #dbeafe; border-color: #1e40af; color: var(--color-primary)"><td class="py-3 px-4">LABA SEBELUM PAJAK</td><td class="text-right">36.775.000</td></tr>
+
+            <tr><td class="py-2 px-4 pl-10">(Beban PPh Final 0.5% UMKM)</td><td class="text-right">(1.235.000)</td></tr>
+
+            <tr class="border-t-4 font-black text-[15px]" style="background: #d1fae5; border-color: #059669; color: #065f46;"><td class="py-4 px-4">LABA NETO BULAN INI</td><td class="text-right">35.540.000</td></tr>
+          </tbody>
+        </table>
+
+        <div class="mt-6 sub-card p-3 flex items-center gap-2 text-[11px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          <i data-lucide="info" class="w-4 h-4 text-amber-700"></i>
+          <span><strong>Format SAK EMKM sederhana:</strong> Pendapatan → HPP → Laba Kotor → Beban Op → Laba Operasional → Lain-lain → Laba Sebelum Pajak → Pajak → Laba Neto</span>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF SAK EMKM</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Excel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3: Neraca -->
+  <section id="m3">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">3. Neraca (Balance Sheet) — Format SAK EMKM</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 text-white text-center" style="background: linear-gradient(135deg, #6b21a8, #5b21b6);">
+        <h3 class="text-xl font-extrabold">PT Garindo Jaya Panel</h3>
+        <p class="text-[12px] text-violet-100">Neraca · Per 30 Juni 2026 · (dalam Rupiah)</p>
+      </div>
+
+      <div class="p-6 relative placeholder-badge">
+        <div class="grid lg:grid-cols-2 gap-4">
+          <!-- ASET -->
+          <div class="sub-card overflow-hidden">
+            <div class="px-4 py-3 font-extrabold text-blue-900" style="background: #dbeafe;">ASET</div>
+            <table class="w-full text-[12px]">
+              <tbody class="row-divider">
+                <tr class="bg-blue-50/30 font-bold text-blue-900"><td colspan="2" class="py-2 px-3">Aset Lancar</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Kas Toko</td><td class="text-right">850.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6">BCA Operasional</td><td class="text-right">12.500.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Mandiri Toko</td><td class="text-right">5.300.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Lalamove Balance</td><td class="text-right">420.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Piutang Usaha</td><td class="text-right">24.500.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Persediaan Barang Jadi</td><td class="text-right">39.500.000</td></tr>
+                <tr class="bg-blue-50 border-t border-blue-200 font-bold"><td class="py-2 px-3">Total Aset Lancar</td><td class="text-right text-blue-800">83.070.000</td></tr>
+                <tr class="bg-blue-50/30 font-bold text-blue-900"><td colspan="2" class="py-2 px-3">Aset Tetap</td></tr>
+                <tr><td class="py-2 px-3 pl-6">Peralatan</td><td class="text-right">5.000.000</td></tr>
+                <tr><td class="py-2 px-3 pl-6 text-gray-500 italic">(Akumulasi Penyusutan)</td><td class="text-right text-rose-600">(0)</td></tr>
+                <tr class="bg-blue-50 border-t border-blue-200 font-bold"><td class="py-2 px-3">Total Aset Tetap</td><td class="text-right text-blue-800">5.000.000</td></tr>
+              </tbody>
+              <tfoot class="border-t-4" style="background: #dbeafe; border-color: #1e40af;">
+                <tr class="font-black text-blue-900 text-[14px]"><td class="py-3 px-3">TOTAL ASET</td><td class="text-right">88.070.000</td></tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- LIABILITAS + EKUITAS -->
+          <div class="space-y-4">
+            <div class="sub-card overflow-hidden">
+              <div class="px-4 py-3 font-extrabold text-red-900" style="background: #fee2e2;">LIABILITAS</div>
+              <table class="w-full text-[12px]">
+                <tbody class="row-divider">
+                  <tr class="bg-rose-50/30 font-bold text-rose-900"><td colspan="2" class="py-2 px-3">Liabilitas Lancar</td></tr>
+                  <tr><td class="py-2 px-3 pl-6">Hutang Usaha</td><td class="text-right">12.700.000</td></tr>
+                  <tr><td class="py-2 px-3 pl-6">Pendapatan Diterima Dimuka (DP)</td><td class="text-right">1.750.000</td></tr>
+                  <tr><td class="py-2 px-3 pl-6">Hutang PPh Final</td><td class="text-right">785.000</td></tr>
+                  <tr class="bg-rose-50 border-t border-rose-200 font-bold"><td class="py-2 px-3">Total Liab Lancar</td><td class="text-right text-rose-800">15.235.000</td></tr>
+                  <tr class="bg-rose-50/30 font-bold text-rose-900"><td colspan="2" class="py-2 px-3">Liabilitas Jangka Panjang</td></tr>
+                  <tr><td class="py-2 px-3 pl-6">Hutang Bank Jk Panjang</td><td class="text-right">6.500.000</td></tr>
+                  <tr class="bg-rose-50 border-t border-rose-200 font-bold"><td class="py-2 px-3">Total Liab Jk Panjang</td><td class="text-right text-rose-800">6.500.000</td></tr>
+                </tbody>
+                <tfoot class="border-t-2" style="background: #fee2e2; border-color: #dc2626;">
+                  <tr class="font-extrabold text-rose-900"><td class="py-2 px-3">TOTAL LIABILITAS</td><td class="text-right">21.735.000</td></tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="sub-card overflow-hidden">
+              <div class="px-4 py-3 font-extrabold text-violet-900" style="background: #e9d5ff;">EKUITAS</div>
+              <table class="w-full text-[12px]">
+                <tbody class="row-divider">
+                  <tr><td class="py-2 px-3">Modal Owner</td><td class="text-right">40.000.000</td></tr>
+                  <tr><td class="py-2 px-3">Laba Ditahan</td><td class="text-right">9.900.000</td></tr>
+                  <tr><td class="py-2 px-3">Laba Tahun Berjalan</td><td class="text-right">33.435.000</td></tr>
+                  <tr><td class="py-2 px-3 text-gray-500 italic">(Prive)</td><td class="text-right text-rose-600">(17.000.000)</td></tr>
+                </tbody>
+                <tfoot class="border-t-2" style="background: #e9d5ff; border-color: #7c3aed;">
+                  <tr class="font-extrabold text-violet-900"><td class="py-2 px-3">TOTAL EKUITAS</td><td class="text-right">66.335.000</td></tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="sub-card p-4 text-center font-black text-emerald-900" style="background: #d1fae5; border: 2px solid #059669;">
+              <div class="text-[10px] uppercase tracking-widest font-extrabold text-emerald-700 mb-1">TOTAL LIABILITAS + EKUITAS</div>
+              <div class="text-2xl">Rp 88.070.000</div>
+              <div class="text-[11px] text-emerald-800 mt-1">✓ SEIMBANG dengan Total Aset</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 sub-card p-3 flex items-center gap-2 text-[11px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          <i data-lucide="check-circle" class="w-4 h-4 text-amber-700"></i>
+          <span><strong>Persamaan akuntansi terverifikasi:</strong> Aset (88.07jt) = Liabilitas (21.74jt) + Ekuitas (66.34jt) ✓ · SAK EMKM Section 4 (Penyajian Wajar)</span>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF SAK EMKM</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Excel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4: Cash Flow Matrix -->
+  <section id="m4">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">4. Cash Flow Matrix (kategori × bulan)</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-baseline justify-between">
+        <div>
+          <h3 class="text-base font-bold" style="color: var(--color-primary)">Cash Flow Matrix</h3>
+          <p class="text-xs text-gray-600">6 bulan terakhir · pivot per kategori</p>
+        </div>
+        <div class="flex gap-2 text-[12px]">
+          <button class="btn-primary py-1.5 text-[11px]">Net</button>
+          <button class="btn-secondary py-1.5 text-[11px]">Gross IN</button>
+          <button class="btn-secondary py-1.5 text-[11px]">Gross OUT</button>
+        </div>
+      </div>
+
+      <div class="p-6 relative placeholder-badge overflow-x-auto">
+        <table class="w-full text-[12px]">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="text-left py-2 px-3 sticky left-0" style="background: #eff4ff;">Kategori</th>
+              <th class="text-right py-2 px-2">Jan</th>
+              <th class="text-right py-2 px-2">Feb</th>
+              <th class="text-right py-2 px-2">Mar</th>
+              <th class="text-right py-2 px-2">Apr</th>
+              <th class="text-right py-2 px-2">May</th>
+              <th class="text-right py-2 px-2" style="background: #dbeafe;">Jun</th>
+              <th class="text-right py-2 px-2" style="background: #d1fae5;">Total 6 bln</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr class="bg-emerald-50/30 font-bold text-emerald-900"><td colspan="8" class="py-2 px-3">↓ UANG MASUK</td></tr>
+            <tr><td class="py-2 px-3 pl-8">Penjualan kasir</td><td class="text-right text-emerald-700">15.2jt</td><td class="text-right text-emerald-700">16.5jt</td><td class="text-right text-emerald-700">17.1jt</td><td class="text-right text-emerald-700">18.3jt</td><td class="text-right text-emerald-700">19.8jt</td><td class="text-right text-emerald-700 font-bold" style="background: #dbeafe;">25.4jt</td><td class="text-right font-extrabold text-emerald-700" style="background: #d1fae5;">112.3jt</td></tr>
+            <tr><td class="py-2 px-3 pl-8">Pelunasan piutang</td><td class="text-right text-emerald-700">3.5jt</td><td class="text-right text-emerald-700">4.2jt</td><td class="text-right text-emerald-700">5.1jt</td><td class="text-right text-emerald-700">4.8jt</td><td class="text-right text-emerald-700">5.5jt</td><td class="text-right text-emerald-700 font-bold" style="background: #dbeafe;">6.2jt</td><td class="text-right font-extrabold text-emerald-700" style="background: #d1fae5;">29.3jt</td></tr>
+            <tr class="bg-rose-50/30 font-bold text-rose-900"><td colspan="8" class="py-2 px-3">↑ UANG KELUAR</td></tr>
+            <tr><td class="py-2 px-3 pl-8">Bayar pembelian</td><td class="text-right text-rose-700">14.5jt</td><td class="text-right text-rose-700">15.8jt</td><td class="text-right text-rose-700">16.2jt</td><td class="text-right text-rose-700">17.5jt</td><td class="text-right text-rose-700">18.8jt</td><td class="text-right text-rose-700 font-bold" style="background: #dbeafe;">22.1jt</td><td class="text-right font-extrabold text-rose-700" style="background: #fee2e2;">104.9jt</td></tr>
+            <tr><td class="py-2 px-3 pl-8">Beban operasional</td><td class="text-right text-rose-700">2.8jt</td><td class="text-right text-rose-700">3.0jt</td><td class="text-right text-rose-700">3.1jt</td><td class="text-right text-rose-700">3.2jt</td><td class="text-right text-rose-700">3.4jt</td><td class="text-right text-rose-700 font-bold" style="background: #dbeafe;">4.0jt</td><td class="text-right font-extrabold text-rose-700" style="background: #fee2e2;">19.5jt</td></tr>
+            <tr><td class="py-2 px-3 pl-8">Tarik pribadi</td><td class="text-right text-rose-700">2.0jt</td><td class="text-right text-rose-700">2.5jt</td><td class="text-right text-rose-700">3.0jt</td><td class="text-right text-rose-700">2.5jt</td><td class="text-right text-rose-700">3.0jt</td><td class="text-right text-rose-700 font-bold" style="background: #dbeafe;">4.0jt</td><td class="text-right font-extrabold text-rose-700" style="background: #fee2e2;">17.0jt</td></tr>
+          </tbody>
+          <tfoot class="border-t-2" style="background: #f1f5f9; border-color: #475569;">
+            <tr class="font-extrabold" style="color: var(--color-primary)">
+              <td class="py-3 px-3">NET CASH FLOW</td>
+              <td class="text-right text-emerald-700">+4.55jt</td>
+              <td class="text-right text-emerald-700">+5.0jt</td>
+              <td class="text-right text-emerald-700">+5.4jt</td>
+              <td class="text-right text-emerald-700">+5.8jt</td>
+              <td class="text-right text-emerald-700">+6.27jt</td>
+              <td class="text-right text-emerald-700 font-black" style="background: #dbeafe;">+8.7jt</td>
+              <td class="text-right text-emerald-900 font-black" style="background: #d1fae5;">+35.66jt</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">Mockup Phase 4 Laporan · 6 tab (Mutasi · Saldo Trailing · Cash Flow · Trial Balance · Laba Rugi · Neraca) · 2026-06-21</footer>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

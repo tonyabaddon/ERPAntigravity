@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Mockup — Phase 5 Recon Alignment (design-system aligned)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --color-primary: #1e3d60; --color-on-surface: #0b1c30; --color-background-soft: #f8f9ff; }
+  body { font-family: 'Inter', sans-serif; background: var(--color-background-soft); color: var(--color-on-surface); }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary { background: #012749; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-emerald { background: #059669; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-secondary { border: 1px solid #c7d7f5; background: white; color: #1e3d60; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #d1fae5; color: #065f46; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 8px 12px; font-size: 14px; outline: none; }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .lane-green { border-left: 4px solid #059669; }
+  .lane-yellow { border-left: 4px solid #d97706; }
+  .lane-red { border-left: 4px solid #dc2626; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center gap-3">
+    <div class="icon-tile"><i data-lucide="check-square" class="w-5 h-5"></i></div>
+    <div>
+      <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Phase 5 — Recon Alignment</h1>
+      <p class="text-[11px] text-gray-600">bank_statement_lines match ke journal_entry_lines (BANK subtype) · auto-clear PENDING settlement</p>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- M1: Rekonsiliasi v2 side-by-side -->
+  <section>
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">1. Rekonsiliasi Bank — Side-by-side mutasi ↔ journal_entry_lines</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 text-white" style="background: linear-gradient(135deg, #059669, #047857);">
+        <h3 class="text-xl font-extrabold">Rekonsiliasi BCA Operasional · Juni 2026</h3>
+        <p class="text-[12px] text-emerald-100 mt-1">Match bank_statement_lines ↔ journal_entry_lines (account_subtype='BANK')</p>
+      </div>
+
+      <!-- Toast notif -->
+      <div class="m-6 sub-card p-3 flex items-center gap-3" style="background: #d1fae5; border-color: #6ee7b7;">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-700"></i>
+        <div class="flex-1">
+          <p class="text-[13px] text-emerald-900"><strong>✓ Auto-match selesai:</strong> 28/30 lines GREEN · 2 PENDING settlement auto-flip ke CLEARED</p>
+        </div>
+        <button class="text-emerald-700 hover:bg-emerald-200 rounded p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <!-- Header bar -->
+      <div class="px-6 pb-4 flex items-center gap-3 text-[12px]">
+        <select class="input w-56 text-xs"><option>BCA Operasional · 1234567890</option><option>Mandiri Toko</option></select>
+        <span class="text-gray-500">Periode: <strong style="color: var(--color-primary)">Jun 2026</strong></span>
+        <div class="ml-auto flex gap-2">
+          <span class="chip-soft bg-emerald-100 text-emerald-800">✓ 28 GREEN</span>
+          <span class="chip-soft bg-amber-100 text-amber-800">⚠ 2 YELLOW</span>
+          <span class="chip-soft bg-red-100 text-red-800">✗ 0 RED</span>
+        </div>
+      </div>
+
+      <div class="px-6 pb-6 grid lg:grid-cols-2 gap-4 relative placeholder-badge">
+        <!-- Bank statement -->
+        <div class="sub-card overflow-hidden">
+          <div class="px-4 py-3 text-white" style="background: #1e40af;">
+            <h4 class="text-[14px] font-extrabold"><i data-lucide="file-text" class="inline w-4 h-4 mr-1"></i> Mutasi Bank (PDF upload)</h4>
+            <p class="text-[10px] text-blue-100">bank_statement_lines · 30 baris · Gemini-parsed</p>
+          </div>
+          <div class="row-divider">
+            <div class="px-4 py-3 lane-green hover:bg-emerald-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">20/06 · TRSF DR TKP-9821</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Auto-matched · JE-202606-0018 (was PENDING → CLEARED)</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 738.750</div>
+            </div>
+            <div class="px-4 py-3 lane-green hover:bg-emerald-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">19/06 · TRSF DR TKP-9785</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Auto-matched · JE-202606-0015</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 1.230.500</div>
+            </div>
+            <div class="px-4 py-3 lane-yellow hover:bg-amber-50/30 text-[12px] cursor-pointer">
+              <div class="font-bold" style="color: var(--color-primary)">18/06 · BIAYA ADMIN BLN</div>
+              <div class="text-[10px] text-amber-700 mt-1">⚠ Tidak ada match · klik untuk auto-create journal entry beban</div>
+              <div class="text-right font-bold text-rose-700 mt-1">− 17.500</div>
+            </div>
+            <div class="px-4 py-3 lane-yellow hover:bg-amber-50/30 text-[12px] cursor-pointer">
+              <div class="font-bold" style="color: var(--color-primary)">17/06 · TRSF DR MEGA</div>
+              <div class="text-[10px] text-amber-700 mt-1">⚠ Partial match · 2 candidates · klik untuk pilih</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 4.500.000</div>
+            </div>
+            <div class="px-4 py-3 lane-green hover:bg-emerald-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">17/06 · TRSF KE SUPP-JAYA</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Matched · JE-202606-0019 (PI-89 Pembayaran)</div>
+              <div class="text-right font-bold text-rose-700 mt-1">− 3.500.000</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Journal entry lines -->
+        <div class="sub-card overflow-hidden">
+          <div class="px-4 py-3 text-white" style="background: #059669;">
+            <h4 class="text-[14px] font-extrabold"><i data-lucide="book-open" class="inline w-4 h-4 mr-1"></i> Journal Entry Lines · BCA (1-1210)</h4>
+            <p class="text-[10px] text-emerald-100">28 reconciled · 2 unmatched</p>
+          </div>
+          <div class="row-divider">
+            <div class="px-4 py-3 hover:bg-blue-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">20/06 · JE-202606-0018 line #1</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Reconciled · bank_line ...9821 · was PENDING → CLEARED</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 750.000 <span class="text-[9px] text-amber-700">(gross, fee 1.5% diff)</span></div>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">19/06 · JE-202606-0015 line #1</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Reconciled</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 1.250.000</div>
+            </div>
+            <div class="px-4 py-3 hover:bg-amber-50/30 text-[12px]" style="background: rgba(254,243,199,0.3);">
+              <div class="font-bold" style="color: var(--color-primary)">14/06 · JE-202606-0012 (Pelunasan TMP-71)</div>
+              <div class="text-[10px] text-amber-700 mt-1">⚠ Unmatched 7 hari · expected match dari bank statement</div>
+              <div class="text-right font-bold text-emerald-700 mt-1">+ 2.800.000</div>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-50/30 text-[12px]">
+              <div class="font-bold" style="color: var(--color-primary)">17/06 · JE-202606-0019 (Bayar PI-89)</div>
+              <div class="text-[10px] text-emerald-700 mt-1">✓ Reconciled · bank_line ...JAYA</div>
+              <div class="text-right font-bold text-rose-700 mt-1">− 3.500.000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 pb-6 flex gap-2 justify-end">
+        <button class="btn-emerald inline-flex items-center gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5"></i> Auto-Match All (score ≥ 0.95)</button>
+        <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Tutup Periode Jun</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- M2: MappingDrawer (multi-allocation) -->
+  <section>
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">2. Mapping Drawer — Multi-allocation (1 bank line ↔ N journal lines)</h2>
+    <div class="max-w-3xl card overflow-hidden">
+      <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #dbeafe;">
+        <div class="icon-tile" style="background: #93c5fd; color: #1e3a8a;"><i data-lucide="git-merge" class="w-5 h-5"></i></div>
+        <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Tindak Lanjut: Bank Line "TRSF DR MEGA"</h3><p class="text-xs text-blue-700">17/06 · + Rp 4.500.000 · pilih candidates</p></div>
+      </div>
+
+      <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+        <div class="sub-card p-3 text-[12px]">
+          <div class="flex justify-between"><span class="text-gray-600">Bank line amount</span><strong style="color: var(--color-primary)">Rp 4.500.000</strong></div>
+          <div class="flex justify-between mt-1"><span class="text-gray-600">Total allocated</span><strong class="text-emerald-700">Rp 4.500.000</strong></div>
+          <div class="flex justify-between mt-1 pt-2 border-t border-gray-200"><span class="text-gray-600">Remaining</span><strong class="text-emerald-700">Rp 0 ✓</strong></div>
+        </div>
+
+        <div>
+          <h4 class="text-[12px] uppercase tracking-widest font-extrabold text-gray-600 mb-2">Candidates (±5% amount, ±3 days, IN, BCA, unreconciled)</h4>
+          <div class="row-divider sub-card overflow-hidden">
+            <label class="px-4 py-3 hover:bg-blue-50/30 flex items-center gap-3 cursor-pointer" style="background: rgba(209,250,229,0.3);">
+              <input type="checkbox" checked class="w-4 h-4" />
+              <div class="flex-1">
+                <div class="font-bold" style="color: var(--color-primary)">JE-202606-0012 · Pelunasan Piutang INV-TMP-73 · PT Mega Konstruksi</div>
+                <div class="text-[11px] text-gray-500">17/06 16:20 · score 1.0 (exact match)</div>
+              </div>
+              <div class="text-right font-bold">Rp 4.500.000</div>
+            </label>
+            <label class="px-4 py-3 hover:bg-blue-50/30 flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" class="w-4 h-4" />
+              <div class="flex-1">
+                <div class="font-bold" style="color: var(--color-primary)">JE-202606-0010 · Penjualan Grosir INV-145 · Toko Mega Sukses</div>
+                <div class="text-[11px] text-gray-500">15/06 14:00 · score 0.75 (-Rp 200rb, -2 days)</div>
+              </div>
+              <div class="text-right font-bold">Rp 4.300.000</div>
+            </label>
+            <label class="px-4 py-3 hover:bg-blue-50/30 flex items-center gap-3 cursor-pointer text-gray-500">
+              <input type="checkbox" class="w-4 h-4" />
+              <div class="flex-1">
+                <div class="font-bold">JE-202606-0005 · Pelunasan INV-TMP-65 · Mega Trade</div>
+                <div class="text-[11px]">12/06 10:00 · score 0.6 (-5 days too far)</div>
+              </div>
+              <div class="text-right font-bold">Rp 4.500.000</div>
+            </label>
+          </div>
+        </div>
+
+        <div class="sub-card p-3 text-[11px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          💡 Kalau remaining > 0 setelah pilih, owner bisa "Tandai sisa sebagai biaya admin" atau create journal entry baru.
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="btn-emerald flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5"></i> Konfirmasi Match (1 allocation)</button>
+          <button class="btn-secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3: Account Badge Variants -->
+  <section>
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">3. AccountReconBadge — 3 variants</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="sub-card p-5 relative placeholder-badge">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="icon-tile" style="background: #dbeafe; color: #1e40af;"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+          <div><div class="text-[14px] font-extrabold" style="color: var(--color-primary)">BCA Operasional</div><div class="text-[11px] text-gray-500">124 mutasi bulan ini</div></div>
+        </div>
+        <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 12.500.000</div>
+        <div class="mt-3"><span class="chip-soft bg-emerald-100 text-emerald-800">✓ Rekonsiliasi 100% (28/28)</span></div>
+      </div>
+
+      <div class="sub-card p-5 relative placeholder-badge">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="icon-tile" style="background: #ffedd5; color: #9a3412;"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+          <div><div class="text-[14px] font-extrabold" style="color: var(--color-primary)">Mandiri Toko</div><div class="text-[11px] text-gray-500">32 mutasi bulan ini</div></div>
+        </div>
+        <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 5.300.000</div>
+        <div class="mt-3"><span class="chip-soft bg-amber-100 text-amber-800">⚠ 3 mutasi belum cocok</span></div>
+      </div>
+
+      <div class="sub-card p-5 relative placeholder-badge">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="icon-tile" style="background: #d1fae5; color: #065f46;"><i data-lucide="banknote" class="w-5 h-5"></i></div>
+          <div><div class="text-[14px] font-extrabold" style="color: var(--color-primary)">Kas Toko</div><div class="text-[11px] text-gray-500">18 mutasi bulan ini</div></div>
+        </div>
+        <div class="text-2xl font-black" style="color: var(--color-primary)">Rp 850.000</div>
+        <div class="mt-3"><span class="chip-soft bg-slate-100 text-slate-700">— Cash · no recon needed</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4: Belum Cocok tab -->
+  <section>
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">4. Tab "Belum Cocok" di Account Detail</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 text-white" style="background: linear-gradient(135deg, #9a3412, #c2410c);">
+        <a href="#" class="text-[11px] text-orange-100 hover:underline inline-flex items-center gap-1"><i data-lucide="arrow-left" class="w-3 h-3"></i> Kas & Bank</a>
+        <h3 class="text-xl font-extrabold mt-1">Mandiri Toko · Belum Cocok <span class="chip-soft bg-amber-200 text-amber-900 ml-2">3 unmatched</span></h3>
+      </div>
+
+      <div class="border-b border-gray-200 px-6 flex gap-1 overflow-x-auto">
+        <button class="px-4 py-3 text-[13px] font-bold text-gray-500">📜 Riwayat <span class="chip-soft bg-slate-100 text-slate-700 ml-1">32</span></button>
+        <button class="px-4 py-3 text-[13px] font-bold text-gray-500">⏳ Belum Cair <span class="chip-soft bg-slate-100 text-slate-700 ml-1">0</span></button>
+        <button class="px-4 py-3 text-[13px] font-extrabold border-b-2 border-orange-600" style="color: var(--color-primary)">⚠ Belum Cocok <span class="chip-soft bg-amber-100 text-amber-800 ml-1">3</span></button>
+        <button class="px-4 py-3 text-[13px] font-bold text-gray-500">ℹ Info Akun</button>
+      </div>
+
+      <div class="p-6 relative placeholder-badge">
+        <div class="sub-card p-4 mb-4 text-[12px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          💡 <strong>Apa artinya?</strong> Mutasi berikut sudah tercatat di journal_entry_lines tapi belum kelihatan di mutasi rekening Mandiri. Kemungkinan: (a) belum upload PDF mutasi terbaru, (b) bank belum process, atau (c) salah catat.
+        </div>
+
+        <div class="sub-card overflow-hidden row-divider">
+          <div class="p-4 hover:bg-amber-50/30 flex items-center gap-3 text-[13px]">
+            <i data-lucide="help-circle" class="w-5 h-5 text-amber-700"></i>
+            <div class="flex-1">
+              <div class="font-bold" style="color: var(--color-primary)">JE-202606-0010 · Penjualan Grosir INV-148</div>
+              <div class="text-[11px] text-gray-500">12/06 · Customer Maju Jaya · 8 hari belum cocok</div>
+            </div>
+            <div class="text-right font-bold text-emerald-700">+ Rp 3.500.000</div>
+            <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="search" class="w-3 h-3"></i> Cari di Recon</button>
+          </div>
+          <div class="p-4 hover:bg-amber-50/30 flex items-center gap-3 text-[13px]">
+            <i data-lucide="help-circle" class="w-5 h-5 text-amber-700"></i>
+            <div class="flex-1">
+              <div class="font-bold" style="color: var(--color-primary)">JE-202606-0007 · Bayar Pembelian PI-91</div>
+              <div class="text-[11px] text-gray-500">10/06 · CV Galaxy · 10 hari belum cocok</div>
+            </div>
+            <div class="text-right font-bold text-rose-700">− Rp 2.250.000</div>
+            <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="search" class="w-3 h-3"></i> Cari di Recon</button>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-end">
+          <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Modul Rekonsiliasi</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">Mockup Phase 5 Recon Alignment · design-system aligned · 2026-06-21</footer>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

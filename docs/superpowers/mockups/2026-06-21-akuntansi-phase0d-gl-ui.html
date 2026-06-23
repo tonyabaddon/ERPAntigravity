@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Akuntansi Phase 0d (design-system aligned)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #1e3d60;
+    --color-secondary: #2d8a4e;
+    --color-on-surface: #0b1c30;
+    --color-background-soft: #f8f9ff;
+  }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--color-background-soft);
+    color: var(--color-on-surface);
+  }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before {
+    content: '⚠ Mockup';
+    position: absolute; top: 8px; right: 8px;
+    background: #fef3c7; color: #92400e;
+    font-size: 9px; font-weight: 800;
+    padding: 2px 6px; border-radius: 4px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary {
+    background: #012749; color: white;
+    border-radius: 9999px;
+    font-size: 12px; font-weight: 700;
+    padding: 8px 14px;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #01365e; }
+  .btn-secondary {
+    border: 1px solid #c7d7f5; background: white;
+    color: #1e3d60;
+    border-radius: 9999px;
+    font-size: 12px; font-weight: 700;
+    padding: 8px 14px;
+  }
+  .btn-secondary:hover { background: #eff4ff; }
+  .btn-danger { background: #dc2626; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-warning { background: #d97706; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #eff4ff; color: #012749; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon-tile-dark { background: #012749; color: #34d399; }
+  .input {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+    padding: 8px 12px; font-size: 14px; outline: none;
+  }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+  .wizard-step { transition: all 0.2s; }
+  .checklist-item.done { background: #d1fae5; }
+  .checklist-item.warn { background: #fef3c7; }
+</style>
+</head>
+<body class="text-[var(--color-on-surface)]">
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="icon-tile icon-tile-dark"><i data-lucide="book-check" class="w-5 h-5"></i></div>
+      <div>
+        <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Mockup — Akuntansi Phase 0d (design-system aligned)</h1>
+        <p class="text-[11px] text-gray-600">Match app: lucide-react icons, rounded-full buttons, c7d7f5/fafbff sub-cards, var(--color-primary) · <strong class="text-amber-700">Placeholder mockup data</strong></p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">1. Sidebar</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-rose-50 text-rose-800">2. Open Balance Wizard</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">3. Trial Balance</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">4. Buku Besar</a>
+      <a href="#m5" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">5. Period Close</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- DECISION RECAP -->
+  <section class="card p-6" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+    <h2 class="text-base font-extrabold mb-3" style="color: #0c4a6e">Design system tokens (extracted dari src/index.css + components)</h2>
+    <div class="grid md:grid-cols-2 gap-4 text-[13px]" style="color: #0c4a6e">
+      <div>
+        <p class="font-extrabold uppercase text-[10px] tracking-widest mb-1">Colors</p>
+        <ul class="list-disc ml-5 space-y-0.5">
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">--color-primary: #1e3d60</code> · text utama</li>
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">#012749</code> · sidebar bg, primary button</li>
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">#c7d7f5</code> · card border</li>
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">#fafbff</code> · sub-card bg</li>
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">#eff4ff</code> · icon tile bg</li>
+          <li><code class="font-mono text-[11px] bg-white px-1 rounded">--color-secondary: #2d8a4e</code> · accent emerald</li>
+        </ul>
+      </div>
+      <div>
+        <p class="font-extrabold uppercase text-[10px] tracking-widest mb-1">Components</p>
+        <ul class="list-disc ml-5 space-y-0.5">
+          <li><strong>Buttons:</strong> rounded-full pill (NOT rounded-lg)</li>
+          <li><strong>Icons:</strong> lucide-react (NOT Material Symbols)</li>
+          <li><strong>Cards:</strong> white bg, rounded-3xl, soft shadow</li>
+          <li><strong>Sub-cards:</strong> border-[#c7d7f5] bg-[#fafbff] rounded-xl</li>
+          <li><strong>Inputs:</strong> border-slate-200 rounded-xl + focus ring</li>
+          <li><strong>Sidebar:</strong> 4 group (Operasional, Inventory, Kontrol & Laporan, Sistem). Akuntansi masuk <strong>Kontrol & Laporan</strong>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M1 — SIDEBAR with Akuntansi entry                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">1. Sidebar — Akuntansi masuk "Kontrol & Laporan"</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-blue-700">Existing pattern: hover-expand w-20 → w-64</span>
+    </div>
+
+    <div class="card overflow-hidden" style="height: 600px;">
+      <div class="flex h-full">
+        <!-- Sidebar match existing -->
+        <aside class="bg-[#012749] text-white py-8 px-3 flex flex-col w-64 shadow-2xl rounded-3xl m-4" style="box-shadow: 0 20px 50px rgba(1,39,73,0.25);">
+          <div class="flex items-center gap-3 px-3 mb-8">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+              <i data-lucide="zap" class="w-5 h-5 text-emerald-400"></i>
+            </div>
+            <span class="text-[14px] font-extrabold">Garindo ERP</span>
+          </div>
+
+          <nav class="flex-1 overflow-y-auto space-y-4 text-[12px]">
+            <div>
+              <div class="px-3 py-1 text-[9px] uppercase tracking-widest text-blue-300 font-extrabold">Operasional</div>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="inbox" class="w-4 h-4"></i> Sales Inbox</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="shopping-cart" class="w-4 h-4"></i> Penjualan</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="receipt" class="w-4 h-4"></i> Kasir</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="users" class="w-4 h-4"></i> Pelanggan</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="wallet" class="w-4 h-4"></i> Piutang</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="trending-up" class="w-4 h-4"></i> Pipeline</a>
+            </div>
+            <div>
+              <div class="px-3 py-1 text-[9px] uppercase tracking-widest text-blue-300 font-extrabold">Inventory</div>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="package" class="w-4 h-4"></i> Produk & Stok</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="package-search" class="w-4 h-4"></i> Stok Opname</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Pembelian</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="warehouse" class="w-4 h-4"></i> Manajemen Gudang</a>
+            </div>
+            <div>
+              <div class="px-3 py-1 text-[9px] uppercase tracking-widest text-blue-300 font-extrabold">Kontrol & Laporan</div>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Persetujuan</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="book-check" class="w-4 h-4"></i> Rekonsiliasi & Tutup Buku</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl bg-emerald-500/20 ring-1 ring-emerald-400/40 cursor-pointer font-bold"><i data-lucide="book-open-check" class="w-4 h-4 text-emerald-300"></i> Akuntansi <span class="ml-auto text-[9px] bg-emerald-400 text-emerald-900 px-1.5 rounded font-extrabold">NEW</span></a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Laporan</a>
+            </div>
+            <div>
+              <div class="px-3 py-1 text-[9px] uppercase tracking-widest text-blue-300 font-extrabold">Sistem</div>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="user-check" class="w-4 h-4"></i> User Management</a>
+              <a class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/10 cursor-pointer"><i data-lucide="settings" class="w-4 h-4"></i> Pengaturan</a>
+            </div>
+          </nav>
+        </aside>
+
+        <!-- Main: Akuntansi entry screen preview -->
+        <main class="flex-1 p-8 overflow-y-auto">
+          <h1 class="text-2xl font-extrabold mb-1" style="color: var(--color-primary)">Akuntansi MSME</h1>
+          <p class="text-xs text-gray-600 mb-6">General Ledger berbasis SAK EMKM · auto-sync dari kasir / pembelian / piutang</p>
+
+          <div class="card p-6 relative placeholder-badge">
+            <div class="flex items-start gap-3">
+              <div class="icon-tile"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+              <div class="flex-1">
+                <h3 class="text-base font-bold mb-1" style="color: var(--color-primary)">Setup Saldo Awal — Belum Dilakukan</h3>
+                <p class="text-xs text-gray-600 mb-4">Sebelum bisa catat transaksi via Akuntansi, Owner harus input saldo awal per akun. Wajib first-time, sekali setup.</p>
+                <button class="btn-primary inline-flex items-center gap-1.5">
+                  <i data-lucide="play" class="w-3.5 h-3.5"></i> Mulai Wizard Saldo Awal
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M2 — OPENING BALANCE WIZARD                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">2. Opening Balance Wizard — design-system match</h2>
+      <span class="chip-soft bg-rose-100 text-rose-800">Mandatory first-time · Owner-only</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-start gap-3">
+        <div class="icon-tile"><i data-lucide="key-round" class="w-5 h-5"></i></div>
+        <div class="flex-1">
+          <h3 class="text-base font-bold" style="color: var(--color-primary)">Setup Saldo Awal — Wizard 4 Step</h3>
+          <p class="text-xs text-gray-600">Tanggal cutoff · input saldo per akun · balance check · confirm &amp; post</p>
+        </div>
+      </div>
+
+      <!-- Stepper -->
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center gap-2 text-[12px] overflow-x-auto">
+        <div class="wizard-step flex items-center gap-2 px-3 py-2 rounded-full bg-[#012749] text-white font-bold">
+          <span class="w-5 h-5 rounded-full bg-white text-[#012749] flex items-center justify-center text-[10px] font-extrabold">1</span>
+          Tanggal Saldo Awal
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+        <div class="wizard-step flex items-center gap-2 px-3 py-2 rounded-full sub-card text-gray-600">
+          <span class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-extrabold">2</span>
+          Input Saldo
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+        <div class="wizard-step flex items-center gap-2 px-3 py-2 rounded-full sub-card text-gray-600">
+          <span class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-extrabold">3</span>
+          Balance Check
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+        <div class="wizard-step flex items-center gap-2 px-3 py-2 rounded-full sub-card text-gray-600">
+          <span class="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-extrabold">4</span>
+          Confirm & Post
+        </div>
+      </div>
+
+      <!-- Step 2 active: Input -->
+      <div class="p-6 relative placeholder-badge">
+        <h4 class="text-base font-bold mb-1" style="color: var(--color-primary)">Step 2 — Input saldo per akun · per 31 Mei 2025</h4>
+        <p class="text-xs text-gray-600 mb-4">Semua saldo per tanggal cutoff. Akun yang tidak relevan biarkan 0.</p>
+
+        <div class="sub-card p-4 mb-3">
+          <p class="text-[11px] uppercase tracking-widest font-extrabold text-blue-700 mb-2">━━ Aset ━━</p>
+          <table class="w-full text-[13px]">
+            <thead>
+              <tr class="text-[10px] uppercase font-bold text-gray-600">
+                <th class="text-left pb-2">Akun</th>
+                <th class="text-right pb-2">Saldo Awal (Debit)</th>
+                <th class="text-left pl-3 pb-2">Source</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr><td class="py-2 font-mono text-xs"><strong>1-1110</strong> Kas Toko</td>
+                  <td class="py-2 text-right"><input class="input text-right font-bold w-40" value="500.000" /></td>
+                  <td class="py-2 pl-3 text-[11px] text-gray-500">hitung fisik laci kasir</td></tr>
+              <tr><td class="py-2 font-mono text-xs"><strong>1-1210</strong> BCA Operasional</td>
+                  <td class="py-2 text-right"><input class="input text-right font-bold w-40" value="8.500.000" /></td>
+                  <td class="py-2 pl-3 text-[11px] text-gray-500">m-banking BCA</td></tr>
+              <tr><td class="py-2 font-mono text-xs"><strong>1-1400</strong> Piutang Usaha</td>
+                  <td class="py-2 text-right"><input class="input text-right font-bold w-40 bg-gray-50" value="12.000.000" readonly /></td>
+                  <td class="py-2 pl-3 text-[11px] text-emerald-700 font-bold">auto-sum dari orders</td></tr>
+              <tr><td class="py-2 font-mono text-xs"><strong>1-1510</strong> Persediaan</td>
+                  <td class="py-2 text-right"><input class="input text-right font-bold w-40 bg-gray-50" value="35.000.000" readonly /></td>
+                  <td class="py-2 pl-3 text-[11px] text-emerald-700 font-bold">auto-sum stock × cost</td></tr>
+            </tbody>
+            <tfoot>
+              <tr class="font-extrabold border-t-2 border-blue-300" style="color: var(--color-primary)">
+                <td class="py-2">Total Aset</td>
+                <td class="py-2 text-right text-blue-700">Rp 56.000.000</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-3 mt-4">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700"></i>
+          <div class="flex-1">
+            <p class="text-[13px] text-emerald-900 font-bold">✓ Balance check pass</p>
+            <p class="text-[11px] text-emerald-800">Total Aset = Total Liabilitas + Modal = Rp 56.000.000 (auto-plug Laba Ditahan)</p>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-2 justify-end">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Back</button>
+          <button class="btn-primary inline-flex items-center gap-1.5">Next: Balance Check <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M3 — TRIAL BALANCE (design-system match)                            -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">3. Trial Balance / Neraca Saldo</h2>
+      <span class="chip-soft bg-emerald-100 text-emerald-800">Format akuntan-grade</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="icon-tile"><i data-lucide="scale" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-base font-bold" style="color: var(--color-primary)">Trial Balance</h3>
+            <p class="text-xs text-gray-600">Per 21 Jun 2026 14:32 WIB · Periode Jun 2026 (OPEN)</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <select class="input w-44 text-xs"><option>Jun 2026 (Berjalan)</option><option>May 2026 (Closed)</option></select>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Excel</button>
+        </div>
+      </div>
+
+      <!-- Balance banner -->
+      <div class="m-6 sub-card p-3 flex items-center gap-3" style="background: #d1fae5; border-color: #6ee7b7;">
+        <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700"></i>
+        <p class="text-[12px] text-emerald-900"><strong>✓ Neraca Saldo SEIMBANG</strong> · Total Debit = Total Kredit = <strong>Rp 487.350.000</strong></p>
+      </div>
+
+      <div class="px-6 pb-6 relative placeholder-badge">
+        <div class="sub-card overflow-hidden">
+          <table class="w-full text-[12px]">
+            <thead style="background: #eff4ff;">
+              <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+                <th class="text-left py-2 px-3">Kode</th>
+                <th class="text-left py-2 px-3">Nama Akun</th>
+                <th class="text-right py-2 px-3">Debit</th>
+                <th class="text-right py-2 px-3">Kredit</th>
+                <th class="text-right py-2 px-3">Saldo</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr class="bg-blue-50/30 font-bold" style="color: #1e40af"><td colspan="5" class="py-2 px-3">━━ 1 ASET ━━</td></tr>
+              <tr class="hover:bg-blue-50/30"><td class="py-2 px-3 font-mono">1-1110</td><td class="py-2 px-3">Kas Toko</td><td class="text-right">15.250.000</td><td class="text-right">14.400.000</td><td class="text-right font-bold text-blue-700">850.000</td></tr>
+              <tr class="hover:bg-blue-50/30"><td class="py-2 px-3 font-mono">1-1210</td><td class="py-2 px-3">BCA Operasional</td><td class="text-right">35.450.000</td><td class="text-right">22.950.000</td><td class="text-right font-bold text-blue-700">12.500.000</td></tr>
+              <tr class="hover:bg-blue-50/30"><td class="py-2 px-3 font-mono">1-1510</td><td class="py-2 px-3">Persediaan</td><td class="text-right">125.000.000</td><td class="text-right">85.500.000</td><td class="text-right font-bold text-blue-700">39.500.000</td></tr>
+
+              <tr class="bg-rose-50/30 font-bold" style="color: #9f1239"><td colspan="5" class="py-2 px-3">━━ 2 LIABILITAS ━━</td></tr>
+              <tr class="hover:bg-rose-50/30"><td class="py-2 px-3 font-mono">2-1100</td><td class="py-2 px-3">Hutang Usaha</td><td class="text-right">68.500.000</td><td class="text-right">81.200.000</td><td class="text-right font-bold text-rose-700">12.700.000</td></tr>
+              <tr class="hover:bg-rose-50/30"><td class="py-2 px-3 font-mono">2-1500</td><td class="py-2 px-3">Pendapatan Diterima Dimuka (DP)</td><td class="text-right">1.500.000</td><td class="text-right">3.250.000</td><td class="text-right font-bold text-rose-700">1.750.000</td></tr>
+
+              <tr class="bg-violet-50/30 font-bold" style="color: #6b21a8"><td colspan="5" class="py-2 px-3">━━ 3 MODAL ━━</td></tr>
+              <tr class="hover:bg-violet-50/30"><td class="py-2 px-3 font-mono">3-1100</td><td class="py-2 px-3">Modal Owner</td><td class="text-right">0</td><td class="text-right">40.000.000</td><td class="text-right font-bold text-violet-700">40.000.000</td></tr>
+              <tr class="hover:bg-violet-50/30"><td class="py-2 px-3 font-mono">3-1200</td><td class="py-2 px-3">Prive (Owner Drawing)</td><td class="text-right">17.000.000</td><td class="text-right">0</td><td class="text-right font-bold text-violet-700">17.000.000</td></tr>
+
+              <tr class="bg-emerald-50/30 font-bold" style="color: #065f46"><td colspan="5" class="py-2 px-3">━━ 4 PENDAPATAN ━━</td></tr>
+              <tr class="hover:bg-emerald-50/30"><td class="py-2 px-3 font-mono">4-1110</td><td class="py-2 px-3">Penjualan Walkin</td><td class="text-right">0</td><td class="text-right">45.300.000</td><td class="text-right font-bold text-emerald-700">45.300.000</td></tr>
+
+              <tr class="bg-orange-50/30 font-bold" style="color: #9a3412"><td colspan="5" class="py-2 px-3">━━ 5 BEBAN ━━</td></tr>
+              <tr class="hover:bg-orange-50/30"><td class="py-2 px-3 font-mono">5-1100</td><td class="py-2 px-3">HPP Penjualan</td><td class="text-right">125.300.000</td><td class="text-right">0</td><td class="text-right font-bold text-orange-700">125.300.000</td></tr>
+              <tr class="hover:bg-orange-50/30"><td class="py-2 px-3 font-mono">5-3300</td><td class="py-2 px-3">Beban Pajak <span class="chip-soft bg-amber-100 text-amber-800 ml-1">AUTO-ACCRUAL</span></td><td class="text-right">1.235.000</td><td class="text-right">0</td><td class="text-right font-bold text-orange-700">1.235.000</td></tr>
+            </tbody>
+            <tfoot style="background: #eff4ff;">
+              <tr class="font-extrabold border-t-2" style="color: var(--color-primary); border-color: #1e40af;">
+                <td colspan="2" class="py-3 px-3">TOTAL</td>
+                <td class="py-3 px-3 text-right">487.350.000</td>
+                <td class="py-3 px-3 text-right">487.350.000</td>
+                <td class="py-3 px-3 text-right text-emerald-700">✓ Balanced</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M4 — BUKU BESAR per akun                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m4">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">4. Buku Besar Per Akun (running balance)</h2>
+      <span class="chip-soft bg-violet-100 text-violet-800">Drill-down dari Trial Balance</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <a href="#m3" class="text-[11px] text-blue-700 hover:underline inline-flex items-center gap-1"><i data-lucide="arrow-left" class="w-3 h-3"></i> Trial Balance</a>
+        <h3 class="text-xl font-extrabold mt-1" style="color: var(--color-primary)">Buku Besar: <span class="font-mono text-blue-700">1-1210</span> BCA Operasional</h3>
+        <p class="text-xs text-gray-600 mt-1">Aset / Bank · normal balance: <strong>Debit</strong> · periode Jun 2026</p>
+      </div>
+
+      <div class="p-6 relative placeholder-badge">
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="sub-card p-3">
+            <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Saldo Awal</div>
+            <div class="text-lg font-extrabold" style="color: var(--color-primary)">Rp 0</div>
+          </div>
+          <div class="sub-card p-3">
+            <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Movement bulan ini</div>
+            <div class="text-lg font-extrabold text-emerald-700">+ Rp 12.500.000</div>
+          </div>
+          <div class="sub-card p-3" style="background: #d1fae5; border-color: #6ee7b7;">
+            <div class="text-[10px] uppercase tracking-widest text-emerald-700 font-bold">Saldo Akhir</div>
+            <div class="text-lg font-extrabold text-emerald-700">Rp 12.500.000</div>
+          </div>
+        </div>
+
+        <div class="sub-card overflow-hidden">
+          <table class="w-full text-[12px]">
+            <thead style="background: #eff4ff;">
+              <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+                <th class="text-left py-2 px-3">Tanggal</th>
+                <th class="text-left py-2 px-3">No. Entry</th>
+                <th class="text-left py-2 px-3">Keterangan</th>
+                <th class="text-right py-2 px-3">Debit</th>
+                <th class="text-right py-2 px-3">Kredit</th>
+                <th class="text-right py-2 px-3">Saldo</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr class="hover:bg-blue-50/30">
+                <td class="py-2 px-3 font-mono">20/06 13:45</td>
+                <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0021</a></td>
+                <td class="py-2 px-3">Penjualan Tokopedia INV-241 <span class="chip-soft bg-amber-100 text-amber-800 ml-1">PENDING</span></td>
+                <td class="py-2 px-3 text-right font-bold text-emerald-700">1.250.000</td>
+                <td class="py-2 px-3 text-right">—</td>
+                <td class="py-2 px-3 text-right font-bold text-gray-400 italic">PENDING</td>
+              </tr>
+              <tr class="hover:bg-blue-50/30">
+                <td class="py-2 px-3 font-mono">20/06 11:12</td>
+                <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0019</a></td>
+                <td class="py-2 px-3">Bayar Pembelian PI-89 · CV Sinar Jaya</td>
+                <td class="py-2 px-3 text-right">—</td>
+                <td class="py-2 px-3 text-right font-bold text-rose-700">3.500.000</td>
+                <td class="py-2 px-3 text-right font-bold text-blue-700">10.250.000</td>
+              </tr>
+              <tr class="hover:bg-blue-50/30">
+                <td class="py-2 px-3 font-mono">19/06 18:45</td>
+                <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0008</a></td>
+                <td class="py-2 px-3">Setor batch CB-58 (pair: 1-1110 Kas Toko)</td>
+                <td class="py-2 px-3 text-right font-bold text-emerald-700">2.150.000</td>
+                <td class="py-2 px-3 text-right">—</td>
+                <td class="py-2 px-3 text-right font-bold text-blue-700">13.750.000</td>
+              </tr>
+              <tr class="bg-amber-50/30 hover:bg-amber-50">
+                <td class="py-2 px-3 font-mono">19/06 03:00</td>
+                <td class="py-2 px-3 font-mono text-blue-700"><a href="#" class="hover:underline">JE-202606-0011</a></td>
+                <td class="py-2 px-3"><i data-lucide="settings-2" class="inline w-3 h-3"></i> Penyesuaian: Admin BCA bulanan</td>
+                <td class="py-2 px-3 text-right">—</td>
+                <td class="py-2 px-3 text-right font-bold text-rose-700">17.500</td>
+                <td class="py-2 px-3 text-right font-bold text-blue-700">11.600.000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="file-down" class="w-3.5 h-3.5"></i> PDF Buku Besar</button>
+          <button class="btn-secondary inline-flex items-center gap-1.5"><i data-lucide="grid" class="w-3.5 h-3.5"></i> Excel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M5 — PERIOD CLOSE                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m5">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">5. Tutup Buku — Periode Mei 2026 + Tax Accrual</h2>
+      <span class="chip-soft bg-amber-100 text-amber-800">Owner-gated · auto-PPh</span>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Period list -->
+      <div class="card overflow-hidden">
+        <div class="p-6 border-b border-gray-200 flex items-start gap-3">
+          <div class="icon-tile"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-base font-bold" style="color: var(--color-primary)">Status Periode Akuntansi</h3>
+            <p class="text-xs text-gray-600">Jun OPEN · Mei siap close · Apr CLOSED · Feb REOPENED</p>
+          </div>
+        </div>
+        <div class="row-divider relative placeholder-badge">
+          <div class="p-4 flex items-center justify-between">
+            <span class="text-[13px] font-bold" style="color: var(--color-primary)">Juni 2026 <span class="text-[10px] text-emerald-700">(berjalan)</span></span>
+            <span class="chip-soft bg-emerald-100 text-emerald-800">OPEN</span>
+          </div>
+          <div class="p-4 flex items-center justify-between bg-amber-50/30">
+            <div>
+              <span class="text-[13px] font-bold" style="color: var(--color-primary)">Mei 2026</span>
+              <div class="text-[10px] text-gray-500">28 entries · Trial Balance ✓</div>
+            </div>
+            <button class="btn-danger inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Tutup Buku</button>
+          </div>
+          <div class="p-4 flex items-center justify-between bg-gray-50">
+            <span class="text-[13px] font-bold text-gray-600">April 2026</span>
+            <span class="chip-soft bg-gray-300 text-gray-700"><i data-lucide="lock" class="inline w-3 h-3 mr-0.5"></i> CLOSED · 5 May</span>
+          </div>
+          <div class="p-4 flex items-center justify-between bg-gray-50">
+            <span class="text-[13px] font-bold text-gray-600">Februari 2026</span>
+            <span class="chip-soft bg-blue-200 text-blue-800"><i data-lucide="rotate-ccw" class="inline w-3 h-3 mr-0.5"></i> REOPENED · 10 Mar</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Close confirm modal -->
+      <div class="card overflow-hidden">
+        <div class="p-6 border-b border-gray-200 flex items-start gap-3" style="background: #fef2f2;">
+          <div class="icon-tile" style="background: #fee2e2; color: #991b1b;"><i data-lucide="lock" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-base font-bold text-red-900">Tutup Buku Mei 2026 — Konfirmasi</h3>
+            <p class="text-xs text-red-700">Setelah close, entry baru ke Mei 2026 akan REJECTED</p>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-3 relative placeholder-badge text-[13px]">
+          <div class="sub-card p-3">
+            <div class="font-extrabold mb-1" style="color: var(--color-primary)">Snapshot</div>
+            <div class="flex justify-between"><span class="text-gray-600">Total entries</span><span class="font-bold">28</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Trial Balance</span><span class="text-emerald-700 font-bold">✓ Seimbang</span></div>
+            <div class="flex justify-between"><span class="text-gray-600">Omzet Mei</span><span class="font-bold">Rp 165.250.000</span></div>
+          </div>
+
+          <div class="sub-card p-3" style="background: #fef3c7; border-color: #fbbf24;">
+            <div class="flex items-center gap-2 mb-2">
+              <i data-lucide="receipt" class="w-4 h-4 text-amber-700"></i>
+              <strong class="text-amber-900 text-[12px]">Tax Accrual Otomatis (akan posted bareng close)</strong>
+            </div>
+            <div class="bg-white border border-amber-200 rounded-lg p-2 text-[11px]">
+              <div class="flex justify-between"><span>Omzet Mei × PPh Final 0.5%</span><strong>Rp 826.250</strong></div>
+              <div class="mt-1 pt-1 border-t border-amber-100 font-mono text-[10px] text-amber-900">
+                D 5-3300 Beban Pajak Rp 826.250<br/>
+                K 2-1210 Hutang PPh Final Rp 826.250
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button class="btn-danger flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Tutup Buku + Generate Tax</button>
+            <button class="btn-secondary">Batal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">
+    Mockup oleh Claude · 2026-06-21 · design-system aligned (var(--color-primary) · lucide-react · rounded-full pills · c7d7f5 borders) · placeholder data
+  </footer>
+
+</div>
+
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>

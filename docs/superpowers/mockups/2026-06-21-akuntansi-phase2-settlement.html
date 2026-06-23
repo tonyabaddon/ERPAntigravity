@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Mockup — Phase 2 Settlement Akurasi (design-system aligned)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --color-primary: #1e3d60; --color-on-surface: #0b1c30; --color-background-soft: #f8f9ff; }
+  body { font-family: 'Inter', sans-serif; background: var(--color-background-soft); color: var(--color-on-surface); }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary { background: #012749; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-primary:hover { background: #01365e; }
+  .btn-secondary { border: 1px solid #c7d7f5; background: white; color: #1e3d60; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-emerald { background: #059669; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #eff4ff; color: #012749; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon-tile-amber { background: #fef3c7; color: #92400e; }
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 8px 12px; font-size: 14px; outline: none; }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center gap-3">
+    <div class="icon-tile icon-tile-amber"><i data-lucide="hourglass" class="w-5 h-5"></i></div>
+    <div>
+      <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Phase 2 — Settlement Akurasi (PENDING → CLEARED)</h1>
+      <p class="text-[11px] text-gray-600">journal_entry_lines.status PENDING untuk marketplace/QRIS/EDC · manual confirm cair · Phase 5 auto-match via recon</p>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- M1: Belum Cair main screen -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">1. Belum Cair — Screen utama</h2>
+      <span class="chip-soft bg-amber-100 text-amber-800">Sub-menu Akuntansi atau tab Kas & Bank</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div class="icon-tile icon-tile-amber"><i data-lucide="hourglass" class="w-5 h-5"></i></div>
+          <div>
+            <h3 class="text-xl font-extrabold" style="color: var(--color-primary)">Belum Cair <span class="chip-soft bg-amber-100 text-amber-800 ml-2">12 PENDING</span></h3>
+            <p class="text-xs text-gray-600 mt-0.5">Marketplace / QRIS / EDC · settlement T+N · belum masuk saldo cleared</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel breakdown -->
+      <div class="p-6 grid grid-cols-4 gap-3 relative placeholder-badge">
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">Tokopedia</div>
+          <div class="text-xl font-black mt-1" style="color: var(--color-primary)">Rp 3.250.000</div>
+          <div class="text-[11px] text-gray-500 mt-1">5 entries · est T+7</div>
+        </div>
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">Shopee</div>
+          <div class="text-xl font-black mt-1" style="color: var(--color-primary)">Rp 1.500.000</div>
+          <div class="text-[11px] text-gray-500 mt-1">3 entries · est T+7</div>
+        </div>
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">QRIS</div>
+          <div class="text-xl font-black mt-1" style="color: var(--color-primary)">Rp 950.000</div>
+          <div class="text-[11px] text-gray-500 mt-1">3 entries · est T+1</div>
+        </div>
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">EDC Debit</div>
+          <div class="text-xl font-black mt-1" style="color: var(--color-primary)">Rp 450.000</div>
+          <div class="text-[11px] text-gray-500 mt-1">1 entry · est T+1</div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="px-6 pb-4 flex items-center gap-3 text-[12px]">
+        <span class="font-bold text-gray-600">Filter:</span>
+        <select class="input w-44 text-xs"><option>Semua akun</option><option>BCA Operasional</option></select>
+        <select class="input w-32 text-xs"><option>Semua channel</option></select>
+        <button class="btn-primary py-1.5 text-[11px] inline-flex items-center gap-1"><i data-lucide="alarm-clock" class="w-3 h-3"></i> Overdue (2)</button>
+        <button class="btn-secondary py-1.5 text-[11px] inline-flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> Soon (4)</button>
+        <button class="btn-secondary py-1.5 text-[11px] inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> On Track (6)</button>
+        <div class="ml-auto">
+          <button class="btn-emerald inline-flex items-center gap-1.5"><i data-lucide="zap" class="w-3 h-3"></i> Bulk Konfirmasi (3)</button>
+        </div>
+      </div>
+
+      <!-- Pending list -->
+      <div class="border-t border-gray-200 relative placeholder-badge">
+        <table class="w-full text-[12px]">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="py-2 px-3"><input type="checkbox" class="w-4 h-4 rounded" /></th>
+              <th class="text-left py-2 px-3">Status</th>
+              <th class="text-left py-2 px-3">Entry</th>
+              <th class="text-left py-2 px-3">Akun Tujuan</th>
+              <th class="text-left py-2 px-3">Keterangan</th>
+              <th class="text-left py-2 px-3">Est. Cair</th>
+              <th class="text-right py-2 px-3">Amount</th>
+              <th class="text-center py-2 px-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr class="hover:bg-amber-50/30">
+              <td class="py-3 px-3"><input type="checkbox" class="w-4 h-4 rounded" /></td>
+              <td><span class="chip-soft bg-red-100 text-red-800"><i data-lucide="alarm-clock" class="inline w-3 h-3 mr-1"></i>Overdue 5h</span></td>
+              <td class="py-3 px-3 font-mono text-blue-700"><a href="#">JE-202606-0018</a></td>
+              <td class="py-3 px-3 font-mono">1-1210 BCA</td>
+              <td class="py-3 px-3">Tokopedia INV-218 · Customer Budi</td>
+              <td class="py-3 px-3 font-bold text-red-700">15 Jun</td>
+              <td class="text-right font-bold" style="color: var(--color-primary)">Rp 750.000</td>
+              <td class="text-center"><button class="btn-emerald inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Cair</button></td>
+            </tr>
+            <tr class="hover:bg-amber-50/30">
+              <td class="py-3 px-3"><input type="checkbox" class="w-4 h-4 rounded" /></td>
+              <td><span class="chip-soft bg-amber-100 text-amber-800"><i data-lucide="zap" class="inline w-3 h-3 mr-1"></i>Soon 1h</span></td>
+              <td class="py-3 px-3 font-mono text-blue-700"><a href="#">JE-202606-0022</a></td>
+              <td class="py-3 px-3 font-mono">1-1220 Mandiri</td>
+              <td class="py-3 px-3">Shopee INV-142 · Customer Rina</td>
+              <td class="py-3 px-3 font-bold text-amber-700">21 Jun (besok)</td>
+              <td class="text-right font-bold" style="color: var(--color-primary)">Rp 500.000</td>
+              <td class="text-center"><button class="btn-emerald inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Cair</button></td>
+            </tr>
+            <tr class="hover:bg-amber-50/30">
+              <td class="py-3 px-3"><input type="checkbox" checked class="w-4 h-4 rounded" /></td>
+              <td><span class="chip-soft bg-emerald-100 text-emerald-800"><i data-lucide="check" class="inline w-3 h-3 mr-1"></i>On Track</span></td>
+              <td class="py-3 px-3 font-mono text-blue-700"><a href="#">JE-202606-0024</a></td>
+              <td class="py-3 px-3 font-mono">1-1210 BCA</td>
+              <td class="py-3 px-3">QRIS Walkin TXN-512</td>
+              <td class="py-3 px-3 font-bold text-emerald-700">20 Jun (besok)</td>
+              <td class="text-right font-bold" style="color: var(--color-primary)">Rp 250.000</td>
+              <td class="text-center"><button class="btn-emerald inline-flex items-center gap-1"><i data-lucide="check" class="w-3 h-3"></i> Cair</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="px-6 py-3 text-[11px] text-center text-gray-500">Menampilkan 3 dari 12 pending · <a href="#" class="text-blue-700 font-bold hover:underline">Muat lebih banyak ↓</a></div>
+    </div>
+  </section>
+
+  <!-- M2: Konfirmasi Cair Modal (single + bulk) -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">2. Konfirmasi Cair — Modal Single + Bulk</h2>
+      <span class="chip-soft bg-blue-100 text-[#012749]">Flip status PENDING → CLEARED + set cleared_at</span>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Single -->
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #d1fae5;">
+          <div class="icon-tile" style="background: #a7f3d0; color: #065f46;"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+          <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Konfirmasi Cair — Single</h3><p class="text-xs text-gray-600">Dari tombol Cair per row</p></div>
+        </div>
+        <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+          <div class="sub-card p-3">
+            <div class="text-[10px] uppercase font-bold text-gray-600 mb-1">Transaksi</div>
+            <div class="font-bold" style="color: var(--color-primary)">Penjualan Tokopedia INV-218</div>
+            <div class="text-[12px] text-gray-600 mt-1">8 Jun 2026 · Customer Budi</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="sub-card p-3" style="background: #dbeafe; border-color: #93c5fd;">
+              <div class="text-[10px] uppercase font-bold text-blue-800">Gross sale</div>
+              <div class="text-lg font-black text-blue-900">Rp 750.000</div>
+            </div>
+            <div class="sub-card p-3" style="background: #d1fae5; border-color: #6ee7b7;">
+              <div class="text-[10px] uppercase font-bold text-emerald-800">Masuk BCA</div>
+              <div class="text-lg font-black text-emerald-900">Rp 750.000</div>
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Tanggal cair *</label>
+            <input type="date" class="input" value="2026-06-20" />
+          </div>
+          <div class="sub-card p-3 text-[11px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+            📋 <strong>Marketplace fee 1.5%</strong> apply otomatis di Phase 5 (recon match). Konfirmasi Cair sekarang masuk gross.
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="btn-emerald flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5"></i> Konfirmasi Cair</button>
+            <button class="btn-secondary">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk -->
+      <div class="card overflow-hidden">
+        <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #e9d5ff;">
+          <div class="icon-tile" style="background: #d8b4fe; color: #6b21a8;"><i data-lucide="layers" class="w-5 h-5"></i></div>
+          <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Bulk Konfirmasi — 3 entries</h3><p class="text-xs text-gray-600">Multiple lines, tanggal cair sama</p></div>
+        </div>
+        <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+          <div class="sub-card p-3 space-y-1.5">
+            <div class="flex justify-between text-[12px]"><span class="font-mono text-xs">QRIS TXN-512</span><span class="font-bold">Rp 250.000 → BCA</span></div>
+            <div class="flex justify-between text-[12px]"><span class="font-mono text-xs">QRIS TXN-510</span><span class="font-bold">Rp 380.000 → BCA</span></div>
+            <div class="flex justify-between text-[12px]"><span class="font-mono text-xs">QRIS TXN-508</span><span class="font-bold">Rp 320.000 → BCA</span></div>
+            <div class="border-t border-gray-200 pt-2 mt-2 flex justify-between font-extrabold" style="color: var(--color-primary)"><span>Total ke BCA</span><span>Rp 950.000</span></div>
+          </div>
+          <div>
+            <label class="block font-bold mb-1" style="color: var(--color-primary)">Tanggal cair *</label>
+            <input type="date" class="input" value="2026-06-20" />
+            <p class="text-[10px] text-gray-500 mt-1">Sama untuk 3 entries</p>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="btn-emerald flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="check-check" class="w-3.5 h-3.5"></i> Konfirmasi 3 Cair</button>
+            <button class="btn-secondary">Batal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3: Settlement Timing Config di Pengaturan -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold" style="color: var(--color-primary)">3. Settlement Timing Config (Pengaturan)</h2>
+      <span class="chip-soft bg-violet-100 text-violet-800">Owner-only · per channel</span>
+    </div>
+
+    <div class="card overflow-hidden">
+      <div class="p-5 border-b border-gray-200 flex items-start gap-3">
+        <div class="icon-tile"><i data-lucide="settings-2" class="w-5 h-5"></i></div>
+        <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Pengaturan → Akuntansi → Settlement Timing</h3><p class="text-xs text-gray-600">Per channel: default akun · estimasi cair · fee marketplace (info-only di Phase 2)</p></div>
+      </div>
+
+      <div class="p-6 relative placeholder-badge">
+        <table class="w-full text-[13px]">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="text-left py-2 px-3">Channel</th>
+              <th class="text-left py-2 px-3">Default akun</th>
+              <th class="text-right py-2 px-3">Est. cair</th>
+              <th class="text-right py-2 px-3">Fee %</th>
+              <th class="text-center py-2 px-3">Aktif</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr><td class="py-3 px-3"><span class="chip-soft bg-blue-100 text-blue-800">tokopedia</span></td>
+              <td class="py-3 px-3"><select class="input text-xs"><option>1-1210 BCA Operasional</option></select></td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="7" /> hari</td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="1.0" step="0.1" /> %</td>
+              <td class="text-center"><input type="checkbox" checked class="w-4 h-4" /></td>
+            </tr>
+            <tr><td class="py-3 px-3"><span class="chip-soft bg-orange-100 text-orange-800">shopee</span></td>
+              <td class="py-3 px-3"><select class="input text-xs"><option>1-1220 Mandiri Toko</option></select></td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="7" /> hari</td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="1.5" step="0.1" /> %</td>
+              <td class="text-center"><input type="checkbox" checked class="w-4 h-4" /></td>
+            </tr>
+            <tr><td class="py-3 px-3"><span class="chip-soft bg-purple-100 text-purple-800">lazada</span></td>
+              <td class="py-3 px-3"><select class="input text-xs"><option>1-1210 BCA Operasional</option></select></td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="14" /> hari</td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="2.0" step="0.1" /> %</td>
+              <td class="text-center"><input type="checkbox" checked class="w-4 h-4" /></td>
+            </tr>
+            <tr><td class="py-3 px-3"><span class="chip-soft bg-green-100 text-green-800">qris</span></td>
+              <td class="py-3 px-3"><select class="input text-xs"><option>1-1210 BCA Operasional</option></select></td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="1" /> hari</td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="0.7" step="0.1" /> %</td>
+              <td class="text-center"><input type="checkbox" checked class="w-4 h-4" /></td>
+            </tr>
+            <tr><td class="py-3 px-3"><span class="chip-soft bg-slate-100 text-slate-700">debit (EDC)</span></td>
+              <td class="py-3 px-3"><select class="input text-xs"><option>1-1210 BCA Operasional</option></select></td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="1" /> hari</td>
+              <td class="text-right"><input type="number" class="input w-20 text-right text-xs" value="0.0" step="0.1" /> %</td>
+              <td class="text-center"><input type="checkbox" checked class="w-4 h-4" /></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="mt-4 flex justify-end">
+          <button class="btn-primary inline-flex items-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Pengaturan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">Mockup Phase 2 Settlement · design-system aligned · 2026-06-21</footer>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

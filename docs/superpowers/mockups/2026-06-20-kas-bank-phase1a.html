@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Kas &amp; Bank Phase 1a (Visibility)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; color: #1e3d60; }
+  .card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.08); }
+  .card-hover { transition: box-shadow 0.15s, transform 0.15s; cursor: pointer; }
+  .card-hover:hover { box-shadow: 0 8px 20px -4px rgba(2, 32, 71, 0.18); transform: translateY(-2px); }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+  .placeholder-badge::before { content: '⚠ Mockup data'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5eeff; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">account_balance_wallet</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup — Kas &amp; Bank Phase 1a (Visibility)</h1>
+        <p class="text-[11px] text-[#43474e]">2026-06-20 • Phase 1a UI lengkap + Phase 1b-5 thumbnails • <strong class="text-amber-700">SEMUA ANGKA = placeholder mockup, BUKAN data asli</strong></p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">1. Halaman utama</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">2. Detail akun</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">3. Form akun</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">4. Picker akun</a>
+      <a href="#m5" class="px-3 py-2 rounded-full bg-slate-100 text-slate-700">5. Roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-16">
+
+  <!-- DECISION RECAP -->
+  <section class="bg-emerald-50 border border-emerald-200 rounded-3xl p-6">
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-2xl">check_circle</span>
+      </div>
+      <div class="flex-1">
+        <h2 class="text-base font-extrabold text-emerald-900 mb-3">Phase 1a — Locked decisions (brainstorm 2026-06-20)</h2>
+        <div class="grid md:grid-cols-2 gap-4 text-[13px] text-emerald-900">
+          <div>
+            <p class="font-extrabold uppercase text-[10px] tracking-widest text-emerald-700 mb-1">Scope</p>
+            <ul class="list-disc ml-5 space-y-1">
+              <li>3-way konsolidasi → 1 tabel <code class="bg-white px-1 py-0.5 rounded text-[11px]">cash_accounts</code></li>
+              <li>Account types: <strong>BANK + KAS + E_WALLET</strong> (Lalamove dll), bukan KAS_KECIL</li>
+              <li>Backfill 1 tahun historis (kasir, pembelian, piutang)</li>
+              <li>Picker akun bank di kasir/pembelian/piutang non-cash</li>
+              <li>Marketplace sale: langsung IN + banner "Belum cair"</li>
+            </ul>
+          </div>
+          <div>
+            <p class="font-extrabold uppercase text-[10px] tracking-widest text-emerald-700 mb-1">Tidak masuk Phase 1a</p>
+            <ul class="list-disc ml-5 space-y-1">
+              <li>Manual entry (Transfer Internal, Setor, Tarik, Penyesuaian) → Phase 2</li>
+              <li>Settlement queue + confirm UI → Phase 1b</li>
+              <li>Laporan PDF/Excel → Phase 3</li>
+              <li>Recon matching ke cash_movements → Phase 4</li>
+              <li>Auto bank feed → Phase 5</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-[12px] text-emerald-900 mt-4"><strong>Estimasi:</strong> 7-9 hari kerja. Owner ship pertama → instant visibility saldo.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M1 — HALAMAN UTAMA Kas & Bank                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">1. Halaman utama — Daftar akun + saldo live</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-emerald-700">Sidebar entry baru di group Keuangan</span>
+    </div>
+    <p class="text-[13px] text-[#43474e] mb-6 max-w-3xl">Owner buka sidebar → klik "Kas &amp; Bank" → langsung lihat semua akun + saldo terkini di satu layar. Group berdasarkan <strong>Bisnis</strong> vs <strong>Pribadi</strong>. Total liquid (bisnis only) di header. Klik kartu → detail akun.</p>
+
+    <!-- Browser frame -->
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <!-- Fake browser bar -->
+      <div class="bg-[#f8fafc] border-b border-[#e5eeff] px-4 py-2 flex items-center gap-2">
+        <div class="flex gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span></div>
+        <div class="flex-1 ml-3 bg-white border border-[#e5eeff] rounded-md px-3 py-1 text-[11px] text-[#43474e]">erp.garindojayapanel.id / kas-bank</div>
+      </div>
+
+      <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-56 bg-[#012749] text-white py-4 px-3 space-y-1 text-[12px] flex-shrink-0">
+          <div class="px-3 py-1.5 text-[10px] uppercase tracking-widest text-blue-300 font-extrabold">Operasional</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">📊 Dashboard</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">🛒 Penjualan</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">📦 Pembelian</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">📋 Daftar Pesanan</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">🏬 Stok &amp; Produk</div>
+
+          <div class="px-3 py-1.5 mt-4 text-[10px] uppercase tracking-widest text-blue-300 font-extrabold">Keuangan</div>
+          <div class="px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-100 font-bold cursor-pointer ring-1 ring-emerald-400/40">💼 Kas &amp; Bank</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">📒 Rekonsiliasi</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">💰 Piutang</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">📈 Laporan</div>
+
+          <div class="px-3 py-1.5 mt-4 text-[10px] uppercase tracking-widest text-blue-300 font-extrabold">Lain-lain</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">👥 Pelanggan</div>
+          <div class="px-3 py-2 rounded-lg hover:bg-white/10 cursor-pointer">⚙️ Pengaturan</div>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 p-8 bg-[#f4f7fb]">
+          <!-- Header -->
+          <div class="flex items-baseline justify-between mb-6">
+            <div>
+              <h3 class="text-2xl font-extrabold text-[#012749]">Kas &amp; Bank</h3>
+              <p class="text-[12px] text-[#43474e] mt-0.5">Saldo per 20 Jun 2026, 14:32 WIB · auto-update real-time</p>
+            </div>
+            <button class="bg-[#012749] text-white text-[13px] font-bold px-4 py-2 rounded-lg hover:bg-[#03386b] flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">add</span> Tambah Akun
+            </button>
+          </div>
+
+          <!-- Total liquid header -->
+          <div class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-2xl p-6 mb-6 relative placeholder-badge">
+            <div class="text-[11px] uppercase tracking-widest text-emerald-100 font-extrabold mb-1">Total liquid (akun bisnis)</div>
+            <div class="text-4xl font-black tracking-tight">Rp 19.070.000</div>
+            <div class="text-[13px] text-emerald-100 mt-2">Tersebar di 4 akun bisnis · ⚠ Termasuk Rp 8.500.000 marketplace yang belum cair</div>
+          </div>
+
+          <!-- Akun Bisnis section -->
+          <div class="mb-6">
+            <div class="flex items-baseline justify-between mb-3">
+              <h4 class="text-sm font-extrabold text-[#012749] uppercase tracking-widest">Akun Bisnis</h4>
+              <span class="text-[11px] text-[#43474e]">4 akun</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+
+              <!-- BCA Operasional -->
+              <div class="bg-white rounded-2xl card-shadow card-hover p-5 border border-[#e5eeff] relative placeholder-badge">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><span class="material-symbols-outlined">account_balance</span></div>
+                    <div>
+                      <div class="text-[14px] font-extrabold text-[#012749]">BCA Operasional</div>
+                      <div class="text-[11px] text-[#43474e]">BCA · 1234567890 · PT Garindo Jaya Panel</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Bank</span>
+                </div>
+                <div class="text-2xl font-black text-[#012749]">Rp 12.500.000</div>
+                <div class="flex items-center justify-between mt-3 text-[11px] text-[#43474e]">
+                  <span>📊 124 mutasi bulan ini</span>
+                  <span class="text-amber-700 font-bold">⚠ Rp 5.2jt belum cair</span>
+                </div>
+              </div>
+
+              <!-- Mandiri -->
+              <div class="bg-white rounded-2xl card-shadow card-hover p-5 border border-[#e5eeff] relative placeholder-badge">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center"><span class="material-symbols-outlined">account_balance</span></div>
+                    <div>
+                      <div class="text-[14px] font-extrabold text-[#012749]">Mandiri Toko</div>
+                      <div class="text-[11px] text-[#43474e]">MANDIRI · 9876543210 · PT Garindo Jaya Panel</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Bank</span>
+                </div>
+                <div class="text-2xl font-black text-[#012749]">Rp 5.300.000</div>
+                <div class="flex items-center justify-between mt-3 text-[11px] text-[#43474e]">
+                  <span>📊 32 mutasi bulan ini</span>
+                  <span class="text-amber-700 font-bold">⚠ Rp 3.3jt belum cair</span>
+                </div>
+              </div>
+
+              <!-- Kas Toko -->
+              <div class="bg-white rounded-2xl card-shadow card-hover p-5 border border-[#e5eeff] relative placeholder-badge">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><span class="material-symbols-outlined">payments</span></div>
+                    <div>
+                      <div class="text-[14px] font-extrabold text-[#012749]">Kas Toko</div>
+                      <div class="text-[11px] text-[#43474e]">Cash · dipegang kasir</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-emerald-50 text-emerald-700 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Kas</span>
+                </div>
+                <div class="text-2xl font-black text-[#012749]">Rp 850.000</div>
+                <div class="flex items-center justify-between mt-3 text-[11px] text-[#43474e]">
+                  <span>📊 18 mutasi bulan ini</span>
+                  <span class="text-emerald-700 font-bold">✓ Real-time</span>
+                </div>
+              </div>
+
+              <!-- Lalamove -->
+              <div class="bg-white rounded-2xl card-shadow card-hover p-5 border border-[#e5eeff] relative placeholder-badge">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-yellow-100 text-yellow-700 flex items-center justify-center"><span class="material-symbols-outlined">two_wheeler</span></div>
+                    <div>
+                      <div class="text-[14px] font-extrabold text-[#012749]">Lalamove Balance</div>
+                      <div class="text-[11px] text-[#43474e]">E-Wallet · LALAMOVE</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-yellow-50 text-yellow-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Wallet</span>
+                </div>
+                <div class="text-2xl font-black text-[#012749]">Rp 420.000</div>
+                <div class="flex items-center justify-between mt-3 text-[11px] text-[#43474e]">
+                  <span>📊 Static balance · update manual</span>
+                  <span class="text-slate-500">Phase 2 → top-up &amp; spend</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Akun Pribadi section -->
+          <div>
+            <div class="flex items-baseline justify-between mb-3">
+              <h4 class="text-sm font-extrabold text-slate-600 uppercase tracking-widest">Akun Pribadi <span class="ml-2 text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold">Tidak masuk laporan bisnis</span></h4>
+              <span class="text-[11px] text-[#43474e]">1 akun</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-slate-50 rounded-2xl card-shadow card-hover p-5 border border-slate-200 relative placeholder-badge">
+                <div class="flex items-start justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><span class="material-symbols-outlined">person</span></div>
+                    <div>
+                      <div class="text-[14px] font-extrabold text-slate-700">BCA Pribadi (Tony)</div>
+                      <div class="text-[11px] text-slate-500">BCA · 5555444433 · Tony Wijaya</div>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-slate-300 text-slate-700 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Pribadi</span>
+                </div>
+                <div class="text-2xl font-black text-slate-700">Rp 35.000.000</div>
+                <div class="flex items-center justify-between mt-3 text-[11px] text-slate-500">
+                  <span>📊 6 mutasi bulan ini (dari OWNER_DRAWING)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M2 — DETAIL AKUN (Riwayat tab)                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">2. Detail akun — Tab Riwayat</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-blue-700">Klik kartu di M1 → masuk ke sini</span>
+    </div>
+    <p class="text-[13px] text-[#43474e] mb-6 max-w-3xl">Filter periode di kanan atas. Setiap baris = 1 cash_movement. Source dari kasir/pembelian/piutang punya icon + link "Lihat" yang buka detail transaksi asalnya di tab baru. Banner kuning di atas mengingatkan owner kalau saldo termasuk pending marketplace.</p>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <!-- Account header -->
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 relative placeholder-badge">
+        <div class="flex items-start justify-between">
+          <div>
+            <a href="#m1" class="text-[11px] text-blue-100 hover:underline">← Kas &amp; Bank</a>
+            <h3 class="text-2xl font-extrabold mt-1">BCA Operasional</h3>
+            <p class="text-[12px] text-blue-100 mt-1">BCA · 1234567890 · PT Garindo Jaya Panel · Bisnis · Tampil di Invoice</p>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] uppercase tracking-widest text-blue-100">Saldo terkini</div>
+            <div class="text-3xl font-black">Rp 12.500.000</div>
+            <div class="text-[11px] text-blue-100 mt-1">Update real-time</div>
+          </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button class="bg-white/15 hover:bg-white/25 text-white text-[12px] font-bold px-3 py-1.5 rounded-lg">✏ Edit</button>
+          <button class="bg-white/15 hover:bg-white/25 text-white text-[12px] font-bold px-3 py-1.5 rounded-lg opacity-60 cursor-not-allowed" title="Phase 2">+ Transfer Internal</button>
+          <button class="bg-white/15 hover:bg-white/25 text-white text-[12px] font-bold px-3 py-1.5 rounded-lg opacity-60 cursor-not-allowed" title="Phase 2">+ Penyesuaian</button>
+          <button class="bg-white/15 hover:bg-white/25 text-white text-[12px] font-bold px-3 py-1.5 rounded-lg opacity-60 cursor-not-allowed" title="Phase 3">📄 Ekspor</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="border-b border-[#e5eeff] px-6 flex gap-1">
+        <button class="px-4 py-3 text-[13px] font-extrabold text-[#012749] border-b-2 border-emerald-600">📜 Riwayat <span class="ml-1 text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">124</span></button>
+        <button class="px-4 py-3 text-[13px] font-bold text-[#43474e]">ℹ Info Akun</button>
+      </div>
+
+      <!-- Banner pending -->
+      <div class="m-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+        <span class="material-symbols-outlined text-amber-700 mt-0.5">info</span>
+        <div class="flex-1 text-[12px] text-amber-900">
+          <p class="font-extrabold mb-1">Saldo termasuk Rp 5.200.000 yang belum cair</p>
+          <p>5 transaksi marketplace (Tokopedia, Shopee) ditulis ke saldo BCA tapi uangnya belum diterima dari marketplace. Phase 1b akan handle ini lebih akurat dengan queue "Belum Cair".</p>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="px-6 pb-4 flex items-center gap-3 text-[12px]">
+        <div class="text-[#43474e] font-bold">Periode:</div>
+        <button class="px-3 py-1 bg-blue-50 text-blue-700 font-bold rounded">Bulan ini</button>
+        <button class="px-3 py-1 bg-white border border-[#e5eeff] hover:border-blue-300 rounded">7 hari</button>
+        <button class="px-3 py-1 bg-white border border-[#e5eeff] hover:border-blue-300 rounded">30 hari</button>
+        <button class="px-3 py-1 bg-white border border-[#e5eeff] hover:border-blue-300 rounded">Custom...</button>
+        <div class="ml-auto flex items-center gap-2">
+          <span class="text-[#43474e]">Total IN: <strong class="text-emerald-700">Rp 18.450.000</strong></span>
+          <span class="text-slate-300">|</span>
+          <span class="text-[#43474e]">Total OUT: <strong class="text-rose-700">Rp 7.200.000</strong></span>
+        </div>
+      </div>
+
+      <!-- Movements list -->
+      <div class="row-divider relative placeholder-badge">
+        <!-- Row 1 — IN from kasir Tokopedia -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_downward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Penjualan Tokopedia · INV-TKP-2026-0241</div>
+            <div class="text-[11px] text-[#43474e]">Customer: Andi · 2026-06-20, 13:45 · <a href="#" class="text-blue-700 hover:underline">Lihat transaksi</a></div>
+          </div>
+          <span class="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Belum cair · Phase 1a</span>
+          <div class="text-right font-extrabold text-emerald-700">+ Rp 1.250.000</div>
+        </div>
+        <!-- Row 2 — OUT from pembelian -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_upward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Bayar Tagihan · PI-2026-0089 · CV Sinar Jaya</div>
+            <div class="text-[11px] text-[#43474e]">2026-06-20, 11:12 · <a href="#" class="text-blue-700 hover:underline">Lihat tagihan</a></div>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Cleared</span>
+          <div class="text-right font-extrabold text-rose-700">− Rp 3.500.000</div>
+        </div>
+        <!-- Row 3 — IN from kasir transfer -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_downward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Penjualan Grosir · INV-GRS-2026-0156</div>
+            <div class="text-[11px] text-[#43474e]">Customer: Toko Maju Jaya · 2026-06-20, 10:33 · Transfer · <a href="#" class="text-blue-700 hover:underline">Lihat transaksi</a></div>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Cleared</span>
+          <div class="text-right font-extrabold text-emerald-700">+ Rp 8.700.000</div>
+        </div>
+        <!-- Row 4 — IN from pelunasan piutang -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_downward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Pelunasan Piutang · INV-TMP-2026-0073</div>
+            <div class="text-[11px] text-[#43474e]">Customer: PT Mega Konstruksi · 2026-06-19, 16:20 · <a href="#" class="text-blue-700 hover:underline">Lihat piutang</a></div>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Cleared</span>
+          <div class="text-right font-extrabold text-emerald-700">+ Rp 4.500.000</div>
+        </div>
+        <!-- Row 5 — OUT bank fee -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_upward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Admin BCA bulanan</div>
+            <div class="text-[11px] text-[#43474e]">2026-06-19, 03:00 · auto-detect dari mutasi (Phase 4)</div>
+          </div>
+          <span class="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Phase 4 preview</span>
+          <div class="text-right font-extrabold text-rose-700">− Rp 17.500</div>
+        </div>
+        <!-- Row 6 — IN backfill setor cash batch -->
+        <div class="px-6 py-3 hover:bg-blue-50/40 flex items-center gap-4 text-[13px]">
+          <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-lg">arrow_downward</span></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[#012749] truncate">Setor kasir batch · CB-2026-0058</div>
+            <div class="text-[11px] text-[#43474e]">2026-06-19, 18:45 · pair dengan OUT Kas Toko · <a href="#" class="text-blue-700 hover:underline">Lihat batch</a></div>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-2 py-0.5 rounded uppercase tracking-widest">Cleared</span>
+          <div class="text-right font-extrabold text-emerald-700">+ Rp 2.150.000</div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 border-t border-[#e5eeff] text-[12px] text-center text-[#43474e]">
+        Menampilkan 6 dari 124 mutasi bulan ini · <a href="#" class="text-blue-700 font-bold hover:underline">Muat lebih banyak ↓</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M3 — FORM AKUN                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">3. Modal — Tambah / Edit akun</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-violet-700">Owner only · Dari M1 "+ Tambah Akun" / M2 "✏ Edit"</span>
+    </div>
+    <p class="text-[13px] text-[#43474e] mb-6 max-w-3xl">Account type dropdown menentukan field mana yang muncul. Opening balance + tanggal cuma diminta saat <strong>create</strong>, tidak bisa diedit setelahnya (kalau salah, owner pakai Penyesuaian di Phase 2). Toggle "Tampilkan di Invoice" cuma muncul untuk type=BANK.</p>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+      <!-- Type BANK -->
+      <div class="bg-white rounded-3xl card-shadow border border-[#e5eeff] overflow-hidden">
+        <div class="bg-blue-50 px-6 py-4 border-b border-blue-100">
+          <h3 class="text-base font-extrabold text-[#012749]">Tambah Akun — Type: BANK</h3>
+          <p class="text-[11px] text-[#43474e] mt-0.5">Bank kategori standar</p>
+        </div>
+        <div class="p-6 space-y-4 text-[13px]">
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Jenis akun *</label>
+            <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white"><option>🏦 Bank</option><option>💵 Kas</option><option>👛 E-Wallet</option></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-[#012749] mb-1">Bank *</label>
+              <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white"><option>BCA</option><option>MANDIRI</option><option>BRI</option><option>BNI</option><option>CIMB</option><option>PERMATA</option><option>OTHER</option></select>
+            </div>
+            <div>
+              <label class="block font-bold text-[#012749] mb-1">Nomor rekening *</label>
+              <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="1234567890" />
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Nama di buku tabungan *</label>
+            <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="PT Garindo Jaya Panel" />
+            <p class="text-[11px] text-[#43474e] mt-1">Yang tampil di Invoice PDF ke customer</p>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Nickname internal *</label>
+            <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="BCA Operasional" />
+            <p class="text-[11px] text-[#43474e] mt-1">Buat memudahkan ID di UI kita</p>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Peruntukan *</label>
+            <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white">
+              <option>Operasional bisnis</option>
+              <option>Tabungan bisnis</option>
+              <option>Pribadi owner</option>
+              <option>Lainnya</option>
+            </select>
+            <p class="text-[11px] text-[#43474e] mt-1">"Pribadi owner" akan di-tag chip Pribadi + exclude dari laporan bisnis</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-[#012749] mb-1">Saldo awal</label>
+              <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="0" />
+              <p class="text-[11px] text-[#43474e] mt-1">Default 0 — bisa di-adjust nanti via Penyesuaian (Phase 2)</p>
+            </div>
+            <div>
+              <label class="block font-bold text-[#012749] mb-1">Tanggal saldo awal</label>
+              <input type="date" class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" value="2025-06-01" />
+            </div>
+          </div>
+          <div class="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <input type="checkbox" id="showinv" checked class="w-4 h-4" />
+            <label for="showinv" class="text-[12px]"><strong>Tampilkan di Invoice PDF</strong> ke customer (default ON untuk Operasional)</label>
+          </div>
+          <div class="flex gap-2 pt-2">
+            <button class="flex-1 bg-[#012749] text-white font-bold py-2.5 rounded-lg hover:bg-[#03386b]">Simpan Akun</button>
+            <button class="px-4 py-2.5 bg-white border border-[#e5eeff] font-bold rounded-lg hover:bg-slate-50">Batal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type E_WALLET -->
+      <div class="bg-white rounded-3xl card-shadow border border-[#e5eeff] overflow-hidden">
+        <div class="bg-yellow-50 px-6 py-4 border-b border-yellow-100">
+          <h3 class="text-base font-extrabold text-[#012749]">Tambah Akun — Type: E-WALLET</h3>
+          <p class="text-[11px] text-[#43474e] mt-0.5">Field bank disembunyikan, provider dropdown muncul</p>
+        </div>
+        <div class="p-6 space-y-4 text-[13px]">
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Jenis akun *</label>
+            <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white"><option>🏦 Bank</option><option>💵 Kas</option><option selected>👛 E-Wallet</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Provider *</label>
+            <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white">
+              <option>Lalamove</option>
+              <option>GoSend</option>
+              <option>Grab</option>
+              <option>OVO</option>
+              <option>DANA</option>
+              <option>GoPay</option>
+              <option>Lainnya...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Nickname internal *</label>
+            <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="Lalamove Balance" value="Lalamove Balance" />
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Peruntukan *</label>
+            <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white">
+              <option>Operasional bisnis</option>
+              <option>Pribadi owner</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-[#012749] mb-1">Saldo awal (terkini)</label>
+            <input class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="420000" value="420000" />
+            <p class="text-[11px] text-[#43474e] mt-1">Untuk E-Wallet: input saldo terkini sekarang. Phase 2 baru ada Top Up + Spend.</p>
+          </div>
+
+          <!-- Hidden fields placeholder -->
+          <div class="bg-slate-50 border border-dashed border-slate-300 rounded-lg p-3 text-[11px] text-slate-500 italic">
+            Field "Bank", "Nomor rekening", "Nama di buku tabungan", "Tampilkan di Invoice" — disembunyikan untuk type E-Wallet
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button class="flex-1 bg-[#012749] text-white font-bold py-2.5 rounded-lg hover:bg-[#03386b]">Simpan Akun</button>
+            <button class="px-4 py-2.5 bg-white border border-[#e5eeff] font-bold rounded-lg hover:bg-slate-50">Batal</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M4 — PICKER UI di flow existing                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m4">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">4. Picker akun bank di flow existing</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-amber-700">Modifikasi 3 modal yang sudah ada</span>
+    </div>
+    <p class="text-[13px] text-[#43474e] mb-6 max-w-3xl">Setiap modal payment-touching dapat 1 field baru "Akun bank". Cash kasir auto-pilih Kas Toko (read-only); transfer/QRIS/debit perlu user pilih. Default akun = akun yang dipilih terakhir kali (saved per-user di localStorage).</p>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+
+      <!-- Kasir transfer -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] overflow-hidden">
+        <div class="bg-emerald-50 px-5 py-3 border-b border-emerald-100">
+          <h3 class="text-[13px] font-extrabold text-[#012749]">Penjualan Baru · Transfer</h3>
+          <p class="text-[10px] text-[#43474e]">PenjualanBaruScreen.tsx</p>
+        </div>
+        <div class="p-5 space-y-3 text-[12px]">
+          <div>
+            <label class="block font-bold mb-1">Metode pembayaran</label>
+            <div class="flex gap-1.5">
+              <button class="px-3 py-1.5 bg-white border border-[#e5eeff] rounded text-[11px]">Cash</button>
+              <button class="px-3 py-1.5 bg-[#012749] text-white rounded text-[11px] font-bold">Transfer</button>
+              <button class="px-3 py-1.5 bg-white border border-[#e5eeff] rounded text-[11px]">QRIS</button>
+              <button class="px-3 py-1.5 bg-white border border-[#e5eeff] rounded text-[11px]">Debit</button>
+            </div>
+          </div>
+          <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 relative">
+            <span class="absolute -top-2 left-3 bg-emerald-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded">BARU di Phase 1a</span>
+            <label class="block font-bold text-emerald-900 mb-1 mt-1">Masuk ke akun *</label>
+            <select class="w-full border border-emerald-300 rounded px-2 py-1.5 bg-white text-[12px]">
+              <option>🏦 BCA Operasional · 1234567890</option>
+              <option>🏦 Mandiri Toko · 9876543210</option>
+            </select>
+            <p class="text-[10px] text-emerald-700 mt-1">Default: akun yg dipilih terakhir kali</p>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Total</label>
+            <input class="w-full border border-[#e5eeff] rounded px-2 py-1.5 text-right font-bold" value="Rp 1.250.000" readonly />
+          </div>
+        </div>
+      </div>
+
+      <!-- Catat Bayar Pembelian -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] overflow-hidden">
+        <div class="bg-rose-50 px-5 py-3 border-b border-rose-100">
+          <h3 class="text-[13px] font-extrabold text-[#012749]">Catat Bayar Pembelian</h3>
+          <p class="text-[10px] text-[#43474e]">PembayaranFormPage.tsx</p>
+        </div>
+        <div class="p-5 space-y-3 text-[12px]">
+          <div class="bg-slate-50 rounded p-2 text-[11px]">
+            <span class="font-bold">Tagihan:</span> PI-2026-0089<br/>
+            <span class="font-bold">Supplier:</span> CV Sinar Jaya<br/>
+            <span class="font-bold">Sisa:</span> Rp 3.500.000
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Jumlah bayar *</label>
+            <input class="w-full border border-[#e5eeff] rounded px-2 py-1.5 text-right font-bold" value="Rp 3.500.000" />
+          </div>
+          <div class="bg-rose-50 border border-rose-200 rounded-lg p-3 relative">
+            <span class="absolute -top-2 left-3 bg-rose-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded">BARU di Phase 1a</span>
+            <label class="block font-bold text-rose-900 mb-1 mt-1">Bayar dari akun *</label>
+            <select class="w-full border border-rose-300 rounded px-2 py-1.5 bg-white text-[12px]">
+              <option>🏦 BCA Operasional · 1234567890</option>
+              <option>🏦 Mandiri Toko · 9876543210</option>
+              <option>💵 Kas Toko</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Tanggal bayar</label>
+            <input type="date" class="w-full border border-[#e5eeff] rounded px-2 py-1.5" value="2026-06-20" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Pelunasan Piutang -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] overflow-hidden">
+        <div class="bg-blue-50 px-5 py-3 border-b border-blue-100">
+          <h3 class="text-[13px] font-extrabold text-[#012749]">Catat Bayar Piutang</h3>
+          <p class="text-[10px] text-[#43474e]">CatatBayarModal.tsx</p>
+        </div>
+        <div class="p-5 space-y-3 text-[12px]">
+          <div class="bg-slate-50 rounded p-2 text-[11px]">
+            <span class="font-bold">Invoice:</span> INV-TMP-2026-0073<br/>
+            <span class="font-bold">Customer:</span> PT Mega Konstruksi<br/>
+            <span class="font-bold">Sisa:</span> Rp 4.500.000
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Jumlah terima *</label>
+            <input class="w-full border border-[#e5eeff] rounded px-2 py-1.5 text-right font-bold" value="Rp 4.500.000" />
+          </div>
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 relative">
+            <span class="absolute -top-2 left-3 bg-blue-600 text-white text-[9px] font-extrabold px-2 py-0.5 rounded">BARU di Phase 1a</span>
+            <label class="block font-bold text-blue-900 mb-1 mt-1">Masuk ke akun *</label>
+            <select class="w-full border border-blue-300 rounded px-2 py-1.5 bg-white text-[12px]">
+              <option>🏦 BCA Operasional · 1234567890</option>
+              <option>🏦 Mandiri Toko · 9876543210</option>
+              <option>💵 Kas Toko</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold mb-1">Bukti pembayaran</label>
+            <button class="w-full border border-dashed border-blue-300 rounded px-2 py-3 text-blue-700 text-[11px]">+ Upload foto bukti</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M5 — ROADMAP THUMBNAILS                                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m5">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">5. Roadmap — Phase 1b sampai 5 (thumbnail preview)</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-slate-600">Bukan untuk dibangun sekarang</span>
+    </div>
+    <p class="text-[13px] text-[#43474e] mb-6 max-w-3xl">Phase 1a ship paling cepat (instant visibility). Phase di bawah ini menyusul tiap 1-2 minggu sebagai value tambahan stand-alone. Detail design per phase ditulis saat mau eksekusi.</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- 1b -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] p-5">
+        <div class="text-[10px] uppercase tracking-widest font-extrabold text-amber-700">Phase 1b · ~3-5 hari</div>
+        <h3 class="text-base font-extrabold text-[#012749] mt-1 mb-2">Settlement akurasi</h3>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] space-y-1.5 mb-3">
+          <div class="font-bold text-amber-900">⏳ Belum Cair (5)</div>
+          <div class="flex justify-between"><span>Tokopedia INV-241</span><span class="font-bold">Rp 1.250.000</span></div>
+          <div class="flex justify-between"><span>Shopee INV-238</span><span class="font-bold">Rp 850.000</span></div>
+          <div class="flex justify-between"><span>QRIS BCA</span><span class="font-bold">Rp 450.000</span></div>
+          <button class="w-full bg-amber-600 text-white text-[10px] font-extrabold py-1.5 rounded mt-1">Konfirmasi Cair →</button>
+        </div>
+        <p class="text-[12px] text-[#43474e]">"Saldo BCA tidak overstate karena marketplace pending"</p>
+      </div>
+
+      <!-- 2 -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] p-5">
+        <div class="text-[10px] uppercase tracking-widest font-extrabold text-violet-700">Phase 2 · ~3-4 hari</div>
+        <h3 class="text-base font-extrabold text-[#012749] mt-1 mb-2">Manual entry</h3>
+        <div class="bg-violet-50 border border-violet-200 rounded-lg p-3 text-[11px] space-y-1.5 mb-3">
+          <button class="block w-full bg-white border border-violet-300 rounded py-1 font-bold text-violet-800">↔ Transfer Internal</button>
+          <button class="block w-full bg-white border border-violet-300 rounded py-1 font-bold text-violet-800">↑ Setor Kas</button>
+          <button class="block w-full bg-white border border-violet-300 rounded py-1 font-bold text-violet-800">↓ Tarik Owner</button>
+          <button class="block w-full bg-white border border-violet-300 rounded py-1 font-bold text-violet-800">⚖ Penyesuaian (PIN)</button>
+        </div>
+        <p class="text-[12px] text-[#43474e]">"Saldo di sistem cocok sama saldo asli"</p>
+      </div>
+
+      <!-- 3 -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] p-5">
+        <div class="text-[10px] uppercase tracking-widest font-extrabold text-blue-700">Phase 3 · ~3-4 hari</div>
+        <h3 class="text-base font-extrabold text-[#012749] mt-1 mb-2">Laporan</h3>
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-[11px] space-y-1 mb-3">
+          <div>📄 Mutasi per akun (PDF/Excel)</div>
+          <div>📊 Saldo bulanan 12 bulan</div>
+          <div>💧 Cash flow per kategori</div>
+          <div class="text-[10px] text-blue-700 mt-2">Periode: Jun 2025 - Jun 2026</div>
+          <button class="w-full bg-blue-600 text-white text-[10px] font-extrabold py-1.5 rounded mt-1">Ekspor PDF →</button>
+        </div>
+        <p class="text-[12px] text-[#43474e]">"Tinggal kirim ke akuntan, gak rekap manual lagi"</p>
+      </div>
+
+      <!-- 4 -->
+      <div class="bg-white rounded-2xl card-shadow border border-[#e5eeff] p-5">
+        <div class="text-[10px] uppercase tracking-widest font-extrabold text-emerald-700">Phase 4 · ~2-3 hari</div>
+        <h3 class="text-base font-extrabold text-[#012749] mt-1 mb-2">Recon alignment</h3>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[11px] space-y-1.5 mb-3">
+          <div class="flex justify-between"><span>BCA Operasional</span><span class="text-emerald-700 font-bold">✓ 28/30</span></div>
+          <div class="flex justify-between"><span>Mandiri Toko</span><span class="text-amber-700 font-bold">⚠ 3 mismatch</span></div>
+          <div class="text-[10px] text-emerald-700">Auto-match cash_movements ↔ bank_statement_lines</div>
+        </div>
+        <p class="text-[12px] text-[#43474e]">"Selisih ketauan di mana, bukan keseluruhan buku salah"</p>
+      </div>
+
+      <!-- 5 (full width spanning 4 cols) -->
+      <div class="md:col-span-2 lg:col-span-4 bg-gradient-to-r from-slate-100 to-slate-50 rounded-2xl card-shadow border border-slate-200 p-5 flex items-center gap-6">
+        <div class="flex-shrink-0">
+          <div class="text-[10px] uppercase tracking-widest font-extrabold text-slate-600">Phase 5 · TBD · Last Phase</div>
+          <h3 class="text-base font-extrabold text-slate-700 mt-1">Auto Bank Feed (Cashlink)</h3>
+        </div>
+        <div class="flex-1 text-[12px] text-slate-600">
+          <p class="mb-1"><strong>Trigger:</strong> API partner bank siap (Cashlink Jurnal cuma support Mandiri saat ini) ATAU volume justify cost ATAU tenant berbayar minta sebagai gating feature.</p>
+          <p><strong>Scope:</strong> auto-pull mutasi rekening, outbound transfer dari aplikasi dengan Maker/Releaser + OTP, webhook handler. <strong>Estimasi:</strong> ~10-15 hari termasuk security review.</p>
+        </div>
+        <div class="flex-shrink-0 bg-slate-200 text-slate-600 px-4 py-2 rounded-lg text-[11px] font-extrabold uppercase tracking-widest">
+          Tunggu signal
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-[11px] text-[#43474e] pt-10 border-t border-[#e5eeff]">
+    Mockup oleh Claude · 2026-06-20 · placeholder data, BUKAN data asli Garindo · <a href="../specs/2026-06-20-kas-bank-roadmap.md" class="text-blue-700 hover:underline">Lihat roadmap doc</a>
+  </footer>
+
+</div>
+
+</body>
+</html>

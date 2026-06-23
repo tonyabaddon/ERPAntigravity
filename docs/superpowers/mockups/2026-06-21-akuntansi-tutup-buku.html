@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Mockup — Tutup Buku Bulanan + Tahunan (design-system aligned)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --color-primary: #1e3d60; --color-on-surface: #0b1c30; --color-background-soft: #f8f9ff; }
+  body { font-family: 'Inter', sans-serif; background: var(--color-background-soft); color: var(--color-on-surface); }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5e7eb; }
+  .card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 12px -2px rgba(2,32,71,0.08); }
+  .sub-card { border: 1px solid #c7d7f5; background: #fafbff; border-radius: 0.75rem; }
+  .btn-primary { background: #012749; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-secondary { border: 1px solid #c7d7f5; background: white; color: #1e3d60; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-danger { background: #dc2626; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-fuchsia { background: #c026d3; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .btn-violet { background: #7c3aed; color: white; border-radius: 9999px; font-size: 12px; font-weight: 700; padding: 8px 14px; }
+  .icon-tile { width: 40px; height: 40px; border-radius: 12px; background: #fee2e2; color: #991b1b; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .input { width: 100%; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 8px 12px; font-size: 14px; outline: none; }
+  .input:focus { box-shadow: 0 0 0 2px rgba(1,39,73,0.3); border-color: #012749; }
+  .chip-soft { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
+  .checklist-item.done { background: #d1fae5; }
+  .checklist-item.warn { background: #fef3c7; }
+  .pin-cell { width: 40px; height: 48px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 0.5rem; text-align: center; color: white; font-weight: 800; font-size: 20px; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="icon-tile"><i data-lucide="lock" class="w-5 h-5"></i></div>
+      <div>
+        <h1 class="text-sm font-extrabold" style="color: var(--color-primary)">Tutup Buku — Bulanan + Tahunan</h1>
+        <p class="text-[11px] text-gray-600">Sub-menu Akuntansi · pre-close checklist · reopen flow (PIN) · year-end closing entries</p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">List Periode</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">Pre-Check</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-rose-50 text-rose-800">Confirm</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">Reopen</a>
+      <a href="#m5" class="px-3 py-2 rounded-full bg-fuchsia-50 text-fuchsia-800">Year-End</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-12">
+
+  <!-- M1: Periods List -->
+  <section id="m1">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">1. Status Periode Akuntansi</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 border-b border-gray-200 flex items-baseline justify-between">
+        <div>
+          <h3 class="text-base font-bold" style="color: var(--color-primary)">Tutup Buku</h3>
+          <p class="text-xs text-gray-600">Sidebar → Akuntansi → Tutup Buku</p>
+        </div>
+        <button class="btn-fuchsia inline-flex items-center gap-1.5"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> Year-End Close FY 2025</button>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="p-6 grid grid-cols-3 gap-4 relative placeholder-badge">
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">Periode Berjalan</div>
+          <div class="text-xl font-black mt-1 text-emerald-700">Juni 2026</div>
+          <div class="text-[11px] text-gray-500 mt-1">38 entries · status OPEN</div>
+        </div>
+        <div class="sub-card p-4" style="border-color: #fbbf24;">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-amber-700">Belum di-Close</div>
+          <div class="text-xl font-black mt-1 text-amber-700">2 bulan</div>
+          <div class="text-[11px] text-red-600 mt-1">Apr 2026 (overdue 16 hari!)</div>
+        </div>
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase tracking-widest font-bold text-gray-600">Last Closed</div>
+          <div class="text-xl font-black mt-1" style="color: var(--color-primary)">Mar 2026</div>
+          <div class="text-[11px] text-gray-500 mt-1">5 Apr · by Owner</div>
+        </div>
+      </div>
+
+      <!-- Periods table -->
+      <div class="px-6 pb-6 relative placeholder-badge">
+        <table class="w-full text-[13px] sub-card overflow-hidden">
+          <thead style="background: #eff4ff;">
+            <tr class="text-[10px] uppercase font-extrabold text-gray-600">
+              <th class="text-left py-3 px-4">Periode</th>
+              <th class="text-center py-3 px-4">Entries</th>
+              <th class="text-right py-3 px-4">Total Debit</th>
+              <th class="text-center py-3 px-4">Balance</th>
+              <th class="text-center py-3 px-4">Status</th>
+              <th class="text-center py-3 px-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="row-divider">
+            <tr class="bg-emerald-50/10 hover:bg-emerald-50/30">
+              <td class="py-3 px-4"><strong>Juni 2026</strong> <span class="text-[10px] text-emerald-700">(berjalan)</span></td>
+              <td class="text-center">38</td>
+              <td class="text-right">Rp 487.350.000</td>
+              <td class="text-center text-emerald-700 font-bold">✓</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">OPEN</span></td>
+              <td class="text-center text-[11px] text-gray-500 italic">bulan berjalan</td>
+            </tr>
+            <tr class="bg-amber-50/10 hover:bg-amber-50/30">
+              <td class="py-3 px-4"><strong>Mei 2026</strong> <span class="text-[10px] text-amber-700">(siap close)</span></td>
+              <td class="text-center">28</td>
+              <td class="text-right">Rp 425.500.000</td>
+              <td class="text-center text-emerald-700 font-bold">✓</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">OPEN</span></td>
+              <td class="text-center"><button class="btn-danger inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3 h-3"></i> Tutup Buku →</button></td>
+            </tr>
+            <tr class="bg-red-50/30 hover:bg-red-50/50">
+              <td class="py-3 px-4"><strong>April 2026</strong> <span class="chip-soft bg-red-200 text-red-900 ml-1">⚠ overdue 16h</span></td>
+              <td class="text-center">31</td>
+              <td class="text-right">Rp 398.200.000</td>
+              <td class="text-center text-emerald-700 font-bold">✓</td>
+              <td class="text-center"><span class="chip-soft bg-emerald-100 text-emerald-800">OPEN</span></td>
+              <td class="text-center"><button class="btn-danger inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3 h-3"></i> Close April Dulu</button></td>
+            </tr>
+            <tr class="bg-gray-50/50 hover:bg-gray-50">
+              <td class="py-3 px-4 text-gray-600">Maret 2026</td>
+              <td class="text-center">35</td>
+              <td class="text-right">Rp 412.800.000</td>
+              <td class="text-center text-emerald-700 font-bold">✓</td>
+              <td class="text-center"><span class="chip-soft bg-gray-300 text-gray-700"><i data-lucide="lock" class="inline w-3 h-3 mr-0.5"></i>CLOSED · 5 Apr</span></td>
+              <td class="text-center"><a href="#m4" class="text-[11px] text-amber-700 font-bold hover:underline">↩ Reopen (PIN)</a></td>
+            </tr>
+            <tr class="bg-gray-50/50 hover:bg-gray-50">
+              <td class="py-3 px-4 text-gray-600">Februari 2026</td>
+              <td class="text-center">29 <span class="text-[10px] text-blue-700">(1 edit)</span></td>
+              <td class="text-right">Rp 378.500.000</td>
+              <td class="text-center text-emerald-700 font-bold">✓</td>
+              <td class="text-center"><span class="chip-soft bg-blue-200 text-blue-800"><i data-lucide="rotate-ccw" class="inline w-3 h-3 mr-0.5"></i>REOPENED · 10 Mar</span></td>
+              <td class="text-center"><button class="btn-danger inline-flex items-center gap-1.5"><i data-lucide="lock" class="w-3 h-3"></i> Tutup Ulang</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="mt-4 sub-card p-3 text-[12px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          💡 <strong>Best practice MSME:</strong> Tutup buku tanggal 5-7 bulan berikutnya. Jangan biarkan menumpuk >1 bulan. April overdue 16 hari — close-kan sebelum lanjut Mei.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M2: Pre-Close Checklist -->
+  <section id="m2">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">2. Pre-Close Checklist (Mei 2026)</h2>
+    <div class="max-w-3xl card overflow-hidden">
+      <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #fef3c7;">
+        <div class="icon-tile" style="background: #fde68a; color: #92400e;"><i data-lucide="clipboard-check" class="w-5 h-5"></i></div>
+        <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Pre-Close Checklist — Mei 2026</h3><p class="text-xs text-gray-600">6 validasi otomatis sebelum allow close</p></div>
+      </div>
+
+      <div class="p-6 space-y-3 relative placeholder-badge">
+        <div class="checklist-item done rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-emerald-900">Trial Balance seimbang</div>
+            <div class="text-[11px] text-emerald-800">Total Debit Rp 425.500.000 = Total Kredit</div>
+          </div>
+        </div>
+
+        <div class="checklist-item done rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-emerald-900">Semua journal entries valid</div>
+            <div class="text-[11px] text-emerald-800">28 entries posted · 0 unbalanced</div>
+          </div>
+        </div>
+
+        <div class="checklist-item warn rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-amber-900">Recon BCA: 2 mutasi belum cocok</div>
+            <div class="text-[11px] text-amber-800">Mutasi 18 Mei (Rp 17.500 admin) & 25 Mei (Rp 350.000) belum match. <a href="#" class="font-bold underline">→ Buka Rekonsiliasi</a></div>
+            <div class="text-[10px] text-amber-700 mt-1">Non-blocking: bisa close tetap, recon lanjut nanti.</div>
+          </div>
+        </div>
+
+        <div class="checklist-item done rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-emerald-900">Marketplace settlement bersih</div>
+            <div class="text-[11px] text-emerald-800">0 PENDING dari Mei (semua cleared / roll ke Juni)</div>
+          </div>
+        </div>
+
+        <div class="checklist-item done rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="check-circle" class="w-5 h-5 text-emerald-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-emerald-900">HPP recognition complete</div>
+            <div class="text-[11px] text-emerald-800">Semua sale entries Mei punya HPP_RECOGNITION pair posted</div>
+          </div>
+        </div>
+
+        <div class="checklist-item warn rounded-xl p-3 flex items-start gap-3">
+          <i data-lucide="info" class="w-5 h-5 text-amber-700 mt-0.5"></i>
+          <div class="flex-1 text-[13px]">
+            <div class="font-bold text-amber-900">Tax accrual akan di-generate otomatis</div>
+            <div class="text-[11px] text-amber-800">PPh Final 0.5% × omzet (Rp 165.250.000) = <strong>Rp 826.250</strong></div>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-4 mt-4 flex items-center gap-3" style="background: #d1fae5; border: 2px solid #059669;">
+          <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-700"></i>
+          <div class="flex-1">
+            <p class="text-emerald-900 font-extrabold text-[13px]">✓ 5/6 checks pass — bisa close (1 warning non-blocking)</p>
+            <p class="text-emerald-800 text-[11px]">Rekomen: selesaikan recon BCA dulu untuk report super clean</p>
+          </div>
+          <button class="btn-danger inline-flex items-center gap-1.5"><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i> Lanjut Tutup Buku</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3: Close Confirm Modal -->
+  <section id="m3">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">3. Modal Konfirmasi Tutup Buku + Tax Accrual</h2>
+    <div class="max-w-2xl card overflow-hidden">
+      <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #fee2e2;">
+        <div class="icon-tile"><i data-lucide="lock" class="w-5 h-5"></i></div>
+        <div><h3 class="text-base font-bold text-red-900">Tutup Buku Mei 2026 — Konfirmasi Final</h3><p class="text-xs text-red-700">Close periode + post tax accrual entry</p></div>
+      </div>
+
+      <div class="p-6 space-y-4 relative placeholder-badge">
+        <div class="sub-card p-4 text-[13px]">
+          <div class="font-extrabold mb-2" style="color: var(--color-primary)">Snapshot Mei 2026</div>
+          <div class="grid grid-cols-2 gap-3 text-[12px]">
+            <div class="bg-white rounded p-2"><div class="text-[10px] uppercase font-bold text-gray-600">Total entries</div><div class="font-extrabold" style="color: var(--color-primary)">28</div></div>
+            <div class="bg-white rounded p-2"><div class="text-[10px] uppercase font-bold text-gray-600">Total debit/kredit</div><div class="font-extrabold text-emerald-700">Rp 425.500.000 ✓</div></div>
+            <div class="bg-white rounded p-2"><div class="text-[10px] uppercase font-bold text-gray-600">Omzet Mei</div><div class="font-extrabold text-blue-700">Rp 165.250.000</div></div>
+            <div class="bg-white rounded p-2"><div class="text-[10px] uppercase font-bold text-gray-600">Laba neto estimasi</div><div class="font-extrabold text-emerald-700">+ Rp 32.450.000</div></div>
+          </div>
+        </div>
+
+        <div class="sub-card p-4" style="background: #fef3c7; border-color: #fbbf24; border-width: 2px;">
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="receipt" class="w-4 h-4 text-amber-700"></i>
+            <strong class="text-[13px] text-amber-900">Tax Accrual akan di-post bersamaan</strong>
+          </div>
+          <div class="bg-white border border-amber-200 rounded-lg p-3 text-[12px]">
+            <div class="flex justify-between"><span>Omzet × 0.5% PPh Final UMKM</span><strong>Rp 826.250</strong></div>
+            <div class="border-t border-amber-200 mt-2 pt-2 font-mono text-[11px] text-amber-900">
+              <div>D 5-3300 Beban Pajak Rp 826.250</div>
+              <div>K 2-1210 Hutang PPh Final Rp 826.250</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[13px] mb-1" style="color: var(--color-primary)">Catatan close (opsional)</label>
+          <textarea rows="2" class="input" placeholder="Mis. semua entry Mei sudah recon BCA, tax accrual sudah di-cek, ready close"></textarea>
+        </div>
+
+        <div class="sub-card p-3 text-[12px] text-red-900" style="background: #fee2e2; border-color: #fca5a5;">
+          <strong>⚠ Setelah klik Tutup Buku:</strong>
+          <ul class="list-disc ml-5 mt-1 space-y-0.5 text-[11px]">
+            <li>Entry baru ke periode Mei akan <strong>REJECTED</strong></li>
+            <li>Edit/reverse entry historis tidak diizinkan</li>
+            <li>Tax accrual auto-posted</li>
+            <li>Untuk reopen: butuh Owner PIN + reason tertulis</li>
+          </ul>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="btn-danger flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="lock" class="w-3.5 h-3.5"></i> Tutup Buku + Generate Tax</button>
+          <button class="btn-secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4: Reopen Modal -->
+  <section id="m4">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">4. Modal Reopen Periode (Owner PIN required)</h2>
+    <div class="max-w-2xl card overflow-hidden">
+      <div class="p-5 border-b border-gray-200 flex items-start gap-3" style="background: #e9d5ff;">
+        <div class="icon-tile" style="background: #d8b4fe; color: #6b21a8;"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></div>
+        <div><h3 class="text-base font-bold" style="color: var(--color-primary)">Reopen Periode Maret 2026</h3><p class="text-xs text-violet-700">PIN-gated · reason mandatory · audit log permanent</p></div>
+      </div>
+
+      <div class="p-6 space-y-4 relative placeholder-badge">
+        <div class="sub-card p-3 text-[12px] text-amber-900" style="background: #fef3c7; border-color: #fbbf24;">
+          ⚠ <strong>Implikasi reopen:</strong> Entries Maret yang sebelumnya locked jadi editable lagi. Setiap perubahan flag "modified after close" di audit log. Reopen-close cycle terekam permanent.
+        </div>
+
+        <div class="sub-card p-3 text-[13px]">
+          <div class="font-bold" style="color: var(--color-primary)">Periode: Maret 2026</div>
+          <div class="text-[12px] text-gray-500 mt-1">35 entries · ditutup 5 Apr 2026 oleh Owner</div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[13px] mb-1" style="color: var(--color-primary)">Alasan reopen * <span class="text-[10px] text-gray-500">(min 20 char)</span></label>
+          <textarea rows="3" class="input" placeholder="Mis. ditemukan transaksi Maret yang lupa dicatat (penjualan grosir tunai Rp 2jt), perlu adjustment untuk akurasi laporan akuntan eksternal"></textarea>
+        </div>
+
+        <div class="rounded-2xl p-4" style="background: #012749;">
+          <div class="text-[11px] uppercase tracking-widest text-blue-200 font-extrabold mb-2 flex items-center gap-2"><i data-lucide="key-round" class="w-3.5 h-3.5"></i> Owner PIN</div>
+          <div class="flex gap-2">
+            <input type="password" maxlength="1" class="pin-cell" value="•" />
+            <input type="password" maxlength="1" class="pin-cell" value="•" />
+            <input type="password" maxlength="1" class="pin-cell" value="•" />
+            <input type="password" maxlength="1" class="pin-cell" />
+            <input type="password" maxlength="1" class="pin-cell" />
+            <input type="password" maxlength="1" class="pin-cell" />
+          </div>
+        </div>
+
+        <div class="sub-card p-3 text-[11px] text-blue-900" style="background: #dbeafe; border-color: #93c5fd;">
+          💡 <strong>Setelah reopen:</strong> Periode Maret jadi REOPENED status. Owner harus tutup ulang setelah selesai adjustment.
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="btn-violet flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reopen Periode Maret</button>
+          <button class="btn-secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M5: Year-End Closing -->
+  <section id="m5">
+    <h2 class="text-xl font-extrabold mb-4" style="color: var(--color-primary)">5. Year-End Close — Tutup Buku Tahunan (FY 2025)</h2>
+    <div class="card overflow-hidden">
+      <div class="p-6 text-white" style="background: linear-gradient(135deg, #a21caf, #86198f);">
+        <h3 class="text-xl font-extrabold">📅 Tutup Buku Tahunan FY 2025</h3>
+        <p class="text-[12px] text-fuchsia-100 mt-1">4 closing entries via Ikhtisar Laba Rugi (3-1900) → Laba Ditahan</p>
+      </div>
+
+      <div class="p-6 space-y-4 relative placeholder-badge">
+        <div class="sub-card p-3 text-[12px] text-emerald-900" style="background: #d1fae5; border-color: #6ee7b7;">
+          <div class="font-bold mb-1">✓ Pre-check pass — siap year-end close:</div>
+          <ul class="list-disc ml-5 text-[11px] space-y-0.5">
+            <li>12 monthly periods FY 2025 (Jan-Des) sudah CLOSED</li>
+            <li>Tax accrual untuk semua periode di-generate (Rp 9.925.000 PPh Final total)</li>
+            <li>Trial Balance system-wide seimbang per 31 Des 2025</li>
+            <li>Tidak ada REOPENED period yang belum di-tutup lagi</li>
+          </ul>
+        </div>
+
+        <div class="sub-card p-4">
+          <div class="text-[10px] uppercase font-extrabold text-gray-600 mb-2">Ringkasan Laba/Rugi FY 2025</div>
+          <table class="w-full text-[12px]">
+            <tbody class="row-divider">
+              <tr class="bg-emerald-50/30"><td class="py-1.5 px-2 font-bold">Total Pendapatan (4-XXXX)</td><td class="py-1.5 px-2 text-right font-extrabold text-emerald-700">Rp 1.985.000.000</td></tr>
+              <tr class="bg-rose-50/30"><td class="py-1.5 px-2 font-bold">Total Beban (5-XXXX)</td><td class="py-1.5 px-2 text-right font-extrabold text-rose-700">Rp 1.832.450.000</td></tr>
+              <tr class="border-t-2 font-extrabold" style="background: #e9d5ff; border-color: #7c3aed; color: #6b21a8;"><td class="py-2 px-2">LABA NETO FY 2025</td><td class="py-2 px-2 text-right">Rp 152.550.000</td></tr>
+              <tr><td class="py-1.5 px-2 text-[11px]">Prive Owner FY 2025</td><td class="py-1.5 px-2 text-right">Rp 84.000.000</td></tr>
+              <tr class="border-t-2 font-extrabold" style="background: #d1fae5; border-color: #059669; color: #065f46;"><td class="py-2 px-2">Net masuk Laba Ditahan</td><td class="py-2 px-2 text-right">Rp 68.550.000</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sub-card p-4" style="background: #fdf4ff; border-color: #e879f9;">
+          <div class="font-bold text-fuchsia-900 mb-2 text-[12px]">4 closing entries yang akan di-post:</div>
+          <div class="space-y-2 text-[11px]">
+            <div class="bg-white rounded p-2">
+              <strong class="text-fuchsia-800">Step 1 — Close Pendapatan ke Ikhtisar:</strong><br/>
+              <code class="text-[10px] font-mono">D 4-XXXX Rp 1.985.000.000 · K 3-1900 Ikhtisar Rp 1.985.000.000</code>
+            </div>
+            <div class="bg-white rounded p-2">
+              <strong class="text-fuchsia-800">Step 2 — Close Beban ke Ikhtisar:</strong><br/>
+              <code class="text-[10px] font-mono">D 3-1900 Ikhtisar Rp 1.832.450.000 · K 5-XXXX Rp 1.832.450.000</code>
+            </div>
+            <div class="bg-white rounded p-2">
+              <strong class="text-fuchsia-800">Step 3 — Close Net Income ke Laba Ditahan:</strong><br/>
+              <code class="text-[10px] font-mono">D 3-1900 Rp 152.550.000 · K 3-1300 Laba Ditahan Rp 152.550.000</code>
+            </div>
+            <div class="bg-white rounded p-2">
+              <strong class="text-fuchsia-800">Step 4 — Close Prive ke Laba Ditahan:</strong><br/>
+              <code class="text-[10px] font-mono">D 3-1300 Rp 84.000.000 · K 3-1200 Prive Rp 84.000.000</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-card p-3 text-[12px] text-blue-900" style="background: #dbeafe; border-color: #93c5fd;">
+          <div class="font-bold mb-1">📊 Saldo setelah close:</div>
+          <ul class="text-[11px] list-disc ml-5 space-y-0.5">
+            <li>Semua 4-XXXX + 5-XXXX akun = <strong>0</strong> (ready FY 2026)</li>
+            <li>3-1900 Ikhtisar Laba Rugi = 0 (akun perantara fully closed)</li>
+            <li>3-1300 Laba Ditahan bertambah <strong>Rp 68.550.000</strong></li>
+            <li>3-1200 Prive = 0 (reset)</li>
+          </ul>
+        </div>
+
+        <div class="sub-card p-3 text-[11px] text-red-900" style="background: #fee2e2; border-color: #fca5a5;">
+          ⚠ <strong>Irreversible.</strong> Year-end close menghapus saldo P&L accounts permanent. Reopen FY butuh manual journal entries + Owner PIN + tertulis alasan ke akuntan.
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="btn-fuchsia flex-1 inline-flex items-center justify-center gap-1.5"><i data-lucide="calendar-check" class="w-3.5 h-3.5"></i> Year-End Close FY 2025 (4 entries)</button>
+          <button class="btn-secondary">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-gray-500 pt-10 border-t border-gray-200">Mockup Tutup Buku · monthly + year-end · design-system aligned · 2026-06-21</footer>
+
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

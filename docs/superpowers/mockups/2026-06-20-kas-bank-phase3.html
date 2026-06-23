@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Kas & Bank Phase 3 (Laporan)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; color: #1e3d60; }
+  .card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.08); }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5eeff; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body>
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">analytics</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup — Kas &amp; Bank Phase 3 (Laporan)</h1>
+        <p class="text-[11px] text-[#43474e]">3 tab: Mutasi + Saldo Trailing + Cash Flow Matrix · Ekspor PDF/Excel/CSV · <strong class="text-amber-700">Placeholder data</strong></p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">1. Mutasi</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">2. Saldo Trailing</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">3. Cash Flow</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-16">
+
+  <section class="bg-blue-50 border border-blue-200 rounded-3xl p-6">
+    <h2 class="text-base font-extrabold text-[#012749] mb-3">Phase 3 — Locked decisions</h2>
+    <ul class="text-[13px] text-[#012749] space-y-1 list-disc ml-5">
+      <li>Mount sebagai tab di sidebar Laporan existing (bukan top-level Kas &amp; Bank)</li>
+      <li>3 tab: Mutasi · Saldo Trailing · Cash Flow Matrix</li>
+      <li>PDF pakai jsPDF + jspdf-autotable (pattern existing Invoice PDF)</li>
+      <li>Excel pakai exceljs (TBD lock O2)</li>
+      <li>Default exclude akun Pribadi (toggle untuk include)</li>
+      <li>Default periode: bulan ini</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M1 — TAB MUTASI                                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">1. Tab Mutasi</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-emerald-700">Filter + tabel + ekspor</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <div class="bg-[#f8fafc] border-b border-[#e5eeff] px-4 py-2 flex items-center gap-2">
+        <div class="flex gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></span><span class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></span></div>
+        <div class="flex-1 ml-3 bg-white border border-[#e5eeff] rounded-md px-3 py-1 text-[11px] text-[#43474e]">erp.garindojayapanel.id / laporan / kas-bank / mutasi</div>
+      </div>
+
+      <div class="p-8 bg-[#f4f7fb]">
+        <div class="flex items-baseline justify-between mb-6">
+          <div>
+            <a href="#" class="text-[11px] text-[#43474e] hover:underline">← Laporan</a>
+            <h3 class="text-2xl font-extrabold text-[#012749] mt-1">Laporan Kas &amp; Bank</h3>
+          </div>
+        </div>
+
+        <!-- Tab pills -->
+        <div class="flex gap-2 mb-6">
+          <button class="px-4 py-2 bg-[#012749] text-white font-extrabold text-[13px] rounded-lg">📜 Mutasi</button>
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg hover:border-blue-300">📈 Saldo Trailing</button>
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg hover:border-blue-300">💧 Cash Flow</button>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="bg-white rounded-2xl border border-[#e5eeff] p-4 mb-4 grid grid-cols-12 gap-3 text-[12px]">
+          <div class="col-span-3">
+            <label class="block font-bold mb-1 text-[10px] uppercase tracking-widest text-[#43474e]">Akun (multi-select)</label>
+            <div class="bg-slate-50 border border-[#e5eeff] rounded px-2 py-1.5 flex flex-wrap gap-1">
+              <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Operasional ×</span>
+              <span class="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded">Mandiri Toko ×</span>
+              <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Kas Toko ×</span>
+              <button class="text-[10px] text-blue-700 font-bold ml-1">+ Pilih</button>
+            </div>
+          </div>
+          <div class="col-span-3">
+            <label class="block font-bold mb-1 text-[10px] uppercase tracking-widest text-[#43474e]">Periode</label>
+            <div class="flex gap-1">
+              <select class="flex-1 border border-[#e5eeff] rounded px-2 py-1.5"><option>Bulan ini (Jun 2026)</option><option>Bulan lalu</option><option>30 hari</option><option>Custom...</option></select>
+            </div>
+          </div>
+          <div class="col-span-2">
+            <label class="block font-bold mb-1 text-[10px] uppercase tracking-widest text-[#43474e]">Arah</label>
+            <select class="w-full border border-[#e5eeff] rounded px-2 py-1.5"><option>Semua</option><option>IN saja</option><option>OUT saja</option></select>
+          </div>
+          <div class="col-span-2">
+            <label class="block font-bold mb-1 text-[10px] uppercase tracking-widest text-[#43474e]">Kategori</label>
+            <select class="w-full border border-[#e5eeff] rounded px-2 py-1.5"><option>Semua</option><option>Penjualan</option><option>Bayar Pembelian</option><option>Transfer Internal</option></select>
+          </div>
+          <div class="col-span-2 flex items-end">
+            <label class="flex items-center gap-2 text-[11px]">
+              <input type="checkbox" class="w-4 h-4 rounded" />
+              <span>Include akun Pribadi</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Summary + export -->
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex gap-4 text-[13px]">
+            <span><strong class="text-[#43474e]">Total IN:</strong> <strong class="text-emerald-700">Rp 35.450.000</strong></span>
+            <span><strong class="text-[#43474e]">Total OUT:</strong> <strong class="text-rose-700">Rp 18.200.000</strong></span>
+            <span><strong class="text-[#43474e]">Net:</strong> <strong class="text-[#012749]">+ Rp 17.250.000</strong></span>
+            <span class="text-[#43474e]">· 156 mutasi</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="px-3 py-1.5 bg-rose-50 text-rose-700 font-bold text-[12px] rounded-lg hover:bg-rose-100 flex items-center gap-1"><span class="material-symbols-outlined text-base">picture_as_pdf</span> PDF</button>
+            <button class="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold text-[12px] rounded-lg hover:bg-emerald-100 flex items-center gap-1"><span class="material-symbols-outlined text-base">grid_on</span> Excel</button>
+            <button class="px-3 py-1.5 bg-slate-100 text-slate-700 font-bold text-[12px] rounded-lg hover:bg-slate-200 flex items-center gap-1"><span class="material-symbols-outlined text-base">description</span> CSV</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-2xl border border-[#e5eeff] overflow-hidden relative placeholder-badge">
+          <table class="w-full text-[13px]">
+            <thead class="bg-slate-50 border-b border-[#e5eeff]">
+              <tr class="text-[10px] uppercase tracking-widest font-extrabold text-[#43474e]">
+                <th class="text-left py-2 px-3">Tanggal</th>
+                <th class="text-left py-2 px-3">Akun</th>
+                <th class="text-left py-2 px-3">Kategori</th>
+                <th class="text-left py-2 px-3">Keterangan</th>
+                <th class="text-right py-2 px-3">IN</th>
+                <th class="text-right py-2 px-3">OUT</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr><td class="py-2 px-3">20 Jun 13:45</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Penjualan</td><td>Tokopedia INV-241 · Customer Andi</td><td class="text-right font-bold text-emerald-700">1.250.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">20 Jun 11:12</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Bayar Pembelian</td><td>PI-89 · CV Sinar Jaya</td><td></td><td class="text-right font-bold text-rose-700">3.500.000</td></tr>
+              <tr><td class="py-2 px-3">20 Jun 10:33</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Penjualan</td><td>Grosir INV-156 · Toko Maju Jaya</td><td class="text-right font-bold text-emerald-700">8.700.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">19 Jun 16:20</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Pelunasan Piutang</td><td>INV-TMP-73 · PT Mega Konstruksi</td><td class="text-right font-bold text-emerald-700">4.500.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">19 Jun 18:45</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Setor Kasir</td><td>Cash batch CB-58 (dari Kas Toko)</td><td class="text-right font-bold text-emerald-700">2.150.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">19 Jun 09:15</td><td><span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Kas Toko</span></td><td>Penjualan</td><td>Walkin cash · 5 produk</td><td class="text-right font-bold text-emerald-700">450.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">18 Jun 14:00</td><td><span class="bg-orange-100 text-orange-800 text-[10px] font-bold px-2 py-0.5 rounded">Mandiri</span></td><td>Transfer Internal</td><td>Pindah dari BCA Op (pair #abc...)</td><td class="text-right font-bold text-emerald-700">5.000.000</td><td></td></tr>
+              <tr><td class="py-2 px-3">18 Jun 14:00</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Transfer Internal</td><td>Pindah ke Mandiri (pair #abc...)</td><td></td><td class="text-right font-bold text-rose-700">5.000.000</td></tr>
+              <tr class="bg-amber-50/30"><td class="py-2 px-3">17 Jun 16:30</td><td><span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">BCA Op</span></td><td>Penyesuaian</td><td>⚖ Koreksi +50rb (bunga deposito) · oleh Owner</td><td class="text-right font-bold text-emerald-700">50.000</td><td></td></tr>
+            </tbody>
+            <tfoot class="bg-slate-50 border-t-2 border-slate-300">
+              <tr class="font-extrabold text-[#012749]">
+                <td colspan="4" class="py-3 px-3 text-right">TOTAL</td>
+                <td class="py-3 px-3 text-right text-emerald-700">35.450.000</td>
+                <td class="py-3 px-3 text-right text-rose-700">18.200.000</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="text-center text-[11px] text-[#43474e] mt-3">Menampilkan 9 dari 156 mutasi · <a href="#" class="text-blue-700 font-bold">Muat lebih banyak ↓</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M2 — SALDO TRAILING                                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">2. Tab Saldo Trailing — Chart + Tabel</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-blue-700">12 bulan terakhir</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <div class="p-8 bg-[#f4f7fb]">
+        <div class="flex gap-2 mb-6">
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg">📜 Mutasi</button>
+          <button class="px-4 py-2 bg-[#012749] text-white font-extrabold text-[13px] rounded-lg">📈 Saldo Trailing</button>
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg">💧 Cash Flow</button>
+        </div>
+
+        <!-- Chart placeholder -->
+        <div class="bg-white rounded-2xl border border-[#e5eeff] p-6 mb-4 relative placeholder-badge">
+          <div class="flex items-baseline justify-between mb-4">
+            <h4 class="text-base font-extrabold text-[#012749]">Saldo akhir bulanan per akun</h4>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 bg-rose-50 text-rose-700 font-bold text-[12px] rounded-lg">PDF</button>
+              <button class="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold text-[12px] rounded-lg">Excel</button>
+            </div>
+          </div>
+
+          <!-- SVG mini line chart -->
+          <svg viewBox="0 0 800 240" class="w-full h-60">
+            <!-- Grid -->
+            <g stroke="#e5eeff" stroke-width="1">
+              <line x1="50" y1="20" x2="780" y2="20" />
+              <line x1="50" y1="80" x2="780" y2="80" />
+              <line x1="50" y1="140" x2="780" y2="140" />
+              <line x1="50" y1="200" x2="780" y2="200" />
+            </g>
+            <!-- Y axis labels -->
+            <text x="40" y="25" font-size="10" text-anchor="end" fill="#43474e">20jt</text>
+            <text x="40" y="85" font-size="10" text-anchor="end" fill="#43474e">15jt</text>
+            <text x="40" y="145" font-size="10" text-anchor="end" fill="#43474e">10jt</text>
+            <text x="40" y="205" font-size="10" text-anchor="end" fill="#43474e">5jt</text>
+            <!-- X axis labels -->
+            <g font-size="10" fill="#43474e">
+              <text x="80" y="225" text-anchor="middle">Jul</text>
+              <text x="140" y="225" text-anchor="middle">Aug</text>
+              <text x="200" y="225" text-anchor="middle">Sep</text>
+              <text x="260" y="225" text-anchor="middle">Oct</text>
+              <text x="320" y="225" text-anchor="middle">Nov</text>
+              <text x="380" y="225" text-anchor="middle">Dec</text>
+              <text x="440" y="225" text-anchor="middle">Jan</text>
+              <text x="500" y="225" text-anchor="middle">Feb</text>
+              <text x="560" y="225" text-anchor="middle">Mar</text>
+              <text x="620" y="225" text-anchor="middle">Apr</text>
+              <text x="680" y="225" text-anchor="middle">May</text>
+              <text x="740" y="225" text-anchor="middle">Jun</text>
+            </g>
+            <!-- BCA line -->
+            <polyline points="80,150 140,140 200,135 260,120 320,110 380,100 440,90 500,85 560,80 620,75 680,70 740,55" fill="none" stroke="#2563eb" stroke-width="3" />
+            <!-- Mandiri line -->
+            <polyline points="80,180 140,175 200,170 260,165 320,165 380,160 440,158 500,155 560,153 620,150 680,148 740,145" fill="none" stroke="#ea580c" stroke-width="3" />
+            <!-- Kas Toko line -->
+            <polyline points="80,205 140,205 200,200 260,202 320,198 380,200 440,205 500,200 560,205 620,205 680,203 740,202" fill="none" stroke="#059669" stroke-width="3" />
+          </svg>
+
+          <!-- Legend -->
+          <div class="flex gap-4 justify-center text-[12px] mt-2">
+            <span class="flex items-center gap-2"><span class="inline-block w-4 h-1 bg-blue-600"></span>BCA Operasional</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-4 h-1 bg-orange-600"></span>Mandiri Toko</span>
+            <span class="flex items-center gap-2"><span class="inline-block w-4 h-1 bg-emerald-600"></span>Kas Toko</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="bg-white rounded-2xl border border-[#e5eeff] overflow-x-auto relative placeholder-badge">
+          <table class="w-full text-[12px]">
+            <thead class="bg-slate-50 border-b border-[#e5eeff]">
+              <tr class="text-[10px] uppercase tracking-widest font-extrabold text-[#43474e]">
+                <th class="text-left py-2 px-3 sticky left-0 bg-slate-50">Akun</th>
+                <th class="text-right py-2 px-2">Jul'25</th>
+                <th class="text-right py-2 px-2">Aug</th>
+                <th class="text-right py-2 px-2">Sep</th>
+                <th class="text-right py-2 px-2">Oct</th>
+                <th class="text-right py-2 px-2">Nov</th>
+                <th class="text-right py-2 px-2">Dec</th>
+                <th class="text-right py-2 px-2">Jan'26</th>
+                <th class="text-right py-2 px-2">Feb</th>
+                <th class="text-right py-2 px-2">Mar</th>
+                <th class="text-right py-2 px-2">Apr</th>
+                <th class="text-right py-2 px-2">May</th>
+                <th class="text-right py-2 px-2 bg-blue-50">Jun'26</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr><td class="py-2 px-3 font-bold sticky left-0 bg-white">BCA Operasional</td><td class="text-right">8.5jt</td><td class="text-right">9.2jt</td><td class="text-right">9.5jt</td><td class="text-right">10.1jt</td><td class="text-right">10.8jt</td><td class="text-right">11.2jt</td><td class="text-right">11.5jt</td><td class="text-right">11.7jt</td><td class="text-right">11.9jt</td><td class="text-right">12.1jt</td><td class="text-right">12.3jt</td><td class="text-right bg-blue-50 font-bold">12.5jt</td></tr>
+              <tr><td class="py-2 px-3 font-bold sticky left-0 bg-white">Mandiri Toko</td><td class="text-right">4.2jt</td><td class="text-right">4.4jt</td><td class="text-right">4.5jt</td><td class="text-right">4.6jt</td><td class="text-right">4.6jt</td><td class="text-right">4.8jt</td><td class="text-right">4.9jt</td><td class="text-right">5.0jt</td><td class="text-right">5.1jt</td><td class="text-right">5.2jt</td><td class="text-right">5.2jt</td><td class="text-right bg-blue-50 font-bold">5.3jt</td></tr>
+              <tr><td class="py-2 px-3 font-bold sticky left-0 bg-white">Kas Toko</td><td class="text-right">0.5jt</td><td class="text-right">0.5jt</td><td class="text-right">0.6jt</td><td class="text-right">0.6jt</td><td class="text-right">0.7jt</td><td class="text-right">0.6jt</td><td class="text-right">0.5jt</td><td class="text-right">0.6jt</td><td class="text-right">0.5jt</td><td class="text-right">0.5jt</td><td class="text-right">0.6jt</td><td class="text-right bg-blue-50 font-bold">0.85jt</td></tr>
+            </tbody>
+            <tfoot class="bg-slate-50 border-t-2 border-slate-300">
+              <tr class="font-extrabold text-[#012749]">
+                <td class="py-2 px-3 sticky left-0 bg-slate-50">TOTAL</td>
+                <td class="text-right">13.2jt</td><td class="text-right">14.1jt</td><td class="text-right">14.6jt</td><td class="text-right">15.3jt</td><td class="text-right">16.1jt</td><td class="text-right">16.6jt</td><td class="text-right">16.9jt</td><td class="text-right">17.3jt</td><td class="text-right">17.5jt</td><td class="text-right">17.8jt</td><td class="text-right">18.1jt</td><td class="text-right bg-blue-100">18.65jt</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M3 — CASH FLOW MATRIX                                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">3. Tab Cash Flow — Matrix per Kategori × Bulan</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-violet-700">Pivot rows = kategori, cols = bulan</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <div class="p-8 bg-[#f4f7fb]">
+        <div class="flex gap-2 mb-6">
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg">📜 Mutasi</button>
+          <button class="px-4 py-2 bg-white border border-[#e5eeff] font-bold text-[13px] rounded-lg">📈 Saldo Trailing</button>
+          <button class="px-4 py-2 bg-[#012749] text-white font-extrabold text-[13px] rounded-lg">💧 Cash Flow</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-[#e5eeff] p-4 mb-4 flex items-center gap-3 text-[12px]">
+          <span class="font-bold text-[#43474e]">Tampilan:</span>
+          <button class="px-3 py-1.5 bg-[#012749] text-white font-bold rounded">Net</button>
+          <button class="px-3 py-1.5 bg-white border border-[#e5eeff] rounded">Gross IN</button>
+          <button class="px-3 py-1.5 bg-white border border-[#e5eeff] rounded">Gross OUT</button>
+          <span class="ml-auto text-[#43474e]">Periode: 6 bulan terakhir (Jan-Jun 2026)</span>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-[#e5eeff] overflow-x-auto relative placeholder-badge">
+          <table class="w-full text-[12px]">
+            <thead class="bg-slate-50 border-b border-[#e5eeff]">
+              <tr class="text-[10px] uppercase tracking-widest font-extrabold text-[#43474e]">
+                <th class="text-left py-2 px-3 sticky left-0 bg-slate-50">Kategori</th>
+                <th class="text-right py-2 px-2">Jan</th>
+                <th class="text-right py-2 px-2">Feb</th>
+                <th class="text-right py-2 px-2">Mar</th>
+                <th class="text-right py-2 px-2">Apr</th>
+                <th class="text-right py-2 px-2">May</th>
+                <th class="text-right py-2 px-2 bg-blue-50">Jun</th>
+                <th class="text-right py-2 px-2 bg-emerald-50">Total 6 bln</th>
+              </tr>
+            </thead>
+            <tbody class="row-divider">
+              <tr class="bg-emerald-50/30 font-bold text-emerald-900"><td class="py-2 px-3 sticky left-0 bg-emerald-50/50">↓ UANG MASUK</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Penjualan kasir</td><td class="text-right text-emerald-700">15.2jt</td><td class="text-right text-emerald-700">16.5jt</td><td class="text-right text-emerald-700">17.1jt</td><td class="text-right text-emerald-700">18.3jt</td><td class="text-right text-emerald-700">19.8jt</td><td class="text-right text-emerald-700 bg-blue-50">25.4jt</td><td class="text-right font-extrabold text-emerald-700 bg-emerald-50">112.3jt</td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Pelunasan piutang</td><td class="text-right text-emerald-700">3.5jt</td><td class="text-right text-emerald-700">4.2jt</td><td class="text-right text-emerald-700">5.1jt</td><td class="text-right text-emerald-700">4.8jt</td><td class="text-right text-emerald-700">5.5jt</td><td class="text-right text-emerald-700 bg-blue-50">6.2jt</td><td class="text-right font-extrabold text-emerald-700 bg-emerald-50">29.3jt</td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Setor kasir batch</td><td class="text-right text-emerald-700">2.8jt</td><td class="text-right text-emerald-700">3.1jt</td><td class="text-right text-emerald-700">2.9jt</td><td class="text-right text-emerald-700">3.3jt</td><td class="text-right text-emerald-700">3.4jt</td><td class="text-right text-emerald-700 bg-blue-50">3.85jt</td><td class="text-right font-extrabold text-emerald-700 bg-emerald-50">19.35jt</td></tr>
+              <tr class="bg-rose-50/30 font-bold text-rose-900"><td class="py-2 px-3 sticky left-0 bg-rose-50/50">↑ UANG KELUAR</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Bayar pembelian</td><td class="text-right text-rose-700">14.5jt</td><td class="text-right text-rose-700">15.8jt</td><td class="text-right text-rose-700">16.2jt</td><td class="text-right text-rose-700">17.5jt</td><td class="text-right text-rose-700">18.8jt</td><td class="text-right text-rose-700 bg-blue-50">22.1jt</td><td class="text-right font-extrabold text-rose-700 bg-rose-50">104.9jt</td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Tarik pribadi (Owner)</td><td class="text-right text-rose-700">2.0jt</td><td class="text-right text-rose-700">2.5jt</td><td class="text-right text-rose-700">3.0jt</td><td class="text-right text-rose-700">2.5jt</td><td class="text-right text-rose-700">3.0jt</td><td class="text-right text-rose-700 bg-blue-50">4.0jt</td><td class="text-right font-extrabold text-rose-700 bg-rose-50">17.0jt</td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Spending wallet (Lalamove)</td><td class="text-right text-rose-700">0.45jt</td><td class="text-right text-rose-700">0.50jt</td><td class="text-right text-rose-700">0.55jt</td><td class="text-right text-rose-700">0.60jt</td><td class="text-right text-rose-700">0.65jt</td><td class="text-right text-rose-700 bg-blue-50">0.70jt</td><td class="text-right font-extrabold text-rose-700 bg-rose-50">3.45jt</td></tr>
+              <tr><td class="py-2 px-3 pl-8 sticky left-0 bg-white">Penyesuaian</td><td class="text-right text-rose-700">0.02jt</td><td class="text-right text-rose-700">0.01jt</td><td class="text-right text-emerald-700">+0.05jt</td><td class="text-right text-rose-700">0.03jt</td><td class="text-right text-emerald-700">+0.02jt</td><td class="text-right text-emerald-700 bg-blue-50">+0.05jt</td><td class="text-right font-extrabold text-emerald-700 bg-emerald-50">+0.06jt</td></tr>
+            </tbody>
+            <tfoot class="bg-slate-50 border-t-2 border-slate-300">
+              <tr class="font-extrabold text-[#012749]">
+                <td class="py-3 px-3 sticky left-0 bg-slate-50">NET CASH FLOW</td>
+                <td class="text-right text-emerald-700">+4.55jt</td>
+                <td class="text-right text-emerald-700">+5.0jt</td>
+                <td class="text-right text-emerald-700">+5.4jt</td>
+                <td class="text-right text-emerald-700">+5.8jt</td>
+                <td class="text-right text-emerald-700">+6.27jt</td>
+                <td class="text-right text-emerald-700 bg-blue-100">+8.7jt</td>
+                <td class="text-right bg-emerald-100">+35.66jt</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="mt-4 flex justify-end gap-2">
+          <button class="px-3 py-1.5 bg-rose-50 text-rose-700 font-bold text-[12px] rounded-lg">PDF</button>
+          <button class="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-bold text-[12px] rounded-lg">Excel pivot</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-[#43474e] pt-10 border-t border-[#e5eeff]">
+    Mockup oleh Claude · 2026-06-20 · placeholder data · <a href="../specs/2026-06-20-kas-bank-phase3-design.md" class="text-blue-700 hover:underline">Lihat spec Phase 3</a>
+  </footer>
+
+</div>
+</body>
+</html>

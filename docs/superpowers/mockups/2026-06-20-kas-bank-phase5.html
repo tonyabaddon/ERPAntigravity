@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Kas & Bank Phase 5 (Auto Bank Feed) [DEPRECATED]</title>
+<style>.deprecated-banner { background: #fef3c7; border-bottom: 3px solid #d97706; padding: 16px 24px; text-align: center; font-family: 'Inter', system-ui, sans-serif; color: #78350f; font-size: 13px; font-weight: 700; }</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f4f7fb; color: #1e3d60; }
+  .card-shadow { box-shadow: 0 4px 12px -2px rgba(2, 32, 71, 0.08); }
+  .placeholder-badge::before { content: '⚠ Mockup'; position: absolute; top: 8px; right: 8px; background: #fef3c7; color: #92400e; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .row-divider > * + * { border-top: 1px solid #e5eeff; }
+  .anchor-nav a { transition: all 0.15s; }
+  .anchor-nav a:hover { background: #012749; color: white; }
+</style>
+</head>
+<body>
+
+<div class="deprecated-banner">
+  ⚠️ DEPRECATED (2026-06-21) — Phase 5 auto bank feed DROP dari active roadmap setelah pivot ke GL approach.<br/>
+  Manual PDF upload via Rekonsiliasi existing dianggap cukup. API integrasi defer ke future tanpa fixed schedule.<br/>
+  Active roadmap: <a href="../specs/2026-06-21-kas-bank-gl-roadmap.md" style="color:#1e40af; text-decoration:underline;">2026-06-21-kas-bank-gl-roadmap.md</a>
+</div>
+
+
+<header class="sticky top-0 z-50 bg-white border-b border-[#e5eeff] shadow-sm">
+  <div class="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center">
+        <span class="material-symbols-outlined text-xl">cable</span>
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-[#012749]">Mockup — Kas &amp; Bank Phase 5 (Auto Bank Feed) <span class="ml-2 text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-extrabold uppercase tracking-widest">TBD-level · sketch</span></h1>
+        <p class="text-[11px] text-[#43474e]">Cashlink-style bank feed + Maker/Releaser outbound transfer · Defer sampai trigger condition tercapai · <strong class="text-amber-700">Placeholder data</strong></p>
+      </div>
+    </div>
+    <nav class="anchor-nav hidden lg:flex gap-2 text-[10px] font-extrabold uppercase tracking-widest">
+      <a href="#m1" class="px-3 py-2 rounded-full bg-blue-50 text-[#012749]">1. Bank Connect</a>
+      <a href="#m2" class="px-3 py-2 rounded-full bg-emerald-50 text-emerald-800">2. Transfer Out</a>
+      <a href="#m3" class="px-3 py-2 rounded-full bg-violet-50 text-violet-800">3. Releaser inbox</a>
+      <a href="#m4" class="px-3 py-2 rounded-full bg-amber-50 text-amber-800">4. OTP modal</a>
+      <a href="#m5" class="px-3 py-2 rounded-full bg-slate-100 text-slate-700">5. History</a>
+    </nav>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-8 py-10 space-y-16">
+
+  <section class="bg-slate-100 border border-slate-300 rounded-3xl p-6">
+    <h2 class="text-base font-extrabold text-slate-800 mb-3">Phase 5 — Sketch-level (TBD lock saat trigger tercapai)</h2>
+    <ul class="text-[13px] text-slate-800 space-y-1 list-disc ml-5">
+      <li><strong>Trigger:</strong> Partner API siap (Brick/Mekari Cashlink) OR volume justify OR paying tenant minta</li>
+      <li><strong>Recommended initial vendor:</strong> Brick (multi-bank: BCA, Mandiri, BRI, BNI, CIMB, etc)</li>
+      <li><strong>Outbound flow:</strong> Maker create → Releaser approve via Google Authenticator OTP → Brick API → webhook</li>
+      <li>Credential encrypted at rest via Supabase pgcrypto</li>
+      <li><strong>Tidak lock UI sekarang.</strong> Mockup ini sketch level untuk discussion saja</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M1 — BANK CONNECT setup                                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m1">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">1. Bank Connect — OAuth setup di Pengaturan</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-blue-700">Per akun bank</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow border border-[#e5eeff] overflow-hidden">
+      <div class="bg-blue-600 text-white px-6 py-4">
+        <h3 class="text-base font-extrabold">Pengaturan → Kas &amp; Bank → Bank Connect</h3>
+        <p class="text-[11px] text-blue-100 mt-0.5">Auto-sync mutasi bank ke sistem via Brick API</p>
+      </div>
+
+      <div class="p-6 space-y-4 relative placeholder-badge">
+
+        <!-- Connected -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center"><span class="material-symbols-outlined text-2xl">account_balance</span></div>
+            <div class="flex-1">
+              <div class="text-[14px] font-extrabold text-[#012749]">BCA Operasional · 1234567890</div>
+              <div class="text-[11px] text-[#43474e]">Last sync: 20 Jun 2026 14:32 WIB · status: <span class="text-emerald-700 font-bold">✓ Connected</span></div>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-700 text-[11px] font-bold rounded hover:bg-emerald-50">⟳ Sync Now</button>
+              <button class="px-3 py-1.5 bg-white border border-rose-300 text-rose-700 text-[11px] font-bold rounded hover:bg-rose-50">Disconnect</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disconnected -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center"><span class="material-symbols-outlined text-2xl">account_balance</span></div>
+            <div class="flex-1">
+              <div class="text-[14px] font-extrabold text-[#012749]">Mandiri Toko · 9876543210</div>
+              <div class="text-[11px] text-[#43474e]">Belum connected · <span class="text-slate-600 font-bold">⊘ Manual upload PDF only</span></div>
+            </div>
+            <button class="px-4 py-2 bg-[#012749] text-white text-[12px] font-bold rounded-lg hover:bg-[#03386b]">+ Connect ke Brick</button>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center"><span class="material-symbols-outlined text-2xl">error</span></div>
+            <div class="flex-1">
+              <div class="text-[14px] font-extrabold text-[#012749]">BCA Pribadi (Tony) · 5555444433</div>
+              <div class="text-[11px] text-rose-700">⚠ Credential expired · perlu re-auth · last successful sync: 5 hari lalu</div>
+            </div>
+            <button class="px-4 py-2 bg-rose-600 text-white text-[12px] font-bold rounded-lg hover:bg-rose-700">Re-authenticate</button>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-[#43474e] bg-blue-50 border border-blue-200 rounded-lg p-3">
+          💡 <strong>Vendor:</strong> Brick aggregator (BCA, Mandiri, BRI, BNI, CIMB, etc) · per-sync cost ~Rp 1.500 · daily auto-sync default
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M2 — TRANSFER OUT MODAL (Maker)                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m2">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">2. Modal — Transfer Keluar (Maker step)</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-emerald-700">Visible kalau akun ada bank_sync_credentials</span>
+    </div>
+
+    <div class="max-w-2xl bg-white rounded-3xl card-shadow border border-[#e5eeff] overflow-hidden">
+      <div class="bg-emerald-600 text-white px-6 py-4">
+        <h3 class="text-base font-extrabold">↗ Transfer Keluar</h3>
+        <p class="text-[11px] text-emerald-100 mt-0.5">Step 1 (Maker) — submit untuk approval Releaser</p>
+      </div>
+      <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+
+        <div class="bg-slate-50 rounded-lg p-3 text-[12px]">
+          <div class="font-bold text-[#012749]">Dari akun: <strong>BCA Operasional</strong> · 1234567890</div>
+          <div class="text-[#43474e]">Saldo terkini: <strong>Rp 12.500.000</strong></div>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Bank tujuan *</label>
+          <select class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 bg-white">
+            <option>BCA</option><option>Mandiri</option><option>BRI</option><option>BNI</option><option>CIMB</option><option>Permata</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Nomor rekening tujuan *</label>
+          <input type="text" class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="1234567890" value="3210987654" />
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Nama penerima *</label>
+          <div class="flex gap-2">
+            <input type="text" class="flex-1 border border-[#e5eeff] rounded-lg px-3 py-2 bg-slate-50" value="CV SUPPLIER JAYA" readonly />
+            <button class="px-3 py-2 bg-blue-100 text-blue-700 font-bold rounded text-[11px]">Verifikasi via Brick</button>
+          </div>
+          <p class="text-[10px] text-emerald-700 mt-1">✓ Nama match dengan rekening tujuan</p>
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Jumlah *</label>
+          <input type="text" class="w-full border border-[#e5eeff] rounded-lg px-3 py-2 text-right font-bold" value="Rp 3.500.000" />
+        </div>
+
+        <div>
+          <label class="block font-bold mb-1">Keterangan *</label>
+          <input type="text" class="w-full border border-[#e5eeff] rounded-lg px-3 py-2" placeholder="Mis. Bayar PI-89 jatuh tempo besok" />
+        </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-900">
+          🔒 <strong>Dual-control protection.</strong> Setelah submit, transfer harus disetujui oleh Releaser (Tony) via OTP sebelum benar-benar dieksekusi.
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="flex-1 bg-emerald-600 text-white font-extrabold py-2.5 rounded-lg hover:bg-emerald-700">Submit untuk Approval</button>
+          <button class="px-4 py-2.5 bg-white border border-[#e5eeff] font-bold rounded-lg hover:bg-slate-50">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M3 — RELEASER INBOX                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m3">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">3. Releaser Inbox — Outbound transfer pending approval</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-violet-700">Untuk Releaser-role users</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <div class="bg-violet-600 text-white px-6 py-4 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold">Approval Inbox — Transfer Keluar</h3>
+          <p class="text-[11px] text-violet-100 mt-0.5">Anda adalah Releaser · 2 transfer menunggu approval</p>
+        </div>
+        <span class="text-[10px] bg-rose-100 text-rose-800 font-extrabold px-2 py-1 rounded uppercase tracking-widest">2 pending</span>
+      </div>
+
+      <div class="row-divider relative placeholder-badge">
+
+        <div class="p-5 hover:bg-violet-50/30">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><span class="material-symbols-outlined">north_east</span></div>
+            <div class="flex-1">
+              <div class="flex items-baseline justify-between">
+                <h4 class="text-[14px] font-extrabold text-[#012749]">Transfer ke CV Supplier Jaya</h4>
+                <span class="text-[12px] font-extrabold text-rose-700">Rp 3.500.000</span>
+              </div>
+              <div class="text-[11px] text-[#43474e] mt-1 space-y-0.5">
+                <div>Dari: BCA Operasional 1234567890</div>
+                <div>Ke: BCA 3210987654 · CV SUPPLIER JAYA <span class="text-emerald-700 font-bold">✓ verified</span></div>
+                <div>Maker: Andre · submitted 14:32 WIB · expires dalam 45 menit</div>
+                <div class="italic">"Bayar PI-89 jatuh tempo besok"</div>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="px-4 py-2 bg-emerald-600 text-white text-[12px] font-extrabold rounded-lg hover:bg-emerald-700">✓ Setujui (perlu OTP)</button>
+                <button class="px-4 py-2 bg-white border border-rose-300 text-rose-700 text-[12px] font-bold rounded-lg hover:bg-rose-50">✗ Tolak</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-5 hover:bg-violet-50/30">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><span class="material-symbols-outlined">north_east</span></div>
+            <div class="flex-1">
+              <div class="flex items-baseline justify-between">
+                <h4 class="text-[14px] font-extrabold text-[#012749]">Transfer ke Gaji Karyawan (Andi)</h4>
+                <span class="text-[12px] font-extrabold text-rose-700">Rp 5.000.000</span>
+              </div>
+              <div class="text-[11px] text-[#43474e] mt-1 space-y-0.5">
+                <div>Dari: Mandiri Toko 9876543210</div>
+                <div>Ke: BCA 1112223334 · ANDI HARIYANTO <span class="text-emerald-700 font-bold">✓ verified</span></div>
+                <div>Maker: Andre · submitted 11:00 WIB · expires dalam 18 menit</div>
+                <div class="italic">"Gaji Andi bulan Juni 2026"</div>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button class="px-4 py-2 bg-emerald-600 text-white text-[12px] font-extrabold rounded-lg hover:bg-emerald-700">✓ Setujui (perlu OTP)</button>
+                <button class="px-4 py-2 bg-white border border-rose-300 text-rose-700 text-[12px] font-bold rounded-lg hover:bg-rose-50">✗ Tolak</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M4 — OTP MODAL                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m4">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">4. OTP Approval — Google Authenticator</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-amber-700">Final step Releaser approval</span>
+    </div>
+
+    <div class="max-w-md bg-white rounded-3xl card-shadow border border-[#e5eeff] overflow-hidden">
+      <div class="bg-[#012749] text-white px-6 py-4">
+        <h3 class="text-base font-extrabold">🔐 Approve Transfer · OTP Required</h3>
+        <p class="text-[11px] text-blue-200 mt-0.5">CV Supplier Jaya · Rp 3.500.000</p>
+      </div>
+
+      <div class="p-6 space-y-4 text-[13px] relative placeholder-badge">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-900">
+          ⚠ <strong>Confirm sekali lagi.</strong> Setelah OTP diterima, transfer akan dikirim ke Brick → BCA — <strong>tidak bisa di-cancel</strong>.
+        </div>
+
+        <div>
+          <label class="block font-bold mb-2 text-center">Buka app Google Authenticator · Input 6 digit kode</label>
+          <div class="flex gap-2 justify-center mb-3">
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-[#e5eeff] text-center font-extrabold text-2xl" value="3" />
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-[#e5eeff] text-center font-extrabold text-2xl" value="8" />
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-[#e5eeff] text-center font-extrabold text-2xl" value="2" />
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-blue-400 text-center font-extrabold text-2xl bg-blue-50" />
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-[#e5eeff] text-center font-extrabold text-2xl" />
+            <input type="text" maxlength="1" class="w-12 h-14 rounded-lg border-2 border-[#e5eeff] text-center font-extrabold text-2xl" />
+          </div>
+          <p class="text-[10px] text-center text-[#43474e]">Token refresh in 23 detik</p>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button class="flex-1 bg-[#012749] text-white font-extrabold py-2.5 rounded-lg hover:bg-[#03386b]">Konfirmasi &amp; Kirim Transfer</button>
+          <button class="px-4 py-2.5 bg-white border border-[#e5eeff] font-bold rounded-lg hover:bg-slate-50">Batal</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- M5 — OUTBOUND TRANSFER HISTORY                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <section id="m5">
+    <div class="flex items-baseline justify-between mb-4">
+      <h2 class="text-xl font-extrabold text-[#012749]">5. Tab "Transfer Keluar" di Account Detail</h2>
+      <span class="text-[11px] uppercase tracking-widest font-extrabold text-slate-700">History per status</span>
+    </div>
+
+    <div class="bg-white rounded-3xl card-shadow overflow-hidden border border-[#e5eeff]">
+      <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <a href="#" class="text-[11px] text-blue-100 hover:underline">← Kas &amp; Bank</a>
+        <h3 class="text-2xl font-extrabold mt-1">BCA Operasional · Transfer Keluar</h3>
+      </div>
+
+      <div class="border-b border-[#e5eeff] px-6 flex gap-1">
+        <button class="px-4 py-3 text-[13px] font-bold text-[#43474e]">📜 Riwayat</button>
+        <button class="px-4 py-3 text-[13px] font-bold text-[#43474e]">⏳ Belum Cair</button>
+        <button class="px-4 py-3 text-[13px] font-bold text-[#43474e]">⚠ Belum Cocok</button>
+        <button class="px-4 py-3 text-[13px] font-extrabold text-[#012749] border-b-2 border-blue-600">↗ Transfer Keluar <span class="ml-1 text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">8</span></button>
+        <button class="px-4 py-3 text-[13px] font-bold text-[#43474e]">ℹ Info Akun</button>
+      </div>
+
+      <div class="row-divider relative placeholder-badge">
+
+        <div class="p-4 hover:bg-blue-50/30 flex items-center gap-4 text-[13px]">
+          <span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded uppercase tracking-widest">✓ Success</span>
+          <div class="flex-1">
+            <div class="font-bold text-[#012749]">CV Supplier Jaya · BCA 3210987654</div>
+            <div class="text-[11px] text-[#43474e]">20 Jun 11:12 · Maker: Andre · Releaser: Tony · Brick ref: BRK-9821</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-rose-700">− Rp 3.500.000</div>
+            <a href="#" class="text-[11px] text-blue-700 hover:underline">Lihat cash_movement</a>
+          </div>
+        </div>
+
+        <div class="p-4 hover:bg-blue-50/30 flex items-center gap-4 text-[13px]">
+          <span class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded uppercase tracking-widest">⏳ Pending Releaser</span>
+          <div class="flex-1">
+            <div class="font-bold text-[#012749]">Gaji Andi · BCA 1112223334</div>
+            <div class="text-[11px] text-[#43474e]">20 Jun 11:00 · Maker: Andre · expires 18 menit</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-rose-700">Rp 5.000.000</div>
+            <a href="#" class="text-[11px] text-amber-700 font-bold hover:underline">Buka di Inbox →</a>
+          </div>
+        </div>
+
+        <div class="p-4 hover:bg-blue-50/30 flex items-center gap-4 text-[13px]">
+          <span class="px-2 py-1 bg-rose-100 text-rose-800 text-[10px] font-extrabold rounded uppercase tracking-widest">✗ Failed</span>
+          <div class="flex-1">
+            <div class="font-bold text-[#012749]">Test transfer · Mandiri 9999888877</div>
+            <div class="text-[11px] text-[#43474e]">18 Jun 09:30 · Brick error: "insufficient balance pre-check"</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-slate-500 line-through">Rp 50.000.000</div>
+            <span class="text-[11px] text-rose-700">Tidak ada movement</span>
+          </div>
+        </div>
+
+        <div class="p-4 hover:bg-blue-50/30 flex items-center gap-4 text-[13px]">
+          <span class="px-2 py-1 bg-slate-200 text-slate-700 text-[10px] font-extrabold rounded uppercase tracking-widest">✗ Releaser Tolak</span>
+          <div class="flex-1">
+            <div class="font-bold text-[#012749]">Beli laptop owner · BCA 1234567890</div>
+            <div class="text-[11px] text-[#43474e]">15 Jun 10:00 · Releaser Tony: "Bukan transfer bisnis, pakai Drawing"</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-slate-500 line-through">Rp 15.000.000</div>
+            <span class="text-[11px] text-slate-700">Cancelled</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <footer class="text-center text-[11px] text-[#43474e] pt-10 border-t border-[#e5eeff]">
+    Mockup oleh Claude · 2026-06-20 · <strong>SKETCH LEVEL</strong> · vendor TBD · placeholder data · <a href="../specs/2026-06-20-kas-bank-phase5-design.md" class="text-blue-700 hover:underline">Lihat spec Phase 5</a>
+  </footer>
+
+</div>
+</body>
+</html>

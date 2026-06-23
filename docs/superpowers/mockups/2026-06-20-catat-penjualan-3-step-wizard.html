@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Catat Penjualan — 3-Step Wizard Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: #012749; --secondary: #2d8a4e; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f8fafc; }
+    .mockup-frame { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .step-divider { background: repeating-linear-gradient(90deg, #cbd5e1 0 8px, transparent 8px 16px); height: 1px; }
+  </style>
+</head>
+<body class="text-slate-800">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Mockup</div>
+      <h1 class="text-base font-extrabold text-[#012749]">Catat Penjualan — 3-Step Wizard</h1>
+    </div>
+    <div class="text-xs text-slate-500">
+      Storyboard: scroll through Step 1 → 2 → 3 → Invoice preview. Click anywhere — nothing is wired.
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+
+  <!-- ============================================== -->
+  <!-- STEP 1 — CHANNEL & CUSTOMER -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 1 / 4 — Wizard Step 1</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <!-- App header (simplified) -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 1 dari 3 — Pilih channel & customer</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- STEPPER -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <!-- Step 1 — current -->
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-[#012749] text-white font-bold text-sm flex items-center justify-center">1</div>
+            <div class="text-sm font-semibold text-[#012749]">Channel & Customer</div>
+          </div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <!-- Step 2 — pending -->
+          <div class="flex items-center gap-2 opacity-50">
+            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">2</div>
+            <div class="text-sm font-medium text-slate-500">Pesanan</div>
+          </div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <!-- Step 3 — pending -->
+          <div class="flex items-center gap-2 opacity-50">
+            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">3</div>
+            <div class="text-sm font-medium text-slate-500">Pembayaran</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="p-6 space-y-6">
+
+        <!-- Channel selector -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Channel Penjualan <span class="text-red-500">*</span></label>
+          <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-[#012749]/5 border-2 border-[#012749] text-[#012749]">
+              <div class="text-xl">🏪</div>
+              <div class="text-[11px] font-bold">Walk-in</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <div class="text-xl">🛒</div><div class="text-[11px] font-semibold">Tokopedia</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <div class="text-xl">🟧</div><div class="text-[11px] font-semibold">Shopee</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <div class="text-xl">🟦</div><div class="text-[11px] font-semibold">Lazada</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <div class="text-xl">🟢</div><div class="text-[11px] font-semibold">WhatsApp</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">
+              <div class="text-xl">📷</div><div class="text-[11px] font-semibold">Instagram</div>
+            </button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-400 hover:bg-slate-50">
+              <div class="text-xl">⋯</div><div class="text-[11px] font-semibold">+ 8 lainnya</div>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">Channel terpilih: <strong class="text-[#012749]">Walk-in</strong> · Tidak perlu nomor order marketplace.</p>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <!-- Customer panel -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Customer <span class="text-red-500">*</span></label>
+
+          <!-- Search row -->
+          <div class="relative">
+            <input type="text" placeholder="Cari nama / HP / perusahaan..." value="PT Smoke"
+                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]" />
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5 italic">
+            💡 Tip: cari pakai nomor HP untuk auto-detect kalau customer pernah belanja sebelumnya — bantu repeat-buyer recognition.
+          </p>
+
+          <!-- Search results dropdown -->
+          <div class="mt-2 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white">
+            <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">PT Smoke Verify Alpha</div>
+                <div class="text-[11px] text-slate-500">PT Smoke Alpha · 081111111111</div>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">TEMPO OK</span>
+                <span class="text-slate-500">Limit Rp 5.000.000 · 30 hari</span>
+              </div>
+            </div>
+            <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between bg-[#012749]/5">
+              <div>
+                <div class="text-sm font-semibold text-[#012749]">PT Smoke Verify Bravo</div>
+                <div class="text-[11px] text-slate-500">PT Smoke Bravo · 082222222222</div>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">TEMPO OK</span>
+                <span class="text-slate-500">Limit Rp 10.000.000 · 14 hari</span>
+              </div>
+            </div>
+            <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">PT Smoke Verify Charlie</div>
+                <div class="text-[11px] text-slate-500">PT Smoke Charlie · 083333333333</div>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="text-slate-400">CASH ONLY</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom action row -->
+          <div class="mt-3 flex items-center justify-between text-[11px]">
+            <div class="text-slate-500">Tidak ketemu di daftar?</div>
+            <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Customer Baru</button>
+          </div>
+
+          <!-- INLINE: Customer Baru form expanded (shown when "+ Customer Baru" clicked) -->
+          <div class="mt-3 border-2 border-[#012749]/30 rounded-xl p-4 bg-[#012749]/5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="text-sm font-extrabold text-[#012749]">Customer Baru</div>
+                <div class="text-[11px] text-slate-600">Akan tersimpan ke daftar Pelanggan setelah disimpan. Bisa di-set TEMPO eligibility.</div>
+              </div>
+              <button class="text-slate-400 hover:text-slate-700 text-sm">×</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Nama <span class="text-red-500">*</span></label>
+                <input type="text" placeholder="Mis: PT Pelanggan Baru" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">No HP / WhatsApp <span class="text-red-500">*</span></label>
+                <input type="text" placeholder="08xxx" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Perusahaan / PT</label>
+                <input type="text" placeholder="Optional" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Alamat</label>
+                <input type="text" placeholder="Optional" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+            </div>
+
+            <!-- TEMPO request (optional, fires approval to Owner) -->
+            <div class="mt-3 pt-3 border-t border-[#012749]/20">
+              <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                <input type="checkbox" class="rounded" />
+                Ajukan TEMPO (kredit) untuk customer ini
+              </label>
+              <p class="text-[11px] text-slate-500 mt-1 ml-6">
+                Centang kalau customer mau bayar nanti. <strong>Butuh approval Owner dulu</strong> — request masuk ke Persetujuan, customer baru bisa pakai TEMPO setelah disetujui.
+              </p>
+
+              <!-- TEMPO request fields: limit + term + reason -->
+              <div class="mt-2 ml-6 space-y-2 opacity-50">
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Limit Kredit yang diminta (Rp)</label>
+                    <input type="text" disabled placeholder="Mis: 5.000.000" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Term (hari)</label>
+                    <input type="text" disabled placeholder="Mis: 14" class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-600 mb-1">Alasan / Justifikasi (optional)</label>
+                  <textarea disabled rows="2" placeholder="Mis: Customer regular, sudah belanja 3x via WA. Owner tetangga sebelah." class="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg"></textarea>
+                  <p class="text-[10px] text-slate-500 mt-1 italic">Bantu Owner decide cepat. Tampil sebagai blockquote di Persetujuan inbox.</p>
+                </div>
+              </div>
+
+              <p class="text-[11px] text-amber-700 mt-2 ml-6 italic">
+                ⚠️ Untuk transaksi sekarang: customer baru saja dibuat & TEMPO belum di-approve, jadi pesanan ini harus pakai <strong>LUNAS</strong> atau <strong>DP</strong>. TEMPO bisa dipakai untuk pesanan berikutnya setelah Owner approve.
+              </p>
+            </div>
+
+            <div class="mt-3 flex justify-end gap-2">
+              <button class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Batal</button>
+              <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">✓ Simpan & Pilih</button>
+            </div>
+          </div>
+
+          <!-- Founder rule: no ad-hoc -->
+          <p class="mt-2 text-[11px] text-slate-500 italic">
+            ℹ️ Setiap customer wajib tersimpan di daftar Pelanggan — database MSME penting buat analisa repeat-buyer, segmentasi, dan TEMPO eligibility. Tidak ada shortcut ad-hoc.
+          </p>
+        </div>
+      </div>
+
+      <!-- FOOTER NAV -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-[11px] text-slate-500">Catatan: <strong>Lanjut</strong> aktif setelah channel & customer dipilih.</div>
+        <div class="flex gap-2">
+          <button disabled class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-400 cursor-not-allowed">← Kembali</button>
+          <button class="px-5 py-2 text-sm font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">Lanjut ke Pesanan →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- STEP 2 — ITEMS -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 2 / 4 — Wizard Step 2</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 2 dari 3 — Tambah produk & jasa</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- STEPPER -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <!-- Step 1 — completed, clickable -->
+          <button class="flex items-center gap-2 hover:opacity-80">
+            <div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div>
+            <div class="text-sm font-semibold text-slate-700">Channel & Customer</div>
+          </button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <!-- Step 2 — current -->
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-[#012749] text-white font-bold text-sm flex items-center justify-center">2</div>
+            <div class="text-sm font-semibold text-[#012749]">Pesanan</div>
+          </div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <div class="flex items-center gap-2 opacity-50">
+            <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">3</div>
+            <div class="text-sm font-medium text-slate-500">Pembayaran</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context recap (sticky reminder of Step 1 choices) -->
+      <div class="px-6 py-3 bg-[#012749]/5 border-b border-slate-100 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-3">
+          <span class="text-slate-600">🏪 <strong>Walk-in</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">👤 <strong>PT Smoke Verify Bravo</strong></span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">TEMPO OK · Rp 10jt limit</span>
+        </div>
+        <button class="text-[#012749] font-semibold hover:underline">Ubah</button>
+      </div>
+
+      <!-- BODY -->
+      <div class="grid grid-cols-12 gap-6 p-6">
+
+        <!-- LEFT: Search + add -->
+        <div class="col-span-5 space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tambah Produk</label>
+            <input type="text" placeholder="Cari nama / SKU..." value="MCB"
+                   class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]" />
+          </div>
+
+          <!-- Search results -->
+          <div class="border border-slate-200 rounded-xl divide-y divide-slate-100">
+            <div class="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">MCB 6A 1P Schneider</div>
+                <div class="text-[11px] text-slate-500">SKU: MCB-6A-1P-SCH · Rp 125.000</div>
+                <div class="text-[11px] mt-0.5">
+                  <span class="text-emerald-600">Atas: 23</span> · <span class="text-emerald-600">Bawah: 45</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Tambah</button>
+            </div>
+            <div class="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">MCB 16A 1P Schneider</div>
+                <div class="text-[11px] text-slate-500">SKU: MCB-16A-1P-SCH · Rp 135.000</div>
+                <div class="text-[11px] mt-0.5">
+                  <span class="text-emerald-600">Atas: 12</span> · <span class="text-amber-600">Bawah: 2 (tipis)</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Tambah</button>
+            </div>
+            <div class="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">MCB 32A 3P Schneider</div>
+                <div class="text-[11px] text-slate-500">SKU: MCB-32A-3P-SCH · Rp 485.000</div>
+                <div class="text-[11px] mt-0.5">
+                  <span class="text-rose-600">Atas: 0</span> · <span class="text-emerald-600">Bawah: 8</span>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Tambah</button>
+            </div>
+          </div>
+
+          <!-- Rakit/jasa toggles -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-4">Tambah Jasa (Optional)</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100">+ Custom Panel</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100">+ Wiring Panel</button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5 italic">Skip jasa kalau pesanan ini cuma jual komponen.</p>
+          </div>
+        </div>
+
+        <!-- RIGHT: Cart -->
+        <div class="col-span-7">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">Keranjang (3 item · 1 jasa)</label>
+            <button class="text-[11px] text-rose-600 font-semibold hover:underline">× Kosongkan</button>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+
+            <!-- Item row 1 -->
+            <div class="px-4 py-3 hover:bg-slate-50">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold">MCB 6A 1P Schneider</div>
+                <button class="text-rose-500 hover:text-rose-700 text-sm">×</button>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Qty:</span>
+                  <button class="w-7 h-7 rounded border border-slate-300 hover:bg-slate-50">−</button>
+                  <input type="text" value="4" class="w-12 text-center border border-slate-300 rounded py-1" />
+                  <button class="w-7 h-7 rounded border border-slate-300 hover:bg-slate-50">+</button>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Gudang:</span>
+                  <select class="text-xs border border-slate-300 rounded px-2 py-1">
+                    <option>Atas (23 tersedia)</option>
+                    <option>Bawah (45 tersedia)</option>
+                  </select>
+                </div>
+                <div class="ml-auto font-bold text-[#012749]">Rp 500.000</div>
+              </div>
+            </div>
+
+            <!-- Item row 2: PRE-ORDER (stock insufficient — sale allowed anyway) -->
+            <div class="px-4 py-3 hover:bg-slate-50 bg-amber-50/30">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="text-sm font-semibold">MCB 32A 3P Schneider</div>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider" title="Stok kurang 5 unit — akan dipenuhi setelah supplier kirim">⏳ Pre-order · kurang 5</span>
+                </div>
+                <button class="text-rose-500 hover:text-rose-700 text-sm">×</button>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Qty:</span>
+                  <button class="w-7 h-7 rounded border border-slate-300 hover:bg-slate-50">−</button>
+                  <input type="text" value="5" class="w-12 text-center border border-slate-300 rounded py-1" />
+                  <button class="w-7 h-7 rounded border border-slate-300 hover:bg-slate-50">+</button>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Gudang:</span>
+                  <select class="text-xs border border-slate-300 rounded px-2 py-1">
+                    <option>Atas (0 tersedia)</option>
+                    <option>Bawah (0 tersedia)</option>
+                  </select>
+                </div>
+                <div class="ml-auto font-bold text-[#012749]">Rp 2.425.000</div>
+              </div>
+            </div>
+
+            <!-- Rakit line: lump-sum jasa (qty=0 allowed!) -->
+            <div class="px-4 py-3 bg-purple-50/40">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-bold uppercase tracking-wider">Custom Panel · Lump Sum</span>
+                  <div class="text-sm font-semibold">Panel 3-Phase Genset 50kVA</div>
+                </div>
+                <button class="text-rose-500 hover:text-rose-700 text-sm">×</button>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Deskripsi:</span>
+                  <input type="text" value="Customer minta full assembly + label + cabling, komponen menyusul"
+                         class="border border-slate-300 rounded px-2 py-1 w-96" />
+                </div>
+                <div class="ml-auto flex items-center gap-1">
+                  <span class="text-slate-500">Est. Harga:</span>
+                  <input type="text" value="3.500.000" class="w-28 text-right border border-slate-300 rounded px-2 py-1" />
+                </div>
+              </div>
+              <p class="text-[11px] text-purple-700 mt-2 italic">ℹ️ Lump-sum: tidak perlu pilih komponen sekarang. Owner finalisasi nanti via Persetujuan Rakit Lock.</p>
+            </div>
+
+          </div>
+
+          <!-- Pre-order summary banner -->
+          <div class="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+            <span>⏳</span>
+            <div>
+              <strong>1 item pre-order</strong> di pesanan ini — stok minus akan dipenuhi setelah supplier kirim (lihat menu Pembelian).
+              Customer akan dapat invoice dengan catatan "Pre-order" di item terkait.
+            </div>
+          </div>
+
+          <!-- Cart totals -->
+          <div class="mt-3 bg-slate-50 rounded-xl p-4 space-y-1.5">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Subtotal Produk (3 item, 1 pre-order)</span>
+              <span class="font-semibold">Rp 3.195.000</span>
+            </div>
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600">Subtotal Jasa (1 lump-sum)</span>
+              <span class="font-semibold">Rp 3.500.000</span>
+            </div>
+            <div class="border-t border-slate-200 my-1.5"></div>
+            <div class="flex justify-between text-sm">
+              <span class="font-bold text-slate-700">Total Pesanan</span>
+              <span class="font-extrabold text-[#012749] text-lg">Rp 6.695.000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-[11px] text-slate-500">⚠️ Pesanan ini mengandung jasa lump-sum → akan masuk Owner Persetujuan Rakit Lock setelah Simpan.</div>
+        <div class="flex gap-2">
+          <button class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100">← Kembali</button>
+          <button class="px-5 py-2 text-sm font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">Lanjut ke Pembayaran →</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- STEP 3 — PAYMENT -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 3 / 4 — Wizard Step 3</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 3 dari 3 — Pembayaran & finalisasi</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- STEPPER -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-2 hover:opacity-80">
+            <div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div>
+            <div class="text-sm font-semibold text-slate-700">Channel & Customer</div>
+          </button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <button class="flex items-center gap-2 hover:opacity-80">
+            <div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div>
+            <div class="text-sm font-semibold text-slate-700">Pesanan</div>
+          </button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-[#012749] text-white font-bold text-sm flex items-center justify-center">3</div>
+            <div class="text-sm font-semibold text-[#012749]">Pembayaran</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context recap -->
+      <div class="px-6 py-3 bg-[#012749]/5 border-b border-slate-100 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-slate-600">🏪 <strong>Walk-in</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">👤 <strong>PT Smoke Verify Bravo</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">📦 3 item + 1 jasa</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-bold text-[#012749]">Rp 4.270.000</span>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="grid grid-cols-12 gap-6 p-6">
+
+        <!-- LEFT: Payment type & method -->
+        <div class="col-span-7 space-y-5">
+
+          <!-- Payment type tabs -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tipe Pembayaran <span class="text-red-500">*</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="px-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300">
+                <div class="font-bold text-sm">LUNAS</div>
+                <div class="text-[11px] text-slate-500">Bayar penuh sekarang</div>
+              </button>
+              <button class="px-4 py-3 rounded-xl bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300">
+                <div class="font-bold text-sm">DP</div>
+                <div class="text-[11px] text-slate-500">Bayar muka sebagian</div>
+              </button>
+              <button class="px-4 py-3 rounded-xl bg-amber-50 border-2 border-amber-500 text-amber-900">
+                <div class="font-bold text-sm">TEMPO</div>
+                <div class="text-[11px] text-amber-700">Bayar nanti (kredit)</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- TEMPO context box -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div class="text-xs font-bold text-amber-900 mb-2 uppercase tracking-wider">Status Kredit Customer</div>
+            <div class="grid grid-cols-3 gap-3 text-xs">
+              <div>
+                <div class="text-amber-700 text-[10px] uppercase tracking-wider">Limit</div>
+                <div class="font-bold text-base text-amber-900">Rp 10.000.000</div>
+              </div>
+              <div>
+                <div class="text-amber-700 text-[10px] uppercase tracking-wider">Outstanding</div>
+                <div class="font-bold text-base text-amber-900">Rp 2.750.000</div>
+              </div>
+              <div>
+                <div class="text-amber-700 text-[10px] uppercase tracking-wider">Sisa Tersedia</div>
+                <div class="font-bold text-base text-emerald-700">Rp 7.250.000</div>
+              </div>
+            </div>
+            <div class="text-[11px] text-amber-800 mt-3">
+              💳 Term: <strong>14 hari</strong> · Jatuh tempo: <strong>04 Jul 2026</strong>
+            </div>
+            <div class="text-[11px] text-emerald-700 mt-1 font-semibold">
+              ✓ Pesanan Rp 4.270.000 cukup di sisa kredit.
+            </div>
+          </div>
+
+          <!-- Payment method (faded for TEMPO since N/A) -->
+          <div class="opacity-50">
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Metode Bayar (untuk pelunasan nanti)</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">💵 Cash</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">🏦 Transfer</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">📱 QRIS</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">💳 EDC</button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5 italic">Optional — bisa di-set saat pelunasan via Catat Bayar.</p>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Ongkir + notes + summary -->
+        <div class="col-span-5 space-y-4">
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">Ongkir</label>
+              <label class="flex items-center gap-1 text-[11px]">
+                <input type="checkbox" checked /> Pakai ongkir
+              </label>
+            </div>
+            <input type="text" value="50.000" class="w-full text-right px-3 py-2 border border-slate-300 rounded-lg" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Alamat Pengiriman</label>
+            <textarea rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">Jl Industri Blok C-12, Cikupa, Tangerang</textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Catatan</label>
+            <textarea rows="2" placeholder="Mis: kirim Selasa, jangan hari libur" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"></textarea>
+          </div>
+
+          <!-- Final summary -->
+          <div class="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">
+            <div class="flex justify-between text-xs opacity-80">
+              <span>Subtotal pesanan</span>
+              <span>Rp 4.270.000</span>
+            </div>
+            <div class="flex justify-between text-xs opacity-80">
+              <span>Ongkir</span>
+              <span>Rp 50.000</span>
+            </div>
+            <div class="border-t border-white/20 my-1.5"></div>
+            <div class="flex justify-between text-sm font-bold">
+              <span>TOTAL (TEMPO)</span>
+              <span class="text-xl">Rp 4.320.000</span>
+            </div>
+            <div class="text-[11px] mt-2 opacity-80">
+              Jatuh tempo: <strong>04 Jul 2026</strong> · Outstanding setelah: <strong>Rp 7.070.000</strong>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-[11px] text-slate-500">⚠️ Karena ada jasa lump-sum, setelah Simpan order akan masuk WIP dan butuh Owner Lock.</div>
+        <div class="flex gap-2">
+          <button class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100">← Kembali</button>
+          <button class="px-6 py-2 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d]">✓ Simpan Penjualan</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- POST-SAVE INVOICE PREVIEW -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 4 / 4 — Post-Save Invoice Preview</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-emerald-600">✓</span>
+            <h1 class="text-lg font-extrabold text-[#012749]">Penjualan Tersimpan</h1>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Invoice <strong>INV-2026-06-0142</strong> · TEMPO · Menunggu Owner Lock</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100">📋 Lihat di Daftar Pesanan</button>
+          <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Catat Penjualan Lagi</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 p-6">
+
+        <!-- LEFT: Invoice preview (uses EXISTING SalesInvoicePDF.tsx — placeholder for mockup) -->
+        <div class="col-span-8">
+          <div class="bg-slate-100 rounded-xl p-6 min-h-[500px] flex items-center justify-center">
+            <div class="bg-white shadow-lg rounded p-8 max-w-2xl w-full text-center">
+              <div class="text-5xl mb-4 opacity-30">📄</div>
+              <div class="text-base font-bold text-slate-700 mb-2">Preview Invoice</div>
+              <div class="text-sm text-slate-500 mb-4">
+                Template invoice akan menggunakan komponen yang sudah ada:<br/>
+                <code class="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">src/components/penjualan/SalesInvoicePDF.tsx</code>
+              </div>
+              <div class="text-xs text-slate-400 italic border-t border-slate-200 pt-3 mt-3">
+                Layout / branding / format tidak berubah — wizard cuma mengganti entry flow, output invoice tetap sama.
+              </div>
+              <div class="mt-4 text-[11px] text-slate-500">
+                INV-2026-06-0142 · TEMPO 14 hari · Total Rp 4.320.000
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Actions -->
+        <div class="col-span-4 space-y-2">
+          <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Cetak</div>
+          <button class="w-full px-4 py-3 text-sm font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 flex items-center justify-center gap-2">
+            🖨️ Printer Biasa (A4 / A5)
+          </button>
+          <button class="w-full px-4 py-3 text-sm font-bold rounded-lg bg-slate-700 text-white hover:bg-slate-800 flex items-center justify-center gap-2">
+            🖨️ Dot Matrix (struk panjang)
+          </button>
+          <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-4">File & Share</div>
+          <button class="w-full px-4 py-3 text-sm font-bold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center gap-2">
+            📱 Bagikan via WhatsApp
+          </button>
+          <button class="w-full px-4 py-3 text-sm font-semibold rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center justify-center gap-2">
+            ⬇️ Download PDF
+          </button>
+
+          <div class="mt-6 pt-4 border-t border-slate-200">
+            <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Status Workflow</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2 text-emerald-700">
+                <div class="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">✓</div>
+                <span>Pesanan tercatat</span>
+              </div>
+              <div class="flex items-center gap-2 text-amber-700">
+                <div class="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">⌛</div>
+                <span>Menunggu Owner Lock</span>
+              </div>
+              <div class="flex items-center gap-2 text-slate-400">
+                <div class="w-5 h-5 rounded-full bg-slate-300 text-white text-[10px] font-bold flex items-center justify-center">3</div>
+                <span>Tunggu pelunasan TEMPO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- NOTES + FULL DECISIONS RECAP -->
+  <!-- ============================================== -->
+  <section class="bg-slate-100 rounded-2xl p-6">
+    <div class="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-3">Catatan Mockup + Recap Keputusan (A1–A4, B5–B9)</div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <div class="text-xs font-extrabold text-slate-700 mb-2">UX yang visible di mockup</div>
+        <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside">
+          <li><strong>Stepper:</strong> Step selesai hijau ✓ (clickable jump-back). Step current navy. Pending abu-abu locked.</li>
+          <li><strong>Context recap bar</strong> di Step 2 + 3: ringkas pilihan sebelumnya, "Ubah" untuk jump-back.</li>
+          <li><strong>Tidak ada ad-hoc customer.</strong> Tidak ada Walk-in Cash placeholder. Tips di search: cari pakai HP untuk repeat-buyer auto-detect.</li>
+          <li><strong>"+ Customer Baru" inline form:</strong> nama + HP + perusahaan + alamat. Optional checkbox "Ajukan TEMPO" + 3 fields (limit, term, alasan optional). TEMPO fire <code>customer_credit_activate</code> approval; customer saved with allows_tempo=false sampai Owner approve.</li>
+          <li><strong>Jasa hanya 2 jenis:</strong> Custom Panel + Wiring Panel. Pure-component sale valid.</li>
+          <li><strong>Lump-sum jasa:</strong> qty=0 OK. Owner finalisasi via Rakit Lock.</li>
+          <li><strong>Pre-order:</strong> stock boleh minus. Yellow chip per-row "⏳ PRE-ORDER · kurang N" + summary banner. Backend pass <code>allow_negative_stock=true</code>.</li>
+          <li><strong>TEMPO context box</strong> (Step 3): limit/outstanding/sisa real-time. Over-limit → Simpan disabled.</li>
+          <li><strong>Banner ⚠️</strong> Step 2 & 3: "mengandung jasa lump-sum → WIP + Owner Lock".</li>
+          <li><strong>Post-save:</strong> existing <code>SalesInvoicePDF.tsx</code>. Aksi: Cetak Printer Biasa, Cetak Dot Matrix, Bagikan WA, Download PDF. "+ Catat Penjualan Lagi" reset wizard.</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="text-xs font-extrabold text-slate-700 mb-2">Backend Prereqs (off-mockup, perlu disiapkan)</div>
+        <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside">
+          <li>Migration: <code>ALTER TABLE customers ADD COLUMN address TEXT</code></li>
+          <li>Migration: <code>recordSale</code> + <code>create_tempo_invoice</code> + <code>insertWipWithRakit</code> dapat new param <code>p_allow_negative_stock BOOLEAN DEFAULT false</code>; relax stock-check ketika true.</li>
+          <li>Migration: drop <code>stock_lots</code> CHECK <code>qty_remaining &gt;= 0</code> kalau ada.</li>
+          <li>New RPC: <code>reject_customer_credit_activate(p_request_id, p_reason)</code>.</li>
+          <li>Modify <code>record_pi</code> body: insert audit <code>preorder_fulfilled</code> ketika SKU yang masuk punya stock balance pre-call &lt; 0 (FIFO oldest order_id).</li>
+        </ul>
+
+        <div class="text-xs font-extrabold text-slate-700 mt-4 mb-2">Cross-cutting (Category C — documented, ga block)</div>
+        <ul class="text-xs text-slate-700 space-y-1.5 list-disc list-inside">
+          <li>Kasir walk-in: keep current behavior (no pre-order; physical-customer-present).</li>
+          <li>SalesInvoicePDF.tsx: tambah footnote "*Pre-order" per row + dot-matrix print mode (narrow + monospace).</li>
+          <li>Dashboard: card baru "Recent pre-order fulfillments (last 7 days)" + "Notify WA" button per row (manual).</li>
+          <li>Stock Manager: negative stock sudah tampil merah (existing).</li>
+          <li>EditOrderModal: stays compatible.</li>
+          <li>Permission: reuse <code>pelanggan</code> flag — no new permission.</li>
+          <li>ApprovalInboxScreen: tambah dispatch arm + new <code>CustomerCreditActivateApprovalRequestRow</code> component.</li>
+        </ul>
+
+        <div class="text-xs font-extrabold text-slate-700 mt-4 mb-2">Deferred (Category D — future)</div>
+        <ul class="text-xs text-slate-500 space-y-1 list-disc list-inside">
+          <li>Draft persistence mid-wizard.</li>
+          <li>Public PDF URL untuk WA share (saat ini text only).</li>
+          <li>Auto-WA notification saat pre-order fulfill (saat ini manual).</li>
+          <li>Keyboard shortcuts (Tab/Enter).</li>
+          <li>Mobile responsive layout.</li>
+          <li>PIN→auth.uid modernization untuk <code>approve_customer_credit_activate</code> (cross-cutting cleanup, separate PR).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-6 pt-6 border-t border-slate-300 text-[11px] text-slate-500 italic">
+      Total scope: replace 624-line <code>PenjualanBaruScreen.tsx</code> → 6 new files (~900 LOC) + 4 backend migrations + 1 new RPC + 2 new approval-inbox components + audit log additions. Estimasi ~3-4 hari kerja kalau pakai subagent-driven-development pattern.
+    </div>
+  </section>
+
+</main>
+
+<footer class="text-center text-[11px] text-slate-400 py-6">
+  Mockup — bukan aplikasi live. Untuk review sebelum implementasi.
+</footer>
+
+</body>
+</html>

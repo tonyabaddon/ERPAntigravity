@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Demo — Buka di Tab Baru (URL Routing)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f3f4f6;
+    color: #111827;
+    min-height: 100vh;
+    display: flex;
+  }
+  /* Sidebar styled mirip Sidebar.tsx (#012749 navy + emerald accents) */
+  aside {
+    width: 240px;
+    background: #012749;
+    padding: 24px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 20px 50px rgba(1, 39, 73, 0.25);
+    border-radius: 0 24px 24px 0;
+  }
+  .brand {
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+    padding: 0 16px 16px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 12px;
+  }
+  .brand small {
+    display: block;
+    color: #34d399;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    margin-top: 4px;
+    font-weight: 700;
+  }
+  .cat {
+    color: rgba(52, 211, 153, 0.7);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 12px 16px 6px 16px;
+  }
+  /* THIS IS THE KEY BIT: anchor tag, bukan button */
+  aside a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;          /* tidak underline */
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 999px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  aside a:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+  aside a.active {
+    background: rgba(255,255,255,0.15);
+    color: #34d399;
+    font-weight: 700;
+  }
+  /* Main content */
+  main {
+    flex: 1;
+    padding: 32px 48px;
+    overflow-y: auto;
+  }
+  h1 { font-size: 24px; margin-bottom: 8px; }
+  .subtitle { color: #6b7280; margin-bottom: 24px; }
+  .card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid #e5e7eb;
+  }
+  .url-display {
+    background: #1f2937;
+    color: #34d399;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 13px;
+    margin: 12px 0;
+    word-break: break-all;
+  }
+  .url-display strong { color: #fbbf24; }
+  .badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .instruction {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .instruction h3 { font-size: 14px; margin-bottom: 8px; color: #78350f; }
+  .instruction ul { margin-left: 18px; color: #78350f; }
+  .instruction li { margin: 6px 0; font-size: 13px; }
+  kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  }
+  .log {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    color: #374151;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .log-entry { padding: 4px 0; border-bottom: 1px dashed #e5e7eb; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-time { color: #9ca3af; }
+  .screen-content {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+  }
+  .screen-content .icon { font-size: 48px; margin-bottom: 12px; }
+  .screen-content h2 { color: #047857; font-size: 22px; }
+  .screen-content p { color: #065f46; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">
+    Garindo Jaya Panel
+    <small>DEMO — URL ROUTING</small>
+  </div>
+
+  <div class="cat">Operasional</div>
+  <a href="?screen=dashboard"  data-screen="dashboard">📊 Dashboard</a>
+  <a href="?screen=penjualan"  data-screen="penjualan">🛒 Penjualan</a>
+  <a href="?screen=pelanggan"  data-screen="pelanggan">👥 Pelanggan</a>
+
+  <div class="cat">Inventory</div>
+  <a href="?screen=ai-stock"   data-screen="ai-stock">📦 Stok</a>
+  <a href="?screen=pembelian"  data-screen="pembelian">🛍️ Pembelian</a>
+
+  <div class="cat">Sistem</div>
+  <a href="?screen=settings"   data-screen="settings">⚙️ Pengaturan</a>
+</aside>
+
+<main>
+  <h1>Demo — "Buka di Tab Baru" <span class="badge">URL Routing</span></h1>
+  <p class="subtitle">Sidebar di atas pakai pattern <code>&lt;a href&gt;</code> + SPA click handler. Coba interaksi di bawah supaya feel-nya nyambung.</p>
+
+  <div class="instruction">
+    <h3>🎯 Coba sekarang:</h3>
+    <ul>
+      <li><strong>Click biasa</strong> sidebar item → halaman ganti in-place, URL bar ikut update, browser back/forward jalan</li>
+      <li><kbd>Ctrl</kbd>+<strong>click</strong> (Windows/Linux) atau <kbd>⌘ Cmd</kbd>+<strong>click</strong> (Mac) → browser buka tab baru</li>
+      <li><strong>Middle-click</strong> (klik tombol scroll mouse) → browser buka tab baru</li>
+      <li><strong>Right-click</strong> → context menu native browser muncul "Open in new tab" / "Open in new window"</li>
+      <li>Pencet <strong>F5 / refresh</strong> setelah pindah screen → tetap di screen yang sama (TIDAK balik ke dashboard)</li>
+      <li>Pencet <strong>browser back button</strong> setelah pindah beberapa screen → kembali ke screen sebelumnya</li>
+      <li>Paste URL <code>?screen=pelanggan</code> di tab baru → langsung buka Pelanggan</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 14px; margin-bottom: 8px;">📍 URL bar saat ini</h3>
+    <div class="url-display" id="urlBar">memuat...</div>
+    <p style="font-size: 12px; color: #6b7280;">
+      Klik sidebar → URL berubah via <code>history.pushState</code>. Tidak ada page reload.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="screen-content" id="screenContent">
+      <div>
+        <div class="icon">📊</div>
+        <h2>Dashboard</h2>
+        <p>Ini area konten utama. Akan berubah sesuai screen yang aktif.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 14px; margin-bottom: 8px;">📜 Event log (live)</h3>
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">
+      Tiap click di sidebar bakal tercatat di sini supaya kelihatan apa yang sistem deteksi.
+    </p>
+    <div class="log" id="eventLog">
+      <div class="log-entry"><span class="log-time">[init]</span> Demo siap. Coba click sidebar di kiri.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 14px; margin-bottom: 8px;">🔍 Logic snippet yang dipakai demo ini</h3>
+    <pre style="background: #1f2937; color: #e5e7eb; padding: 16px; border-radius: 8px; font-size: 11px; overflow-x: auto;">// SAMA dengan handleSPAClick() di spec
+function handleSPAClick(e, screen) {
+  // Modifier key apapun = let browser handle natively
+  if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  // Bukan left-click = let browser handle (middle-click = button 1)
+  if (e.button !== 0) return;
+  // Plain left-click = SPA navigate
+  e.preventDefault();
+  navigate(screen);
+}
+
+function navigate(screen) {
+  history.pushState({}, '', '?screen=' + screen);
+  renderScreen(screen);
+}
+
+// Browser back/forward
+window.addEventListener('popstate', () => {
+  renderScreen(getScreenFromURL());
+});</pre>
+  </div>
+</main>
+
+<script>
+  const SCREENS = {
+    dashboard:  { icon: '📊', label: 'Dashboard',  desc: 'KPI ringkasan + grafik penjualan harian.' },
+    penjualan:  { icon: '🛒', label: 'Penjualan',  desc: 'List order + status fulfillment.' },
+    pelanggan:  { icon: '👥', label: 'Pelanggan',  desc: 'Customer database + history.' },
+    'ai-stock': { icon: '📦', label: 'Stok',       desc: 'Inventory level + warehouse view.' },
+    pembelian:  { icon: '🛍️', label: 'Pembelian',  desc: 'PO supplier + BNL invoice tracking.' },
+    settings:   { icon: '⚙️', label: 'Pengaturan', desc: 'Konfigurasi sistem + user management.' },
+  };
+
+  function getScreenFromURL() {
+    const p = new URLSearchParams(window.location.search);
+    const s = p.get('screen');
+    return SCREENS[s] ? s : 'dashboard';
+  }
+
+  function renderScreen(screen) {
+    const meta = SCREENS[screen];
+    document.getElementById('screenContent').innerHTML = `
+      <div>
+        <div class="icon">${meta.icon}</div>
+        <h2>${meta.label}</h2>
+        <p>${meta.desc}</p>
+      </div>
+    `;
+    document.querySelectorAll('aside a').forEach(a => {
+      a.classList.toggle('active', a.dataset.screen === screen);
+    });
+    document.getElementById('urlBar').innerHTML =
+      window.location.origin + window.location.pathname + '<strong>?screen=' + screen + '</strong>';
+  }
+
+  function log(msg) {
+    const el = document.getElementById('eventLog');
+    const now = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">[${now}]</span> ${msg}`;
+    el.insertBefore(entry, el.firstChild);
+  }
+
+  // === THE CORE: handleSPAClick + navigate ===
+  function handleSPAClick(e, screen) {
+    const mods = [];
+    if (e.ctrlKey) mods.push('Ctrl');
+    if (e.metaKey) mods.push('Cmd');
+    if (e.shiftKey) mods.push('Shift');
+    if (e.altKey) mods.push('Alt');
+    const btnName = e.button === 0 ? 'left' : e.button === 1 ? 'middle' : e.button === 2 ? 'right' : 'other';
+
+    if (mods.length > 0 || e.button !== 0) {
+      log(`🌐 ${btnName}-click${mods.length ? ' + ' + mods.join('+') : ''} → <strong>browser handle</strong> (new tab opens)`);
+      return;
+    }
+    e.preventDefault();
+    history.pushState({}, '', '?screen=' + screen);
+    log(`✅ plain left-click → <strong>SPA navigate</strong> to "${screen}" (no reload)`);
+    renderScreen(screen);
+  }
+
+  document.querySelectorAll('aside a').forEach(a => {
+    a.addEventListener('click', (e) => handleSPAClick(e, a.dataset.screen));
+    a.addEventListener('auxclick', (e) => {
+      if (e.button === 1) {
+        log(`🌐 middle-click on "${a.dataset.screen}" → <strong>browser handle</strong> (new tab opens)`);
+      }
+    });
+    a.addEventListener('contextmenu', () => {
+      log(`📋 right-click on "${a.dataset.screen}" → native browser menu`);
+    });
+  });
+
+  window.addEventListener('popstate', () => {
+    const s = getScreenFromURL();
+    log(`⬅️ popstate (back/forward) → render "${s}"`);
+    renderScreen(s);
+  });
+
+  // Initial render
+  renderScreen(getScreenFromURL());
+  log(`🚀 demo loaded — initial screen: "${getScreenFromURL()}"`);
+</script>
+</body>
+</html>
