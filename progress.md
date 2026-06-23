@@ -9228,3 +9228,6 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **Manual smoke test:** Deferred (no dev server in subagent environment). In production, would verify 10 toggles render in Pengaturan UI, toggle defaults ON, persist correctly across refresh.
 - **Commit:** (pending).
 - **Report:** `.superpowers/sdd/task-9-report.md` documents lint output + status.
+
+## 2026-06-23 — Diskon Fitur Task 12 — record_pi RPC with Discount DONE
+- ✅ Diskon Task 12: record_pi extended with per-item + order-level discount, 3-line JE on discount (5-1900 CREDIT). 3 smokes PASS (happy/markup/over-discount). Branch worktree-diskon. Migration 20260801000006.
