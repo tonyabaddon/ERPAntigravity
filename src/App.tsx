@@ -44,6 +44,7 @@ import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 import ManajemenGudangScreen from './components/ManajemenGudangScreen';
 import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
 import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
+import DaftarPenawaranScreen from './components/penjualan/DaftarPenawaranScreen';
 import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
 import KasBankScreen from './components/kasbank/KasBankScreen';
 import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
@@ -541,13 +542,17 @@ export default function App() {
             onOpenCustomer={handleOpenCustomer}
           />
         );
-      case 'penjualanBaru':
+      case 'penjualanBaru': {
+        const wizardMode = route.params.mode === 'quote' ? 'quote' : 'invoice';
+        const wizardFromSo = route.params.fromSo;
         return (
           <CatatPenjualanWizard
             currentUser={currentUser}
             showToast={triggerToast}
             initialChannel={penjualanInitialChannel}
             initialPrefillSku={penjualanInitialPrefillSku}
+            mode={wizardMode}
+            fromSalesOrderId={wizardFromSo}
             onBack={() => navigate('kasir')}
             onSaved={(txId) => {
               // Park the id in App-scoped state so the next page (chosen
@@ -562,6 +567,7 @@ export default function App() {
             onNavigate={(page) => navigate(page)}
           />
         );
+      }
       case 'invoicePreview':
         return invoicePreviewOrderId ? (
           <InvoicePreviewScreen
@@ -577,6 +583,8 @@ export default function App() {
             Invoice tidak tersedia. Silakan catat penjualan baru.
           </div>
         );
+      case 'daftarPenawaran':
+        return <DaftarPenawaranScreen showToast={triggerToast} />;
       case 'rekonsiliasi':
         return (
           <RekonsiliasiScreen
