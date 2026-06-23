@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Sales Order (Penawaran) Task 11 — Step3Payment mode='quote' branch DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `c676e1f`
+- **File modified:** `src/components/penjualan/wizard/Step3Payment.tsx`
+- Added `mode?: 'invoice' | 'quote'` prop to Props interface (default `'invoice'`).
+- Existing JSX extracted verbatim into `renderInvoiceMode()` closure; no JSX changes.
+- New `renderQuoteMode()` closure: info banner (blue-50) + catatan textarea (4 rows, extended placeholder) + amber summary card (subtotal only, ongkir disclaimer) + amber Simpan button.
+- Branch at bottom: `if (mode === 'quote') return renderQuoteMode(); return renderInvoiceMode();`
+- `formatRp` already imported — no new import needed.
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 failures pre-existing in unrelated worktree `.claude/worktrees/diskon/`).
+
+## 2026-06-23 — Sales Order (Penawaran) Task 9 — NewProductInlineForm + validator DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `99d6318`
+- **Files created:** `src/lib/wizard/newProductValidation.ts`, `src/lib/wizard/newProductValidation.test.ts`, `src/components/penjualan/wizard/NewProductInlineForm.tsx`
+- Pure validator `validateNewProductForm` + `parsePriceLike` helper (accepts Rp notation: "45.000", "45,000", "45000").
+- React component `<NewProductInlineForm>` wires validator + `insertNewProduct` from T8; datalist for categories, unit select, optional HPP, subcategory/brand fields.
+- **Tests: 7/7 PASS** (TDD: test-first). `npx tsc --noEmit`: clean.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 7 — salesOrderService wrappers + vitest DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `1b5f930`
+- **Files created:** `src/lib/salesOrderService.ts`, `src/lib/salesOrderService.test.ts`
+- 5 wrapper functions: `createSalesOrder`, `fetchSalesOrderById`, `fetchSalesOrders`, `markSalesOrderConverted`, `closeSalesOrder`
+- Client-side guard rails: `markSalesOrderConverted` enforces exactly-one-target XOR; `closeSalesOrder` requires non-empty trimmed reason.
+- **Tests: 12/12 PASS** (TDD: test-first, then impl). Pre-existing 20 failures in unrelated worktree unchanged.
+- `npx tsc --noEmit`: clean.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 5 — close_sales_order RPC DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `3ff8739`
+- **File created:** `supabase/migrations/20260725000005_close_sales_order_rpc.sql`
+- `public.close_sales_order(p_so_id text, p_reason text) RETURNS public.sales_orders` — SECURITY DEFINER, terminal CLOSED state.
+- Validates reason is non-empty (btrim), locks row FOR UPDATE, asserts status=OPEN before flip.
+- Updates status→CLOSED, closed_reason set to trimmed reason; returns full row.
+- **Smoke tests 3/3 PASS:** happy path (OPEN→CLOSED + reason stored), empty reason rejected, already-CLOSED rejected.
+
 ## 2026-06-23 — Sales Order (Penawaran) Task 3 — create_sales_order RPC DONE
 
 **Branch:** `feat/sales-order-penawaran` | **Commit:** `bccebea`
