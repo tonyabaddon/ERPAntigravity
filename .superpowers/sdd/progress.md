@@ -86,3 +86,114 @@ Files:
 
 Task 4: complete (26/26 tests PASS, npx tsc clean, ready for deploy)
 Task 4: complete (commits 2e596af..78317f6, 26/26 tests, branch verified)
+
+## Task 5 — DONE (2026-06-23)
+
+**close_sales_order RPC** — manual close to terminal CLOSED state.
+
+Migration: `supabase/migrations/20260725000005_close_sales_order_rpc.sql`
+
+Smoke: 3/3 PASS (happy path with reason, empty reason rejected, already-CLOSED rejected).
+
+Task 5: complete (commit 3ff8739, review clean)
+
+## Phase A complete — 5 backend migrations applied + reviewed.
+
+## Task 6 — DONE (2026-06-23)
+
+**types.ts updates** — DbSalesOrder interface + ActivePage += daftarPenawaran.
+
+File: `src/types.ts`
+
+tsc clean; 4800/4800 tests pass.
+
+Task 6: complete (commit fb277f5, review clean)
+
+## Task 7 — DONE (2026-06-23)
+
+**salesOrderService wrappers + vitest coverage.**
+
+Files: `src/lib/salesOrderService.ts` + `src/lib/salesOrderService.test.ts`
+
+5 wrappers (create / fetchById / fetchAll / markConverted / close) with client-side XOR + non-empty guards.
+
+Tests: 12/12 PASS; tsc clean.
+
+Task 7: complete (commit 1b5f930, review clean)
+
+## Task 8 — DONE (2026-06-23)
+
+**insertNewProduct wrapper + vitest.**
+
+Files: `src/lib/products/productWrappers.ts` + `src/lib/products/productWrappers.test.ts`
+
+Validation: name + category trim non-empty; price finite > 0. Defaults: stock_atas=0, stock_bawah=0, status='aktif', unit='pcs'.
+
+Tests: 6/6 PASS.
+
+Task 8: complete (commit 3129264, review clean)
+
+## Phase B complete — types + wrappers ready.
+
+## Task 9 — DONE (2026-06-23)
+
+**NewProductInlineForm + validator.**
+
+Files: `src/lib/wizard/newProductValidation.ts` + `.test.ts` + `src/components/penjualan/wizard/NewProductInlineForm.tsx`
+
+Tests: 7/7 validator PASS; tsc clean.
+
+Task 9: complete (commit 99d6318, review clean)
+
+## Task 10 — DONE (2026-06-23)
+
+**Step2Items — wire up + Produk Baru inline form.**
+
+File: `src/components/penjualan/wizard/Step2Items.tsx`
+
+Changes: imported `NewProductInlineForm`; added `showNewProductForm` state + `existingCategories` derivation from `props.stocks`; added always-visible CTA below search results with copy adapting to active search query; conditional rendering of `NewProductInlineForm` on form open; on save calls `props.onAddItem(product)` + closes form.
+
+tsc clean; 4825/4845 tests pass (20 pre-existing failures in diskon worktree, unrelated).
+
+Task 10: complete (commit b48b482)
+
+## Task 10 — DONE (2026-06-23)
+
+**Step2Items wire-up + Produk Baru.**
+
+File: `src/components/penjualan/wizard/Step2Items.tsx`
+
+tsc clean; 4825/4845 (20 pre-existing failures in unrelated worktree).
+
+Task 10: complete (commit b48b482, review clean)
+
+## Task 11 — DONE (2026-06-23)
+
+**Step3Payment mode='quote' branch.**
+
+File: `src/components/penjualan/wizard/Step3Payment.tsx`
+
+`renderInvoiceMode()` extracted verbatim; `renderQuoteMode()` new light layout (info banner + catatan + amber summary + amber Simpan).
+
+Test: tsc clean; 4825/4845.
+
+Task 11: complete (commits c676e1f + b6cc4d0, review clean)
+
+## Phase C complete — wizard internal extensions ready.
+
+## Task 12 — DONE (2026-06-23)
+
+**CatatPenjualanWizard orchestrator integration — mode + fromSalesOrderId.**
+
+File: `src/components/penjualan/CatatPenjualanWizard.tsx`
+
+Two new props on `CatatPenjualanWizardProps`: `mode?: 'invoice' | 'quote'` and `fromSalesOrderId?: string`.
+- Pre-fill effect: on mount with `fromSalesOrderId`, fetches SO and seeds channel/customer/cart/rakit/notes.
+- Save dispatch: quote branch calls `createSalesOrder` → navigate to `daftarPenawaran`.
+- All three invoice paths (TEMPO/WIP/standard) call `markSalesOrderConverted` when `fromSalesOrderId` present.
+- Header h1: QUOTE MODE badge + title swap (Sales Order vs Sales Invoice).
+- Step 3 subtitle updates for quote mode.
+- `mode` prop passed to `<Step3Payment>`.
+- Emerald pre-fill banner above stepper when `fromSalesOrderId` set.
+
+tsc clean; 4825/4845 (20 pre-existing failures in diskon worktree, unrelated).
