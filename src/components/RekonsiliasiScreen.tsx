@@ -1,5 +1,5 @@
 // src/components/RekonsiliasiScreen.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRekonsiliasi } from '../hooks/useRekonsiliasi';
 import { reconciliationService, supabase } from '../lib/supabaseClient';
 import type { BankAccount, BankStatementLine, SalesChannel } from '../types';
@@ -10,12 +10,21 @@ import TallyBar from './rekonsiliasi/TallyBar';
 import OrdersColumn from './rekonsiliasi/OrdersColumn';
 import MutasiColumn from './rekonsiliasi/MutasiColumn';
 import CashColumn from './rekonsiliasi/CashColumn';
+import JournalColumn from './rekonsiliasi/JournalColumn';
 import POSellThrough from './rekonsiliasi/POSellThrough';
 import CompletionSummary from './rekonsiliasi/CompletionSummary';
 import MappingDrawer, { type DrawerCandidate, type DrawerSource } from './rekonsiliasi/MappingDrawer';
 import ClassificationModal from './rekonsiliasi/ClassificationModal';
 import AddBankAccountModal from './rekonsiliasi/AddBankAccountModal';
 import UploadPDFModal from './rekonsiliasi/UploadPDFModal';
+import { fetchAccountingConfig, fetchCoa } from '../lib/akuntansi/service';
+import type { AccountingConfig, CoaAccount } from '../lib/akuntansi/types';
+import {
+  fetchUnreconciledJournalLines,
+  matchJournalToBankLine,
+  autoMatchJournalLinesToBank,
+  type UnreconciledJournalLine,
+} from '../lib/akuntansi/journalReconService';
 
 interface Props {
   currentUser: { name: string; role: string; permissions: { reconciliation?: boolean } } | null;
@@ -30,6 +39,17 @@ function defaultPeriod() {
 function fmt(n: number) { return 'Rp ' + (n / 1_000_000).toFixed(1).replace('.', ',') + 'jt'; }
 function fmtDate(s: string) { return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }); }
 
+/** ISO YYYY-MM-DD for start of month */
+function periodFromDate(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+/** ISO YYYY-MM-DD for end of month (last day inclusive) */
+function periodToDate(year: number, month: number): string {
+  const lastDay = new Date(year, month, 0).getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+}
+
 export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
   const allowed = currentUser?.role?.toLowerCase() === 'owner' || !!currentUser?.permissions?.reconciliation;
   const [period, setPeriod] = useState(defaultPeriod());
@@ -37,8 +57,63 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
 
   const [showAdd, setShowAdd] = useState(false);
   const [uploadFor, setUploadFor] = useState<BankAccount | null>(null);
-  const [drawer, setDrawer] = useState<{ source: DrawerSource | null; cands: DrawerCandidate[]; open: boolean }>({ source: null, cands: [], open: false });
+  const [drawer, setDrawer] = useState<{ source: DrawerSource | null; cands: DrawerCandidate[]; open: boolean; glMode: boolean }>({
+    source: null, cands: [], open: false, glMode: false,
+  });
   const [classifyFor, setClassifyFor] = useState<BankStatementLine | null>(null);
+
+  // ─── GL mode state ───────────────────────────────────
+  const [glMode, setGlMode] = useState(false);
+  const [glConfig, setGlConfig] = useState<AccountingConfig | null>(null);
+  const [glBankCoaAccounts, setGlBankCoaAccounts] = useState<CoaAccount[]>([]);
+  const [glCoaAccountId, setGlCoaAccountId] = useState<string | null>(null);
+  const [glJournalLines, setGlJournalLines] = useState<UnreconciledJournalLine[]>([]);
+  const [glRefreshKey, setGlRefreshKey] = useState(0);
+
+  // Fetch accounting config on mount
+  useEffect(() => {
+    fetchAccountingConfig()
+      .then(setGlConfig)
+      .catch((err: unknown) => {
+        console.warn('[RekonsiliasiScreen] fetchAccountingConfig error', err);
+      });
+  }, []);
+
+  // Fetch BANK-subtype COA accounts when GL mode is turned on
+  useEffect(() => {
+    if (!glMode) return;
+    fetchCoa()
+      .then((all) => {
+        const bankAccounts = all.filter(a => a.account_subtype === 'BANK' && a.is_active);
+        setGlBankCoaAccounts(bankAccounts);
+        if (bankAccounts.length > 0 && !glCoaAccountId) {
+          setGlCoaAccountId(bankAccounts[0].id);
+        }
+      })
+      .catch((err: unknown) => {
+        console.warn('[RekonsiliasiScreen] fetchCoa error', err);
+        showToast('Gagal memuat akun COA', 'warning');
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [glMode]);
+
+  // Sync journal lines into local state whenever coaAccountId / period / refreshKey changes
+  useEffect(() => {
+    if (!glCoaAccountId) {
+      setGlJournalLines([]);
+      return;
+    }
+    const fromDate = periodFromDate(period.year, period.month);
+    const toDate = periodToDate(period.year, period.month);
+    fetchUnreconciledJournalLines(glCoaAccountId, fromDate, toDate)
+      .then(setGlJournalLines)
+      .catch((err: unknown) => {
+        console.warn('[RekonsiliasiScreen] fetchUnreconciledJournalLines error', err);
+      });
+  }, [glCoaAccountId, period.year, period.month, glRefreshKey]);
+
+  // Derived: GL mode available when dual-write is on AND bank accounts exist
+  const glModeAvailable = glConfig?.enable_dual_write_to_gl === true && accounts.length > 0;
 
   // ─── Derived state ─────────────────────────────────
   const totalSales = useMemo(() => orders.reduce((a, o) => a + o.total, 0), [orders]);
@@ -81,43 +156,94 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
     refresh();
   };
 
-  const openFindPairForMutasi = (line: BankStatementLine) => {
+  /**
+   * Build drawer candidates from unreconciled journal lines for GL mode.
+   * Scores by amount proximity to the bank line.
+   */
+  function buildGlCandidates(line: BankStatementLine): DrawerCandidate[] {
     const tol = 0.05;
     const lo = line.amount * (1 - tol);
     const hi = line.amount * (1 + tol);
-    const cands: DrawerCandidate[] = [];
-    for (const o of orders) {
-      for (const s of o.slots) {
-        if (s.status !== 'OPEN') continue;
-        if (s.expected_amount < lo || s.expected_amount > hi) continue;
-        const diff = Math.abs(s.expected_amount - line.amount);
-        const score = diff < 100 ? 0.95 : 0.7;
-        cands.push({
-          id: s.id,
-          name: o.customer_name,
-          meta: `${s.slot_type} · ${fmtDate(o.created_at)}`,
-          amount: s.expected_amount,
-          score,
-          scoreBreakdown: 'amount/date heuristic',
-        });
-      }
-    }
+
+    const cands: DrawerCandidate[] = glJournalLines.map(jl => {
+      const inRange = jl.amount >= lo && jl.amount <= hi;
+      const diff = Math.abs(jl.amount - line.amount);
+      const score = inRange ? (diff < 100 ? 0.97 : 0.75) : 0.4;
+      return {
+        id: jl.id,
+        name: jl.entry_number,
+        meta: `${fmtDate(jl.entry_date)} · ${jl.side} · ${jl.description ?? ''}`.trim(),
+        amount: jl.amount,
+        score,
+        scoreBreakdown: inRange ? 'amount cocok' : 'amount tidak cocok',
+        accountCode: jl.account_code,
+      };
+    });
+
     cands.sort((a, b) => b.score - a.score);
     if (cands.length > 0) cands[0].best = true;
-    setDrawer({
-      open: true,
-      source: {
-        type: 'mutasi',
-        id: line.id,
-        title: `${line.counterparty || line.description.slice(0, 24)} · ${fmt(line.amount)}`,
-        meta: line.description,
-        headerBg: '#fee2e2',
-        headerColor: '#991b1b',
-      },
-      cands,
-    });
+    return cands;
+  }
+
+  const openFindPairForMutasi = (line: BankStatementLine) => {
+    if (glMode) {
+      // GL mode: show journal entry lines as candidates (multi-allocation)
+      const cands = buildGlCandidates(line);
+      setDrawer({
+        open: true,
+        glMode: true,
+        source: {
+          type: 'mutasi',
+          id: line.id,
+          title: `${line.counterparty || line.description.slice(0, 24)} · ${fmt(line.amount)}`,
+          meta: line.description,
+          headerBg: '#eef2ff',
+          headerColor: '#3730a3',
+          amount: line.amount,
+        },
+        cands,
+      });
+    } else {
+      // Standard mode: show order payable slots as candidates
+      const tol = 0.05;
+      const lo = line.amount * (1 - tol);
+      const hi = line.amount * (1 + tol);
+      const cands: DrawerCandidate[] = [];
+      for (const o of orders) {
+        for (const s of o.slots) {
+          if (s.status !== 'OPEN') continue;
+          if (s.expected_amount < lo || s.expected_amount > hi) continue;
+          const diff = Math.abs(s.expected_amount - line.amount);
+          const score = diff < 100 ? 0.95 : 0.7;
+          cands.push({
+            id: s.id,
+            name: o.customer_name,
+            meta: `${s.slot_type} · ${fmtDate(o.created_at)}`,
+            amount: s.expected_amount,
+            score,
+            scoreBreakdown: 'amount/date heuristic',
+          });
+        }
+      }
+      cands.sort((a, b) => b.score - a.score);
+      if (cands.length > 0) cands[0].best = true;
+      setDrawer({
+        open: true,
+        glMode: false,
+        source: {
+          type: 'mutasi',
+          id: line.id,
+          title: `${line.counterparty || line.description.slice(0, 24)} · ${fmt(line.amount)}`,
+          meta: line.description,
+          headerBg: '#fee2e2',
+          headerColor: '#991b1b',
+        },
+        cands,
+      });
+    }
   };
 
+  /** Standard single-pick handler (non-GL mode) */
   const handlePick = async (candidateId: string) => {
     if (!drawer.source) return;
     if (drawer.source.type === 'mutasi') {
@@ -128,10 +254,72 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
         .update({ lane: 'GREEN', match_reason: 'manual', match_confidence: 1.0 })
         .eq('id', line.id);
       showToast('✓ Cocok', 'success');
-      setDrawer({ open: false, source: null, cands: [] });
+      setDrawer({ open: false, source: null, cands: [], glMode: false });
       refresh();
     }
   };
+
+  /** GL multi-allocation: match selected journal lines to bank line */
+  const handlePickMultiGl = useCallback(async (candidateIds: string[], _totalAmount: number) => {
+    if (!drawer.source) return;
+    const bankLineId = drawer.source.id;
+    try {
+      const result = await matchJournalToBankLine({
+        bankLineId,
+        journalEntryLineIds: candidateIds,
+        matchReason: 'manual_gl',
+      });
+      showToast(
+        `✓ GL Match: ${result.matched_count} line · ${fmt(result.total_amount_matched)}`,
+        'success',
+      );
+      setDrawer({ open: false, source: null, cands: [], glMode: false });
+      setGlRefreshKey(k => k + 1);
+      refresh();
+    } catch (err: unknown) {
+      showToast(`❌ ${err instanceof Error ? err.message : 'Gagal match'}`, 'warning');
+    }
+  }, [drawer.source, showToast, refresh]);
+
+  /** Auto-match handler for JournalColumn button */
+  const handleAutoMatch = useCallback(async () => {
+    // Use the first bank account ID for auto-match (single-tenant assumption)
+    const bankAccount = accounts[0];
+    if (!bankAccount) {
+      showToast('Tidak ada akun bank', 'warning');
+      return;
+    }
+    try {
+      const result = await autoMatchJournalLinesToBank({
+        bankAccountId: bankAccount.id,
+        periodYear: period.year,
+        periodMonth: period.month,
+      });
+      showToast(
+        `Auto-match selesai: ${result.auto_matched} cocok, ${result.candidates_pending_manual} perlu review manual`,
+        result.auto_matched > 0 ? 'success' : 'info',
+      );
+      setGlRefreshKey(k => k + 1);
+      refresh();
+    } catch (err: unknown) {
+      showToast(`❌ Auto-match gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+    }
+  }, [accounts, period.year, period.month, showToast, refresh]);
+
+  // GL mode toggle: reset selection when turning off
+  const handleToggleGlMode = () => {
+    if (glMode) {
+      setGlMode(false);
+    } else {
+      setGlMode(true);
+    }
+  };
+
+  // ─── GL bank account label for JournalColumn ────────
+  const glBankAccountLabel = useMemo(() => {
+    const coa = glBankCoaAccounts.find(a => a.id === glCoaAccountId);
+    return coa ? `${coa.account_code} · ${coa.account_name}` : (accounts[0] ? `${accounts[0].bank_code} ${accounts[0].account_number.slice(-4)}` : 'Bank');
+  }, [glBankCoaAccounts, glCoaAccountId, accounts]);
 
   if (!allowed) {
     return <div className="p-8 text-center text-slate-500 font-semibold">Akses Rekonsiliasi terbatas untuk Owner.</div>;
@@ -151,7 +339,20 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
             {loading ? 'Memuat data…' : `${orders.length} order · ${bankLines.length} mutasi · ${cashBatches.length} batch kas`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* GL mode toggle — only shown when feature flag is on */}
+          {glModeAvailable && (
+            <button
+              onClick={handleToggleGlMode}
+              className={`px-4 py-2 rounded-full text-xs font-extrabold border transition-colors ${
+                glMode
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-indigo-700 border-indigo-300 hover:bg-indigo-50'
+              }`}
+            >
+              {glMode ? '✓ GL Mode Aktif' : 'Match dengan GL (Phase 5)'}
+            </button>
+          )}
           <select
             value={`${period.year}-${period.month}`}
             onChange={(e) => { const [y, m] = e.target.value.split('-').map(Number); setPeriod({ year: y, month: m }); }}
@@ -162,9 +363,25 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
               return <option key={i} value={`${d.getFullYear()}-${d.getMonth() + 1}`}>{d.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</option>;
             })}
           </select>
-          <button onClick={handleCloseBook} className="bg-[#012749] text-white px-4 py-2 rounded-full text-xs font-extrabold">🔒 Tutup Buku</button>
+          <button onClick={handleCloseBook} className="bg-[#012749] text-white px-4 py-2 rounded-full text-xs font-extrabold">Tutup Buku</button>
         </div>
       </div>
+
+      {/* GL mode: COA account selector (shown when multiple BANK COA accounts exist) */}
+      {glMode && glBankCoaAccounts.length > 1 && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+          <span className="text-xs font-bold text-indigo-700">Akun COA Bank:</span>
+          <select
+            value={glCoaAccountId ?? ''}
+            onChange={(e) => setGlCoaAccountId(e.target.value || null)}
+            className="text-xs border border-indigo-300 rounded-lg px-2 py-1 bg-white text-[#012749] font-bold"
+          >
+            {glBankCoaAccounts.map(a => (
+              <option key={a.id} value={a.id}>{a.account_code} · {a.account_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <WizardSteps
         currentStep={currentStep}
@@ -189,13 +406,32 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
         totalAmount={totalSales}
         totalCount={totalOrderCount}
       />
+
+      {/* 3-column layout: swaps OrdersColumn ↔ JournalColumn when GL mode on */}
       <div className="grid grid-cols-3 gap-4">
-        <OrdersColumn
-          orders={orders}
-          onFindPayment={() => showToast('Drawer: order side (coming soon)', 'info')}
-          onExtend={() => showToast('Geser tempo (coming soon)', 'info')}
-          onWriteOff={() => showToast('Write-off (coming soon)', 'info')}
-        />
+        {glMode ? (
+          <JournalColumn
+            coaAccountId={glCoaAccountId}
+            bankAccountId={accounts[0]?.id ?? null}
+            bankAccountLabel={glBankAccountLabel}
+            fromDate={periodFromDate(period.year, period.month)}
+            toDate={periodToDate(period.year, period.month)}
+            onPickJournalLine={(line) => {
+              // JournalColumn click: in the future this could open a bank-line picker
+              // For now, surface as toast (Option A flow: bank line is anchor)
+              showToast(`JE ${line.entry_number} dipilih — klik mutasi bank untuk cocokkan`, 'info');
+            }}
+            onAutoMatch={handleAutoMatch}
+            refreshKey={glRefreshKey}
+          />
+        ) : (
+          <OrdersColumn
+            orders={orders}
+            onFindPayment={() => showToast('Drawer: order side (coming soon)', 'info')}
+            onExtend={() => showToast('Geser tempo (coming soon)', 'info')}
+            onWriteOff={() => showToast('Write-off (coming soon)', 'info')}
+          />
+        )}
         <MutasiColumn
           lines={bankLines}
           accounts={accounts}
@@ -222,11 +458,13 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
           if (drawer.source) {
             const l = bankLines.find(x => x.id === drawer.source!.id);
             if (l) setClassifyFor(l);
-            setDrawer({ open: false, source: null, cands: [] });
+            setDrawer({ open: false, source: null, cands: [], glMode: false });
           }
         }}
-        onSkip={() => setDrawer({ open: false, source: null, cands: [] })}
-        onClose={() => setDrawer({ open: false, source: null, cands: [] })}
+        onSkip={() => setDrawer({ open: false, source: null, cands: [], glMode: false })}
+        onClose={() => setDrawer({ open: false, source: null, cands: [], glMode: false })}
+        multiAllocation={drawer.glMode}
+        onPickMulti={drawer.glMode ? handlePickMultiGl : undefined}
       />
       <ClassificationModal
         open={!!classifyFor}

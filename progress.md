@@ -1,5 +1,39 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Sales Order (Penawaran) Task 20 — Final-review fixes DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `2816c72`
+- **Fix 1:** `productWrappers.ts` + `productWrappers.test.ts`: `stocks.status='aktif'` → `'Sinkron'` (canonical DB value per seed_stock_row RPC).
+- **Fix 2:** Added TODO comment above `insertNewProduct` documenting seed_stock_row bypass (audit ledger continuity — defer to Phase 2).
+- **Fix 3:** `DaftarPenawaranScreen.tsx`: Added "Lihat" button (slate-themed) to every row; opens read-only SO summary modal (channel, customer, items table, total, notes, CONVERTED/CLOSED info, "PDF preview tersedia di Phase 2" footer).
+- **Fix 4:** `Step3Payment.tsx` invoice mode: `'✓ Simpan Penjualan'` → `'✓ Simpan Sales Invoice'` (wording rename per spec §11).
+- **`npx tsc --noEmit`: clean.** Unit tests: 50 files / 408 tests PASS.
+
+## 2026-06-23 — Sales Order (Penawaran) Task 14 — SalesInvoicePDF quotation variant DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `580a82b`
+- **File modified:** `src/components/penjualan/SalesInvoicePDF.tsx`
+- Extended `InvoiceVariant = 'dp' | 'lunas' | 'quotation'`; added `isQuotation` derived flag in `InvoiceBody`.
+- PENAWARAN stamp (amber, rotated -12deg) replaces DP/LUNAS stamp when `isQuotation`; DP/LUNAS stamp guarded so quotation doesn't fall into DP branch.
+- Title: 'SALES ORDER' (not 'SALES INVOICE') + subtitle "Tanda Terima..." suppressed for quotation.
+- Bill-to grid collapses to 1 col for quotation: alamat replaced with italic "ditentukan saat Sales Invoice", Metode Bayar column hidden.
+- Totals: ongkir row hidden; total label → 'TOTAL PENAWARAN'; total value → `subtotal` (not `total`); italic footnote about ongkir added; Sudah Dibayar/Sisa rows hidden.
+- Payment block (Rekening Pembayaran) entirely hidden for quotation.
+- Disclaimer "BARANG TIDAK DAPAT DIKEMBALIKAN" hidden; replaced by quotation footer "bukan invoice resmi".
+- Signature footer kept (acceptable to leave "Penerima Barang" on quotation for pre-sign confirmation).
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 pre-existing failures in unrelated `.claude/worktrees/diskon/` only).
+
+## 2026-06-23 — Sales Order (Penawaran) Task 13 — DaftarPenawaranScreen DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `51f6c86`
+- **File created:** `src/components/penjualan/DaftarPenawaranScreen.tsx` (251 lines)
+- Summary cards: SO Open (count + Rp total), Converted 7d, Closed 7d, Conversion Rate %.
+- Tab strip: Semua / Open / Converted / Closed with live counts.
+- Search input: filters by SO number, customer name, or phone.
+- Per-row actions: OPEN → "→ Jadi Sales Invoice" (navigate fromSo=id) + "Tutup" (open close modal). CLOSED shows closed_reason. CONVERTED shows FK slice to kasir_tx or tempo orders.
+- Close modal: non-empty reason required; calls `closeSalesOrder`; reloads on success.
+- **`npx tsc --noEmit`: clean.** Tests: 4825/4845 PASS (20 pre-existing failures in unrelated `.claude/worktrees/diskon/` only).
+
 ## 2026-06-23 — Sales Order (Penawaran) Task 11 — Step3Payment mode='quote' branch DONE
 
 **Branch:** `feat/sales-order-penawaran` | **Commit:** `c676e1f`
