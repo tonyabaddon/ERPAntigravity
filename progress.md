@@ -1,5 +1,11 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 15 DONE — TEMPO RPC discount path + SalesInvoicePDF Diskon row + InvoicePreviewScreen Diskon row
+
+- ✅ Diskon Task 15: TEMPO submit in `CatatPenjualanWizard` now passes `discount` 2nd arg to `createTempoInvoice` (order-level triple) + `subtotal` corrected to post-line value. `SalesInvoicePDF` Diskon row added before TOTAL TAGIHAN (hidden when 0, label includes `(N%)` for PERCENT type). `InvoicePreviewScreen` mini-preview card gains matching Diskon row. Gate: single `modul_diskon_kasir` covers all flows (option a — Kasir + TEMPO through same wizard). `npm run lint` clean.
+
+---
+
 ## 2026-06-23 — Diskon Fitur Task 11 DONE — create_tempo_invoice RPC + discount validation + piutangService wrapper
 
 - ✅ Diskon Task 11: `create_tempo_invoice` RPC extended with discount triples (per-line + order-level). Migration 20260801000005 applied. No GL dual-write present (TODO Phase 0c). 3 smokes PASS: happy path total=950000, MARKUP_NOT_ALLOWED, DISCOUNT_EXCEEDS_SUBTOTAL. Frontend wrapper `createTempoInvoice(payload, discount?)` backward-compat. `npm run lint` clean.

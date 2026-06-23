@@ -156,6 +156,11 @@ function InvoiceBody({
   const ongkir = t.ongkir_amount ?? 0;
   const total = t.total_amount ?? subtotal + ongkir;
   const dp = t.dp_amount ?? 0;
+  // Task 15: order-level discount for Diskon row. Hidden when 0 / null.
+  const discountAmountRp = t.discount_amount_rp ?? 0;
+  const discountLabel = t.discount_type === 'PERCENT' && t.discount_value
+    ? `Diskon (${t.discount_value}%)`
+    : 'Diskon';
   const sisa = variant === 'dp' ? total - dp : 0;
   const sudahDibayar = variant === 'lunas' ? total : dp;
 
@@ -282,6 +287,11 @@ function InvoiceBody({
       <div className="ml-auto w-3/5 text-[12px] mt-2">
         <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(subtotal)}</span></div>
         {ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
+        {discountAmountRp > 0 && (
+          <div className="flex justify-between py-0.5 text-[11px] text-slate-700">
+            <span>{discountLabel}</span><span>− {formatRp(discountAmountRp)}</span>
+          </div>
+        )}
         <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-[13px]">
           <span>TOTAL TAGIHAN</span><span>{formatRp(total)}</span>
         </div>

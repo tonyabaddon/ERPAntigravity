@@ -411,6 +411,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       }
       // TODO(T18+): plumb allow_negative_stock through CreateTempoInvoicePayload typing.
       // For now cast at call site so the new payload key reaches the RPC body.
+      // Task 15: pass order-level discount as 2nd arg; subtotal uses post-line value
+      // (consistent with the standard recordSale path). Per-line discount fields are
+      // already embedded in each cart item via the _key-stripped spread.
       const result = await createTempoInvoice({
         customer_id: customer.id,
         customer_name: customer.name,
@@ -421,11 +424,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         sales_channel: channel,
         delivery_type: deliveryAddress.trim() ? 'DELIVERY' : 'PICKUP',
         items: cart.map(({ _key, ...rest }) => rest),
-        subtotal,
+        subtotal: subtotalAfterLineDiscount,
         shipping_fee: ongkirOn ? ongkirAmount : 0,
         total: totalInvoice,
         allow_negative_stock: true,
-      } as any);
+      } as any, {
+        discount_type: orderDiscountType,
+        discount_value: orderDiscountValue,
+        discount_amount_rp: orderDiscountAmountRp,
+      });
       if (result.kind === 'ok') {
         const termDaysLabel = customer.term_days ? ` (Jatuh tempo ${customer.term_days} hari).` : '.';
         showToast(`Faktur tempo dibuat${termDaysLabel}`, 'success');

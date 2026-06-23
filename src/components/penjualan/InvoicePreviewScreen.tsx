@@ -228,6 +228,19 @@ export default function InvoicePreviewScreen({
                         <div className="font-semibold text-right">Rp {Math.round(transaction.ongkir_amount ?? 0).toLocaleString('id-ID')}</div>
                       </>
                     )}
+                    {/* Task 15: order-level Diskon row — hidden when 0 */}
+                    {(transaction.discount_amount_rp ?? 0) > 0 && (
+                      <>
+                        <div className="text-slate-500">
+                          {transaction.discount_type === 'PERCENT' && transaction.discount_value
+                            ? `Diskon (${transaction.discount_value}%)`
+                            : 'Diskon'}
+                        </div>
+                        <div className="font-semibold text-right text-rose-600">
+                          − Rp {Math.round(transaction.discount_amount_rp ?? 0).toLocaleString('id-ID')}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
                     <div className="text-sm font-bold text-slate-700">TOTAL</div>
