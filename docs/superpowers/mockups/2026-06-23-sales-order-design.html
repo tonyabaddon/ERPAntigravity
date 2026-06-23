@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sales Order (Penawaran) — Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: #012749; --secondary: #2d8a4e; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f8fafc; }
+    .mockup-frame { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .quote-stamp {
+      position: absolute; top: 20px; right: 20px; transform: rotate(-12deg);
+      border: 3px solid #d97706; color: #d97706; font-weight: 900;
+      padding: 4px 12px; font-size: 18px; letter-spacing: 4px;
+      background: rgba(255,255,255,0.7);
+    }
+  </style>
+</head>
+<body class="text-slate-800">
+
+<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Mockup · 2026-06-23</div>
+      <h1 class="text-base font-extrabold text-[#012749]">Sales Order (Penawaran) — 7-Frame Design</h1>
+    </div>
+    <div class="text-xs text-slate-500">
+      Sales Landing → Daftar Penawaran → Wizard Step 1 → Step 2 → Step 3 (Quote) → Convert Flow → Quotation PDF
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8 space-y-12">
+
+  <!-- ============================================== -->
+  <!-- FRAME 1 — SALES LANDING (entry point) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 1 / 5 — Sales Landing (entry point baru)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Penjualan</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Catat sales invoice atau bikin sales order (penawaran) ke customer</p>
+        </div>
+      </div>
+
+      <div class="p-6 grid grid-cols-2 gap-4">
+        <!-- + Sales Invoice (existing) -->
+        <button class="border-2 border-[#012749] bg-[#012749]/5 rounded-2xl p-6 text-left hover:bg-[#012749]/10 transition">
+          <div class="text-3xl mb-2">🧾</div>
+          <div class="text-base font-extrabold text-[#012749]">+ Sales Invoice</div>
+          <div class="text-xs text-slate-600 mt-1">Catat penjualan yang sudah commit — customer bayar sekarang (LUNAS / DP) atau TEMPO. Stok bergerak, invoice resmi keluar.</div>
+        </button>
+        <!-- + Sales Order (NEW) -->
+        <button class="border-2 border-amber-400 bg-amber-50 rounded-2xl p-6 text-left hover:bg-amber-100 transition">
+          <div class="text-3xl mb-2">📄</div>
+          <div class="text-base font-extrabold text-amber-800">+ Sales Order <span class="ml-1 text-[10px] font-bold bg-amber-200 px-1.5 py-0.5 rounded">NEW</span></div>
+          <div class="text-xs text-amber-700 mt-1">Bikin penawaran ke customer. Belum commit, tidak ada payment method, stok tidak bergerak. Kalau customer accept → lanjut jadi Sales Invoice.</div>
+        </button>
+      </div>
+
+      <div class="px-6 pb-6">
+        <div class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2">Akses Cepat</div>
+        <div class="flex gap-2">
+          <a href="#frame-2" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold">📋 Daftar Pesanan (Sales Invoice)</a>
+          <a href="#frame-2" class="text-xs px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold">📄 Daftar Penawaran (Sales Order)</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 2 — DAFTAR PENAWARAN (Sales Order list) -->
+  <!-- ============================================== -->
+  <section id="frame-2">
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 2 / 5 — Daftar Penawaran (sidebar menu baru)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Daftar Penawaran</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Sales Order ke customer. Belum commit · stok belum bergerak.</p>
+        </div>
+        <a href="#" class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">+ Sales Order Baru</a>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="px-6 pt-5 grid grid-cols-4 gap-3">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <div class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">SO Open</div>
+          <div class="text-lg font-extrabold text-amber-900 mt-1">5</div>
+          <div class="text-[11px] text-amber-700">Rp 24.350.000 total</div>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+          <div class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Converted (7 hari)</div>
+          <div class="text-lg font-extrabold text-emerald-900 mt-1">3</div>
+          <div class="text-[11px] text-emerald-700">Rp 12.150.000 menjadi SI</div>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+          <div class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Closed (7 hari)</div>
+          <div class="text-lg font-extrabold text-slate-700 mt-1">2</div>
+          <div class="text-[11px] text-slate-500">Lost deal</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-xl p-3">
+          <div class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Conversion Rate</div>
+          <div class="text-lg font-extrabold text-[#012749] mt-1">60%</div>
+          <div class="text-[11px] text-slate-500">3 dari 5 closed/converted</div>
+        </div>
+      </div>
+
+      <!-- Tabs + search -->
+      <div class="px-6 pt-5 flex items-center justify-between">
+        <div class="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <button class="px-3 py-1.5 text-xs font-bold rounded-md bg-white text-[#012749] shadow-sm">Semua (10)</button>
+          <button class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:bg-white/50">Open (5)</button>
+          <button class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:bg-white/50">Converted (3)</button>
+          <button class="px-3 py-1.5 text-xs font-bold rounded-md text-slate-600 hover:bg-white/50">Closed (2)</button>
+        </div>
+        <input type="text" placeholder="Cari nomor SO / customer / HP..." class="text-xs px-3 py-1.5 border border-slate-300 rounded-lg w-64" />
+      </div>
+
+      <!-- Table -->
+      <div class="px-6 py-4">
+        <div class="border border-slate-200 rounded-xl overflow-hidden">
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 px-4 py-2 border-b border-slate-200">
+            <div>SO Number</div>
+            <div>Customer</div>
+            <div>Total</div>
+            <div>Tanggal</div>
+            <div>Status</div>
+            <div>Aksi</div>
+          </div>
+
+          <!-- Row 1: OPEN -->
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] items-center px-4 py-3 text-xs border-b border-slate-100">
+            <div class="font-bold text-[#012749]">SO-WLK-20260623-001</div>
+            <div>
+              <div class="font-semibold">PT Cipta Mandiri</div>
+              <div class="text-[11px] text-slate-500">082277665544 · Walk-in</div>
+            </div>
+            <div class="font-bold text-[#012749]">Rp 4.850.000</div>
+            <div class="text-slate-500">23 Jun 2026</div>
+            <div><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">OPEN</span></div>
+            <div class="flex gap-1.5">
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">→ Jadi Sales Invoice</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50">Lihat</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">Tutup</button>
+            </div>
+          </div>
+
+          <!-- Row 2: CONVERTED -->
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] items-center px-4 py-3 text-xs border-b border-slate-100 bg-emerald-50/30">
+            <div class="font-bold text-[#012749]">SO-GSR-20260622-003</div>
+            <div>
+              <div class="font-semibold">CV Mitra Elektrik</div>
+              <div class="text-[11px] text-slate-500">081333222111 · Grosir</div>
+            </div>
+            <div class="font-bold text-[#012749]">Rp 12.500.000</div>
+            <div class="text-slate-500">22 Jun 2026</div>
+            <div><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">CONVERTED</span></div>
+            <div class="flex gap-1.5 items-center">
+              <a href="#" class="text-[10px] font-bold text-emerald-700 hover:underline">→ GSR-20260622-007</a>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50">Lihat</button>
+            </div>
+          </div>
+
+          <!-- Row 3: OPEN with note "Sudah diprint" -->
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] items-center px-4 py-3 text-xs border-b border-slate-100">
+            <div class="font-bold text-[#012749]">SO-WAM-20260622-002</div>
+            <div>
+              <div class="font-semibold">Toko Cahaya Listrik</div>
+              <div class="text-[11px] text-slate-500">085555666777 · WhatsApp</div>
+            </div>
+            <div class="font-bold text-[#012749]">Rp 6.300.000</div>
+            <div class="text-slate-500">22 Jun 2026</div>
+            <div><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">OPEN</span></div>
+            <div class="flex gap-1.5">
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">→ Jadi Sales Invoice</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50">Lihat</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">Tutup</button>
+            </div>
+          </div>
+
+          <!-- Row 4: CLOSED -->
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] items-center px-4 py-3 text-xs border-b border-slate-100 bg-slate-50/50">
+            <div class="font-bold text-slate-500">SO-WLK-20260621-002</div>
+            <div>
+              <div class="font-semibold text-slate-600">PT Anugrah Jaya</div>
+              <div class="text-[11px] text-slate-400">089123456789 · Walk-in</div>
+            </div>
+            <div class="font-bold text-slate-600">Rp 2.700.000</div>
+            <div class="text-slate-400">21 Jun 2026</div>
+            <div><span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">CLOSED</span></div>
+            <div class="flex gap-1.5">
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50">Lihat</button>
+              <span class="text-[10px] text-slate-500 italic">Lost: harga tidak match</span>
+            </div>
+          </div>
+
+          <!-- Row 5: OPEN with jasa lump-sum tag -->
+          <div class="grid grid-cols-[140px_1fr_120px_100px_110px_220px] items-center px-4 py-3 text-xs">
+            <div class="font-bold text-[#012749]">SO-TPD-20260621-001</div>
+            <div>
+              <div class="font-semibold">PT Sentra Mekanik <span class="ml-1 px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[9px] font-extrabold">JASA</span></div>
+              <div class="text-[11px] text-slate-500">081888999000 · Tokopedia</div>
+            </div>
+            <div class="font-bold text-[#012749]">Rp 18.500.000</div>
+            <div class="text-slate-500">21 Jun 2026</div>
+            <div><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">OPEN</span></div>
+            <div class="flex gap-1.5">
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">→ Jadi Sales Invoice</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50">Lihat</button>
+              <button class="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">Tutup</button>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-slate-500 mt-3 italic">
+          💡 SO yang sudah CLOSED tidak bisa di-reopen — bikin SO baru kalau customer berubah pikiran.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 3 — WIZARD QUOTE MODE (Step 1: Channel + Customer) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 3 / 7 — Wizard Quote-mode Step 1 (Channel + Customer) — IDENTIK dengan Sales Invoice</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-amber-800 flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider">QUOTE MODE</span>
+            Sales Order
+          </h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 1 dari 3 — Pilih channel & customer</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- Stepper -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center">1</div><div class="text-sm font-semibold text-amber-800">Channel & Customer</div></div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <div class="flex items-center gap-2 opacity-50"><div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">2</div><div class="text-sm font-medium text-slate-500">Pesanan</div></div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <div class="flex items-center gap-2 opacity-50"><div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">3</div><div class="text-sm font-medium text-slate-500">Finalisasi</div></div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <!-- Channel selector -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Channel Penjualan *</label>
+          <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-[#012749]/5 border-2 border-[#012749] text-[#012749]"><div class="text-xl">🏪</div><div class="text-[11px] font-bold">Walk-in</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600"><div class="text-xl">🏬</div><div class="text-[11px] font-semibold">Grosir</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600"><div class="text-xl">👔</div><div class="text-[11px] font-semibold">Sales Lapangan</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600"><div class="text-xl">🎪</div><div class="text-[11px] font-semibold">Pameran</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600"><div class="text-xl">🛒</div><div class="text-[11px] font-semibold">Tokopedia</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-600"><div class="text-xl">🟢</div><div class="text-[11px] font-semibold">WhatsApp</div></button>
+            <button class="flex flex-col items-center gap-1 p-3 rounded-xl bg-white border border-slate-200 text-slate-400"><div class="text-xl">⋯</div><div class="text-[11px] font-semibold">+ 8 lainnya</div></button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">Channel terpilih: <strong class="text-[#012749]">Walk-in</strong> · Tidak perlu nomor order marketplace.</p>
+        </div>
+
+        <!-- Customer search -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Customer *</label>
+          <input type="text" value="PT Cipta" class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]" />
+          <p class="text-[11px] text-slate-500 mt-1.5 italic">💡 Tip: cari pakai nomor HP untuk auto-detect repeat-buyer.</p>
+
+          <!-- Dropdown result -->
+          <div class="mt-2 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white">
+            <div class="px-4 py-3 hover:bg-slate-50 cursor-pointer flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">PT Cipta Mandiri</div>
+                <div class="text-[11px] text-slate-500">PT Cipta Mandiri · 082277665544 · 0 pesanan</div>
+              </div>
+              <div class="flex items-center gap-3 text-[11px]">
+                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">TEMPO OK</span>
+                <span class="text-slate-500">Limit Rp 10.000.000 · 14 hari</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between text-[11px]">
+            <div class="text-slate-500">Tidak ketemu di daftar?</div>
+            <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white">+ Customer Baru</button>
+          </div>
+          <p class="mt-2 text-[11px] text-slate-500 italic">ℹ️ Setiap customer wajib tersimpan — database MSME penting.</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-[11px] text-slate-500">Step 1 + Step 2 identik dengan Sales Invoice. Hanya Step 3 yang beda (no payment).</div>
+        <div class="flex gap-2">
+          <button disabled class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-400 cursor-not-allowed">← Kembali</button>
+          <button class="px-5 py-2 text-sm font-bold rounded-lg bg-amber-500 text-white hover:bg-amber-600">Lanjut ke Pesanan →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 4 — WIZARD QUOTE MODE (Step 2: Items + Cart) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 4 / 7 — Wizard Quote-mode Step 2 (Items + Cart) — IDENTIK dengan Sales Invoice, tempat input produk</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-amber-800 flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider">QUOTE MODE</span>
+            Sales Order
+          </h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 2 dari 3 — Tambah produk & jasa</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- Stepper -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div><div class="text-sm font-semibold text-slate-700">Channel & Customer</div></button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center">2</div><div class="text-sm font-semibold text-amber-800">Pesanan</div></div>
+          <div class="flex-1 h-[2px] bg-slate-200"></div>
+          <div class="flex items-center gap-2 opacity-50"><div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center">3</div><div class="text-sm font-medium text-slate-500">Finalisasi</div></div>
+        </div>
+      </div>
+
+      <!-- Context recap -->
+      <div class="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-3">
+          <span class="text-slate-600">🏪 <strong>Walk-in</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">👤 <strong>PT Cipta Mandiri</strong></span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">TEMPO OK · Limit Rp 10jt</span>
+        </div>
+        <button class="text-[#012749] font-semibold hover:underline">Ubah</button>
+      </div>
+
+      <!-- Body — 2-col layout same as Sales Invoice Step 2 -->
+      <div class="grid grid-cols-12 gap-6 p-6">
+
+        <!-- LEFT: Search + add -->
+        <div class="col-span-5 space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tambah Produk</label>
+            <input type="text" value="MCB" class="w-full px-4 py-2.5 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]" />
+          </div>
+
+          <div class="border border-slate-200 rounded-xl divide-y divide-slate-100">
+            <div class="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">MCB SchneiderA 16</div>
+                <div class="text-[11px] text-slate-500">SKU: 0671d9fd · Rp 45.000</div>
+                <div class="text-[11px] mt-0.5"><span class="text-emerald-600">Atas: 209</span> · <span class="text-rose-600">Bawah: 0</span></div>
+              </div>
+              <button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white">+ Tambah</button>
+            </div>
+            <div class="px-4 py-3 hover:bg-slate-50 flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold">Kabel NYM 2.5mm²</div>
+                <div class="text-[11px] text-slate-500">SKU: eb5f045d · Rp 70.000</div>
+                <div class="text-[11px] mt-0.5"><span class="text-emerald-600">Atas: 47</span> · <span class="text-rose-600">Bawah: 0</span></div>
+              </div>
+              <button class="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white">+ Tambah</button>
+            </div>
+          </div>
+
+          <!-- + Produk Baru affordance (NEW — surfaces when search has zero matches OR via button) -->
+          <div class="mt-3 flex items-center justify-between text-[11px]">
+            <div class="text-slate-500">Produk belum ada di daftar?</div>
+            <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white">+ Produk Baru</button>
+          </div>
+
+          <!-- INLINE: Produk Baru form (NEW — expands when "+ Produk Baru" clicked) -->
+          <div class="mt-3 border-2 border-[#012749]/30 rounded-xl p-4 bg-[#012749]/5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="text-sm font-extrabold text-[#012749]">Produk Baru</div>
+                <div class="text-[11px] text-slate-600">Akan tersimpan ke daftar Produk & Stok dengan stok awal 0.</div>
+              </div>
+              <button class="text-slate-400 hover:text-slate-700 text-sm">×</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Nama Produk <span class="text-red-500">*</span></label>
+                <input type="text" placeholder="Mis: MCB Schneider 25A 1P" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Kategori <span class="text-red-500">*</span></label>
+                <select class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                  <option>Aksesori</option><option>MCB</option><option>Kabel</option><option>Panel</option><option>+ Kategori baru…</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Unit</label>
+                <select class="w-full px-3 py-2 border border-slate-300 rounded-lg">
+                  <option>pcs</option><option>m</option><option>rol</option><option>box</option><option>set</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Harga Jual (Rp) <span class="text-red-500">*</span></label>
+                <input type="text" placeholder="Mis: 45.000" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Harga Modal / HPP (Rp)</label>
+                <input type="text" placeholder="Mis: 30.000 (optional, recommend isi)" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Sub-kategori / Brand (optional)</label>
+                <input type="text" placeholder="Mis: Schneider · Heavy Duty" class="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+              </div>
+            </div>
+
+            <p class="text-[11px] text-amber-700 mt-3 italic">
+              ⚠️ Ini lite-create — foto, specs lengkap, min stock, dll. bisa di-set nanti via menu <strong>Produk & Stok</strong>. Stok awal 0 (semua gudang) — pesanan ini otomatis pre-order sampai pembelian masuk.
+            </p>
+
+            <div class="mt-3 flex justify-end gap-2">
+              <button class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Batal</button>
+              <button class="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90">✓ Simpan & Tambah ke Cart</button>
+            </div>
+          </div>
+
+          <!-- Jasa buttons -->
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 mt-4">Tambah Jasa (Optional)</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-purple-50 text-purple-800 border border-purple-200">+ Custom Panel</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-sky-50 text-sky-800 border border-sky-200">+ Wiring Panel</button>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5 italic">Skip jasa kalau penawaran ini cuma jual komponen.</p>
+          </div>
+        </div>
+
+        <!-- RIGHT: Cart + totals -->
+        <div class="col-span-7">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">Keranjang (2 item)</label>
+            <button class="text-[11px] text-rose-600 font-semibold hover:underline">× Kosongkan</button>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl divide-y divide-slate-100">
+            <div class="px-4 py-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold">MCB SchneiderA 16</div>
+                <button class="text-rose-500 hover:text-rose-700 text-sm">×</button>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Qty:</span>
+                  <button class="w-7 h-7 rounded border border-slate-300">−</button>
+                  <input type="text" value="100" class="w-12 text-center border border-slate-300 rounded py-1" />
+                  <button class="w-7 h-7 rounded border border-slate-300">+</button>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Gudang:</span>
+                  <select class="text-xs border border-slate-300 rounded px-2 py-1">
+                    <option>Gudang Atas · 209</option>
+                  </select>
+                </div>
+                <div class="ml-auto font-bold text-[#012749]">Rp 4.500.000</div>
+              </div>
+            </div>
+            <div class="px-4 py-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold">Kabel NYM 2.5mm²</div>
+                <button class="text-rose-500 hover:text-rose-700 text-sm">×</button>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Qty:</span>
+                  <button class="w-7 h-7 rounded border border-slate-300">−</button>
+                  <input type="text" value="5" class="w-12 text-center border border-slate-300 rounded py-1" />
+                  <button class="w-7 h-7 rounded border border-slate-300">+</button>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-500">Gudang:</span>
+                  <select class="text-xs border border-slate-300 rounded px-2 py-1">
+                    <option>Gudang Atas · 47</option>
+                  </select>
+                </div>
+                <div class="ml-auto font-bold text-[#012749]">Rp 350.000</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="mt-3 bg-slate-50 rounded-xl p-4 space-y-1.5">
+            <div class="flex justify-between text-xs"><span class="text-slate-600">Subtotal Produk (2 item)</span><span class="font-semibold">Rp 4.850.000</span></div>
+            <div class="border-t border-slate-200 my-1.5"></div>
+            <div class="flex justify-between text-sm"><span class="font-bold text-slate-700">Total Pesanan</span><span class="font-extrabold text-[#012749] text-lg">Rp 4.850.000</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-[11px] text-amber-800">
+          ⚠️ Quote mode: stok TIDAK akan dikurang saat Sales Order disimpan.
+        </div>
+        <div class="flex gap-2">
+          <button class="px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100">← Kembali</button>
+          <button class="px-5 py-2 text-sm font-bold rounded-lg bg-amber-500 text-white hover:bg-amber-600">Lanjut ke Finalisasi →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 5 — WIZARD QUOTE MODE (Step 3: Finalisasi, no payment) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 5 / 7 — Wizard Quote-mode (Step 3) — payment section hidden</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <!-- Header (note: mode badge) -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-amber-800 flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider">QUOTE MODE</span>
+            Sales Order
+          </h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 3 dari 3 — Finalisasi penawaran (no payment method)</p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- Stepper -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div><div class="text-sm font-semibold text-slate-700">Channel & Customer</div></button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <button class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div><div class="text-sm font-semibold text-slate-700">Pesanan</div></button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-sm flex items-center justify-center">3</div><div class="text-sm font-semibold text-amber-800">Finalisasi</div></div>
+        </div>
+      </div>
+
+      <!-- Context recap -->
+      <div class="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="text-slate-600">🏪 <strong>Walk-in</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">👤 <strong>PT Cipta Mandiri</strong></span>
+          <span class="text-slate-400">·</span>
+          <span class="text-slate-600">📦 3 item</span>
+          <span class="text-slate-400">·</span>
+          <span class="font-bold text-[#012749]">Rp 4.850.000</span>
+        </div>
+        <button class="text-[#012749] font-semibold hover:underline">Ubah</button>
+      </div>
+
+      <!-- Body — Quote mode Step 3 is LIGHT: just catatan + summary + simpan -->
+      <div class="grid grid-cols-12 gap-6 p-6">
+
+        <!-- LEFT: explanation + catatan -->
+        <div class="col-span-7 space-y-5">
+
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div class="text-2xl">ℹ️</div>
+              <div>
+                <div class="text-sm font-extrabold text-blue-900 mb-1">Mode Penawaran (Sales Order)</div>
+                <ul class="text-xs text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Tidak perlu pilih payment method — penawaran belum commit ke pembayaran.</li>
+                  <li><strong>Ongkir + alamat pengiriman diisi nanti</strong> waktu convert ke Sales Invoice (saat customer sudah accept).</li>
+                  <li>Stok tidak akan bergerak saat disimpan.</li>
+                  <li>Customer accept → klik <strong>"→ Jadi Sales Invoice"</strong> di Daftar Penawaran → wizard pre-filled, lengkapi payment/ongkir/alamat di sana.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Catatan / Syarat Penawaran (optional)</label>
+            <textarea rows="4" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" placeholder="Mis: Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice."></textarea>
+            <p class="text-[11px] text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
+          </div>
+        </div>
+
+        <!-- RIGHT: summary only (NO ongkir, NO alamat — those move to invoice stage) -->
+        <div class="col-span-5 space-y-4">
+
+          <!-- Quote summary card — amber-themed -->
+          <div class="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 space-y-1.5">
+            <div class="flex justify-between text-xs text-amber-800">
+              <span>Subtotal produk</span>
+              <span>Rp 4.850.000</span>
+            </div>
+            <div class="border-t border-amber-200 my-1.5"></div>
+            <div class="flex justify-between text-sm font-bold text-amber-900">
+              <span>TOTAL PENAWARAN</span>
+              <span class="text-xl">Rp 4.850.000</span>
+            </div>
+            <div class="text-[10px] text-amber-700 italic mt-2">
+              ⚠️ Total ini belum termasuk ongkir. Ongkir dihitung saat customer accept dan di-convert ke Sales Invoice.
+            </div>
+          </div>
+
+          <button class="w-full px-6 py-3 text-sm font-bold rounded-lg bg-amber-500 text-white hover:bg-amber-600">
+            ✓ Simpan Sales Order
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 4 — CONVERT FLOW (SO → SI) -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 6 / 7 — Convert flow (Sales Order → Sales Invoice)</div>
+    <div class="mockup-frame bg-white rounded-2xl overflow-hidden">
+
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h1 class="text-lg font-extrabold text-[#012749]">Sales Invoice</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Step 3 dari 3 — Pembayaran & finalisasi · <span class="text-emerald-700 font-semibold">Pre-filled dari SO-WLK-20260623-001</span></p>
+        </div>
+        <button class="text-xs text-slate-500 hover:text-slate-700 font-semibold">Batal</button>
+      </div>
+
+      <!-- Stepper completed -->
+      <div class="px-6 py-4 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <button class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div><div class="text-sm font-semibold text-slate-700">Channel & Customer</div></button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <button class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#2d8a4e] text-white font-bold text-sm flex items-center justify-center">✓</div><div class="text-sm font-semibold text-slate-700">Pesanan</div></button>
+          <div class="flex-1 h-[2px] bg-[#2d8a4e]"></div>
+          <div class="flex items-center gap-2"><div class="w-8 h-8 rounded-full bg-[#012749] text-white font-bold text-sm flex items-center justify-center">3</div><div class="text-sm font-semibold text-[#012749]">Pembayaran</div></div>
+        </div>
+      </div>
+
+      <!-- Banner: pre-filled from SO -->
+      <div class="px-6 py-3 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-emerald-600 text-base">✓</span>
+          <span class="text-emerald-900">
+            <strong>Pre-filled dari Sales Order SO-WLK-20260623-001</strong> · Channel, customer, items, dan ongkir sudah diisi. Anda bisa adjust kalau scope berubah.
+          </span>
+        </div>
+        <button class="text-[11px] text-emerald-700 font-semibold hover:underline">Lihat SO Original</button>
+      </div>
+
+      <!-- Body — same Step 3 as Sales Invoice mode (full payment fields) -->
+      <div class="grid grid-cols-12 gap-6 p-6">
+        <div class="col-span-7 space-y-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Tipe Pembayaran *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="px-4 py-3 rounded-xl border-2 bg-[#012749]/5 border-[#012749] text-[#012749]">
+                <div class="font-bold text-sm">LUNAS</div>
+                <div class="text-[11px] text-[#012749]/80">Bayar penuh sekarang</div>
+              </button>
+              <button class="px-4 py-3 rounded-xl border-2 bg-white border-slate-200 text-slate-700">
+                <div class="font-bold text-sm">DP</div>
+                <div class="text-[11px] text-slate-500">Bayar muka sebagian</div>
+              </button>
+              <button class="px-4 py-3 rounded-xl border-2 bg-white border-slate-200 text-slate-700">
+                <div class="font-bold text-sm">TEMPO</div>
+                <div class="text-[11px] text-slate-500">Bayar nanti (kredit)</div>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Metode Bayar</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-[#012749]/5 border border-[#012749] text-[#012749]">💵 Cash</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">🏦 Transfer</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">📱 QRIS</button>
+              <button class="px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200">💳 EDC</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-5 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Alamat Pengiriman</label>
+            <textarea rows="2" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">Jl Industri Blok C-12, Cikupa, Tangerang</textarea>
+          </div>
+
+          <!-- Dark navy summary (same as invoice mode) -->
+          <div class="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">
+            <div class="flex justify-between text-xs opacity-80">
+              <span>Subtotal pesanan</span>
+              <span>Rp 4.850.000</span>
+            </div>
+            <div class="flex justify-between text-xs opacity-80">
+              <span>Ongkir</span>
+              <span>Rp 50.000</span>
+            </div>
+            <div class="border-t border-white/20 my-1.5"></div>
+            <div class="flex justify-between text-sm font-bold">
+              <span>TOTAL</span>
+              <span class="text-xl">Rp 4.900.000</span>
+            </div>
+            <div class="text-[11px] mt-2 opacity-80">
+              💾 Sales Order asal: <strong>SO-WLK-20260623-001</strong> akan di-mark <strong>CONVERTED</strong>
+            </div>
+          </div>
+
+          <button class="w-full px-6 py-3 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d]">
+            ✓ Simpan Sales Invoice
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FRAME 5 — QUOTATION PDF -->
+  <!-- ============================================== -->
+  <section>
+    <div class="mb-3 text-[11px] uppercase tracking-wider text-slate-400 font-bold">Frame 7 / 7 — Quotation PDF (variant baru di SalesInvoicePDF)</div>
+    <div class="mockup-frame bg-slate-100 rounded-2xl overflow-hidden p-8">
+
+      <!-- Mock PDF page -->
+      <div class="bg-white shadow-xl mx-auto max-w-2xl p-8 relative">
+        <!-- Quote stamp -->
+        <div class="quote-stamp">PENAWARAN</div>
+
+        <!-- Letterhead -->
+        <div class="border-b border-slate-300 pb-4 mb-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="text-xl font-extrabold text-[#012749]">GARINDO JAYA PANEL</div>
+              <div class="text-[10px] text-slate-600">Jl. Industri Kawasan I Blok A-12, Tangerang</div>
+              <div class="text-[10px] text-slate-600">📞 (021) 555-1234 · garindojaya@example.id</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-amber-700">Sales Order</div>
+              <div class="text-base font-extrabold text-[#012749]">SO-WLK-20260623-001</div>
+              <div class="text-[10px] text-slate-500 mt-1">Tanggal: 23 Juni 2026</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer / context — no shipping address in quote -->
+        <div class="grid grid-cols-2 gap-4 mb-4 text-[11px]">
+          <div>
+            <div class="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">Untuk</div>
+            <div class="font-bold">PT Cipta Mandiri</div>
+            <div class="text-slate-600">📞 082277665544</div>
+            <div class="text-slate-500 italic text-[10px] mt-1">Alamat pengiriman ditentukan saat Sales Invoice diterbitkan.</div>
+          </div>
+          <div>
+            <div class="font-bold text-slate-500 uppercase tracking-wider text-[10px] mb-1">Channel</div>
+            <div class="font-bold">🏪 Walk-in</div>
+            <div class="text-slate-500 mt-2 text-[10px] italic">Belum mengikat pembayaran. Total final + ongkir dihitung saat dikonfirmasi sebagai Sales Invoice.</div>
+          </div>
+        </div>
+
+        <!-- Items table -->
+        <table class="w-full text-[11px] border-collapse">
+          <thead>
+            <tr class="border-b border-slate-300 text-left text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <th class="py-2 pr-2">#</th>
+              <th class="py-2 pr-2">Item</th>
+              <th class="py-2 pr-2 text-right">Qty</th>
+              <th class="py-2 pr-2 text-right">Harga</th>
+              <th class="py-2 text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-slate-100">
+              <td class="py-2 pr-2 text-slate-500">1</td>
+              <td class="py-2 pr-2"><strong>MCB SchneiderA 16</strong><br/><span class="text-[10px] text-slate-500">SKU: 0671d9fd</span></td>
+              <td class="py-2 pr-2 text-right">100</td>
+              <td class="py-2 pr-2 text-right">Rp 45.000</td>
+              <td class="py-2 text-right font-semibold">Rp 4.500.000</td>
+            </tr>
+            <tr class="border-b border-slate-100">
+              <td class="py-2 pr-2 text-slate-500">2</td>
+              <td class="py-2 pr-2"><strong>Kabel NYM 2.5mm²</strong><br/><span class="text-[10px] text-slate-500">SKU: eb5f045d</span></td>
+              <td class="py-2 pr-2 text-right">5</td>
+              <td class="py-2 pr-2 text-right">Rp 70.000</td>
+              <td class="py-2 text-right font-semibold">Rp 350.000</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Totals (no ongkir line — moves to invoice stage) -->
+        <div class="border-t-2 border-slate-300 mt-2 pt-3 space-y-1 text-[11px]">
+          <div class="flex justify-between text-base font-extrabold text-[#012749] mt-1 pt-1">
+            <span>TOTAL PENAWARAN</span><span>Rp 4.850.000</span>
+          </div>
+          <div class="text-[10px] text-slate-500 italic mt-1">* Belum termasuk ongkir. Ongkir + alamat pengiriman dihitung saat Sales Invoice.</div>
+        </div>
+
+        <!-- Notes -->
+        <div class="mt-5 pt-4 border-t border-slate-200 text-[10px]">
+          <div class="font-bold text-slate-500 uppercase tracking-wider mb-1">Catatan / Syarat</div>
+          <div class="text-slate-700">Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice.</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 grid grid-cols-2 gap-4 text-[10px] text-slate-500">
+          <div>
+            <div class="font-bold uppercase tracking-wider mb-1">Catatan PDF</div>
+            <div>Dokumen ini bukan invoice resmi. Untuk pemesanan, konfirmasi ke admin untuk diteruskan menjadi Sales Invoice.</div>
+          </div>
+          <div class="text-right">
+            <div class="font-bold uppercase tracking-wider mb-8">Hormat kami,</div>
+            <div class="text-slate-700 font-semibold">Admin Garindo Jaya</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="max-w-2xl mx-auto mt-4 grid grid-cols-4 gap-2">
+        <button class="px-3 py-2 text-xs font-bold rounded-lg bg-[#012749] text-white">🖨️ Cetak A4 / A5</button>
+        <button class="px-3 py-2 text-xs font-bold rounded-lg bg-slate-700 text-white">🖨️ Dot Matrix</button>
+        <button class="px-3 py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white">📱 Share WA</button>
+        <button class="px-3 py-2 text-xs font-bold rounded-lg bg-white border border-slate-300 text-slate-700">⬇️ Download PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- NOTES & RECAP -->
+  <!-- ============================================== -->
+  <section class="bg-slate-100 rounded-2xl p-6">
+    <div class="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-3">Catatan + Recap Keputusan</div>
+    <div class="grid grid-cols-2 gap-6 text-xs">
+      <div>
+        <div class="text-xs font-extrabold text-slate-700 mb-2">Locked decisions</div>
+        <ul class="text-slate-700 space-y-1.5 list-disc list-inside">
+          <li><strong>2 entry points terpisah</strong>: salesLanding punya "+ Sales Invoice" + "+ Sales Order".</li>
+          <li><strong>Rename</strong>: "Catat Penjualan" → "Sales Invoice"; new "Sales Order" untuk penawaran.</li>
+          <li><strong>Konversi</strong>: SO → wizard pre-filled di Step 3, items editable, payment method + ongkir + alamat diisi saat convert. SO original preserved sebagai history (status=CONVERTED).</li>
+          <li><strong>Stok</strong>: SO tidak menyentuh stok. Movement hanya saat SI dibuat.</li>
+          <li><strong>Step 3 Quote-mode</strong> light: hanya catatan/syarat + total subtotal. <strong>Ongkir + alamat pengiriman</strong> diisi nanti saat convert ke SI (operator + customer biasanya finalize logistik bareng-bareng saat sudah deal).</li>
+          <li><strong>+ Produk Baru inline</strong> di Step 2 (shared antara SO + SI). Lite-create: nama + kategori + unit + harga jual + HPP. Stok awal 0 (semua gudang) → pesanan otomatis pre-order. Foto/specs lengkap di-set nanti via Produk & Stok screen.</li>
+          <li><strong>Expiry</strong>: no auto-expire. Manual close (button + reason field).</li>
+          <li><strong>Listing</strong>: sidebar menu baru "Penawaran" → halaman dedicated "Daftar Penawaran".</li>
+          <li><strong>Implementation</strong>: new <code>sales_orders</code> table + extend wizard dengan <code>mode='quote'</code> prop + new <code>insertNewProduct</code> wrapper.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs font-extrabold text-slate-700 mb-2">Files yang akan disentuh (high-level)</div>
+        <ul class="text-slate-700 space-y-1.5 list-disc list-inside">
+          <li><code>supabase/migrations/*_sales_orders_*.sql</code> — new table + 2 RPCs (create, convert)</li>
+          <li><code>src/types.ts</code> — DbSalesOrder type, ActivePage += 'daftarPenawaran', InvoiceVariant += 'quotation'</li>
+          <li><code>src/lib/salesOrderService.ts</code> — wrappers (create, convert, close, fetchAll)</li>
+          <li><code>src/lib/products/productWrappers.ts</code> — <strong>NEW</strong> insertNewProduct wrapper</li>
+          <li><code>src/components/penjualan/DaftarPenawaranScreen.tsx</code> — new screen</li>
+          <li><code>src/components/penjualan/CatatPenjualanWizard.tsx</code> — add mode prop + dispatch convert + Step 2 wires new product callback</li>
+          <li><code>src/components/penjualan/wizard/Step2Items.tsx</code> — add "+ Produk Baru" button + NewProductInlineForm</li>
+          <li><code>src/components/penjualan/wizard/NewProductInlineForm.tsx</code> — <strong>NEW</strong> inline create-product form</li>
+          <li><code>src/components/penjualan/wizard/Step3Payment.tsx</code> — branch quote-mode (no payment, no ongkir, no alamat) vs invoice-mode (full)</li>
+          <li><code>src/components/penjualan/SalesInvoicePDF.tsx</code> — quotation variant (stamp + simplified totals)</li>
+          <li><code>src/components/Sidebar.tsx</code> — new menuItem</li>
+          <li><code>src/lib/urlRoute.ts</code> — ACTIVE_PAGES += 'daftarPenawaran'</li>
+          <li><code>src/App.tsx</code> — case 'daftarPenawaran' mount</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-6 pt-6 border-t border-slate-300 text-[11px] text-slate-500 italic">
+      Estimasi scope: ~2-3 hari kerja. Bukan blocker untuk fitur lain. Backend prereq: 3 migrations (table + 2 RPCs). Frontend: 1 new screen + 1 new service + extend 3 existing components + 1 new PDF variant.
+    </div>
+  </section>
+
+</main>
+
+<footer class="text-center text-[11px] text-slate-400 py-6">
+  Mockup — Sales Order (Penawaran) design draft. Untuk review founder sebelum implementasi.
+</footer>
+
+</body>
+</html>
