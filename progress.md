@@ -9281,3 +9281,11 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - `TagihanDetailPage.tsx`: shows Diskon Item column in items table when any item has `discount_amount_rp > 0`; shows SUBTOTAL + Diskon Tagihan rows in tfoot when discount present; backward-compat (old PIs without discount render unchanged).
   - `types.ts`: `DbPurchaseInvoiceItem` extended with `master_unit_cost?`, `discount_type?`, `discount_value?`, `discount_amount_rp?`; `DbPurchaseInvoice` extended with order-level discount triple.
   - `npm run lint` PASS (tsc --noEmit clean). Branch worktree-diskon.
+
+## 2026-06-23 — Diskon Final Review Fixes (I-1 + I-2)
+
+- ✅ Diskon I-1 fix: SalesInvoicePDF + InvoicePreviewScreen now display gross Subtotal + total discount row (lineDiscount + orderDiscount). Customers can verify Gross − Diskon = Total. Smart label mirrors KasirInvoiceModal pattern.
+  - `SalesInvoicePDF.tsx`: grossSubtotal = sum(master_price_at_sale × qty), totalDiscount = lineDiscount + orderDiscount, shown in Subtotal + single Diskon row.
+  - `InvoicePreviewScreen.tsx`: mini-preview card mirrors same computation via IIFE.
+- ✅ Diskon I-2 fix: journal-lines.test.ts added. 5 structural JE infrastructure tests (auto-run PASS). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked .skip due to live-DB cleanup risk on pesanan_items/stock_levels. Founder removes .skip for pre-monthly-close manual verification.
+  - Tests/integration/diskon: 48 pass + 2 skip (was 43 pass). Unit 410/410. Lint clean.

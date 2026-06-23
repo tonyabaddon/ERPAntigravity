@@ -43,3 +43,31 @@ Base commit: 01853b0
   - Note: Task 14 covered shared CatatPenjualanWizard (used by both Kasir DP/Lunas and Wizard TEMPO flows). Task 15 scope reduced.
 - ✅ Task 15: complete (commits 4c919f8..e1f7a8d). TEMPO path discount wired + SalesInvoicePDF/InvoicePreviewScreen Diskon row. Gate decision: single modul_diskon_kasir for both Kasir + TEMPO (option a).
 - ✅ Task 16 fix: payload+display unit_cost = master_unit_cost (was net, would double-subtract in RPC). lint clean, 410/410 tests pass.
+- ✅ Task 16: complete (commits e1f7a8d..008a5f9). Tagihan UI integrated. Critical fix applied: unit_cost convention realigned to master (matches record_pi RPC). 410/410 tests + lint clean.
+- ✅ Task 17: complete (commits 008a5f9..d3b44ff). 43/43 diskon integration tests + 410/410 unit + lint clean. PDF visual deferred manual.
+
+## Final review fixes (2026-06-23)
+
+- ✅ I-1: SalesInvoicePDF + InvoicePreviewScreen now display gross Subtotal + total discount (lineDiscount + orderDiscount). Smart label mirrors KasirInvoiceModal pattern. Math: Gross − totalDiscount = Total visible to customer. Files: SalesInvoicePDF.tsx, InvoicePreviewScreen.tsx.
+- ✅ I-2: journal-lines.test.ts added. 5 structural JE infrastructure tests PASS (auto). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked `.skip` pending founder manual run on live DB due to cleanup risk to pesanan_items/stock_levels. Total diskon suite: 48 pass + 2 skip. lint clean.
+
+## All 17 tasks DONE (2026-06-23)
+- Branch: worktree-diskon
+- Base: 01853b0 (main)
+- Head: (see git log after final review commits)
+- Migrations: 20260801000001..20260801000007 (7 SQL files applied to live DB)
+- Frontend: shared primitives + KasirInvoiceModal + CatatPenjualanWizard + CartRows + Step2Items + Step3Payment + SalesInvoicePDF + InvoicePreviewScreen + TagihanFormPage + TagihanDetailPage + ModulSwitchesPanel + types.ts + 2 lib wrappers
+- Tests: 410 unit + 48 integration (diskon, +5 new I-2 structural) + 2 skip (I-2 happy-path); lint clean
+- Deferred: PDF visual founder check; happy-path JE verification requires founder manual run (`.skip` in journal-lines.test.ts)
+
+## Minor findings to track for final review
+- 10a: NULL/NULL/>0 triple bypasses RPC check → DB CHECK catches (23514) instead of clean error code.
+- 10b: rollback ref in 20260801000004 points to predecessor migration (not inlined captured body).
+- 11a: 2 separate item-loop passes in create_tempo_invoice (inefficiency).
+- 11b: 100% discount + 0 ongkir trips v_total <= 0 guard (UX caveat — wizard should prevent).
+- 12a: migration 20260801000006 lacks BEGIN/COMMIT wrapper (functionally safe, inconsistent w/ project pattern).
+- 12b: 5-1900 JE line not smoke-verified live (deferred to Task 17 E2E per Task 10 precedent).
+- 12c: master_unit_cost fallback `NULLIF(..,0)` treats genuine 0 as "missing".
+- 14a: handlePriceChange early-return ordering can leave parent state one update stale on markup.
+- 14b: KasirInvoiceModal "Diskon (X%)" label reads order discount type only.
+- Pre-existing (Phase 0c regression): `p_allow_negative_stock` declared but never forwarded to deduct_stock_fifo.
