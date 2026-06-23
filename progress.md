@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 7 DONE — DiscountInlineInput Component + RTL Tests
+
+- ✅ Diskon Task 7: `<DiscountInlineInput>` component + 7 RTL test cases.
+- ✅ Tests: numeric input + segmented pill toggle [Rp | %]. TDD strict: RED → GREEN.
+- ✅ Verification: 7/7 tests PASS. Toggle preserves Rupiah equivalent via `computeDiscountAmount`. Disabled state blocks input + toggle.
+- ✅ Implementation file: `src/components/ui/discount/DiscountInlineInput.tsx` (63 lines).
+
+**Files created:**
+- `src/components/ui/discount/DiscountInlineInput.tsx` — component implementation
+- `src/components/ui/discount/DiscountInlineInput.test.tsx` — 7 RTL tests
+
+**Verification:**
+- `npm test src/components/ui/discount/DiscountInlineInput.test.tsx`: 7/7 PASS
+- All 405 project tests passing
+- tsc type check: clean
+- Component exports: `DiscountInlineInputProps` + `DiscountInlineInput`
+
+---
+
 ## 2026-06-23 — Diskon Fitur Task 6 DONE — useDiscountBinding Hook + RTL Tests
 
 - ✅ Diskon Task 6: `useDiscountBinding(master_price, qty, initial?)` hook + 8 bidirectional sync tests.
