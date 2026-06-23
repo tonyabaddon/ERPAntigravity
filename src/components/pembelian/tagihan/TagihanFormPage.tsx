@@ -153,7 +153,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
         </select>
       </td>
       <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
-        {fmtRp((it.qty * it.unit_cost) - (it.discount_amount_rp ?? 0))}
+        {fmtRp((it.qty * it.master_unit_cost) - (it.discount_amount_rp ?? 0))}
       </td>
     </tr>
   );
@@ -247,7 +247,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
 
   // Subtotals
   const subtotalAfterLine = useMemo(
-    () => items.reduce((a, it) => a + (it.qty * it.unit_cost) - (it.discount_amount_rp ?? 0), 0),
+    () => items.reduce((a, it) => a + (it.qty * it.master_unit_cost) - (it.discount_amount_rp ?? 0), 0),
     [items],
   );
   const orderDiscountAmountRp = useMemo(
@@ -307,7 +307,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
             sku: i.sku,
             product_name: i.product_name,
             qty: i.qty,
-            unit_cost: i.unit_cost,
+            unit_cost: i.master_unit_cost,
             sell_price: 0,
             pesanan_item_id: i.pesanan_item_id,
             warehouse_id: i.warehouse_id || undefined,

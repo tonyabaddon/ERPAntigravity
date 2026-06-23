@@ -37,3 +37,9 @@ Base commit: 01853b0
   - Minor 12c: master_unit_cost fallback uses NULLIF(...,0) which treats 0 as "not provided"; legitimate zero-cost master would fall back to unit_cost.
 - ✅ Task 13: complete (commits 1a64357..0dcd1fc). Pengawasan view v2 (CTE pattern, latent bug fixed). All 13 backend tasks done.
 - ✅ Task 14: complete (commits 0dcd1fc..<head>). Kasir UI integrated: CartRow bidirectional binding, DiscountRow in Step3, struk PDF Diskon row. lint clean, 410/410 tests.
+- ✅ Task 14: complete (commits 0dcd1fc..4c919f8). Kasir/Wizard cart UI + bidirectional binding + struk PDF; 410/410 tests + lint clean.
+  - Minor 14a: handlePriceChange early-return ordering allows parent state to be one update stale on markup; binding state remains correct.
+  - Minor 14b: KasirInvoiceModal label "Diskon (X%)" reads order discount type only; if both line+order discounts exist, label is imprecise.
+  - Note: Task 14 covered shared CatatPenjualanWizard (used by both Kasir DP/Lunas and Wizard TEMPO flows). Task 15 scope reduced.
+- ✅ Task 15: complete (commits 4c919f8..e1f7a8d). TEMPO path discount wired + SalesInvoicePDF/InvoicePreviewScreen Diskon row. Gate decision: single modul_diskon_kasir for both Kasir + TEMPO (option a).
+- ✅ Task 16 fix: payload+display unit_cost = master_unit_cost (was net, would double-subtract in RPC). lint clean, 410/410 tests pass.
