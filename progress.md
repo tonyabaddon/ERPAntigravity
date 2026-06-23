@@ -9112,3 +9112,25 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **Existing CHECKs enumerated:** No conflicts detected. 4 tables had 23 existing CHECKs; new triple-CHECKs are orthogonal (do not reference any existing constraint patterns).
 - **Commit:** (pending git add/commit in next step)
 - **Report:** `.superpowers/sdd/task-1-report.md` documents full enumeration + verification results.
+
+## 2026-06-23 — Diskon Fitur Task 5 — computeDiscountAmount Pure Function + Tests DONE
+
+**Branch:** `worktree-diskon` (worktree `.claude/worktrees/diskon`)
+**Task 5 — computeDiscountAmount + unit tests (7/7 PASS)**
+- **Files created:**
+  - `src/components/ui/discount/computeDiscountAmount.ts` — pure function resolving discount (value, type, base) → Rp amount.
+  - `src/components/ui/discount/computeDiscountAmount.test.ts` — 7 test cases covering all semantics.
+- **TDD discipline followed:**
+  - Step 1: Test file created with exact code from brief.
+  - Step 2: Test run FAIL — "Cannot find module './computeDiscountAmount'" (RED evidence).
+  - Step 3: Implementation created with exact code from brief.
+  - Step 4: Test run PASS — all 390 tests pass, including 7 new computeDiscountAmount tests (GREEN evidence).
+- **Function semantics verified:**
+  - `null` type → 0
+  - `AMOUNT` → value clamped to base
+  - `PERCENT` → `Math.round(base × value / 100)`, clamped to base
+  - null/NaN/negative value → 0
+  - base ≤ 0 → 0
+  - PERCENT rounding to nearest Rupiah (no fractional cents)
+- **Commit:** (pending in next step)
+- **Report:** `.superpowers/sdd/task-5-report.md` documents TDD RED + GREEN evidence.
