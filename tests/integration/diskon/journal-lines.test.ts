@@ -63,6 +63,13 @@ const ORDER_DISCOUNT_AMOUNT = 5000;
 
 // ─── record_pi 5-1900 JE verification ─────────────────────────────────────
 
+// NOTE 2026-06-23: Verified live via MCP execute_sql (real auth.users.id + fake
+// auth.uid via set_config). record_pi posts 3-line balanced JE with K 5-1900
+// = 5000 when payload has order discount AMOUNT 5000. PASS. Keeping .skip on
+// the supabase-js path because anon-role .env fallback blocks RLS-protected
+// reads of journal_entries (the test "passed" by silent early-return on pesanan
+// pre-check, not by actually verifying the JE).
+// To run via supabase-js: set SUPABASE_SERVICE_KEY in .env and remove .skip.
 describe.skip(
   'Diskon record_pi — happy path 5-1900 JE verification (FOUNDER MANUAL RUN ONLY)',
   () => {
@@ -207,6 +214,9 @@ describe.skip(
 
 // ─── record_kasir_sale 4-1900 JE verification ─────────────────────────────
 
+// NOTE 2026-06-23: Verified live via MCP execute_sql. record_kasir_sale posts
+// balanced JE with D 4-1900 = 50 when payload has order discount AMOUNT 50.
+// PASS. Same RLS caveat — supabase-js path skipped pending service-role key.
 describe.skip(
   'Diskon record_kasir_sale — happy path 4-1900 JE verification (FOUNDER MANUAL RUN ONLY)',
   () => {
@@ -234,7 +244,7 @@ describe.skip(
           p_date:                   new Date().toISOString().slice(0, 10),
           p_channel:                'walkin',
           p_items: [{
-            sku:                   'TEST-DISKON-KASIR',
+            sku:                   ITEM_SKU,
             name:                  'Test Diskon Kasir',
             qty:                   1,
             unit_price:            100000,
@@ -271,13 +281,15 @@ describe.skip(
 
         expect(error).toBeNull();
         expect(data).toBeTruthy();
-        ktId = (data as any).transaction_id ?? (data as any).id as string;
+        // record_kasir_sale RETURNS public.kasir_transactions (single row).
+        const row = Array.isArray(data) ? (data[0] as Record<string, unknown>) : (data as Record<string, unknown>);
+        ktId = (row.id ?? row.transaction_id) as string;
         expect(ktId).toBeTruthy();
 
         // ── Verify JE lines ─────────────────────────────────────────────
         const { data: jeRows, error: jeErr } = await supabaseAdmin
           .from('journal_entries')
-          .select('id, total_debit, total_credit, source_ref_id')
+          .select('id, total_debit, total_credit, source_ref_id, source_type')
           .eq('source_ref_id', ktId)
           .eq('source_type', 'KASIR_SALE')
           .limit(1);
