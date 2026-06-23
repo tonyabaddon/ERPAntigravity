@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Sales Order (Penawaran) Task 3 — create_sales_order RPC DONE
+
+**Branch:** `feat/sales-order-penawaran` | **Commit:** `bccebea`
+- **File created:** `supabase/migrations/20260725000003_create_sales_order_rpc.sql`
+- `public.create_sales_order(p_payload jsonb) RETURNS public.sales_orders` — SECURITY DEFINER, no stock movement.
+- Validates channel via `validate_sales_channel`, rejects empty items, requires customer_name.
+- Find-or-create customer pattern (mirror `record_kasir_sale`): lookup by `wa_number`, insert on miss with `ON CONFLICT DO UPDATE`.
+- Reserves SO number via `next_sales_order_number(channel, date)`, formats as `SO-<PREFIX>-YYYYMMDD-NNN`.
+- **Smoke tests 3/3 PASS:** happy path (SO-WLK-20991201-002, status=OPEN, customer linked, 0 stock_movements), invalid channel rejected, empty items rejected.
+
 ## 2026-06-23 — Akuntansi Phase 0c IMPLEMENTATION COMPLETE (5 tasks)
 
 Phase 0c complete. 3 critical GL fixes deployed:
