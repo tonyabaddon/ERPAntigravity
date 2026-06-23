@@ -61,3 +61,27 @@ idempotency guard, posts BACKFILL JEs, logs anomalies to gl_dual_write_anomalies
 - total_jes: 93
 
 Task 3: complete (TB balanced, 78 JEs posted, 33 anomalies logged for review)
+Task 3: complete (commits 8c41d99..2e596af, 78 backfill JEs + TB balanced 0.00; 33 anomalies = data quality issues, non-blocking)
+
+## Task 4 — DONE (2026-06-23)
+
+**Pattern C integration tests: HPP + record_pi + backfill.**
+
+Files: 
+- `tests/integration/akuntansi-phase0c/_setup.ts` — service-role client + COA IDs
+- `tests/integration/akuntansi-phase0c/kasir-hpp.test.ts` — HPP extension + 22-param signature verification
+- `tests/integration/akuntansi-phase0c/record-pi.test.ts` — record_pi signature + PI_TAGIHAN source_type
+- `tests/integration/akuntansi-phase0c/backfill.test.ts` — backfill function + anomalies table schema
+
+**Test coverage (26/26 PASS):**
+- Kasir-HPP tests (8): COA structure, 22-param signature, KASIR_SALE source_type, 4-line JE support
+- Record-PI tests (9): COA structure, record_pi signature, PI_TAGIHAN source_type, purchase_invoices tracking
+- Backfill tests (9): function deployment, BACKFILL source_type, anomalies table schema, trial balance structure
+
+**Pattern C approach:**
+- Structural + deployment verification (no Owner JWT happy-path execution)
+- All queries work pre/post-backfill (conditional assertions for optional data)
+- Role-gate + function existence verified via RPC signature tests
+- Anomalies table accessible + schema complete
+
+Task 4: complete (26/26 tests PASS, npx tsc clean, ready for deploy)
