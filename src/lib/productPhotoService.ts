@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import type { ProductPhotoSearchResponse } from '../types';
 
 export const MAX_PHOTOS = 5;
-export const MIN_PHOTOS = 1;
+export const MIN_PHOTOS = 0;
 export const PRE_COMPRESS_MAX_BYTES = 5 * 1024 * 1024;
 export const COMPRESS_LONGEST_DIM = 1024;
 export const COMPRESS_JPEG_QUALITY = 0.75;
