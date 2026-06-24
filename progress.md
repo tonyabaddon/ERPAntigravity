@@ -9461,3 +9461,5 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - Modul OFF: tier field fully ignored (Garindo default unchanged)
 - TS: `CreateTempoInvoiceItemPayload.pricing_tier_used?: 'eceran' | 'grosir' | null` added to `src/types.ts`
 - Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
+
+Task 11 DONE — BulkUpdateGrosirSection (4 RTL tests PASS).
