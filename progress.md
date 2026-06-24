@@ -9450,3 +9450,14 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
 
 ## Task 7 DONE — Kasir pill toggle (7 RTL tests PASS).
+
+## Task 8 DONE — create_tempo_invoice tier-aware (4 smoke tests PASS).
+
+- Migration: `supabase/migrations/20260901000006_create_tempo_invoice_tier.sql`
+- Creates OR REPLACES `create_tempo_invoice(p_payload jsonb) RETURNS uuid` — single-param signature preserved
+- Reads `modul_multi_tier_price` from `tenant_settings` before per-line loop
+- Per-line: reads `pricing_tier_used` from item JSONB; when modul ON validates tier in (eceran,grosir) and strict-equality checks `master_price_at_sale` vs stocks.price/price_grosir (grosir fallback: COALESCE(price_grosir, price))
+- `pricing_tier_used` persists in `orders.items` JSONB via v_items_jsonb passthrough (no rebuild loop needed — payload items stored as-is)
+- Modul OFF: tier field fully ignored (Garindo default unchanged)
+- TS: `CreateTempoInvoiceItemPayload.pricing_tier_used?: 'eceran' | 'grosir' | null` added to `src/types.ts`
+- Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS

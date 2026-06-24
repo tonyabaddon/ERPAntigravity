@@ -1239,6 +1239,8 @@ export interface CreateTempoInvoiceItemPayload {
   discount_type?: DiscountType;
   discount_value?: number | null;
   discount_amount_rp?: number;
+  // Multi-tier pricing (Task 8) — optional; server validates when modul_multi_tier_price ON
+  pricing_tier_used?: 'eceran' | 'grosir' | null;
 }
 
 export interface CreateTempoInvoicePayload {
