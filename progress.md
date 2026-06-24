@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-24 — Multi-Tier Pricing Task 1 DONE — Schema foundation
+
+- Worktree: `worktree-multi-tier-pricing` (off main 7730a83).
+- Spec + plan: `docs/superpowers/specs/2026-06-24-multi-tier-pricing-design.md`, `docs/superpowers/plans/2026-06-24-multi-tier-pricing-implementation.md`.
+- **Schema reality correction:** product master is `stocks` (PK sku, not `products`); `customers.id` is text; transaction line items live as JSONB array inside `kasir_transactions.items` / `orders.items` (no `*_items` child tables). Spec + plan updated inline. Migration count reduced from 5 → 4 (snapshot column migration dropped — uses JSONB key pattern same as `master_price_at_sale`).
+- Migrations applied (via Supabase MCP):
+  - `20260901000001_multi_tier_stocks_columns` → `stocks.price_grosir` NULL
+  - `20260901000002_multi_tier_customers_columns` → `customers.default_pricing_tier` DEFAULT 'eceran' + CHECK
+  - `20260901000003_multi_tier_tenant_settings_toggle` → `modul_multi_tier_price` DEFAULT FALSE
+  - `20260901000004_product_price_audit_table` → audit table FK to stocks(sku), RLS, GRANT SELECT
+- Verification: 5 SELECT checks PASS, `modul_multi_tier_price=false` on existing tenant_settings row (Garindo unaffected).
+- Subagent (haiku) escalated BLOCKED on schema mismatch — correctly. I took over inline (faster than re-brief loop).
+
+---
+
 ## 2026-06-24 — Produk & Stok — photo upload made optional (PR #60) + initial_stock approval RPC follow-up (PR #39)
 
 **Photo upload now opsional (PR #60, commit `734edfd` squash-merge):**
