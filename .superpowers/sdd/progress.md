@@ -71,3 +71,17 @@ Base commit: 01853b0
 - 14a: handlePriceChange early-return ordering can leave parent state one update stale on markup.
 - 14b: KasirInvoiceModal "Diskon (X%)" label reads order discount type only.
 - Pre-existing (Phase 0c regression): `p_allow_negative_stock` declared but never forwarded to deduct_stock_fifo.
+
+---
+
+# Multi-Tier Pricing Feature — Task Progress
+
+Branch: worktree-multi-tier-pricing
+Started: 2026-06-24
+Base commit: 0c13a3f (Tasks 1-2 done)
+
+## Tasks
+
+- ✅ Task 1: complete. DB migration 20260624000001: added `modul_multi_tier_price: boolean` column to `tenant_settings` table. Default TRUE. RPC `set_tenant_modul` extended to accept the new key. Migration applied to live DB.
+- ✅ Task 2: complete. Types extended: `ModulSwitchKey` union includes `'modul_multi_tier_price'`; `DbTenantSettings` interface includes `modul_multi_tier_price: boolean` field. tsc --noEmit clean.
+- ✅ Task 3: complete (commit bd677e9). Pengaturan UI toggle wired: MODULS array in ModulSwitchesPanel.tsx appended with multi-tier entry (icon='💵', description='Aktifkan harga grosir terpisah dari eceran...'). Test file created: ModulSwitchesPanel.test.tsx renders toggle row (1 test PASS). vite.config.ts + vitest.setup.ts configured for jsdom + @testing-library/jest-dom. npm run lint PASS.

@@ -9407,3 +9407,33 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - `InvoicePreviewScreen.tsx`: mini-preview card mirrors same computation via IIFE.
 - ✅ Diskon I-2 fix: journal-lines.test.ts added. 5 structural JE infrastructure tests (auto-run PASS). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked .skip due to live-DB cleanup risk on pesanan_items/stock_levels. Founder removes .skip for pre-monthly-close manual verification.
   - Tests/integration/diskon: 48 pass + 2 skip (was 43 pass). Unit 410/410. Lint clean.
+
+## 2026-06-24 — Multi-Tier Pricing Task 1 DONE
+
+- ✅ Task 1: DB schema migration applied. 4 columns added: `stocks.price_grosir`, `customers.default_pricing_tier`, `tenant_settings.modul_multi_tier_price`, `product_price_audit` table created. Commit: c777caa.
+
+## 2026-06-24 — Multi-Tier Pricing Task 2 DONE
+
+**Branch:** `worktree-multi-tier-pricing`
+**Task 2 — TypeScript types + cascadeMap entries + tests**
+- **Files modified:**
+  - `src/types.ts`: 
+    - `StockItem` extended with `price_grosir?: number | null`
+    - `DbCustomer` extended with `default_pricing_tier?: 'eceran' | 'grosir'`
+    - `DbTenantSettings` extended with `modul_multi_tier_price: boolean`
+    - `ModulSwitchKey` union extended with `'modul_multi_tier_price'`
+    - `KasirItem` extended with `pricing_tier_used?: 'eceran' | 'grosir' | null`
+    - `CartItemWithDiscount` extended with `pricing_tier_used?: 'eceran' | 'grosir' | null`
+  - `src/lib/pengaturan/cascadeMap.ts`:
+    - `FieldKey` extended with 4 new UI visibility keys: `'tier_pill_kasir'`, `'tier_dropdown_customer'`, `'price_grosir_column'`, `'csv_bulk_grosir_button'`
+    - `isFieldVisible` cases added for all 4 new keys (return `settings.modul_multi_tier_price`)
+    - `UsageStats` interface extended with `tierEnabledCustomerCount?: number`
+    - `cascadeImpactSummary` case added for `'modul_multi_tier_price'` (warns if tierEnabledCustomerCount > 0, else info)
+  - `src/lib/pengaturan/cascadeMap.test.ts`:
+    - Added 6 multi-tier pricing test cases (nested describe block within existing suite)
+    - Tests verify: field visibility OFF/ON, cascadeImpactSummary warn/info
+- **Test results:** 16/16 PASS (includes 6 new multi-tier tests + 10 existing cascade tests)
+- **Lint:** `npm run lint` PASS (tsc --noEmit clean)
+- **Commit:** `0c13a3f` — "feat(multi-tier): types + cascadeMap entries + tests"
+- **Report:** `.superpowers/sdd/task-2-report.md` documents full implementation + test output + lint verification
+
