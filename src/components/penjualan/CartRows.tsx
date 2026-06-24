@@ -229,6 +229,15 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   const stockMap = stockByWarehouseSku ?? {};
   const { warehouses } = useWarehouses();
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
+  // Net subtotal when modul diskon on — matches per-row display formula
+  // (master_price × qty − discount_amount_rp). Without this, the Keranjang
+  // header showed gross while each row showed net → visual mismatch.
+  const subtotalNet = modulDiskonOn
+    ? items.reduce((s, i) => {
+        const masterPrice = i.master_price_at_sale ?? i.unit_price;
+        return s + (masterPrice * i.qty - (i.discount_amount_rp ?? 0));
+      }, 0)
+    : subtotal;
   const rakitSubtotal = (rakitLines ?? []).reduce((s, r) => s + r.estimatedPrice, 0);
   const totalLineCount = items.length + (rakitLines?.length ?? 0);
   // Empty-state is only correct when BOTH SKU cart and jasa-rakit list are
@@ -251,7 +260,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
           🧺 Keranjang
           <span className="bg-emerald-700 text-white px-2 py-0.5 rounded-full text-[11px] font-extrabold">{totalLineCount} item</span>
         </div>
-        <div className="font-extrabold text-emerald-700 text-[13px]">{formatRp(subtotal + rakitSubtotal)}</div>
+        <div className="font-extrabold text-emerald-700 text-[13px]">{formatRp(subtotalNet + rakitSubtotal)}</div>
       </div>
 
       {items.map(item => {
