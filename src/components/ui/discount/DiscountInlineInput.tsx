@@ -29,8 +29,10 @@ export const DiscountInlineInput: React.FC<DiscountInlineInputProps> = ({
     if (next === type) return;
     if (next === null) { onChange(null, null); return; }
     const currentAmount = computeDiscountAmount(value, type, base);
+    // No current amount: select the format but keep value empty (pill highlights, input blank).
+    // Fixes 2026-06-24 prod bug where clicking Rp/% with empty input silently reset state.
     if (currentAmount === 0 || base <= 0) {
-      onChange(0, next);
+      onChange(null, next);
       return;
     }
     const newValue = next === 'AMOUNT' ? currentAmount : Math.round((currentAmount / base) * 100);

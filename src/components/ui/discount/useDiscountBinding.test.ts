@@ -69,4 +69,25 @@ describe('useDiscountBinding', () => {
     expect(result.current.state.discount_amount_rp).toBe(30000);
     expect(result.current.state.typed_price).toBe(94000); // 100k - 6k
   });
+
+  test('setDiscountFromInput with null value + non-null type → keeps type (empty pill-active state)', () => {
+    // Regression: 2026-06-24 prod bug — user clicks Rp/% on empty input → upstream passes
+    // (null/0, type) → guard reset type to null → pill never highlighted. Fix: keep type set,
+    // clear value/amount.
+    const { result } = renderHook(() => useDiscountBinding(100000, 5));
+    act(() => { result.current.setDiscountFromInput(null, 'PERCENT'); });
+    expect(result.current.state.discount_type).toBe('PERCENT');
+    expect(result.current.state.discount_value).toBeNull();
+    expect(result.current.state.discount_amount_rp).toBe(0);
+    expect(result.current.state.typed_price).toBe(100000); // unchanged when no discount
+  });
+
+  test('setDiscountFromInput with type=null → full reset', () => {
+    const { result } = renderHook(() => useDiscountBinding(100000, 5));
+    act(() => { result.current.setDiscountFromInput(50000, 'AMOUNT'); }); // first set some
+    act(() => { result.current.setDiscountFromInput(null, null); });     // then reset
+    expect(result.current.state.discount_type).toBeNull();
+    expect(result.current.state.discount_value).toBeNull();
+    expect(result.current.state.discount_amount_rp).toBe(0);
+  });
 });

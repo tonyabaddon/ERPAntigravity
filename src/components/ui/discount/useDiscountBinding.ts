@@ -37,10 +37,18 @@ export function useDiscountBinding(
   );
 
   const setDiscountFromInput = useCallback((value: number | null, type: DiscountType) => {
-    if (type === null || value == null || !Number.isFinite(value) || value <= 0) {
+    // type=null = full reset (no discount selected at all)
+    if (type === null) {
       setTriple({ discount_type: null, discount_value: null, discount_amount_rp: 0 });
       return;
     }
+    // Type selected but value missing/invalid: keep type for UI feedback (pill active),
+    // clear value+amount. This is the "user clicked Rp/% but hasn't typed amount yet" state.
+    if (value == null || !Number.isFinite(value) || value < 0) {
+      setTriple({ discount_type: type, discount_value: null, discount_amount_rp: 0 });
+      return;
+    }
+    // value === 0 is also valid: type selected with explicit zero amount
     const amount = computeDiscountAmount(value, type, base);
     setTriple({ discount_type: type, discount_value: value, discount_amount_rp: amount });
   }, [base]);

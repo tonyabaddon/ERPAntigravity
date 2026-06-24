@@ -11,11 +11,21 @@ describe('DiscountInlineInput', () => {
     expect(screen.getByRole('button', { name: '%' })).toBeTruthy();
   });
 
-  test('clicking Rp when no type selected sets type to AMOUNT with current value (or 0)', () => {
+  test('clicking Rp when no type selected sets type to AMOUNT with null value (empty state)', () => {
+    // Regression: 2026-06-24 prod bug — value=0 hit setDiscountFromInput's
+    // value<=0 guard upstream and silently reset state to null. Pass null
+    // so the pill highlights without resetting the user's intent.
     const onChange = vi.fn();
     render(<DiscountInlineInput value={null} type={null} base={1000} onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: 'Rp' }));
-    expect(onChange).toHaveBeenCalledWith(0, 'AMOUNT');
+    expect(onChange).toHaveBeenCalledWith(null, 'AMOUNT');
+  });
+
+  test('clicking % when no type selected sets type to PERCENT with null value (empty state)', () => {
+    const onChange = vi.fn();
+    render(<DiscountInlineInput value={null} type={null} base={1000} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: '%' }));
+    expect(onChange).toHaveBeenCalledWith(null, 'PERCENT');
   });
 
   test('typing into input emits onChange with current type (defaults AMOUNT if null)', () => {
