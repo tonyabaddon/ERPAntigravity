@@ -151,7 +151,7 @@ export default function InvoicePreviewScreen({
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       {/* Header — white bg with navy text per mockup */}
-      <div className="bg-white border border-slate-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border border-slate-200 rounded-t-lg px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-700">
             <ChevronLeft className="w-5 h-5" />
@@ -184,7 +184,7 @@ export default function InvoicePreviewScreen({
         </div>
       </div>
 
-      <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl p-5 md:p-6 shadow-sm">
+      <div className="bg-white border-x border-b border-slate-200 rounded-b-lg p-5 md:p-6 shadow-sm">
         {loadError ? (
           <div className="text-center py-12">
             <div className="text-amber-700 font-bold mb-2">⚠️ Tidak dapat memuat invoice</div>
@@ -202,7 +202,7 @@ export default function InvoicePreviewScreen({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* LEFT col-span-8: invoice preview card */}
             <div className="lg:col-span-8">
-              <div className="bg-slate-100 rounded-xl p-6 min-h-[500px] flex items-center justify-center">
+              <div className="bg-slate-100 rounded-lg p-6 min-h-[500px] flex items-center justify-center">
                 <div className="bg-white shadow-lg rounded p-8 max-w-2xl w-full">
                   <div className="text-center mb-4">
                     <div className="text-5xl opacity-30">📄</div>

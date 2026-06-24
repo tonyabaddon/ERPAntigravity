@@ -258,7 +258,7 @@ export default function LockSubmissionModal({
 
         <div className="space-y-4">
           {drafts.map(d => (
-            <div key={d.id} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40">
+            <div key={d.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50/40">
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start mb-3">
                 <div>
                   <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Deskripsi</div>
@@ -301,7 +301,7 @@ export default function LockSubmissionModal({
               </div>
 
               {d.trackingMode === 'detail' ? (
-                <div className="bg-white border border-slate-200 rounded-xl p-3 space-y-2">
+                <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-widest">Komponen</span>
                     <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export default function LockSubmissionModal({
                   </div>
                 </div>
               ) : (
-                <div className="bg-white border border-slate-200 rounded-xl p-3">
+                <div className="bg-white border border-slate-200 rounded-lg p-3">
                   <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Lump Sum HPP</div>
                   <input
                     type="number"

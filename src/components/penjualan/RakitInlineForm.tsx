@@ -37,7 +37,7 @@ export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel
     : 'Mis. Box Wiring untuk PT XYZ — 1 unit';
 
   return (
-    <div className={`bg-white border ${isCustom ? 'border-sky-300' : 'border-orange-300'} rounded-xl p-3 space-y-3`}>
+    <div className={`bg-white border ${isCustom ? 'border-sky-300' : 'border-orange-300'} rounded-lg p-3 space-y-3`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${

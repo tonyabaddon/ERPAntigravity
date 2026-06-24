@@ -70,7 +70,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
 
       {/* Search results dropdown */}
       {filtered.length > 0 && (
-        <div className="mt-2 border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white">
+        <div className="mt-2 border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100 bg-white">
           {filtered.map(c => (
             <button
               key={c.id}
@@ -99,7 +99,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
 
       {/* Selected customer chip (navy-themed to match mockup palette) */}
       {isSelected && selected && (
-        <div className="mt-2 bg-[#012749]/5 border border-[#012749]/30 rounded-xl px-4 py-3 flex justify-between items-center">
+        <div className="mt-2 bg-[#012749]/5 border border-[#012749]/30 rounded-lg px-4 py-3 flex justify-between items-center">
           <div>
             <div className="font-bold text-[#012749] text-sm">{selected.name}</div>
             <div className="text-[11px] text-slate-600 mt-0.5">

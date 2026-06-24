@@ -7,7 +7,7 @@ export interface TokpedStripProps {
 
 export function TokpedStrip({ value, onChange }: TokpedStripProps) {
   return (
-    <div className="bg-gradient-to-r from-amber-100 to-amber-50 border border-amber-300 border-l-4 border-l-amber-600 rounded-xl px-4 py-3 mb-4 flex items-center gap-3">
+    <div className="bg-gradient-to-r from-amber-100 to-amber-50 border border-amber-300 border-l-4 border-l-amber-600 rounded-lg px-4 py-3 mb-4 flex items-center gap-3">
       <span className="text-2xl leading-none">🛍️</span>
       <div className="flex-1">
         <label className="text-[11px] font-extrabold text-amber-700 uppercase tracking-widest block">
@@ -34,7 +34,7 @@ export interface WhatsappStripProps {
 
 export function WhatsappStrip({ phone, chatUrl, onPhoneChange, onChatUrlChange }: WhatsappStripProps) {
   return (
-    <div className="bg-gradient-to-r from-green-100 to-green-50 border border-green-300 border-l-4 border-l-green-600 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
+    <div className="bg-gradient-to-r from-green-100 to-green-50 border border-green-300 border-l-4 border-l-green-600 rounded-lg px-4 py-3 mb-4 flex items-start gap-3">
       <span className="text-2xl leading-none mt-0.5">💬</span>
       <div className="flex-1">
         <label className="text-[11px] font-extrabold text-green-700 uppercase tracking-widest block">

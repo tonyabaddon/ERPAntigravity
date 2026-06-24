@@ -57,7 +57,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
   };
 
   return (
-    <div className="mt-3 border-2 border-[#012749]/30 rounded-xl p-4 bg-[#012749]/5">
+    <div className="mt-3 border-2 border-[#012749]/30 rounded-lg p-4 bg-[#012749]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[#012749]">Customer Baru</div>

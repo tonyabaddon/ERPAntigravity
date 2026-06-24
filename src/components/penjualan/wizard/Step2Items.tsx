@@ -92,7 +92,7 @@ export default function Step2Items(props: Props) {
         </div>
 
         {filtered.length > 0 && (
-          <div className="border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="border border-slate-200 rounded-lg divide-y divide-slate-100">
             {filtered.map((s) => {
               const atas = s.stock_atas ?? 0;
               const bawah = s.stock_bawah ?? 0;
@@ -227,7 +227,7 @@ export default function Step2Items(props: Props) {
         )}
 
         {(skuCount > 0 || jasaCount > 0) && (
-          <div className="mt-3 bg-slate-50 rounded-xl p-4 space-y-1.5">
+          <div className="mt-3 bg-slate-50 rounded-lg p-4 space-y-1.5">
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">
                 Subtotal Produk ({skuCount} item{preOrderCount > 0 ? `, ${preOrderCount} pre-order` : ''})
