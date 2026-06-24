@@ -48,3 +48,42 @@ export async function closeAccountingPeriod(
 
   return (data as { ok: true; closed_at: string }) as PeriodCloseResult;
 }
+
+/**
+ * Result from year-end fiscal close.
+ * Posts JEs to close Pendapatan + Beban → Ikhtisar Laba Rugi (3-1900),
+ * then Ikhtisar → Laba Ditahan (3-1100), then Prive → Modal Owner.
+ */
+export interface YearEndCloseResult {
+  ok: true;
+  fiscal_year: number;
+  total_pendapatan: number;
+  total_beban: number;
+  net_income: number;
+  prive_closed: number;
+  closed_at: string;
+}
+
+/**
+ * Close a fiscal year — posts 4-step JE sequence:
+ *   1. D Pendapatan, K Ikhtisar (zero out revenue accounts)
+ *   2. D Ikhtisar, K Beban (zero out expense accounts)
+ *   3. D/K Ikhtisar ↔ Laba Ditahan (net income to retained earnings)
+ *   4. D Modal Owner, K Prive (close drawing account)
+ *
+ * Prerequisite: all months of the year should be CLOSED already.
+ *
+ * @param year - Fiscal year (e.g., 2025)
+ */
+export async function closeFiscalYear(year: number): Promise<YearEndCloseResult> {
+  const sb = requireSupabase();
+
+  const { data, error } = await sb.rpc('close_fiscal_year', {
+    p_year: year,
+    p_tenant_id: null,
+  });
+
+  if (error) throw new Error(error.message);
+
+  return data as YearEndCloseResult;
+}

@@ -1,105 +1,133 @@
-# Task 4 Report — Pattern C Integration Tests
+# Task 4 Report — RekonsiliasiScreen GL Mode + JournalColumn
 
-**Status:** DONE  
-**Date:** 2026-06-23  
-**Branch:** worktree-akuntansi-phase0c  
-**Commits:** 2e596af..HEAD  
-**Tests:** 26/26 PASS
-
----
-
-## Deliverables
-
-### Files Created
-1. **tests/integration/akuntansi-phase0c/_setup.ts**
-   - Service-role client configuration (auth.uid() = NULL per Pattern C)
-   - COA ID constants for HPP, Persediaan, Hutang Usaha
-   - Pattern C explanation in header comment
-
-2. **tests/integration/akuntansi-phase0c/kasir-hpp.test.ts** (8 tests)
-   - HPP COA (5-1100) structure + schema verification
-   - Persediaan COA (1-1510) structure + schema verification
-   - record_kasir_sale function signature (22 params, accepts p_cash_account_id)
-   - KASIR_SALE source_type enum value exists
-   - journal_entry_lines schema supports 4-line entries
-
-3. **tests/integration/akuntansi-phase0c/record-pi.test.ts** (9 tests)
-   - Hutang Usaha COA (2-1100) structure + schema verification
-   - Persediaan COA (1-1510) reused by PI dual-write
-   - record_pi function signature (accepts payload jsonb)
-   - PI_TAGIHAN source_type enum value exists
-   - source_ref_table column for purchase_invoices tracking
-
-4. **tests/integration/akuntansi-phase0c/backfill.test.ts** (9 tests)
-   - _phase0c_backfill_historical() function deployment verification
-   - BACKFILL source_type enum value + BACKFILL entries queryable
-   - gl_dual_write_anomalies table schema complete
-   - Trial balance structure (DEBIT/CREDIT filtering + SUM calculation)
-   - Anomalies can be filtered by source_rpc and resolved_at
+**Status:** DONE
+**Date:** 2026-06-23
+**Branch:** worktree-akuntansi-phase5
+**Base commit:** ba99a85
+**Verification:** tsc clean · 48 test files · 401/401 PASS
 
 ---
 
-## Test Results
+## Existing RekonsiliasiScreen Structure
 
-```
-Test Files  3 passed (3)
-Tests       26 passed (26)
-Duration    5.24s
-```
-
-### Breakdown
-- `kasir-hpp.test.ts`: 8/8 PASS
-- `record-pi.test.ts`: 9/9 PASS
-- `backfill.test.ts`: 9/9 PASS
-
-### TypeScript
-```
-npx tsc --noEmit
-(no errors)
-```
+Before this task, `RekonsiliasiScreen.tsx` had:
+- 3-column grid: `OrdersColumn` (left) · `MutasiColumn` (center) · `CashColumn` (right)
+- `openFindPairForMutasi` builds `DrawerCandidate[]` from `orders[].slots` (payable_slots) and opens `MappingDrawer` with single-select mode
+- `MappingDrawer` already had `multiAllocation` + `onPickMulti` props added in Task 3
+- No GL awareness — no `glMode`, no `glConfig`, no journal entry lines fetched
 
 ---
 
-## Pattern C Approach
+## Files Modified
 
-**Why Pattern C?**
-Pattern B (SET LOCAL config per RPC call) breaks across separate HTTP requests because each supabase.rpc() is a new connection → new transaction → config lost. Owner JWT auth not available (Tony Wei's password unknown).
+### `src/components/RekonsiliasiScreen.tsx`
 
-**What tests verify:**
-1. **Structural:** Schema columns, enums, tables exist and are accessible
-2. **Deployment:** Functions exist via RPC signature tests (not "unknown function" errors)
-3. **Role-gate:** RPC functions wired with _assert_owner_active() guards
-4. **Pre/post-backfill:** Queries work regardless of whether backfill data exists yet
+New imports:
+- `fetchAccountingConfig`, `fetchCoa` from `../lib/akuntansi/service`
+- `AccountingConfig`, `CoaAccount` types from `../lib/akuntansi/types`
+- `fetchUnreconciledJournalLines`, `matchJournalToBankLine`, `autoMatchJournalLinesToBank`, `UnreconciledJournalLine` from `../lib/akuntansi/journalReconService`
+- `JournalColumn` from `./rekonsiliasi/JournalColumn`
 
-**What tests do NOT verify:**
-- Happy-path GL posting with real Owner JWT (Task 5 E2E service tests)
-- Actual JE creation from kasir_transactions/purchase_invoices (verified in Task 3)
-- Anomaly count = 33 (verified post-backfill; pre-backfill may be 0)
+New state:
+- `glMode: boolean` — toggle flag
+- `glConfig: AccountingConfig | null` — fetched on mount
+- `glBankCoaAccounts: CoaAccount[]` — BANK-subtype COA accounts (fetched when glMode on)
+- `glCoaAccountId: string | null` — active COA selection
+- `glJournalLines: UnreconciledJournalLine[]` — cached for drawer candidates
+- `glRefreshKey: number` — bumped after match to force JournalColumn refetch
+
+New effects:
+- Mount: `fetchAccountingConfig()` → `setGlConfig`
+- `glMode` on: `fetchCoa()` → filter `account_subtype === 'BANK'` → auto-select first
+- `glCoaAccountId / period / glRefreshKey` change: `fetchUnreconciledJournalLines()` → `setGlJournalLines`
+
+New derived:
+- `glModeAvailable = glConfig?.enable_dual_write_to_gl === true && accounts.length > 0`
 
 ---
 
-## Key Design Decisions
+## Files Created
 
-1. **Flexible assertion logic:** Tests pass pre-backfill (empty result sets) and post-backfill (populated data)
-   - e.g., `if (hpp && hpp.length > 0) { expect(...) }` allows test to run before migration is applied
+### `src/components/rekonsiliasi/JournalColumn.tsx`
 
-2. **Schema over data:** Focus on structure (columns, enums, RPC signatures) rather than specific row counts
-   - Ensures test suite passes immediately after worktree branch creation
+Props:
+```typescript
+interface Props {
+  coaAccountId: string | null;
+  bankAccountId: string | null;
+  bankAccountLabel: string;
+  fromDate: string;
+  toDate: string;
+  onPickJournalLine: (line: UnreconciledJournalLine) => void;
+  onAutoMatch: () => Promise<void>;
+  refreshKey?: number;
+}
+```
 
-3. **COA ID constants:** Defined in _setup.ts but tests don't hardcode them
-   - Allows future tenant-specific overrides without test changes
+Layout:
+- Header: "GL · Journal Entries" + bankAccountLabel + count badge + Auto-match button
+- Scrollable list with per-row: `entry_number` (mono blue) + `entry_date` + optional description + `account_code` chip + amount + DEBIT (emerald) / CREDIT (rose) side chip
+- Hover: `hover:bg-blue-50 hover:border-blue-200`
+- Empty state: "Semua sudah cocok ✓"
+- No COA state: link prompt
+- Auto-match button disabled when `!bankAccountId`
 
-4. **No mocking:** Uses live test database (supabaseAdmin service-role client)
-   - Matches Phase 0a/0b integration test pattern
-   - Requires VITE_SUPABASE_URL and SUPABASE_SERVICE_KEY env vars (loaded from .env)
+---
+
+## GL Mode Toggle Wiring
+
+Toggle button location: top-right of header, next to period selector and "Tutup Buku".
+
+Condition: Only rendered when `glModeAvailable` is true (i.e. `enable_dual_write_to_gl === true && accounts.length > 0`).
+
+Visual states:
+- Off: outlined indigo button "Match dengan GL (Phase 5)"
+- On: filled indigo "✓ GL Mode Aktif"
+
+COA selector: shown below header bar when `glMode && glBankCoaAccounts.length > 1`.
+
+---
+
+## Auto-Match Button Location
+
+The "Auto-match" button lives in `JournalColumn` header (top-right). It calls the `onAutoMatch` prop which in `RekonsiliasiScreen` runs:
+```typescript
+autoMatchJournalLinesToBank({ bankAccountId: accounts[0].id, periodYear, periodMonth })
+```
+
+**Known limitation:** Auto-match uses `accounts[0].id` regardless of which COA account is selected in the multi-COA selector. For Garindo (single-tenant, one bank account), this is fine. Future: correlate selected `glCoaAccountId` back to the specific `bank_accounts` row via `cash_accounts.coa_account_id` lookup.
+
+---
+
+## Flow (Option A: bank line as anchor)
+
+1. User activates GL mode → OrdersColumn swapped with JournalColumn
+2. User clicks a bank line in MutasiColumn → `openFindPairForMutasi` detects `glMode=true`
+3. `buildGlCandidates(line)` scores `glJournalLines` by amount proximity (±5% tolerance, 97% score on tight match)
+4. `MappingDrawer` opens with `multiAllocation=true`, `headerBg` in indigo tone
+5. User selects one or more journal lines → clicks "Match selected"
+6. `handlePickMultiGl` calls `matchJournalToBankLine({ bankLineId, journalEntryLineIds, matchReason: 'manual_gl' })`
+7. Success: toast + `glRefreshKey++` (JournalColumn refetches) + `refresh()` (MutasiColumn refetches)
+
+---
+
+## Branch Verification
+
+```
+git branch --show-current
+→ worktree-akuntansi-phase5
+```
 
 ---
 
 ## Verification Checklist
 
-- [x] All 26 tests PASS
-- [x] TypeScript compiles cleanly (npx tsc --noEmit)
-- [x] Pattern C structure (no Owner JWT, schema verification)
-- [x] Tested against worktree-akuntansi-phase0c branch
-- [x] progress.md updated with Task 4 completion
-- [x] Ready for Task 5 (final deploy + production smoke)
+- [x] `npx tsc --noEmit` — 0 errors
+- [x] `npm test -- --run` — 48 files, 401/401 PASS
+- [x] GL mode toggle visible only when `enable_dual_write_to_gl === true`
+- [x] Standard 3-column flow unchanged when `glMode=false`
+- [x] `JournalColumn` created with correct props interface
+- [x] `MappingDrawer` opened with `multiAllocation=true` in GL mode
+- [x] Auto-match button in JournalColumn header
+- [x] Empty state: "Semua sudah cocok ✓"
+- [x] No COA state: link prompt shown

@@ -4,10 +4,11 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { CalendarCheck, Lock, RotateCcw } from 'lucide-react';
+import { CalendarCheck, Lock, RotateCcw, Archive } from 'lucide-react';
 import { fetchAccountingPeriods } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod } from '../../../lib/akuntansi/types';
 import PeriodCloseModal from './PeriodCloseModal';
+import YearEndCloseModal from './YearEndCloseModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
   const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalPeriod, setModalPeriod] = useState<AccountingPeriod | null>(null);
+  const [yearEndModalOpen, setYearEndModalOpen] = useState(false);
 
   const loadPeriods = useCallback(async () => {
     setLoading(true);
@@ -156,14 +158,26 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
     <>
       <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
-            <CalendarCheck className="w-5 h-5" />
+        <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
+              <CalendarCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#012749]">Status Periode Akuntansi</h3>
+              <p className="text-xs text-gray-600">Per period status overview · last 12 periods</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-bold text-[#012749]">Status Periode Akuntansi</h3>
-            <p className="text-xs text-gray-600">Per period status overview · last 12 periods</p>
-          </div>
+          {/* Year-End Close button */}
+          <button
+            type="button"
+            onClick={() => setYearEndModalOpen(true)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors"
+            title="Tutup tahun fiskal — post Pendapatan/Beban ke Ikhtisar Laba Rugi"
+          >
+            <Archive className="w-3.5 h-3.5" />
+            Tutup Tahun Fiskal
+          </button>
         </div>
 
         {/* Period list */}
@@ -193,6 +207,18 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
           showToast={showToast}
         />
       )}
+
+      {/* Year-End Close Modal */}
+      <YearEndCloseModal
+        open={yearEndModalOpen}
+        defaultYear={currentYear - 1}
+        onClose={() => setYearEndModalOpen(false)}
+        onClosed={() => {
+          setYearEndModalOpen(false);
+          loadPeriods();
+        }}
+        showToast={showToast}
+      />
     </>
   );
 }

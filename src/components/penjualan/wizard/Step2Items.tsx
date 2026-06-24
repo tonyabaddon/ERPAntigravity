@@ -6,6 +6,7 @@ import CartRows from '../CartRows';
 import RakitButtonsRow from '../RakitButtonsRow';
 import RakitInlineForm from '../RakitInlineForm';
 import { isPreOrder } from '../../../lib/wizard/validation';
+import NewProductInlineForm from './NewProductInlineForm';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -49,6 +50,10 @@ interface Props {
 
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
+  const [showNewProductForm, setShowNewProductForm] = useState(false);
+
+  // Derive categories for the form's datalist
+  const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
 
   const filtered = q.trim().length > 0
     ? props.stocks.filter(s =>
@@ -115,6 +120,36 @@ export default function Step2Items(props: Props) {
               );
             })}
           </div>
+        )}
+
+        {/* + Produk Baru affordance — always visible below results */}
+        {!showNewProductForm && (
+          <div className="mt-3 flex items-center justify-between text-[11px]">
+            <div className="text-slate-500">
+              {q.trim().length > 0 && filtered.length === 0
+                ? 'Produk tidak ketemu di daftar?'
+                : 'Produk belum ada di daftar?'}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNewProductForm(true)}
+              className="px-4 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90"
+            >
+              + Produk Baru
+            </button>
+          </div>
+        )}
+
+        {showNewProductForm && (
+          <NewProductInlineForm
+            onSaved={(product) => {
+              props.onAddItem(product);
+              setShowNewProductForm(false);
+            }}
+            onCancel={() => setShowNewProductForm(false)}
+            showToast={props.showToast}
+            existingCategories={existingCategories}
+          />
         )}
 
         <div className="mt-2">

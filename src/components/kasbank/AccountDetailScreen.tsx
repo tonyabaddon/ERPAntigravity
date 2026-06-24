@@ -13,8 +13,11 @@ import {
   List,
   Hourglass,
   Info,
+  CheckCircle2,
 } from 'lucide-react';
 import { fetchCashAccountBalances, fetchAccountLedger } from '../../lib/kasbank/service';
+import { fetchUnreconciledJournalLines } from '../../lib/akuntansi/journalReconService';
+import type { UnreconciledJournalLine } from '../../lib/akuntansi/journalReconService';
 import { supabase } from '../../lib/supabaseClient';
 import type { CashAccountBalance } from '../../lib/kasbank/types';
 import type { GeneralLedgerRow, JournalSource } from '../../lib/akuntansi/types';
@@ -125,6 +128,20 @@ function getStatusVariant(sourceType: JournalSource): StatusVariant {
   return 'cleared';
 }
 
+// ---------------------------------------------------------------------------
+// Days unmatched calculation
+// ---------------------------------------------------------------------------
+
+function daysUnmatched(entryDate: string): string {
+  const today = new Date();
+  const entryDateObj = new Date(entryDate);
+  const diffMs = today.getTime() - entryDateObj.getTime();
+  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (days === 0) return 'hari ini';
+  if (days === 1) return '1 hari';
+  return `${days} hari`;
+}
+
 interface StatusChipProps {
   variant: StatusVariant;
 }
@@ -197,7 +214,11 @@ export default function AccountDetailScreen({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // Active tab
-  const [activeTab, setActiveTab] = useState<'riwayat' | 'belum-cair' | 'info'>('riwayat');
+  const [activeTab, setActiveTab] = useState<'riwayat' | 'belum-cair' | 'belum-cocok' | 'info'>('riwayat');
+
+  // Unreconciled journal lines for Belum Cocok tab
+  const [unmatchedLines, setUnmatchedLines] = useState<UnreconciledJournalLine[]>([]);
+  const [loadingUnmatched, setLoadingUnmatched] = useState(false);
 
   // Active aksi (drives modal visibility)
   const [aksi, setAksi] = useState<AksiAction | null>(null);
@@ -250,6 +271,26 @@ export default function AccountDetailScreen({
       loadLedger(balance.coa_account_id, period.fromDate, period.toDate);
     }
   }, [balance, period, loadLedger]);
+
+  // ---------------------------------------------------------------------------
+  // Load unreconciled journal lines when Belum Cocok tab is active
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (activeTab !== 'belum-cocok' || !balance?.coa_account_id) {
+      return;
+    }
+    setLoadingUnmatched(true);
+    fetchUnreconciledJournalLines(balance.coa_account_id, period.fromDate, period.toDate)
+      .then(setUnmatchedLines)
+      .catch(err => {
+        console.error('[AccountDetailScreen] fetchUnreconciledJournalLines error', err);
+        showToast('Gagal memuat jurnal belum cocok', 'warning');
+        setUnmatchedLines([]);
+      })
+      .finally(() => setLoadingUnmatched(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, balance?.coa_account_id, period]);
 
   // ---------------------------------------------------------------------------
   // Aksi action handler
@@ -442,6 +483,24 @@ export default function AccountDetailScreen({
             </span>
           )}
         </button>
+        {coaMeta?.account_type === 'BANK' && (
+          <button
+            onClick={() => setActiveTab('belum-cocok')}
+            className={`px-4 py-3 text-[13px] font-extrabold whitespace-nowrap transition-colors ${
+              activeTab === 'belum-cocok'
+                ? 'border-b-2 border-emerald-600 text-[#012749]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <CheckCircle2 className="inline w-3.5 h-3.5 mr-1" />
+            Belum Cocok
+            {unmatchedLines.length > 0 && (
+              <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                {unmatchedLines.length}
+              </span>
+            )}
+          </button>
+        )}
         <button
           disabled
           className="px-4 py-3 text-[13px] font-bold text-gray-300 cursor-not-allowed whitespace-nowrap"
@@ -729,6 +788,123 @@ export default function AccountDetailScreen({
                       </button>
                     </>
                   )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Belum Cocok tab - Unreconciled journal entries (BANK accounts only) */}
+      {activeTab === 'belum-cocok' && coaMeta?.account_type === 'BANK' && (
+        <div className="bg-white">
+          {/* Filter bar */}
+          <div className="px-6 py-4 flex items-center gap-3 text-[12px] flex-wrap">
+            <span className="font-bold text-gray-600 text-xs">Periode:</span>
+
+            {(
+              [
+                { key: 'bulan-ini', label: 'Bulan ini' },
+                { key: '30-hari', label: '30 hari' },
+                { key: 'tahun-ini', label: 'Tahun ini' },
+              ] as { key: PeriodPreset; label: string }[]
+            ).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => handlePreset(key)}
+                className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
+                  activePreset === key
+                    ? 'bg-[#012749] text-white'
+                    : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div className="border-t border-gray-200">
+            {loadingUnmatched ? (
+              <div className="p-8 text-center text-[13px] text-gray-500">
+                Memuat jurnal belum cocok...
+              </div>
+            ) : unmatchedLines.length === 0 ? (
+              <div className="p-12 text-center text-[13px] text-gray-500">
+                <CheckCircle2 className="w-8 h-8 mx-auto mb-3 text-emerald-400" />
+                <p className="font-bold text-emerald-700">Semua sudah cocok ✓</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <p className="text-[13px] font-bold text-gray-900">
+                    Journal Entries Belum Cocok dengan Bank Statement
+                  </p>
+                  <p className="text-[11px] text-gray-600 mt-1">
+                    Buka Modul Rekonsiliasi untuk match
+                  </p>
+                </div>
+
+                {/* Table */}
+                <table className="w-full text-[12px]">
+                  <thead style={{ background: '#eff4ff' }}>
+                    <tr className="text-[10px] uppercase font-extrabold text-gray-600">
+                      <th className="text-left py-2 px-3">Tanggal</th>
+                      <th className="text-left py-2 px-3">No. Entry</th>
+                      <th className="text-left py-2 px-3">Keterangan</th>
+                      <th className="text-right py-2 px-3">Jumlah</th>
+                      <th className="text-center py-2 px-3">Sisi</th>
+                      <th className="text-center py-2 px-3">Belum Cocok</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unmatchedLines.map((line, idx) => (
+                      <tr
+                        key={`${line.id}-${idx}`}
+                        className="border-t border-gray-100 hover:bg-blue-50/30"
+                      >
+                        <td className="py-2 px-3 font-mono text-gray-600">
+                          {formatEntryDate(line.entry_date)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-blue-700">
+                          {line.entry_number}
+                        </td>
+                        <td className="py-2 px-3 text-gray-700">
+                          {line.description ?? '—'}
+                        </td>
+                        <td className="py-2 px-3 text-right font-bold text-gray-900">
+                          {new Intl.NumberFormat('id-ID').format(line.amount)}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                              line.side === 'DEBIT'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}
+                          >
+                            {line.side === 'DEBIT' ? 'Debit' : 'Kredit'}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-center text-[11px] text-gray-600">
+                          {daysUnmatched(line.entry_date)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Action button */}
+                <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                  <button
+                    onClick={() => {
+                      showToast('Modul Rekonsiliasi hadir di Phase 2', 'info');
+                    }}
+                    className="text-[12px] font-bold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    Buka Modul Rekonsiliasi
+                  </button>
                 </div>
               </>
             )}

@@ -46,6 +46,11 @@ import { wibDateString } from '../../lib/format';
 import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { createTempoInvoice } from '../../lib/piutangService';
+import {
+  createSalesOrder,
+  fetchSalesOrderById,
+  markSalesOrderConverted,
+} from '../../lib/salesOrderService';
 import WizardStepper from './wizard/WizardStepper';
 import Step1ChannelCustomer from './wizard/Step1ChannelCustomer';
 import Step2Items from './wizard/Step2Items';
@@ -74,10 +79,14 @@ export interface CatatPenjualanWizardProps {
   initialChannel?: KasirChannel;
   initialPrefillSku?: string;
   onNavigate?: (page: ActivePage) => void;
+  mode?: 'invoice' | 'quote';
+  fromSalesOrderId?: string;
 }
 
 export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const { currentUser, showToast, onBack, onSaved, initialChannel, initialPrefillSku, onNavigate } = props;
+  const mode = props.mode ?? 'invoice';
+  const fromSalesOrderId = props.fromSalesOrderId;
 
   // Stepper state
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -298,6 +307,75 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialPrefillSku, loading, stocks]);
 
+  // Pre-fill from SO when converting Sales Order → Sales Invoice.
+  // One-shot: fetches SO and seeds channel/customer/items/notes. Operator
+  // can still edit anything before saving the SI.
+  useEffect(() => {
+    if (!fromSalesOrderId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const so = await fetchSalesOrderById(fromSalesOrderId);
+        if (cancelled || !so) return;
+        setChannel(so.channel as KasirChannel);
+        // Customer: try match in local customers, else build a stub
+        const match = customers.find((c) => c.id === so.customer_id);
+        if (match) {
+          setCustomer(match);
+        } else if (so.customer_id) {
+          setCustomer({
+            id: so.customer_id,
+            name: so.customer_name,
+            wa_number: so.customer_phone ?? '',
+            company: so.customer_company ?? '',
+            address: null,
+            created_at: '',
+            allows_tempo: false,
+            term_days: 0,
+            credit_limit: 0,
+            order_count: 0,
+            total_spend: 0,
+          } as DbCustomerWithStats);
+        }
+        // Items: split SKU rows from jasa lump-sum rows
+        const skuRows: CartItem[] = [];
+        const jasaRows: RakitLine[] = [];
+        for (const it of so.items) {
+          if (it.sku) {
+            skuRows.push({
+              _key: ++_itemSeq,
+              sku: it.sku,
+              name: it.name,
+              qty: it.qty,
+              unit_price: it.unit_price,
+              hpp_per_unit: it.hpp_per_unit,
+              subtotal: it.subtotal,
+              hpp_subtotal: it.hpp_subtotal,
+              warehouse: null,
+              warehouse_id: it.warehouse_id ?? null,
+            });
+          } else {
+            jasaRows.push({
+              id: `prefill-${Math.random().toString(36).slice(2)}`,
+              type: 'jasa_custom_panel',  // default; user can adjust
+              description: it.name,
+              estimatedPrice: it.unit_price,
+              hppEstimate: it.hpp_per_unit,
+            });
+          }
+        }
+        setCart(skuRows);
+        setRakitLines(jasaRows);
+        setNotes(so.notes ?? '');
+        showToast(`Pre-filled dari ${so.so_number}`, 'success');
+      } catch (err) {
+        showToast(`Gagal pre-fill dari SO: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromSalesOrderId, customers.length]);
+
   // Rakit handlers
   const openRakitForm = (t: RakitServiceType) => {
     setRakitFormType(t);
@@ -397,6 +475,35 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       throw new Error('cash_account_missing');
     }
 
+    // New: mode='quote' → createSalesOrder, no payment/ongkir/alamat
+    if (mode === 'quote') {
+      const skuItems = cart.map(({ _key, ...rest }) => rest);
+      const serviceItems = rakitLines.map((l) => ({
+        sku: null,
+        name: l.description,
+        qty: 1,
+        unit_price: l.estimatedPrice,
+        hpp_per_unit: l.hppEstimate,
+        subtotal: l.estimatedPrice,
+        hpp_subtotal: l.hppEstimate,
+        warehouse_id: null,
+        warehouse: null,
+      }));
+      const so = await createSalesOrder({
+        channel,
+        items: [...skuItems, ...serviceItems],
+        subtotal,
+        customer_id: customer.id,
+        customer_name: customer.name,
+        customer_phone: customer.wa_number || null,
+        customer_company: customer.company || null,
+        notes: notes.trim() || null,
+      });
+      showToast(`Sales Order ${so.so_number} tersimpan`, 'success');
+      if (onNavigate) onNavigate('daftarPenawaran'); else onBack();
+      return;
+    }
+
     if (path === 'tempo') {
       if (!customer.allows_tempo) {
         showToast('Pelanggan ini belum diaktifkan untuk Tempo.', 'warning');
@@ -434,6 +541,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         discount_amount_rp: orderDiscountAmountRp,
       });
       if (result.kind === 'ok') {
+        if (fromSalesOrderId) {
+          try {
+            await markSalesOrderConverted(fromSalesOrderId, { orderId: result.order_id });
+          } catch (err) {
+            showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+          }
+        }
         const termDaysLabel = customer.term_days ? ` (Jatuh tempo ${customer.term_days} hari).` : '.';
         showToast(`Faktur tempo dibuat${termDaysLabel}`, 'success');
         onSaved(result.order_id);
@@ -496,6 +610,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           estimatedPrice: l.estimatedPrice,
         })),
       });
+      if (fromSalesOrderId) {
+        try {
+          await markSalesOrderConverted(fromSalesOrderId, { kasirTxId: txId });
+        } catch (err) {
+          showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+        }
+      }
       showToast('✅ Transaksi WIP tersimpan. Cek di Daftar Pesanan untuk lock + approval.', 'success');
       onSaved(txId);
       if (onNavigate) onNavigate('daftarPesanan'); else onBack();
@@ -550,6 +671,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         discount_amount_rp: orderDiscountAmountRp,
       },
     });
+    if (fromSalesOrderId) {
+      try {
+        await markSalesOrderConverted(fromSalesOrderId, { kasirTxId: tx.id });
+      } catch (err) {
+        showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      }
+    }
     onSaved(tx.id);
     if (onNavigate) onNavigate('invoicePreview'); else onBack();
   };
@@ -559,7 +687,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     ? 'Pilih channel & customer'
     : currentStep === 2
     ? 'Tambah produk & jasa'
-    : 'Pembayaran & finalisasi';
+    : (mode === 'quote' ? 'Finalisasi penawaran' : 'Pembayaran & finalisasi');
 
   // Channel label for the context recap bar (Steps 2 & 3).
   const channelDef = getChannelDef(channel);
@@ -569,7 +697,10 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       {/* Header — white per mockup. Date/user pills dropped; replaced with Batal link. */}
       <div className="bg-white border border-slate-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-extrabold text-[#012749]">Catat Penjualan</h1>
+          <h1 className={`text-lg font-extrabold ${mode === 'quote' ? 'text-amber-800' : 'text-[#012749]'}`}>
+            {mode === 'quote' && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider mr-2">QUOTE MODE</span>}
+            {mode === 'quote' ? 'Sales Order' : 'Sales Invoice'}
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">Step {currentStep} dari 3 — {stepSlug}</p>
         </div>
         <button
@@ -582,6 +713,16 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       </div>
 
       <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm overflow-hidden">
+        {fromSalesOrderId && (
+          <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-emerald-600 text-base">✓</span>
+              <span className="text-emerald-900">
+                <strong>Pre-filled dari Sales Order</strong> — Channel, customer, items, dan catatan sudah diisi. Bisa adjust kalau scope berubah.
+              </span>
+            </div>
+          </div>
+        )}
         <WizardStepper
           currentStep={currentStep}
           completedSteps={completedSteps}
@@ -698,6 +839,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
             {currentStep === 3 && customer && (
               <Step3Payment
+                mode={mode}
                 customer={customer}
                 items={cart}
                 rakitLines={rakitLines}
