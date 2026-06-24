@@ -9437,3 +9437,14 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **Commit:** `0c13a3f` — "feat(multi-tier): types + cascadeMap entries + tests"
 - **Report:** `.superpowers/sdd/task-2-report.md` documents full implementation + test output + lint verification
 
+
+## Task 6 DONE — record_kasir_sale tier-aware (4 smoke tests PASS).
+
+- Migration: `supabase/migrations/20260901000005_record_kasir_sale_tier.sql`
+- Creates OR REPLACES `record_kasir_sale` with same 25-param signature + `RETURNS public.kasir_transactions`
+- Reads `modul_multi_tier_price` from `tenant_settings` early in body
+- Per-line: reads `pricing_tier_used` from item JSONB; when modul ON validates tier in (eceran,grosir) and strict-equality checks `master_price_at_sale` vs stocks.price/price_grosir
+- `pricing_tier_used` persists in stored JSONB snapshot via left-operand passthrough
+- Modul OFF: tier field fully ignored (Garindo default unchanged)
+- TS type `KasirItem.pricing_tier_used` already present from Task 1/2 — no change needed
+- Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
