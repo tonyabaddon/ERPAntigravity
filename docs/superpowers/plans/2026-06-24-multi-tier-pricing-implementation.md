@@ -1758,6 +1758,7 @@ Append progress.md: "Task 12 DONE — Multi-tier pricing feature complete. Integ
 - [ ] Manual founder smoke 7 scenarios passed
 - [ ] progress.md updated per task
 - [ ] Modul default OFF di tenant Garindo; tidak ada perubahan visible
+- [x] Multi-tier shipped to dev DB via slot 20260901xxx. Garindo no-regression smoke PASS (4 scenarios).
 
 ---
 

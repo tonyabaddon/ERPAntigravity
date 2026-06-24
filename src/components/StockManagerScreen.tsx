@@ -16,6 +16,7 @@ import StockAdjustmentModal from './stok/StockAdjustmentModal';
 import PriceChangeRequestModal from './stok/PriceChangeRequestModal';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import BulkUploadSection from './produk/BulkUploadSection';
+import BulkUpdateGrosirSection from './produk/BulkUpdateGrosirSection';
 import StockTableView from './produk/StockTableView';
 import CatalogGridView from './produk/CatalogGridView';
 import ProductForm from './produk/ProductForm';
@@ -339,13 +340,22 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
       )}
 
       {activeTab === 'bulk' && (
-        <BulkUploadSection
-          stockList={stockList}
-          companyName={companyName}
-          showToast={showToast}
-          onStockUpdate={onStockUpdate}
-          onUploaded={refreshPending}
-        />
+        <>
+          <BulkUploadSection
+            stockList={stockList}
+            companyName={companyName}
+            showToast={showToast}
+            onStockUpdate={onStockUpdate}
+            onUploaded={refreshPending}
+          />
+          {showGrosir && (
+            <BulkUpdateGrosirSection
+              stockList={stockList}
+              showToast={showToast}
+              onApplied={() => { void onStocksRefresh?.(); }}
+            />
+          )}
+        </>
       )}
 
       {activeTab === 'tipis' && (
