@@ -142,6 +142,8 @@ interface Props {
   /** Show only items with stock <= threshold (for Stok Tipis tab). */
   thinOnly?: boolean;
   thinThreshold?: number;
+  /** Show Harga Grosir column + inline edit field (driven by modul_multi_tier_price). */
+  showGrosir?: boolean;
 }
 
 export default function StockTableView({
@@ -158,12 +160,13 @@ export default function StockTableView({
   showToast,
   thinOnly = false,
   thinThreshold = 5,
+  showGrosir = false,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua Produk');
 
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { price: string; harga_modal: number | null; specs: Record<string, string> }>>({});
+  const [editValues, setEditValues] = useState<Record<string, { price: string; harga_modal: number | null; price_grosir: number | null; specs: Record<string, string> }>>({});
 
   const uniqueCategories = useMemo(
     () => ['Semua Produk', 'Panel', 'MCB', 'Kabel', 'Aksesori'],
@@ -186,6 +189,7 @@ export default function StockTableView({
       [item.sku]: {
         price: String(item.price),
         harga_modal: item.harga_modal ?? null,
+        price_grosir: item.price_grosir ?? null,
         specs: Object.fromEntries(
           Object.entries(item.specs ?? {}).map(([k, v]) => [k, String(v)])
         ),
@@ -212,6 +216,7 @@ export default function StockTableView({
       ...item,
       price,
       harga_modal: vals.harga_modal ?? null,
+      price_grosir: vals.price_grosir ?? null,
       specs: vals.specs,
       name,
     };
@@ -299,6 +304,9 @@ export default function StockTableView({
                 </div>
 
                 <div className="w-full md:w-44 shrink-0">
+                  <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 text-right pr-1 mb-0.5">
+                    {showGrosir ? 'Harga Eceran' : 'Harga'}
+                  </div>
                   <button
                     type="button"
                     onClick={() => onRequestPriceChange(item, 'price')}
@@ -338,6 +346,15 @@ export default function StockTableView({
                       )}
                     </button>
                   </div>
+                  {showGrosir && (
+                    <div className="mt-1 text-[10px] font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
+                      <span className="text-gray-400">Grosir:</span>
+                      {item.price_grosir == null
+                        ? <span className="text-amber-600 font-bold">⚠ Belum di-set</span>
+                        : <span className="text-emerald-700 font-bold">Rp {item.price_grosir.toLocaleString('id-ID')}</span>
+                      }
+                    </div>
+                  )}
                 </div>
 
                 <div className="w-full md:w-36 shrink-0">
@@ -424,7 +441,9 @@ export default function StockTableView({
                 <div className="bg-blue-50 border border-blue-200 border-t-0 rounded-b-2xl p-5">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga (Rp)</label>
+                      <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                        {showGrosir ? 'Harga Eceran (Rp)' : 'Harga (Rp)'}
+                      </label>
                       <input
                         type="text"
                         value={vals.price}
@@ -445,12 +464,34 @@ export default function StockTableView({
                         className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                       />
                     </div>
-                    <div className="md:col-span-1 flex items-end">
-                      <div className="w-full bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
-                        💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
+                    {showGrosir ? (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Grosir (Rp)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={vals.price_grosir ?? ''}
+                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price_grosir: e.target.value ? Number(e.target.value) : null } }))}
+                          placeholder="Harga untuk pembeli grosir"
+                          className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        />
+                        {vals.price_grosir != null && vals.price_grosir > (parseInt(vals.price.replace(/\D/g, '')) || 0) && (
+                          <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="md:col-span-1 flex items-end">
+                        <div className="w-full bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                          💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  {showGrosir && (
+                    <div className="mb-4 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                      💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-blue-200" />
                     <span className="text-[8.5px] font-black uppercase tracking-widest px-3 py-1 bg-blue-100 text-blue-800 rounded-full">⚙ Spesifikasi {item.category}</span>

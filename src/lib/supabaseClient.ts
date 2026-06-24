@@ -1239,6 +1239,7 @@ export const stockService = {
     unit_alt_factor: number | null;
     price: number;
     harga_modal: number | null;
+    price_grosir?: number | null;
     description: string | null;
     min_stock_per_product: number | null;
     photo_urls: ProductPhoto[];

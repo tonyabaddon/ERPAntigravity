@@ -14,6 +14,8 @@ interface Props {
   onCancel: () => void;
   onSubmit: (item: Partial<StockItem>) => Promise<void>;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  /** Show Harga Grosir input (driven by modul_multi_tier_price). */
+  showGrosir?: boolean;
 }
 
 function generateSkuId(): string {
@@ -44,7 +46,7 @@ function validate(input: {
   return errs;
 }
 
-export default function ProductForm({ initial, warehouses, currentUserId, onCancel, onSubmit, showToast }: Props) {
+export default function ProductForm({ initial, warehouses, currentUserId, onCancel, onSubmit, showToast, showGrosir = false }: Props) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [units, setUnits] = useState<ProductUnit[]>([]);
@@ -88,6 +90,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
   // ─── Harga & Stok state (Task 2.7) ───
   const [price, setPrice] = useState<number>(initial?.price ?? 0);
   const [hargaModal, setHargaModal] = useState<number | null>(initial?.harga_modal ?? null);
+  const [priceGrosir, setPriceGrosir] = useState<number | null>(initial?.price_grosir ?? null);
   const [stokAwal, setStokAwal] = useState<number>(0);
   const [gudangTujuanId, setGudangTujuanId] = useState<string | null>(
     warehouses.find(w => w.is_default)?.id ?? null
@@ -135,6 +138,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         unit_alt_factor: unitAltFactor,
         price,
         harga_modal: hargaModal,
+        price_grosir: priceGrosir,
         description: description || null,
         min_stock_per_product: minStockPerProduct,
         photo_urls: photos.filter(p => p.status === 'uploaded').map(({ url, path, order, uploaded_at }) => ({ url, path, order, uploaded_at })),
@@ -385,7 +389,9 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           <h5 className="text-sm font-extrabold text-[#012749] mb-3">💰 Harga & Stok</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Harga Jual (Rp) *</label>
+              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+                {showGrosir ? 'Harga Eceran (Rp) *' : 'Harga Jual (Rp) *'}
+              </label>
               <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))}
                      className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
               <p className="text-[10px] text-slate-400 pl-1">per {unit}</p>
@@ -412,6 +418,23 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               </p>
             </div>
           </div>
+
+          {showGrosir && (
+            <div className="mb-3 space-y-1">
+              <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Harga Grosir (Rp)</label>
+              <input
+                type="number"
+                min="0"
+                value={priceGrosir ?? ''}
+                onChange={e => setPriceGrosir(e.target.value === '' ? null : Number(e.target.value))}
+                placeholder="Kosongkan jika belum di-set"
+                className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+              />
+              {priceGrosir != null && priceGrosir > price && (
+                <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
+              )}
+            </div>
+          )}
 
           <div className="border-t border-slate-100 pt-3">
             <div className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>

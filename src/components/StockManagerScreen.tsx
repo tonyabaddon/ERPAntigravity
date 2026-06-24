@@ -5,9 +5,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
-import { StockItem, ApprovalRequest } from '../types';
+import { StockItem, ApprovalRequest, DbTenantSettings } from '../types';
 import { isSupabaseConfigured, listPendingApprovals, stockService } from '../lib/supabaseClient';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
+import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
+import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
 import { useWarehouses } from '../hooks/useWarehouses';
 import WarehouseTransferModal from './WarehouseTransferModal';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
@@ -85,6 +87,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
   // shipped originally (2026-06-12 e2e audit). Falls back to a generic
   // label if the row isn't reachable.
   const [companyName, setCompanyName] = useState<string>('Stok');
+  const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -116,6 +119,13 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
     })();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    tenantSettingsService.fetch().then(setTenantSettings).catch(console.error);
+  }, []);
+
+  const showGrosir = tenantSettings ? isFieldVisible('price_grosir_column', tenantSettings) : false;
 
   const refreshPending = () => setPendingRefreshTick((n) => n + 1);
 
@@ -324,6 +334,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           onRequestAdjustment={(item, warehouseId) => setAdjustmentTarget({ item, warehouseId })}
           onOpname={onNavigateToOpname}
           showToast={showToast}
+          showGrosir={showGrosir}
         />
       )}
 
@@ -351,6 +362,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           onOpname={onNavigateToOpname}
           showToast={showToast}
           thinOnly={true}
+          showGrosir={showGrosir}
         />
       )}
 
@@ -418,6 +430,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
                 setShowAddProductModal(false);
               }}
               showToast={showToast}
+              showGrosir={showGrosir}
             />
           </div>
         </div>
@@ -443,6 +456,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
                 setEditingSku(null);
               }}
               showToast={showToast}
+              showGrosir={showGrosir}
             />
           </div>
         </div>
