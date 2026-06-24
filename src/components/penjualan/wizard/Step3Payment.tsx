@@ -12,7 +12,7 @@ import type {
 import { formatRp } from '../../../lib/format';
 import { dispatchSave, validateStep3, type WizardState } from '../../../lib/wizard/validation';
 import CashAccountPicker from '../../akuntansi/CashAccountPicker';
-import { DiscountRow } from '../../ui/discount';
+import { DiscountRow, computeDiscountAmount } from '../../ui/discount';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -422,34 +422,60 @@ export default function Step3Payment(props: Props) {
           )}
 
           {/* Final summary card — signature dark navy panel from mockup */}
-          <div className="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">
-            <div className="flex justify-between text-xs opacity-80">
-              <span>Subtotal pesanan</span>
-              <span>{formatRp(props.subtotal)}</span>
-            </div>
-            {props.ongkirOn && (
-              <div className="flex justify-between text-xs opacity-80">
-                <span>Ongkir</span>
-                <span>{formatRp(props.ongkirAmount)}</span>
+          {/* Show gross subtotal so Diskon Item / Diskon Order subtractions are transparent. */}
+          {(() => {
+            const lineDiscount = (props.items ?? []).reduce(
+              (sum, i) => sum + ((i as any).discount_amount_rp ?? 0), 0,
+            );
+            const grossSubtotal = props.subtotal + lineDiscount;
+            const orderDiscount = computeDiscountAmount(
+              props.orderDiscountValue, props.orderDiscountType, props.subtotal,
+            );
+            const orderLabel = props.orderDiscountType === 'PERCENT' && props.orderDiscountValue
+              ? `− Diskon Order (${props.orderDiscountValue}%)`
+              : '− Diskon Order';
+            return (
+              <div className="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">
+                <div className="flex justify-between text-xs opacity-80">
+                  <span>Subtotal pesanan</span>
+                  <span>{formatRp(grossSubtotal)}</span>
+                </div>
+                {lineDiscount > 0 && (
+                  <div className="flex justify-between text-xs text-orange-200">
+                    <span>− Diskon Item</span>
+                    <span>− {formatRp(lineDiscount)}</span>
+                  </div>
+                )}
+                {orderDiscount > 0 && (
+                  <div className="flex justify-between text-xs text-orange-200">
+                    <span>{orderLabel}</span>
+                    <span>− {formatRp(orderDiscount)}</span>
+                  </div>
+                )}
+                {props.ongkirOn && (
+                  <div className="flex justify-between text-xs opacity-80">
+                    <span>Ongkir</span>
+                    <span>{formatRp(props.ongkirAmount)}</span>
+                  </div>
+                )}
+                <div className="border-t border-white/20 my-1.5"></div>
+                <div className="flex justify-between text-sm font-bold">
+                  <span>TOTAL {isTempo ? '(TEMPO)' : isDp ? '(DP)' : ''}</span>
+                  <span className="text-xl">{formatRp(props.totalInvoice)}</span>
+                </div>
+                {isDp && (
+                  <div className="text-[11px] mt-2 opacity-80">
+                    Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
+                  </div>
+                )}
+                {isTempo && (
+                  <div className="text-[11px] mt-2 opacity-80">
+                    Jatuh tempo: <strong>{jatuhTempoStr}</strong> · Outstanding setelah: <strong>{formatRp(outstandingAfter)}</strong>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="border-t border-white/20 my-1.5"></div>
-            <div className="flex justify-between text-sm font-bold">
-              <span>TOTAL {isTempo ? '(TEMPO)' : isDp ? '(DP)' : ''}</span>
-              <span className="text-xl">{formatRp(props.totalInvoice)}</span>
-            </div>
-            {isDp && (
-              <div className="text-[11px] mt-2 opacity-80">
-                Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
-              </div>
-            )}
-            {isTempo && (
-              <div className="text-[11px] mt-2 opacity-80">
-                Jatuh tempo: <strong>{jatuhTempoStr}</strong> · Outstanding setelah: <strong>{formatRp(outstandingAfter)}</strong>
-              </div>
-            )}
-          </div>
-
+            );
+          })()}
           {/* Save button — full-width green per mockup */}
           <button
             type="button"
