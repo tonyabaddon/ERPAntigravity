@@ -20,6 +20,7 @@ const MODULS: Array<{ key: ModulSwitchKey; icon: string; title: string; descript
   { key: 'modul_diskon_kasir',    icon: '🏷️', title: 'Diskon di Kasir',           description: 'Kolom Diskon di cart + baris Diskon Order di total bar Kasir.' },
   { key: 'modul_diskon_penjualan',icon: '🏷️', title: 'Diskon di Penjualan',       description: 'Kolom Diskon di Step 2 + Diskon Order di Step 3 wizard Catat Penjualan.' },
   { key: 'modul_diskon_tagihan',  icon: '🏷️', title: 'Diskon di Tagihan PI',      description: 'Kolom Diskon per item + Diskon Tagihan di total Pembelian Tagihan.' },
+  { key: 'modul_multi_tier_price', icon: '💵', title: 'Modul Multi-Tier Pricing', description: 'Aktifkan harga grosir terpisah dari eceran. Customer dapat di-tag tier default; kasir bebas switch.' },
 ];
 
 export default function ModulSwitchesPanel({ showToast }: Props) {
