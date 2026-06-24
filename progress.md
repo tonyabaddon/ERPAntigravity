@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-24 — Produk & Stok — photo upload made optional (PR #60) + initial_stock approval RPC follow-up (PR #39)
+
+**Photo upload now opsional (PR #60, commit `734edfd` squash-merge):**
+- User report: forcing min 1 photo at create time blocks legitimate flows (wholesale generic items, just-arrived inventory, products sourced via WA catalog where photo lives at supplier).
+- `MIN_PHOTOS` constant: `1` → `0`; `ProductForm.validate` drops the photos-count check; helper text "Min 1 wajib · max 5" → "Max 5"; card header "📷 Foto Produk (opsional)"; footer note explains fallback explicitly — products tanpa foto tetap muncul di Katalog dengan `image_not_supported` placeholder dan tidak surface di Cari by Foto (search RPC naturally skips SKUs without embeddings).
+- Tests updated (`photoValidation.test.ts` + `productFormValidate.test.ts`) — 0 photos now valid.
+- Browser smoke via MCP Chrome (preview tag `c838e22f9`) confirmed: form submit without photo → save succeeds (sku=`ead87438`, photo_count=0 in DB); catalog row renders with `image_not_supported` Material Symbol placeholder. Smoke artifact cleaned up post-test.
+- Deploy: Cloud Build `71bd11a5` SUCCESS (3m28s) → revision `00205-deb` (manual build of `838e22f`). Auto-trigger on main merge produced `00206-haf` (`734edfd` squash-merge), promoted to **100% traffic** — both revisions carry identical bundle. Rollback paths: `00131-piw` (pre-this-change) and `00125-pax` (pre-initial-stock) warm at 0%.
+
+**Initial_stock approval close-out — follow-up to 2026-06-20 entry (PR #39 merged as `4b68438`):**
+- Browser smoke via MCP Chrome caught a deny-trigger bug in the initial migration: the post-INSERT `UPDATE stock_movements SET warehouse_id` pattern (copied from Phase 2c's `commit_approved_adjustment`) is blocked by `trg_deny_sm_update` (SQLSTATE P0001 "stock_movements is append-only"). RPC failed silently, side-effects didn't apply, status was already flipped to 'approved' so the row disappeared from inbox while still being un-committed.
+- Hotfix migration `20260620000051_commit_initial_stock_rpc_fix_movement_insert.sql` applied to live: bypass `_log_stock_movement`, INSERT directly into `stock_movements` with `warehouse_id` stamped at write time. Preserves qty math + actor defaults.
+- Recovered the broken approval (#749, sku `ca2a458d`) via direct RPC call after hotfix. 2nd smoke round (sku `617ebed9`, approval #750) executed full chain through UI — all 5 side-effects landed (`stocks.initial_stock_approved=true`, `stock_levels.qty=3`, `stock_lots` row, `stock_movements id=1566` with `warehouse_id` stamped, `approval_requests.status=approved`).
+- Cloud Run rev `00131-piw` promoted to 100% (when this PR landed; subsequently demoted by the photo-optional ship above).
+- Both worktrees (`initial-stock-approval` + `photo-optional`) cleaned up after merge.
+
+**Side finding (out of scope, tracked separately):** Phase 2c's `commit_approved_adjustment` + `commit_opname` have the SAME deny-trigger flaw — every existing `adjustment` / `opname_variance` row in prod has `warehouse_id=NULL` because their post-UPDATE pattern silently fails. SKU + qty_delta + related_doc_id are all correctly written via `_log_stock_movement`, only the warehouse_id stamp is missing. Impact: any per-warehouse audit query that filters `stock_movements.warehouse_id` would miss historical adjustment/opname rows. Fix is the same direct-INSERT pattern; ~25 min including backfill. Skip unless a specific report breaks.
+
+**PIN side-effect from smoke setup:** Owner PIN for Tony Wei (Aktif) was reset to `123456` via direct bcrypt UPDATE during smoke (the UI's "Demo PIN: 123456" label is just placeholder copy, real PIN was different and unrecoverable from bcrypt hash). User can change again via Pengaturan → Owner.
+
 ## 2026-06-23 — Diskon Fitur Task 17 DONE — Integration tests + regression sweep
 
 - ✅ Diskon Task 17: Integration E2E tests + final regression sweep COMPLETE.
