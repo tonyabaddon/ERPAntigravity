@@ -166,7 +166,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       </div>
 
       {isVoided && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
           <div>
             <div className="text-sm font-bold text-red-800">Tagihan ini sudah di-void</div>
@@ -212,15 +212,15 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Status Pembayaran</div>
         <div className="grid grid-cols-3 gap-4 mb-3">
-          <div className="bg-gray-50 rounded-2xl p-3">
+          <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Tagihan</div>
             <div className="text-lg font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(tgh.total)}</div>
           </div>
-          <div className="bg-green-50 rounded-2xl p-3">
+          <div className="bg-green-50 rounded-lg p-3">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Sudah Dibayar</div>
             <div className="text-lg font-extrabold mt-1 text-green-700">{fmtRp(paid)}</div>
           </div>
-          <div className="bg-amber-50 rounded-2xl p-3">
+          <div className="bg-amber-50 rounded-lg p-3">
             <div className="text-[11px] text-amber-700 uppercase font-semibold">Sisa Bayar</div>
             <div className="text-lg font-extrabold mt-1 text-amber-700">{fmtRp(outstanding)}</div>
           </div>
@@ -356,7 +356,7 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-lg border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
           <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {tagihan.pi_number}

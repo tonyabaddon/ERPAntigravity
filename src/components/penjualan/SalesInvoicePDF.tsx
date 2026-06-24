@@ -111,7 +111,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="sales-invoice-root"
-          className={`bg-white rounded-xl shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} ${printMode === 'dot_matrix' ? 'max-w-md' : 'max-w-3xl'}`}
+          className={`bg-white rounded-lg shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} ${printMode === 'dot_matrix' ? 'max-w-md' : 'max-w-3xl'}`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-2 bg-[#012749] text-white print:hidden">

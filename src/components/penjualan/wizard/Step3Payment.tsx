@@ -143,7 +143,7 @@ export default function Step3Payment(props: Props) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
         <div className="lg:col-span-7 space-y-5">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <div className="text-2xl">ℹ️</div>
               <div>
@@ -173,7 +173,7 @@ export default function Step3Payment(props: Props) {
         </div>
 
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 space-y-1.5">
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 space-y-1.5">
             <div className="flex justify-between text-xs text-amber-800">
               <span>Subtotal produk</span>
               <span>{formatRp(props.subtotal)}</span>
@@ -215,7 +215,7 @@ export default function Step3Payment(props: Props) {
               <button
                 type="button"
                 onClick={() => props.onPaymentTypeChange('FULL')}
-                className={`px-4 py-3 rounded-xl border-2 text-left transition ${
+                className={`px-4 py-3 rounded-lg border-2 text-left transition ${
                   props.paymentType === 'FULL'
                     ? 'bg-[#012749]/5 border-[#012749] text-[#012749]'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -227,7 +227,7 @@ export default function Step3Payment(props: Props) {
               <button
                 type="button"
                 onClick={() => props.onPaymentTypeChange('DP')}
-                className={`px-4 py-3 rounded-xl border-2 text-left transition ${
+                className={`px-4 py-3 rounded-lg border-2 text-left transition ${
                   props.paymentType === 'DP'
                     ? 'bg-amber-50 border-amber-500 text-amber-900'
                     : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -240,7 +240,7 @@ export default function Step3Payment(props: Props) {
                 <button
                   type="button"
                   onClick={() => props.onPaymentTypeChange('TEMPO')}
-                  className={`px-4 py-3 rounded-xl border-2 text-left transition ${
+                  className={`px-4 py-3 rounded-lg border-2 text-left transition ${
                     isTempo
                       ? 'bg-amber-50 border-amber-500 text-amber-900'
                       : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -255,7 +255,7 @@ export default function Step3Payment(props: Props) {
 
           {/* TEMPO context box (only when TEMPO active) */}
           {isTempo && (
-            <div className={`rounded-xl p-4 border ${overLimit ? 'bg-rose-50 border-rose-300' : 'bg-amber-50 border-amber-200'}`}>
+            <div className={`rounded-lg p-4 border ${overLimit ? 'bg-rose-50 border-rose-300' : 'bg-amber-50 border-amber-200'}`}>
               <div className={`text-xs font-bold mb-2 uppercase tracking-wider ${overLimit ? 'text-rose-900' : 'text-amber-900'}`}>
                 Status Kredit Customer
               </div>
@@ -290,7 +290,7 @@ export default function Step3Payment(props: Props) {
 
           {/* DP amount input (only when DP) */}
           {isDp && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="text-xs font-bold mb-2 uppercase tracking-wider text-amber-900">DP / Tanda Jadi</div>
               <div className="flex items-center gap-2 mb-2">
                 <button
@@ -435,7 +435,7 @@ export default function Step3Payment(props: Props) {
               ? `− Diskon Order (${props.orderDiscountValue}%)`
               : '− Diskon Order';
             return (
-              <div className="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">
+              <div className="bg-[#012749] text-white rounded-lg p-4 space-y-1.5">
                 <div className="flex justify-between text-xs opacity-80">
                   <span>Subtotal pesanan</span>
                   <span>{formatRp(grossSubtotal)}</span>

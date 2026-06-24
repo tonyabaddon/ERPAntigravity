@@ -695,7 +695,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
       {/* Header — white per mockup. Date/user pills dropped; replaced with Batal link. */}
-      <div className="bg-white border border-slate-200 rounded-t-2xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border border-slate-200 rounded-t-lg px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className={`text-lg font-extrabold ${mode === 'quote' ? 'text-amber-800' : 'text-[#012749]'}`}>
             {mode === 'quote' && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold tracking-wider mr-2">QUOTE MODE</span>}
@@ -712,7 +712,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         </button>
       </div>
 
-      <div className="bg-white border-x border-b border-slate-200 rounded-b-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border-x border-b border-slate-200 rounded-b-lg shadow-sm overflow-hidden">
         {fromSalesOrderId && (
           <div className="px-6 py-3 bg-emerald-50 border-b border-emerald-200 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs">
