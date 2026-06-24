@@ -2382,6 +2382,25 @@ export const reconciliationService = {
   },
 };
 
+// ─── productService (Multi-Tier Pricing) ────────────────────────────────────
+// Task 10: bulk CSV grosir price update RPC wrapper.
+
+export interface BulkGrosirRow {
+  sku: string;
+  price_grosir: number;
+}
+
+export const productService = {
+  async bulkUpdateGrosirPrice(
+    rows: BulkGrosirRow[]
+  ): Promise<{ applied: number; skipped: Array<{ sku: string; reason: string }> }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase!.rpc('bulk_update_grosir_price', { p_rows: { rows } });
+    if (error) throw error;
+    return data as { applied: number; skipped: Array<{ sku: string; reason: string }> };
+  },
+};
+
 // ─── Pengaturan MSME Configurability (Phase 1) Services ────────────────
 // Implemented in ./pengaturan/pengaturanServices.ts
 // (Not re-exported here to avoid circular dep: supabaseClient → pengaturanServices → supabaseClient)
