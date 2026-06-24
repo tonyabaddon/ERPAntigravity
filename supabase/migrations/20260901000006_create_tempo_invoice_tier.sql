@@ -79,6 +79,16 @@ BEGIN
     -- ── NEW: tier validation (only when modul ON) ──────────────────────────
     v_tier_used := v_item->>'pricing_tier_used';
 
+    -- I-4 (review 2026-06-24): when modul ON + SKU line + tier missing,
+    -- default to 'eceran' instead of silently skipping validation. Prevents
+    -- buggy/legacy clients from posting mis-priced lines with no tier metadata.
+    -- NOTE: persisted JSONB snapshot stores items as-is from p_payload (see line 71);
+    -- a defaulted tier validates correctly but does NOT inject into the snapshot.
+    -- Historical readers can infer tier from master_price_at_sale = stocks.price/grosir.
+    IF v_tier_modul_on AND v_tier_used IS NULL AND (v_item->>'sku') IS NOT NULL THEN
+      v_tier_used := 'eceran';
+    END IF;
+
     IF v_tier_modul_on AND v_tier_used IS NOT NULL THEN
       -- Validate tier value
       IF v_tier_used NOT IN ('eceran', 'grosir') THEN

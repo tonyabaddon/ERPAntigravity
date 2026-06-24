@@ -71,6 +71,13 @@ export default function BulkUpdateGrosirSection({ stockList, showToast, onApplie
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // I-3 (review 2026-06-24): cap file size to avoid OOM on large/hostile uploads.
+    const MAX_BYTES = 10 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      showToast(`File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)} MB). Maks 10 MB.`, 'warning');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     const text = await file.text();
     setRows(parseCsv(text));
     setConfirmAbove(false);

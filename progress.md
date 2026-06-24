@@ -9462,4 +9462,21 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - TS: `CreateTempoInvoiceItemPayload.pricing_tier_used?: 'eceran' | 'grosir' | null` added to `src/types.ts`
 - Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
 
+---
+
+## 2026-06-24 — Multi-Tier Pricing — Review Fixes I-3 + I-4 DONE
+
+Review-fix DONE — I-3 CSV size cap + I-4 RPC default eceran (4 smoke PASS). I-1 + I-2 ticketed for follow-up.
+
+- **I-3 (CSV size cap):** `src/components/produk/BulkUpdateGrosirSection.tsx` — 10 MB file size cap enforced before parse. Unstaged fix already present in worktree.
+- **I-4 (default eceran on missing tier):** When `modul_multi_tier_price = ON` + SKU line + `pricing_tier_used` key absent, both `record_kasir_sale` and `create_tempo_invoice` now default `v_tier_used := 'eceran'` and validate `master_price_at_sale` against `stocks.price`. Service lines (sku IS NULL) keep null-skip behavior.
+- **Migration applied:** `supabase/migrations/20260901000008_review_fixes_i4_rpc_tier_default.sql` → deployed to DB (project ekhhojaezdfjfwuxyjkl).
+- **Smoke results (4/4 PASS):**
+  - Scenario A: record_kasir_sale no-tier key + correct master → PASS (success, smoke rollback)
+  - Scenario B: record_kasir_sale no-tier key + bogus master 99999999 → PASS (TIER_PRICE_MISMATCH caught)
+  - Scenario C: create_tempo_invoice no-tier key + correct master → PASS (success, smoke rollback)
+  - Scenario D: create_tempo_invoice no-tier key + bogus master 99999999 → PASS (TIER_PRICE_MISMATCH caught)
+- **Lint:** clean (`tsc --noEmit` 0 errors)
+- **Tests:** npx vitest run --dir src baseline PASS
+
 Task 11 DONE — BulkUpdateGrosirSection (4 RTL tests PASS).
