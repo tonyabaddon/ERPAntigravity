@@ -67,6 +67,7 @@ export interface SupabaseStockItem {
   unit_alt?: string | null;
   unit_alt_factor?: number | null;
   price: number;
+  price_grosir?: number | null;
   stock: number;
   stock_atas?: number;
   stock_bawah?: number;

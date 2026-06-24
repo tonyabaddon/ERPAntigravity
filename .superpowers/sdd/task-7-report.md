@@ -1,9 +1,18 @@
-# Task 7 Report — salesOrderService wrappers + vitest
+# Task 7 Report — Kasir Pill Toggle + Auto-Apply + Re-Compute
 
 **Status:** DONE
 
-**Commit SHA range:** fb277f5..1b5f930 (single commit: 1b5f930)
+**Files modified:**
+- `src/lib/supabaseClient.ts` — added `price_grosir?: number | null` to `SupabaseStockItem` (was missing → TS errors)
+- `src/components/penjualan/CatatPenjualanWizard.tsx` — `activeTier`/`tenantSettings` state, auto-apply on customer change, re-compute cart on tier switch, tier-aware `addItem`, pass props to Step2Items
+- `src/components/penjualan/wizard/Step2Items.tsx` — tier pill `[Eceran|Grosir]` in cart header, pass activeTier/showTierPill to CartRows
+- `src/components/penjualan/CartRows.tsx` — per-line amber warning when grosir active but price_grosir is null
 
-**Test summary:** 12/12 salesOrderService tests PASS; 0 regressions (pre-existing 20 failures in `.claude/worktrees/diskon/` are unrelated).
+**Files created:**
+- `src/components/penjualan/wizard/Step2Items.test.tsx` — 7 RTL tests
 
-**Concerns:** none
+**Test summary:** 476/476 PASS (469 baseline + 7 new Task 7 tests)
+
+**Concerns:** 
+- Tests placed in Step2Items (not KasirScreen) because KasirScreen is a transaction log, not the cart component.
+- Re-compute zeroes stale per-line discounts on tier switch (safe: operator must re-enter if needed).

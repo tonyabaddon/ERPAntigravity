@@ -56,6 +56,8 @@ import Step1ChannelCustomer from './wizard/Step1ChannelCustomer';
 import Step2Items from './wizard/Step2Items';
 import Step3Payment from './wizard/Step3Payment';
 import { validateStep1, validateStep2 } from '../../lib/wizard/validation';
+import { isFieldVisible } from '../../lib/pengaturan/cascadeMap';
+import type { DbTenantSettings } from '../../types';
 
 // Module-scoped sequence for stable cart row keys, mirroring the legacy
 // _itemSeq pattern in PenjualanBaruScreen. Per-row _key lets CartRows track
@@ -105,13 +107,59 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const [rakitFormOpen, setRakitFormOpen] = useState(false);
   const [rakitFormType, setRakitFormType] = useState<RakitServiceType | null>(null);
 
-  // ── Diskon modul toggle (Task 14) ─────────────────────────────────────────
+  // ── Diskon modul toggle (Task 14) + multi-tier price settings (Task 7) ──────
   const [modulDiskonOn, setModulDiskonOn] = useState(true);
+  const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
   useEffect(() => {
     tenantSettingsService.fetch()
-      .then((s) => setModulDiskonOn(s?.modul_diskon_kasir ?? true))
-      .catch(() => { /* keep default true */ });
+      .then((s) => {
+        setModulDiskonOn(s?.modul_diskon_kasir ?? true);
+        setTenantSettings(s ?? null);
+      })
+      .catch(() => { /* keep defaults */ });
   }, []);
+
+  // ── Multi-tier pricing state (Task 7) ─────────────────────────────────────
+  const [activeTier, setActiveTier] = useState<'eceran' | 'grosir'>('eceran');
+  const showTierPill = tenantSettings ? isFieldVisible('tier_pill_kasir', tenantSettings) : false;
+
+  // ── Auto-apply tier when customer changes (Task 7) ────────────────────────
+  useEffect(() => {
+    if (!showTierPill) return;
+    const customerTier = customer?.default_pricing_tier ?? 'eceran';
+    if (customerTier !== activeTier) setActiveTier(customerTier);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customer?.id, showTierPill]);
+
+  // ── Re-compute cart prices when tier switches (Task 7) ────────────────────
+  // Per-line: zero out any stale percent discount when master price changes
+  // (the correct discount_amount_rp would require knowing the new pct×base;
+  // zeroing is safer and forces the operator to re-enter if needed).
+  useEffect(() => {
+    if (!showTierPill) return;
+    setCart((prev) => prev.map((line) => {
+      if (!line.sku) return line;
+      const product = stocks.find((s) => s.sku === line.sku);
+      if (!product) return line;
+      const newPrice = activeTier === 'grosir'
+        ? (product.price_grosir ?? product.price)
+        : product.price;
+      if (newPrice === line.unit_price) return line;
+      return {
+        ...line,
+        unit_price: newPrice,
+        master_price_at_sale: newPrice,
+        pricing_tier_used: activeTier,
+        subtotal: newPrice * line.qty,
+        hpp_subtotal: line.hpp_per_unit * line.qty,
+        // Zero out stale line discount when price changes to avoid desync
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
+      };
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTier, showTierPill]);
 
   // ── Order-level discount state (Task 14) ──────────────────────────────────
   const [orderDiscountValue, setOrderDiscountValue] = useState<number | null>(null);
@@ -244,6 +292,10 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     const defaultWh = maxBalance && maxBalance.qty > 0
       ? maxBalance.w
       : (warehouses.find((w) => w.is_default) ?? warehouses[0]);
+    // Task 7: apply active tier price when adding item
+    const tierPrice = showTierPill && activeTier === 'grosir'
+      ? (stock.price_grosir ?? stock.price)
+      : stock.price;
     setCart((prev) => [
       ...prev,
       {
@@ -251,17 +303,19 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         sku: stock.sku,
         name: stock.name,
         qty: 1,
-        unit_price: stock.price,
+        unit_price: tierPrice,
         hpp_per_unit: stock.harga_modal ?? 0,
-        subtotal: stock.price,
+        subtotal: tierPrice,
         hpp_subtotal: stock.harga_modal ?? 0,
         warehouse: null,
         warehouse_id: defaultWh?.id ?? null,
         // Task 14: capture master price at time of add for discount reference
-        master_price_at_sale: stock.price,
+        master_price_at_sale: tierPrice,
         discount_type: null,
         discount_value: null,
         discount_amount_rp: 0,
+        // Task 7: record which tier was active at add time
+        pricing_tier_used: showTierPill ? activeTier : undefined,
       },
     ]);
   }
@@ -808,6 +862,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 subtotalAfterLineDiscount={skuSubtotalAfterLineDiscount}
                 rakitSubtotal={rakitTotal}
                 modulDiskonOn={modulDiskonOn}
+                activeTier={activeTier}
+                onTierChange={setActiveTier}
+                showTierPill={showTierPill}
                 rakitLines={rakitLines}
                 rakitFormOpen={rakitFormOpen}
                 rakitFormType={rakitFormType}

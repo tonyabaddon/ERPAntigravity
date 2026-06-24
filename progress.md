@@ -9448,3 +9448,5 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - Modul OFF: tier field fully ignored (Garindo default unchanged)
 - TS type `KasirItem.pricing_tier_used` already present from Task 1/2 — no change needed
 - Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
+
+## Task 7 DONE — Kasir pill toggle (7 RTL tests PASS).

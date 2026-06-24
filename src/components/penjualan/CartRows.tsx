@@ -48,6 +48,10 @@ export interface CartRowsProps {
    * Defaults to true (shown) so existing callers are unaffected.
    */
   modulDiskonOn?: boolean;
+  /** Task 7: active pricing tier — used for per-line grosir warning. */
+  activeTier?: 'eceran' | 'grosir';
+  /** Task 7: when false, tier warnings are hidden. */
+  showTierPill?: boolean;
 }
 
 // ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
@@ -61,11 +65,14 @@ interface CartRowProps {
   onRemove: (key: number) => void;
   onDiscountChange?: (key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) => void;
   modulDiskonOn: boolean;
+  activeTier?: 'eceran' | 'grosir';
+  showTierPill?: boolean;
 }
 
 function CartRow({
   item, stock, warehouses, stockMap,
   onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
+  activeTier, showTierPill,
 }: CartRowProps) {
   const masterPrice = item.master_price_at_sale ?? item.unit_price;
 
@@ -149,6 +156,10 @@ function CartRow({
               ⏳ Pre-order · kurang {shortage}
             </span>
           )}
+          {/* Task 7: warn when grosir tier active but product has no price_grosir */}
+          {showTierPill && activeTier === 'grosir' && stock && stock.price_grosir == null && (
+            <span className="text-amber-600 text-[10px]">⚠ Harga grosir belum di-set — pakai eceran</span>
+          )}
         </div>
         {/* Harga input with List label above */}
         <div className="mt-1">
@@ -215,7 +226,7 @@ function CartRow({
   );
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill }: CartRowsProps) {
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -277,6 +288,8 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             onRemove={onRemove}
             onDiscountChange={onDiscountChange}
             modulDiskonOn={modulDiskonOn}
+            activeTier={activeTier}
+            showTierPill={showTierPill}
           />
         );
       })}
