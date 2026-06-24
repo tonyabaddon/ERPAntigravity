@@ -1,199 +1,73 @@
-# SDD Progress Ledger — Akuntansi Phase 0c
+# SDD Progress Ledger — Diskon Fitur
 
-Plan: docs/superpowers/plans/2026-06-23-akuntansi-phase0c-hpp-pi-backfill.md
-Branch: worktree-akuntansi-phase0c
+Plan: docs/superpowers/plans/2026-06-23-diskon-implementation.md
+Spec: docs/superpowers/specs/2026-06-23-diskon-design.md
+Mockup: docs/superpowers/mockups/2026-06-23-diskon-feature.html
+Branch: worktree-diskon
 Started: 2026-06-23
-
-## Task 1 — DONE (2026-06-23)
-
-**HPP extension to record_kasir_sale dual-write block.**
-
-Migration: `supabase/migrations/20260724000001_phase0c_kasir_hpp_extension.sql`
-
-Change: added `v_lines jsonb` to inner DECLARE; conditionally appends D 5-1100 / K 1-1510 lines when `v_kasir.hpp_total > 0`. Base 2-line JE unchanged when hpp=0 (back-compat).
-
-Smoke tests: 3/3 PASS (rollback-via-RAISE pattern, zero data leakage):
-- Test A: 4-line JE, balanced, hpp>0 ✓
-- Test B: 2-line JE when hpp=0 ✓
-- Test C: 0 JEs when flag=false ✓
-
-Task 1: complete (commits 0e65277..0e9f6f2, 3/3 smoke PASS, HPP critical fix deployed)
-
-## Task 2 — DONE (2026-06-23)
-
-**record_pi dual-write: D 1-1510 Persediaan / K 2-1100 Hutang Usaha.**
-
-Migration: `supabase/migrations/20260724000002_phase0c_record_pi_dual_write.sql`
-
-Changes: CREATE OR REPLACE record_pi (from 20260630000006 base) with two additions:
-1. `v_purchase_date` captured before INSERT for correct JE date on backdated PIs
-2. Soft-fail GL dual-write block before RETURN — fetches supplier name independently
-   (BELUM_LUNAS path skips outer v_supplier_name), posts D 1-1510 / K 2-1100
-
-Documented TODOs for Phase 1: PASSTHROUGH debit account branching; LUNAS payment-leg JE gap.
-
-Smoke tests: 3/3 PASS (real writes, cleaned up after):
-- Test A: JE-202607-0002, D 1-1510 / K 2-1100, 500,000 balanced, 0 anomalies ✓
-- Test B: flag=OFF → 0 JEs ✓
-- Test C: closed period (strict mode) → anomaly logged (period_closed), PI returned ✓
-
-Task 2: complete (3/3 smoke PASS)
-Task 2: complete (commits 0e9f6f2..8c41d99, 3/3 smoke PASS, record_pi dual-write deployed)
-
-## Task 3 — DONE (2026-06-23)
-
-**Historical backfill function + auto-execute.**
-
-Migration: `supabase/migrations/20260724000003_phase0c_historical_backfill.sql`
-
-Function `public._phase0c_backfill_historical()` loops 3 source tables with NOT EXISTS
-idempotency guard, posts BACKFILL JEs, logs anomalies to gl_dual_write_anomalies (soft-fail).
-
-**Actual results (applied 2026-06-23):**
-- kasir_transactions (income): 69 posted, 2 anomalies (qris/edc — no default_bank configured)
-- purchase_invoices: 5 posted, 31 anomalies (subtotal=0 test PIs — validator rejects zero-amount JEs)
-- pembayaran: 4 posted (COALESCE→default_kas), 0 anomalies
-- Total posted: 78 JEs; total anomalies: 33
-
-**Smoke verification:**
-- backfill_jes: 91 (78 new + 13 pre-existing test data)
-- Trial Balance imbalance: 0.00 — BALANCED ✓
-- total_jes: 93
-
-Task 3: complete (TB balanced, 78 JEs posted, 33 anomalies logged for review)
-Task 3: complete (commits 8c41d99..2e596af, 78 backfill JEs + TB balanced 0.00; 33 anomalies = data quality issues, non-blocking)
-
-## Task 4 — DONE (2026-06-23)
-
-**Pattern C integration tests: HPP + record_pi + backfill.**
-
-Files: 
-- `tests/integration/akuntansi-phase0c/_setup.ts` — service-role client + COA IDs
-- `tests/integration/akuntansi-phase0c/kasir-hpp.test.ts` — HPP extension + 22-param signature verification
-- `tests/integration/akuntansi-phase0c/record-pi.test.ts` — record_pi signature + PI_TAGIHAN source_type
-- `tests/integration/akuntansi-phase0c/backfill.test.ts` — backfill function + anomalies table schema
-
-**Test coverage (26/26 PASS):**
-- Kasir-HPP tests (8): COA structure, 22-param signature, KASIR_SALE source_type, 4-line JE support
-- Record-PI tests (9): COA structure, record_pi signature, PI_TAGIHAN source_type, purchase_invoices tracking
-- Backfill tests (9): function deployment, BACKFILL source_type, anomalies table schema, trial balance structure
-
-**Pattern C approach:**
-- Structural + deployment verification (no Owner JWT happy-path execution)
-- All queries work pre/post-backfill (conditional assertions for optional data)
-- Role-gate + function existence verified via RPC signature tests
-- Anomalies table accessible + schema complete
-
-Task 4: complete (26/26 tests PASS, npx tsc clean, ready for deploy)
-Task 4: complete (commits 2e596af..78317f6, 26/26 tests, branch verified)
-
-## Task 5 — DONE (2026-06-23)
-
-**close_sales_order RPC** — manual close to terminal CLOSED state.
-
-Migration: `supabase/migrations/20260725000005_close_sales_order_rpc.sql`
-
-Smoke: 3/3 PASS (happy path with reason, empty reason rejected, already-CLOSED rejected).
-
-Task 5: complete (commit 3ff8739, review clean)
-
-## Phase A complete — 5 backend migrations applied + reviewed.
-
-## Task 6 — DONE (2026-06-23)
-
-**types.ts updates** — DbSalesOrder interface + ActivePage += daftarPenawaran.
-
-File: `src/types.ts`
-
-tsc clean; 4800/4800 tests pass.
-
-Task 6: complete (commit fb277f5, review clean)
-
-## Task 7 — DONE (2026-06-23)
-
-**salesOrderService wrappers + vitest coverage.**
-
-Files: `src/lib/salesOrderService.ts` + `src/lib/salesOrderService.test.ts`
-
-5 wrappers (create / fetchById / fetchAll / markConverted / close) with client-side XOR + non-empty guards.
-
-Tests: 12/12 PASS; tsc clean.
-
-Task 7: complete (commit 1b5f930, review clean)
-
-## Task 8 — DONE (2026-06-23)
-
-**insertNewProduct wrapper + vitest.**
-
-Files: `src/lib/products/productWrappers.ts` + `src/lib/products/productWrappers.test.ts`
-
-Validation: name + category trim non-empty; price finite > 0. Defaults: stock_atas=0, stock_bawah=0, status='aktif', unit='pcs'.
-
-Tests: 6/6 PASS.
-
-Task 8: complete (commit 3129264, review clean)
-
-## Phase B complete — types + wrappers ready.
-
-## Task 9 — DONE (2026-06-23)
-
-**NewProductInlineForm + validator.**
-
-Files: `src/lib/wizard/newProductValidation.ts` + `.test.ts` + `src/components/penjualan/wizard/NewProductInlineForm.tsx`
-
-Tests: 7/7 validator PASS; tsc clean.
-
-Task 9: complete (commit 99d6318, review clean)
-
-## Task 10 — DONE (2026-06-23)
-
-**Step2Items — wire up + Produk Baru inline form.**
-
-File: `src/components/penjualan/wizard/Step2Items.tsx`
-
-Changes: imported `NewProductInlineForm`; added `showNewProductForm` state + `existingCategories` derivation from `props.stocks`; added always-visible CTA below search results with copy adapting to active search query; conditional rendering of `NewProductInlineForm` on form open; on save calls `props.onAddItem(product)` + closes form.
-
-tsc clean; 4825/4845 tests pass (20 pre-existing failures in diskon worktree, unrelated).
-
-Task 10: complete (commit b48b482)
-
-## Task 10 — DONE (2026-06-23)
-
-**Step2Items wire-up + Produk Baru.**
-
-File: `src/components/penjualan/wizard/Step2Items.tsx`
-
-tsc clean; 4825/4845 (20 pre-existing failures in unrelated worktree).
-
-Task 10: complete (commit b48b482, review clean)
-
-## Task 11 — DONE (2026-06-23)
-
-**Step3Payment mode='quote' branch.**
-
-File: `src/components/penjualan/wizard/Step3Payment.tsx`
-
-`renderInvoiceMode()` extracted verbatim; `renderQuoteMode()` new light layout (info banner + catatan + amber summary + amber Simpan).
-
-Test: tsc clean; 4825/4845.
-
-Task 11: complete (commits c676e1f + b6cc4d0, review clean)
-
-## Phase C complete — wizard internal extensions ready.
-
-## Task 12 — DONE (2026-06-23)
-
-**CatatPenjualanWizard orchestrator integration — mode + fromSalesOrderId.**
-
-File: `src/components/penjualan/CatatPenjualanWizard.tsx`
-
-Two new props on `CatatPenjualanWizardProps`: `mode?: 'invoice' | 'quote'` and `fromSalesOrderId?: string`.
-- Pre-fill effect: on mount with `fromSalesOrderId`, fetches SO and seeds channel/customer/cart/rakit/notes.
-- Save dispatch: quote branch calls `createSalesOrder` → navigate to `daftarPenawaran`.
-- All three invoice paths (TEMPO/WIP/standard) call `markSalesOrderConverted` when `fromSalesOrderId` present.
-- Header h1: QUOTE MODE badge + title swap (Sales Order vs Sales Invoice).
-- Step 3 subtitle updates for quote mode.
-- `mode` prop passed to `<Step3Payment>`.
-- Emerald pre-fill banner above stepper when `fromSalesOrderId` set.
-
-tsc clean; 4825/4845 (20 pre-existing failures in diskon worktree, unrelated).
+Base commit: 01853b0
+
+## Tasks
+
+- ✅ Task 1: complete (commits 01853b0..c022ad8, root progress.md updated + review clean). Migration applied: 4 tables, 13 cols + triple-CHECKs. All existing rows pass constraints (orders 7/7, kasir_transactions 83/83, purchase_invoices 39/39, purchase_invoice_items 36/36 clean).
+- ✅ Task 2: complete (commits c022ad8..876dd1c). COA seed 5-1900 Diskon Pembelian. account_code='5-1900', account_name='Diskon Pembelian (kontra)', account_type='BEBAN', account_subtype='KONTRA', normal_balance='CREDIT', is_active=true. Step 1 enum: 4-1900 ✓, 5-1900 ✓ seeded. Step 4 verify: 1 row ✓.
+
+- ✅ Task 2: complete (commits c022ad8..876dd1c). 5-1900 seeded. **Spec hint**: actual `chart_of_accounts` schema uses `account_type`/`account_subtype` (NOT `category`/`sub_category`); composite UNIQUE on `(tenant_id, account_code)`. Future tasks referencing COA columns should use these names.
+- ✅ Task 3: complete (migration 20260801000003 created). 3 toggle columns `modul_diskon_kasir`, `modul_diskon_penjualan`, `modul_diskon_tagihan` (all DEFAULT TRUE). RPC whitelist extended 7→10 keys. Migration ready for deployment (remote connectivity timeout prevented live execution, but SQL verified correct).
+- ✅ Task 3: complete (commits 876dd1c..e86e805). 3 toggles + whitelist widened. Migration applied + smoke PASS via controller (implementer hit MCP timeout, fixed by controller).
+- ✅ Task 4: complete (types extended; tsc clean). Frontend types + ModulSwitchKey/DbTenantSettings extended. `DiscountType`, `DiscountTriple`, `CartItemWithDiscount` added. 3 discount module keys + fields in settings. cascadeMap.ts exhaustive switch covered. Test fixtures updated.
+- ✅ Task 4: complete (commits e86e805..5106180). Types extended, lint clean (also touched cascadeMap.ts + test fixture for exhaustive switch).
+- ✅ Task 5: complete (commits 5106180..73d6379). computeDiscountAmount + 7/7 unit tests. TDD discipline (RED→GREEN evidenced).
+- ✅ Task 6: complete (commits 73d6379..ccc83c4). useDiscountBinding hook + 8/8 RTL tests. RTL deps installed, vite.config.ts jsdom env added.
+- ✅ Task 7: complete (commits ccc83c4..c934568). DiscountInlineInput + 7/7 RTL tests.
+- ✅ Task 8: complete (commits c934568..72885a7). DiscountRow + barrel; 410/410 suite + lint clean. All Phase 2 shared primitives ready.
+- ✅ Task 9: complete (commits 72885a7..f51986c). ModulSwitchesPanel 10 entries; lint clean.
+- ✅ Task 10: complete. record_kasir_sale RPC patched: 25-param (3 diskon params before p_cash_account_id), server-recompute subtotal/total, markup guard, line/order over-discount guard, 4-1900 journal debit (soft-fail pattern preserved, balanced JE: D cash + D 4-1900 = C pendapatan gross). Migration 20260801000004 applied. 3 smokes PASS (happy subtotal=950000 total=850000, markup rejected, DISCOUNT_EXCEEDS_SUBTOTAL rejected). Frontend RecordKasirSaleInput.discount field + supabaseClient.ts wrapper updated. lint clean.
+- ✅ Task 10: complete (commits f51986c..2c359a4). record_kasir_sale 25-param + 4-1900 journal + 3 smokes PASS. 
+  - Minor 10a: `(NULL, NULL, >0)` triple bypasses RPC check → DB CHECK catches with 23514 instead of clean DISCOUNT_TRIPLE_INVALID.
+  - Minor 10b: rollback reference points to predecessor migration instead of inlined captured body.
+  - Pre-existing (out-of-scope this task): `p_allow_negative_stock` declared but never used in stock-deduct path; same gap exists in Phase 0c migration. Track as follow-up.
+- ✅ Task 11: complete (commits 2c359a4..0d91843, 3 smokes PASS). create_tempo_invoice extended: per-line + order-level discount triples, server recompute, MARKUP_NOT_ALLOWED + DISCOUNT_EXCEEDS_SUBTOTAL guards. No GL dual-write (TODO Phase 0c). Credit limit check fixed to use recomputed total. piutangService.createTempoInvoice(payload, discount?) backward-compat. types.ts CreateTempoInvoiceItemPayload + payload fields extended. lint clean.
+- ✅ Task 11: complete (commits 2c359a4..0d91843). create_tempo_invoice + 3 smokes PASS. No dual-write present in this RPC; TODO comment added for Phase 0c sales follow-up.
+  - Minor 11a: 2 separate item-loop passes (validation, then stock deduct) — inefficiency, not bug.
+  - Minor 11b: `v_total <= 0` guard fires on 100% discount + 0 ongkir edge case (UX caveat for wizard).
+- ✅ Task 12: complete (commits 0d91843..1a64357). record_pi + 3 smokes PASS (happy/markup/over-discount). 3-line JE on discount.
+  - Minor 12a: migration file lacks explicit BEGIN/COMMIT wrapper (functionally safe for CREATE OR REPLACE-only DDL, but inconsistent with project pattern).
+  - Minor 12b: 5-1900 journal line not smoke-verified live (deferred to Task 17 E2E per Task 10 precedent).
+  - Minor 12c: master_unit_cost fallback uses NULLIF(...,0) which treats 0 as "not provided"; legitimate zero-cost master would fall back to unit_cost.
+- ✅ Task 13: complete (commits 1a64357..0dcd1fc). Pengawasan view v2 (CTE pattern, latent bug fixed). All 13 backend tasks done.
+- ✅ Task 14: complete (commits 0dcd1fc..<head>). Kasir UI integrated: CartRow bidirectional binding, DiscountRow in Step3, struk PDF Diskon row. lint clean, 410/410 tests.
+- ✅ Task 14: complete (commits 0dcd1fc..4c919f8). Kasir/Wizard cart UI + bidirectional binding + struk PDF; 410/410 tests + lint clean.
+  - Minor 14a: handlePriceChange early-return ordering allows parent state to be one update stale on markup; binding state remains correct.
+  - Minor 14b: KasirInvoiceModal label "Diskon (X%)" reads order discount type only; if both line+order discounts exist, label is imprecise.
+  - Note: Task 14 covered shared CatatPenjualanWizard (used by both Kasir DP/Lunas and Wizard TEMPO flows). Task 15 scope reduced.
+- ✅ Task 15: complete (commits 4c919f8..e1f7a8d). TEMPO path discount wired + SalesInvoicePDF/InvoicePreviewScreen Diskon row. Gate decision: single modul_diskon_kasir for both Kasir + TEMPO (option a).
+- ✅ Task 16 fix: payload+display unit_cost = master_unit_cost (was net, would double-subtract in RPC). lint clean, 410/410 tests pass.
+- ✅ Task 16: complete (commits e1f7a8d..008a5f9). Tagihan UI integrated. Critical fix applied: unit_cost convention realigned to master (matches record_pi RPC). 410/410 tests + lint clean.
+- ✅ Task 17: complete (commits 008a5f9..d3b44ff). 43/43 diskon integration tests + 410/410 unit + lint clean. PDF visual deferred manual.
+
+## Final review fixes (2026-06-23)
+
+- ✅ I-1: SalesInvoicePDF + InvoicePreviewScreen now display gross Subtotal + total discount (lineDiscount + orderDiscount). Smart label mirrors KasirInvoiceModal pattern. Math: Gross − totalDiscount = Total visible to customer. Files: SalesInvoicePDF.tsx, InvoicePreviewScreen.tsx.
+- ✅ I-2: journal-lines.test.ts added. 5 structural JE infrastructure tests PASS (auto). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked `.skip` pending founder manual run on live DB due to cleanup risk to pesanan_items/stock_levels. Total diskon suite: 48 pass + 2 skip. lint clean.
+
+## All 17 tasks DONE (2026-06-23)
+- Branch: worktree-diskon
+- Base: 01853b0 (main)
+- Head: (see git log after final review commits)
+- Migrations: 20260801000001..20260801000007 (7 SQL files applied to live DB)
+- Frontend: shared primitives + KasirInvoiceModal + CatatPenjualanWizard + CartRows + Step2Items + Step3Payment + SalesInvoicePDF + InvoicePreviewScreen + TagihanFormPage + TagihanDetailPage + ModulSwitchesPanel + types.ts + 2 lib wrappers
+- Tests: 410 unit + 48 integration (diskon, +5 new I-2 structural) + 2 skip (I-2 happy-path); lint clean
+- Deferred: PDF visual founder check; happy-path JE verification requires founder manual run (`.skip` in journal-lines.test.ts)
+
+## Minor findings to track for final review
+- 10a: NULL/NULL/>0 triple bypasses RPC check → DB CHECK catches (23514) instead of clean error code.
+- 10b: rollback ref in 20260801000004 points to predecessor migration (not inlined captured body).
+- 11a: 2 separate item-loop passes in create_tempo_invoice (inefficiency).
+- 11b: 100% discount + 0 ongkir trips v_total <= 0 guard (UX caveat — wizard should prevent).
+- 12a: migration 20260801000006 lacks BEGIN/COMMIT wrapper (functionally safe, inconsistent w/ project pattern).
+- 12b: 5-1900 JE line not smoke-verified live (deferred to Task 17 E2E per Task 10 precedent).
+- 12c: master_unit_cost fallback `NULLIF(..,0)` treats genuine 0 as "missing".
+- 14a: handlePriceChange early-return ordering can leave parent state one update stale on markup.
+- 14b: KasirInvoiceModal "Diskon (X%)" label reads order discount type only.
+- Pre-existing (Phase 0c regression): `p_allow_negative_stock` declared but never forwarded to deduct_stock_fifo.

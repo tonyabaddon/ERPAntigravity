@@ -151,9 +151,31 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   {/* Totals */}
                   <div className="flex justify-end mb-4">
                     <div className="min-w-[200px] text-xs font-sans">
+                      {/* Per-line discounts + order-level discount row — font 11px per feedback_font_sizing.md */}
+                      {(() => {
+                        const lineDiscount = (transaction.items ?? []).reduce(
+                          (s, i) => s + (i.discount_amount_rp ?? 0), 0,
+                        );
+                        const orderDiscount = transaction.discount_amount_rp ?? 0;
+                        const totalDiscount = lineDiscount + orderDiscount;
+                        if (totalDiscount <= 0) return null;
+                        const label = transaction.discount_type === 'PERCENT'
+                          ? `Diskon (order ${transaction.discount_value}%)`
+                          : lineDiscount > 0 && orderDiscount > 0
+                          ? 'Diskon (baris + order)'
+                          : lineDiscount > 0
+                          ? 'Diskon baris'
+                          : 'Diskon Order';
+                        return (
+                          <div className="flex justify-between py-1" style={{ fontSize: '11px', color: '#b45309' }}>
+                            <span>{label}</span>
+                            <span className="font-mono">− Rp {totalDiscount.toLocaleString('id-ID')}</span>
+                          </div>
+                        );
+                      })()}
                       <div className="flex justify-between py-2 font-black text-[#012749] text-sm border-t-2 border-[#012749]">
                         <span>TOTAL</span>
-                        <span>Rp {transaction.subtotal.toLocaleString('id-ID')}</span>
+                        <span>Rp {(transaction.total_amount ?? transaction.subtotal).toLocaleString('id-ID')}</span>
                       </div>
                       {transaction.payment_method && (
                         <div className="flex justify-between py-1 text-gray-500 text-[10px]">

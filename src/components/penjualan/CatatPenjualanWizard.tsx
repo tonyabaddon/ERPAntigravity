@@ -23,6 +23,7 @@ import type {
   DbCustomer,
   DbCustomerWithStats,
   DbServiceType,
+  DiscountType,
   KasirChannel,
   KasirDpInputType,
   KasirItem,
@@ -38,7 +39,8 @@ import {
   stockService,
   supabase,
 } from '../../lib/supabaseClient';
-import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
+import { serviceTypesService, tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { computeDiscountAmount } from '../ui/discount';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
 import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
@@ -103,6 +105,18 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const [rakitFormOpen, setRakitFormOpen] = useState(false);
   const [rakitFormType, setRakitFormType] = useState<RakitServiceType | null>(null);
 
+  // ── Diskon modul toggle (Task 14) ─────────────────────────────────────────
+  const [modulDiskonOn, setModulDiskonOn] = useState(true);
+  useEffect(() => {
+    tenantSettingsService.fetch()
+      .then((s) => setModulDiskonOn(s?.modul_diskon_kasir ?? true))
+      .catch(() => { /* keep default true */ });
+  }, []);
+
+  // ── Order-level discount state (Task 14) ──────────────────────────────────
+  const [orderDiscountValue, setOrderDiscountValue] = useState<number | null>(null);
+  const [orderDiscountType, setOrderDiscountType] = useState<DiscountType>(null);
+
   // ── Step 3: payment fields ────────────────────────────────────────────────
   const [paymentMethod, setPaymentMethod] = useState<KasirPaymentMethod>('cash');
   // Phase 0b: cash_account_id picker selection for transfer/qris/edc flows.
@@ -147,8 +161,17 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   // ── Derived totals ────────────────────────────────────────────────────────
   const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
   const skuSubtotal = cart.reduce((s, i) => s + i.subtotal, 0);
+  // Task 14: subtotal after per-line discounts (master × qty − discount_amount_rp per line)
+  const skuSubtotalAfterLineDiscount = cart.reduce((s, i) => {
+    const master = i.master_price_at_sale ?? i.unit_price;
+    const discAmt = i.discount_amount_rp ?? 0;
+    return s + (master * i.qty - discAmt);
+  }, 0);
+  const subtotalAfterLineDiscount = skuSubtotalAfterLineDiscount + rakitTotal;
   const subtotal = skuSubtotal + rakitTotal;
-  const totalInvoice = subtotal + (ongkirOn ? ongkirAmount : 0);
+  // Task 14: order-level discount applied on top of line discounts
+  const orderDiscountAmountRp = computeDiscountAmount(orderDiscountValue, orderDiscountType, subtotalAfterLineDiscount);
+  const totalInvoice = subtotalAfterLineDiscount - orderDiscountAmountRp + (ongkirOn ? ongkirAmount : 0);
   const effectiveDp = paymentType === 'DP'
     ? (dpInputType === 'PERCENT' ? Math.round(totalInvoice * dpAmount / 100) : dpAmount)
     : 0;
@@ -234,6 +257,11 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         hpp_subtotal: stock.harga_modal ?? 0,
         warehouse: null,
         warehouse_id: defaultWh?.id ?? null,
+        // Task 14: capture master price at time of add for discount reference
+        master_price_at_sale: stock.price,
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
       },
     ]);
   }
@@ -252,6 +280,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
   function removeItem(key: number) {
     setCart((prev) => prev.filter((i) => i._key !== key));
+  }
+
+  // Task 14: update per-line discount fields from CartRow bidirectional binding.
+  function updateLineDiscount(key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) {
+    setCart((prev) => prev.map((i) =>
+      i._key === key
+        ? { ...i, discount_type, discount_value, discount_amount_rp }
+        : i,
+    ));
   }
 
   // Prefill SKU from "Cari by Foto" — runs once after stocks load.
@@ -481,6 +518,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       }
       // TODO(T18+): plumb allow_negative_stock through CreateTempoInvoicePayload typing.
       // For now cast at call site so the new payload key reaches the RPC body.
+      // Task 15: pass order-level discount as 2nd arg; subtotal uses post-line value
+      // (consistent with the standard recordSale path). Per-line discount fields are
+      // already embedded in each cart item via the _key-stripped spread.
       const result = await createTempoInvoice({
         customer_id: customer.id,
         customer_name: customer.name,
@@ -491,11 +531,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         sales_channel: channel,
         delivery_type: deliveryAddress.trim() ? 'DELIVERY' : 'PICKUP',
         items: cart.map(({ _key, ...rest }) => rest),
-        subtotal,
+        subtotal: subtotalAfterLineDiscount,
         shipping_fee: ongkirOn ? ongkirAmount : 0,
         total: totalInvoice,
         allow_negative_stock: true,
-      } as any);
+      } as any, {
+        discount_type: orderDiscountType,
+        discount_value: orderDiscountValue,
+        discount_amount_rp: orderDiscountAmountRp,
+      });
       if (result.kind === 'ok') {
         if (fromSalesOrderId) {
           try {
@@ -580,6 +624,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     }
 
     // path === 'standard'
+    // Task 14: include per-line discount fields in items sent to RPC.
     const skuItems = cart.map(({ _key, ...rest }) => rest);
     const serviceItems = rakitLines.map((l) => ({
       sku: null,
@@ -600,7 +645,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       date: today,
       channel,
       items: [...skuItems, ...serviceItems],
-      subtotal,
+      subtotal: subtotalAfterLineDiscount,
       payment_method: paymentMethod,
       payment_subtype: paymentSubtype,
       payment_type: paymentType === 'TEMPO' ? 'FULL' : paymentType,
@@ -619,6 +664,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       customer_id: customer.id,
       p_allow_negative_stock: true,
       cash_account_id: paymentMethod === 'cash' ? null : cashAccountId,
+      // Task 14: pass order-level discount triple
+      discount: {
+        discount_type: orderDiscountType,
+        discount_value: orderDiscountValue,
+        discount_amount_rp: orderDiscountAmountRp,
+      },
     });
     if (fromSalesOrderId) {
       try {
@@ -698,7 +749,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   </span>
                   <span className="text-slate-400">·</span>
                   <span className="font-bold text-[#012749]">
-                    Rp {Math.round(subtotal).toLocaleString('id-ID')}
+                    Rp {Math.round(subtotalAfterLineDiscount).toLocaleString('id-ID')}
                   </span>
                 </>
               )}
@@ -751,9 +802,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onQtyChange={updateQty}
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
+                onDiscountChange={updateLineDiscount}
                 onClearCart={() => { setCart([]); setRakitLines([]); }}
                 subtotal={skuSubtotal}
+                subtotalAfterLineDiscount={skuSubtotalAfterLineDiscount}
                 rakitSubtotal={rakitTotal}
+                modulDiskonOn={modulDiskonOn}
                 rakitLines={rakitLines}
                 rakitFormOpen={rakitFormOpen}
                 rakitFormType={rakitFormType}
@@ -812,11 +866,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onDeliveryAddressChange={setDeliveryAddress}
                 notes={notes}
                 onNotesChange={setNotes}
-                subtotal={subtotal}
+                subtotal={subtotalAfterLineDiscount}
                 totalInvoice={totalInvoice}
                 effectiveDp={effectiveDp}
                 sisaPelunasan={sisaPelunasan}
                 outstanding={tempoOutstanding}
+                orderDiscountValue={orderDiscountValue}
+                orderDiscountType={orderDiscountType}
+                onOrderDiscountChange={(v, t) => { setOrderDiscountValue(v); setOrderDiscountType(t); }}
+                modulDiskonOn={modulDiskonOn}
                 onSave={onSave}
                 onCancel={onCancel}
                 showToast={showToast}

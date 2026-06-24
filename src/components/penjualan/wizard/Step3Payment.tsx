@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type {
   DbCustomer,
+  DiscountType,
   KasirItem,
   KasirPaymentMethod,
   KasirPaymentSubtype,
@@ -11,6 +12,7 @@ import type {
 import { formatRp } from '../../../lib/format';
 import { dispatchSave, validateStep3, type WizardState } from '../../../lib/wizard/validation';
 import CashAccountPicker from '../../akuntansi/CashAccountPicker';
+import { DiscountRow } from '../../ui/discount';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -56,12 +58,19 @@ interface Props {
   notes: string;
   onNotesChange: (v: string) => void;
 
-  subtotal: number;          // products + jasa
-  totalInvoice: number;      // subtotal + ongkir
+  subtotal: number;          // products + jasa (after line discounts)
+  totalInvoice: number;      // subtotal - orderDiscount + ongkir
   effectiveDp: number;
   sisaPelunasan: number;
 
   outstanding: number;
+
+  /** Task 14: order-level discount state, managed by parent wizard */
+  orderDiscountValue: number | null;
+  orderDiscountType: DiscountType;
+  onOrderDiscountChange: (value: number | null, type: DiscountType) => void;
+  /** Task 14: when false, DiscountRow is hidden */
+  modulDiskonOn?: boolean;
 
   onSave: (path: 'tempo' | 'wip' | 'standard') => Promise<void>;
   onCancel: () => void;
@@ -400,6 +409,17 @@ export default function Step3Payment(props: Props) {
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-[#012749]/30 focus:border-[#012749]"
             />
           </div>
+
+          {/* Order-level discount row — shown above navy summary, gated by modulDiskonOn */}
+          {props.modulDiskonOn && (
+            <DiscountRow
+              label="Diskon Order"
+              value={props.orderDiscountValue}
+              type={props.orderDiscountType}
+              base={props.subtotal}
+              onChange={props.onOrderDiscountChange}
+            />
+          )}
 
           {/* Final summary card — signature dark navy panel from mockup */}
           <div className="bg-[#012749] text-white rounded-xl p-4 space-y-1.5">

@@ -464,6 +464,11 @@ export interface KasirItem {
   hpp_subtotal: number;
   warehouse: WarehouseLocation | null;   // legacy — Task 22 removes
   warehouse_id?: string | null;            // new — populated by Task 14 onwards
+  // Diskon fitur (Task 14): per-line discount fields. Optional for backward-compat.
+  master_price_at_sale?: number;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface KasirTransaction {
@@ -500,6 +505,10 @@ export interface KasirTransaction {
   po_id?: string | null;
   created_by?: string | null;
   created_at: string;
+  // Diskon fitur (Task 14): order-level discount read from DB. Optional for backward-compat.
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface DailySummary {
@@ -549,6 +558,12 @@ export interface RecordKasirSaleInput {
    * accounting_config defaults by payment_method.
    */
   cash_account_id?: string | null;
+  /**
+   * Diskon fitur (Task 10): optional order-level discount triple.
+   * When omitted, defaults to no discount (null/null/0). Per-line discounts
+   * are embedded in the items JSONB as discount_amount_rp fields.
+   */
+  discount?: DiscountTriple;
 }
 
 export interface NewExpense {
@@ -926,6 +941,11 @@ export interface DbPurchaseInvoiceItem {
   sell_price: number;
   subtotal: number;
   created_at: string;
+  // Task 16: discount fields (optional, backward-compat with old PIs)
+  master_unit_cost?: number | null;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export interface DbPurchaseInvoice {
@@ -956,6 +976,10 @@ export interface DbPurchaseInvoice {
   tukar_faktur_id?: string | null;
   paid_amount?: number;
   is_tf_quick_add?: boolean;
+  // Task 16: order-level discount fields (optional, backward-compat with old PIs)
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
   // joined
   supplier?: DbSupplier;
   order?: { id: string; customer_name?: string };
@@ -1199,6 +1223,19 @@ export interface SuggestOutstandingResult {
 }
 
 // ── Piutang Phase 1B — Tempo invoice + Piutang screen ──
+export interface CreateTempoInvoiceItemPayload {
+  sku: string;
+  name?: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+  // Discount fields (optional — defaults to no discount for backward-compat)
+  master_price_at_sale?: number;
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
+}
+
 export interface CreateTempoInvoicePayload {
   customer_id: string;
   customer_name?: string;
@@ -1208,10 +1245,14 @@ export interface CreateTempoInvoicePayload {
   delivery_type?: 'PICKUP' | 'DELIVERY';
   channel?: 'walkin' | 'whatsapp' | 'grosir' | 'tokopedia' | string;
   sales_channel?: string;
-  items: Array<{ sku: string; name?: string; qty: number; unit_price: number; subtotal: number }>;
+  items: CreateTempoInvoiceItemPayload[];
   subtotal: number;
   shipping_fee?: number;
   total: number;
+  // Order-level discount fields (optional — defaults to no discount for backward-compat)
+  discount_type?: DiscountType;
+  discount_value?: number | null;
+  discount_amount_rp?: number;
 }
 
 export type CreateTempoInvoiceResult =
@@ -1266,7 +1307,10 @@ export type ModulSwitchKey =
   | 'modul_multi_warehouse'
   | 'modul_akuntansi'
   | 'modul_jasa_layanan'
-  | 'modul_bom_recipe';
+  | 'modul_bom_recipe'
+  | 'modul_diskon_kasir'
+  | 'modul_diskon_penjualan'
+  | 'modul_diskon_tagihan';
 
 export interface DbTenantSettings {
   id: number;
@@ -1278,6 +1322,9 @@ export interface DbTenantSettings {
   modul_akuntansi: boolean;
   modul_jasa_layanan: boolean;
   modul_bom_recipe: boolean;
+  modul_diskon_kasir: boolean;
+  modul_diskon_penjualan: boolean;
+  modul_diskon_tagihan: boolean;
   pajak_mode: PajakMode;
   pajak_ppn_rate_umum: number;
   pajak_ppn_rate_mewah: number;
@@ -1315,6 +1362,20 @@ export interface DbServiceType {
   updated_at: string;
 }
 
+// ─── Diskon (2026-06-23) ────────────────────────────────────────────────
+export type DiscountType = 'PERCENT' | 'AMOUNT' | null;
+
+export interface DiscountTriple {
+  discount_type: DiscountType;
+  discount_value: number | null;
+  discount_amount_rp: number;
+}
+
+export interface CartItemWithDiscount extends DiscountTriple {
+  master_price_at_sale: number;
+}
+
+// ─── Sales Order / Penawaran (PR #55) ───────────────────────────────────
 /**
  * Sales Order (Penawaran) — pre-commit quote to customer.
  * No stock movement, no payment fields. Items shape mirrors kasir_transactions.items.

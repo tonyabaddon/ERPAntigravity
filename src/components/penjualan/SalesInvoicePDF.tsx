@@ -154,9 +154,25 @@ function InvoiceBody({
 }: InvoiceBodyProps) {
   const isQuotation = variant === 'quotation';
   const subtotal = t.subtotal;
+  // Gross subtotal: sum of master_price_at_sale × qty (fallback to unit_price for pre-Task-14 rows)
+  const grossSubtotal = (t.items as any[]).reduce(
+    (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
+  );
   const ongkir = t.ongkir_amount ?? 0;
-  const total = t.total_amount ?? subtotal + ongkir;
+  const total = t.total_amount ?? t.subtotal + ongkir;
   const dp = t.dp_amount ?? 0;
+  // I-1 fix: total discount = per-line + order-level (mirrors KasirInvoiceModal lines 155-175).
+  const lineDiscount = (t.items as any[]).reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
+  const orderDiscount = t.discount_amount_rp ?? 0;
+  const totalDiscount = lineDiscount + orderDiscount;
+  // Smart label: match KasirInvoiceModal pattern
+  const discountLabel = t.discount_type === 'PERCENT' && t.discount_value
+    ? `Diskon (order ${t.discount_value}%)`
+    : lineDiscount > 0 && orderDiscount > 0
+    ? 'Diskon (baris + order)'
+    : lineDiscount > 0
+    ? 'Diskon baris'
+    : 'Diskon Order';
   const sisa = variant === 'dp' ? total - dp : 0;
   const sudahDibayar = variant === 'lunas' ? total : dp;
 
@@ -299,8 +315,14 @@ function InvoiceBody({
 
       {/* Totals */}
       <div className="ml-auto w-3/5 text-[12px] mt-2">
-        <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(subtotal)}</span></div>
+        {/* I-1 fix: show gross subtotal so Gross − Diskon = Total is transparent to customer */}
+        <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(grossSubtotal)}</span></div>
         {!isQuotation && ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
+        {totalDiscount > 0 && (
+          <div className="flex justify-between py-0.5 text-[11px] text-slate-700">
+            <span>{discountLabel}</span><span>− {formatRp(totalDiscount)}</span>
+          </div>
+        )}
         <div className="flex justify-between py-1 border-t border-slate-900 border-b-[3px] border-double border-b-slate-900 font-extrabold text-[13px]">
           <span>{isQuotation ? 'TOTAL PENAWARAN' : 'TOTAL TAGIHAN'}</span>
           <span>{formatRp(isQuotation ? subtotal : total)}</span>

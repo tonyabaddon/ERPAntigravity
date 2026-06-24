@@ -7,6 +7,7 @@ const baseSettings: DbTenantSettings = {
   modul_kasir: true, modul_tempo: true, modul_pengiriman: true,
   modul_multi_warehouse: true, modul_akuntansi: true,
   modul_jasa_layanan: true, modul_bom_recipe: false,
+  modul_diskon_kasir: false, modul_diskon_penjualan: false, modul_diskon_tagihan: false,
   pajak_mode: 'FINAL_UMKM', pajak_ppn_rate_umum: 11, pajak_ppn_rate_mewah: 12,
   pajak_final_rate: 0.5,
   pajak_umkm_jenis_badan: 'OP', pajak_umkm_terdaftar_at: '2022-01-01',

@@ -240,40 +240,80 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         </div>
       )}
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
-        <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Barang yang Diterima</div>
-        <table className="w-full">
-          <thead className="border-b border-gray-200">
-            <tr>
-              <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
-              <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
-              <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
-              <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(tgh.items ?? []).map(it => (
-              <tr key={it.id} className="border-b border-gray-100">
-                <td className="py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">{it.sku}</span>
-                    <span className="text-sm">{it.product_name}</span>
-                  </div>
-                </td>
-                <td className="py-3 text-center font-semibold">{it.qty}</td>
-                <td className="py-3 text-right">{fmtRp(it.unit_cost)}</td>
-                <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(it.subtotal)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={3} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(tgh.total)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      {(() => {
+        const itemsArr = tgh.items ?? [];
+        const hasItemDiscount = itemsArr.some(it => (it.discount_amount_rp ?? 0) > 0);
+        const hasOrderDiscount = (tgh.discount_amount_rp ?? 0) > 0;
+        // When any per-item or order-level discount exists, show subtotal row too
+        const showBreakdown = hasItemDiscount || hasOrderDiscount;
+        const colCount = hasItemDiscount ? 5 : 4;
+
+        return (
+          <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+            <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Barang yang Diterima</div>
+            <table className="w-full">
+              <thead className="border-b border-gray-200">
+                <tr>
+                  <th className="text-left py-2 text-[11px] font-semibold text-gray-500 uppercase">SKU / Nama</th>
+                  <th className="text-center py-2 w-20 text-[11px] font-semibold text-gray-500 uppercase">Qty</th>
+                  <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Harga Beli</th>
+                  {hasItemDiscount && (
+                    <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Diskon Item</th>
+                  )}
+                  <th className="text-right py-2 w-32 text-[11px] font-semibold text-gray-500 uppercase">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itemsArr.map(it => (
+                  <tr key={it.id} className="border-b border-gray-100">
+                    <td className="py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded">{it.sku}</span>
+                        <span className="text-sm">{it.product_name}</span>
+                      </div>
+                      {(it.master_unit_cost ?? 0) > it.unit_cost && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">List {fmtRp(it.master_unit_cost ?? 0)}</div>
+                      )}
+                    </td>
+                    <td className="py-3 text-center font-semibold">{it.qty}</td>
+                    <td className="py-3 text-right">{fmtRp(it.unit_cost)}</td>
+                    {hasItemDiscount && (
+                      <td className="py-3 text-right text-orange-700 text-sm">
+                        {(it.discount_amount_rp ?? 0) > 0
+                          ? `− ${fmtRp(it.discount_amount_rp ?? 0)}`
+                          : '—'}
+                      </td>
+                    )}
+                    <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(it.subtotal)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                {showBreakdown && (
+                  <tr>
+                    <td colSpan={colCount - 1} className="py-2 text-right text-xs font-semibold text-gray-500">SUBTOTAL</td>
+                    <td className="py-2 text-right text-sm font-bold text-gray-700">{fmtRp(tgh.subtotal)}</td>
+                  </tr>
+                )}
+                {hasOrderDiscount && (
+                  <tr>
+                    <td colSpan={colCount - 1} className="py-1 text-right text-xs font-semibold text-orange-700">
+                      Diskon Tagihan{tgh.discount_type === 'PERCENT' ? ` (${tgh.discount_value}%)` : ''}
+                    </td>
+                    <td className="py-1 text-right text-sm font-semibold text-orange-700">
+                      − {fmtRp(tgh.discount_amount_rp ?? 0)}
+                    </td>
+                  </tr>
+                )}
+                <tr>
+                  <td colSpan={colCount - 1} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
+                  <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(tgh.total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        );
+      })()}
 
       {tgh.notes && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">

@@ -211,24 +211,51 @@ export default function InvoicePreviewScreen({
                     <div className="text-base font-extrabold text-[#012749]">Invoice {transaction.invoice_number ?? '—'}</div>
                     <div className="text-xs text-slate-500 mt-0.5">{transaction.payment_type ?? 'FULL'} · {new Date(transaction.date ?? Date.now()).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
-                    <div className="text-slate-500">Customer</div>
-                    <div className="font-semibold text-right">{transaction.customer_name ?? '—'}</div>
-                    {transaction.customer_phone && (
-                      <>
-                        <div className="text-slate-500">HP</div>
-                        <div className="font-semibold text-right">{transaction.customer_phone}</div>
-                      </>
-                    )}
-                    <div className="text-slate-500">Subtotal</div>
-                    <div className="font-semibold text-right">Rp {Math.round(transaction.subtotal).toLocaleString('id-ID')}</div>
-                    {(transaction.ongkir_amount ?? 0) > 0 && (
-                      <>
-                        <div className="text-slate-500">Ongkir</div>
-                        <div className="font-semibold text-right">Rp {Math.round(transaction.ongkir_amount ?? 0).toLocaleString('id-ID')}</div>
-                      </>
-                    )}
-                  </div>
+                  {/* I-1 fix: gross subtotal + totalDiscount so customer sees transparent math */}
+                  {(() => {
+                    const items = (transaction.items ?? []) as any[];
+                    const grossSubtotal = items.reduce(
+                      (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
+                    );
+                    const lineDiscount = items.reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
+                    const orderDiscount = transaction.discount_amount_rp ?? 0;
+                    const totalDiscount = lineDiscount + orderDiscount;
+                    const discountLabel = transaction.discount_type === 'PERCENT' && transaction.discount_value
+                      ? `Diskon (order ${transaction.discount_value}%)`
+                      : lineDiscount > 0 && orderDiscount > 0
+                      ? 'Diskon (baris + order)'
+                      : lineDiscount > 0
+                      ? 'Diskon baris'
+                      : 'Diskon Order';
+                    return (
+                      <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
+                        <div className="text-slate-500">Customer</div>
+                        <div className="font-semibold text-right">{transaction.customer_name ?? '—'}</div>
+                        {transaction.customer_phone && (
+                          <>
+                            <div className="text-slate-500">HP</div>
+                            <div className="font-semibold text-right">{transaction.customer_phone}</div>
+                          </>
+                        )}
+                        <div className="text-slate-500">Subtotal</div>
+                        <div className="font-semibold text-right">Rp {Math.round(grossSubtotal).toLocaleString('id-ID')}</div>
+                        {(transaction.ongkir_amount ?? 0) > 0 && (
+                          <>
+                            <div className="text-slate-500">Ongkir</div>
+                            <div className="font-semibold text-right">Rp {Math.round(transaction.ongkir_amount ?? 0).toLocaleString('id-ID')}</div>
+                          </>
+                        )}
+                        {totalDiscount > 0 && (
+                          <>
+                            <div className="text-slate-500">{discountLabel}</div>
+                            <div className="font-semibold text-right text-rose-600">
+                              − Rp {Math.round(totalDiscount).toLocaleString('id-ID')}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
                     <div className="text-sm font-bold text-slate-700">TOTAL</div>
                     <div className="text-xl font-extrabold text-[#012749]">

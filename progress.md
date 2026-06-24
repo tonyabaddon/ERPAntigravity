@@ -1,5 +1,85 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-23 — Diskon Fitur Task 17 DONE — Integration tests + regression sweep
+
+- ✅ Diskon Task 17: Integration E2E tests + final regression sweep COMPLETE.
+  - Files added: `tests/integration/diskon/_setup.ts`, `kasir-wizard.test.ts`, `tagihan-pi.test.ts`, `toggle-bc.test.ts`
+  - 3 test files, 43 tests — all PASS.
+  - Scenarios covered:
+    - Kasir Path B: record_kasir_sale discount validation guards (TRIPLE_INVALID, MARKUP_NOT_ALLOWED, EXCESSIVE_LINE_DISCOUNT, DISCOUNT_EXCEEDS_SUBTOTAL) + 25-param signature.
+    - Wizard TEMPO: create_tempo_invoice discount validation guards + orders table schema (3 new columns).
+    - Tagihan PI: record_pi discount validation guards + purchase_invoices + purchase_invoice_items schema + COA 5-1900.
+    - Toggle backward-compat: tenant_settings 3 new columns + set_tenant_modul deployment + legacy RPC calls without discount params still work.
+  - Unit suite: 410/410 PASS (no regression).
+  - Lint: `npm run lint` PASS (tsc --noEmit clean).
+  - PDF visual checks: DEFERRED (manual founder smoke). Founder should run `npm run dev` and:
+    1. Kasir: create a discounted sale → verify struk shows Diskon row (11-12px font, §feedback_font_sizing).
+    2. Wizard TEMPO: create TEMPO order with discount → verify SalesInvoicePDF Diskon row.
+    3. Tagihan PI: record PI with supplier discount → verify TagihanDetailPage Diskon row.
+  - Note: Integration suite pre-existing failures (46 failing files) are unrelated to diskon — they include stale schema cache issues (tokped_order_no), SUPABASE_SERVICE_KEY missing in some test file setups (vite loadEnv vs dotenv), and data-dependent tests. Diskon tests use dotenv pattern (warehouse-style) which works correctly.
+  - Branch: worktree-diskon.
+
+---
+
+## 2026-06-23 — Diskon Fitur Task 15 DONE — TEMPO RPC discount path + SalesInvoicePDF Diskon row + InvoicePreviewScreen Diskon row
+
+- ✅ Diskon Task 15: TEMPO submit in `CatatPenjualanWizard` now passes `discount` 2nd arg to `createTempoInvoice` (order-level triple) + `subtotal` corrected to post-line value. `SalesInvoicePDF` Diskon row added before TOTAL TAGIHAN (hidden when 0, label includes `(N%)` for PERCENT type). `InvoicePreviewScreen` mini-preview card gains matching Diskon row. Gate: single `modul_diskon_kasir` covers all flows (option a — Kasir + TEMPO through same wizard). `npm run lint` clean.
+
+---
+
+## 2026-06-23 — Diskon Fitur Task 11 DONE — create_tempo_invoice RPC + discount validation + piutangService wrapper
+
+- ✅ Diskon Task 11: `create_tempo_invoice` RPC extended with discount triples (per-line + order-level). Migration 20260801000005 applied. No GL dual-write present (TODO Phase 0c). 3 smokes PASS: happy path total=950000, MARKUP_NOT_ALLOWED, DISCOUNT_EXCEEDS_SUBTOTAL. Frontend wrapper `createTempoInvoice(payload, discount?)` backward-compat. `npm run lint` clean.
+
+---
+
+## 2026-06-23 — Diskon Fitur Task 10 DONE — record_kasir_sale RPC + discount validation + journal 4-1900
+
+- ✅ Diskon Task 10: `record_kasir_sale` RPC patched to 25-param with discount (3 params + per-line validation + server recompute + GL 4-1900 debit). Migration 20260801000004 applied. 3 smokes PASS. Frontend wrapper updated.
+
+---
+
+## 2026-06-23 — Diskon Fitur Task 7 DONE — DiscountInlineInput Component + RTL Tests
+
+- ✅ Diskon Task 7: `<DiscountInlineInput>` component + 7 RTL test cases.
+- ✅ Tests: numeric input + segmented pill toggle [Rp | %]. TDD strict: RED → GREEN.
+- ✅ Verification: 7/7 tests PASS. Toggle preserves Rupiah equivalent via `computeDiscountAmount`. Disabled state blocks input + toggle.
+- ✅ Implementation file: `src/components/ui/discount/DiscountInlineInput.tsx` (63 lines).
+
+**Files created:**
+- `src/components/ui/discount/DiscountInlineInput.tsx` — component implementation
+- `src/components/ui/discount/DiscountInlineInput.test.tsx` — 7 RTL tests
+
+**Verification:**
+- `npm test src/components/ui/discount/DiscountInlineInput.test.tsx`: 7/7 PASS
+- All 405 project tests passing
+- tsc type check: clean
+- Component exports: `DiscountInlineInputProps` + `DiscountInlineInput`
+
+---
+
+## 2026-06-23 — Diskon Fitur Task 6 DONE — useDiscountBinding Hook + RTL Tests
+
+- ✅ Diskon Task 6: `useDiscountBinding(master_price, qty, initial?)` hook + 8 bidirectional sync tests.
+- ✅ Tests: RTL renderHook + @testing-library/react (installed). Vitest jsdom env configured (vite.config.ts).
+- ✅ Verification: 8/8 tests PASS. Hook handles AMOUNT/PERCENT toggle, silent ignore on markup (typed_price > master), preserves Rupiah equivalent.
+- ✅ Implementation file: `src/components/ui/discount/useDiscountBinding.ts` (84 lines, strict TDD).
+
+**Files created:**
+- `src/components/ui/discount/useDiscountBinding.ts` — hook implementation
+- `src/components/ui/discount/useDiscountBinding.test.ts` — 8 unit tests
+
+**Dependencies installed:**
+- @testing-library/react (16.3.2)
+- @testing-library/dom (10.4.1)
+- jsdom (dev)
+
+**Verification:**
+- `npx vitest run src/components/ui/discount/useDiscountBinding.test.ts`: 8/8 PASS
+- tsc type check: clean
+- vite.config.ts: test.environment = 'jsdom' added
+
+---
 ## 2026-06-23 — Sales Order (Penawaran) Task 20 — Final-review fixes DONE
 
 **Branch:** `feat/sales-order-penawaran` | **Commit:** `2816c72`
@@ -85,6 +165,10 @@
 
 Phase 0c complete. 3 critical GL fixes deployed:
 
+## 2026-06-23 — Diskon Fitur Task 1-2 DONE — Schema + COA Seed
+
+- ✅ Diskon Task 1: schema migration applied (4 tables, 13 cols + triple-CHECKs). Commit c30a155.
+- ✅ Diskon Task 2: COA seed 5-1900 Diskon Pembelian (kontra) seeded. account_type='BEBAN', account_subtype='KONTRA', normal_balance='CREDIT'. Commit incoming.
 ## 2026-06-23 — Diskon Fitur Task 1 — Schema Migration DONE
 
 - ✅ Diskon Task 1: schema migration applied (4 tables, 13 cols + triple-CHECKs). Branch worktree-diskon, commit c30a155.
@@ -9192,3 +9276,99 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
 - **Existing CHECKs enumerated:** No conflicts detected. 4 tables had 23 existing CHECKs; new triple-CHECKs are orthogonal (do not reference any existing constraint patterns).
 - **Commit:** (pending git add/commit in next step)
 - **Report:** `.superpowers/sdd/task-1-report.md` documents full enumeration + verification results.
+
+## 2026-06-23 — Diskon Fitur Task 5 — computeDiscountAmount Pure Function + Tests DONE
+
+**Branch:** `worktree-diskon` (worktree `.claude/worktrees/diskon`)
+**Task 5 — computeDiscountAmount + unit tests (7/7 PASS)**
+- **Files created:**
+  - `src/components/ui/discount/computeDiscountAmount.ts` — pure function resolving discount (value, type, base) → Rp amount.
+  - `src/components/ui/discount/computeDiscountAmount.test.ts` — 7 test cases covering all semantics.
+- **TDD discipline followed:**
+  - Step 1: Test file created with exact code from brief.
+  - Step 2: Test run FAIL — "Cannot find module './computeDiscountAmount'" (RED evidence).
+  - Step 3: Implementation created with exact code from brief.
+  - Step 4: Test run PASS — all 390 tests pass, including 7 new computeDiscountAmount tests (GREEN evidence).
+- **Function semantics verified:**
+  - `null` type → 0
+  - `AMOUNT` → value clamped to base
+  - `PERCENT` → `Math.round(base × value / 100)`, clamped to base
+  - null/NaN/negative value → 0
+  - base ≤ 0 → 0
+  - PERCENT rounding to nearest Rupiah (no fractional cents)
+- **Commit:** (pending in next step)
+- **Report:** `.superpowers/sdd/task-5-report.md` documents TDD RED + GREEN evidence.
+
+---
+
+**Task 8 — DiscountRow component + index barrel (5/5 PASS + 410/410 full suite PASS)**
+- **Files created:**
+  - `src/components/ui/discount/DiscountRow.tsx` — React component: label + DiscountInlineInput + computed Rp amount display.
+  - `src/components/ui/discount/DiscountRow.test.tsx` — 5 test cases covering label default/custom, computed amounts, onChange forwarding.
+  - `src/components/ui/discount/index.ts` — barrel exporting all 6 named items (3 components + 3 types).
+- **TDD discipline followed:**
+  - Step 1: Test file created with 5 test cases (RED).
+  - Step 2: Test run FAIL — "Cannot find module './DiscountRow'" (RED evidence).
+  - Step 3: Implementation created (DiscountRow.tsx) with flex layout, orange styling, Rp formatting.
+  - Step 4: Test run PASS — 5/5 DiscountRow tests pass (GREEN evidence).
+  - Step 5: Barrel created with 6 exports (computeDiscountAmount, useDiscountBinding, DiscountBindingState/Api, DiscountInlineInput, DiscountInlineInputProps, DiscountRow, DiscountRowProps).
+  - Step 6: Full discount test suite run — 410/410 PASS (all 51 test files). Lint clean (tsc --noEmit, no errors).
+- **Component semantics verified:**
+  - Default label "Diskon Order" when not provided.
+  - Custom label accepted via `label` prop.
+  - Computed Rp amount displayed below input (via computeDiscountAmount).
+  - Shows "= − Rp 0" when no discount selected (value=null, type=null).
+  - Shows "= − Rp 100.000" when PERCENT=10, base=1000000.
+  - onChange handler forwarded to DiscountInlineInput without modification.
+- **Commit:** (pending).
+- **Report:** `.superpowers/sdd/task-8-report.md` documents TDD RED + GREEN evidence + full suite PASS.
+
+
+---
+
+**Task 9 — Pengaturan UI ModulSwitchesPanel 3 toggle diskon (COMPLETE)**
+- **File modified:** `src/components/pengaturan/ModulSwitchesPanel.tsx`
+  - MODULS array expanded from 7 entries to 10 entries.
+  - 3 new entries appended after `modul_bom_recipe`:
+    - `modul_diskon_kasir` (icon 🏷️, title "Diskon di Kasir")
+    - `modul_diskon_penjualan` (icon 🏷️, title "Diskon di Penjualan")
+    - `modul_diskon_tagihan` (icon 🏷️, title "Diskon di Tagihan PI")
+  - All 7 existing entries preserved unchanged.
+- **TypeScript verification:** `npm run lint` → tsc --noEmit PASS (zero errors). ModulSwitchKey widened in Task 4; tenantSettingsService.updateModul accepts new keys (RPC whitelist extended Task 3).
+- **Manual smoke test:** Deferred (no dev server in subagent environment). In production, would verify 10 toggles render in Pengaturan UI, toggle defaults ON, persist correctly across refresh.
+- **Commit:** (pending).
+- **Report:** `.superpowers/sdd/task-9-report.md` documents lint output + status.
+
+## 2026-06-23 — Diskon Fitur Task 12 — record_pi RPC with Discount DONE
+- ✅ Diskon Task 12: record_pi extended with per-item + order-level discount, 3-line JE on discount (5-1900 CREDIT). 3 smokes PASS (happy/markup/over-discount). Branch worktree-diskon. Migration 20260801000006.
+
+## 2026-06-23 — Diskon Fitur Task 13 — Pengawasan view rewrite DONE
+- ✅ Diskon Task 13: pengawasan view v2 — latent bug fixed (explicit discount_amount_rp snapshot vs derived from stocks.price). 
+  - Migration: `20260801000007_pengawasan_kasir_discount_view_v2.sql`
+  - View rewritten with CTE pattern: line_agg (per-item discounts via JSONB) → kt_agg (per-cashier totals) → final SELECT with admin_users join
+  - Handles backward-compat: COALESCE for NULL discount_amount_rp in pre-migration rows
+  - Smoke test PASS: 5 columns returned (cashier_user_id, cashier_name, total_discount_rp, total_revenue_rp, discount_pct_of_revenue)
+  - Regression: View stable across stocks.price mutations (JSONB snapshot reads, not live price derivation)
+  - Branch worktree-diskon. Migration applied successfully.
+
+## 2026-06-23 — Diskon Fitur Task 14 — Kasir UI integration DONE
+- ✅ Diskon Task 14: Kasir UI cart/total/struk integrated. Per-line + order-level discount wired end-to-end.
+  - Files modified: `types.ts` (KasirItem + KasirTransaction discount fields), `CatatPenjualanWizard.tsx` (modulDiskonOn, order discount state, updateLineDiscount, pass discount to recordSale), `CartRows.tsx` (extracted CartRow subcomponent with useDiscountBinding, bidirectional Harga/Diskon), `wizard/Step2Items.tsx` (onDiscountChange + modulDiskonOn props), `wizard/Step3Payment.tsx` (DiscountRow above summary card), `KasirInvoiceModal.tsx` (Diskon row in totals, font 11px).
+  - Note: brief targets KasirScreen.tsx (the daily log dashboard) but actual cart/checkout is in CatatPenjualanWizard.tsx — correctly pivoted to wizard files.
+  - lint: `npm run lint` PASS (tsc --noEmit). Tests: 410/410 PASS.
+  - Manual smoke: deferred (no dev server in subagent env).
+
+## 2026-06-23 — Diskon Fitur Task 16 — Tagihan PI UI DONE
+- ✅ Diskon Task 16: Tagihan PI form + detail dengan diskon.
+  - `TagihanFormPage.tsx`: extracted `TagihanItemRow` sub-component (isolates `useDiscountBinding` hook per row), per-item Diskon column (gated by `modulOn`), "List Rp …" label above unit_cost when modulOn, order-level `DiscountRow` in tfoot between subtotal-after-line and total, `tenantSettingsService.fetch()` gate on `modul_diskon_tagihan`, submit payload includes `master_unit_cost` + per-item discount triple + top-level order discount triple.
+  - `TagihanDetailPage.tsx`: shows Diskon Item column in items table when any item has `discount_amount_rp > 0`; shows SUBTOTAL + Diskon Tagihan rows in tfoot when discount present; backward-compat (old PIs without discount render unchanged).
+  - `types.ts`: `DbPurchaseInvoiceItem` extended with `master_unit_cost?`, `discount_type?`, `discount_value?`, `discount_amount_rp?`; `DbPurchaseInvoice` extended with order-level discount triple.
+  - `npm run lint` PASS (tsc --noEmit clean). Branch worktree-diskon.
+
+## 2026-06-23 — Diskon Final Review Fixes (I-1 + I-2)
+
+- ✅ Diskon I-1 fix: SalesInvoicePDF + InvoicePreviewScreen now display gross Subtotal + total discount row (lineDiscount + orderDiscount). Customers can verify Gross − Diskon = Total. Smart label mirrors KasirInvoiceModal pattern.
+  - `SalesInvoicePDF.tsx`: grossSubtotal = sum(master_price_at_sale × qty), totalDiscount = lineDiscount + orderDiscount, shown in Subtotal + single Diskon row.
+  - `InvoicePreviewScreen.tsx`: mini-preview card mirrors same computation via IIFE.
+- ✅ Diskon I-2 fix: journal-lines.test.ts added. 5 structural JE infrastructure tests (auto-run PASS). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked .skip due to live-DB cleanup risk on pesanan_items/stock_levels. Founder removes .skip for pre-monthly-close manual verification.
+  - Tests/integration/diskon: 48 pass + 2 skip (was 43 pass). Unit 410/410. Lint clean.
