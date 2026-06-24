@@ -135,21 +135,24 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   // Per-line: zero out any stale percent discount when master price changes
   // (the correct discount_amount_rp would require knowing the new pct×base;
   // zeroing is safer and forces the operator to re-enter if needed).
+  // When grosir is active but price_grosir is null for a line, fall back to
+  // eceran price AND tag that line as 'eceran' so the JSONB payload stays
+  // semantically correct (matches the COALESCE in the Task 6 RPC).
   useEffect(() => {
     if (!showTierPill) return;
     setCart((prev) => prev.map((line) => {
       if (!line.sku) return line;
       const product = stocks.find((s) => s.sku === line.sku);
       if (!product) return line;
-      const newPrice = activeTier === 'grosir'
-        ? (product.price_grosir ?? product.price)
-        : product.price;
-      if (newPrice === line.unit_price) return line;
+      const useGrosir = activeTier === 'grosir' && product.price_grosir != null;
+      const newPrice = useGrosir ? product.price_grosir! : product.price;
+      const lineTier: 'eceran' | 'grosir' = useGrosir ? 'grosir' : 'eceran';
+      if (newPrice === line.unit_price && lineTier === (line.pricing_tier_used ?? 'eceran')) return line;
       return {
         ...line,
         unit_price: newPrice,
         master_price_at_sale: newPrice,
-        pricing_tier_used: activeTier,
+        pricing_tier_used: lineTier,
         subtotal: newPrice * line.qty,
         hpp_subtotal: line.hpp_per_unit * line.qty,
         // Zero out stale line discount when price changes to avoid desync
@@ -292,10 +295,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     const defaultWh = maxBalance && maxBalance.qty > 0
       ? maxBalance.w
       : (warehouses.find((w) => w.is_default) ?? warehouses[0]);
-    // Task 7: apply active tier price when adding item
-    const tierPrice = showTierPill && activeTier === 'grosir'
-      ? (stock.price_grosir ?? stock.price)
-      : stock.price;
+    // Task 7: apply active tier price when adding item.
+    // When grosir is active but price_grosir is null, fall back to eceran
+    // price AND record tier as 'eceran' so RPC JSONB is semantically correct.
+    const useGrosirAdd = showTierPill && activeTier === 'grosir' && stock.price_grosir != null;
+    const tierPrice = useGrosirAdd ? stock.price_grosir! : stock.price;
+    const lineTierAdd: 'eceran' | 'grosir' = useGrosirAdd ? 'grosir' : 'eceran';
     setCart((prev) => [
       ...prev,
       {
@@ -314,8 +319,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         discount_type: null,
         discount_value: null,
         discount_amount_rp: 0,
-        // Task 7: record which tier was active at add time
-        pricing_tier_used: showTierPill ? activeTier : undefined,
+        // Task 7: record which tier was active (may be eceran if grosir not set)
+        pricing_tier_used: showTierPill ? lineTierAdd : undefined,
       },
     ]);
   }
