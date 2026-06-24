@@ -31,7 +31,6 @@ function validate(input: {
   if (!input.category) errs.push({ field: 'category', message: 'Kategori wajib dipilih' });
   if (!input.unit) errs.push({ field: 'unit', message: 'Satuan wajib dipilih' });
   if (!input.price || input.price <= 0) errs.push({ field: 'price', message: 'Harga Jual harus > 0' });
-  if (input.photos < 1) errs.push({ field: 'photos', message: 'Minimal 1 foto produk wajib' });
   // Multi-satuan
   if ((input.unitAlt && !input.unitAltFactor) || (!input.unitAlt && input.unitAltFactor)) {
     errs.push({ field: 'multi_satuan', message: 'Multi-satuan: keduanya harus diisi atau dikosongkan' });
@@ -298,8 +297,8 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         <div className="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h5 className="text-sm font-extrabold text-[#012749]">📷 Foto Produk <span className="w-1.5 h-1.5 bg-rose-500 rounded-full inline-block ml-1" /></h5>
-              <p className="text-[10.5px] text-slate-500">Min 1 wajib · max 5 · drop dari folder atau drag slot untuk urutan</p>
+              <h5 className="text-sm font-extrabold text-[#012749]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
+              <p className="text-[10.5px] text-slate-500">Max 5 · drop dari folder atau drag slot untuk urutan</p>
             </div>
             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
               {photos.length} / {MAX_PHOTOS} terisi
@@ -377,7 +376,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             </div>
           </div>
           <p className="text-[11px] text-slate-500 italic mt-3">
-            Min 1 foto wajib — foto pertama jadi thumbnail. Foto akan di-index AI ~5 detik setelah simpan.
+            Foto opsional — kalau ada, foto pertama jadi thumbnail + di-index AI ~5 detik setelah simpan. Tanpa foto, produk tetap muncul di Katalog dengan placeholder dan tidak bisa dicari via "Cari by Foto".
           </p>
         </div>
 
