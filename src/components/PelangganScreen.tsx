@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Pencil, Check, X } from 'lucide-react';
-import { ActivePage, DbCustomerWithStats, DbCustomerProfile } from '../types';
+import { ActivePage, DbCustomerWithStats, DbCustomerProfile, DbTenantSettings } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 import TempoCreditSection from './pelanggan/TempoCreditSection';
+import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
+import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -69,7 +71,14 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editCompany, setEditCompany] = useState('');
+  const [editTier, setEditTier] = useState<'eceran' | 'grosir'>('eceran');
   const [saving, setSaving] = useState(false);
+  const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
+  const [tierFilter, setTierFilter] = useState<'all' | 'eceran' | 'grosir'>('all');
+
+  useEffect(() => {
+    tenantSettingsService.fetch().then(setTenantSettings).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -93,14 +102,19 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
       .finally(() => setLoadingProfile(false));
   }, [selectedId]);
 
+  const showTierDropdown = tenantSettings ? isFieldVisible('tier_dropdown_customer', tenantSettings) : false;
+
   async function handleSaveCustomer() {
     if (!profile) return;
     setSaving(true);
     try {
       await customersService.updateNameCompany(profile.id, editName.trim(), editCompany.trim());
-      const updated = { ...profile, name: editName.trim(), company: editCompany.trim() };
+      if (showTierDropdown) {
+        await customersService.updateTier(profile.id, editTier);
+      }
+      const updated = { ...profile, name: editName.trim(), company: editCompany.trim(), default_pricing_tier: editTier };
       setProfile(updated);
-      setCustomers(prev => prev.map(c => c.id === profile.id ? { ...c, name: editName.trim(), company: editCompany.trim() } : c));
+      setCustomers(prev => prev.map(c => c.id === profile.id ? { ...c, name: editName.trim(), company: editCompany.trim(), default_pricing_tier: editTier } : c));
       setEditing(false);
       showToast('Profil pelanggan diperbarui.', 'success');
     } catch {
@@ -111,13 +125,20 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   }
 
   const filtered = customers.filter(c => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      c.name.toLowerCase().includes(q) ||
-      c.wa_number.includes(q) ||
-      c.company.toLowerCase().includes(q)
-    );
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      const matchesSearch = (
+        c.name.toLowerCase().includes(q) ||
+        c.wa_number.includes(q) ||
+        c.company.toLowerCase().includes(q)
+      );
+      if (!matchesSearch) return false;
+    }
+    if (tierFilter !== 'all') {
+      const customerTier = c.default_pricing_tier ?? 'eceran';
+      if (customerTier !== tierFilter) return false;
+    }
+    return true;
   });
 
   const salesEntries = profile
@@ -152,7 +173,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
         {/* Left panel */}
         <div className="w-72 shrink-0 border-r border-gray-200 flex flex-col">
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-3 border-b border-gray-200 space-y-2">
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
               <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
               <input
@@ -162,6 +183,25 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
+            {showTierDropdown && (
+              <div className="flex gap-1">
+                {(['all', 'eceran', 'grosir'] as const).map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setTierFilter(t)}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                      tierFilter === t
+                        ? t === 'grosir'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-[#012749] text-white'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    }`}
+                  >
+                    {t === 'all' ? 'Semua' : t === 'eceran' ? 'Eceran' : 'Grosir'}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
@@ -202,8 +242,19 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       )}
                       <div className="font-mono text-[10px] text-gray-400 truncate">{c.wa_number}</div>
                     </div>
-                    <div className={`text-xs font-bold shrink-0 ${isSelected ? 'text-[#012749]' : 'text-gray-500'}`}>
-                      {c.order_count}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className={`text-xs font-bold ${isSelected ? 'text-[#012749]' : 'text-gray-500'}`}>
+                        {c.order_count}
+                      </div>
+                      {showTierDropdown && (
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                          (c.default_pricing_tier ?? 'eceran') === 'grosir'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {(c.default_pricing_tier ?? 'eceran') === 'grosir' ? 'Grosir' : 'Eceran'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
@@ -246,6 +297,21 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         placeholder="Nama perusahaan (opsional)"
                         className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white placeholder:text-white/40 outline-none focus:border-white/60"
                       />
+                      {showTierDropdown && (
+                        <div>
+                          <label className="text-[11px] font-bold text-white/60">Tier Harga Default</label>
+                          <select
+                            aria-label="Tier Harga Default"
+                            value={editTier}
+                            onChange={e => setEditTier(e.target.value as 'eceran' | 'grosir')}
+                            className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white outline-none focus:border-white/60 mt-0.5"
+                          >
+                            <option value="eceran" className="text-gray-800">Eceran (retail)</option>
+                            <option value="grosir" className="text-gray-800">Grosir (reseller)</option>
+                          </select>
+                          <p className="text-[10px] text-white/40 mt-1">Otomatis dipakai saat customer ini transaksi; kasir bebas switch.</p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <>
@@ -283,7 +349,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       <div className="text-[9px] opacity-55">total belanja</div>
                     </div>
                     <button
-                      onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditing(true); }}
+                      onClick={() => { setEditName(profile.name); setEditCompany(profile.company); setEditTier(profile.default_pricing_tier ?? 'eceran'); setEditing(true); }}
                       className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white text-[10px] px-2 py-1 rounded-lg transition-colors"
                     >
                       <Pencil className="w-3 h-3" /> Edit

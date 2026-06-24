@@ -812,6 +812,15 @@ export const customersService = {
     if (error) throw error;
   },
 
+  async updateTier(id: string, tier: 'eceran' | 'grosir'): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('customers')
+      .update({ default_pricing_tier: tier })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
     const [customerRes, kasirRes] = await Promise.all([
