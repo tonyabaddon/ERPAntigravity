@@ -8,6 +8,7 @@ const baseSettings: DbTenantSettings = {
   modul_multi_warehouse: true, modul_akuntansi: true,
   modul_jasa_layanan: true, modul_bom_recipe: false,
   modul_diskon_kasir: false, modul_diskon_penjualan: false, modul_diskon_tagihan: false,
+  modul_multi_tier_price: false,
   pajak_mode: 'FINAL_UMKM', pajak_ppn_rate_umum: 11, pajak_ppn_rate_mewah: 12,
   pajak_final_rate: 0.5,
   pajak_umkm_jenis_badan: 'OP', pajak_umkm_terdaftar_at: '2022-01-01',
@@ -67,5 +68,33 @@ describe('cascadeMap', () => {
   test('cascadeImpactSummary returns info when modul off with no usage', () => {
     const summary = cascadeImpactSummary('modul_bom_recipe', {});
     expect(summary.level).toBe('info');
+  });
+
+  // Multi-tier pricing tests (Task 2)
+  describe('cascadeMap multi-tier pricing', () => {
+    const onSettings = { ...baseSettings, modul_multi_tier_price: true };
+    const offSettings = { ...baseSettings, modul_multi_tier_price: false };
+
+    test('hides tier_pill_kasir when modul OFF', () => {
+      expect(isFieldVisible('tier_pill_kasir', offSettings)).toBe(false);
+    });
+    test('shows tier_pill_kasir when modul ON', () => {
+      expect(isFieldVisible('tier_pill_kasir', onSettings)).toBe(true);
+    });
+    test('shows price_grosir_column when modul ON', () => {
+      expect(isFieldVisible('price_grosir_column', onSettings)).toBe(true);
+    });
+    test('shows csv_bulk_grosir_button when modul ON', () => {
+      expect(isFieldVisible('csv_bulk_grosir_button', onSettings)).toBe(true);
+    });
+    test('cascadeImpactSummary warns when customers tagged grosir', () => {
+      const summary = cascadeImpactSummary('modul_multi_tier_price' as any, { tierEnabledCustomerCount: 12 });
+      expect(summary.level).toBe('warn');
+      expect(summary.message).toMatch(/12 customer/);
+    });
+    test('cascadeImpactSummary info when no grosir customer', () => {
+      const summary = cascadeImpactSummary('modul_multi_tier_price' as any, {});
+      expect(summary.level).toBe('info');
+    });
   });
 });

@@ -165,6 +165,7 @@ export interface StockItem {
   unit_alt?: string | null;
   unit_alt_factor?: number | null;
   price: number;
+  price_grosir?: number | null;
   stock: number;
   stock_atas?: number;
   stock_bawah?: number;
@@ -327,6 +328,8 @@ export interface DbCustomer {
   credit_limit: number;
   tempo_activated_at?: string | null;
   tempo_activated_by?: string | null;
+  // Multi-tier pricing
+  default_pricing_tier?: 'eceran' | 'grosir';
 }
 
 export interface DbLead {
@@ -469,6 +472,8 @@ export interface KasirItem {
   discount_type?: DiscountType;
   discount_value?: number | null;
   discount_amount_rp?: number;
+  // Multi-tier pricing
+  pricing_tier_used?: 'eceran' | 'grosir' | null;
 }
 
 export interface KasirTransaction {
@@ -1234,6 +1239,8 @@ export interface CreateTempoInvoiceItemPayload {
   discount_type?: DiscountType;
   discount_value?: number | null;
   discount_amount_rp?: number;
+  // Multi-tier pricing (Task 8) — optional; server validates when modul_multi_tier_price ON
+  pricing_tier_used?: 'eceran' | 'grosir' | null;
 }
 
 export interface CreateTempoInvoicePayload {
@@ -1310,7 +1317,8 @@ export type ModulSwitchKey =
   | 'modul_bom_recipe'
   | 'modul_diskon_kasir'
   | 'modul_diskon_penjualan'
-  | 'modul_diskon_tagihan';
+  | 'modul_diskon_tagihan'
+  | 'modul_multi_tier_price';
 
 export interface DbTenantSettings {
   id: number;
@@ -1325,6 +1333,7 @@ export interface DbTenantSettings {
   modul_diskon_kasir: boolean;
   modul_diskon_penjualan: boolean;
   modul_diskon_tagihan: boolean;
+  modul_multi_tier_price: boolean;
   pajak_mode: PajakMode;
   pajak_ppn_rate_umum: number;
   pajak_ppn_rate_mewah: number;
@@ -1373,6 +1382,7 @@ export interface DiscountTriple {
 
 export interface CartItemWithDiscount extends DiscountTriple {
   master_price_at_sale: number;
+  pricing_tier_used?: 'eceran' | 'grosir' | null;
 }
 
 // ─── Sales Order / Penawaran (PR #55) ───────────────────────────────────

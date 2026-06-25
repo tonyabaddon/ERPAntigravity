@@ -8,7 +8,9 @@ export type FieldKey =
   | 'ppn_line' | 'pph_final_footnote'
   | 'tempo_chip' | 'allows_tempo_field' | 'credit_limit_field'
   | 'ongkir_field' | 'warehouse_picker'
-  | 'rakit_buttons' | 'walkin_channel';
+  | 'rakit_buttons' | 'walkin_channel'
+  | 'tier_pill_kasir' | 'tier_dropdown_customer'
+  | 'price_grosir_column' | 'csv_bulk_grosir_button';
 
 export function isMenuVisible(key: MenuKey, settings: DbTenantSettings): boolean {
   switch (key) {
@@ -36,6 +38,10 @@ export function isFieldVisible(key: FieldKey, settings: DbTenantSettings): boole
     case 'warehouse_picker':      return settings.modul_multi_warehouse;
     case 'rakit_buttons':         return settings.modul_jasa_layanan;
     case 'walkin_channel':        return settings.modul_kasir;
+    case 'tier_pill_kasir':
+    case 'tier_dropdown_customer':
+    case 'price_grosir_column':
+    case 'csv_bulk_grosir_button': return settings.modul_multi_tier_price;
     default: return true;
   }
 }
@@ -58,6 +64,7 @@ export interface UsageStats {
   pengirimanRatio?: number;
   jasaActiveCount?: number;
   bomRecipeCount?: number;
+  tierEnabledCustomerCount?: number;
 }
 
 export interface ImpactSummary {
@@ -93,6 +100,10 @@ export function cascadeImpactSummary(key: ModulSwitchKey, stats: UsageStats): Im
       if ((stats.bomRecipeCount ?? 0) > 0)
         return { level: 'warn', message: `${stats.bomRecipeCount} resep aktif; SKU dengan komposisi akan break` };
       return { level: 'info', message: 'Tidak ada resep — defer ke V3' };
+    case 'modul_multi_tier_price':
+      if ((stats.tierEnabledCustomerCount ?? 0) > 0)
+        return { level: 'warn', message: `${stats.tierEnabledCustomerCount} customer ter-tag grosir akan kembali jadi harga eceran; data tetap tersimpan` };
+      return { level: 'info', message: 'Belum ada customer grosir — aman dimatikan' };
     case 'modul_diskon_kasir':
     case 'modul_diskon_penjualan':
     case 'modul_diskon_tagihan':

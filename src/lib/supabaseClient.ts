@@ -67,6 +67,7 @@ export interface SupabaseStockItem {
   unit_alt?: string | null;
   unit_alt_factor?: number | null;
   price: number;
+  price_grosir?: number | null;
   stock: number;
   stock_atas?: number;
   stock_bawah?: number;
@@ -812,6 +813,15 @@ export const customersService = {
     if (error) throw error;
   },
 
+  async updateTier(id: string, tier: 'eceran' | 'grosir'): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('customers')
+      .update({ default_pricing_tier: tier })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
     const [customerRes, kasirRes] = await Promise.all([
@@ -1239,6 +1249,7 @@ export const stockService = {
     unit_alt_factor: number | null;
     price: number;
     harga_modal: number | null;
+    price_grosir?: number | null;
     description: string | null;
     min_stock_per_product: number | null;
     photo_urls: ProductPhoto[];
@@ -2368,6 +2379,25 @@ export const reconciliationService = {
       .update({ line_kind: kind, lane: 'GRAY', match_reason: kind, notes: notes ?? null })
       .eq('id', bankLineId);
     if (error) throw error;
+  },
+};
+
+// ─── productService (Multi-Tier Pricing) ────────────────────────────────────
+// Task 10: bulk CSV grosir price update RPC wrapper.
+
+export interface BulkGrosirRow {
+  sku: string;
+  price_grosir: number;
+}
+
+export const productService = {
+  async bulkUpdateGrosirPrice(
+    rows: BulkGrosirRow[]
+  ): Promise<{ applied: number; skipped: Array<{ sku: string; reason: string }> }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase!.rpc('bulk_update_grosir_price', { p_rows: { rows } });
+    if (error) throw error;
+    return data as { applied: number; skipped: Array<{ sku: string; reason: string }> };
   },
 };
 

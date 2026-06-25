@@ -46,11 +46,16 @@ interface Props {
   serviceTypes?: DbServiceType[];
   /** Task 14: when false, Diskon column is hidden in CartRows. */
   modulDiskonOn?: boolean;
+  /** Task 7: multi-tier price pill. */
+  activeTier?: 'eceran' | 'grosir';
+  onTierChange?: (tier: 'eceran' | 'grosir') => void;
+  showTierPill?: boolean;
 }
 
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
   const [showNewProductForm, setShowNewProductForm] = useState(false);
+  const { activeTier = 'eceran', onTierChange, showTierPill = false } = props;
 
   // Derive categories for the form's datalist
   const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
@@ -188,9 +193,30 @@ export default function Step2Items(props: Props) {
       {/* RIGHT: Cart + totals */}
       <div className="lg:col-span-7">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-            Keranjang ({skuCount} item{jasaCount > 0 ? ` · ${jasaCount} jasa` : ''})
-          </label>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+              Keranjang ({skuCount} item{jasaCount > 0 ? ` · ${jasaCount} jasa` : ''})
+            </label>
+            {/* Task 7: tier pill toggle — only when modul ON */}
+            {showTierPill && (
+              <div className="flex gap-0.5 bg-slate-100 rounded-full p-0.5">
+                <button
+                  type="button"
+                  onClick={() => onTierChange?.('eceran')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTier === 'eceran' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Eceran
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTierChange?.('grosir')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTier === 'grosir' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Grosir
+                </button>
+              </div>
+            )}
+          </div>
           {(skuCount > 0 || jasaCount > 0) && (
             <button
               type="button"
@@ -214,6 +240,8 @@ export default function Step2Items(props: Props) {
           stockByWarehouseSku={props.stockByWarehouseSku}
           serviceTypes={props.serviceTypes}
           modulDiskonOn={props.modulDiskonOn}
+          activeTier={activeTier}
+          showTierPill={showTierPill}
         />
 
         {preOrderCount > 0 && (

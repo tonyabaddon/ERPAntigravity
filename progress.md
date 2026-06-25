@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-06-24 — Multi-Tier Pricing Task 1 DONE — Schema foundation
+
+- Worktree: `worktree-multi-tier-pricing` (off main 7730a83).
+- Spec + plan: `docs/superpowers/specs/2026-06-24-multi-tier-pricing-design.md`, `docs/superpowers/plans/2026-06-24-multi-tier-pricing-implementation.md`.
+- **Schema reality correction:** product master is `stocks` (PK sku, not `products`); `customers.id` is text; transaction line items live as JSONB array inside `kasir_transactions.items` / `orders.items` (no `*_items` child tables). Spec + plan updated inline. Migration count reduced from 5 → 4 (snapshot column migration dropped — uses JSONB key pattern same as `master_price_at_sale`).
+- Migrations applied (via Supabase MCP):
+  - `20260901000001_multi_tier_stocks_columns` → `stocks.price_grosir` NULL
+  - `20260901000002_multi_tier_customers_columns` → `customers.default_pricing_tier` DEFAULT 'eceran' + CHECK
+  - `20260901000003_multi_tier_tenant_settings_toggle` → `modul_multi_tier_price` DEFAULT FALSE
+  - `20260901000004_product_price_audit_table` → audit table FK to stocks(sku), RLS, GRANT SELECT
+- Verification: 5 SELECT checks PASS, `modul_multi_tier_price=false` on existing tenant_settings row (Garindo unaffected).
+- Subagent (haiku) escalated BLOCKED on schema mismatch — correctly. I took over inline (faster than re-brief loop).
+
+---
+
 ## 2026-06-24 — Produk & Stok — photo upload made optional (PR #60) + initial_stock approval RPC follow-up (PR #39)
 
 **Photo upload now opsional (PR #60, commit `734edfd` squash-merge):**
@@ -9392,3 +9407,76 @@ Post-Task-7: handler now early-returns when `ai_active=false`. Customer reply af
   - `InvoicePreviewScreen.tsx`: mini-preview card mirrors same computation via IIFE.
 - ✅ Diskon I-2 fix: journal-lines.test.ts added. 5 structural JE infrastructure tests (auto-run PASS). 2 happy-path tests (record_pi 5-1900 + record_kasir_sale 4-1900) marked .skip due to live-DB cleanup risk on pesanan_items/stock_levels. Founder removes .skip for pre-monthly-close manual verification.
   - Tests/integration/diskon: 48 pass + 2 skip (was 43 pass). Unit 410/410. Lint clean.
+
+## 2026-06-24 — Multi-Tier Pricing Task 1 DONE
+
+- ✅ Task 1: DB schema migration applied. 4 columns added: `stocks.price_grosir`, `customers.default_pricing_tier`, `tenant_settings.modul_multi_tier_price`, `product_price_audit` table created. Commit: c777caa.
+
+## 2026-06-24 — Multi-Tier Pricing Task 2 DONE
+
+**Branch:** `worktree-multi-tier-pricing`
+**Task 2 — TypeScript types + cascadeMap entries + tests**
+- **Files modified:**
+  - `src/types.ts`: 
+    - `StockItem` extended with `price_grosir?: number | null`
+    - `DbCustomer` extended with `default_pricing_tier?: 'eceran' | 'grosir'`
+    - `DbTenantSettings` extended with `modul_multi_tier_price: boolean`
+    - `ModulSwitchKey` union extended with `'modul_multi_tier_price'`
+    - `KasirItem` extended with `pricing_tier_used?: 'eceran' | 'grosir' | null`
+    - `CartItemWithDiscount` extended with `pricing_tier_used?: 'eceran' | 'grosir' | null`
+  - `src/lib/pengaturan/cascadeMap.ts`:
+    - `FieldKey` extended with 4 new UI visibility keys: `'tier_pill_kasir'`, `'tier_dropdown_customer'`, `'price_grosir_column'`, `'csv_bulk_grosir_button'`
+    - `isFieldVisible` cases added for all 4 new keys (return `settings.modul_multi_tier_price`)
+    - `UsageStats` interface extended with `tierEnabledCustomerCount?: number`
+    - `cascadeImpactSummary` case added for `'modul_multi_tier_price'` (warns if tierEnabledCustomerCount > 0, else info)
+  - `src/lib/pengaturan/cascadeMap.test.ts`:
+    - Added 6 multi-tier pricing test cases (nested describe block within existing suite)
+    - Tests verify: field visibility OFF/ON, cascadeImpactSummary warn/info
+- **Test results:** 16/16 PASS (includes 6 new multi-tier tests + 10 existing cascade tests)
+- **Lint:** `npm run lint` PASS (tsc --noEmit clean)
+- **Commit:** `0c13a3f` — "feat(multi-tier): types + cascadeMap entries + tests"
+- **Report:** `.superpowers/sdd/task-2-report.md` documents full implementation + test output + lint verification
+
+
+## Task 6 DONE — record_kasir_sale tier-aware (4 smoke tests PASS).
+
+- Migration: `supabase/migrations/20260901000005_record_kasir_sale_tier.sql`
+- Creates OR REPLACES `record_kasir_sale` with same 25-param signature + `RETURNS public.kasir_transactions`
+- Reads `modul_multi_tier_price` from `tenant_settings` early in body
+- Per-line: reads `pricing_tier_used` from item JSONB; when modul ON validates tier in (eceran,grosir) and strict-equality checks `master_price_at_sale` vs stocks.price/price_grosir
+- `pricing_tier_used` persists in stored JSONB snapshot via left-operand passthrough
+- Modul OFF: tier field fully ignored (Garindo default unchanged)
+- TS type `KasirItem.pricing_tier_used` already present from Task 1/2 — no change needed
+- Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
+
+## Task 7 DONE — Kasir pill toggle (7 RTL tests PASS).
+
+## Task 8 DONE — create_tempo_invoice tier-aware (4 smoke tests PASS).
+
+- Migration: `supabase/migrations/20260901000006_create_tempo_invoice_tier.sql`
+- Creates OR REPLACES `create_tempo_invoice(p_payload jsonb) RETURNS uuid` — single-param signature preserved
+- Reads `modul_multi_tier_price` from `tenant_settings` before per-line loop
+- Per-line: reads `pricing_tier_used` from item JSONB; when modul ON validates tier in (eceran,grosir) and strict-equality checks `master_price_at_sale` vs stocks.price/price_grosir (grosir fallback: COALESCE(price_grosir, price))
+- `pricing_tier_used` persists in `orders.items` JSONB via v_items_jsonb passthrough (no rebuild loop needed — payload items stored as-is)
+- Modul OFF: tier field fully ignored (Garindo default unchanged)
+- TS: `CreateTempoInvoiceItemPayload.pricing_tier_used?: 'eceran' | 'grosir' | null` added to `src/types.ts`
+- Smoke tests: (1) happy grosir PASS, (2) TIER_PRICE_MISMATCH PASS, (3) INVALID_TIER PASS, (4) modul OFF PASS
+
+---
+
+## 2026-06-24 — Multi-Tier Pricing — Review Fixes I-3 + I-4 DONE
+
+Review-fix DONE — I-3 CSV size cap + I-4 RPC default eceran (4 smoke PASS). I-1 + I-2 ticketed for follow-up.
+
+- **I-3 (CSV size cap):** `src/components/produk/BulkUpdateGrosirSection.tsx` — 10 MB file size cap enforced before parse. Unstaged fix already present in worktree.
+- **I-4 (default eceran on missing tier):** When `modul_multi_tier_price = ON` + SKU line + `pricing_tier_used` key absent, both `record_kasir_sale` and `create_tempo_invoice` now default `v_tier_used := 'eceran'` and validate `master_price_at_sale` against `stocks.price`. Service lines (sku IS NULL) keep null-skip behavior.
+- **Migration applied:** `supabase/migrations/20260901000008_review_fixes_i4_rpc_tier_default.sql` → deployed to DB (project ekhhojaezdfjfwuxyjkl).
+- **Smoke results (4/4 PASS):**
+  - Scenario A: record_kasir_sale no-tier key + correct master → PASS (success, smoke rollback)
+  - Scenario B: record_kasir_sale no-tier key + bogus master 99999999 → PASS (TIER_PRICE_MISMATCH caught)
+  - Scenario C: create_tempo_invoice no-tier key + correct master → PASS (success, smoke rollback)
+  - Scenario D: create_tempo_invoice no-tier key + bogus master 99999999 → PASS (TIER_PRICE_MISMATCH caught)
+- **Lint:** clean (`tsc --noEmit` 0 errors)
+- **Tests:** npx vitest run --dir src baseline PASS
+
+Task 11 DONE — BulkUpdateGrosirSection (4 RTL tests PASS).

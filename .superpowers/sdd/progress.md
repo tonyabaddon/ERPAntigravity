@@ -71,3 +71,21 @@ Base commit: 01853b0
 - 14a: handlePriceChange early-return ordering can leave parent state one update stale on markup.
 - 14b: KasirInvoiceModal "Diskon (X%)" label reads order discount type only.
 - Pre-existing (Phase 0c regression): `p_allow_negative_stock` declared but never forwarded to deduct_stock_fifo.
+
+---
+
+# Multi-Tier Pricing Feature — Task Progress
+
+Branch: worktree-multi-tier-pricing
+Started: 2026-06-24
+Base commit: 0c13a3f (Tasks 1-2 done)
+
+## Tasks
+
+- ✅ Task 1: complete. DB migration 20260624000001: added `modul_multi_tier_price: boolean` column to `tenant_settings` table. Default TRUE. RPC `set_tenant_modul` extended to accept the new key. Migration applied to live DB.
+- ✅ Task 2: complete. Types extended: `ModulSwitchKey` union includes `'modul_multi_tier_price'`; `DbTenantSettings` interface includes `modul_multi_tier_price: boolean` field. tsc --noEmit clean.
+- ✅ Task 3: complete (commit bd677e9). Pengaturan UI toggle wired: MODULS array in ModulSwitchesPanel.tsx appended with multi-tier entry (icon='💵', description='Aktifkan harga grosir terpisah dari eceran...'). Test file created: ModulSwitchesPanel.test.tsx renders toggle row (1 test PASS). vite.config.ts + vitest.setup.ts configured for jsdom + @testing-library/jest-dom. npm run lint PASS.
+- ✅ Task 4 DONE — Master Produk dual columns (3 RTL tests PASS). StockTableView: showGrosir prop, "Harga Eceran" label, grosir row per card, "Belum di-set" amber warning, inline edit Harga Grosir field + above-eceran warning. StockManagerScreen: fetches tenant_settings, computes showGrosir via isFieldVisible, passes to StockTableView + ProductForm. ProductForm: showGrosir prop, price_grosir state, Harga Grosir input, included in onSubmit payload. supabaseClient: price_grosir added to upsertProduct interface. 466/466 tests PASS + lint clean.
+- ✅ Task 5 DONE — Master Customer tier UI (3 RTL tests PASS). PelangganScreen: showTierDropdown from isFieldVisible('tier_dropdown_customer'), tier filter chips (Semua/Eceran/Grosir) in left panel header, tier badge pill in each customer row, tier dropdown in edit form. customersService.updateTier added to supabaseClient. handleSaveCustomer calls updateTier when modul ON. 469/469 tests PASS + lint clean.
+- ✅ Task 10 DONE — bulk_update_grosir_price RPC (4 smoke tests PASS). Migration 20260901000007 applied. SECURITY DEFINER RPC with Owner/Admin Stok/Admin gate, modul_multi_tier_price toggle guard, per-row skip on sku_not_found/price_not_numeric, audit ledger write. TS wrapper productService.bulkUpdateGrosirPrice added to supabaseClient.ts. tsc clean.
+- ✅ Task 12 DONE — Multi-tier pricing feature complete. BulkUpdateGrosirSection wired into StockManagerScreen (activeTab=bulk, conditional on showGrosir). Integration smoke 4/4 PASS (Garindo no-regression: kasir + tempo paths unaffected when modul OFF; tier field silently ignored when modul OFF). Unit suite 480/480 PASS, lint clean.
