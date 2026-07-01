@@ -109,15 +109,16 @@ func TestRecordKasirSale_HappyPath(t *testing.T) {
 		t.Fatalf("stock_lots.qty_remaining = %d, want 7", lotRemain)
 	}
 
-	// 2 stock_movements rows expected: one from decrement_stock + one from
-	// deduct_stock_fifo. Both carry related_doc_id = invoice_number.
+	// 1 stock_movements row expected: from decrement_stock only.
+	// Post-migration 20260810000001 stops deduct_stock_fifo from writing
+	// a second (phantom) ledger row. See that migration's header for why.
 	if err := client.DB.QueryRow(
 		`SELECT COUNT(*) FROM public.stock_movements
 		   WHERE sku=$1 AND related_doc_id=$2`, sku, invoice).Scan(&mvmCount); err != nil {
 		t.Fatalf("count stock_movements: %v", err)
 	}
-	if mvmCount != 2 {
-		t.Fatalf("stock_movements count = %d, want 2 (decrement_stock + deduct_stock_fifo)", mvmCount)
+	if mvmCount != 1 {
+		t.Fatalf("stock_movements count = %d, want 1 (decrement_stock only; deduct_stock_fifo no longer writes ledger)", mvmCount)
 	}
 }
 
@@ -278,8 +279,9 @@ func TestRecordKasirSale_ShopeeChannel_IssuesSHPInvoice(t *testing.T) {
 // Assertions:
 //   - stock_atas decremented by 5 total (not 4, not 6).
 //   - stock_lots.qty_remaining decremented by 5.
-//   - Exactly 2 stock_movements rows (one decrement_stock + one deduct_stock_fifo),
-//     proving the RPC walked lots ONCE per aggregate group, not once per line.
+//   - Exactly 1 stock_movements row (from decrement_stock only, post-migration
+//     20260810000001), proving the RPC walked lots ONCE per aggregate group,
+//     not once per line.
 //   - Both output line items carry hpp_per_unit = 1000 (average across aggregate).
 func TestRecordKasirSale_AggregatesSameSKU(t *testing.T) {
 	client := db.NewTestClient(t)
@@ -323,15 +325,16 @@ func TestRecordKasirSale_AggregatesSameSKU(t *testing.T) {
 		t.Fatalf("stock_lots.qty_remaining = %d, want 5 (aggregate drain not duplicated)", lotRemain)
 	}
 
-	// Exactly 2 stock_movements rows for this invoice: one decrement_stock,
-	// one deduct_stock_fifo. NOT 4 (which would indicate per-line execution).
+	// Exactly 1 stock_movements row for this invoice (from decrement_stock;
+	// deduct_stock_fifo no longer writes a ledger row post-migration
+	// 20260810000001). NOT 2 (per-line execution instead of aggregation).
 	var mvmCount int
 	if err := client.DB.QueryRow(
 		`SELECT COUNT(*) FROM public.stock_movements
 		   WHERE sku=$1 AND related_doc_id=$2`, sku, invoice).Scan(&mvmCount); err != nil {
 		t.Fatalf("count stock_movements: %v", err)
 	}
-	if mvmCount != 2 {
-		t.Fatalf("stock_movements count = %d, want 2 (proves SKU aggregation: one ledger row per RPC, not per line)", mvmCount)
+	if mvmCount != 1 {
+		t.Fatalf("stock_movements count = %d, want 1 (proves SKU aggregation: one ledger row per RPC, not per line)", mvmCount)
 	}
 }
