@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS Phase 2 batch 2b: warehouses + warehouse_audit_log + piutang_write_off_requests
+
+Three more tables locked down; advisory now 18 → 4 remaining.
+
+**Migration `20260910000003_rls_phase2_batch2b_warehouses_and_audit.sql`**:
+- `ENABLE ROW LEVEL SECURITY` on all three.
+- `CREATE POLICY ... FOR SELECT TO authenticated USING (true)` on each (same pattern as warm-up).
+- No INSERT/UPDATE/DELETE policies — mutations all through SD RPCs (`create_warehouse`, `update_warehouse`, `set_default_warehouse`, `deactivate_warehouse`, `force_deactivate_warehouse`, `reactivate_warehouse`, satellite writes from the piutang write-off approval RPC, warehouse-audit-log writes from within warehouse SD RPCs).
+
+**Grants state (differs from warm-up)**: unlike `service_types` / `approval_settings` where INSERT/UPDATE/DELETE grants had been REVOKE'd previously, these three tables still have the wide-open grants for anon+authenticated (verified via `information_schema.role_table_grants`). RLS is therefore the ONLY block on direct writes until a separate REVOKE migration lands.
+
+**Access shape (pre-design grep + code read)**:
+- `warehouses` (3 rows) — `.from().select('*')` at `supabaseClient.ts:1046` (`fetchAll`) + 1058 (`fetchActive`). Consumer: warehouse picker across Kasir / Pembelian / Opname + Pengaturan admin CRUD.
+- `warehouse_audit_log` (96 rows, append-only) — `.from().select('*').limit(50)` at `supabaseClient.ts:1117`. Consumer: Pengaturan → Manajemen Gudang audit tab. Writes are injected inside warehouse SD RPCs — no client insert path.
+- `piutang_write_off_requests` (4 rows) — `.from().select('reason, order_id').eq('approval_id', request.id).single()` at `TempoWriteOffApprovalRequestRow.tsx:39`. Consumer: Persetujuan (Approval Inbox) rendering per-row satellite. Writes are inserted by the SD RPC that creates the write-off approval.
+
+**Verified post-apply**:
+- `pg_class.relrowsecurity=true` + policies with `qual='true'`, `roles=[authenticated]`, `cmd='SELECT'` for all three.
+- Anon curl on all three GET endpoints → `[]` (was: 3, 96, 4 rows respectively).
+- Anon POST `warehouses {"code":"EVIL",...}` → `42501: new row violates row-level security policy` (was: would have succeeded via the still-open INSERT grant — real hole now closed).
+- Live UI on prod: `?screen=manajemen-gudang` rendered Daftar Gudang (Jakarta / Atas / Bawah — 3 rows) + Riwayat Perubahan (CREATE audit rows for Gudang Atas × N). Both `warehousesService.fetchAll()` and `warehousesService.fetchAuditLog()` succeed via authenticated. Zero console errors.
+
+**Access-level gating note**: SELECT is currently `USING (true)` — any authenticated user can read the warehouse master, audit log, and write-off request satellite via PostgREST. Role gating (Owner/Admin only) is enforced at the UI layer today, not the DB. A follow-up to add DB-level role gating would need a helper `is_owner_or_admin()` reading `admin_users.role`. Kept out of scope here for consistency with warm-up.
+
+**Multi-tenant TODO** (unchanged from warm-up): `warehouses.tenant_id` filter for Sub-Project A; `warehouse_audit_log` + `piutang_write_off_requests` have no tenant_id → future filter via warehouse_id / order_id EXISTS-subquery.
+
+---
+
 ## 2026-07-02 — RLS Phase 2 warm-up: service_types + approval_settings
 
 First 2 of the 9 Phase 2 tables get proper read policies. Both are single-purpose config tables with simple access shapes.
