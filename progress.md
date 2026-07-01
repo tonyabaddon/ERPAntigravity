@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — Follow-ups from RLS session: 3 fixes
+
+Three known bugs surfaced during the RLS Phase 2 sweep, shipped together.
+
+### Fix 1 — Stok Opname screen crash (client-side)
+
+**Bug**: `src/components/stok/StockOpnameScreen.tsx:143` — `counterName(id).slice(0, 8)` had no null guard. `session.witnessedByUserId` is null for solo sessions (verified 18+ such rows in `stock_opname_sessions` reqid=582 during batch 2c smoke). Called at lines 238 + 282 → whole `?screen=stok-opname` renders blank with `Uncaught TypeError: Cannot read properties of null (reading 'slice')`.
+
+**Fix**: widen the parameter type to `string | null | undefined` and short-circuit with `'(solo)'` when null. Same string the existing table cell at line 331 already uses for missing witness.
+
+### Fix 2 — `funnel_stage` + `lunas_at` never populated on kasir sale
+
+**Bug root cause**: `kasir_transactions.funnel_stage`/`funnel_sub_stage` have column defaults `1` / `'1a'` (from migration `20260625000001`). `record_kasir_sale` RPC INSERT (all versions incl. `20260901000005_record_kasir_sale_tier`) never overrides these — relies on defaults. No trigger auto-advances on INSERT. `lunas_at` has no default and no code sets it. The one-shot backfill in `20260625000005` fixed the batch existing on 2026-06-25 (65 rows landed at stage 5); everything committed AFTER Jun 13 with `status='PAID'` has been stuck at stage 1 / `'1a'` ever since. `lunas_at` is universally NULL on all 88 pre-fix PAID rows.
+
+Symptom: PAID walk-in sales show up under "Bertanya" in the Daftar Pesanan funnel instead of "Diterima". Downstream analytics that read `lunas_at IS NOT NULL` for lunas-time-to-close never fire.
+
+**Fix**: `20260910000005_fix_kasir_funnel_stage_and_lunas_at.sql`.
+
+- New trigger function `kasir_derive_stage_and_lunas()` — fires BEFORE INSERT and BEFORE UPDATE OF status. Only touches `type='income'` rows (skips expenses).
+- On INSERT: if `funnel_stage`/`funnel_sub_stage` are still at the column default `(1, '1a')`, derive from status using the same mapping as the `20260625000005` backfill (PAID/LUNAS/COMPLETED → `(5, '5a')`; WIP → `(3, '3a')`; PENDING_LOCK → `(3, '3g')`; AWAITING_LUNAS → `(3, '3d')`; INVOICE_TEMPO → `(3, '3a')`; CANCELLED → `(6, '6a')`). Explicit stage from a caller is preserved.
+- On any INSERT/UPDATE into a lunas-family status with `lunas_at IS NULL` → set to `now()`. Idempotent replay-safe.
+- Backfill UPDATE for historical rows: 76 rows fixed (23 stuck stage-1 rows moved to 5, all 76 got `lunas_at` populated from `date` at Asia/Jakarta TZ). The 12 remaining PAID rows are `type='expense'` — deliberately excluded, funnel doesn't apply.
+- **Verified live**: DO-block INSERT smoke → new row lands with `stage=5, sub=5a, lunas_at=now()`; RAISE EXCEPTION rollback leaves no trace. Post-backfill query on 76 income PAID rows: `funnel_5_ct=76, funnel_off=0, lunas_set=76, lunas_null=0`.
+
+### Fix 3 — `stocks` RLS wide-open policy closed to anon
+
+**Bug root cause**: `stocks` has RLS ON but its only policy was `"Allow Public Access" FOR ALL TO public USING (true) WITH CHECK (true)` — completely toothless. Combined with wide grants (anon: SELECT/INSERT/DELETE, authenticated: full CRUD), anyone with the anon key baked in the frontend bundle could read the full product catalog + `harga_modal` cost basis, forge new products, delete existing rows. The pre-existing failing test `TestStocksDirectUpdate_AsAuthenticated_Fails` (approvals_test.go:1289) was a TODO marker for the REVOKE + policy tightening that never landed.
+
+**Interim fix**: `20260910000006_stocks_rls_close_anon.sql` — drops the `"Allow Public Access"` policy and adds per-operation policies scoped to `authenticated` matching current grants (SELECT / INSERT / UPDATE / DELETE, `USING (true)` / `WITH CHECK (true)`). Net effect:
+- anon: SELECT → `[]`, POST → `42501` (verified via curl).
+- authenticated: unchanged CRUD surface, no client refactor needed.
+- Live UI: `?screen=ai-stock` loads normally.
+
+**NOT full fix — follow-up needed**: `TestStocksDirectUpdate_AsAuthenticated_Fails` stays red. Making it green requires refactoring ~7-8 client mutation sites (`supabaseClient.ts` UPDATE at 157, DELETE at 179, UPDATE at 1205, UPSERT at 1224 + 1261; `productWrappers.ts:49` INSERT; `bnl/SkuPickerWithInlineCreate.tsx:39` INSERT) through SD RPCs so the UPDATE policy can be dropped and INSERT/UPDATE/DELETE grants REVOKE'd. Kept out of scope here — it's a genuinely larger refactor that touches product management, opname commit, and bulk-upload paths.
+
+---
+
 ## 2026-07-02 — RLS Phase 2 batch 2c: stock_opname_sessions + audit_log (with WITH CHECK)
 
 Advisory now 18 → 2 remaining. First batch to introduce a scoped INSERT policy — client at `EditOrderModal.tsx:59` inserts an audit_log row directly (audit-before-mutate pattern for order edits). A pure SELECT-only policy would break that flow; instead the policy allows INSERT gated on `actor_user_id = auth.uid()` to prevent impersonation.

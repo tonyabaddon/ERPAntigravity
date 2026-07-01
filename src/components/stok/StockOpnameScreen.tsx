@@ -138,9 +138,13 @@ export default function StockOpnameScreen({
     [sessions, activeSession],
   );
 
-  const counterName = (id: string) =>
-    users.find((u) => u.id === id)?.name
-    ?? (id === currentUser?.id ? currentUser?.name ?? 'Anda' : id.slice(0, 8));
+  const counterName = (id: string | null | undefined) => {
+    if (!id) return '(solo)';
+    return (
+      users.find((u) => u.id === id)?.name
+      ?? (id === currentUser?.id ? currentUser?.name ?? 'Anda' : id.slice(0, 8))
+    );
+  };
 
   const openStartModal = () => {
     if (!currentUser) {
