@@ -1,5 +1,38 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS Phase 2 batch 2c: stock_opname_sessions + audit_log (with WITH CHECK)
+
+Advisory now 18 → 2 remaining. First batch to introduce a scoped INSERT policy — client at `EditOrderModal.tsx:59` inserts an audit_log row directly (audit-before-mutate pattern for order edits). A pure SELECT-only policy would break that flow; instead the policy allows INSERT gated on `actor_user_id = auth.uid()` to prevent impersonation.
+
+**Migration `20260910000004_rls_phase2_batch2c_opname_and_audit.sql`**:
+- `ENABLE ROW LEVEL SECURITY` on both.
+- `SELECT policy USING (true) TO authenticated` on each.
+- `audit_log_write_self_as_actor` INSERT policy `WITH CHECK (actor_user_id = auth.uid())` — the anti-impersonation invariant.
+- No UPDATE/DELETE policies (audit log is append-only; opname sessions mutated via SD RPCs).
+
+**Access shape**:
+- `stock_opname_sessions` (208 rows) — `listOpnameSessions` + `getOpnameSession` at `supabaseClient.ts:1968/1979`. All mutations via SD RPCs (start_opname, submit_opname, commit_opname_*, reject_opname_*).
+- `audit_log` (31 rows, append-only):
+  - Reads: `fetchOpnameAuditLog` (`supabaseClient.ts:1876`), `fetchRakitLockHistory` (`sales/queries.ts:74`), `fetchRecentRejectsByOrder` (`sales/recentRejects.ts:25`), `PreOrderFulfillmentsCard` (`components/dashboard/PreOrderFulfillmentsCard.tsx:41`). All filter by `event_type` + time.
+  - Write: `EditOrderModal.tsx:59` — critical audit-before-mutate. Loss breaks order edit.
+
+**Verified post-apply**:
+- `pg_class.relrowsecurity=true` on both. 3 policies present: `stock_opname_sessions_read_authenticated`, `audit_log_read_authenticated`, `audit_log_write_self_as_actor`.
+- DB smoke via DO block (fake `set_config('request.jwt.claim.sub')` + `set_config('role','authenticated')`):
+  - Self-insert with `actor_user_id = Tony's uid` → allowed (`self_ok=t`)
+  - Impersonation attempt with someone else's uid → 42501 (`impersonation_blocked=t`)
+  - Rolled back via `RAISE EXCEPTION 'SMOKE_ROLLBACK'` — no persistent side effect.
+- Anon curl: SELECT → `[]` on both; INSERT → `42501 RLS-violation`.
+- Live UI network: Stok Opname screen fires all 11 XHRs returning 200, including `stock_opname_sessions?limit=20` (returned 20 rows) and `audit_log?event_type=in.(opname_auto_commit,...)` (returned rows).
+
+**Follow-up flagged (NOT my regression)**: Stok Opname screen renders BLANK due to a pre-existing UI bug at `src/components/stok/StockOpnameScreen.tsx:143` — `counterName(id)` calls `id.slice(0, 8)` without a null guard, but `session.witnessedByUserId` is null for solo sessions (verified in the response body I pulled from `reqid=582`: many rows have `witnessed_by_user_id: null`). Called at lines 238 + 282 with `activeSession.witnessedByUserId` / `s.witnessedByUserId`. Not caused by RLS — all API responses succeed with real data. Fix: `if (!id) return '(solo)'` at the top of `counterName`. Not shipped in this migration commit to keep the diff scoped; can be a small follow-up PR.
+
+**Multi-tenant TODO**: neither table has a `tenant_id` column (opname sessions link via `counted_by_user_id`; audit_log carries global events). Sub-Project A will need a tenant_id column addition + tightened policies.
+
+**Access-level gating**: SELECT still `USING (true)` — any authenticated user can read the full opname history and audit log via PostgREST. UI is admin-scoped but DB isn't. Same follow-up as previous batches: role-gated read via `is_owner_or_admin()` helper.
+
+---
+
 ## 2026-07-02 — RLS Phase 2 batch 2b: warehouses + warehouse_audit_log + piutang_write_off_requests
 
 Three more tables locked down; advisory now 18 → 4 remaining.
