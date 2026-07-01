@@ -160,44 +160,40 @@ func TestReceivePO_WritesLedgerRowPerLine(t *testing.T) {
 	}
 }
 
-// TestDeductFIFO_WritesLedgerRow verifies Phase 1 Task 5: the wrapped
-// deduct_stock_fifo RPC writes exactly one stock_movements row per call
-// (aggregate sale — NOT one row per lot consumed), inside the same
-// transaction as the FIFO walk. The row carries source = the p_source arg,
-// qty_delta = -p_qty, and related_doc_{type,id} from the args.
+// TestDeductFIFO_WritesNoLedgerRow verifies migration 20260810000001: the
+// wrapped deduct_stock_fifo RPC no longer writes a stock_movements row.
+// decrement_stock is now the sole ledger writer for the (decrement +
+// FIFO-cost) call pair in record_kasir_sale / DeductStockAndGetHPP. This
+// removes the "phantom column move" row that used to inflate the audit trail
+// 2× per sale. The RPC still walks stock_lots for COGS and returns the total
+// cost; only the side-effect ledger insert is gone.
 //
-// Calls the new 6-arg overload positionally:
+// Calls the 6-arg overload positionally:
 //
 //	(p_sku, p_qty, p_warehouse, p_related_doc_type, p_related_doc_id, p_source)
 //
-// The pre-existing 2-arg overload (varchar, int) is dropped by the Task 5
-// migration so this is now the only signature.
-func TestDeductFIFO_WritesLedgerRow(t *testing.T) {
+// p_related_doc_type / p_related_doc_id / p_source are retained in the
+// signature for caller compatibility but have no effect on the ledger.
+func TestDeductFIFO_WritesNoLedgerRow(t *testing.T) {
 	client := db.NewTestClient(t)
 	defer client.Close()
 	db.EnsureSKUStock(t, client, "TEST-IMM", "atas", 10)
 
 	beforeRows := db.CountStockMovements(t, client, "TEST-IMM")
-	_, err := client.DB.Exec(
+	var totalCost float64
+	err := client.DB.QueryRow(
 		`SELECT public.deduct_stock_fifo('TEST-IMM', 3, 'atas',
-		         'order'::text, 'ORD-TEST'::text, 'sale_wa'::public.stock_movement_source)`)
+		         'order'::text, 'ORD-TEST'::text, 'sale_wa'::public.stock_movement_source)`).Scan(&totalCost)
 	if err != nil {
 		t.Fatalf("deduct_stock_fifo: %v", err)
 	}
-	if got := db.CountStockMovements(t, client, "TEST-IMM"); got-beforeRows != 1 {
-		t.Fatalf("expected 1 ledger row, got %d", got-beforeRows)
+	if got := db.CountStockMovements(t, client, "TEST-IMM"); got != beforeRows {
+		t.Fatalf("expected 0 new ledger rows (decrement_stock is the sole writer), got %d", got-beforeRows)
 	}
-
-	var source string
-	var delta int
-	err = client.DB.QueryRow(
-		`SELECT source::text, qty_delta FROM public.stock_movements
-		 WHERE related_doc_id='ORD-TEST' ORDER BY id DESC LIMIT 1`).Scan(&source, &delta)
-	if err != nil {
-		t.Fatalf("read: %v", err)
-	}
-	if source != "sale_wa" || delta != -3 {
-		t.Fatalf("ledger row wrong: source=%s delta=%d", source, delta)
+	// Guard against regression on the FIFO walk itself — 3 units consumed
+	// against the seeded lot should return a positive cost.
+	if totalCost < 0 {
+		t.Fatalf("expected non-negative FIFO cost, got %f", totalCost)
 	}
 }
 
