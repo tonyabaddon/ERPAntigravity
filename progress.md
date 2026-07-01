@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS remediation Phase 1: 9 RPC-only tables locked down
+
+Closes half of the 18-table RLS-off critical advisory surfaced by Supabase during the 2026-07-01 E2E audit. Migration `20260910000001_enable_rls_on_rpc_only_tables.sql` ships `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` for the 9 tables with **zero** direct `.from()` call sites in `src/` (grep, excluding tests): `stock_movements`, `stock_adjustments`, `stock_opname_counts`, `price_change_requests`, `stock_price_history`, `warehouse_transfers`, `stock_levels`, `invoice_counters`, `gl_dual_write_anomalies`. All are accessed only via SECURITY DEFINER RPCs, which bypass RLS.
+
+**Verification pre-apply**:
+- Client `.from()` grep in `src/` returned 0 sites for all 9 tables (test files excluded — they use direct postgres connection which bypasses RLS anyway).
+- Backend-go uses `SUPABASE_SERVICE_KEY` (`backend-go/config/config.go:37`) — service role bypasses RLS.
+- Test harness uses `SUPABASE_DB_CONNECTION` (`postgres` role) — bypasses RLS.
+- SD-function references: 10 (`stock_movements`), 10 (`stock_levels`), 7 (`stock_opname_counts`), 5 (`gl_dual_write_anomalies`), 4 (`stock_adjustments`), 3 (`stock_price_history`), 2 (`price_change_requests`), 1 (`invoice_counters`), 0 (`warehouse_transfers` — legacy).
+- Grants before: anon + authenticated both had `SELECT/INSERT/UPDATE/DELETE/TRUNCATE/TRIGGER/REFERENCES` on every one of these tables. Verified via `information_schema.role_table_grants`. Anon key is baked into the frontend bundle → anyone could read/write the entire stock audit trail, adjustments, invoice counter, price history, GL anomalies.
+
+**Verification post-apply**:
+- `pg_class.relrowsecurity = true` for all 9 tables (verified).
+- Direct anon-key `curl` against PostgREST:
+  - `GET /rest/v1/stock_movements?select=id&limit=1` → `[]` (was: rows). RLS drops all rows since no policy allows SELECT.
+  - `POST /rest/v1/stock_movements` → `42501: new row violates row-level security policy` (was: 201 Created).
+- Go integration tests: 10/10 PASS (4× TestRecordKasirSale, TestDeductFIFO_WritesNoLedgerRow, TestDecrementStock_WritesLedgerRow, TestTransferWarehouse_WritesOutAndInPair, 3× TestStockMovements_*). Confirms RPC path still writes/reads these tables normally.
+
+**NOT included** (intentional scope split):
+- Grant revocation: `REVOKE INSERT/UPDATE/DELETE FROM anon, authenticated` — belt-and-suspenders defense that's valid but adds complexity; kept for a follow-up. RLS is the primary gate; grants are moot until a policy is added.
+- 9 tables in Phase 2 (real policies required, per-table access analysis): `approval_requests` (5 client sites, 49 SD refs), `audit_log` (5, 20), `service_types` (3, 2), `stock_opname_sessions` (2, 9), `warehouses` (2, 11), `warehouse_audit_log` (1, 6), `piutang_write_off_requests` (1, 4), `approval_settings` (1, 2), `tenant_settings` (1, 5). Each needs SELECT/INSERT/UPDATE/DELETE policies matching current access patterns.
+
+**Rollback (emergency only)**: `ALTER TABLE public.<name> DISABLE ROW LEVEL SECURITY;` per table. Re-opens the security hole.
+
+---
+
 ## 2026-07-01 — E2E smoke pada production (Cloud Run) via chrome-devtools MCP
 
 Live URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` diuji end-to-end oleh Owner (tonywei.office@gmail.com) untuk memastikan 3 PR terakhir tidak regresi. Semua konsol bersih (0 error / warn) sepanjang alur.
