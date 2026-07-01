@@ -1,5 +1,44 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS Phase 2 warm-up: service_types + approval_settings
+
+First 2 of the 9 Phase 2 tables get proper read policies. Both are single-purpose config tables with simple access shapes.
+
+**Migration `20260910000002_rls_phase2_service_types_approval_settings.sql`**:
+- `ENABLE ROW LEVEL SECURITY` on both.
+- `CREATE POLICY ... FOR SELECT TO authenticated USING (true)` on each.
+- No policies for INSERT/UPDATE/DELETE — mutations already go through SD RPCs (`upsert_service_type`, `deactivate_service_type`, `set_approval_setting`). Grants for those verbs were REVOKE'd previously (verified via `information_schema.role_table_grants`); RLS is a second gate.
+- `DROP POLICY IF EXISTS ... ; CREATE POLICY ...` pattern for idempotency (universally compatible; avoids the PG15+ `CREATE POLICY IF NOT EXISTS` syntax).
+
+**Access shape verified pre-design (grep + code read)**:
+- `service_types` — 3 client `.from()` sites in `src/lib/pengaturan/pengaturanServices.ts` (all `.select()`, all behind auth), + downstream reads in `pengaturan/JenisJasaCrudPanel.tsx`, `penjualan/CartRows.tsx`, `penjualan/CatatPenjualanWizard.tsx`. All mutations via `upsert_service_type` + `deactivate_service_type` RPCs.
+- `approval_settings` — 1 client `.select()` at `pengaturanServices.ts:18` (via `approvalSettingsService.fetch()`, admin config screen only). All mutations via `set_approval_setting` RPC (role-gated to Owner / Staff Admin Toko inside function body). Code comment at line 12-14 documents the pattern verbatim.
+
+**Verified post-apply**:
+- `pg_class.relrowsecurity=true` + policies present with `qual='true'` and `roles=[authenticated]`.
+- Anon `curl` on both `GET /rest/v1/service_types` + `GET /rest/v1/approval_settings` → `[]` (was: 2 rows + 19 rows respectively).
+- Live UI smoke via chrome-devtools MCP on prod:
+  - Pengaturan → Approval tab: STOK 3/3 aktif + KASIR/POS 3/3 aktif + HARGA & PRODUK 1/1 aktif toggles all rendered from `approval_settings` fetch → authenticated read works.
+  - Pengaturan → Modul & Jasa → Master Jenis Jasa: Custom Panel + Wiring Panel cards rendered from `service_types` fetch → authenticated read works.
+- No console errors.
+
+**Multi-tenant note in migration header**: both tables carry a `tenant_id` column (currently NULL for Garindo). When Sub-Project A ships, the `USING (true)` policies must tighten to `USING (tenant_id IS NULL OR tenant_id = public.current_tenant_id())`. Explicit TODO in migration.
+
+**Advisory progress**: 18 tables → 9 tables (Phase 1) → 7 tables (Phase 2 warm-up done).
+
+**Remaining Phase 2 backlog** (7 tables, per-table policy design still needed):
+| Table | Client sites | SD refs | Sketch |
+|---|---|---|---|
+| `tenant_settings` | 1 (fetch by tenant_id IS NULL) | 5 | SELECT authenticated (Garindo single-tenant); TODO tenant_id filter for Sub-Project A |
+| `warehouses` | 2 | 11 | SELECT authenticated (warehouse picker in Kasir/Pembelian/Opname) |
+| `stock_opname_sessions` | 2 | 9 | SELECT authenticated; investigate if session filters apply |
+| `warehouse_audit_log` | 1 | 6 | SELECT authenticated (admin-only screen) |
+| `piutang_write_off_requests` | 1 | 4 | SELECT authenticated (approval flow) |
+| `audit_log` | 5 | 20 | SELECT authenticated; likely admin-only in practice |
+| `approval_requests` | 5 | 49 | LARGEST — approval inbox reads, needs INSERT/UPDATE analysis too |
+
+---
+
 ## 2026-07-02 — RLS remediation Phase 1: 9 RPC-only tables locked down
 
 Closes half of the 18-table RLS-off critical advisory surfaced by Supabase during the 2026-07-01 E2E audit. Migration `20260910000001_enable_rls_on_rpc_only_tables.sql` ships `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` for the 9 tables with **zero** direct `.from()` call sites in `src/` (grep, excluding tests): `stock_movements`, `stock_adjustments`, `stock_opname_counts`, `price_change_requests`, `stock_price_history`, `warehouse_transfers`, `stock_levels`, `invoice_counters`, `gl_dual_write_anomalies`. All are accessed only via SECURITY DEFINER RPCs, which bypass RLS.
