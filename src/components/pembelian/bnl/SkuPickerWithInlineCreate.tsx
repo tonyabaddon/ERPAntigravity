@@ -36,14 +36,19 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
     setSaving(true);
     try {
       const skuCode = draftName.toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32) || `BNL-${Date.now()}`;
-      const { error } = await supabase.from('stocks').insert({
-        sku: skuCode,
-        name: draftName.trim(),
-        category: 'Pass-through',
-        price: draftSellPrice,
-        stock: 0,
-        status: 'active',
-        harga_modal: unitCostHint ?? null,
+      // Route through admin_upsert_product SD RPC (migration 20260910000009):
+      // direct .insert() no longer writes value-bearing columns like price /
+      // harga_modal from the anon+authenticated client roles.
+      const { error } = await supabase.rpc('admin_upsert_product', {
+        p_input: {
+          sku: skuCode,
+          name: draftName.trim(),
+          category: 'Pass-through',
+          price: draftSellPrice,
+          stock: 0,
+          status: 'active',
+          harga_modal: unitCostHint ?? null,
+        },
       });
       if (error) throw error;
       onChange({ sku: skuCode, name: draftName.trim(), sell_price: draftSellPrice });

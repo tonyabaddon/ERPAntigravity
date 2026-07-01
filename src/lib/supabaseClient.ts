@@ -1201,10 +1201,13 @@ export const adminUsersService = {
 export const stockService = {
   async updateHargaModal(sku: string, hargaModal: number | null): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('stocks')
-      .update({ harga_modal: hargaModal, updated_at: new Date().toISOString() })
-      .eq('sku', sku);
+    // Route through admin_upsert_product SD RPC (migration 20260910000009):
+    // direct .update({ harga_modal }) no longer permitted — the column-level
+    // UPDATE grant on stocks.harga_modal was revoked. The RPC's ON CONFLICT
+    // DO UPDATE path handles the by-sku update, gated on Owner/Admin role.
+    const { error } = await supabase.rpc('admin_upsert_product', {
+      p_input: { sku, harga_modal: hargaModal },
+    });
     if (error) throw error;
   },
 
@@ -1220,10 +1223,13 @@ export const stockService = {
 
   async bulkUpsert(items: SupabaseStockItem[]): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('stocks')
-      .upsert(
-        items.map(item => ({
+    // Route through admin_upsert_product SD RPC (migration 20260910000009).
+    // Called sequentially so per-row RPC errors surface at the item that
+    // failed. Volume is bounded (CSV bulk uploads are <500 rows per spec);
+    // if this becomes a hot path, a batched RPC variant is a follow-up.
+    for (const item of items) {
+      const { error } = await supabase.rpc('admin_upsert_product', {
+        p_input: {
           sku: item.sku,
           name: item.name,
           category: item.category,
@@ -1232,11 +1238,10 @@ export const stockService = {
           status: item.status,
           specs: item.specs,
           harga_modal: item.harga_modal ?? null,
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: 'sku' }
-      );
-    if (error) throw error;
+        },
+      });
+      if (error) throw error;
+    }
   },
 
   async upsertProduct(input: {
@@ -1257,16 +1262,17 @@ export const stockService = {
     initial_stock_approved: boolean;
   }): Promise<StockItem> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('stocks')
-      .upsert({
+    // Route through admin_upsert_product SD RPC (migration 20260910000009).
+    // Value-bearing columns (price, harga_modal, price_grosir, stock_atas,
+    // stock_bawah) can no longer be written via direct .upsert() from the
+    // anon+authenticated client roles.
+    const { data, error } = await supabase.rpc('admin_upsert_product', {
+      p_input: {
         ...input,
         status: 'Sinkron',
         stock: 0,           // M5 search RPC reads stock_levels; stocks.stock is derived
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'sku' })
-      .select()
-      .single();
+      },
+    });
     if (error) throw error;
     return data as StockItem;
   },

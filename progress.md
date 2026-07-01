@@ -1,5 +1,47 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS follow-ups: role gates, REVOKEs, orphan cleanup, multi-tenant defer, stocks refactor
+
+Five loose ends closed after the Phase 2 advisory sweep.
+
+### 1. Role-gated SELECT policies on admin-scoped tables
+**Migration** `20260910000008_rls_role_gates_revokes_and_cleanup.sql` (shared with 3+4+5+2).
+
+- New helper `public.is_owner_or_admin() → boolean` — STABLE + SECURITY DEFINER + `SET search_path=public`. Returns true if `auth.uid()` maps to an `admin_users` row with role in `('Owner', 'Staff Admin Toko')`. Current effect same as `USING(true)` (all 25 admin_users rows are in those 2 roles); future-proofs when finer roles (e.g. Kasir, Read-only) get added.
+- Tightened SELECT policies on `audit_log`, `warehouse_audit_log`, `approval_requests` to `USING (is_owner_or_admin())`. Their INSERT policies stay unchanged (audit_log write-self, approval_requests insert-self) — non-admin users still need to file their own audit trail + approval requests.
+- Verified: `pg_policies` shows `is_owner_or_admin()` on all three tables' SELECT policies.
+
+### 2. Multi-tenant tenant_id filter — DEFERRED
+Cannot ship without Sub-Project A infra. Design contract for future migration is documented verbatim in the header of `20260910000008` (section 5): needs `current_tenant_id()` + `is_superadmin()` helpers, existing NULL-tenant rows backfilled to Garindo's tenant_id, then rewrite every `USING (true)` / `USING(is_owner_or_admin())` to `USING (tenant_id IS NULL OR tenant_id = public.current_tenant_id() OR public.is_superadmin())`. Applies to every batch (1, 2b, 2c, 2d) plus the 9 Phase-1 RPC-only tables.
+
+### 3. stocks client refactor + column-grant REVOKE — **`TestStocksDirectUpdate_AsAuthenticated_Fails` flips GREEN**
+**Migration** `20260910000009_stocks_admin_upsert_rpc_and_revoke.sql`.
+
+- New SD RPC `admin_upsert_product(p_input jsonb, p_actor_user_id uuid DEFAULT NULL) RETURNS public.stocks`. Owner + Staff Admin Toko role gate. INSERT-or-UPDATE via `ON CONFLICT (sku) DO UPDATE` with COALESCE-based partial-update semantics. `stock_atas` / `stock_bawah` / `stock` intentionally NOT touched on DO UPDATE — those flow through the ledger (decrement_stock / seed_stock_row / opname RPCs), never via product-details upsert.
+- Column-level UPDATE grants tightened: `REVOKE UPDATE ON public.stocks FROM PUBLIC, anon, authenticated` (a table-level grant coexists with column REVOKE, so the surgical version needed the full revoke + re-grant dance), then `GRANT UPDATE (name, category, subcategory, brand, unit, unit_alt, unit_alt_factor, status, specs, description, min_stock_per_product, photo_urls, initial_stock_approved, updated_at)` to authenticated + a narrower safe set to anon. Value-bearing columns (`price`, `harga_modal`, `price_grosir`, `stock_atas`, `stock_bawah`) now unreachable except via SD RPCs.
+- **Client sites refactored to call the RPC** (5 sites):
+  - `src/lib/products/productWrappers.ts:24` `insertNewProduct` — wizard inline create
+  - `src/components/pembelian/bnl/SkuPickerWithInlineCreate.tsx:34` BNL inline create
+  - `src/lib/supabaseClient.ts:1200` `stockService.updateHargaModal`
+  - `src/lib/supabaseClient.ts:1224` `stockService.bulkUpsert` (CSV upload, sequential RPC calls)
+  - `src/lib/supabaseClient.ts:1258` `productService.upsertProduct` (ProductForm save)
+- **NOT migrated** (documented follow-ups in migration header):
+  - `src/lib/supabaseClient.ts:157` `.update({ name, category, status, specs, updated_at })` — safe columns only, works under new grants.
+  - `src/lib/supabaseClient.ts:179` `.delete()` — separate `admin_delete_product` RPC + `REVOKE DELETE` in a follow-up.
+- **Test regression sweep**: 13/13 relevant Go tests PASS — `TestStocksDirectUpdate_AsAuthenticated_Fails` (finally green after being TODO since Phase 2 T11), `TestSeedStockRow_HappyPath`, `TestSeedStockRow_ExistingSKU_Fails`, 4× `TestRecordKasirSale_*`, 3× `TestStockMovements_*`, `TestDeductFIFO_WritesNoLedgerRow`, `TestDecrementStock_WritesLedgerRow`, `TestTransferWarehouse_WritesOutAndInPair`.
+- **Deploy window**: prod DB now enforces revokes, but the deployed Cloud Run bundle serves the OLD frontend that does direct `.upsert()`. Between this commit's push and Cloud Build's ~3 min turnaround, ProductForm save + CSV upload + inline BNL create will 42501-fail. Chose the tight window over a two-phase deploy dance since Garindo has low product-edit traffic.
+
+### 4. REVOKE INSERT/UPDATE/DELETE grants on RLS-guarded tables
+- Migration `20260910000008` applies `REVOKE INSERT, UPDATE, DELETE ON <tbl> FROM anon, authenticated` for: `warehouses`, `warehouse_audit_log`, `piutang_write_off_requests`, `stock_opname_sessions`, `tenant_settings`. RLS was previously the only block; now grant-level defense in depth.
+- `audit_log` INSERT grant kept (EditOrderModal.tsx:59 write path). `approval_requests` INSERT grant kept (approvalService.requestInitialStock). `service_types` + `approval_settings` already had trimmed grants from an earlier migration. `stocks` handled by migration `20260910000009` above.
+- Verified: `information_schema.role_table_grants` query returns 0 rows for the 5 covered tables' write privileges.
+
+### 5. E2E-TEST-DELETEME orphan cleanup
+- Product renamed to `"DELETED - E2E TEST (do not use)"` via `UPDATE stocks` in migration `20260910000008`. Hard delete still blocked by `stock_movements_sku_fkey` (append-only audit trail); no `is_active` / `deleted_at` column exists on stocks (proper soft-delete infra is a separate follow-up not attempted here).
+- Verified in the live UI catalog under `?screen=ai-stock` — visible with the DELETED name.
+
+---
+
 ## 2026-07-02 — RLS Phase 2 FINAL: tenant_settings + approval_requests (advisory 18 → 0)
 
 Last two tables on the 18-table RLS-off advisory. Migration `20260910000007_rls_phase2_final_tenant_settings_and_approval_requests.sql`.
