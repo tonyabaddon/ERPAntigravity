@@ -1,5 +1,228 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-01 — E2E smoke pada production (Cloud Run) via chrome-devtools MCP
+
+Live URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` diuji end-to-end oleh Owner (tonywei.office@gmail.com) untuk memastikan 3 PR terakhir tidak regresi. Semua konsol bersih (0 error / warn) sepanjang alur.
+
+**Task 1 — Dashboard render**: Login OTP → dashboard load; sidebar penuh, kartu widget (Omset / Pesanan / OTOMASI / Stok Tipis) semua rendering; grafik Revenue & Interaksi Chat kosong (Selesai Bulan Ini 0) tapi tidak crash. Konsol bersih.
+
+**Task 2 — PR #60 Foto opsional (produk)**: Buka Produk & Stok → + Tambah Barang. Label form berubah dari "Foto Produk" jadi "Foto Produk (opsional)" + teks penjelas "Foto opsional — kalau ada, foto pertama jadi thumbnail + di-index AI ~5 detik setelah simpan. Tanpa foto, produk tetap muncul di Katalog dengan placeholder dan bisa dicari via 'Cari by Foto'". Uji validasi klien (submit kosong) → toast pertama `"Harga Jual harus > 0"` (bukan foto), konfirmasi validator tidak lagi memblok pada foto. Uji round-trip: SKU `E2E-TEST-DELETEME` (MCB ABB 10A 1P, Rp 1.000, stok 0, tanpa foto) berhasil disimpan; muncul di daftar dengan placeholder di kolom FOTO; Stok Tipis naik 397 → 398. **Follow-up: hapus SKU E2E-TEST-DELETEME dari UI (tidak ada tombol Hapus di form edit; kemungkinan lewat expand row atau bulk delete)**.
+
+**Task 3 — Diskon polish (wizard Sales Invoice)**: Penjualan → Sales Invoice wizard. Step 1 (Channel & Customer): channel pill "Walk-in" `rounded-lg` + border navy saat dipilih (bukan `rounded-full` penuh). Step 2 (Pesanan): tambah E2E-TEST-DELETEME ke keranjang → badge PRE-ORDER kuning muncul (stok 0, ini expected per feedback_allow_negative_stock_preorder). Isi diskon Rp 200 → subtotal drop 1.000 → 800 real-time. Step 3 (Pembayaran) → **kartu ringkasan navy menampilkan baris "− Diskon Item − Rp 200" di antara Subtotal (1.000) dan TOTAL (800)** — konfirmasi PR #59 shipped correctly. Ditekan Batal → confirm dialog "Batalkan? Semua input akan hilang" → accept → transaksi tidak commit ke DB.
+
+**Task 4 — Corner styling (Tagihan PI + Kasir + PDF)**: Pembelian → tab Tagihan → Detail PI-2026-06-005. Kartu Pesanan Terkait / Supplier / Jatuh Tempo dan sub-kartu Status Pembayaran (Total Tagihan / Sudah Dibayar / Sisa Bayar) semua pakai rounded-2xl konsisten, pill VOID + Stok `rounded-full` kecil, banner cascade void `rounded-lg`. Kasir Harian dashboard: kartu Total Pemasukan / Pengeluaran / HPP / Laba Bersih rounded moderate. Kasir "struk" (invoice PDF) diakses via Daftar Pesanan → Diterima → Invoice Lunas untuk #c104f798 → modal Pratinjau PDF muncul dengan `invoice_Lunas_INV-0026-00001.pdf` blob preview + tombol Tutup/Download rounded-lg. Semua sudut konsisten "moderate rounded" (bukan pill penuh, bukan siku tajam) sesuai commit `1d741ad`.
+
+**Tidak diuji karena butuh commit data ke produksi**: Pembayaran commit (Simpan Sales Invoice tidak ditekan), Kasir Catat Penjualan real (Log Transaksi hari ini kosong), Tukar Faktur create (butuh supplier + PO chain), Buat Tagihan baru.
+
+---
+
+## 2026-07-01 — Full-commit E2E follow-up: Sales Invoice + Supabase MCP verification + cleanup
+
+Owner approved committing real transaction untuk full-round verification. Skenario: `Test JE Diskon` customer → `E2E-TEST-DELETEME` produk (1 pcs @ Rp 1.000) → Diskon item Rp 200 → LUNAS Cash. Invoice `WLK-20260701-001` (uuid `d9671951-5eb5-401a-8dc1-f139422edca6`) berhasil di-simpan; UI success page render 3 workflow check + tombol Cetak/Share/Download PDF.
+
+**Baseline sebelum commit**: kasir_transactions=85, stock_movements=1536, journal_entries=271, journal_entry_lines=594. **Setelah commit**: +1 / +2 / +1 / +3.
+
+**✅ Yang benar**:
+- `kasir_transactions` row lengkap: `total_amount=800`, `subtotal=800`, `status=PAID`, `payment_method=cash`, `channel=walkin`, `customer_id` FK ke customers, `items[0]` menyimpan `discount_type=AMOUNT`, `discount_value=200`, `discount_amount_rp=200`, `master_price_at_sale=1000` — semua field diskon per-item persisted.
+- `journal_entries` (`JE-202607-0001`, source_type=KASIR_SALE, is_balanced=true, is_posted=true) + 3 lines: Dr Kas Toko `1-1110` Rp 800, Cr Penjualan Walkin `4-1110` Rp 1.000, Dr Diskon Penjualan (contra) `4-1900` Rp 200 — akuntansi kontrak revenue + contra-discount pattern benar.
+
+**🚨 BUG #1 — Kasir sale mem-write stock_movements 2× per unit**: Untuk qty=1 di items[], `stock_movements` menerima 2 row (id 2078 & 2079) dengan `qty_delta=-1` masing-masing, keduanya `qty_before=0 qty_after=-1` — computed dari snapshot sama, jadi bukan sequential chain. Bukan bug baru: sale historis `WLK-20260623-008` (qty=1) juga punya 2 row (id 2059, 2060, `208→207→206`); SKU `0671d9fd` menunjukkan 4 unit terjual (dari items[] sum) tapi `sum(qty_delta)=-8` di stock_movements dengan 8 sale_kasir movement rows (ratio 2:1). Audit trail stock digandakan silent. **Investigasi urgen di RPC sale_kasir / trigger** — apakah COGS trigger + inventory trigger dua-duanya fire? Apakah stocks table update lewat trigger vs RPC direct write jadi sumber dupe?
+
+**⚠️ Anomali #2 — Pre-order path: stocks tidak decrement meski movements bilang -1**: E2E-TEST-DELETEME sesudah sale, `stocks.stock=0 stock_atas=0 stock_bawah=0` (identik dengan sebelum sale) padahal movements bilang `qty_after=-1`. Divergensi audit trail vs master state. Untuk historical SKU 0671d9fd `stock_atas=207` — konsisten dengan movements, jadi pre-order (stock<qty) mungkin skip update master. Kalau intentional, `qty_after` di stock_movements salah anotasi.
+
+**⚠️ Anomali #3 — `funnel_stage=1 funnel_sub_stage="1a"` di kasir_transactions row meski status=PAID + UI tunjukkan workflow selesai**. Tidak match funnel expectations (stage 5 = Diterima). Mungkin field belum di-populate post-status update — cek Sales Order → Kasir converter logic. Juga `lunas_at=null` meski `status=PAID`.
+
+**🚨 SECURITY ADVISORY — 18 tabel RLS OFF di production**: `stock_movements`, `approval_requests`, `stock_adjustments`, `stock_opname_sessions`, `stock_opname_counts`, `price_change_requests`, `stock_price_history`, `warehouse_transfers`, `warehouses`, `stock_levels`, `warehouse_audit_log`, `audit_log`, `invoice_counters`, `piutang_write_off_requests`, `approval_settings`, `tenant_settings`, `service_types`, `gl_dual_write_anomalies`. Anon+authenticated roles bisa read/write semua row. `ENABLE ROW LEVEL SECURITY` tanpa policy = block all — perlu design policy sebelum enable. Advisory dari `mcp__supabase__list_tables`.
+
+**Cleanup via Supabase MCP** (dilakukan setelah verifikasi):
+- ✅ `kasir_transactions` `WLK-20260701-001` di-DELETE.
+- ✅ `journal_entries` `JE-202607-0001` + 3 lines di-DELETE (soft accounting hygiene: seharusnya booking reversal, tapi ini test data).
+- ✅ `stock_movements` — append-only (`deny_stock_movement_mutation` trigger tolak DELETE). Solusi: insert 2 compensating row `source='correction'` `qty_delta=+1` masing-masing → **net delta untuk SKU E2E-TEST-DELETEME sekarang 0**, audit trail utuh.
+- ⚠️ `stocks` row SKU `E2E-TEST-DELETEME` **tidak bisa di-DELETE** karena FK `stock_movements_sku_fkey` (append-only trail selamanya reference). Row tetap ada dengan `stock=0` (state original, aman). Tidak ada `is_active`/`archived` column di stocks, jadi tidak bisa soft-delete via flag.
+
+**Rekomendasi follow-up untuk user**:
+1. **Prioritas 1**: ~~Investigasi stock_movement double-write bug~~ → **selesai, migration siap**.
+2. **Prioritas 2**: Design + apply RLS policies untuk 18 tabel unprotected sebelum multi-tenant launch.
+3. **Prioritas 3**: Fix funnel_stage populate + lunas_at set on status=PAID transition.
+4. **Cosmetic**: Tambah cara delete produk dari UI (opsi: mark inactive + hide dari selector).
+
+---
+
+## 2026-07-02 — Double-ledger-write investigation + fix migration drafted
+
+**Root cause (dari `20260607000006_wrap_decrement_stock.sql` header + `20260723000002_phase0b_record_kasir_sale_dual_write.sql:174-190`)**: `record_kasir_sale` RPC memanggil DUA helper stok per aggregated (sku, warehouse) group:
+
+1. `decrement_stock(...)` — mutasi `stocks.stock_<warehouse>` column, insert 1 ledger row (`qty_before`/`qty_after` truthful).
+2. `deduct_stock_fifo(...)` — walk `stock_lots` untuk COGS, insert 1 ledger row kedua (`qty_before` di-read POST-decrement dari stocks, `qty_after = qty_before - p_qty` phantom column move).
+
+Kedua helper masing-masing panggil `_log_stock_movement`. Ini adalah **tech debt yang di-dokumentasikan** di Phase 1 (Juni 2026) dengan follow-up "Phase 2/3" yang tidak pernah dieksekusi. Bukan bug baru, bukan misteri.
+
+**Blast-radius (revised — koreksi laporan sebelumnya)**:
+- ✅ `stocks.stock_atas`/`stock_bawah` master — DECREMENT SEKALI PER SALE (bukan 2×). Migration header: "call pair of (3, 3) takes stock_atas from 10 → 7 (verified)". Inventaris master di produksi TIDAK menyimpang.
+- ✅ `stock_lots.qty_remaining` FIFO — consumed once (correct).
+- ✅ HPP/COGS di `journal_entries` — reads from lots, correct.
+- ⚠️ `stock_movements` audit trail — 2× rows per sale_kasir / sale_wa (this is the observable bug).
+- ⚠️ Analitik yang SUM `qty_delta` per SKU — 2× real outflow.
+
+Berlaku untuk semua Kasir + WA sales sejak Phase 1 ship di Juni 2026.
+
+**Fix — option (i) smallest diff**:
+- Migration baru: `supabase/migrations/20260810000001_stop_double_ledger_write_in_deduct_stock_fifo.sql` — `CREATE OR REPLACE FUNCTION public.deduct_stock_fifo(...)` dengan signature identik; hapus block `PERFORM _log_stock_movement(...)` dan variabel `v_qty_before` beserta SELECT-nya (unused after fix). Semua caller (record_kasir_sale RPC, backend-go `DeductStockAndGetHPP`, `src/lib/pembelianService.ts`) tetap dipakai identik — return value `v_total_cost` unchanged. Slot 20260810 sengaja distant untuk hindari kolisi dengan potential parallel-session migration slots (per memory `project_parallel_terminals_worktree`).
+- Test updates di `backend-go/internal/db/record_kasir_sale_test.go`:
+  - `TestRecordKasirSale_*_SuccessPath` line 119-121: `mvmCount != 2` → `mvmCount != 1` + pesan update.
+  - `TestRecordKasirSale_AggregatesSameSKU` line 281-282 comment + line 334-338 assertion: `count = 2` → `count = 1`.
+- Tidak ada test lain yang ter-impact. `stock_movements_test.go:225` (`TestTransferWarehouse_WritesOutAndInPair`) tetap `!= 2` — itu memang expected untuk transfer (out+in pair), bukan sale.
+
+**Historical rows kept**: `stock_movements` append-only via `deny_stock_movement_mutation` trigger; scrub tidak didukung. BI/reporting yang consume `sum(qty_delta)` untuk pre-ship sales harus re-baseline: `real_outflow = qty_delta / 2` untuk `source IN ('sale_kasir', 'sale_wa')` dan `created_at < '2026-08-10'` — SQL disediakan di migration header.
+
+**SHIPPED 2026-07-02**:
+- Migration applied ke prod via `mcp__supabase__apply_migration`. Verified via `pg_get_functiondef(oid)` — `_log_stock_movement` REMOVED, `v_qty_before` REMOVED dari function body.
+- Live smoke di prod: DO block panggil `deduct_stock_fifo('E2E-TEST-DELETEME', 1, 'atas', ...)` di dalam tx dengan RAISE EXCEPTION rollback → `NOTICE: BEFORE=4 AFTER=4 DELTA=0`. Function tidak lagi menulis ledger row.
+- Go integration tests, semua PASS terhadap prod DB:
+  - `TestRecordKasirSale_HappyPath` (4 s) — 1 movement row expected, got 1 ✓
+  - `TestRecordKasirSale_RollsBackOnInvalidPayment` ✓
+  - `TestRecordKasirSale_ShopeeChannel_IssuesSHPInvoice` ✓
+  - `TestRecordKasirSale_AggregatesSameSKU` — 1 movement row expected untuk 2-line aggregate, got 1 ✓
+  - `TestDeductFIFO_WritesNoLedgerRow` (renamed dari `WritesLedgerRow`) — asserts 0 new rows + non-negative FIFO cost ✓
+  - `TestDecrementStock_WritesLedgerRow` — masih menulis 1 row (unaffected by fix) ✓
+  - `TestTransferWarehouse_WritesOutAndInPair` — masih 2 rows (transfer_out + transfer_in pair, intentional) ✓
+  - `TestStockMovements_TableExists`, `_UpdateRaises`, `_DeleteRaises` — append-only guard intact ✓
+- Test suite juga menemukan **1 pre-existing failure yang tidak terkait dengan fix ini**: `TestStocksDirectUpdate_AsAuthenticated_Fails` (approvals_test.go:1311) — expects permission denied on direct UPDATE `stocks.price` for authenticated role, gets nil error. Diamati tapi tidak dalam scope migration ini; kemungkinan besar tied ke RLS-off state di `stocks` (belum verify, tapi symptom cocok). Bagian dari prioritas #2 RLS remediation.
+- Test leftovers di prod DB: 4 x kasir_transactions (invoice numbers dengan prefix WLK, SHP, dst hari ini), 4 kasir_counters bumps, plus stocks row `TEST-IMM` (durable seed dari `EnsureSKUStock` — sudah ada dari test runs sebelumnya). Tidak scrub karena test data pattern sudah ada di tenant ini (`QA-TEST-*`, `TEST-NEG-001`, `E2E-AUDIT-*`, dll).
+
+Files:
+- `supabase/migrations/20260810000001_stop_double_ledger_write_in_deduct_stock_fifo.sql` (new)
+- `backend-go/internal/db/record_kasir_sale_test.go` — 2 assertions `!= 2` → `!= 1`, comments updated
+- `backend-go/internal/db/stock_movements_test.go` — `TestDeductFIFO_WritesLedgerRow` renamed → `TestDeductFIFO_WritesNoLedgerRow`, body inverted to guard against regression of the removed ledger call
+
+---
+
+## 2026-06-24 — Canva briefs untuk standing banner V1 + WA poster V1 ditulis
+
+- Folder baru: `docs/marketing/canva-briefs/` untuk production-ready Canva execution briefs.
+- File 1: `banner-v1-standing-60x160cm-2026-06-24.md` — 60×160 cm portrait X-banner spec lengkap (print spec 300 DPI CMYK 3mm bleed, color palette Direction A navy `#0B2545` + kuning `#F9B233` + cream `#FAF7F0`, Inter typography pt sizing, 4-zone layout 25/30/23/22%, element-by-element spec per zone, QR code Canva built-in generator instructions, print partner suggestion Pasar Pagi / Mangga Dua Rp 80-150K per banner, QA checklist 8 item).
+- File 2: `wa-poster-v1-square-1080x1080-2026-06-24.md` — 1080×1080 px IG/WA square spec (RGB screen mode, navy-dominant background untuk scroll-stop attention, 3-zone layout 35/35/30%, stat "80%" hero at 240px size kuning-on-navy, distribution playbook WA broadcast + IG Story + carousel, A/B test framework M2, variant idea bank 5 templates untuk batch produksi).
+- Both briefs reusable — copy file per variant (banner V2/V3, WA poster V2-V5).
+- User Canva Premium → bisa eksekusi langsung dari brief tanpa designer.
+- Next: user eksekusi di Canva ATAU minta brief variant lain ATAU drill ke spec spesifik.
+
+---
+
+## 2026-06-24 — GTM 6-month roadmap formalized
+
+- File baru: `docs/business/gtm-roadmap-6mo-2026-06-24.md` (340 lines).
+- Strategy lock: **Pro-led GTM** untuk distributor B2B Glodok vertical, **warm Premium upsell only** di M3+, **vertical 2 (chat-heavy online seller, Premium-led)** buka M5. Starter accept-inbound-only ≤25% mix.
+- Each month (M1-M6) ditulis full: Aktivitas, Goal, Hindari, Cash modeling under v3 pricing, KPI tracked, Decision gate, Trigger ke next month, Cumulative cash position.
+- Cumulative cash modeling 3 scenario (konservatif/realistic/stretch): **+Rp 145jt to +Rp 210jt** 6-month net (vs v2 modeling +Rp 80-115jt — meaningful uplift dari v3 pricing higher upfront + anchor inflation).
+- Decision gates explicit: M1→M2 sampai M6→Stage 2, plus hire gates (CS at M4 if MRR ≥Rp 15jt, junior eng at M6 if MRR ≥Rp 45jt per pricing.md Rule 1).
+- KPI dashboard 11-row untuk weekly tracking (tenant count, MRR, 6mo/12mo mix, demo-to-close, CAC, LTV/CAC, Pro→Premium conversion, Calista shadow quality, onboarding hours, churn, founder workload).
+- Risk register 8 risks dengan likelihood/impact/mitigation.
+- Cross-refs ke pricing.md (v3), marketing pack, landing-page doc, onboarding playbook, compliance, direct-launch memory.
+- Open questions: 14-day money-back ToS draft pending sebelum tenant #1, setup fee acquisition discount decision (first 10 Pro), founder Stage 0-1 cash salary confirmation, CRM tool decision M3+.
+
+---
+
+## 2026-06-24 — Pricing v3 LOCKED (Option B) — Quarterly dropped, 6mo+12mo only, anchor +10%
+
+Decision lock setelah GTM strategy brainstorm:
+- **Dropped Quarterly tier.** Minimum komitmen sekarang **6 bulan**.
+- **6-month tier baru** dengan **15% diskon** off list anchor.
+- **12-month tetap** dengan **30% diskon**.
+- **List anchor naik +10%** semua tier (Starter Rp 549K → 599K · Pro Rp 859K → 949K · Premium Rp 3,499K → 3,799K). Marketing-badge anchor (struck-through 2×) ikut naik.
+
+**Effective price baru:**
+| Tier | 6-month | 12-month | Margin 6mo | Margin 12mo |
+|------|---------|----------|------------|-------------|
+| Starter | Rp 509K/bln | Rp 419K/bln | 45% | 33% (lift dari v2's thin 27%) |
+| Pro | Rp 807K/bln | Rp 664K/bln | 49% | 38% |
+| Premium | Rp 3,229K/bln | Rp 2,659K/bln | 72% | 66% |
+
+**Setup fee unchanged** (Starter/Pro Rp 1.5M, Premium Rp 3.5M).
+
+**Money-back guarantee 14 hari** ditambahkan sebagai 6mo commitment-barrier unlock.
+
+**Files updated:**
+- `docs/business/pricing.md` — v3 entry full: tier table, terms, cash flow per tenant, margin per plan, blended scenario marked TODO untuk v3 re-model after 5-10 tenants, competitive context, v3 differentiation lines, version history.
+- `docs/marketing/vosi-context-pack-2026-06-24.md` — §6.5 tier table sync, banner pricing teaser §9 (3 variant), WA blast §10 (3 variant) dengan harga v3, objection handler §7 dengan harga v3 + 14-day money-back angle.
+
+**Reasoning chain (locked in pricing.md v3 entry):**
+- 6mo minimum filters tire-kicker buyer → better churn cohort
+- Anchor +10% maintains "anchor + diskon psychology" — "30% OFF 12-month" badge lebih powerful dari 20% OFF on lower base
+- Starter 12mo margin lift 27% → 33% (loss-leader-ish, masih survivable)
+- Cash upfront per Pro tenant +55% vs v2 Quarterly (Rp 6.34jt 6mo vs Rp 4.08jt Q)
+- Tentative blended profit at 50 tenants: Rp 410M annualized (vs v2's Rp 372M)
+
+**Direct-launch posture (per [[direct-launch-skip-phased]] memory):** v3 pricing dipasang ke semua eligible tenant once first v2 cohort settle. Grandfather existing v2 Quarterly tenants sampai renewal.
+
+**Next pending:** (1) v3 blended scenario re-modeling after first 5-10 v3 tenants signed, (2) GTM 6-month roadmap doc — user decision pending whether to formalize ke `docs/business/gtm-roadmap-6mo-2026-06-24.md`, (3) Money-back guarantee terms — add ke Tenant ToS sebelum first v3 sale.
+
+---
+
+## 2026-06-24 — VOSI marketing pack v2 — pricing v2 + Calista + feature matrix integrated
+
+- Round 2 update setelah user catch bahwa v1 missed pricing tier + Calista naming + Pengawasan/Barcode/GL features.
+- **Marketing pack updates** (`docs/marketing/vosi-context-pack-2026-06-24.md`):
+  - **§0 new** — Strategic tension surfaced: 2026-06-04 landing-doc broad MSME ("Wujudkan Visi Bisnismu") vs 2026-06-24 narrow distributor B2B campaign. Resolution proposal: umbrella tagline stays broad, per-vertical campaign sub-pages narrow.
+  - **§4 value props rewritten** — added Calista (Premium only), Pengawasan, GL/Neraca/Arus Kas (Pro+), Barcode (Pro+); each row now tagged dengan tier eligibility.
+  - **§6 slogan bank** — added "Wujudkan Visi Bisnismu" sebagai umbrella tagline rule.
+  - **§6.5 new — Tier & Pricing** — full Starter/Pro/Premium table dari `docs/business/pricing.md` v2 (Starter Rp 384.3K/Y, Pro Rp 601.3K/Y, Premium Rp 2,449.3K/Y). Setup fees, terms, differentiation lines per tier, "PROMO LAUNCH 50% OFF — 100 Tenant Pertama" badge rule. Default pitch ke distributor B2B Glodok = **Pro tier**.
+  - **§6.6 new — Feature Matrix per Tier** — comprehensive 4-tier matrix (Core/Pro/Premium/in-spec) dengan 50+ modul listed. Honest disclosure section untuk partial-ship features (Barcode, Pengawasan, Calista auto-reply, persona tuning).
+  - **§7 objection handlers expanded** — added 4 pricing-specific objections (Pro mahal, Premium gak kuat, lebih murah Kledo, setup fee mahal) + Calista-vs-Mekari-Kontak differentiator.
+  - **§9 banner copy** — 3 variants now (V1 primary, V2 aspiration, V3 Calista focus); pricing teaser "Mulai Rp 384K/bulan" + promo badge added.
+  - **§10 WA blast** — 3 captions (long-edukasi, short, Premium-Calista) dengan pricing hook + "Wujudkan Visi Bisnismu" signature.
+- **Pricing.md updates** (`docs/business/pricing.md` §"Tier structure"):
+  - Module list per tier expanded — added features shipped sejak v2 lock 2026-06-13: Sales Order Penawaran, Diskon, Tulis-off, Owner Biaya Final Inbox, Initial Stock Approval, Rakit, Opname+Adjustment audit, foto opsional.
+  - Added "Module list last sync: 2026-06-24" timestamp + cross-ref ke marketing pack §6.6.
+  - Added explicit "⚠️ Partial-ship status (honest disclosure for sales)" subsection naming Barcode, Pengawasan, Calista auto-reply, Calista persona tuning, Tax PPh formal.
+- **Single source of truth chain locked:** `docs/business/pricing.md` (pricing + tier definitions) ← `docs/marketing/vosi-context-pack-2026-06-24.md` §6.5+§6.6 (marketing-facing tier copy) ← per-asset chats di claude.ai Project.
+- **Open decision for user:** (1) Soft-launch Sales Order Penawaran ke Garindo dulu sebelum campaign Glodok? (2) Tunda Pro promotion sampai Barcode + Pengawasan ship fully? (3) Rename Starter → Lite untuk konsistensi dengan user's mental model?
+
+---
+
+## 2026-06-24 — VOSI marketing context pack v1 written
+
+- Marketing context pack ditulis untuk brand **VOSI** (target: distributor B2B Indonesia, fokus sentra Glodok — alat listrik, panel, CCTV).
+- File: `docs/marketing/vosi-context-pack-2026-06-24.md` — reusable knowledge untuk claude.ai Project.
+- Konten: Foundations V2 (positioning, ICP, persona "Pak Anton", 5 value props mapped ke shipped modules, voice, 5 slogan candidates, 6 objection handlers), 3 visual directions ("Toko Modern" rekomendasi default, "Calm Authority", "Workshop/Industrial"), banner standing copy 2 variant + layout zones, WA poster spec + 2 caption variants, pitch deck outline 12 slide dengan speaker note untuk demo flow, dan playbook claude.ai (Project Instructions + chat-per-asset starter prompts + Canva/Gamma handoff).
+- Value props grounded di modul shipped saja (Sales Order Penawaran, Pembelian end-to-end, Multi-gudang, Piutang, Approval Inbox/Owner PIN, WhatsApp AI). Tidak dipromosikan dulu: multi-tier pricing + multi-tenant SaaS (in spec).
+- Maintenance rule §13: file di-update setiap kali modul baru shipped atau persona shift.
+- Next: user upload file ke claude.ai Project + paste Project Instructions §12, lalu chat-per-asset untuk produksi banner/WA/deck. Final visual production di Canva (banner+WA) dan Gamma (deck).
+
+---
+
+## 2026-06-24 — Configurability Audit + Multi-Tier Pricing spec written
+
+- Audit gap configurability ERP Antigravity → stratifikasi Tier 1 (column toggle), Tier 2 (new mode), Tier 3 (schema refactor).
+- User memilih fokus: onboarding tenant baru tipe LTC Glodok (Distributor B2B / penjual CCTV / panel listrik).
+- Decision locked: bangun **Multi-Tier Pricing (Eceran + Grosir)** sebagai Phase 1 — paling kritis untuk SOP toko Glodok. Tier 1/1b toggle (rounding, numbering, backdate, dst) defer.
+- Spec written: `docs/superpowers/specs/2026-06-24-multi-tier-pricing-design.md`.
+- Decisions locked (lihat §13 spec):
+  - Fixed 2 tier hardcoded; auto-apply by `customer.default_pricing_tier`; switch bebas + audit log; modul OFF default; CSV bulk update grosir prices = Phase 1; soft-hide on modul OFF.
+- Effort estimate: ~11 hari (2-2.5 minggu) single developer.
+- Memori `feedback_phase2_defer_sop_profile.md` context-relaxed untuk tenant-onboarding scenario (preset picker tetap defer; per-knob untuk multi-tenant onboarding OK).
+- Pending: user review spec → writing-plans phase.
+
+---
+
+## 2026-06-24 — Multi-Tenant SaaS MVP — Brainstorm + Sub-Project A spec written
+
+Brainstorm gap audit ERP Antigravity vs MSME requirements. User memilih 3 lens: MVP closure (PRD §6) + Operational depth (replace Excel) + SaaS foundation (onboard customer #2). Compliance lens (e-Faktur/PPh) defer total per Q1/Q8 PRD open question.
+
+**Multi-tenant `org_id` migration** dipilih sebagai sub-project pertama. User tambahkan requirement: per-tenant URL berbeda di production (e.g. `garindo.vosi.id`).
+
+**Keputusan terkunci:**
+- Approach migrasi: **B. Phased per domain** (Garindo zero impact, slice-by-slice rollout)
+- Tenant model: **A. 1 user = 1 tenant** (multi-tenant-per-user defer Phase 4)
+- URL strategy: **Subdomain `<slug>.vosi.id`** (rejected subdirectory karena cookie-share risk + dead-end ke Phase 4 custom domain)
+- Hosting: **Vercel/Netlify default, Cloud Run+LB backup** (lock di Phase A.1)
+- Auth pattern: **Opsi 1: per-tenant Supabase Auth** (Mekari OAuth-server pattern overkill kalau VOSI = 1 produk)
+- Split sub-projects: **A** (Tenant Infra, 4-5 minggu) → **B** (VOSI Admin Panel, 1-2 minggu) → **C** (Plan & Billing, 1-2 minggu) — total ~6-8 minggu
+
+**Spec ditulis:** `docs/superpowers/specs/2026-06-24-multi-tenant-saas-mvp-subproject-A-infra-design.md`
+Covers: `tenants` + `tenant_users` schema, RLS pattern (`current_tenant_id()` + `is_superadmin()` helpers), RPC sweep strategy untuk 136 SECURITY DEFINER files, per-tenant sequences, storage bucket isolation, frontend subdomain bootstrap, backend-go WA tenant routing, 7-phase rollout plan (A.0 Foundation → A.7 Tenant creation RPC + isolation tests), risks/mitigations, infrastructure tasks (DNS + wildcard SSL).
+
+**Next:** User review spec → kalau approved, invoke `writing-plans` skill untuk detail per-phase implementation. Sub-Project B + C specs ditulis setelah A landed.
+
 ## 2026-06-24 — Multi-Tier Pricing Task 1 DONE — Schema foundation
 
 - Worktree: `worktree-multi-tier-pricing` (off main 7730a83).

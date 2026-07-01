@@ -1,66 +1,93 @@
-# Vosi Pricing — v2 with Premium tier + Calista AI
+# Vosi Pricing — v3 with 6mo+12mo commitment + anchor inflation
 
-**Date:** 2026-06-13 — v2 update after Calista Phase 1 brainstorm
-**Status:** Locked after multi-round refinement with stage-based hiring trade-offs analyzed.
+**Date:** 2026-06-24 — v3 update after GTM strategy brainstorm with Option B locked
+**Status:** Locked. **v3 replaces v2 — Quarterly dropped, anchor raised +10%, 6mo introduced.**
 
 > This doc lives **separate from the tech spec** because pricing evolves on a faster cadence (months) than architecture (years). Tech spec (`docs/superpowers/specs/2026-06-13-multi-tenant-prerequisites-design.md` + `2026-06-13-calista-phase-1-design.md`) references package `id` only (`starter`, `pro`, `premium`), never concrete prices.
 
+### v3 vs v2 — what changed
+
+1. **Dropped Quarterly tier.** Minimum commitment is now 6-month.
+2. **Added 6-month tier** (15% off list anchor).
+3. **Yearly stays at 30% off** (same diskon %, but applied to higher list anchor).
+4. **Raised list anchor +10%** across all tiers (Starter Rp 549K → 599K, Pro Rp 859K → 949K, Premium Rp 3,499K → 3,799K). Marketing badge anchor (2× struck-through) follows.
+5. **Setup fees unchanged** (Starter/Pro Rp 1.5M, Premium Rp 3.5M).
+
+Reasoning chain captured in conversation 2026-06-24: higher commitment filter → better churn cohort → cleaner blended margin (Starter Yearly margin 27% → 33%); anchor inflation maintains pricing.md's existing "anchor + diskon psychology" pattern consistently.
+
 ---
 
-## Tier structure (v2 — with anchor + diskon psychology)
+## Tier structure (v3 — 6mo + 12mo only)
 
-| Tier | Anchor (struck-through) | **Quarterly effective** | **Yearly effective** | Yearly discount | Modules |
-|------|--------------------------|--------------------------|----------------------|------------------|---------|
-| **Starter** | ~~Rp 1,099,000/mo~~ | **Rp 549,000/mo** | **Rp 384,300/mo** | 30% | Kasir, Stock, Purchasing, Recon, Laporan dasar, AR, Returns, 14-channel sales, 1 warehouse |
-| **Pro** | ~~Rp 1,799,000/mo~~ | **Rp 859,000/mo** | **Rp 601,300/mo** | 30% | Starter + Pengawasan + Barcode + **GL/Neraca/Arus Kas** + Tax reports + multi-warehouse (5) + multi-user roles + executive dashboard. **Everything except AI.** |
-| **Premium** | ~~Rp 6,999,000/mo~~ | **Rp 3,499,000/mo** | **Rp 2,449,300/mo** | 30% | Pro + **Calista AI for Ordering** (the ONLY differentiator vs Pro). Multi-warehouse (10), multi-user (25), 50K SKUs. |
+| Tier | List anchor | Marketing badge anchor (struck-through 2×) | **6-month effective** (15% off list) | **12-month effective** (30% off list) | Modules |
+|------|-------------|--------------------------------------------|---------------------------------------|----------------------------------------|---------|
+| **Starter** | Rp 599,000/mo | ~~Rp 1,199,000/mo~~ | **Rp 509,150/mo** | **Rp 419,300/mo** | Auth + multi-user, Dashboard, Produk (foto opsional), Pelanggan, Kasir POS + struk + multi-payment, Penjualan basic + Faktur PDF, Pembelian basic (PO + Tagihan PI + Pembayaran + BNL), Stok 1 gudang, Piutang basic, **Diskon (per-line + order)**, Retur Penjualan, Rekonsiliasi bank basic, KasBank (BANK + KAS + E_WALLET), Sales channels (14), Laporan dasar, Pengaturan + Notification settings |
+| **Pro** | Rp 949,000/mo | ~~Rp 1,899,000/mo~~ | **Rp 806,650/mo** | **Rp 664,300/mo** | Starter + **Sales Order (Penawaran) → Invoice flow** + Multi-warehouse (5) + Multi-user roles + Approval Inbox + Owner PIN + GL/Neraca/Arus Kas + Tax reports (PPN; PPh formal defer) + Executive dashboard + Pengawasan dashboard ⚠️partial + Opname + Adjustment + Audit trail + Rakit/Assembly + Piutang advanced + Tulis-off + Initial Stock Approval + Owner Biaya Final Inbox + Barcode scanning ⚠️partial + Diskon wizard advanced. **Everything except AI.** |
+| **Premium** | Rp 3,799,000/mo | ~~Rp 7,599,000/mo~~ | **Rp 3,229,150/mo** | **Rp 2,659,300/mo** | Pro + **Calista AI for Ordering** ⚠️partial (the ONLY differentiator vs Pro) + WhatsApp pair (pair-code + QR) + Calista capacity 300 conv/hari + Calista persona tuning ⚠️manual + Shadow mode 2-week ramp. Multi-warehouse (10), multi-user (25), 50K SKUs. |
 | **garindo_legacy** *(internal)* | — | — | — | — | All modules including whatsmeow Calista (grandfather rate for tenant #1) |
+
+**Module list last sync:** 2026-06-24 (added features shipped since v2 lock 2026-06-13: Sales Order Penawaran, Diskon, Tulis-off, Initial Stock Approval, Owner Biaya Final Inbox, foto opsional). Module list authoritatively cross-referenced di `docs/marketing/vosi-context-pack-2026-06-24.md` §6.6.
+
+**Pricing decision date 2026-06-24:** anchor +10% from v2 list, drop Quarterly, introduce 6-month at 15% off list. See "Version history" v3 entry for full reasoning.
+
+**⚠️ Partial-ship status (honest disclosure for sales):**
+- **Barcode (Pro):** scanner UI ada, hardware-integration belum lengkap untuk semua receipt printer / scanner brand.
+- **Pengawasan dashboard (Pro):** executive dashboard ada, dedicated Pengawasan real-time-staff-monitoring view belum.
+- **Calista AI (Premium):** backend-go LLM router + Gemini direct + OpenRouter chain shipped; frontend auto-reply masih **shadow mode** (staff approve tiap jawaban dulu). 2-week ramp di setup fee already covers this — frame sebagai feature ramp, bukan caveat.
+- **Calista persona tuning (Premium):** founder + tenant kerja bareng saat setup (high-touch). Self-serve customization defer.
+- **Tax PPh formal (Pro):** PPN OK; PPh Final formal defer (Q1/Q8 PRD compliance lens deferred — lihat progress.md).
 
 **Marketing badge across all tiers:** "PROMO LAUNCH 50% OFF — Limited First 100 Tenants"
 
-The anchor pricing creates psychological "you're winning" framing while effective prices hit target margins. Anchor is roughly 2× effective price; discount badge always 50% off.
+The anchor pricing creates psychological "you're winning" framing while effective prices hit target margins. Marketing-badge anchor (struck-through) is roughly 2× list anchor (≈4× 12-month effective); discount badge always 50% off marketing anchor.
 
 ### Terms
 
-- All plans paid **upfront** at signup (3 months or 12 months in advance).
-- **No monthly billing without commitment** — minimum tier is quarterly (3-mo).
-- 6-month tier was considered and dropped (simplification — quarterly and yearly are enough).
+- All plans paid **upfront** at signup (6 months or 12 months in advance).
+- **No monthly billing, no quarterly billing** — minimum tier is **6-month commitment**.
+- **v3 change:** Quarterly tier removed; 6-month tier added at 15% off list. Reasoning: higher commitment filter, better churn cohort, eliminates thin-margin Starter Quarterly option.
 - Setup fees:
   - **Starter / Pro: Rp 1,500,000** one-time at onboarding (covers catalog import + 1-2 training sessions).
   - **Premium: Rp 3,500,000** one-time (covers catalog import + Calista persona tuning + 2 training sessions + 2-week shadow mode monitoring).
 
-### Cash flow per tenant per cohort
+### Cash flow per tenant per cohort (v3)
 
 | Plan | Per-tenant upfront | Annualized revenue |
 |---|---|---|
-| Starter Quarterly | Rp 1,647,000 (3 × Rp 549K + Rp 1.5M setup) | Rp 6,588,000 |
-| Starter Yearly | Rp 6,111,600 (12 × Rp 384.3K + Rp 1.5M setup) | Rp 4,611,600 |
-| Pro Quarterly | Rp 4,077,000 (3 × Rp 859K + Rp 1.5M setup) | Rp 10,308,000 |
-| Pro Yearly | Rp 8,715,600 (12 × Rp 601.3K + Rp 1.5M setup) | Rp 7,215,600 |
-| **Premium Quarterly** | **Rp 14,497,000** (3 × Rp 3,499K + Rp 3.5M setup) | **Rp 41,988,000** |
-| **Premium Yearly** | **Rp 33,891,600** (12 × Rp 2,449.3K + Rp 3.5M setup) | **Rp 29,391,600** |
+| Starter 6-month | Rp 4,554,900 (6 × Rp 509,150 + Rp 1.5M setup) | Rp 6,109,800 |
+| Starter 12-month | Rp 6,531,600 (12 × Rp 419,300 + Rp 1.5M setup) | Rp 5,031,600 |
+| Pro 6-month | Rp 6,339,900 (6 × Rp 806,650 + Rp 1.5M setup) | Rp 9,679,800 |
+| Pro 12-month | Rp 9,471,600 (12 × Rp 664,300 + Rp 1.5M setup) | Rp 7,971,600 |
+| **Premium 6-month** | **Rp 22,874,900** (6 × Rp 3,229,150 + Rp 3.5M setup) | **Rp 38,749,800** |
+| **Premium 12-month** | **Rp 35,411,600** (12 × Rp 2,659,300 + Rp 3.5M setup) | **Rp 31,911,600** |
 
 ---
 
-## Discount rationale
+## Discount rationale (v3)
 
-**Yearly discount 30% uniform across all tiers (v2 — was asymmetric in v1):**
+**6-month at 15% off list, 12-month at 30% off list:**
 
-- All tiers now hit 30% Yearly discount for sales simplicity ("commit 1 tahun, hemat 30%").
-- Trade-off accepted: Starter Yearly margin thin at ~27% as loss-leader for market acquisition. Pro Yearly healthy at 31.8%. Premium Yearly strong at 67%.
-- Premium tier's high margin (67% Yearly) **subsidizes Starter tier's thin margin** at blended level — by design.
+- 6-month tier replaces dropped Quarterly. 15% off is enough to incentivize commitment beyond "trial-style" thinking, while preserving margin (Pro 6mo margin 49%, Starter 6mo margin 45%).
+- 12-month discount stays at 30% (same as v2). "Commit 1 tahun, hemat 30%" sales line unchanged.
+- 15pp gap between 6mo and 12mo discounts creates meaningful commitment incentive — buyer feels concrete reason to commit longer.
 
-**Why no 6-month tier:**
+**Why drop Quarterly (v3 reversal of v2 reasoning):**
 
-- 6-month at any reasonable price cannibalizes either quarterly or yearly without adding meaningful customer choice.
-- Simplifies sales conversation (one of two: "ambil 3 bulan, atau commit 1 tahun?").
-- Less SKU complexity in operator console + billing.
+- v2 said "6-month cannibalizes Quarterly or Yearly" — that was true *if* 6mo was ADDED between Q+Y. v3 REPLACES Q with 6mo, so no cannibalization, just consolidation.
+- Quarterly was the lowest-quality buyer filter — 3-month trial-style commitment correlates with higher churn at 6-12mo mark. v3 6-month minimum filters out tire-kickers.
+- Quarterly cash upfront (Pro Rp 4.1jt) was modest; 6-month upfront (Pro Rp 6.3jt) is +55% per tenant — material runway improvement at Stage 1-2.
+- Sales conversation cleaner: "6 bulan, atau commit 1 tahun hemat 30%?" — 2 options not 3.
 
-**Why anchor + diskon psychology:**
+**Trade-off accepted:**
+- Starter 12-month margin still thin at 33% (improved from v2's 27% as loss-leader, but still loss-leader-ish).
+- Some prospects who would have signed Quarterly will balk at 6mo upfront — mitigated by 14-day money-back guarantee (psychology unlock, low actual cost).
+
+**Why anchor + diskon psychology (unchanged from v2):**
 
 - Anchor pricing (struck-through ~~Rp X~~) creates loss aversion + "you're winning" framing.
 - "50% OFF LAUNCH" badge is the universal Indonesian SaaS marketing pattern (Mekari, Pajak.io, Klikpajak all use it).
 - Effective prices hit margin targets — the discount is the actual price, not a promotion that ends.
+- v3 raises list anchor +10% to maintain coherent badge math after the 6mo addition.
 
 ---
 
@@ -83,16 +110,16 @@ Earlier v1 used flat Rp 321K allocated cost for all tiers (overhead divided equa
 
 **Note on Claude Code subscription ($100/mo = Rp 1,600K/mo):** founder tooling, not per-tenant. Allocated at Stage 2+ as part of overhead. At 50 tenants = Rp 32K/tenant; at 200 tenants = Rp 8K/tenant. Falls into "Shared fixed" line above.
 
-### Margin per plan (lean stage, basic HPP)
+### Margin per plan (v3, lean stage, basic HPP)
 
 | Plan | Revenue/mo | HPP | Margin | Status |
 |------|------------|-----|--------|--------|
-| Starter Quarterly | Rp 549,000 | Rp 280K | **49%** (+Rp 269K) | ✅ Healthy |
-| Starter Yearly | Rp 384,300 | Rp 280K | **27%** (+Rp 104K) | ⚠️ Thin (loss-leader for acquisition) |
-| Pro Quarterly | Rp 859,000 | Rp 410K | **52%** (+Rp 449K) | ✅ Healthy |
-| Pro Yearly | Rp 601,300 | Rp 410K | **32%** (+Rp 191K) | ✅ Sustainable |
-| **Premium Quarterly** | **Rp 3,499,000** | **Rp 910K** | **74%** (+Rp 2,589K) | ⭐ Very healthy — funds team growth |
-| **Premium Yearly** | **Rp 2,449,300** | **Rp 910K** | **63%** (+Rp 1,539K) | ⭐ Strong |
+| Starter 6-month | Rp 509,150 | Rp 280K | **45%** (+Rp 229K) | ✅ Healthy |
+| Starter 12-month | Rp 419,300 | Rp 280K | **33%** (+Rp 139K) | ⚠️ Tipis tapi survivable (v3 lift dari v2's 27%) |
+| Pro 6-month | Rp 806,650 | Rp 410K | **49%** (+Rp 397K) | ✅ Healthy |
+| Pro 12-month | Rp 664,300 | Rp 410K | **38%** (+Rp 254K) | ✅ Sustainable |
+| **Premium 6-month** | **Rp 3,229,150** | **Rp 910K** | **72%** (+Rp 2,319K) | ⭐ Very healthy — funds team growth |
+| **Premium 12-month** | **Rp 2,659,300** | **Rp 910K** | **66%** (+Rp 1,749K) | ⭐ Strong |
 
 ### Reading the lenses
 
@@ -101,6 +128,8 @@ Earlier v1 used flat Rp 321K allocated cost for all tiers (overhead divided equa
 - **Starter Yearly thin margin (27%)** accepted as market-acquisition loss-leader — Premium subsidizes.
 
 ### Blended scenario — 35% Starter / 45% Pro / 20% Premium, 50/50 Q/Y intra-tier (v2)
+
+> ⚠️ **v3 modeling TODO** — table below uses v2 prices + Q/Y mix. Under v3 (6mo/12mo, anchor +10%), blended profit is **higher** (every price up ~7-10% vs v2 effective at same mix). Re-model when first 5 tenants signed and actual 6mo/12mo mix observed. Tentative new headline: **~Rp 410M annualized profit at 50 tenants** (vs v2 projection Rp 372M).
 
 | Cohort | Count | Revenue/mo | Cost/mo (basic HPP) | Profit/mo |
 |--------|-------|------------|---------------------|-----------|
@@ -117,6 +146,8 @@ Earlier v1 used flat Rp 321K allocated cost for all tiers (overhead divided equa
 vs v1 projection (Rp 140M annual at 50 tenants): **+166% improvement** driven primarily by Premium tier.
 
 ### Cash upfront at 50-tenant go-live (v2 mix)
+
+> ⚠️ **v3 modeling TODO** — table below uses v2 Q/Y upfront. Under v3, no Quarterly tenants exist; 6mo replaces. 6mo upfront ≈ 1.55× v2 Quarterly upfront. At same 50-tenant 35/45/20 mix with 50/50 6mo/12mo split, cash upfront milestone is approximately **Rp 510-540M** (vs v2 projection Rp 452M). Confirm after first 5-10 tenants signed.
 
 | Cohort | Per-tenant upfront × count | Cohort upfront |
 |---|---|---|
@@ -272,20 +303,20 @@ Every 3 months, run the same blended-scenario analysis but with actual tenant co
 
 ---
 
-## Competitive context (v2)
+## Competitive context (v3)
 
-| Competitor | Their pricing | Vosi parity (v2 effective prices) |
+| Competitor | Their pricing | Vosi parity (v3 effective prices) |
 |---|---|---|
-| **Mekari Jurnal Pro** | Rp 399,000/mo quarterly, 10% off yearly | Vosi Starter Rp 549K Q / Rp 384K Y. **+38% Q price**, but Vosi bundles kasir + stock + recon + AR + 14 sales channels (Jurnal is accounting only). Total bundle ≈ Vosi Starter vs Jurnal Pro + 3-4 add-ons. |
-| **Mekari Jurnal Enterprise** | ~Rp 1,499,000/mo+ | Vosi Pro Rp 859K Q. **~43% cheaper** than Jurnal Enterprise, with comparable feature breadth (GL + multi-warehouse + pengawasan). |
-| **Mekari Kontak** (AI WA) | Rp 2,000,000+/mo base + per-message | Vosi Premium Rp 3,499K Q includes Calista AI + full ERP + GL. Mekari requires Jurnal subscription on top → total Rp 3.5M+ for less integrated stack. Vosi competitive on total cost of bundle. |
-| **Jurnal Premium / Custom** | ~Rp 3M/mo + ~Rp 11M/yr | Vosi Premium Q Rp 3,499K matches Jurnal monthly price point. Vosi Yearly Rp 2,449K is higher than Jurnal's aggressive Rp 917K/mo Yearly — Vosi cannot match Jurnal's Yearly heavily-discounted promo without breaking margin. Position as: "Pay slightly more Yearly, get the only AI ordering assistant in the market." |
+| **Mekari Jurnal Pro** | Rp 399,000/mo quarterly, 10% off yearly | Vosi Starter Rp 509K 6mo / Rp 419K 12mo. **+5% to +28%** vs Jurnal Pro depending on commit, but Vosi bundles kasir + stock + recon + AR + 14 sales channels (Jurnal is accounting only). Total bundle ≈ Vosi Starter vs Jurnal Pro + 3-4 add-ons. |
+| **Mekari Jurnal Enterprise** | ~Rp 1,499,000/mo+ | Vosi Pro Rp 807K 6mo / Rp 664K 12mo. **~46% to ~56% cheaper** than Jurnal Enterprise, with comparable feature breadth (GL + multi-warehouse + pengawasan). |
+| **Mekari Kontak** (AI WA) | Rp 2,000,000+/mo base + per-message | Vosi Premium Rp 3,229K 6mo / Rp 2,659K 12mo includes Calista AI + full ERP + GL. Mekari requires Jurnal subscription on top → total Rp 3.5M+ for less integrated stack. Vosi competitive on total cost of bundle. |
+| **Jurnal Premium / Custom** | ~Rp 3M/mo + ~Rp 11M/yr | Vosi Premium 6mo Rp 3,229K matches Jurnal monthly price point. Vosi 12mo Rp 2,659K still higher than Jurnal's aggressive Yearly promo — Vosi cannot match Jurnal's Yearly heavily-discounted promo without breaking margin. Position as: "Pay slightly more 12-month, get the only AI ordering assistant in the market." |
 | **Desty** | IDR 5-7M deposit + pay-per-order | Vosi Premium Calista handles end-to-end including marketplace channels. Different pricing model (Vosi flat, Desty per-order) — Vosi better for predictable monthly cost. |
 
-**Key differentiation messages (v2):**
+**Key differentiation messages (v3):**
 
-- **Starter:** *"Bukan cuma accounting kayak Jurnal — Vosi handle kasir + stock + recon + 14 channels jualan dari hari pertama, satu harga."*
-- **Pro:** *"Semua fitur ERP termasuk GL dan multi-warehouse, dengan harga Rp 859K — 43% lebih murah dari Jurnal Enterprise."*
+- **Starter:** *"Bukan cuma accounting kayak Jurnal — Vosi handle kasir + stock + recon + 14 channels jualan dari hari pertama, satu harga. Mulai Rp 419K/bulan 12-month."*
+- **Pro:** *"Semua fitur ERP termasuk GL dan multi-warehouse, dengan harga Rp 664K — 56% lebih murah dari Jurnal Enterprise."*
 - **Premium:** *"Cuma Vosi yang punya Calista AI yang handle WhatsApp order end-to-end. Jurnal + Kontak masih perlu staff manual menyusun pesan. Calista handle 300 chat/hari tanpa lelah."*
 
 ---
@@ -313,14 +344,17 @@ When tenant pays subscription, Vosi issues an invoice. Minimum requirements:
 
 ## Open questions / iterate next time
 
-- ~~Should Premium tier (post-GL) be priced Rp 1,200-1,500k or higher?~~ **RESOLVED v2:** Premium Rp 3,499K Q / Rp 2,449K Y (anchor Rp 6,999K with 50% promo).
+- ~~Should Premium tier (post-GL) be priced Rp 1,200-1,500k or higher?~~ **RESOLVED v2:** Premium Rp 3,499K Q / Rp 2,449K Y. **v3 update:** Premium 6mo Rp 3,229K / 12mo Rp 2,659K (anchor Rp 7,599K marketing badge with 50% promo).
 - ~~Calista add-on pricing~~ **RESOLVED v2:** Calista bundled INTO Premium tier (not separate add-on). Premium = Pro + Calista AI.
+- ~~6-month tier should be added?~~ **RESOLVED v3:** Yes — 6mo replaces Quarterly entirely, 15% off list anchor.
 - Annual vs lifetime grandfather: how long should founding-customer pricing lock in? **Tentative:** 24 months minimum; lifetime if testimonial agreement is signed.
 - Optional: pricing experiment with founding customers (A/B testing list price vs effective price) — defer to tenant 20+.
 - Vosi legal entity (sole prop vs PT) — drives invoice format and DPA validity. **Action item:** founder consult lawyer before tenant #2.
-- **NEW v2:** Premium Plus tier (Phase 3?) — higher Calista capacity (1000+ conv/day), dedicated model fine-tuning, UU PDP direct Gemini Asia. Price hint: Rp 5,999-7,999K/mo Quarterly. Defer design until Premium tier validates with 5+ paying tenants.
-- **NEW v2:** Monthly tier for super-cautious prospects (no commitment)? Currently rejected (3-month minimum). Revisit if conversion rate suggests trial barrier.
-- **NEW v2:** Hiring trigger calibration. Rule 1 of Financial Discipline says "Hire when MRR ≥ 3× cost". After 6 months of operations, validate whether 3× is right number or should be 4× (more conservative) or 2.5× (more aggressive).
+- **NEW v3:** v3 blended scenario modeling (50-tenant + cash-upfront-go-live) — current numbers in this doc are v2 reference. Re-model after first 5-10 v3 tenants signed, observed 6mo vs 12mo mix.
+- **NEW v3:** Money-back guarantee — recommend 14-day full refund if tenant inactive (psychology unlock for 6mo commitment barrier). Confirm exact terms + add to Tenant ToS before first v3 sale.
+- **v2 carry:** Premium Plus tier (Phase 3?) — higher Calista capacity (1000+ conv/day), dedicated model fine-tuning, UU PDP direct Gemini Asia. Price hint: Rp 5,999-7,999K/mo 12mo. Defer design until Premium tier validates with 5+ paying tenants.
+- **v2 carry:** Monthly tier for super-cautious prospects (no commitment)? Rejected in v3 — 6-month minimum is the new floor. Revisit only if conversion rate signals existential trial barrier.
+- **v2 carry:** Hiring trigger calibration. Rule 1 of Financial Discipline says "Hire when MRR ≥ 3× cost". After 6 months of operations, validate whether 3× is right number or should be 4× (more conservative) or 2.5× (more aggressive).
 
 ---
 
@@ -332,6 +366,10 @@ When tenant pays subscription, Vosi issues an invoice. Minimum requirements:
 
   **Key insight from v2:** At 50 tenants with FULL team hired (founder + 5 employees), Vosi runs Rp 947M ANNUAL LOSS. Discipline = stage hiring tied to MRR milestones. Lean team at 50 tenants generates Rp 33M/mo profit. Break-even with full team = ~140 tenants. Sustainable 40-50% net margin = 500+ tenants (year 3-4 trajectory).
 
+- **v3 (2026-06-24 this update):** Dropped Quarterly tier; replaced with 6-month commitment minimum. Added 6mo (15% off list) + kept 12mo (30% off list). Raised list anchor +10% across all tiers (Starter Rp 549K → 599K, Pro Rp 859K → 949K, Premium Rp 3,499K → 3,799K). Effective prices: Starter Rp 509K 6mo / Rp 419K 12mo · Pro Rp 807K 6mo / Rp 664K 12mo · Premium Rp 3,229K 6mo / Rp 2,659K 12mo. Marketing badge anchor (struck-through 2×) updated to match new list. Setup fees unchanged. 50-tenant blended scenario re-modeling pending after first 5-10 v3 tenants observed. Tentative new projection: Rp 410M annualized profit at 50 tenants (vs v2's Rp 372M).
+
+  **Key reasoning chain (v3):** Pro-led GTM strategy locked separately (see project conversation 2026-06-24). 6mo minimum filters tire-kicker buyers, improves blended churn, lifts Starter 12mo margin from 27% (v2 thin loss-leader) to 33% (tipis tapi survivable). Anchor inflation +10% maintains "anchor + diskon psychology" coherence — sales messaging "30% OFF 12mo" psychologically bigger lever than v2's "30% OFF" on lower base. Skema cocok untuk distributor B2B target (Glodok persona — 12-year businesses, 6mo commitment is normal cadence). Money-back guarantee 14-day to be added to ToS as commitment-barrier unlock.
+
 ---
 
-*Pricing iteration usually happens quarterly based on signal. v2 locked 2026-06-13. Next review trigger: after first 5 Premium tenants OR Stage 3 hire (sales rep), whichever comes first.*
+*Pricing iteration usually happens quarterly based on signal. v2 locked 2026-06-13, v3 locked 2026-06-24 (rapid iteration before tenant #1 v3 onboarded). Next review trigger: after first 5 v3 tenants signed (observe 6mo vs 12mo mix), OR Stage 3 hire (sales rep), whichever comes first.*

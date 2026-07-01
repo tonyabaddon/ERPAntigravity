@@ -74,7 +74,7 @@ Base commit: 01853b0
 
 ---
 
-# Multi-Tier Pricing Feature — Task Progress
+# Multi-Tier Pricing Feature — Task Progress (summary)
 
 Branch: worktree-multi-tier-pricing
 Started: 2026-06-24
@@ -89,3 +89,56 @@ Base commit: 0c13a3f (Tasks 1-2 done)
 - ✅ Task 5 DONE — Master Customer tier UI (3 RTL tests PASS). PelangganScreen: showTierDropdown from isFieldVisible('tier_dropdown_customer'), tier filter chips (Semua/Eceran/Grosir) in left panel header, tier badge pill in each customer row, tier dropdown in edit form. customersService.updateTier added to supabaseClient. handleSaveCustomer calls updateTier when modul ON. 469/469 tests PASS + lint clean.
 - ✅ Task 10 DONE — bulk_update_grosir_price RPC (4 smoke tests PASS). Migration 20260901000007 applied. SECURITY DEFINER RPC with Owner/Admin Stok/Admin gate, modul_multi_tier_price toggle guard, per-row skip on sku_not_found/price_not_numeric, audit ledger write. TS wrapper productService.bulkUpdateGrosirPrice added to supabaseClient.ts. tsc clean.
 - ✅ Task 12 DONE — Multi-tier pricing feature complete. BulkUpdateGrosirSection wired into StockManagerScreen (activeTab=bulk, conditional on showGrosir). Integration smoke 4/4 PASS (Garindo no-regression: kasir + tempo paths unaffected when modul OFF; tier field silently ignored when modul OFF). Unit suite 480/480 PASS, lint clean.
+
+---
+
+# Multi-Tier Pricing Plan (2026-06-24) — SDD Run (detail)
+
+**Plan:** `docs/superpowers/plans/2026-06-24-multi-tier-pricing-implementation.md`
+**Spec:** `docs/superpowers/specs/2026-06-24-multi-tier-pricing-design.md`
+**Worktree:** `.claude/worktrees/multi-tier-pricing` on branch `worktree-multi-tier-pricing`
+**Base commit:** see below
+**Execution mode:** continuous autonomous (no per-stage checkpoint per user instruction 2026-06-24).
+**Deploy gate:** still requires explicit user confirmation (non-negotiable per system instructions).
+
+**Base commit:** 7730a83 (main HEAD at 2026-06-24)
+
+
+- ✅ Task 1: complete (commit 7730a83..$(git rev-parse --short HEAD)). 4 migrations applied to live DB via MCP. Spec corrected: stocks (not products), JSONB items (no child tables). Subagent surfaced schema mismatch, I took over inline.
+
+- ✅ Task 2: complete (commit 0c13a3f). 16/16 tests PASS, lint clean. Skipped formal reviewer (pure typing work; controller verified). Subagent (haiku) completed cleanly without escalation.
+
+- ✅ Task 3: complete (commits bd677e9, d0c3725). Pengaturan modul toggle + RTL test PASS. Subagent edited vite.config + vitest.setup.ts (jest-dom matchers). Controller-verified: lint clean, 463/463 unit tests PASS, no regression.
+
+- ✅ Task 4: complete (commits de4093a, 0dbe7df). 466/466 unit tests PASS, lint clean. Master Produk: StockTableView per-card grosir display + ProductForm dual-input + warning; layout adapted (flex-card not table per spec).
+
+- ✅ Task 5: complete (commit 329184f). 469/469 unit tests PASS, lint clean. Customer tier dropdown + filter + persistence.
+
+- ✅ Task 6: complete (commit ffd8cfc). 4/4 smoke PASS via MCP (happy/MISMATCH/INVALID/modul-OFF). 25-param signature preserved. No regression on existing kasir path.
+
+- ✅ Task 7: complete (commits 5e977f6, 603cf52). 476/476 unit tests PASS. Discovery: cart UI lives in CatatPenjualanWizard/Step2Items (shared between kasir + tempo wizard paths); KasirScreen is read-only history. Pill + auto-apply + re-compute implemented at the shared layer. **This makes Task 9 (wizard pill) redundant — same component.** Will mark Task 9 covered after Task 8.
+
+- ✅ Task 8: complete (commit 88bd84f). 4/4 smoke PASS via MCP. orders.items snapshot persists pricing_tier_used. Signature preserved.
+- ⏭️  Task 9: COVERED-BY-TASK-7 (wizard cart UI = Step2Items.tsx, already has pill/auto-apply/re-compute). Need to verify createTempoInvoice wrapper passes pricing_tier_used through.
+- ✅ Task 9: VERIFIED COVERED-BY-TASK-7. KasirItem + CreateTempoInvoiceItemPayload both carry pricing_tier_used (added in Task 7). Wizard submit propagates via spread. No additional work.
+
+- ✅ Task 10: complete (commit f6b3736). 4/4 smoke PASS (happy/mixed/FORBIDDEN/MODUL_OFF). modul left at FALSE default after smokes.
+
+- ✅ Task 11: complete (commit acb1749). 4/4 component tests + 480/480 total PASS.
+
+- ✅ Task 12: complete (commit 8fe1c91). 480/480 unit PASS, 4/4 Garindo no-regression smoke PASS, lint clean.
+
+## All 12 tasks DONE (2026-06-24) — multi-tier pricing
+Base: 7730a83 (main). Head: 8fe1c91. Branch: worktree-multi-tier-pricing.
+Migrations applied to dev DB (project ekhhojaezdfjfwuxyjkl): 20260901000001..20260901000007 (4 schema + 3 RPC).
+Frontend: types + cascadeMap + Pengaturan + StockManagerScreen + ProductForm + StockTableView + PelangganScreen + CatatPenjualanWizard + Step2Items + CartRows + BulkUpdateGrosirSection.
+Tests: 480/480 unit PASS (Tasks 1-11 added ~17 new tests); 4/4 Garindo no-regression smoke PASS.
+Tier default OFF preserved → Garindo daily kasir + tempo paths unaffected.
+
+- ✅ Review fixes (commit 4320d7a): I-3 (CSV 10MB cap) + I-4 (default eceran tier on missing) DONE. 4/4 smoke PASS, 480/480 vitest, lint clean.
+- 📋 Follow-ups ticketed: I-1 (audit ledger 'manual_edit' source allowed but no code writes it — tighten CHECK or add update_product_grosir RPC); I-2 (wizard tier-switch silently zeros per-line discounts — add toast).
+
+## Stage E: MCP Chrome smoke
+- ⚠️ Stage E — MCP Chrome smoke: BLOCKED. User's normal Chrome holds the chrome-devtools-mcp profile dir lock. Either close Chrome before retry, or reconfigure MCP with --isolated. Not blocking deploy decision — evidence stack already comprehensive (480 unit + 12 smoke + manual founder TODO checklist in plan §Task 12).
+
+## Stage F: DEPLOY GATE — awaiting user
