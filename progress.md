@@ -1,5 +1,38 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — RLS Phase 2 FINAL: tenant_settings + approval_requests (advisory 18 → 0)
+
+Last two tables on the 18-table RLS-off advisory. Migration `20260910000007_rls_phase2_final_tenant_settings_and_approval_requests.sql`.
+
+**Design decisions**:
+- `tenant_settings` (1 row): SELECT `TO authenticated USING (true)`. All mutations already through SD RPCs (`set_tenant_modul`, `set_tenant_pajak`). No INSERT/UPDATE/DELETE grants exist for anon/authenticated on this table, so no additional policies needed.
+- `approval_requests` (1206 rows): two policies.
+  - SELECT `TO authenticated USING (true)` — approval inbox reads (`listPendingApprovals`, `getApprovalRequest`) + per-customer polling in `TempoCreditSection.tsx:44`.
+  - INSERT `TO authenticated WITH CHECK (requested_by = auth.uid())` — anti-impersonation invariant matching the audit_log pattern from batch 2c. Handles the intentional direct-insert path at `supabaseClient.ts:1656` (`approvalService.requestInitialStock`) which is documented in code as "no dedicated RPC — RLS lets authenticated users insert their own pending requests". Callers currently pass `currentUser.id` as `requestedBy`, so the invariant matches present behavior; forging a request "on behalf of" another user is now blocked. No UPDATE/DELETE policy — status transitions all go through SD RPCs (`verify_owner_pin`, opname commit RPCs, etc.).
+
+**Verified post-apply**:
+- `pg_class.relrowsecurity=true` on both. 3 policies present with matching `qual`/`with_check` expressions.
+- Anon curl GET tenant_settings + approval_requests → `[]` (was: 1 + 1206 rows).
+- Anon POST approval_requests → `42501` (was: 201).
+- DB impersonation smoke via DO-block: authenticated INSERT with `requested_by=self` → allowed; `requested_by=<other-uuid>` → `insufficient_privilege`. Rolled back via `RAISE EXCEPTION SMOKE_ROLLBACK`.
+- Live UI:
+  - `?screen=persetujuan` renders "Persetujuan Menunggu / 0 permintaan terbuka" + full tab bar (SEMUA / ADJUSTMENT / HARGA / OPNAME / STOK AWAL / RAKIT LOCK / KASIR / TULIS-OFF / AKTIVASI TEMPO). Zero console errors. Reads work.
+  - `?screen=settings` → Modul & Jasa tab renders correctly (reads `tenant_settings`).
+- Supabase advisor sweep confirms **no ERROR-level RLS-off tables remain**. The `rls_disabled` critical advisory that started this thread (18 tables) is now cleared. Remaining lints are all INFO (Phase-1 RPC-only tables that intentionally have no policies) or WARN (unrelated concerns: `security_definer_view`, `function_search_path_mutable`, `rls_policy_always_true` design compromise, storage bucket listing, etc.).
+
+**Access-level gating** still `USING (true)` — same follow-up as previous batches: any authenticated user can PostgREST-SELECT the full approval inbox. UI restricts to Owner/Admin but DB doesn't. Follow-up needs an `is_owner_or_admin()` helper reading `admin_users.role`. Multi-tenant TODO same as before (Sub-Project A tenant_id filter on the two tables + all previous batches).
+
+**Full RLS Phase 2 shipped in order**:
+1. Phase 1 (9 RPC-only tables, no policies): `20260910000001`
+2. Warm-up (2 tables): `20260910000002` — service_types + approval_settings
+3. Batch 2b (3 tables): `20260910000003` — warehouses + warehouse_audit_log + piutang_write_off_requests
+4. Batch 2c (2 tables + WITH CHECK): `20260910000004` — stock_opname_sessions + audit_log
+5. Batch 2d final (2 tables + WITH CHECK): `20260910000007` — tenant_settings + approval_requests
+
++ related fixes shipped alongside: `20260910000005` funnel_stage/lunas_at trigger + backfill; `20260910000006` stocks interim RLS close-anon; StockOpnameScreen null-guard.
+
+---
+
 ## 2026-07-02 — Follow-ups from RLS session: 3 fixes
 
 Three known bugs surfaced during the RLS Phase 2 sweep, shipped together.
