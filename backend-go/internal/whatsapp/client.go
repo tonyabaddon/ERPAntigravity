@@ -66,7 +66,15 @@ func (c *Client) Connect(ctx context.Context) error {
 			return nil
 		}
 		if err := c.WA.Connect(); err != nil {
-			return fmt.Errorf("whatsapp: connect: %w", err)
+			// Don't crash the daemon — schedule a retry loop so the HTTP server
+			// stays up. This branch fires when the outbound TLS handshake to
+			// web.whatsapp.com/ws/chat times out (30s) on Cloud Run cold start;
+			// without the retry, the daemon proceeds without WA for the
+			// instance's whole lifetime (see progress.md 2026-07-02 finding).
+			// Backoff: 30s → 60s → 120s (cap), max 100 attempts (~3.3h ceiling).
+			log.Printf("[WA] Connect (Store.ID=nil, pre-pair) error: %v — starting backoff retry", err)
+			go c.retryPreparePairing(ctx)
+			return nil
 		}
 		go c.runQRLoop(ctx, qrChan)
 	} else {
@@ -84,6 +92,55 @@ func (c *Client) Connect(ctx context.Context) error {
 		log.Println("[WA] Connected (resuming stored session)")
 	}
 	return nil
+}
+
+// retryPreparePairing retries the pre-pair Connect() with exponential-ish
+// backoff (30s, 60s, 120s repeating). Fires when the initial WA.Connect()
+// fails on a fresh (unpaired) store — typically because the outbound TLS
+// handshake to web.whatsapp.com timed out. Disconnects any lingering state
+// between attempts so GetQRChannel doesn't hit ErrQRAlreadyConnected on
+// retry. Exits cleanly when a session becomes paired mid-backoff (rare) or
+// when ctx is cancelled.
+func (c *Client) retryPreparePairing(ctx context.Context) {
+	delays := []time.Duration{30 * time.Second, 60 * time.Second, 120 * time.Second}
+	for attempt := 0; attempt < 100; attempt++ {
+		d := delays[len(delays)-1]
+		if attempt < len(delays) {
+			d = delays[attempt]
+		}
+		log.Printf("[WA] retryPreparePairing: attempt %d, waiting %s", attempt+1, d)
+		select {
+		case <-ctx.Done():
+			log.Printf("[WA] retryPreparePairing: ctx cancelled after %d attempts", attempt)
+			return
+		case <-time.After(d):
+		}
+		// Reset any lingering state so GetQRChannel doesn't return
+		// ErrQRAlreadyConnected. Mirrors the pattern used in runQRLoop
+		// (lines 113-118) after a QR timeout.
+		c.WA.Disconnect()
+		for i := 0; i < 20 && c.WA.IsConnected(); i++ {
+			time.Sleep(500 * time.Millisecond)
+		}
+		// Rare race: another path paired the session during our sleep.
+		if c.WA.Store.ID != nil {
+			log.Printf("[WA] retryPreparePairing: Store.ID appeared during backoff, exiting retry loop")
+			return
+		}
+		qrChan, err := c.WA.GetQRChannel(ctx)
+		if err != nil {
+			log.Printf("[WA] retryPreparePairing attempt %d: GetQRChannel error: %v", attempt+1, err)
+			continue
+		}
+		if err := c.WA.Connect(); err != nil {
+			log.Printf("[WA] retryPreparePairing attempt %d: WA.Connect error: %v", attempt+1, err)
+			continue
+		}
+		log.Printf("[WA] retryPreparePairing attempt %d: connected — starting QR loop", attempt+1)
+		go c.runQRLoop(ctx, qrChan)
+		return
+	}
+	log.Printf("[WA] retryPreparePairing: exhausted after 100 attempts — daemon staying up without WA pairing")
 }
 
 func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelItem) {
