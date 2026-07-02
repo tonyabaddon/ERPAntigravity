@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — Sales-side dual-write close: Task 1 (foundation) SHIPPED
+
+Migrations `20260910000010` + `20260910000011` applied to prod (project `ekhhojaezdfjfwuxyjkl`).
+
+- **COA seeded**: `5-1200 HPP Barang Passthrough` (BEBAN/HPP, DEBIT, parent 5-1000), `2-1150 Hutang Passthrough Accrued` (LIABILITAS/HUTANG_USAHA, CREDIT, parent 2-1100).
+- **Enum extensions**: 6 new `journal_entry_source` values added (`TEMPO_INVOICE_CREATE`, `TEMPO_WRITEOFF_REVERT`, 4× `BACKFILL_*`).
+- **`stocks.is_passthrough`** column added (NOT NULL DEFAULT false). Heuristic backfill: 0/466 SKUs flagged — Garindo tidak jual passthrough-only SKU (expected).
+
+**Plan bugs surfaced during apply (fixed inline)**:
+- Migration 10 originally used `ON CONFLICT (account_code)`. Actual constraint is composite `(tenant_id, account_code)`; Garindo uses NULL tenant_id where NULL is DISTINCT in PG unique indexes. Rewrote to `WHERE NOT EXISTS` pattern for reliable idempotency.
+- Migration 11 originally referenced `purchase_invoice_items.purchase_invoice_id`. Actual column name is `pi_id`. Fixed inline.
+
+Both surfaced early because MCP `apply_migration` rejects on error before writing to migration tracker — safe fail mode.
+
+Commit: `bc0ab82` (amended twice during Task 1 to absorb both plan-bug fixes).
+
+Task reviewer subagent skipped for Task 1 — mechanical DDL, verified live via MCP verification queries.
+
+**Next**: Task 2 (Slice A `create_tempo_invoice` dual-write) — significantly higher schema-dependence than Task 1; controller will escalate to user for approach decision before proceeding (schema-verification pass suggested).
+
+---
+
 ## 2026-07-02 — Sales-side dual-write close IMPLEMENTATION PLAN written
 
 Plan doc committed `64e97ae`: `docs/superpowers/plans/2026-07-02-sales-side-dual-write-close-implementation.md` (2739 lines, 6 tasks).
