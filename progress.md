@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — Sales-side dual-write close DESIGN written (brainstorm session)
+
+Design doc committed `bb9f400`: `docs/superpowers/specs/2026-07-02-sales-side-dual-write-close-design.md` (518 lines).
+
+Scope: close all sales-side GL dual-write gaps identified from progress.md + migration TODO markers + code verification. 5 slices (A-E) targeting ~2 weeks wall-clock:
+
+- **Slice A** `create_tempo_invoice` dual-write — AR (D 1-1400 / K 4-1140) + HPP (D 5-1100 / K 1-1510) + Diskon (D 4-1900) + passthrough branch (D 5-1200 / K 2-1150 sale-time accrual).
+- **Slice B** `record_pi` PASSTHROUGH COA swap — 1-1510 (wrong, overstates inventory) → 5-1200 HPP Barang Passthrough, with accrual reclass (D 2-1150 / K 2-1100) when sale-time accrual matches via `purchase_invoices.order_id`.
+- **Slice C** `record_pi` LUNAS-at-create refactor — replace inline pembayaran INSERT with `PERFORM public.record_pembayaran(...)` to inherit Phase 0b's dual-write payment leg.
+- **Slice D** tempo write-off pair — `approve_tempo_write_off_request` books D 5-3100 / K 1-1400; `revert_tempo_write_off` manually composes swapped lines (verified `_post_journal_entry.p_reverses_entry_id` does NOT auto-swap D/C, only links reversed_by_entry_id).
+- **Slice E** historical backfill — 4 idempotent functions with dry-run preview + closed-period skip + anomaly categorization + distinct `BACKFILL_*` enum values for clean rollback.
+
+**Accounting decisions justified per SAK EMKM (Garindo standard):**
+- D-1 Diskon: keep gross-method 4-1900 (Indonesian MSME convention; kasir parity)
+- D-2 Bad debt: direct write-off (SAK EMKM ¶12.7 explicit — not a compromise)
+- D-3 PASSTHROUGH: **upgrade** MSME shortcut → full accrual (matching principle preserved for monthly L-R accuracy — cost ~+1 day)
+- D-4 SKU flag: add `stocks.is_passthrough boolean` + heuristic backfill from PI type history + ProductForm toggle wire-up
+
+**Code verification closed 5 open questions before spec write:**
+- ✓ Stock deducted in-tx via `deduct_stock_fifo` line 195 → revenue-at-invoice defensible
+- ✓ No DP payload in current create_tempo_invoice → `v_total = AR` safe
+- ✓ `deduct_stock_fifo` fallback to `stocks.harga_modal` when SKU has no lots → passthrough SKU edge documented + D-4 flag mitigates
+- ✓ `record_pembayaran(payload jsonb)` accepts `supplier_id + items[] + payment_method + account_id` → Slice C `PERFORM` call safe
+- ✓ `_post_journal_entry.p_reverses_entry_id` links `reversed_by_entry_id` but does NOT swap D/C → Slice D2 manually composes
+
+**New objects introduced (all in migration `20260910000010` prelude):**
+- COA: `5-1200 HPP Barang Passthrough` (BEBAN / HPP, DEBIT), `2-1150 Hutang Passthrough Accrued` (LIABILITAS / HUTANG, CREDIT)
+- Enum values on `journal_entry_source`: `TEMPO_INVOICE_CREATE`, `TEMPO_WRITEOFF_REVERT`, `BACKFILL_TEMPO_INVOICE`, `BACKFILL_PI_PASSTHROUGH`, `BACKFILL_PEMBAYARAN`, `BACKFILL_TEMPO_WRITEOFF`
+
+**Rollback honest note (spec §6.3):** Slice B rollback is RPC-only — historical PI_TAGIHAN entries with `5-1200` debit stay booked because Slice B shares source_type enum with Phase 0c STOCK PI (no clean filter). Manual reconciliation tracked as follow-up. Slices A/D/E have distinct enum values → clean delete filter works.
+
+**Deferrals (spec §8):** PKP tenants (multi-tenant), Sub-Project A tenant_id filter, allowance method migration, hard-fail dual-write upgrade, admin_adjust_journal SD RPC, ProductForm UI toggle for is_passthrough.
+
+**Next:** invoke writing-plans skill for implementation plan (6 migrations × per-slice smoke gates × 35-40 new Go tests × browser E2E via chrome-devtools MCP).
+
+---
+
 ## 2026-07-02 — RLS follow-ups: role gates, REVOKEs, orphan cleanup, multi-tenant defer, stocks refactor
 
 Five loose ends closed after the Phase 2 advisory sweep.
