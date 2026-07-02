@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — Sales-side dual-write close IMPLEMENTATION PLAN written
+
+Plan doc committed `64e97ae`: `docs/superpowers/plans/2026-07-02-sales-side-dual-write-close-implementation.md` (2739 lines, 6 tasks).
+
+Tasks 1-6 cover:
+1. Foundation migrations (10 COA/enum + 11 `is_passthrough` column)
+2. Slice A `create_tempo_invoice` dual-write (migration 12) + 6 Go tests
+3. Slice B+C `record_pi` PASSTHROUGH swap + LUNAS refactor (migration 13) + 7 Go tests
+4. Slice D tempo write-off pair (migration 14) + 9 Go tests
+5. Slice E backfill functions + dry-run + real run + 5 validation queries (migration 15) + 6 Go tests
+6. Post-launch cleanup: retire TODO markers in 3 legacy migrations, update PRD, final wrap-up
+
+Each task follows TDD (failing tests first) → migration SQL with CAPTURED ORIGINAL BODY header → MCP apply → Go tests pass → DB smoke DO-block via MCP → browser E2E via chrome-devtools MCP → anomaly log check → commit + progress.md update.
+
+33 Go tests total (across 5 new test files), 4 new fixture helpers in `backend-go/internal/db/fixtures.go`.
+
+Ready to execute. Options: (1) subagent-driven — fresh subagent per task, review between (recommended for prod-touching work). (2) inline execution via `superpowers:executing-plans`.
+
+---
+
 ## 2026-07-02 — Sales-side dual-write close DESIGN written (brainstorm session)
 
 Design doc committed `bb9f400`: `docs/superpowers/specs/2026-07-02-sales-side-dual-write-close-design.md` (518 lines).
