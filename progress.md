@@ -1,5 +1,41 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-02 — Sales-side dual-write close: Task 2 (Slice A) SHIPPED
+
+Migration `20260910000012_create_tempo_invoice_dual_write` applied to prod (`ekhhojaezdfjfwuxyjkl`).
+
+`create_tempo_invoice` now books balanced JE with `source_type=TEMPO_INVOICE_CREATE`. Per-line branching on `stocks.is_passthrough` routes stock lines to `5-1100`/`1-1510` and pass-through lines to `5-1200`/`2-1150` accrual pair.
+
+Balance math verified: D = `v_total + line_disc + order_disc + hpp_s + hpp_p` = `v_recomputed_subtotal + line_disc + hpp_s + hpp_p` = K.
+
+**Plan bugs surfaced during subagent (sonnet) implementation — fixed inline**:
+- `customers.id` is TEXT (legacy `GJP-CUST-XXXX` format), NOT UUID
+- Column is `allows_tempo`, not `is_tempo`
+- `customers.wa_number` is NOT NULL (fixture must populate)
+- `stocks` INSERT needs `category`, `stock`, `status`, `specs` NOT NULL columns
+- COPY VERBATIM line range in plan was off by 2 (actual body starts line 62)
+- `jsonb || jsonb_build_object()` invalid syntax — must wrap in `jsonb_build_array()`
+
+Subagent's schema-first approach caught 6 plan bugs before apply. Migration applied clean at first attempt.
+
+Files:
+- `supabase/migrations/20260910000012_create_tempo_invoice_dual_write.sql` (566 lines, CAPTURED ORIGINAL BODY header preserved)
+- `backend-go/internal/db/create_tempo_invoice_dual_write_test.go` (316 lines, 6 tests)
+- `backend-go/internal/db/fixtures.go` (60 lines, 3 new helpers)
+
+Commit: `66c3eb4`.
+
+**Deferred to next session (context management)**:
+- Go tests actual run against live DB (need `SUPABASE_DB_CONNECTION` env)
+- DB smoke DO-block via MCP
+- Browser E2E via chrome-devtools MCP on Cloud Run
+- Anomaly log check
+- Tasks 3-5 (Slice B+C record_pi, Slice D write-off pair, Slice E backfill + STOP gate)
+
+**Next**: Task 3 (Slice B+C `record_pi` PASSTHROUGH swap + LUNAS refactor). Similar schema-verification pattern expected.
+
+---
+
 ## 2026-07-02 — Sales-side dual-write close: Task 1 (foundation) SHIPPED
 
 Migrations `20260910000010` + `20260910000011` applied to prod (project `ekhhojaezdfjfwuxyjkl`).
