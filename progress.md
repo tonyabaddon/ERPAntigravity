@@ -10149,3 +10149,14 @@ Product renamed VOSI (from Vosi landing). Phase A = tenant registry
 - **Key design decisions:** hybrid plan tier + per-tenant JSONB overrides; impersonation via HTTP header (not JWT claim); expiry write-guard via bulk auto-wrap migration; `platform_admin_audit` for PDP UU 27/2022 compliance; sync trigger to keep existing `tenant_settings` backward-compat; FORCE ROW LEVEL SECURITY on all T tables; warn-only CI gate initially → hard-fail after 2 weeks; no Playwright E2E in Phase A.
 - **Effort estimate:** ~2 weeks solo focused work (~15 days).
 - **Next:** user review of spec → then invoke superpowers:writing-plans for Phase A implementation plan.
+
+---
+
+## 2026-07-03 — Multi-Tenant Foundation Phase A — IMPLEMENTATION PLAN WRITTEN
+
+Following spec (see prior entry) → implementation plan committed.
+
+- **Plan:** `docs/superpowers/plans/2026-07-03-multi-tenant-phase-a-implementation.md` (3.3k lines, 28 tasks)
+- **Structure:** Tasks 1–8 = migrations + RLS generator; 9–12 = pgTAP DB-unit; 13–16 = isolation harness + CI; 17–26 = frontend; 27–28 = rollout.
+- **TDD:** every testable component (parser, error interceptor, TenantContext, RPCs, RLS) has RED→GREEN→commit steps.
+- **Next:** user picks execution mode (subagent-driven vs inline) → invoke corresponding sub-skill.
