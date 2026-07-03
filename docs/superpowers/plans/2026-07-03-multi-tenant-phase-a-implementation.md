@@ -25,6 +25,8 @@
   - `20261001000002_phase_a_seed_and_backfill.sql`
   - `20261001000003_phase_a_not_null_and_rls.sql`
   - `20261001000004_phase_a_wire_layer_a.sql`
+  - `20261001000005_phase_a_secdef_ownership.sql` (Task 8.5 bulk ownership migration)
+  - `20261001000006+` per-RPC SECDEF explicit-filter patches (Task 8.5 Step 8, one per high-risk RPC)
 - **CI gate:** starts `warn-only` (post PR comment, don't block). Tighten to hard-fail after 2 weeks.
 - **TDD strict** where testable: RED test → run failing → implement → run passing → commit. Exceptions: pure DDL migration files (verified via replay).
 - **Lint pass per FE task:** `npx tsc --noEmit` clean, `npx vitest run --dir src` baseline PASS.
@@ -89,7 +91,11 @@
 
 ## Task Index
 
-**Database & migrations (Tasks 1–8):**
+**Architecture verification (Task 0):**
+
+0. **Architecture spike (1 day)** — verify `pgrst.db_pre_request` on Supabase Cloud, auto-wrap regex, cross-tenant leak via SECURITY DEFINER, current Garindo DB size
+
+**Database & migrations (Tasks 1–8.5):**
 
 1. Migration File 1 — schema (tables + view + trigger functions)
 2. Migration File 2a — seed plans + Garindo tenant + subscriptions + platform_admins + tenant_users
@@ -99,6 +105,7 @@
 6. RLS audit generator script + config
 7. Migration File 3b — RLS hardening block (from generator, appended to File 3)
 8. Migration File 4 — Layer-A wiring (functions + bulk auto-wrap + `ALTER ROLE`)
+8.5. **SECURITY DEFINER audit + ownership migration** — create `vosi_rpc_owner` role, re-own tenant-touching RPCs, add explicit tenant filters to high-risk RPCs
 
 **pgTAP DB-unit tests (Tasks 9–12):**
 
@@ -140,6 +147,135 @@
 
 27. Full local Supabase Docker dry-run + smoke checklist
 28. Production apply (halt-gate rollout) + monitor
+
+---
+
+## Task 0: Architecture Spike (1 day, verification only — no production code)
+
+**Files:**
+- Create: `docs/superpowers/spikes/2026-07-XX-phase-a-architecture-spike.md`
+
+**Interfaces:**
+- No production code shipped. Output: a spike report with go/no-go decision on 4 unverified assumptions from spec §7.3 CRITICAL risks. If any check fails, revise spec (§3, §4, §7) BEFORE proceeding to Task 1.
+
+**Why this exists:** The entire Phase A architecture rests on 4 assumptions that have not been tested against real Supabase Cloud managed environment. If any fails, weeks of downstream work are invalidated. Spike = 1 day investment to protect 2 weeks of build time.
+
+- [ ] **Step 1: Verify `pgrst.db_pre_request` is settable on Supabase Cloud free tier**
+
+Create a throwaway Supabase Cloud project (free tier). Apply a minimal test:
+
+```sql
+-- Test function that logs to Postgres notice
+CREATE OR REPLACE FUNCTION public._spike_pre_request() RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RAISE NOTICE 'spike:pre_request fired for uid=%', auth.uid();
+END $$;
+
+GRANT EXECUTE ON FUNCTION public._spike_pre_request() TO authenticator, anon, authenticated;
+
+ALTER ROLE authenticator SET pgrst.db_pre_request = 'public._spike_pre_request';
+NOTIFY pgrst, 'reload config';
+```
+
+Then make one API call via the anon key:
+```bash
+curl "$SUPABASE_URL/rest/v1/tenants" -H "apikey: $SUPABASE_ANON_KEY"
+```
+
+Check Supabase Dashboard → Logs → Database Logs. Look for `spike:pre_request fired` notice.
+
+**PASS criteria:** notice appears in logs.
+**FAIL criteria:** notice absent, or `ALTER ROLE` fails with permission error.
+**Fallback if FAIL:** revise §3.1 to per-RPC GUC-set via SECURITY DEFINER wrapper. Adds ~2× work to every write RPC. Not a killshot, but changes spec.
+
+- [ ] **Step 2: Verify auto-wrap regex handles DECLARE-block RPCs**
+
+Pick 1 existing tenant-touching SECURITY DEFINER RPC with DECLARE + INSERT (e.g., `record_kasir_sale` or `create_tempo_invoice` from `supabase/migrations/`). Extract its body via:
+
+```sql
+SELECT pg_get_functiondef(oid) FROM pg_proc
+WHERE proname = 'record_kasir_sale' LIMIT 1;
+```
+
+Save output to `/tmp/rpc.sql`. Apply the REVISED regex (from Task 8 Step 4 revised):
+
+```sql
+-- Line-anchored BEGIN — robust to DECLARE
+SELECT regexp_replace(
+  pg_read_file('/tmp/rpc.sql'),
+  E'(\\nBEGIN\\n)',
+  E'\\1  PERFORM public._guard_expiry_write();\n'
+);
+```
+
+**PASS:** output contains `PERFORM public._guard_expiry_write();` inserted right after the top-level `BEGIN` line, not inside a nested `EXCEPTION` block.
+**FAIL:** insertion happens in the wrong place or not at all → refine regex before Task 8.
+
+- [ ] **Step 3: Reproduce cross-tenant leak via SECURITY DEFINER (baseline)**
+
+On Supabase local Docker with only pre-Phase-A migrations applied:
+
+1. Manually create 2 tenants + 2 users via SQL (bypassing app).
+2. Seed 1 `stocks` row per tenant.
+3. Log in as user A (JWT with `sub` = A's UUID).
+4. Call any existing SECURITY DEFINER RPC that does `SELECT * FROM stocks` (e.g., a report RPC).
+5. Observe: does user A see user B's row?
+
+**Expected leak:** YES (this is the bug §3.5.2 correction describes). Documenting the reproducer proves the fix is needed and gives Task 8.5 a regression test.
+**Unexpected:** NO — investigate what's already protecting. Maybe all RPCs already have explicit filters. Update Task 8.5 scope accordingly.
+
+- [ ] **Step 4: Measure current Garindo production DB size vs. 500 MB cap**
+
+```sql
+SELECT pg_size_pretty(pg_database_size(current_database())) AS db_size,
+       pg_size_pretty(pg_total_relation_size('public.stocks')) AS stocks_size,
+       pg_size_pretty(pg_total_relation_size('public.kasir_transactions')) AS kasir_size,
+       pg_size_pretty(pg_total_relation_size('public.orders')) AS orders_size;
+```
+
+**PASS:** total < 300 MB → 200 MB headroom for tenant #2.
+**FAIL:** total ≥ 400 MB → tenant #2 would push over 500 MB free cap. Escalate to founder: Pro tier upgrade needed at production time (§7.6).
+
+- [ ] **Step 5: Write spike report + go/no-go**
+
+```markdown
+# Phase A Architecture Spike Report — <date>
+
+## Step 1: pgrst.db_pre_request on Supabase Cloud
+- Result: PASS / FAIL
+- Evidence: [log excerpt / error message]
+- Impact: [continue / revise §3.1]
+
+## Step 2: Auto-wrap regex on DECLARE RPCs
+- Result: PASS / FAIL
+- Evidence: [before/after diff of one RPC]
+- Impact: [continue / refine regex before Task 8]
+
+## Step 3: Cross-tenant leak reproducer
+- Result: LEAK REPRODUCED / NO LEAK
+- Evidence: [SQL + observed rows]
+- Impact: [Task 8.5 scope confirmed / re-scope]
+
+## Step 4: DB size headroom
+- Current size: <X MB> / 500 MB
+- Impact: [free tier viable / Pro tier at go-live]
+
+## Go / No-Go for Task 1
+- [ ] All 4 checks PASS or have clear mitigation → PROCEED to Task 1
+- [ ] Any CRITICAL failure → HALT, revise spec
+```
+
+- [ ] **Step 6: Delete throwaway Supabase Cloud test project**
+
+Free up the 2-project free tier slot for real dev.
+
+- [ ] **Step 7: Commit report**
+
+```bash
+git add docs/superpowers/spikes/2026-07-XX-phase-a-architecture-spike.md
+git commit -m "docs(spike): Phase A architecture verification — go/no-go for Task 1"
+```
 
 ---
 
@@ -1169,10 +1305,16 @@ GRANT EXECUTE ON FUNCTION public.bootstrap_tenant_context() TO authenticated;
 -- Heuristic: function name doesn't start with get_/list_/resolve_/is_/bootstrap_/log_
 -- AND function body contains INSERT/UPDATE/DELETE/TRUNCATE (case-insensitive, ignoring comments).
 -- CREATE OR REPLACE with `PERFORM _guard_expiry_write();` right after the first BEGIN.
+--
+-- REGEX (revised per Task 0 spike): line-anchored `\nBEGIN\n` — robust to DECLARE blocks.
+-- pg_get_functiondef normalizes formatting so BEGIN always appears on its own line.
+-- Skip if already wrapped (avoid double injection on re-runs).
 DO $$
 DECLARE
   r RECORD;
   v_new_body TEXT;
+  v_wrapped_count INT := 0;
+  v_skipped_count INT := 0;
 BEGIN
   FOR r IN
     SELECT n.nspname AS schema_name, p.proname AS fn_name, p.oid,
@@ -1181,31 +1323,77 @@ BEGIN
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public'
       AND p.prokind = 'f'
-      AND p.proname NOT LIKE 'get\_%' AND p.proname NOT LIKE 'list\_%'
-      AND p.proname NOT LIKE 'resolve\_%' AND p.proname NOT LIKE 'is\_%'
-      AND p.proname NOT LIKE 'bootstrap\_%' AND p.proname NOT LIKE 'log\_%'
-      AND p.proname NOT LIKE '\_%'  -- skip internal helpers
+      -- Skip read-only naming conventions
+      AND p.proname NOT LIKE 'get\_%' ESCAPE '\'
+      AND p.proname NOT LIKE 'list\_%' ESCAPE '\'
+      AND p.proname NOT LIKE 'resolve\_%' ESCAPE '\'
+      AND p.proname NOT LIKE 'is\_%' ESCAPE '\'
+      AND p.proname NOT LIKE 'bootstrap\_%' ESCAPE '\'
+      AND p.proname NOT LIKE 'log\_%' ESCAPE '\'
+      AND p.proname NOT LIKE '\_%' ESCAPE '\'  -- skip internal helpers (leading underscore)
+      -- Skip trigger functions we own (they're not RPCs)
       AND p.proname NOT IN ('sync_tenant_settings_from_subscription',
                             'resync_all_tenants_on_plan_change',
-                            'company_settings_costing_method_chk')
+                            'company_settings_costing_method_chk',
+                            '_forbid_slug_change',
+                            '_seed_company_settings_for_new_tenant')
+      -- Body must contain a write keyword outside of comments
       AND p.prosrc ~* '\y(INSERT|UPDATE|DELETE|TRUNCATE)\y'
-      AND p.prosrc !~ 'PERFORM\s+_guard_expiry_write\(\)'
+      -- Skip if already wrapped (idempotent)
+      AND p.prosrc !~ 'PERFORM\s+(public\.)?_guard_expiry_write\(\s*\)'
   LOOP
+    -- Line-anchored BEGIN: matches `\nBEGIN\n` anywhere in the function definition.
+    -- pg_get_functiondef output always has BEGIN on its own line.
+    -- Nested BEGIN...EXCEPTION blocks appear later; regexp_replace default replaces first match only.
     v_new_body := regexp_replace(
       r.full_def,
-      '(\$[a-zA-Z0-9_]*\$\s*BEGIN)',
-      E'\\1\n  PERFORM public._guard_expiry_write();',
-      ''
+      E'(\\nBEGIN\\n)',
+      E'\\1  PERFORM public._guard_expiry_write();\n'
     );
+
+    -- Safety: only execute if regex actually changed the body
+    IF v_new_body = r.full_def THEN
+      RAISE WARNING 'Regex miss on %: no \\nBEGIN\\n pattern found — investigate manually', r.fn_name;
+      v_skipped_count := v_skipped_count + 1;
+      CONTINUE;
+    END IF;
+
     BEGIN
       EXECUTE v_new_body;
       RAISE NOTICE 'Wrapped: %', r.fn_name;
+      v_wrapped_count := v_wrapped_count + 1;
     EXCEPTION WHEN OTHERS THEN
-      RAISE WARNING 'Skipped % (regex failed): %', r.fn_name, SQLERRM;
+      RAISE WARNING 'Skipped % (execute failed): %', r.fn_name, SQLERRM;
+      v_skipped_count := v_skipped_count + 1;
     END;
   END LOOP;
+
+  RAISE NOTICE 'Bulk auto-wrap complete: % wrapped, % skipped', v_wrapped_count, v_skipped_count;
+
+  -- Hard-fail if too many misses — indicates codebase has RPCs the heuristic can't handle
+  IF v_skipped_count > 5 THEN
+    RAISE EXCEPTION 'Too many skipped RPCs (%). Manual audit required before rolling out Layer-A.', v_skipped_count;
+  END IF;
 END $$;
 ```
+
+**Post-apply verification (mandatory):**
+```sql
+-- Every write RPC should now contain _guard_expiry_write
+SELECT proname FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.prokind = 'f'
+  AND p.proname NOT LIKE 'get\_%' ESCAPE '\'
+  AND p.proname NOT LIKE 'list\_%' ESCAPE '\'
+  AND p.proname NOT LIKE 'resolve\_%' ESCAPE '\'
+  AND p.proname NOT LIKE 'is\_%' ESCAPE '\'
+  AND p.proname NOT LIKE 'bootstrap\_%' ESCAPE '\'
+  AND p.proname NOT LIKE 'log\_%' ESCAPE '\'
+  AND p.proname NOT LIKE '\_%' ESCAPE '\'
+  AND p.prosrc ~* '\y(INSERT|UPDATE|DELETE|TRUNCATE)\y'
+  AND p.prosrc !~ 'PERFORM\s+(public\.)?_guard_expiry_write\(\s*\)';
+```
+Expected: **0 rows**. Any row = an unwrapped write RPC; investigate before proceeding.
 
 - [ ] **Step 5: Append `ALTER ROLE` + NOTIFY**
 
@@ -1230,6 +1418,208 @@ Expected: `pgrst.db_pre_request=public._pgrst_pre_request` in rolconfig. Second 
 git add supabase/migrations/20261001000004_phase_a_wire_layer_a.sql
 git commit -m "feat(multi-tenant): Phase A file 4 — Layer-A wiring + helper RPCs + bulk write-guard"
 ```
+
+---
+
+## Task 8.5: SECURITY DEFINER audit + ownership migration
+
+**Files:**
+- Create: `supabase/migrations/20261001000005_phase_a_secdef_ownership.sql`
+
+**Interfaces:**
+- Consumes: `_pgrst_pre_request` from Task 8 wired.
+- Produces: role `vosi_rpc_owner` created WITHOUT `BYPASSRLS`. All tenant-touching `SECURITY DEFINER` functions re-owned to `vosi_rpc_owner`. High-risk RPCs additionally receive explicit `WHERE tenant_id = _resolve_tenant_id()` in their bodies (belt-and-suspenders). `_pgrst_pre_request()` deliberately kept owned by postgres (documented exception).
+
+**Why this is a separate task (and why it MUST run after Task 8):** Per spec §3.5.2 correction, FORCE RLS does not override BYPASSRLS. Functions owned by postgres bypass RLS even with FORCE. This task fixes that systemically by ownership change, then adds explicit filters to the highest-risk RPCs as a second layer.
+
+- [ ] **Step 1: Enumerate tenant-touching SECURITY DEFINER RPCs**
+
+Run on local Supabase:
+```sql
+SELECT p.proname, p.proowner::regrole, obj_description(p.oid, 'pg_proc') AS comment
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.prosecdef = true
+  AND p.prokind = 'f'
+  AND p.proname NOT IN ('_pgrst_pre_request', 'log_impersonation_start',
+                        'log_impersonation_end', 'is_platform_admin', 'bootstrap_tenant_context')
+  AND (
+    p.prosrc ~* '\yFROM\s+(public\.)?(stocks|customers|orders|kasir_transactions|company_settings|admin_users|tenant_settings|purchase_orders|piutang|utang|journal_entries|journal_entry_lines|approval_requests|stock_movements|stock_lots|stock_adjustments|kasir_counters|kasir_cash_batches|recon_bank_lines|recon_payable_slots|recon_periods|stock_consumption)\y'
+    OR p.prosrc ~* '\yINTO\s+(public\.)?(stocks|customers|orders|kasir_transactions|company_settings|admin_users|tenant_settings|purchase_orders|piutang|utang|journal_entries|journal_entry_lines|approval_requests|stock_movements|stock_lots|stock_adjustments|kasir_counters|kasir_cash_batches|recon_bank_lines|recon_payable_slots|recon_periods|stock_consumption)\y'
+  )
+ORDER BY p.proname;
+```
+
+Save output. This is the audit list. Expect 100–200 rows given the ~276 migrations.
+
+- [ ] **Step 2: Create migration file — role + ownership migration**
+
+```sql
+-- supabase/migrations/20261001000005_phase_a_secdef_ownership.sql
+-- Phase A: SECURITY DEFINER hardening. Create dedicated owner role without
+-- BYPASSRLS so FORCE ROW LEVEL SECURITY actually applies to SECURITY DEFINER
+-- function bodies. Re-own every tenant-touching RPC.
+--
+-- WHY: postgres role has BYPASSRLS. Functions owned by postgres run as
+-- postgres → RLS bypassed even with FORCE. Ownership change forces RLS
+-- to apply, plugging the primary SECURITY DEFINER leak vector.
+--
+-- Rollback: ALTER FUNCTION ... OWNER TO postgres per affected function.
+
+-- 1. Create the dedicated owner role
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'vosi_rpc_owner') THEN
+    CREATE ROLE vosi_rpc_owner NOINHERIT;
+    -- Explicitly NO BYPASSRLS, NO SUPERUSER
+  END IF;
+END $$;
+
+-- Migration user (typically postgres) needs the role to ALTER OWNER
+GRANT vosi_rpc_owner TO postgres;
+
+-- The owner role needs table/sequence/schema privileges to actually run RPC bodies
+GRANT USAGE ON SCHEMA public TO vosi_rpc_owner;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO vosi_rpc_owner;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO vosi_rpc_owner;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO vosi_rpc_owner;
+-- Future tables/sequences added later
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO vosi_rpc_owner;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO vosi_rpc_owner;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO vosi_rpc_owner;
+```
+
+- [ ] **Step 3: Append bulk ownership migration DO block**
+
+```sql
+-- 2. Re-own all tenant-touching SECURITY DEFINER RPCs
+--    EXCLUSIONS (must remain postgres-owned to bypass RLS on platform tables):
+--      - _pgrst_pre_request (reads platform_admins, tenant_users to SET GUCs)
+--      - log_impersonation_start/end, is_platform_admin, bootstrap_tenant_context
+--        (read tenants/tenant_users/v_tenant_effective_features across tenant boundaries)
+DO $$
+DECLARE
+  r RECORD;
+  v_reowned INT := 0;
+  v_skipped INT := 0;
+BEGIN
+  FOR r IN
+    SELECT p.proname, p.oid,
+           pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+      AND p.prokind = 'f'
+      AND p.proname NOT IN ('_pgrst_pre_request', 'log_impersonation_start',
+                            'log_impersonation_end', 'is_platform_admin',
+                            'bootstrap_tenant_context', '_guard_expiry_write',
+                            '_resolve_tenant_id', '_forbid_slug_change',
+                            '_seed_company_settings_for_new_tenant',
+                            'sync_tenant_settings_from_subscription',
+                            'resync_all_tenants_on_plan_change')
+      AND p.proowner <> 'vosi_rpc_owner'::regrole
+  LOOP
+    BEGIN
+      EXECUTE format('ALTER FUNCTION public.%I(%s) OWNER TO vosi_rpc_owner',
+                     r.proname, r.args);
+      v_reowned := v_reowned + 1;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE WARNING 'Failed to re-own %(%): %', r.proname, r.args, SQLERRM;
+      v_skipped := v_skipped + 1;
+    END;
+  END LOOP;
+  RAISE NOTICE 'SECURITY DEFINER ownership migration: % re-owned, % skipped', v_reowned, v_skipped;
+
+  IF v_skipped > 0 THEN
+    RAISE EXCEPTION 'Some functions could not be re-owned. Investigate before Layer-A go-live.';
+  END IF;
+END $$;
+```
+
+- [ ] **Step 4: Append explicit tenant filter guards for high-risk RPCs**
+
+For the highest-risk write RPCs (identified by "touches money" or "touches inventory"), add an explicit `_resolve_tenant_id()` sanity check at the start of the function body — even after ownership migration. This is belt-and-suspenders.
+
+Target list (adjust per Step 1 output):
+
+```sql
+-- Add tenant sanity check to record_kasir_sale variants
+-- Pattern: fetch the resolved tenant_id at function start, then use it explicitly
+-- in every INSERT/UPDATE that names tenant_id. Ensures the value doesn't get
+-- overridden by a stale caller-supplied tenant_id.
+
+CREATE OR REPLACE FUNCTION public._assert_tenant_context()
+RETURNS uuid LANGUAGE plpgsql STABLE AS $$
+DECLARE v_tid uuid;
+BEGIN
+  v_tid := nullif(current_setting('app.current_tenant_id', true), '')::uuid;
+  IF v_tid IS NULL THEN
+    RAISE EXCEPTION 'MISSING_TENANT_CONTEXT' USING errcode = 'P0400';
+  END IF;
+  RETURN v_tid;
+END $$;
+
+REVOKE ALL ON FUNCTION public._assert_tenant_context() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public._assert_tenant_context() TO authenticated, vosi_rpc_owner;
+```
+
+**High-risk RPCs to manually patch (list from spike Step 1):**
+- `record_kasir_sale` (and `_tier` variant)
+- `create_tempo_invoice` (and variants)
+- `receive_po`, `wrap_receive_po`
+- `record_pi_dual_write`, `record_pembayaran_dual_write`
+- `create_tempo_invoice_dual_write`
+- `commit_reject_adjustment`, `request_adjustment`
+- Any `*_dual_write` or write RPC touching multiple T-tables in a single transaction
+
+For each, add near the top of the function body (right after the `_guard_expiry_write()` call already injected by Task 8):
+
+```sql
+-- After PERFORM public._guard_expiry_write(); insert this line:
+v_ctx_tenant_id := public._assert_tenant_context();
+-- Then ensure every INSERT/UPDATE targeting a T-table uses v_ctx_tenant_id
+-- (not a caller-supplied parameter or a re-read from another table without joining on tenant).
+```
+
+**Note:** these manual patches happen in separate migration files per RPC (e.g., `20261001000006_secdef_patch_record_kasir_sale.sql`), NOT in the current bulk migration. This lets each patch be reviewed independently. Add them as **inline sub-tasks** during Task 8.5 rollout — one patch per high-risk RPC, one commit each.
+
+- [ ] **Step 5: Apply + verify ownership**
+
+```bash
+supabase db reset
+supabase db psql -c "SELECT COUNT(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prosecdef=true AND p.proowner='vosi_rpc_owner'::regrole;"
+```
+Expected: number matches the audit list from Step 1 minus the 11 exclusions.
+
+- [ ] **Step 6: Verify SECURITY DEFINER RPCs now respect RLS**
+
+Rerun the leak reproducer from Task 0 Step 3. Log in as user A, call the same SECURITY DEFINER RPC. Expected: **no user B data returned** (RLS now applies).
+
+- [ ] **Step 7: Commit bulk ownership migration**
+
+```bash
+git add supabase/migrations/20261001000005_phase_a_secdef_ownership.sql
+git commit -m "feat(multi-tenant): Phase A file 5 — SECURITY DEFINER ownership migration (vosi_rpc_owner)"
+```
+
+- [ ] **Step 8: For each high-risk RPC identified in Step 4, create a per-RPC patch commit**
+
+Example workflow for `record_kasir_sale`:
+
+```bash
+# Create supabase/migrations/20261001000006_secdef_patch_record_kasir_sale.sql
+# Copy current function body from pg_get_functiondef output
+# Add: v_ctx_tenant_id := public._assert_tenant_context(); after PERFORM _guard_expiry_write();
+# Replace: WHERE tenant_id = p_tenant_id → WHERE tenant_id = v_ctx_tenant_id (where p_tenant_id is caller-supplied)
+# ... etc
+supabase db reset
+# Run relevant smoke test
+git add supabase/migrations/20261001000006_secdef_patch_record_kasir_sale.sql
+git commit -m "feat(multi-tenant): SECDEF patch — record_kasir_sale explicit tenant filter"
+```
+
+Repeat for each high-risk RPC. Expect 5–10 patch migrations.
 
 ---
 

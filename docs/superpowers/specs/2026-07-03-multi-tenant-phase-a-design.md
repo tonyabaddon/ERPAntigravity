@@ -619,11 +619,33 @@ PERFORM set_config('app.current_tenant_id', 'tenant-A', false);
 
 **CI guardrail:** grep-fail on any migration or function definition that passes `false` as the third argument to `set_config`. Enforced in the isolation-audit GitHub Actions job.
 
-### 3.5.2 RLS default-deny posture
+### 3.5.2 RLS default-deny posture + `SECURITY DEFINER` ownership hardening
 
 Existing policies with `TO anon USING (true)` (e.g., `admin_users`, pre-refactor `company_settings`, `kasir_*`) are treated as bugs by Phase A. The RLS hardening migration (Section 5) drops each such policy and replaces it with a tenant-scoped policy or revokes anon access entirely.
 
-`FORCE ROW LEVEL SECURITY` is set on all `T`-category tables — this forces RLS even for table owners, so a rogue `SECURITY DEFINER` RPC cannot bypass isolation.
+`FORCE ROW LEVEL SECURITY` is set on all `T`-category tables — this forces RLS even for the table owner.
+
+**IMPORTANT CORRECTION (audit finding):** `FORCE ROW LEVEL SECURITY` does **NOT** override the `BYPASSRLS` role attribute. Superusers (`postgres`) and roles with `BYPASSRLS` — which includes Supabase's `service_role` and the `postgres` role that migrations run as — bypass all RLS regardless of `ENABLE`/`FORCE`. This means:
+
+- A `SECURITY DEFINER` function owned by `postgres` (the default when migrations create functions) runs with `postgres`'s effective role → RLS bypassed → no tenant filter → cross-tenant leak.
+- The `SET row_security = on` GUC does NOT fix this (`row_security` has no effect on BYPASSRLS roles, per Postgres docs).
+
+**Fix — two layers, both required:**
+
+1. **Ownership change (systemic).** Create a dedicated role `vosi_rpc_owner` **without** `BYPASSRLS`. All tenant-touching `SECURITY DEFINER` functions must be owned by this role. FORCE RLS then applies as intended.
+   ```sql
+   CREATE ROLE vosi_rpc_owner NOINHERIT;
+   -- (no BYPASSRLS, no SUPERUSER)
+   GRANT vosi_rpc_owner TO postgres;  -- so migration user can ALTER OWNER
+   ALTER FUNCTION public.<fn>(...) OWNER TO vosi_rpc_owner;
+   -- Grant the owner role read/write on the tables it needs
+   GRANT SELECT, INSERT, UPDATE, DELETE ON <T-tables> TO vosi_rpc_owner;
+   ```
+2. **Explicit tenant filter in RPC body (belt-and-suspenders).** Every `SECURITY DEFINER` RPC that reads or writes a T-category table must filter by `WHERE tenant_id = _resolve_tenant_id()` explicitly, not rely on RLS alone. This protects against ownership-change regressions and makes the guarantee legible in code review.
+
+**Migration scope for Phase A:** every existing tenant-touching `SECURITY DEFINER` function must be re-owned and audited. This is a discrete work-item (see plan Task 8.5 — SECURITY DEFINER audit + ownership migration).
+
+**Special case — `_pgrst_pre_request()` itself.** This function *must* be able to read `platform_admins`, `tenant_users`, `tenants`, `v_tenant_effective_features` from within its body. Since these are P/A category tables with FORCE RLS, the function needs privileges the tenant user doesn't have. Solution: `_pgrst_pre_request()` is owned by `postgres` (BYPASSRLS) — the ONE deliberate exception. Its body only reads platform meta and cannot itself leak tenant data because it doesn't return rows to the caller (returns `void`).
 
 ### 3.5.3 Per-tenant activity telemetry skeleton
 
@@ -1201,8 +1223,11 @@ Total: ~500–700 LOC net change.
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
+| **`pgrst.db_pre_request` may not be settable / persist on Supabase Cloud managed free tier** | MEDIUM | **CRITICAL — voids entire architecture** | **Task 0 architecture spike (1 day) BEFORE Task 1.** Test `ALTER ROLE authenticator SET pgrst.db_pre_request` on real Supabase Cloud project (not just local Docker). Verify function fires via `RAISE NOTICE` in Supabase Logs. If it fails: fallback is per-RPC GUC setting via `SET LOCAL` wrapper (2× more work, still viable). |
+| **`SECURITY DEFINER` + `BYPASSRLS` role bypasses FORCE RLS** (§3.5.2 correction) | HIGH | **CRITICAL — cross-tenant leak** | **Ownership migration** (plan Task 8.5): create `vosi_rpc_owner` role WITHOUT `BYPASSRLS`; `ALTER FUNCTION ... OWNER TO vosi_rpc_owner` for all 200+ tenant-touching RPCs. Belt-and-suspenders: add explicit `WHERE tenant_id = _resolve_tenant_id()` to high-risk RPC bodies. |
+| **Auto-wrap regex misses `DECLARE`-block RPCs silently** | HIGH (pre-fix) → LOW (post-fix) | HIGH | Regex fix (plan Task 8 revised): use line-anchored `\nBEGIN\n` instead of `$$-BEGIN`. Also inject `PERFORM _guard_expiry_write()` skip check to avoid double-injection on re-runs. |
 | PgBouncer transaction pool GUC leak | LOW | CRITICAL | §3.5.1 CI grep-check for `set_config(..., false)`. Manual load test on preview. |
-| Existing RPC with `SECURITY DEFINER` bypasses tenant filter | MEDIUM | HIGH | Enumerate `pg_proc` where `prosecdef = true`; audit each for `_resolve_tenant_id()` gating. FORCE RLS on all T tables provides secondary defense. |
+| Existing RPC with `SECURITY DEFINER` bypasses tenant filter (residual after ownership migration) | LOW (post-fix) | HIGH | Task 8.5 also audits RPC bodies for tenant filter; high-risk RPCs (record_kasir_sale, create_tempo_invoice, receive_po, etc.) get explicit filters even after ownership fix. |
 | Existing data with `tenant_id` values other than sentinel/NULL | MEDIUM | HIGH | Pre-migration query `SELECT DISTINCT tenant_id FROM <table>` per table. Manual investigation if non-Garindo UUIDs surface. Skeptic script fails migration if unexpected values found. |
 | `kasir_transactions` — currently uses anon writes | MEDIUM | HIGH | Field-check whether POS device uses anon key or an authenticated kiosk user. If anon → RLS tightening breaks POS flow. Resolution: introduce a tenant-scoped kiosk service user; POS device authenticates as that user. Track as Phase A blocker before tenant #2 real go-live. |
 | `admin_users` (POS staff) — schema pre-tenant, `anon USING (true)` | HIGH | MEDIUM | Category T treatment: add `tenant_id`, backfill Garindo, tighten RLS. Frontend `UserManagementScreen` refactor is minor. Included in migration file 2 backfill block. |
@@ -1240,26 +1265,39 @@ Pending confirmation (address during implementation kickoff):
 - Isolation test suite runtime: < 5 min (CI budget).
 - Latency overhead of `_pgrst_pre_request()`: < 5 ms p95 (measured via Supabase logs).
 
-### 7.6 Free-tier alignment
+### 7.6 Free-tier alignment (honest note)
 
-Phase A adds no paid-service dependency. All infrastructure resources stay within free tier: Supabase free (500 MB DB, 1 GB storage, 50k MAU), Cloud Run free (2M req/mo), GitHub Actions free (2000 min/mo private), pgTAP embedded free, Vitest free. Playwright E2E and Supabase Branching are deferred (Phase B / not planned). Billing infrastructure and Stripe/Xendit are deferred to Phase C.
+Phase A adds no paid-service dependency **at build time**. All build-time resources fit within free tier: Supabase free (500 MB DB, 1 GB storage, 50k MAU), Cloud Run free (2M req/mo), GitHub Actions free (2000 min/mo private), pgTAP embedded, Vitest, Supabase local Docker. Playwright E2E, Supabase Branching, billing (Stripe/Xendit) are deferred.
+
+**However — production reality on free tier has landmines:**
+
+1. **Supabase free-tier auto-pauses the database after 7 days of inactivity.** For a solo-founder MSME with 1–2 early tenants, a 7-day quiet stretch is realistic. When paused, all logins fail with cryptic errors until manually resumed via dashboard. This is a **customer-facing UX disaster** for a real SaaS.
+2. **500 MB DB cap** — Garindo's current data (sales history + kasir + pembelian ledger) likely already consumes ~100–300 MB. Adding 1 more MSME tenant (typical size 50–150 MB after 6 months) pushes into cap territory.
+3. **2 GB storage cap** — logos, PDF invoices, product images. Realistic 1-year runway for 2–3 tenants.
+4. **Supabase free project cap of 2** — using free-tier + a preview project consumes both slots.
+
+**Honest recommendation:** the design *fits* free tier at build time, but running a **real production SaaS** requires upgrading Garindo's production DB to **Supabase Pro ($25/month)** at go-live of tenant #2 for real. This kills auto-pause, raises limits, and enables branch environments. The design does NOT require code changes when upgrading — it is billing-only.
+
+**Do not promise "free forever" to onboarded tenants.** Phase A ships on free tier for development / testing; production go-live decision is a separate founder call per `feedback_cost_upgrade_approval` memory — flagged here so the decision isn't a surprise.
 
 ### 7.7 Effort estimate
 
-Approximately 2 weeks solo focused work:
+Approximately 2.5–3 weeks solo focused work (updated after audit findings):
 
 | Component | Days |
 |---|---|
+| **Task 0: Architecture spike (Supabase Cloud verification)** | 1 |
 | Migration files 1–4 (schema, seed, backfill, RLS, Layer-A wire) | 3 |
 | RLS audit script (`generate-rls-audit-migration.ts`) + manual review | 2 |
 | `_pgrst_pre_request` + `_guard_expiry_write` + bulk auto-wrap | 1 |
+| **Task 8.5: SECURITY DEFINER ownership migration + high-risk RPC patches** | 2 |
 | Frontend: TenantContext, URL refactor, error interceptor, read-only banner | 3 |
 | `companySettingsService` refactor + affected screen updates | 1 |
 | pgTAP + Vitest tests | 2 |
 | Isolation test harness + fixtures + CI wiring | 2 |
 | Manual smoke + 4-day halt-gate rollout | 1 |
 
-Total ~15 days. 2 weeks full-time or 3 weeks part-time.
+Total ~18 days (up from 15). 2.5 weeks full-time or 3.5 weeks part-time. The +3 days come from the architecture spike (1 day) and SECURITY DEFINER hardening (2 days) added after the audit round.
 
 ---
 
