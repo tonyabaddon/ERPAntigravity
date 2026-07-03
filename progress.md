@@ -1,5 +1,54 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-03 — Sales-side dual-write close: COMPLETE (Tasks 1-5 shipped)
+
+All 5 slices + backfill executed via subagent-driven-development on branch `worktree-sales-dual-write`.
+
+**Migrations applied to prod (project `ekhhojaezdfjfwuxyjkl`):**
+
+| # | Slice | RPC | Commit |
+|---|---|---|---|
+| 10 | Foundation | 2 COAs (`5-1200`, `2-1150`) + 6 enum values | `bc0ab82` |
+| 11 | Foundation | `stocks.is_passthrough` column | `bc0ab82` |
+| 12 | A | `create_tempo_invoice` dual-write | `66c3eb4` |
+| 13 | B+C | `record_pi` PASSTHROUGH swap + LUNAS refactor | `307c5f4` |
+| 14 | D | `approve_tempo_write_off` + `revert_tempo_write_off` | `058db59` |
+| 15 | E | 4 backfill functions + preview table | `91c1681` |
+
+**Backfill run (Slice E)**: 3+0+3+3 = **9 JEs posted** (Entry numbers `JE-202606-0159`–`JE-202606-0167`), ~6M IDR total value.
+
+- 3× `BACKFILL_TEMPO_INVOICE` (Rp 850k, 45k, 45k)
+- 3× `BACKFILL_PEMBAYARAN` (Rp 5k, 20k, 10k) — 4th eligible skipped as idempotency (duplicate `uq_je_source_unique` clash with live PEMBAYARAN row)
+- 3× `BACKFILL_TEMPO_WRITEOFF` (Rp 850k, 2.75M, 1.5M)
+- 0× `BACKFILL_PI_PASSTHROUGH` (no eligible rows)
+
+**Post-backfill validation**: Q1-Q3 (missing JE checks) = 0. Q5 (unbalanced) = 0.
+
+**Plan quality**: 23 total schema mismatches surfaced + fixed inline across all 5 tasks. Rich pattern of subagent-driven schema verification catching real column/type mismatches before apply. Migration `apply_migration` MCP rejected 2 bugs pre-tracker (safe fail).
+
+**Deferred to follow-up sessions** (not blocking):
+- Go tests actual run against live DB (need `SUPABASE_DB_CONNECTION` env)
+- DB smoke DO-blocks via MCP per slice
+- Browser E2E via chrome-devtools MCP
+- Final code review + branch merge
+
+**Deferred by design (spec §8)**:
+- PKP tenants (`2-1200` PPN Keluaran)
+- Multi-tenant `tenant_id` filter (Sub-Project A dependency)
+- Allowance method for bad debt (SAK ETAP tier)
+- Hard-fail dual-write upgrade
+- `admin_adjust_journal` SD RPC
+- ProductForm UI toggle for `is_passthrough`
+- Partial-reclass double-count edge (accrual < subtotal falls to 5-1200)
+- PASSTHROUGH discount `5-1900` leg not covered
+- Task 6 migration TODO retirement (per pre-flight decision: applied migrations immutable)
+
+Design: `docs/superpowers/specs/2026-07-02-sales-side-dual-write-close-design.md`
+Plan: `docs/superpowers/plans/2026-07-02-sales-side-dual-write-close-implementation.md`
+SDD ledger: `.superpowers/sdd/progress.md`
+
+---
+
 ## 2026-07-02 — Sales-side dual-write close: Task 2 (Slice A) SHIPPED
 
 Migration `20260910000012_create_tempo_invoice_dual_write` applied to prod (`ekhhojaezdfjfwuxyjkl`).
