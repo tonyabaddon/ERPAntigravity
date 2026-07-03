@@ -1,8 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { DbSalesOrder } from '../../types';
+import type { DbSalesOrder, KasirTransaction } from '../../types';
 import { formatRp } from '../../lib/format';
 import { navigate } from '../../lib/urlRoute';
 import { fetchSalesOrders, closeSalesOrder } from '../../lib/salesOrderService';
+import SalesInvoicePDF, { type InvoicePrintMode } from './SalesInvoicePDF';
+
+// Adapt DbSalesOrder → the KasirTransaction shape SalesInvoicePDF expects.
+// Only fields used by variant='quotation' need to be populated; the rest are
+// harmlessly undefined (SalesInvoicePDF gates on `isQuotation` before touching
+// payment/DP/lunas fields).
+function soToTransaction(so: DbSalesOrder): KasirTransaction {
+  return {
+    id: so.id,
+    date: so.date,
+    type: 'income',
+    channel: so.channel as KasirTransaction['channel'],
+    items: so.items,
+    subtotal: Number(so.subtotal),
+    hpp_total: 0,
+    total_amount: Number(so.subtotal),
+    invoice_number: so.so_number,
+    customer_id: so.customer_id ?? null,
+    customer_name: so.customer_name,
+    customer_phone: so.customer_phone ?? null,
+    customer_company: so.customer_company ?? null,
+    notes: so.notes ?? null,
+    created_at: so.created_at,
+  };
+}
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -18,6 +43,11 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
   const [closeModal, setCloseModal] = useState<{ so: DbSalesOrder; reason: string } | null>(null);
   const [closing, setClosing] = useState(false);
   const [viewSo, setViewSo] = useState<DbSalesOrder | null>(null);
+  const [printSo, setPrintSo] = useState<{ so: DbSalesOrder; mode: InvoicePrintMode; autoPrint: boolean } | null>(null);
+
+  const openPrintSo = (so: DbSalesOrder, mode: InvoicePrintMode) => {
+    setPrintSo({ so, mode, autoPrint: true });
+  };
 
   const reload = async () => {
     setLoading(true);
@@ -332,8 +362,21 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
             </div>
 
             {/* Modal footer */}
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center">
-              <p className="text-[10px] text-slate-400 italic">PDF preview tersedia di Phase 2</p>
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-between items-center gap-2 flex-wrap">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => openPrintSo(viewSo, 'normal')}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#012749] text-white hover:opacity-90"
+                >
+                  🖨️ Cetak A4
+                </button>
+                <button
+                  onClick={() => openPrintSo(viewSo, 'dot_matrix')}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-700 text-white hover:bg-slate-800"
+                >
+                  🖨️ Dot Matrix
+                </button>
+              </div>
               <button onClick={() => setViewSo(null)}
                 className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">
                 Tutup
@@ -368,6 +411,17 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Print SO preview modal */}
+      {printSo && (
+        <SalesInvoicePDF
+          transaction={soToTransaction(printSo.so)}
+          variant="quotation"
+          autoPrint={printSo.autoPrint}
+          printMode={printSo.mode}
+          onClose={() => setPrintSo(null)}
+        />
       )}
     </div>
   );

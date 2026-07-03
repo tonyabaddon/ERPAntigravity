@@ -14,10 +14,12 @@ import {
   renderDocTitle,
   renderCustomerBlock,
   renderFooter,
+  fetchLogoDataUrl,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
+  type PdfPrintMode,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
 import type { ItemRow, OrderForPdf, PdfResult } from './types';
@@ -29,7 +31,9 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const BLACK_RGB: [number, number, number] = [0, 0, 0];
 const NAVY_HEX = '#012749';
+const BLACK_HEX = '#000000';
 const HAIRLINE_HEX = '#d0d7e2';
 const GRAY_MUTED_HEX = '#555555';
 
@@ -42,19 +46,27 @@ export async function generateSuratJalanPdf(
   order: OrderForPdf,
   settings: StoreSettings,
   _banks: BankAccount[],
+  printMode: PdfPrintMode = 'normal',
 ): Promise<PdfResult> {
   // `_banks` accepted for signature parity; SJ does not show bank instructions.
   void _banks;
 
   const docNumber = await nextInvoiceNumber('SJ');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const dm = printMode === 'dot_matrix';
+  const headerFill = dm ? BLACK_RGB : NAVY_RGB;
+  const primary = dm ? BLACK_HEX : NAVY_HEX;
+  const hairline = dm ? BLACK_HEX : HAIRLINE_HEX;
+  const muted = dm ? BLACK_HEX : GRAY_MUTED_HEX;
+  const bodyText = dm ? '#000000' : '#222222';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();
-  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+  const logoDataUrl = await fetchLogoDataUrl(settings);
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8), printMode, logoDataUrl);
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'SURAT JALAN', cursorY);
+  cursorY = renderDocTitle(doc, 'SURAT JALAN', cursorY, printMode);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -72,6 +84,7 @@ export async function generateSuratJalanPdf(
       destination: order.customer_address,
     },
     cursorY,
+    printMode,
   );
 
   // ----- 4. Items table (No | Produk | Qty only) -----
@@ -85,12 +98,12 @@ export async function generateSuratJalanPdf(
       font: 'helvetica',
       fontSize: 9,
       cellPadding: 2,
-      textColor: '#222222',
-      lineColor: HAIRLINE_HEX,
+      textColor: bodyText,
+      lineColor: hairline,
       lineWidth: 0.15,
     },
     headStyles: {
-      fillColor: NAVY_RGB,
+      fillColor: headerFill,
       textColor: '#ffffff',
       fontStyle: 'bold',
       fontSize: 9,
@@ -119,10 +132,10 @@ export async function generateSuratJalanPdf(
   doc.setFontSize(9.5);
   for (const [label, value] of metaRows) {
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(NAVY_HEX);
+    doc.setTextColor(primary);
     doc.text(label, labelX, cursorY);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(GRAY_MUTED_HEX);
+    doc.setTextColor(muted);
     const wrapped = doc.splitTextToSize(value, PAGE_WIDTH_MM - MARGIN_MM - valueX);
     doc.text(wrapped, valueX, cursorY);
     cursorY += Math.max(5, wrapped.length * 4.6);
@@ -136,7 +149,7 @@ export async function generateSuratJalanPdf(
   const leftBoxX = MARGIN_MM;
   const rightBoxX = MARGIN_MM + colWidth + colGap;
 
-  doc.setDrawColor(HAIRLINE_HEX);
+  doc.setDrawColor(hairline);
   doc.setLineWidth(0.3);
   doc.roundedRect(leftBoxX, cursorY, colWidth, boxHeight, 1.6, 1.6);
   doc.roundedRect(rightBoxX, cursorY, colWidth, boxHeight, 1.6, 1.6);
@@ -144,13 +157,13 @@ export async function generateSuratJalanPdf(
   // Box labels
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(NAVY_HEX);
+  doc.setTextColor(primary);
   doc.text('Diserahkan oleh,', leftBoxX + 3, cursorY + 5);
   doc.text('Diterima oleh,', rightBoxX + 3, cursorY + 5);
 
   // Signature lines at ~70% box height
   const lineY = cursorY + boxHeight - 8;
-  doc.setDrawColor(GRAY_MUTED_HEX);
+  doc.setDrawColor(muted);
   doc.setLineWidth(0.2);
   doc.line(leftBoxX + 6, lineY, leftBoxX + colWidth - 6, lineY);
   doc.line(rightBoxX + 6, lineY, rightBoxX + colWidth - 6, lineY);
@@ -158,7 +171,7 @@ export async function generateSuratJalanPdf(
   // Name lines under signature line
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.setTextColor(GRAY_MUTED_HEX);
+  doc.setTextColor(muted);
   const leftName = settings.nama_toko || '—';
   const rightName = '(nama jelas + TTD)';
   doc.text(leftName, leftBoxX + colWidth / 2, lineY + 4, { align: 'center' });
@@ -171,7 +184,7 @@ export async function generateSuratJalanPdf(
     'Mohon periksa barang sebelum tanda tangan',
     'Komplain barang rusak/kurang setelah tanda tangan tidak dilayani',
     'Surat Jalan ini bukti sah penyerahan barang',
-  ]);
+  ], printMode);
 
   const blob = doc.output('blob');
   const filename = `Surat_Jalan_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;

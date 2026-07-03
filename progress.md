@@ -1,5 +1,32 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-03 — SO→SI conversion + dot-matrix print family fixes
+
+**Two bugs reported, both root-caused before touching code (Iron Law from `superpowers:systematic-debugging`):**
+
+1. **SO→SI conversion — "Tidak bisa klik Lanjut"**
+   - Root cause: `SO-WAM-20260703-001` (channel `whatsapp`) pre-fill only seeded channel + customer + items + notes; `validateStep1` requires `wa_phone` for whatsapp channel → button disabled.
+   - Fix (`CatatPenjualanWizard.tsx:377-382`): seed `waPhone` from `so.customer_phone` when channel is `whatsapp`.
+
+2. **Dot Matrix print — "Print dialog never opens" + wrong format**
+   - Root cause A (format): `SalesInvoicePDF.tsx:84` `@page { size: 80mm auto; }` was thermal-receipt width; user's shop uses Epson LX-310 / LX-2190 fanfold (~9.5×11in). Comment even contradicted itself ("58mm-ish ... 80-col fanfold").
+   - Root cause B (dialog): `setTimeout(300)` after `useEffect` could fire before React committed the print-mode CSS swap.
+   - Fix (`SalesInvoicePDF.tsx`): page size → `9.5in 11in` matching fanfold, monospace + no-fill CSS retained; autoPrint uses double-`requestAnimationFrame` + a fired-once ref so it fires after paint and can't re-fire on state churn.
+   - Modal max-width unified to `max-w-3xl` in both modes so on-screen preview matches actual print output.
+
+**Extended dot-matrix coverage per user request ("do everything now"):**
+
+- **Sales Order print** — was placeholder "PDF preview tersedia di Phase 2". Added Cetak A4 / Dot Matrix buttons in `DaftarPenawaranScreen` "Lihat" modal footer, wired through a `soToTransaction()` adapter to reuse `SalesInvoicePDF` (`variant='quotation'`).
+- **jsPDF generators** (Sales Order, Surat Jalan, Invoice DP/Lunas/Pelunasan, Catatan Pembatalan) — added optional `printMode: PdfPrintMode = 'normal'` 4th arg to each generator. New `paletteFor(mode)` helper in `common.ts` swaps navy/green/callout fills to black + no-fill in dot-matrix. Header logo box switches from filled navy to outlined black; autoTable header band uses black fill. `ActionPanel.tsx` gains a small "A4 Berwarna / Dot Matrix" toggle pill above the PDF button row.
+- **jsPDF logo rendering** — previously deferred with a "Phase 1C" TODO. New `fetchLogoDataUrl(settings)` helper in `common.ts` fetches `store_settings.logo_url` and returns a base64 data-URL for jsPDF's `addImage`. `renderHeader` gained a 7th param `logoDataUrl?: string | null`; when present + normal mode, we drop the initial box and paint the real logo. Dot-matrix mode still uses the initial box (color raster smudges on impact printers). Guards: >2 MB skipped with a console warn, fetch failures log + fallback to the initial. All 6 generators now `await fetchLogoDataUrl(settings)` before renderHeader.
+
+**Tests**: 340 vitest tests still pass. jsPDF generator tests unchanged (default arg preserves prior signature).
+
+**What still requires manual action from Tony (data-entry, not code):**
+- Upload logo at `Pengaturan → Identitas Toko → Logo Toko` (PNG/JPG, ≤ 200×200 px recommended)
+- Fill address, kota, telp/WA, email, NPWP (currently all empty on `store_settings id=1`)
+- Rename bank account holder from "Tony" to the formal business name (matches NPWP)
+
 ## 2026-07-03 — Sales-side dual-write close: COMPLETE (Tasks 1-5 shipped)
 
 All 5 slices + backfill executed via subagent-driven-development on branch `worktree-sales-dual-write`.

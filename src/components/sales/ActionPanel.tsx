@@ -10,6 +10,7 @@ import { generateInvoiceLunasPdf } from '../../lib/sales/pdf/invoiceLunasPdf';
 import { generateInvoicePelunasanPdf } from '../../lib/sales/pdf/invoicePelunasanPdf';
 import { generateSuratJalanPdf } from '../../lib/sales/pdf/suratJalanPdf';
 import { generateCatatanPembatalanPdf } from '../../lib/sales/pdf/catatanPembatalanPdf';
+import type { PdfPrintMode } from '../../lib/sales/pdf/common';
 import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
 
 interface Props {
@@ -71,6 +72,10 @@ export function ActionPanel({
   const [generating, setGenerating] = useState<AvailablePdf | null>(null);
   const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  // Print target picker: normal = A4 with colors; dot_matrix = mono, no fills,
+  // sized for LX-310 / LX-2190 fanfold impact printers. The mode toggle wraps
+  // every generate*Pdf call below.
+  const [printMode, setPrintMode] = useState<PdfPrintMode>('normal');
 
   const isVerifyStage = order.funnel_sub_stage === '2d' || order.funnel_sub_stage === '3b';
   const pdfs = availablePdfsForOrder(order);
@@ -106,22 +111,22 @@ export function ActionPanel({
       let result;
       switch (kind) {
         case 'SO':
-          result = await generateSalesOrderPdf(order, settings, banks);
+          result = await generateSalesOrderPdf(order, settings, banks, printMode);
           break;
         case 'INV-DP':
-          result = await generateInvoiceDpPdf(order, settings, banks);
+          result = await generateInvoiceDpPdf(order, settings, banks, printMode);
           break;
         case 'INV-LUNAS':
-          result = await generateInvoiceLunasPdf(order, settings, banks);
+          result = await generateInvoiceLunasPdf(order, settings, banks, printMode);
           break;
         case 'INV-PEL':
-          result = await generateInvoicePelunasanPdf(order, settings, banks);
+          result = await generateInvoicePelunasanPdf(order, settings, banks, printMode);
           break;
         case 'SJ':
-          result = await generateSuratJalanPdf(order, settings, banks);
+          result = await generateSuratJalanPdf(order, settings, banks, printMode);
           break;
         case 'CAN':
-          result = await generateCatatanPembatalanPdf(order, settings, banks);
+          result = await generateCatatanPembatalanPdf(order, settings, banks, printMode);
           break;
       }
       setPreview({ blob: result.blob, filename: result.filename });
@@ -157,8 +162,32 @@ export function ActionPanel({
 
       {(pdfs.length > 0 || showEdit) && (
         <div style={{ marginTop: isVerifyStage ? 14 : 0 }}>
-          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            Dokumen & Aksi
+          <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span>Dokumen & Aksi</span>
+            {pdfs.length > 0 && (
+              <span style={{ display: 'inline-flex', gap: 4, background: '#f3f4f6', borderRadius: 8, padding: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => setPrintMode('normal')}
+                  style={{
+                    fontSize: 10, padding: '2px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: printMode === 'normal' ? '#012749' : 'transparent',
+                    color: printMode === 'normal' ? 'white' : '#6b7280',
+                    fontWeight: 700, letterSpacing: 0,
+                  }}
+                >A4 Berwarna</button>
+                <button
+                  type="button"
+                  onClick={() => setPrintMode('dot_matrix')}
+                  style={{
+                    fontSize: 10, padding: '2px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: printMode === 'dot_matrix' ? '#012749' : 'transparent',
+                    color: printMode === 'dot_matrix' ? 'white' : '#6b7280',
+                    fontWeight: 700, letterSpacing: 0,
+                  }}
+                >Dot Matrix</button>
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
             {pdfs.map(kind => {

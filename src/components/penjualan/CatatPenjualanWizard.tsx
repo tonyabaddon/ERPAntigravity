@@ -377,6 +377,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         const so = await fetchSalesOrderById(fromSalesOrderId);
         if (cancelled || !so) return;
         setChannel(so.channel as KasirChannel);
+        // Seed channel-specific fields validateStep1 requires. Without this,
+        // whatsapp/marketplace SO conversions land on Step 1 with the Lanjut
+        // button disabled because wa_phone / marketplace_order_no stayed blank.
+        // SO stores customer_phone, which for whatsapp channel is the WA number.
+        if (so.channel === 'whatsapp' && so.customer_phone) {
+          setWaPhone(so.customer_phone);
+        }
         // Customer: try match in local customers, else build a stub
         const match = customers.find((c) => c.id === so.customer_id);
         if (match) {
@@ -948,7 +955,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         {!loading && (
           <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
             <div className="text-[11px] text-slate-500">
-              {currentStep === 1 && !canAdvanceStep1 && 'Lengkapi channel & customer untuk lanjut.'}
+              {currentStep === 1 && !canAdvanceStep1 && (
+                (() => {
+                  const errs = validateStep1(step1State).errors ?? [];
+                  return `Lengkapi untuk lanjut: ${errs.join(', ')}.`;
+                })()
+              )}
               {currentStep === 2 && !canAdvanceStep2 && 'Lengkapi keranjang untuk lanjut.'}
             </div>
             <div className="flex gap-2">

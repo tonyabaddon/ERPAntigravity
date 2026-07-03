@@ -13,12 +13,14 @@ import {
   renderDocTitle,
   renderCustomerBlock,
   renderFooter,
+  fetchLogoDataUrl,
   formatRupiah,
   formatTanggal,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
+  type PdfPrintMode,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
 import type { ItemRow, OrderForPdf, PdfResult } from './types';
@@ -30,6 +32,8 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const BLACK_RGB: [number, number, number] = [0, 0, 0];
+const BLACK_HEX = '#000000';
 const NAVY_HEX = '#012749';
 const GREEN_HEX = '#2d8a4e';
 const GREEN_BANNER_BG = '#e7f3ec';
@@ -44,19 +48,25 @@ export async function generateInvoicePelunasanPdf(
   order: OrderForPdf,
   settings: StoreSettings,
   _banks: BankAccount[],
+  printMode: PdfPrintMode = 'normal',
 ): Promise<PdfResult> {
   // `_banks` accepted for signature parity; no bank instruction block here.
   void _banks;
 
   const docNumber = await nextInvoiceNumber('INV-PEL');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const dm = printMode === 'dot_matrix';
+  const headerFill = dm ? BLACK_RGB : NAVY_RGB;
+  const totalAccent = dm ? BLACK_HEX : GREEN_HEX;
+  const dividerColor = dm ? '#000000' : '#012749';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();
-  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+  const logoDataUrl = await fetchLogoDataUrl(settings);
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8), printMode, logoDataUrl);
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'INVOICE PELUNASAN', cursorY);
+  cursorY = renderDocTitle(doc, 'INVOICE PELUNASAN', cursorY, printMode);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -74,6 +84,7 @@ export async function generateInvoicePelunasanPdf(
       destination: order.customer_address,
     },
     cursorY,
+    printMode,
   );
 
   // ----- 4. Items table -----
@@ -93,12 +104,12 @@ export async function generateInvoicePelunasanPdf(
       font: 'helvetica',
       fontSize: 9,
       cellPadding: 2,
-      textColor: '#222222',
-      lineColor: HAIRLINE_HEX,
+      textColor: dm ? '#000000' : '#222222',
+      lineColor: dm ? '#000000' : HAIRLINE_HEX,
       lineWidth: 0.15,
     },
     headStyles: {
-      fillColor: NAVY_RGB,
+      fillColor: headerFill,
       textColor: '#ffffff',
       fontStyle: 'bold',
       fontSize: 9,
@@ -143,7 +154,7 @@ export async function generateInvoicePelunasanPdf(
   cursorY += 5;
 
   // Hairline divider
-  doc.setDrawColor(HAIRLINE_HEX);
+  doc.setDrawColor(dm ? '#000000' : HAIRLINE_HEX);
   doc.setLineWidth(0.2);
   doc.line(totalsLabelX, cursorY - 1, totalsValueX, cursorY - 1);
   cursorY += 1;
@@ -151,7 +162,7 @@ export async function generateInvoicePelunasanPdf(
   // Pelunasan amount — green bold 12pt
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(GREEN_HEX);
+  doc.setTextColor(totalAccent);
   doc.text('Sisa terbayar lunas', totalsLabelX, cursorY + 3);
   doc.text(formatRupiah(pelunasan, true), totalsValueX, cursorY + 3, { align: 'right' });
   cursorY += 10;
@@ -177,7 +188,7 @@ export async function generateInvoicePelunasanPdf(
     'Invoice ini bersifat pelunasan; sudah memperhitungkan DP sebelumnya',
     'Surat Jalan terlampir / akan menyusul saat barang diserahkan',
     'Klaim garansi mengikuti ketentuan supplier masing-masing',
-  ]);
+  ], printMode);
 
   const blob = doc.output('blob');
   const filename = `Invoice_Pelunasan_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;

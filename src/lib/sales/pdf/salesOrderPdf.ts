@@ -14,11 +14,13 @@ import {
   renderCustomerBlock,
   renderBankBlock,
   renderFooter,
+  fetchLogoDataUrl,
   formatRupiah,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
+  type PdfPrintMode,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
 import type { ItemRow, PdfResult } from './types';
@@ -39,7 +41,9 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const BLACK_RGB: [number, number, number] = [0, 0, 0];
 const GREEN_HEX = '#2d8a4e';
+const BLACK_HEX = '#000000';
 
 /**
  * Generate the Sales Order PDF. Returns a Blob (application/pdf), the freshly
@@ -50,16 +54,23 @@ export async function generateSalesOrderPdf(
   order: SalesOrderPdfOrder,
   settings: StoreSettings,
   banks: BankAccount[],
+  printMode: PdfPrintMode = 'normal',
 ): Promise<PdfResult> {
   const docNumber = await nextInvoiceNumber('SO');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const dm = printMode === 'dot_matrix';
+  const headerFill = dm ? BLACK_RGB : NAVY_RGB;
+  const headerTextColor = dm ? '#ffffff' : '#ffffff';
+  const totalAccent = dm ? BLACK_HEX : GREEN_HEX;
+  const dividerColor = dm ? '#000000' : '#012749';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();
-  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+  const logoDataUrl = await fetchLogoDataUrl(settings);
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8), printMode, logoDataUrl);
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'PESANAN PENJUALAN', cursorY);
+  cursorY = renderDocTitle(doc, 'PESANAN PENJUALAN', cursorY, printMode);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -77,6 +88,7 @@ export async function generateSalesOrderPdf(
       destination: order.customer_address,
     },
     cursorY,
+    printMode,
   );
 
   // ----- 4. Items table -----
@@ -96,13 +108,13 @@ export async function generateSalesOrderPdf(
       font: 'helvetica',
       fontSize: 9,
       cellPadding: 2,
-      textColor: '#222222',
-      lineColor: '#d0d7e2',
+      textColor: dm ? '#000000' : '#222222',
+      lineColor: dm ? '#000000' : '#d0d7e2',
       lineWidth: 0.15,
     },
     headStyles: {
-      fillColor: NAVY_RGB,
-      textColor: '#ffffff',
+      fillColor: headerFill,
+      textColor: headerTextColor,
       fontStyle: 'bold',
       fontSize: 9,
       halign: 'left',
@@ -129,7 +141,7 @@ export async function generateSalesOrderPdf(
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
-  doc.setTextColor('#222222');
+  doc.setTextColor(dm ? '#000000' : '#222222');
   doc.text('Subtotal', totalsLabelX, cursorY);
   doc.text(formatRupiah(subtotal), totalsValueX, cursorY, { align: 'right' });
   cursorY += 5;
@@ -141,25 +153,25 @@ export async function generateSalesOrderPdf(
   }
 
   // Divider above TOTAL line
-  doc.setDrawColor('#012749');
+  doc.setDrawColor(dividerColor);
   doc.setLineWidth(0.4);
   doc.line(totalsLabelX, cursorY - 2, totalsValueX, cursorY - 2);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(GREEN_HEX);
+  doc.setTextColor(totalAccent);
   doc.text('TOTAL', totalsLabelX, cursorY + 3);
   doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
   cursorY += 10;
 
   // ----- 6. Bank instruction block -----
-  cursorY = renderBankBlock(doc, banks, cursorY);
+  cursorY = renderBankBlock(doc, banks, cursorY, printMode);
 
   // ----- 7. Footer T&C -----
   renderFooter(doc, 'SYARAT & KETENTUAN', [
     'Barang yang telah dibeli tidak dapat dikembalikan',
     'Pembayaran dianggap sah setelah dana masuk ke rekening kami',
     'Komplain barang rusak/kurang harap disampaikan saat barang diterima',
-  ]);
+  ], printMode);
 
   const blob = doc.output('blob');
   const filename = `Sales_Order_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;

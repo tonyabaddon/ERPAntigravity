@@ -16,16 +16,20 @@ import {
   renderHeader,
   renderDocTitle,
   renderFooter,
+  fetchLogoDataUrl,
   formatRupiah,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
+  type PdfPrintMode,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
 import type { ItemRow, OrderForPdf, PdfResult } from './types';
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const BLACK_RGB: [number, number, number] = [0, 0, 0];
+const BLACK_HEX = '#000000';
 const NAVY_HEX = '#012749';
 const HAIRLINE_HEX = '#d0d7e2';
 const GRAY_MUTED_HEX = '#555555';
@@ -91,6 +95,7 @@ export async function generateCatatanPembatalanPdf(
   order: OrderForPdf,
   settings: StoreSettings,
   _banks: BankAccount[],
+  printMode: PdfPrintMode = 'normal',
 ): Promise<PdfResult> {
   // `_banks` accepted for signature parity; cancellation record never shows
   // bank instructions.
@@ -98,13 +103,17 @@ export async function generateCatatanPembatalanPdf(
 
   const docNumber = await nextInvoiceNumber('CAN');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const dm = printMode === 'dot_matrix';
+  const headerFill = dm ? BLACK_RGB : NAVY_RGB;
+  const dividerColor = dm ? '#000000' : '#012749';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();
-  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+  const logoDataUrl = await fetchLogoDataUrl(settings);
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8), printMode, logoDataUrl);
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'CATATAN PEMBATALAN', cursorY);
+  cursorY = renderDocTitle(doc, 'CATATAN PEMBATALAN', cursorY, printMode);
 
   // ----- 3. Customer block only -----
   cursorY = renderCustomerOnlyBlock(
@@ -134,12 +143,12 @@ export async function generateCatatanPembatalanPdf(
       font: 'helvetica',
       fontSize: 9,
       cellPadding: 2,
-      textColor: '#222222',
-      lineColor: HAIRLINE_HEX,
+      textColor: dm ? '#000000' : '#222222',
+      lineColor: dm ? '#000000' : HAIRLINE_HEX,
       lineWidth: 0.15,
     },
     headStyles: {
-      fillColor: NAVY_RGB,
+      fillColor: headerFill,
       textColor: '#ffffff',
       fontStyle: 'bold',
       fontSize: 9,
@@ -246,7 +255,7 @@ export async function generateCatatanPembatalanPdf(
     'Catatan ini sebagai bukti audit pembatalan order',
     'Sengketa pembatalan harap diselesaikan secara baik-baik',
     'Refund (jika ada) sudah ditransfer per metode di atas',
-  ]);
+  ], printMode);
 
   const blob = doc.output('blob');
   const filename = `Catatan_Pembatalan_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;

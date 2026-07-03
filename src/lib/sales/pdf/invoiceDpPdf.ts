@@ -16,11 +16,13 @@ import {
   renderCustomerBlock,
   renderBankBlock,
   renderFooter,
+  fetchLogoDataUrl,
   formatRupiah,
   sanitizeDocNumber,
   customerInitial,
   MARGIN_MM,
   PAGE_WIDTH_MM,
+  type PdfPrintMode,
 } from './common';
 import { nextInvoiceNumber } from './invoiceNumber';
 import type { ItemRow, OrderForPdf, PdfResult } from './types';
@@ -32,6 +34,8 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 };
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
+const BLACK_RGB: [number, number, number] = [0, 0, 0];
+const BLACK_HEX = '#000000';
 const NAVY_HEX = '#012749';
 const GREEN_HEX = '#2d8a4e';
 const AMBER_HEX = '#b45309';
@@ -45,16 +49,22 @@ export async function generateInvoiceDpPdf(
   order: OrderForPdf,
   settings: StoreSettings,
   banks: BankAccount[],
+  printMode: PdfPrintMode = 'normal',
 ): Promise<PdfResult> {
   const docNumber = await nextInvoiceNumber('INV-DP');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const dm = printMode === 'dot_matrix';
+  const headerFill = dm ? BLACK_RGB : NAVY_RGB;
+  const totalAccent = dm ? BLACK_HEX : GREEN_HEX;
+  const dividerColor = dm ? '#000000' : '#012749';
 
   // ----- 1. Header -----
   const issueDate = new Date().toISOString();
-  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8));
+  const logoDataUrl = await fetchLogoDataUrl(settings);
+  let cursorY = renderHeader(doc, settings, docNumber, issueDate, order.id?.slice(0, 8), printMode, logoDataUrl);
 
   // ----- 2. Doc title -----
-  cursorY = renderDocTitle(doc, 'INVOICE DP / TANDA JADI', cursorY);
+  cursorY = renderDocTitle(doc, 'INVOICE DP / TANDA JADI', cursorY, printMode);
 
   // ----- 3. Customer + Pengiriman -----
   const deliveryLabel = order.delivery_method
@@ -72,6 +82,7 @@ export async function generateInvoiceDpPdf(
       destination: order.customer_address,
     },
     cursorY,
+    printMode,
   );
 
   // ----- 4. Items table -----
@@ -91,12 +102,12 @@ export async function generateInvoiceDpPdf(
       font: 'helvetica',
       fontSize: 9,
       cellPadding: 2,
-      textColor: '#222222',
-      lineColor: HAIRLINE_HEX,
+      textColor: dm ? '#000000' : '#222222',
+      lineColor: dm ? '#000000' : HAIRLINE_HEX,
       lineWidth: 0.15,
     },
     headStyles: {
-      fillColor: NAVY_RGB,
+      fillColor: headerFill,
       textColor: '#ffffff',
       fontStyle: 'bold',
       fontSize: 9,
@@ -126,7 +137,7 @@ export async function generateInvoiceDpPdf(
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
-  doc.setTextColor('#222222');
+  doc.setTextColor(dm ? '#000000' : '#222222');
   doc.text('Subtotal', totalsLabelX, cursorY);
   doc.text(formatRupiah(subtotal), totalsValueX, cursorY, { align: 'right' });
   cursorY += 5;
@@ -138,25 +149,25 @@ export async function generateInvoiceDpPdf(
   }
 
   // Divider above TOTAL line
-  doc.setDrawColor(NAVY_HEX);
+  doc.setDrawColor(dividerColor);
   doc.setLineWidth(0.4);
   doc.line(totalsLabelX, cursorY - 2, totalsValueX, cursorY - 2);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(GREEN_HEX);
+  doc.setTextColor(totalAccent);
   doc.text('TOTAL', totalsLabelX, cursorY + 3);
   doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
   cursorY += 9;
 
   // Hairline divider before DP / Sisa rows
-  doc.setDrawColor(HAIRLINE_HEX);
+  doc.setDrawColor(dm ? '#000000' : HAIRLINE_HEX);
   doc.setLineWidth(0.2);
   doc.line(totalsLabelX, cursorY - 1, totalsValueX, cursorY - 1);
 
   // DP diterima — green bold 10pt
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(GREEN_HEX);
+  doc.setTextColor(totalAccent);
   doc.text('DP diterima', totalsLabelX, cursorY + 4);
   doc.text(formatRupiah(dpAmount, true), totalsValueX, cursorY + 4, { align: 'right' });
   cursorY += 6;
@@ -164,20 +175,20 @@ export async function generateInvoiceDpPdf(
   // Sisa — amber bold 11pt
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(AMBER_HEX);
+  doc.setTextColor(dm ? '#000000' : AMBER_HEX);
   doc.text('Sisa', totalsLabelX, cursorY + 4);
   doc.text(formatRupiah(sisa, true), totalsValueX, cursorY + 4, { align: 'right' });
   cursorY += 10;
 
   // ----- 6. Bank instruction block -----
-  cursorY = renderBankBlock(doc, banks, cursorY);
+  cursorY = renderBankBlock(doc, banks, cursorY, printMode);
 
   // ----- 7. Footer T&C -----
   renderFooter(doc, 'SYARAT & KETENTUAN', [
     'DP yang sudah dibayar tidak dapat dikembalikan (kecuali force majeure)',
     'Sisa pembayaran wajib dilunasi sebelum barang dikirim/diserahkan',
     'Estimasi pengerjaan: berlaku setelah DP dikonfirmasi',
-  ]);
+  ], printMode);
 
   const blob = doc.output('blob');
   const filename = `Invoice_DP_${sanitizeDocNumber(docNumber)}_${customerInitial(order.customer)}.pdf`;

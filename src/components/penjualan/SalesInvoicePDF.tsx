@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Printer } from 'lucide-react';
 import { KasirTransaction } from '../../types';
 import type { SalesChannel } from '../../types';
@@ -23,11 +23,12 @@ export interface SalesInvoicePDFProps {
   autoPrint?: boolean;
   /**
    * 'normal' (default) → 9.5×11in continuous A4-ish layout (existing CSS).
-   * 'dot_matrix'       → narrow 58mm-ish layout, monospace fallback, tighter
-   *                      paddings, no background colors. Targets impact
-   *                      printers (Epson LX-310 family) that interpret CSS
-   *                      via a generic raster driver — colored fills and
-   *                      shadows just waste ribbon ink.
+   * 'dot_matrix'       → 9.5×11in letter-fanfold layout with monospace font,
+   *                      tighter paddings, no background colors. Targets
+   *                      Epson LX-310 / LX-2190 fanfold impact printers.
+   *                      Earlier this was set to 80mm (thermal receipt width)
+   *                      which mismatched the LX-310 fanfold operators use in
+   *                      practice — output was chopped and drivers rejected it.
    */
   printMode?: InvoicePrintMode;
   onClose: () => void;
@@ -55,11 +56,18 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
     return () => { document.title = previousTitle; };
   }, [transaction.invoice_number]);
 
+  // Auto-print after data resolves. requestAnimationFrame ensures the DOM
+  // (with the new @media print stylesheet swapped in for dot_matrix mode) is
+  // painted before window.print() captures it; a bare setTimeout could fire
+  // before React committed the update, producing a blank print preview.
+  const autoPrintFiredRef = useRef(false);
   useEffect(() => {
-    if (autoPrint && !loading) {
-      const timer = setTimeout(() => window.print(), 300);
-      return () => clearTimeout(timer);
-    }
+    if (!autoPrint || loading || autoPrintFiredRef.current) return;
+    autoPrintFiredRef.current = true;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
+    return () => cancelAnimationFrame(raf);
   }, [autoPrint, loading]);
 
   const channelLabel = CHANNEL_VISUAL[(transaction.channel ?? 'walkin') as SalesChannel].label;
@@ -73,15 +81,15 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
     return 'Cash';
   })();
 
-  // Dot-matrix uses a single-column narrow page (58mm thermal-style continuous
-  // form is a decent stand-in for the 80-col fanfold that LX-310 / TM-U220
-  // operators print onto). We keep the same JSX tree and merely swap the
-  // print stylesheet + a root class so InvoiceBody can react with Tailwind
-  // conditionals (font, paddings) without two parallel render trees.
+  // Dot-matrix keeps the same JSX tree and swaps only the print stylesheet + a
+  // root class so InvoiceBody can react with Tailwind conditionals (font,
+  // paddings) without two parallel render trees. Page size stays 9.5×11in
+  // (letter fanfold — LX-310 / LX-2190 native); the difference from 'normal'
+  // is: monospace font, no color fills (saves ribbon), no shadows.
   const printCss = printMode === 'dot_matrix'
     ? `
         @media print {
-          @page { size: 80mm auto; margin: 4mm 4mm; }
+          @page { size: 9.5in 11in; margin: 0.5in 0.4in; }
           body * { visibility: hidden; }
           #sales-invoice-root, #sales-invoice-root * { visibility: visible; }
           #sales-invoice-root { position: fixed; top: 0; left: 0; width: 100%; background: white; box-shadow: none !important; border-radius: 0 !important; }
@@ -90,6 +98,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
             color: #000 !important;
             background: #fff !important;
             box-shadow: none !important;
+            border-color: #000 !important;
           }
           .print\\:hidden { display: none !important; }
         }
@@ -111,7 +120,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="sales-invoice-root"
-          className={`bg-white rounded-lg shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} ${printMode === 'dot_matrix' ? 'max-w-md' : 'max-w-3xl'}`}
+          className={`bg-white rounded-lg shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} max-w-3xl`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-2 bg-[#012749] text-white print:hidden">

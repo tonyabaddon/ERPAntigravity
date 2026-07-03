@@ -20,6 +20,18 @@ export const PAGE_WIDTH_MM = 210; // A4 portrait
 export const PAGE_HEIGHT_MM = 297;
 export const MARGIN_MM = 14;
 
+// ---------- Print mode ----------
+
+/**
+ * Toggle between the brand-colored A4 layout ('normal') and a monochrome
+ * variant tuned for Epson LX-310 / LX-2190 impact printers ('dot_matrix').
+ * Dot-matrix mode drops all color fills (they waste ribbon and render as
+ * raster smudges on impact printers) and forces every stroke/text to pure
+ * black, keeping the same page geometry so operators can swap paper without
+ * re-teaching the layout.
+ */
+export type PdfPrintMode = 'normal' | 'dot_matrix';
+
 // ---------- Brand palette ----------
 
 const COLOR_NAVY = '#012749';
@@ -31,6 +43,90 @@ const COLOR_BANK_BORDER = '#c7d7f5';
 const COLOR_BANK_BG = '#fafbff';
 const COLOR_WHITE = '#ffffff';
 const COLOR_HAIRLINE = '#d0d7e2';
+
+// Mono palette for dot-matrix: pure black text + strokes, no fills.
+const DM_BLACK = '#000000';
+const DM_WHITE = '#ffffff';
+
+interface Palette {
+  navy: string;
+  green: string;
+  grayMuted: string;
+  grayFooter: string;
+  calloutBg: string;
+  bankBorder: string;
+  bankBg: string;
+  white: string;
+  hairline: string;
+  /** Whether callers should skip fill on rectangles (dot-matrix rides on ribbon-saving mono). */
+  noFill: boolean;
+}
+
+export function paletteFor(mode: PdfPrintMode = 'normal'): Palette {
+  if (mode === 'dot_matrix') {
+    return {
+      navy: DM_BLACK,
+      green: DM_BLACK,
+      grayMuted: DM_BLACK,
+      grayFooter: DM_BLACK,
+      calloutBg: DM_WHITE,
+      bankBorder: DM_BLACK,
+      bankBg: DM_WHITE,
+      white: DM_WHITE,
+      hairline: DM_BLACK,
+      noFill: true,
+    };
+  }
+  return {
+    navy: COLOR_NAVY,
+    green: COLOR_GREEN,
+    grayMuted: COLOR_GRAY_MUTED,
+    grayFooter: COLOR_GRAY_FOOTER,
+    calloutBg: COLOR_CALLOUT_BG,
+    bankBorder: COLOR_BANK_BORDER,
+    bankBg: COLOR_BANK_BG,
+    white: COLOR_WHITE,
+    hairline: COLOR_HAIRLINE,
+    noFill: false,
+  };
+}
+
+// ---------- Logo fetch ----------
+
+/**
+ * Fetch `settings.logo_url` and convert to a base64 data-URL for jsPDF.addImage.
+ * jsPDF cannot pull a remote URL directly (no XHR path in its addImage), and we
+ * don't want to embed a `<img>` node in a background PDF generator, so we do
+ * the fetch + FileReader dance here. Returns null on any error (missing URL,
+ * CORS failure, non-image response, oversized asset). Callers fall back to the
+ * initial box, so a bad logo url never blocks doc generation.
+ *
+ * Called once per PDF (not per page), so overhead is acceptable even for
+ * multi-MB PNG logos — but recommend keeping logos ≤ 200×200 px @ ≤ 200 KB
+ * to keep the resulting PDFs slim enough to email.
+ */
+export async function fetchLogoDataUrl(settings: StoreSettings): Promise<string | null> {
+  if (!settings.logo_url) return null;
+  try {
+    const res = await fetch(settings.logo_url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    // Guard: refuse to embed anything huge — jsPDF crawls on very large images.
+    if (blob.size > 2 * 1024 * 1024) {
+      console.warn('logo_url exceeds 2MB, skipping — upload a smaller image');
+      return null;
+    }
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn('logo fetch failed, using initial fallback', err);
+    return null;
+  }
+}
 
 // ---------- Formatters ----------
 
@@ -86,22 +182,50 @@ export function renderHeader(
   docNumber: string,
   isoDate: string,
   orderShortId?: string,
+  mode: PdfPrintMode = 'normal',
+  logoDataUrl?: string | null,
 ): number {
-  // --- Logo box (always initial fallback for now) ---
+  const p = paletteFor(mode);
+  // --- Logo ---
   const logoX = MARGIN_MM;
   const logoY = HEADER_TOP_MM;
-  doc.setDrawColor(COLOR_NAVY);
-  doc.setFillColor(COLOR_NAVY);
-  doc.roundedRect(logoX, logoY, LOGO_SIZE_MM, LOGO_SIZE_MM, 2.2, 2.2, 'F');
 
-  const initial = (settings.nama_toko || '??').slice(0, 2).toUpperCase();
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(COLOR_WHITE);
-  // approximate vertical centre (Helvetica baseline sits ~70% down the box)
-  doc.text(initial, logoX + LOGO_SIZE_MM / 2, logoY + LOGO_SIZE_MM / 2 + 2.6, {
-    align: 'center',
-  });
+  // Use the fetched logo image only in normal (color) mode. Dot-matrix always
+  // falls back to the outlined initial box: a raster color logo prints as an
+  // ugly grey smudge on impact printers and wastes ribbon on a large solid
+  // block. The 2-letter initial in monospace stays crisp on 9-pin ribbons.
+  const shouldRenderLogo = !!logoDataUrl && mode === 'normal';
+  let logoRendered = false;
+  if (shouldRenderLogo && logoDataUrl) {
+    try {
+      const format = logoDataUrl.startsWith('data:image/png') ? 'PNG'
+        : logoDataUrl.startsWith('data:image/jpeg') || logoDataUrl.startsWith('data:image/jpg') ? 'JPEG'
+        : 'PNG';
+      doc.addImage(logoDataUrl, format, logoX, logoY, LOGO_SIZE_MM, LOGO_SIZE_MM);
+      logoRendered = true;
+    } catch (err) {
+      console.warn('logo addImage failed, falling back to initial box', err);
+    }
+  }
+
+  if (!logoRendered) {
+    doc.setDrawColor(p.navy);
+    doc.setFillColor(p.navy);
+    // Dot-matrix skips the black fill (would print as a solid ribbon-eating
+    // rectangle); render an outlined box + black initial instead.
+    doc.roundedRect(logoX, logoY, LOGO_SIZE_MM, LOGO_SIZE_MM, 2.2, 2.2, p.noFill ? 'S' : 'F');
+
+    const initial = (settings.nama_toko || '??').slice(0, 2).toUpperCase();
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    // In dot-matrix the box is white with black outline, so the initial has to
+    // be black too (white-on-white would vanish).
+    doc.setTextColor(p.noFill ? p.navy : p.white);
+    // approximate vertical centre (Helvetica baseline sits ~70% down the box)
+    doc.text(initial, logoX + LOGO_SIZE_MM / 2, logoY + LOGO_SIZE_MM / 2 + 2.6, {
+      align: 'center',
+    });
+  }
 
   // --- Company info (right of logo) ---
   const infoX = logoX + LOGO_SIZE_MM + 4;
@@ -109,13 +233,13 @@ export function renderHeader(
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text(settings.nama_toko || '—', infoX, infoY);
   infoY += 5;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(COLOR_GRAY_MUTED);
+  doc.setTextColor(p.grayMuted);
 
   // Address: wrap to remaining width before the right column starts
   const rightColumnStart = PAGE_WIDTH_MM - MARGIN_MM - 60;
@@ -139,20 +263,20 @@ export function renderHeader(
   let rightY = logoY + 5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text(docNumber, rightX, rightY, { align: 'right' });
   rightY += 5;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(COLOR_GRAY_MUTED);
+  doc.setTextColor(p.grayMuted);
   doc.text(formatTanggal(isoDate), rightX, rightY, { align: 'right' });
   rightY += 4;
 
   if (orderShortId) {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(8.5);
-    doc.setTextColor(COLOR_GRAY_FOOTER);
+    doc.setTextColor(p.grayFooter);
     doc.text(`Order #${orderShortId}`, rightX, rightY, { align: 'right' });
     rightY += 4;
   }
@@ -160,7 +284,7 @@ export function renderHeader(
   // --- Divider just below whichever side is taller ---
   const stackBottom = Math.max(infoY, rightY, logoY + LOGO_SIZE_MM);
   const dividerY = stackBottom + DIVIDER_GAP_MM;
-  doc.setDrawColor(COLOR_NAVY);
+  doc.setDrawColor(p.navy);
   doc.setLineWidth(DIVIDER_WEIGHT_MM);
   doc.line(MARGIN_MM, dividerY, PAGE_WIDTH_MM - MARGIN_MM, dividerY);
 
@@ -173,10 +297,16 @@ export function renderHeader(
  * Render the centered doc title (e.g. "PESANAN PENJUALAN") in 14pt navy
  * bold. Returns the y-coordinate to continue body content from.
  */
-export function renderDocTitle(doc: jsPDF, title: string, y: number): number {
+export function renderDocTitle(
+  doc: jsPDF,
+  title: string,
+  y: number,
+  mode: PdfPrintMode = 'normal',
+): number {
+  const p = paletteFor(mode);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text(title, PAGE_WIDTH_MM / 2, y + 5, { align: 'center' });
   return y + 11;
 }
@@ -192,7 +322,9 @@ export function renderCustomerBlock(
   customer: { name: string; phone?: string; address?: string },
   delivery: { method: string; destination?: string },
   y: number,
+  mode: PdfPrintMode = 'normal',
 ): number {
+  const p = paletteFor(mode);
   const blockX = MARGIN_MM;
   const blockWidth = PAGE_WIDTH_MM - MARGIN_MM * 2;
   const padding = 3; // ~8pt
@@ -221,28 +353,36 @@ export function renderCustomerBlock(
   const contentLines = Math.max(leftLines.length, rightLines.length);
   const blockHeight = padding * 2 + labelHeight + contentLines * lineHeight + 1;
 
-  // Background
-  doc.setFillColor(COLOR_CALLOUT_BG);
-  doc.roundedRect(blockX, y, blockWidth, blockHeight, 2.2, 2.2, 'F');
+  // Background — dot-matrix strokes a plain rectangle instead of the pale-blue
+  // callout fill so we don't waste ribbon painting a large block. Border keeps
+  // the visual grouping intact.
+  if (p.noFill) {
+    doc.setDrawColor(p.navy);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(blockX, y, blockWidth, blockHeight, 2.2, 2.2, 'S');
+  } else {
+    doc.setFillColor(p.calloutBg);
+    doc.roundedRect(blockX, y, blockWidth, blockHeight, 2.2, 2.2, 'F');
+  }
 
   // Labels
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text('Kepada:', blockX + padding, y + padding + 3);
   doc.text('Pengiriman:', blockX + padding + colWidth + colGap, y + padding + 3);
 
   // Left column content
   doc.setFontSize(9.5);
-  doc.setTextColor(COLOR_GRAY_MUTED);
+  doc.setTextColor(p.grayMuted);
   let leftY = y + padding + 3 + labelHeight;
   leftLines.forEach((line, i) => {
     if (i === 0) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(COLOR_NAVY);
+      doc.setTextColor(p.navy);
     } else {
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(COLOR_GRAY_MUTED);
+      doc.setTextColor(p.grayMuted);
     }
     doc.text(line, blockX + padding, leftY);
     leftY += lineHeight;
@@ -253,10 +393,10 @@ export function renderCustomerBlock(
   rightLines.forEach((line, i) => {
     if (i === 0) {
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(COLOR_NAVY);
+      doc.setTextColor(p.navy);
     } else {
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(COLOR_GRAY_MUTED);
+      doc.setTextColor(p.grayMuted);
     }
     doc.text(line, blockX + padding + colWidth + colGap, rightY);
     rightY += lineHeight;
@@ -272,15 +412,21 @@ export function renderCustomerBlock(
  * active bank account. Falls back to a single gray italic line when the
  * caller passes an empty list.
  */
-export function renderBankBlock(doc: jsPDF, banks: BankAccount[], y: number): number {
+export function renderBankBlock(
+  doc: jsPDF,
+  banks: BankAccount[],
+  y: number,
+  mode: PdfPrintMode = 'normal',
+): number {
+  const p = paletteFor(mode);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text('Cara Pembayaran:', MARGIN_MM, y + 3);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.setTextColor(COLOR_GRAY_MUTED);
+  doc.setTextColor(p.grayMuted);
   doc.text('Transfer ke salah satu rekening berikut:', MARGIN_MM + 32, y + 3);
 
   let cursorY = y + 6;
@@ -288,7 +434,7 @@ export function renderBankBlock(doc: jsPDF, banks: BankAccount[], y: number): nu
   if (!banks || banks.length === 0) {
     doc.setFont('helvetica', 'italic');
     doc.setFontSize(9);
-    doc.setTextColor(COLOR_GRAY_FOOTER);
+    doc.setTextColor(p.grayFooter);
     doc.text('Hubungi admin untuk info rekening.', MARGIN_MM, cursorY + 3);
     return cursorY + 7;
   }
@@ -298,36 +444,38 @@ export function renderBankBlock(doc: jsPDF, banks: BankAccount[], y: number): nu
   const padding = 2.2;
 
   for (const bank of banks) {
-    doc.setFillColor(COLOR_BANK_BG);
-    doc.setDrawColor(COLOR_BANK_BORDER);
+    if (!p.noFill) doc.setFillColor(p.bankBg);
+    doc.setDrawColor(p.bankBorder);
     doc.setLineWidth(0.3);
-    doc.roundedRect(MARGIN_MM, cursorY, rowWidth, rowHeight, 1.4, 1.4, 'FD');
+    // Dot-matrix skips the fill mode ('S' vs 'FD') so the bank row is just an
+    // outlined rectangle — ribbon-friendly and matches impact printer output.
+    doc.roundedRect(MARGIN_MM, cursorY, rowWidth, rowHeight, 1.4, 1.4, p.noFill ? 'S' : 'FD');
 
     const textY = cursorY + rowHeight / 2 + 1.4;
 
     // Bold bank name
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
-    doc.setTextColor(COLOR_NAVY);
+    doc.setTextColor(p.navy);
     doc.text(bank.bank_name, MARGIN_MM + padding + 1, textY);
     const bankNameWidth = doc.getTextWidth(bank.bank_name);
 
     // Separator dot + "No. " label
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(COLOR_GRAY_MUTED);
+    doc.setTextColor(p.grayMuted);
     let xCursor = MARGIN_MM + padding + 1 + bankNameWidth + 2;
     doc.text(' · No. ', xCursor, textY);
     xCursor += doc.getTextWidth(' · No. ');
 
     // Bold account number
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(COLOR_NAVY);
+    doc.setTextColor(p.navy);
     doc.text(bank.account_number, xCursor, textY);
     xCursor += doc.getTextWidth(bank.account_number);
 
     // "a.n. <holder>"
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(COLOR_GRAY_MUTED);
+    doc.setTextColor(p.grayMuted);
     doc.text(` · a.n. ${bank.account_holder}`, xCursor, textY);
 
     cursorY += rowHeight + 1.5;
@@ -349,24 +497,26 @@ export function renderFooter(
   doc: jsPDF,
   heading: string,
   tcLines: string[],
+  mode: PdfPrintMode = 'normal',
 ): void {
+  const p = paletteFor(mode);
   const startY = PAGE_HEIGHT_MM - FOOTER_BAND_OFFSET_MM;
 
   // Hairline divider above footer band
-  doc.setDrawColor(COLOR_HAIRLINE);
+  doc.setDrawColor(p.hairline);
   doc.setLineWidth(0.2);
   doc.line(MARGIN_MM, startY, PAGE_WIDTH_MM - MARGIN_MM, startY);
 
   // Heading
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(COLOR_NAVY);
+  doc.setTextColor(p.navy);
   doc.text(heading, MARGIN_MM, startY + 4.5);
 
   // Bullets
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.setTextColor(COLOR_GRAY_MUTED);
+  doc.setTextColor(p.grayMuted);
   let bulletY = startY + 9;
   for (const line of tcLines) {
     doc.text(`•  ${line}`, MARGIN_MM + 2, bulletY);
@@ -376,7 +526,7 @@ export function renderFooter(
   // Tagline (right-aligned)
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.setTextColor(COLOR_GRAY_FOOTER);
+  doc.setTextColor(p.grayFooter);
   const tagline = `Dicetak otomatis · ${formatTanggal(new Date())}`;
   doc.text(tagline, PAGE_WIDTH_MM - MARGIN_MM, PAGE_HEIGHT_MM - MARGIN_MM, {
     align: 'right',
