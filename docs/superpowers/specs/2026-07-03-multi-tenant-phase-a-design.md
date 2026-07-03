@@ -397,227 +397,282 @@ Files touched: `src/lib/supabaseClient.ts`, `src/types.ts`, `src/components/Peng
 
 ---
 
-## 3. Auth Hook & GUC Mechanism
+## 3. Auth Hook & Tenant Identity Mechanism
 
-### 3.1 PostgREST `db-pre-request` — single-point setter
+> **Architecture pivot (2026-07-03 spike):** Original design used PostgREST `db-pre-request` role setting. Verified via Task 0 spike that Supabase Cloud managed does NOT honor this setting (ALTER ROLE succeeds, PostgREST listens on channel, but function never fires). See `docs/superpowers/spikes/2026-07-03-phase-a-architecture-spike.md`.
+>
+> **Pivoted to Supabase Auth Hook `custom_access_token_hook`** — officially supported on free tier, JWT-baked tenant identity, zero per-request overhead, tamper-proof.
 
-Set on the `authenticator` role:
+### 3.1 Supabase Auth Hook — JWT tenant claim
+
+Registration (Supabase Dashboard → Authentication → Hooks → Custom Access Token → select `public.custom_access_token_hook`):
+
+The hook fires at JWT issue and refresh. It receives the default claims and returns claims to bake into the token. RLS policies then read tenant identity from `auth.jwt()` — no header injection, no GUC, no per-request DB lookup.
 
 ```sql
-ALTER ROLE authenticator SET pgrst.db_pre_request = 'public._pgrst_pre_request';
-NOTIFY pgrst, 'reload config';
-```
-
-The function is invoked by PostgREST before every query. If it raises, PostgREST returns a 4xx.
-
-```sql
-CREATE OR REPLACE FUNCTION public._pgrst_pre_request()
-RETURNS void
+CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
+RETURNS jsonb
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_uid            uuid;
-  v_slug           text;
-  v_impersonate    text;
-  v_is_platform    boolean;
-  v_tenant_id      uuid;
-  v_tenant_status  text;
-  v_expiry_state   text;
-  v_headers        json;
+  v_user_id                uuid;
+  v_is_platform_admin      boolean;
+  v_impersonating_slug     text;
+  v_tenant_id              uuid;
+  v_tenant_status          text;
+  v_expiry_state           text;
+  v_claims                 jsonb;
 BEGIN
-  v_uid := auth.uid();  -- NULL for anon
-  v_headers := nullif(current_setting('request.headers', true), '')::json;
+  v_claims := event->'claims';
+  v_user_id := (v_claims->>'sub')::uuid;
 
-  v_slug        := nullif(v_headers ->> 'x-tenant-slug', '');
-  v_impersonate := nullif(v_headers ->> 'x-impersonate-tenant', '');
+  -- 1. Platform admin membership
+  v_is_platform_admin := EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_user_id);
+  v_claims := jsonb_set(v_claims, '{is_platform_admin}', to_jsonb(v_is_platform_admin));
 
-  -- Reset (defensive; PgBouncer session may inherit)
-  PERFORM set_config('app.current_tenant_id', '', true);
-  PERFORM set_config('app.tenant_expiry_mode', '', true);
-  PERFORM set_config('app.is_platform_admin', 'false', true);
-
-  IF v_uid IS NULL THEN
-    RETURN;  -- unauthenticated request; login flow etc.
+  -- 2. Impersonation state (super-admin only; source: platform_admin_active_impersonation)
+  IF v_is_platform_admin THEN
+    SELECT tenant_slug INTO v_impersonating_slug
+    FROM public.platform_admin_active_impersonation
+    WHERE admin_user_id = v_user_id;
   END IF;
 
-  v_is_platform := EXISTS (SELECT 1 FROM platform_admins WHERE user_id = v_uid);
-  IF v_is_platform THEN
-    PERFORM set_config('app.is_platform_admin', 'true', true);
+  -- 3. Resolve tenant_id
+  IF v_impersonating_slug IS NOT NULL THEN
+    -- Impersonation path — super-admin acts as tenant
+    SELECT id, status INTO v_tenant_id, v_tenant_status
+    FROM public.tenants WHERE slug = v_impersonating_slug;
+    v_claims := jsonb_set(v_claims, '{impersonating}', to_jsonb(true));
+    v_claims := jsonb_set(v_claims, '{impersonating_slug}', to_jsonb(v_impersonating_slug));
+  ELSE
+    -- Normal path — user's active tenant membership.
+    -- For MSME context, users typically have exactly one active tenant.
+    -- Deterministic pick: earliest-joined tenant_users membership.
+    SELECT t.id, t.status INTO v_tenant_id, v_tenant_status
+    FROM public.tenant_users tu
+    JOIN public.tenants t ON t.id = tu.tenant_id
+    WHERE tu.user_id = v_user_id AND tu.status = 'ACTIVE' AND t.status IN ('ACTIVE','SUSPENDED')
+    ORDER BY tu.created_at ASC
+    LIMIT 1;
   END IF;
 
-  -- Platform admin impersonation override
-  IF v_is_platform AND v_impersonate IS NOT NULL THEN
-    v_slug := v_impersonate;
+  -- 4. Bake tenant claims (nullable — super-admin browsing /admin without impersonation has no tenant)
+  IF v_tenant_id IS NOT NULL THEN
+    v_claims := jsonb_set(v_claims, '{tenant_id}', to_jsonb(v_tenant_id::text));
+    v_claims := jsonb_set(v_claims, '{tenant_status}', to_jsonb(v_tenant_status));
+
+    -- 5. Expiry state from view
+    SELECT expiry_state INTO v_expiry_state
+    FROM public.v_tenant_effective_features WHERE tenant_id = v_tenant_id;
+    v_claims := jsonb_set(v_claims, '{tenant_expiry_mode}', to_jsonb(COALESCE(v_expiry_state, 'ACTIVE')));
   END IF;
 
-  IF v_slug IS NULL THEN
-    RETURN;  -- super-admin browsing /admin, no tenant context needed
-  END IF;
-
-  SELECT id, status INTO v_tenant_id, v_tenant_status
-  FROM tenants WHERE slug = v_slug;
-
-  IF v_tenant_id IS NULL THEN
-    RAISE EXCEPTION USING errcode = 'P0404', message = 'TENANT_NOT_FOUND',
-      detail = format('slug=%s', v_slug);
-  END IF;
-
-  IF v_tenant_status = 'SUSPENDED' THEN
-    RAISE EXCEPTION USING errcode = 'P0403', message = 'TENANT_SUSPENDED';
-  END IF;
-
-  IF v_tenant_status = 'ARCHIVED' THEN
-    RAISE EXCEPTION USING errcode = 'P0404', message = 'TENANT_NOT_FOUND';
-  END IF;
-
-  -- Membership check (skip for platform admin impersonation)
-  IF NOT v_is_platform THEN
-    IF NOT EXISTS (SELECT 1 FROM tenant_users
-                   WHERE tenant_id = v_tenant_id AND user_id = v_uid AND status = 'ACTIVE') THEN
-      RAISE EXCEPTION USING errcode = 'P0403', message = 'NOT_A_MEMBER';
-    END IF;
-  END IF;
-
-  PERFORM set_config('app.current_tenant_id', v_tenant_id::text, true);
-
-  SELECT expiry_state INTO v_expiry_state
-  FROM v_tenant_effective_features WHERE tenant_id = v_tenant_id;
-
-  PERFORM set_config('app.tenant_expiry_mode', COALESCE(v_expiry_state, 'ACTIVE'), true);
-
-  -- Note: impersonation audit is NOT written here (would insert per-RPC-call → noisy).
-  -- Frontend logs start-of-session explicitly by calling RPC `log_impersonation_start(slug)`
-  -- once when entering impersonation mode. See §3.6.
+  RETURN jsonb_build_object('claims', v_claims);
 END $$;
 
-REVOKE ALL ON FUNCTION public._pgrst_pre_request() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public._pgrst_pre_request() TO authenticator, anon, authenticated;
+-- Supabase requires the hook to be executable by supabase_auth_admin role
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.custom_access_token_hook(jsonb) FROM authenticated, anon, PUBLIC;
 ```
 
-### 3.2 Existing `_resolve_tenant_id()` — semantic update
-
-The helper defined in migration `20260614000011_resolve_tenant_helper.sql` remains unchanged in signature and body — but its return value semantic shifts:
-
-- **Before Phase A:** returns the sentinel UUID `00000000-...` when the GUC is unset (pre-Layer-A).
-- **After Phase A:** the pre-request hook always sets the GUC, so `_resolve_tenant_id()` returns the real tenant UUID. The sentinel path becomes unreachable in production but is retained as a defensive fallback.
-
-RLS policies must use `WHERE tenant_id = _resolve_tenant_id()`. Any policy that treated the sentinel as "grant all" is a bug and is fixed by the Section 5 RLS hardening migration.
-
-### 3.3 Expiry write-guard
+**Impersonation state table** (feeds the hook):
 
 ```sql
-CREATE OR REPLACE FUNCTION _guard_expiry_write()
-RETURNS void LANGUAGE plpgsql STABLE AS $$
+CREATE TABLE IF NOT EXISTS public.platform_admin_active_impersonation (
+  admin_user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  tenant_slug   TEXT NOT NULL REFERENCES public.tenants(slug),
+  started_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.platform_admin_active_impersonation IS 'category=P';
+GRANT SELECT ON public.platform_admin_active_impersonation TO supabase_auth_admin;
+```
+
+**Impersonation flow (client-side):**
+
+1. Super-admin clicks "Impersonate garindo" at `/admin`.
+2. Frontend calls RPC `impersonate_tenant('garindo')` — SECDEF, verifies caller is platform admin, UPSERTs `platform_admin_active_impersonation`.
+3. Frontend calls `supabase.auth.refreshSession()` — triggers JWT re-issue.
+4. Hook fires, reads `platform_admin_active_impersonation`, bakes new tenant claim.
+5. Subsequent queries authorize as garindo tenant.
+6. Exit: RPC `stop_impersonation()` deletes row + `refreshSession()`.
+
+**JWT claim schema (added by hook):**
+
+| Claim | Type | Meaning |
+|---|---|---|
+| `tenant_id` | UUID string | Active tenant. NULL for super-admin not impersonating. |
+| `tenant_status` | text | `ACTIVE`\|`SUSPENDED`\|`ARCHIVED` |
+| `tenant_expiry_mode` | text | `ACTIVE`\|`GRACE`\|`READONLY` |
+| `is_platform_admin` | boolean | From `platform_admins` allowlist |
+| `impersonating` | boolean | True when super-admin has active impersonation |
+| `impersonating_slug` | text | Which tenant is being impersonated (for UI display) |
+
+Existing standard claims (`sub`, `aud`, `role`, `exp`, `iat`) are preserved untouched.
+
+### 3.2 `_resolve_tenant_id()` — semantic update (reads from JWT)
+
+The helper defined in migration `20260614000011_resolve_tenant_helper.sql` keeps its signature. Body is rewritten to read the JWT claim baked by the Auth Hook:
+
+```sql
+CREATE OR REPLACE FUNCTION public._resolve_tenant_id()
+RETURNS uuid LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_claims_text text;
+  v_tenant_id_text text;
 BEGIN
-  IF current_setting('app.tenant_expiry_mode', true) = 'READONLY' THEN
+  v_claims_text := current_setting('request.jwt.claims', true);
+  IF v_claims_text IS NULL OR v_claims_text = '' THEN
+    RETURN '00000000-0000-0000-0000-000000000000'::uuid;  -- sentinel: no auth context
+  END IF;
+  v_tenant_id_text := (v_claims_text::jsonb)->>'tenant_id';
+  IF v_tenant_id_text IS NULL THEN
+    RETURN '00000000-0000-0000-0000-000000000000'::uuid;  -- sentinel: super-admin without impersonation
+  END IF;
+  RETURN v_tenant_id_text::uuid;
+EXCEPTION WHEN OTHERS THEN
+  RETURN '00000000-0000-0000-0000-000000000000'::uuid;  -- defensive
+END $$;
+```
+
+- **Before Phase A:** returned sentinel UUID (GUC unset).
+- **After Phase A:** returns real tenant UUID from JWT claim. Sentinel is reachable only for authenticated super-admin at `/admin` without active impersonation, or for the anon/login flow — both cases the caller has no legitimate tenant reads pending, so RLS returns empty result sets.
+
+RLS policies keep the shape `WHERE tenant_id = _resolve_tenant_id()` — no policy rewrite needed. This is why we keep the helper: 56+ existing migrations reference it.
+
+### 3.3 Expiry write-guard (reads from JWT)
+
+```sql
+CREATE OR REPLACE FUNCTION public._guard_expiry_write()
+RETURNS void LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_mode text;
+BEGIN
+  v_mode := (current_setting('request.jwt.claims', true)::jsonb)->>'tenant_expiry_mode';
+  IF v_mode = 'READONLY' THEN
     RAISE EXCEPTION USING errcode = 'P0402',
       message = 'SUBSCRIPTION_EXPIRED_READONLY',
       hint = 'Renew subscription to enable writes.';
   END IF;
+EXCEPTION WHEN invalid_text_representation OR null_value_not_allowed OR undefined_object THEN
+  NULL;  -- Missing/malformed claim = allow (unauth flow, tests, etc.). Defense: RLS elsewhere.
 END $$;
 ```
 
 Invoked in two places (defense-in-depth):
 
-1. **RPC bodies** (write RPCs only) — bulk auto-wrapped by migration Step 4 (Section 4.2). Script inspects `pg_proc.prosrc` for INSERT/UPDATE/DELETE/TRUNCATE keywords, skipping SELECT-only functions and `get_*`/`list_*`/`resolve_*` naming convention. For each match, `CREATE OR REPLACE` with `PERFORM _guard_expiry_write();` inserted right after `BEGIN`.
-2. **RLS `WITH CHECK` clauses** — see Section 5.3 policy template. Policy evaluates `_guard_expiry_write() IS NULL` — the function returns void, so the comparison is true when it doesn't raise; false path is unreachable because raise cancels the transaction.
+1. **RPC bodies** — bulk auto-wrapped by plan Task 8 with `PERFORM _guard_expiry_write();` at start of every write RPC.
+2. **RLS `WITH CHECK` clauses** — see §5.3 template. Policy evaluates `_guard_expiry_write() IS NULL`: void returns satisfy `IS NULL`; raise cancels the transaction.
 
-### 3.4 Frontend Supabase client header injection
+### 3.4 Frontend — no header injection needed
 
-`src/lib/supabaseClient.ts`:
+Because the Auth Hook bakes tenant identity into the JWT itself, the frontend does **not** need to send `x-tenant-slug` or `x-impersonate-tenant` headers on Supabase requests. The Supabase JS SDK automatically attaches the JWT bearer token, which contains the tenant claims.
 
-```typescript
-import { createClient } from '@supabase/supabase-js';
-import { getTenantSlugFromURL, getImpersonateSlug } from './tenantContext';
+`src/lib/supabaseClient.ts` initialization stays close to the codebase's existing pattern — no custom `global.fetch` wrapper needed for tenant identity. (URL slug still exists for routing / display; it is authoritative for UI but not for authorization.)
 
-export const supabase = createClient(url, key, {
-  global: {
-    fetch: (input, init) => {
-      const slug = getTenantSlugFromURL();          // sync read from window.location
-      const impersonate = getImpersonateSlug();     // sync read from local state
-      const headers = new Headers(init?.headers);
-      if (slug) headers.set('x-tenant-slug', slug);
-      if (impersonate) headers.set('x-impersonate-tenant', impersonate);
-      return fetch(input, { ...init, headers });
-    }
-  }
-});
-```
+**Session refresh trigger.** When a super-admin starts or stops impersonation, the tenant identity in the JWT must change. Frontend calls `await supabase.auth.refreshSession()` immediately after the impersonation RPC succeeds. The hook re-fires; the new JWT carries the updated claims. Same mechanism handles plan changes made by super-admin while a user is signed in: after any change to `tenant_subscriptions` or `feature_overrides`, admins can trigger a "force resync" by sending a Supabase realtime broadcast to affected user sessions, prompting a refresh.
 
-`getTenantSlugFromURL()` reads synchronously from `window.location.pathname` matching `/^\/t\/([^/]+)/`. Reading from URL (not from `TenantContext`) avoids the race where the fetch fires before the async context mounts.
+### 3.5 Impersonation flow (RPCs + hook-driven JWT re-issue)
 
-### 3.6 Impersonation audit RPC
-
-The frontend logs impersonation start-of-session explicitly to avoid noisy per-RPC audit rows:
+Two RPCs manage the impersonation state that the Auth Hook reads:
 
 ```sql
-CREATE OR REPLACE FUNCTION log_impersonation_start(p_slug text)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+CREATE OR REPLACE FUNCTION public.impersonate_tenant(p_slug text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_tenant_id uuid;
-  v_headers json := nullif(current_setting('request.headers', true), '')::json;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM platform_admins WHERE user_id = v_uid) THEN
+  IF NOT EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_uid) THEN
     RAISE EXCEPTION 'Not a platform admin' USING errcode = 'P0403';
   END IF;
 
-  SELECT id INTO v_tenant_id FROM tenants WHERE slug = p_slug;
+  SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = p_slug AND status = 'ACTIVE';
   IF v_tenant_id IS NULL THEN
     RAISE EXCEPTION 'TENANT_NOT_FOUND';
   END IF;
 
-  INSERT INTO platform_admin_audit
-    (admin_user_id, admin_email, tenant_id, action, detail, ip_address, user_agent)
-  VALUES (
-    v_uid,
-    (SELECT email FROM auth.users WHERE id = v_uid),
-    v_tenant_id,
-    'IMPERSONATE_START',
-    jsonb_build_object('via', 'log_impersonation_start_rpc'),
-    nullif(v_headers ->> 'x-forwarded-for', '')::inet,
-    v_headers ->> 'user-agent'
-  );
+  INSERT INTO public.platform_admin_active_impersonation (admin_user_id, tenant_slug)
+  VALUES (v_uid, p_slug)
+  ON CONFLICT (admin_user_id) DO UPDATE SET tenant_slug = EXCLUDED.tenant_slug, started_at = now();
+
+  INSERT INTO public.platform_admin_audit
+    (admin_user_id, admin_email, tenant_id, action, detail)
+  VALUES (v_uid, (SELECT email FROM auth.users WHERE id = v_uid),
+          v_tenant_id, 'IMPERSONATE_START',
+          jsonb_build_object('slug', p_slug));
 END $$;
 
-REVOKE ALL ON FUNCTION log_impersonation_start(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION log_impersonation_start(text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.stop_impersonation()
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_prev_slug text;
+  v_tenant_id uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_uid) THEN
+    RAISE EXCEPTION 'Not a platform admin' USING errcode = 'P0403';
+  END IF;
+
+  SELECT tenant_slug INTO v_prev_slug FROM public.platform_admin_active_impersonation
+  WHERE admin_user_id = v_uid;
+
+  DELETE FROM public.platform_admin_active_impersonation WHERE admin_user_id = v_uid;
+
+  IF v_prev_slug IS NOT NULL THEN
+    SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = v_prev_slug;
+    INSERT INTO public.platform_admin_audit
+      (admin_user_id, admin_email, tenant_id, action, detail)
+    VALUES (v_uid, (SELECT email FROM auth.users WHERE id = v_uid),
+            v_tenant_id, 'IMPERSONATE_END',
+            jsonb_build_object('slug', v_prev_slug));
+  END IF;
+END $$;
+
+REVOKE ALL ON FUNCTION public.impersonate_tenant(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.stop_impersonation() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.impersonate_tenant(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.stop_impersonation() TO authenticated;
 ```
 
-Frontend (`AdminShell.tsx`) calls this once when the super-admin clicks "Impersonate <tenant>" — before setting the `x-impersonate-tenant` header. Corresponding `log_impersonation_end()` RPC fires on exit.
+Client sequence when super-admin enters impersonation:
 
-### 3.7 Backend Go — Layer-A follow-up
+```typescript
+await supabase.rpc('impersonate_tenant', { p_slug: 'garindo' });
+await supabase.auth.refreshSession();  // triggers hook re-fire → new JWT has tenant claims
+navigate('/t/garindo/dashboard');
+```
 
-`backend-go/` currently accesses Supabase directly. Post-Phase A, every HTTP handler in the Go backend must:
+Exit:
+```typescript
+await supabase.rpc('stop_impersonation');
+await supabase.auth.refreshSession();
+navigate('/admin');
+```
 
-1. Read `x-tenant-slug` from the incoming request.
-2. Start a DB transaction and execute `SET LOCAL app.current_tenant_id = '<uuid>'` after resolving the slug.
-3. Run business queries inside that transaction so RLS sees the GUC.
+The audit trail lives in `platform_admin_audit` — same table as before, populated by the impersonate RPCs directly (not by a global pre-request hook). No noisy per-RPC audit inserts.
 
-This is tracked as **Phase A polish task** (not a blocker for Phase A initial merge, but required before real tenant #2 go-live). Documented in Section 7.3 risks.
+### 3.6 Backend Go — JWT-aware follow-up
+
+`backend-go/` currently issues its own DB queries. Post-Phase A, every Go request handler must forward the incoming Supabase JWT and rely on it for tenant identity:
+
+1. Read `Authorization: Bearer <jwt>` header from the incoming HTTP request.
+2. Pass the same JWT to Supabase-facing PostgREST calls (Go can use `supabase-community/postgrest-go` with the user's JWT), so PostgREST sets `request.jwt.claims` naturally — `_resolve_tenant_id()` reads tenant from the JWT the client already carries.
+3. If Go bypasses PostgREST and hits Postgres directly (via pgx pool), it must set the JWT claims GUC per-transaction: `SET LOCAL request.jwt.claims = '<json>'` at the start of each transaction, where JSON is decoded from the bearer token.
+
+Tracked as **Phase A polish task** — not blocking initial Phase A merge, but required before tenant #2 real go-live. Documented in §7.3 risks.
 
 ---
 
 ## 3.5 Scalability & Production Guardrails
 
-### 3.5.1 GUC leakage via connection pooling — CRITICAL
+### 3.5.1 GUC leakage via connection pooling — best practice (downgraded post-pivot)
 
-Supabase runs PgBouncer in transaction pooling mode. All GUC sets **must** use the transaction-local flag:
+Post-Auth-Hook pivot (§3.1), tenant identity is carried in the JWT and read via `request.jwt.claims` — which is set by PostgREST **per request** (not per connection) and is transaction-local by design. So the original PgBouncer-transaction-pool GUC-leak risk no longer applies to the primary auth path.
 
-```sql
--- SAFE
-PERFORM set_config('app.current_tenant_id', 'tenant-A', true);
-
--- FORBIDDEN (session-level → leaks between requests)
-PERFORM set_config('app.current_tenant_id', 'tenant-A', false);
-```
-
-**CI guardrail:** grep-fail on any migration or function definition that passes `false` as the third argument to `set_config`. Enforced in the isolation-audit GitHub Actions job.
+However, the general rule still holds for any custom GUCs we introduce elsewhere: all `set_config(..., true)` in every migration/RPC — never `false`. Enforced as CI grep-check regardless.
 
 ### 3.5.2 RLS default-deny posture + `SECURITY DEFINER` ownership hardening
 
@@ -645,7 +700,11 @@ Existing policies with `TO anon USING (true)` (e.g., `admin_users`, pre-refactor
 
 **Migration scope for Phase A:** every existing tenant-touching `SECURITY DEFINER` function must be re-owned and audited. This is a discrete work-item (see plan Task 8.5 — SECURITY DEFINER audit + ownership migration).
 
-**Special case — `_pgrst_pre_request()` itself.** This function *must* be able to read `platform_admins`, `tenant_users`, `tenants`, `v_tenant_effective_features` from within its body. Since these are P/A category tables with FORCE RLS, the function needs privileges the tenant user doesn't have. Solution: `_pgrst_pre_request()` is owned by `postgres` (BYPASSRLS) — the ONE deliberate exception. Its body only reads platform meta and cannot itself leak tenant data because it doesn't return rows to the caller (returns `void`).
+**Special case — `custom_access_token_hook()` itself.** The Auth Hook must be able to read `platform_admins`, `tenant_users`, `tenants`, `v_tenant_effective_features`, and `platform_admin_active_impersonation` from within its body. These are P/A category tables with FORCE RLS. Solution: `custom_access_token_hook()` is owned by `postgres` (BYPASSRLS) — the ONE deliberate exception. It runs only under the `supabase_auth_admin` role at JWT-issue time (not from tenant sessions), and it returns opaque claims to Supabase Auth — not tenant data to the caller.
+
+**`impersonate_tenant()` / `stop_impersonation()`** (§3.5) also need cross-tenant reach (they operate on the platform-admin-scoped impersonation table). These are **kept postgres-owned** — the ONE additional exception alongside the Auth Hook. Their bodies check `platform_admins` membership as the first statement; a non-admin caller raises before any mutation.
+
+Every other tenant-touching SECURITY DEFINER RPC in the codebase is re-owned to `vosi_rpc_owner` in Task 8.5. Explicit `WHERE tenant_id = _resolve_tenant_id()` filters are added to the top-N high-risk write RPCs in Task 8.5 Step 8 as belt-and-suspenders.
 
 ### 3.5.3 Per-tenant activity telemetry skeleton
 
@@ -673,9 +732,14 @@ Cloud Run deploys are rolling — old code and new code hit the same DB during a
 
 ### 3.5.7 Statement timeout per role
 
+Supabase Cloud already sets `statement_timeout=8s` on `authenticator` by default (verified in Task 0 spike). We only add explicit caps for `authenticated`/`anon` if we want tighter isolation, and raise `service_role` cap for admin operations:
+
 ```sql
-ALTER ROLE authenticated SET statement_timeout = '10s';
+-- Optional: tighten user-facing roles to match authenticator's 8s.
+-- Skip if Supabase defaults are already acceptable.
+ALTER ROLE authenticated SET statement_timeout = '8s';
 ALTER ROLE anon SET statement_timeout = '3s';
+-- service_role handles background jobs, migrations, admin ops — allow longer
 ALTER ROLE service_role SET statement_timeout = '60s';
 ```
 
@@ -1223,11 +1287,12 @@ Total: ~500–700 LOC net change.
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| **`pgrst.db_pre_request` may not be settable / persist on Supabase Cloud managed free tier** | MEDIUM | **CRITICAL — voids entire architecture** | **Task 0 architecture spike (1 day) BEFORE Task 1.** Test `ALTER ROLE authenticator SET pgrst.db_pre_request` on real Supabase Cloud project (not just local Docker). Verify function fires via `RAISE NOTICE` in Supabase Logs. If it fails: fallback is per-RPC GUC setting via `SET LOCAL` wrapper (2× more work, still viable). |
-| **`SECURITY DEFINER` + `BYPASSRLS` role bypasses FORCE RLS** (§3.5.2 correction) | HIGH | **CRITICAL — cross-tenant leak** | **Ownership migration** (plan Task 8.5): create `vosi_rpc_owner` role WITHOUT `BYPASSRLS`; `ALTER FUNCTION ... OWNER TO vosi_rpc_owner` for all 200+ tenant-touching RPCs. Belt-and-suspenders: add explicit `WHERE tenant_id = _resolve_tenant_id()` to high-risk RPC bodies. |
-| **Auto-wrap regex misses `DECLARE`-block RPCs silently** | HIGH (pre-fix) → LOW (post-fix) | HIGH | Regex fix (plan Task 8 revised): use line-anchored `\nBEGIN\n` instead of `$$-BEGIN`. Also inject `PERFORM _guard_expiry_write()` skip check to avoid double-injection on re-runs. |
-| PgBouncer transaction pool GUC leak | LOW | CRITICAL | §3.5.1 CI grep-check for `set_config(..., false)`. Manual load test on preview. |
-| Existing RPC with `SECURITY DEFINER` bypasses tenant filter (residual after ownership migration) | LOW (post-fix) | HIGH | Task 8.5 also audits RPC bodies for tenant filter; high-risk RPCs (record_kasir_sale, create_tempo_invoice, receive_po, etc.) get explicit filters even after ownership fix. |
+| ~~`pgrst.db_pre_request` may not persist on Supabase Cloud~~ **CONFIRMED unavailable; pivoted to Auth Hook (§3.1)** | — | — | **Resolved via architecture pivot.** Task 0 spike verified Supabase Cloud does not honor the setting. Design now uses `custom_access_token_hook` instead — officially supported, zero per-request overhead. Spike report: `docs/superpowers/spikes/2026-07-03-phase-a-architecture-spike.md`. |
+| **Auth Hook not registered in Supabase Dashboard** (manual step) | LOW | HIGH | Migration files 1–5 create the SQL function, but Supabase Dashboard → Authentication → Hooks → Custom Access Token must be toggled ON manually and pointed at `public.custom_access_token_hook`. Rollout checklist (§7.2 Day 4) includes this step explicitly. Missing this = login works but JWT lacks tenant claim → all RLS returns empty. |
+| **JWT claim staleness on plan/subscription changes** | MEDIUM | LOW | User's JWT is baked at login; a super-admin changing that user's plan won't reflect until the next JWT refresh (typically 1 hour). Mitigation: Supabase realtime broadcast to prompt affected clients to call `refreshSession()`. Acceptable for MSME context where plan changes are rare. |
+| **`SECURITY DEFINER` + `BYPASSRLS` role bypasses FORCE RLS** (§3.5.2) | HIGH | **CRITICAL — cross-tenant leak** | **Ownership migration** (plan Task 8.5): create `vosi_rpc_owner` role WITHOUT `BYPASSRLS`; `ALTER FUNCTION ... OWNER TO vosi_rpc_owner` for the 163 tenant-touching RPCs verified in spike. Belt-and-suspenders: explicit `WHERE tenant_id = _resolve_tenant_id()` in high-risk RPC bodies. |
+| **Auto-wrap regex misses `DECLARE`-block RPCs silently** | ~~HIGH~~ → LOW | HIGH | **Regex verified in spike (Task 0 Step 2).** Line-anchored `\nBEGIN\n` correctly wraps `_apply_price_change` (a real DECLARE RPC). Spike also confirmed 112 of 162 SECDEF+write RPCs use DECLARE — so the fix is essential. |
+| Existing RPC with SECURITY DEFINER bypasses tenant filter (residual after ownership migration) | LOW (post-fix) | HIGH | Task 8.5 also audits RPC bodies for tenant filter; high-risk RPCs (record_kasir_sale, create_tempo_invoice, receive_po, etc.) get explicit filters even after ownership fix. |
 | Existing data with `tenant_id` values other than sentinel/NULL | MEDIUM | HIGH | Pre-migration query `SELECT DISTINCT tenant_id FROM <table>` per table. Manual investigation if non-Garindo UUIDs surface. Skeptic script fails migration if unexpected values found. |
 | `kasir_transactions` — currently uses anon writes | MEDIUM | HIGH | Field-check whether POS device uses anon key or an authenticated kiosk user. If anon → RLS tightening breaks POS flow. Resolution: introduce a tenant-scoped kiosk service user; POS device authenticates as that user. Track as Phase A blocker before tenant #2 real go-live. |
 | `admin_users` (POS staff) — schema pre-tenant, `anon USING (true)` | HIGH | MEDIUM | Category T treatment: add `tenant_id`, backfill Garindo, tighten RLS. Frontend `UserManagementScreen` refactor is minor. Included in migration file 2 backfill block. |
@@ -1242,7 +1307,7 @@ Resolved during brainstorming:
 
 1. URL model — path prefix `/t/<slug>/*`, custom domain deferred to Phase C.
 2. Feature model — hybrid plans + per-tenant JSONB overrides.
-3. Super-admin auth — `platform_admins` allowlist + Supabase Auth OTP + impersonation via header.
+3. Super-admin auth — `platform_admins` allowlist + Supabase Auth OTP + **impersonation via RPC + JWT refresh** (was: header; changed after Task 0 spike pivot to Auth Hook).
 4. Onboarding UX — super-admin fills, tenant just logs in via magic link (no wizard).
 5. Expiry behavior — 7-day grace (full write) → read-only permanent.
 6. Data import scope — 4 entities (products, customers, suppliers, kas/bank), Excel template only. **Phase B.**
@@ -1282,22 +1347,22 @@ Phase A adds no paid-service dependency **at build time**. All build-time resour
 
 ### 7.7 Effort estimate
 
-Approximately 2.5–3 weeks solo focused work (updated after audit findings):
+Approximately 2–2.5 weeks solo focused work (post-spike + pivot):
 
 | Component | Days |
 |---|---|
-| **Task 0: Architecture spike (Supabase Cloud verification)** | 1 |
-| Migration files 1–4 (schema, seed, backfill, RLS, Layer-A wire) | 3 |
+| ~~Task 0: Architecture spike~~ | ~~1~~ (done: ~30 min) |
+| Migration files 1–4 (schema, seed, backfill, RLS) | 3 |
 | RLS audit script (`generate-rls-audit-migration.ts`) + manual review | 2 |
-| `_pgrst_pre_request` + `_guard_expiry_write` + bulk auto-wrap | 1 |
+| `custom_access_token_hook` + `_resolve_tenant_id` rewrite + `_guard_expiry_write` + `impersonate_tenant`/`stop_impersonation` RPCs + bulk auto-wrap | 1 |
 | **Task 8.5: SECURITY DEFINER ownership migration + high-risk RPC patches** | 2 |
-| Frontend: TenantContext, URL refactor, error interceptor, read-only banner | 3 |
+| Frontend: TenantContext, URL refactor, error interceptor, read-only banner (no more header injection — simpler) | 2.5 |
 | `companySettingsService` refactor + affected screen updates | 1 |
-| pgTAP + Vitest tests | 2 |
+| pgTAP + Vitest tests (hook branches replace pre-request branches) | 2 |
 | Isolation test harness + fixtures + CI wiring | 2 |
-| Manual smoke + 4-day halt-gate rollout | 1 |
+| Manual smoke + rollout (Supabase Dashboard hook registration + halt-gate deploys) | 1 |
 
-Total ~18 days (up from 15). 2.5 weeks full-time or 3.5 weeks part-time. The +3 days come from the architecture spike (1 day) and SECURITY DEFINER hardening (2 days) added after the audit round.
+Total ~16.5 days. **2 weeks full-time or 3 weeks part-time**. The pivot to Auth Hook shaved ~1.5 days (simpler frontend + simpler DB function) from the pre-pivot 18-day estimate.
 
 ---
 

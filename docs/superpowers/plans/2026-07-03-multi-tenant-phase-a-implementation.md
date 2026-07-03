@@ -21,12 +21,13 @@
 - **Slug regex:** `^[a-z0-9][a-z0-9-]{2,29}$`. **Reserved:** `admin, api, auth, login, signup, www, t, static, assets, public, app, support, help`.
 - **Plan codes:** `STARTER`, `PRO`, `PREMIUM` (regex `^[A-Z][A-Z0-9_]{2,29}$`).
 - **Migration file names (exact):**
-  - `20261001000001_phase_a_schema.sql`
+  - `20261001000001_phase_a_schema.sql` (includes `platform_admin_active_impersonation`)
   - `20261001000002_phase_a_seed_and_backfill.sql`
   - `20261001000003_phase_a_not_null_and_rls.sql`
-  - `20261001000004_phase_a_wire_layer_a.sql`
+  - `20261001000004_phase_a_auth_hook.sql` (was `_wire_layer_a`; renamed post-pivot to reflect Auth Hook mechanism)
   - `20261001000005_phase_a_secdef_ownership.sql` (Task 8.5 bulk ownership migration)
   - `20261001000006+` per-RPC SECDEF explicit-filter patches (Task 8.5 Step 8, one per high-risk RPC)
+- **Manual Supabase Dashboard step (not in migration):** Authentication → Hooks → Custom Access Token Hook → enable + point to `public.custom_access_token_hook`. Required per environment (preview + prod). Local Supabase Docker auto-picks up.
 - **CI gate:** starts `warn-only` (post PR comment, don't block). Tighten to hard-fail after 2 weeks.
 - **TDD strict** where testable: RED test → run failing → implement → run passing → commit. Exceptions: pure DDL migration files (verified via replay).
 - **Lint pass per FE task:** `npx tsc --noEmit` clean, `npx vitest run --dir src` baseline PASS.
@@ -1112,147 +1113,214 @@ git commit -m "feat(multi-tenant): Phase A file 3b — RLS hardening block appen
 
 ---
 
-## Task 8: Migration File 4 — Layer-A wiring (functions + auto-wrap + `ALTER ROLE`)
+## Task 8: Migration File 4 — Auth Hook + `_resolve_tenant_id` rewrite + guards + impersonation RPCs + bulk auto-wrap
 
 **Files:**
-- Create: `supabase/migrations/20261001000004_phase_a_wire_layer_a.sql`
+- Create: `supabase/migrations/20261001000004_phase_a_auth_hook.sql`
 
 **Interfaces:**
-- Produces: `_pgrst_pre_request()`, `_guard_expiry_write()`, `log_impersonation_start(text)`, `log_impersonation_end(text)`, `bootstrap_tenant_context()`, `is_platform_admin()`. All write RPCs auto-wrapped with `PERFORM _guard_expiry_write();` at BEGIN. `authenticator` role wired to run pre-request. `NOTIFY pgrst` reload.
+- Produces: `custom_access_token_hook(jsonb)` (registered via Supabase Dashboard), `_resolve_tenant_id()` (body rewritten to read JWT), `_guard_expiry_write()` (reads JWT), `impersonate_tenant(text)`, `stop_impersonation()`, `is_platform_admin()`, `bootstrap_tenant_context()`. `platform_admin_active_impersonation` table added to §2.1 schema (moved into File 1 in practice). All write RPCs auto-wrapped with `PERFORM _guard_expiry_write();`.
 
-- [ ] **Step 1: Create file + `_guard_expiry_write`**
+> **File rename:** was `20261001000004_phase_a_wire_layer_a.sql` in pre-pivot plan. Renamed to `_auth_hook.sql` to reflect the actual mechanism. Update the Global Constraints migration list accordingly.
+
+- [ ] **Step 1: Create file + `platform_admin_active_impersonation` table**
+
+Add to Migration File 1 (Task 1) alongside other platform tables — moving here for clarity:
 
 ```sql
--- supabase/migrations/20261001000004_phase_a_wire_layer_a.sql
--- Phase A: wire Layer-A auth hook + expiry guard + helper RPCs.
--- Rollback: ALTER ROLE authenticator RESET pgrst.db_pre_request; NOTIFY pgrst, 'reload config';
+-- (Task 1 addendum: add to 20261001000001_phase_a_schema.sql)
+CREATE TABLE IF NOT EXISTS public.platform_admin_active_impersonation (
+  admin_user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  tenant_slug   TEXT NOT NULL,  -- FK added in File 2 after tenants seeded
+  started_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.platform_admin_active_impersonation IS 'category=P';
+GRANT SELECT ON public.platform_admin_active_impersonation TO supabase_auth_admin;
 
+-- FK added in File 2 (after tenants seeded):
+-- ALTER TABLE public.platform_admin_active_impersonation
+--   ADD CONSTRAINT fk_impersonation_slug FOREIGN KEY (tenant_slug) REFERENCES public.tenants(slug);
+```
+
+Create File 4 with `_resolve_tenant_id()` rewrite (replaces existing sentinel-return body):
+
+```sql
+-- supabase/migrations/20261001000004_phase_a_auth_hook.sql
+-- Phase A: Supabase Auth Hook for JWT tenant claims + expiry guard +
+-- impersonation RPCs + bulk write-guard auto-wrap.
+--
+-- ROLLBACK NOTES:
+--   1. Supabase Dashboard → Auth → Hooks → Custom Access Token → disable.
+--      OR: run the "rollback" fallback below to restore _resolve_tenant_id
+--      to sentinel-only behavior (Phase A pre-pivot state).
+--   2. If bulk auto-wrap causes issues on a specific RPC, restore that
+--      individual RPC from git history and re-apply.
+
+CREATE OR REPLACE FUNCTION public._resolve_tenant_id()
+RETURNS uuid LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_claims_text text;
+  v_tenant_id_text text;
+BEGIN
+  v_claims_text := current_setting('request.jwt.claims', true);
+  IF v_claims_text IS NULL OR v_claims_text = '' THEN
+    RETURN '00000000-0000-0000-0000-000000000000'::uuid;
+  END IF;
+  v_tenant_id_text := (v_claims_text::jsonb)->>'tenant_id';
+  IF v_tenant_id_text IS NULL THEN
+    RETURN '00000000-0000-0000-0000-000000000000'::uuid;
+  END IF;
+  RETURN v_tenant_id_text::uuid;
+EXCEPTION WHEN OTHERS THEN
+  RETURN '00000000-0000-0000-0000-000000000000'::uuid;
+END $$;
+
+-- signature unchanged; grants unchanged
+```
+
+- [ ] **Step 2: Append `_guard_expiry_write()`**
+
+```sql
 CREATE OR REPLACE FUNCTION public._guard_expiry_write()
 RETURNS void LANGUAGE plpgsql STABLE AS $$
+DECLARE
+  v_mode text;
 BEGIN
-  IF current_setting('app.tenant_expiry_mode', true) = 'READONLY' THEN
+  v_mode := (current_setting('request.jwt.claims', true)::jsonb)->>'tenant_expiry_mode';
+  IF v_mode = 'READONLY' THEN
     RAISE EXCEPTION USING errcode = 'P0402',
       message = 'SUBSCRIPTION_EXPIRED_READONLY',
       hint = 'Renew subscription to enable writes.';
   END IF;
+EXCEPTION WHEN invalid_text_representation OR null_value_not_allowed OR undefined_object THEN
+  -- No JWT claims (unauth flow, tests, migration scripts) — do not block.
+  -- RLS is the primary defense; guard is a UX-preserving extra.
+  NULL;
 END $$;
 
 REVOKE ALL ON FUNCTION public._guard_expiry_write() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public._guard_expiry_write() TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public._guard_expiry_write() TO authenticated, service_role, vosi_rpc_owner;
 ```
 
-- [ ] **Step 2: Append `_pgrst_pre_request`**
+Note: `vosi_rpc_owner` grant is important since Task 8.5 re-owns RPCs to it, and those RPCs call `_guard_expiry_write()`.
+
+- [ ] **Step 3: Append `custom_access_token_hook`**
 
 ```sql
-CREATE OR REPLACE FUNCTION public._pgrst_pre_request()
-RETURNS void
+CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
+RETURNS jsonb
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_uid uuid;
-  v_slug text;
-  v_impersonate text;
-  v_is_platform boolean;
-  v_tenant_id uuid;
-  v_tenant_status text;
-  v_expiry_state text;
-  v_headers json;
+  v_user_id                uuid;
+  v_is_platform_admin      boolean;
+  v_impersonating_slug     text;
+  v_tenant_id              uuid;
+  v_tenant_status          text;
+  v_expiry_state           text;
+  v_claims                 jsonb;
 BEGIN
-  v_uid := auth.uid();
-  v_headers := nullif(current_setting('request.headers', true), '')::json;
-  v_slug        := nullif(v_headers ->> 'x-tenant-slug', '');
-  v_impersonate := nullif(v_headers ->> 'x-impersonate-tenant', '');
+  v_claims := event->'claims';
+  v_user_id := (v_claims->>'sub')::uuid;
 
-  PERFORM set_config('app.current_tenant_id', '', true);
-  PERFORM set_config('app.tenant_expiry_mode', '', true);
-  PERFORM set_config('app.is_platform_admin', 'false', true);
+  v_is_platform_admin := EXISTS (
+    SELECT 1 FROM public.platform_admins WHERE user_id = v_user_id
+  );
+  v_claims := jsonb_set(v_claims, '{is_platform_admin}', to_jsonb(v_is_platform_admin));
 
-  IF v_uid IS NULL THEN RETURN; END IF;
-
-  v_is_platform := EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_uid);
-  IF v_is_platform THEN
-    PERFORM set_config('app.is_platform_admin', 'true', true);
+  IF v_is_platform_admin THEN
+    SELECT tenant_slug INTO v_impersonating_slug
+    FROM public.platform_admin_active_impersonation
+    WHERE admin_user_id = v_user_id;
   END IF;
 
-  IF v_is_platform AND v_impersonate IS NOT NULL THEN
-    v_slug := v_impersonate;
+  IF v_impersonating_slug IS NOT NULL THEN
+    SELECT id, status INTO v_tenant_id, v_tenant_status
+    FROM public.tenants WHERE slug = v_impersonating_slug;
+    v_claims := jsonb_set(v_claims, '{impersonating}', to_jsonb(true));
+    v_claims := jsonb_set(v_claims, '{impersonating_slug}', to_jsonb(v_impersonating_slug));
+  ELSE
+    SELECT t.id, t.status INTO v_tenant_id, v_tenant_status
+    FROM public.tenant_users tu
+    JOIN public.tenants t ON t.id = tu.tenant_id
+    WHERE tu.user_id = v_user_id AND tu.status = 'ACTIVE' AND t.status IN ('ACTIVE','SUSPENDED')
+    ORDER BY tu.created_at ASC
+    LIMIT 1;
   END IF;
 
-  IF v_slug IS NULL THEN RETURN; END IF;
+  IF v_tenant_id IS NOT NULL THEN
+    v_claims := jsonb_set(v_claims, '{tenant_id}', to_jsonb(v_tenant_id::text));
+    v_claims := jsonb_set(v_claims, '{tenant_status}', to_jsonb(v_tenant_status));
 
-  SELECT id, status INTO v_tenant_id, v_tenant_status
-  FROM public.tenants WHERE slug = v_slug;
-
-  IF v_tenant_id IS NULL THEN
-    RAISE EXCEPTION USING errcode = 'P0404', message = 'TENANT_NOT_FOUND', detail = format('slug=%s', v_slug);
+    SELECT expiry_state INTO v_expiry_state
+    FROM public.v_tenant_effective_features WHERE tenant_id = v_tenant_id;
+    v_claims := jsonb_set(v_claims, '{tenant_expiry_mode}', to_jsonb(COALESCE(v_expiry_state, 'ACTIVE')));
   END IF;
 
-  IF v_tenant_status = 'SUSPENDED' THEN
-    RAISE EXCEPTION USING errcode = 'P0403', message = 'TENANT_SUSPENDED';
-  END IF;
-
-  IF v_tenant_status = 'ARCHIVED' THEN
-    RAISE EXCEPTION USING errcode = 'P0404', message = 'TENANT_NOT_FOUND';
-  END IF;
-
-  IF NOT v_is_platform THEN
-    IF NOT EXISTS (SELECT 1 FROM public.tenant_users
-                   WHERE tenant_id = v_tenant_id AND user_id = v_uid AND status = 'ACTIVE') THEN
-      RAISE EXCEPTION USING errcode = 'P0403', message = 'NOT_A_MEMBER';
-    END IF;
-  END IF;
-
-  PERFORM set_config('app.current_tenant_id', v_tenant_id::text, true);
-
-  SELECT expiry_state INTO v_expiry_state
-  FROM public.v_tenant_effective_features WHERE tenant_id = v_tenant_id;
-
-  PERFORM set_config('app.tenant_expiry_mode', COALESCE(v_expiry_state, 'ACTIVE'), true);
+  RETURN jsonb_build_object('claims', v_claims);
 END $$;
 
-REVOKE ALL ON FUNCTION public._pgrst_pre_request() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public._pgrst_pre_request() TO authenticator, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.custom_access_token_hook(jsonb) TO supabase_auth_admin;
+REVOKE ALL ON FUNCTION public.custom_access_token_hook(jsonb) FROM authenticated, anon, PUBLIC;
+
+-- Also grant supabase_auth_admin read access to the tables the hook needs
+GRANT SELECT ON public.platform_admins TO supabase_auth_admin;
+GRANT SELECT ON public.platform_admin_active_impersonation TO supabase_auth_admin;
+GRANT SELECT ON public.tenants TO supabase_auth_admin;
+GRANT SELECT ON public.tenant_users TO supabase_auth_admin;
+GRANT SELECT ON public.tenant_subscriptions TO supabase_auth_admin;
+GRANT SELECT ON public.plans TO supabase_auth_admin;
+GRANT SELECT ON public.v_tenant_effective_features TO supabase_auth_admin;
 ```
 
-- [ ] **Step 3: Append helper RPCs**
+- [ ] **Step 4: Append impersonation RPCs + helper RPCs**
 
 ```sql
-CREATE OR REPLACE FUNCTION public.log_impersonation_start(p_slug text)
+CREATE OR REPLACE FUNCTION public.impersonate_tenant(p_slug text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid uuid := auth.uid();
   v_tenant_id uuid;
-  v_headers json := nullif(current_setting('request.headers', true), '')::json;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_uid) THEN
     RAISE EXCEPTION 'Not a platform admin' USING errcode = 'P0403';
   END IF;
-  SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = p_slug;
-  IF v_tenant_id IS NULL THEN RAISE EXCEPTION 'TENANT_NOT_FOUND'; END IF;
+  SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = p_slug AND status = 'ACTIVE';
+  IF v_tenant_id IS NULL THEN
+    RAISE EXCEPTION 'TENANT_NOT_FOUND';
+  END IF;
+  INSERT INTO public.platform_admin_active_impersonation (admin_user_id, tenant_slug)
+  VALUES (v_uid, p_slug)
+  ON CONFLICT (admin_user_id) DO UPDATE SET tenant_slug = EXCLUDED.tenant_slug, started_at = now();
   INSERT INTO public.platform_admin_audit
-    (admin_user_id, admin_email, tenant_id, action, detail, ip_address, user_agent)
-  VALUES (
-    v_uid, (SELECT email FROM auth.users WHERE id = v_uid), v_tenant_id,
-    'IMPERSONATE_START', jsonb_build_object('via', 'log_impersonation_start_rpc'),
-    nullif(v_headers ->> 'x-forwarded-for', '')::inet, v_headers ->> 'user-agent'
-  );
+    (admin_user_id, admin_email, tenant_id, action, detail)
+  VALUES (v_uid, (SELECT email FROM auth.users WHERE id = v_uid), v_tenant_id,
+          'IMPERSONATE_START', jsonb_build_object('slug', p_slug));
 END $$;
 
-CREATE OR REPLACE FUNCTION public.log_impersonation_end(p_slug text)
+CREATE OR REPLACE FUNCTION public.stop_impersonation()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid uuid := auth.uid();
+  v_prev_slug text;
   v_tenant_id uuid;
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.platform_admins WHERE user_id = v_uid) THEN
     RAISE EXCEPTION 'Not a platform admin' USING errcode = 'P0403';
   END IF;
-  SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = p_slug;
-  IF v_tenant_id IS NULL THEN RAISE EXCEPTION 'TENANT_NOT_FOUND'; END IF;
-  INSERT INTO public.platform_admin_audit (admin_user_id, admin_email, tenant_id, action)
-  VALUES (v_uid, (SELECT email FROM auth.users WHERE id = v_uid), v_tenant_id, 'IMPERSONATE_END');
+  SELECT tenant_slug INTO v_prev_slug FROM public.platform_admin_active_impersonation
+  WHERE admin_user_id = v_uid;
+  DELETE FROM public.platform_admin_active_impersonation WHERE admin_user_id = v_uid;
+  IF v_prev_slug IS NOT NULL THEN
+    SELECT id INTO v_tenant_id FROM public.tenants WHERE slug = v_prev_slug;
+    INSERT INTO public.platform_admin_audit
+      (admin_user_id, admin_email, tenant_id, action, detail)
+    VALUES (v_uid, (SELECT email FROM auth.users WHERE id = v_uid), v_tenant_id,
+            'IMPERSONATE_END', jsonb_build_object('slug', v_prev_slug));
+  END IF;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.is_platform_admin()
@@ -1263,13 +1331,15 @@ $$;
 CREATE OR REPLACE FUNCTION public.bootstrap_tenant_context()
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE
+  v_claims jsonb;
   v_tenant_id uuid;
   v_result jsonb;
 BEGIN
-  v_tenant_id := nullif(current_setting('app.current_tenant_id', true), '')::uuid;
-  IF v_tenant_id IS NULL THEN
+  v_claims := nullif(current_setting('request.jwt.claims', true), '')::jsonb;
+  IF v_claims IS NULL OR (v_claims->>'tenant_id') IS NULL THEN
     RAISE EXCEPTION 'MISSING_TENANT_CONTEXT' USING errcode = 'P0400';
   END IF;
+  v_tenant_id := (v_claims->>'tenant_id')::uuid;
   SELECT jsonb_build_object(
     'tenant_id', t.id,
     'slug', t.slug,
@@ -1280,7 +1350,9 @@ BEGIN
     'expiry_mode', v.expiry_state,
     'expires_at', v.expires_at,
     'grace_expires_at', v.grace_expires_at,
-    'is_platform_admin', current_setting('app.is_platform_admin', true) = 'true'
+    'is_platform_admin', COALESCE((v_claims->>'is_platform_admin')::boolean, false),
+    'impersonating', COALESCE((v_claims->>'impersonating')::boolean, false),
+    'impersonating_slug', v_claims->>'impersonating_slug'
   ) INTO v_result
   FROM public.tenants t
   LEFT JOIN public.v_tenant_effective_features v ON v.tenant_id = t.id
@@ -1288,12 +1360,12 @@ BEGIN
   RETURN v_result;
 END $$;
 
-REVOKE ALL ON FUNCTION public.log_impersonation_start(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.log_impersonation_end(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.impersonate_tenant(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.stop_impersonation() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.is_platform_admin() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.bootstrap_tenant_context() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.log_impersonation_start(text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.log_impersonation_end(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.impersonate_tenant(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.stop_impersonation() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_platform_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.bootstrap_tenant_context() TO authenticated;
 ```
@@ -1395,28 +1467,42 @@ WHERE n.nspname = 'public' AND p.prokind = 'f'
 ```
 Expected: **0 rows**. Any row = an unwrapped write RPC; investigate before proceeding.
 
-- [ ] **Step 5: Append `ALTER ROLE` + NOTIFY**
+- [ ] **Step 5: Optional — tighten `statement_timeout` per role**
+
+Supabase Cloud already sets `authenticator.statement_timeout = 8s`. Optionally match for `authenticated`/`anon`:
 
 ```sql
-ALTER ROLE authenticator SET pgrst.db_pre_request = 'public._pgrst_pre_request';
-NOTIFY pgrst, 'reload config';
+ALTER ROLE authenticated SET statement_timeout = '8s';
+ALTER ROLE anon SET statement_timeout = '3s';
+ALTER ROLE service_role SET statement_timeout = '60s';
 ```
 
-- [ ] **Step 6: Apply + verify pre-request wired**
+- [ ] **Step 6: Apply + verify functions created**
 
-Run:
 ```bash
 supabase db reset
-supabase db psql -c "SELECT rolname, rolconfig FROM pg_roles WHERE rolname='authenticator';"
-supabase db psql -c "SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname IN ('_pgrst_pre_request','_guard_expiry_write','log_impersonation_start','log_impersonation_end','is_platform_admin','bootstrap_tenant_context');"
+supabase db psql -c "SELECT proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname='public' AND p.proname IN ('custom_access_token_hook','_resolve_tenant_id','_guard_expiry_write','impersonate_tenant','stop_impersonation','is_platform_admin','bootstrap_tenant_context') ORDER BY proname;"
 ```
-Expected: `pgrst.db_pre_request=public._pgrst_pre_request` in rolconfig. Second query returns 6 rows.
+Expected: 7 rows.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Register hook in Supabase Dashboard (manual step, per environment)**
+
+**LOCAL:** hook is auto-picked up from Postgres config — no dashboard step needed if using `supabase start`.
+
+**Preview / Production:**
+1. Open Supabase Dashboard → Authentication → Hooks → **Custom Access Token Hook**.
+2. Toggle **Enable Hook** → ON.
+3. Set **Hook Function** → `public.custom_access_token_hook`.
+4. **Save**.
+5. Trigger a fresh login (open incognito, sign in via OTP) — verify new JWT has `tenant_id` claim by decoding at jwt.io.
+
+Missing this manual step is captured as risk in spec §7.3. Rollout checklist (Task 27) covers it.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add supabase/migrations/20261001000004_phase_a_wire_layer_a.sql
-git commit -m "feat(multi-tenant): Phase A file 4 — Layer-A wiring + helper RPCs + bulk write-guard"
+git add supabase/migrations/20261001000004_phase_a_auth_hook.sql
+git commit -m "feat(multi-tenant): Phase A file 4 — Auth Hook + helper RPCs + bulk write-guard"
 ```
 
 ---
@@ -1723,39 +1809,45 @@ git commit -m "test(multi-tenant): pgTAP sync_tenant_settings_from_subscription"
 
 ---
 
-## Task 11: pgTAP — `_pgrst_pre_request` all branches
+## Task 11: pgTAP — `custom_access_token_hook` all branches
 
 **Files:**
-- Create: `supabase/tests/pgtap/phase_a_pre_request.sql`
+- Create: `supabase/tests/pgtap/phase_a_auth_hook.sql`
 
 **Interfaces:**
-- Consumes: `_pgrst_pre_request()` from Task 8; requires seeding auth.users test rows.
+- Consumes: `custom_access_token_hook()` from Task 8.
+- Tests: normal tenant user, super-admin without impersonation, super-admin with impersonation, user with no membership, suspended tenant, expired tenant.
 
-- [ ] **Step 1: Write test with helper for simulating auth**
+- [ ] **Step 1: Write test**
 
 ```sql
--- supabase/tests/pgtap/phase_a_pre_request.sql
+-- supabase/tests/pgtap/phase_a_auth_hook.sql
 BEGIN;
-SELECT plan(6);
+SELECT plan(7);
 
--- Helper: simulate authenticated request
-CREATE OR REPLACE FUNCTION _test_simulate_request(p_uid uuid, p_slug text, p_impersonate text DEFAULT NULL) RETURNS void
+-- Helper: invoke hook with simulated event JSON
+CREATE OR REPLACE FUNCTION _test_hook(p_uid uuid) RETURNS jsonb
 LANGUAGE plpgsql AS $fn$
-DECLARE
-  v_headers jsonb := jsonb_build_object();
+DECLARE v_event jsonb; v_result jsonb;
 BEGIN
-  IF p_slug IS NOT NULL THEN v_headers := v_headers || jsonb_build_object('x-tenant-slug', p_slug); END IF;
-  IF p_impersonate IS NOT NULL THEN v_headers := v_headers || jsonb_build_object('x-impersonate-tenant', p_impersonate); END IF;
-  PERFORM set_config('request.jwt.claims', jsonb_build_object('sub', p_uid::text)::text, true);
-  PERFORM set_config('request.headers', v_headers::text, true);
-  PERFORM _pgrst_pre_request();
+  v_event := jsonb_build_object(
+    'claims', jsonb_build_object(
+      'sub', p_uid::text,
+      'aud', 'authenticated',
+      'role', 'authenticated',
+      'exp', extract(epoch from now())::int + 3600,
+      'iat', extract(epoch from now())::int
+    )
+  );
+  RETURN public.custom_access_token_hook(v_event);
 END $fn$;
 
--- Seed: 2 tenants, 2 users, 1 platform admin
+-- Seed: 2 tenants, 2 users, 1 platform admin, 1 orphan user
 INSERT INTO auth.users (id, email) VALUES
   ('aaaa9999-0000-0000-0000-000000000001', 'a@test'),
   ('bbbb9999-0000-0000-0000-000000000001', 'b@test'),
-  ('cccc9999-0000-0000-0000-000000000001', 'super@test');
+  ('cccc9999-0000-0000-0000-000000000001', 'super@test'),
+  ('dddd9999-0000-0000-0000-000000000001', 'orphan@test');
 INSERT INTO tenants (id, slug, name) VALUES
   ('aaaa1111-0000-0000-0000-000000000001', 'test-a', 'Test A'),
   ('bbbb2222-0000-0000-0000-000000000001', 'test-b', 'Test B');
@@ -1764,43 +1856,52 @@ INSERT INTO tenant_users (tenant_id, user_id, role) VALUES
   ('bbbb2222-0000-0000-0000-000000000001', 'bbbb9999-0000-0000-0000-000000000001', 'owner');
 INSERT INTO tenant_subscriptions (tenant_id, plan_code, activated_at, expires_at) VALUES
   ('aaaa1111-0000-0000-0000-000000000001', 'PREMIUM', '2026-01-01', '2099-12-31'),
-  ('bbbb2222-0000-0000-0000-000000000001', 'PREMIUM', '2026-01-01', '2099-12-31');
+  ('bbbb2222-0000-0000-0000-000000000001', 'PREMIUM', '2026-01-01', '2020-01-01'); -- expired > 7d
 INSERT INTO platform_admins (user_id, email) VALUES ('cccc9999-0000-0000-0000-000000000001', 'super@test');
 
--- Test 1: user A + slug test-a → sets GUC to A's UUID
-SELECT _test_simulate_request('aaaa9999-0000-0000-0000-000000000001', 'test-a');
-SELECT is(current_setting('app.current_tenant_id', true),
-          'aaaa1111-0000-0000-0000-000000000001',
-          'User A + slug test-a: GUC set correctly');
+-- Test 1: normal user A → JWT gets tenant_id = A
+SELECT is(
+  _test_hook('aaaa9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,tenant_id}',
+  'aaaa1111-0000-0000-0000-000000000001',
+  'User A: JWT contains tenant_id = A');
 
--- Test 2: user A + slug test-b → NOT_A_MEMBER
-SELECT throws_ok(
-  $$SELECT _test_simulate_request('aaaa9999-0000-0000-0000-000000000001'::uuid, 'test-b')$$,
-  'P0403', 'NOT_A_MEMBER', 'User A cannot access tenant B');
+-- Test 2: is_platform_admin = false for tenant user
+SELECT is(
+  _test_hook('aaaa9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,is_platform_admin}',
+  'false',
+  'User A: is_platform_admin = false');
 
--- Test 3: unknown slug → TENANT_NOT_FOUND
-SELECT throws_ok(
-  $$SELECT _test_simulate_request('aaaa9999-0000-0000-0000-000000000001'::uuid, 'nonexistent-slug')$$,
-  'P0404', 'TENANT_NOT_FOUND', 'Unknown slug rejected');
+-- Test 3: expired tenant B → tenant_expiry_mode = READONLY
+SELECT is(
+  _test_hook('bbbb9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,tenant_expiry_mode}',
+  'READONLY',
+  'User B (expired > 7d): tenant_expiry_mode = READONLY');
 
--- Test 4: platform admin can impersonate tenant B
-SELECT _test_simulate_request('cccc9999-0000-0000-0000-000000000001', NULL, 'test-b');
-SELECT is(current_setting('app.current_tenant_id', true),
-          'bbbb2222-0000-0000-0000-000000000001',
-          'Platform admin can impersonate any tenant');
+-- Test 4: super-admin without impersonation → no tenant_id claim
+SELECT is(
+  _test_hook('cccc9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,tenant_id}',
+  NULL,
+  'Super-admin without impersonation: no tenant_id claim');
 
--- Test 5: unauthenticated → no GUC set, no exception
-PERFORM set_config('request.jwt.claims', '', true);
-PERFORM set_config('request.headers', '{}', true);
-SELECT _pgrst_pre_request();
-SELECT is(current_setting('app.current_tenant_id', true), '',
-          'Unauthenticated request leaves GUC empty');
+-- Test 5: super-admin with impersonation → tenant_id = impersonated tenant
+INSERT INTO platform_admin_active_impersonation (admin_user_id, tenant_slug)
+VALUES ('cccc9999-0000-0000-0000-000000000001', 'test-a');
+SELECT is(
+  _test_hook('cccc9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,tenant_id}',
+  'aaaa1111-0000-0000-0000-000000000001',
+  'Super-admin impersonating test-a: tenant_id = A');
 
--- Test 6: suspended tenant → TENANT_SUSPENDED
-UPDATE tenants SET status='SUSPENDED' WHERE slug='test-a';
-SELECT throws_ok(
-  $$SELECT _test_simulate_request('aaaa9999-0000-0000-0000-000000000001'::uuid, 'test-a')$$,
-  'P0403', 'TENANT_SUSPENDED', 'Suspended tenant rejected');
+-- Test 6: impersonating claim = true
+SELECT is(
+  _test_hook('cccc9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,impersonating}',
+  'true',
+  'Super-admin impersonating: claim impersonating = true');
+
+-- Test 7: orphan user (no tenant_users) → no tenant_id claim
+SELECT is(
+  _test_hook('dddd9999-0000-0000-0000-000000000001'::uuid) #>> '{claims,tenant_id}',
+  NULL,
+  'Orphan user: no tenant_id claim');
 
 SELECT finish();
 ROLLBACK;
@@ -1809,15 +1910,15 @@ ROLLBACK;
 - [ ] **Step 2: Run + verify**
 
 ```bash
-supabase test db --file supabase/tests/pgtap/phase_a_pre_request.sql
+supabase test db --file supabase/tests/pgtap/phase_a_auth_hook.sql
 ```
-Expected: `# ok 6`.
+Expected: `# ok 7`.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add supabase/tests/pgtap/phase_a_pre_request.sql
-git commit -m "test(multi-tenant): pgTAP _pgrst_pre_request 6 branches"
+git add supabase/tests/pgtap/phase_a_auth_hook.sql
+git commit -m "test(multi-tenant): pgTAP custom_access_token_hook 7 branches"
 ```
 
 ---
@@ -1832,36 +1933,55 @@ git commit -m "test(multi-tenant): pgTAP _pgrst_pre_request 6 branches"
 ```sql
 -- supabase/tests/pgtap/phase_a_helper_rpcs.sql
 BEGIN;
-SELECT plan(5);
+SELECT plan(6);
 
--- Reuse setup from _pgrst_pre_request test (inline shortened)
-INSERT INTO auth.users (id, email) VALUES ('dddd9999-0000-0000-0000-000000000001', 'helper@test');
-INSERT INTO tenants (id, slug, name) VALUES ('dddd1111-0000-0000-0000-000000000001', 'test-helper', 'Test Helper');
-INSERT INTO tenant_users (tenant_id, user_id, role)
-  VALUES ('dddd1111-0000-0000-0000-000000000001', 'dddd9999-0000-0000-0000-000000000001', 'owner');
-INSERT INTO tenant_subscriptions (tenant_id, plan_code, activated_at, expires_at)
-  VALUES ('dddd1111-0000-0000-0000-000000000001', 'PRO', '2026-01-01', '2099-12-31');
+INSERT INTO auth.users (id, email) VALUES
+  ('dddd9999-0000-0000-0000-000000000001', 'helper@test'),
+  ('eeee9999-0000-0000-0000-000000000001', 'admin@test');
+INSERT INTO tenants (id, slug, name) VALUES
+  ('dddd1111-0000-0000-0000-000000000001', 'test-helper', 'Test Helper');
+INSERT INTO tenant_users (tenant_id, user_id, role) VALUES
+  ('dddd1111-0000-0000-0000-000000000001', 'dddd9999-0000-0000-0000-000000000001', 'owner');
+INSERT INTO tenant_subscriptions (tenant_id, plan_code, activated_at, expires_at) VALUES
+  ('dddd1111-0000-0000-0000-000000000001', 'PRO', '2026-01-01', '2099-12-31');
+INSERT INTO platform_admins (user_id, email) VALUES
+  ('eeee9999-0000-0000-0000-000000000001', 'admin@test');
 
--- Test 1: is_platform_admin returns false for non-admin
+-- Test 1: is_platform_admin false for tenant user
 PERFORM set_config('request.jwt.claims', '{"sub":"dddd9999-0000-0000-0000-000000000001"}', true);
 SELECT is(is_platform_admin(), false, 'is_platform_admin=false for tenant user');
 
--- Test 2: bootstrap_tenant_context returns feature bundle
-PERFORM set_config('app.current_tenant_id', 'dddd1111-0000-0000-0000-000000000001', true);
-PERFORM set_config('app.is_platform_admin', 'false', true);
+-- Test 2: is_platform_admin true for admin
+PERFORM set_config('request.jwt.claims', '{"sub":"eeee9999-0000-0000-0000-000000000001"}', true);
+SELECT is(is_platform_admin(), true, 'is_platform_admin=true for platform admin');
+
+-- Test 3: bootstrap_tenant_context returns feature bundle (via JWT-baked claim)
+PERFORM set_config('request.jwt.claims',
+  '{"sub":"dddd9999-0000-0000-0000-000000000001","tenant_id":"dddd1111-0000-0000-0000-000000000001","tenant_expiry_mode":"ACTIVE","is_platform_admin":false}',
+  true);
 SELECT is(bootstrap_tenant_context()->>'plan_code', 'PRO', 'bootstrap returns PRO plan');
 SELECT is((bootstrap_tenant_context()->'effective_features'->>'modul_tempo')::boolean, true,
           'bootstrap includes modul_tempo=true for PRO');
 
--- Test 3: bootstrap raises when GUC empty
-PERFORM set_config('app.current_tenant_id', '', true);
-SELECT throws_ok($$SELECT bootstrap_tenant_context()$$, 'P0400', 'MISSING_TENANT_CONTEXT',
-                 'bootstrap raises without tenant GUC');
-
--- Test 4: log_impersonation_start rejects non-admin
+-- Test 4: bootstrap raises when tenant_id claim missing
 PERFORM set_config('request.jwt.claims', '{"sub":"dddd9999-0000-0000-0000-000000000001"}', true);
-SELECT throws_ok($$SELECT log_impersonation_start('test-helper')$$, 'P0403', NULL,
-                 'log_impersonation_start rejects non-admin');
+SELECT throws_ok($$SELECT bootstrap_tenant_context()$$, 'P0400', 'MISSING_TENANT_CONTEXT',
+                 'bootstrap raises without tenant_id claim');
+
+-- Test 5: impersonate_tenant rejects non-admin
+PERFORM set_config('request.jwt.claims', '{"sub":"dddd9999-0000-0000-0000-000000000001"}', true);
+SELECT throws_ok($$SELECT impersonate_tenant('test-helper')$$, 'P0403', 'Not a platform admin',
+                 'impersonate_tenant rejects non-admin');
+
+-- Test 6: impersonate_tenant + stop_impersonation write audit rows for admin
+PERFORM set_config('request.jwt.claims', '{"sub":"eeee9999-0000-0000-0000-000000000001"}', true);
+PERFORM impersonate_tenant('test-helper');
+PERFORM stop_impersonation();
+SELECT is(
+  (SELECT COUNT(*) FROM platform_admin_audit
+   WHERE admin_user_id='eeee9999-0000-0000-0000-000000000001'::uuid
+     AND action IN ('IMPERSONATE_START','IMPERSONATE_END'))::int,
+  2, 'impersonate_tenant + stop_impersonation write both audit rows');
 
 SELECT finish();
 ROLLBACK;
@@ -1872,13 +1992,13 @@ ROLLBACK;
 ```bash
 supabase test db --file supabase/tests/pgtap/phase_a_helper_rpcs.sql
 ```
-Expected: `# ok 5`.
+Expected: `# ok 6`.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add supabase/tests/pgtap/phase_a_helper_rpcs.sql
-git commit -m "test(multi-tenant): pgTAP helper RPCs (bootstrap, is_platform_admin, impersonate log)"
+git commit -m "test(multi-tenant): pgTAP helper RPCs (bootstrap, is_platform_admin, impersonate)"
 ```
 
 ---
@@ -2387,15 +2507,16 @@ git commit -m "ci(multi-tenant): isolation audit workflow + verify-migrations sc
 - Create: `src/lib/urlRoute.test.ts`
 
 **Interfaces:**
-- Produces: `getTenantSlugFromURL(): string | null`, `getImpersonateSlug(): string | null`, `setImpersonateSlug(slug: string | null): void`, `clearImpersonateSlug(): void`. `useURLRoute()` extended: return `{ tenantSlug, screen, params, isPlatformAdminArea }`.
+- Produces: `getTenantSlugFromURL(): string | null` (used for URL parsing + UI display; not for auth — auth uses JWT claim). `useURLRoute()` extended: return `{ tenantSlug, screen, params, isPlatformAdminArea }`.
 
-- [ ] **Step 1: Create tenantContext helpers**
+> **Change from pre-pivot plan:** `setImpersonateSlug`/`getImpersonateSlug`/`clearImpersonateSlug` are REMOVED. Impersonation state now lives in the JWT (managed server-side via `platform_admin_active_impersonation` table + Auth Hook). Frontend reads impersonation state via `decodeJwt` from the current session token (see Task 23).
+
+- [ ] **Step 1: Create tenantContext helpers (URL-only)**
 
 ```typescript
 // src/lib/tenantContext.ts
-// Synchronous accessors for tenant slug — read from window.location + a
-// module-level ref for impersonation. Used by supabase fetch interceptor
-// so header injection happens BEFORE any async React state settles.
+// Synchronous accessor for tenant slug — read from window.location.
+// Used by URL routing + UI display. Auth identity comes from JWT (server-baked).
 
 const SLUG_RE = /^\/t\/([a-z0-9][a-z0-9-]{2,29})(?:\/|$)/;
 
@@ -2403,29 +2524,6 @@ export function getTenantSlugFromURL(): string | null {
   if (typeof window === 'undefined') return null;
   const m = window.location.pathname.match(SLUG_RE);
   return m ? m[1] : null;
-}
-
-let _impersonateSlug: string | null = null;
-
-export function setImpersonateSlug(slug: string | null): void {
-  _impersonateSlug = slug;
-  if (slug) {
-    sessionStorage.setItem('vosi_impersonate', slug);
-  } else {
-    sessionStorage.removeItem('vosi_impersonate');
-  }
-}
-
-export function getImpersonateSlug(): string | null {
-  if (_impersonateSlug) return _impersonateSlug;
-  if (typeof window !== 'undefined') {
-    _impersonateSlug = sessionStorage.getItem('vosi_impersonate');
-  }
-  return _impersonateSlug;
-}
-
-export function clearImpersonateSlug(): void {
-  setImpersonateSlug(null);
 }
 ```
 
@@ -2536,72 +2634,76 @@ git commit -m "feat(multi-tenant): tenantContext helpers + urlRoute /t/<slug>/* 
 
 ---
 
-## Task 18: `supabaseClient.ts` — global fetch header injection
+## Task 18: `supabaseClient.ts` — `tenantContextService` (no header injection needed post-pivot)
 
 **Files:**
 - Modify: `src/lib/supabaseClient.ts`
 
 **Interfaces:**
-- Consumes: `getTenantSlugFromURL`, `getImpersonateSlug` from Task 17.
-- Produces: Supabase client attaches `x-tenant-slug` and `x-impersonate-tenant` on every request.
+- Produces: `tenantContextService` exporting `bootstrap`, `isPlatformAdmin`, `impersonateTenant`, `stopImpersonation`. No `x-tenant-slug`/`x-impersonate-tenant` headers — tenant identity is baked into JWT by the Auth Hook (§3.1).
 
-- [ ] **Step 1: Add imports + wrap `createClient` global.fetch**
+> **Change from pre-pivot plan:** the `global.fetch` wrapper adding `x-tenant-slug` / `x-impersonate-tenant` headers is REMOVED. Tenant identity now travels in the JWT bearer token that Supabase SDK attaches automatically. `getTenantSlugFromURL` from Task 17 stays for routing/UI display only — not for auth.
 
-Modify `src/lib/supabaseClient.ts` — locate the `createClient(...)` call and wrap fetch:
+- [ ] **Step 1: Confirm createClient stays vanilla**
 
-```typescript
-import { getTenantSlugFromURL, getImpersonateSlug } from './tenantContext';
+`src/lib/supabaseClient.ts` — verify the existing `createClient(...)` call is untouched by Task 17 changes. No `global.fetch` override for tenant identity.
 
-// ... existing imports ...
-
-export const supabase = isSupabaseConfigured && SUPABASE_URL && SUPABASE_ANON_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        fetch: (input, init) => {
-          const slug = getTenantSlugFromURL();
-          const impersonate = getImpersonateSlug();
-          const headers = new Headers(init?.headers);
-          if (slug) headers.set('x-tenant-slug', slug);
-          if (impersonate) headers.set('x-impersonate-tenant', impersonate);
-          return fetch(input, { ...init, headers });
-        }
-      }
-    })
-  : null;
-```
-
-- [ ] **Step 2: Add `bootstrap_tenant_context` wrapper**
+- [ ] **Step 2: Add `tenantContextService` wrapper**
 
 At the end of the file:
 
 ```typescript
+export interface TenantContextData {
+  tenant_id: string;
+  slug: string;
+  name: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+  plan_code: string;
+  effective_features: Record<string, boolean>;
+  expiry_mode: 'ACTIVE' | 'GRACE' | 'READONLY';
+  expires_at: string;
+  grace_expires_at: string;
+  is_platform_admin: boolean;
+  impersonating: boolean;
+  impersonating_slug: string | null;
+}
+
 export const tenantContextService = {
-  async bootstrap(): Promise<{
-    tenant_id: string; slug: string; name: string; status: string;
-    plan_code: string;
-    effective_features: Record<string, boolean>;
-    expiry_mode: 'ACTIVE' | 'GRACE' | 'READONLY';
-    expires_at: string; grace_expires_at: string;
-    is_platform_admin: boolean;
-  } | null> {
+  async bootstrap(): Promise<TenantContextData | null> {
     if (!supabase) return null;
     const { data, error } = await supabase.rpc('bootstrap_tenant_context');
     if (error) throw error;
-    return data as any;
+    return data as TenantContextData;
   },
+
   async isPlatformAdmin(): Promise<boolean> {
     if (!supabase) return false;
     const { data, error } = await supabase.rpc('is_platform_admin');
     if (error) return false;
     return !!data;
   },
-  async logImpersonationStart(slug: string): Promise<void> {
-    if (!supabase) return;
-    await supabase.rpc('log_impersonation_start', { p_slug: slug });
+
+  /**
+   * Super-admin starts impersonating a tenant.
+   * Writes to platform_admin_active_impersonation, then refreshes the JWT
+   * so the Auth Hook picks up the new tenant claim.
+   */
+  async impersonateTenant(slug: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('impersonate_tenant', { p_slug: slug });
+    if (error) throw error;
+    const { error: refreshErr } = await supabase.auth.refreshSession();
+    if (refreshErr) throw refreshErr;
   },
-  async logImpersonationEnd(slug: string): Promise<void> {
-    if (!supabase) return;
-    await supabase.rpc('log_impersonation_end', { p_slug: slug });
+
+  /**
+   * Super-admin exits impersonation. Refreshes JWT to clear the tenant claim.
+   */
+  async stopImpersonation(): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('stop_impersonation');
+    if (error) throw error;
+    await supabase.auth.refreshSession();
   }
 };
 ```
@@ -2618,7 +2720,7 @@ Expected: no errors, existing tests still pass.
 
 ```bash
 git add src/lib/supabaseClient.ts
-git commit -m "feat(multi-tenant): supabase client header injection + tenantContextService"
+git commit -m "feat(multi-tenant): tenantContextService (bootstrap, impersonate, stopImpersonation)"
 ```
 
 ---
@@ -3090,13 +3192,14 @@ git commit -m "feat(multi-tenant): readonly + grace banners + data-write CSS"
 
 ---
 
-## Task 23: `AdminShell.tsx` — auth gate + impersonation
+## Task 23: `AdminShell.tsx` — auth gate + impersonation (via RPC + JWT refresh)
 
 **Files:**
 - Create: `src/components/admin/AdminShell.tsx`
 
 **Interfaces:**
-- Uses: `tenantContextService.isPlatformAdmin()`, `logImpersonationStart/End`, `setImpersonateSlug`, `navigate` from `urlRoute`.
+- Uses: `tenantContextService.isPlatformAdmin()`, `impersonateTenant()`, `stopImpersonation()` from Task 18.
+- No `setImpersonateSlug` / `getImpersonateSlug` from `tenantContext` — those helpers are no longer needed post-pivot. Impersonation state lives in JWT via server-side hook.
 
 - [ ] **Step 1: Implement**
 
@@ -3104,17 +3207,30 @@ git commit -m "feat(multi-tenant): readonly + grace banners + data-write CSS"
 // src/components/admin/AdminShell.tsx
 import React, { useEffect, useState } from 'react';
 import { tenantContextService } from '../../lib/supabaseClient';
-import { setImpersonateSlug, clearImpersonateSlug, getImpersonateSlug } from '../../lib/tenantContext';
 import { navigate } from '../../lib/urlRoute';
+import { supabase } from '../../lib/supabaseClient';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
+
+interface ImpersonationState {
+  active: boolean;
+  slug: string | null;
+}
 
 export const AdminShell: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [impersonateInput, setImpersonateInput] = useState('');
-  const currentImpersonation = getImpersonateSlug();
+  const [impersonation, setImpersonation] = useState<ImpersonationState>({ active: false, slug: null });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     tenantContextService.isPlatformAdmin().then(setIsAdmin);
+    // Read current impersonation state from JWT
+    supabase?.auth.getSession().then(({ data }) => {
+      const claims: any = data.session?.access_token ? decodeJwt(data.session.access_token) : {};
+      if (claims?.impersonating) {
+        setImpersonation({ active: true, slug: claims.impersonating_slug ?? null });
+      }
+    });
   }, []);
 
   if (isAdmin === null) return <div className="p-6 text-slate-500">Loading…</div>;
@@ -3125,18 +3241,29 @@ export const AdminShell: React.FC = () => {
 
   const handleImpersonate = async () => {
     const slug = impersonateInput.trim().toLowerCase();
-    if (!slug) return;
-    await tenantContextService.logImpersonationStart(slug);
-    setImpersonateSlug(slug);
-    navigate(`/t/${slug}/dashboard`);
+    if (!slug || submitting) return;
+    setSubmitting(true);
+    try {
+      await tenantContextService.impersonateTenant(slug);
+      // JWT is refreshed inside impersonateTenant; new claims are live.
+      navigate(`/t/${slug}/dashboard`);
+    } catch (err) {
+      console.error(err);
+      alert(`Gagal impersonate: ${(err as Error).message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleExitImpersonation = async () => {
-    if (currentImpersonation) {
-      await tenantContextService.logImpersonationEnd(currentImpersonation);
+    setSubmitting(true);
+    try {
+      await tenantContextService.stopImpersonation();
+      setImpersonation({ active: false, slug: null });
+      navigate('/admin');
+    } finally {
+      setSubmitting(false);
     }
-    clearImpersonateSlug();
-    navigate('/admin');
   };
 
   return (
@@ -3144,10 +3271,10 @@ export const AdminShell: React.FC = () => {
       <header className="bg-slate-900 text-white px-6 py-4 flex items-center gap-3">
         <ShieldCheck size={20} />
         <span className="font-semibold">VOSI Admin Panel</span>
-        {currentImpersonation && (
-          <button onClick={handleExitImpersonation}
-            className="ml-auto px-3 py-1 bg-amber-500 text-amber-950 text-xs rounded font-semibold">
-            Impersonating: {currentImpersonation} — Exit
+        {impersonation.active && (
+          <button onClick={handleExitImpersonation} disabled={submitting}
+            className="ml-auto px-3 py-1 bg-amber-500 text-amber-950 text-xs rounded font-semibold disabled:opacity-50">
+            Impersonating: {impersonation.slug} — Exit
           </button>
         )}
       </header>
@@ -3155,14 +3282,14 @@ export const AdminShell: React.FC = () => {
         <section className="bg-white p-6 rounded shadow">
           <h2 className="font-semibold text-slate-900">Impersonate Tenant</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Enter slug to enter tenant view. Session is audit-logged.
+            Enter slug to enter tenant view. Session is audit-logged. JWT refreshes with new tenant claim.
           </p>
           <div className="flex gap-2 mt-4">
             <input value={impersonateInput} onChange={e => setImpersonateInput(e.target.value)}
-              placeholder="e.g. garindo"
-              className="flex-1 px-3 py-2 border border-slate-300 rounded" />
-            <button onClick={handleImpersonate}
-              className="px-4 py-2 bg-slate-900 text-white rounded flex items-center gap-1">
+              placeholder="e.g. garindo" disabled={submitting}
+              className="flex-1 px-3 py-2 border border-slate-300 rounded disabled:bg-slate-100" />
+            <button onClick={handleImpersonate} disabled={submitting}
+              className="px-4 py-2 bg-slate-900 text-white rounded flex items-center gap-1 disabled:opacity-50">
               Enter <ArrowRight size={16} />
             </button>
           </div>
@@ -3175,6 +3302,16 @@ export const AdminShell: React.FC = () => {
     </div>
   );
 };
+
+// Minimal JWT decoder (no signature verification needed for reading claims)
+function decodeJwt(token: string): Record<string, any> {
+  try {
+    const [, payload] = token.split('.');
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return {};
+  }
+}
 ```
 
 - [ ] **Step 2: Type check**
