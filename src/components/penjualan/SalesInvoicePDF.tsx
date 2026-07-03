@@ -194,13 +194,10 @@ function InvoiceBody({
 
   return (
     <div className={containerCls}>
-      {/* Stamp */}
-      {isQuotation ? (
-        <div className="absolute right-8 top-32 rotate-[-12deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 border-amber-600 text-amber-600"
-          style={{ background: 'rgba(255,255,255,0.7)', zIndex: 10 }}>
-          PENAWARAN
-        </div>
-      ) : (
+      {/* Stamp — only render for LUNAS/DP invoices. Quotation drops the stamp
+          because the "SALES ORDER" doc title already conveys the state; a
+          PENAWARAN watermark on top of it just duplicates the label. */}
+      {!isQuotation && (
         <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
           variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
         }`}>
