@@ -10177,3 +10177,17 @@ Founder asked for adversarial audit of spec ("check kembali specs nya, saya mau 
 - **Effort:** 15 → 18 days (Task 0 +1 day, Task 8.5 +2 days).
 - **Commit:** spec + plan revisions committed in one atomic commit.
 - **Next:** user pick execution mode (subagent-driven vs inline) OR run Task 0 spike first standalone.
+
+---
+
+## 2026-07-03 — Phase A Architecture Spike — NO-GO on current design
+
+Task 0 spike executed in ~30 min on production (defensively; production restored). Full report: `docs/superpowers/spikes/2026-07-03-phase-a-architecture-spike.md`.
+
+- **Step 1 FAIL (CRITICAL):** `ALTER ROLE authenticator SET pgrst.db_pre_request` succeeds and setting persists in `rolconfig`, PostgREST IS listening on `pgrst` channel, but pre-request function does NOT fire on real API requests. Supabase Cloud managed appears to filter/ignore this per-role setting. Verified with 6 curl requests + log-table check.
+- **Step 2 PASS:** revised line-anchored `\nBEGIN\n` regex works on real production RPC. Original regex would silently miss 112 of 162 SECDEF+DECLARE+write RPCs.
+- **Step 3 CONFIRMED:** all 163 SECDEF RPCs in prod owned by `postgres` (rolbypassrls=true). FORCE RLS doesn't help. Task 8.5 ownership migration remains Phase A ship blocker.
+- **Step 4 PASS:** DB size 35 MB / 500 MB (7%). Plenty of headroom for tenant #2.
+- **Bonus:** Supabase already sets `statement_timeout=8s` on authenticator (not 10s as spec assumed).
+- **Recommended pivot:** replace `pgrst.db_pre_request` with Supabase Auth Hook (`custom_access_token_hook`) injecting `tenant_id` claim into JWT. Free tier, officially supported, zero per-request overhead.
+- **Next:** user picks pivot (Auth Hook vs per-RPC wrapper vs client-side). Spec + plan revision follows.
