@@ -10132,3 +10132,20 @@ Review-fix DONE — I-3 CSV size cap + I-4 RPC default eceran (4 smoke PASS). I-
 - **Tests:** npx vitest run --dir src baseline PASS
 
 Task 11 DONE — BulkUpdateGrosirSection (4 RTL tests PASS).
+
+---
+
+## 2026-07-03 — Multi-Tenant Foundation Phase A — DESIGN SPEC WRITTEN
+
+Brainstorming session (superpowers:brainstorming) → spec committed.
+Product renamed VOSI (from Vosi landing). Phase A = tenant registry
++ Layer-A auth hook so tenant #2 can be onboarded safely.
+
+- **Spec:** `docs/superpowers/specs/2026-07-03-multi-tenant-phase-a-design.md` (1.3k lines)
+- **Commit:** `97a8cd4 docs(spec): Phase A multi-tenant foundation design`
+- **Scope locked (Phase A):** tenant registry (tenants, tenant_users, platform_admins), plans catalog (STARTER/PRO/PREMIUM) + tenant_subscriptions (7-day grace → read-only permanent), PostgREST `db-pre-request` hook setting `app.current_tenant_id` GUC, path prefix `/t/<slug>/*` routing, RLS category taxonomy (T/G/P/A/S) + auto-generated hardening migration, Garindo backfill via 4 idempotent migration files, cross-tenant isolation test harness (Supabase local Docker, free tier only).
+- **Phase B (later spec):** super-admin `/admin` UI, onboarding form (plan picker + override), 4-entity Excel data import (products/customers/suppliers/kas-bank), feature entitlement service `useFeature()`.
+- **Phase C (deferred):** custom domain, billing/Xendit/Stripe, self-serve signup.
+- **Key design decisions:** hybrid plan tier + per-tenant JSONB overrides; impersonation via HTTP header (not JWT claim); expiry write-guard via bulk auto-wrap migration; `platform_admin_audit` for PDP UU 27/2022 compliance; sync trigger to keep existing `tenant_settings` backward-compat; FORCE ROW LEVEL SECURITY on all T tables; warn-only CI gate initially → hard-fail after 2 weeks; no Playwright E2E in Phase A.
+- **Effort estimate:** ~2 weeks solo focused work (~15 days).
+- **Next:** user review of spec → then invoke superpowers:writing-plans for Phase A implementation plan.
