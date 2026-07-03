@@ -10160,3 +10160,20 @@ Following spec (see prior entry) → implementation plan committed.
 - **Structure:** Tasks 1–8 = migrations + RLS generator; 9–12 = pgTAP DB-unit; 13–16 = isolation harness + CI; 17–26 = frontend; 27–28 = rollout.
 - **TDD:** every testable component (parser, error interceptor, TenantContext, RPCs, RLS) has RED→GREEN→commit steps.
 - **Next:** user picks execution mode (subagent-driven vs inline) → invoke corresponding sub-skill.
+
+---
+
+## 2026-07-03 — Multi-Tenant Phase A — AUDIT ROUND + SPEC/PLAN REVISIONS
+
+Founder asked for adversarial audit of spec ("check kembali specs nya, saya mau pastikan ini benar bisa multi tenant"). Advisor + self review surfaced 3 CRITICAL issues, all now addressed inline.
+
+- **Finding #1 (CRITICAL):** `FORCE RLS` does NOT override `BYPASSRLS` role attribute. Supabase's `postgres` role has BYPASSRLS → SECURITY DEFINER functions owned by postgres bypass RLS even with FORCE. Original spec §3.5.2 defense-in-depth claim was partially fictional.
+  - **Fix:** ownership migration to `vosi_rpc_owner` role (no BYPASSRLS) + explicit `WHERE tenant_id = _resolve_tenant_id()` in high-risk RPC bodies. New Task 8.5 in plan.
+- **Finding #2 (CRITICAL):** `pgrst.db_pre_request` on Supabase Cloud managed free tier is UNVERIFIED. If Supabase blocks `ALTER ROLE authenticator`, the entire single-point-setter architecture fails.
+  - **Fix:** Task 0 architecture spike (1 day) BEFORE Task 1 with 4 go/no-go checks.
+- **Finding #3 (HIGH):** Auto-wrap regex `$$\s*BEGIN` misses functions with `DECLARE` block silently — most complex RPCs would be unwrapped.
+  - **Fix:** regex revised to line-anchored `\nBEGIN\n`; added hard-fail if >5 misses.
+- **Honest note added (§7.6):** free tier fits *data* but Supabase auto-pause after 7 days idle = production landmine. Real go-live needs Pro tier ($25/mo). Don't promise "free forever" to onboarded tenants.
+- **Effort:** 15 → 18 days (Task 0 +1 day, Task 8.5 +2 days).
+- **Commit:** spec + plan revisions committed in one atomic commit.
+- **Next:** user pick execution mode (subagent-driven vs inline) OR run Task 0 spike first standalone.
