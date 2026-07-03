@@ -10191,3 +10191,18 @@ Task 0 spike executed in ~30 min on production (defensively; production restored
 - **Bonus:** Supabase already sets `statement_timeout=8s` on authenticator (not 10s as spec assumed).
 - **Recommended pivot:** replace `pgrst.db_pre_request` with Supabase Auth Hook (`custom_access_token_hook`) injecting `tenant_id` claim into JWT. Free tier, officially supported, zero per-request overhead.
 - **Next:** user picks pivot (Auth Hook vs per-RPC wrapper vs client-side). Spec + plan revision follows.
+
+---
+
+## 2026-07-03 — Multi-Tenant Phase A — PIVOT to Supabase Auth Hook COMPLETE
+
+Post-spike (pgrst.db_pre_request confirmed unsupported on Supabase Cloud), pivoted spec + plan to `custom_access_token_hook`. Atomic commit landed.
+
+- **Spec revisions:** §3.1 auth hook, §3.2 _resolve_tenant_id body (reads JWT), §3.3 _guard_expiry_write (reads JWT), §3.4 no more header injection, §3.5 impersonate_tenant/stop_impersonation RPCs, §3.5.1 GUC risk downgraded, §7.3 risks updated, §7.7 effort 18 → 16.5 days.
+- **Plan revisions:** Task 8 fully rewritten (creates custom_access_token_hook + helper RPCs), Task 11 pgTAP now tests hook branches (7 tests), Task 12 pgTAP tests impersonate_tenant + audit, Task 17 tenantContext helpers slimmed (URL only), Task 18 removed header injection, Task 23 AdminShell uses RPC + refreshSession + JWT decoder.
+- **New manual step:** Supabase Dashboard → Authentication → Hooks → Custom Access Token → enable + point to `public.custom_access_token_hook` (per environment).
+- **Migration file 4 renamed:** `20261001000004_phase_a_auth_hook.sql` (was `_wire_layer_a.sql`).
+- **JWT claim schema:** tenant_id, tenant_status, tenant_expiry_mode, is_platform_admin, impersonating, impersonating_slug.
+- **New table:** platform_admin_active_impersonation (in Task 1 schema, feeds hook at JWT refresh).
+- **Effort delta:** -1.5 days from pre-pivot 18 days = ~16.5 days total (spike consumed 0.5 day of the 1 budgeted).
+- **Next:** user re-review spec + plan, then execution mode pick (subagent-driven vs inline).
