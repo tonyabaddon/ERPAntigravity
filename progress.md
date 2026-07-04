@@ -10772,3 +10772,15 @@ Phase A is LIVE on production. Runbook executed via MCP + gcloud.
 - AdminShell full-page reload UX polish.
 - Backend Go audit for JWT forwarding.
 - Fix `20261001000002_phase_a_seed_and_backfill.sql` in repo to include BASE TABLE filter (production ran with the fix applied inline via MCP).
+
+---
+
+## 2026-07-04 — Phase A production bug: Auth Hook not registered (fixed)
+
+Founder smoke test setelah production apply revealed frontend showing "MISSING_TENANT_CONTEXT" error.
+
+**Root cause:** Supabase Dashboard toggle Auth → Hooks → Custom Access Token was NOT enabled despite founder attempting it earlier. Config API showed `hook_custom_access_token_enabled: false` and `hook_custom_access_token_uri: null`. Function itself was correct + grants OK, but GoTrue Auth never called it saat mint token.
+
+**Fix:** enabled via Management API PATCH `/v1/projects/ekhhojaezdfjfwuxyjkl/config/auth` with `hook_custom_access_token_enabled: true` + `hook_custom_access_token_uri: pg-functions://postgres/public/custom_access_token_hook`. Verified via chrome-devtools MCP smoke: forced JWT refresh → new token carries `tenant_id`, `is_platform_admin`, `tenant_status`, `tenant_expiry_mode`. Dashboard reload → full UI works.
+
+**Runbook fix:** Day 4b step should be more explicit — after selecting the hook function in Dashboard, **click Save** and wait for confirmation toast. Better yet, add a fallback verification step via Management API before proceeding.
