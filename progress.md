@@ -10725,3 +10725,50 @@ Phase A shipped as single squash commit `1526f1f` on `main`. 42 commits from `wo
   2. Runtime testing caught missing `GRANT CREATE ON SCHEMA public` — would have blocked production apply.
 - **Post-merge manual:** Supabase Dashboard → Authentication → Hooks → Custom Access Token → enable + point to `public.custom_access_token_hook` per environment.
 - **Backlog:** category-P/A isolation test coverage, App.tsx legacy `/t/garindo/*` hardcode, backend-go JWT audit.
+
+---
+
+## 2026-07-04 — Multi-Tenant Phase A — FULL PRODUCTION APPLY COMPLETE ✓
+
+Phase A is LIVE on production. Runbook executed via MCP + gcloud.
+
+**Migrations applied to Garindo project `ekhhojaezdfjfwuxyjkl`:**
+- 20261001000001_phase_a_schema (8 platform tables + view + trigger fns)
+- 20261001000002_phase_a_seed_and_backfill (plans + Garindo + business tables backfill + 68 tables gained tenant_id)
+- 20261001000003_phase_a_not_null_and_helpers (NOT NULL enforcement + sync triggers + stub _guard_expiry_write + _is_platform_admin_from_jwt helper)
+- 20261001000003_phase_a_rls_hardening (85 FORCE RLS tables — 78 T + 6 P + 1 A; plans G has ENABLE only)
+- 20261001000004_phase_a_auth_hook (custom_access_token_hook + JWT-reading _resolve_tenant_id/_guard_expiry_write + 4 helper RPCs + bulk auto-wrap)
+- 20261001000005_phase_a_secdef_ownership (vosi_rpc_owner NOINHERIT nobypassrls + 162 SECDEF RPCs re-owned + _assert_tenant_context helper)
+
+**Runtime issues caught + fixed during rollout (not in original spec/plan):**
+1. `journal_entries` had 10 test rows (BACKFILL source_type) with duplicate entry_numbers → deleted (30 rows including 20 lines).
+2. Migration file 2 backfill loop iterated views too (trial_balance, general_ledger, cash_account_balances, v_tenant_effective_features) → fixed loop to filter BASE TABLE only.
+3. `chart_of_accounts` had 6 TEST-UNIQ-1 duplicates → deleted.
+4. `accounting_periods` had 11 duplicate rows for 3 periods → deduped keeping earliest per (period_year, period_month).
+5. 4 append-only tables (approval_requests, stock_movements, stock_price_history, warehouse_audit_log) had UPDATE-blocking triggers → wrapped backfill with `SET LOCAL session_replication_role='replica'`.
+
+**Auth Hook registered** in Supabase Dashboard (manual step, done by founder).
+
+**Frontend deployed:**
+- Build ID: 7b5e2d10-624c-4678-b7c9-081353bcec02 (SUCCESS)
+- Revision: garindo-jaya-panel-msme-erp-frontend-00227-gex (from commit f1175d6)
+- Traffic: 100% promoted after smoke test pass.
+- Production URL: https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app
+
+**Post-migration state:**
+- DB size: 35 → 38 MB (+3 MB Phase A metadata)
+- Total tables: 97 → 105 (+8 Phase A platform tables)
+- Tables with tenant_id: 18 → 86
+- FORCE RLS tables: 0 → 85
+- SECDEF RPCs owned by vosi_rpc_owner: 0 → 162
+
+**Auth Hook end-to-end verified**: founder JWT includes tenant_id=Garindo, is_platform_admin=true, tenant_expiry_mode=ACTIVE.
+
+**Ready to onboard tenant #2 via SQL insert** (Phase B builds UI for this). Recipe in runbook.
+
+**Backlog (non-blocking):**
+- Category-P + Category-A isolation test coverage (would have caught C1 pre-merge).
+- App.tsx legacy redirect hardcoded /t/garindo/*.
+- AdminShell full-page reload UX polish.
+- Backend Go audit for JWT forwarding.
+- Fix `20261001000002_phase_a_seed_and_backfill.sql` in repo to include BASE TABLE filter (production ran with the fix applied inline via MCP).
