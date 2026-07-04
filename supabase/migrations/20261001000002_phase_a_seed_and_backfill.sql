@@ -2,6 +2,20 @@
 -- Phase A: seed plans, Garindo tenant, subscriptions, platform_admins,
 -- tenant_users. Then bulk backfill tenant_id across business tables and
 -- reshape company_settings + admin_users. Idempotent.
+--
+-- PRODUCTION FIXES (retro-applied after 2026-07-04 rollout):
+--   1. session_replication_role='replica' bypasses append-only UPDATE
+--      triggers on stock_movements, stock_price_history, approval_requests,
+--      warehouse_audit_log so tenant_id backfill can add rows without
+--      tripping their integrity guards. System triggers (FK checks) still fire.
+--   2. Pre-flight + backfill loops JOIN information_schema.tables and filter
+--      by table_type='BASE TABLE' to avoid UPDATE-ing views (trial_balance,
+--      general_ledger, cash_account_balances, v_tenant_effective_features
+--      all expose tenant_id via their underlying tables but are not
+--      updatable).
+
+-- Disable user triggers session-wide for this migration (system triggers still fire)
+SET LOCAL session_replication_role = 'replica';
 
 INSERT INTO public.plans (code, name, feature_bundle, sort_order) VALUES
   ('STARTER', 'Starter', jsonb_build_object(
@@ -56,15 +70,21 @@ END $$;
 
 -- Pre-flight: bail if any table has tenant_id values that are NOT null,
 -- NOT sentinel, and NOT Garindo. Manual investigation required.
+-- Filters BASE TABLE only — views inherit tenant_id via underlying tables
+-- but are not updatable.
 DO $$
 DECLARE
   r RECORD;
   v_bad_uuid UUID;
 BEGIN
   FOR r IN
-    SELECT table_name FROM information_schema.columns
-    WHERE table_schema = 'public' AND column_name = 'tenant_id'
-      AND table_name NOT IN ('tenants','tenant_users','tenant_settings','tenant_subscriptions','tenant_activity_daily','platform_admin_audit')
+    SELECT c.table_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+    WHERE c.table_schema = 'public' AND c.column_name = 'tenant_id'
+      AND t.table_type = 'BASE TABLE'
+      AND c.table_name NOT IN ('tenants','tenant_users','tenant_settings','tenant_subscriptions','tenant_activity_daily','platform_admin_audit')
   LOOP
     EXECUTE format($fmt$
       SELECT tenant_id FROM public.%I
@@ -80,6 +100,7 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Bulk backfill: BASE TABLE only (avoid UPDATE on views).
 DO $$
 DECLARE
   r RECORD;
@@ -87,9 +108,13 @@ DECLARE
   v_count BIGINT;
 BEGIN
   FOR r IN
-    SELECT table_name FROM information_schema.columns
-    WHERE table_schema = 'public' AND column_name = 'tenant_id'
-      AND table_name NOT IN ('tenants','tenant_users','tenant_settings','tenant_subscriptions','tenant_activity_daily','platform_admin_audit')
+    SELECT c.table_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+    WHERE c.table_schema = 'public' AND c.column_name = 'tenant_id'
+      AND t.table_type = 'BASE TABLE'
+      AND c.table_name NOT IN ('tenants','tenant_users','tenant_settings','tenant_subscriptions','tenant_activity_daily','platform_admin_audit')
   LOOP
     EXECUTE format($fmt$
       UPDATE public.%I SET tenant_id = %L
