@@ -10711,3 +10711,17 @@ Created GitHub Actions CI infrastructure for Phase A isolation testing and migra
 - **Commit:** `1339650` feat(multi-tenant): SelectTenantScreen
 - **Report:** `.superpowers/sdd/task-24-report.md`
 - **Next:** Task 25+ (remaining Phase A tasks)
+
+---
+
+## 2026-07-04 — Multi-Tenant Phase A — MERGED TO MAIN (squash)
+
+Phase A shipped as single squash commit `1526f1f` on `main`. 42 commits from `worktree-multi-tenant-phase-a` collapsed into one comprehensive commit; worktree + branch removed.
+
+- **Architecture:** Supabase Auth Hook `custom_access_token_hook` (post-spike pivot from `pgrst.db_pre_request`; the latter proven unsupported on Supabase Cloud managed).
+- **Migrations:** 5 files, `20261001000001..20261001000005`.
+- **Runtime verified** against ERP MSME test project via MCP: Auth Hook end-to-end (3 scenarios), C1 helper, SECDEF ownership DO block. Two critical bugs caught + fixed:
+  1. Opus reviewer caught P-policies used stale `app.is_platform_admin` GUC → helper `_is_platform_admin_from_jwt()` reads JWT.
+  2. Runtime testing caught missing `GRANT CREATE ON SCHEMA public` — would have blocked production apply.
+- **Post-merge manual:** Supabase Dashboard → Authentication → Hooks → Custom Access Token → enable + point to `public.custom_access_token_hook` per environment.
+- **Backlog:** category-P/A isolation test coverage, App.tsx legacy `/t/garindo/*` hardcode, backend-go JWT audit.
