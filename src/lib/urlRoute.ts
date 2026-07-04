@@ -69,6 +69,68 @@ export interface RouteState {
   params: Record<string, string>;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Pathname-based routing for multi-tenant URLs (/t/<slug>/*)
+// ──────────────────────────────────────────────────────────────────────────────
+
+const TENANT_SLUG_RE = /^\/t\/([a-z0-9][a-z0-9-]{2,29})(?:\/(.*))?$/;
+
+/** Screen type widened for platform-level pages not in the tenant ActivePage union. */
+export type RouteScreen = ActivePage | 'select-tenant' | 'login' | 'admin';
+
+export interface Route {
+  tenantSlug: string | null;
+  screen: RouteScreen;
+  params: Record<string, string>;
+  isPlatformAdminArea: boolean;
+}
+
+/**
+ * Pure: extract screen name from a pathname segment (e.g. "/dashboard" → "dashboard").
+ * Falls back to "dashboard" for unknown values.
+ */
+function parseScreenFromPath(pathname: string, _search: URLSearchParams): { screen: RouteScreen; params: Record<string, string> } {
+  // Strip leading slash and take the first path segment as the screen name
+  const segment = pathname.replace(/^\//, '').split('/')[0] ?? '';
+  const screen: RouteScreen = ACTIVE_PAGES.has(segment as ActivePage)
+    ? (segment as ActivePage)
+    : 'dashboard';
+  return { screen, params: {} };
+}
+
+/**
+ * Pure: parse a pathname + search into a Route object that includes tenant
+ * slug and platform-admin-area flag. Used for multi-tenant path-based routing.
+ *
+ * Route patterns:
+ *   /t/<slug>/<screen>  → tenantSlug='<slug>', screen='<screen>'
+ *   /admin/*            → isPlatformAdminArea=true
+ *   /select-tenant      → screen='select-tenant'
+ *   /login              → screen='login'
+ *   /<screen>           → legacy path, tenantSlug=null
+ */
+export function parseRoute(pathname: string, search: URLSearchParams): Route {
+  // Platform admin area
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+    return { tenantSlug: null, screen: 'admin', params: {}, isPlatformAdminArea: true };
+  }
+  if (pathname === '/select-tenant') {
+    return { tenantSlug: null, screen: 'select-tenant', params: {}, isPlatformAdminArea: false };
+  }
+  if (pathname === '/login') {
+    return { tenantSlug: null, screen: 'login', params: {}, isPlatformAdminArea: false };
+  }
+  // Tenant-scoped: /t/<slug>/<screen>
+  const m = pathname.match(TENANT_SLUG_RE);
+  if (m) {
+    const slug = m[1];
+    const rest = '/' + (m[2] ?? '');
+    return { tenantSlug: slug, ...parseScreenFromPath(rest, search), isPlatformAdminArea: false };
+  }
+  // Legacy path (no /t/ prefix) — return null slug, existing screen resolution
+  return { tenantSlug: null, ...parseScreenFromPath(pathname, search), isPlatformAdminArea: false };
+}
+
 /**
  * Pure: parse a query-string ("?key=val&...") into a RouteState.
  * Unknown screens silently fall back to 'dashboard' (web-standard behavior).

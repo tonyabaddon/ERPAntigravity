@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Bot,
   Search,
@@ -19,7 +19,16 @@ import {
 } from 'lucide-react';
 
 import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
-import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES } from './lib/urlRoute';
+import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES, parseRoute } from './lib/urlRoute';
+import { TenantProvider } from './contexts/TenantContext';
+import { AdminShell } from './components/admin/AdminShell';
+import { SelectTenantScreen } from './components/SelectTenantScreen';
+import { TenantNotFound } from './components/errors/TenantNotFound';
+import { TenantSuspended } from './components/errors/TenantSuspended';
+import { AccessDenied } from './components/errors/AccessDenied';
+import { TenantBootstrapError } from './components/errors/TenantBootstrapError';
+import { ReadonlyBanner } from './components/ReadonlyBanner';
+import { GraceBanner } from './components/GraceBanner';
 import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
@@ -112,6 +121,18 @@ export default function App() {
   const [invoicePreviewOrderId, setInvoicePreviewOrderId] = useState<string | null>(null);
   // Track which cash account to view in detail within KasBankDetail screen.
   const [kasBankDetailAccountId, setKasBankDetailAccountId] = useState<string | null>(null);
+
+  // Multi-tenant: parse pathname route once per mount (full reload on platform transitions).
+  const pathRoute = useMemo(
+    () => parseRoute(window.location.pathname, new URLSearchParams(window.location.search)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  // Tenant error screen state: null = no error, otherwise show the specific error screen.
+  type TenantErrorScreen = 'not-found' | 'suspended' | 'denied' | 'bootstrap' | null;
+  const [tenantErrorScreen, setTenantErrorScreen] = useState<TenantErrorScreen>(null);
+  const [tenantErrorCode, setTenantErrorCode] = useState<string>('');
 
   // General state databases loaded from templates or LocalStorage
   const [stockList, setStockList] = useState<StockItem[]>(() => {
@@ -368,13 +389,61 @@ export default function App() {
     window.dispatchEvent(new Event('urlroute:change'));
   };
 
-  const triggerToast = (msg: string, type: 'success' | 'info' | 'warning' = 'success') => {
+  const triggerToast = useCallback((msg: string, type: 'success' | 'info' | 'warning' = 'success') => {
     setToastMessage(msg);
     setToastType(type);
     setTimeout(() => {
       setToastMessage(null);
     }, 4500);
-  };
+  }, []);
+
+  // Multi-tenant: handle TenantProvider + interceptor error codes.
+  const handleTenantError = useCallback((code: string) => {
+    if (code === 'TENANT_NOT_FOUND') {
+      setTenantErrorScreen('not-found');
+    } else if (code === 'TENANT_SUSPENDED') {
+      setTenantErrorScreen('suspended');
+    } else if (code === 'NOT_A_MEMBER') {
+      setTenantErrorScreen('denied');
+    } else {
+      setTenantErrorCode(code);
+      setTenantErrorScreen('bootstrap');
+    }
+  }, []);
+
+  // Global listener for vosi:tenant-error events from supabaseErrorInterceptor.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const code = (e as CustomEvent).detail?.code as string | undefined;
+      if (!code) return;
+      if (code === 'SUBSCRIPTION_EXPIRED_READONLY') {
+        triggerToast('Peringatan: subscription expired. Mode write dilarang — renew untuk melanjutkan.', 'warning');
+      } else {
+        handleTenantError(code);
+      }
+    };
+    window.addEventListener('vosi:tenant-error', handler);
+    return () => window.removeEventListener('vosi:tenant-error', handler);
+  }, [triggerToast, handleTenantError]);
+
+  // Multi-tenant: legacy redirect — if user hits a non-tenant path while logged in,
+  // redirect to /t/garindo/<screen>. Only fires in production (Supabase configured);
+  // dev mode keeps the existing query-string shell to avoid full-page reload loop.
+  // Uses useEffect so it runs after session restore, not during initial mount.
+  useEffect(() => {
+    if (!currentUser) return;
+    if (pathRoute.tenantSlug) return;           // already on /t/… path — no redirect needed
+    if (pathRoute.isPlatformAdminArea) return;  // /admin — no redirect needed
+    if (pathRoute.screen === 'select-tenant') return;
+    if (pathRoute.screen === 'login') return;
+    if (!isSupabaseConfigured) return;          // dev mode — keep legacy shell
+    // Legacy path: /dashboard or ?screen=... → redirect to /t/garindo/dashboard
+    const targetScreen = (route.screen !== 'dashboard' && ACTIVE_PAGES.has(route.screen as ActivePage))
+      ? route.screen
+      : 'dashboard';
+    window.location.replace(`/t/garindo/${targetScreen}`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   // Total alert indicators
   const lowStockCount = stockList.filter(item => item.stock < config.lowStockAlert).length;
@@ -650,6 +719,167 @@ export default function App() {
   if (!currentUser) {
     return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
   }
+
+  // ── Multi-tenant platform-level routing ────────────────────────────────────
+  // Platform admin area: /admin/*
+  if (pathRoute.isPlatformAdminArea) {
+    return <AdminShell />;
+  }
+
+  // Tenant-selector screen: /select-tenant
+  if (pathRoute.screen === 'select-tenant') {
+    return <SelectTenantScreen />;
+  }
+
+  // Tenant-scoped area: /t/<slug>/*
+  // Wrap the existing shell in TenantProvider when a slug is present.
+  // In dev-mode (no Supabase), pathRoute.tenantSlug is null (URL is query-string
+  // based), so we fall through to the legacy shell below.
+  if (pathRoute.tenantSlug) {
+    // If a tenant error has been set (from onError callback or window event), render
+    // the appropriate error screen instead of the normal shell.
+    if (tenantErrorScreen === 'not-found') {
+      return (
+        <TenantNotFound
+          slug={pathRoute.tenantSlug}
+          onBackToLogin={() => {
+            setTenantErrorScreen(null);
+            window.location.href = '/login';
+          }}
+        />
+      );
+    }
+    if (tenantErrorScreen === 'suspended') {
+      return <TenantSuspended onLogout={handleLogout} />;
+    }
+    if (tenantErrorScreen === 'denied') {
+      return <AccessDenied onLogout={handleLogout} />;
+    }
+    if (tenantErrorScreen === 'bootstrap') {
+      return (
+        <TenantBootstrapError
+          code={tenantErrorCode || 'BOOTSTRAP_FAILED'}
+          onRetry={() => { setTenantErrorScreen(null); window.location.reload(); }}
+        />
+      );
+    }
+
+    // Render tenant shell wrapped in TenantProvider.
+    const tenantShell = (
+      <TenantProvider slug={pathRoute.tenantSlug} onError={handleTenantError}>
+        <ReadonlyBanner />
+        <GraceBanner />
+        {isDetailTab ? (
+          <div className="min-h-screen bg-gray-50 text-[#0b1c30] font-sans">
+            {toastMessage && (
+              <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-bounce-subtle">
+                <div className="bg-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-[#abc9f3] whitespace-nowrap">
+                  {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
+                  {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
+                  {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
+                  <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+                </div>
+              </div>
+            )}
+            <PembelianScreen
+              stockList={stockList}
+              showToast={triggerToast}
+              onStockRefresh={handleStockRefresh}
+              currentUserId={currentUser?.id}
+              currentUserPermissions={currentUser?.permissions}
+              initialDetailPoNumber={initialDetailPoNumber}
+              onDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
+              initialBnlPiNumber={initialBnlPiNumber}
+              onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
+              initialBnlPrefill={initialBnlPrefill}
+              initialPesananNumber={initialPesananNumber}
+              onPesananDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+              initialTagihanNumber={initialTagihanNumber}
+              onTagihanDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+              initialPembayaranNumber={initialPembayaranNumber}
+              onPembayaranDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+            />
+          </div>
+        ) : (
+          <SalesChannelsProvider>
+          <div
+            className="min-h-screen bg-[#f8f9ff] text-[#0b1c30] flex font-sans"
+            style={{ background: 'radial-gradient(circle at 70% 80%, #eff4ff 0%, #f8f9ff 100%)' }}
+          >
+            {toastMessage && (
+              <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-bounce-subtle">
+                <div className="bg-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 border border-[#abc9f3] whitespace-nowrap">
+                  {toastType === 'success' && <ShieldCheck className="w-5 h-5 text-[#2d8a4e] shrink-0 fill-emerald-50" />}
+                  {toastType === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
+                  {toastType === 'info' && <Info className="w-5 h-5 text-[#1e3d60] shrink-0" />}
+                  <span className="font-extrabold text-xs text-[#012749] tracking-tight">{toastMessage}</span>
+                </div>
+              </div>
+            )}
+            <Sidebar
+              activePage={activePage}
+              onPageChange={(page) => navigate(page)}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+            />
+            <main className="flex-1 ml-[96px] mr-6 my-6 flex flex-col gap-6 min-h-[calc(100vh-48px)]">
+              <header className="flex justify-between items-center w-full px-8 py-4 bg-white/60 backdrop-blur-xl rounded-3xl border border-white/60 shadow-sm shrink-0">
+                <div className="flex items-center gap-5">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
+                    <h1 className="font-extrabold text-lg text-primary tracking-tight">
+                      {currentUser?.storeName || 'Garindo Jaya Panel'}
+                    </h1>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 select-none">
+                  <div className="relative hidden md:block">
+                    <input
+                      type="text"
+                      placeholder="Cari menu..."
+                      onClick={() => triggerToast("Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
+                      className="bg-[#eff4ff] border-none rounded-full px-5 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[#012749]"
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
+                  </div>
+                  <button
+                    onClick={() => navigate('notifications')}
+                    className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 relative cursor-pointer"
+                    title="Notifikasi Laporan"
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-[#2d8a4e] rounded-full" />
+                  </button>
+                  <button
+                    onClick={() => triggerToast(`Toko: ${currentUser?.storeName || 'Garindo Jaya Panel'} — User: ${currentUser?.name} — Keamanan: Premium GPN`, 'info')}
+                    className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
+                    title="Informasi Sistem"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              </header>
+              <div className="flex-1 min-h-0">
+                {renderPage()}
+              </div>
+              <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
+                <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
+                  © 2026 Garindo Jaya Panel MSME ERP • Powered by DeepMind &amp; Gemini AI
+                </p>
+                <div className="flex gap-4">
+                  <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
+                  <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Kebijakan Privasi CRM Enkripsi GPN Aktif.", 'info')}>Privacy</span>
+                </div>
+              </footer>
+            </main>
+          </div>
+          </SalesChannelsProvider>
+        )}
+      </TenantProvider>
+    );
+    return tenantShell;
+  }
+  // ── End multi-tenant routing ───────────────────────────────────────────────
 
   // Detail tab: no sidebar, no global header, no footer. Only the toast and the screen.
   // The screen itself owns its top bar (close X + action buttons).

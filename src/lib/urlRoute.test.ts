@@ -1,6 +1,7 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, it, expect } from 'vitest';
 import { buildHref } from './urlRoute';
 import { parseSearch } from './urlRoute';
+import { parseRoute } from './urlRoute';
 
 describe('urlRoute.buildHref', () => {
   test('no params returns ?screen=<screen>', () => {
@@ -110,5 +111,33 @@ describe('urlRoute.shouldInterceptClick', () => {
 
   test('right-click (button=2) → no intercept (false)', () => {
     expect(shouldInterceptClick(ev({ button: 2 }))).toBe(false);
+  });
+});
+
+describe('urlRoute — /t/<slug>/* parsing', () => {
+  it('parses tenant slug from /t/garindo/dashboard', () => {
+    const r = parseRoute('/t/garindo/dashboard', new URLSearchParams());
+    expect(r.tenantSlug).toBe('garindo');
+    expect(r.screen).toBe('dashboard');
+    expect(r.isPlatformAdminArea).toBe(false);
+  });
+
+  it('marks /admin/tenants as platform admin area', () => {
+    const r = parseRoute('/admin/tenants', new URLSearchParams());
+    expect(r.tenantSlug).toBeNull();
+    expect(r.isPlatformAdminArea).toBe(true);
+  });
+
+  it('/select-tenant is not admin area, no slug', () => {
+    const r = parseRoute('/select-tenant', new URLSearchParams());
+    expect(r.tenantSlug).toBeNull();
+    expect(r.isPlatformAdminArea).toBe(false);
+    expect(r.screen).toBe('select-tenant');
+  });
+
+  it('legacy /dashboard falls back to null slug (redirect handled elsewhere)', () => {
+    const r = parseRoute('/dashboard', new URLSearchParams());
+    expect(r.tenantSlug).toBeNull();
+    expect(r.screen).toBe('dashboard');
   });
 });

@@ -1,0 +1,43 @@
+# scripts/rls-audit-config.yaml
+# Manual overrides for RLS category assignment. Auto-detection:
+#   - has tenant_id → T
+#   - else → error (require override)
+overrides:
+  # Platform tables (defined in Task 1 migration)
+  tenants:                            { category: P }
+  platform_admins:                    { category: P }
+  tenant_subscriptions:               { category: P }
+  tenant_activity_daily:              { category: P }
+  platform_admin_audit:               { category: P }
+  platform_admin_active_impersonation: { category: P }  # added post-pivot; no tenant_id column
+  # Auth-adjacent
+  tenant_users:          { category: A }
+  # Global reference
+  plans:                 { category: G }
+  # Supabase-managed
+  storage_objects:       { category: skip, reason: 'Supabase-managed' }
+  storage_buckets:       { category: skip, reason: 'Supabase-managed' }
+  # WhatsApp session state (managed by whatsmeow-go daemon; not user data)
+  whatsmeow_app_state_mutation_macs:  { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_app_state_sync_keys:      { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_app_state_version:        { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_chat_settings:            { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_contacts:                 { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_device:                   { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_event_buffer:             { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_identity_keys:            { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_lid_map:                  { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_message_secrets:          { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_nct_salt:                 { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_pre_keys:                 { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_privacy_tokens:           { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_retry_buffer:             { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_sender_keys:              { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_sessions:                 { category: skip, reason: 'whatsmeow-go daemon' }
+  whatsmeow_version:                  { category: skip, reason: 'whatsmeow-go daemon' }
+  # Internal system tables (not per-tenant)
+  _backfill_preview_je:  { category: skip, reason: 'internal backfill workspace' }
+  model_cooldowns:       { category: skip, reason: 'system-wide AI rate limit' }
+  # Frozen singleton config not yet worth extending to multi-tenant
+  # (each of these can be graduated to T with tenant_id later; kept singleton for Phase A)
+  # (none identified — all remaining business tables should get tenant_id in Task 3.5)

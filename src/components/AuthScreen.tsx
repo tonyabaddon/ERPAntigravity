@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Rocket, Mail, Lock, Heart, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
-import { supabase, isSupabaseConfigured, adminUsersService } from '../lib/supabaseClient';
+import { supabase, isSupabaseConfigured, adminUsersService, tenantContextService } from '../lib/supabaseClient';
 import { PermissionSet, ALL_PERMISSIONS } from '../types';
 
 interface AuthScreenProps {
@@ -53,6 +53,46 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       avatarUrl: '',
       storeName: storeName ?? 'Dev Store',
     });
+    // Dev mode: no platform paths, stay on legacy query-string shell.
+  };
+
+  /**
+   * Post-login routing decision:
+   *  1. Platform admin → /admin
+   *  2. Single tenant  → /t/<slug>/dashboard
+   *  3. Multiple or no tenants → /select-tenant
+   *
+   * Uses window.location.href (option B: full page reload on platform transitions).
+   * Only called when Supabase is configured; dev bypass skips this.
+   */
+  const afterLogin = async () => {
+    if (!supabase) return;
+    try {
+      const isAdmin = await tenantContextService.isPlatformAdmin();
+      if (isAdmin) {
+        window.location.href = '/admin';
+        return;
+      }
+    } catch {
+      // Non-fatal: fall through to tenant lookup
+    }
+    try {
+      const { data } = await supabase
+        .from('tenant_users')
+        .select('tenants!inner(slug)')
+        .eq('status', 'ACTIVE');
+      const tenants = data ?? [];
+      if (tenants.length === 1) {
+        const slug = (tenants[0] as any).tenants.slug as string;
+        window.location.href = `/t/${slug}/dashboard`;
+      } else {
+        // 0 or >1 tenants → selection screen (shows "no tenant" message when 0)
+        window.location.href = '/select-tenant';
+      }
+    } catch {
+      // Fallback: navigate to select-tenant on error
+      window.location.href = '/select-tenant';
+    }
   };
 
   const handleSendSignInOtp = async () => {
@@ -126,7 +166,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       return;
     }
     showToast('🎉 Masuk sukses! Memuat sistem ERP...');
-    setTimeout(() => {
+    setTimeout(async () => {
       onLoginSuccess({
         id: user.id,
         name: deriveDisplayName(user.email ?? '', adminRow!.name),
@@ -135,6 +175,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         avatarUrl: user.user_metadata?.avatar_url ?? '',
         storeName: user.user_metadata?.store_name ?? '',
       });
+      await afterLogin();
     }, 800);
   };
 
@@ -218,7 +259,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     }
     setSignUpLoading(false);
     showToast(`🎉 Toko "${signUpStore}" sukses terdaftar! Mengalihkan ke Dashboard.`);
-    setTimeout(() => {
+    setTimeout(async () => {
       onLoginSuccess({
         id: data.user?.id ?? '',
         name: signUpName,
@@ -227,6 +268,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         avatarUrl: '',
         storeName: signUpStore,
       });
+      await afterLogin();
     }, 1200);
   };
 

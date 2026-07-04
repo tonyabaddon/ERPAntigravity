@@ -286,7 +286,7 @@ git commit -m "docs(spike): Phase A architecture verification — go/no-go for T
 - Create: `supabase/migrations/20261001000001_phase_a_schema.sql`
 
 **Interfaces:**
-- Produces: 7 new tables (`tenants`, `platform_admins`, `tenant_users`, `plans`, `tenant_subscriptions`, `platform_admin_audit`, `tenant_activity_daily`), 1 view (`v_tenant_effective_features`), 4 trigger functions (`_forbid_slug_change`, `_seed_company_settings_for_new_tenant`, `sync_tenant_settings_from_subscription`, `resync_all_tenants_on_plan_change`). Slug-immutability trigger attached to `tenants`; other triggers attached in later files.
+- Produces: **8 new tables** (`tenants`, `platform_admins`, `tenant_users`, `plans`, `tenant_subscriptions`, `platform_admin_audit`, `tenant_activity_daily`, `platform_admin_active_impersonation`), 1 view (`v_tenant_effective_features`), 4 trigger functions (`_forbid_slug_change`, `_seed_company_settings_for_new_tenant`, `sync_tenant_settings_from_subscription`, `resync_all_tenants_on_plan_change`). Slug-immutability trigger attached to `tenants`; other triggers attached in later files. `platform_admin_active_impersonation.tenant_slug` FK to `tenants(slug)` deferred to Task 3 (File 2) after Garindo tenant seeded.
 
 - [ ] **Step 1: Create migration file with header + tenants table**
 
@@ -496,32 +496,48 @@ BEGIN
 END $$;
 ```
 
-- [ ] **Step 6: Append statement_timeout per role**
+- [ ] **Step 6: Append `platform_admin_active_impersonation` table**
+
+This table feeds the Auth Hook (§3.1, plan Task 8) — super-admin impersonation state persists here and is read at JWT issue/refresh time. The FK to `tenants(slug)` is added in Task 3 (File 2) after Garindo tenant is seeded.
 
 ```sql
-ALTER ROLE authenticated SET statement_timeout = '10s';
+CREATE TABLE IF NOT EXISTS public.platform_admin_active_impersonation (
+  admin_user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  tenant_slug   TEXT NOT NULL,
+  started_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.platform_admin_active_impersonation IS 'category=P';
+GRANT SELECT ON public.platform_admin_active_impersonation TO supabase_auth_admin;
+```
+
+- [ ] **Step 7: Append statement_timeout per role**
+
+```sql
+ALTER ROLE authenticated SET statement_timeout = '8s';
 ALTER ROLE anon SET statement_timeout = '3s';
 ALTER ROLE service_role SET statement_timeout = '60s';
 ```
 
-- [ ] **Step 7: Apply migration on Supabase local**
+Note: `authenticator` already has `statement_timeout=8s` set by Supabase Cloud default (verified in Task 0 spike). We do not re-ALTER it here.
+
+- [ ] **Step 8: Apply migration on Supabase local**
 
 Run:
 ```bash
 supabase start  # if not running
 supabase db reset  # applies all migrations from scratch
 ```
-Expected: no errors. `\dt public.tenants*` shows 4 tables (tenants, tenant_users, tenant_subscriptions, tenant_activity_daily); `\dt public.platform*` shows 2 (platform_admins, platform_admin_audit); `\dt public.plans` shows 1; `\dv public.v_tenant*` shows the view.
+Expected: no errors. `\dt public.tenants*` shows 4 tables; `\dt public.platform*` shows 3 (platform_admins, platform_admin_audit, platform_admin_active_impersonation); `\dt public.plans` shows 1; `\dv public.v_tenant*` shows the view.
 
-- [ ] **Step 8: Verify with psql query**
+- [ ] **Step 9: Verify with psql query**
 
 Run:
 ```bash
-supabase db psql -c "SELECT table_name, obj_description((quote_ident(table_schema)||'.'||quote_ident(table_name))::regclass) AS category FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('tenants','platform_admins','tenant_users','plans','tenant_subscriptions','platform_admin_audit','tenant_activity_daily') ORDER BY table_name;"
+supabase db psql -c "SELECT table_name, obj_description((quote_ident(table_schema)||'.'||quote_ident(table_name))::regclass) AS category FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('tenants','platform_admins','tenant_users','plans','tenant_subscriptions','platform_admin_audit','tenant_activity_daily','platform_admin_active_impersonation') ORDER BY table_name;"
 ```
-Expected: 7 rows, each with a `category=X` comment.
+Expected: 8 rows, each with a `category=X` comment.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add supabase/migrations/20261001000001_phase_a_schema.sql
@@ -595,6 +611,16 @@ INSERT INTO public.tenant_users (tenant_id, user_id, role, status)
 SELECT '11111111-1111-1111-1111-111111111111', id, 'owner', 'ACTIVE'
 FROM auth.users
 ON CONFLICT (tenant_id, user_id) DO NOTHING;
+
+-- Deferred FK from Task 1: platform_admin_active_impersonation.tenant_slug → tenants(slug).
+-- Garindo tenant now exists, so we can add the constraint safely.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_impersonation_tenant_slug') THEN
+    ALTER TABLE public.platform_admin_active_impersonation
+      ADD CONSTRAINT fk_impersonation_tenant_slug
+      FOREIGN KEY (tenant_slug) REFERENCES public.tenants(slug) ON DELETE CASCADE;
+  END IF;
+END $$;
 ```
 
 - [ ] **Step 4: Apply + verify**
@@ -795,6 +821,108 @@ Expected: PK is `tenant_id`, `id` column absent. Row count = 1 (Garindo).
 ```bash
 git add supabase/migrations/20261001000002_phase_a_seed_and_backfill.sql
 git commit -m "feat(multi-tenant): Phase A file 2c — company_settings restructure + admin_users category-T"
+```
+
+---
+
+## Task 4.5: Migration File 2d — Dynamic `tenant_id` addition + backfill for remaining business tables
+
+**Files:**
+- Modify (append): `supabase/migrations/20261001000002_phase_a_seed_and_backfill.sql`
+
+**Interfaces:**
+- Consumes: Tasks 1-4 (Garindo tenant seeded; company_settings + admin_users already handled).
+- Produces: **every business table that lacked `tenant_id`** now has it (NULLable, FK REFERENCES tenants(id), backfilled to Garindo, category=T comment). Skip list: platform tables from Task 1, tables explicitly handled by Task 4 (`company_settings`, `admin_users`), whatsmeow_* (17 tables — WhatsApp daemon internal state), internal workspace (`_backfill_preview_je`, `model_cooldowns`).
+- Enables Task 5 NOT NULL loop to cover the full universe (~65 T-tables instead of only 15).
+- Enables Task 7 RLS block to protect the full universe.
+
+**Why this exists:** MCP enumeration against production confirmed only 15 tables have `tenant_id` — the plan implicitly assumed all business tables were already tenant-scoped, but they weren't. Spec §4.2 anticipated this ("Handle tables without tenant_id column... others surfaced by inspection"), but the plan only enumerated `admin_users`. Task 4.5 fills the gap for the ~50 remaining business tables via dynamic discovery.
+
+- [ ] **Step 1: Append discovery + backfill DO block**
+
+Append to `supabase/migrations/20261001000002_phase_a_seed_and_backfill.sql`:
+
+```sql
+-- Task 4.5: Dynamic tenant_id addition for business tables that lacked it.
+-- Adds column + backfills Garindo + category=T comment for each discovered table.
+-- Skip list = platform tables + Task-4-handled + WhatsApp daemon state + internal workspace.
+DO $$
+DECLARE
+  r RECORD;
+  v_garindo UUID := '11111111-1111-1111-1111-111111111111';
+  v_count BIGINT;
+  v_added INT := 0;
+BEGIN
+  FOR r IN
+    SELECT t.table_name
+    FROM information_schema.tables t
+    WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
+      -- Only tables that DON'T yet have tenant_id
+      AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns c
+        WHERE c.table_schema = 'public' AND c.table_name = t.table_name
+          AND c.column_name = 'tenant_id'
+      )
+      -- Skip: platform tables from Task 1
+      AND t.table_name NOT IN (
+        'tenants','platform_admins','tenant_users','plans','tenant_subscriptions',
+        'tenant_activity_daily','platform_admin_audit','platform_admin_active_impersonation',
+        'tenant_settings',
+        -- Skip: tables Task 4 explicitly restructured
+        'company_settings','admin_users'
+      )
+      -- Skip: WhatsApp daemon session state (whatsmeow-go manages these, not per-tenant data)
+      AND t.table_name NOT LIKE 'whatsmeow\_%' ESCAPE '\'
+      -- Skip: internal workspace / system-wide
+      AND t.table_name NOT IN ('_backfill_preview_je', 'model_cooldowns')
+    ORDER BY t.table_name
+  LOOP
+    -- Add column (NULLable — NOT NULL enforced in Task 5)
+    EXECUTE format(
+      'ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE',
+      r.table_name
+    );
+
+    -- Backfill Garindo UUID (idempotent — WHERE clause skips already-set rows)
+    EXECUTE format(
+      $fmt$UPDATE public.%I SET tenant_id = %L WHERE tenant_id IS NULL$fmt$,
+      r.table_name, v_garindo
+    );
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    -- Category T comment (idempotent — COMMENT ON TABLE overwrites)
+    EXECUTE format(
+      $fmt$COMMENT ON TABLE public.%I IS 'category=T'$fmt$,
+      r.table_name
+    );
+
+    RAISE NOTICE 'Added tenant_id to %: % rows backfilled', r.table_name, v_count;
+    v_added := v_added + 1;
+  END LOOP;
+
+  RAISE NOTICE 'Task 4.5: added tenant_id to % business tables', v_added;
+END $$;
+```
+
+- [ ] **Step 2: Apply + verify**
+
+```bash
+supabase db reset
+supabase db psql -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='public' AND column_name='tenant_id';"
+```
+Expected: 60-70 tables now have tenant_id (up from ~15 pre-Task-4.5).
+
+Sanity check on a specific table:
+```bash
+supabase db psql -c "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_schema='public' AND table_name='customers' AND column_name='tenant_id';"
+```
+Expected: 1 row, `data_type=uuid`, `is_nullable=YES` (NOT NULL comes in Task 5).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add supabase/migrations/20261001000002_phase_a_seed_and_backfill.sql
+git commit -m "feat(multi-tenant): Phase A file 2d — dynamic tenant_id addition for business tables (Task 4.5)"
 ```
 
 ---

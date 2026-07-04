@@ -378,11 +378,16 @@ export interface DbNotificationConfig {
 // The `company_settings` table still exists in Postgres; we just no
 // longer surface the legacy display columns to TypeScript callers.
 export interface DbCompanySettings {
-  id: number;
+  tenant_id: string;        // replaces `id: number` — PK is now tenant_id
+  company_name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
   logo_url?: string | null;
+  npwp?: string;
   opname_require_witness?: boolean;
   costing_method?: 'FIFO' | 'Average';
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface DbSupplier {

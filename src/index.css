@@ -86,3 +86,10 @@
   0% { transform: translate(0, 0) scale(1); }
   100% { transform: translate(40px, -60px) scale(1.15); }
 }
+
+/* Multi-tenant read-only mode — disables all write controls */
+body.tenant-readonly [data-write="true"] {
+  pointer-events: none !important;
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}

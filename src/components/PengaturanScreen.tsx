@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
 import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
 import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { useTenant } from '../contexts/TenantContext';
 import TabBar, { TabDef } from './ui/TabBar';
 import CostingMethodPanel from './pengaturan/CostingMethodPanel';
 import ClipMonitorPanel from './pengaturan/ClipMonitorPanel';
@@ -32,6 +33,7 @@ interface PengaturanScreenProps {
 export default function PengaturanScreen(props: PengaturanScreenProps) {
   const { showToast } = props;
   const currentUserRole = props.currentUserRole;
+  const tenant = useTenant();
 
   const tabs = useMemo<TabDef<PengaturanTab>[]>(() => {
     const perms = props.permissions;
@@ -165,9 +167,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       showToast('Format logo harus PNG atau JPG.', 'warning');
       return;
     }
+    if (!tenant) { showToast('Tenant belum dimuat.', 'warning'); return; }
     setLogoUploading(true);
     try {
-      const url = await companySettingsService.uploadLogo(file);
+      const url = await companySettingsService.uploadLogo(tenant.tenant_id, file);
       setLogoUrl(url);
       showToast('Logo berhasil di-upload.', 'success');
     } catch (err: any) {
@@ -180,8 +183,9 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
 
   async function handleLogoClear() {
     if (!confirm('Hapus logo? Ini akan menghilangkan logo dari semua invoice baru.')) return;
+    if (!tenant) { showToast('Tenant belum dimuat.', 'warning'); return; }
     try {
-      await companySettingsService.clearLogo();
+      await companySettingsService.clearLogo(tenant.tenant_id);
       setLogoUrl(null);
       showToast('Logo dihapus.', 'success');
     } catch (err: any) {
@@ -391,10 +395,11 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                 checked={company?.opname_require_witness ?? true}
                 onChange={async (e) => {
                   const v = e.target.checked;
+                  if (!tenant) { showToast('Tenant belum dimuat.', 'warning'); return; }
                   // Optimistic local update for snappy toggle UX.
                   setCompany(prev => prev ? { ...prev, opname_require_witness: v } : prev);
                   try {
-                    await companySettingsService.updateOpnameRequireWitness(v);
+                    await companySettingsService.updateOpnameRequireWitness(tenant.tenant_id, v);
                     showToast(`Saksi wajib: ${v ? 'AKTIF' : 'NONAKTIF'}`, 'success');
                   } catch (err) {
                     console.error('updateOpnameRequireWitness error:', err);

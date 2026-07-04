@@ -943,59 +943,45 @@ export const notificationConfigService = {
 export const companySettingsService = {
   async fetch(): Promise<DbCompanySettings | null> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('company_settings')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle();
+    const { data, error } = await supabase.from('company_settings').select('*').maybeSingle();
     if (error) throw error;
     return data ?? null;
   },
 
-  async uploadLogo(file: File): Promise<string> {
+  async uploadLogo(tenantId: string, file: File): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-    const path = `logo_${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from('branding')
-      .upload(path, file, { upsert: true, cacheControl: '3600' });
+    const path = `logo_${tenantId}_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('branding').upload(path, file, { upsert: true, cacheControl: '3600' });
     if (upErr) throw upErr;
     const { data: pub } = supabase.storage.from('branding').getPublicUrl(path);
     const url = pub.publicUrl;
-    const { error: updErr } = await supabase
-      .from('company_settings')
-      .update({ logo_url: url, updated_at: new Date().toISOString() })
-      .eq('id', 1);
+    const { error: updErr } = await supabase.from('company_settings')
+      .update({ logo_url: url, updated_at: new Date().toISOString() } as any)
+      .eq('tenant_id', tenantId);
     if (updErr) throw updErr;
     return url;
   },
 
-  async updateOpnameRequireWitness(required: boolean): Promise<void> {
+  async updateOpnameRequireWitness(tenantId: string, required: boolean): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('company_settings')
-      .update({ opname_require_witness: required, updated_at: new Date().toISOString() })
-      .eq('id', 1);
+    const { error } = await supabase.from('company_settings')
+      .update({ opname_require_witness: required, updated_at: new Date().toISOString() } as any)
+      .eq('tenant_id', tenantId);
     if (error) throw error;
   },
 
-  async clearLogo(): Promise<void> {
+  async clearLogo(tenantId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data: settings, error: fetchErr } = await supabase
-      .from('company_settings')
-      .select('id, logo_url')
-      .eq('id', 1)
-      .maybeSingle();
+    const { data: settings, error: fetchErr } = await supabase.from('company_settings')
+      .select('logo_url').maybeSingle();
     if (fetchErr) throw fetchErr;
     if (!settings?.logo_url) return;
     const filename = settings.logo_url.split('/').pop();
     if (filename) {
       await supabase.storage.from('branding').remove([filename]);
     }
-    await supabase
-      .from('company_settings')
-      .update({ logo_url: null })
-      .eq('id', 1);
+    await supabase.from('company_settings').update({ logo_url: null } as any).eq('tenant_id', tenantId);
   },
 
   // Costing method is stored as a column on the single-row company_settings table
@@ -1003,19 +989,17 @@ export const companySettingsService = {
   // model that didn't match this codebase — see fix migration header for context.
   async getCostingMethod(): Promise<'FIFO' | 'Average'> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase
-      .from('company_settings').select('costing_method').eq('id', 1).maybeSingle();
+    const { data, error } = await supabase.from('company_settings').select('costing_method').maybeSingle();
     if (error) throw error;
     const v = (data as { costing_method?: string } | null)?.costing_method ?? 'FIFO';
     return (v === 'Average' ? 'Average' : 'FIFO');
   },
 
-  async setCostingMethod(m: 'FIFO' | 'Average'): Promise<void> {
+  async setCostingMethod(tenantId: string, m: 'FIFO' | 'Average'): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('company_settings')
-      .update({ costing_method: m, updated_at: new Date().toISOString() })
-      .eq('id', 1);
+    const { error } = await supabase.from('company_settings')
+      .update({ costing_method: m, updated_at: new Date().toISOString() } as any)
+      .eq('tenant_id', tenantId);
     if (error) throw error;
   },
 };
@@ -2410,3 +2394,61 @@ export const productService = {
 // ─── Pengaturan MSME Configurability (Phase 1) Services ────────────────
 // Implemented in ./pengaturan/pengaturanServices.ts
 // (Not re-exported here to avoid circular dep: supabaseClient → pengaturanServices → supabaseClient)
+
+// ─── Multi-Tenant Phase A: tenantContextService ──────────────────────────────
+// Task 18: tenant context bootstrapping and super-admin impersonation.
+// Tenant identity is baked into JWT by the Auth Hook; no header injection needed.
+
+export interface TenantContextData {
+  tenant_id: string;
+  slug: string;
+  name: string;
+  status: 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+  plan_code: string;
+  effective_features: Record<string, boolean>;
+  expiry_mode: 'ACTIVE' | 'GRACE' | 'READONLY';
+  expires_at: string;
+  grace_expires_at: string;
+  is_platform_admin: boolean;
+  impersonating: boolean;
+  impersonating_slug: string | null;
+}
+
+export const tenantContextService = {
+  async bootstrap(): Promise<TenantContextData | null> {
+    if (!supabase) return null;
+    const { data, error } = await supabase.rpc('bootstrap_tenant_context');
+    if (error) throw error;
+    return data as TenantContextData;
+  },
+
+  async isPlatformAdmin(): Promise<boolean> {
+    if (!supabase) return false;
+    const { data, error } = await supabase.rpc('is_platform_admin');
+    if (error) return false;
+    return !!data;
+  },
+
+  /**
+   * Super-admin starts impersonating a tenant.
+   * Writes to platform_admin_active_impersonation, then refreshes the JWT
+   * so the Auth Hook picks up the new tenant claim.
+   */
+  async impersonateTenant(slug: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('impersonate_tenant', { p_slug: slug });
+    if (error) throw error;
+    const { error: refreshErr } = await supabase.auth.refreshSession();
+    if (refreshErr) throw refreshErr;
+  },
+
+  /**
+   * Super-admin exits impersonation. Refreshes JWT to clear the tenant claim.
+   */
+  async stopImpersonation(): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('stop_impersonation');
+    if (error) throw error;
+    await supabase.auth.refreshSession();
+  }
+};

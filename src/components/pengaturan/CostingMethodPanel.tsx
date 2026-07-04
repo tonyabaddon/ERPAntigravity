@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { companySettingsService } from '../../lib/supabaseClient';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface Props {
   showToast: (msg: string, kind?: 'success' | 'info' | 'warning') => void;
@@ -8,6 +9,7 @@ interface Props {
 type CostingMethod = 'FIFO' | 'Average';
 
 export default function CostingMethodPanel({ showToast }: Props) {
+  const tenant = useTenant();
   const [method, setMethod] = useState<CostingMethod>('FIFO');
   const [saving, setSaving] = useState(false);
 
@@ -19,9 +21,10 @@ export default function CostingMethodPanel({ showToast }: Props) {
   }, []);
 
   const handleSave = async () => {
+    if (!tenant) { showToast('Tenant belum dimuat.', 'warning'); return; }
     setSaving(true);
     try {
-      await companySettingsService.setCostingMethod(method);
+      await companySettingsService.setCostingMethod(tenant.tenant_id, method);
       showToast('Metode costing tersimpan.', 'success');
     } catch (e) {
       showToast(`Gagal simpan: ${(e as Error).message}`, 'warning');
