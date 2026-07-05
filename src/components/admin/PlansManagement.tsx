@@ -170,6 +170,7 @@ interface PlanCardEditProps {
 }
 
 interface EditForm {
+  name: string;
   description: string;
   target_segment: string;
   is_recommended: boolean;
@@ -178,6 +179,7 @@ interface EditForm {
 
 function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
   const [form, setForm] = useState<EditForm>({
+    name: plan.name,
     description: plan.description ?? '',
     target_segment: plan.target_segment ?? '',
     is_recommended: plan.is_recommended,
@@ -205,6 +207,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
     setSubmitting(true);
     try {
       const updates: UpdatePlanInput = {};
+      if (form.name !== plan.name) updates.name = form.name;
       if (form.description !== (plan.description ?? '')) updates.description = form.description;
       if (form.target_segment !== (plan.target_segment ?? '')) updates.target_segment = form.target_segment;
       if (form.is_recommended !== plan.is_recommended) updates.is_recommended = form.is_recommended;
@@ -246,6 +249,17 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
       <h2 className="text-[15px] font-bold text-vosi-navy">
         Edit {plan.code}
       </h2>
+
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+        Nama paket
+        <input
+          type="text"
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
+          data-testid={`edit-name-${plan.code}`}
+        />
+      </label>
 
       <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
         Deskripsi

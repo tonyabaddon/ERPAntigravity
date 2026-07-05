@@ -205,6 +205,11 @@ export default function App() {
             sessionStorage.removeItem('pendingDeepLink');
             window.history.replaceState({}, '', stashedSearch);
             window.dispatchEvent(new Event('urlroute:change'));
+          } else if (window.location.pathname.startsWith('/admin/')
+                     || window.location.pathname === '/admin') {
+            // Platform-admin area uses its own path-based routing (AdminRoutes.tsx);
+            // do NOT force ?screen=dashboard here — that leaks tenant-side URL
+            // scheme into admin URLs. Leave the URL alone.
           } else {
             const rawScreen = new URLSearchParams(window.location.search).get('screen');
             const isValidNonAuthScreen =
@@ -216,7 +221,10 @@ export default function App() {
             }
           }
         } catch {
-          replaceRoute('dashboard');
+          if (!(window.location.pathname.startsWith('/admin/')
+                || window.location.pathname === '/admin')) {
+            replaceRoute('dashboard');
+          }
         }
       }
     });

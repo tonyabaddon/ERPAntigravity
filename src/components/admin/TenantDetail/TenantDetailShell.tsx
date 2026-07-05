@@ -45,7 +45,22 @@ function getTabSnapshot(): TabKey {
   if (search !== _lastSearch) {
     _lastSearch = search;
     const raw = new URLSearchParams(search).get('tab') ?? '';
-    _lastTab = VALID_TABS.has(raw) ? (raw as TabKey) : DEFAULT_TAB;
+    if (VALID_TABS.has(raw)) {
+      _lastTab = raw as TabKey;
+    } else {
+      _lastTab = DEFAULT_TAB;
+      // Sync URL to the effective tab so URL and rendered state agree
+      // (bookmarked / shared links with typo'd tab now self-correct).
+      if (raw !== '' && typeof window !== 'undefined') {
+        const params = new URLSearchParams(search);
+        params.set('tab', DEFAULT_TAB);
+        // Use setTimeout to avoid triggering render mid-snapshot.
+        setTimeout(() => {
+          window.history.replaceState({}, '', '?' + params.toString());
+          window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
+        }, 0);
+      }
+    }
   }
   return _lastTab;
 }
