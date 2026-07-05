@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-05 — Multi-tenant Phase B: design spec + Wave 1 plan checkpoint
+
+Design phase for Phase B complete. Committing spec + Wave 1 plan + VOSI Design System as a durable baseline before starting implementation.
+
+**Committed artifacts:**
+- `docs/superpowers/specs/2026-07-04-multi-tenant-phase-b-design.md` — 2088-line spec covering 8 waves (Wave 1 read-only admin → Wave 5 payment tracking)
+- `docs/superpowers/plans/2026-07-04-multi-tenant-phase-b-wave1-admin-shell.md` — 3432-line, 14-task implementation plan for Wave 1
+- `docs/VOSI-Design-System.md` + 4 logo PNGs — brand tokens (navy `#0B2545` / gold `#F9B233` / cream `#FAF7F0`), Plus Jakarta Sans + JetBrains Mono, 60/30/10 rule
+- `docs/superpowers/mockups/2026-07-04-phase-b-final-end-to-end.html` — 27-screen end-to-end walkthrough (LAYAR 1 login → LAYAR 12c payment modal)
+
+**Delivery-order decision (memory: `project_phase_b_wave_reorder.md`):**
+Wave 1 → 4a (renewal) → 5 (payments) → **BLOCK on real wizard UI capture** → 2 (wizard) + 3a (import) → 3b/3c → 4b/4c. Wizard deferred because current mockup didn't capture real UX flow; renewal + payment work stands alone super-admin-only, so founder gets usable admin features first.
+
+**Next:** Wave 1 Task 1 (migration to extend `plans` + `company_settings` + Garindo backfill) via `superpowers:subagent-driven-development`.
+
+---
+
 ## 2026-07-04 — Multi-tenant Phase A: Task 26 — companySettingsService refactor (COMPLETE)
 
 Commit `686dd6e` on branch `worktree-multi-tenant-phase-a`.
