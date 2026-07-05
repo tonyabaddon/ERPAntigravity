@@ -21,7 +21,7 @@ import {
 import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
 import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES, parseRoute } from './lib/urlRoute';
 import { TenantProvider } from './contexts/TenantContext';
-import { AdminShell } from './components/admin/AdminShell';
+import { AdminRoutes } from './components/admin/AdminRoutes';
 import { SelectTenantScreen } from './components/SelectTenantScreen';
 import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
@@ -723,7 +723,7 @@ export default function App() {
   // ── Multi-tenant platform-level routing ────────────────────────────────────
   // Platform admin area: /admin/*
   if (pathRoute.isPlatformAdminArea) {
-    return <AdminShell />;
+    return <AdminRoutes />;
   }
 
   // Tenant-selector screen: /select-tenant

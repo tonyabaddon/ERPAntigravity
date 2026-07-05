@@ -1,5 +1,40 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-05 — Multi-tenant Phase B Wave 1 — READY TO MERGE
+
+Wave 1 (read-only super-admin panel) complete on branch `worktree-phase-b-wave1`. 14 tasks + final whole-branch review + fix pass. All work applied to Garindo prod via Supabase MCP.
+
+**19 commits on the branch** (from base `3330575` to head `3196c06`):
+- `e4bfb19`, `1786837` — Task 1 (plans + company_settings extensions)
+- `106ae62`, `81ab3a8` — Task 2 (list_tenants_admin + RLS gap fix on 79 tables)
+- `9f73e31` — Task 3 (list_audit_events + dashboard_stats)
+- `de33123` — Task 4 (VOSI tokens + fonts + sonner)
+- `e6a2c49` — Task 5 (adminApi + adminTypes)
+- `dbbae24` — Task 6 (AdminSidebar + AdminLayout)
+- `2f436f3` — Task 7 (/admin/* routes + guard)
+- `03a69ce` — Task 8 (AdminHome dashboard)
+- `eb4c5d2` — Task 9 (TenantsList + Impersonasi reintegration)
+- `de6482a` — Task 10 (TenantDetailShell + tabs)
+- `306bec7` — Task 11 (OverviewTab 4-quadrant)
+- `d6fcba4` — Task 12 (UsersTab + list_tenant_users_admin)
+- `3ef8a06`, `6b8d781` — Task 13 (AuditTab + AuditLogViewer)
+- `f008599` — Task 14 (PlansManagement + regression)
+- `3196c06` — Task 15 fix pass (2 Critical + 4 Important findings from Opus review)
+
+**Prod state:** 8 new migrations applied to `ekhhojaezdfjfwuxyjkl` — extensions, 4 admin RPCs, RLS gap fix (6 P-policies + `plans` extended, 79 supplementary `p_platform_admin_readall` policies added), `list_tenant_users_admin` postgres-owned for auth.users access.
+
+**Two architectural findings surfaced + fixed mid-wave:**
+- SECDEF RPCs owned by `vosi_rpc_owner` cannot read RLS `TO {authenticated}` policies unless the role is added explicitly (or supplementary policy added). Memory: `project_phase_a_secdef_authenticated_gap`.
+- `auth.users` access from SECDEF requires postgres ownership because `supabase_admin` owns the auth schema and `postgres` lacks `WITH GRANT OPTION` on the schema ACL. Same pattern as Phase A `custom_access_token_hook`.
+
+**Test status:** tsc clean, vitest 616 pass / 5 pre-existing failures (unchanged from before Wave 1).
+
+**Deferred to Wave 2 prep tasks:** VOSI token sweep (~163 inline hex → `bg-vosi-*` classes), server-side `tenant_id`/`slug` filter on `list_tenants_admin`, audit Phase A tenant-scoped RPCs for latent read-visibility bugs on the same principle Task 2 surfaced.
+
+**Next:** merge worktree-phase-b-wave1 → main via `superpowers:finishing-a-development-branch` (or founder review + merge as normal).
+
+---
+
 ## 2026-07-05 — Multi-tenant Phase B: design spec + Wave 1 plan checkpoint
 
 Design phase for Phase B complete. Committing spec + Wave 1 plan + VOSI Design System as a durable baseline before starting implementation.
@@ -13,7 +48,80 @@ Design phase for Phase B complete. Committing spec + Wave 1 plan + VOSI Design S
 **Delivery-order decision (memory: `project_phase_b_wave_reorder.md`):**
 Wave 1 → 4a (renewal) → 5 (payments) → **BLOCK on real wizard UI capture** → 2 (wizard) + 3a (import) → 3b/3c → 4b/4c. Wizard deferred because current mockup didn't capture real UX flow; renewal + payment work stands alone super-admin-only, so founder gets usable admin features first.
 
-**Next:** Wave 1 Task 1 (migration to extend `plans` + `company_settings` + Garindo backfill) via `superpowers:subagent-driven-development`.
+**Next:** Wave 1 Task 2 (RPC `list_tenants_admin` + pgTAP).
+
+---
+
+## 2026-07-05 — Phase B Wave 1 Task 14: PlansManagement + Wave 1 Regression (COMPLETE)
+
+**PlansManagement `/admin/plans`:**
+- 3-card read-only grid (STARTER / PRO / PREMIUM) with PALING POPULER gold ribbon on PRO.
+- VOSI gold (#F9B233) ribbon header, VOSI navy headings, 13-14px UI base fonts.
+- Feature bundle rendered as translated Bahasa bullet list using FEATURE_LABELS from OverviewTab.
+- Disabled "Aktifkan (Wave 4a)" CTA on each card with tooltip "Tersedia di Wave 4a".
+- Tenant count derived client-side from `tenant_subscriptions`.
+- Direct `.from('plans').select()` — no RPC/migration needed (g_read_all TO authenticated).
+- `price_monthly` column does not exist (plans has `price_reference NUMERIC`); Bulanan price display omitted.
+
+**New files:**
+- `src/lib/adminPlansApi.ts` — `listPlansAdmin()` + `PlanRow` type
+- `src/components/admin/PlansManagement.tsx` — replaces stub
+- `src/components/admin/PlansManagement.test.tsx` — 6/6 tests pass
+
+**Wave 1 regression:**
+- `npx tsc --noEmit`: CLEAN
+- `npm run build`: SUCCESS (2.79s, 2877 modules)
+- Vitest src/: 602 pass / 5 fail (all 5 pre-existing — 2 AdminRoutes stub text + 3 productWrappers)
+- All Wave 1 routes verified by test coverage + code inspection.
+
+---
+
+## 2026-07-05 — Phase B Wave 1 Task 4: VOSI design tokens + fonts + sonner (COMPLETE)
+
+Tailwind v4 CSS-only config. All tokens wired via `@theme` in `src/index.css`. sonner v2.0.7 installed and `<Toaster />` mounted globally.
+
+**Key deviation from brief:** Brief assumed Tailwind v3 (`tailwind.config.js`) and instructed overriding `font-sans` with Plus Jakarta Sans. Actual project uses Tailwind v4 CSS-only config. To avoid regressing Garindo screens (which use `font-sans` = Inter throughout), Plus Jakarta Sans was added as `--font-vosi` (generates `font-vosi` utility) instead of replacing `--font-sans`. Garindo body styling is unchanged.
+
+**What changed:**
+- `index.html`: Added Plus Jakarta Sans (wght 400-800) `<link>` (kept Inter + JetBrains Mono for Garindo).
+- `src/index.css` `@theme`: Added 11 `--color-vosi-*` tokens, `--font-vosi`, `--radius-vosi-card/pill`, `--shadow-vosi-card/hero`.
+- `package.json`: `sonner: ^2.0.7` added.
+- `src/main.tsx`: `<Toaster position="top-right" richColors closeButton />` mounted inside `<StrictMode>`.
+- `src/lib/adminToast.ts`: Typed wrapper (`success`, `error`, `info`) over `toast` from sonner.
+- `src/lib/adminToast.test.ts`: 3/3 tests passing.
+
+**Verification:**
+- `npx tsc --noEmit`: clean (0 errors).
+- `npm test -- --run`: 488 passed / 3 pre-existing failures (unrelated `productWrappers.test.ts` — `supabase.rpc` mock issue).
+- `npm run build`: builds successfully in 3.07s.
+
+**Files:**
+- `src/index.css`, `index.html`, `src/main.tsx`, `src/lib/adminToast.ts`, `src/lib/adminToast.test.ts`
+- `.superpowers/sdd/task-4-report.md`
+
+---
+
+## 2026-07-05 — Phase B Wave 1 Task 1: plans + company_settings extensions (COMPLETE)
+
+Migration slot `20261115000001` applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`).
+
+**What changed:**
+- `plans` table: added `description TEXT`, `target_segment TEXT`, `is_recommended BOOLEAN NOT NULL DEFAULT false`. All 3 plan rows (STARTER/PRO/PREMIUM) backfilled with Bahasa Indonesia copy.
+- `company_settings` table: added `industry TEXT`, `employee_range TEXT`, `annual_revenue_range TEXT`. Two CHECK constraints added: `company_settings_employee_range_check` (4 buckets: Mikro/Kecil/Menengah/Besar) and `company_settings_annual_revenue_range_check` (5 revenue buckets).
+- Garindo backfilled: `industry='Retail/Toko umum'`, `employee_range='4-19 orang (Kecil)'`, `annual_revenue_range='300 juta - 2.5 miliar (Kecil)'`.
+
+**Verification (9/9 SQL assertions passing):**
+- All 5 new columns exist on correct tables.
+- PRO plan `description` and `is_recommended=true` correct.
+- employee_range CHECK rejects invalid bucket (SQLSTATE 23514).
+- Garindo row non-NULL and matching brief values.
+
+**pgTAP note:** pgTAP not installed on prod — test file at `supabase/tests/wave1/plans_company_extensions.sql` is ready for local `supabase test db` when needed.
+
+**Files:**
+- `supabase/migrations/20261115000001_phase_b_wave1_plans_company_extensions.sql`
+- `supabase/tests/wave1/plans_company_extensions.sql`
+- `.superpowers/sdd/task-1-report.md`
 
 ---
 
@@ -10801,3 +10909,31 @@ Founder smoke test setelah production apply revealed frontend showing "MISSING_T
 **Fix:** enabled via Management API PATCH `/v1/projects/ekhhojaezdfjfwuxyjkl/config/auth` with `hook_custom_access_token_enabled: true` + `hook_custom_access_token_uri: pg-functions://postgres/public/custom_access_token_hook`. Verified via chrome-devtools MCP smoke: forced JWT refresh → new token carries `tenant_id`, `is_platform_admin`, `tenant_status`, `tenant_expiry_mode`. Dashboard reload → full UI works.
 
 **Runbook fix:** Day 4b step should be more explicit — after selecting the hook function in Dashboard, **click Save** and wait for confirmation toast. Better yet, add a fallback verification step via Management API before proceeding.
+
+---
+
+## 2026-07-05 — Phase B Wave 1 Task 11: OverviewTab 4-quadrant read-only view (COMPLETE)
+
+**Task:** Replace `OverviewTab` stub with full 4-panel read-only view.
+
+**Panels implemented:**
+1. **Profil** — Nama toko, Slug, Industri (chip), Jumlah karyawan (chip), Omzet tahunan (chip), Bergabung
+2. **Paket & masa aktif** — Paket (gold chip), Aktif sejak, Masa aktif s/d (amber warning when ≤45d), Status masa aktif
+3. **Aktivitas** — Login terakhir, Transaksi 7 hari, Rata-rata/hari (JetBrains Mono), Status pemakaian, Jumlah user/SKU
+4. **Fitur aktif** — Modul list enabled/disabled from v_tenant_effective_features
+
+**New API function:** `getTenantOverviewExtras(tenantId)` in `adminApi.ts` — parallel reads from `company_settings` (annual_revenue_range) + `v_tenant_effective_features` (effective_features JSONB). New `TenantOverviewExtras` type in `adminTypes.ts`.
+
+**NULL handling:** Em-dash component with `title="Belum diisi"` tooltip on all nullable fields.
+
+**Tests:** 8/8 PASS (OverviewTab.test.tsx). Full admin suite 69/71 — 2 pre-existing failures (AdminRoutes Task 8/9 stub assertions).
+
+**TSC:** 0 errors.
+
+**Files:**
+- `src/components/admin/TenantDetail/OverviewTab.tsx` (replaced stub)
+- `src/components/admin/TenantDetail/OverviewTab.test.tsx` (new, 8 tests)
+- `src/lib/adminApi.ts` (added getTenantOverviewExtras)
+- `src/lib/adminTypes.ts` (added TenantOverviewExtras)
+- `src/components/admin/TenantDetail/TenantDetailShell.test.tsx` (fixed assertions for duplicate text)
+- `src/components/admin/AdminRoutes.test.tsx` (added getTenantOverviewExtras to mock)

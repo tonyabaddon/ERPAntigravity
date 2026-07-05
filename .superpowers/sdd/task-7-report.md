@@ -1,18 +1,46 @@
-# Task 7 Report — Kasir Pill Toggle + Auto-Apply + Re-Compute
+# Task 7 Report: /admin/* routes + platform-admin guard
 
-**Status:** DONE
+## urlRoute.ts API Summary
 
-**Files modified:**
-- `src/lib/supabaseClient.ts` — added `price_grosir?: number | null` to `SupabaseStockItem` (was missing → TS errors)
-- `src/components/penjualan/CatatPenjualanWizard.tsx` — `activeTier`/`tenantSettings` state, auto-apply on customer change, re-compute cart on tier switch, tier-aware `addItem`, pass props to Step2Items
-- `src/components/penjualan/wizard/Step2Items.tsx` — tier pill `[Eceran|Grosir]` in cart header, pass activeTier/showTierPill to CartRows
-- `src/components/penjualan/CartRows.tsx` — per-line amber warning when grosir active but price_grosir is null
+`urlRoute.ts` is a custom query-string and pathname router — **no react-router-dom**. Key facts:
 
-**Files created:**
-- `src/components/penjualan/wizard/Step2Items.test.tsx` — 7 RTL tests
+- `parseRoute(pathname, search)` collapses **all** `/admin/*` paths into `{ screen: 'admin', isPlatformAdminArea: true, params: {} }` — no sub-path or param extraction.
+- Navigation uses `window.history.pushState` + custom `urlroute:change` event.
+- No nested-route primitives, no URL param extraction for admin sub-paths.
 
-**Test summary:** 476/476 PASS (469 baseline + 7 new Task 7 tests)
+**Workaround applied**: `AdminRoutes.tsx` performs its own `pathname.match()` dispatch (regex-based) since `urlRoute.ts` cannot distinguish `/admin/tenants/garindo` from `/admin/tenants`. This is intentional and documented — Task 8+ may want to formalise this into a helper if more param extraction is needed.
 
-**Concerns:** 
-- Tests placed in Step2Items (not KasirScreen) because KasirScreen is a transaction log, not the cart component.
-- Re-compute zeroes stale per-line discounts on tier switch (safe: operator must re-enter if needed).
+## Guard Location + Strategy
+
+- `src/components/admin/AdminRouteGuard.tsx` — standalone component wrapping children.
+- Calls `tenantContextService.isPlatformAdmin()` (Supabase RPC `is_platform_admin`) on mount.
+- On deny: fires `adminToast.error('Halaman khusus admin')` then `window.location.assign('/dashboard')`.
+- Redirect target is `/dashboard` (not `/login`); the Garindo legacy-redirect in `App.tsx` will further bounce to `/t/garindo/dashboard` for tenant users.
+
+## Route Dispatch
+
+`src/components/admin/AdminRoutes.tsx` replaces `AdminShell` as the entry-point from `App.tsx`:
+- `/admin` → `AdminHome` (Task 8 placeholder)
+- `/admin/tenants` → `TenantsList` (Task 9 placeholder)
+- `/admin/tenants/:tenantId` → `TenantDetailShell` (Task 10 placeholder, extracts slug via regex)
+- `/admin/audit` → `AuditLogViewer` (Task 13 placeholder)
+- `/admin/plans` → `PlansManagement` (Task 14 placeholder)
+
+## Tests
+
+| File | Tests | Result |
+|------|-------|--------|
+| `AdminRouteGuard.test.tsx` | 4 | PASS |
+| `AdminRoutes.test.tsx` | 5 | PASS |
+| `AdminLayout.test.tsx` | 3 | PASS (pre-existing) |
+| `AdminSidebar.test.tsx` | 5 | PASS (pre-existing) |
+| `adminApi.test.ts` | 11 | PASS (pre-existing) |
+| `adminToast.test.ts` | 7 | PASS (pre-existing) |
+
+**Pre-existing failures**: `src/lib/products/productWrappers.test.ts` (3 tests) — unrelated mock issue, present before this task. No new failures introduced.
+
+## Concerns / DONE_WITH_CONCERNS
+
+1. **urlRoute.ts has no nested-route or param-extraction support for admin paths.** Workaround: inline regex dispatch in `AdminRoutes.tsx`. Suggest adding `parseAdminRoute(pathname)` helper to `urlRoute.ts` in Task 8+ if more admin params are needed.
+
+2. **Impersonate Tenant form from AdminShell (Phase A) is now orphaned.** `AdminShell` is no longer rendered; the impersonate UI (text input + button) has no home. `AdminHome` stub (Task 8) or `TenantsList` row action (Task 9) is the natural replacement. Flagged for Task 8/9 implementors.

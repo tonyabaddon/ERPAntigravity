@@ -1,0 +1,167 @@
+/**
+ * Types for the platform-admin API layer (Phase B Wave 1).
+ * All shapes are derived from the actual RPC RETURNS TABLE definitions —
+ * see task-2-report.md and task-3-report.md for schema verification notes.
+ */
+
+// ─── Scalar unions ────────────────────────────────────────────────────────────
+
+export type EmployeeRange =
+  | '1-3 orang (Mikro)'
+  | '4-19 orang (Kecil)'
+  | '20-99 orang (Menengah)'
+  | '100+ orang (Besar)';
+
+export type PlanCode = 'STARTER' | 'PRO' | 'PREMIUM';
+
+export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+
+/** Sourced from v_tenant_effective_features.expiry_state aliased as expiry_mode */
+export type ExpiryMode = 'ACTIVE' | 'GRACE' | 'READONLY';
+
+export type UsageStatus = 'SANGAT_AKTIF' | 'AKTIF' | 'IDLE' | 'VAKUM';
+
+// ─── Row types ────────────────────────────────────────────────────────────────
+
+/**
+ * One row returned by list_tenants_admin().
+ * total_count is BIGINT (window count for pagination) — modelled as number.
+ */
+export interface AdminTenantRow {
+  tenant_id: string;
+  slug: string;
+  name: string;
+  plan_code: PlanCode | null;
+  status: TenantStatus;
+  expiry_mode: ExpiryMode | null;
+  activated_at: string | null;       // DATE → string (ISO)
+  expires_at: string | null;         // DATE → string (ISO)
+  days_until_expiry: number | null;  // INT, null when no subscription
+  user_count: number;
+  sku_count: number;
+  industry: string | null;
+  employee_range: EmployeeRange | null;
+  onboarded_at: string;              // TIMESTAMPTZ aliased from t.created_at
+  last_login_at: string | null;      // TIMESTAMPTZ from v_tenant_usage_summary
+  txn_7d: number;                    // INT
+  avg_daily_txn: number;             // NUMERIC
+  usage_status: UsageStatus;
+  total_count: number;               // BIGINT window COUNT(*) OVER ()
+}
+
+/**
+ * One row returned by list_audit_events().
+ * id is BIGINT (platform_admin_audit.id) — use number, NOT string/uuid.
+ * action is returned as action_code in the RPC RETURNS TABLE.
+ */
+export interface AuditEventRow {
+  id: number;                        // BIGINT — not UUID
+  ts: string;                        // TIMESTAMPTZ aliased from created_at
+  admin_email: string;
+  tenant_slug: string | null;        // nullable: LEFT JOIN on tenants
+  action_code: string;               // aliased from a.action
+  detail: Record<string, unknown> | null;
+}
+
+/**
+ * Shape of the jsonb returned by _get_platform_dashboard_stats().
+ * Key names verified against task-3-report prod values.
+ */
+export interface DashboardStats {
+  tenants_total: number;
+  active_count: number;
+  suspended_count: number;
+  expiring_45d: number;
+  plans_count: number;
+  pending_imports: number;
+}
+
+// ─── Filter shapes ────────────────────────────────────────────────────────────
+
+/** p_filters for list_tenants_admin — whitelist: search, plan_code, status,
+ *  expiry_within_days, page, page_size, sort_by, sort_dir */
+export interface TenantsListFilters {
+  search?: string;
+  plan_code?: PlanCode | '';
+  status?: TenantStatus | '';
+  expiry_within_days?: number;
+  page?: number;
+  page_size?: number;
+  sort_by?: 'name' | 'created_at' | 'plan_code' | 'expires_at' | 'last_login_at';
+  sort_dir?: 'asc' | 'desc';
+}
+
+/** p_filters for list_audit_events — whitelist: tenant_id, action_code,
+ *  actor, from_ts, to_ts, search, page, page_size, limit, offset */
+export interface AuditListFilters {
+  tenant_id?: string;
+  action_code?: string;
+  actor?: string;
+  from_ts?: string;
+  to_ts?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+  /** @deprecated prefer page/page_size; kept for backward compat */
+  limit?: number;
+  /** @deprecated prefer page/page_size; kept for backward compat */
+  offset?: number;
+}
+
+// ─── Task 12: tenant staff row ────────────────────────────────────────────────
+
+/**
+ * One row returned by list_tenant_users_admin(p_tenant_id uuid).
+ * role values match tenant_users CHECK constraint in 20261001000001_phase_a_schema.sql.
+ * status values match tenant_users CHECK constraint.
+ * full_name falls back to email when raw_user_meta_data->>'full_name' is absent.
+ */
+export interface TenantUserRow {
+  user_id:         string;
+  email:           string;
+  full_name:       string;
+  role:            'owner' | 'admin' | 'staff' | 'kasir';
+  status:          'ACTIVE' | 'DISABLED';
+  last_sign_in_at: string | null;   // TIMESTAMPTZ → ISO string or null
+  created_at:      string;          // TIMESTAMPTZ → ISO string
+}
+
+// ─── Overview extras (Task 11) ────────────────────────────────────────────────
+
+/**
+ * Extra fields fetched for the OverviewTab that are not on AdminTenantRow.
+ * Combines: company_settings.annual_revenue_range
+ *         + v_tenant_effective_features.effective_features
+ */
+export interface TenantOverviewExtras {
+  annual_revenue_range: string | null;
+  /** Map of modul_* → true/false from v_tenant_effective_features */
+  effective_features: Record<string, boolean> | null;
+}
+
+// ─── Typed error classes ──────────────────────────────────────────────────────
+
+/** Raised when the caller is not a platform admin (SQLSTATE P0403). */
+export class PlatformAdminRequiredError extends Error {
+  readonly code = 'P0403' as const;
+  /** Bahasa Indonesia message suitable for toast display */
+  readonly userMessage =
+    'Akses ditolak: hanya admin platform yang dapat mengakses halaman ini.';
+
+  constructor(cause?: string) {
+    super(cause ?? 'PLATFORM_ADMIN_REQUIRED');
+    this.name = 'PlatformAdminRequiredError';
+  }
+}
+
+/** Raised when an unknown or invalid filter key is passed (SQLSTATE 22023). */
+export class InvalidFilterError extends Error {
+  readonly code = '22023' as const;
+  /** Bahasa Indonesia message suitable for toast display */
+  readonly userMessage = 'Filter tidak valid. Periksa kembali parameter pencarian.';
+
+  constructor(cause?: string) {
+    super(cause ?? 'invalid_parameter_value');
+    this.name = 'InvalidFilterError';
+  }
+}
