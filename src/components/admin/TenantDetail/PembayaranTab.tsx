@@ -330,6 +330,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           open={recordOpen}
           tenant={row}
           mode="record"
+          defaultAmount={PLAN_PRICE_IDR[row.plan_code as keyof typeof PLAN_PRICE_IDR]}
           onClose={() => setRecordOpen(false)}
           onSuccess={(result) => { handleModalSuccess(result); setRecordOpen(false); }}
         />
