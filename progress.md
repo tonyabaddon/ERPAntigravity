@@ -35,6 +35,23 @@ Wave 1 (read-only super-admin panel) complete on branch `worktree-phase-b-wave1`
 
 ---
 
+## 2026-07-05 — Phase B Wave 4a Task 7: Suspend / Activate row actions (COMPLETE)
+
+**New files:**
+- `src/components/admin/SuspendTenantModal.tsx` — reason-required dialog with warning callout, ESC/backdrop close, VOSI danger tokens
+- `src/components/admin/SuspendTenantModal.test.tsx` — 18 tests (all pass)
+- `src/components/admin/TenantsTable.test.tsx` — 12 tests (all pass)
+
+**Modified files:**
+- `src/components/admin/TenantsTable.tsx` — Aksi column: Suspend (ACTIVE) / Aktifkan (SUSPENDED) / em-dash (ARCHIVED); `onRowActionSuccess` prop; SuspendTenantModal wired
+- `src/components/admin/TenantsList.tsx` — `refreshKey` state bumped after action, passed as `onRowActionSuccess` to table
+
+**Terminology:** "Suspend" (English loanword) to match Wave 1's existing `● Suspended` badge and filter option.
+
+**Tests:** 18 SuspendTenantModal + 12 TenantsTable + 9 TenantsList (no regression). Pre-existing failures in AdminRoutes (2) and AdminLayout (1) unchanged.
+
+---
+
 ## 2026-07-05 — Multi-tenant Phase B: design spec + Wave 1 plan checkpoint
 
 Design phase for Phase B complete. Committing spec + Wave 1 plan + VOSI Design System as a durable baseline before starting implementation.

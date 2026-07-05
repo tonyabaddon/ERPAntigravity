@@ -1,64 +1,140 @@
 // src/components/admin/AttentionQueue.test.tsx
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+// Wave 4a: AttentionQueue now fetches via listAttentionTenants(45).
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AttentionQueue } from './AttentionQueue';
-import type { AdminTenantRow } from '../../lib/adminTypes';
+import type { AttentionTenantRow } from '../../lib/adminTypes';
+import { AdminApiError } from '../../lib/adminTypes';
 
-const baseTenant: AdminTenantRow = {
+const listAttentionTenants = vi.fn();
+
+vi.mock('../../lib/adminApi', () => ({
+  listAttentionTenants: (...args: unknown[]) => listAttentionTenants(...args),
+}));
+
+vi.mock('../../lib/adminToast', () => ({
+  adminToast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
+}));
+
+const expiringRow: AttentionTenantRow = {
   tenant_id: 't1',
   slug: 'apotek-sehat',
   name: 'Apotek Sehat',
   plan_code: 'PRO',
   status: 'ACTIVE',
-  expiry_mode: 'ACTIVE',
-  activated_at: '2026-07-01',
   expires_at: '2026-08-15',
   days_until_expiry: 41,
-  user_count: 2,
-  sku_count: 100,
-  industry: 'Apotek/Farmasi',
-  employee_range: '4-19 orang (Kecil)',
-  onboarded_at: '2026-07-01',
-  last_login_at: null,
-  txn_7d: 10,
-  avg_daily_txn: 1.4,
-  usage_status: 'AKTIF',
-  total_count: 1,
+  attention_reason: 'EXPIRING',
 };
 
-const suspendedTenant: AdminTenantRow = {
-  ...baseTenant,
+const suspendedRow: AttentionTenantRow = {
   tenant_id: 't2',
   slug: 'toko-maju',
   name: 'Toko Maju',
+  plan_code: 'STARTER',
   status: 'SUSPENDED',
-  days_until_expiry: null,
-  expires_at: null,
+  expires_at: '2027-06-01',
+  days_until_expiry: 360,
+  attention_reason: 'SUSPENDED',
 };
 
+const expiredSuspendedRow: AttentionTenantRow = {
+  tenant_id: 't3',
+  slug: 'warung-lama',
+  name: 'Warung Lama',
+  plan_code: 'PREMIUM',
+  status: 'SUSPENDED',
+  expires_at: '2025-01-01',
+  days_until_expiry: -180,
+  attention_reason: 'EXPIRED_AND_SUSPENDED',
+};
+
+class InternalError extends AdminApiError {
+  readonly userMessage = 'Kesalahan internal.';
+}
+
+beforeEach(() => {
+  listAttentionTenants.mockReset();
+});
+
 describe('AttentionQueue', () => {
-  it('shows "Semua tenteram" when both lists empty', () => {
-    render(<AttentionQueue expiringTenants={[]} suspendedTenants={[]} />);
-    expect(screen.getByTestId('attention-queue-empty')).toBeInTheDocument();
+  it('renders skeleton while loading', async () => {
+    let resolvePromise: (v: AttentionTenantRow[]) => void;
+    listAttentionTenants.mockReturnValue(new Promise<AttentionTenantRow[]>((r) => { resolvePromise = r; }));
+    render(<AttentionQueue />);
+    expect(screen.getByTestId('attention-queue-loading')).toBeInTheDocument();
+    resolvePromise!([]);
+    await waitFor(() => expect(screen.queryByTestId('attention-queue-loading')).not.toBeInTheDocument());
+  });
+
+  it('shows Semua tenteram when server returns 0 rows', async () => {
+    listAttentionTenants.mockResolvedValue([]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-empty')).toBeInTheDocument());
     expect(screen.getByText(/Semua tenteram/)).toBeInTheDocument();
   });
 
-  it('renders expiring tenant with days and link', () => {
-    render(<AttentionQueue expiringTenants={[baseTenant]} suspendedTenants={[]} />);
+  it('renders EXPIRING row with correct chip + days', async () => {
+    listAttentionTenants.mockResolvedValue([expiringRow]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
     expect(screen.getByText('Apotek Sehat')).toBeInTheDocument();
+    expect(screen.getByTestId('attention-reason-apotek-sehat')).toHaveTextContent('Kedaluwarsa');
+    expect(screen.getByTestId('attention-plan-apotek-sehat')).toHaveTextContent('PRO');
     expect(screen.getByText(/41 hari/)).toBeInTheDocument();
-    const link = screen.getByRole('link', { name: /Detail/ });
-    expect(link).toHaveAttribute('href', '/admin/tenants/apotek-sehat');
+    expect(screen.getByTestId('attention-link-apotek-sehat')).toHaveAttribute(
+      'href', '/admin/tenants/apotek-sehat?tab=ringkasan'
+    );
   });
 
-  it('renders suspended tenant with badge', () => {
-    render(<AttentionQueue expiringTenants={[]} suspendedTenants={[suspendedTenant]} />);
-    expect(screen.getByText('Toko Maju')).toBeInTheDocument();
-    expect(screen.getByText('Suspended')).toBeInTheDocument();
+  it('renders SUSPENDED row with danger chip', async () => {
+    listAttentionTenants.mockResolvedValue([suspendedRow]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    expect(screen.getByTestId('attention-reason-toko-maju')).toHaveTextContent('Ditangguhkan');
   });
 
-  it('shows count in header when multiple items', () => {
-    render(<AttentionQueue expiringTenants={[baseTenant]} suspendedTenants={[suspendedTenant]} />);
-    expect(screen.getByText(/Butuh perhatian \(2\)/)).toBeInTheDocument();
+  it('renders EXPIRED_AND_SUSPENDED with negative-day label', async () => {
+    listAttentionTenants.mockResolvedValue([expiredSuspendedRow]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    expect(screen.getByTestId('attention-reason-warung-lama')).toHaveTextContent('Kedaluwarsa & ditangguhkan');
+    expect(screen.getByText(/180 hari lalu/)).toBeInTheDocument();
+  });
+
+  it('shows total in header when multiple rows', async () => {
+    listAttentionTenants.mockResolvedValue([expiringRow, suspendedRow, expiredSuspendedRow]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByText(/Butuh perhatian \(3\)/)).toBeInTheDocument());
+  });
+
+  it('shows error state with Bahasa message and retry button', async () => {
+    listAttentionTenants.mockRejectedValue(new InternalError());
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument());
+    expect(screen.getByText('Kesalahan internal.')).toBeInTheDocument();
+    expect(screen.getByTestId('attention-queue-retry')).toBeInTheDocument();
+  });
+
+  it('retry button re-triggers fetch', async () => {
+    listAttentionTenants.mockRejectedValueOnce(new InternalError())
+      .mockResolvedValueOnce([expiringRow]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument());
+    fireEvent.click(screen.getByTestId('attention-queue-retry'));
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    expect(listAttentionTenants).toHaveBeenCalledTimes(2);
+  });
+
+  it('passes withinDays prop through to the RPC', async () => {
+    listAttentionTenants.mockResolvedValue([]);
+    render(<AttentionQueue withinDays={90} />);
+    await waitFor(() => expect(listAttentionTenants).toHaveBeenCalledWith(90));
+  });
+
+  it('defaults withinDays to 45', async () => {
+    listAttentionTenants.mockResolvedValue([]);
+    render(<AttentionQueue />);
+    await waitFor(() => expect(listAttentionTenants).toHaveBeenCalledWith(45));
   });
 });

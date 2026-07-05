@@ -7,6 +7,8 @@
 // v_tenant_effective_features.
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import { RenewSubscriptionModal } from '../RenewSubscriptionModal';
+import type { RenewSubscriptionResult } from '../../../lib/adminTypes';
 import { getTenantOverviewExtras } from '../../../lib/adminApi';
 import type { AdminTenantRow, TenantOverviewExtras } from '../../../lib/adminTypes';
 
@@ -75,21 +77,32 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({
+  title,
+  children,
+  headerAction,
+}: {
+  title: string;
+  children: ReactNode;
+  headerAction?: ReactNode;
+}) {
   return (
     <div
       className="rounded-xl p-4 border"
       style={{ background: '#ffffff', borderColor: C.surface }}
     >
-      <div
-        className="text-[11px] font-bold mb-3 tracking-widest uppercase"
-        style={{
-          color: C.muted,
-          fontFamily: 'JetBrains Mono, monospace',
-          letterSpacing: '0.12em',
-        }}
-      >
-        {title}
+      <div className="flex items-center justify-between mb-3">
+        <div
+          className="text-[11px] font-bold tracking-widest uppercase"
+          style={{
+            color: C.muted,
+            fontFamily: 'JetBrains Mono, monospace',
+            letterSpacing: '0.12em',
+          }}
+        >
+          {title}
+        </div>
+        {headerAction}
       </div>
       <table className="w-full">
         <tbody>{children}</tbody>
@@ -164,11 +177,13 @@ function featureLabel(key: string): string {
 
 interface Props {
   tenant: AdminTenantRow;
+  onDataChange?: () => void;
 }
 
-export function OverviewTab({ tenant }: Props) {
+export function OverviewTab({ tenant, onDataChange }: Props) {
   const [extras, setExtras] = useState<TenantOverviewExtras | null>(null);
   const [loadingExtras, setLoadingExtras] = useState(true);
+  const [isRenewOpen, setIsRenewOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,6 +206,11 @@ export function OverviewTab({ tenant }: Props) {
     };
   }, [tenant.tenant_id]);
 
+  function handleRenewSuccess(_result: RenewSubscriptionResult) {
+    setIsRenewOpen(false);
+    onDataChange?.();
+  }
+
   // ── Feature list (enabled then disabled) ───────────────────────────────────
   const featureEntries =
     extras?.effective_features != null
@@ -204,6 +224,13 @@ export function OverviewTab({ tenant }: Props) {
     tenant.days_until_expiry !== null && tenant.days_until_expiry <= 45;
 
   return (
+    <>
+    <RenewSubscriptionModal
+      open={isRenewOpen}
+      tenant={tenant}
+      onClose={() => setIsRenewOpen(false)}
+      onSuccess={handleRenewSuccess}
+    />
     <div
       className="grid grid-cols-2 gap-3"
       data-testid="overview-tab"
@@ -240,7 +267,19 @@ export function OverviewTab({ tenant }: Props) {
       </Panel>
 
       {/* ── Card 2: Paket & masa aktif ────────────────────────────────────────── */}
-      <Panel title="Paket & masa aktif">
+      <Panel
+        title="Paket & masa aktif"
+        headerAction={
+          <button
+            type="button"
+            onClick={() => setIsRenewOpen(true)}
+            className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-3 py-1 text-[11px] hover:opacity-90 transition-opacity"
+            data-testid="perpanjang-cta"
+          >
+            Perpanjang
+          </button>
+        }
+      >
         <Row label="Paket">
           {tenant.plan_code ? (
             <Chip gold>{tenant.plan_code}</Chip>
@@ -368,5 +407,6 @@ export function OverviewTab({ tenant }: Props) {
         )}
       </Panel>
     </div>
+    </>
   );
 }

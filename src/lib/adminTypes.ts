@@ -141,8 +141,21 @@ export interface TenantOverviewExtras {
 
 // ─── Typed error classes ──────────────────────────────────────────────────────
 
+/**
+ * Abstract base for all typed admin-API errors.
+ * Every subclass provides a Bahasa Indonesia `userMessage` suitable for toasts.
+ */
+export abstract class AdminApiError extends Error {
+  abstract readonly userMessage: string;
+  constructor(message?: string) {
+    super(message);
+    // Ensure correct prototype chain for instanceof checks in transpiled JS.
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+
 /** Raised when the caller is not a platform admin (SQLSTATE P0403). */
-export class PlatformAdminRequiredError extends Error {
+export class PlatformAdminRequiredError extends AdminApiError {
   readonly code = 'P0403' as const;
   /** Bahasa Indonesia message suitable for toast display */
   readonly userMessage =
@@ -155,7 +168,7 @@ export class PlatformAdminRequiredError extends Error {
 }
 
 /** Raised when an unknown or invalid filter key is passed (SQLSTATE 22023). */
-export class InvalidFilterError extends Error {
+export class InvalidFilterError extends AdminApiError {
   readonly code = '22023' as const;
   /** Bahasa Indonesia message suitable for toast display */
   readonly userMessage = 'Filter tidak valid. Periksa kembali parameter pencarian.';
@@ -164,4 +177,92 @@ export class InvalidFilterError extends Error {
     super(cause ?? 'invalid_parameter_value');
     this.name = 'InvalidFilterError';
   }
+}
+
+// ─── Wave 4a error classes ────────────────────────────────────────────────────
+
+/** Raised when the requested tenant does not exist (SQLSTATE P0404). */
+export class TenantNotFoundError extends AdminApiError {
+  readonly userMessage = 'Tenant tidak ditemukan.';
+  constructor(cause?: string) {
+    super(cause ?? 'TENANT_NOT_FOUND');
+    this.name = 'TenantNotFoundError';
+  }
+}
+
+/** Raised when the new subscription date is not in the future (SQLSTATE 22023 INVALID_EXPIRES_AT). */
+export class InvalidRenewalDateError extends AdminApiError {
+  readonly userMessage = 'Tanggal perpanjangan harus lebih dari hari ini.';
+  constructor(cause?: string) {
+    super(cause ?? 'INVALID_EXPIRES_AT');
+    this.name = 'InvalidRenewalDateError';
+  }
+}
+
+/** Raised when an invalid plan code is supplied (SQLSTATE 22023 INVALID_PLAN_CODE). */
+export class InvalidPlanCodeError extends AdminApiError {
+  readonly userMessage = 'Kode paket tidak valid.';
+  constructor(cause?: string) {
+    super(cause ?? 'INVALID_PLAN_CODE');
+    this.name = 'InvalidPlanCodeError';
+  }
+}
+
+/** Raised when the action requires super-admin role (SQLSTATE P0403 SUPER_ADMIN_REQUIRED). */
+export class SuperAdminRequiredError extends AdminApiError {
+  readonly userMessage = 'Aksi ini butuh peran super admin.';
+  constructor(cause?: string) {
+    super(cause ?? 'SUPER_ADMIN_REQUIRED');
+    this.name = 'SuperAdminRequiredError';
+  }
+}
+
+/** Raised when trying to re-activate an ARCHIVED tenant (SQLSTATE 22023 CANNOT_ACTIVATE_ARCHIVED). */
+export class CannotActivateArchivedError extends AdminApiError {
+  readonly userMessage = 'Tenant yang sudah diarsipkan tidak bisa diaktifkan lagi.';
+  constructor(cause?: string) {
+    super(cause ?? 'CANNOT_ACTIVATE_ARCHIVED');
+    this.name = 'CannotActivateArchivedError';
+  }
+}
+
+// ─── Wave 4a input/output types ───────────────────────────────────────────────
+
+export interface RenewSubscriptionInput {
+  tenant_id: string;
+  new_expires_at: string;      // ISO date "YYYY-MM-DD"
+  new_plan_code?: 'STARTER' | 'PRO' | 'PREMIUM' | null;
+  notes?: string | null;
+}
+
+export interface RenewSubscriptionResult {
+  ok: true;
+  tenant_id: string;
+  new_expires_at: string;
+  new_grace_expires_at: string;
+  plan_code: 'STARTER' | 'PRO' | 'PREMIUM';
+}
+
+export type AttentionReason = 'EXPIRING' | 'SUSPENDED' | 'EXPIRED_AND_SUSPENDED';
+
+export interface AttentionTenantRow {
+  tenant_id: string;
+  slug: string;
+  name: string;
+  plan_code: 'STARTER' | 'PRO' | 'PREMIUM';
+  status: 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+  expires_at: string;
+  days_until_expiry: number;   // may be negative
+  attention_reason: AttentionReason;
+}
+
+export interface UpdatePlanInput {
+  name?: string;
+  description?: string;
+  target_segment?: string;
+  price_reference?: number | null;
+  feature_bundle?: Record<string, unknown>;
+  is_recommended?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
 }

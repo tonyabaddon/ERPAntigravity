@@ -6,11 +6,14 @@ import { AdminHome } from './AdminHome';
 const dashboardMock = vi.fn();
 const tenantsMock = vi.fn();
 const auditMock = vi.fn();
+const attentionMock = vi.fn();
 
 vi.mock('../../lib/adminApi', () => ({
   getPlatformDashboardStats: () => dashboardMock(),
   listTenantsAdmin: () => tenantsMock(),
   listAuditEvents: () => auditMock(),
+  // Wave 4a: AttentionQueue now fetches on its own via listAttentionTenants.
+  listAttentionTenants: (...args: unknown[]) => attentionMock(...args),
 }));
 
 vi.mock('../../lib/adminToast', () => ({
@@ -60,6 +63,9 @@ describe('AdminHome', () => {
     dashboardMock.mockReset();
     tenantsMock.mockReset();
     auditMock.mockReset();
+    attentionMock.mockReset();
+    // Default: AttentionQueue fetches empty (Semua tenteram).
+    attentionMock.mockResolvedValue([]);
   });
 
   // ── Happy path: multiple tenants ─────────────────────────────────────────────
@@ -90,6 +96,8 @@ describe('AdminHome', () => {
   });
 
   it('shows attention queue with expiring tenant', async () => {
+    // Wave 4a: AttentionQueue fetches its own data via listAttentionTenants;
+    // AdminHome no longer derives from the tenants list. Mock the RPC directly.
     dashboardMock.mockResolvedValue({
       tenants_total: 2,
       active_count: 2,
@@ -100,12 +108,25 @@ describe('AdminHome', () => {
     });
     tenantsMock.mockResolvedValue([garindoTenant, apotekTenant]);
     auditMock.mockResolvedValue([]);
+    attentionMock.mockResolvedValue([
+      {
+        tenant_id: 'a1',
+        slug: 'apotek-sehat',
+        name: 'Apotek Sehat',
+        plan_code: 'PRO',
+        status: 'ACTIVE',
+        expires_at: '2026-08-15',
+        days_until_expiry: 41,
+        attention_reason: 'EXPIRING',
+      },
+    ]);
 
     render(<AdminHome />);
 
     await waitFor(() => {
       expect(screen.getByText('Apotek Sehat')).toBeInTheDocument();
     });
+    expect(attentionMock).toHaveBeenCalledWith(45);
   });
 
   // ── Empty state: single tenant ───────────────────────────────────────────────

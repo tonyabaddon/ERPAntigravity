@@ -11,6 +11,18 @@ const overviewExtrasMock = vi.fn();
 
 vi.mock('../../../lib/adminApi', () => ({
   getTenantOverviewExtras: (id: string) => overviewExtrasMock(id),
+  // RenewSubscriptionModal (imported by OverviewTab) also calls renewSubscription
+  renewSubscription: vi.fn(),
+}));
+
+// Stub sonner/adminToast — OverviewTab now imports RenewSubscriptionModal which
+// imports adminToast → sonner. sonner is a runtime dep, not installed in test env.
+vi.mock('../../../lib/adminToast', () => ({
+  adminToast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
 }));
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────

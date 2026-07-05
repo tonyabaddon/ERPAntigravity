@@ -21,8 +21,20 @@ import type {
   AuditListFilters,
   TenantOverviewExtras,
   TenantUserRow,
+  RenewSubscriptionInput,
+  RenewSubscriptionResult,
+  UpdatePlanInput,
+  AttentionTenantRow,
 } from './adminTypes';
-import { PlatformAdminRequiredError, InvalidFilterError } from './adminTypes';
+import {
+  PlatformAdminRequiredError,
+  InvalidFilterError,
+  TenantNotFoundError,
+  InvalidRenewalDateError,
+  InvalidPlanCodeError,
+  SuperAdminRequiredError,
+  CannotActivateArchivedError,
+} from './adminTypes';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -31,10 +43,28 @@ import { PlatformAdminRequiredError, InvalidFilterError } from './adminTypes';
  * Supabase surfaces SQLSTATE on `error.code` (string).
  */
 function normalizeRpcError(error: { message?: string; code?: string }): never {
+  // P0404 — tenant not found (any message)
+  if (error.code === 'P0404') {
+    throw new TenantNotFoundError(error.message);
+  }
+  // P0403 — check specific message before generic fallthrough
   if (error.code === 'P0403') {
+    if (error.message === 'SUPER_ADMIN_REQUIRED') {
+      throw new SuperAdminRequiredError(error.message);
+    }
     throw new PlatformAdminRequiredError(error.message);
   }
+  // 22023 — check specific message before generic fallthrough
   if (error.code === '22023') {
+    if (error.message === 'INVALID_EXPIRES_AT') {
+      throw new InvalidRenewalDateError(error.message);
+    }
+    if (error.message === 'INVALID_PLAN_CODE') {
+      throw new InvalidPlanCodeError(error.message);
+    }
+    if (error.message === 'CANNOT_ACTIVATE_ARCHIVED') {
+      throw new CannotActivateArchivedError(error.message);
+    }
     throw new InvalidFilterError(error.message);
   }
   // Generic pass-through
@@ -154,4 +184,113 @@ export async function getPlatformDashboardStats(): Promise<DashboardStats> {
   const { data, error } = await supabase.rpc('_get_platform_dashboard_stats');
   if (error) normalizeRpcError(error);
   return data as DashboardStats;
+}
+
+// ─── Wave 4a wrappers ─────────────────────────────────────────────────────────
+
+/**
+ * Call renew_subscription(p_tenant_id, p_new_expires_at, p_new_plan_code, p_notes).
+ * Extends a tenant subscription. Does NOT auto-reactivate suspended tenants.
+ *
+ * @throws PlatformAdminRequiredError  when caller is not a platform admin
+ * @throws TenantNotFoundError         when tenant_id does not exist
+ * @throws InvalidRenewalDateError     when new_expires_at <= today
+ * @throws InvalidPlanCodeError        when new_plan_code is not in the plans table
+ */
+export async function renewSubscription(
+  input: RenewSubscriptionInput,
+): Promise<RenewSubscriptionResult> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('renew_subscription', {
+    p_tenant_id:      input.tenant_id,
+    p_new_expires_at: input.new_expires_at,
+    p_new_plan_code:  input.new_plan_code ?? null,
+    p_notes:          input.notes ?? null,
+  });
+  if (error) normalizeRpcError(error);
+  return data as RenewSubscriptionResult;
+}
+
+/**
+ * Call suspend_tenant(p_tenant_id, p_reason).
+ * Suspends a tenant. Idempotent — second call on already-suspended tenant
+ * returns {ok, noop, reason} without a new audit row.
+ *
+ * @throws PlatformAdminRequiredError  when caller is not a platform admin
+ * @throws TenantNotFoundError         when tenant_id does not exist
+ * @throws InvalidFilterError          when reason is empty (22023 INVALID_REASON)
+ */
+export async function suspendTenant(
+  tenantId: string,
+  reason: string,
+): Promise<{ ok: true; suspended_at: string; reason: string }> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('suspend_tenant', {
+    p_tenant_id: tenantId,
+    p_reason:    reason,
+  });
+  if (error) normalizeRpcError(error);
+  return data as { ok: true; suspended_at: string; reason: string };
+}
+
+/**
+ * Call activate_tenant(p_tenant_id).
+ * Re-activates a suspended tenant. Idempotent — already-ACTIVE returns {ok, noop}.
+ *
+ * @throws PlatformAdminRequiredError    when caller is not a platform admin
+ * @throws TenantNotFoundError           when tenant_id does not exist
+ * @throws CannotActivateArchivedError   when tenant is ARCHIVED
+ */
+export async function activateTenant(
+  tenantId: string,
+): Promise<{ ok: true; status: 'ACTIVE' }> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('activate_tenant', {
+    p_tenant_id: tenantId,
+  });
+  if (error) normalizeRpcError(error);
+  return data as { ok: true; status: 'ACTIVE' };
+}
+
+/**
+ * Call update_plan_admin(p_plan_code, p_updates).
+ * Updates a plan row. Double-gated: platform admin + super admin.
+ * Per-key CASE-WHEN UPDATE — no dynamic SQL.
+ *
+ * @throws PlatformAdminRequiredError  when caller is not a platform admin
+ * @throws SuperAdminRequiredError     when caller is not a super admin
+ * @throws InvalidPlanCodeError        when plan_code is not STARTER/PRO/PREMIUM
+ * @throws InvalidFilterError          when an unknown key is supplied in updates
+ */
+export async function updatePlan(
+  planCode: 'STARTER' | 'PRO' | 'PREMIUM',
+  updates: UpdatePlanInput,
+): Promise<{ ok: true; updated_keys: string[] }> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('update_plan_admin', {
+    p_plan_code: planCode,
+    p_updates:   updates,
+  });
+  if (error) normalizeRpcError(error);
+  return data as { ok: true; updated_keys: string[] };
+}
+
+/**
+ * Call list_attention_tenants(p_expiry_within_days).
+ * Returns tenants requiring attention: expiring within N days OR suspended.
+ * Excludes ARCHIVED. Sorted by days_until_expiry ASC, then name.
+ *
+ * @param withinDays  Number of days to look ahead (1-365; default 45)
+ * @throws PlatformAdminRequiredError  when caller is not a platform admin
+ * @throws InvalidFilterError          when withinDays is out of range (22023 INVALID_RANGE)
+ */
+export async function listAttentionTenants(
+  withinDays = 45,
+): Promise<AttentionTenantRow[]> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('list_attention_tenants', {
+    p_expiry_within_days: withinDays,
+  });
+  if (error) normalizeRpcError(error);
+  return (data ?? []) as AttentionTenantRow[];
 }

@@ -111,6 +111,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
   const [tenant, setTenant] = useState<AdminTenantRow | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Cancel in-flight requests when tenantSlug changes or component unmounts.
   const cancelledRef = useRef(false);
@@ -143,7 +144,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
     return () => {
       cancelledRef.current = true;
     };
-  }, [tenantSlug]);
+  }, [tenantSlug, refreshKey]);
 
   // ─── Loading state ─────────────────────────────────────────────────────────
 
@@ -295,7 +296,12 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         role="tabpanel"
         aria-labelledby={activeTab}
       >
-        {activeTab === 'ringkasan' && <OverviewTab tenant={tenant} />}
+        {activeTab === 'ringkasan' && (
+          <OverviewTab
+            tenant={tenant}
+            onDataChange={() => setRefreshKey((k) => k + 1)}
+          />
+        )}
         {activeTab === 'pengguna' && <UsersTab tenantId={tenant.tenant_id} />}
         {activeTab === 'log-aktivitas' && <AuditTab tenantId={tenant.tenant_id} />}
       </div>

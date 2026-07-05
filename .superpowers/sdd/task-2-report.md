@@ -1,156 +1,124 @@
-# Task 2 Report — list_tenants_admin RPC + v_tenant_usage_summary
+# Task 2 Report — `suspend_tenant` + `activate_tenant` RPCs
 
-**Status: NEEDS_CONTEXT**
-**Date: 2026-07-05**
-**Migration slot: 20261115000002** (VIEW + RPC deployed to prod; sort_by alias patch 20261115000002b also deployed)
-
----
-
-## Schema Drifts Resolved (from controller brief)
-
-### Drift A — `tenant_activity_daily.transaction_count` → `writes`
-Applied per resolution: `writes` used as transaction proxy in `v_tenant_usage_summary` VIEW (txn_7d, avg_daily_txn) and all `usage_status` CASE thresholds. All thresholds are avg-daily-based:
-- `SANGAT_AKTIF`: avg_daily > 100
-- `AKTIF`: avg_daily >= 1
-- `VAKUM`: last_login IS NULL OR last_login < now() - 30d
-- `IDLE`: catch-all
-
-### Drift B — `tenant_subscriptions.expiry_mode` → `v_tenant_effective_features.expiry_state`
-Applied per resolution: JOINs `v_tenant_effective_features vef ON vef.tenant_id = t.id`, SELECTs `vef.expiry_state AS expiry_mode`. Confirmed `expiry_state` is TEXT, Garindo returns `'ACTIVE'`.
-
-### Additional bug found and fixed during smoke test
-`sort_by = 'created_at'` caused `column "created_at" does not exist` inside dynamic SQL — the CTE aliases `t.created_at` as `onboarded_at`. Fixed by mapping `'created_at' → 'onboarded_at'` via `v_sort_by_raw` (validated) → `v_sort_by` (alias-mapped), passed to `%I`. Deployed as patch migration 20261115000002b.
+**Status:** DONE
+**Migration slot:** `20261115000011_phase_b_wave4a_suspend_activate_tenant`
+**Applied:** 2026-07-05 via Supabase MCP on project `ekhhojaezdfjfwuxyjkl`
 
 ---
 
-## VIEW SELECT list — `v_tenant_usage_summary`
+## Schema Findings
 
-```
-tenant_id       UUID
-last_login_at   TIMESTAMPTZ   -- MAX(auth.users.last_sign_in_at) via tenant_users
-txn_7d          INT           -- SUM(tenant_activity_daily.writes) last 7 days
-avg_daily_txn   NUMERIC       -- ROUND(txn_7d / 7, 1)
-usage_status    TEXT          -- SANGAT_AKTIF / AKTIF / VAKUM / IDLE (all avg-based)
-```
+### `tenants` table columns (relevant to this task)
 
-Garindo live values: `txn_7d=0, avg_daily_txn=0, usage_status=IDLE, last_login_at=2026-07-03T08:01Z`
+| column | data_type | nullable | generated |
+|---|---|---|---|
+| `status` | text | NO | no |
+| `suspended_at` | timestamptz | YES | no |
+| `suspended_reason` | text | YES | no |
+| `archived_at` | timestamptz | YES | no |
 
----
+All four target columns are regular (non-GENERATED). Safe to UPDATE all of them.
 
-## RPC RETURNS TABLE — `list_tenants_admin(p_filters jsonb)`
-
-```
-tenant_id         UUID
-slug              TEXT
-name              TEXT
-plan_code         TEXT
-status            TEXT
-expiry_mode       TEXT          -- sourced from v_tenant_effective_features.expiry_state
-activated_at      DATE
-expires_at        DATE
-days_until_expiry INT
-user_count        INT
-sku_count         INT           -- COUNT(*) FROM stocks WHERE tenant_id = t.id
-industry          TEXT
-employee_range    TEXT
-onboarded_at      TIMESTAMPTZ   -- t.created_at aliased
-last_login_at     TIMESTAMPTZ
-txn_7d            INT
-avg_daily_txn     NUMERIC
-usage_status      TEXT
-total_count       BIGINT        -- window COUNT(*) OVER () for pagination
-```
-
-Accepted `p_filters` keys (whitelist-validated, 22023 on unknown): `search`, `plan_code`, `status`, `expiry_within_days`, `page`, `page_size`, `sort_by`, `sort_dir`.
-`sort_by` whitelist: `name`, `created_at`, `plan_code`, `expires_at`, `last_login_at`.
-
----
-
-## NEW DRIFT — RLS Blocker (NEEDS_CONTEXT)
-
-### Root cause (fully confirmed by evidence)
-
-`tenants` has `relforcerowsecurity = true`. The only RLS policy is:
-- policyname: `p_platform_admin_only`
-- roles: `{authenticated}`
-- qual: `_is_platform_admin_from_jwt()`
-
-`list_tenants_admin` is `SECURITY DEFINER` owned by `vosi_rpc_owner`. SECURITY DEFINER switches the effective role to `vosi_rpc_owner` for all inner queries. `vosi_rpc_owner` is **not a member of `authenticated`** (confirmed):
+### `tenants.status` CHECK constraint
 
 ```sql
-SELECT pg_has_role('vosi_rpc_owner', 'authenticated', 'MEMBER');
--- → false
+CHECK ((status = ANY (ARRAY['ACTIVE'::text, 'SUSPENDED'::text, 'ARCHIVED'::text])))
 ```
 
-With `forcerowsecurity=true`, **default-deny** applies when no policy matches the current role → 0 rows even with valid admin JWT set in `request.jwt.claims`.
+All three values present — `ACTIVE`, `SUSPENDED`, `ARCHIVED`. No blockers. ARCHIVED guard test exercised in both smoke and pgTAP.
 
-**Evidence:**
-```sql
--- SET LOCAL ROLE vosi_rpc_owner + admin JWT → 0 rows
-SELECT COUNT(*) FROM public.tenants;  -- → 0
+### `tenants` NOT NULL columns (for pgTAP fixture seeding)
 
--- Direct query as postgres (rolbypassrls=true) + admin JWT → 1 row (Garindo)
-SELECT COUNT(*) FROM public.tenants;  -- → 1
-```
-
-### Blast radius
-
-All 81 tables in `public` have `relforcerowsecurity = true`. The ones touched by `list_tenants_admin` and upcoming admin RPCs (Task 3: `audit_log`, `platform_admin_audit`; Task 5+: `tenant_users`, `tenant_subscriptions`, `company_settings`, `tenant_activity_daily`, `stocks`):
-
-```
-tenants, tenant_subscriptions, tenant_users, tenant_settings,
-company_settings, tenant_activity_daily, stocks, audit_log,
-platform_admin_audit, platform_admins, platform_admin_active_impersonation
-```
-
-This affects every future SECURITY DEFINER RPC owned by `vosi_rpc_owner` that reads any tenant-scoped table.
-
-### Candidate fixes (controller decision required)
-
-**A — `GRANT authenticated TO vosi_rpc_owner`** ← recommended
-One line. Matches PostgREST convention. The existing `p_platform_admin_only` policy (gates on `_is_platform_admin_from_jwt()`) then correctly fires for `vosi_rpc_owner` too. No new policies needed on any table. No changes to `list_tenants_admin` itself.
-Risk: `vosi_rpc_owner` inherits privileges granted to `authenticated`. For SECURITY DEFINER RPCs this is bounded by what each function exposes.
-
-**B — Extend `p_platform_admin_only` to `{authenticated, vosi_rpc_owner}` on each table**
-Must be applied to every table admin RPCs touch (8+ tables now, grows per task). Explicit but sprawling.
-
-**C — `SET LOCAL ROLE authenticated` inside each SECURITY DEFINER function**
-Requires A anyway (`SET ROLE` requires role membership). Extra boilerplate per function.
-
-**D — `ALTER ROLE vosi_rpc_owner BYPASSRLS`**
-Eliminates RLS for all `vosi_rpc_owner`-owned functions including non-admin RPCs. Not acceptable.
-
-### Recommended action
-
-Apply **Option A** as a prerequisite migration (`GRANT authenticated TO vosi_rpc_owner;`) in slot 20261115000001b or prepended to slot 20261115000003. Then re-run smoke tests for Task 2 — no changes to the existing RPC or VIEW code needed.
+Columns requiring values: `id`, `slug`, `name`, `status`. All four supplied in pgTAP fixture for the ARCHIVED test tenant.
 
 ---
 
-## Smoke Test Results (current state)
+## `platform_admin_audit` Action Code Whitelist
 
-| Case | Description | Result |
-|------|-------------|--------|
-| 1 | Non-admin → P0403 | **PASS** |
-| 2 | No-filter returns Garindo | FAIL — RLS blocker |
-| 3 | plan_code=PREMIUM → Garindo | FAIL — RLS blocker |
-| 4 | plan_code=STARTER → 0 rows | PASS (0 rows, correct but for wrong reason) |
-| 5 | page=2, page_size=1 → 0 rows | PASS (0 rows, correct but for wrong reason) |
-| 6 | sort_by=created_at,sort_dir=desc | FAIL — RLS blocker |
-| 7 | search=Garindo | FAIL — RLS blocker |
-| 8 | Unknown filter key → 22023 | **PASS** |
-| 9 | v_tenant_usage_summary has Garindo row | **PASS** |
+### State before this migration
 
-Cases 2/3/6/7 will all pass once `GRANT authenticated TO vosi_rpc_owner` is applied.
+```
+IMPERSONATE_START, IMPERSONATE_END, CREATE_TENANT, CHANGE_PLAN,
+CHANGE_FEATURES, SUSPEND, ACTIVATE, ARCHIVE, RENEW_SUBSCRIPTION
+```
+
+### State after this migration
+
+```
+IMPERSONATE_START, IMPERSONATE_END, CREATE_TENANT, CHANGE_PLAN,
+CHANGE_FEATURES, SUSPEND, ACTIVATE, ARCHIVE, RENEW_SUBSCRIPTION,
+SUSPEND_TENANT, ACTIVATE_TENANT
+```
+
+### Action-code duplication flag
+
+The Wave 1 seed included generic `SUSPEND` and `ACTIVATE` codes. This migration adds more specific `SUSPEND_TENANT` and `ACTIVATE_TENANT` codes as instructed by the brief. The old codes are preserved in the whitelist to cover any existing audit rows but no new RPCs emit them. **The operator should acknowledge this intentional dual-code existence.** If the semantic intent is to consolidate, a future migration can relabel historic rows and drop the old codes from the CHECK — but that is out of scope here.
 
 ---
 
-## Verified Prod State
+## Ownership Decision
 
-- `v_tenant_usage_summary`: EXISTS, COMMENT set, returns Garindo correctly
-- `list_tenants_admin`: EXISTS, owner=`vosi_rpc_owner`, EXECUTE granted to `authenticated`
-- Auth gate: P0403 fires correctly for non-admin callers
-- Key whitelist: 22023 fires for unknown filter keys
-- `sort_by=created_at` alias mapping: fixed and deployed
+Both RPCs call `auth.uid()` (for `admin_user_id` audit column) and SELECT from `platform_admins` (for `admin_email`). `vosi_rpc_owner` cannot be granted USAGE on the `auth` schema (`supabase_admin` owns it; `postgres` lacks `WITH GRANT OPTION`). Both functions are owned by `postgres`, consistent with Wave 1 Task 12 and Wave 4a Task 1.
 
-Garindo inner-query row (confirmed via direct SQL as postgres/bypassrls):
-`plan_code=PREMIUM, status=ACTIVE, expiry_mode=ACTIVE, expires_at=2099-12-31, days_until_expiry=26842, user_count=3, sku_count=474, industry=Retail/Toko umum, employee_range=4-19 orang (Kecil), txn_7d=0, avg_daily_txn=0, usage_status=IDLE`.
+Verified:
+```
+proname         | owner    | prosecdef
+activate_tenant | postgres | true
+suspend_tenant  | postgres | true
+```
+
+---
+
+## Smoke Test Results
+
+DO block with RAISE-based rollback. All 10 cases passed.
+
+| # | Test | Result |
+|---|---|---|
+| SMOKE1 | non-admin `suspend_tenant` → P0403 | PASS |
+| SMOKE2 | non-admin `activate_tenant` → P0403 | PASS |
+| SMOKE3 | bad tenant `suspend_tenant` → P0404 | PASS |
+| SMOKE4 | bad tenant `activate_tenant` → P0404 | PASS |
+| SMOKE5 | empty/whitespace reason → 22023 INVALID_REASON | PASS |
+| SMOKE6 | suspend Garindo → status=SUSPENDED, result ok=true | PASS |
+| SMOKE6b | SUSPEND_TENANT audit row exists | PASS |
+| SMOKE7 | idempotent suspend (2nd call) → noop=true | PASS |
+| SMOKE8 | activate Garindo → status=ACTIVE, result ok=true | PASS |
+| SMOKE8b | ACTIVATE_TENANT audit row exists | PASS |
+| SMOKE9 | idempotent activate (2nd call) → noop=true | PASS |
+| SMOKE10 | ARCHIVED guard → 22023 CANNOT_ACTIVATE_ARCHIVED | PASS |
+
+Post-rollback verification:
+- Garindo: `status=ACTIVE`, `suspended_at=null`, `suspended_reason=null` — clean.
+- Audit table: 0 rows for `SUSPEND_TENANT` / `ACTIVATE_TENANT` — all rolled back.
+
+---
+
+## pgTAP Coverage
+
+File: `supabase/tests/wave4a/suspend_activate_tenant.sql`
+13 assertions across 13 cases.
+
+| Case | Description |
+|---|---|
+| 1 | `suspend_tenant` non-admin → P0403 |
+| 2 | `activate_tenant` non-admin → P0403 |
+| 3 | `suspend_tenant` unknown tenant → P0404 |
+| 4 | `suspend_tenant` empty whitespace reason → 22023 |
+| 5 | `suspend_tenant` NULL reason → 22023 |
+| 6 | `activate_tenant` unknown tenant → P0404 |
+| 7 | `suspend_tenant` happy path: Garindo status=SUSPENDED |
+| 8 | SUSPEND_TENANT audit row exists |
+| 9 | `suspend_tenant` idempotent: noop=true |
+| 10 | `activate_tenant` happy path: Garindo status=ACTIVE |
+| 11 | ACTIVATE_TENANT audit row exists |
+| 12 | `activate_tenant` idempotent: noop=true |
+| 13 | `activate_tenant` ARCHIVED tenant → 22023 CANNOT_ACTIVATE_ARCHIVED (exercised — CHECK permits ARCHIVED) |
+
+---
+
+## Files Produced
+
+- `supabase/migrations/20261115000011_phase_b_wave4a_suspend_activate_tenant.sql`
+- `supabase/tests/wave4a/suspend_activate_tenant.sql`
+- `docs/sdd/task-2-report.md` (this file)

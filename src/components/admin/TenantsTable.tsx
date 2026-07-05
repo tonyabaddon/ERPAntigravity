@@ -2,7 +2,12 @@
 // Primitive table for the /admin/tenants list.
 // Uses VOSI Design System colors (inline style matching existing admin components).
 // No react-router-dom — uses native <a href> (project pattern).
+import { useState } from 'react';
+import { activateTenant } from '../../lib/adminApi';
+import { adminToast } from '../../lib/adminToast';
 import type { AdminTenantRow, UsageStatus } from '../../lib/adminTypes';
+import { AdminApiError } from '../../lib/adminTypes';
+import { SuspendTenantModal } from './SuspendTenantModal';
 
 // ─── Usage status badge ───────────────────────────────────────────────────────
 
@@ -112,6 +117,7 @@ interface TenantsTableProps {
   onSort: (col: string) => void;
   onImpersonate: (slug: string) => void;
   impersonating: string | null;
+  onRowActionSuccess: () => void;
 }
 
 export function TenantsTable({
@@ -121,7 +127,28 @@ export function TenantsTable({
   onSort,
   onImpersonate,
   impersonating,
+  onRowActionSuccess,
 }: TenantsTableProps) {
+  // Suspend modal state
+  const [suspendTarget, setSuspendTarget] = useState<AdminTenantRow | null>(null);
+
+  // Activate flow — plain confirm dialog, no modal
+  async function handleActivate(row: AdminTenantRow) {
+    const confirmed = window.confirm(`Aktifkan kembali ${row.name}?`);
+    if (!confirmed) return;
+    try {
+      await activateTenant(row.tenant_id);
+      adminToast.success('Tenant diaktifkan.');
+      onRowActionSuccess();
+    } catch (err) {
+      if (err instanceof AdminApiError) {
+        adminToast.error(err.userMessage);
+      } else {
+        adminToast.error('Terjadi kesalahan tak terduga.');
+      }
+    }
+  }
+
   if (rows.length === 0) {
     return (
       <div
@@ -229,17 +256,59 @@ export function TenantsTable({
               </td>
               {/* Aksi */}
               <td className="px-3 py-2">
-                <ImpersonateButton
-                  slug={t.slug}
-                  name={t.name}
-                  onImpersonate={onImpersonate}
-                  impersonating={impersonating}
-                />
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <ImpersonateButton
+                    slug={t.slug}
+                    name={t.name}
+                    onImpersonate={onImpersonate}
+                    impersonating={impersonating}
+                  />
+                  {t.status === 'ACTIVE' && (
+                    <button
+                      aria-label={`Suspend ${t.name}`}
+                      onClick={() => setSuspendTarget(t)}
+                      className="text-vosi-danger border border-vosi-danger/40 hover:bg-vosi-danger/10 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors"
+                    >
+                      Suspend
+                    </button>
+                  )}
+                  {t.status === 'SUSPENDED' && (
+                    <button
+                      aria-label={`Aktifkan ${t.name}`}
+                      onClick={() => handleActivate(t)}
+                      className="bg-vosi-success text-white rounded-full px-3 py-1 text-[12px] font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      Aktifkan
+                    </button>
+                  )}
+                  {t.status === 'ARCHIVED' && (
+                    <span
+                      data-testid={`no-action-archived-${t.tenant_id}`}
+                      className="text-[12px]"
+                      style={{ color: '#9DB2CE' }}
+                    >
+                      —
+                    </span>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* SuspendTenantModal — rendered outside the table loop */}
+      {suspendTarget && (
+        <SuspendTenantModal
+          open={suspendTarget !== null}
+          tenant={suspendTarget}
+          onClose={() => setSuspendTarget(null)}
+          onSuccess={() => {
+            setSuspendTarget(null);
+            onRowActionSuccess();
+          }}
+        />
+      )}
     </div>
   );
 }

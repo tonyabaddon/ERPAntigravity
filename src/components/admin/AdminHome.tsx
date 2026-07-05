@@ -105,10 +105,9 @@ export function AdminHome() {
 
   if (!stats) return null;
 
-  const expiringTenants = tenants.filter(
-    (t) => t.days_until_expiry !== null && t.days_until_expiry <= 45
-  );
-  const suspendedTenants = tenants.filter((t) => t.status === 'SUSPENDED');
+  // AttentionQueue now fetches its own data via list_attention_tenants(45)
+  // — see Wave 4a Task 8b. AdminHome no longer derives from `tenants`.
+  void tenants; // Wave 4a: attention derivation moved server-side; keep var for future use.
   const showEmptyState = stats.tenants_total <= 1;
 
   return (
@@ -184,10 +183,7 @@ export function AdminHome() {
         >
           Butuh perhatian
         </div>
-        <AttentionQueue
-          expiringTenants={expiringTenants}
-          suspendedTenants={suspendedTenants}
-        />
+        <AttentionQueue withinDays={45} />
       </div>
 
       {/* Recent activity feed */}

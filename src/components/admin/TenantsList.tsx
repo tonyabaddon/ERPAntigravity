@@ -56,6 +56,9 @@ export function TenantsList() {
   // Impersonation state
   const [impersonating, setImpersonating] = useState<string | null>(null);
 
+  // Refresh key — bumped after suspend/activate to re-fetch current page
+  const [refreshKey, setRefreshKey] = useState(0);
+
   // Debounced search — separate from immediate filter changes
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,7 +127,7 @@ export function TenantsList() {
   useEffect(() => {
     fetchTenants();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, planCode, status, expiryWithinDays, sortBy, sortDir, page]);
+  }, [debouncedSearch, planCode, status, expiryWithinDays, sortBy, sortDir, page, refreshKey]);
 
   // ─── Impersonation ──────────────────────────────────────────────────────────
 
@@ -251,6 +254,7 @@ export function TenantsList() {
           onSort={handleSort}
           onImpersonate={handleImpersonate}
           impersonating={impersonating}
+          onRowActionSuccess={() => setRefreshKey((k) => k + 1)}
         />
       )}
 
