@@ -31,6 +31,16 @@ const C = {
   info:    '#2A6FDB',
 } as const;
 
+// ─── Plan price map (matches Wave 5 Task 1 seed values in plans.price_annual)
+// Used only as a default hint for RecordPaymentModal nominal input — the
+// authoritative source is the plans table. Kept as a constant to avoid an
+// extra network round-trip on tab mount for a purely optional default.
+const PLAN_PRICE_IDR = {
+  STARTER: 1_200_000,
+  PRO:     3_600_000,
+  PREMIUM: 9_000_000,
+} as const;
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -354,11 +364,12 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
 
   return (
     <>
-      {/* RecordPaymentModal (record) */}
+      {/* RecordPaymentModal (record) — defaultAmount from tenant's plan price */}
       <RecordPaymentModal
         open={recordOpen}
         tenant={row}
         mode="record"
+        defaultAmount={PLAN_PRICE_IDR[row.plan_code as keyof typeof PLAN_PRICE_IDR]}
         onClose={() => setRecordOpen(false)}
         onSuccess={(result) => { handleModalSuccess(result); setRecordOpen(false); }}
       />
