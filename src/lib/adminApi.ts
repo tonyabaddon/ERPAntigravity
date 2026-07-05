@@ -25,6 +25,7 @@ import type {
   RenewSubscriptionResult,
   UpdatePlanInput,
   AttentionTenantRow,
+  CoverageStatus,
 } from './adminTypes';
 import {
   PlatformAdminRequiredError,
@@ -34,6 +35,12 @@ import {
   InvalidPlanCodeError,
   SuperAdminRequiredError,
   CannotActivateArchivedError,
+  InvalidAmountError,
+  InvalidPeriodError,
+  MethodMismatchError,
+  PaymentNotFoundError,
+  ReasonRequiredError,
+  InvalidGroupByError,
 } from './adminTypes';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -43,8 +50,11 @@ import {
  * Supabase surfaces SQLSTATE on `error.code` (string).
  */
 function normalizeRpcError(error: { message?: string; code?: string }): never {
-  // P0404 — tenant not found (any message)
+  // P0404 — check specific message before generic tenant fallthrough
   if (error.code === 'P0404') {
+    if (error.message === 'PAYMENT_NOT_FOUND') {
+      throw new PaymentNotFoundError(error.message);
+    }
     throw new TenantNotFoundError(error.message);
   }
   // P0403 — check specific message before generic fallthrough
@@ -53,6 +63,10 @@ function normalizeRpcError(error: { message?: string; code?: string }): never {
       throw new SuperAdminRequiredError(error.message);
     }
     throw new PlatformAdminRequiredError(error.message);
+  }
+  // 23514 — CHECK constraint violation (payment method / bank / ewallet mismatch)
+  if (error.code === '23514') {
+    throw new MethodMismatchError(error.message);
   }
   // 22023 — check specific message before generic fallthrough
   if (error.code === '22023') {
@@ -65,6 +79,18 @@ function normalizeRpcError(error: { message?: string; code?: string }): never {
     if (error.message === 'CANNOT_ACTIVATE_ARCHIVED') {
       throw new CannotActivateArchivedError(error.message);
     }
+    if (error.message === 'INVALID_AMOUNT') {
+      throw new InvalidAmountError(error.message);
+    }
+    if (error.message === 'INVALID_PERIOD') {
+      throw new InvalidPeriodError(error.message);
+    }
+    if (error.message === 'REASON_REQUIRED') {
+      throw new ReasonRequiredError(error.message);
+    }
+    if (error.message === 'INVALID_GROUP_BY') {
+      throw new InvalidGroupByError(error.message);
+    }
     throw new InvalidFilterError(error.message);
   }
   // Generic pass-through
@@ -73,10 +99,20 @@ function normalizeRpcError(error: { message?: string; code?: string }): never {
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+/** Row shape from v_tenant_payment_coverage used for client-side merge. */
+interface CoverageRow {
+  tenant_id: string;
+  coverage_status: CoverageStatus;
+}
+
 /**
  * Call list_tenants_admin(p_filters jsonb).
  * Returns a paginated list of tenant rows. `total_count` on each row carries
  * the window-count for pagination.
+ *
+ * After fetching tenants, also fetches v_tenant_payment_coverage in parallel
+ * and merges `coverage_status` onto each row by `tenant_id`. The coverage
+ * fetch is best-effort: on error, rows are returned without coverage_status.
  *
  * @throws PlatformAdminRequiredError  when caller is not a platform admin
  * @throws InvalidFilterError          when an unknown filter key is supplied
@@ -85,11 +121,30 @@ export async function listTenantsAdmin(
   filters: TenantsListFilters = {},
 ): Promise<AdminTenantRow[]> {
   if (!supabase) throw new Error('Supabase client not configured');
-  const { data, error } = await supabase.rpc('list_tenants_admin', {
-    p_filters: filters,
-  });
-  if (error) normalizeRpcError(error);
-  return (data ?? []) as AdminTenantRow[];
+
+  // Run tenant RPC + coverage view in parallel.
+  const [tenantsResult, coverageResult] = await Promise.all([
+    supabase.rpc('list_tenants_admin', { p_filters: filters }),
+    supabase
+      .from('v_tenant_payment_coverage')
+      .select('tenant_id, coverage_status'),
+  ]);
+
+  if (tenantsResult.error) normalizeRpcError(tenantsResult.error);
+
+  const rows = (tenantsResult.data ?? []) as AdminTenantRow[];
+
+  // Best-effort coverage merge — silently skip if view is unavailable.
+  if (!coverageResult.error && coverageResult.data) {
+    const coverageMap = new Map<string, CoverageStatus>(
+      (coverageResult.data as CoverageRow[]).map((r) => [r.tenant_id, r.coverage_status]),
+    );
+    for (const row of rows) {
+      row.coverage_status = coverageMap.get(row.tenant_id) ?? null;
+    }
+  }
+
+  return rows;
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   HelpCircle,
+  Coins,
 } from 'lucide-react';
 
 interface NavItem {
@@ -38,6 +39,11 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/plans',
     label: 'Paket',
     icon: <Package size={16} strokeWidth={1.8} strokeLinecap="round" />,
+  },
+  {
+    to: '/admin/revenue',
+    label: 'Pendapatan',
+    icon: <Coins size={16} strokeWidth={1.8} strokeLinecap="round" />,
   },
   {
     to: '/admin/settings',

@@ -1,71 +1,39 @@
-# Task 4 Report — VOSI design tokens + fonts + sonner
+## Task 4 — record_payment + update_payment + delete_payment RPCs (COMPLETE)
 
-## Environment
+- Migration: `supabase/migrations/20261115000023_phase_b_wave5_payment_write_rpcs.sql`
+- Tests: `supabase/tests/wave5/record_payment.sql` (12 assertions) + `supabase/tests/wave5/update_delete_payment.sql` (18 assertions)
+- Applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`).
 
-- **Tailwind version**: v4.1.14 via `@tailwindcss/vite` Vite plugin
-- **Config style**: CSS-only `@theme {}` block in `src/index.css` — NO `tailwind.config.js`
-- **Package manager**: npm (package-lock.json present)
-- **sonner version installed**: `^2.0.7`
+### Verified via MCP
 
-## Deliverables shipped
+All 3 functions — owner=postgres, is_secdef=true, authenticated_execute=true, search_path=public, pg_catalog.
 
-| # | Deliverable | Status |
-|---|---|---|
-| 1 | `sonner` added to dependencies | Done — `"sonner": "^2.0.7"` in package.json |
-| 2 | Plus Jakarta Sans (400-800) via `<link>` in index.html | Done — kept Inter + JetBrains Mono for Garindo |
-| 3 | 11 `--color-vosi-*` tokens + font/radius/shadow tokens in `@theme` | Done |
-| 4 | `<Toaster position="top-right" richColors closeButton />` in main.tsx | Done |
-| 5 | `src/lib/adminToast.ts` typed wrapper | Done |
-| 6 | `src/lib/adminToast.test.ts` smoke tests | Done — 3/3 pass |
+**Smoke test end-to-end (live, not rolled back):**
 
-## Deviations from brief
+1. `record_payment` — BANK_TRANSFER + BCA + 1,000,000 IDR → returned `coverage_status=OVERDUE`, `coverage_ok=false`, `amount_paid_ytd=1000000` ✓  
+   (1M / 9M PREMIUM = 11.1% < 30% threshold → OVERDUE, matches spec §15.5)
+2. `update_payment` — changed amount to 3,000,000 → returned `{ok:true, updated_keys:["amount"]}`. DB row confirmed amount=3000000.00 ✓
+3. `delete_payment` — reason='smoke-test cleanup' → returned `{ok:true}`. Row gone from tenant_payments. ✓
+4. Audit trail: RECORD_PAYMENT=1, UPDATE_PAYMENT=1, DELETE_PAYMENT=1 each with correct detail shape ✓
+5. DELETE_PAYMENT audit has full snapshot including `id`, `amount`, `payment_method` ✓
 
-**Brief step 0b** assumed Tailwind v3 with `tailwind.config.js` and `theme.extend.colors`. Brief step 0c instructed setting `font-sans` to Plus Jakarta Sans globally.
+**Validation checks (22023):** UNKNOWN_FIELD, INVALID_AMOUNT (0 and negative), INVALID_PERIOD (period_to < period_from), REASON_REQUIRED (empty string) — all raised correctly ✓
 
-**Actual approach (v4 CSS-only):**
-- Tokens registered as `--color-vosi-*` in `@theme {}` — generates `bg-vosi-navy`, `text-vosi-gold`, etc. verbatim as in brief's class name spec.
-- Font: Added `--font-vosi: "Plus Jakarta Sans", system-ui, sans-serif` instead of overriding `--font-sans`. Reason: `--font-sans` is already set to Inter, and every existing Garindo screen uses `font-sans` (body class, individual components). Replacing it would change every Garindo screen's typeface, violating the "MUST render normally" regression constraint. Admin layout (Task 6+) will opt in via `font-vosi` explicitly.
-- Global body `font-family` override from Step 0c was **not applied** for the same reason.
+**P0403 checks:** record_payment, update_payment, delete_payment all block non-admin JWT ✓
 
-## Verification results
+### Schema drift notes
 
-### TypeScript
-```
-npx tsc --noEmit: CLEAN (0 errors, 0 warnings)
-```
+- `tenant_subscriptions` has no `status` column — coverage formula uses `expires_at >= CURRENT_DATE` for "active" check (not needed for OVERDUE logic; threshold math is purely amount-based)
+- `plans.price_annual` NULL case handled gracefully → coverage_ok=false, coverage_status='UNKNOWN'
+- `proof_object_key` payload key correctly maps to `proof_url` column in both record_payment and update_payment
 
-### Vitest
-```
-Test Files: 1 failed (pre-existing) | 62 passed (63 total)
-Tests:      3 failed (pre-existing) | 488 passed (491 total)
-```
+### Coverage formula implemented (§15.5)
 
-Pre-existing failures: `src/lib/products/productWrappers.test.ts` — 3 tests fail because mock doesn't wire `supabase.rpc` (existed before this task, unrelated to Task 4 changes).
-
-New test file `src/lib/adminToast.test.ts`: **3/3 PASS**
-
-### Build
-```
-npm run build: SUCCESS in 3.07s
-✓ 2856 modules transformed
-dist/assets/index-b3THnrEG.css  148.70 kB (gzip: 22.41 kB)
-```
-Build warnings are pre-existing (chunk size + dynamic import).
-
-## Regression check
-
-- `npx tsc --noEmit` clean — no type regressions.
-- Build succeeds — Tailwind v4 compiled `--color-vosi-*` tokens without errors.
-- Existing test suite unchanged (same 3 pre-existing failures, no new failures).
-- `--font-sans` (Inter) untouched — Garindo screens maintain existing font rendering.
-- No body-level CSS overrides that could shift Garindo layout.
-
-## Files modified/created
-
-- `index.html` — Plus Jakarta Sans `<link>` added
-- `src/index.css` — 11 `--color-vosi-*` tokens + `--font-vosi` + radius/shadow tokens added to `@theme`
-- `src/main.tsx` — `<Toaster />` imported and mounted
-- `package.json` / `package-lock.json` — sonner added
-- `src/lib/adminToast.ts` — created
-- `src/lib/adminToast.test.ts` — created
-- `progress.md` — updated
+| Status  | Condition |
+|---------|-----------|
+| LUNAS   | amount_paid_ytd >= price_annual |
+| DP_60   | >= 0.6 × price_annual AND < price_annual |
+| DP_30   | >= 0.3 × price_annual AND < 0.6 × price_annual |
+| OVERDUE | > 0 AND < 0.3 × price_annual |
+| UNPAID  | = 0 |
+| UNKNOWN | price_annual IS NULL |

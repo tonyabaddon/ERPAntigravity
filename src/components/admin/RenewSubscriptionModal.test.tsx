@@ -9,18 +9,25 @@ import { TenantNotFoundError } from '../../lib/adminTypes';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-const renewMock = vi.fn();
-const toastSuccessMock = vi.fn();
-const toastErrorMock = vi.fn();
+const renewMock         = vi.fn();
+const recordPaymentMock = vi.fn();
+const uploadProofMock   = vi.fn();
+const toastSuccessMock  = vi.fn();
+const toastErrorMock    = vi.fn();
 
 vi.mock('../../lib/adminApi', () => ({
   renewSubscription: (input: unknown) => renewMock(input),
 }));
 
+vi.mock('../../lib/paymentsApi', () => ({
+  recordPayment:      (...args: unknown[]) => recordPaymentMock(...args),
+  uploadPaymentProof: (...args: unknown[]) => uploadProofMock(...args),
+}));
+
 vi.mock('../../lib/adminToast', () => ({
   adminToast: {
     success: (msg: string) => toastSuccessMock(msg),
-    error: (msg: string) => toastErrorMock(msg),
+    error:   (msg: string) => toastErrorMock(msg),
     info: vi.fn(),
   },
 }));
@@ -325,5 +332,149 @@ describe('RenewSubscriptionModal', () => {
     fireEvent.click(backdrop);
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  // ── Payment chain tests ─────────────────────────────────────────────────
+
+  it('checkbox for payment chain is not checked by default', () => {
+    renderOpen();
+    const checkbox = screen.getByTestId('renew-pay-toggle') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+    // Payment fields should NOT be visible
+    expect(screen.queryByTestId('renew-pay-amount')).not.toBeInTheDocument();
+  });
+
+  it('expands payment fields when checkbox is checked', () => {
+    renderOpen();
+    const checkbox = screen.getByTestId('renew-pay-toggle');
+    fireEvent.click(checkbox);
+    expect(screen.getByTestId('renew-pay-amount')).toBeInTheDocument();
+    expect(screen.getByTestId('renew-pay-method')).toBeInTheDocument();
+    expect(screen.getByTestId('renew-pay-proof')).toBeInTheDocument();
+  });
+
+  it('renew-only path: no recordPayment called, "Masa aktif diperpanjang." toast', async () => {
+    renewMock.mockResolvedValue(fakeResult);
+    const { onClose, onSuccess } = renderOpen();
+    // Payment checkbox stays unchecked
+    fireEvent.click(screen.getByRole('button', { name: /simpan perpanjangan/i }));
+    await waitFor(() => {
+      expect(renewMock).toHaveBeenCalled();
+      expect(recordPaymentMock).not.toHaveBeenCalled();
+      expect(toastSuccessMock).toHaveBeenCalledWith('Masa aktif diperpanjang.');
+    });
+    expect(onSuccess).toHaveBeenCalledWith(fakeResult);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renew+pay: calls renewSubscription then recordPayment on happy path', async () => {
+    renewMock.mockResolvedValue(fakeResult);
+    recordPaymentMock.mockResolvedValue({ ok: true, payment_id: 'pid-new', amount_paid_ytd: 3_600_000, coverage_ok: true, coverage_status: 'LUNAS' });
+    const { onClose, onSuccess } = renderOpen();
+
+    // Enable payment section
+    fireEvent.click(screen.getByTestId('renew-pay-toggle'));
+
+    // Switch to CASH so upload is not required
+    const methodSelect = screen.getByTestId('renew-pay-method');
+    fireEvent.change(methodSelect, { target: { value: 'CASH' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /simpan perpanjangan/i }));
+
+    await waitFor(() => {
+      expect(renewMock).toHaveBeenCalled();
+      expect(recordPaymentMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenant_id:      'tid-001',
+          payment_method: 'CASH',
+          period_from:    '2026-07-05',          // tenant.expires_at
+          period_to:      fakeResult.new_expires_at,
+        })
+      );
+      expect(toastSuccessMock).toHaveBeenCalledWith('Perpanjangan + pembayaran berhasil.');
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(fakeResult);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('partial success: upload fails → toast partial error, modal closes', async () => {
+    renewMock.mockResolvedValue(fakeResult);
+    uploadProofMock.mockRejectedValue(new Error('storage error'));
+    const { onClose, onSuccess } = renderOpen();
+
+    // Enable payment + attach file
+    fireEvent.click(screen.getByTestId('renew-pay-toggle'));
+
+    // Attach a valid PNG file
+    const fileInput = screen.getByTestId('renew-pay-proof');
+    const goodFile = new File([new Uint8Array(1000)], 'proof.png', { type: 'image/png' });
+    fireEvent.change(fileInput, { target: { files: [goodFile] } });
+
+    // Switch BANK_TRANSFER → need bank selected
+    const bankSelect = screen.getByLabelText(/bank \(rantai\)/i);
+    fireEvent.change(bankSelect, { target: { value: 'BCA' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /simpan perpanjangan/i }));
+
+    await waitFor(() => {
+      expect(renewMock).toHaveBeenCalled();
+      expect(uploadProofMock).toHaveBeenCalled();
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining('upload bukti gagal')
+      );
+    });
+
+    // Modal closes, onSuccess called with renew result
+    expect(onSuccess).toHaveBeenCalledWith(fakeResult);
+    expect(onClose).toHaveBeenCalled();
+    // recordPayment should NOT be called since upload failed
+    expect(recordPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it('partial success: record fails → toast partial error, modal closes', async () => {
+    renewMock.mockResolvedValue(fakeResult);
+    recordPaymentMock.mockRejectedValue(new Error('db error'));
+    const { onClose, onSuccess } = renderOpen();
+
+    // Enable payment, CASH (no upload required)
+    fireEvent.click(screen.getByTestId('renew-pay-toggle'));
+    const methodSelect = screen.getByTestId('renew-pay-method');
+    fireEvent.change(methodSelect, { target: { value: 'CASH' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /simpan perpanjangan/i }));
+
+    await waitFor(() => {
+      expect(renewMock).toHaveBeenCalled();
+      expect(recordPaymentMock).toHaveBeenCalled();
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        expect.stringContaining('pembayaran gagal tersimpan')
+      );
+    });
+
+    expect(onSuccess).toHaveBeenCalledWith(fakeResult);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renew fails: error toast, modal stays open, recordPayment not called', async () => {
+    renewMock.mockRejectedValue(new TenantNotFoundError());
+    const { onClose, onSuccess } = renderOpen();
+
+    // Enable payment, CASH
+    fireEvent.click(screen.getByTestId('renew-pay-toggle'));
+    const methodSelect = screen.getByTestId('renew-pay-method');
+    fireEvent.change(methodSelect, { target: { value: 'CASH' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /simpan perpanjangan/i }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('Tenant tidak ditemukan.');
+    });
+
+    expect(recordPaymentMock).not.toHaveBeenCalled();
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    // Modal still visible
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

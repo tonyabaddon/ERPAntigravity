@@ -10,6 +10,7 @@ import { adminToast } from '../../../lib/adminToast';
 import { OverviewTab } from './OverviewTab';
 import { UsersTab } from './UsersTab';
 import { AuditTab } from './AuditTab';
+import { PembayaranTab } from './PembayaranTab';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const TABS = [
   { key: 'ringkasan',     label: 'Ringkasan' },
   { key: 'pengguna',      label: 'Pengguna' },
   { key: 'log-aktivitas', label: 'Log aktivitas' },
+  { key: 'pembayaran',    label: 'Pembayaran' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -319,6 +321,13 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         )}
         {activeTab === 'pengguna' && <UsersTab tenantId={tenant.tenant_id} />}
         {activeTab === 'log-aktivitas' && <AuditTab tenantId={tenant.tenant_id} />}
+        {activeTab === 'pembayaran' && (
+          <PembayaranTab
+            tenantId={tenant.tenant_id}
+            tenantSlug={tenant.slug}
+            row={tenant}
+          />
+        )}
       </div>
     </div>
   );

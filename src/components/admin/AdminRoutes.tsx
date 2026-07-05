@@ -11,6 +11,7 @@ import { TenantsList } from './TenantsList';
 import { TenantDetailShell } from './TenantDetail/TenantDetailShell';
 import { AuditLogViewer } from './AuditLogViewer';
 import { PlansManagement } from './PlansManagement';
+import { AdminRevenue } from './AdminRevenue';
 
 // Pattern for /admin/tenants/<slug>
 const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
@@ -32,6 +33,9 @@ function resolveAdminContent(pathname: string): React.ReactNode {
   }
   if (pathname === '/admin/plans' || pathname === '/admin/plans/') {
     return <PlansManagement />;
+  }
+  if (pathname === '/admin/revenue' || pathname === '/admin/revenue/') {
+    return <AdminRevenue />;
   }
   // Unknown sub-path — fallback to home
   return <AdminHome />;

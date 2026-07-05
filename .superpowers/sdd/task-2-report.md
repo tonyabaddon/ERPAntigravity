@@ -1,124 +1,48 @@
-# Task 2 Report — `suspend_tenant` + `activate_tenant` RPCs
+# Task 2 Report — tenant_payments table + RLS + audit CHECK
 
-**Status:** DONE
-**Migration slot:** `20261115000011_phase_b_wave4a_suspend_activate_tenant`
-**Applied:** 2026-07-05 via Supabase MCP on project `ekhhojaezdfjfwuxyjkl`
+**Status:** COMPLETE
 
----
+**Migration:** `supabase/migrations/20261115000021_phase_b_wave5_tenant_payments_table.sql`
+**Test:** `supabase/tests/wave5/tenant_payments_table.sql`
+**Applied:** Garindo prod `ekhhojaezdfjfwuxyjkl` — `apply_migration` success
 
-## Schema Findings
+## Verifications (all passed)
 
-### `tenants` table columns (relevant to this task)
+| Check | Result |
+|-------|--------|
+| Table `tenant_payments` exists | PASS |
+| Index `idx_tenant_payments_tenant_date` | PASS |
+| Index `idx_tenant_payments_period` | PASS |
+| `relrowsecurity = true` | PASS |
+| `relforcerowsecurity = true` | PASS |
+| Policy `p_platform_admin_only` on `{authenticated, vosi_rpc_owner}` | PASS |
+| Audit CHECK includes all 16 codes (through UPLOAD_PAYMENT_PROOF) | PASS |
+| Smoke INSERT (BANK_TRANSFER + BCA, valid row) + RAISE rollback | PASS |
 
-| column | data_type | nullable | generated |
-|---|---|---|---|
-| `status` | text | NO | no |
-| `suspended_at` | timestamptz | YES | no |
-| `suspended_reason` | text | YES | no |
-| `archived_at` | timestamptz | YES | no |
+## pgTAP coverage (9 assertions)
 
-All four target columns are regular (non-GENERATED). Safe to UPDATE all of them.
+1. `has_table` — table exists
+2. `has_index` — idx_tenant_payments_tenant_date
+3. `has_index` — idx_tenant_payments_period
+4. `ok(relrowsecurity)` — RLS enabled
+5. `ok(relforcerowsecurity)` — FORCE RLS enabled
+6. `has_row_policy` — p_platform_admin_only
+7. `ok(constraint LIKE '%RECORD_PAYMENT%')` — audit CHECK includes RECORD_PAYMENT
+8. `ok(all 4 Wave 5 codes present)` — RECORD/UPDATE/DELETE/UPLOAD_PAYMENT_PROOF
+9. `throws_ok(23514)` — BANK_TRANSFER + NULL bank_name rejects with payment_bank_required CHECK
 
-### `tenants.status` CHECK constraint
+## Drift corrections
 
-```sql
-CHECK ((status = ANY (ARRAY['ACTIVE'::text, 'SUSPENDED'::text, 'ARCHIVED'::text])))
-```
+- `audit_id BIGINT` (spec said UUID; platform_admin_audit.id is BIGINT per Wave 1 Task 3)
+- Added `set_updated_at` trigger (project convention; not in spec but consistent with all tables carrying `updated_at`)
 
-All three values present — `ACTIVE`, `SUSPENDED`, `ARCHIVED`. No blockers. ARCHIVED guard test exercised in both smoke and pgTAP.
+## Pre-flight checks performed
 
-### `tenants` NOT NULL columns (for pgTAP fixture seeding)
+- `vosi_rpc_owner` role: EXISTS
+- `auth.users` cross-schema FK: PERMITTED (kasir_transactions + stock_adjustments both FK to auth.users)
+- `platform_admin_audit.id` type: BIGINT confirmed
+- Existing audit CHECK codes: 12 (through UPDATE_PLAN) confirmed
 
-Columns requiring values: `id`, `slug`, `name`, `status`. All four supplied in pgTAP fixture for the ARCHIVED test tenant.
+## Concerns
 
----
-
-## `platform_admin_audit` Action Code Whitelist
-
-### State before this migration
-
-```
-IMPERSONATE_START, IMPERSONATE_END, CREATE_TENANT, CHANGE_PLAN,
-CHANGE_FEATURES, SUSPEND, ACTIVATE, ARCHIVE, RENEW_SUBSCRIPTION
-```
-
-### State after this migration
-
-```
-IMPERSONATE_START, IMPERSONATE_END, CREATE_TENANT, CHANGE_PLAN,
-CHANGE_FEATURES, SUSPEND, ACTIVATE, ARCHIVE, RENEW_SUBSCRIPTION,
-SUSPEND_TENANT, ACTIVATE_TENANT
-```
-
-### Action-code duplication flag
-
-The Wave 1 seed included generic `SUSPEND` and `ACTIVATE` codes. This migration adds more specific `SUSPEND_TENANT` and `ACTIVATE_TENANT` codes as instructed by the brief. The old codes are preserved in the whitelist to cover any existing audit rows but no new RPCs emit them. **The operator should acknowledge this intentional dual-code existence.** If the semantic intent is to consolidate, a future migration can relabel historic rows and drop the old codes from the CHECK — but that is out of scope here.
-
----
-
-## Ownership Decision
-
-Both RPCs call `auth.uid()` (for `admin_user_id` audit column) and SELECT from `platform_admins` (for `admin_email`). `vosi_rpc_owner` cannot be granted USAGE on the `auth` schema (`supabase_admin` owns it; `postgres` lacks `WITH GRANT OPTION`). Both functions are owned by `postgres`, consistent with Wave 1 Task 12 and Wave 4a Task 1.
-
-Verified:
-```
-proname         | owner    | prosecdef
-activate_tenant | postgres | true
-suspend_tenant  | postgres | true
-```
-
----
-
-## Smoke Test Results
-
-DO block with RAISE-based rollback. All 10 cases passed.
-
-| # | Test | Result |
-|---|---|---|
-| SMOKE1 | non-admin `suspend_tenant` → P0403 | PASS |
-| SMOKE2 | non-admin `activate_tenant` → P0403 | PASS |
-| SMOKE3 | bad tenant `suspend_tenant` → P0404 | PASS |
-| SMOKE4 | bad tenant `activate_tenant` → P0404 | PASS |
-| SMOKE5 | empty/whitespace reason → 22023 INVALID_REASON | PASS |
-| SMOKE6 | suspend Garindo → status=SUSPENDED, result ok=true | PASS |
-| SMOKE6b | SUSPEND_TENANT audit row exists | PASS |
-| SMOKE7 | idempotent suspend (2nd call) → noop=true | PASS |
-| SMOKE8 | activate Garindo → status=ACTIVE, result ok=true | PASS |
-| SMOKE8b | ACTIVATE_TENANT audit row exists | PASS |
-| SMOKE9 | idempotent activate (2nd call) → noop=true | PASS |
-| SMOKE10 | ARCHIVED guard → 22023 CANNOT_ACTIVATE_ARCHIVED | PASS |
-
-Post-rollback verification:
-- Garindo: `status=ACTIVE`, `suspended_at=null`, `suspended_reason=null` — clean.
-- Audit table: 0 rows for `SUSPEND_TENANT` / `ACTIVATE_TENANT` — all rolled back.
-
----
-
-## pgTAP Coverage
-
-File: `supabase/tests/wave4a/suspend_activate_tenant.sql`
-13 assertions across 13 cases.
-
-| Case | Description |
-|---|---|
-| 1 | `suspend_tenant` non-admin → P0403 |
-| 2 | `activate_tenant` non-admin → P0403 |
-| 3 | `suspend_tenant` unknown tenant → P0404 |
-| 4 | `suspend_tenant` empty whitespace reason → 22023 |
-| 5 | `suspend_tenant` NULL reason → 22023 |
-| 6 | `activate_tenant` unknown tenant → P0404 |
-| 7 | `suspend_tenant` happy path: Garindo status=SUSPENDED |
-| 8 | SUSPEND_TENANT audit row exists |
-| 9 | `suspend_tenant` idempotent: noop=true |
-| 10 | `activate_tenant` happy path: Garindo status=ACTIVE |
-| 11 | ACTIVATE_TENANT audit row exists |
-| 12 | `activate_tenant` idempotent: noop=true |
-| 13 | `activate_tenant` ARCHIVED tenant → 22023 CANNOT_ACTIVATE_ARCHIVED (exercised — CHECK permits ARCHIVED) |
-
----
-
-## Files Produced
-
-- `supabase/migrations/20261115000011_phase_b_wave4a_suspend_activate_tenant.sql`
-- `supabase/tests/wave4a/suspend_activate_tenant.sql`
-- `docs/sdd/task-2-report.md` (this file)
+None. All schema assumptions verified before writing. Smoke test passed with intended RAISE rollback pattern.

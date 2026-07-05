@@ -1,26 +1,36 @@
-# Task 3 Report — `_assert_super_admin_from_jwt` + `update_plan_admin`
+# Task 3 Report — payment-proofs Storage bucket + RLS
 
 **Status:** DONE
-**Commit:** 4897223
-**Branch:** worktree-phase-b-wave4a
-**Migration:** `20261115000012_phase_b_wave4a_update_plan_admin.sql`
+**Migration:** `20261115000022_phase_b_wave5_payment_proofs_bucket.sql`
+**Applied to:** Garindo prod `ekhhojaezdfjfwuxyjkl` via MCP
 
-## Test Summary
+## What was done
 
-pgTAP: 9 cases in `supabase/tests/wave4a/update_plan_admin.sql`
-- Case 1: non-admin → P0403 PLATFORM_ADMIN_REQUIRED
-- Case 2: `_assert_super_admin_from_jwt` with unknown sub (NULL role) → P0403 SUPER_ADMIN_REQUIRED
-- Case 3: invalid plan_code ENTERPRISE → 22023 INVALID_PLAN_CODE
-- Case 4: unknown key `{bogus}` → 22023 UNKNOWN_FIELD
-- Cases 5a–5e: happy path (ok=true, plan_code, updated_keys, plan row updated, audit row present, helper lives_ok for founder)
+1. **Bucket upserted** (bucket already existed with wrong settings — used ON CONFLICT DO UPDATE):
+   - `public=false` (was `true`)
+   - `file_size_limit=5242880` (was 10485760 / 10MB)
+   - `allowed_mime_types=['image/jpeg','image/png','application/pdf']` (was jpeg/png/webp/heic)
 
-DO-block smoke: 5 cases verified on Garindo prod, rolled back via T0000. PRO description and audit table clean post-rollback.
+2. **Legacy policy dropped:** `"authenticated full access payment-proofs"` (ALL, {authenticated}, no path scoping) — replaced by the two new policies.
 
-## Schema Drift Correction
+3. **`p_platform_admin_crud`** — FOR ALL TO authenticated, USING + WITH CHECK on `_is_platform_admin_from_jwt()`.
 
-`platform_admin_audit.tenant_id` was `NOT NULL` in live DB — brief assumed nullable. Relaxed to nullable here: `ALTER TABLE ... ALTER COLUMN tenant_id DROP NOT NULL`. `list_audit_events` uses `LEFT JOIN tenants` and `(v_tenant_id IS NULL OR a.tenant_id = v_tenant_id)` — NULL rows handled correctly. RLS policy gates only on `_is_platform_admin_from_jwt()` — no tenant_id filter issue.
+4. **`t_tenant_owner_read`** — FOR SELECT TO authenticated, path-scoped to `<slug>/*` via `_resolve_tenant_id()` → tenants.slug.
 
-## Concerns / Notes
+## Smoke test results (post-apply)
 
-- None blocking. The non-super admin pgTAP case (Case 2) tests via a UUID absent from platform_admins (role = NULL) rather than inserting a row with role='admin', because the `platform_admins.user_id` FK references `auth.users` — a fake UUID cannot be inserted without a matching auth row. The NULL-role path covers the same code branch.
-- `updated_keys` array order from `jsonb_object_keys` is non-deterministic; pgTAP Case 5b uses `@>` containment check rather than equality for robustness.
+- Bucket: `public=false`, `file_size_limit=5242880`, `allowed_mime_types={image/jpeg,image/png,application/pdf}` ✓
+- `p_platform_admin_crud` present (cmd=ALL, roles={authenticated}) ✓
+- `t_tenant_owner_read` present (cmd=SELECT, roles={authenticated}) ✓
+- Legacy policy gone ✓
+
+## Concerns
+
+- **None blocking.** `storage.objects` owner is `supabase_storage_admin` but `postgres` role has USAGE on storage schema; `CREATE POLICY` from migration executed successfully.
+- **Anon/cross-tenant isolation tests** cannot run inside pgTAP (SET ROLE not available to postgres in Supabase Cloud). Documented as manual verification steps A/B/C in the test file.
+- FE must enforce 5MB + mime-type at upload time (Storage API will also reject, but client-side guard improves UX).
+
+## Files
+
+- `supabase/migrations/20261115000022_phase_b_wave5_payment_proofs_bucket.sql`
+- `supabase/tests/wave5/payment_proofs_bucket.sql` (7 pgTAP assertions)

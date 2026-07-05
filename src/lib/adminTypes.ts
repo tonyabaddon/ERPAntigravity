@@ -47,6 +47,8 @@ export interface AdminTenantRow {
   avg_daily_txn: number;             // NUMERIC
   usage_status: UsageStatus;
   total_count: number;               // BIGINT window COUNT(*) OVER ()
+  /** Merged client-side from v_tenant_payment_coverage (Task 10). */
+  coverage_status?: CoverageStatus | null;
 }
 
 /**
@@ -226,6 +228,92 @@ export class CannotActivateArchivedError extends AdminApiError {
   }
 }
 
+// ─── Wave 5 error classes ─────────────────────────────────────────────────────
+
+/** Coverage status for a tenant's subscription payment. */
+export type CoverageStatus = 'LUNAS' | 'DP_60' | 'DP_30' | 'OVERDUE' | 'UNPAID';
+
+/** Raised when amount ≤ 0 (SQLSTATE 22023 message=INVALID_AMOUNT). */
+export class InvalidAmountError extends AdminApiError {
+  readonly userMessage = 'Nominal pembayaran harus lebih dari 0.';
+  constructor(cause?: string) {
+    super(cause ?? 'INVALID_AMOUNT');
+    this.name = 'InvalidAmountError';
+  }
+}
+
+/** Raised when period_to is not after period_from (SQLSTATE 22023 message=INVALID_PERIOD). */
+export class InvalidPeriodError extends AdminApiError {
+  readonly userMessage = 'Periode akhir harus setelah periode mulai.';
+  constructor(cause?: string) {
+    super(cause ?? 'INVALID_PERIOD');
+    this.name = 'InvalidPeriodError';
+  }
+}
+
+/** Raised when payment_method requires bank/ewallet but none supplied (SQLSTATE 23514). */
+export class MethodMismatchError extends AdminApiError {
+  readonly userMessage = 'Metode pembayaran butuh informasi bank atau e-wallet.';
+  constructor(cause?: string) {
+    super(cause ?? 'METHOD_MISMATCH');
+    this.name = 'MethodMismatchError';
+  }
+}
+
+/** Raised when the requested payment does not exist (SQLSTATE P0404 message=PAYMENT_NOT_FOUND). */
+export class PaymentNotFoundError extends AdminApiError {
+  readonly userMessage = 'Data pembayaran tidak ditemukan.';
+  constructor(cause?: string) {
+    super(cause ?? 'PAYMENT_NOT_FOUND');
+    this.name = 'PaymentNotFoundError';
+  }
+}
+
+/** Raised when Storage RLS rejects the signed-URL request. */
+export class StorageAccessDeniedError extends AdminApiError {
+  readonly userMessage = 'Anda tidak berhak mengakses bukti ini.';
+  constructor(cause?: string) {
+    super(cause ?? 'STORAGE_ACCESS_DENIED');
+    this.name = 'StorageAccessDeniedError';
+  }
+}
+
+/** Raised when delete_payment is called without a reason (SQLSTATE 22023 message=REASON_REQUIRED). */
+export class ReasonRequiredError extends AdminApiError {
+  readonly userMessage = 'Alasan penghapusan wajib diisi.';
+  constructor(cause?: string) {
+    super(cause ?? 'REASON_REQUIRED');
+    this.name = 'ReasonRequiredError';
+  }
+}
+
+/** Raised when get_revenue_stats receives an invalid group_by value (SQLSTATE 22023 message=INVALID_GROUP_BY). */
+export class InvalidGroupByError extends AdminApiError {
+  readonly userMessage = 'Kelompok data tidak valid.';
+  constructor(cause?: string) {
+    super(cause ?? 'INVALID_GROUP_BY');
+    this.name = 'InvalidGroupByError';
+  }
+}
+
+/** Raised client-side when an uploaded proof file exceeds 5MB. */
+export class PaymentFileTooLargeError extends AdminApiError {
+  readonly userMessage = 'Bukti pembayaran maksimal 5 MB.';
+  constructor(cause?: string) {
+    super(cause ?? 'FILE_TOO_LARGE');
+    this.name = 'PaymentFileTooLargeError';
+  }
+}
+
+/** Raised client-side when an uploaded proof file is not JPG, PNG, or PDF. */
+export class PaymentFileWrongTypeError extends AdminApiError {
+  readonly userMessage = 'Bukti pembayaran harus JPG, PNG, atau PDF.';
+  constructor(cause?: string) {
+    super(cause ?? 'FILE_WRONG_TYPE');
+    this.name = 'PaymentFileWrongTypeError';
+  }
+}
+
 // ─── Wave 4a input/output types ───────────────────────────────────────────────
 
 export interface RenewSubscriptionInput {
@@ -243,7 +331,7 @@ export interface RenewSubscriptionResult {
   plan_code: 'STARTER' | 'PRO' | 'PREMIUM';
 }
 
-export type AttentionReason = 'EXPIRING' | 'SUSPENDED' | 'EXPIRED_AND_SUSPENDED';
+export type AttentionReason = 'EXPIRING' | 'SUSPENDED' | 'EXPIRED_AND_SUSPENDED' | 'OVERDUE';
 
 export interface AttentionTenantRow {
   tenant_id: string;

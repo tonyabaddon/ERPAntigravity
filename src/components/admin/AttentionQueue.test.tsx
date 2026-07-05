@@ -1,5 +1,6 @@
 // src/components/admin/AttentionQueue.test.tsx
 // Wave 4a: AttentionQueue now fetches via listAttentionTenants(45).
+// Wave 5 Task 10b: also merges OVERDUE tenants from v_tenant_payment_coverage.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AttentionQueue } from './AttentionQueue';
@@ -15,6 +16,25 @@ vi.mock('../../lib/adminApi', () => ({
 vi.mock('../../lib/adminToast', () => ({
   adminToast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
 }));
+
+// Mock supabaseClient: .from('v_tenant_payment_coverage') returns empty by default.
+// Individual tests can override supabaseFromMock for OVERDUE scenarios.
+const supabaseSelectMock = vi.fn();
+const supabaseEqMock = vi.fn();
+const supabaseFromMock = vi.fn();
+
+vi.mock('../../lib/supabaseClient', () => ({
+  supabase: {
+    from: (...args: unknown[]) => supabaseFromMock(...args),
+  },
+}));
+
+// Default: coverage view returns empty (no OVERDUE)
+function setupEmptyCoverage() {
+  supabaseEqMock.mockResolvedValue({ data: [], error: null });
+  supabaseSelectMock.mockReturnValue({ eq: supabaseEqMock });
+  supabaseFromMock.mockReturnValue({ select: supabaseSelectMock });
+}
 
 const expiringRow: AttentionTenantRow = {
   tenant_id: 't1',
@@ -55,6 +75,10 @@ class InternalError extends AdminApiError {
 
 beforeEach(() => {
   listAttentionTenants.mockReset();
+  supabaseFromMock.mockReset();
+  supabaseSelectMock.mockReset();
+  supabaseEqMock.mockReset();
+  setupEmptyCoverage();
 });
 
 describe('AttentionQueue', () => {
@@ -136,5 +160,95 @@ describe('AttentionQueue', () => {
     listAttentionTenants.mockResolvedValue([]);
     render(<AttentionQueue />);
     await waitFor(() => expect(listAttentionTenants).toHaveBeenCalledWith(45));
+  });
+
+  // ─── Task 10b: OVERDUE integration ──────────────────────────────────────────
+
+  it('renders OVERDUE row with "Pembayaran terlambat" chip', async () => {
+    listAttentionTenants.mockResolvedValue([]);
+    supabaseEqMock.mockResolvedValue({
+      data: [{
+        tenant_id: 't99',
+        tenant_slug: 'toko-overdue',
+        tenant_name: 'Toko Overdue',
+        plan_code: 'PRO',
+        coverage_status: 'OVERDUE',
+      }],
+      error: null,
+    });
+
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    expect(screen.getByText('Toko Overdue')).toBeInTheDocument();
+    expect(screen.getByTestId('attention-reason-toko-overdue')).toHaveTextContent('Pembayaran terlambat');
+  });
+
+  it('OVERDUE row links to ?tab=pembayaran', async () => {
+    listAttentionTenants.mockResolvedValue([]);
+    supabaseEqMock.mockResolvedValue({
+      data: [{
+        tenant_id: 't99',
+        tenant_slug: 'toko-overdue',
+        tenant_name: 'Toko Overdue',
+        plan_code: 'PRO',
+        coverage_status: 'OVERDUE',
+      }],
+      error: null,
+    });
+
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-link-toko-overdue')).toBeInTheDocument());
+    expect(screen.getByTestId('attention-link-toko-overdue')).toHaveAttribute(
+      'href', '/admin/tenants/toko-overdue?tab=pembayaran'
+    );
+  });
+
+  it('SUSPENDED + OVERDUE same tenant: SUSPENDED wins (higher priority)', async () => {
+    // suspendedRow already in attention list
+    listAttentionTenants.mockResolvedValue([suspendedRow]);
+    supabaseEqMock.mockResolvedValue({
+      data: [{
+        tenant_id: 't2',          // same id as suspendedRow
+        tenant_slug: 'toko-maju',
+        tenant_name: 'Toko Maju',
+        plan_code: 'STARTER',
+        coverage_status: 'OVERDUE',
+      }],
+      error: null,
+    });
+
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    // Should be deduplicated to 1 row
+    expect(screen.getAllByText('Toko Maju')).toHaveLength(1);
+    // Reason chip should be SUSPENDED (higher priority)
+    expect(screen.getByTestId('attention-reason-toko-maju')).toHaveTextContent('Ditangguhkan');
+  });
+
+  it('counts OVERDUE rows in total header', async () => {
+    listAttentionTenants.mockResolvedValue([expiringRow]);
+    supabaseEqMock.mockResolvedValue({
+      data: [{
+        tenant_id: 't99',
+        tenant_slug: 'toko-overdue',
+        tenant_name: 'Toko Overdue',
+        plan_code: 'PRO',
+        coverage_status: 'OVERDUE',
+      }],
+      error: null,
+    });
+
+    render(<AttentionQueue />);
+    await waitFor(() => expect(screen.getByText(/Butuh perhatian \(2\)/)).toBeInTheDocument());
+  });
+
+  it('silently continues when coverage view errors', async () => {
+    listAttentionTenants.mockResolvedValue([expiringRow]);
+    supabaseEqMock.mockResolvedValue({ data: null, error: { message: 'permission denied' } });
+
+    render(<AttentionQueue />);
+    // Should still show the expiring row; coverage error is silent
+    await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
+    expect(screen.getByText('Apotek Sehat')).toBeInTheDocument();
   });
 });

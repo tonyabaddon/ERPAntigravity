@@ -18,6 +18,8 @@ export interface PlanRow {
   feature_bundle: Record<string, boolean>;
   sort_order: number;
   tenant_count: number;
+  /** Annual price in IDR (from plans.price_annual). Null for legacy rows without price. */
+  price_annual: number | null;
 }
 
 export async function listPlansAdmin(): Promise<PlanRow[]> {
@@ -25,7 +27,7 @@ export async function listPlansAdmin(): Promise<PlanRow[]> {
 
   const { data, error } = await supabase
     .from('plans')
-    .select('code, name, description, target_segment, is_recommended, feature_bundle, sort_order')
+    .select('code, name, description, target_segment, is_recommended, feature_bundle, sort_order, price_annual')
     .order('sort_order', { ascending: true });
   if (error) throw new Error(`plans query failed: ${error.message}`);
 
@@ -48,5 +50,6 @@ export async function listPlansAdmin(): Promise<PlanRow[]> {
     feature_bundle: (p.feature_bundle as Record<string, boolean>) ?? {},
     sort_order: (p.sort_order as number) ?? 0,
     tenant_count: countMap[p.code] ?? 0,
+    price_annual: (p.price_annual as number | null) ?? null,
   }));
 }

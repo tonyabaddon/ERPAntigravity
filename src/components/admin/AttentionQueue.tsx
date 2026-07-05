@@ -2,16 +2,29 @@
 // Wave 4a: fetches directly via list_attention_tenants(45) instead of
 // receiving props from AdminHome. Server-side sort by urgency, includes
 // EXPIRED_AND_SUSPENDED reason.
+// Wave 5 Task 10b: also merges OVERDUE tenants from v_tenant_payment_coverage.
+// Priority order: SUSPENDED > EXPIRED_AND_SUSPENDED > OVERDUE > EXPIRING.
 import { useEffect, useState, useCallback } from 'react';
 import { listAttentionTenants } from '../../lib/adminApi';
+import { supabase } from '../../lib/supabaseClient';
 import type { AttentionTenantRow, AttentionReason } from '../../lib/adminTypes';
 import { AdminApiError } from '../../lib/adminTypes';
 import { adminToast } from '../../lib/adminToast';
 
+// ─── Priority map (lower = higher priority in sort) ───────────────────────────
+
+const REASON_PRIORITY: Record<AttentionReason, number> = {
+  SUSPENDED:              1,
+  EXPIRED_AND_SUSPENDED:  2,
+  OVERDUE:                3,
+  EXPIRING:               4,
+};
+
 const REASON_LABEL: Record<AttentionReason, string> = {
-  EXPIRING: 'Kedaluwarsa',
-  SUSPENDED: 'Ditangguhkan',
-  EXPIRED_AND_SUSPENDED: 'Kedaluwarsa & ditangguhkan',
+  EXPIRING:               'Kedaluwarsa',
+  SUSPENDED:              'Ditangguhkan',
+  EXPIRED_AND_SUSPENDED:  'Kedaluwarsa & ditangguhkan',
+  OVERDUE:                'Pembayaran terlambat',
 };
 
 function daysColor(days: number): string {
@@ -21,10 +34,19 @@ function daysColor(days: number): string {
 }
 
 function reasonChipClass(reason: AttentionReason): string {
-  if (reason === 'SUSPENDED' || reason === 'EXPIRED_AND_SUSPENDED') {
+  if (reason === 'SUSPENDED' || reason === 'EXPIRED_AND_SUSPENDED' || reason === 'OVERDUE') {
     return 'bg-vosi-danger/10 text-vosi-danger';
   }
   return 'bg-vosi-gold/15 text-vosi-navy';
+}
+
+/** Shape of a row in v_tenant_payment_coverage. */
+interface CoverageViewRow {
+  tenant_id: string;
+  tenant_slug: string;
+  tenant_name: string;
+  plan_code: string | null;
+  coverage_status: string;
 }
 
 interface Props {
@@ -47,8 +69,62 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
     setError(null);
     (async () => {
       try {
-        const data = await listAttentionTenants(withinDays);
-        if (!cancelled) setRows(data);
+        // Fetch subscription-attention rows + OVERDUE coverage rows in parallel.
+        const [attentionRows, coverageResult] = await Promise.all([
+          listAttentionTenants(withinDays),
+          supabase
+            ? supabase
+                .from('v_tenant_payment_coverage')
+                .select('tenant_id, tenant_slug, tenant_name, plan_code, coverage_status')
+                .eq('coverage_status', 'OVERDUE')
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        // Build merged set: start from subscription attention rows.
+        // Track by tenant_id; higher-priority reason wins on collision.
+        const rowMap = new Map<string, AttentionTenantRow>();
+        for (const r of attentionRows) {
+          rowMap.set(r.tenant_id, r);
+        }
+
+        // Inject OVERDUE rows (best-effort: silently skip on view error).
+        if (!coverageResult.error && coverageResult.data) {
+          for (const cv of coverageResult.data as CoverageViewRow[]) {
+            const existing = rowMap.get(cv.tenant_id);
+            if (!existing) {
+              // New row — add as OVERDUE.
+              rowMap.set(cv.tenant_id, {
+                tenant_id:      cv.tenant_id,
+                slug:           cv.tenant_slug,
+                name:           cv.tenant_name,
+                plan_code:      (cv.plan_code ?? 'STARTER') as AttentionTenantRow['plan_code'],
+                status:         'ACTIVE',
+                expires_at:     '',
+                days_until_expiry: 0,
+                attention_reason: 'OVERDUE',
+              });
+            } else {
+              // Already present — only upgrade to OVERDUE if it has LOWER priority
+              // than the current reason (i.e., keep SUSPENDED/EXPIRED_AND_SUSPENDED).
+              const currentPriority = REASON_PRIORITY[existing.attention_reason];
+              const overduePriority = REASON_PRIORITY['OVERDUE'];
+              if (overduePriority < currentPriority) {
+                rowMap.set(cv.tenant_id, { ...existing, attention_reason: 'OVERDUE' });
+              }
+              // Otherwise current reason (SUSPENDED etc.) already has higher priority — keep it.
+            }
+          }
+        }
+
+        // Sort merged rows by priority, then by name as tiebreaker.
+        const sorted = Array.from(rowMap.values()).sort((a, b) => {
+          const pa = REASON_PRIORITY[a.attention_reason] ?? 99;
+          const pb = REASON_PRIORITY[b.attention_reason] ?? 99;
+          if (pa !== pb) return pa - pb;
+          return a.name.localeCompare(b.name, 'id');
+        });
+
+        if (!cancelled) setRows(sorted);
       } catch (err) {
         if (!cancelled) {
           const msg = err instanceof AdminApiError
@@ -169,7 +245,11 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
             </div>
           </div>
           <a
-            href={`/admin/tenants/${t.slug}?tab=ringkasan`}
+            href={
+              t.attention_reason === 'OVERDUE'
+                ? `/admin/tenants/${t.slug}?tab=pembayaran`
+                : `/admin/tenants/${t.slug}?tab=ringkasan`
+            }
             className="text-[12px] px-3 py-1 rounded-lg border font-medium hover:bg-vosi-navy hover:text-white transition shrink-0"
             style={{ borderColor: '#0B2545', color: '#0B2545' }}
             data-testid={`attention-link-${t.slug}`}

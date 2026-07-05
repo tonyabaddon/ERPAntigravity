@@ -21,10 +21,13 @@ import {
 
 // ─── Mock supabaseClient ──────────────────────────────────────────────────────
 // Use vi.hoisted so the mock factory runs before module-level imports resolve.
-const { mockRpc } = vi.hoisted(() => ({ mockRpc: vi.fn() }));
+const { mockRpc, mockFrom } = vi.hoisted(() => ({ mockRpc: vi.fn(), mockFrom: vi.fn() }));
 
 vi.mock('./supabaseClient', () => ({
-  supabase: { rpc: (...args: unknown[]) => mockRpc(...args) },
+  supabase: {
+    rpc:  (...args: unknown[]) => mockRpc(...args),
+    from: (...args: unknown[]) => mockFrom(...args),
+  },
   isSupabaseConfigured: true,
 }));
 
@@ -73,7 +76,17 @@ const dashboardStatsFixture = {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('listTenantsAdmin', () => {
-  beforeEach(() => { mockRpc.mockReset(); });
+  // Helper: sets up coverage view mock to return empty (best-effort; skipped on error)
+  function setupEmptyCoverage() {
+    const selectMock = vi.fn().mockResolvedValue({ data: [], error: null });
+    mockFrom.mockReturnValue({ select: selectMock });
+  }
+
+  beforeEach(() => {
+    mockRpc.mockReset();
+    mockFrom.mockReset();
+    setupEmptyCoverage();
+  });
 
   it('happy path — returns typed rows', async () => {
     mockRpc.mockResolvedValue({ data: [garindoTenantRow], error: null });

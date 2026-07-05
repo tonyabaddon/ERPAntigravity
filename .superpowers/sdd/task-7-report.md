@@ -1,65 +1,45 @@
-# Task 7 Report — Suspend / Activate row actions
+# Task 7 Report — FE paymentsApi + paymentsTypes + adminApi extension
 
-**Status:** DONE
+**Status:** DONE_WITH_CONCERNS (minor — see below)
+**Date:** 2026-07-05
 
-## Deliverables
+## Files Changed
 
-1. **Created** `src/components/admin/SuspendTenantModal.tsx`
-   - Renders null when `open=false`; full dialog with `role="dialog"` when open
-   - Warning callout (`bg-vosi-danger/10 border-l-4 border-vosi-danger`) with Bahasa copy
-   - Tenant name in JetBrains Mono inline style
-   - `<textarea required minLength=5 maxLength=500>` for alasan
-   - Konfirmasi Suspend disabled when reason < 5 chars or submitting
-   - ESC + backdrop close (blocked while submitting)
-   - On success: `adminToast.success('Tenant di-suspend.')`, calls `onSuccess()` + `onClose()`
-   - On AdminApiError: toasts `err.userMessage`; on unknown error: generic toast
+| File | Action |
+|------|--------|
+| `src/lib/paymentsTypes.ts` | Created — all type unions + interfaces verbatim from brief |
+| `src/lib/paymentsApi.ts` | Created — 7 wrappers + storage helpers |
+| `src/lib/paymentsApi.test.ts` | Created — 43 vitest tests |
+| `src/lib/adminTypes.ts` | Modified — CoverageStatus union + 9 error classes |
+| `src/lib/adminApi.ts` | Modified — normalizeRpcError extended |
 
-2. **Created** `src/components/admin/SuspendTenantModal.test.tsx`
-   - 18 tests: renders null/open, warning callout, validation blocks, happy path,
-     typed error, generic error, busy state, ESC, backdrop, Batal, reset on reopen
-   - All 18 pass
+## Test Summary
 
-3. **Modified** `src/components/admin/TenantsTable.tsx`
-   - Added `useState` + `activateTenant` + `adminToast` + `SuspendTenantModal` imports
-   - New prop `onRowActionSuccess: () => void`
-   - Aksi cell: ACTIVE → Suspend button (VOSI tokens); SUSPENDED → Aktifkan button;
-     ARCHIVED → `<span data-testid="no-action-archived-{id}">—</span>`
-   - `handleActivate`: window.confirm → activateTenant → toast + callback
-   - `SuspendTenantModal` rendered outside table rows; closes on success and calls `onRowActionSuccess`
+- New tests: **43 passed** (paymentsApi.test.ts)
+- Existing tests: **42 passed** (adminApi.test.ts — unchanged)
+- Baseline failures before this task: 65. After: 64. Net: 0 new failures (actually -1 because new file adds passing tests to count).
+- TypeScript: `npx tsc --noEmit` — zero errors in new/modified files.
 
-4. **Modified** `src/components/admin/TenantsList.tsx`
-   - Added `refreshKey` state; added to `useEffect` deps
-   - Passes `onRowActionSuccess={() => setRefreshKey(k => k + 1)}` to `TenantsTable`
+## Implementation Notes
 
-5. **Created** `src/components/admin/TenantsTable.test.tsx`
-   - 12 tests: empty state, Suspend button on ACTIVE, Aktifkan on SUSPENDED,
-     em-dash on ARCHIVED, modal opens on Suspend click, Aktifkan confirm/cancel,
-     error paths (AdminApiError + generic), Impersonasi preserved alongside new buttons,
-     onRowActionSuccess called after suspend success
-   - All 12 pass
+### RPC parameter names verified from migrations
+- `record_payment(p_payload jsonb)` — payload is the entire input object
+- `update_payment(p_payment_id uuid, p_updates jsonb)`
+- `delete_payment(p_payment_id uuid, p_reason text)`
+- `list_payments(p_filters jsonb)`
+- `get_revenue_stats(p_filters jsonb)`
 
-## Terminology choice
+### Storage signed URL
+`generate_payment_proof_signed_url` confirmed absent from SQL (Task 5 concern documented). FE uses `supabase.storage.from('payment-proofs').createSignedUrl(key, 3600)` directly. StorageAccessDeniedError is thrown on any Storage error (including 403 status codes).
 
-Used **"Suspend"** (English loanword, matching Wave 1's existing "● Suspended" status badge and
-"Suspended" filter option). Consistent: button label, modal header, confirm button. Audit RPC
-action code stays `SUSPEND_TENANT` (not user-facing).
+### normalizeRpcError dispatch order
+P0404 branch now checks `PAYMENT_NOT_FOUND` FIRST before falling through to `TenantNotFoundError`. This is critical — a payment-not-found error was previously incorrectly surfacing as TenantNotFoundError.
 
-## Test summary
-
-| File | Tests | Status |
-|------|-------|--------|
-| SuspendTenantModal.test.tsx | 18 | ✅ all pass |
-| TenantsTable.test.tsx | 12 | ✅ all pass |
-| TenantsList.test.tsx | 9 | ✅ no regression |
-
-Pre-existing failures (unrelated): `AdminRoutes.test.tsx` (2 tests looking for "Task 8/9"
-placeholder text not yet built) + `AdminLayout.test.tsx` (sonner import error).
-
-## TypeScript
-
-`npx tsc --noEmit` — zero errors from new/modified files. Only pre-existing errors
-(missing `pg`, `yaml`, `sonner`, `jsonwebtoken` type declarations in scripts/tests).
+### Error class count
+Brief commit message said "8 error classes" but the spec body listed 9. Shipped 9 (the correct count from the message descriptions section).
 
 ## Concerns
 
-None.
+1. **PaymentRow missing pagination fields** — Brief specifies `PaymentRow` verbatim, which omits `tenant_slug`, `tenant_name`, `total_count` that the backend RPC actually returns. Task 8 (PembayaranTab) will need to extend this interface or cast when rendering pagination. Note this at Task 8 start.
+
+2. **Commit message error count** — Brief says "8 new typed error classes" in the commit template but actually requires 9. Corrected in commit body.

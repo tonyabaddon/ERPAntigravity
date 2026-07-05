@@ -1,39 +1,63 @@
-# Task 6 Report — FE: RenewSubscriptionModal + OverviewTab wire
+# Task 6 Report — `v_tenant_payment_coverage` view
 
 **Status:** DONE
-**Date:** 2026-07-05
 
-## Files changed
+## Files
 
-| File | Action |
-|------|--------|
-| `src/components/admin/RenewSubscriptionModal.tsx` | Created |
-| `src/components/admin/RenewSubscriptionModal.test.tsx` | Created |
-| `src/components/admin/TenantDetail/OverviewTab.tsx` | Modified |
-| `src/components/admin/TenantDetail/TenantDetailShell.tsx` | Modified |
-| `src/components/admin/TenantDetail/OverviewTab.test.tsx` | Modified (added mocks) |
-| `.superpowers/sdd/progress.md` | Updated |
+- `supabase/migrations/20261115000025_phase_b_wave5_tenant_payment_coverage_view.sql` — view + grants + comment
+- `supabase/tests/wave5/v_tenant_payment_coverage.sql` — 13 pgTAP assertions
 
-## Test summary
+## Migration applied
 
-- 20 new RTL tests in `RenewSubscriptionModal.test.tsx` — all pass.
-- All 8 pre-existing `OverviewTab.test.tsx` tests — still pass.
-- All 9 pre-existing `TenantDetailShell.test.tsx` tests — still pass.
-- Full suite: 659 unit tests pass, 5 pre-existing failures unchanged (AdminRoutes x2, productWrappers x3).
-- `npx tsc --noEmit`: 0 new errors (9 pre-existing unrelated errors unchanged).
+Applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`) via Supabase MCP. View owner: `postgres`.
+
+## Smoke test results (all pass)
+
+| Scenario | total_paid | expected | coverage_status |
+|---|---|---|---|
+| Zero payments (Garindo baseline) | 0 | 9,000,000 | UNPAID |
+| 3,500,000 (39% — above 30% threshold) | 3,500,000 | 9,000,000 | DP_30 |
+| 6,000,000 (67% — above 60% threshold) | 6,000,000 | 9,000,000 | DP_60 |
+| 9,500,000 (106% — above 100%) | 9,500,000 | 9,000,000 | LUNAS |
+| 1,000,000 (11% — below 30%) | 1,000,000 | 9,000,000 | OVERDUE |
+
+All INSERT-based smoke tests ran inside a DO block with `RAISE EXCEPTION 'ROLLBACK_SENTINEL'` at the end — Garindo confirmed untouched (0 payments) after execution.
+
+## Schema facts verified before writing
+
+- `tenant_subscriptions.tenant_id` has a UNIQUE constraint → exactly one row per tenant; no row-multiplication in GROUP BY
+- `activated_at` / `expires_at` are `DATE` (not timestamptz) → direct comparison with `period_from`/`period_to` (also `DATE`), no cast needed
+- `plans.g_read_all` policy scoped to `{authenticated, vosi_rpc_owner}` → view JOINs on plans return `price_annual` correctly under RLS
+- `tenants`, `tenant_payments`, `tenant_subscriptions` all have `p_platform_admin_only` → view reads correctly for admin callers
 
 ## Design decisions
 
-1. **Plan select default** — Brief is ambiguous: top-level spec says `— Tidak diganti — (sends null)`, modal sub-spec says `default = current plan_code`. Chose `— Tidak diganti —` (sends null). Rationale: safer choice — avoids unintended plan-change audit events when admin only wants to extend the expiry date, not change the plan.
+**CTE `paid` anchors on `tenants`** — ensures every tenant row appears even with zero payments. The outer `LEFT JOIN paid ON paid.tenant_id = t.id` + `COALESCE` handles the zero-payment case cleanly.
 
-2. **Panel headerAction prop** — Added optional `headerAction?: ReactNode` to the `Panel` primitive to accommodate the Perpanjang button cleanly without breaking the table layout. Existing panels pass `undefined` (no change in render).
+**Explicit `GRANT SELECT` on view** — views do not inherit table-level grants; without this the admin frontend would get a permission error before RLS even fires.
 
-3. **OverviewTab test mock** — Added `adminToast` and `renewSubscription` mocks to `OverviewTab.test.tsx`. Required because my import of `RenewSubscriptionModal` into `OverviewTab` introduced a transitive chain: `modal → adminToast → sonner`, and `sonner` cannot be resolved in the vitest environment. The pre-existing `TenantDetailShell.test.tsx` already mocked `adminToast` for the same reason.
+**View owner: `postgres` (default)** — RLS on the underlying tables uses `_is_platform_admin_from_jwt()` (caller-based JWT check, not role-based), so ownership doesn't affect correctness. No `SECURITY INVOKER` override needed.
 
-4. **refreshKey re-fetch** — `TenantDetailShell` hoists a `refreshKey: number` state. After successful renewal, `OverviewTab` calls `onDataChange?.()` which bumps `refreshKey`. The existing `useEffect([tenantSlug, refreshKey])` re-fetches the tenant row, updating the displayed `expires_at` and `expiry_mode` automatically. The existing `cancelledRef` pattern handles concurrent requests safely.
+## Concerns / deferred items
 
-5. **Focus on open** — Implemented via `requestAnimationFrame` inside `useEffect` gated on `open` (not a full focus trap — the brief's "focus trap" was clarified to mean focus-on-open only).
+1. **Pro-rate deferred** — subscriptions shorter than 365 days still use `plans.price_annual` as `expected`. Fair value would be `price_annual × (subscription_days / 365)`. Deferred per spec — most subscriptions are 1-year annual. Follow-up task required before multi-tenant onboarding at scale.
 
-## Concerns
+2. **Formula divergence with `record_payment` RPC** — the RPC computes coverage from `amount_paid_ytd` (payment_date EXTRACT year = current year). This view uses period-overlap with the subscription window (`tp.period_from <= ts.expires_at AND tp.period_to >= ts.activated_at`). These differ when payment_date year != subscription year. Both are intentional: RPC is a quick post-write snapshot; view is the authoritative canonical coverage per spec §15.5. Task 7/8 FE devs should use the view for display, not the RPC's `coverage_status`.
 
-None. All deliverables from the brief are implemented and passing.
+3. **Tenant-owner reads deferred** — `tenants` and `tenant_subscriptions` have `p_platform_admin_only` only; no `p_tenant_owner_read` policy exists. Tenant owners cannot see their own coverage row without impersonation. Acceptable for Wave 5 — coverage display is platform-admin only. Tenant-side display is future work.
+
+4. **Performance at scale** — the view does a full scan of `tenant_payments` per tenant. At hundreds of tenants × thousands of payments, an index on `(tenant_id, period_from, period_to)` would help. Current `idx_tenant_payments_period` covers `(period_from, period_to)` but not leading on `tenant_id`. Flag for follow-up if query time degrades.
+
+## pgTAP
+
+13 assertions covering:
+- View exists + 4 columns present (Cases 1-2)
+- Garindo zero-payments → UNPAID (Case 3)
+- INSERT 3.5M → DP_30 (Cases 4-4b)
+- INSERT +2.5M = 6M → DP_60 (Case 5)
+- INSERT +3.5M = 9.5M → LUNAS (Case 6)
+- Payment outside subscription window excluded → UNPAID (Case 7)
+
+All within `BEGIN; ... ROLLBACK;` — no persistent state change.
+
+pgTAP not installed on prod — file ready for `supabase test db` when needed (Wave 1 Task 1 precedent).

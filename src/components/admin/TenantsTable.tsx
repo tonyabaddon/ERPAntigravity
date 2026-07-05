@@ -8,6 +8,7 @@ import { adminToast } from '../../lib/adminToast';
 import type { AdminTenantRow, UsageStatus } from '../../lib/adminTypes';
 import { AdminApiError } from '../../lib/adminTypes';
 import { SuspendTenantModal } from './SuspendTenantModal';
+import { CoverageStatusBadge } from './CoverageStatusBadge';
 
 // ─── Usage status badge ───────────────────────────────────────────────────────
 
@@ -176,6 +177,7 @@ export function TenantsTable({
             <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>SKU</th>
             <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Transaksi 7h</th>
             <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aktifitas</th>
+            <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Pembayaran</th>
             <th className="text-left px-3 py-2 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}>Aksi</th>
           </tr>
         </thead>
@@ -253,6 +255,10 @@ export function TenantsTable({
               {/* Aktifitas badge */}
               <td className="px-3 py-2">
                 <UsageBadge status={t.usage_status} />
+              </td>
+              {/* Pembayaran coverage badge */}
+              <td className="px-3 py-2">
+                <CoverageStatusBadge status={t.coverage_status ?? null} />
               </td>
               {/* Aksi */}
               <td className="px-3 py-2">

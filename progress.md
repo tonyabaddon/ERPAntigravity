@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-06 — Phase B Wave 5 Task 11: Final-review fix pass (COMPLETE)
+
+Commit `c75d64a` — all 4 Opus reviewer findings fixed in one squashed commit.
+
+**C1:** Extended `v_tenant_payment_coverage` view with `tenant_slug`, `tenant_name`, `plan_code` columns (migration 000025b). Fixes silent 42703 failures in AdminRevenue, AttentionQueue OVERDUE, RevenueTopTenants.
+
+**C2:** `get_revenue_stats` monthly_trend changed from DESC to ASC (migration 000025c). Fixes RevenueKPIRow "Bulan ini" reading wrong element + reversed chart polyline.
+
+**I1:** `PembayaranTab.tsx` reads `coverage_status` from view via new `getTenantCoverage()` in `paymentsApi.ts` instead of computing client-side from hardcoded `PLAN_PRICES`. Tests updated (15/15 pass).
+
+**I2:** `record_payment` returns `'UNPAID'` (not `'UNKNOWN'`) when `plans.price_annual IS NULL` (migration 000025d). Aligns with CoverageStatus union type.
+
+**Verification:** `tsc --noEmit` = 9 pre-existing errors only. `vitest run src/` = 5 pre-existing failures only.
+
+**Wave 5 branch is now ready to merge.**
+
+---
+
+## 2026-07-05 — Phase B Wave 5 Task 6: v_tenant_payment_coverage view (COMPLETE)
+
+Migration `20261115000025` applied to Garindo prod.
+
+**New files:**
+- `supabase/migrations/20261115000025_phase_b_wave5_tenant_payment_coverage_view.sql` — view + grants + comment
+- `supabase/tests/wave5/v_tenant_payment_coverage.sql` — 13 pgTAP assertions
+
+**View shape:** `tenant_id, total_paid_covering_current_subscription, expected, coverage_status`
+**Coverage logic (spec §15.5):** UNPAID / DP_30 / DP_60 / LUNAS / OVERDUE based on period-overlap SUM vs `plans.price_annual`
+
+**All smoke tests pass:**
+- Garindo (0 payments) → UNPAID, expected=9,000,000
+- 3.5M → DP_30 | 6M → DP_60 | 9.5M → LUNAS (all rolled back, Garindo untouched)
+
+**Deferred:** pro-rate for subscriptions < 365 days; tenant-owner reads (admin-only for Wave 5).
+
+---
+
 ## 2026-07-05 — Multi-tenant Phase B Wave 1 — READY TO MERGE
 
 Wave 1 (read-only super-admin panel) complete on branch `worktree-phase-b-wave1`. 14 tasks + final whole-branch review + fix pass. All work applied to Garindo prod via Supabase MCP.

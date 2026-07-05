@@ -1,53 +1,69 @@
-# Task 10 Report — TenantDetailShell + tab stubs
+# Task 10 Report — CoverageStatusBadge + TenantsTable Pembayaran + AttentionQueue OVERDUE + Regression
 
-**Status:** DONE
+## Status: DONE
 
-## Routing pattern
+## Commits
 
-`AdminRoutes.tsx` already had `TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/` and passed the captured segment as `tenantId` prop to `TenantDetailShell`. No routing changes needed — the shell now accepts `{ tenantId: string }` prop (same interface as the stub).
+- `35905a5` — feat(phase-b-wave5): Task 10a — CoverageStatusBadge + TenantsTable column
+- `dfcbb8a` — feat(phase-b-wave5): Task 10b — AttentionQueue OVERDUE integration
+- `10c` — docs(progress): Wave 5 Task 10 complete
 
-## Param extraction shape
+## Test Summary
 
-```tsx
-// AdminRoutes.tsx (unchanged)
-const tenantDetailMatch = pathname.match(TENANT_DETAIL_RE);
-if (tenantDetailMatch) {
-  return <TenantDetailShell tenantId={tenantDetailMatch[1]} />;
-}
-```
+### TypeScript
+- `npx tsc --noEmit`: 9 errors — all pre-existing stubs (pg, yaml, sonner, jsonwebtoken). Zero new errors.
 
-No `useParams` hook needed — prop-based extraction, consistent with the no-react-router-dom project pattern.
+### Vitest
+- `npx vitest run src/`: 847 tests total, **842 pass**, 5 pre-existing failures (7 test assertions in 4 files — same set as before task).
+- New tests added: 13 (CoverageStatusBadge) + 6 (AttentionQueue OVERDUE scenarios) = 19 new passing tests.
 
-## Tab URL state
+### Build
+- `npm run build` not attempted locally — sonner not in worktree node_modules (same constraint as Wave 1/4a/9). Cloud Build handles fresh install.
 
-`useSyncExternalStore` subscribes to `popstate` + `urlroute:change` (reusing the same event name as `urlRoute.ts`). `setTab(key)` calls `window.history.pushState({}, '', '?' + params.toString())` using only the relative search string (avoids jsdom SecurityError with absolute URLs in tests).
+## What Was Built
 
-## Tenant lookup
+### 10a — CoverageStatusBadge + TenantsTable column
 
-Client-side find: `listTenantsAdmin({ page_size: 200 })` → `rows.find(r => r.tenant_id === tenantId)`.
+**`src/components/admin/CoverageStatusBadge.tsx`**
+Reusable pill badge using VOSI design tokens:
+- LUNAS → `bg-vosi-success/15 text-vosi-success` "Lunas"
+- DP_60 → `bg-vosi-gold/15 text-vosi-navy` "DP 60%"
+- DP_30 → `bg-vosi-gold/25 text-vosi-navy` "DP 30%"
+- OVERDUE → `bg-vosi-danger/15 text-vosi-danger` "Terlambat"
+- UNPAID → `bg-vosi-slate/15 text-vosi-slate` "Belum bayar"
+- null/undefined → em-dash span
 
-**Wave 2+ followup:** Add a `tenant_id` filter key to `list_tenants_admin` RPC to avoid fetching all rows. Currently safe — only 1 tenant in prod; `page_size: 200` is a cheap guard.
+Font: `text-[11px] uppercase tracking-wide font-bold px-2 py-0.5 rounded-full`.
 
-Note: `search` filter on `list_tenants_admin` does ILIKE on name/slug, NOT UUID match — confirmed by adminApi.ts + adminTypes.ts. Using `search: tenantId` would not reliably find a tenant by UUID.
+**`src/lib/adminApi.ts` — `listTenantsAdmin` extended**
+Now runs `supabase.rpc('list_tenants_admin', ...)` + `supabase.from('v_tenant_payment_coverage').select(...)` in `Promise.all`, merges `coverage_status` onto each row by `tenant_id`. Coverage fetch is best-effort — any error is silently skipped; rows return without `coverage_status`.
 
-## Loading / not-found discrimination
+**`src/components/admin/TenantsTable.tsx`**
+Added "Pembayaran" column header + cell between Aktifitas and Aksi. Cell renders `<CoverageStatusBadge status={t.coverage_status ?? null} />`.
 
-Three distinct states: `loading=true` (fetch in flight), `notFound=true` (fetch resolved, no match), `tenant` set (found). Loading and not-found are never conflated — tested in `'is distinct: loading state has no not-found marker'`.
+**`src/lib/adminTypes.ts`**
+- `AdminTenantRow`: added `coverage_status?: CoverageStatus | null`
+- `AttentionReason`: extended to include `'OVERDUE'`
 
-## tsc
+**Badge consolidation**
+- `PembayaranTab.tsx`: inline `CoverageBadge` function removed; uses `CoverageStatusBadge` (same `data-testid` preserved)
+- `RevenueTopTenants.tsx`: inline `COVERAGE_BADGE` const + render logic removed; uses `CoverageStatusBadge`
 
-`npx tsc --noEmit` → 0 errors.
+Note: The label for OVERDUE changed from "Lewat" (old inline) to "Terlambat" (canonical). `RevenueTopTenants.test.tsx` updated accordingly.
 
-## Vitest
+### 10b — AttentionQueue OVERDUE integration
 
-- New: `TenantDetailShell.test.tsx` — **9/9 PASS**
-- Suite-wide: 63 total, 61 pass, 2 pre-existing failures (AdminRoutes.test.tsx stubs "Beranda Admin.*Task 8" and "Daftar Tenant.*Task 9" from Task 7-era assertions — not introduced by this task, confirmed by stash check).
+**`src/components/admin/AttentionQueue.tsx`**
+- Runs `listAttentionTenants(withinDays)` + `supabase.from('v_tenant_payment_coverage').select(...).eq('coverage_status', 'OVERDUE')` in parallel.
+- Merges by `tenant_id`. Deduplication rule: if tenant already in attention list, keep whichever reason has higher priority (SUSPENDED=1 > EXPIRED_AND_SUSPENDED=2 > OVERDUE=3 > EXPIRING=4).
+- Sorted by priority ASC, then name as tiebreaker.
+- OVERDUE "Detail →" link routes to `?tab=pembayaran`. All other reasons keep `?tab=ringkasan`.
+- Coverage fetch is best-effort: on error, falls through with only subscription-attention rows.
 
-## Files created/modified
+## Concerns
 
-- `src/components/admin/TenantDetail/TenantDetailShell.tsx` — replaced stub with real shell
-- `src/components/admin/TenantDetail/OverviewTab.tsx` — stub (Task 11)
-- `src/components/admin/TenantDetail/UsersTab.tsx` — stub (Task 12)
-- `src/components/admin/TenantDetail/AuditTab.tsx` — stub (Task 13)
-- `src/components/admin/TenantDetail/TenantDetailShell.test.tsx` — 9 tests
-- `src/components/admin/AdminRoutes.test.tsx` — updated tenant detail test (tablist scope), added adminApi mock
+1. **Extra DB round-trip in `listTenantsAdmin`**: Each tenants page load now issues one additional SELECT on `v_tenant_payment_coverage`. For admin panel with max 50 tenants per page, this is acceptable. The coverage view is lightweight (single JOIN). If scale becomes a concern, the `list_tenants_admin` RPC could JOIN the view server-side in a future migration.
+
+2. **OVERDUE + SUSPENDED dedup** (escalation check): A tenant that is both SUSPENDED and OVERDUE will appear in AttentionQueue only once with SUSPENDED reason (higher priority). The OVERDUE coverage info is visible when clicking "Detail →" which goes to the Pembayaran tab anyway. This is intentional — the queue is actionable, not a full audit trail.
+
+3. **`npm run build` not verified locally** — pre-existing constraint, Cloud Build handles it.
