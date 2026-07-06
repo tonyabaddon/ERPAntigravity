@@ -1120,17 +1120,21 @@ export const adminUsersService = {
 
   async upsert(user: Omit<DbAdminUser, 'created_at'>): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('admin_users')
-      .upsert({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        whatsapp: user.whatsapp,
-        role: user.role,
-        permissions: user.permissions,
-        status: user.status,
-      });
+    // Routes through admin_upsert_user SECDEF RPC (migration
+    // 20261115000026): direct .upsert() is blocked by a broken t_insert_own
+    // WITH-CHECK predicate (`_guard_expiry_write() IS NULL` is always
+    // false because the guard function returns void). tenant_id is
+    // resolved server-side from the JWT; the user.tenant_id argument is
+    // ignored by the RPC.
+    const { error } = await supabase.rpc('admin_upsert_user', {
+      p_id: user.id,
+      p_name: user.name,
+      p_email: user.email ?? '',
+      p_whatsapp: user.whatsapp ?? '',
+      p_role: user.role,
+      p_permissions: user.permissions,
+      p_status: user.status,
+    });
     if (error) throw error;
   },
 

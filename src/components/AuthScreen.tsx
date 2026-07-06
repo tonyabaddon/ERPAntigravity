@@ -243,6 +243,9 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     // Auto-create Owner row in admin_users
     if (isSupabaseConfigured && data.user) {
       try {
+        // TODO: sign-up flow doesn't have tenant_id yet — tenant bootstrap
+        // happens after this call, so this upsert has been failing silently.
+        // Owner row should be created by tenant bootstrap RPC, not here.
         await adminUsersService.upsert({
           id: data.user.id,
           name: signUpName,
@@ -251,6 +254,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           role: 'Owner',
           permissions: ALL_PERMISSIONS,
           status: 'Aktif',
+          tenant_id: '',
         });
       } catch (err) {
         console.error('Failed to create owner row in admin_users:', err);

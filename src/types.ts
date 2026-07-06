@@ -125,6 +125,7 @@ export interface DbAdminUser {
   permissions: PermissionSet;
   status: string;
   created_at: string;
+  tenant_id: string;
 }
 
 export type ChatStatusType = 'BUTUH_ADMIN' | 'WIRING_CUSTOM' | 'DIKELOLA_AI';

@@ -1,5 +1,51 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-06 — Add-Admin 403 bugfix (SECDEF RPC route)
+
+Complaint: "Tambah Admin Baru" di UserManagementScreen error saat submit. Repro'd via MCP Chrome → `POST /rest/v1/admin_users` returns 403 (`42501 new row violates row-level security policy`).
+
+**Root cause chain** (uncovered via probes, not what surface symptom suggested):
+1. `admin_users.tenant_id` NOT NULL (Phase B) — direct-upsert payload missed it. Fix'd by adding `tenant_id` to `DbAdminUser` + injecting from `useTenant()` at call site.
+2. Still 403 after (1). Probe: RLS `t_insert_own` `WITH CHECK` predicate `_guard_expiry_write() IS NULL` evaluates to **false**. `_guard_expiry_write() RETURNS void`; in Postgres `void IS NULL = false`. Broken predicate blocks every direct-write from `authenticated` to ~100 `t_*`-policy tables (10 tables sampled, each 3 policies). Origin: migration `20261001000003_phase_a_not_null_and_rls.sql:47-53` stub was never replaced with a boolean guard.
+3. Since the wider RLS-predicate cleanup is out-of-scope for a bug fix, routed admin_users writes through a SECDEF RPC per `admin_upsert_product` pattern.
+
+**Migration `20261115000026_admin_upsert_user_rpc.sql`** — `admin_upsert_user(p_id, p_name, p_email, p_whatsapp, p_role, p_permissions, p_status)` SECDEF, `OWNER TO postgres` (BYPASSRLS — avoids the SECDEF/authenticated gap `project_phase_a_secdef_authenticated_gap`). Gates on caller Owner role + tenant membership. Resolves `tenant_id` from JWT via `_resolve_tenant_id()`. Cross-tenant PK guard rejects hijack of `id` belonging to another tenant. `ON CONFLICT (id) DO UPDATE` preserves permissions-toggle path; `tenant_id` intentionally not updated (no cross-tenant move).
+
+**Client change:** `adminUsersService.upsert()` now calls `rpc('admin_upsert_user', ...)` instead of `.from('admin_users').upsert()`. Local `tenant_id` still added to `DbAdminUser` type since column is NOT NULL and callers (fetchAll/fetchById/fetchByEmail) always read it.
+
+**Verification:** SQL smoke test (fake JWT via `set_config`) → success. Browser test via MCP Chrome → RPC returns 200, `send-admin-invite` edge function 200, row persists with correct `tenant_id=11111111-...`. Test row cleaned up.
+
+**Deferred follow-ups (not in this fix):**
+- `adminUsersService.remove()` DELETE hits the same broken RLS predicate — needs `admin_delete_user` RPC. Silently broken until user tries delete.
+- AuthScreen sign-up `upsert` call has always been broken (no `tenant_id` at sign-up time). Existing try/catch swallows it. Tenant bootstrap RPC should create the Owner row instead; touched only to satisfy TypeScript (`tenant_id: ''` with TODO comment).
+- Global RLS-predicate audit: rewrite `_guard_expiry_write() IS NULL` in ~100 `t_*` policies (or change `_guard_expiry_write` to `RETURNS boolean`). Big blast radius — many modules quietly depend on SECDEF-only writes; needs separate design.
+
+Uncommitted changes: `types.ts`, `lib/supabaseClient.ts`, `components/UserManagementScreen.tsx`, `components/AuthScreen.tsx`, new migration `20261115000026_admin_upsert_user_rpc.sql`. Also ran `npm install sonner` — `node_modules` was stale, unrelated to bug.
+
+---
+
+## 2026-07-06 — Wave 5 shipped + E2E smoke + polish + PAUSE
+
+**Prod state:** Cloud Run `garindo-jaya-panel-msme-erp-frontend-00243-waw` @ 100%.
+
+**Session shipped:**
+- Wave 5 (payment tracking + revenue dashboard) merged to main at `6804c98` — 60 files, 9120 insertions, 6 migrations (000020–000025 + 4 hotfix suffixes)
+- Opus final review caught 2 Critical + 2 Important, all fixed in `c75d64a` (extended view schema, monthly_trend ASC, PembayaranTab reads view, record_payment UNPAID fallback)
+- E2E MCP Chrome smoke found 2 UX gaps (RecordPaymentModal defaultAmount missing in 2 code paths) → hotfixed `7b1e15b` + `07982be`
+- Full write flow verified: record 9M CASH → coverage LUNAS → delete with reason → coverage UNPAID → audit trail complete
+- Wave 5 polish `6dc482a`: update_plan_admin whitelist extended with price_annual (migration 000025e) + PlansManagement edit form "Harga tahunan (IDR)" field + RecordPaymentModal dynamic placeholder
+
+**Delivery order per memory `phase-b-wave-reorder`:** Wave 1 ✓ · 4a ✓ · 5 ✓ · **BLOCK on real wizard UI capture** → then Wave 2/3a/3b/3c/4b/4c.
+
+**PAUSED** — waiting on founder review + wizard UI capture decision. All state durable: git log carries commit trail, `.superpowers/sdd/progress.md` carries per-task ledger for Wave 5.
+
+**Uncommitted marketing WIP still on working copy:**
+- `docs/marketing/vosi-pitch-deck-knowledge-2026-07-05.md` (new)
+- `docs/VOSI-Design-System.md` (edited)
+- `.claude/scheduled_tasks.lock` (long-standing deletion, unrelated)
+
+---
+
 ## 2026-07-06 — Phase B Wave 5 Task 11: Final-review fix pass (COMPLETE)
 
 Commit `c75d64a` — all 4 Opus reviewer findings fixed in one squashed commit.
@@ -13,8 +59,6 @@ Commit `c75d64a` — all 4 Opus reviewer findings fixed in one squashed commit.
 **I2:** `record_payment` returns `'UNPAID'` (not `'UNKNOWN'`) when `plans.price_annual IS NULL` (migration 000025d). Aligns with CoverageStatus union type.
 
 **Verification:** `tsc --noEmit` = 9 pre-existing errors only. `vitest run src/` = 5 pre-existing failures only.
-
-**Wave 5 branch is now ready to merge.**
 
 ---
 
@@ -37,9 +81,35 @@ Migration `20261115000025` applied to Garindo prod.
 
 ---
 
-## 2026-07-05 — Multi-tenant Phase B Wave 1 — READY TO MERGE
+## 2026-07-05 — Multi-tenant Phase B Wave 4a — MERGED TO MAIN
 
-Wave 1 (read-only super-admin panel) complete on branch `worktree-phase-b-wave1`. 14 tasks + final whole-branch review + fix pass. All work applied to Garindo prod via Supabase MCP.
+Squash-merged to `main` at commit `54dc434`. Worktree branch `worktree-phase-b-wave4a` closed. Full task history in `.superpowers/sdd/task-*-report.md` + committed to git via squash. 11-commit branch, 8 execution tasks + final Opus review + fix pass. Migrations applied to Garindo prod via MCP during execution.
+
+**What ships in Wave 4a:**
+- 4 new SECDEF write RPCs (renew_subscription, suspend_tenant, activate_tenant, update_plan_admin) + 1 new read RPC (list_attention_tenants) + 1 helper (_assert_super_admin_from_jwt)
+- FE: RenewSubscriptionModal + Perpanjang CTA, SuspendTenantModal + row actions in TenantsList, PlansManagement inline edit with super-admin gate, AttentionQueue live data
+
+**Prod DB state after Wave 4a:**
+- 6 new migrations applied (000010, 000010b hotfix, 000010c hotfix, 000011, 000012, 000013)
+- platform_admin_audit.action CHECK extended: +RENEW_SUBSCRIPTION, +SUSPEND_TENANT, +ACTIVATE_TENANT, +UPDATE_PLAN
+- platform_admin_audit.tenant_id relaxed to nullable (platform-scoped audit rows)
+- All test cases (57 pgTAP assertions + 35 DO-block smokes) pass; Garindo untouched (RAISE rollback pattern)
+
+**Two architectural findings surfaced + resolved:**
+1. `tenant_subscriptions.grace_expires_at` is a GENERATED column (`expires_at + 7 days`) — cannot be manually assigned. Original brief said +14d; corrected to +7d. Migration 000010c CREATE OR REPLACE with fixed body.
+2. SECDEF RPCs calling `auth.uid()` must be owned by `postgres` — Wave 1 Task 12 pattern reconfirmed. Applies to renew/suspend/activate/update_plan. Only list_attention_tenants (pure read) stays vosi_rpc_owner.
+
+**Test status:** tsc clean on Wave 4a code (9 pre-existing errors unchanged); vitest 686/5 in src/ (same 5 pre-existing failures as Wave 1); local build fails on missing sonner in worktree node_modules — Cloud Build handles fresh install.
+
+**Delivery order per memory `phase-b-wave-reorder`:** Wave 1 (shipped) → Wave 4a (this) → Wave 5 (payment tracking + revenue dashboard) → BLOCK on real wizard UI capture.
+
+**Next:** deploy frontend via Cloud Run per `docs/cloud-run-promote-runbook.md`; push `main` to origin (currently 2 commits ahead).
+
+---
+
+## 2026-07-05 — Multi-tenant Phase B Wave 1 — MERGED TO MAIN
+
+Squash-merged to `main` at commit `efc7f40`. Worktree branch `worktree-phase-b-wave1` closed. All work applied to Garindo prod via Supabase MCP earlier. 14 tasks + final Opus whole-branch review + fix pass.
 
 **19 commits on the branch** (from base `3330575` to head `3196c06`):
 - `e4bfb19`, `1786837` — Task 1 (plans + company_settings extensions)
@@ -68,7 +138,36 @@ Wave 1 (read-only super-admin panel) complete on branch `worktree-phase-b-wave1`
 
 **Deferred to Wave 2 prep tasks:** VOSI token sweep (~163 inline hex → `bg-vosi-*` classes), server-side `tenant_id`/`slug` filter on `list_tenants_admin`, audit Phase A tenant-scoped RPCs for latent read-visibility bugs on the same principle Task 2 surfaced.
 
-**Next:** merge worktree-phase-b-wave1 → main via `superpowers:finishing-a-development-branch` (or founder review + merge as normal).
+**Next:** deploy frontend via Cloud Run (matching Phase A production apply pattern); push `main` to origin (currently 3 commits ahead). Then move to Wave 4a (Renewal + attention queue + plans edit) per `phase-b-wave-reorder` memory.
+
+---
+
+## 2026-07-05 — Pitch deck knowledge doc (marketing artifact)
+
+Marketing deliverable — bukan implementation task. Ditulis via `superpowers:brainstorming` untuk hand-off ke Claude PPT builder / Gamma / Beautiful.ai.
+
+**File:** `docs/marketing/vosi-pitch-deck-knowledge-2026-07-05.md` — self-contained, ~1400 baris.
+
+**Isi:**
+- **§0** cara pakai (paste ke Claude PPT chat + prompt template)
+- **§A** brand & audience context (tokens dari VOSI Design System v1.0 + persona Pak Anton ringkas + tone formal Anda/Pak/Bu untuk B2B owner 45yo)
+- **§B** per-slide spec 14 slide — layout template (T1-T6), visual concept detail, body text verbatim ID, speaker notes 60-100 kata, design notes per slide
+- **§C** appendix (pricing v3 recap, objection FAQ, feature matrix per tier, competitor pricing anchor, list JANGAN-dibicarakan)
+- **§D** instructions verbatim untuk paste ke Claude PPT builder
+- **§E** version + maintenance
+
+**Decisions locked selama brainstorm:**
+- Audience: distributor B2B Glodok (bukan umbrella MSME)
+- Format: dual-purpose live pitch 12-15 min + kirim-untuk-dibaca-sendiri via WA/email
+- Pricing exposure: full 3-tier × (6mo + 12mo), anchor struck-through + PROMO 50% LAUNCH badge
+- Trust anchor: founder story anonymous (NO Garindo disclosure per new feedback memory) + founding tenant scarcity progress bar
+- Struktur: Approach 1 pain-first AIDA (§11 marketing pack), 14 slide
+
+**New memory:** `feedback_no_garindo_disclosure.md` — jangan sebut Garindo di material marketing manapun; conflict-of-interest concern (founder owner Garindo yang beroperasi di sentra distributor sama, kompetitor tidak akan mau pakai software kompetitor).
+
+**Design mismatch flagged:** VOSI Design System v1.0 tagline "Toko Rapi, Untung Jelas." + tone "juragan/toko kamu" (broader UMKM) vs Marketing pack §5 tone "Anda/Pak/Bu" formal untuk campaign B2B distributor. Deck pakai tone marketing pack — Design System tagline treat sebagai umbrella brand element di footer subtle.
+
+**Next:** user review knowledge doc → adjust kalau perlu → paste ke fresh Claude chat / Gamma → render pptx. Iterate per-slide setelah pertama jadi.
 
 ---
 

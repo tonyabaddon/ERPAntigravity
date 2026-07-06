@@ -15,6 +15,7 @@ import {
 import { AdminUser, PermissionSet, DbAdminUser, ALL_PERMISSIONS } from '../types';
 import { adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
+import { useTenant } from '../contexts/TenantContext';
 
 interface UserManagementScreenProps {
   showToast: (msg: string) => void;
@@ -33,7 +34,7 @@ function dbToAdminUser(db: DbAdminUser): AdminUser {
   };
 }
 
-function adminUserToDb(u: AdminUser): Omit<DbAdminUser, 'created_at'> {
+function adminUserToDb(u: AdminUser, tenantId: string): Omit<DbAdminUser, 'created_at'> {
   return {
     id: u.id,
     name: u.name,
@@ -42,6 +43,7 @@ function adminUserToDb(u: AdminUser): Omit<DbAdminUser, 'created_at'> {
     role: u.role,
     permissions: u.permissions,
     status: u.status,
+    tenant_id: tenantId,
   };
 }
 
@@ -69,6 +71,7 @@ function defaultPermissions(role: string): PermissionSet {
 }
 
 export default function UserManagementScreen({ showToast, currentUser }: UserManagementScreenProps) {
+  const tenant = useTenant();
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -119,9 +122,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     });
     setAdmins(updated);
     if (isSupabaseConfigured) {
+      if (!tenant) {
+        setAdmins(prev);
+        showToast('⚠️ Konteks tenant belum siap. Muat ulang halaman.');
+        return;
+      }
       const changed = updated.find(a => a.id === adminId)!;
       try {
-        await adminUsersService.upsert(adminUserToDb(changed));
+        await adminUsersService.upsert(adminUserToDb(changed, tenant.tenant_id));
         showToast('🛡️ Keamanan Diperbarui! Hak akses berhasil disesuaikan.');
       } catch (err) {
         console.error('upsert permission failed:', err);
@@ -161,8 +169,13 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     setAdmins(prev => [...prev, newAdmin]);
 
     if (isSupabaseConfigured) {
+      if (!tenant) {
+        setAdmins(prev => prev.filter(a => a.id !== newAdmin.id));
+        showToast('⚠️ Konteks tenant belum siap. Muat ulang halaman.');
+        return;
+      }
       try {
-        await adminUsersService.upsert(adminUserToDb(newAdmin));
+        await adminUsersService.upsert(adminUserToDb(newAdmin, tenant.tenant_id));
       } catch (err) {
         console.error('upsert new admin failed:', err);
         // Revert optimistic add on failure
