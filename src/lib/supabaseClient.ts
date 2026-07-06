@@ -1140,10 +1140,12 @@ export const adminUsersService = {
 
   async remove(id: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase
-      .from('admin_users')
-      .delete()
-      .eq('id', id);
+    // Routes through admin_delete_user SECDEF RPC (migration
+    // 20261115000027): direct .delete() is blocked by the same broken
+    // t_delete_own USING predicate (`_guard_expiry_write() IS NULL`).
+    // The RPC enforces tenant + Owner-role gate and refuses self-delete
+    // or last-Owner deletion.
+    const { error } = await supabase.rpc('admin_delete_user', { p_id: id });
     if (error) throw error;
   },
 

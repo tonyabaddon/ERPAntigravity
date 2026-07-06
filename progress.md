@@ -16,11 +16,26 @@ Complaint: "Tambah Admin Baru" di UserManagementScreen error saat submit. Repro'
 **Verification:** SQL smoke test (fake JWT via `set_config`) → success. Browser test via MCP Chrome → RPC returns 200, `send-admin-invite` edge function 200, row persists with correct `tenant_id=11111111-...`. Test row cleaned up.
 
 **Deferred follow-ups (not in this fix):**
-- `adminUsersService.remove()` DELETE hits the same broken RLS predicate — needs `admin_delete_user` RPC. Silently broken until user tries delete.
+- ~~`adminUsersService.remove()` DELETE~~ → **shipped as follow-up** below (migration 000027).
 - AuthScreen sign-up `upsert` call has always been broken (no `tenant_id` at sign-up time). Existing try/catch swallows it. Tenant bootstrap RPC should create the Owner row instead; touched only to satisfy TypeScript (`tenant_id: ''` with TODO comment).
 - Global RLS-predicate audit: rewrite `_guard_expiry_write() IS NULL` in ~100 `t_*` policies (or change `_guard_expiry_write` to `RETURNS boolean`). Big blast radius — many modules quietly depend on SECDEF-only writes; needs separate design.
 
 Uncommitted changes: `types.ts`, `lib/supabaseClient.ts`, `components/UserManagementScreen.tsx`, `components/AuthScreen.tsx`, new migration `20261115000026_admin_upsert_user_rpc.sql`. Also ran `npm install sonner` — `node_modules` was stale, unrelated to bug.
+
+### Follow-up: admin_delete_user SECDEF RPC (migration 000027)
+
+`adminUsersService.remove()` hits the same broken `_guard_expiry_write() IS NULL` predicate on `t_delete_own`. Silently broken until user clicks Trash. Routed through `admin_delete_user(p_id uuid)` SECDEF RPC, `OWNER postgres`.
+
+Guards:
+- Caller must be authenticated + Owner + tenant member (`_resolve_tenant_id()` from JWT).
+- Target must live in caller's tenant (cross-tenant delete rejected).
+- Self-delete rejected (prevents UserManagement lock-out).
+- Last-Owner delete rejected (prevents tenant orphan).
+- Idempotent: unknown id returns NULL, not error.
+
+SQL smoke: self-block ✓, happy-path ✓, idempotent-NULL ✓. Cross-tenant + last-Owner branches present but not exercised (single test tenant with 5 Owners). Browser E2E: seed staff row → click Trash → `admin_delete_user` returned 200, row removed from DB, UI count 26→25, no error console.
+
+Client change: `adminUsersService.remove` swapped from `.from().delete()` to `rpc('admin_delete_user', {p_id})`.
 
 ---
 
