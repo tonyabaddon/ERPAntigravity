@@ -349,6 +349,9 @@ export interface UpdatePlanInput {
   description?: string;
   target_segment?: string;
   price_reference?: number | null;
+  /** Annual price in IDR — Wave 5 addition. RPC whitelist extended via
+   * migration 20261115000025e to accept this field. */
+  price_annual?: number | null;
   feature_bundle?: Record<string, unknown>;
   is_recommended?: boolean;
   is_active?: boolean;

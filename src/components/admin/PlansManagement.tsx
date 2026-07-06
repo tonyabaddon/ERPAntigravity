@@ -173,6 +173,7 @@ interface EditForm {
   name: string;
   description: string;
   target_segment: string;
+  price_annual: string;
   is_recommended: boolean;
   feature_bundle_json: string;
 }
@@ -182,6 +183,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
     name: plan.name,
     description: plan.description ?? '',
     target_segment: plan.target_segment ?? '',
+    price_annual: plan.price_annual != null ? String(plan.price_annual) : '',
     is_recommended: plan.is_recommended,
     feature_bundle_json: JSON.stringify(plan.feature_bundle, null, 2),
   });
@@ -210,6 +212,11 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
       if (form.name !== plan.name) updates.name = form.name;
       if (form.description !== (plan.description ?? '')) updates.description = form.description;
       if (form.target_segment !== (plan.target_segment ?? '')) updates.target_segment = form.target_segment;
+      // price_annual — string form, convert to number or null on save
+      const priceCurrent = plan.price_annual != null ? String(plan.price_annual) : '';
+      if (form.price_annual !== priceCurrent) {
+        updates.price_annual = form.price_annual === '' ? null : Number(form.price_annual);
+      }
       if (form.is_recommended !== plan.is_recommended) updates.is_recommended = form.is_recommended;
       let featureBundle: Record<string, boolean> | null = null;
       try {
@@ -281,6 +288,22 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
           data-testid={`edit-target-${plan.code}`}
         />
+      </label>
+
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+        Harga tahunan (IDR)
+        <input
+          type="number"
+          value={form.price_annual}
+          onChange={(e) => setForm((f) => ({ ...f, price_annual: e.target.value }))}
+          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none font-mono"
+          placeholder="Contoh: 9000000"
+          min={0}
+          data-testid={`edit-price-annual-${plan.code}`}
+        />
+        <span className="text-[11px] font-normal text-vosi-muted">
+          Nominal referensi tahunan; dipakai untuk perhitungan MRR/ARR + status coverage pembayaran.
+        </span>
       </label>
 
       <label className="flex items-center gap-2 text-[13px] font-semibold text-vosi-navy">

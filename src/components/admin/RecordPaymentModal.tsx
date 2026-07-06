@@ -334,7 +334,9 @@ export function RecordPaymentModal({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               disabled={submitting}
-              placeholder="Contoh: 3600000"
+              placeholder={defaultAmount != null
+                ? `Contoh: ${defaultAmount}`
+                : 'Contoh: 3600000'}
               className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
               aria-label="Nominal diterima"
             />
