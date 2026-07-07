@@ -11239,3 +11239,41 @@ WHERE n.nspname='public' AND c.relkind='v'
 
 **Tenant #2 (Toko Jaya Makmur) smoke certification:** cleared for pitch demo. Kas & Bank displays correct data. Other modules (Dashboard, Produk, Pelanggan, Supplier, Kasir landing) already verified in prior pass.
 
+---
+
+## 2026-07-07 (later) — Tenant-aware URL routing + slug guard shipped
+
+**Problem:** URL `/t/garindo/...` was hardcoded regardless of tenant. Demo-owner (Toko Jaya Makmur) saw their data at `/t/garindo/` — confusing for pitch + cross-tenant bookmarks.
+
+**Fix (commits `7e99b3d` + `2ee53f0`):**
+- Added `sessionTenantSlug` state in `App.tsx`, fetched via `tenantContextService.bootstrap()` (SECDEF RPC) on session restore.
+- Redirect useEffect now waits for slug then routes to `/t/<session-slug>/<screen>` instead of hardcoded `garindo`.
+- Slug guard: if URL slug ≠ session slug → replace URL to correct slug. Prevents cross-tenant URL confusion after tenant switch.
+- Reset `sessionTenantSlug` on sign-out.
+- Added test for multi-word slug parsing (`/t/toko-jaya-makmur/kasBank`).
+
+**Design decision — SECDEF RPC over direct SELECT:**
+- Initial attempt used direct `.from('tenant_users').select('tenants!inner(slug)')` — same pattern AuthScreen uses.
+- Failed for non-admin users with `42P17: infinite recursion detected in policy for relation "tenant_users"` — the P1 (task #56) `a_self_or_tenant_admin` self-referential EXISTS bug.
+- Pivoted to `bootstrap_tenant_context()` RPC which is SECURITY DEFINER + already returns `slug` — bypasses tenant_users RLS entirely.
+- Zero admin regression (SECDEF is role-agnostic). AuthScreen still uses direct SELECT because admins (only users signing in via UI at this stage) work through `p_platform_admin_readall` policy — no recursion for them. Once P1 (#56) lands, AuthScreen can also swap to the RPC.
+
+**Deployed:** Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00251-vos` (tag `c2ee53f0`) at 100% traffic. Old revision `00243-waw` retired.
+
+**Chrome MCP verification (post-promote):**
+- Fresh session → landing on `/` as demo-owner → auto-redirected to `/t/toko-jaya-makmur/dashboard?screen=dashboard` ✅
+- All nav links now use `/t/toko-jaya-makmur/dashboard?screen=<page>` ✅
+- URL desync test: navigated to `/t/garindo/kasBank` as demo-owner → auto-redirected to `/t/toko-jaya-makmur/dashboard` ✅ (slug guard fires)
+
+**Minor followup (ticketed):** URL desync guard preserves `pathRoute.tenantSlug` but not `pathRoute.screen` — target screen from path falls back to `dashboard`. 1-line fix (`pathRoute.screen ?? route.screen ?? 'dashboard'`). Non-blocking for pitch.
+
+**Garindo regression:** not re-tested via Chrome MCP (tonywei has no password, only OTP). Verified earlier in session via SQL JWT simulation — Garindo non-admin sees only tenant_id=11111... rows in view. Direct-SELECT tenant_users path (AuthScreen) uses `p_platform_admin_readall` for tonywei since `is_platform_admin=true` — no recursion for admin user.
+
+**Demo persona login flow finalized:**
+- Email: `tonywei.office+demo@gmail.com` (Gmail plus-addressing → forwards to `tonywei.office@gmail.com` inbox)
+- Method: OTP (Kirim OTP → paste code from Gmail → MASUK)
+- Landing URL: `/t/toko-jaya-makmur/dashboard`
+
+**Cloudflare Email Routing setup:** deferred (Cloudflare UI friction, plus-addressing works today). Pitch will show `tonywei.office+demo@gmail.com` in header — investor-facing tradeoff accepted.
+
+
