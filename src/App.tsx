@@ -63,7 +63,7 @@ import {
   INITIAL_CONFIG
 } from './initialData';
 
-import { isSupabaseConfigured, supabase, supabaseService, adminUsersService } from './lib/supabaseClient';
+import { isSupabaseConfigured, supabase, supabaseService, adminUsersService, tenantContextService } from './lib/supabaseClient';
 import { SalesChannelsProvider } from './contexts/SalesChannelsContext';
 
 // Local type guard for the channel URL param. Defensive — if URL is hand-edited
@@ -200,16 +200,12 @@ export default function App() {
           storeName: user.user_metadata?.store_name ?? '',
         });
         // Fetch tenant slug for URL routing (drives the redirect + slug guard
-        // below). Same pattern AuthScreen uses on successful sign-in.
+        // below). Uses bootstrap_tenant_context RPC (SECURITY DEFINER) rather
+        // than a direct SELECT on tenant_users — the latter hits the P1
+        // tenant_users RLS self-recursion bug (42P17) for non-admin users.
         try {
-          const { data: tenants } = await supabase
-            .from('tenant_users')
-            .select('tenants!inner(slug)')
-            .eq('user_id', user.id)
-            .limit(1);
-          if (tenants && tenants.length > 0) {
-            setSessionTenantSlug((tenants[0] as unknown as { tenants: { slug: string } }).tenants.slug);
-          }
+          const ctx = await tenantContextService.bootstrap();
+          if (ctx?.slug) setSessionTenantSlug(ctx.slug);
         } catch (err) {
           console.error('Failed to fetch tenant slug on session restore:', err);
         }
