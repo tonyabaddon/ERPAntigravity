@@ -122,6 +122,13 @@ describe('urlRoute — /t/<slug>/* parsing', () => {
     expect(r.isPlatformAdminArea).toBe(false);
   });
 
+  it('parses multi-word tenant slug from /t/toko-jaya-makmur/kasBank', () => {
+    const r = parseRoute('/t/toko-jaya-makmur/kasBank', new URLSearchParams());
+    expect(r.tenantSlug).toBe('toko-jaya-makmur');
+    expect(r.screen).toBe('kasBank');
+    expect(r.isPlatformAdminArea).toBe(false);
+  });
+
   it('marks /admin/tenants as platform admin area', () => {
     const r = parseRoute('/admin/tenants', new URLSearchParams());
     expect(r.tenantSlug).toBeNull();

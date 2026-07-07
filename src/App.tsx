@@ -112,6 +112,10 @@ export default function App() {
   // Optional SKU to pre-fill cart (set when navigating from Cari by Foto).
   const penjualanInitialPrefillSku: string | undefined = route.params.prefillSku || undefined;
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
+  // Tenant slug for the logged-in user's tenant, fetched once on session
+  // restore. Drives the legacy-path redirect below and the URL/session slug
+  // guard. Null while loading or when Supabase not configured (dev).
+  const [sessionTenantSlug, setSessionTenantSlug] = useState<string | null>(null);
   // Holds the kasir_transactions.id of the just-saved wizard transaction so
   // InvoicePreviewScreen can render its details after navigate('invoicePreview').
   // Kept in App state (not URL) because it's a transient hand-off — a refresh
@@ -195,6 +199,20 @@ export default function App() {
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
+        // Fetch tenant slug for URL routing (drives the redirect + slug guard
+        // below). Same pattern AuthScreen uses on successful sign-in.
+        try {
+          const { data: tenants } = await supabase
+            .from('tenant_users')
+            .select('tenants!inner(slug)')
+            .eq('user_id', user.id)
+            .limit(1);
+          if (tenants && tenants.length > 0) {
+            setSessionTenantSlug((tenants[0] as unknown as { tenants: { slug: string } }).tenants.slug);
+          }
+        } catch (err) {
+          console.error('Failed to fetch tenant slug on session restore:', err);
+        }
         // Restore deep-link if stashed by AuthScreen; otherwise preserve the
         // current URL when it carries a valid screen (page reload while
         // logged in). Only normalize to dashboard when the URL is empty,
@@ -231,6 +249,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         setCurrentUser(null);
+        setSessionTenantSlug(null); // clear slug so next login re-fetches
         // Don't push 'auth' into URL — let the !currentUser gate render AuthScreen.
         // The next login will replaceRoute() to dashboard or stashed deep-link.
       }
@@ -434,24 +453,30 @@ export default function App() {
     return () => window.removeEventListener('vosi:tenant-error', handler);
   }, [triggerToast, handleTenantError]);
 
-  // Multi-tenant: legacy redirect — if user hits a non-tenant path while logged in,
-  // redirect to /t/garindo/<screen>. Only fires in production (Supabase configured);
-  // dev mode keeps the existing query-string shell to avoid full-page reload loop.
-  // Uses useEffect so it runs after session restore, not during initial mount.
+  // Multi-tenant: URL routing enforcement — two jobs:
+  //   1. Legacy redirect: user on `/dashboard` or `?screen=...` (no tenant
+  //      prefix) → send to `/t/<session-slug>/<screen>`.
+  //   2. Slug guard: URL prefix `/t/wrong-slug/` doesn't match the session's
+  //      tenant → correct the URL to `/t/<session-slug>/<screen>`. Prevents
+  //      stale bookmarks + cross-tenant URL confusion when the same user
+  //      re-logs into a different tenant. RLS still enforces data isolation;
+  //      this guard is UX-only.
+  // Only fires in production (Supabase configured); dev mode keeps the
+  // legacy query-string shell to avoid a full-page reload loop.
   useEffect(() => {
     if (!currentUser) return;
-    if (pathRoute.tenantSlug) return;           // already on /t/… path — no redirect needed
-    if (pathRoute.isPlatformAdminArea) return;  // /admin — no redirect needed
+    if (!sessionTenantSlug) return;             // wait until slug fetched
+    if (pathRoute.isPlatformAdminArea) return;  // /admin — separate router
     if (pathRoute.screen === 'select-tenant') return;
     if (pathRoute.screen === 'login') return;
-    if (!isSupabaseConfigured) return;          // dev mode — keep legacy shell
-    // Legacy path: /dashboard or ?screen=... → redirect to /t/garindo/dashboard
+    if (!isSupabaseConfigured) return;          // dev mode
+    if (pathRoute.tenantSlug === sessionTenantSlug) return; // already correct
     const targetScreen = (route.screen !== 'dashboard' && ACTIVE_PAGES.has(route.screen as ActivePage))
       ? route.screen
       : 'dashboard';
-    window.location.replace(`/t/garindo/${targetScreen}`);
+    window.location.replace(`/t/${sessionTenantSlug}/${targetScreen}`);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [currentUser, sessionTenantSlug]);
 
   // Total alert indicators
   const lowStockCount = stockList.filter(item => item.stock < config.lowStockAlert).length;

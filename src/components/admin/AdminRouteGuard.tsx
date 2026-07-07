@@ -43,8 +43,8 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
   }
 
   if (state === 'deny') {
-    // Redirect to /dashboard — the Garindo legacy-redirect in App.tsx
-    // will further bounce this to /t/garindo/dashboard for tenant users.
+    // Redirect to /dashboard — the legacy-redirect in App.tsx will further
+    // bounce this to /t/<session-slug>/dashboard for tenant users.
     window.location.assign('/dashboard');
     return null;
   }
