@@ -76,21 +76,20 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     } catch {
       // Non-fatal: fall through to tenant lookup
     }
+    // Use bootstrap_tenant_context (SECDEF) instead of direct SELECT on
+    // tenant_users — the latter hits 42P17 recursion in the
+    // a_self_or_tenant_admin RLS policy for non-admin users. The RPC returns
+    // the JWT-scoped tenant's slug directly. Multi-tenant users (rare/future)
+    // still fall through to /select-tenant, which needs its own fix once
+    // multi-tenant support lands.
     try {
-      const { data } = await supabase
-        .from('tenant_users')
-        .select('tenants!inner(slug)')
-        .eq('status', 'ACTIVE');
-      const tenants = data ?? [];
-      if (tenants.length === 1) {
-        const slug = (tenants[0] as any).tenants.slug as string;
-        window.location.href = `/t/${slug}/dashboard`;
+      const ctx = await tenantContextService.bootstrap();
+      if (ctx?.slug) {
+        window.location.href = `/t/${ctx.slug}/dashboard`;
       } else {
-        // 0 or >1 tenants → selection screen (shows "no tenant" message when 0)
         window.location.href = '/select-tenant';
       }
     } catch {
-      // Fallback: navigate to select-tenant on error
       window.location.href = '/select-tenant';
     }
   };

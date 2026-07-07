@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { navigate } from '../lib/urlRoute';
+import { supabase, tenantContextService } from '../lib/supabaseClient';
 import { Building2 } from 'lucide-react';
 
 interface TenantRow { tenant_id: string; slug: string; name: string; }
@@ -10,15 +9,19 @@ export const SelectTenantScreen: React.FC = () => {
 
   useEffect(() => {
     if (!supabase) return;
-    // Reads tenant_users JOIN tenants; RLS gives current user their own memberships
-    supabase.from('tenant_users')
-      .select('tenant_id, tenants!inner(slug, name)')
-      .eq('status', 'ACTIVE')
-      .then(({ data }) => {
-        setTenants((data ?? []).map((r: any) => ({
-          tenant_id: r.tenant_id, slug: r.tenants.slug, name: r.tenants.name
-        })));
-      });
+    // Use bootstrap_tenant_context (SECDEF) — direct SELECT on tenant_users
+    // hits 42P17 RLS recursion for non-admin users. For MVP (every user is
+    // single-tenant) this returns exactly the JWT-scoped tenant.
+    // Multi-tenant expansion needs a dedicated RPC to list all memberships.
+    tenantContextService.bootstrap()
+      .then((ctx) => {
+        if (ctx?.slug && ctx?.tenant_id && ctx?.name) {
+          setTenants([{ tenant_id: ctx.tenant_id, slug: ctx.slug, name: ctx.name }]);
+        } else {
+          setTenants([]);
+        }
+      })
+      .catch(() => setTenants([]));
   }, []);
 
   useEffect(() => {
