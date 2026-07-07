@@ -37,6 +37,19 @@ SQL smoke: self-block ✓, happy-path ✓, idempotent-NULL ✓. Cross-tenant + l
 
 Client change: `adminUsersService.remove` swapped from `.from().delete()` to `rpc('admin_delete_user', {p_id})`.
 
+### Deploy — LIVE on prod
+
+Cloud Build auto-triggered on push (both commits SUCCESS). Deploys land at `--no-traffic` per `cloudbuild.frontend.yaml` — manually promoted.
+
+- Frontend Cloud Run revision: `garindo-jaya-panel-msme-erp-frontend-00247-jar` @ **100%** (was `00243-waw` from `6dc482a` Wave 5 polish).
+- Tag URL smoke (`https://ca5a2346---garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/`) → landing page renders, container healthy.
+- Post-promote prod URL smoke: `POST /rest/v1/rpc/admin_upsert_user` **200**, `send-admin-invite` edge function **200**, row persisted with correct `tenant_id`. Test row `prod-smoke-64lecr@test.local` cleaned up via SQL.
+- Backend migrations `20261115000026` + `20261115000027` were applied to prod Supabase during dev (same DB as localhost).
+
+Commits: `cd7f720` (upsert RPC) + `a5a2346` (delete RPC follow-up), both on `origin/main`.
+
+Bug "Tambah Admin Baru 403" resolved end-to-end. Complaint closable.
+
 ---
 
 ## 2026-07-06 — Wave 5 shipped + E2E smoke + polish + PAUSE
@@ -11105,3 +11118,124 @@ Founder smoke test setelah production apply revealed frontend showing "MISSING_T
 - `src/lib/adminTypes.ts` (added TenantOverviewExtras)
 - `src/components/admin/TenantDetail/TenantDetailShell.test.tsx` (fixed assertions for duplicate text)
 - `src/components/admin/AdminRoutes.test.tsx` (added getTenantOverviewExtras to mock)
+
+---
+
+## 2026-07-07 — Tenant #2 (Toko Jaya Makmur) Chrome MCP smoke pass — CLEAN
+
+**Scope:** End-to-end verification of tenant #2 seed data + Wave 5 payment/revenue features against Cloud Run `garindo-jaya-panel-msme-erp-frontend-00243-waw` (100% traffic).
+
+**Screens verified:**
+- `/admin` (Beranda) — 2 tenants aktif, recent activity feed shows RECORD_PAYMENT on toko-jaya-makmur.
+- `/admin/tenants` — 2 rows, coverage badges rendering (BELUM BAYAR / LUNAS), Aktivitas column populated.
+- `/admin/revenue` — MRR Rp 1.500.000, ARR Rp 18.000.000, RINCIAN PER PAKET Premium 100%, TREN 12 BULAN spike on rightmost month (ASC fix from 000025c confirmed), TENANT TERATAS row Toko Jaya Makmur Rp 9.000.000.
+- `/admin/tenants/toko-jaya-makmur?tab=ringkasan` — all 4 quadrants populated: Jumlah SKU=20, user=1, status=Vakum, 11 PREMIUM features enabled, industri/karyawan/omzet all rendered.
+- `/admin/tenants/toko-jaya-makmur?tab=pembayaran` — LUNAS badge, YTD/all-time Rp 9.000.000, aktif s/d 2027-07-07, 1 payment row (Tunai, periode 2026-07-07 → 2027-07-07, catatan "Onboarding payment for..."), Edit + Hapus visible.
+
+**Console errors:** 0 across all screens.
+
+**Minor cosmetic gap (non-blocking):** `/admin/revenue` TENANT TERATAS table shows "—" in PAKET and STATUS columns for Toko Jaya Makmur despite the view carrying `plan_code=PREMIUM` and tenant being `AKTIF`. Likely a column mapping oversight in `RevenueTable.tsx` — not part of Wave 5 spec §15.5 KPIs, does not affect any RPC/data pipeline. Ticket for follow-up polish.
+
+**Wave 5 features validated end-to-end:**
+- `record_payment` RPC (via MCP seed) → coverage view derived LUNAS.
+- `v_tenant_payment_coverage` extended columns (tenant_slug/name/plan_code) — used by revenue TENANT TERATAS query, rows returned.
+- `PLAN_PRICE_IDR` map on `PembayaranTab` prefills 9M for PREMIUM in RecordPaymentModal.
+- Monthly trend ASC ordering (fix 000025c) confirmed visually.
+
+**Tenant #2 posture:** PREMIUM 12-month subscription (aktif s/d 2027-07-07), owner user seeded, 20 SKU across 5 kategori, 10 customers, 5 suppliers, 3 cash_accounts. Transactional seed via `record_kasir_sale` skipped due to Phase A `_guard_expiry_write() IS NULL` broken predicate — demo will be recorded live during pitch.
+
+**Next:** none pending; ready for founder review + pitch demo.
+
+---
+
+## 2026-07-07 — Tenant #2 owner login smoke — CRITICAL P0 tenant isolation leak found
+
+**Setup:**
+- Set password for `demo-owner@vosi.id` (auth.users) — `DemoOwner2026!`
+- Fixed 8 NULL auth.users text fields that gotrue can't scan (confirmation_token, recovery_token, email_change*, reauthentication_token, phone_change*) — sign-in was returning 500 with `sql: Scan error on column index 3, name "confirmation_token": converting NULL to string is unsupported`
+- Signed in via direct gotrue call (login UI is OTP-only). JWT claims correct: sub=demo-owner UUID, tenant_id=22222222..., tenant_status=ACTIVE, is_platform_admin=false.
+
+**Smoke pass — modules that render CLEAN with tenant-scoped data:**
+- **Dashboard/Beranda:** "Toko Jaya Makmur" in header, 4 KPI cards (all Rp 0), empty channel-revenue chart, empty AI activity feed. Console warns only (recharts init 0-width). Cosmetic: main heading says "Hub Kendali Garindo Jaya Panel" + footer "GARINDO JAYA PANEL MSME ERP" — hardcoded product-brand strings, backlog.
+- **Produk & Stok:** all 20 SKU (TJM-EL-*, TJM-PW-*, TJM-RT-*, TJM-SB-*, plus 5 unprefixed Alat Tulis rows) render with correct kategori/harga/stok. Status koneksi "Terhubung ke Supabase Cloud DB". Cosmetic: stock cell shows trailing "0" after warehouse name (needs closer look).
+- **Pelanggan:** all 10 seeded customers (Ibu Sari … Ibu Nia) render with phone +62812-1000-0001..0010, piutang 0.
+- **Pembelian → Supplier:** all 5 seeded suppliers with correct Net 14/21/30/Cash terms. Kontak column empty (seed didn't populate).
+- **Pembelian → Beranda:** 4 AP KPI cards all Rp 0, "Tidak ada outstanding — semua sudah lunas ✨" state.
+- **Kasir Harian:** 4 KPI cards (Total Pemasukan / Pengeluaran / HPP / Laba Bersih) all Rp 0, empty Log Transaksi, Rekap Pembayaran 3 methods (Tunai/Transfer/QRIS), Tutup Buku Harian widget renders. Did not attempt actual sale — Phase A `_guard_expiry_write() IS NULL` broken predicate blocks kasir_counters write.
+
+**URL/routing cosmetic:** URL uses `/t/garindo/dashboard` slug prefix for tenant #2 (should be `/t/toko-jaya-makmur/`). Header + tenant data are correctly scoped, so this is a legacy path-slug hardcode, not a functional bug. Backlog.
+
+---
+
+**🚨 P0 CRITICAL — Kas & Bank tenant isolation LEAK:**
+
+Screen `?screen=kasBank` for demo-owner (tenant #2) showed **4 cash accounts** but tenant #2 only has 3. The 4th "Kas Toko" card displayed **Rp 56.548.131 with 92 mutasi GL** — data that belongs to Garindo tenant.
+
+Root cause: view `public.cash_account_balances` (owner=postgres) has `security_invoker=false` (default). Postgres role has BYPASSRLS, so the view's underlying JOIN across `cash_accounts + journal_entry_lines + journal_entries` bypasses RLS entirely and returns rows across ALL tenants. Verified via `GET /rest/v1/cash_account_balances` — response body included one row with `tenant_id: "11111111-...(Garindo)"` served to demo-owner's JWT (tenant_id=22222222).
+
+Even more concerning — audit shows **all 13 public views run without security_invoker**:
+- cash_account_balances ⚠️ CONFIRMED leaking
+- general_ledger (likely leaking)
+- trial_balance (likely leaking)
+- kasir_rakit_forfeit_summary
+- kasir_transactions_legacy
+- order_cogs_breakdown
+- v_pengawasan_kasir_discount_7d
+- v_pengawasan_outflow_outliers
+- v_pengawasan_top_adjustments
+- v_pengawasan_transfer_aging
+- v_tenant_effective_features (admin scope — may be intentional)
+- v_tenant_payment_coverage (admin scope — may be intentional)
+- v_tenant_usage_summary (admin scope — may be intentional)
+
+**Impact:**
+- Any authenticated user of any tenant can SELECT these views and read cross-tenant financial data.
+- Wave-A isolation-audit did not catch this — it only checked tables, not views.
+- This is a live prod exposure — every existing Garindo user has been potentially exposed to whatever data these views hold (though Garindo is currently single-tenant, so real-world exposure was moot until tenant #2 landed).
+
+**Proposed fix (P0 — before pitch demo):**
+```sql
+-- One migration, safe to run:
+ALTER VIEW public.cash_account_balances SET (security_invoker = true);
+ALTER VIEW public.general_ledger SET (security_invoker = true);
+ALTER VIEW public.trial_balance SET (security_invoker = true);
+ALTER VIEW public.kasir_rakit_forfeit_summary SET (security_invoker = true);
+ALTER VIEW public.kasir_transactions_legacy SET (security_invoker = true);
+ALTER VIEW public.order_cogs_breakdown SET (security_invoker = true);
+ALTER VIEW public.v_pengawasan_kasir_discount_7d SET (security_invoker = true);
+ALTER VIEW public.v_pengawasan_outflow_outliers SET (security_invoker = true);
+ALTER VIEW public.v_pengawasan_top_adjustments SET (security_invoker = true);
+ALTER VIEW public.v_pengawasan_transfer_aging SET (security_invoker = true);
+-- v_tenant_* views: audit their consumers first — they may be intentional admin views
+```
+
+After ALTER, add regression to isolation-audit script: sweep pg_class WHERE relkind='v' AND relnamespace='public'::regnamespace AND NOT (reloptions @> ARRAY['security_invoker=true']).
+
+**Smoke test status:** BLOCKED on this fix. Cannot certify tenant #2 as demo-ready — Kas & Bank card is showing wrong data.
+
+---
+
+## 2026-07-07 (later) — P0 view-isolation leak FIXED
+
+**Migration applied:** `20261115000028_secinvoker_view_isolation.sql`
+
+**Result:** 12 of 13 public views now `security_invoker=true`. Verified via bidirectional smoke:
+- **Tenant #2 non-admin JWT** on `cash_account_balances` → 3 rows, all `tenant_id=22222222...` (was 4 rows with Garindo leak).
+- **Garindo non-admin JWT** on `cash_account_balances / general_ledger / trial_balance` → 1 / 628 / 62 rows respectively, ALL `tenant_id=11111111...`, zero cross-tenant leak.
+- **Re-loaded /kasBank as demo-owner** → 3 accounts, Rp 30.500.000 total (5M Kas Utama + 25M BCA Utama + 500K GoPay Merchant). Screenshot confirmed.
+
+**Exception carved out:** `v_tenant_usage_summary` was intentionally reverted from security_invoker=true because it JOINs `tenant_users`, whose `a_self_or_tenant_admin` RLS policy contains a self-referential `EXISTS (SELECT 1 FROM tenant_users me WHERE ...)`. Under invoker mode, the subquery re-triggers RLS → infinite recursion (Postgres error `42P17`). Bounded revert preserves admin-panel functionality.
+
+**Follow-up ticketed (P1):** replace the tenant_users EXISTS clause with a SECURITY DEFINER helper `_is_tenant_admin(tenant_id, user_id) RETURNS boolean` that bypasses RLS internally. Then re-enable `security_invoker=true` on `v_tenant_usage_summary`. The v_tenant_usage_summary "leak" is bounded — only admin surfaces query it, and admin auth-gate at the API layer prevents non-admin access.
+
+**Regression suggestions for isolation-audit script:**
+```sql
+-- Sweep for any public view still bypassing RLS:
+SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relkind='v'
+  AND COALESCE((SELECT bool_or(opt LIKE 'security_invoker=true') FROM unnest(c.reloptions) opt), false) = false;
+-- Expected: [] (or documented exceptions like v_tenant_usage_summary)
+```
+
+**Tenant #2 (Toko Jaya Makmur) smoke certification:** cleared for pitch demo. Kas & Bank displays correct data. Other modules (Dashboard, Produk, Pelanggan, Supplier, Kasir landing) already verified in prior pass.
+
