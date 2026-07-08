@@ -334,7 +334,7 @@ export default function AccountFormModal({
                   type="text"
                   value={form.account_holder}
                   onChange={(e) => updateField('account_holder', e.target.value)}
-                  placeholder="PT Garindo Jaya Panel"
+                  placeholder="Nama sesuai buku rekening"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                 />
                 <p className="text-[11px] text-gray-500 mt-1">Untuk tampil di Invoice PDF customer (kalau Show in Invoice di-aktifkan)</p>

@@ -50,7 +50,7 @@ export function generatePoPdf(args: GeneratePoPdfArgs): Blob {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(TEXT_DARK);
-  const companyName = storeSettings?.nama_toko ?? 'Garindo Jaya Panel';
+  const companyName = storeSettings?.nama_toko ?? 'Toko Anda';
   doc.text(companyName, margin + 48, margin + 16);
 
   doc.setFont('helvetica', 'bold');

@@ -486,6 +486,7 @@ export default function App() {
             showToast={triggerToast}
             onNavigate={(page) => navigate(page)}
             lowStockCount={lowStockCount}
+            storeName={currentUser?.storeName}
           />
         );
       case 'sales-inbox':
@@ -857,7 +858,7 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
                     <h1 className="font-extrabold text-lg text-primary tracking-tight">
-                      {currentUser?.storeName || 'Garindo Jaya Panel'}
+                      {currentUser?.storeName || 'Toko Anda'}
                     </h1>
                   </div>
                 </div>
@@ -880,7 +881,7 @@ export default function App() {
                     <span className="absolute top-1 right-1 w-2 h-2 bg-[#2d8a4e] rounded-full" />
                   </button>
                   <button
-                    onClick={() => triggerToast(`Toko: ${currentUser?.storeName || 'Garindo Jaya Panel'} — User: ${currentUser?.name} — Keamanan: Premium GPN`, 'info')}
+                    onClick={() => triggerToast(`Toko: ${currentUser?.storeName || 'Toko Anda'} — User: ${currentUser?.name} — Keamanan: Premium GPN`, 'info')}
                     className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
                     title="Informasi Sistem"
                   >
@@ -893,7 +894,7 @@ export default function App() {
               </div>
               <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
                 <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
-                  © 2026 Garindo Jaya Panel MSME ERP • Powered by DeepMind &amp; Gemini AI
+                  © 2026 VOSI MSME ERP • Powered by DeepMind &amp; Gemini AI
                 </p>
                 <div className="flex gap-4">
                   <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
@@ -982,7 +983,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
               <h1 className="font-extrabold text-lg text-primary tracking-tight">
-                {currentUser?.storeName || 'Garindo Jaya Panel'}
+                {currentUser?.storeName || 'Toko Anda'}
               </h1>
             </div>
             
@@ -1017,7 +1018,7 @@ export default function App() {
             </button>
             
             <button 
-              onClick={() => triggerToast(`📌 Toko: ${currentUser?.storeName || 'Garindo Jaya Panel'} • User: ${currentUser?.name} • Keamanan: Premium GPN`, 'info')}
+              onClick={() => triggerToast(`📌 Toko: ${currentUser?.storeName || 'Toko Anda'} • User: ${currentUser?.name} • Keamanan: Premium GPN`, 'info')}
               className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
               title="Informasi Sistem"
             >
@@ -1034,7 +1035,7 @@ export default function App() {
         {/* Global Footer credits */}
         <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
           <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
-            © 2026 Garindo Jaya Panel MSME ERP • Powered by DeepMind &amp; Gemini AI
+            © 2026 VOSI MSME ERP • Powered by DeepMind &amp; Gemini AI
           </p>
           <div className="flex gap-4">
             <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("📜 Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>

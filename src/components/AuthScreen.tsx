@@ -353,7 +353,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
               <div className="space-y-2">
                 <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Selamat Datang Kembali 👋</h2>
                 <p className="text-[#43474e] text-sm leading-relaxed">
-                  Silakan masuk untuk mengelola sistem ERP dan WhatsApp Bot Garindo Jaya Panel Anda.
+                  Silakan masuk untuk mengelola sistem ERP dan WhatsApp Bot toko Anda.
                 </p>
               </div>
 
@@ -459,7 +459,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                         required
                         value={signUpStore}
                         onChange={(e) => setSignUpStore(e.target.value)}
-                        placeholder="Garindo Jaya Panel Cabang Baru"
+                        placeholder="Nama toko / cabang Anda"
                         className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                       />
                     </div>

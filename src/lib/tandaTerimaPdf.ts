@@ -6,7 +6,7 @@ import type { DbTukarFaktur } from '../types';
 import { tukarFakturService } from './tukarFakturService';
 
 // TODO: Phase 3 multi-tenant — read from store_settings.
-const COMPANY_NAME = 'Garindo Jaya Panel';
+const COMPANY_NAME = 'Toko Anda';
 
 function fmtDate(s?: string | null) {
   return s

@@ -84,7 +84,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   {/* Invoice header */}
                   <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
                     <div>
-                      <div className="text-xl font-black text-[#012749] tracking-tight">{store?.nama_toko ?? 'Garindo Jaya Panel'}</div>
+                      <div className="text-xl font-black text-[#012749] tracking-tight">{store?.nama_toko ?? 'Toko Anda'}</div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1 flex items-center gap-1.5 flex-wrap">
                         {store?.alamat_lengkap || 'Alamat belum diisi'}
                         <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
@@ -185,8 +185,8 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
 
                   {/* Footer */}
                   <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3">
-                    Terima kasih atas kepercayaan Anda kepada {store?.nama_toko ?? 'Garindo Jaya Panel'} 🙏<br />
-                    Dokumen ini diterbitkan secara otomatis oleh sistem ERP {store?.nama_toko ?? 'Garindo Jaya Panel'}.
+                    Terima kasih atas kepercayaan Anda kepada {store?.nama_toko ?? 'Toko Anda'} 🙏<br />
+                    Dokumen ini diterbitkan secara otomatis oleh sistem ERP {store?.nama_toko ?? 'Toko Anda'}.
                   </div>
                 </>
               )}

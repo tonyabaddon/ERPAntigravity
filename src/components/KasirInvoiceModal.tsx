@@ -82,7 +82,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
                     <div>
                       <div className="text-xl font-black text-[#012749] tracking-tight">
-                        {store?.nama_toko ?? 'Garindo Jaya Panel'}
+                        {store?.nama_toko ?? 'Toko Anda'}
                       </div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1">
                         {store?.alamat_lengkap ?? 'Alamat belum diisi'}
@@ -188,7 +188,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
 
                   {/* Footer */}
                   <div className="text-center text-[10px] text-gray-400 font-sans border-t border-gray-100 pt-3 mt-2">
-                    Terima kasih atas kepercayaan Anda · {store?.nama_toko ?? 'Garindo Jaya Panel'}
+                    Terima kasih atas kepercayaan Anda · {store?.nama_toko ?? 'Toko Anda'}
                   </div>
                 </>
               )}

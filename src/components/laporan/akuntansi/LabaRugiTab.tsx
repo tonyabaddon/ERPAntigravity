@@ -28,7 +28,7 @@ const ID_MONTHS = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-const COMPANY_NAME = 'PT Garindo Jaya Panel';
+const COMPANY_NAME = 'Perusahaan Anda';
 
 // ─── Period helpers ───────────────────────────────────────────────────────────
 

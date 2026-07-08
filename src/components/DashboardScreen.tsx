@@ -42,9 +42,10 @@ interface DashboardScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onNavigate: (page: import('../types').ActivePage) => void;
   lowStockCount: number;
+  storeName?: string;
 }
 
-export default function DashboardScreen({ showToast, onNavigate, lowStockCount }: DashboardScreenProps) {
+export default function DashboardScreen({ showToast, onNavigate, lowStockCount, storeName }: DashboardScreenProps) {
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -111,7 +112,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount }
             ⚡ Sistem Integrasi Aktif
           </span>
           <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-2">
-            Selamat Datang di Hub Kendali Garindo Jaya Panel
+            Selamat Datang di Hub Kendali {storeName || 'Toko Anda'}
           </h2>
           <p className="text-[#43474e] text-sm mt-1">
             Pantau ringkasan performa penjualan, otomasi chatbot WhatsApp, dan status inventaris Anda secara real-time.

@@ -201,7 +201,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
           <Zap className="w-5 h-5 fill-white text-[#2d8a4e]" />
         </div>
         <div className={`transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">Garindo Jaya Panel</h1>
+          <h1 className="text-lg font-extrabold text-white tracking-tight leading-none">VOSI</h1>
           <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-1">MSME ERP Suite</p>
         </div>
       </div>

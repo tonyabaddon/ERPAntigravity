@@ -213,7 +213,7 @@ function InvoiceBody({
             : (store?.nama_toko ?? 'GARINDO').split(' ').slice(0,3).join(' ')}
         </div>
         <div>
-          <div className="font-extrabold font-sans text-[15px]">{store?.nama_toko ?? 'GARINDO JAYA PANEL'}</div>
+          <div className="font-extrabold font-sans text-[15px]">{store?.nama_toko ?? 'TOKO ANDA'}</div>
           <div className="text-[11px] mt-0.5">{store?.alamat_lengkap ?? '—'}</div>
           <div className="text-[11px]">{store?.telp_wa && `Telp ${store.telp_wa}`} {store?.email && `· ${store.email}`}</div>
           {store?.npwp && <div className="text-[11px]">NPWP {store.npwp}</div>}
@@ -391,7 +391,7 @@ function InvoiceBody({
             )}
           </div>
           <div className="font-bold text-[10px]">Hormat Kami</div>
-          <div className="text-[9px] text-slate-500 italic mt-0.5">{store?.nama_toko ?? 'Garindo Jaya Panel'}</div>
+          <div className="text-[9px] text-slate-500 italic mt-0.5">{store?.nama_toko ?? 'Toko Anda'}</div>
         </div>
       </div>
     </div>
