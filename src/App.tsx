@@ -58,10 +58,7 @@ import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
 import KasBankScreen from './components/kasbank/KasBankScreen';
 import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
 
-import {
-  INITIAL_STOCK,
-  INITIAL_CONFIG
-} from './initialData';
+import { INITIAL_CONFIG } from './initialData';
 
 import { isSupabaseConfigured, supabase, supabaseService, adminUsersService, tenantContextService } from './lib/supabaseClient';
 import { SalesChannelsProvider } from './contexts/SalesChannelsContext';
@@ -143,11 +140,13 @@ export default function App() {
   const [tenantErrorScreen, setTenantErrorScreen] = useState<TenantErrorScreen>(null);
   const [tenantErrorCode, setTenantErrorCode] = useState<string>('');
 
-  // General state databases loaded from templates or LocalStorage
-  const [stockList, setStockList] = useState<StockItem[]>(() => {
-    const saved = localStorage.getItem('sinar_elektrik_stocks');
-    return saved ? JSON.parse(saved) : INITIAL_STOCK;
-  });
+  // stockList is DB-scoped per tenant via RLS. Initialized empty; populated
+  // by fetchStocks() on mount + refetch on tenant switch. Do NOT persist to
+  // localStorage — that leaked another tenant's SKUs across sessions (a
+  // browser opened first as Garindo would show Garindo's KOMODITAS STOK TIPIS
+  // count on tenant #3's dashboard). config stays local-only (user prefs, not
+  // tenant data).
+  const [stockList, setStockList] = useState<StockItem[]>([]);
 
   const [config, setConfig] = useState<NotificationConfig>(() => {
     const saved = localStorage.getItem('sinar_elektrik_config');
@@ -253,6 +252,7 @@ export default function App() {
         setCurrentUser(null);
         setSessionTenantSlug(null); // clear slug so next login re-fetches
         setSessionTenantName(null);
+        setStockList([]); // don't bleed one tenant's stock into the next
         // Don't push 'auth' into URL — let the !currentUser gate render AuthScreen.
         // The next login will replaceRoute() to dashboard or stashed deep-link.
       }
@@ -260,59 +260,50 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Sync state modifications to localStorage
-  useEffect(() => {
-    localStorage.setItem('sinar_elektrik_stocks', JSON.stringify(stockList));
-  }, [stockList]);
-
+  // Persist config (user preference — low-stock threshold, etc). stockList
+  // deliberately NOT persisted; see the state initializer comment above.
   useEffect(() => {
     localStorage.setItem('sinar_elektrik_config', JSON.stringify(config));
   }, [config]);
 
-  // Load stocks on mount if Supabase is active
+  // Load stocks on mount + whenever the tenant slug changes (session
+  // restore, tenant switch). Empty result = empty state, NOT a signal to
+  // auto-seed legacy INITIAL_STOCK — that legacy path wrote Garindo's
+  // Sinar Elektrik demo SKUs into fresh tenants' stocks tables. Real
+  // tenants seed via VOSI admin or manual import.
   useEffect(() => {
-    if (isSupabaseConfigured) {
-      supabaseService.fetchStocks().then(data => {
-        if (data && data.length > 0) {
-          const mapped: StockItem[] = data.map(item => ({
-            sku: item.sku,
-            name: item.name,
-            category: item.category,
-            subcategory: item.subcategory ?? null,
-            unit: item.unit ?? 'pcs',
-            unit_alt: item.unit_alt ?? null,
-            unit_alt_factor: item.unit_alt_factor ?? null,
-            price: Number(item.price),
-            stock: Number(item.stock),
-            stock_atas: Number(item.stock_atas ?? item.stock),
-            stock_bawah: Number(item.stock_bawah ?? 0),
-            status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
-            specs: (item.specs as Record<string, string | number>) ?? {},
-            harga_modal: item.harga_modal ?? null,
-            photo_urls: item.photo_urls ?? [],
-            description: item.description ?? null,
-            min_stock_per_product: item.min_stock_per_product ?? null,
-            initial_stock_approved: item.initial_stock_approved ?? true,
-          }));
-          setStockList(mapped);
-          triggerToast('🌐 Database Supabase Sinkron! Ketersediaan stok live dimuat.', 'success');
-        } else {
-          // If Supabase table is empty, seed it with INITIAL_STOCK
-          INITIAL_STOCK.forEach(async (item) => {
-            try {
-              await supabaseService.upsertStock(item);
-            } catch (e) {
-              console.error(e);
-            }
-          });
-          triggerToast('⚡ Supabase terdeteksi kosong. Melakukan seeding data inisial.', 'info');
-        }
-      }).catch(err => {
-        console.error('Failed to load from Supabase:', err);
-        triggerToast('⚠️ Cloud Supabase offline. Menggunakan data local cache.', 'warning');
-      });
-    }
-  }, []);
+    if (!isSupabaseConfigured || !sessionTenantSlug) return;
+    supabaseService.fetchStocks().then(data => {
+      const rows = data ?? [];
+      const mapped: StockItem[] = rows.map(item => ({
+        sku: item.sku,
+        name: item.name,
+        category: item.category,
+        subcategory: item.subcategory ?? null,
+        unit: item.unit ?? 'pcs',
+        unit_alt: item.unit_alt ?? null,
+        unit_alt_factor: item.unit_alt_factor ?? null,
+        price: Number(item.price),
+        stock: Number(item.stock),
+        stock_atas: Number(item.stock_atas ?? item.stock),
+        stock_bawah: Number(item.stock_bawah ?? 0),
+        status: (item.status === 'Stok Tipis' ? 'Stok Tipis' : 'Sinkron') as 'Sinkron' | 'Stok Tipis',
+        specs: (item.specs as Record<string, string | number>) ?? {},
+        harga_modal: item.harga_modal ?? null,
+        photo_urls: item.photo_urls ?? [],
+        description: item.description ?? null,
+        min_stock_per_product: item.min_stock_per_product ?? null,
+        initial_stock_approved: item.initial_stock_approved ?? true,
+      }));
+      setStockList(mapped);
+      if (mapped.length > 0) {
+        triggerToast('🌐 Database Supabase Sinkron! Ketersediaan stok live dimuat.', 'success');
+      }
+    }).catch(err => {
+      console.error('Failed to load stocks:', err);
+      triggerToast('⚠️ Gagal memuat stok dari Supabase.', 'warning');
+    });
+  }, [sessionTenantSlug]);
 
   const handleStockRefresh = async () => {
     if (!isSupabaseConfigured) return;
