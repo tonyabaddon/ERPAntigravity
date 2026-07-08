@@ -116,6 +116,11 @@ export default function App() {
   // restore. Drives the legacy-path redirect below and the URL/session slug
   // guard. Null while loading or when Supabase not configured (dev).
   const [sessionTenantSlug, setSessionTenantSlug] = useState<string | null>(null);
+  // Tenant display name from tenants.name (via bootstrap RPC). Preferred
+  // source over currentUser.storeName — the JWT user_metadata.store_name
+  // isn't guaranteed to be populated for every onboarded user, but the
+  // tenants row's name column always is.
+  const [sessionTenantName, setSessionTenantName] = useState<string | null>(null);
   // Holds the kasir_transactions.id of the just-saved wizard transaction so
   // InvoicePreviewScreen can render its details after navigate('invoicePreview').
   // Kept in App state (not URL) because it's a transient hand-off — a refresh
@@ -206,6 +211,7 @@ export default function App() {
         try {
           const ctx = await tenantContextService.bootstrap();
           if (ctx?.slug) setSessionTenantSlug(ctx.slug);
+          if (ctx?.name) setSessionTenantName(ctx.name);
         } catch (err) {
           console.error('Failed to fetch tenant slug on session restore:', err);
         }
@@ -246,6 +252,7 @@ export default function App() {
       if (!session) {
         setCurrentUser(null);
         setSessionTenantSlug(null); // clear slug so next login re-fetches
+        setSessionTenantName(null);
         // Don't push 'auth' into URL — let the !currentUser gate render AuthScreen.
         // The next login will replaceRoute() to dashboard or stashed deep-link.
       }
@@ -486,7 +493,7 @@ export default function App() {
             showToast={triggerToast}
             onNavigate={(page) => navigate(page)}
             lowStockCount={lowStockCount}
-            storeName={currentUser?.storeName}
+            storeName={sessionTenantName ?? currentUser?.storeName}
           />
         );
       case 'sales-inbox':
@@ -858,7 +865,7 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
                     <h1 className="font-extrabold text-lg text-primary tracking-tight">
-                      {currentUser?.storeName || 'Toko Anda'}
+                      {sessionTenantName || currentUser?.storeName || 'Toko Anda'}
                     </h1>
                   </div>
                 </div>
@@ -881,7 +888,7 @@ export default function App() {
                     <span className="absolute top-1 right-1 w-2 h-2 bg-[#2d8a4e] rounded-full" />
                   </button>
                   <button
-                    onClick={() => triggerToast(`Toko: ${currentUser?.storeName || 'Toko Anda'} — User: ${currentUser?.name} — Keamanan: Premium GPN`, 'info')}
+                    onClick={() => triggerToast(`Toko: ${sessionTenantName || currentUser?.storeName || 'Toko Anda'} — User: ${currentUser?.name} — Keamanan: Premium GPN`, 'info')}
                     className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
                     title="Informasi Sistem"
                   >
@@ -983,7 +990,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
               <h1 className="font-extrabold text-lg text-primary tracking-tight">
-                {currentUser?.storeName || 'Toko Anda'}
+                {sessionTenantName || currentUser?.storeName || 'Toko Anda'}
               </h1>
             </div>
             
@@ -1018,7 +1025,7 @@ export default function App() {
             </button>
             
             <button 
-              onClick={() => triggerToast(`📌 Toko: ${currentUser?.storeName || 'Toko Anda'} • User: ${currentUser?.name} • Keamanan: Premium GPN`, 'info')}
+              onClick={() => triggerToast(`📌 Toko: ${sessionTenantName || currentUser?.storeName || 'Toko Anda'} • User: ${currentUser?.name} • Keamanan: Premium GPN`, 'info')}
               className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer"
               title="Informasi Sistem"
             >
