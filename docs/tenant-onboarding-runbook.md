@@ -173,12 +173,12 @@ WHERE tenant_id = '<tenant-uuid>';
    `App.tsx` redirects `/t/wrongslug/*` to `/t/<jwt-slug>/dashboard`. If a
    customer bookmarks the wrong URL, they'll be corrected. Expected behavior.
 
-4. **`tenant_users` RLS 42P17 recursion for non-admin direct SELECTs.**
-   Frontend has been routed through `bootstrap_tenant_context` RPC to
-   sidestep this. If you add new frontend code that does
-   `.from('tenant_users').select(...)` you WILL hit 42P17 for non-admin users.
-   Use `tenantContextService.bootstrap()` instead until the P1 RLS fix ships
-   (see progress.md task #56).
+4. **`tenant_users` RLS — historically 42P17 for non-admin.**
+   Closed by migration 20261115000030 (SECDEF `_is_tenant_admin` helper
+   replaces the recursive EXISTS). Direct `.from('tenant_users')` SELECT
+   now works for non-admin users, scoped to their own memberships. Older
+   frontend code that still uses `bootstrap_tenant_context` for slug lookup
+   remains correct; the migration is orthogonal.
 
 5. **Cross-tenant view leaks.** All public views must be `security_invoker=true`.
    Migration `20261115000028_secinvoker_view_isolation.sql` set this for the
@@ -189,5 +189,5 @@ WHERE tenant_id = '<tenant-uuid>';
      AND COALESCE((SELECT bool_or(opt LIKE 'security_invoker=true')
                    FROM unnest(c.reloptions) opt), false) = false;
    ```
-   Exception: `v_tenant_usage_summary` is intentionally excluded due to
-   tenant_users RLS self-recursion (see task #56).
+   All public views should be `security_invoker=true` — no exceptions since
+   migration 20261115000030 closed the tenant_users recursion.

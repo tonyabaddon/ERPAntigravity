@@ -22,12 +22,12 @@ const DB_URL =
   'postgresql://postgres:postgres@localhost:54322/postgres';
 
 /** Views intentionally kept as non-invoker. Every entry must reference the
- * open task blocking the fix. Empty this list once the tasks land. */
-const ALLOWED_NON_INVOKER: Record<string, string> = {
-  // Joins tenant_users; a_self_or_tenant_admin policy self-recurses under
-  // invoker mode -> 42P17. See progress.md task #56 (tenant_users RLS fix).
-  v_tenant_usage_summary: 'task#56: tenant_users RLS self-recursion',
-};
+ * open task blocking the fix. Empty this list once the tasks land.
+ *
+ * v_tenant_usage_summary was here until migration 20261115000030 closed
+ * task #56 (SECDEF _is_tenant_admin helper broke the recursion). Entry
+ * removed 2026-07-08 — all public views now enforce RLS. */
+const ALLOWED_NON_INVOKER: Record<string, string> = {};
 
 interface Row {
   view_name: string;

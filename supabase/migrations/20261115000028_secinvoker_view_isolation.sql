@@ -53,15 +53,15 @@ ALTER VIEW public.v_pengawasan_transfer_aging SET (security_invoker = true);
 ALTER VIEW public.v_tenant_effective_features SET (security_invoker = true);
 ALTER VIEW public.v_tenant_payment_coverage SET (security_invoker = true);
 
--- v_tenant_usage_summary is intentionally EXCLUDED here. It JOINs tenant_users,
--- whose a_self_or_tenant_admin RLS policy contains a self-referential
--- EXISTS (SELECT 1 FROM tenant_users me WHERE ...) subquery. Under
--- security_invoker mode, reading tenant_users triggers RLS whose subquery
--- reads tenant_users whose RLS triggers again -> infinite recursion (42P17).
--- The bounded fix (revert this one view) preserves admin-panel functionality;
--- the structural fix is to replace the EXISTS with a SECURITY DEFINER helper
--- _is_tenant_admin(tenant_id, user_id), then re-enable security_invoker here.
--- Ticketed as P1 in progress.md 2026-07-07.
+-- v_tenant_usage_summary was intentionally EXCLUDED here at the time of
+-- writing. It JOINs tenant_users, whose a_self_or_tenant_admin RLS policy
+-- contained a self-referential EXISTS subquery — under security_invoker
+-- mode that triggered 42P17 infinite recursion.
+--
+-- Migration 20261115000030 (fix_tenant_users_rls_self_recursion) closed
+-- this by extracting the membership check into a SECDEF helper
+-- (_is_tenant_admin) and flipping v_tenant_usage_summary to invoker mode.
+-- All public views now enforce RLS.
 
 COMMIT;
 
