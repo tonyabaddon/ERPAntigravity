@@ -11276,4 +11276,63 @@ WHERE n.nspname='public' AND c.relkind='v'
 
 **Cloudflare Email Routing setup:** deferred (Cloudflare UI friction, plus-addressing works today). Pitch will show `tonywei.office+demo@gmail.com` in header — investor-facing tradeoff accepted.
 
+---
+
+## 2026-07-08 — Full OTP login flow certified + Garindo → VOSI product rebrand
+
+**End-to-end OTP login test (revealed 3 hidden gaps):**
+
+1. **`admin_users` row missing for demo-owner.** AuthScreen's post-OTP verify calls `adminUsersService.fetchByEmail(signInEmail)`; row was seeded only in `tenant_users` + `auth.users`, not `admin_users`. Session restore worked via `.fetchById(user.id)` with Owner fallback, but AuthScreen has no fallback → "Email belum terdaftar sebagai admin". Fixed by inserting a `Aktif` Owner row with full permissions (mirroring Garindo's Jenny Setiawan reference).
+
+2. **`afterLogin` in AuthScreen hit the same 42P17 recursion.** After passing the admin_users guard, `afterLogin` did `.from('tenant_users').select('tenants!inner(slug)').eq('status','ACTIVE')` — non-admin user → 500 → treated as "0 tenants" → redirected to `/select-tenant`. Fixed same way as session restore: swapped to `tenantContextService.bootstrap()` SECDEF RPC.
+
+3. **`SelectTenantScreen` also 42P17 for defense-in-depth.** Same direct SELECT pattern. Fixed via bootstrap RPC too — MVP is single-tenant so returning the one JWT-scoped tenant is correct.
+
+Both fixes in commit `7712cc8`, deployed as `garindo-jaya-panel-msme-erp-frontend-00254-vut`.
+
+**Post-fix OTP flow:** demo-owner successfully signed in via Kirim OTP → Gmail delivery → paste code → MASUK → auto-redirect to `/t/toko-jaya-makmur/dashboard`. ✅
+
+---
+
+**Product rebrand: "Garindo Jaya Panel" → "VOSI" + dynamic tenant name**
+
+**Trigger:** during OTP smoke, dashboard rendered sidebar "Garindo Jaya Panel" + heading "Selamat Datang di Hub Kendali Garindo Jaya Panel" for Toko Jaya Makmur tenant. Founder request: hardcoded Garindo strings must go so every onboarded tenant sees their own name + VOSI product branding.
+
+**Classification of 15+ string occurrences:**
+- **Product-brand strings** (static, appear same for all tenants) → replaced with `VOSI`:
+  - `Sidebar.tsx` brand header
+  - `App.tsx` footer × 2
+  - `index.html` `<title>` (browser tab)
+- **Tenant-identity strings** (should show the current tenant's name) → now read from `currentUser.storeName`:
+  - `DashboardScreen.tsx` welcome heading (new `storeName` prop threaded from App.tsx)
+  - `App.tsx` top-right tenant chip × 2
+- **Empty fallbacks** for records without a tenant-provided name → replaced with generic Indonesian:
+  - Invoice PDFs, receipts, PO templates: `'Toko Anda'` / `'TOKO ANDA'`
+  - Accounting reports (Neraca, LabaRugi): `'Perusahaan Anda'`
+- **Copy/placeholders**:
+  - AuthScreen login subtitle → generic "WhatsApp Bot toko Anda"
+  - Sign-up form placeholder → "Nama toko / cabang Anda"
+  - Cash-account form placeholder → "Nama sesuai buku rekening"
+
+Files touched (13 total): `Sidebar.tsx`, `DashboardScreen.tsx`, `App.tsx`, `AuthScreen.tsx`, `InvoiceModal.tsx`, `KasirInvoiceModal.tsx`, `SalesInvoicePDF.tsx`, `AccountFormModal.tsx`, `NeracaTab.tsx`, `LabaRugiTab.tsx`, `tandaTerimaPdf.ts`, `purchaseOrderPdf.ts`, `index.html`.
+
+Commits: `f0d9500` (12 UI files) + `5d9f427` (tab title). Deployed as `garindo-jaya-panel-msme-erp-frontend-00258-gap`, 100% traffic.
+
+**Chrome MCP verification (post-promote):** signed in as demo-owner, verified:
+- Tab title: "VOSI MSME ERP & Selling Bot" ✅
+- Sidebar: "VOSI" ✅
+- Header top: "Toko Jaya Makmur" ✅
+- Welcome heading: "Selamat Datang di Hub Kendali **Toko Jaya Makmur**" ✅ (dynamic, matches JWT store_name claim)
+- Footer: "© 2026 VOSI MSME ERP • POWERED BY DEEPMIND & GEMINI AI" ✅
+- Zero "Garindo Jaya Panel" residual on tenant dashboard.
+
+**Backlog (not blocking pitch):**
+- `WhatsappAiScreen.tsx` — Garindo mentions in AI system-role prompts + code comments. Modifies inference behavior, deferred to avoid regression.
+- `ERP Pro` (login left-panel logo) + `TechSaaS System` (login copyright) — separate brand elements founder didn't call out. Ticket if founder wants VOSI-consistent login page.
+- Task #56 (tenant_users RLS self-recursion): P1 structural fix. Once landed, AuthScreen + SelectTenantScreen can go back to direct SELECT + support real multi-tenant enumeration.
+- Slug guard preserve `pathRoute.screen` — currently URL desync redirect drops target screen back to `dashboard`.
+
+**Overall session status:** demo tenant pitch-ready. Login flow certified end-to-end. Branding rewrite complete for tenant-facing surfaces. Cross-tenant isolation fixed at RLS view layer. All migrations + code changes deployed to prod at 100% traffic (revision `00258-gap`).
+
+
 
