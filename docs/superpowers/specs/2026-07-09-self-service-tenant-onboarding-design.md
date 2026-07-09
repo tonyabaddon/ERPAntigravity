@@ -10,7 +10,7 @@ Sales rep dapat onboard tenant baru dari awal sampai owner login sukses,
 **tanpa harus escalate ke founder** (kecuali destructive rollback yang
 memang designed founder-only).
 
-## Scope: 6 MUST-HAVE Items
+## Scope: 9 MUST-HAVE Items
 
 Sales team assumption: **1 rep dulu**. Multi-rep features (pipeline
 filter per rep, tenant reassignment, per-rep dashboard) deferred to
@@ -33,6 +33,15 @@ tanpa migration ulang.
    RPC (provision, update_plan, record_payment, toggle_module,
    deprovision, deactivate_sales_rep). Foundation untuk weekly review
    evidence + future compliance + dispute resolution.
+7. **Plans read access for sales_rep** — RLS `plans.SELECT` allow both
+   roles. Rep bisa quote pricing ke customer. Write tetap super_admin only.
+8. **Payment instructions block di wizard result screen** — auto-generate
+   copy-pasteable message ke customer dengan bank info + tenant slug
+   sebagai reference. Bank info dari NEW `platform_settings` table
+   (rekening VOSI, updateable oleh super_admin).
+9. **Module toggle RPC** — NEW `update_tenant_feature_override(tenant_id,
+   module_key, enabled)` SECDEF RPC. Both roles callable. Logs to
+   audit_log per C6.
 
 ## Deferred to backlog (post-launch)
 
@@ -517,6 +526,146 @@ dari tenant. RLS updates di C2 above cover this: sales_rep can SELECT
 + INSERT via record_payment RPC, but cannot UPDATE/DELETE existing
 payment rows (super_admin only untuk correcting mistakes).
 
+### C7: Plans read access untuk sales_rep
+
+**Migration snippet:**
+```sql
+-- Existing plans policy: super_admin only (Wave 4a)
+-- Add: SELECT allowed for both roles supaya sales_rep bisa quote pricing
+CREATE POLICY p_platform_admin_read ON public.plans
+  FOR SELECT
+  USING (public._is_platform_admin_from_jwt());
+```
+
+**UI update:**
+- Sidebar link `/admin/plans` tampil untuk **kedua role** (previously
+  super_admin only per Component 2 UI gates).
+- Kalau sales_rep buka page, hide "Edit" / "Create" buttons — read-only mode.
+
+**Reuse:** existing `PlansManagement.tsx` component. Add `readOnly` prop
+yang toggle button visibility.
+
+---
+
+### C8: Payment instructions block di wizard result
+
+**NEW table `platform_settings`:**
+```sql
+CREATE TABLE public.platform_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1) DEFAULT 1,
+  bank_name TEXT,           -- e.g. "BCA"
+  bank_account_no TEXT,     -- e.g. "1234567890"
+  bank_account_name TEXT,   -- e.g. "PT VOSI Digital"
+  admin_wa_number TEXT,     -- e.g. "+62812-...."
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO public.platform_settings (id) VALUES (1)
+ON CONFLICT DO NOTHING;
+
+-- RLS: super_admin only write, both roles read
+ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY p_super_write ON public.platform_settings
+  FOR ALL USING (public._is_super_admin_from_jwt())
+  WITH CHECK (public._is_super_admin_from_jwt());
+CREATE POLICY p_admin_read ON public.platform_settings
+  FOR SELECT USING (public._is_platform_admin_from_jwt());
+```
+
+**Wizard ResultStep update:**
+
+Setelah tenant berhasil di-create, tampilkan copy-pasteable message:
+
+```
+✅ Tenant "<name>" berhasil di-onboard.
+✅ Email invite terkirim ke <owner_email>
+
+📋 KIRIM INI KE CUSTOMER (via WhatsApp):
+─────────────────────────────────────────
+Selamat! Toko Anda "<name>" sudah aktif di VOSI.
+
+Untuk aktivasi paket <plan_code> (Rp <plan_price>/tahun):
+🏦 Transfer ke: <bank_name> <bank_account_no>
+   a/n: <bank_account_name>
+💬 Berita transfer: <tenant_slug>
+📱 Kirim bukti transfer ke: <admin_wa_number>
+
+Terima kasih! 🙏
+─────────────────────────────────────────
+[📋 Copy]  [📱 Buka WhatsApp]
+```
+
+**UI new elements:**
+- Copy button dengan `navigator.clipboard.writeText()`
+- WhatsApp link `wa.me/<phone>?text=<encoded>` untuk quick share
+- Fetch `platform_settings` + `plans[plan_code].price_annual` on component mount
+
+**Super admin UI untuk edit bank info:**
+- `/admin/settings/payment` route baru (super_admin only) — simple form update `platform_settings`
+- Sidebar link "Pengaturan Pembayaran" — super_admin only
+
+---
+
+### C9: Module toggle RPC
+
+**Migration:**
+```sql
+CREATE OR REPLACE FUNCTION public.update_tenant_feature_override(
+  p_tenant_id UUID,
+  p_module_key TEXT,
+  p_enabled BOOLEAN,
+  p_reason TEXT DEFAULT NULL
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_old_value BOOLEAN;
+BEGIN
+  IF NOT public._is_platform_admin_from_jwt() THEN
+    RAISE EXCEPTION 'update_tenant_feature_override: platform_admin required'
+      USING errcode = 'P0403';
+  END IF;
+
+  -- Get old value untuk audit
+  SELECT enabled INTO v_old_value
+  FROM public.tenant_feature_overrides
+  WHERE tenant_id = p_tenant_id AND module_key = p_module_key;
+
+  -- Upsert override
+  INSERT INTO public.tenant_feature_overrides (tenant_id, module_key, enabled, updated_at)
+  VALUES (p_tenant_id, p_module_key, p_enabled, now())
+  ON CONFLICT (tenant_id, module_key) DO UPDATE SET
+    enabled = EXCLUDED.enabled,
+    updated_at = now();
+
+  -- Audit log
+  INSERT INTO public.audit_log (event_type, payload, created_at)
+  VALUES ('TOGGLE_MODULE',
+    jsonb_build_object(
+      'tenant_id', p_tenant_id,
+      'module_key', p_module_key,
+      'old_value', v_old_value,
+      'new_value', p_enabled,
+      'reason', p_reason,
+      'actor_user_id', auth.uid()
+    ), now());
+
+  RETURN jsonb_build_object('tenant_id', p_tenant_id,
+    'module_key', p_module_key, 'enabled', p_enabled);
+END;
+$function$;
+
+GRANT EXECUTE ON FUNCTION public.update_tenant_feature_override(UUID, TEXT, BOOLEAN, TEXT)
+  TO authenticated;
+```
+
+**UI:** Existing tenant detail Paket & Modul section (jika ada) atau tambah
+toggle buttons di TenantDetailShell → tab "Modul". Reuse existing
+`v_tenant_effective_features` untuk display current state.
+
+---
+
 ### C6: Extended audit trail
 
 Existing `audit_log` table captures Wave 4a suspend/activate + Wave 5
@@ -675,7 +824,7 @@ Escalation ke founder cuma untuk:
 Untuk model founder weekly-review + sales rep daily operations, ini
 fit-for-purpose.
 
-## Implementation Effort Estimate (revised, 6 items)
+## Implementation Effort Estimate (revised, 9 items)
 
 | Component | Effort |
 |---|---|
@@ -685,9 +834,12 @@ fit-for-purpose.
 | Sales rep management (create + deactivate + UI) | 2-3 hours |
 | deprovision_tenant RPC + Zona Bahaya UI | 1.5-2 hours |
 | Slug blocklist (bundle with Edge Function) | 15 minutes |
-| **Extended audit trail (audit_log INSERT di 10 RPCs)** | **1-2 hours** |
+| Extended audit trail (audit_log INSERT di 10 RPCs) | 1-2 hours |
+| **Plans read access for sales_rep (RLS + UI toggle)** | **30 min** |
+| **Payment instructions block + platform_settings table + UI** | **1-1.5 hours** |
+| **Module toggle RPC + UI wire-up** | **1 hour** |
 | Testing (minimal: manual smoke + P0 unit tests) | 2 hours |
-| **Total** | **~13-18 hours** |
+| **Total** | **~16-21 hours** |
 
 ## Deploy sequence (Missing #3 fix)
 
