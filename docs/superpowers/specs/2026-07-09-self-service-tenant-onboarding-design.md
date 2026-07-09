@@ -10,7 +10,7 @@ Sales rep dapat onboard tenant baru dari awal sampai owner login sukses,
 **tanpa harus escalate ke founder** (kecuali destructive rollback yang
 memang designed founder-only).
 
-## Scope: 9 MUST-HAVE Items
+## Scope: 10 MUST-HAVE Items
 
 Sales team assumption: **1 rep dulu**. Multi-rep features (pipeline
 filter per rep, tenant reassignment, per-rep dashboard) deferred to
@@ -42,6 +42,11 @@ tanpa migration ulang.
 9. **Module toggle RPC** — NEW `update_tenant_feature_override(tenant_id,
    module_key, enabled)` SECDEF RPC. Both roles callable. Logs to
    audit_log per C6.
+10. **Two-step payment verification workflow** — anti-fraud. Rep records
+    payment + uploads proof (status='PENDING_VERIFICATION'). Founder
+    verifies daily via `/admin/payments/pending` queue. Only VERIFIED
+    payments count for LUNAS coverage. Includes proof-required for
+    non-cash + amount anomaly detection.
 
 ## Deferred to backlog (post-launch)
 
@@ -666,6 +671,166 @@ toggle buttons di TenantDetailShell → tab "Modul". Reuse existing
 
 ---
 
+### C10: Two-step payment verification workflow (anti-fraud)
+
+**Migration:**
+```sql
+-- Add status column to tenant_payments
+ALTER TABLE public.tenant_payments
+  ADD COLUMN status TEXT NOT NULL DEFAULT 'VERIFIED'
+  CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'REJECTED')),
+  ADD COLUMN verified_by UUID REFERENCES auth.users(id),
+  ADD COLUMN verified_at TIMESTAMPTZ,
+  ADD COLUMN rejection_reason TEXT;
+
+-- Existing rows default to VERIFIED (backward compat — Wave 5 payments trusted)
+-- New rows via updated record_payment RPC default to PENDING_VERIFICATION.
+
+-- Update v_tenant_payment_coverage view: only count VERIFIED for LUNAS
+DROP VIEW IF EXISTS public.v_tenant_payment_coverage CASCADE;
+CREATE VIEW public.v_tenant_payment_coverage
+  WITH (security_invoker = true) AS
+SELECT
+  t.id AS tenant_id,
+  t.slug AS tenant_slug,
+  t.name AS tenant_name,
+  s.plan_code,
+  s.expires_at,
+  COALESCE(SUM(tp.amount) FILTER (WHERE tp.status = 'VERIFIED'), 0)
+    AS total_paid_verified,
+  COALESCE(SUM(tp.amount) FILTER (WHERE tp.status = 'PENDING_VERIFICATION'), 0)
+    AS total_pending,
+  CASE
+    WHEN COALESCE(SUM(tp.amount) FILTER (WHERE tp.status = 'VERIFIED'), 0)
+         >= COALESCE(p.price_annual, 0) THEN 'LUNAS'
+    WHEN s.expires_at < now() THEN 'OVERDUE'
+    ELSE 'BELUM_BAYAR'
+  END AS coverage_status
+FROM public.tenants t
+LEFT JOIN public.tenant_subscriptions s ON s.tenant_id = t.id
+LEFT JOIN public.plans p ON p.code = s.plan_code
+LEFT JOIN public.tenant_payments tp ON tp.tenant_id = t.id
+GROUP BY t.id, t.slug, t.name, s.plan_code, s.expires_at, p.price_annual;
+```
+
+**Update `record_payment` RPC** (both roles callable, but insert as PENDING):
+```sql
+-- Add validations + PENDING status
+-- Anti-fraud #1: proof_url REQUIRED for non-cash
+IF p_method != 'CASH' AND (p_proof_url IS NULL OR p_proof_url = '') THEN
+  RAISE EXCEPTION 'record_payment: bukti transfer WAJIB untuk non-cash'
+    USING errcode = '22023';
+END IF;
+
+-- Anti-fraud #2: amount anomaly detection
+DECLARE v_plan_price NUMERIC;
+SELECT price_annual INTO v_plan_price FROM plans
+  JOIN tenant_subscriptions ts ON ts.plan_code = plans.code
+  WHERE ts.tenant_id = p_tenant_id;
+IF ABS(p_amount - v_plan_price) > (v_plan_price * 0.1) THEN
+  -- Warn + flag in audit; don't block (founder decides during verification)
+  v_amount_anomaly := true;
+END IF;
+
+-- INSERT with status=PENDING_VERIFICATION
+INSERT INTO tenant_payments (..., status)
+VALUES (..., 'PENDING_VERIFICATION');
+
+-- Audit log with anomaly flag
+INSERT INTO audit_log (event_type, payload) VALUES (
+  'RECORD_PAYMENT',
+  jsonb_build_object(
+    ..., 'amount_anomaly', v_amount_anomaly
+  )
+);
+```
+
+**NEW RPCs: `verify_payment` + `reject_payment`** (super_admin only):
+```sql
+CREATE OR REPLACE FUNCTION public.verify_payment(
+  p_payment_id UUID
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION 'verify_payment: super_admin required' USING errcode = 'P0403';
+  END IF;
+
+  UPDATE public.tenant_payments
+  SET status = 'VERIFIED',
+      verified_by = auth.uid(),
+      verified_at = now()
+  WHERE id = p_payment_id AND status = 'PENDING_VERIFICATION';
+
+  INSERT INTO audit_log (event_type, payload) VALUES (
+    'VERIFY_PAYMENT',
+    jsonb_build_object('payment_id', p_payment_id, 'actor_user_id', auth.uid())
+  );
+
+  RETURN jsonb_build_object('payment_id', p_payment_id, 'status', 'VERIFIED');
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reject_payment(
+  p_payment_id UUID,
+  p_reason TEXT
+) RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER
+AS $$
+BEGIN
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION 'reject_payment: super_admin required' USING errcode = 'P0403';
+  END IF;
+
+  UPDATE public.tenant_payments
+  SET status = 'REJECTED',
+      verified_by = auth.uid(),
+      verified_at = now(),
+      rejection_reason = p_reason
+  WHERE id = p_payment_id AND status = 'PENDING_VERIFICATION';
+
+  INSERT INTO audit_log (event_type, payload) VALUES (
+    'REJECT_PAYMENT',
+    jsonb_build_object('payment_id', p_payment_id, 'reason', p_reason,
+                       'actor_user_id', auth.uid())
+  );
+  -- TODO: notify rep of rejection (backlog — WA notif atau in-app badge)
+  RETURN jsonb_build_object('payment_id', p_payment_id, 'status', 'REJECTED');
+END;
+$$;
+```
+
+**UI Component: `/admin/payments/pending` (NEW route, super_admin only)**
+
+Queue view untuk founder daily batch review:
+
+```
+┌─ Pending Payment Verification (3) ─────────────────────────┐
+│ Tenant           │ Amount    │ Method │ Reference │ Actions │
+├──────────────────┼───────────┼────────┼───────────┼─────────┤
+│ Warung Sinar     │ 1.200.000 │ BANK   │ [proof.jpg] │ [Approve][Reject]│
+│ Toko Rezeki      │ 3.600.000 │ BANK   │ [proof.jpg] │ [Approve][Reject]│
+│ Warung ABC ⚠️     │ 2.000.000 │ BANK   │ [proof.jpg] │ [Approve][Reject]│
+│  ⚠️ Amount anomaly: expected 1.200.000 (STARTER)          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Sidebar badge: "Pembayaran (3)" red badge di menu Pengaturan atau
+di menu utama, jumlah pending yang perlu di-verify.
+
+**UI update — Tenant detail Pembayaran tab:**
+- Rep view: payments list dengan status column. PENDING rows dengan icon
+  hourglass. VERIFIED dengan check. REJECTED dengan X + reason hover.
+- Rep tidak bisa Approve/Reject.
+
+**Reject flow:**
+- Rep dapat notif (badge di Pembayaran tab tenant that has REJECTED payment)
+- Rep re-review dengan customer (mungkin proof salah, amount salah, dll)
+- Rep bisa DELETE the REJECTED entry + Record ulang (super_admin can also
+  DELETE for cleanup)
+
+---
+
 ### C6: Extended audit trail
 
 Existing `audit_log` table captures Wave 4a suspend/activate + Wave 5
@@ -680,7 +845,9 @@ trail + dispute resolution.
 | `PROVISION_TENANT` | provision_tenant RPC | { tenant_id, slug, name, plan_code, owner_email, actor_user_id } |
 | `UPDATE_PLAN` | update_plan_admin RPC | { tenant_id, old_plan, new_plan, actor_user_id } |
 | `TOGGLE_MODULE` | (module toggle RPC) | { tenant_id, module_key, old_value, new_value, actor_user_id } |
-| `RECORD_PAYMENT` | record_payment RPC | { tenant_id, amount, method, reference, actor_user_id } |
+| `RECORD_PAYMENT` | record_payment RPC | { tenant_id, amount, method, reference, amount_anomaly, actor_user_id } |
+| `VERIFY_PAYMENT` | verify_payment RPC (super_admin) | { payment_id, actor_user_id } |
+| `REJECT_PAYMENT` | reject_payment RPC (super_admin) | { payment_id, reason, actor_user_id } |
 | `DEPROVISION_TENANT` | deprovision_tenant RPC | { tenant_snapshot, reason, actor_user_id } |
 | `CREATE_SALES_REP` | create_sales_rep RPC | { user_id, email, name, actor_user_id } |
 | `DEACTIVATE_SALES_REP` | deactivate_sales_rep RPC | { user_id, reason, actor_user_id } |
@@ -824,7 +991,7 @@ Escalation ke founder cuma untuk:
 Untuk model founder weekly-review + sales rep daily operations, ini
 fit-for-purpose.
 
-## Implementation Effort Estimate (revised, 9 items)
+## Implementation Effort Estimate (revised, 10 items)
 
 | Component | Effort |
 |---|---|
@@ -838,8 +1005,13 @@ fit-for-purpose.
 | **Plans read access for sales_rep (RLS + UI toggle)** | **30 min** |
 | **Payment instructions block + platform_settings table + UI** | **1-1.5 hours** |
 | **Module toggle RPC + UI wire-up** | **1 hour** |
+| **Two-step payment verification workflow (C10)** | **3-3.5 hours** |
+|  - Migration: add status column + update coverage view | 30 min |
+|  - record_payment RPC update (PENDING + proof required + amount validation) | 30 min |
+|  - verify_payment + reject_payment RPCs | 45 min |
+|  - `/admin/payments/pending` queue UI + sidebar badge | 1.5 hours |
 | Testing (minimal: manual smoke + P0 unit tests) | 2 hours |
-| **Total** | **~16-21 hours** |
+| **Total** | **~19.5-24.5 hours** |
 
 ## Deploy sequence (Missing #3 fix)
 
