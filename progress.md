@@ -11334,5 +11334,143 @@ Commits: `f0d9500` (12 UI files) + `5d9f427` (tab title). Deployed as `garindo-j
 
 **Overall session status:** demo tenant pitch-ready. Login flow certified end-to-end. Branding rewrite complete for tenant-facing surfaces. Cross-tenant isolation fixed at RLS view layer. All migrations + code changes deployed to prod at 100% traffic (revision `00258-gap`).
 
+---
+
+## 2026-07-09 — Multi-tenant hardening: 5-item cleanup + tenant #3 onboarding + gap fixes
+
+**Trigger:** after demo tenant #2 (Toko Jaya Makmur) was shipped, ran a rigorous
+"what would break for tenant #3+" audit. Found 5 latent multi-tenant hygiene
+gaps and 2 downstream branding leaks. Tackled all 7 in sequence with production
+verification after each.
+
+**Items #1–5 (planned) shipped + deployed to `00269-kud`:**
+
+1. **CI view isolation audit (`npm run audit:views`)** — commit `e7bd19e`. Runs
+   `scripts/audit-view-security-invoker.ts`; fails if any public view lacks
+   `security_invoker=true`. GitHub Actions workflow drafted in
+   `.github/workflows/isolation-audit.yml` but push blocked on PAT `workflow`
+   scope — needs manual push via GitHub UI.
+
+2. **P1 `tenant_users` RLS 42P17 self-recursion fix** — migration `000030` +
+   commit `7fd116c`. Extracted the recursive `EXISTS (SELECT 1 FROM
+   tenant_users me ...)` from `a_self_or_tenant_admin` + `a_admin_write`
+   into SECDEF helper `_is_tenant_admin(p_tenant_id, p_user_id)`. Direct
+   `.from('tenant_users')` SELECT now works for non-admin users; bonus flip
+   of `v_tenant_usage_summary` to `security_invoker=true` (was the last
+   public view exempt). Closes task #56. Verified via 3 simulated-JWT probes.
+
+3. **`WhatsappAiScreen` rebrand** — commit `bde8ff6`. Replaced all "Garindo
+   Jaya Panel" mentions in Go/Node backend template snippets + AI system
+   prompts + `stok kelistrikan` category hardcode. Now tenant-neutral: VOSI
+   product name in inference context, generic "sales asisten toko" system
+   instruction.
+
+4. **`stockList` localStorage → DB-scoped fetch** — commit `2a66cd4`. Two
+   bugs killed: (a) `sinar_elektrik_stocks` in localStorage bled Garindo's
+   stock into tenant #3's "KOMODITAS STOK TIPIS" KPI on shared browsers;
+   (b) mount-time useEffect auto-seeded fresh empty tenants with
+   `INITIAL_STOCK` (legacy Sinar Elektrik electrical demo data) via
+   `upsertStock()`. Fix: `useState<StockItem[]>([])`, delete localStorage
+   sync, refetch depends on `sessionTenantSlug`, clear on sign-out.
+   Auto-seed logic removed entirely — new tenants show empty state until
+   real seed.
+
+5. **Wave 2 wizard `/admin/tenants/new`** — commit `8540660`. New
+   `TenantWizard.tsx` (547 lines) — 4-step form (Tenant → Owner → Review →
+   Result) wrapping `provision_tenant` RPC. Slug regex validation, error
+   mapping for 23505 / P0002 / P0403 / 22023. E2E verified: filled
+   duplicate slug `warung-sinar-rezeki` → RPC returned 23505 → UI showed
+   "Slug sudah dipakai. Pilih slug lain." ✅
+
+**Gap fixes (found during tenant #3 rigor check) shipped + deployed to `00271-jip`:**
+
+**Gap #1: `store_settings` singleton design broke multi-tenant.**
+   Migration `000031`. Legacy schema had `id` as PK with default 1 + `CHECK
+   (id = 1)` — hard-locked one row per database, so only Garindo had a
+   `store_settings` row. Tenant #2 (manual SQL) + #3 (via
+   `provision_tenant`) had zero rows → invoice PDFs / PO / kasir modals
+   fell back to "Toko Anda". Fix: drop CHECK, drop PK on id, promote
+   `tenant_id` to PK, convert `id` to sequence-backed, backfill tenants
+   #2 + #3 using `tenants.name`, extend `provision_tenant` to INSERT the
+   row per new tenant. Frontend `pengaturan/queries.ts` +
+   `mutations.ts`: dropped `.eq('id', 1)` hardcode.
+
+**Gap #2: Neraca + LabaRugi reports showed hardcoded "Perusahaan Anda".**
+   Fixed same commit `83c3873`. `NeracaTab.tsx` + `LabaRugiTab.tsx` now
+   call `fetchStoreSettings()` and use `storeSettings.nama_toko` for the
+   PDF companyName + on-screen `<h3>` heading. Constant renamed to
+   `COMPANY_NAME_FALLBACK` to signal pre-load / RLS-blocked path.
+
+---
+
+**Tenant #3 end-to-end onboarding, empirically verified on production
+(revision `00271-jip`):**
+
+1. Supabase Dashboard Auth API mocked via raw `INSERT auth.users` with
+   proper text-field `''` defaults (per runbook Step 1) — created
+   `tonywei.office+tenant3@gmail.com`, UUID `33333333-aaaa-bbbb-cccc-…`.
+
+2. `SELECT provision_tenant('33333333…', 'warung-sinar-rezeki', 'Warung
+   Sinar Rezeki', 'Tenant 3 Owner', 'tonywei.office+tenant3@gmail.com',
+   'STARTER', 12)` → jsonb response with `tenant_id: 49cbbc94-…`. Seed
+   verified via joined SELECT across `tenants + tenant_subscriptions +
+   tenant_users + admin_users + store_settings` → all present with
+   correct role/status/expiry/name.
+
+3. Sign in as tenant #3 owner via password (Gmail plus-alias). JWT
+   claims correct: `tenant_id=49cbbc94-…`, `is_platform_admin=false`,
+   `tenant_status=ACTIVE`.
+
+4. Landing on `/` → auto-redirected to `/t/warung-sinar-rezeki/dashboard`
+   (session slug guard). Dashboard heading: **"Selamat Datang di Hub
+   Kendali Warung Sinar Rezeki"**. KPIs: all Rp 0 / 0 transaksi
+   (KOMODITAS STOK TIPIS = **0 Barang**, previously leaked 423 from
+   Garindo localStorage — closed by item #4).
+
+5. Navigated Laporan → Akuntansi → **Laba Rugi** tab: heading **"Warung
+   Sinar Rezeki"** ✅ (from `store_settings.nama_toko` — dynamic).
+   Same for **Neraca** tab.
+
+6. Wizard smoke: navigated to `/admin/tenants/new` as tonywei
+   (platform admin), filled duplicate slug + review page → submit → UI
+   showed **"Slug sudah dipakai. Pilih slug lain."** — full error
+   mapping loop works.
+
+---
+
+**Multi-tenant status: production-ready for tenant #4+ onboarding via
+wizard. Zero known blockers.**
+
+**Runbook now says (2 steps for platform admin):**
+1. Supabase Dashboard → Auth → Users → Add user + Auto Confirm ON → copy UUID
+2. `/admin/tenants/new` → fill wizard (Tenant slug/name/plan → Owner UUID/name/email → Review → Submit)
+
+New tenant lands on `/t/<slug>/dashboard` with:
+- Dashboard heading = tenants.name
+- Header top chip = tenants.name
+- Neraca / LabaRugi = store_settings.nama_toko (= tenants.name)
+- Sidebar = VOSI
+- Footer = © 2026 VOSI MSME ERP
+
+Sidebar Login/Kasir/Produk/Pelanggan/Supplier modules render tenant-scoped
+data (RLS enforced). Invoice PDFs / PO templates / receipts pick up the
+tenant name automatically.
+
+**Remaining known gaps (non-blocking):**
+- `.github/workflows/isolation-audit.yml` still needs manual push via
+  GitHub UI (PAT lacks `workflow` scope).
+- Edge Function wrapping `supabase.auth.admin.createUser` — currently
+  Step 1 of onboarding is manual Dashboard click. Once that ships, wizard
+  becomes single-form single-click.
+- Auto-seed default masters (COA / warehouse / units / categories) for
+  new tenants — currently trigger `_seed_company_settings_for_new_tenant`
+  handles `company_settings` but nothing seeds inventory master data.
+  Real tenants seed via their own onboarding data anyway; this matters
+  more for demo/staging tenants.
+
+**Deploy summary:** revision `00271-jip` @ 100% traffic. Local + prod
+migrations aligned. Working tree clean, origin sync.
+
+
 
 
