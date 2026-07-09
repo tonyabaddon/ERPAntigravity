@@ -8,6 +8,8 @@ import { Layout, FileDown, Grid, CheckCircle, AlertTriangle } from 'lucide-react
 import { fetchNeraca } from '../../../lib/akuntansi/reportQueries';
 import type { NeracaResult } from '../../../lib/akuntansi/reportQueries';
 import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanServices';
+import { fetchStoreSettings } from '../../../lib/pengaturan/queries';
+import type { StoreSettings } from '../../../lib/pengaturan/types';
 import type { DbTenantSettings } from '../../../types';
 import { generateNeracaPDF } from '../../../lib/akuntansi/pdfExport';
 import type { NeracaData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
@@ -26,7 +28,8 @@ const ID_MONTHS = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-const COMPANY_NAME = 'Perusahaan Anda';
+// Fallback used only until fetchStoreSettings resolves + when RLS blocks the row.
+const COMPANY_NAME_FALLBACK = 'Perusahaan Anda';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -93,13 +96,19 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
   // Tenant settings (for NPWP in PDF header)
   const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
+  // Store settings (for company name in PDF header + on-screen title)
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const companyName = storeSettings?.nama_toko ?? COMPANY_NAME_FALLBACK;
 
   // Export state
   const [exporting, setExporting] = useState(false);
 
-  // ── Load tenant settings once on mount ────────────────────────────────────
+  // ── Load tenant + store settings once on mount ────────────────────────────
   useEffect(() => {
     let cancelled = false;
+    fetchStoreSettings().catch(() => null).then(ss => {
+      if (!cancelled) setStoreSettings(ss);
+    });
     tenantSettingsService.fetch().catch(() => null).then(ts => {
       if (!cancelled) setTenantSettings(ts);
     });
@@ -152,7 +161,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
 
       const options: PDFGenerationOptions = {
         company: {
-          companyName: COMPANY_NAME,
+          companyName,
           npwp: tenantSettings?.pajak_npwp ?? null,
           address: null,
         },
@@ -195,7 +204,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
       >
         <div className="flex items-center justify-center gap-2 mb-1">
           <Layout className="w-5 h-5 text-violet-200" />
-          <h3 className="text-xl font-extrabold">{COMPANY_NAME}</h3>
+          <h3 className="text-xl font-extrabold">{companyName}</h3>
         </div>
         <p className="text-[12px] text-violet-100">
           Neraca · {asOfLabel} · (dalam Rupiah)

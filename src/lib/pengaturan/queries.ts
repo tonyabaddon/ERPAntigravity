@@ -2,10 +2,12 @@ import { supabase } from '../supabaseClient';
 import type { StoreSettings, OperatingHour, BankAccount } from './types';
 
 export async function fetchStoreSettings(): Promise<StoreSettings> {
+  // PK is now tenant_id (see migration 20261115000031). Legacy code hardcoded
+  // .eq('id', 1) — that only worked for Garindo because it was the only row.
+  // RLS scopes SELECT to the caller's tenant; one row returned.
   const { data, error } = await supabase
     .from('store_settings')
     .select('*')
-    .eq('id', 1)
     .single();
   if (error) throw error;
   return data as StoreSettings;

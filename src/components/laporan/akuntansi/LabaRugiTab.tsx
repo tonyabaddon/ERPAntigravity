@@ -10,6 +10,8 @@ import type { LabaRugiResult } from '../../../lib/akuntansi/reportQueries';
 import { fetchAccountingConfig } from '../../../lib/akuntansi/service';
 import type { AccountingConfig } from '../../../lib/akuntansi/types';
 import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanServices';
+import { fetchStoreSettings } from '../../../lib/pengaturan/queries';
+import type { StoreSettings } from '../../../lib/pengaturan/types';
 import type { DbTenantSettings } from '../../../types';
 import { generateLabaRugiPDF } from '../../../lib/akuntansi/pdfExport';
 import type { LabaRugiData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
@@ -28,7 +30,8 @@ const ID_MONTHS = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
 ];
 
-const COMPANY_NAME = 'Perusahaan Anda';
+// Fallback used only until fetchStoreSettings resolves + when RLS blocks the row.
+const COMPANY_NAME_FALLBACK = 'Perusahaan Anda';
 
 // ─── Period helpers ───────────────────────────────────────────────────────────
 
@@ -103,7 +106,9 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
   // Config state (loaded once)
   const [accountingConfig, setAccountingConfig] = useState<AccountingConfig | null>(null);
   const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [configLoaded, setConfigLoaded] = useState(false);
+  const companyName = storeSettings?.nama_toko ?? COMPANY_NAME_FALLBACK;
 
   // Export state
   const [exporting, setExporting] = useState(false);
@@ -114,10 +119,12 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
     Promise.all([
       fetchAccountingConfig().catch(() => null),
       tenantSettingsService.fetch().catch(() => null),
-    ]).then(([cfg, ts]) => {
+      fetchStoreSettings().catch(() => null),
+    ]).then(([cfg, ts, ss]) => {
       if (!cancelled) {
         setAccountingConfig(cfg);
         setTenantSettings(ts);
+        setStoreSettings(ss);
         setConfigLoaded(true);
       }
     });
@@ -192,7 +199,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
       const options: PDFGenerationOptions = {
         company: {
-          companyName: COMPANY_NAME,
+          companyName,
           npwp: tenantSettings?.pajak_npwp ?? null,
           address: null,
         },
@@ -240,7 +247,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
       >
         <div className="flex items-center justify-center gap-2 mb-1">
           <TrendingUp className="w-5 h-5 text-emerald-200" />
-          <h3 className="text-xl font-extrabold">{COMPANY_NAME}</h3>
+          <h3 className="text-xl font-extrabold">{companyName}</h3>
         </div>
         <p className="text-[12px] text-emerald-100">
           Laporan Laba Rugi · Periode {headerPeriodLabel} · (dalam Rupiah)

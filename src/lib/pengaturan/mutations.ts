@@ -9,10 +9,13 @@ import type { StoreSettings, OperatingHour, BankAccount } from './types';
 export async function updateStoreSettings(
   patch: Partial<Omit<StoreSettings, 'id' | 'updated_at' | 'updated_by'>>,
 ): Promise<void> {
+  // RLS restricts UPDATE to the caller's tenant + Owner role. No filter
+  // needed here — an unfiltered UPDATE affects only the row(s) RLS lets
+  // through, which is the caller's single store_settings row (PK tenant_id).
   const { error } = await supabase
     .from('store_settings')
     .update({ ...patch, updated_at: new Date().toISOString() })
-    .eq('id', 1);
+    .not('tenant_id', 'is', null); // no-op filter to satisfy PostgREST safety
   if (error) throw error;
 }
 
