@@ -10,15 +10,20 @@ Sales rep dapat onboard tenant baru dari awal sampai owner login sukses,
 **tanpa harus escalate ke founder** (kecuali destructive rollback yang
 memang designed founder-only).
 
-## Scope: 4 MUST-HAVE Items
+## Scope: 5 MUST-HAVE Items
 
 1. **Edge Function `create-tenant-owner`** — wrap Supabase Auth Admin API +
    provision_tenant RPC dengan compensating rollback.
-2. **Sales Rep role** — new enum column `platform_admins.role`
-   (`super_admin`/`sales_rep`) + JWT claim + RLS gates + UI hides.
+2. **Sales Rep role + lifecycle** — new enum column `platform_admins.role`
+   + status column + JWT claim + RLS gates + UI hides + admin UI untuk
+   founder add/deactivate rep.
 3. **`deprovision_tenant` RPC + UI** — hard delete tenant dengan audit
    log. Super_admin only.
 4. **Slug blocklist** — reserved words check di Edge Function.
+5. **Broad sales rep operational access** — RLS + RPC updates supaya
+   sales_rep bisa: assign paket (update_plan_admin), toggle module,
+   record payment (record_payment). Payment tab TIDAK di-narrow — sales
+   rep butuh access untuk validasi transfer.
 
 ## Out of Scope (explicitly deferred)
 
@@ -186,20 +191,26 @@ di-reuse via step 5.
 ```sql
 ALTER TABLE public.platform_admins
   ADD COLUMN role TEXT NOT NULL DEFAULT 'super_admin'
-  CHECK (role IN ('super_admin', 'sales_rep'));
+  CHECK (role IN ('super_admin', 'sales_rep')),
+  ADD COLUMN status TEXT NOT NULL DEFAULT 'active'
+  CHECK (status IN ('active', 'disabled'));
 
--- All existing platform_admins → super_admin (backward compatible).
--- Sales rep baru: INSERT dengan role='sales_rep'.
-
--- Extend auth hook untuk expose role claim
--- (see custom_access_token_hook update)
+-- All existing platform_admins → super_admin + active (backward compat).
+-- Sales rep baru: INSERT via create_sales_rep RPC.
+-- Resign / suspend: UPDATE status='disabled' (audit trail lebih baik dari DELETE).
 ```
 
-**Auth Hook update:**
+**Auth Hook update (ALTER FUNCTION existing `custom_access_token_hook`):**
 
-Extend existing `custom_access_token_hook` function untuk read
-`platform_admins.role` dan expose sebagai claim `platform_admin_role`
-di JWT.
+Bukan create new — modify function yang sudah production di Phase A.
+Extend logic untuk:
+- Read `platform_admins.role` + `status` for the user
+- If `status='disabled'` → skip role claim (JWT tidak mendapat platform admin claim)
+- Else expose sebagai claim `platform_admin_role` di JWT
+
+Backward compat: existing `is_platform_admin` claim tetap true untuk BOTH
+super_admin + sales_rep, jadi existing code jalan. New code cek claim
+baru `platform_admin_role` untuk role-specific gates.
 
 **Helper functions:**
 
@@ -225,19 +236,41 @@ GRANT EXECUTE ON FUNCTION public._is_super_admin_from_jwt() TO authenticated;
 
 | Table | Command | Rule after migration |
 |---|---|---|
-| tenants | SELECT | `_is_platform_admin_from_jwt()` — both roles can view |
-| tenants | INSERT/UPDATE/DELETE | `_is_super_admin_from_jwt()` — direct writes = super only |
+| tenants | SELECT | `_is_platform_admin_from_jwt()` — both roles |
+| tenants | INSERT/UPDATE/DELETE | `_is_super_admin_from_jwt()` — super only |
 | tenant_subscriptions | SELECT | `_is_platform_admin_from_jwt()` |
-| tenant_subscriptions | INSERT/UPDATE/DELETE | `_is_super_admin_from_jwt()` |
-| plans | ALL | Already super-admin-only (Wave 4a) — UNCHANGED |
+| tenant_subscriptions | UPDATE (via `update_plan_admin` SECDEF) | Both roles via RPC |
+| tenant_subscriptions | INSERT/DELETE (direct or via `renew_subscription`) | Super only |
+| tenant_payments | SELECT | `_is_platform_admin_from_jwt()` — both roles |
+| tenant_payments | INSERT (via `record_payment` SECDEF) | Both roles |
+| tenant_payments | UPDATE/DELETE | Super only |
+| tenant_features / tenant_feature_overrides | SELECT | Both roles |
+| tenant_features / tenant_feature_overrides | UPDATE (via module toggle RPC) | Both roles |
+| plans | ALL | Super only — UNCHANGED |
 
-**Sales rep write path:** sales_rep tidak punya direct INSERT permission
-di tenants — mereka HARUS via `provision_tenant` RPC yang SECDEF (bypass
-RLS internally). Edge Function calls RPC on their behalf. Ini enforce
-single write path + auditability.
+**RPC auth check updates:**
 
-**Super admin direct writes:** super_admin bisa langsung `.from('tenants').update({...})` untuk edge cases (mis. rename tenant tanpa lewat wizard).
-Sales rep tidak.
+Existing RPCs perlu ubah gate dari `_is_platform_admin_from_jwt()` ke
+allow-list eksplisit:
+
+| RPC | Existing gate | New gate |
+|---|---|---|
+| `provision_tenant` | platform_admin | UNCHANGED (both roles OK) |
+| `update_plan_admin` | super_admin (assume) | platform_admin (kedua role) |
+| `record_payment` | platform_admin | UNCHANGED (both roles OK) |
+| `renew_subscription` | platform_admin | narrow to super_admin |
+| `suspend_tenant` / `activate_tenant` | platform_admin | narrow to super_admin |
+| `deprovision_tenant` (NEW) | — | super_admin only |
+| `create_sales_rep` (NEW) | — | super_admin only |
+| `deactivate_sales_rep` (NEW) | — | super_admin only |
+
+**Sales rep operational path:** semua modification lewat SECDEF RPC.
+Direct table INSERT/UPDATE untuk sales_rep = blocked. Ini simplify audit
++ enforce business logic centralized di RPC.
+
+**Super admin exemption:** super_admin punya `_is_platform_admin_from_jwt()`
+true + `_is_super_admin_from_jwt()` true. Bisa panggil semua RPC + direct
+table writes untuk edge cases.
 
 **UI gates (client-side):**
 
@@ -251,10 +284,20 @@ Update existing `isSuperAdmin()` helper in `src/lib/adminAuth.ts`:
 Sidebar (`AdminLayout.tsx`):
 - Hide `/admin/plans` link jika `!isSuperAdmin()`
 - Hide `/admin/revenue` link jika `!isSuperAdmin()`
+- Hide `/admin/sales-reps` link jika `!isSuperAdmin()` (route baru — see C5)
 
-TenantDetailShell:
-- Danger Zone section (delete button) rendered jika `isSuperAdmin()`
-- Sales rep tidak lihat sama sekali
+TenantDetailShell — conditional UI berdasarkan role:
+
+| Section | Super Admin | Sales Rep |
+|---|---|---|
+| Ringkasan tab | View all fields | View all fields |
+| Pengguna tab | Full manage | View only (add/edit/delete hidden) |
+| Log aktivitas tab | View all | View all |
+| Pembayaran tab (Wave 5) | View + Catat Pembayaran + Edit/Delete | View + Catat Pembayaran (edit/delete hidden) |
+| Paket & Modul (via update_plan_admin) | Full edit | Full edit |
+| Suspend / Activate button (Wave 4a) | Visible | Hidden |
+| Renew Subscription button (Wave 4a) | Visible | Hidden |
+| Delete tenant (Zona Bahaya — NEW) | Visible | Hidden |
 
 ---
 
@@ -339,8 +382,112 @@ Reuse: existing `RenewSubscriptionModal.tsx` (Wave 4a) structural pattern
 
 ### C4: Slug blocklist
 
-Already covered in C1. Const array shared between Edge Function + wizard
-(nice-to-have inline pre-check).
+Trimmed list (10 items, hanya route collisions real):
+```typescript
+const RESERVED_SLUGS = [
+  'admin', 't', 'select-tenant',       // Wajib — direct URL clash
+  'api', 'auth', 'login', 'register',  // Sebaiknya — future routes
+  'signup', 'signin', 'settings',      // Sebaiknya — Supabase Auth defaults
+];
+```
+
+Removed dari draft awal: `www, mail, blog, docs, help, support,
+pengaturan, onboarding, billing` — over-paranoid, no actual collision.
+
+### C5: Sales rep management (add/deactivate)
+
+**Status:** NEW. Tanpa ini founder tetap manual SQL setiap tambah sales rep
+= sales team growth tetap bottleneck.
+
+**RPC: `create_sales_rep(p_email, p_name)` — SECDEF, super_admin only.**
+
+```sql
+CREATE OR REPLACE FUNCTION public.create_sales_rep(
+  p_email TEXT,
+  p_name TEXT
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION 'create_sales_rep: super_admin required' USING errcode = 'P0403';
+  END IF;
+  IF p_email IS NULL OR p_email !~ '^[^ ]+@[^ ]+\.[^ ]+$' THEN
+    RAISE EXCEPTION 'create_sales_rep: invalid email' USING errcode = '22023';
+  END IF;
+
+  -- auth.users must be created first via Edge Function
+  -- (mirror pattern of create-tenant-owner: invite email)
+  -- This RPC assumes v_user_id sudah exist di auth.users.
+  -- Called by Edge Function `invite-sales-rep` yang wrap auth.admin.inviteUserByEmail.
+
+  SELECT id INTO v_user_id FROM auth.users WHERE email = p_email;
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'create_sales_rep: user_id not found for %', p_email
+      USING errcode = 'P0002';
+  END IF;
+
+  INSERT INTO public.platform_admins (user_id, role, status, name)
+  VALUES (v_user_id, 'sales_rep', 'active', p_name);
+
+  RETURN jsonb_build_object('user_id', v_user_id, 'email', p_email, 'name', p_name);
+END;
+$function$;
+```
+
+**Edge Function `invite-sales-rep`** (companion untuk create_sales_rep):
+- Same pattern sebagai `create-tenant-owner` tapi lebih simple
+- inviteUserByEmail → RPC create_sales_rep → return
+- Compensating rollback jika RPC gagal
+
+**RPC: `deactivate_sales_rep(p_user_id, p_reason)` — SECDEF, super_admin only.**
+
+```sql
+CREATE OR REPLACE FUNCTION public.deactivate_sales_rep(
+  p_user_id UUID, p_reason TEXT
+) RETURNS JSONB ...
+AS $function$
+BEGIN
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION '...' USING errcode = 'P0403';
+  END IF;
+
+  UPDATE public.platform_admins SET status='disabled'
+  WHERE user_id = p_user_id AND role = 'sales_rep';
+
+  INSERT INTO public.audit_log (event_type, payload)
+  VALUES ('DEACTIVATE_SALES_REP', jsonb_build_object(...));
+
+  -- Note: existing JWT tetap valid sampai expire (~1 jam).
+  -- Immediate revoke butuh Supabase Auth force-logout (nice-to-have).
+
+  RETURN jsonb_build_object('user_id', p_user_id, 'deactivated_at', now());
+END;
+$function$;
+```
+
+**UI: `/admin/sales-reps` route (NEW).**
+
+Simple list + create form:
+- Table: name, email, status, tenants_created (count), actions
+- Row action untuk active reps: "Nonaktifkan" button → modal + reason input
+- Button di top: "Tambah Sales Rep" → wizard mini (1 step: email + name)
+- Route gated: super_admin only
+
+Add sidebar link "Sales Reps" — super_admin only, hidden dari sales_rep.
+
+Reuse: existing `TenantsList.tsx` table pattern.
+
+## Section 2.5: (removed — payment narrow reversed based on final sales rep scope)
+
+Original draft narrowed payment access to super_admin. Later re-scope
+confirmed sales rep needs Pembayaran tab access untuk validasi transfer
+dari tenant. RLS updates di C2 above cover this: sales_rep can SELECT
++ INSERT via record_payment RPC, but cannot UPDATE/DELETE existing
+payment rows (super_admin only untuk correcting mistakes).
 
 ## Section 3: Data Flow
 
@@ -430,20 +577,6 @@ Add to CI (existing isolation-audit workflow):
 - pgTAP suite for deprovision_tenant auth gate
 - Deno test suite for Edge Function
 
-## Implementation Effort Estimate
-
-| Component | Effort |
-|---|---|
-| Edge Function `create-tenant-owner` | 2-3 hours |
-| Sales Rep role (migration + JWT + RLS + UI gates) | 3-4 hours |
-| deprovision_tenant RPC + Delete modal | 1.5-2 hours |
-| Slug blocklist (bundle with Edge Function) | 15 minutes |
-| Testing (all layers) | 5.5 hours |
-| **Total** | **~12-15 hours** |
-
-Note: original estimate was 6-10 hours. Testing budget yang comprehensive
-bumps it up. Kalau accept manual smoke test dan skip pgTAP → ~8 hours.
-
 ## Reuse Summary
 
 Nothing rebuilt from scratch. All new components hook into existing infra:
@@ -458,18 +591,63 @@ Nothing rebuilt from scratch. All new components hook into existing infra:
 
 ## Success Criteria (revisit)
 
-Sales rep dapat:
+Sales rep dapat (daily operations, no founder needed):
 - ✅ Login ke VOSI admin dengan role `sales_rep`
-- ✅ Buka wizard `/admin/tenants/new` + fill form
-- ✅ Submit → Edge Function bikin auth.users + seed tenant + kirim invite
-- ✅ Owner terima email invite + klik magic link + masuk dashboard
-- ✅ Kalau gagal (slug taken, rate limit), dapat error inline yang jelas
-- ✅ Owner subsequent login via OTP tetap jalan
-- ❌ Sales rep TIDAK bisa hapus tenant (by design — super_admin only)
-- ❌ Sales rep TIDAK bisa akses /admin/plans + /admin/revenue
+- ✅ Onboard tenant baru via wizard `/admin/tenants/new`
+- ✅ Owner terima email invite + magic link login → OTP login berikutnya
+- ✅ Assign / ubah paket + toggle module untuk tenant mana pun
+- ✅ Record + validasi payment transfer dari tenant
+- ✅ View list semua tenant + detail (kecuali destructive buttons)
+- ✅ Error handling inline (slug conflict, rate limit, dll)
 
-Escalation ke founder tetap needed untuk: delete tenant (typo cleanup),
-email loss / owner locked out, refund, sales rep turnover (customer minta
-delete tenant yang di-onboard rep yang sudah resign).
+Sales rep TIDAK bisa (founder escalation):
+- ❌ Delete tenant (super_admin only — via /admin/tenants/<slug> Zona Bahaya)
+- ❌ Suspend / activate tenant (super_admin only)
+- ❌ Renew subscription (super_admin only)
+- ❌ Add / edit / hapus admin user di dalam tenant (super_admin only —
+   owner tenant biasanya handle sendiri)
+- ❌ Akses /admin/plans (catalog paket global)
+- ❌ Akses /admin/revenue (analytics platform-wide)
+- ❌ Akses /admin/sales-reps (manage rep lain)
 
-Untuk MVP + sales team kecil (2-5 rep), tradeoff ini acceptable.
+Escalation ke founder cuma untuk:
+- Delete tenant (typo cleanup)
+- Suspend/renew (billing decisions)
+- Owner locked out (email loss)
+- Sales rep resign / new hire
+
+Untuk model founder weekly-review + sales rep daily operations, ini
+fit-for-purpose.
+
+## Implementation Effort Estimate (revised)
+
+| Component | Effort |
+|---|---|
+| Edge Function `create-tenant-owner` | 2-3 hours |
+| Sales Rep role + status + auth hook + RLS updates | 3-4 hours |
+| RPC gate updates (update_plan_admin, renew, suspend/activate) | 1-2 hours |
+| Sales rep management (create + deactivate + UI) | 2-3 hours |
+| deprovision_tenant RPC + Zona Bahaya UI | 1.5-2 hours |
+| Slug blocklist (bundle with Edge Function) | 15 minutes |
+| Testing (minimal: manual smoke + P0 unit tests) | 2 hours |
+| **Total** | **~12-16 hours** |
+
+## Deploy sequence (Missing #3 fix)
+
+Kritikal — kalau salah urutan, founder bisa kehilangan access.
+
+```
+1. Deploy migration 20261115000032 (role + status columns, backward compat)
+2. Deploy migration 20261115000033 (deprovision_tenant RPC)
+3. Deploy migration 20261115000034 (RPC gate updates)
+4. Deploy auth hook ALTER (add platform_admin_role claim, skip if disabled)
+5. Force JWT refresh (via Supabase Auth admin API atau tunggu session expire ~1jam)
+6. Deploy frontend (isSuperAdmin() helper + UI conditionals + new routes)
+7. Deploy Edge Functions (create-tenant-owner + invite-sales-rep)
+8. Smoke test as founder → verify super_admin access intact
+9. Create test sales_rep + smoke test as sales_rep
+```
+
+Backwards compat safety: existing `is_platform_admin` claim TETAP true
+untuk kedua role, jadi kalau frontend deploy sebelum auth hook, existing
+gates tetap work (fallback ke old behavior).
