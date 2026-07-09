@@ -12,6 +12,7 @@ import { TenantDetailShell } from './TenantDetail/TenantDetailShell';
 import { AuditLogViewer } from './AuditLogViewer';
 import { PlansManagement } from './PlansManagement';
 import { AdminRevenue } from './AdminRevenue';
+import { TenantWizard } from './TenantWizard';
 
 // Pattern for /admin/tenants/<slug>
 const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
@@ -19,6 +20,11 @@ const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
 function resolveAdminContent(pathname: string): React.ReactNode {
   if (pathname === '/admin' || pathname === '/admin/') {
     return <AdminHome />;
+  }
+  // /admin/tenants/new MUST match before TENANT_DETAIL_RE below — otherwise
+  // 'new' would be interpreted as a slug and drop into TenantDetailShell.
+  if (pathname === '/admin/tenants/new' || pathname === '/admin/tenants/new/') {
+    return <TenantWizard />;
   }
   const tenantDetailMatch = pathname.match(TENANT_DETAIL_RE);
   if (tenantDetailMatch) {
