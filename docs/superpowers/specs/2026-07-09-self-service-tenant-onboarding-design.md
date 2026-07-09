@@ -10,7 +10,12 @@ Sales rep dapat onboard tenant baru dari awal sampai owner login sukses,
 **tanpa harus escalate ke founder** (kecuali destructive rollback yang
 memang designed founder-only).
 
-## Scope: 5 MUST-HAVE Items
+## Scope: 6 MUST-HAVE Items
+
+Sales team assumption: **1 rep dulu**. Multi-rep features (pipeline
+filter per rep, tenant reassignment, per-rep dashboard) deferred to
+backlog. Foundation (role system, RLS, RPC gates) scalable ke N rep
+tanpa migration ulang.
 
 1. **Edge Function `create-tenant-owner`** — wrap Supabase Auth Admin API +
    provision_tenant RPC dengan compensating rollback.
@@ -24,6 +29,29 @@ memang designed founder-only).
    sales_rep bisa: assign paket (update_plan_admin), toggle module,
    record payment (record_payment). Payment tab TIDAK di-narrow — sales
    rep butuh access untuk validasi transfer.
+6. **Extended audit trail** — expand audit_log INSERT ke SEMUA sensitive
+   RPC (provision, update_plan, record_payment, toggle_module,
+   deprovision, deactivate_sales_rep). Foundation untuk weekly review
+   evidence + future compliance + dispute resolution.
+
+## Deferred to backlog (post-launch)
+
+**Multi-rep operational tooling:**
+- "Tenant saya" filter di /admin/tenants (need at 2+ reps)
+- Per-rep pipeline dashboard (need at 3+ reps)
+- Tenant reassignment RPC (need on rep turnover)
+- Rep performance analytics (need at 5+ reps)
+
+**Volume UX:**
+- Tenant list search + server-side pagination (need at 30-50+ tenants)
+- Bulk operations (bulk suspend, bulk export)
+
+**Ops hygiene:**
+- Custom SMTP untuk invite email deliverability (need if spam issue
+  reports meningkat)
+- Anomaly detection dashboard (duplicate tenants, ghost tenants)
+- Reset owner credentials RPC (fallback ada: owner Kirim OTP dari
+  login page)
 
 ## Out of Scope (explicitly deferred)
 
@@ -489,6 +517,34 @@ dari tenant. RLS updates di C2 above cover this: sales_rep can SELECT
 + INSERT via record_payment RPC, but cannot UPDATE/DELETE existing
 payment rows (super_admin only untuk correcting mistakes).
 
+### C6: Extended audit trail
+
+Existing `audit_log` table captures Wave 4a suspend/activate + Wave 5
+payment/user actions. Extend coverage ke SEMUA sensitive RPC yang
+sales_rep bisa panggil, supaya founder weekly review punya evidence
+trail + dispute resolution.
+
+**Events yang harus di-log** (append INSERT audit_log di setiap RPC):
+
+| Event type | Emitted from | Payload |
+|---|---|---|
+| `PROVISION_TENANT` | provision_tenant RPC | { tenant_id, slug, name, plan_code, owner_email, actor_user_id } |
+| `UPDATE_PLAN` | update_plan_admin RPC | { tenant_id, old_plan, new_plan, actor_user_id } |
+| `TOGGLE_MODULE` | (module toggle RPC) | { tenant_id, module_key, old_value, new_value, actor_user_id } |
+| `RECORD_PAYMENT` | record_payment RPC | { tenant_id, amount, method, reference, actor_user_id } |
+| `DEPROVISION_TENANT` | deprovision_tenant RPC | { tenant_snapshot, reason, actor_user_id } |
+| `CREATE_SALES_REP` | create_sales_rep RPC | { user_id, email, name, actor_user_id } |
+| `DEACTIVATE_SALES_REP` | deactivate_sales_rep RPC | { user_id, reason, actor_user_id } |
+| `SUSPEND_TENANT` | suspend_tenant RPC | { tenant_id, reason, actor_user_id } (existing Wave 4a) |
+| `ACTIVATE_TENANT` | activate_tenant RPC | { tenant_id, actor_user_id } (existing Wave 4a) |
+| `RENEW_SUBSCRIPTION` | renew_subscription RPC | { tenant_id, new_expires_at, actor_user_id } (existing Wave 4a) |
+
+**Implementation:** append `INSERT INTO audit_log (event_type, payload, created_at) VALUES (...)` di setiap RPC. Pattern sama dengan existing Wave 4a code.
+
+**No new table needed** — pakai audit_log existing.
+
+**Founder access untuk review:** `/admin/audit` sudah ada (Wave 5). Search + filter by event_type + actor bisa di-extend kalau butuh (backlog).
+
 ## Section 3: Data Flow
 
 ### Happy path
@@ -619,7 +675,7 @@ Escalation ke founder cuma untuk:
 Untuk model founder weekly-review + sales rep daily operations, ini
 fit-for-purpose.
 
-## Implementation Effort Estimate (revised)
+## Implementation Effort Estimate (revised, 6 items)
 
 | Component | Effort |
 |---|---|
@@ -629,8 +685,9 @@ fit-for-purpose.
 | Sales rep management (create + deactivate + UI) | 2-3 hours |
 | deprovision_tenant RPC + Zona Bahaya UI | 1.5-2 hours |
 | Slug blocklist (bundle with Edge Function) | 15 minutes |
+| **Extended audit trail (audit_log INSERT di 10 RPCs)** | **1-2 hours** |
 | Testing (minimal: manual smoke + P0 unit tests) | 2 hours |
-| **Total** | **~12-16 hours** |
+| **Total** | **~13-18 hours** |
 
 ## Deploy sequence (Missing #3 fix)
 
