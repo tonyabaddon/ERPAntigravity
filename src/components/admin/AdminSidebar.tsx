@@ -8,6 +8,7 @@ import {
   Settings,
   HelpCircle,
   Coins,
+  UsersRound,
 } from 'lucide-react';
 import { isSuperAdmin } from '../../lib/adminAuth';
 
@@ -48,6 +49,12 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/revenue',
     label: 'Pendapatan',
     icon: <Coins size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
+  },
+  {
+    to: '/admin/sales-reps',
+    label: 'Sales Reps',
+    icon: <UsersRound size={16} strokeWidth={1.8} strokeLinecap="round" />,
     superAdminOnly: true,
   },
   {

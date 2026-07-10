@@ -1,5 +1,25 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 5: /admin/sales-reps UI (list + create + deactivate)
+
+Built the full `/admin/sales-reps` screen in the platform admin panel.
+
+**New files:**
+- `src/lib/salesRepsApi.ts` — `list()`, `create()`, `deactivate()` typed wrappers
+- `src/lib/salesRepsApi.test.ts` — 9 tests (list/create/deactivate happy + error paths)
+- `src/components/admin/SalesRepCreateModal.tsx` — UUID paste + email + name, Bahasa copy
+- `src/components/admin/SalesRepDeactivateModal.tsx` — reason textarea, JWT warning, Bahasa copy
+- `src/components/admin/SalesRepsList.tsx` — orchestrator with skeleton, table, status badges
+- `src/components/admin/SalesRepsList.test.tsx` — 8 tests (render, modals, error, re-fetch)
+
+**Modified:**
+- `AdminRoutes.tsx` — added `/admin/sales-reps` route
+- `AdminSidebar.tsx` — added "Sales Reps" nav item (superAdminOnly, UsersRound icon)
+
+**Tests:** 18 new pass (0 fail). tsc clean. AdminSidebar tests unaffected.
+
+---
+
 ## 2026-07-10 — Wave 6 Task 14: verify_payment + reject_payment RPCs + FE wrappers
 
 Appended `verify_payment`, `reject_payment`, and `list_pending_payments` RPCs to migration 000039 (applied to prod via execute_sql).

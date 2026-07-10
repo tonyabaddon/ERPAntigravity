@@ -1,47 +1,50 @@
-# Task 5 Report — adminApi wrappers + adminTypes extensions
+# Task 5 Report: /admin/sales-reps UI
 
-**Status:** DONE  
-**Date:** 2026-07-05  
-**Branch:** worktree-phase-b-wave4a
+**Status:** DONE
+**Date:** 2026-07-10
+**Wave:** 6
 
-## Files Modified
+## What was built
 
-- `src/lib/adminTypes.ts` — Added `AdminApiError` abstract base class; refactored `PlatformAdminRequiredError` + `InvalidFilterError` to extend it; added 5 new error classes + 4 new interface/type exports (RenewSubscriptionInput, RenewSubscriptionResult, UpdatePlanInput, AttentionTenantRow, AttentionReason).
-- `src/lib/adminApi.ts` — Extended `normalizeRpcError` with P0404 + message-gated P0403/22023 dispatch; added 5 new wrappers: `renewSubscription`, `suspendTenant`, `activateTenant`, `updatePlan`, `listAttentionTenants`.
-- `src/lib/adminApi.test.ts` — Extended with 5 Wave 4a describe blocks (42 total tests, up from 21).
+### New files
+- `src/lib/salesRepsApi.ts` — typed wrappers: `list()` queries `platform_admins` WHERE role='sales_rep'; `create()` calls `create_sales_rep` RPC; `deactivate()` calls `deactivate_sales_rep` RPC. Local `normalizeRpcError` mirrors paymentsApi pattern (not re-exported from adminApi).
+- `src/lib/salesRepsApi.test.ts` — 9 tests covering list/create/deactivate happy paths and error propagation (P0403, P0002, 22023).
+- `src/components/admin/SalesRepCreateModal.tsx` — 3-field form (UUID paste + email + name), UUID format validation, Bahasa copy per Note F, gold accent header, adminToast on submit.
+- `src/components/admin/SalesRepDeactivateModal.tsx` — reason textarea (min 5 chars), Bahasa warning per Note G, gold accent header, adminToast on submit.
+- `src/components/admin/SalesRepsList.tsx` — orchestrator: useEffect+async fetch, skeleton rows, table with status badges (green/gray), "Tambah Sales Rep" button, per-row "Nonaktifkan" button (active only), error inline retry, refresh key on create/deactivate success.
+- `src/components/admin/SalesRepsList.test.tsx` — 8 tests: heading/button render, empty state, rows with badges, create modal opens, Nonaktifkan button active-only, deactivate modal opens, error state, re-fetch after create.
 
-## SQL Sentinel Messages Verified
+### Modified files
+- `src/components/admin/AdminRoutes.tsx` — added `/admin/sales-reps` route dispatching to `<SalesRepsList />`.
+- `src/components/admin/AdminSidebar.tsx` — added `UsersRound` import + "Sales Reps" nav item with `superAdminOnly: true`.
 
-Before writing, verified exact RAISE EXCEPTION messages from each migration SQL file:
-
-| SQLSTATE | message                  | throws                       | Source migration |
-|----------|--------------------------|------------------------------|-----------------|
-| P0404    | TENANT_NOT_FOUND         | TenantNotFoundError          | 000010, 000011  |
-| 22023    | INVALID_EXPIRES_AT       | InvalidRenewalDateError      | 000010          |
-| 22023    | INVALID_PLAN_CODE        | InvalidPlanCodeError         | 000010, 000012  |
-| P0403    | SUPER_ADMIN_REQUIRED     | SuperAdminRequiredError      | 000012          |
-| 22023    | CANNOT_ACTIVATE_ARCHIVED | CannotActivateArchivedError  | 000011          |
-| 22023    | (other)                  | InvalidFilterError           | fallthrough     |
-| P0403    | (other)                  | PlatformAdminRequiredError   | fallthrough     |
-
-`listAttentionTenants` uses `p_expiry_within_days` parameter (verified from migration 000013).
-
-## Test Results
+## Test results
 
 ```
-npx vitest run src/lib/adminApi
-  Tests  42 passed (42)
-```
+npx vitest run src/lib/salesRepsApi.test.ts src/components/admin/SalesRepsList.test.tsx
 
-Full suite: 5 pre-existing failures unchanged (adminToast, AdminLayout, productWrappers×3, AdminRoutes×2 are pre-existing; adminApi added 21 new passing tests). Zero new failures.
+Test Files  2 passed (2)
+     Tests  18 passed (18)
+  Duration  663ms
+```
 
 ## TypeScript
 
-`npx tsc --noEmit`: same 9 pre-existing errors (pg, yaml, sonner, jsonwebtoken missing types). Zero new errors from Task 5 changes.
+```
+npx tsc --noEmit
+(no output — clean)
+```
 
-## Design Notes
+## Pre-existing test failures (not caused by Task 5)
 
-- `AdminApiError` abstract base class introduced (brief assumed it existed; Wave 1 used `extends Error` directly). Both Wave 1 error classes updated to extend `AdminApiError` — `instanceof` chain preserved.
-- `Object.setPrototypeOf(this, new.target.prototype)` called in `AdminApiError` constructor to fix prototype chain in transpiled JS.
-- `normalizeRpcError`: P0404 checked first; P0403 checks `SUPER_ADMIN_REQUIRED` message before falling to `PlatformAdminRequiredError`; 22023 checks 3 specific messages before falling to `InvalidFilterError`.
-- `updatePlan` returns `{ok: true; updated_keys: string[]}` — matches RPC RETURNS jsonb `updated_keys` key (list of jsonb_object_keys from p_updates).
+`src/components/admin/AdminRoutes.test.tsx` had 2 pre-existing failures before Task 5 (confirmed via git stash):
+- "renders AdminHome stub at /admin" — checks for `/Beranda Admin.*Task 8/` which doesn't exist in AdminHome.tsx
+- "renders TenantsList stub at /admin/tenants" — checks for `/Daftar Tenant.*Task 9/` which doesn't exist in TenantsList.tsx
+
+These are stale test stubs from a prior wave. Not introduced by this task.
+
+## Design decisions
+
+- `normalizeRpcError` is private in `adminApi.ts` (not exported); followed `paymentsApi.ts` pattern of a local mirror.
+- AdminSidebar test count comment says "7 items" but test assertions don't count items — no test update needed.
+- `SalesRepDeactivateModal` guards `!salesRep` at render to prevent null access (prop is `SalesRep | null`).

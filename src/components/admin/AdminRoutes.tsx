@@ -13,6 +13,7 @@ import { AuditLogViewer } from './AuditLogViewer';
 import { PlansManagement } from './PlansManagement';
 import { AdminRevenue } from './AdminRevenue';
 import { TenantWizard } from './TenantWizard';
+import { SalesRepsList } from './SalesRepsList';
 
 // Pattern for /admin/tenants/<slug>
 const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
@@ -42,6 +43,9 @@ function resolveAdminContent(pathname: string): React.ReactNode {
   }
   if (pathname === '/admin/revenue' || pathname === '/admin/revenue/') {
     return <AdminRevenue />;
+  }
+  if (pathname === '/admin/sales-reps' || pathname === '/admin/sales-reps/') {
+    return <SalesRepsList />;
   }
   // Unknown sub-path — fallback to home
   return <AdminHome />;
