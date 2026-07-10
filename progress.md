@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 3: Frontend isSuperAdmin helper + sidebar role filter
+
+Wired frontend to read `platform_admin_role` JWT claim. `isSuperAdmin()` now returns `true` only for `'super_admin'` claim value; `isSalesRep()` returns `true` only for `'sales_rep'`. AdminSidebar hides Paket (`/admin/plans`) and Pendapatan (`/admin/revenue`) for non-super_admin. Shared `decodeJwt` extracted to `src/lib/jwt.ts` (base64url-safe).
+
+**Tests:** 6 new unit tests for adminAuth (RED→GREEN); 2 new sidebar role-filter cases; PlansManagement.test.tsx 11/11 unchanged. TypeScript strict passes clean. E2E sidebar smoke deferred to Task 5 (no sales_rep row exists yet).
+
+**Commit:** `f02ed37` feat(admin): sidebar filter by role via platform_admin_role JWT claim
+
+---
+
 ## 2026-07-10 — Wave 6 Task 2: RLS role-gates + narrow RPC gates (migrations 000033, 000034)
 
 Split `tenants` and `tenant_subscriptions` RLS: SELECT open to both platform admin roles, writes restricted to super_admin. Narrowed `suspend_tenant`/`activate_tenant`/`renew_subscription` RPCs to super_admin only (P0403 SUPER_ADMIN_REQUIRED).
