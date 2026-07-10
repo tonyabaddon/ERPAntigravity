@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 13: record_payment update (PENDING + fraud checks)
+
+Updated `record_payment(jsonb)` RPC in migration 000039 (appended via CREATE OR REPLACE; applied to prod via execute_sql since slot already consumed by Task 12).
+
+**4 changes vs Wave 5 body:**
+1. Anti-fraud #1: non-CASH without `proof_object_key` → 22023 `PROOF_REQUIRED_FOR_NON_CASH`
+2. Anti-fraud #2: amount anomaly flag (`v_amount_anomaly boolean`) — >10% deviation vs `plans.price_annual` written into `platform_admin_audit.detail`
+3. `tenant_payments` INSERT now includes `status='PENDING_VERIFICATION'` (two-step verification workflow)
+4. Coverage SUM adds `AND status='VERIFIED'` — PENDING payments don't inflate returned `coverage_status`
+
+**MCP smokes (no Docker):** 4 pass — body verification (all 4 strings present), proof-check DO block (rolled back clean, no committed rows), happy-path (PENDING_VERIFICATION + anomaly=false + coverage=UNPAID), anomaly detection (amount_anomaly=true for 200% deviation).
+
+**Garindo (Toko Jaya Makmur):** 1 VERIFIED payment 9,000,000 unchanged. Coverage intact.
+
+**pgTAP:** `supabase/tests/wave6/record_payment_v6.sql` — plan(3): proof check, PENDING status, anomaly flag.
+
+---
+
+## 2026-07-10 — Wave 6 Task 12: Payment verification schema (migration 000039)
+
+Added 4 columns to `tenant_payments` (status/verified_by/verified_at/rejection_reason) and rebuilt `v_tenant_payment_coverage` with Wave 6 VERIFIED filter + `total_pending` column. Wave 5 shape and Garindo coverage row fully preserved. Commit d5a510f.
+
 ## 2026-07-10 — Wave 6 Task 6: deprovision_tenant RPC + Zona Bahaya UI (migration 000035)
 
 Hard-delete tenant gate for super_admin: atomic RPC + confirm-slug modal UI.

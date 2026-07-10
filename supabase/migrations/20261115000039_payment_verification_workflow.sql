@@ -81,3 +81,205 @@ LEFT JOIN paid ON paid.tenant_id = t.id;
 
 -- Re-issue GRANTs (DROP VIEW loses them)
 GRANT SELECT ON public.v_tenant_payment_coverage TO authenticated, vosi_rpc_owner;
+
+-- ==== Task 13: record_payment (PENDING + fraud checks) ====
+-- Applied to prod via execute_sql (slot 000039 already applied by Task 12).
+-- Changes vs Wave 5 body:
+--   1. New DECLARE vars: v_amount_anomaly boolean, v_plan_price numeric
+--   2. Anti-fraud #1: proof required for non-CASH (after TENANT_NOT_FOUND check)
+--   3. Anti-fraud #2: amount anomaly flag (>10% deviation vs plan price_annual)
+--   4. Audit INSERT: detail = p_payload || jsonb_build_object('amount_anomaly', v_amount_anomaly)
+--   5. tenant_payments INSERT: adds status='PENDING_VERIFICATION' to column list + VALUES
+--   6. Coverage SUM: adds AND status='VERIFIED' (PENDING doesn't inflate coverage)
+
+CREATE OR REPLACE FUNCTION public.record_payment(p_payload jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_catalog'
+AS $function$
+DECLARE
+  v_admin_email      text;
+  v_unknown_keys     text[];
+  v_allowed_keys     text[] := ARRAY[
+    'tenant_id', 'amount', 'payment_method', 'payment_date',
+    'period_from', 'period_to', 'bank_name', 'ewallet_provider',
+    'proof_object_key', 'bank_reference', 'notes'
+  ];
+  v_tenant_id        uuid;
+  v_amount           numeric;
+  v_payment_method   text;
+  v_payment_date     date;
+  v_period_from      date;
+  v_period_to        date;
+  v_bank_name        text;
+  v_ewallet_provider text;
+  v_proof_url        text;
+  v_bank_reference   text;
+  v_notes            text;
+  v_audit_id         bigint;
+  v_payment_id       uuid;
+  v_amount_paid_ytd  numeric;
+  v_price_annual     numeric;
+  v_coverage_ok      boolean;
+  v_coverage_status  text;
+  -- Wave 6 additions
+  v_amount_anomaly   boolean := false;
+  v_plan_price       numeric;
+BEGIN
+  IF NOT public._is_platform_admin_from_jwt() THEN
+    RAISE EXCEPTION USING errcode = 'P0403', message = 'PLATFORM_ADMIN_REQUIRED';
+  END IF;
+
+  SELECT ARRAY_AGG(k)
+  INTO v_unknown_keys
+  FROM jsonb_object_keys(p_payload) AS k
+  WHERE k <> ALL(v_allowed_keys);
+
+  IF v_unknown_keys IS NOT NULL AND array_length(v_unknown_keys, 1) > 0 THEN
+    RAISE EXCEPTION USING errcode = '22023', message = 'UNKNOWN_FIELD';
+  END IF;
+
+  v_tenant_id        := (p_payload ->>'tenant_id')::uuid;
+  v_amount           := (p_payload ->>'amount')::numeric;
+  v_payment_method   := p_payload ->>'payment_method';
+  v_payment_date     := (p_payload ->>'payment_date')::date;
+  v_period_from      := (p_payload ->>'period_from')::date;
+  v_period_to        := (p_payload ->>'period_to')::date;
+  v_bank_name        := p_payload ->>'bank_name';
+  v_ewallet_provider := p_payload ->>'ewallet_provider';
+  v_proof_url        := p_payload ->>'proof_object_key';
+  v_bank_reference   := p_payload ->>'bank_reference';
+  v_notes            := p_payload ->>'notes';
+
+  IF v_amount IS NULL OR v_amount <= 0 THEN
+    RAISE EXCEPTION USING errcode = '22023', message = 'INVALID_AMOUNT';
+  END IF;
+
+  IF v_period_from IS NULL OR v_period_to IS NULL OR v_period_to < v_period_from THEN
+    RAISE EXCEPTION USING errcode = '22023', message = 'INVALID_PERIOD';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM public.tenants WHERE id = v_tenant_id) THEN
+    RAISE EXCEPTION USING errcode = 'P0404', message = 'TENANT_NOT_FOUND';
+  END IF;
+
+  -- Wave 6 Anti-fraud #1: proof required for non-cash
+  IF v_payment_method != 'CASH'
+     AND (v_proof_url IS NULL OR v_proof_url = '') THEN
+    RAISE EXCEPTION USING errcode = '22023',
+      message = 'PROOF_REQUIRED_FOR_NON_CASH';
+  END IF;
+
+  -- Wave 6 Anti-fraud #2: amount anomaly (>10% deviation vs plan price)
+  SELECT p.price_annual INTO v_plan_price
+  FROM public.plans p
+  JOIN public.tenant_subscriptions ts ON ts.plan_code = p.code
+  WHERE ts.tenant_id = v_tenant_id;
+
+  IF v_plan_price IS NOT NULL AND v_plan_price > 0
+     AND ABS(v_amount - v_plan_price) > (v_plan_price * 0.1) THEN
+    v_amount_anomaly := true;
+  END IF;
+
+  SELECT email INTO v_admin_email
+  FROM public.platform_admins
+  WHERE user_id = auth.uid();
+
+  -- Wave 6: extend audit detail with amount_anomaly flag
+  INSERT INTO public.platform_admin_audit
+    (admin_user_id, admin_email, tenant_id, action, detail)
+  VALUES (
+    auth.uid(),
+    v_admin_email,
+    v_tenant_id,
+    'RECORD_PAYMENT',
+    p_payload || jsonb_build_object('amount_anomaly', v_amount_anomaly)
+  )
+  RETURNING id INTO v_audit_id;
+
+  -- Wave 6: insert with PENDING_VERIFICATION status (two-step workflow)
+  INSERT INTO public.tenant_payments (
+    tenant_id,
+    amount,
+    payment_method,
+    payment_date,
+    period_from,
+    period_to,
+    bank_name,
+    ewallet_provider,
+    proof_url,
+    bank_reference,
+    notes,
+    recorded_by_admin,
+    audit_id,
+    status
+  ) VALUES (
+    v_tenant_id,
+    v_amount,
+    v_payment_method,
+    v_payment_date,
+    v_period_from,
+    v_period_to,
+    v_bank_name,
+    v_ewallet_provider,
+    v_proof_url,
+    v_bank_reference,
+    v_notes,
+    auth.uid(),
+    v_audit_id,
+    'PENDING_VERIFICATION'
+  )
+  RETURNING id INTO v_payment_id;
+
+  -- Wave 6: coverage sum counts only VERIFIED payments (PENDING doesn't inflate)
+  SELECT COALESCE(SUM(amount), 0)
+  INTO v_amount_paid_ytd
+  FROM public.tenant_payments
+  WHERE tenant_id = v_tenant_id
+    AND status = 'VERIFIED'
+    AND EXTRACT(year FROM payment_date) = EXTRACT(year FROM CURRENT_DATE);
+
+  SELECT p.price_annual INTO v_price_annual
+  FROM public.tenant_subscriptions ts
+  JOIN public.plans p ON p.code = ts.plan_code
+  WHERE ts.tenant_id = v_tenant_id;
+
+  IF v_price_annual IS NULL THEN
+    v_coverage_ok     := false;
+    v_coverage_status := 'UNPAID';
+  ELSIF v_amount_paid_ytd >= v_price_annual THEN
+    v_coverage_ok     := true;
+    v_coverage_status := 'LUNAS';
+  ELSIF v_amount_paid_ytd >= v_price_annual * 0.6 THEN
+    v_coverage_ok     := false;
+    v_coverage_status := 'DP_60';
+  ELSIF v_amount_paid_ytd >= v_price_annual * 0.3 THEN
+    v_coverage_ok     := false;
+    v_coverage_status := 'DP_30';
+  ELSIF v_amount_paid_ytd > 0 THEN
+    v_coverage_ok     := false;
+    v_coverage_status := 'OVERDUE';
+  ELSE
+    v_coverage_ok     := false;
+    v_coverage_status := 'UNPAID';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'payment_id',       v_payment_id,
+    'amount_paid_ytd',  v_amount_paid_ytd,
+    'coverage_ok',      v_coverage_ok,
+    'coverage_status',  v_coverage_status
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RAISE;
+END;
+$function$;
+
+ALTER FUNCTION public.record_payment(jsonb) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.record_payment(jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO vosi_rpc_owner;
+GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO anon;
