@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 14: verify_payment + reject_payment RPCs + FE wrappers
+
+Appended `verify_payment`, `reject_payment`, and `list_pending_payments` RPCs to migration 000039 (applied to prod via execute_sql).
+
+**RPCs:**
+- `verify_payment(p_payment_id uuid)`: super_admin gate (`_is_super_admin_from_jwt`); P0002 if not found; P0409 if not PENDING; sets verified_by/at; emits VERIFY_PAYMENT audit
+- `reject_payment(p_payment_id uuid, p_reason text)`: same gate; sets status=REJECTED + rejection_reason; emits REJECT_PAYMENT audit
+- `list_pending_payments()`: platform_admin gate; SECDEF JOIN to bypass RLS gap on platform_admin_audit; returns PendingPayment shape with amount_anomaly flag
+
+**MCP smokes (5 scenarios):** All pass — super_admin verify PENDING (rollback), sales_rep → P0403, verify already-VERIFIED → P0409, super_admin reject PENDING (rollback), reject unknown UUID → P0002.
+
+**FE:** `src/lib/paymentVerificationApi.ts` — `PendingPayment` interface + `listPending()`, `verify()`, `reject()` wrappers. `PaymentNotPendingError` added to `adminTypes.ts`. P0409 branch added to `normalizeRpcError` in `adminApi.ts`.
+
+**Tests:** 53 vitest pass (11 new in `paymentVerificationApi.test.ts`). tsc clean. pgTAP plan(5) in `supabase/tests/wave6/verify_reject_payment.sql`.
+
+**Commit:** c765316
+
+---
+
 ## 2026-07-10 — Wave 6 Task 13: record_payment update (PENDING + fraud checks)
 
 Updated `record_payment(jsonb)` RPC in migration 000039 (appended via CREATE OR REPLACE; applied to prod via execute_sql since slot already consumed by Task 12).
