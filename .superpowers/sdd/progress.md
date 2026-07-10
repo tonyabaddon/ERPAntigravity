@@ -158,3 +158,14 @@ Preceded by: Wave 1 (efc7f40) + Wave 4a (54dc434) + audit polish (d69319a). Clou
 - Vitest: 0 new failures (same 7 pre-existing; 847 total tests, 842 pass)
 - CONCERN: `npm run build` likely fails locally in worktree (sonner not in worktree node_modules) — Cloud Build handles fresh install
 - CONCERN: `listTenantsAdmin` now issues 1 extra select per page load; acceptable for admin panel scale (max 50 tenants per page)
+
+### Task 16 (Wave 6, dispatched early) — platform_admin_audit action CHECK extension (COMPLETE)
+- Migration: `supabase/migrations/20261115000040_platform_admin_audit_action_extension.sql`
+- Test: `supabase/tests/wave6/platform_admin_audit_action_check.sql`
+- Applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`). Verified:
+  - Pre-flight: 16 existing values matched Note B verbatim (no schema drift)
+  - Existing rows: RECORD_PAYMENT (3), DELETE_PAYMENT (2), UPDATE_PAYMENT (1) — all in preserve list
+  - Post-migration: 23 values confirmed via pg_get_constraintdef
+  - DO-block smoke: all 7 new values (PROVISION_TENANT, DEPROVISION_TENANT, CREATE_SALES_REP, DEACTIVATE_SALES_REP, TOGGLE_MODULE, VERIFY_PAYMENT, REJECT_PAYMENT) accepted by CHECK; rolled back cleanly
+- pgTAP: plan(8) = 7 lives_ok + 1 throws_ok; Docker unavailable so MCP prod smoke substitutes
+- DONE_WITH_CONCERNS: pgTAP not runnable locally (Docker unavailable); MCP smoke covers prod verification per Note H
