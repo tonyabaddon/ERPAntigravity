@@ -23,19 +23,23 @@ SELECT lives_ok(
 );
 
 -- 2. sales_rep CANNOT UPDATE tenants (blocked by RLS — new p_super_admin_update policy)
-SELECT throws_ok(
-  $$UPDATE public.tenants SET name = 'hacked' WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$,
-  '42501',
-  NULL,
-  'sales_rep blocked from direct UPDATE tenants'
+-- RLS USING-clause silently filters rows; no error is raised
+UPDATE public.tenants SET name = 'hacked' WHERE id = '11111111-2222-3333-4444-555555555555'::uuid;
+
+SELECT is(
+  (SELECT name FROM public.tenants WHERE id = '11111111-2222-3333-4444-555555555555'::uuid),
+  'Test RLS Wave6',
+  'sales_rep UPDATE silently filtered — row unchanged'
 );
 
 -- 3. sales_rep CANNOT DELETE tenants
-SELECT throws_ok(
-  $$DELETE FROM public.tenants WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$,
-  '42501',
-  NULL,
-  'sales_rep blocked from direct DELETE tenants'
+-- RLS USING-clause silently filters rows; no error is raised
+DELETE FROM public.tenants WHERE id = '11111111-2222-3333-4444-555555555555'::uuid;
+
+SELECT is(
+  (SELECT count(*)::int FROM public.tenants WHERE id = '11111111-2222-3333-4444-555555555555'::uuid),
+  1,
+  'sales_rep DELETE silently filtered — row still exists'
 );
 
 -- 4. sales_rep CAN SELECT plans (already open via g_read_all USING (true))
