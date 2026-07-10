@@ -1,4 +1,4 @@
-# Task 9 Report — FE: AdminRevenue dashboard `/admin/revenue`
+# Task 9 Report (Wave 5) — FE: AdminRevenue dashboard `/admin/revenue`
 
 **Status:** DONE  
 **Commit:** `2dc009a`  
@@ -86,3 +86,55 @@ Full `src/` suite: 4 test files failed (adminToast, AdminLayout, AdminRoutes stu
 3. **Top-10 tenant join by key** — `getRevenueStats({ group_by: 'tenant' })` returns `breakdown[].key` which is the tenant_id (UUID) per the migration's `jsonb_build_object('key', t.tenant_id, ...)`. Client-side join uses tenant_id match first, slug fallback for robustness.
 
 4. **Coverage gaps callout reuses RecordPaymentModal** — "Catat pembayaran" CTA opens RecordPaymentModal with the matching AdminTenantRow. If the tenant row isn't in the first 50 results from listTenantsAdmin, the CTA falls back to navigation link (`/admin/tenants/{slug}?tab=pembayaran`). This is acceptable as OVERDUE tenants will typically be in the top 50 active tenants.
+
+---
+
+# Task 9 Report (Wave 6) — Edge Function `create-tenant-owner`
+
+**Status:** DONE
+**Wave:** Wave 6 (Self-Service Tenant Onboarding)
+
+## What was built
+
+4 files created under `supabase/functions/create-tenant-owner/`:
+
+- **`blocklist.ts`** — exports `SLUG_RE` (`/^[a-z0-9][a-z0-9-]{2,29}$/`) and `RESERVED_SLUGS` (20 entries: admin, api, auth, login, logout, register, signup, signin, www, mail, blog, docs, help, support, settings, pengaturan, t, select-tenant, onboarding, billing)
+- **`deno.json`** — Deno config with `@supabase/supabase-js@2` import from esm.sh + `deno test --allow-net` task
+- **`index.ts`** — Full Edge Function implementing:
+  - CORS OPTIONS handler
+  - JWT extraction + `platform_admin_role` claim check (E1/E2) for `super_admin` or `sales_rep`
+  - Input validation: required fields (E11), slug format (E3), slug reserved (E4), email format (E6)
+  - Two Supabase clients: `sb` (caller JWT, RLS-gated) and `sbAdmin` (service_role, for auth admin ops)
+  - Slug uniqueness pre-check against `tenants` table → 409 E5
+  - `inviteUserByEmail` with email-taken detection (E7) and general auth error (E8)
+  - `provision_tenant` RPC call with all 7 params per Note A signature
+  - Compensating rollback via `deleteUser` on RPC failure (E9 if rollback OK, E10 orphan if rollback fails)
+  - `platform_admin_audit` insert of `PROVISION_TENANT` event (non-fatal on failure)
+  - 201 success response: `{ tenant_id, slug, owner_user_id, expires_at }`
+- **`index.test.ts`** — 13 Deno.test cases covering: valid slugs, too-short, too-long, leading-dash, uppercase, underscores, special chars, 30-char boundary, reserved list coverage, non-reserved slugs
+
+## Syntax verification approach
+
+Deno CLI not available on machine. Verification done via:
+1. Visual eyeball of all files
+2. Node.js brace-balance check — `index.ts` balanced 55/55 `{}`; `index.test.ts` balanced 29/29
+3. Import paths verified: `./blocklist.ts`, `https://esm.sh/@supabase/supabase-js@2`, `https://deno.land/std@0.224.0/assert/mod.ts`
+
+## Deploy note
+
+Do NOT deploy from Agent context. Human must run:
+```bash
+supabase functions deploy create-tenant-owner
+```
+
+Deno tests can be run once Deno CLI is installed:
+```bash
+cd supabase/functions/create-tenant-owner && deno test --allow-net
+```
+
+## Concerns
+
+1. **Deno CLI unavailable** — 13 tests written but not executed; human must run `deno test --allow-net` before relying on function in production
+2. **inviteUserByEmail error matching** — E7 detection relies on substring match against Supabase auth error messages; if Supabase changes wording, E7 silently falls to E8
+3. **`sb` client RPC** — if caller JWT expires between slug-check and provision_tenant call, RPC fails as E8/E9 rather than E1; acceptable for short-lived requests
+4. **Audit non-fatal** — `platform_admin_audit` insert failure is logged but does not fail the 201 response; intentional since tenant is already provisioned
