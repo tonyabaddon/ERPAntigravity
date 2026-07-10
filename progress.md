@@ -1,5 +1,54 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 11: update_tenant_feature_override RPC + Modul Toggle UI
+
+**Migration:** `supabase/migrations/20261115000038_update_tenant_feature_override_rpc.sql`
+- SECURITY DEFINER RPC updates `tenant_subscriptions.feature_overrides` JSONB (not the nonexistent `tenant_feature_overrides` table)
+- Auth guard: `_is_platform_admin_from_jwt()` (dual-role: super_admin + sales_rep)
+- Emits `TOGGLE_MODULE` → `platform_admin_audit` with `module_key`, `old_value`, `new_value`, `reason`
+- REVOKE ALL FROM PUBLIC; GRANT EXECUTE TO authenticated
+
+**New files:**
+- `supabase/tests/wave6/update_tenant_feature_override.sql` — pgTAP plan(5): super_admin toggle, sales_rep toggle, P0403, P0002, view reflects change
+- `src/components/admin/TenantDetail/ModuleTogglePanel.tsx` — reads `v_tenant_effective_features`, renders per-module toggle (VOSI gold/navy), optimistic update + rollback + adminToast; MODULE_LABELS map (11 modules, Bahasa Indonesia)
+- `src/components/admin/TenantDetail/ModuleTogglePanel.test.tsx` — 3 tests (renders, toggle→RPC+toast, error rollback)
+
+**Modified:**
+- `TenantDetailShell.tsx` — imports + mounts `<ModuleTogglePanel tenantId={tenant.tenant_id} />` above Zona Bahaya (visible to both roles)
+- `TenantDetailShell.test.tsx` — supabase mock + 2 new cases (panel visible for super_admin, panel visible for sales_rep)
+
+**MCP smoke:** 5 scenarios all pass — RPC SECDEF+owner verified, toggle updates view + audit row (ROLLBACK_OK), P0403 + P0002 correct error codes.
+**Tests:** 56/56 vitest pass (6 files). `tsc --noEmit` clean.
+**Commit:** `2c236a3`
+
+---
+
+## 2026-07-10 — Wave 6 Task 8: platform_settings singleton + /admin/settings/payment UI
+
+Deployed the `platform_settings` singleton table and the super-admin settings form.
+
+**Migration:** `supabase/migrations/20261115000037_platform_settings_table.sql`
+- Singleton table with `CHECK (id = 1)`, columns: bank_name, bank_account_no, bank_account_name, admin_wa_number, updated_at, updated_by
+- RLS: SELECT open to `authenticated, vosi_rpc_owner`; UPDATE gated to `_is_super_admin_from_jwt()` for both roles
+- Seed row (id=1) inserted via `ON CONFLICT DO NOTHING`
+
+**New files:**
+- `src/lib/platformSettingsApi.ts` — `get()` / `update()` direct-table wrappers, typed error mapping
+- `src/lib/platformSettingsApi.test.ts` — 5 tests (get happy, get P0403, update happy, update SUPER_ADMIN_REQUIRED, update generic error)
+- `src/components/admin/PlatformSettings.tsx` — Bahasa 4-field form, useEffect+async fetch, skeleton, adminToast
+- `src/components/admin/PlatformSettings.test.tsx` — 3 tests (renders+populates, edits+saves, error toast)
+- `supabase/tests/wave6/platform_settings.sql` — pgTAP plan(4)
+
+**Modified:**
+- `AdminRoutes.tsx` — added `/admin/settings/payment` route
+- `AdminSidebar.tsx` — added "Pengaturan Pembayaran" nav item (superAdminOnly, Banknote icon)
+
+**Tests:** 8 vitest pass (0 fail). tsc clean.
+**MCP smoke:** seed row confirmed, both RLS policies verified, super_admin UPDATE path exercised + rolled back.
+**Commit:** `392be5d`
+
+---
+
 ## 2026-07-10 — Wave 6 Task 5: /admin/sales-reps UI (list + create + deactivate)
 
 Built the full `/admin/sales-reps` screen in the platform admin panel.
