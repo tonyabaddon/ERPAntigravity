@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 1: Sales Rep role + status + auth hook (migration 000032)
+
+Added `sales_rep` role support to `platform_admins` and extended `custom_access_token_hook` to emit `platform_admin_role` JWT claim.
+
+**Pre-flight correction applied:** Phase A migration `20261001000001` had created `platform_admins.role` with `CHECK IN ('super_admin','support')`. The Wave 6 migration drops and re-adds the constraint to `CHECK IN ('super_admin','sales_rep')`.
+
+**Migration `20261115000032_sales_rep_role_and_status.sql`:**
+- DROP/ADD `platform_admins_role_check` — swaps enum from `support` to `sales_rep`
+- `ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active' CHECK IN ('active','disabled')`
+- `ADD COLUMN IF NOT EXISTS name TEXT`
+- New `public._is_super_admin_from_jwt()` SECDEF STABLE, owner=postgres — reads `platform_admin_role` JWT claim
+- `custom_access_token_hook` extended: after `is_platform_admin` check, fetches `role+status` → sets `platform_admin_role` claim; disabled admins get `is_platform_admin=false` on next JWT mint
+
+**pgTAP tests** (Docker unavailable, no local RED/GREEN — prod smoke confirms GREEN post-apply):
+- `supabase/tests/wave6/sales_rep_role_column.sql` — 7 assertions including `pg_get_constraintdef` matches('sales_rep') regression guard
+- `supabase/tests/wave6/is_super_admin_helper.sql` — 3 assertions for helper semantics
+
+**Prod smoke (all pass):**
+- Columns `role`, `status`, `name` present with correct defaults/nullability
+- 1/1 platform_admin rows have `role='super_admin'`, `status='active'`
+- CHECK constraint confirms `sales_rep` in enum, `support` removed
+- `_is_super_admin_from_jwt` owned by postgres, SECDEF=true
+- Hook body confirmed in prod with Wave 6 additions
+
+**MANUAL STEP REQUIRED:** Founder must sign out and back in to refresh JWT and pick up the new `platform_admin_role: 'super_admin'` claim.
+
+Commit: `afcc70d` feat(rls): sales_rep role + status columns + _is_super_admin_from_jwt helper
+
 ## 2026-07-06 — Add-Admin 403 bugfix (SECDEF RPC route)
 
 Complaint: "Tambah Admin Baru" di UserManagementScreen error saat submit. Repro'd via MCP Chrome → `POST /rest/v1/admin_users` returns 403 (`42501 new row violates row-level security policy`).
