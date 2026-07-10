@@ -10,19 +10,18 @@
 -- Execution order inside the RPC:
 --   1. Snapshot tenant row
 --   2. Insert audit row WHILE tenant still exists (FK = valid at INSERT time)
---   3. Delete explicit non-cascade tables: admin_users, tenant_users, store_settings, tenant_subscriptions
---   4. DELETE FROM tenants → FK cascade handles all other tenant-scoped tables
+--   3. DELETE FROM tenants → FK cascade handles all tenant-scoped child tables
 --      → platform_admin_audit.tenant_id and tenant_payments.tenant_id SET NULL automatically
 
 -- ── FK patches ────────────────────────────────────────────────────────────────
 
 ALTER TABLE public.platform_admin_audit
-  DROP CONSTRAINT platform_admin_audit_tenant_id_fkey,
+  DROP CONSTRAINT IF EXISTS platform_admin_audit_tenant_id_fkey,
   ADD CONSTRAINT platform_admin_audit_tenant_id_fkey
     FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE SET NULL;
 
 ALTER TABLE public.tenant_payments
-  DROP CONSTRAINT tenant_payments_tenant_id_fkey,
+  DROP CONSTRAINT IF EXISTS tenant_payments_tenant_id_fkey,
   ADD CONSTRAINT tenant_payments_tenant_id_fkey
     FOREIGN KEY (tenant_id) REFERENCES public.tenants(id) ON DELETE SET NULL;
 
@@ -69,14 +68,7 @@ BEGIN
     )
   );
 
-  -- Explicit deletes for tables that are CASCADE but we want guaranteed order,
-  -- plus any tables with FK policies that need explicit removal.
-  DELETE FROM public.admin_users         WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.tenant_users        WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.store_settings      WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.tenant_subscriptions WHERE tenant_id = p_tenant_id;
-
-  -- Delete the tenant row — remaining FKs with ON DELETE CASCADE fire here.
+  -- All child tables use ON DELETE CASCADE — one DELETE FROM tenants suffices.
   DELETE FROM public.tenants WHERE id = p_tenant_id;
 
   RETURN jsonb_build_object(
