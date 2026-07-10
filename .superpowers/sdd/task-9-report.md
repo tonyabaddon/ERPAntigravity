@@ -138,3 +138,12 @@ cd supabase/functions/create-tenant-owner && deno test --allow-net
 2. **inviteUserByEmail error matching** — E7 detection relies on substring match against Supabase auth error messages; if Supabase changes wording, E7 silently falls to E8
 3. **`sb` client RPC** — if caller JWT expires between slug-check and provision_tenant call, RPC fails as E8/E9 rather than E1; acceptable for short-lived requests
 4. **Audit non-fatal** — `platform_admin_audit` insert failure is logged but does not fail the 201 response; intentional since tenant is already provisioned
+
+---
+
+## Post-Review Fix
+
+**Status:** DONE  
+**Commit:** `e6e0562`  
+**Fix:** Replaced try/catch on `deleteUser()` with `{ error }` return inspection (sbAdmin.auth.admin.deleteUser returns {data, error}, not throws)  
+**Report path:** `/.superpowers/sdd/task-9-report.md`

@@ -108,11 +108,11 @@ describe('AdminSidebar', () => {
     expect(screen.getByTestId('badge--admin-payments-pending')).toHaveTextContent('2');
   });
 
-  it('sales_rep does not see superAdminOnly items (Paket, Pendapatan, Verifikasi Pembayaran hidden)', async () => {
+  it('sales_rep sees Paket (read-only) but not Pendapatan or Verifikasi Pembayaran', async () => {
     vi.mocked(isSuperAdmin).mockResolvedValue(false);
     render(<AdminSidebar activePath="/admin" />);
     await waitFor(() => {
-      expect(screen.queryByText('Paket')).not.toBeInTheDocument();
+      expect(screen.getByText('Paket')).toBeInTheDocument();
       expect(screen.queryByText('Pendapatan')).not.toBeInTheDocument();
       expect(screen.queryByText('Verifikasi Pembayaran')).not.toBeInTheDocument();
     });

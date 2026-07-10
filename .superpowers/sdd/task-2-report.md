@@ -96,10 +96,32 @@ All ran as DO-block with `RAISE EXCEPTION 'SMOKE_ROLLBACK'` at end (no side effe
 
 ---
 
-## 5. Files Changed
+## 5. Post-Review Fix
+
+### Finding
+`rls_role_gates.sql` used `throws_ok(..., '42501', ...)` to assert RLS blocking on UPDATE/DELETE. Postgres RLS USING-clause silently filters rows rather than raising 42501; the test pattern was semantically incorrect.
+
+### Replacement (Commit 70692cd)
+Two assertions replaced:
+- **Before:** `throws_ok($$UPDATE ... WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$, '42501', ...)`
+- **After:** UPDATE statement executed, followed by `is((SELECT name FROM public.tenants WHERE ...), 'Test RLS Wave6', 'sales_rep UPDATE silently filtered — row unchanged')`
+
+- **Before:** `throws_ok($$DELETE ... WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$, '42501', ...)`
+- **After:** DELETE statement executed, followed by `is((SELECT count(*)::int FROM public.tenants WHERE ...), 1, 'sales_rep DELETE silently filtered — row still exists')`
+
+**plan(5) unchanged:** 3 lives_ok + 2 is() = 5 total assertions.
+
+### Caveats
+- Seeded row name verified as `'Test RLS Wave6'` (line 12 of original file)
+- Seeded UUID verified as `11111111-2222-3333-4444-555555555555` (line 12)
+- SQL parses; assertion count preserved
+
+---
+
+## 6. Files Changed
 
 - `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000033_rls_role_gates.sql`
 - `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000034_narrow_rpc_gates_to_super.sql`
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/rls_role_gates.sql`
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/rls_role_gates.sql` (post-review fix)
 - `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/narrow_rpc_gates.sql`
 - `/Users/tonywei/IdeaProjects/ERPAntigravity/progress.md` (updated per CLAUDE.md requirement)

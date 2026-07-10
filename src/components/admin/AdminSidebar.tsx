@@ -48,7 +48,6 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/plans',
     label: 'Paket',
     icon: <Package size={16} strokeWidth={1.8} strokeLinecap="round" />,
-    superAdminOnly: true,
   },
   {
     to: '/admin/revenue',

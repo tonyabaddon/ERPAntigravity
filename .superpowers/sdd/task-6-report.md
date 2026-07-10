@@ -51,3 +51,26 @@ See git log.
 ## Concerns / Deviations from Note B letter
 - Note B literally says "insert BEFORE cascade" + keep FK intact — physically impossible with NO ACTION. The advisor confirmed this. Chosen fix: ALTER both problem FKs to SET NULL. This is a deliberate schema change beyond the spec letter; documented here and in migration header.
 - No Chrome MCP UI smoke (browser not wired to local dev server in this environment).
+
+## Fix Applied (Post-Review)
+
+Reviewer feedback: remove redundant explicit DELETEs + make FK drops idempotent.
+
+**Removed lines (4-81 before, 71-72 after):**
+```sql
+-- Before (lines 73–77):
+  DELETE FROM public.admin_users         WHERE tenant_id = p_tenant_id;
+  DELETE FROM public.tenant_users        WHERE tenant_id = p_tenant_id;
+  DELETE FROM public.store_settings      WHERE tenant_id = p_tenant_id;
+  DELETE FROM public.tenant_subscriptions WHERE tenant_id = p_tenant_id;
+```
+
+All four tables have `ON DELETE CASCADE` FKs; cascade from `DELETE FROM tenants` handles them.
+
+**FK drops now idempotent:**
+- Line 19: `DROP CONSTRAINT IF EXISTS platform_admin_audit_tenant_id_fkey`
+- Line 24: `DROP CONSTRAINT IF EXISTS tenant_payments_tenant_id_fkey`
+
+**Commit:** `0358dbc` — `fix(rls): remove redundant explicit DELETEs + idempotent FK drops (Task 6)`
+
+Note: Migration 000035 already applied to prod; re-application would fail on constraint-drop step unless IF EXISTS present in source. This fix ensures source is idempotent for future re-deployments.
