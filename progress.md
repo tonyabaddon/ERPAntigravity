@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 — Deep-link + impersonation gate fix (super_admin `/t/<slug>/*`)
+
+**Bug:** super_admin visiting `/t/garindo/dashboard` (bookmark, direct URL, email link) was force-redirected to `/admin` post-login. `AuthScreen.afterLogin()` unconditionally set `window.location.href = '/admin'` for platform admins, ignoring `pendingDeepLink`. Even when logged in, direct visit failed because JWT had no impersonation claim for target slug → `TenantProvider` bootstrap surfaced NOT_A_MEMBER.
+
+**Root cause verified live via Chrome DevTools MCP:** OTP login from `/t/garindo/dashboard?screen=dashboard` landed at `/admin` on Cloud Run production build.
+
+**Fix (Option B — deep-link stash + explicit gate, no silent auto-impersonate):**
+
+**New files:**
+- `src/lib/postLoginRoute.ts` — pure `computePostLoginRoute({pathname, isPlatformAdmin, tenantSlug})` decision table. Platform admin honors `/t/*` and `/admin/*` deep-links; else `/admin`. Tenant user honors `/t/*`; else `/t/<theirslug>/dashboard`; no slug → `/select-tenant`.
+- `src/lib/postLoginRoute.test.ts` — 10 tests covering all cells of the decision table.
+- `src/components/errors/TenantImpersonateGate.tsx` — VOSI-styled confirm screen. "Impersonasi & Lanjutkan" → `impersonateTenant(slug)` + `refreshSession()` + reload; "Kembali ke VOSI Admin" → `/admin`. Error surfaces inline; buttons re-enabled after failure so user can retry.
+- `src/components/errors/TenantImpersonateGate.test.tsx` — 5 tests (render, confirm click, loading state, error surface, cancel).
+
+**Modified:**
+- `src/App.tsx`:
+  - Deep-link stash now saves `pathname + search` (was `search` only) — search-only stash silently lost tenant paths.
+  - Guard broadened: stash on any non-trivial path OR non-empty search (was: only stash if search present).
+  - New `ImpersonateGateState` preflight: decodes JWT (`is_platform_admin`, `impersonating_slug` claims via `decodeJwt`) when `pathRoute.tenantSlug` set. If admin && `impersonating_slug !== targetSlug` → gate. Blocks `TenantProvider` from mounting with wrong-tenant bootstrap.
+  - Render branch: loading spinner while checking, then either `<TenantImpersonateGate>` or existing tenant shell.
+- `src/components/AuthScreen.tsx` — `afterLogin()` now delegates to `computePostLoginRoute()`. Reads `window.location.pathname` (restored by `handleLoginSuccess` from `pendingDeepLink` stash) instead of hardcoding `/admin`.
+
+**Tests:** 15/15 vitest pass (2 new files). `tsc --noEmit` clean. AdminRoutes.tsx 2 pre-existing failures unchanged (not caused by this diff — verified via `git stash` baseline).
+
+**Design rationale (explicit gate vs silent auto-impersonate):** URL-driven silent JWT swap hurts audit trail integrity and creates surprise cross-tenant data access if a stale bookmark or shared link is opened. Explicit click matches the existing `TenantsList.tsx` `window.confirm` pattern and keeps the security boundary visible.
+
+---
+
 ## 2026-07-10 — Wave 6 Task 15: PendingPaymentsQueue UI + sidebar badge
 
 **New files:**

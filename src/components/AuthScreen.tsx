@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Rocket, Mail, Lock, Heart, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured, adminUsersService, tenantContextService } from '../lib/supabaseClient';
 import { PermissionSet, ALL_PERMISSIONS } from '../types';
+import { computePostLoginRoute } from '../lib/postLoginRoute';
 
 interface AuthScreenProps {
   onLoginSuccess: (userData: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => void;
@@ -57,41 +58,55 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
   };
 
   /**
-   * Post-login routing decision:
-   *  1. Platform admin → /admin
-   *  2. Single tenant  → /t/<slug>/dashboard
-   *  3. Multiple or no tenants → /select-tenant
+   * Post-login routing decision — honors deep-link URL preserved by
+   * `handleLoginSuccess` (App.tsx). handleLoginSuccess restores the
+   * pathname+search from sessionStorage BEFORE we run, so
+   * `window.location.pathname` here reflects the URL the user originally
+   * requested (e.g. `/t/garindo/dashboard`) — not `/login` or `/`.
    *
-   * Uses window.location.href (option B: full page reload on platform transitions).
+   * Decision table (current URL after stash restore → target):
+   *   /t/<slug>/*   → stay (App renders impersonation gate for admin/slug
+   *                  mismatch, tenant shell otherwise)
+   *   /admin*       → stay (admin can visit admin pages; non-admin falls
+   *                  through to tenant redirect below)
+   *   anything else, platform admin      → /admin
+   *   anything else, tenant user w/ slug → /t/<slug>/dashboard
+   *   no tenant slug                     → /select-tenant
+   *
    * Only called when Supabase is configured; dev bypass skips this.
    */
   const afterLogin = async () => {
     if (!supabase) return;
+
+    let isPlatformAdmin = false;
     try {
-      const isAdmin = await tenantContextService.isPlatformAdmin();
-      if (isAdmin) {
-        window.location.href = '/admin';
-        return;
-      }
+      isPlatformAdmin = await tenantContextService.isPlatformAdmin();
     } catch {
-      // Non-fatal: fall through to tenant lookup
+      // Non-fatal — treat as non-admin for routing purposes.
     }
-    // Use bootstrap_tenant_context (SECDEF) instead of direct SELECT on
-    // tenant_users — the latter hits 42P17 recursion in the
-    // a_self_or_tenant_admin RLS policy for non-admin users. The RPC returns
-    // the JWT-scoped tenant's slug directly. Multi-tenant users (rare/future)
-    // still fall through to /select-tenant, which needs its own fix once
-    // multi-tenant support lands.
-    try {
-      const ctx = await tenantContextService.bootstrap();
-      if (ctx?.slug) {
-        window.location.href = `/t/${ctx.slug}/dashboard`;
-      } else {
-        window.location.href = '/select-tenant';
+
+    // Tenant slug via bootstrap_tenant_context (SECDEF). Direct SELECT on
+    // tenant_users hits 42P17 recursion in the a_self_or_tenant_admin RLS
+    // policy for non-admin users.
+    let tenantSlug: string | null = null;
+    if (!isPlatformAdmin) {
+      try {
+        const ctx = await tenantContextService.bootstrap();
+        tenantSlug = ctx?.slug ?? null;
+      } catch {
+        tenantSlug = null;
       }
-    } catch {
-      window.location.href = '/select-tenant';
     }
+
+    const decision = computePostLoginRoute({
+      pathname: window.location.pathname,
+      isPlatformAdmin,
+      tenantSlug,
+    });
+    if (decision.action === 'redirect') {
+      window.location.href = decision.href;
+    }
+    // action === 'stay' → no-op; App renders based on the preserved URL.
   };
 
   const handleSendSignInOtp = async () => {

@@ -27,6 +27,8 @@ import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
 import { AccessDenied } from './components/errors/AccessDenied';
 import { TenantBootstrapError } from './components/errors/TenantBootstrapError';
+import { TenantImpersonateGate } from './components/errors/TenantImpersonateGate';
+import { decodeJwt } from './lib/jwt';
 import { ReadonlyBanner } from './components/ReadonlyBanner';
 import { GraceBanner } from './components/GraceBanner';
 import Sidebar from './components/Sidebar';
@@ -140,6 +142,16 @@ export default function App() {
   const [tenantErrorScreen, setTenantErrorScreen] = useState<TenantErrorScreen>(null);
   const [tenantErrorCode, setTenantErrorCode] = useState<string>('');
 
+  // Impersonation gate state for platform admins landing on `/t/<slug>/*`
+  // without an active impersonation for that slug. Gate blocks TenantProvider
+  // from mounting (which would fetch bootstrap context for the wrong tenant).
+  //   skip     — path is not tenant-scoped or Supabase not configured
+  //   checking — awaiting JWT claim inspection
+  //   needed   — platform admin needs to click confirm before entering tenant
+  //   ok       — regular tenant user, OR admin already impersonating this slug
+  type ImpersonateGateState = 'skip' | 'checking' | 'needed' | 'ok';
+  const [impersonateGate, setImpersonateGate] = useState<ImpersonateGateState>('skip');
+
   // stockList is DB-scoped per tenant via RLS. Initialized empty; populated
   // by fetchStocks() on mount + refetch on tenant switch. Do NOT persist to
   // localStorage — that leaked another tenant's SKUs across sessions (a
@@ -157,15 +169,20 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
 
-  // Read deep-link query params on boot. URL is already source of truth for
+  // Read deep-link (path + query) on boot. URL is already source of truth for
   // logged-in users (useURLRoute reads it directly). For logged-out users,
-  // we stash the route in sessionStorage so we can restore after login.
+  // we stash BOTH pathname and search in sessionStorage so we can restore the
+  // full URL after login — search-only stash lost tenant path `/t/<slug>/...`
+  // when AuthScreen.afterLogin's hardcoded `/admin` redirect ran.
   useEffect(() => {
     if (currentUser) return; // Logged in — URL already drives state.
+    const pathname = window.location.pathname;
     const search = window.location.search;
-    if (!search || search === '?') return;
+    const trivialPath = pathname === '' || pathname === '/' || pathname === '/login';
+    const trivialSearch = !search || search === '?';
+    if (trivialPath && trivialSearch) return;
     try {
-      sessionStorage.setItem('pendingDeepLink', search);
+      sessionStorage.setItem('pendingDeepLink', pathname + search);
     } catch {
       // sessionStorage unavailable (e.g., private window quota) — ignore.
     }
@@ -472,6 +489,42 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, sessionTenantSlug]);
 
+  // Impersonation-gate preflight: when a platform admin lands on `/t/<slug>/*`
+  // without a matching impersonation claim in their JWT, block TenantProvider
+  // from mounting (bootstrap would fetch context for the wrong tenant, or
+  // fail with NOT_A_MEMBER for a super-admin without impersonation). JWT is
+  // the source of truth here — we decode locally to avoid an extra RPC.
+  useEffect(() => {
+    if (!currentUser || !pathRoute.tenantSlug || !isSupabaseConfigured || !supabase) {
+      setImpersonateGate('skip');
+      return;
+    }
+    setImpersonateGate('checking');
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase!.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) {
+          if (!cancelled) setImpersonateGate('ok'); // let TenantProvider surface auth error
+          return;
+        }
+        const claims = decodeJwt(token);
+        const isAdmin = claims.is_platform_admin === true;
+        const impersonatingSlug = typeof claims.impersonating_slug === 'string'
+          ? claims.impersonating_slug
+          : null;
+        const targetSlug = pathRoute.tenantSlug;
+        const needsGate = isAdmin && impersonatingSlug !== targetSlug;
+        if (!cancelled) setImpersonateGate(needsGate ? 'needed' : 'ok');
+      } catch {
+        if (!cancelled) setImpersonateGate('ok'); // fail-safe: let TenantProvider try
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, pathRoute.tenantSlug]);
+
   // Total alert indicators
   const lowStockCount = stockList.filter(item => item.stock < config.lowStockAlert).length;
   
@@ -764,6 +817,35 @@ export default function App() {
   // In dev-mode (no Supabase), pathRoute.tenantSlug is null (URL is query-string
   // based), so we fall through to the legacy shell below.
   if (pathRoute.tenantSlug) {
+    // Impersonation gate — must run BEFORE any tenant-context bootstrap.
+    // Only produces UI for platform admins entering a tenant they aren't
+    // currently impersonating; regular tenant users skip straight through.
+    if (impersonateGate === 'checking') {
+      return (
+        <div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-vosi">
+          Memeriksa akses tenant…
+        </div>
+      );
+    }
+    if (impersonateGate === 'needed') {
+      const targetSlug = pathRoute.tenantSlug;
+      return (
+        <TenantImpersonateGate
+          slug={targetSlug}
+          onConfirm={async () => {
+            await tenantContextService.impersonateTenant(targetSlug);
+            // Full reload so the refreshed JWT (new impersonation claim)
+            // drives the next render — matches the pattern used by the
+            // TenantsList "Impersonasi" button.
+            window.location.reload();
+          }}
+          onCancel={() => {
+            window.location.href = '/admin';
+          }}
+        />
+      );
+    }
+
     // If a tenant error has been set (from onError callback or window event), render
     // the appropriate error screen instead of the normal shell.
     if (tenantErrorScreen === 'not-found') {
