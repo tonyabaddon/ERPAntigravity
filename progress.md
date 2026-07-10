@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 15: PendingPaymentsQueue UI + sidebar badge
+
+**New files:**
+- `src/components/admin/PendingPaymentsQueue.tsx` — `/admin/payments/pending` page; polls `listPending()` every 60s, loading skeleton, empty state
+- `src/components/admin/PendingPaymentsQueue.test.tsx` — 5 tests (loads, renders rows, empty state, refetch after verify, anomaly badge)
+- `src/components/admin/PendingPaymentRow.tsx` — per-row Verify/Reject buttons + `amount_anomaly` yellow badge + RejectPaymentModal integration
+- `src/components/admin/RejectPaymentModal.tsx` — alasan penolakan textarea + Tolak button
+
+**Modified:**
+- `AdminRoutes.tsx` — added `/admin/payments/pending` route
+- `AdminSidebar.tsx` — `badgeSource?: 'pendingPayments'` on NavItem, pendingCount poll (60s, super_admin only, red pill badge), ClipboardCheck icon + Verifikasi Pembayaran nav item
+- `AdminSidebar.test.tsx` — added paymentVerificationApi mock, +2 new tests (nav item visible, badge count)
+- `AdminLayout.test.tsx` / `AdminRoutes.test.tsx` — paymentVerificationApi mock added
+
+**Tests:** 15 vitest pass (2 files). `tsc --noEmit` clean. 3 pre-existing failures in AdminRoutes/AdminLayout (timing, unrelated).
+**Commit:** `a9178df`
+
+---
+
 ## 2026-07-10 — Wave 6 Task 11: update_tenant_feature_override RPC + Modul Toggle UI
 
 **Migration:** `supabase/migrations/20261115000038_update_tenant_feature_override_rpc.sql`
