@@ -279,10 +279,7 @@ $function$;
 
 ALTER FUNCTION public.record_payment(jsonb) OWNER TO postgres;
 REVOKE ALL ON FUNCTION public.record_payment(jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO vosi_rpc_owner;
-GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO service_role;
 GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO anon;
 
 -- ==== Task 14: verify_payment + reject_payment RPCs ====
 -- Applied to prod via execute_sql (slot 000039 already applied by Task 12).

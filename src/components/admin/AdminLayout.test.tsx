@@ -74,7 +74,7 @@ describe('AdminLayout', () => {
   it('renders impersonation banner when impersonating', async () => {
     // Override mock to return a JWT with impersonating=true
     const { supabase } = await import('../../lib/supabaseClient');
-    vi.mocked(supabase!.auth.getSession).mockResolvedValueOnce({
+    vi.mocked(supabase!.auth.getSession).mockResolvedValue({
       data: {
         session: {
           user: { email: 'admin@vosi.app' },
