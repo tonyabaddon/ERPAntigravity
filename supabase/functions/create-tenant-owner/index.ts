@@ -188,10 +188,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.error('provision_tenant error:', provisionError);
 
     // ── Compensating rollback: delete the auth user we just created ────────
-    try {
-      await sbAdmin.auth.admin.deleteUser(user.id);
-    } catch (rollbackErr) {
-      console.error(`ORPHAN AUTH USER: ${user.id}`, rollbackErr);
+    const { error: deleteError } = await sbAdmin.auth.admin.deleteUser(user.id);
+    if (deleteError) {
+      console.error(`ORPHAN AUTH USER: ${user.id}`, deleteError);
       return errResponse(500, 'E10', 'Rollback gagal — hubungi support (orphan detected)');
     }
 
