@@ -283,3 +283,215 @@ GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO vosi_rpc_owner;
 GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO service_role;
 GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.record_payment(jsonb) TO anon;
+
+-- ==== Task 14: verify_payment + reject_payment RPCs ====
+-- Applied to prod via execute_sql (slot 000039 already applied by Task 12).
+-- Both RPCs: super_admin only; raise P0409 for wrong state, P0002 for unknown payment.
+-- Audit: INSERT into platform_admin_audit (VERIFY_PAYMENT / REJECT_PAYMENT).
+
+CREATE OR REPLACE FUNCTION public.verify_payment(p_payment_id UUID)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_catalog'
+AS $function$
+DECLARE
+  v_tenant_id uuid;
+  v_amount    numeric;
+  v_admin_email text;
+BEGIN
+  -- Auth gate: super_admin ONLY
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION USING errcode = 'P0403', message = 'SUPER_ADMIN_REQUIRED';
+  END IF;
+
+  -- Fetch payment context BEFORE the update (Note B)
+  SELECT tenant_id, amount
+    INTO v_tenant_id, v_amount
+  FROM public.tenant_payments
+  WHERE id = p_payment_id;
+
+  IF v_tenant_id IS NULL THEN
+    RAISE EXCEPTION USING errcode = 'P0002', message = 'PAYMENT_NOT_FOUND';
+  END IF;
+
+  -- Update: only if PENDING_VERIFICATION (Note C)
+  UPDATE public.tenant_payments
+  SET
+    status      = 'VERIFIED',
+    verified_by = auth.uid(),
+    verified_at = now()
+  WHERE id = p_payment_id
+    AND status = 'PENDING_VERIFICATION';
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING errcode = 'P0409', message = 'PAYMENT_NOT_PENDING';
+  END IF;
+
+  -- Audit INSERT (Note A)
+  SELECT email INTO v_admin_email
+  FROM public.platform_admins
+  WHERE user_id = auth.uid();
+
+  INSERT INTO public.platform_admin_audit
+    (admin_user_id, admin_email, tenant_id, action, detail)
+  VALUES (
+    auth.uid(),
+    v_admin_email,
+    v_tenant_id,
+    'VERIFY_PAYMENT',
+    jsonb_build_object(
+      'payment_id', p_payment_id,
+      'amount',     v_amount
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'payment_id', p_payment_id,
+    'status',     'VERIFIED'
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RAISE;
+END;
+$function$;
+
+ALTER FUNCTION public.verify_payment(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.verify_payment(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.verify_payment(uuid) TO authenticated;
+
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.reject_payment(p_payment_id UUID, p_reason TEXT)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_catalog'
+AS $function$
+DECLARE
+  v_tenant_id uuid;
+  v_amount    numeric;
+  v_admin_email text;
+BEGIN
+  -- Auth gate: super_admin ONLY
+  IF NOT public._is_super_admin_from_jwt() THEN
+    RAISE EXCEPTION USING errcode = 'P0403', message = 'SUPER_ADMIN_REQUIRED';
+  END IF;
+
+  -- Fetch payment context BEFORE the update (Note B)
+  SELECT tenant_id, amount
+    INTO v_tenant_id, v_amount
+  FROM public.tenant_payments
+  WHERE id = p_payment_id;
+
+  IF v_tenant_id IS NULL THEN
+    RAISE EXCEPTION USING errcode = 'P0002', message = 'PAYMENT_NOT_FOUND';
+  END IF;
+
+  -- Update: only if PENDING_VERIFICATION (Note C)
+  UPDATE public.tenant_payments
+  SET
+    status           = 'REJECTED',
+    verified_by      = auth.uid(),
+    verified_at      = now(),
+    rejection_reason = p_reason
+  WHERE id = p_payment_id
+    AND status = 'PENDING_VERIFICATION';
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING errcode = 'P0409', message = 'PAYMENT_NOT_PENDING';
+  END IF;
+
+  -- Audit INSERT (Note A)
+  SELECT email INTO v_admin_email
+  FROM public.platform_admins
+  WHERE user_id = auth.uid();
+
+  INSERT INTO public.platform_admin_audit
+    (admin_user_id, admin_email, tenant_id, action, detail)
+  VALUES (
+    auth.uid(),
+    v_admin_email,
+    v_tenant_id,
+    'REJECT_PAYMENT',
+    jsonb_build_object(
+      'payment_id',       p_payment_id,
+      'amount',           v_amount,
+      'rejection_reason', p_reason
+    )
+  );
+
+  RETURN jsonb_build_object(
+    'payment_id', p_payment_id,
+    'status',     'REJECTED'
+  );
+
+EXCEPTION WHEN OTHERS THEN
+  RAISE;
+END;
+$function$;
+
+ALTER FUNCTION public.reject_payment(uuid, text) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.reject_payment(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.reject_payment(uuid, text) TO authenticated;
+
+-- ---------------------------------------------------------------------------
+-- list_pending_payments() SECDEF RPC
+-- Used by paymentVerificationApi.listPending() — direct SELECT on
+-- platform_admin_audit is blocked for authenticated role (RLS gap).
+-- Returns: tenant_payments joined with tenants + amount_anomaly flag from audit.
+-- ---------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION public.list_pending_payments()
+RETURNS TABLE (
+  id               uuid,
+  tenant_id        uuid,
+  tenant_slug      text,
+  tenant_name      text,
+  amount           numeric,
+  payment_method   text,
+  payment_date     date,
+  proof_url        text,
+  bank_reference   text,
+  notes            text,
+  amount_anomaly   boolean,
+  created_at       timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public', 'pg_catalog'
+AS $function$
+BEGIN
+  -- Auth gate: platform_admin minimum (super_admin also qualifies)
+  IF NOT public._is_platform_admin_from_jwt() THEN
+    RAISE EXCEPTION USING errcode = 'P0403', message = 'PLATFORM_ADMIN_REQUIRED';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    tp.id,
+    tp.tenant_id,
+    t.slug   AS tenant_slug,
+    t.name   AS tenant_name,
+    tp.amount,
+    tp.payment_method,
+    tp.payment_date,
+    tp.proof_url,
+    tp.bank_reference,
+    tp.notes,
+    COALESCE(
+      (paa.detail ->> 'amount_anomaly')::boolean,
+      false
+    )        AS amount_anomaly,
+    tp.created_at
+  FROM public.tenant_payments tp
+  JOIN public.tenants t ON t.id = tp.tenant_id
+  LEFT JOIN public.platform_admin_audit paa ON paa.id = tp.audit_id
+  WHERE tp.status = 'PENDING_VERIFICATION'
+  ORDER BY tp.created_at DESC;
+END;
+$function$;
+
+ALTER FUNCTION public.list_pending_payments() OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.list_pending_payments() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.list_pending_payments() TO authenticated;

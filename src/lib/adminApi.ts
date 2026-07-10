@@ -41,6 +41,7 @@ import {
   PaymentNotFoundError,
   ReasonRequiredError,
   InvalidGroupByError,
+  PaymentNotPendingError,
 } from './adminTypes';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -67,6 +68,10 @@ function normalizeRpcError(error: { message?: string; code?: string }): never {
       throw new SuperAdminRequiredError(error.message);
     }
     throw new PlatformAdminRequiredError(error.message);
+  }
+  // P0409 — wrong state (verify/reject on non-PENDING payment)
+  if (error.code === 'P0409') {
+    throw new PaymentNotPendingError(error.message);
   }
   // 23514 — CHECK constraint violation (payment method / bank / ewallet mismatch)
   if (error.code === '23514') {

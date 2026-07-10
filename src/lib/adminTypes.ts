@@ -314,6 +314,21 @@ export class PaymentFileWrongTypeError extends AdminApiError {
   }
 }
 
+// ─── Wave 6 error classes ─────────────────────────────────────────────────────
+
+/**
+ * Raised when verify_payment / reject_payment is called on a payment that is
+ * not PENDING_VERIFICATION (SQLSTATE P0409 message=PAYMENT_NOT_PENDING).
+ * Bahasa: "Pembayaran ini sudah diverifikasi/ditolak"
+ */
+export class PaymentNotPendingError extends AdminApiError {
+  readonly userMessage = 'Pembayaran ini sudah diverifikasi atau ditolak.';
+  constructor(cause?: string) {
+    super(cause ?? 'PAYMENT_NOT_PENDING');
+    this.name = 'PaymentNotPendingError';
+  }
+}
+
 // ─── Wave 4a input/output types ───────────────────────────────────────────────
 
 export interface RenewSubscriptionInput {
