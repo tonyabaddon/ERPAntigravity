@@ -1,21 +1,38 @@
 /**
- * Lightweight super-admin check for the platform-admin FE.
+ * Lightweight role-check helpers for the platform-admin frontend.
  *
- * Since all current platform admins ARE super admins (only the founder is an admin),
- * we use is_platform_admin as a proxy.
+ * Both functions read the `platform_admin_role` JWT claim minted by the
+ * custom_access_token_hook (Wave 6 Task 1). No network round-trip — the
+ * session is already cached by the Supabase client.
  *
- * TODO(wave-4b): swap to admin_role JWT claim once Auth Hook adds it.
- * Backend still gated via _assert_super_admin_from_jwt() — this is UX polish only.
+ * Safe defaults:
+ *  - Missing claim → false (handles pre-hook JWTs and tenant users)
+ *  - No session → false
  *
- * We deliberately do NOT cache the result. The JWT lookup is cheap (single
- * getSession call, no network round-trip), and caching would leave a demoted
- * admin with stale edit privileges until reload once Wave 4b lands the
- * admin_role JWT claim. Backend gates every call regardless.
+ * Backend is still gated via _is_super_admin_from_jwt() — these helpers
+ * are UX polish only (hide restricted nav items / edit buttons).
  */
 
-import { tenantContextService } from './supabaseClient';
+import { supabase } from './supabaseClient';
+import { decodeJwt } from './jwt';
 
-/** Returns true when the current session belongs to a super admin. */
+/** Returns true only when the JWT carries platform_admin_role = 'super_admin'. */
 export async function isSuperAdmin(): Promise<boolean> {
-  return tenantContextService.isPlatformAdmin();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return false;
+  const claims = decodeJwt(session.access_token);
+  return claims['platform_admin_role'] === 'super_admin';
+}
+
+/**
+ * Returns true only when the JWT carries platform_admin_role = 'sales_rep'.
+ *
+ * Deliberately NOT implemented as `!(await isSuperAdmin())` — tenant users
+ * lack the claim entirely and must NOT be treated as sales_rep.
+ */
+export async function isSalesRep(): Promise<boolean> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return false;
+  const claims = decodeJwt(session.access_token);
+  return claims['platform_admin_role'] === 'sales_rep';
 }

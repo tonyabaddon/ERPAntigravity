@@ -1,5 +1,5 @@
 // src/components/admin/AdminSidebar.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Home,
   Building2,
@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Coins,
 } from 'lucide-react';
+import { isSuperAdmin } from '../../lib/adminAuth';
 
 interface NavItem {
   to: string;
@@ -16,6 +17,8 @@ interface NavItem {
   icon: React.ReactNode;
   exact?: boolean;
   badge?: number;
+  /** When true, this item is hidden for sales_rep (requires super_admin role). */
+  superAdminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -39,11 +42,13 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/plans',
     label: 'Paket',
     icon: <Package size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
   },
   {
     to: '/admin/revenue',
     label: 'Pendapatan',
     icon: <Coins size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
   },
   {
     to: '/admin/settings',
@@ -72,6 +77,28 @@ function isActive(item: NavItem, activePath: string): boolean {
 export function AdminSidebar({ activePath }: AdminSidebarProps) {
   const currentPath =
     activePath ?? (typeof window !== 'undefined' ? window.location.pathname : '/admin');
+
+  // null = unknown (check pending); true = super_admin; false = not super_admin.
+  // We show all items while the check is pending (null), then filter once resolved.
+  // A sales_rep may briefly see restricted items before they hide — this is acceptable
+  // because backend RLS + P0403 gates prevent actual access.
+  const [superAdmin, setSuperAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    isSuperAdmin().then((ok) => {
+      if (!cancelled) setSuperAdmin(ok);
+    }).catch(() => {
+      if (!cancelled) setSuperAdmin(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Show all items until check resolves; after resolve, hide superAdminOnly items
+  // if user is NOT super_admin.
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !item.superAdminOnly || superAdmin !== false
+  );
 
   return (
     <aside
@@ -106,7 +133,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
         >
           Menu
         </div>
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const active = isActive(item, currentPath);
           return (
             <a

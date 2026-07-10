@@ -3,21 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { ShieldCheck, LogOut } from 'lucide-react';
 import { supabase, tenantContextService } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
+import { decodeJwt } from '../../lib/jwt';
 import { AdminSidebar } from './AdminSidebar';
 
 interface ImpersonationState {
   active: boolean;
   slug: string | null;
-}
-
-/** Minimal JWT decoder — reads claims without signature verification. */
-function decodeJwt(token: string): Record<string, unknown> {
-  try {
-    const [, payload] = token.split('.');
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
 }
 
 interface AdminLayoutProps {
