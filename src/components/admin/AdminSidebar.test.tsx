@@ -7,11 +7,20 @@ vi.mock('../../lib/adminAuth', () => ({
   isSuperAdmin: vi.fn(),
 }));
 
+// Mock paymentVerificationApi so the sidebar's pendingCount poll doesn't hit Supabase.
+vi.mock('../../lib/paymentVerificationApi', () => ({
+  paymentVerificationApi: {
+    listPending: vi.fn(() => Promise.resolve([])),
+  },
+}));
+
 import { isSuperAdmin } from '../../lib/adminAuth';
+import { paymentVerificationApi } from '../../lib/paymentVerificationApi';
 
 beforeEach(() => {
-  // Default: super_admin — existing tests continue to pass (all 7 items visible).
+  // Default: super_admin — existing tests continue to pass (all items visible).
   vi.mocked(isSuperAdmin).mockResolvedValue(true);
+  vi.mocked(paymentVerificationApi.listPending).mockResolvedValue([]);
 });
 
 describe('AdminSidebar', () => {
@@ -54,7 +63,7 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('VOSI Admin')).toBeInTheDocument();
   });
 
-  it('super_admin sees all 7 nav items including Paket and Pendapatan', async () => {
+  it('super_admin sees all nav items including Paket, Pendapatan, and Verifikasi Pembayaran', async () => {
     vi.mocked(isSuperAdmin).mockResolvedValue(true);
     render(<AdminSidebar activePath="/admin" />);
     await waitFor(() => {
@@ -68,12 +77,44 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('Bantuan')).toBeInTheDocument();
   });
 
-  it('sales_rep sees only 5 items (Paket and Pendapatan hidden)', async () => {
+  it('super_admin sees Verifikasi Pembayaran nav item', async () => {
+    vi.mocked(isSuperAdmin).mockResolvedValue(true);
+    render(<AdminSidebar activePath="/admin" />);
+    await waitFor(() => {
+      expect(screen.getByText('Verifikasi Pembayaran')).toBeInTheDocument();
+    });
+  });
+
+  it('renders pending badge count when listPending returns items (super_admin only)', async () => {
+    vi.mocked(isSuperAdmin).mockResolvedValue(true);
+    vi.mocked(paymentVerificationApi.listPending).mockResolvedValue([
+      {
+        id: 'pay-1', tenant_id: 't1', tenant_slug: 'slug', tenant_name: 'T1',
+        amount: 100000, payment_method: 'TRANSFER', payment_date: '2026-07-01',
+        proof_url: null, bank_reference: null, notes: null,
+        amount_anomaly: false, created_at: '2026-07-01T00:00:00Z',
+      },
+      {
+        id: 'pay-2', tenant_id: 't2', tenant_slug: 'slug2', tenant_name: 'T2',
+        amount: 200000, payment_method: 'TRANSFER', payment_date: '2026-07-02',
+        proof_url: null, bank_reference: null, notes: null,
+        amount_anomaly: false, created_at: '2026-07-02T00:00:00Z',
+      },
+    ]);
+    render(<AdminSidebar activePath="/admin" />);
+    await waitFor(() => {
+      expect(screen.getByTestId('badge--admin-payments-pending')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('badge--admin-payments-pending')).toHaveTextContent('2');
+  });
+
+  it('sales_rep does not see superAdminOnly items (Paket, Pendapatan, Verifikasi Pembayaran hidden)', async () => {
     vi.mocked(isSuperAdmin).mockResolvedValue(false);
     render(<AdminSidebar activePath="/admin" />);
     await waitFor(() => {
       expect(screen.queryByText('Paket')).not.toBeInTheDocument();
       expect(screen.queryByText('Pendapatan')).not.toBeInTheDocument();
+      expect(screen.queryByText('Verifikasi Pembayaran')).not.toBeInTheDocument();
     });
     expect(screen.getByText('Beranda')).toBeInTheDocument();
     expect(screen.getByText('Tenant')).toBeInTheDocument();

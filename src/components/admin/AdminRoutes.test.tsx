@@ -38,6 +38,14 @@ vi.mock('../../lib/adminToast', () => ({
   },
 }));
 
+vi.mock('../../lib/paymentVerificationApi', () => ({
+  paymentVerificationApi: {
+    listPending: vi.fn(() => Promise.resolve([])),
+    verify: vi.fn(),
+    reject: vi.fn(),
+  },
+}));
+
 vi.mock('../../lib/adminApi', () => ({
   getPlatformDashboardStats: vi.fn(() => Promise.resolve({
     tenants_total: 1, active_count: 1, suspended_count: 0,

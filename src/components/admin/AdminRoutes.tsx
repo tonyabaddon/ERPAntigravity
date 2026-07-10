@@ -15,6 +15,7 @@ import { AdminRevenue } from './AdminRevenue';
 import { TenantWizard } from './TenantWizard';
 import { SalesRepsList } from './SalesRepsList';
 import { PlatformSettings } from './PlatformSettings';
+import { PendingPaymentsQueue } from './PendingPaymentsQueue';
 
 // Pattern for /admin/tenants/<slug>
 const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
@@ -47,6 +48,9 @@ function resolveAdminContent(pathname: string): React.ReactNode {
   }
   if (pathname === '/admin/sales-reps' || pathname === '/admin/sales-reps/') {
     return <SalesRepsList />;
+  }
+  if (pathname === '/admin/payments/pending' || pathname === '/admin/payments/pending/') {
+    return <PendingPaymentsQueue />;
   }
   if (pathname === '/admin/settings/payment' || pathname === '/admin/settings/payment/') {
     return <PlatformSettings />;

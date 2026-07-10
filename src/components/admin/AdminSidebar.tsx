@@ -10,8 +10,10 @@ import {
   Coins,
   UsersRound,
   Banknote,
+  ClipboardCheck,
 } from 'lucide-react';
 import { isSuperAdmin } from '../../lib/adminAuth';
+import { paymentVerificationApi } from '../../lib/paymentVerificationApi';
 
 interface NavItem {
   to: string;
@@ -21,6 +23,8 @@ interface NavItem {
   badge?: number;
   /** When true, this item is hidden for sales_rep (requires super_admin role). */
   superAdminOnly?: boolean;
+  /** When set, the badge count is sourced dynamically rather than from item.badge. */
+  badgeSource?: 'pendingPayments';
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -57,6 +61,13 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Sales Reps',
     icon: <UsersRound size={16} strokeWidth={1.8} strokeLinecap="round" />,
     superAdminOnly: true,
+  },
+  {
+    to: '/admin/payments/pending',
+    label: 'Verifikasi Pembayaran',
+    icon: <ClipboardCheck size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
+    badgeSource: 'pendingPayments',
   },
   {
     to: '/admin/settings/payment',
@@ -97,6 +108,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
   // A sales_rep may briefly see restricted items before they hide — this is acceptable
   // because backend RLS + P0403 gates prevent actual access.
   const [superAdmin, setSuperAdmin] = useState<boolean | null>(null);
+  const [pendingCount, setPendingCount] = useState<number>(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +119,28 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
     });
     return () => { cancelled = true; };
   }, []);
+
+  // Poll pending payment count every 60s — only for super_admin.
+  useEffect(() => {
+    if (superAdmin !== true) return;
+    let cancelled = false;
+
+    async function loadCount() {
+      try {
+        const pending = await paymentVerificationApi.listPending();
+        if (!cancelled) setPendingCount(pending.length);
+      } catch {
+        // Non-fatal: badge stays at current count
+      }
+    }
+
+    loadCount();
+    const t = setInterval(loadCount, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [superAdmin]);
 
   // Show all items until check resolves; after resolve, hide superAdminOnly items
   // if user is NOT super_admin.
@@ -149,6 +183,8 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
         </div>
         {visibleNavItems.map((item) => {
           const active = isActive(item, currentPath);
+          const badgeCount =
+            item.badgeSource === 'pendingPayments' ? pendingCount : item.badge;
           return (
             <a
               key={item.to}
@@ -177,12 +213,16 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
                 {item.icon}
               </span>
               <span>{item.label}</span>
-              {item.badge !== undefined && item.badge > 0 && (
+              {badgeCount !== undefined && badgeCount > 0 && (
                 <span
                   className="ml-auto text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                  style={{ background: '#F9B233', color: '#0B2545' }}
+                  style={{
+                    background: item.badgeSource === 'pendingPayments' ? '#DC2626' : '#F9B233',
+                    color: item.badgeSource === 'pendingPayments' ? '#ffffff' : '#0B2545',
+                  }}
+                  data-testid={`badge-${item.to.replace(/\//g, '-')}`}
                 >
-                  {item.badge}
+                  {badgeCount}
                 </span>
               )}
             </a>

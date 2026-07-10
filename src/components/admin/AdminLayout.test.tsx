@@ -5,6 +5,12 @@ import { AdminLayout } from './AdminLayout';
 // Stable resolved value helper
 const resolved = <T,>(value: T) => Promise.resolve({ data: value, error: null });
 
+vi.mock('../../lib/paymentVerificationApi', () => ({
+  paymentVerificationApi: {
+    listPending: vi.fn(() => Promise.resolve([])),
+  },
+}));
+
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
     auth: {
