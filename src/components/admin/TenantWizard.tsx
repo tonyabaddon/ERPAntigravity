@@ -1,25 +1,40 @@
 // src/components/admin/TenantWizard.tsx
-// Phase B Wave 2 — new-tenant onboarding wizard, /admin/tenants/new.
+// Phase B Wave 6 — new-tenant onboarding wizard, /admin/tenants/new.
 //
-// Multi-step form that platform admins use to seed a new tenant. Wraps
-// the provision_tenant SECDEF RPC (migration 20261115000029) so the admin
-// doesn't have to hand-craft 4 INSERTs into tenants + tenant_subscriptions
-// + tenant_users + admin_users.
+// Multi-step form that platform admins use to onboard a new tenant.
+// Submit calls Edge Function create-tenant-owner which:
+//   1. Validates inputs + slug uniqueness
+//   2. Creates owner via supabase.auth.admin.inviteUserByEmail (service_role)
+//   3. Calls provision_tenant RPC atomically
+//   4. Emits PROVISION_TENANT audit event
 //
-// Prerequisite the wizard cannot automate: the owner's auth.users row
-// must exist BEFORE calling provision_tenant. Supabase's Auth Admin API
-// requires service_role, which the frontend can't hold safely — until
-// an Edge Function wrapping supabase.auth.admin.createUser ships, the
-// admin creates the user via Supabase Dashboard first and pastes the
-// UUID into Step 2 here.
-//
-// See docs/tenant-onboarding-runbook.md for the manual flow this
-// wizard replaces.
+// See docs/tenant-onboarding-runbook.md for the manual flow this replaces.
 
 import type React from 'react';
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
+import { PaymentInstructionBlock } from './PaymentInstructionBlock';
+
+// ─── Edge Function error mapping ──────────────────────────────────────────────
+
+const EDGE_ERROR_MESSAGES: Record<string, string> = {
+  E1: 'Sesi expired — silakan login ulang',
+  E2: 'Akses ditolak — bukan platform admin',
+  E3: 'Format slug tidak valid (3-30 karakter, huruf kecil, angka, dash)',
+  E4: 'Slug tidak boleh menggunakan kata reserved',
+  E5: 'Slug sudah dipakai — pilih yang lain',
+  E6: 'Format email tidak valid',
+  E7: 'Email sudah terdaftar — user tidak dibuat',
+  E8: 'Gagal membuat user (invite service error)',
+  E9: 'Gagal simpan tenant — data user sudah cleanup, silakan retry',
+  E10: 'Rollback gagal — hubungi support (orphan detected)',
+  E11: 'Field wajib tidak lengkap',
+};
+
+function mapEdgeErrorToBahasa(code: string | undefined, fallback: string): string {
+  return (code && EDGE_ERROR_MESSAGES[code]) || fallback;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,14 +51,20 @@ interface WizardForm {
   ownerEmail: string;
 }
 
-interface ProvisionResult {
+/** Shape returned by Edge Function create-tenant-owner (201 OK). */
+interface EdgeProvisionResult {
   tenant_id: string;
   slug: string;
-  name: string;
-  plan_code: string;
-  activated_at: string;
-  expires_at: string;
   owner_user_id: string;
+  expires_at: string;
+}
+
+/** Extended result including form-supplied fields not returned by Edge Function. */
+interface ProvisionResult extends EdgeProvisionResult {
+  /** Copied from form.name at submit time. */
+  name: string;
+  /** Copied from form.planCode at submit time. */
+  plan_code: string;
 }
 
 const INITIAL_FORM: WizardForm = {
@@ -124,8 +145,6 @@ export function TenantWizard() {
         return setError('Masa aktif 1–60 bulan');
       setStep('owner');
     } else if (step === 'owner') {
-      const uuidErr = validateUuid(form.ownerUserId);
-      if (uuidErr) return setError(uuidErr);
       if (!form.ownerName.trim()) return setError('Nama owner wajib diisi');
       const emailErr = validateEmail(form.ownerEmail);
       if (emailErr) return setError(emailErr);
@@ -140,40 +159,53 @@ export function TenantWizard() {
   };
 
   const submit = async () => {
-    if (!supabase) {
-      setError('Supabase tidak dikonfigurasi');
-      return;
-    }
     setSubmitting(true);
     setError(null);
     try {
-      const { data, error: rpcErr } = await supabase.rpc('provision_tenant', {
-        p_owner_user_id: form.ownerUserId,
-        p_slug: form.slug,
-        p_name: form.name,
-        p_owner_name: form.ownerName,
-        p_owner_email: form.ownerEmail,
-        p_plan_code: form.planCode,
-        p_expires_in_months: form.expiresInMonths,
-      });
-      if (rpcErr) {
-        const code = (rpcErr as { code?: string }).code;
-        const msg = rpcErr.message ?? 'Provision gagal';
-        if (code === '23505')
-          setError('Slug sudah dipakai. Pilih slug lain.');
-        else if (code === 'P0002')
-          setError(
-            'Owner UUID tidak ditemukan di auth.users. Buat user dulu via Supabase Dashboard.',
-          );
-        else if (code === 'P0403') setError('Anda bukan platform admin.');
-        else setError(msg);
+      const { data: { session } } = await supabase!.auth.getSession();
+      if (!session) {
+        const msg = mapEdgeErrorToBahasa('E1', 'Sesi expired — silakan login ulang');
+        setError(msg);
         adminToast.error('Gagal onboarding', msg);
         return;
       }
-      const r = data as ProvisionResult;
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-tenant-owner`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            slug: form.slug,
+            name: form.name,
+            plan_code: form.planCode,
+            expires_in_months: form.expiresInMonths,
+            owner_email: form.ownerEmail,
+            owner_name: form.ownerName,
+          }),
+        }
+      );
+      const data = await resp.json() as EdgeProvisionResult & { code?: string; message?: string };
+      if (!resp.ok) {
+        const msg = mapEdgeErrorToBahasa(data.code, data.message ?? 'Provision gagal');
+        setError(msg);
+        adminToast.error('Gagal onboarding', msg);
+        return;
+      }
+      const r: ProvisionResult = {
+        ...(data as EdgeProvisionResult),
+        name: form.name,
+        plan_code: form.planCode,
+      };
       setResult(r);
       setStep('result');
-      adminToast.success(`Tenant ${r.name} berhasil di-onboard.`);
+      adminToast.success(`Tenant ${form.name} berhasil di-onboard.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Network error';
+      setError(msg);
+      adminToast.error('Gagal onboarding', msg);
     } finally {
       setSubmitting(false);
     }
@@ -256,9 +288,8 @@ function Header({ step }: { step: Step }) {
         Onboard tenant baru
       </h1>
       <p className="text-[13px] mt-1" style={{ color: C.muted }}>
-        Wizard ini seed rows di tenants + tenant_subscriptions + tenant_users +
-        admin_users. Owner-nya harus sudah punya auth.users row — buat via
-        Supabase Dashboard sebelum lanjut.
+        Wizard ini onboard tenant baru via Edge Function. Owner auth.users dibuat
+        otomatis via email invite — tidak perlu buat manual di Dashboard.
       </p>
       <div className="flex gap-2 mt-4">
         {steps.map((s, idx) => (
@@ -361,20 +392,9 @@ function OwnerStep({ form, update }: StepProps) {
         className="p-3 rounded-lg text-[12px]"
         style={{ background: C.cream, color: C.navy, border: `1px solid ${C.gold}` }}
       >
-        <strong>Sebelum lanjut:</strong> buat auth.users row untuk owner via
-        Supabase Dashboard → Authentication → Users → <em>Add user</em>. Pilih{' '}
-        <em>Create new user</em> + Auto Confirm ON. Copy UUID-nya, paste di bawah.
+        <strong>Info:</strong> Edge Function akan kirim email invite otomatis ke
+        owner. Pastikan email valid dan belum terdaftar di sistem.
       </div>
-      <Field label="Owner UUID (dari auth.users)" hint="Format 8-4-4-4-12 hex">
-        <input
-          type="text"
-          value={form.ownerUserId}
-          onChange={e => update('ownerUserId', e.target.value.toLowerCase())}
-          placeholder="33333333-aaaa-bbbb-cccc-000000000001"
-          className="w-full border rounded-lg px-3 py-2 text-[13px] font-mono"
-          style={{ borderColor: C.border }}
-        />
-      </Field>
       <Field label="Nama owner" hint="Ditampilkan di sidebar user management">
         <input
           type="text"
@@ -385,7 +405,7 @@ function OwnerStep({ form, update }: StepProps) {
           style={{ borderColor: C.border }}
         />
       </Field>
-      <Field label="Email owner" hint="Harus sama dengan auth.users.email">
+      <Field label="Email owner" hint="Owner akan menerima link aktivasi via email ini">
         <input
           type="email"
           value={form.ownerEmail}
@@ -405,9 +425,9 @@ function ReviewStep({ form }: { form: WizardForm }) {
   return (
     <section className="space-y-3">
       <p className="text-[13px]" style={{ color: C.muted }}>
-        Cek ulang. Setelah klik <strong>Onboard tenant</strong>, RPC{' '}
-        <code className="font-mono text-[11px]">provision_tenant</code> akan
-        seed 4 tabel atomik.
+        Cek ulang. Setelah klik <strong>Onboard tenant</strong>, Edge Function{' '}
+        <code className="font-mono text-[11px]">create-tenant-owner</code> akan
+        buat auth.users invite + seed 4 tabel atomik.
       </p>
       <ReviewRow label="Slug" value={form.slug} />
       <ReviewRow label="Nama tenant" value={form.name} />
@@ -416,7 +436,6 @@ function ReviewStep({ form }: { form: WizardForm }) {
         label="Masa aktif"
         value={`${form.expiresInMonths} bulan`}
       />
-      <ReviewRow label="Owner UUID" value={form.ownerUserId} mono />
       <ReviewRow label="Nama owner" value={form.ownerName} />
       <ReviewRow label="Email owner" value={form.ownerEmail} />
     </section>
@@ -456,60 +475,65 @@ function ResultStep({ result }: { result: ProvisionResult }) {
   const tenantUrl = `${window.location.origin}/t/${result.slug}/dashboard`;
   const detailUrl = `/admin/tenants/${result.slug}`;
   return (
-    <section
-      className="p-6 rounded-xl space-y-4"
-      style={{ background: C.cream, border: `2px solid ${C.gold}` }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-full flex items-center justify-center text-[16px]"
-          style={{ background: C.green, color: '#FFFFFF' }}
-          aria-hidden
-        >
-          ✓
+    <section className="space-y-4">
+      <div
+        className="p-6 rounded-xl space-y-4"
+        style={{ background: C.cream, border: `2px solid ${C.gold}` }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-[16px]"
+            style={{ background: C.green, color: '#FFFFFF' }}
+            aria-hidden
+          >
+            ✓
+          </div>
+          <div>
+            <h2 className="text-[18px] font-extrabold" style={{ color: C.navy }}>
+              Tenant berhasil di-onboard
+            </h2>
+            <p className="text-[12px]" style={{ color: C.muted }}>
+              Rows tersimpan di tenants + tenant_subscriptions + tenant_users + admin_users.
+              Email invite terkirim ke owner.
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-[18px] font-extrabold" style={{ color: C.navy }}>
-            Tenant berhasil di-onboard
-          </h2>
-          <p className="text-[12px]" style={{ color: C.muted }}>
-            Rows tersimpan di tenants + tenant_subscriptions + tenant_users + admin_users
-          </p>
+
+        <div className="space-y-2">
+          <ReviewRow label="Tenant ID" value={result.tenant_id} mono />
+          <ReviewRow label="Slug" value={result.slug} />
+          <ReviewRow label="Nama" value={result.name} />
+          <ReviewRow label="Paket" value={result.plan_code} />
+          <ReviewRow label="Aktif s/d" value={new Date(result.expires_at).toLocaleDateString('id-ID')} />
         </div>
+
+        <div className="flex gap-3 pt-2">
+          <a
+            href={detailUrl}
+            className="flex-1 text-center py-2 rounded-lg text-[13px] font-bold"
+            style={{ background: C.navy, color: '#FFFFFF' }}
+          >
+            Buka detail tenant →
+          </a>
+          <a
+            href={tenantUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 text-center py-2 rounded-lg text-[13px] font-bold"
+            style={{ background: C.bg, color: C.navy, border: `1px solid ${C.border}` }}
+          >
+            Preview dashboard ↗
+          </a>
+        </div>
+
+        <p className="text-[11px] pt-2" style={{ color: C.muted }}>
+          Owner akan menerima email invite untuk set password dan login pertama kali.
+        </p>
       </div>
 
-      <div className="space-y-2">
-        <ReviewRow label="Tenant ID" value={result.tenant_id} mono />
-        <ReviewRow label="Slug" value={result.slug} />
-        <ReviewRow label="Nama" value={result.name} />
-        <ReviewRow label="Paket" value={result.plan_code} />
-        <ReviewRow label="Aktif s/d" value={new Date(result.expires_at).toLocaleDateString('id-ID')} />
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <a
-          href={detailUrl}
-          className="flex-1 text-center py-2 rounded-lg text-[13px] font-bold"
-          style={{ background: C.navy, color: '#FFFFFF' }}
-        >
-          Buka detail tenant →
-        </a>
-        <a
-          href={tenantUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 text-center py-2 rounded-lg text-[13px] font-bold"
-          style={{ background: C.bg, color: C.navy, border: `1px solid ${C.border}` }}
-        >
-          Preview dashboard ↗
-        </a>
-      </div>
-
-      <p className="text-[11px] pt-2" style={{ color: C.muted }}>
-        Owner login: {result.owner_user_id.slice(0, 8)}… — sudah bisa Kirim OTP
-        via halaman login utama, atau login pakai password kalau di-set saat
-        buat user di Supabase Dashboard.
-      </p>
+      <PaymentInstructionBlock
+        tenant={{ slug: result.slug, name: result.name, plan_code: result.plan_code }}
+      />
     </section>
   );
 }
