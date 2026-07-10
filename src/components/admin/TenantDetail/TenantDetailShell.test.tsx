@@ -5,11 +5,34 @@
 //   3. Not-found state renders "Tenant tidak ditemukan"
 //   4. Distinct loading vs not-found states
 //   5. TenantDangerZone visible for super_admin, hidden for sales_rep
+//   6. ModuleTogglePanel visible for both super_admin and sales_rep (Task 11)
 // C1 fix: prop renamed tenantId→tenantSlug; lookup now by slug not tenant_id UUID.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { TenantDetailShell } from './TenantDetailShell';
 import type { AdminTenantRow } from '../../../lib/adminTypes';
+
+// Mock supabaseClient for ModuleTogglePanel (Task 11).
+// Returns empty features by default so the panel renders without crashing.
+const supabaseSingleMock  = vi.fn();
+const supabaseEqMock2     = vi.fn();
+const supabaseSelectMock2 = vi.fn();
+const supabaseFromMock2   = vi.fn();
+const supabaseRpcMock     = vi.fn();
+
+vi.mock('../../../lib/supabaseClient', () => ({
+  supabase: {
+    from: (...args: unknown[]) => supabaseFromMock2(...args),
+    rpc:  (...args: unknown[]) => supabaseRpcMock(...args),
+  },
+}));
+
+function setupModulePanelMock(features: Record<string, boolean> = {}) {
+  supabaseSingleMock.mockResolvedValue({ data: { effective_features: features }, error: null });
+  supabaseEqMock2.mockReturnValue({ single: supabaseSingleMock });
+  supabaseSelectMock2.mockReturnValue({ eq: supabaseEqMock2 });
+  supabaseFromMock2.mockReturnValue({ select: supabaseSelectMock2 });
+}
 
 const tenantsMock   = vi.fn();
 const isSuperAdminMock = vi.fn();
@@ -83,6 +106,8 @@ describe('TenantDetailShell', () => {
     isSuperAdminMock.mockResolvedValue(false);
     // Reset URL to no tab param
     setSearch('');
+    // Default: ModuleTogglePanel (Task 11) returns empty features
+    setupModulePanelMock({});
   });
 
   afterEach(() => {
@@ -243,6 +268,34 @@ describe('TenantDetailShell', () => {
 
     await waitFor(() => screen.getByTestId('tenant-detail-shell'));
     // Give time for isSuperAdmin async to resolve
+    await waitFor(() => expect(isSuperAdminMock).toHaveBeenCalled());
+    expect(screen.queryByTestId('tenant-danger-zone')).not.toBeInTheDocument();
+  });
+
+  it('ModuleTogglePanel visible for super_admin (Task 11)', async () => {
+    isSuperAdminMock.mockResolvedValue(true);
+    tenantsMock.mockResolvedValue([fakeTenant]);
+    setupModulePanelMock({ modul_kasir: true, modul_tempo: false });
+    render(<TenantDetailShell tenantSlug="garindo-jaya" />);
+
+    await waitFor(() => screen.getByTestId('tenant-detail-shell'));
+    await waitFor(() =>
+      expect(screen.getByTestId('module-toggle-panel')).toBeInTheDocument()
+    );
+    expect(screen.getByText('Pengaturan Modul')).toBeInTheDocument();
+  });
+
+  it('ModuleTogglePanel visible for sales_rep (Task 11)', async () => {
+    isSuperAdminMock.mockResolvedValue(false);
+    tenantsMock.mockResolvedValue([fakeTenant]);
+    setupModulePanelMock({ modul_kasir: true });
+    render(<TenantDetailShell tenantSlug="garindo-jaya" />);
+
+    await waitFor(() => screen.getByTestId('tenant-detail-shell'));
+    // Panel always mounted regardless of superAdmin flag
+    expect(screen.getByTestId('module-toggle-panel')).toBeInTheDocument();
+    expect(screen.getByText('Pengaturan Modul')).toBeInTheDocument();
+    // Danger zone hidden for sales_rep
     await waitFor(() => expect(isSuperAdminMock).toHaveBeenCalled());
     expect(screen.queryByTestId('tenant-danger-zone')).not.toBeInTheDocument();
   });

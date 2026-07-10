@@ -13,6 +13,7 @@ import { UsersTab } from './UsersTab';
 import { AuditTab } from './AuditTab';
 import { PembayaranTab } from './PembayaranTab';
 import { TenantDangerZone } from './TenantDangerZone';
+import { ModuleTogglePanel } from './ModuleTogglePanel';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -336,6 +337,9 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
           />
         )}
       </div>
+
+      {/* Pengaturan Modul — visible to both roles */}
+      <ModuleTogglePanel tenantId={tenant.tenant_id} />
 
       {/* Zona Bahaya — super_admin only */}
       {superAdmin && (
