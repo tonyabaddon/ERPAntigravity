@@ -1,48 +1,105 @@
-# Task 2 Report — tenant_payments table + RLS + audit CHECK
+# Task 2 Report: Wave 6 RLS + Narrowed RPC Gates
 
-**Status:** COMPLETE
+**Date:** 2026-07-10
+**Status:** DONE_WITH_CONCERNS (Docker unavailable; MCP smoke substitutes for local pgTAP RED/GREEN)
+**Commit:** `f0c3a47` feat(rls): narrow tenant writes + suspend/activate/renew to super_admin
 
-**Migration:** `supabase/migrations/20261115000021_phase_b_wave5_tenant_payments_table.sql`
-**Test:** `supabase/tests/wave5/tenant_payments_table.sql`
-**Applied:** Garindo prod `ekhhojaezdfjfwuxyjkl` — `apply_migration` success
+---
 
-## Verifications (all passed)
+## 1. Verification Results (Pre-flight)
 
-| Check | Result |
-|-------|--------|
-| Table `tenant_payments` exists | PASS |
-| Index `idx_tenant_payments_tenant_date` | PASS |
-| Index `idx_tenant_payments_period` | PASS |
-| `relrowsecurity = true` | PASS |
-| `relforcerowsecurity = true` | PASS |
-| Policy `p_platform_admin_only` on `{authenticated, vosi_rpc_owner}` | PASS |
-| Audit CHECK includes all 16 codes (through UPLOAD_PAYMENT_PROOF) | PASS |
-| Smoke INSERT (BANK_TRANSFER + BCA, valid row) + RAISE rollback | PASS |
+### plans.g_read_all
+```
+polname    | polcmd | using_clause | roles
+g_read_all | r      | true         | authenticated,vosi_rpc_owner
+```
+Confirmed `USING (true)` — skipped per Note A. No change to plans policy.
 
-## pgTAP coverage (9 assertions)
+### tenants + tenant_subscriptions existing policies
+```
+table                   | polname              | polcmd | using_clause                    | roles
+tenants                 | p_platform_admin_only | *     | _is_platform_admin_from_jwt()   | authenticated,vosi_rpc_owner
+tenant_subscriptions    | p_platform_admin_only | *     | _is_platform_admin_from_jwt()   | authenticated,vosi_rpc_owner
+```
+Confirmed: FOR ALL (`*`), TO authenticated,vosi_rpc_owner, USING _is_platform_admin_from_jwt(). Matches expected.
 
-1. `has_table` — table exists
-2. `has_index` — idx_tenant_payments_tenant_date
-3. `has_index` — idx_tenant_payments_period
-4. `ok(relrowsecurity)` — RLS enabled
-5. `ok(relforcerowsecurity)` — FORCE RLS enabled
-6. `has_row_policy` — p_platform_admin_only
-7. `ok(constraint LIKE '%RECORD_PAYMENT%')` — audit CHECK includes RECORD_PAYMENT
-8. `ok(all 4 Wave 5 codes present)` — RECORD/UPDATE/DELETE/UPLOAD_PAYMENT_PROOF
-9. `throws_ok(23514)` — BANK_TRANSFER + NULL bank_name rejects with payment_bank_required CHECK
+### RPC signatures (from pg_get_function_identity_arguments)
+- `suspend_tenant(p_tenant_id uuid, p_reason text)` — matches (uuid, text)
+- `activate_tenant(p_tenant_id uuid)` — matches (uuid)
+- `renew_subscription(p_tenant_id uuid, p_new_expires_at date, p_new_plan_code text DEFAULT NULL, p_notes text DEFAULT NULL)` — matches (uuid, date, text, text)
 
-## Drift corrections
+No signature deviations. Proceeded with full implementation.
 
-- `audit_id BIGINT` (spec said UUID; platform_admin_audit.id is BIGINT per Wave 1 Task 3)
-- Added `set_updated_at` trigger (project convention; not in spec but consistent with all tables carrying `updated_at`)
+---
 
-## Pre-flight checks performed
+## 2. What Was Implemented
 
-- `vosi_rpc_owner` role: EXISTS
-- `auth.users` cross-schema FK: PERMITTED (kasir_transactions + stock_adjustments both FK to auth.users)
-- `platform_admin_audit.id` type: BIGINT confirmed
-- Existing audit CHECK codes: 12 (through UPDATE_PLAN) confirmed
+### Files Created
+1. `supabase/migrations/20261115000033_rls_role_gates.sql`
+   - DROP `p_platform_admin_only` on `tenants` + `tenant_subscriptions`
+   - CREATE 8 replacement policies (4 per table):
+     - `p_platform_admin_select` FOR SELECT `TO authenticated, vosi_rpc_owner` USING `_is_platform_admin_from_jwt()`
+     - `p_super_admin_write` FOR INSERT `TO authenticated, vosi_rpc_owner` WITH CHECK `_is_super_admin_from_jwt()`
+     - `p_super_admin_update` FOR UPDATE `TO authenticated, vosi_rpc_owner` USING+WITH CHECK `_is_super_admin_from_jwt()`
+     - `p_super_admin_delete` FOR DELETE `TO authenticated, vosi_rpc_owner` USING `_is_super_admin_from_jwt()`
 
-## Concerns
+2. `supabase/migrations/20261115000034_narrow_rpc_gates_to_super.sql`
+   - `suspend_tenant`: gate → `_is_super_admin_from_jwt()`, message → `SUPER_ADMIN_REQUIRED` (P0403)
+   - `activate_tenant`: same gate change
+   - `renew_subscription`: same gate change
+   - OWNER TO postgres + REVOKE + GRANT preserved verbatim on all 3 RPCs
+   - All other logic (audit inserts, idempotency guards, TENANT_NOT_FOUND, etc.) preserved verbatim from prod
 
-None. All schema assumptions verified before writing. Smoke test passed with intended RAISE rollback pattern.
+3. `supabase/tests/wave6/rls_role_gates.sql`
+   - 5 pgTAP assertions; seeds own test tenant UUID `11111111-2222-3333-4444-555555555555`
+   - Tests: sales_rep SELECT (pass), UPDATE (blocked 42501), DELETE (blocked 42501), plans SELECT (pass), super_admin UPDATE (pass)
+
+4. `supabase/tests/wave6/narrow_rpc_gates.sql`
+   - 3 pgTAP assertions; seeds own test tenant UUID `99999999-9999-9999-9999-999999999999`
+   - Tests: sales_rep → suspend_tenant P0403, activate_tenant P0403, renew_subscription P0403
+
+---
+
+## 3. Prod Smoke Evidence
+
+### Policy verification (post-000033 apply)
+All 8 policies confirmed on prod:
+```
+table                | polname               | polcmd | using_clause
+tenant_subscriptions | p_platform_admin_select | r    | _is_platform_admin_from_jwt()
+tenant_subscriptions | p_super_admin_delete    | d    | _is_super_admin_from_jwt()
+tenant_subscriptions | p_super_admin_update    | w    | _is_super_admin_from_jwt()
+tenant_subscriptions | p_super_admin_write     | a    | (WITH CHECK only)
+tenants              | p_platform_admin_select | r    | _is_platform_admin_from_jwt()
+tenants              | p_super_admin_delete    | d    | _is_super_admin_from_jwt()
+tenants              | p_super_admin_update    | w    | _is_super_admin_from_jwt()
+tenants              | p_super_admin_write     | a    | (WITH CHECK only)
+```
+
+### RPC gate smokes (post-000034 apply)
+All ran as DO-block with `RAISE EXCEPTION 'SMOKE_ROLLBACK'` at end (no side effects on prod data).
+
+- `suspend_tenant` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS (SMOKE_ROLLBACK reached, not SMOKE_FAIL)
+- `activate_tenant` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS
+- `renew_subscription` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS
+- Message correctness: SQLERRM verified as `'SUPER_ADMIN_REQUIRED'` (not old `'PLATFORM_ADMIN_REQUIRED'`)
+
+---
+
+## 4. Concerns
+
+1. **Docker still unavailable** — pgTAP tests written but not run locally. No RED/GREEN cycle. MCP prod smoke is the only live verification. Tests are structurally correct (BEGIN/ROLLBACK, seeded UUIDs, correct errcode/message assertions) but CI has not confirmed GREEN.
+
+2. **Garindo dashboard regression** — The `tenants` SELECT is preserved via `p_platform_admin_select` USING `_is_platform_admin_from_jwt()` (same predicate as old `p_platform_admin_only`). No regression expected, but human should verify Garindo dashboard renders normally post-migration as noted in Note E.
+
+3. **REVOKE/GRANT explicit in 000034** — The original prod function bodies did not include REVOKE/GRANT in their pg_get_functiondef output (those were applied in separate prior migrations). Migration 000034 adds them explicitly following the Wave 5 OWNER TO postgres pattern. This is additive and correct, not a regression.
+
+---
+
+## 5. Files Changed
+
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000033_rls_role_gates.sql`
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000034_narrow_rpc_gates_to_super.sql`
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/rls_role_gates.sql`
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/narrow_rpc_gates.sql`
+- `/Users/tonywei/IdeaProjects/ERPAntigravity/progress.md` (updated per CLAUDE.md requirement)

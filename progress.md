@@ -1,5 +1,38 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 2: RLS role-gates + narrow RPC gates (migrations 000033, 000034)
+
+Split `tenants` and `tenant_subscriptions` RLS: SELECT open to both platform admin roles, writes restricted to super_admin. Narrowed `suspend_tenant`/`activate_tenant`/`renew_subscription` RPCs to super_admin only (P0403 SUPER_ADMIN_REQUIRED).
+
+**Pre-flight verification:**
+- `plans.g_read_all` confirmed `USING (true)` TO authenticated,vosi_rpc_owner — untouched per Note A
+- `p_platform_admin_only` confirmed on both tables, FOR ALL, TO authenticated,vosi_rpc_owner
+- All 3 RPC bodies fetched verbatim from prod; only gate line changed
+
+**Migration `20261115000033_rls_role_gates.sql`:**
+- DROP `p_platform_admin_only` on `tenants` + `tenant_subscriptions`
+- Create 4 policies per table (8 total): `p_platform_admin_select` (both roles), `p_super_admin_write/update/delete` (super only)
+- All policies scoped `TO authenticated, vosi_rpc_owner` (SECDEF RPC gap fix per Note C)
+
+**Migration `20261115000034_narrow_rpc_gates_to_super.sql`:**
+- `suspend_tenant`, `activate_tenant`, `renew_subscription` — gate changed from `_is_platform_admin_from_jwt()` to `_is_super_admin_from_jwt()`
+- Error message changed to `SUPER_ADMIN_REQUIRED` (errcode P0403 preserved)
+- OWNER TO postgres + REVOKE/GRANT preserved verbatim
+
+**Prod smoke (all pass via MCP DO-block pattern):**
+- 8 new policies confirmed on prod (4 per table)
+- `suspend_tenant` raises P0403 SUPER_ADMIN_REQUIRED for sales_rep JWT
+- `activate_tenant` raises P0403 SUPER_ADMIN_REQUIRED for sales_rep JWT
+- `renew_subscription` raises P0403 SUPER_ADMIN_REQUIRED for sales_rep JWT
+
+**pgTAP tests** (Docker unavailable — MCP smoke substitutes):
+- `supabase/tests/wave6/rls_role_gates.sql` — 5 assertions, seeded UUID (no garindo dependency)
+- `supabase/tests/wave6/narrow_rpc_gates.sql` — 3 assertions checking P0403 + message
+
+Commit: `f0c3a47` feat(rls): narrow tenant writes + suspend/activate/renew to super_admin
+
+---
+
 ## 2026-07-10 — Wave 6 Task 1: Sales Rep role + status + auth hook (migration 000032)
 
 Added `sales_rep` role support to `platform_admins` and extended `custom_access_token_hook` to emit `platform_admin_role` JWT claim.
