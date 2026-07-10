@@ -1,5 +1,70 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
+
+**Goal:** produce 5 pitch-ready fullpage PNGs of the tenant UI for founder's deck, packaged as a zip for drop-in to a Claude Project.
+
+**Deliverables:**
+- `docs/screenshots/pitch-deck/pitch-01-beranda.png` — Owner Dashboard: TOTAL OMSET Rp 10.060.000 (7d), 21 transaksi, 67% AI efisiensi, Revenue-by-Channel bar chart (Walk-in/Tokopedia/Grosir/WA AI), AI activity feed with 5 log entries.
+- `docs/screenshots/pitch-deck/pitch-02-kasir-harian.png` — POS daily book (Sabtu 11 Juli): Rp 2.299.000 pemasukan / 5 txns + Rp 570.000 pengeluaran; 5 walk-in/grosir/tokopedia line items; Rekap Pembayaran (Tunai/Transfer/QRIS split); Tutup Buku Harian with laba bersih Rp 303.620.
+- `docs/screenshots/pitch-deck/pitch-03-produk-stok.png` — Full 20 SKU table (Alat Tulis / Elektronik / Perawatan / Rumah Tangga / Sembako), Gudang Utama badges, category filter.
+- `docs/screenshots/pitch-deck/pitch-04-sales-inbox-ai.png` — Sales Inbox with Ibu Sari's full AI conversation (customer intake → stock check → address → transfer → confirmation → order created), left rail categories (Butuh Aksi / AI Aktif / Menunggu / Riwayat), right rail Alur Percakapan funnel.
+- `docs/screenshots/pitch-deck/pitch-05-kas-bank.png` — 3 akun bisnis (Kas Utama Rp 5M, BCA Utama Rp 25M, GoPay Merchant Rp 500k), total liquid Rp 30.5M.
+- `pitch-deck-highlights.zip` (repo root) — all 5 PNGs, 5.3 MB.
+
+**Seed method:** one-shot idempotent SQL via Supabase MCP against toko-jaya-makmur (tenant_id `2222…`):
+- 15 kasir income txns across 7 days (5 today), mix of walkin/tokopedia/grosir + cash/transfer/qris.
+- 2 kasir expense txns today (Utilitas Rp 450k + Transportasi Rp 120k).
+- 6 WA orders (PAYMENT_VERIFIED status).
+- 3 conversations + 15 messages + 3 leads (`PITCH-LEAD-001..003`) spanning COMPLETED / CONFIRMING / ESCALATED_ADMIN states.
+- 1 whatsapp_number (`wa_tjm_main`).
+- `stocks.harga_modal` backfilled to 62% of price (was NULL) so HPP KPI renders.
+- `store_settings` alamat/kota/telp/email backfilled for realism.
+
+**Rollback:** `docs/screenshots/pitch-deck/rollback-pitch-demo-seed.sql` — single transaction, deletes all seeded rows by tag (`notes LIKE 'pitch_demo_seed%'`, `id LIKE 'PITCH-%'`, `collected_data->>'pitch_demo_seed' = 'true'`), reverts `store_settings` + `stocks.harga_modal` to pre-seed state.
+
+**Gotchas encountered:**
+- **Timezone shift:** initial seed used `CURRENT_DATE` (UTC) but Kasir screen queries by Jakarta local date; UTC 2026-07-10 ≠ Jakarta 2026-07-11. Fix: `UPDATE ... SET date = date + INTERVAL '1 day'` on all seeded kasir rows.
+- **Literal `\n` in seed messages:** SQL single-quoted `'\n'` is 2 chars, not newline. Fix: `UPDATE messages SET text = REPLACE(text, '\n', E'\n')`. E-string prefix required for actual newline chars.
+- **Cross-tenant data leak observed on platform_admin session:** `tonywei.office` (garindo owner + platform_admin) saw toko-jaya seeded data on garindo dashboard due to `p_platform_admin_readall` RLS supplementary policy — expected behavior, but worth noting screenshots taken under toko-jaya owner session (`tonywei.office+demo@gmail.com`), not garindo, to keep header + URL clean.
+- **Chrome DevTools MCP profile lock:** first `list_pages` failed because a parallel Claude session held the browser profile. User closed the other session's browser to free it.
+
+**Viewport:** all screenshots 1440×900 fullpage (fits 16:9 deck slides without letterbox).
+
+**Files touched:**
+- New: `docs/screenshots/pitch-deck/pitch-01..05-*.png` (5 files, ~5.3 MB total)
+- New: `docs/screenshots/pitch-deck/rollback-pitch-demo-seed.sql`
+- New: `pitch-deck-highlights.zip`
+- DB (cloud, ekhhojaezdfjfwuxyjkl / toko-jaya-makmur only): ~44 rows inserted, 2 tables patched
+- `progress.md` (this entry)
+
+**Next:** if you want to re-shoot or add screens (Laporan Rugi-Laba, Manajemen Gudang, Pelanggan detail), the seed still lives on toko-jaya. Run the rollback SQL before pitch demo to a live customer to keep their sandbox clean.
+
+---
+
+## 2026-07-11 — Swap impersonation gate → silent auto-impersonate + banner
+
+**Follow-up on same-day fix below.** After live-testing the gate on Cloud Run, founder pushback: solo-founder context makes the confirm-click friction; URL bar itself is intent (`/admin` vs `/t/<slug>/*`), so login-to-URL should land direct. Safety signal moves from a blocking gate to a persistent-but-subtle banner.
+
+**Deleted:**
+- `src/components/errors/TenantImpersonateGate.tsx` + its test — replaced by silent auto-impersonate path.
+
+**New files:**
+- `src/components/TenantImpersonationBanner.tsx` — thin amber strip (h-7, `#FFFBEB` bg / `#FDE68A` border / `#78350F` text) at top of tenant shell. Renders only when JWT `impersonating=true`. "Keluar ▸" → `stopImpersonation()` → `/admin`.
+- `src/components/TenantImpersonationBanner.test.tsx` — 4 tests (hidden without claim, visible with claim, unknown slug fallback, exit click).
+
+**Modified:**
+- `src/App.tsx`:
+  - `ImpersonateGateState` type: `'needed'` → `'impersonating' | 'failed'`. Preflight, on JWT mismatch, calls `impersonateTenant()` + `window.location.reload()` directly (no gate render).
+  - Failure path renders existing `<TenantBootstrapError code="IMPERSONATE_FAILED: ...">` with retry.
+  - Mounted `<TenantImpersonationBanner />` as first child of `<TenantProvider>`, above `ReadonlyBanner`/`GraceBanner` — visible in both detail-tab and normal tenant shell branches.
+
+**Tests:** 14/14 vitest pass (postLoginRoute + banner). `tsc --noEmit` clean.
+
+**Design rationale:** URL is intent (`/admin/*` vs `/t/<slug>/*`) — solo-founder context makes explicit confirm click redundant when the URL itself already signals it. Banner replaces gate as the visibility mechanism: legible without blocking the workflow, decouples "aware of impersonation" from "must confirm every entry."
+
+---
+
 ## 2026-07-11 — Deep-link + impersonation gate fix (super_admin `/t/<slug>/*`)
 
 **Bug:** super_admin visiting `/t/garindo/dashboard` (bookmark, direct URL, email link) was force-redirected to `/admin` post-login. `AuthScreen.afterLogin()` unconditionally set `window.location.href = '/admin'` for platform admins, ignoring `pendingDeepLink`. Even when logged in, direct visit failed because JWT had no impersonation claim for target slug → `TenantProvider` bootstrap surfaced NOT_A_MEMBER.

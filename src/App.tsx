@@ -27,7 +27,7 @@ import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
 import { AccessDenied } from './components/errors/AccessDenied';
 import { TenantBootstrapError } from './components/errors/TenantBootstrapError';
-import { TenantImpersonateGate } from './components/errors/TenantImpersonateGate';
+import { TenantImpersonationBanner } from './components/TenantImpersonationBanner';
 import { decodeJwt } from './lib/jwt';
 import { ReadonlyBanner } from './components/ReadonlyBanner';
 import { GraceBanner } from './components/GraceBanner';
@@ -142,15 +142,19 @@ export default function App() {
   const [tenantErrorScreen, setTenantErrorScreen] = useState<TenantErrorScreen>(null);
   const [tenantErrorCode, setTenantErrorCode] = useState<string>('');
 
-  // Impersonation gate state for platform admins landing on `/t/<slug>/*`
-  // without an active impersonation for that slug. Gate blocks TenantProvider
-  // from mounting (which would fetch bootstrap context for the wrong tenant).
-  //   skip     — path is not tenant-scoped or Supabase not configured
-  //   checking — awaiting JWT claim inspection
-  //   needed   — platform admin needs to click confirm before entering tenant
-  //   ok       — regular tenant user, OR admin already impersonating this slug
-  type ImpersonateGateState = 'skip' | 'checking' | 'needed' | 'ok';
+  // Impersonation preflight state for platform admins landing on `/t/<slug>/*`
+  // without a matching JWT impersonation claim. Silent auto-impersonate — no
+  // confirm gate — because URL differentiates intent (`/admin/*` vs
+  // `/t/<slug>/*`) and the persistent banner in tenant shell signals the
+  // active impersonation.
+  //   skip           — path is not tenant-scoped or Supabase not configured
+  //   checking       — awaiting JWT claim inspection
+  //   impersonating  — mid-flight impersonate_tenant RPC + refreshSession
+  //   failed         — auto-impersonate failed; user can retry
+  //   ok             — regular tenant user, OR admin already impersonating this slug
+  type ImpersonateGateState = 'skip' | 'checking' | 'impersonating' | 'failed' | 'ok';
   const [impersonateGate, setImpersonateGate] = useState<ImpersonateGateState>('skip');
+  const [impersonateError, setImpersonateError] = useState<string>('');
 
   // stockList is DB-scoped per tenant via RLS. Initialized empty; populated
   // by fetchStocks() on mount + refetch on tenant switch. Do NOT persist to
@@ -489,11 +493,12 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, sessionTenantSlug]);
 
-  // Impersonation-gate preflight: when a platform admin lands on `/t/<slug>/*`
-  // without a matching impersonation claim in their JWT, block TenantProvider
-  // from mounting (bootstrap would fetch context for the wrong tenant, or
-  // fail with NOT_A_MEMBER for a super-admin without impersonation). JWT is
-  // the source of truth here — we decode locally to avoid an extra RPC.
+  // Impersonation preflight: when a platform admin lands on `/t/<slug>/*`
+  // without a matching JWT impersonation claim, silently swap the claim
+  // (impersonate_tenant RPC + refreshSession) then reload. JWT is source of
+  // truth — decoded locally to avoid an extra RPC round-trip. On success,
+  // reload replaces the current URL with a JWT that satisfies TenantProvider
+  // bootstrap; on failure, the failure UI offers a retry.
   useEffect(() => {
     if (!currentUser || !pathRoute.tenantSlug || !isSupabaseConfigured || !supabase) {
       setImpersonateGate('skip');
@@ -502,11 +507,12 @@ export default function App() {
     setImpersonateGate('checking');
     let cancelled = false;
     (async () => {
+      const targetSlug = pathRoute.tenantSlug!;
       try {
         const { data } = await supabase!.auth.getSession();
         const token = data.session?.access_token;
         if (!token) {
-          if (!cancelled) setImpersonateGate('ok'); // let TenantProvider surface auth error
+          if (!cancelled) setImpersonateGate('ok'); // TenantProvider will surface auth error
           return;
         }
         const claims = decodeJwt(token);
@@ -514,11 +520,21 @@ export default function App() {
         const impersonatingSlug = typeof claims.impersonating_slug === 'string'
           ? claims.impersonating_slug
           : null;
-        const targetSlug = pathRoute.tenantSlug;
-        const needsGate = isAdmin && impersonatingSlug !== targetSlug;
-        if (!cancelled) setImpersonateGate(needsGate ? 'needed' : 'ok');
-      } catch {
-        if (!cancelled) setImpersonateGate('ok'); // fail-safe: let TenantProvider try
+        if (!isAdmin || impersonatingSlug === targetSlug) {
+          if (!cancelled) setImpersonateGate('ok');
+          return;
+        }
+        // Platform admin, JWT mismatch — auto-impersonate. On success reload
+        // picks up the new claim; the effect re-runs and lands on 'ok'.
+        if (!cancelled) setImpersonateGate('impersonating');
+        await tenantContextService.impersonateTenant(targetSlug);
+        if (!cancelled) window.location.reload();
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setImpersonateError(msg);
+          setImpersonateGate('failed');
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -817,31 +833,24 @@ export default function App() {
   // In dev-mode (no Supabase), pathRoute.tenantSlug is null (URL is query-string
   // based), so we fall through to the legacy shell below.
   if (pathRoute.tenantSlug) {
-    // Impersonation gate — must run BEFORE any tenant-context bootstrap.
-    // Only produces UI for platform admins entering a tenant they aren't
-    // currently impersonating; regular tenant users skip straight through.
-    if (impersonateGate === 'checking') {
+    // Impersonation preflight — must run BEFORE any tenant-context bootstrap.
+    // Silent auto-impersonate for platform admin/slug mismatch; regular
+    // tenant users pass straight through.
+    if (impersonateGate === 'checking' || impersonateGate === 'impersonating') {
+      const label = impersonateGate === 'impersonating'
+        ? `Masuk sebagai tenant ${pathRoute.tenantSlug}…`
+        : 'Memeriksa akses tenant…';
       return (
         <div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-vosi">
-          Memeriksa akses tenant…
+          {label}
         </div>
       );
     }
-    if (impersonateGate === 'needed') {
-      const targetSlug = pathRoute.tenantSlug;
+    if (impersonateGate === 'failed') {
       return (
-        <TenantImpersonateGate
-          slug={targetSlug}
-          onConfirm={async () => {
-            await tenantContextService.impersonateTenant(targetSlug);
-            // Full reload so the refreshed JWT (new impersonation claim)
-            // drives the next render — matches the pattern used by the
-            // TenantsList "Impersonasi" button.
-            window.location.reload();
-          }}
-          onCancel={() => {
-            window.location.href = '/admin';
-          }}
+        <TenantBootstrapError
+          code={`IMPERSONATE_FAILED: ${impersonateError || 'unknown'}`}
+          onRetry={() => window.location.reload()}
         />
       );
     }
@@ -877,6 +886,7 @@ export default function App() {
     // Render tenant shell wrapped in TenantProvider.
     const tenantShell = (
       <TenantProvider slug={pathRoute.tenantSlug} onError={handleTenantError}>
+        <TenantImpersonationBanner />
         <ReadonlyBanner />
         <GraceBanner />
         {isDetailTab ? (
