@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 4: create_sales_rep + deactivate_sales_rep RPCs (migration 000036)
+
+Backend RPC pair for sales rep lifecycle. Both are SECDEF, OWNER TO postgres, P0403-gated.
+
+**Pre-flight verifications (MCP):**
+- `platform_admin_audit_action_check` contains CREATE_SALES_REP + DEACTIVATE_SALES_REP ✓
+- `platform_admins.email` is NOT NULL ✓
+- Wave 5 audit pattern: `v_admin_email` resolved from `platform_admins WHERE user_id = auth.uid()` (not auth.users)
+- `platform_admins_user_id_fkey` → `auth.users(id)` exists (cross-schema FK missed by information_schema; caught in smoke)
+
+**Migration `20261115000036_sales_rep_lifecycle_rpcs.sql`:**
+- `create_sales_rep(p_user_id, p_email, p_name)`: super_admin gate → validate inputs → auth.users existence check → super_admin demotion guard → INSERT with email (ON CONFLICT DO UPDATE) → platform_admin_audit INSERT (tenant_id NULL)
+- `deactivate_sales_rep(p_user_id, p_reason)`: super_admin gate → UPDATE WHERE role='sales_rep' (protects founder) → NOT FOUND → P0002 → audit INSERT
+- Both: OWNER TO postgres, REVOKE ALL FROM PUBLIC, GRANT EXECUTE TO authenticated
+
+**pgTAP `supabase/tests/wave6/sales_rep_lifecycle.sql`:**
+- plan(6): lives_ok create, role/status eq, P0403 sales_rep blocked, lives_ok deactivate, email eq, audit row shape
+- Seeds auth.users for both actor (22222222) and target (55555555) before SET LOCAL role
+
+**Prod smoke (MCP DO-blocks, all rolled back via RAISE):**
+- create_sales_rep super_admin path: role=sales_rep, status=active, email populated, audit row CREATE_SALES_REP ✓
+- create_sales_rep P0403 gate (sales_rep JWT): blocked ✓
+- deactivate_sales_rep super_admin path: status=disabled, audit row DEACTIVATE_SALES_REP ✓
+- deactivate_sales_rep P0403 gate (sales_rep JWT): blocked ✓
+
+**Commit:** `48e354e` feat(rls): create_sales_rep + deactivate_sales_rep RPCs (super_admin only)
+
+---
+
 ## 2026-07-10 — Wave 6 Task 3: Frontend isSuperAdmin helper + sidebar role filter
 
 Wired frontend to read `platform_admin_role` JWT claim. `isSuperAdmin()` now returns `true` only for `'super_admin'` claim value; `isSalesRep()` returns `true` only for `'sales_rep'`. AdminSidebar hides Paket (`/admin/plans`) and Pendapatan (`/admin/revenue`) for non-super_admin. Shared `decodeJwt` extracted to `src/lib/jwt.ts` (base64url-safe).
