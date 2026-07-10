@@ -1,5 +1,47 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-10 — Wave 6 Task 6: deprovision_tenant RPC + Zona Bahaya UI (migration 000035)
+
+Hard-delete tenant gate for super_admin: atomic RPC + confirm-slug modal UI.
+
+**Pre-flight verifications (MCP):**
+- FK cascade audit: 60+ tables ON DELETE CASCADE except two blockers:
+  - `platform_admin_audit.tenant_id` → NO ACTION (condeferrable=false)
+  - `tenant_payments.tenant_id` → RESTRICT
+- Both altered to ON DELETE SET NULL in migration (audit history + revenue records preserved)
+- DEPROVISION_TENANT confirmed in `platform_admin_audit_action_check` (Task 16 pre-req) ✓
+- 4 explicit delete targets confirmed: admin_users, store_settings, tenant_subscriptions, tenant_users ✓
+
+**Migration `20261115000035_deprovision_tenant_rpc.sql`:**
+- FK patches: platform_admin_audit + tenant_payments → SET NULL
+- `deprovision_tenant(p_tenant_id UUID, p_reason TEXT) → JSONB`
+  - Auth gate P0403 SUPER_ADMIN_REQUIRED
+  - Snapshot tenant row → INSERT audit BEFORE cascade (FK valid at insert time; SET NULL fires after delete)
+  - Explicit DELETEs: admin_users → tenant_users → store_settings → tenant_subscriptions
+  - DELETE FROM tenants (cascade handles all other 50+ tenant-scoped tables)
+  - OWNER TO postgres, SECDEF, GRANT TO authenticated
+
+**pgTAP `supabase/tests/wave6/deprovision_tenant.sql`:**
+- plan(6): P0403 sales_rep blocked / P0002 unknown UUID / happy path / tenant deleted / subscriptions deleted / audit row (tenant_id NULL, snapshot id in detail)
+
+**Prod smoke (MCP, no real tenant touched):**
+- RPC: owner=postgres, security_definer=true ✓
+- FK patches: both confdeltype='n' (SET NULL) ✓
+- super_admin + fabricated UUID → P0002 ✓
+- sales_rep JWT → P0403 ✓
+
+**UI:**
+- `DeleteTenantModal.tsx`: confirm-slug pattern, alasan textarea, Hapus Permanen gated until slug matches exactly
+- `TenantDangerZone.tsx`: red-bordered section at bottom of TenantDetailShell
+- `TenantDetailShell.tsx`: isSuperAdmin() useEffect → mounts TenantDangerZone when true, onDeleted → window.location.href = '/admin/tenants'
+- `adminApi.ts`: deprovisionTenant() + P0002 handler in normalizeRpcError
+
+**Tests:** 51/51 passed (9 new DeleteTenantModal tests + 2 new shell visibility tests). `tsc --noEmit` clean.
+
+**Commit:** `0c26364` feat(admin): deprovision_tenant RPC + Zona Bahaya UI (super_admin only)
+
+---
+
 ## 2026-07-10 — Wave 6 Task 4: create_sales_rep + deactivate_sales_rep RPCs (migration 000036)
 
 Backend RPC pair for sales rep lifecycle. Both are SECDEF, OWNER TO postgres, P0403-gated.
