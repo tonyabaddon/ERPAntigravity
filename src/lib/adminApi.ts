@@ -50,6 +50,10 @@ import {
  * Supabase surfaces SQLSTATE on `error.code` (string).
  */
 function normalizeRpcError(error: { message?: string; code?: string }): never {
+  // P0002 — no_data_found (deprovision_tenant: tenant not found)
+  if (error.code === 'P0002') {
+    throw new TenantNotFoundError(error.message);
+  }
   // P0404 — check specific message before generic tenant fallthrough
   if (error.code === 'P0404') {
     if (error.message === 'PAYMENT_NOT_FOUND') {
@@ -348,4 +352,25 @@ export async function listAttentionTenants(
   });
   if (error) normalizeRpcError(error);
   return (data ?? []) as AttentionTenantRow[];
+}
+
+/**
+ * Call deprovision_tenant(p_tenant_id, p_reason).
+ * Hard-deletes a tenant and all its data atomically. Preserves auth.users.
+ * Super admin only.
+ *
+ * @throws SuperAdminRequiredError  when caller is not super admin (P0403)
+ * @throws TenantNotFoundError      when tenant UUID does not exist (P0002)
+ */
+export async function deprovisionTenant(
+  tenantId: string,
+  reason: string,
+): Promise<{ deleted_slug: string; deleted_at: string; actor: string }> {
+  if (!supabase) throw new Error('Supabase client not configured');
+  const { data, error } = await supabase.rpc('deprovision_tenant', {
+    p_tenant_id: tenantId,
+    p_reason:    reason,
+  });
+  if (error) normalizeRpcError(error);
+  return data as { deleted_slug: string; deleted_at: string; actor: string };
 }

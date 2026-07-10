@@ -7,10 +7,12 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { listTenantsAdmin } from '../../../lib/adminApi';
 import type { AdminTenantRow } from '../../../lib/adminTypes';
 import { adminToast } from '../../../lib/adminToast';
+import { isSuperAdmin } from '../../../lib/adminAuth';
 import { OverviewTab } from './OverviewTab';
 import { UsersTab } from './UsersTab';
 import { AuditTab } from './AuditTab';
 import { PembayaranTab } from './PembayaranTab';
+import { TenantDangerZone } from './TenantDangerZone';
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 
@@ -129,6 +131,11 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [superAdmin, setSuperAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    isSuperAdmin().then(setSuperAdmin);
+  }, []);
 
   // Cancel in-flight requests when tenantSlug changes or component unmounts.
   const cancelledRef = useRef(false);
@@ -329,6 +336,17 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
           />
         )}
       </div>
+
+      {/* Zona Bahaya — super_admin only */}
+      {superAdmin && (
+        <TenantDangerZone
+          tenant={tenant}
+          onDeleted={() => {
+            // Tenant no longer exists — redirect to list.
+            window.location.href = '/admin/tenants';
+          }}
+        />
+      )}
     </div>
   );
 }

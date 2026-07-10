@@ -4,13 +4,15 @@
 //   2. Tab switching updates URL and renders correct panel
 //   3. Not-found state renders "Tenant tidak ditemukan"
 //   4. Distinct loading vs not-found states
+//   5. TenantDangerZone visible for super_admin, hidden for sales_rep
 // C1 fix: prop renamed tenantId→tenantSlug; lookup now by slug not tenant_id UUID.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { TenantDetailShell } from './TenantDetailShell';
 import type { AdminTenantRow } from '../../../lib/adminTypes';
 
-const tenantsMock = vi.fn();
+const tenantsMock   = vi.fn();
+const isSuperAdminMock = vi.fn();
 
 vi.mock('../../../lib/adminApi', () => ({
   listTenantsAdmin: (f: unknown) => tenantsMock(f),
@@ -21,6 +23,10 @@ vi.mock('../../../lib/adminApi', () => ({
   listTenantUsersAdmin: () => Promise.resolve([]),
   // AuditTab (Task 13) calls this; resolve with empty array so it renders quickly.
   listAuditEvents: () => Promise.resolve([]),
+}));
+
+vi.mock('../../../lib/adminAuth', () => ({
+  isSuperAdmin: () => isSuperAdminMock(),
 }));
 
 vi.mock('../../../lib/adminToast', () => ({
@@ -73,6 +79,8 @@ function setSearch(search: string) {
 describe('TenantDetailShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: non-super-admin (sales_rep) — safe default hides danger zone
+    isSuperAdminMock.mockResolvedValue(false);
     // Reset URL to no tab param
     setSearch('');
   });
@@ -214,5 +222,28 @@ describe('TenantDetailShell', () => {
     await waitFor(() => screen.getByTestId('tenant-detail-shell'));
     // Should have been called with page_size (not search: tenantSlug)
     expect(tenantsMock).toHaveBeenCalledWith(expect.objectContaining({ page_size: expect.any(Number) }));
+  });
+
+  it('shows TenantDangerZone for super_admin', async () => {
+    isSuperAdminMock.mockResolvedValue(true);
+    tenantsMock.mockResolvedValue([fakeTenant]);
+    render(<TenantDetailShell tenantSlug="garindo-jaya" />);
+
+    await waitFor(() => screen.getByTestId('tenant-detail-shell'));
+    await waitFor(() =>
+      expect(screen.getByTestId('tenant-danger-zone')).toBeInTheDocument()
+    );
+    expect(screen.getByText('Zona Bahaya')).toBeInTheDocument();
+  });
+
+  it('hides TenantDangerZone for sales_rep', async () => {
+    isSuperAdminMock.mockResolvedValue(false);
+    tenantsMock.mockResolvedValue([fakeTenant]);
+    render(<TenantDetailShell tenantSlug="garindo-jaya" />);
+
+    await waitFor(() => screen.getByTestId('tenant-detail-shell'));
+    // Give time for isSuperAdmin async to resolve
+    await waitFor(() => expect(isSuperAdminMock).toHaveBeenCalled());
+    expect(screen.queryByTestId('tenant-danger-zone')).not.toBeInTheDocument();
   });
 });
