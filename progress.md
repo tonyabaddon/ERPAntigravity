@@ -112,7 +112,16 @@ No code changes.
 | Admin impersonating with native seat | ✓ tenant-only | ✓ (escape hatch) |
 | Admin no grant no native seat | — | ✗ REJECTED |
 
-**Follow-up not in this commit:** onboarding wizard opt-in ("allow VOSI support access by default during setup?") deferred to Phase 2d. Live click-through verification pending Cloud Run deploy.
+**Follow-up not in this commit:** onboarding wizard opt-in ("allow VOSI support access by default during setup?") deferred to Phase 2d.
+
+**Live prod verification (post-deploy, 2026-07-11):**
+- Support Access tab visible under Pengaturan (Owner-only) ✓
+- Grant flow: created 4h grant → shown in "Akses aktif" with correct expiry, granted-by, reason ✓
+- Revoke flow: revoked grant → moved to "Riwayat" with "Dicabut" state + counter went 1→0 ✓
+- VOSI Admin Tenants list: garindo=Impersonasi enabled (native seat tooltip), toko-jaya=Impersonasi enabled (grant expires in Xh), warung-sinar-rezeki=No access disabled ✓
+- Grant-based impersonation of toko-jaya-makmur worked end-to-end → dashboard rendered toko-jaya-scoped data (Rp 10.060.000 omset, its own AI conversations) ✓
+
+**Fix during verification:** `admin_impersonation_access_status` RPC hit a 42702 ambiguity between the RETURNS TABLE `status` column and column names on platform_admins / tenant_users. Renamed OUT columns to `out_slug` / `out_status` / `out_expires_at` (migration codified) so the collision can't recur. Frontend remaps in TenantsList. Fixed via ad-hoc DROP+CREATE, verified via HTTP, committed as follow-up fix.
 
 ---
 
