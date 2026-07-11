@@ -213,7 +213,6 @@ export default function AccountFormModal({
           opening_balance: form.opening_balance,
           opening_balance_date: form.opening_balance_date || null,
           coa_account_id: coaId,
-          tenant_id: null,
         };
         await createCashAccount(input);
         showToast('✓ Akun berhasil dibuat', 'success');

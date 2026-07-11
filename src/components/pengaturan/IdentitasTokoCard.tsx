@@ -4,6 +4,10 @@ import { fetchStoreSettings } from '../../lib/pengaturan/queries';
 import { updateStoreSettings } from '../../lib/pengaturan/mutations';
 import type { StoreSettings } from '../../lib/pengaturan/types';
 
+// Note: logo_url is intentionally NOT edited here. The dedicated "Logo Toko"
+// card in PengaturanScreen handles upload → Storage bucket 'branding' →
+// store_settings.logo_url. A duplicate URL text input would silently overwrite
+// the uploaded value.
 type StoreFormState = {
   nama_toko: string;
   nama_legal: string;
@@ -14,7 +18,6 @@ type StoreFormState = {
   email: string;
   google_maps_url: string;
   npwp: string;
-  logo_url: string;
 };
 
 const EMPTY_FORM: StoreFormState = {
@@ -27,7 +30,6 @@ const EMPTY_FORM: StoreFormState = {
   email: '',
   google_maps_url: '',
   npwp: '',
-  logo_url: '',
 };
 
 interface Props {
@@ -59,7 +61,6 @@ export default function IdentitasTokoCard({ showToast }: Props) {
           email: data.email ?? '',
           google_maps_url: data.google_maps_url ?? '',
           npwp: data.npwp ?? '',
-          logo_url: data.logo_url ?? '',
         });
       })
       .catch(err => {
@@ -104,7 +105,6 @@ export default function IdentitasTokoCard({ showToast }: Props) {
         kota: form.kota.trim(),
         telp_wa: form.telp_wa.trim(),
         email: form.email.trim() || undefined,
-        logo_url: form.logo_url.trim() || undefined,
         google_maps_url: form.google_maps_url.trim() || undefined,
         npwp: form.npwp.trim() || undefined,
       };
@@ -255,21 +255,6 @@ export default function IdentitasTokoCard({ showToast }: Props) {
                 onChange={e => updateField('npwp', e.target.value)}
                 disabled={saving}
               />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-600 mb-1">Logo URL</label>
-              <input
-                type="url"
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
-                placeholder="https://..."
-                value={form.logo_url}
-                onChange={e => updateField('logo_url', e.target.value)}
-                disabled={saving}
-              />
-              <p className="text-[11px] text-slate-400 mt-1">
-                Isi URL manual, atau upload file via card &quot;Logo Toko&quot; di bawah.
-              </p>
             </div>
           </div>
 

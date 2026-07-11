@@ -17,6 +17,7 @@ import JenisJasaCrudPanel from './pengaturan/JenisJasaCrudPanel';
 import ApprovalRulesPanel from './pengaturan/ApprovalRulesPanel';
 import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
 import SupportAccessPanel from './pengaturan/SupportAccessPanel';
+import { fetchStoreSettings } from '../lib/pengaturan/queries';
 
 type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access';
 
@@ -94,16 +95,24 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     Promise.allSettled([
       waRecipientsService.fetchAll(),
       companySettingsService.fetch(),
-    ]).then(([recipsResult, coResult]) => {
+      fetchStoreSettings(),
+    ]).then(([recipsResult, coResult, storeResult]) => {
       if (recipsResult.status === 'fulfilled') setRecipients(recipsResult.value);
       else console.error('wa_recipients load error:', recipsResult.reason);
 
       if (coResult.status === 'fulfilled') {
         setCompany(coResult.value);
-        setLogoUrl(coResult.value?.logo_url ?? null);
       } else {
         console.error('company_settings load error:', coResult.reason);
         showToast('Gagal memuat sebagian pengaturan. Coba refresh.', 'warning');
+      }
+
+      // Invoice PDF reads logo_url from store_settings — mirror it here so the
+      // logo widget shows the same source that the PDF uses.
+      if (storeResult.status === 'fulfilled') {
+        setLogoUrl(storeResult.value?.logo_url ?? null);
+      } else {
+        console.error('store_settings load error:', storeResult.reason);
       }
     }).finally(() => {
       setRecipientsLoading(false);
@@ -219,8 +228,8 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           <RekeningBankCard showToast={showToast} />
 
           {/* Logo Toko — used by invoice PDFs and on-screen invoices.
-              Kept on company_settings.logo_url for now; not yet migrated
-              to store_settings.logo_url (which exists but is unused). */}
+              Persisted on store_settings.logo_url (the table the invoice
+              renderer reads). Uploaded to Storage bucket 'branding'. */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
               Logo Toko (untuk invoice PDF)

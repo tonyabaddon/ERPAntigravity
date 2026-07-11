@@ -75,7 +75,8 @@ export interface CashAccountBalance {
 
 /**
  * Input for creating/updating a cash account.
- * Omits id, created_at, updated_at.
+ * Omits id, created_at, updated_at. tenant_id is server-derived from JWT via
+ * the column DEFAULT _resolve_tenant_id() — do NOT pass it from the client.
  */
 export interface CashAccountInput {
   account_type: CashAccountType;
@@ -91,5 +92,4 @@ export interface CashAccountInput {
   opening_balance?: number;
   opening_balance_date?: string | null;
   coa_account_id?: string | null;
-  tenant_id?: string | null;
 }

@@ -12279,6 +12279,94 @@ tenant name automatically.
 **Deploy summary:** revision `00271-jip` @ 100% traffic. Local + prod
 migrations aligned. Working tree clean, origin sync.
 
+---
+
+## Session 2026-07-12 — F-17/F-18/F-19 pengaturan/kasbank/gudang blockers
+
+User-reported blockers on live prod (Garindo tenant, Owner session):
+
+1. **Pengaturan → Logo upload gagal** ("tidak bisa upload logo") + text
+   input "Logo URL" felt redundant.
+2. **Kas & Bank → Simpan Akun** → toast `Gagal: new row violates
+   row-level security policy for table "cash_accounts"`.
+3. **Gudang → Tambah Gudang** → analogous failure.
+
+**Root cause investigation (systematic-debugging skill):**
+
+- Migration `20260711081112` (fix_secdef_write_path_all_ttables) fixed
+  the void-returning `_guard_expiry_write() IS NULL` predicate on the
+  t_*_own RLS policies for cash_accounts / warehouses / store_settings.
+  So the RLS stack itself was already correct.
+- Migration `20260711093010` (tenant_id_default_all_ttables) set
+  `DEFAULT public._resolve_tenant_id()` on the tenant_id columns —
+  callers no longer need to pass tenant_id.
+- BUT: **F-17** = client at `AccountFormModal.tsx:216` still sent
+  `tenant_id: null` explicitly, bypassing the DEFAULT → RLS 42501.
+- **F-18** = SECDEF RPC `create_warehouse` hardcoded
+  `VALUES (NULL, upper(p_code), ...)` for the tenant_id column. Same
+  DEFAULT-bypass, same 42501. Also its `v_first` predicate checked
+  `WHERE tenant_id IS NULL` — legacy single-tenant logic — so every
+  new warehouse would flag `is_default=true` and the second insert
+  would hit the `warehouses_one_default_per_tenant` partial UNIQUE.
+- **F-19** = Storage bucket `branding` had only one write policy
+  (`branding_anon_write` for `{anon}`). Signed-in Owner has role
+  `authenticated`, so `storage.objects` INSERT hit 42501.
+- Class sweep found `upsert_service_type` had the same
+  `VALUES (NULL, ...)` bug for service_types.tenant_id — added to the
+  same migration to prevent user hitting it next.
+
+Live smoke tests (JWT-simulated as Garindo Owner, then RAISE-rollback):
+
+```
+[1] Bug 3 create_warehouse #1: SUCCESS
+[2] Bug 3b create_warehouse #2: SUCCESS  ← unique-default index no longer trips
+[2b] SMOKE_WH_B.is_default = f (expect false)
+[3] Class-bug upsert_service_type: SUCCESS
+[4] Bug 2 cash_accounts (omit tenant_id): SUCCESS
+[5] Bug 1 storage.objects INSERT branding: SUCCESS
+```
+
+**Changes shipped:**
+
+- Migration `20261115000200_fix_secdef_null_tenant_id_and_branding_upload.sql`
+  - `create_warehouse` uses `public._resolve_tenant_id()`, and v_first
+    checks `WHERE tenant_id = v_tenant`.
+  - `upsert_service_type` uses `_resolve_tenant_id()` for tenant_id.
+  - New policy `branding_authenticated_write` on `storage.objects`
+    (INSERT/UPDATE/DELETE for `{authenticated}` where
+    `bucket_id='branding'`). Kept the anon policy in place.
+
+- Client (Bug 2 / F-17):
+  - `src/lib/kasbank/types.ts` — dropped `tenant_id` from
+    `CashAccountInput` (server-derived only).
+  - `src/components/kasbank/AccountFormModal.tsx` — dropped the
+    `tenant_id: null` field from the insert payload.
+
+- Client (Bug 1 / F-19 UX):
+  - `src/lib/supabaseClient.ts` uploadLogo/clearLogo — retarget from
+    `company_settings.logo_url` → `store_settings.logo_url` (the table
+    `fetchStoreSettings` / `SalesInvoicePDF` actually reads). RLS
+    scopes the update to caller's tenant via `t_update_own`.
+  - `src/components/PengaturanScreen.tsx` — fetch initial `logoUrl`
+    from `fetchStoreSettings()` alongside `companySettingsService.fetch`.
+    Updated stale comment referencing company_settings.
+  - `src/components/pengaturan/IdentitasTokoCard.tsx` — removed the
+    "Logo URL" text input + `logo_url` from form state/patch (the
+    duplicate URL editor that silently overwrote the uploaded value).
+
+- Local dev diff (`src/lib/pengaturan/pengaturanServices.ts`) that
+  removed the `.is('tenant_id', null)` filter on `tenant_settings` fetch
+  is aligned with this cleanup (also multi-tenant hygiene).
+
+**Verification status:**
+
+- All 5 live smoke tests green (see above).
+- `npx tsc --noEmit` clean after client edits.
+- End-to-end UI verification (Kas & Bank Simpan, Tambah Gudang, Upload
+  Logo) still pending user hands-on click-through — code paths verified
+  at DB layer.
+
+
 
 
 
