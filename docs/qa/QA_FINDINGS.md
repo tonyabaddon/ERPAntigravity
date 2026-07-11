@@ -189,6 +189,46 @@ _(Entries added per session below. Newest at top.)_
 
 ---
 
+### Session 3 — Scenario C: Purchase cycle (Pembelian → Bayar → GL)
+
+**Date:** 2026-07-11
+
+**Modules covered:** Pembelian dashboard (AP aging), Pesanan/Tagihan/Pembayaran tabs, Catat Pembayaran flow (partial + multi-tagihan), Akuntansi (AP GL auto-post).
+
+**Test flow executed:** Impersonate garindo → Pembelian → Beranda showed 1 overdue tagihan (supplier GTA, Rp 11.2jt, terlambat 4 hari). Click Bayar → Catat Pembayaran flow → select tagihan `TGH-2026-06-003` → partial amount Rp 5jt (of 11.2jt) → CASH method → Kas Toko account → Catat Pembayaran.
+
+**Findings:**
+
+### F-13 [🔴 P0 blocker] Partial supplier payment blocked by stale CHECK constraint
+- **Module:** Pembelian → Pembayaran → Catat (partial).
+- **Reproduction:** Any partial payment (amount < outstanding) triggers `record_pembayaran` RPC → 23514 "new row for relation purchase_invoices violates check constraint purchase_invoices_status_check".
+- **Root cause:** Two CHECK constraints coexist on `purchase_invoices.status`:
+  - `pi_status_check` (newer, correct): `('BELUM_LUNAS','DIBAYAR_SEBAGIAN','LUNAS')`
+  - `purchase_invoices_status_check` (stale): `('BELUM_LUNAS','LUNAS')` — no DIBAYAR_SEBAGIAN.
+  Postgres AND's all CHECKs. When RPC sets status to DIBAYAR_SEBAGIAN, newer accepts but stale rejects → row rejected. Textbook "check-constraints-before-rpc-rewrite" scenario — earlier migration added the new CHECK to enable partial but never dropped the old one.
+- **Fix:** migration `20261115000052_drop_stale_purchase_invoice_status_check.sql` — `DROP CONSTRAINT purchase_invoices_status_check`. `pi_status_check` remains as the source of truth.
+- **Blast-radius audit:** ran `pg_constraint` query for other tables with duplicate `status` CHECKs — none found. Isolated issue.
+- **Fix status:** ✅ Applied + verified.
+
+### F-14 [✅ PASS] Partial supplier payment end-to-end after F-13 fix
+- Pembayaran `PMB-2026-07-001` created (CASH, Rp 5jt, tagihan `TGH-2026-06-003`).
+- Tagihan status: `BELUM_LUNAS` → `DIBAYAR_SEBAGIAN`, `paid_amount = 5.000.000`, outstanding sisa Rp 6.200.000.
+- GL: 2-line balanced entry — Hutang Usaha (2-1100) DEBIT 5jt, Kas Toko (1-1110) CREDIT 5jt. ✓
+- AP dashboard total outstanding: Rp 11.2jt → Rp 6.2jt.
+
+**Positive observation:** the AP-side Pembayaran flow is much richer than the AR-side Catat Bayar modal from Session 2. AP has:
+- Multi-tagihan selection (1 pembayaran can close multiple tagihan)
+- Partial amount input per row
+- "Boleh bayar sebagian (partial)" hint
+- Discount, proof upload, notes
+- Multiple bulk buttons ("Pilih Semua Outstanding", "Pilih JT ≤ 7 Hari")
+
+This is exactly the UI pattern F-11 recommends for the AR side.
+
+**Session status:** Purchase-cycle write path GREEN after fix. F-13 fixed in single-line migration. Session 4 (VOSI Onboard flow) queued next.
+
+---
+
 ## Findings summary (all sessions)
 
 | # | Severity | Session | Module | Title | Status |
@@ -203,3 +243,4 @@ _(Entries added per session below. Newest at top.)_
 | F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |
 | F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
 | F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | 🟡 Open |
+| F-13 | 🔴 P0 | 3 | Pembelian → Pembayaran partial | `record_pembayaran` fails 23514 on `purchase_invoices_status_check` — stale narrower CHECK still enforced alongside newer `pi_status_check` that allows DIBAYAR_SEBAGIAN. | ✅ Fixed — 20261115000052 (dropped stale constraint) |

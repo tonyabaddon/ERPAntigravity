@@ -1,5 +1,43 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 (Session 3 QA) — Approval Rules panel unblocked; Post Opening Balance click regression triaged (fixed by concurrent 20261115000060)
+
+**Context:** founder QA reported two symptoms:
+- (a) **Post Opening Balance** button in Akuntansi wizard step 4 didn't work — silently produced `Gagal: Gagal posting` toast.
+- (b) **Approval submenu in Pengaturan** rendered "Tenant settings tidak ditemukan".
+
+Investigated both via Chrome DevTools + Supabase MCP smoke tests. Bug (a) turned out to be same root cause as Session 2 Bug #3 (SECDEF RETURNING gap) plus an owner-gate variant on `admin_users`; both cleared by concurrent migration `20261115000060`. Bug (b) required a one-line frontend fix.
+
+**Findings:**
+
+1. **Bug A — `set_opening_balance` RPC returned 400 for tonywei impersonating garindo.** Full chain:
+   - Silent auto-impersonate (`99bb5f0`) writes a row to `platform_admin_active_impersonation` for tonywei against his own tenant → `custom_access_token_hook` sets `impersonating=true` in his JWT.
+   - F-6 Phase 1 (`9b5b7cc`) tightened `_is_platform_admin_active_from_jwt() = is_platform_admin AND NOT impersonating`. So even for tonywei (a super_admin), the helper returns FALSE during his normal tenant session.
+   - `set_opening_balance` (SECDEF owned by `vosi_rpc_owner`) opens with `SELECT 1 FROM admin_users WHERE id = auth.uid() AND role = 'Owner' AND status = 'Aktif'`. RLS applies to `vosi_rpc_owner` (no BYPASSRLS, non-inheriting). Before 20261115000060, only `p_platform_admin_readall` applied — its qual is the helper above, which returns false → SELECT returns zero rows → `RAISE EXCEPTION owner_only` → PostgREST 400 → frontend `showToast('Gagal: Gagal posting')`.
+   - Same shape blocks all 50+ SECDEF RPCs owned by `vosi_rpc_owner` that gate on `admin_users` (`_assert_owner_active`, `is_owner_or_admin`, `set_approval_setting`, `close_accounting_period`, warehouse mgmt, purchase-side RPCs, ...). Verified via smoke test that Jenny (regular Owner, no platform_admin claim) also failed `_assert_owner_active` with the pre-fix state.
+   - Downstream: even if the owner gate cleared, `_post_journal_entry`'s `INSERT ... RETURNING id INTO v_entry_id` on `journal_entries` would hit the same SECDEF-RETURNING gap Session 2 documented.
+   - **Fix**: Session 2 migration `20261115000060_fix_secdef_select_returning_gap.sql` — sweeps every T-table with `t_insert_own` and re-creates `t_select_own` with `TO authenticated, vosi_rpc_owner`. Covers `admin_users`, `journal_entries`, `journal_entry_lines`, `accounting_config`, `approval_settings`, `tenant_settings` (77 tables total). Applied by concurrent session mid-investigation. Verified `set_opening_balance` under tonywei-impersonating-garindo now returns `{ok:true, entry_number:"JE-202505-0001"}`.
+
+2. **Bug B — Approval Rules panel: "Tenant settings tidak ditemukan".** `tenantSettingsService.fetch()` still filtered `.is('tenant_id', null).maybeSingle()`. `tenant_settings` has one row per real tenant (garindo, toko-jaya, warung-sinar-rezeki, one dev tenant); zero rows have `tenant_id IS NULL`. Fetch returned null → `ApprovalRulesPanel`'s `if (!tenant)` branch rendered the error text, and the rest of the panel never rendered. **Fix**: drop the `.is('tenant_id', null)` clause; RLS scopes to the caller's tenant so `.maybeSingle()` returns the single visible row. `src/lib/pengaturan/pengaturanServices.ts:44`. Existing unit test still passes (mock resolves `singleResult` on both `.is().maybeSingle()` and bare `.maybeSingle()`).
+
+**Files touched:**
+- Frontend: `src/lib/pengaturan/pengaturanServices.ts`.
+- No new migrations. Bug A was resolved by Session 2's `20261115000060` applied by a concurrent session while this investigation was in flight (initial policy dump showed the pre-fix state; a re-query minutes later showed the post-fix state).
+
+**Follow-ups (non-blocking, worth flagging):**
+
+- Same legacy `.is('tenant_id', null)` filter is in `src/lib/akuntansi/service.ts:48` (`fetchAccountingConfig`), `service.ts:63` (`fetchAccountingPeriods`), `glQueries.ts:200`. `fetchAccountingConfig` masks itself as "opening balance not set" (returns null → `!config?.opening_balance_set` = true → wizard renders) — so the wizard shows even for tenants that DID post opening balance. Fix same shape: drop the null filter, let RLS scope.
+- `set_opening_balance` RPC (migration `20260715000013`) never runs `p_tenant_id := COALESCE(p_tenant_id, _resolve_tenant_id())` at the top. Frontend passes `p_tenant_id = null`. The RPC's `UPDATE accounting_config SET opening_balance_set = true WHERE COALESCE(tenant_id, '000…') = COALESCE(NULL, '000…')` matches zero rows for real tenants → RPC returns `{ok:true, entry_number:…}` but the flag never flips. Wizard reappears next visit. Same shape lives in `close_accounting_period`, `close_fiscal_year`, `accrue_period_taxes` — audit before shipping accounting Phase 0 to more tenants.
+- Jenny (regular Owner) was blocked against ~50 SECDEF RPCs before 20261115000060 landed. Check `docs/qa/QA_FINDINGS.md` for previously stalled tickets that this fix quietly unblocked.
+
+**Discriminating evidence for Bug A (keep for future audits):**
+- Smoke test as tonywei with `is_platform_admin=true, impersonating=false` (before 20261115000060): SUCCEEDED because `p_platform_admin_readall` matched.
+- Same JWT with `impersonating=true` (before 20261115000060): FAILED with `owner_only`. Proves F-6 Phase 1 tightening was the trigger, not the auto-impersonate feature alone.
+- Smoke test as Jenny (no platform_admin claim, before 20261115000060): FAILED `_assert_owner_active` with `INSUFFICIENT_ROLE`. Proves the gap wasn't specific to platform admins.
+- Same three smokes after 20261115000060: ALL SUCCEED (Jenny too). Untrusted user (fake sub) still properly rejected with `INSUFFICIENT_ROLE`.
+
+---
+
 ## 2026-07-11 (Session 2 QA) — 4 P0 bugfixes across sales funnel, kasir picker, and opname RPC
 
 **Context:** founder QA smoke of the app surfaced four independent bugs. Root-caused each before touching code; two required DB migrations, two were pure frontend.
@@ -170,6 +208,33 @@ No code changes.
 **Finding: F-11 (P1)** — Catat Bayar modal has no partial-payment field. Only "Konfirmasi Lunas" full-close option. Real B2B tempo customers commonly pay partial; recommend a "Jumlah Bayar" input (default = full total, max = outstanding) + "Sisa setelah bayar" preview. Backend RPC name (`record_piutang_payment`) suggests it can handle partial; only the UI is limited. Deferred, not blocking.
 
 **Session status:** Tempo write path GREEN. Session 3 (Purchase cycle, Scenario C) queued next.
+
+---
+
+## 2026-07-11 (Session 3 QA — Scenario C) — Purchase cycle GREEN after F-13 fix
+
+**Coverage:** Pembelian dashboard (AP aging), Beranda/Pesanan/Tagihan/Pembayaran tabs, Catat Pembayaran flow (partial + multi-tagihan), GL AP auto-post.
+
+**Test flow:** garindo Pembelian showed 1 overdue tagihan (supplier GTA, Rp 11.2jt, terlambat 4 hari, TGH-2026-06-003). Click Bayar → open Catat Pembayaran form → select tagihan checkbox → set partial amount Rp 5jt (of 11.2jt) → CASH method → Kas Toko account → Catat Pembayaran.
+
+**Finding: F-13 (P0 blocker) — stale CHECK duplicates + fixed:**
+`record_pembayaran` fails 23514 on `purchase_invoices_status_check`. Two coexisting CHECKs on `purchase_invoices.status`:
+- `pi_status_check` (newer, correct): allows `('BELUM_LUNAS','DIBAYAR_SEBAGIAN','LUNAS')`
+- `purchase_invoices_status_check` (stale narrower): only `('BELUM_LUNAS','LUNAS')`
+
+Postgres AND's all CHECKs, so partial payment (which sets DIBAYAR_SEBAGIAN) always rejected. Textbook "check-constraints-before-rpc-rewrite" scenario — earlier migration added the new CHECK but never dropped the old one.
+
+**Fix:** migration `20261115000052` — `DROP CONSTRAINT purchase_invoices_status_check`. Blast-radius audit ran `pg_constraint` for other tables with duplicate status CHECKs; none found. Single-table, single-line fix.
+
+**End-to-end verify post-fix:**
+- Pembayaran `PMB-2026-07-001` created (CASH, Rp 5jt).
+- Tagihan status: BELUM_LUNAS → DIBAYAR_SEBAGIAN, paid_amount 5.000.000, sisa outstanding Rp 6.200.000.
+- GL: 2-line balanced — Hutang Usaha (2-1100) DEBIT 5jt, Kas Toko (1-1110) CREDIT 5jt. ✓
+- AP dashboard total outstanding: Rp 11.2jt → Rp 6.2jt.
+
+**Positive observation:** AP-side Catat Pembayaran flow is much richer than AR-side Catat Bayar modal from Session 2. AP has multi-tagihan selection, partial amount input per row, bulk buttons ("Pilih Semua Outstanding", "Pilih JT ≤ 7 Hari"), discount, proof upload, notes. Exactly the pattern F-11 (AR) needs.
+
+**Session status:** Purchase cycle GREEN. F-13 fixed with single-line drop. Session 4 (VOSI Onboard flow) queued next.
 
 ---
 
