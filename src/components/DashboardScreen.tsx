@@ -42,7 +42,12 @@ interface DashboardScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onNavigate: (page: import('../types').ActivePage) => void;
   lowStockCount: number;
-  storeName?: string;
+  /**
+   * Store display name. `null` = still loading (bootstrap_tenant_context
+   * RPC hasn't resolved); render an nbsp placeholder to avoid the
+   * `'Toko Anda'` fallback flash on post-login reload.
+   */
+  storeName?: string | null;
 }
 
 export default function DashboardScreen({ showToast, onNavigate, lowStockCount, storeName }: DashboardScreenProps) {
@@ -112,7 +117,10 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
             ⚡ Sistem Integrasi Aktif
           </span>
           <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-2">
-            Selamat Datang di Hub Kendali {storeName || 'Toko Anda'}
+            {/* `storeName === null` = loading (bootstrap RPC in flight);
+                render nbsp to keep layout height stable without flashing
+                the 'Toko Anda' fallback. */}
+            Selamat Datang di Hub Kendali {storeName === null ? ' ' : (storeName || 'Toko Anda')}
           </h2>
           <p className="text-[#43474e] text-sm mt-1">
             Pantau ringkasan performa penjualan, otomasi chatbot WhatsApp, dan status inventaris Anda secara real-time.

@@ -78,9 +78,7 @@ describe('TenantImpersonationBanner', () => {
 
   it('calls stopImpersonation and redirects on Keluar click', async () => {
     const originalLocation = window.location;
-    // @ts-expect-error — override window.location for this test
-    delete window.location;
-    // @ts-expect-error — assign minimal shape
+    // @ts-expect-error — assign minimal shape to a mutable copy
     window.location = { href: '/t/garindo/dashboard' };
     getSessionMock.mockResolvedValue({
       data: {

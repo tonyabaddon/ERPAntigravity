@@ -42,6 +42,26 @@
 
 ---
 
+## 2026-07-11 — Fix "Toko Anda" flash on post-login/reload render
+
+**Follow-up polish on impersonation deploy.** After the silent auto-impersonate went live, header briefly (~200-500ms) showed the `'Toko Anda'` fallback before `bootstrap_tenant_context` RPC resolved and set the real tenant name. Race between initial render and async fetch. Cosmetic, single-render flash — but visible enough to distract on every login/reload.
+
+**Modified:**
+- `src/App.tsx`:
+  - New `sessionTenantLoaded: boolean` state, flipped to `true` inside a `finally` block after the bootstrap try/catch — signals "RPC has resolved, either success or failure."
+  - Tenant shell header (line ~958): render nbsp (`' '`) instead of `'Toko Anda'` fallback while `!sessionTenantLoaded`.
+  - DashboardScreen `storeName` prop: pass `null` while loading, real value once resolved.
+- `src/components/DashboardScreen.tsx`:
+  - Prop type widened: `storeName?: string | null`.
+  - Welcome heading treats `null` as loading (nbsp) vs `undefined`/`""` as unknown (`'Toko Anda'`).
+
+**Also:**
+- `src/components/TenantImpersonationBanner.test.tsx` — dropped an unused `@ts-expect-error` directive (unrelated cleanup, made typecheck clean).
+
+**Verify:** 14/14 vitest pass. `tsc --noEmit` clean.
+
+---
+
 ## 2026-07-11 — Swap impersonation gate → silent auto-impersonate + banner
 
 **Follow-up on same-day fix below.** After live-testing the gate on Cloud Run, founder pushback: solo-founder context makes the confirm-click friction; URL bar itself is intent (`/admin` vs `/t/<slug>/*`), so login-to-URL should land direct. Safety signal moves from a blocking gate to a persistent-but-subtle banner.

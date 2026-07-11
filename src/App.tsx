@@ -120,6 +120,11 @@ export default function App() {
   // isn't guaranteed to be populated for every onboarded user, but the
   // tenants row's name column always is.
   const [sessionTenantName, setSessionTenantName] = useState<string | null>(null);
+  // Tracks whether the initial bootstrap_tenant_context RPC has resolved
+  // (either success or failure). Blocks the tenant-name flash — without
+  // this the header briefly renders the 'Toko Anda' fallback for ~200-500ms
+  // after post-login reload while the async RPC is still in flight.
+  const [sessionTenantLoaded, setSessionTenantLoaded] = useState<boolean>(false);
   // Holds the kasir_transactions.id of the just-saved wizard transaction so
   // InvoicePreviewScreen can render its details after navigate('invoicePreview').
   // Kept in App state (not URL) because it's a transient hand-off — a refresh
@@ -234,6 +239,8 @@ export default function App() {
           if (ctx?.name) setSessionTenantName(ctx.name);
         } catch (err) {
           console.error('Failed to fetch tenant slug on session restore:', err);
+        } finally {
+          setSessionTenantLoaded(true);
         }
         // Restore deep-link if stashed by AuthScreen; otherwise preserve the
         // current URL when it carries a valid screen (page reload while
@@ -553,7 +560,7 @@ export default function App() {
             showToast={triggerToast}
             onNavigate={(page) => navigate(page)}
             lowStockCount={lowStockCount}
-            storeName={sessionTenantName ?? currentUser?.storeName}
+            storeName={sessionTenantLoaded ? (sessionTenantName ?? currentUser?.storeName) : null}
           />
         );
       case 'sales-inbox':
@@ -948,7 +955,9 @@ export default function App() {
                   <div className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-[#012749] fill-blue-950 shrink-0" />
                     <h1 className="font-extrabold text-lg text-primary tracking-tight">
-                      {sessionTenantName || currentUser?.storeName || 'Toko Anda'}
+                      {sessionTenantLoaded
+                        ? (sessionTenantName || currentUser?.storeName || 'Toko Anda')
+                        : ' '}
                     </h1>
                   </div>
                 </div>
