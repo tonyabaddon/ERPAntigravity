@@ -44,7 +44,9 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
 
   useEffect(() => {
     if (canManage) {
-      warehousesService.fetchAuditLog(50).then(setAudit).catch(() => {});
+      warehousesService.fetchAuditLog(50).then(setAudit).catch((err) => {
+        console.error('warehouses fetchAuditLog failed:', err);
+      });
     }
   }, [canManage, warehouses]);
 

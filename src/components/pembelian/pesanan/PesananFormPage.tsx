@@ -32,9 +32,8 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
   const [expectedReceiveAt, setExpectedReceiveAt] = useState(editing?.expected_receive_at ?? '');
   const [notes, setNotes] = useState(editing?.notes ?? '');
   const [taxRate, setTaxRate] = useState<number>(editing?.tax_rate ?? 0);
-  const [initialStatus, setInitialStatus] = useState<'DRAFT' | 'ORDERED'>(
-    editing?.status === 'ORDERED' ? 'ORDERED' : 'DRAFT'
-  );
+  // (initialStatus state removed alongside dead radios — handleSubmit
+  // receives status directly from the button click below.)
   const [items, setItems] = useState<ItemRow[]>(
     editing?.items?.map(i => ({
       sku: i.sku, product_name: i.product_name, qty: i.qty, unit_cost: i.unit_cost,
@@ -174,19 +173,11 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
               className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
             <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
           </div>
-          <div>
-            <div className="text-xs font-semibold text-gray-600 mb-1.5">Status Awal</div>
-            <div className="grid grid-cols-2 gap-2">
-              <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer ${initialStatus === 'DRAFT' ? 'border-gray-500 bg-gray-50' : 'border-gray-200 bg-white'}`}>
-                <input type="radio" checked={initialStatus === 'DRAFT'} onChange={() => setInitialStatus('DRAFT')} className="accent-gray-600" />
-                <span className="text-xs font-bold">Draft</span>
-              </label>
-              <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer ${initialStatus === 'ORDERED' ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 bg-white'}`}>
-                <input type="radio" checked={initialStatus === 'ORDERED'} onChange={() => setInitialStatus('ORDERED')} className="accent-blue-600" />
-                <span className="text-xs font-bold">Ordered</span>
-              </label>
-            </div>
-          </div>
+          {/* "Status Awal" radios removed 2026-07-11 audit — the two buttons
+              at the bottom ("Simpan Draft" / "Terbitkan Ordered") pass the
+              status directly to handleSubmit, so this radio state was never
+              read. It looked like a control, but selecting Ordered here then
+              clicking Simpan Draft still saved as DRAFT. Confusing dead UI. */}
           <div className="col-span-2">
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Catatan (opsional)</label>
             <input value={notes} onChange={e => setNotes(e.target.value)}

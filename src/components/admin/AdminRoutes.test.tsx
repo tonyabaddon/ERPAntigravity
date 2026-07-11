@@ -21,6 +21,9 @@ vi.mock('../../lib/supabaseClient', () => ({
           error: null,
         })
       ),
+      // AdminRouteGuard now calls refreshSession() as a server heartbeat
+      // before trusting the JWT claim; mock so tests don't blow up.
+      refreshSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
       signOut: vi.fn(() => Promise.resolve({ error: null })),
     },
   },
@@ -28,6 +31,11 @@ vi.mock('../../lib/supabaseClient', () => ({
     isPlatformAdmin: vi.fn(() => Promise.resolve(true)),
     stopImpersonation: vi.fn(() => Promise.resolve()),
   },
+}));
+
+// Super-admin gate for /admin/sales-reps, /admin/settings/payment, etc.
+vi.mock('../../lib/adminAuth', () => ({
+  isSuperAdmin: () => Promise.resolve(true),
 }));
 
 vi.mock('../../lib/adminToast', () => ({

@@ -21,6 +21,12 @@ vi.mock('../../lib/supabaseClient', () => ({
   },
 }));
 
+// Default the super_admin gate to true so pre-existing tests (which expect
+// the Impersonasi button) still see it. New tests can override per case.
+vi.mock('../../lib/adminAuth', () => ({
+  isSuperAdmin: () => Promise.resolve(true),
+}));
+
 vi.mock('../../lib/adminToast', () => ({
   adminToast: {
     error: vi.fn(),

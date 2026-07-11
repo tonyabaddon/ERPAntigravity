@@ -25,7 +25,10 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
     setLoading(true);
     purchaseInvoiceService.fetchByOrderId(orderId)
       .then(setPis)
-      .catch(() => setPis([]))
+      .catch((err) => {
+        console.error('OrderBnlSection fetchByOrderId failed:', err);
+        setPis([]);
+      })
       .finally(() => setLoading(false));
   }, [orderId]);
 

@@ -42,6 +42,7 @@ interface PembelianScreenProps {
   initialBnlPiNumber?: string | null;
   onBnlDetailConsumed?: () => void;
   initialBnlPrefill?: { orderId: string; customerName?: string } | null;
+  onBnlPrefillConsumed?: () => void;
   initialPesananNumber?: string | null;
   onPesananDetailConsumed?: () => void;
   initialTagihanNumber?: string | null;
@@ -116,7 +117,7 @@ const LEFT_BORDER: Record<string, string> = {
 export default function PembelianScreen({
   stockList, showToast, onStockRefresh, currentUserId, currentUserPermissions,
   initialDetailPoNumber, onDetailConsumed,
-  initialBnlPiNumber, onBnlDetailConsumed, initialBnlPrefill,
+  initialBnlPiNumber, onBnlDetailConsumed, initialBnlPrefill, onBnlPrefillConsumed,
   initialPesananNumber, onPesananDetailConsumed,
   initialTagihanNumber, onTagihanDetailConsumed,
   initialPembayaranNumber, onPembayaranDetailConsumed,
@@ -168,13 +169,16 @@ export default function PembelianScreen({
     }
   }, [initialBnlPiNumber, onBnlDetailConsumed]);
 
-  // BNL prefill (?bnl-new-for-order=...) — open create form pre-filled
+  // BNL prefill (?bnl-new-for-order=...) — open create form pre-filled.
+  // Also consume the URL params so leaving + returning to Pembelian doesn't
+  // force-restart bnl-create.
   useEffect(() => {
     if (initialBnlPrefill?.orderId) {
       setTab('bnl');
       setViewMode({ kind: 'bnl-create', prefill: { orderId: initialBnlPrefill.orderId, customerName: initialBnlPrefill.customerName } });
+      onBnlPrefillConsumed?.();
     }
-  }, [initialBnlPrefill?.orderId]);
+  }, [initialBnlPrefill?.orderId, onBnlPrefillConsumed]);
 
   // Pesanan deep-link (?pesanan=PSN-...) — switch tab + open detail
   useEffect(() => {

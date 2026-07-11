@@ -163,16 +163,24 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
   }, [pendingApprovals]);
 
   const handleInlineSave = async (updatedItem: StockItem) => {
+    // Was hard-coding threshold to 10; use the per-SKU value (fallback 5)
+    // so the inline status flag matches the thinCount tab counter.
+    const thin = updatedItem.min_stock_per_product ?? 5;
     const next: StockItem = {
       ...updatedItem,
-      status: updatedItem.stock < 10 ? 'Stok Tipis' : 'Sinkron',
+      status: updatedItem.stock < thin ? 'Stok Tipis' : 'Sinkron',
     };
     const updated = stockList.map(i => (i.sku === next.sku ? next : i));
     onStockUpdate(updated);
   };
 
   const handleDeleteItem = (sku: string) => {
-    onStockUpdate(stockList.filter(item => item.sku !== sku));
+    const item = stockList.find(i => i.sku === sku);
+    if (!item) return;
+    // Was firing on click with no confirmation. Deleting a SKU affects
+    // stock_movements + kasir history; require an explicit confirm.
+    if (!window.confirm(`Hapus produk "${item.name}" (SKU: ${sku})?\nAksi ini tidak bisa di-undo.`)) return;
+    onStockUpdate(stockList.filter(i => i.sku !== sku));
     showToast('🗑️ Produk berhasil dihapus.');
   };
 

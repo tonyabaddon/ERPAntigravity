@@ -207,6 +207,11 @@ export default function StockOpnameSessionView({
   // witness_acknowledged_at was cleared by record_opname_count. Surface a
   // visible cue so witness knows to ack again before submit unlocks.
   const [prevAcked, setPrevAcked] = useState(false);
+  // Reset when opening a different session — without this, a session that
+  // was previously acknowledged bleeds prevAcked=true into an unrelated
+  // fresh session, firing "witness must re-ack" on session B when nothing
+  // was invalidated.
+  useEffect(() => { setPrevAcked(false); }, [sessionId]);
   useEffect(() => {
     if (session?.witnessAcknowledgedAt) setPrevAcked(true);
   }, [session?.witnessAcknowledgedAt]);

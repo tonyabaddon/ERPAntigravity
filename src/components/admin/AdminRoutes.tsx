@@ -3,7 +3,7 @@
 // This is the replacement for AdminShell as the entry-point from App.tsx.
 // Sub-route pattern matching is done via simple pathname regex since urlRoute.ts
 // has no nested-route or param-extraction primitives (workaround noted in report).
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AdminLayout } from './AdminLayout';
 import { AdminRouteGuard } from './AdminRouteGuard';
 import { AdminHome } from './AdminHome';
@@ -16,6 +16,47 @@ import { TenantWizard } from './TenantWizard';
 import { SalesRepsList } from './SalesRepsList';
 import { PlatformSettings } from './PlatformSettings';
 import { PendingPaymentsQueue } from './PendingPaymentsQueue';
+import { isSuperAdmin } from '../../lib/adminAuth';
+
+// Sub-paths that require super_admin (not just any platform_admin). Backend
+// RPCs already gate these via _is_super_admin_from_jwt(); frontend gate is UX
+// polish — sidebar hides links, but URL-bar navigation could still reach them.
+const SUPER_ADMIN_ONLY_PATHS = new Set([
+  '/admin/sales-reps',
+  '/admin/sales-reps/',
+  '/admin/payments/pending',
+  '/admin/payments/pending/',
+  '/admin/settings/payment',
+  '/admin/settings/payment/',
+  '/admin/revenue',
+  '/admin/revenue/',
+]);
+
+function SuperAdminGate({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<'checking' | 'allow' | 'deny'>('checking');
+  useEffect(() => {
+    let cancelled = false;
+    isSuperAdmin()
+      .then((ok) => { if (!cancelled) setState(ok ? 'allow' : 'deny'); })
+      .catch(() => { if (!cancelled) setState('deny'); });
+    return () => { cancelled = true; };
+  }, []);
+  if (state === 'checking') {
+    return <div className="p-6 text-[13px] text-slate-500 font-vosi">Memeriksa akses super_admin…</div>;
+  }
+  if (state === 'deny') {
+    return (
+      <div className="p-8 max-w-md">
+        <h1 className="text-lg font-semibold text-slate-800">Butuh super admin</h1>
+        <p className="text-[13px] text-slate-600 mt-2">
+          Halaman ini hanya dapat diakses oleh super_admin. Sales_rep tidak berwenang di sub-modul ini.
+        </p>
+        <a href="/admin" className="mt-4 inline-block text-[13px] text-slate-700 underline">← Kembali ke Beranda</a>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 // Pattern for /admin/tenants/<slug>
 const TENANT_DETAIL_RE = /^\/admin\/tenants\/([^/]+)\/?$/;
@@ -62,11 +103,13 @@ function resolveAdminContent(pathname: string): React.ReactNode {
 export function AdminRoutes() {
   const pathname =
     typeof window !== 'undefined' ? window.location.pathname : '/admin';
-
+  const needsSuperAdmin = SUPER_ADMIN_ONLY_PATHS.has(pathname);
+  const content = resolveAdminContent(pathname);
+  const wrapped = needsSuperAdmin ? <SuperAdminGate>{content}</SuperAdminGate> : content;
   return (
     <AdminRouteGuard>
       <AdminLayout activePath={pathname}>
-        {resolveAdminContent(pathname)}
+        {wrapped}
       </AdminLayout>
     </AdminRouteGuard>
   );

@@ -39,7 +39,13 @@ export default function StockAdjustmentModal({
     if (!supabase) throw new Error('Supabase belum dikonfigurasi');
     const urls: string[] = [];
     for (const f of files) {
-      const path = `adjustments/pending/${Date.now()}-${f.name}`;
+      // Sanitize filename (raw `f.name` can contain `/`, unicode, path
+      // traversal segments) and randomize suffix to prevent same-millisecond
+      // collisions. Storage bucket RLS still enforces per-tenant read/write,
+      // but the object key should still be discipline-safe.
+      const safeName = f.name.replace(/[^\w.-]/g, '_').slice(0, 80);
+      const rand = Math.random().toString(36).slice(2, 10);
+      const path = `adjustments/pending/${Date.now()}-${rand}-${safeName}`;
       const { error } = await supabase.storage.from('stock-evidence').upload(path, f);
       if (error) throw error;
       urls.push(path);

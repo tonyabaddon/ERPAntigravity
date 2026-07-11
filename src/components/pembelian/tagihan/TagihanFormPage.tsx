@@ -215,7 +215,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
     return () => clearTimeout(t);
   }, [pesananQuery]);
 
-  // When Pesanan is picked (or prefill), populate items + payment defaults
+  // When Pesanan is picked (or prefill), populate items.
   useEffect(() => {
     if (!pesanan || !defaultWh) return;
     const rows: ItemRow[] = (pesanan.items ?? []).map(i => ({
@@ -233,13 +233,18 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
       discount_amount_rp: 0,
     }));
     setItems(rows);
-    // payment due auto-fill from supplier
-    if (pesanan.supplier?.payment_term_days != null) {
-      const d = new Date(purchaseDate);
-      d.setDate(d.getDate() + (pesanan.supplier.payment_term_days ?? 0));
-      setPaymentDueAt(d.toISOString().slice(0, 10));
-    }
   }, [pesanan, defaultWh]);
+
+  // Payment due auto-fill — separate effect keyed on purchaseDate too, so
+  // adjusting purchaseDate AFTER Pesanan pick correctly recomputes JT.
+  // Was baked into the effect above with only [pesanan, defaultWh] deps,
+  // giving a stale JT after any purchaseDate edit.
+  useEffect(() => {
+    if (!pesanan || pesanan.supplier?.payment_term_days == null) return;
+    const d = new Date(purchaseDate);
+    d.setDate(d.getDate() + (pesanan.supplier.payment_term_days ?? 0));
+    setPaymentDueAt(d.toISOString().slice(0, 10));
+  }, [pesanan, purchaseDate]);
 
   const updateItem = (idx: number, patch: Partial<ItemRow>) => {
     setItems(prev => prev.map((p, i) => i === idx ? { ...p, ...patch } : p));

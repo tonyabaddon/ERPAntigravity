@@ -99,7 +99,14 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       setRejectInfoMap({});
       return;
     }
-    fetchRecentRejectsByOrder(threeFIds).then(setRejectInfoMap);
+    fetchRecentRejectsByOrder(threeFIds)
+      .then(setRejectInfoMap)
+      .catch((err) => {
+        // Was firing unhandledrejection on failure, and leaving rejectInfoMap
+        // stale from a previous id-set. Clear + log so the reject chips reset.
+        console.error('fetchRecentRejectsByOrder failed:', err);
+        setRejectInfoMap({});
+      });
   }, [orders]);
 
   // auto-expand urgent sub-stages when stage/tab changes — also include orphan urgent

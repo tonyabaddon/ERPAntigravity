@@ -50,12 +50,18 @@ export default function InvoicePreviewScreen({
   const [pdfPrintMode, setPdfPrintMode] = useState<InvoicePrintMode>('normal');
 
   useEffect(() => {
-    if (!supabase) {
-      setLoadError('Supabase belum dikonfigurasi.');
-      return;
-    }
+    // Reset error state when orderId changes; without this, stale error from
+    // a prior invoice sticks even after user navigates to a valid one.
+    setLoadError(null);
     let cancelled = false;
     void (async () => {
+      // Re-check supabase at fetch time (not at effect-mount time) so that a
+      // post-impersonation JWT swap doesn't leave the screen stuck on
+      // "belum dikonfigurasi" until manual nav away and back.
+      if (!supabase) {
+        setLoadError('Supabase belum dikonfigurasi.');
+        return;
+      }
       const { data, error } = await supabase
         .from('kasir_transactions')
         .select('*')

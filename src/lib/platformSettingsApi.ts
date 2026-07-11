@@ -33,6 +33,12 @@ function normalizeRpcError(error: { message?: string; code?: string }): never {
     }
     throw new PlatformAdminRequiredError(error.message);
   }
+  // PGRST116 = "no rows returned" from PostgREST .single(). Sales_reps get
+  // this when their UPDATE is silently filtered by RLS; surface as a
+  // super-admin-required error instead of the cryptic PostgREST message.
+  if (error.code === 'PGRST116') {
+    throw new SuperAdminRequiredError('SUPER_ADMIN_REQUIRED');
+  }
   throw new Error(error.message ?? 'Database error');
 }
 

@@ -141,10 +141,11 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
     };
   }, [superAdmin]);
 
-  // Show all items until check resolves; after resolve, hide superAdminOnly items
-  // if user is NOT super_admin.
+  // Hide superAdminOnly items until we've CONFIRMED super_admin. Previous
+  // logic showed them during the null (checking) window, letting sales_reps
+  // briefly see restricted nav links.
   const visibleNavItems = NAV_ITEMS.filter(
-    (item) => !item.superAdminOnly || superAdmin !== false
+    (item) => !item.superAdminOnly || superAdmin === true
   );
 
   return (

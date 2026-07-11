@@ -172,14 +172,17 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
    * Scores by amount proximity to the bank line.
    */
   function buildGlCandidates(line: BankStatementLine): DrawerCandidate[] {
-    const tol = 0.05;
-    const lo = line.amount * (1 - tol);
-    const hi = line.amount * (1 + tol);
+    // Tolerance: 0.5% relative with a Rp 500 absolute floor. Was 5%
+    // percentage-only which over-matched small-ticket flows (Rp 1k fee on
+    // Rp 20k invoice = 5%, absurd) and under-matched large-ticket flows
+    // where a Rp 5k bank fee on Rp 5jt was scored 0.4 as "tidak cocok".
+    const tol = Math.max(500, line.amount * 0.005);
+    const lo = line.amount - tol;
+    const hi = line.amount + tol;
 
     const cands: DrawerCandidate[] = glJournalLines.map(jl => {
       const inRange = jl.amount >= lo && jl.amount <= hi;
-      const diff = Math.abs(jl.amount - line.amount);
-      const score = inRange ? (diff < 100 ? 0.97 : 0.75) : 0.4;
+      const score = inRange ? 0.97 : 0.4;
       return {
         id: jl.id,
         name: jl.entry_number,
@@ -216,9 +219,9 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
       });
     } else {
       // Standard mode: show order payable slots as candidates
-      const tol = 0.05;
-      const lo = line.amount * (1 - tol);
-      const hi = line.amount * (1 + tol);
+      const tol = Math.max(500, line.amount * 0.005);
+      const lo = line.amount - tol;
+      const hi = line.amount + tol;
       const cands: DrawerCandidate[] = [];
       for (const o of orders) {
         for (const s of o.slots) {

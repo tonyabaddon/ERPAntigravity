@@ -25,10 +25,20 @@ export function PendingPaymentsQueue() {
     }
 
     load();
-    const t = setInterval(load, 60_000);
+    // Skip poll while tab is backgrounded; reload immediately when it
+    // becomes visible again. Saves ~1 network round-trip per minute per
+    // backgrounded admin tab.
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, 60_000);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVis);
     return () => {
       cancelled = true;
       clearInterval(t);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, [refreshKey]);
 

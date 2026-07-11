@@ -696,6 +696,7 @@ export default function App() {
             initialBnlPiNumber={initialBnlPiNumber}
             onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
             initialBnlPrefill={initialBnlPrefill}
+            onBnlPrefillConsumed={() => navigate('pembelian', {})}
             initialPesananNumber={initialPesananNumber}
             onPesananDetailConsumed={() => { /* no-op: URL is source of truth */ }}
             initialTagihanNumber={initialTagihanNumber}
@@ -934,6 +935,7 @@ export default function App() {
               initialBnlPiNumber={initialBnlPiNumber}
               onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
               initialBnlPrefill={initialBnlPrefill}
+            onBnlPrefillConsumed={() => navigate('pembelian', {})}
               initialPesananNumber={initialPesananNumber}
               onPesananDetailConsumed={() => { /* no-op: URL is source of truth */ }}
               initialTagihanNumber={initialTagihanNumber}

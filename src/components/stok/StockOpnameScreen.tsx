@@ -243,12 +243,23 @@ export default function StockOpnameScreen({
                   {' · '}Mulai {formatDateTime(activeSession.startedAt)}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
-                <p className="font-bold text-lg text-slate-900">
-                  {formatRpDelta(activeSession.varianceTotalValue)}
-                </p>
-              </div>
+              {/* Blind-count discipline: while the session is IN_PROGRESS,
+                  non-Owner roles must not see the running variance total.
+                  Was visible to counter/witness/kasir here even though the
+                  StockOpnameSessionView correctly hides it — pattern leak. */}
+              {(currentUser?.role === 'Owner' || activeSession.status !== 'in_progress') ? (
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
+                  <p className="font-bold text-lg text-slate-900">
+                    {formatRpDelta(activeSession.varianceTotalValue)}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-right">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Total Selisih</p>
+                  <p className="text-[11px] text-slate-400 italic">Tersembunyi selama sesi (blind count)</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (

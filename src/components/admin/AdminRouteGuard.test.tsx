@@ -7,6 +7,13 @@ const mockIsPlatformAdmin = vi.fn();
 const mockAdminToastError = vi.fn();
 
 vi.mock('../../lib/supabaseClient', () => ({
+  supabase: {
+    auth: {
+      // Guard now performs a server heartbeat via refreshSession() before
+      // trusting the JWT claim; mock so tests don't blow up on undefined.
+      refreshSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+    },
+  },
   tenantContextService: {
     isPlatformAdmin: () => mockIsPlatformAdmin() as Promise<boolean>,
   },

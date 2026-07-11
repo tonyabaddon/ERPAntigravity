@@ -2,7 +2,7 @@
 // Platform-admin guard. Non-admins are redirected to /dashboard with a toast.
 // Uses urlRoute.ts patterns (no react-router-dom).
 import React, { useEffect, useState } from 'react';
-import { tenantContextService } from '../../lib/supabaseClient';
+import { supabase, tenantContextService } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
 
 type GuardState = 'checking' | 'allow' | 'deny';
@@ -18,6 +18,13 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
     let cancelled = false;
     (async () => {
       try {
+        // Server heartbeat: force JWT refresh so a deactivated / demoted user
+        // doesn't retain admin UI access via a stale cached claim. Backend
+        // RPCs re-verify anyway, but the shell + read-only queries were
+        // leaking data for the residual JWT lifetime.
+        if (supabase) {
+          await supabase.auth.refreshSession().catch(() => { /* ignore */ });
+        }
         const ok = await tenantContextService.isPlatformAdmin();
         if (cancelled) return;
         if (!ok) {

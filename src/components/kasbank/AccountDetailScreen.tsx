@@ -250,17 +250,23 @@ export default function AccountDetailScreen({
   // Load ledger rows whenever period or coaAccountId changes
   // ---------------------------------------------------------------------------
 
+  // Sequence counter drops out-of-order responses. Without it, switching
+  // period mid-fetch could let the older response resolve last and paint
+  // rows for the wrong period. Rare on fast networks, reproducible on 3G.
+  const ledgerSeqRef = React.useRef(0);
   const loadLedger = useCallback(
     (coaAccountId: string, fromDate: string, toDate: string) => {
+      const mySeq = ++ledgerSeqRef.current;
       setLoadingRows(true);
       setVisibleCount(PAGE_SIZE);
       fetchAccountLedger(coaAccountId, fromDate, toDate)
-        .then(data => setRows(data))
+        .then(data => { if (mySeq === ledgerSeqRef.current) setRows(data); })
         .catch(err => {
+          if (mySeq !== ledgerSeqRef.current) return;
           console.error('[AccountDetailScreen] fetchAccountLedger error', err);
           showToast('Gagal memuat riwayat', 'warning');
         })
-        .finally(() => setLoadingRows(false));
+        .finally(() => { if (mySeq === ledgerSeqRef.current) setLoadingRows(false); });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

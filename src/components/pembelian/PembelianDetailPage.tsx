@@ -96,7 +96,9 @@ export default function PembelianDetailPage({
   useEffect(() => {
     document.title = `${poNumber} — Pembelian`;
     fetchPo();
-    fetchStoreSettings().then(setStoreSettings).catch(() => {});
+    fetchStoreSettings().then(setStoreSettings).catch((err) => {
+      console.error('fetchStoreSettings (PembelianDetail) failed:', err);
+    });
   }, [poNumber]);
 
   async function handleDownloadPdf() {

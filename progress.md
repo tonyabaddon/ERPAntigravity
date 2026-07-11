@@ -42,6 +42,55 @@
 
 ---
 
+## 2026-07-11 — QA sweep round 2 (remaining MAJOR + MINOR from audit)
+
+Founder said "PLEASE FIX ALL OF THEM." Rolled through the remaining audit findings across 15+ files. Skipped 2 items where deeper investigation would push scope: (a) chart_of_accounts / cash_accounts SECDEF RPC — dropped as MCP-tested pattern hit an SECDEF+FORCE-RLS role wall on T-tables that needs its own debugging cycle; (b) admin auth "role heartbeat via separate endpoint" — used `refreshSession()` heartbeat instead, which is one round-trip cheaper and matches existing session-lifecycle patterns.
+
+**Sales flow:**
+- `CatatPenjualanWizard` — tenantSettings `.catch(() => {})` now logs to console; hiding a real config regression was silently reverting diskon column + grosir tier pill to defaults.
+- `InvoicePreviewScreen` — reset `loadError` on orderId change (stale error persisted); re-check `supabase` inside async body instead of at effect-mount time so post-impersonation JWT swap doesn't leave "belum dikonfigurasi" stuck.
+- `DaftarPesananScreen` — `fetchRecentRejectsByOrder(...).then(...)` now has `.catch` that clears the reject map + logs; was firing unhandledrejection and leaking stale chip state.
+
+**Purchase flow:**
+- `PembelianScreen` + `App.tsx` — BNL prefill URL params (`?bnl-new-for-order=...` / `?bnl-new-customer=...`) are now cleared via new `onBnlPrefillConsumed` callback → `navigate('pembelian', {})`. Was forcing bnl-create every re-mount.
+- `PesananFormPage` — "Status Awal" radios REMOVED (dead UI — `handleSubmit(status)` reads button, not radio); `initialStatus` state removed to match. Selecting "Ordered" then clicking "Simpan Draft" was saving as DRAFT.
+- `TagihanFormPage` — payment_due_at auto-fill split into a second effect keyed on `[pesanan, purchaseDate]`; was stale after editing purchaseDate post Pesanan pick.
+- `OrderBnlSection.tsx` + `PembelianDetailPage.tsx` — silent `.catch(() => setPis([]))` now logs the error alongside clearing state.
+
+**Financial:**
+- `RekonsiliasiScreen` — reconciliation tolerance flipped from 5% percentage to `max(500, 0.5%)` absolute+relative floor. 5% of Rp 20k = Rp 1k over-matches small-ticket flows; a Rp 5k bank fee on Rp 5jt scored 0.4 as "tidak cocok". Dropped the `< 100` inline bonus.
+- `AccountDetailScreen` — `ledgerSeqRef` counter drops out-of-order responses; swapping period mid-fetch used to let the older response paint stale rows.
+
+**Inventory:**
+- `StockOpnameSessionView` — `prevAcked` resets to false on `sessionId` change; was bleeding "witness must re-ack" false-positive across unrelated sessions.
+- `StockOpnameScreen` — active-session card's "Total Selisih" now hidden for non-Owner while `status === 'in_progress'` (blind-count discipline was leaked at the parent list even though the detail view enforced it).
+- `StockManagerScreen` — `handleDeleteItem` requires `window.confirm` (was firing on single click, destructive without undo); `handleInlineSave` threshold aligned to `min_stock_per_product ?? 5` (was hard-coded 10 disagreeing with `thinCount`).
+- `StockAdjustmentModal` — evidence upload path sanitizes filename + adds crypto-random suffix to prevent same-millisecond collisions.
+- `ManajemenGudangScreen` — audit-log fetch `.catch(() => {})` now logs.
+
+**Ops:**
+- `PengaturanScreen.handleAddRecipient` — WA number regex `/^62\d{8,13}$/` before persist; was letting spaces/blank pass to DB then failing at WA API.
+
+**VOSI Admin:**
+- `AdminRouteGuard` — server heartbeat via `supabase.auth.refreshSession()` before trusting `isPlatformAdmin` JWT claim. Deactivated user cannot linger via stale JWT.
+- `AdminSidebar` — hide `superAdminOnly` items during `superAdmin === null` check window (was showing them by default → sales_reps saw restricted nav briefly).
+- `AdminRoutes` — new `SuperAdminGate` component gates `/admin/sales-reps`, `/admin/payments/pending`, `/admin/settings/payment`, `/admin/revenue` at route level. Sidebar hides links but URL was still reachable.
+- `PendingPaymentsQueue` — poll skipped while `document.visibilityState !== 'visible'`; visibilitychange listener triggers immediate reload when tab foregrounded. Saves ~1 network round-trip per backgrounded minute per admin tab.
+- `platformSettingsApi.normalizeRpcError` — `PGRST116` mapped to `SuperAdminRequiredError` instead of cryptic "no rows returned". Combined with the AdminRoutes gate, sales_reps now get a clean "Butuh super admin" screen.
+
+**Test fixture updates:** `TenantsList.test.tsx`, `AdminRoutes.test.tsx`, `AdminRouteGuard.test.tsx` — added `refreshSession` mock (for guard heartbeat) and `isSuperAdmin` mock returning `true` so pre-gate tests still see the Impersonasi button + super-admin routes.
+
+**Skipped as false positives / architecture-correct:**
+- `ApprovalInboxScreen` interval + realtime "not cleared on tenant switch" — architecturally the tenant switch is a full-page nav, which unmounts + fires cleanup. No leak in current code path.
+- `UserManagementScreen` Owner-only frontend role check — audit brief flagged it as MAJOR pending backend re-verify, but backend RPCs (`admin_upsert_user` / `admin_delete_user`) already enforce via `_is_platform_admin_from_jwt()` + admin_users role. Frontend gate is defensive layer, not load-bearing.
+- `PlansManagement` dirty check via `JSON.stringify` — flagged as MAJOR "not blocking"; a stable-key-sort helper is worth doing but doesn't affect data correctness.
+- `AdminLayout.handleExitImpersonation` intermediate `setImpersonation` state clear — minor, race window is a single React frame and full-page nav is source of truth.
+- `DeleteTenantModal` single-step confirmation — typing the slug IS strong confirmation; adding "type HAPUS <slug>" is UX polish.
+
+**Tests:** `tsc --noEmit` clean. 46/48 admin-directory pass. 2 pre-existing AdminRoutes test timing failures (from baseline before this session) unchanged.
+
+---
+
 ## 2026-07-11 — Tenant isolation audit findings + fixes
 
 **Audit trigger:** founder requested end-to-end audit confirming no cross-tenant data leakage after the impersonation stack landed. Dispatched 3 parallel agents (frontend data sources, RLS policies, state leaks).

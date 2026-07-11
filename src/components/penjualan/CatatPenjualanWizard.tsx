@@ -116,7 +116,11 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         setModulDiskonOn(s?.modul_diskon_kasir ?? true);
         setTenantSettings(s ?? null);
       })
-      .catch(() => { /* keep defaults */ });
+      .catch((err) => {
+        // Silent catch was hiding real config regressions — diskon column /
+        // grosir tier pill would silently revert to permissive defaults.
+        console.error('tenantSettings fetch (wizard) failed:', err);
+      });
   }, []);
 
   // ── Multi-tier pricing state (Task 7) ─────────────────────────────────────

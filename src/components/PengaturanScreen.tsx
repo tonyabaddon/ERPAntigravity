@@ -140,6 +140,13 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       showToast('Nama dan nomor WA wajib diisi.', 'warning');
       return;
     }
+    // WA format guard — DB may reject silently or accept malformed nums that
+    // then fail at WA API send time. Require Indonesian format 62xxxxxxxxxx.
+    const cleaned = addForm.wa_number.replace(/[\s+()-]/g, '');
+    if (!/^62\d{8,13}$/.test(cleaned)) {
+      showToast('Nomor WA harus format 62xxxxxxxxxx (tanpa 0/+62).', 'warning');
+      return;
+    }
     setAddSaving(true);
     try {
       await waRecipientsService.add(addForm);
