@@ -1,5 +1,53 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 — Pesanan diskon + RLS bug brainstorm → no code change
+
+User asked (a) where to enter discount on Pembelian → Buat Pesanan and
+whether to build it, and (b) reported the "Simpan & Kirim ke Supplier"
+button was failing with `new row violates row-level security policy for
+table "pesanan"`.
+
+**Diagnostic evidence (prod DB `ekhhojaezdfjfwuxyjkl`):**
+
+- Pesanan `t_insert_own` / `t_select_own` / `t_update_own` policies all
+  include `vosi_rpc_owner` + use `_check_expiry_ok()` (not the broken
+  `_guard_expiry_write() IS NULL`). `p_platform_admin_readall` present.
+- `pesanan.tenant_id` NOT NULL, DEFAULT `_resolve_tenant_id()`.
+  `pesanan_items.tenant_id` same.
+- `record_pesanan` body owned by `vosi_rpc_owner`, SECURITY DEFINER,
+  omits `tenant_id` in the INSERT so DEFAULT kicks in, uses
+  `_current_user_id()` (post-000048 sweep).
+- 42 pesanan rows in prod, newest 2026-07-11 18:35 — real writes are
+  landing.
+- Live smoke test with founder's real auth.uid + Garindo tenant JWT
+  claim → `record_pesanan` returned `PSN-2026-07-002`. Rolled back via
+  RAISE EXCEPTION per the memory-documented smoke-test pattern.
+
+**Decisions:**
+
+- **Discount on Pesanan: not building.** User's call, agree with
+  reasoning: Tagihan already has the hardened header + line-level
+  discount stack (record_pi + purchase_invoices/items discount_type /
+  discount_value / discount_amount_rp + triple-consistency CHECK
+  constraints). Pesanan is a commitment; final numbers get set at
+  Tagihan-time when supplier's actual invoice arrives. Adding a
+  parallel discount surface at Pesanan doubles the input area with
+  little marginal value.
+- **RLS bug: already fixed by Nov SECDEF chain** (20261115000044,
+  000045, 000048, 000060, 000200). No further code change needed. If
+  user still sees the error after a hard-refresh (Cmd+Shift+R), they'll
+  send the browser console error + JWT payload and we trace the
+  specific gate.
+
+**Changes shipped:** none. Brainstorm-only session.
+
+**Follow-up marker:** if a "kesepakatan diskon" note field is ever
+requested on Pesanan (e.g., a free-text field capturing "supplier
+janji 3% total" for negotiation memory), that's a one-column text-only
+add — no CHECK constraints, no server recompute. Deferred until asked.
+
+---
+
 ## 2026-07-11 (Session 3 QA) — Approval Rules panel unblocked; Post Opening Balance click regression triaged (fixed by concurrent 20261115000060)
 
 **Context:** founder QA reported two symptoms:
