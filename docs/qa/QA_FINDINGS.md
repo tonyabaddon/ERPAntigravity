@@ -112,7 +112,31 @@ _(Entries added per session below. Newest at top.)_
 ### F-5 [✅ FIXED] Cross-cutting `vosi_rpc_owner` SECDEF sweep
 - Rolled into F-4's permanent fix (migration 20261115000048). Any new SECDEF written against `vosi_rpc_owner` should call `public._current_user_id()` instead of `auth.uid()`; going forward, add a CI check via `pg_get_functiondef` audit before shipping migrations.
 
-### F-6 [✅ PASS] Kasir walk-in cash sale — end-to-end after all fixes
+### F-6 [🔴 P0] Impersonation retains `platform_admin` — reader queries leak cross-tenant
+- **Module:** Dashboard (Detak Jantung AI log), Laporan Performa (all totals + Produk Terlaris), likely more.
+- **Reproduction:** Log in as `tonywei.office` (platform_admin + garindo owner) → impersonate garindo → open Dashboard. AI Log shows entries with tenant_id = toko-jaya-makmur (verified via SQL: rows `077efaef…`, `ccf5f837…`, `d7826769…`, all `tenant_id = 22222…`). Open Laporan Performa → Total Omset 7d Rp 37.756.000 (impossible for garindo alone), Produk Terlaris top-5 are all toko-jaya SKUs (Detergen Bubuk / Gula Pasir / Beras Premium / Terigu — verified via SQL, `tenant_id = 22222…`).
+- **Root cause:** Impersonation JWT swap changes `tenant_id` claim but keeps the user's platform-wide role. RLS supplementary policy `p_platform_admin_readall` fires and lets the client read every tenant's rows. Reader queries in the tenant UI trust RLS to scope by tenant instead of adding `WHERE tenant_id = _resolve_tenant_id()` themselves.
+- **Blast radius:** any tenant screen whose read query has no explicit `tenant_id` predicate. Includes at minimum: dashboard messages panel, Laporan Performa totals + top products, top-N kanal breakdown. Kasir screen is clean (queries clearly filter by tenant) so the write path stays consistent — but reporting numbers are wrong under impersonation.
+- **Fix options (permanent):**
+  1. **JWT-level:** during `impersonate_tenant`, mint a JWT that drops the `platform_admin` role claim so RLS scoping works. Cleanest — no frontend touching required.
+  2. **Query-level:** every tenant-UI reader adds `.eq('tenant_id', tenantId)` explicitly. Repetitive, easy to miss, brittle.
+  3. **Policy-level:** rewrite `p_platform_admin_readall` to only fire when a session marker (e.g. `current_setting('vosi.platform_read_mode') = 'on'`) is set — off by default, only VOSI Admin surfaces set it.
+- **Recommendation:** option 1. Investigate `impersonate_tenant` RPC and `src/App.tsx` impersonation handling next session.
+- **Fix status:** open — Session 2 blocker if we can't tell what's tenant-scoped vs cross-tenant during future testing.
+
+### F-7 [🟠 P1] Laporan Performa "Produk Terlaris" revenue column always Rp 0
+- **Module:** Laporan → Performa → Produk Terlaris table.
+- **Reproduction:** Impersonate any tenant → Laporan Performa → look at top-5. QTY column populated (Detergen 45, Gula Pasir 38, etc.); REVENUE column shows Rp 0 for every row.
+- **Root cause hypothesis:** query aggregates units sold but joins on a stale price column that no longer exists (memory of `stocks.harga_beli` failing earlier — schema now uses `harga_modal` and different column names). Needs code inspection of the Laporan Performa fetcher.
+- **Fix status:** open — investigate query in Laporan tab.
+
+### F-8 [🟠 P1] Laporan Performa "7 Hari" toggle shows 30-day chart
+- **Module:** Laporan → Performa → range selector.
+- **Reproduction:** Impersonate any tenant → Laporan Performa → default view has "7 Hari" button highlighted, but the Revenue chart X-axis shows `12 Jun – 11 Jul` (30 days). Total Omset card matches the wider window.
+- **Root cause hypothesis:** button state selected 7 but query still passes 30 by default; or Total-Omset card fetches 30d fixed. Needs code inspection.
+- **Fix status:** open.
+
+### F-9 [✅ PASS] Kasir walk-in cash sale — end-to-end after all fixes
 - Sale `WLK-20260711-005` created via wizard, cash payment.
 - `kasir_transactions` row created; `stocks.quantity_top` decremented by 1.
 - Journal entry `JE-202607-0010` posted with 4 balanced lines:
@@ -120,7 +144,7 @@ _(Entries added per session below. Newest at top.)_
 - `gl_dual_write_anomalies` empty for this sale.
 - Kasir dashboard Rekap Pembayaran + Tutup Buku Harian: not yet re-verified after this sale; deferred to Scenario A completion follow-up.
 
-**Session status:** Cash-walk-in write path GREEN. Follow-up items: F-5 sweep, dashboard KPI re-check after WLK-005, F-2 backfill of the earlier missed WLK-001..004 GL entries.
+**Session status:** Cash-walk-in write path GREEN. Kasir screen totals (Rekap Pembayaran + Tutup Buku Harian ringkasan) reconcile end-to-end after WLK-005 & WLK-006. Dashboard KPI card totals move correctly but the AI activity log panel leaks toko-jaya rows (F-6). Laporan Performa unusable under impersonation because of F-6 + F-7 + F-8. Follow-up items: F-6 impersonation JWT design fix (Session 2 blocker), F-7 revenue column, F-8 range selector, F-2 backfill of earlier WLK-001..004 GL entries (defer to Session 8).
 
 ---
 
@@ -133,3 +157,6 @@ _(Entries added per session below. Newest at top.)_
 | F-3 | 🔴 P0 | 1 | GL dual-write | `_post_journal_entry` p_tenant_id=NULL → accounting_periods RLS fail | ✅ Fixed — 20261115000047 |
 | F-4 | 🔴 P0 | 1 | Cross-cutting (64 SECDEFs) | `auth.uid()` denied under vosi_rpc_owner — every write RPC affected | ✅ Fixed — 20261115000048 (`public._current_user_id()` helper + sweep) |
 | F-5 | 🔴 P0 | 1 | Cross-cutting | Full sweep of remaining vosi_rpc_owner SECDEFs | ✅ Rolled into 20261115000048 |
+| F-6 | 🔴 P0 | 1 | Dashboard + Laporan (impersonation) | Impersonation retains platform_admin claim → cross-tenant read leak | 🟡 Open — Session 2 blocker |
+| F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | 🟡 Open |
+| F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |

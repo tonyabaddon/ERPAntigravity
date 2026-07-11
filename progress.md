@@ -22,7 +22,15 @@
 **Follow-ups not blocking Session 1:**
 - Backfill missing GL entries for historical kasir sales that ran under the F-2 bug (72 of 83 Garindo kasir_transactions). Defer to Session 8 (bulanan close prep).
 - Adopt a `pg_get_functiondef` CI check that flags any new `auth.uid()` reference in a `vosi_rpc_owner`-owned SECDEF before merge.
-- Continue Session 1 remaining checks: Laporan revenue chart update, Dashboard KPI update, Tutup Buku Harian preview + PDF.
+
+**Additional Session 1 findings (Dashboard + Laporan review post-fix):**
+- **F-6 (P0) — impersonation retains platform_admin claim, reader queries leak cross-tenant.** Under garindo impersonation the Dashboard "Detak Jantung AI" log renders toko-jaya-makmur messages, and Laporan Performa totals + Produk Terlaris show toko-jaya SKUs. Kasir screen is clean (queries explicitly filter by tenant). Root cause: `p_platform_admin_readall` supplementary RLS fires for platform_admin regardless of impersonation state. Recommendation: JWT-level fix in `impersonate_tenant` RPC to drop the platform_admin claim when impersonating. Session 2 blocker until this is resolved — can't tell tenant-scoped vs cross-tenant numbers.
+- **F-7 (P1) — Laporan Performa Produk Terlaris "Revenue" column always Rp 0** while QTY is populated. Likely a stale column reference in the aggregation query.
+- **F-8 (P1) — Laporan Performa "7 Hari" toggle renders 30-day chart + 30-day Total Omset.** Range selector state disconnected from query.
+
+**Session 1 status:** Cash-walkin write path GREEN + kasir screen totals reconcile. Dashboard KPI cards move but AI log leaks. Laporan blocked by F-6. Ready to move on to Session 2 after F-6 fix designed.
+
+---
 
 ---
 
