@@ -385,8 +385,8 @@ Resolution notes (optional) + additional photos (optional, e.g. WA screenshot).
 **Approval gate handling:**
 - On submit: RPC checks `approval_settings`
 - If threshold hit + verification_method='PIN': inline PIN input appears, RPC verifies + proceeds
-- If verification_method='WA_BUTTON': modal shows "Menunggu approval owner via WA", RPC creates approval_request, returns PENDING_APPROVAL. Owner WA button callback resolves.
 - If verification_method='APP_INBOX': modal shows "Ditambahkan ke inbox owner", RPC creates approval_request, returns PENDING_APPROVAL. Owner sees in inbox menu, approves, callback resolves.
+- **WA_BUTTON not supported for this feature** — WA-based approval feels like overhead for a workflow already covered by in-app inbox. Per-tenant `approval_settings` for RESOLVE_SUPPLIER_CLAIM only accepts PIN or APP_INBOX.
 - If no gate: submit inline, close modal, refresh list.
 
 **Variance handling UI:**
@@ -480,9 +480,9 @@ Default: no gate. Tenant configures via Pengaturan → Approval Settings:
 - `approval_required` (bool)
 - `threshold_amount` (Rp — trigger when `resolution_amount ≥ threshold`)
 - `threshold_qty` (unused for claims)
-- `verification_method` (PIN | WA_BUTTON | APP_INBOX)
+- `verification_method` (PIN | APP_INBOX only — WA_BUTTON explicitly excluded for this feature)
 
-### 7.2 Three verification flows in `resolve_supplier_claim`
+### 7.2 Two verification flows in `resolve_supplier_claim`
 
 **PIN inline:**
 1. UI shows PIN input when threshold hit
@@ -491,22 +491,19 @@ Default: no gate. Tenant configures via Pengaturan → Approval Settings:
 4. On pass: proceed with resolution, post journal, return SUCCESS
 5. Idempotent: RPC checks `approval_request_id` on claim — if already granted, skip verification
 
-**WA_BUTTON (async):**
+**APP_INBOX (async):**
 1. UI submits without PIN
 2. RPC creates `approval_requests` row (existing table), links `supplier_claims.approval_request_id`
 3. RPC returns `{status: 'PENDING_APPROVAL', approval_request_id}`
-4. UI shows "Menunggu owner via WA"
-5. Owner receives WA message with approve/reject button (existing WA plumbing)
-6. Callback flow: on approve, WA webhook updates `approval_requests.status='APPROVED'`, then triggers `resolve_supplier_claim` retry (idempotent — proceeds because approval_request_id already linked and status=APPROVED)
+4. UI shows "Ditambahkan ke inbox owner"
+5. Owner sees pending item in existing Approval Inbox menu
+6. Callback flow: owner clicks approve → updates `approval_requests.status='APPROVED'` → triggers `resolve_supplier_claim` retry (idempotent — proceeds because approval_request_id already linked and status=APPROVED)
 
-**APP_INBOX:**
-1. Same as WA_BUTTON step 1-4
-2. Owner sees pending item in existing Approval Inbox menu
-3. Owner clicks approve → same callback flow
+**WA_BUTTON explicitly not supported.** Rationale: (a) in-app inbox already covers async owner approval without external dependencies, (b) WA callback plumbing adds failure modes (webhook delays, delivery failures) without proportional UX benefit for this workflow, (c) reduces test surface. If tenant configures verification_method='WA_BUTTON' for RESOLVE_SUPPLIER_CLAIM, RPC returns error `wa_not_supported_for_claim_resolve` — Pengaturan UI should also grey out the WA option for this request_type.
 
 ### 7.3 Idempotency in resolve
 
-`idempotency_key` UNIQUE per tenant. Same key resubmitted returns cached result. Prevents double-post on retry or duplicate WA callback.
+`idempotency_key` UNIQUE per tenant. Same key resubmitted returns cached result. Prevents double-post on retry.
 
 ---
 
@@ -691,7 +688,7 @@ Explicitly out of scope for Item #1 delivery:
 - [ ] Admin can flag rusak inline during opname with disposition choice
 - [ ] Klaim Supplier menu shows all pending claims from PO + opname + adjustment sources
 - [ ] Resolve flow supports all 4 outcomes with correct journals (verified balance)
-- [ ] Owner-configurable approval gate works with all 3 verification methods (PIN, WA, inbox)
+- [ ] Owner-configurable approval gate works with PIN + APP_INBOX (WA_BUTTON explicitly not supported for this workflow)
 - [ ] Existing PO damage UI (`ReceiveGoodsModal`, `ReceiveReplacementModal`) works without user-visible regression
 - [ ] Backfill migration completes on staging without data loss
 - [ ] Feature flag `enable_pi_damage_split` toggles behavior cleanly
