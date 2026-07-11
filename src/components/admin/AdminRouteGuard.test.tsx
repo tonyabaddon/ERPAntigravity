@@ -5,6 +5,9 @@ import { AdminRouteGuard } from './AdminRouteGuard';
 
 const mockIsPlatformAdmin = vi.fn();
 const mockAdminToastError = vi.fn();
+const mockGetSession = vi.fn(() =>
+  Promise.resolve({ data: { session: null }, error: null })
+);
 
 vi.mock('../../lib/supabaseClient', () => ({
   supabase: {
@@ -12,12 +15,24 @@ vi.mock('../../lib/supabaseClient', () => ({
       // Guard now performs a server heartbeat via refreshSession() before
       // trusting the JWT claim; mock so tests don't blow up on undefined.
       refreshSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
+      getSession: () => mockGetSession(),
     },
   },
   tenantContextService: {
     isPlatformAdmin: () => mockIsPlatformAdmin() as Promise<boolean>,
   },
 }));
+
+// Build a signed-looking JWT with the given claims (base64url-encoded).
+// The guard decodes the middle segment only; signature is not verified.
+function buildFakeJwt(claims: Record<string, unknown>): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = btoa(JSON.stringify(claims))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+  return `${header}.${payload}.fake-signature`;
+}
 
 vi.mock('../../lib/adminToast', () => ({
   adminToast: {
@@ -35,6 +50,8 @@ const originalLocation = window.location;
 beforeEach(() => {
   vi.clearAllMocks();
   mockAssign.mockClear();
+  // Default: no active session → readImpersonationSlug returns null
+  mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
   // Replace window.location with a writable mock
   Object.defineProperty(window, 'location', {
     writable: true,
@@ -95,5 +112,37 @@ describe('AdminRouteGuard', () => {
     );
     await waitFor(() => expect(mockAssign).toHaveBeenCalledWith('/dashboard'));
     expect(mockAdminToastError).toHaveBeenCalledWith('Halaman khusus admin');
+  });
+
+  it('redirects impersonating admin back to /t/<slug>/dashboard with toast', async () => {
+    // F-6 companion: admin with active impersonation URL-hacks to /admin.
+    // We bounce them to the impersonated tenant's dashboard so they can Stop
+    // Impersonation from the banner instead of hitting RPC 403s.
+    mockIsPlatformAdmin.mockResolvedValue(true);
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: buildFakeJwt({
+            sub: '00000000-0000-0000-0000-000000000001',
+            is_platform_admin: true,
+            impersonating: true,
+            impersonating_slug: 'garindo',
+          }),
+        },
+      },
+      error: null,
+    });
+    render(
+      <AdminRouteGuard>
+        <div>Tidak boleh terlihat</div>
+      </AdminRouteGuard>
+    );
+    await waitFor(() =>
+      expect(mockAssign).toHaveBeenCalledWith('/t/garindo/dashboard?screen=dashboard')
+    );
+    expect(mockAdminToastError).toHaveBeenCalledWith(
+      'Stop impersonation dulu sebelum masuk VOSI Admin'
+    );
+    expect(screen.queryByText('Tidak boleh terlihat')).not.toBeInTheDocument();
   });
 });

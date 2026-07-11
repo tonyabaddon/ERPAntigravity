@@ -112,23 +112,27 @@ _(Entries added per session below. Newest at top.)_
 ### F-5 [✅ FIXED] Cross-cutting `vosi_rpc_owner` SECDEF sweep
 - Rolled into F-4's permanent fix (migration 20261115000048). Any new SECDEF written against `vosi_rpc_owner` should call `public._current_user_id()` instead of `auth.uid()`; going forward, add a CI check via `pg_get_functiondef` audit before shipping migrations.
 
-### F-6 [🔴 P0] Impersonation retains `platform_admin` — reader queries leak cross-tenant
-- **Module:** Dashboard (Detak Jantung AI log), Laporan Performa (all totals + Produk Terlaris), likely more.
-- **Reproduction:** Log in as `tonywei.office` (platform_admin + garindo owner) → impersonate garindo → open Dashboard. AI Log shows entries with tenant_id = toko-jaya-makmur (verified via SQL: rows `077efaef…`, `ccf5f837…`, `d7826769…`, all `tenant_id = 22222…`). Open Laporan Performa → Total Omset 7d Rp 37.756.000 (impossible for garindo alone), Produk Terlaris top-5 are all toko-jaya SKUs (Detergen Bubuk / Gula Pasir / Beras Premium / Terigu — verified via SQL, `tenant_id = 22222…`).
-- **Root cause:** Impersonation JWT swap changes `tenant_id` claim but keeps the user's platform-wide role. RLS supplementary policy `p_platform_admin_readall` fires and lets the client read every tenant's rows. Reader queries in the tenant UI trust RLS to scope by tenant instead of adding `WHERE tenant_id = _resolve_tenant_id()` themselves.
-- **Blast radius:** any tenant screen whose read query has no explicit `tenant_id` predicate. Includes at minimum: dashboard messages panel, Laporan Performa totals + top products, top-N kanal breakdown. Kasir screen is clean (queries clearly filter by tenant) so the write path stays consistent — but reporting numbers are wrong under impersonation.
-- **Fix options (permanent):**
-  1. **JWT-level:** during `impersonate_tenant`, mint a JWT that drops the `platform_admin` role claim so RLS scoping works. Cleanest — no frontend touching required.
-  2. **Query-level:** every tenant-UI reader adds `.eq('tenant_id', tenantId)` explicitly. Repetitive, easy to miss, brittle.
-  3. **Policy-level:** rewrite `p_platform_admin_readall` to only fire when a session marker (e.g. `current_setting('vosi.platform_read_mode') = 'on'`) is set — off by default, only VOSI Admin surfaces set it.
-- **Recommendation:** option 1. Investigate `impersonate_tenant` RPC and `src/App.tsx` impersonation handling next session.
-- **Fix status:** open — Session 2 blocker if we can't tell what's tenant-scoped vs cross-tenant during future testing.
+### F-6 [✅ FIXED — Phase 1] Impersonation retains `platform_admin` — reader queries leaked cross-tenant
+- **Module:** Dashboard (Detak Jantung AI log), Laporan Performa (all totals + Produk Terlaris), 87 RLS-policied tables total.
+- **Reproduction:** Log in as `tonywei.office` (platform_admin + garindo owner) → impersonate garindo → open Dashboard. AI Log showed entries with tenant_id = toko-jaya-makmur. Open Laporan Performa → Total Omset 7d Rp 37.756.000 (impossible for garindo), Produk Terlaris top-5 all toko-jaya SKUs.
+- **Root cause:** `_is_platform_admin_from_jwt()` returned TRUE whenever JWT carried `is_platform_admin=true` — no check for `impersonating`. That helper backed the `p_platform_admin_readall` supplementary RLS on 87 tables + 14 admin-write RPC gates. During impersonation the admin's read-all bypass fired, letting reader queries with no explicit `tenant_id` predicate leak.
+- **Permanent fix:** migration `20261115000049_impersonation_scope_platform_admin_readall.sql` + `src/components/admin/AdminRouteGuard.tsx` update.
+  1. Introduce new helper `_is_platform_admin_active_from_jwt()` — same semantic as old but returns `false` when `impersonating=true`. Explicit name so future policies can't accidentally revert to the lax semantic.
+  2. Sweep 87 RLS policies (rewrite `qual`/`with_check` via `ALTER POLICY ... USING`) and 14 admin RPCs (`pg_get_functiondef` + `replace` + `EXECUTE`) to reference new helper.
+  3. `DROP FUNCTION _is_platform_admin_from_jwt()` so no callsite drifts back.
+  4. In-place smoke test with three fake JWT payloads (regular tenant / admin-not-impersonating / admin-impersonating).
+  5. Frontend: `AdminRouteGuard` now also denies during impersonation — redirects to `/t/<slug>/dashboard` with toast "Stop impersonation dulu sebelum masuk VOSI Admin", so URL-hacks don't hit RPC 403s. Added test case.
+- **Live verification (post-fix):**
+  - Dashboard Total Omset 7d: Rp 37.756.000 → **Rp 300.000** (matches 6 WLK × 50k).
+  - Dashboard AI log: toko-jaya messages gone; only garindo activity shown.
+  - Laporan Total Omset: Rp 37.756.000 → **Rp 27.696.000** (garindo-only, 30d window).
+  - Laporan Produk Terlaris: toko-jaya SKUs gone; garindo SKUs with correct revenue.
+- **Fix status:** ✅ Applied 2026-07-11.
 
-### F-7 [🟠 P1] Laporan Performa "Produk Terlaris" revenue column always Rp 0
+### F-7 [✅ FIXED — side-effect of F-6] Laporan Performa "Produk Terlaris" revenue column always Rp 0
 - **Module:** Laporan → Performa → Produk Terlaris table.
-- **Reproduction:** Impersonate any tenant → Laporan Performa → look at top-5. QTY column populated (Detergen 45, Gula Pasir 38, etc.); REVENUE column shows Rp 0 for every row.
-- **Root cause hypothesis:** query aggregates units sold but joins on a stale price column that no longer exists (memory of `stocks.harga_beli` failing earlier — schema now uses `harga_modal` and different column names). Needs code inspection of the Laporan Performa fetcher.
-- **Fix status:** open — investigate query in Laporan tab.
+- **Root cause:** column was Rp 0 because the query was hitting toko-jaya SKUs (via F-6 leak) which have zero garindo sales, so revenue aggregation was zero. Once F-6 scoped the query to garindo, revenue populates with real numbers.
+- **Fix status:** ✅ Resolved as side-effect of F-6.
 
 ### F-8 [🟠 P1] Laporan Performa "7 Hari" toggle shows 30-day chart
 - **Module:** Laporan → Performa → range selector.
@@ -157,6 +161,7 @@ _(Entries added per session below. Newest at top.)_
 | F-3 | 🔴 P0 | 1 | GL dual-write | `_post_journal_entry` p_tenant_id=NULL → accounting_periods RLS fail | ✅ Fixed — 20261115000047 |
 | F-4 | 🔴 P0 | 1 | Cross-cutting (64 SECDEFs) | `auth.uid()` denied under vosi_rpc_owner — every write RPC affected | ✅ Fixed — 20261115000048 (`public._current_user_id()` helper + sweep) |
 | F-5 | 🔴 P0 | 1 | Cross-cutting | Full sweep of remaining vosi_rpc_owner SECDEFs | ✅ Rolled into 20261115000048 |
-| F-6 | 🔴 P0 | 1 | Dashboard + Laporan (impersonation) | Impersonation retains platform_admin claim → cross-tenant read leak | 🟡 Open — Session 2 blocker |
-| F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | 🟡 Open |
+| F-6 | 🔴 P0 | 1 | Dashboard + Laporan (impersonation) | Impersonation retains platform_admin claim → cross-tenant read leak | ✅ Fixed — 20261115000049 (`_is_platform_admin_active_from_jwt()` helper + 87 policies + 14 RPCs) + AdminRouteGuard update |
+| F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | ✅ Resolved as side-effect of F-6 |
 | F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |
+| F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | 🟡 Open — Phase 2 |

@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 (later) — Access links & logins doc
+
+**Goal:** founder needs a single doc with tenant dashboard URLs, VOSI Admin URL, and every login that works today.
+
+**Deliverable:** `docs/access-links-and-logins.md` — snapshot as of 2026-07-11, sourced from live SQL against `public.tenants` / `tenant_users` / `admin_users` / `platform_admins` in project `ekhhojaezdfjfwuxyjkl`.
+
+Contents:
+- Cloud Run host + auth notes (Supabase OTP/password)
+- Per-tenant block for **Garindo Jaya Panel** (`/t/garindo/…`), **Toko Jaya Makmur** (`/t/toko-jaya-makmur/…`), **Warung Sinar Rezeki** (`/t/warung-sinar-rezeki/…`) — slug, tenant_id, aktifasi date, all Aktif owner emails + inactive/staff for context.
+- VOSI Admin section (`/admin`) — sole super_admin `tonywei.office@gmail.com`; sales_rep role supported but zero seed (flagged how to create the first one).
+- Gotchas: slug-guard redirect, F-6 impersonation JWT leak (so QA teammate doesn't impersonate for cross-tenant testing), plus-alias inbox routing.
+
+No code changes.
+
+---
+
 ## 2026-07-11 (Session 1 QA cycle) — Kasir cash-walkin flow + 5 cross-cutting P0 write-path fixes
 
 **Context:** kicked off the end-to-end QA cycle (per plan in `docs/qa/QA_FINDINGS.md`). Session 1 scenario A = single walk-in cash sale via Sales Invoice wizard, impersonating garindo. Ran into cascading RLS write-path failures — each fix uncovered the next layer. All 5 findings are permanent DB-level fixes, no frontend changes needed.
@@ -31,6 +47,28 @@
 **Session 1 status:** Cash-walkin write path GREEN + kasir screen totals reconcile. Dashboard KPI cards move but AI log leaks. Laporan blocked by F-6. Ready to move on to Session 2 after F-6 fix designed.
 
 ---
+
+## 2026-07-11 (Phase 1 F-6 fix) — impersonation-scoped reader RLS
+
+**Follow-up to Session 1's F-6 finding.** Two phases planned:
+- Phase 1 (this commit): scope reader queries at RLS layer during impersonation
+- Phase 2 (deferred): grant-gated impersonation start (F-10)
+
+**Root cause:** `_is_platform_admin_from_jwt()` returned true whenever JWT carried `is_platform_admin=true`. It ignored the `impersonating` claim. That helper backed 87 supplementary RLS policies (`p_platform_admin_readall`-style) and 14 admin-write RPC gates. During impersonation the admin's read-all bypass fired, letting readers without explicit tenant filters leak cross-tenant.
+
+**Fix:** migration `20261115000049` + `src/components/admin/AdminRouteGuard.tsx` update.
+- Introduced `public._is_platform_admin_active_from_jwt()` — same semantic as old helper but returns false when `impersonating=true`. Explicit name so it can't get accidentally reverted.
+- Swept 87 policies via `ALTER POLICY ... USING (replace(qual, old, new))` and 14 functions via `pg_get_functiondef` + `replace` + `EXECUTE`. Dropped old helper. In-place smoke test with three fake JWT scenarios (regular / admin / admin-impersonating) — all passed.
+- `AdminRouteGuard` now also redirects during impersonation to `/t/<slug>/dashboard` with toast "Stop impersonation dulu sebelum masuk VOSI Admin" — prevents URL-hacks to `/admin` from hitting RPC 403s.
+- Added test case for the impersonation-deny path (5/5 tests pass).
+
+**Live verification under garindo impersonation:**
+- Dashboard Total Omset 7d: **Rp 37.756.000 → Rp 300.000** (matches 6 walk-in × 50k).
+- Dashboard AI log: toko-jaya `PITCH-ORDER-001` / `Bpk Anton` / `Ibu Sari` messages gone.
+- Laporan Total Omset: **Rp 37.756.000 → Rp 27.696.000** (garindo-only 30d).
+- Laporan Produk Terlaris: toko-jaya SKUs gone; garindo SKUs with correct revenue populated (F-7 resolved as side-effect).
+
+**Phase 2 follow-up (F-10, not in this commit):** grant-gated impersonation. Even after Phase 1 scopes reads correctly, any platform_admin can currently impersonate any tenant without that tenant's consent. Design: `tenant_impersonation_grants` table + `impersonate_tenant` gate + tenant UI Pengaturan → Support Access (grant/revoke + PIN owner) + VOSI Admin impersonate button gated on grant.
 
 ---
 
