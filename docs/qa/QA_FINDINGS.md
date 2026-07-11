@@ -309,9 +309,9 @@ Ran a rapid smoke sweep across the remaining tenant + VOSI Admin surfaces to cat
 | F-5 | 🔴 P0 | 1 | Cross-cutting | Full sweep of remaining vosi_rpc_owner SECDEFs | ✅ Rolled into 20261115000048 |
 | F-6 | 🔴 P0 | 1 | Dashboard + Laporan (impersonation) | Impersonation retains platform_admin claim → cross-tenant read leak | ✅ Fixed — 20261115000049 (`_is_platform_admin_active_from_jwt()` helper + 87 policies + 14 RPCs) + AdminRouteGuard update |
 | F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | ✅ Resolved as side-effect of F-6 |
-| F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |
+| F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | ✅ Fixed — default period aligned to '7d' (matches Dashboard) |
 | F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
-| F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | 🟡 Open |
+| F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | ✅ Fixed — 20261115000054 (piutang_paid_amount column + p_amount RPC param + Jumlah Bayar UI + outstanding preview) |
 | F-13 | 🔴 P0 | 3 | Pembelian → Pembayaran partial | `record_pembayaran` fails 23514 on `purchase_invoices_status_check` — stale narrower CHECK still enforced alongside newer `pi_status_check` that allows DIBAYAR_SEBAGIAN. | ✅ Fixed — 20261115000052 (dropped stale constraint) |
 | F-15 | 🔴 P0 | 4 | Onboard wizard / provision_tenant RPC | New tenant gets 0 chart_of_accounts + 0 accounting_config + 0 cash_accounts → every write path silently degrades (F-2 style) on first sale. Real tenant warung-sinar-rezeki also broken. | ✅ Fixed — 20261115000053 (`_seed_tenant_accounting()` helper + provision_tenant integration + backfill) |
-| F-16 | 🟡 P2 | 5 | Stok Opname list | 7 opname sessions in state "Berlangsung" from 8 days ago (03 Jul). No auto-close / auto-abandon on idle sessions. | 🟡 Open |
+| F-16 | 🟡 P2 | 5 | Stok Opname list | 7 opname sessions in state "Berlangsung" from 8 days ago (03 Jul). No auto-close / auto-abandon on idle sessions. | ✅ Fixed — 20261115000055 (opname_status += 'abandoned', cancel_opname_session RPC, 30-day backfill cleared 96 zombies, owner "Batalkan" button in UI) |

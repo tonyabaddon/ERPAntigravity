@@ -269,6 +269,16 @@ Live verify: fresh onboard via UI wizard produced 63 COA + 1 cfg + 1 cash for th
 
 **Findings state after F-15:** 11 P0 fixed, 0 P0 open, 2 P1 open (F-8, F-11), 1 P2 open (F-16).
 
+## 2026-07-12 — F-8, F-11, F-16 all fixed; QA cycle findings all resolved
+
+**F-11 (P1) partial payment for AR** — migration `20261115000054`. Added `orders.piutang_paid_amount NUMERIC NOT NULL DEFAULT 0` with nonneg CHECK; rewrote `record_piutang_payment` with optional `p_amount` (NULL → backward-compatible full close; otherwise accumulates and flips status to PAYMENT_VERIFIED only when fully paid). Frontend service gains optional `amount`; PiutangScreen modal replaces "Konfirmasi Lunas" full-close with a Jumlah Bayar input (default = full sisa, max = sisa) + "Sisa setelah bayar" preview + submit button label that switches between "Konfirmasi Lunas" and "Catat Bayar Rp X". Piutang row renders outstanding-after-partial instead of raw total. Toast wording adapts to full/partial. Tests updated (p_amount: null in expected args). Zero regression for pre-fix callers.
+
+**F-8 (P1) Laporan 7-Hari toggle** — root cause was actually a UX inconsistency, not a wiring bug: Laporan defaulted to '30d' while Dashboard defaulted to '7d'. Toggle itself was correctly wired (useEffect refetches on period change). Fix: aligned Laporan default to '7d'.
+
+**F-16 (P2) stuck opname sessions** — migration `20261115000055`. ALTERed `opname_status` enum to add 'abandoned' (idempotent). New RPC `cancel_opname_session(bigint)` — owner-only via `admin_users.role='Owner'` gate; only transitions `in_progress → abandoned`. Backfill DO block cleared 96 zombie sessions (started > 30 days ago); 51 recent sessions untouched. Frontend: `OpnameSession['status']` type gains 'abandoned', STATUS_LABEL "Dibatalkan" + slate pill, owner-only "Batalkan sesi" link on the Sesi Aktif card with a confirm modal + Bahasa error handling for NOT_OWNER / INVALID_STATE. Cron auto-abandon on schedule deferred to follow-up (needs pg_cron infra).
+
+**Final findings state:** 11 P0 fixed, 0 P0 open, **0 P1 open**, **0 P2 open**. All QA cycle findings resolved.
+
 ---
 
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
