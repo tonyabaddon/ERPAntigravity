@@ -39,10 +39,12 @@ export const approvalSettingsService = {
 // ─── tenant_settings ────────────────────────────────────────────────────
 export const tenantSettingsService = {
   async fetch(): Promise<DbTenantSettings | null> {
+    // RLS scopes to the caller's tenant; no explicit tenant_id filter needed.
+    // Legacy `.is('tenant_id', null)` matched the single-tenant seed and now
+    // returns zero rows, which surfaced as "Tenant settings tidak ditemukan".
     const { data, error } = await supabase
       .from('tenant_settings')
       .select('*')
-      .is('tenant_id', null)
       .maybeSingle();
     if (error) throw error;
     return data as DbTenantSettings | null;
