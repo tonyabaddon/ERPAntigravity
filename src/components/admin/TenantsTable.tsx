@@ -81,28 +81,54 @@ function SortableHeader({ label, colKey, sortBy, sortDir, onSort }: SortableHead
 
 // ─── Impersonate action ───────────────────────────────────────────────────────
 
+export interface ImpersonationAccessStatus {
+  status: 'native' | 'grant' | 'blocked';
+  expires_at: string | null;
+}
+
 interface ImpersonateButtonProps {
   slug: string;
   name: string;
   onImpersonate: (slug: string) => void;
   impersonating: string | null;
+  access: ImpersonationAccessStatus | undefined;
 }
 
-function ImpersonateButton({ slug, name, onImpersonate, impersonating }: ImpersonateButtonProps) {
+function fmtExpiryShort(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const hours = Math.floor((d.getTime() - now.getTime()) / (3600 * 1000));
+  if (hours < 1) return 'expiring soon';
+  if (hours < 24) return `expires in ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `expires in ${days}d`;
+}
+
+function ImpersonateButton({ slug, name, onImpersonate, impersonating, access }: ImpersonateButtonProps) {
   const busy = impersonating === slug;
+  // Default to 'blocked' if status hasn't loaded yet — safer than showing
+  // an enabled button that will 403.
+  const status = access?.status ?? 'blocked';
+  const isBlocked = status === 'blocked';
+  const title = isBlocked
+    ? 'Butuh grant dari tenant (Pengaturan → Support Access).'
+    : status === 'native'
+    ? `Impersonasi ${name} (akses lewat native seat).`
+    : `Impersonasi ${name} — grant ${fmtExpiryShort(access?.expires_at ?? null)}.`;
   return (
     <button
       onClick={() => onImpersonate(slug)}
-      disabled={impersonating !== null}
-      title={`Impersonasi ${name}`}
-      className="rounded px-2 py-0.5 text-[11px] font-semibold border transition-opacity disabled:opacity-40"
+      disabled={impersonating !== null || isBlocked}
+      title={title}
+      className="rounded px-2 py-0.5 text-[11px] font-semibold border transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
-        borderColor: '#F9B233',
-        color: busy ? '#F9B233' : '#0B2545',
+        borderColor: isBlocked ? '#cbd5e1' : '#F9B233',
+        color: busy ? '#F9B233' : isBlocked ? '#94a3b8' : '#0B2545',
         background: busy ? '#fffbeb' : 'transparent',
       }}
     >
-      {busy ? 'Masuk…' : 'Impersonasi'}
+      {busy ? 'Masuk…' : isBlocked ? 'No access' : 'Impersonasi'}
     </button>
   );
 }
@@ -120,6 +146,8 @@ interface TenantsTableProps {
   impersonating: string | null;
   /** Only super_admins see the Impersonasi button. Backend rejects sales_reps. */
   canImpersonate?: boolean;
+  /** F-10 Phase 2c: per-tenant grant status. Undefined means unloaded → button disabled. */
+  accessStatus?: Map<string, ImpersonationAccessStatus>;
   onRowActionSuccess: () => void;
 }
 
@@ -131,6 +159,7 @@ export function TenantsTable({
   onImpersonate,
   impersonating,
   canImpersonate = false,
+  accessStatus,
   onRowActionSuccess,
 }: TenantsTableProps) {
   // Suspend modal state
@@ -272,6 +301,7 @@ export function TenantsTable({
                       name={t.name}
                       onImpersonate={onImpersonate}
                       impersonating={impersonating}
+                      access={accessStatus?.get(t.slug)}
                     />
                   )}
                   {t.status === 'ACTIVE' && (

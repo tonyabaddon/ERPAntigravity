@@ -3,7 +3,7 @@
 // Aktifkan confirm+success flow, ARCHIVED row shows —, impersonation preserved.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { TenantsTable } from './TenantsTable';
+import { TenantsTable, ImpersonationAccessStatus } from './TenantsTable';
 import type { AdminTenantRow } from '../../lib/adminTypes';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
@@ -58,8 +58,15 @@ function defaultProps(
   overrides: {
     onImpersonate?: (slug: string) => void;
     onRowActionSuccess?: () => void;
+    accessStatus?: Map<string, ImpersonationAccessStatus>;
   } = {}
 ) {
+  // F-10 Phase 2c: pre-existing tests assume the Impersonasi button is
+  // rendered enabled. Give every fixture row a 'native' access status by
+  // default so we don't need to touch each individual test.
+  const defaultAccess: Map<string, ImpersonationAccessStatus> = new Map(
+    rows.map((r) => [r.slug, { status: 'native' as const, expires_at: null }])
+  );
   return {
     rows,
     sortBy: 'name' as const,
@@ -70,6 +77,7 @@ function defaultProps(
     // Default super_admin so the existing tests (which pre-date the gate)
     // continue to see the Impersonasi button.
     canImpersonate: true,
+    accessStatus: overrides.accessStatus ?? defaultAccess,
     onRowActionSuccess: overrides.onRowActionSuccess ?? vi.fn(),
   };
 }

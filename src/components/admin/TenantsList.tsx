@@ -5,11 +5,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { listTenantsAdmin } from '../../lib/adminApi';
 import type { AdminTenantRow, PlanCode, TenantStatus, TenantsListFilters } from '../../lib/adminTypes';
-import { tenantContextService } from '../../lib/supabaseClient';
+import { supabase, tenantContextService } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
 import { isSuperAdmin } from '../../lib/adminAuth';
 import { TenantsTable } from './TenantsTable';
-import type { SortBy } from './TenantsTable';
+import type { SortBy, ImpersonationAccessStatus } from './TenantsTable';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -65,6 +65,12 @@ export function TenantsList() {
     isSuperAdmin().then((v) => { if (!cancelled) setCanImpersonate(v); }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+  // Per-tenant impersonation access status (F-10 Phase 2c). Fetched after
+  // the tenant list loads. Slugs with 'native' or 'grant' status allow the
+  // Impersonate button; 'blocked' disables it with tooltip.
+  const [accessStatus, setAccessStatus] = useState<Map<string, ImpersonationAccessStatus>>(
+    new Map()
+  );
 
   // Refresh key — bumped after suspend/activate to re-fetch current page
   const [refreshKey, setRefreshKey] = useState(0);
@@ -139,6 +145,45 @@ export function TenantsList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, planCode, status, expiryWithinDays, sortBy, sortDir, page, refreshKey]);
 
+  // ─── Access status fetch (F-10 Phase 2c) ────────────────────────────────────
+  // After the tenant list resolves, look up the caller's impersonation
+  // access status for each visible slug. Batched RPC returns
+  // (slug, status, expires_at). Un-mapped slugs default to 'blocked'.
+  useEffect(() => {
+    if (!canImpersonate || rows.length === 0 || !supabase) {
+      setAccessStatus(new Map());
+      return;
+    }
+    let cancelled = false;
+    const slugs = rows.map((r) => r.slug);
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc('admin_impersonation_access_status', {
+          p_slugs: slugs,
+        });
+        if (cancelled) return;
+        if (error) {
+          console.error('admin_impersonation_access_status error:', error);
+          return;
+        }
+        const map = new Map<string, ImpersonationAccessStatus>();
+        for (const row of (data ?? []) as Array<{
+          slug: string;
+          status: 'native' | 'grant' | 'blocked';
+          expires_at: string | null;
+        }>) {
+          map.set(row.slug, { status: row.status, expires_at: row.expires_at });
+        }
+        setAccessStatus(map);
+      } catch (err) {
+        console.error('access status fetch failed:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rows, canImpersonate]);
+
   // ─── Impersonation ──────────────────────────────────────────────────────────
 
   async function handleImpersonate(slug: string) {
@@ -151,7 +196,17 @@ export function TenantsList() {
       window.location.href = `/t/${slug}/dashboard`;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      adminToast.error(`Gagal impersonasi tenant "${slug}"`, msg);
+      // F-10: humanize the grant-related errors so admins know what to do.
+      let userMsg = msg;
+      if (msg.includes('IMPERSONATION_NOT_GRANTED')) {
+        userMsg =
+          'Belum ada grant aktif dari tenant. Minta owner untuk kasih akses lewat Pengaturan → Support Access.';
+      } else if (msg.includes('NOT_PLATFORM_ADMIN')) {
+        userMsg = 'Akun tidak terdaftar sebagai platform admin aktif.';
+      } else if (msg.includes('TENANT_NOT_FOUND')) {
+        userMsg = 'Tenant tidak ditemukan atau sedang tidak aktif.';
+      }
+      adminToast.error(`Gagal impersonasi "${slug}"`, userMsg);
       setImpersonating(null);
     }
   }
@@ -265,6 +320,7 @@ export function TenantsList() {
           onImpersonate={handleImpersonate}
           impersonating={impersonating}
           canImpersonate={canImpersonate}
+          accessStatus={accessStatus}
           onRowActionSuccess={() => setRefreshKey((k) => k + 1)}
         />
       )}

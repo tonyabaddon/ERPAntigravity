@@ -15,7 +15,18 @@ vi.mock('../../lib/adminApi', () => ({
   listTenantsAdmin: (filters: unknown) => listMock(filters),
 }));
 
+// F-10 Phase 2c: TenantsList calls supabase.rpc('admin_impersonation_access_status')
+// after rows load. Default the mock to grant native access to every slug so
+// pre-existing tests don't need to opt in per case.
+const accessStatusMock = vi.fn(async (_fn: string, args: { p_slugs: string[] }) => ({
+  data: args.p_slugs.map((s) => ({ slug: s, status: 'native', expires_at: null })),
+  error: null,
+}));
+
 vi.mock('../../lib/supabaseClient', () => ({
+  supabase: {
+    rpc: (fn: string, args: unknown) => accessStatusMock(fn, args as { p_slugs: string[] }),
+  },
   tenantContextService: {
     impersonateTenant: (slug: string) => impersonateMock(slug),
   },
