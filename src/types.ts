@@ -677,7 +677,7 @@ export interface OpnameSession {
   countedByUserId: string;
   witnessedByUserId: string;
   witnessAcknowledgedAt?: string | null;
-  status: 'in_progress' | 'pending_owner' | 'committed' | 'rejected';
+  status: 'in_progress' | 'pending_owner' | 'committed' | 'rejected' | 'abandoned';
   varianceTotalValue: number;
   approvalRequestId?: number | null;
   startedAt: string;

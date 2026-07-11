@@ -956,9 +956,12 @@ export const companySettingsService = {
     if (upErr) throw upErr;
     const { data: pub } = supabase.storage.from('branding').getPublicUrl(path);
     const url = pub.publicUrl;
-    const { error: updErr } = await supabase.from('company_settings')
+    // Invoice PDF (SalesInvoicePDF.tsx via fetchStoreSettings) reads
+    // store_settings.logo_url — not company_settings.logo_url. RLS
+    // t_update_own scopes the update to the caller's tenant.
+    const { error: updErr } = await supabase.from('store_settings')
       .update({ logo_url: url, updated_at: new Date().toISOString() } as any)
-      .eq('tenant_id', tenantId);
+      .not('tenant_id', 'is', null);
     if (updErr) throw updErr;
     return url;
   },
@@ -971,9 +974,9 @@ export const companySettingsService = {
     if (error) throw error;
   },
 
-  async clearLogo(tenantId: string): Promise<void> {
+  async clearLogo(_tenantId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data: settings, error: fetchErr } = await supabase.from('company_settings')
+    const { data: settings, error: fetchErr } = await supabase.from('store_settings')
       .select('logo_url').maybeSingle();
     if (fetchErr) throw fetchErr;
     if (!settings?.logo_url) return;
@@ -981,7 +984,9 @@ export const companySettingsService = {
     if (filename) {
       await supabase.storage.from('branding').remove([filename]);
     }
-    await supabase.from('company_settings').update({ logo_url: null } as any).eq('tenant_id', tenantId);
+    await supabase.from('store_settings')
+      .update({ logo_url: null } as any)
+      .not('tenant_id', 'is', null);
   },
 
   // Costing method is stored as a column on the single-row company_settings table
@@ -1796,6 +1801,19 @@ export async function startOpnameSession(args: {
   });
   if (error) throw error;
   return data as number;
+}
+
+/**
+ * F-16: mark an in_progress opname session as abandoned. Owner-only per
+ * the SECDEF RPC. Only transitions in_progress → abandoned; any other
+ * source status raises an error the UI surfaces as a toast.
+ */
+export async function cancelOpnameSession(sessionId: number): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.rpc('cancel_opname_session', {
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
 }
 
 export async function recordOpnameCount(args: {

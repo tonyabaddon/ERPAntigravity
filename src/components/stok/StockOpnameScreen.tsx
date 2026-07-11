@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import {
+  cancelOpnameSession,
   fetchOpnameAuditLog,
   listOpnameSessions,
   startOpnameSession,
@@ -38,6 +39,7 @@ const STATUS_LABEL: Record<OpnameSession['status'], string> = {
   pending_owner: 'Menunggu Persetujuan',
   committed: 'Selesai',
   rejected: 'Ditolak',
+  abandoned: 'Dibatalkan',
 };
 
 const STATUS_PILL: Record<OpnameSession['status'], string> = {
@@ -45,6 +47,7 @@ const STATUS_PILL: Record<OpnameSession['status'], string> = {
   pending_owner: 'bg-blue-100 text-blue-800 border border-blue-200',
   committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
+  abandoned: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 
 function formatDateTime(iso: string): string {
@@ -66,6 +69,10 @@ export default function StockOpnameScreen({
   const [users, setUsers] = useState<DbAdminUser[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // F-16 cancel modal state
+  const [cancelTarget, setCancelTarget] = useState<OpnameSession | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   // Start-new-session modal state
   const [showStartModal, setShowStartModal] = useState(false);
@@ -228,7 +235,7 @@ export default function StockOpnameScreen({
             className="bg-white border border-amber-200 rounded-lg p-4 cursor-pointer hover:border-amber-400 transition"
           >
             <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
+              <div className="flex-1">
                 <span
                   className={`inline-block px-2 py-0.5 rounded-full text-xs ${STATUS_PILL[activeSession.status]}`}
                 >
@@ -242,6 +249,18 @@ export default function StockOpnameScreen({
                   {' · '}Saksi: <b>{counterName(activeSession.witnessedByUserId)}</b>
                   {' · '}Mulai {formatDateTime(activeSession.startedAt)}
                 </p>
+                {/* F-16: owner can cancel an in_progress session that no longer
+                    matters. Stops the "Riwayat" tab from filling with zombie
+                    rows and lets a new session start clean. */}
+                {currentUser?.role === 'Owner' && activeSession.status === 'in_progress' && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setCancelTarget(activeSession); }}
+                    className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-rose-700 hover:text-rose-800 hover:underline"
+                  >
+                    Batalkan sesi
+                  </button>
+                )}
               </div>
               {/* Blind-count discipline: while the session is IN_PROGRESS,
                   non-Owner roles must not see the running variance total.
@@ -442,6 +461,66 @@ export default function StockOpnameScreen({
                 className="flex-1 py-2 bg-emerald-600 text-white rounded-full text-sm disabled:opacity-50"
               >
                 {submitting ? 'Memulai…' : 'Mulai Sesi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* F-16 Cancel-session confirm modal — Owner only */}
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => !cancelling && setCancelTarget(null)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-sm w-full p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h2 className="font-bold text-slate-900">Batalkan sesi opname?</h2>
+              <p className="text-sm text-slate-600 mt-1">
+                Sesi <b>#{cancelTarget.id}</b> · {TYPE_LABEL[cancelTarget.opnameType]} — dimulai {formatDateTime(cancelTarget.startedAt)}.
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Sesi ditandai <b>Dibatalkan</b>. Perhitungan yang sudah masuk tetap tercatat sebagai audit, tapi tidak akan committed ke stok.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelTarget(null)}
+                disabled={cancelling}
+                className="flex-1 py-2 border border-slate-300 rounded-full text-sm hover:bg-slate-50 disabled:opacity-50"
+              >
+                Tidak
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={async () => {
+                  setCancelling(true);
+                  try {
+                    await cancelOpnameSession(cancelTarget.id);
+                    showToast(`Sesi #${cancelTarget.id} dibatalkan.`, 'success');
+                    setCancelTarget(null);
+                    await refresh();
+                  } catch (err) {
+                    const msg = err instanceof Error ? err.message : String(err);
+                    if (msg.includes('NOT_OWNER')) {
+                      showToast('Hanya Owner yang bisa membatalkan sesi opname.', 'warning');
+                    } else if (msg.includes('INVALID_STATE')) {
+                      showToast('Sesi ini sudah tidak Berlangsung — refresh dulu.', 'warning');
+                    } else {
+                      showToast(`Gagal batalkan sesi: ${msg}`, 'warning');
+                    }
+                  } finally {
+                    setCancelling(false);
+                  }
+                }}
+                className="flex-1 py-2 bg-rose-600 text-white rounded-full text-sm hover:bg-rose-700 disabled:opacity-50"
+              >
+                {cancelling ? 'Membatalkan…' : 'Ya, batalkan'}
               </button>
             </div>
           </div>

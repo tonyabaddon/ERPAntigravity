@@ -38,6 +38,7 @@ const STATUS_LABEL: Record<OpnameSession['status'], string> = {
   pending_owner: 'Menunggu Persetujuan',
   committed: 'Selesai',
   rejected: 'Ditolak',
+  abandoned: 'Dibatalkan',
 };
 
 const STATUS_PILL: Record<OpnameSession['status'], string> = {
@@ -45,6 +46,7 @@ const STATUS_PILL: Record<OpnameSession['status'], string> = {
   pending_owner: 'bg-blue-100 text-blue-800 border border-blue-200',
   committed: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   rejected: 'bg-rose-100 text-rose-800 border border-rose-200',
+  abandoned: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 
 function formatDateTime(iso: string): string {
