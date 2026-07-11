@@ -378,7 +378,14 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
 
       <button
         onClick={() => {
-          localStorage.setItem('sinar_elektrik_stocks', JSON.stringify(stockList));
+          // Re-fire onStockUpdate with the current list. Every individual edit
+          // (add/edit/delete) already calls onStockUpdate → App.handleStockUpdate
+          // → Supabase upsert, so this is a "confirm-all" safety net. Was writing
+          // to localStorage('sinar_elektrik_stocks') — a global key not scoped
+          // by tenant slug. Left tenant A's SKUs at rest on the browser profile
+          // (shared warung PC = data leak). No reader loaded it back, so no
+          // active bleed, but violated the tenant-scoped-storage discipline.
+          onStockUpdate(stockList);
           showToast('💾 Berhasil Menyimpan Semua Perubahan Inventaris!');
         }}
         className="fixed bottom-10 right-10 bg-[#2d8a4e] text-white px-10 py-5 rounded-full shadow-[0_20px_50px_rgba(45,138,78,0.3)] hover:shadow-[0_25px_60px_rgba(45,138,78,0.4)] transition-all duration-300 hover:-translate-y-1.5 flex items-center gap-2.5 z-50 cursor-pointer text-sm font-extrabold uppercase tracking-wide"

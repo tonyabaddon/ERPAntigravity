@@ -125,6 +125,10 @@ export default function App() {
   // this the header briefly renders the 'Toko Anda' fallback for ~200-500ms
   // after post-login reload while the async RPC is still in flight.
   const [sessionTenantLoaded, setSessionTenantLoaded] = useState<boolean>(false);
+  // Cached JWT claims from session-restore. Used by the slug-guard effect to
+  // detect platform admins synchronously (without racing an async isPlatformAdmin
+  // RPC) so it can defer tenant-switch routing to the impersonation preflight.
+  const [jwtClaims, setJwtClaims] = useState<Record<string, unknown> | null>(null);
   // Holds the kasir_transactions.id of the just-saved wizard transaction so
   // InvoicePreviewScreen can render its details after navigate('invoicePreview').
   // Kept in App state (not URL) because it's a transient hand-off — a refresh
@@ -229,6 +233,10 @@ export default function App() {
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
         });
+        // Cache JWT claims for the slug-guard effect (see below).
+        if (session.access_token) {
+          setJwtClaims(decodeJwt(session.access_token));
+        }
         // Fetch tenant slug for URL routing (drives the redirect + slug guard
         // below). Uses bootstrap_tenant_context RPC (SECURITY DEFINER) rather
         // than a direct SELECT on tenant_users — the latter hits the P1
@@ -279,6 +287,7 @@ export default function App() {
       if (!session) {
         setCurrentUser(null);
         setSessionTenantSlug(null); // clear slug so next login re-fetches
+        setJwtClaims(null); // clear cached JWT claims
         setSessionTenantName(null);
         setStockList([]); // don't bleed one tenant's stock into the next
         // Don't push 'auth' into URL — let the !currentUser gate render AuthScreen.
@@ -493,12 +502,18 @@ export default function App() {
     if (pathRoute.screen === 'login') return;
     if (!isSupabaseConfigured) return;          // dev mode
     if (pathRoute.tenantSlug === sessionTenantSlug) return; // already correct
+    // Platform admins own tenant switching via the impersonation preflight
+    // below — this slug-guard would race the preflight's impersonate+reload
+    // and could land the admin on /t/<old-impersonation> when the URL says
+    // /t/<new-target>. Non-admin tenant users are unaffected (isPlatformAdmin
+    // claim absent → false → guard runs as before).
+    if (jwtClaims?.is_platform_admin === true) return;
     const targetScreen = (route.screen !== 'dashboard' && ACTIVE_PAGES.has(route.screen as ActivePage))
       ? route.screen
       : 'dashboard';
     window.location.replace(`/t/${sessionTenantSlug}/${targetScreen}`);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, sessionTenantSlug]);
+  }, [currentUser, sessionTenantSlug, jwtClaims]);
 
   // Impersonation preflight: when a platform admin lands on `/t/<slug>/*`
   // without a matching JWT impersonation claim, silently swap the claim

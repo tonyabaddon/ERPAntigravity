@@ -42,6 +42,27 @@
 
 ---
 
+## 2026-07-11 — Tenant isolation audit findings + fixes
+
+**Audit trigger:** founder requested end-to-end audit confirming no cross-tenant data leakage after the impersonation stack landed. Dispatched 3 parallel agents (frontend data sources, RLS policies, state leaks).
+
+**Findings:**
+- **DB-level isolation SOLID.** 78 T-tables uniformly enforce `tenant_id = _resolve_tenant_id()`; 7 P/A tables platform-admin-gated; 2 `USING (true)` (plans, platform_settings) are intentional global catalogs; 13 views forced `security_invoker=true`. 0 risky policies.
+- **Dashboard data sources** all rely on direct `.from().select()` reads with implicit RLS scoping (no explicit `tenant_id` filter in code, none needed — RLS enforces).
+- **Impersonation flow correct.** Every tenant switch is a full-page `window.location.reload/href` — React state discarded, no in-place swap possible.
+
+**Fixes applied:**
+
+1. **`src/components/StockManagerScreen.tsx`** — Line 381 "Simpan Semua Perubahan" button was writing to `localStorage['sinar_elektrik_stocks']` (global, non-tenant-scoped key) and never persisting to Supabase. Both a broken save AND a data-at-rest leak on shared browser profiles. Replaced with `onStockUpdate(stockList)` which routes through App.handleStockUpdate → Supabase upserts.
+
+2. **`src/App.tsx` slug-guard vs impersonation preflight race.** Non-blocking bug but wrong redirect: admin impersonating tenant A opens `/t/B/dashboard` — slug-guard sees JWT slug='A' vs URL slug='B' and could win the race, landing admin at `/t/A` instead of `/t/B`. Fix: cache JWT claims in App state via session-restore; slug-guard early-returns when `jwtClaims.is_platform_admin === true` — preflight owns tenant switching for admins.
+
+3. **`supabase/migrations/20261115000042_tenants_id_anti_sentinel_check.sql`** — Defensive CHECK: `tenants.id <> '00000000-0000-0000-0000-000000000000'::uuid`. `_resolve_tenant_id()` returns the all-zeros UUID when the JWT tenant claim is missing; a real tenant with that id would collapse every unauthenticated session into it. Applied to remote — verified via `INSERT ... check_violation` roundtrip.
+
+**Tests:** `tsc --noEmit` clean. Constraint smoke-tested via MCP `execute_sql` (INSERT sentinel → `check_violation` raised → `ROLLBACK_OK`). No unit test regression.
+
+---
+
 ## 2026-07-11 — Fix "Toko Anda" flash on post-login/reload render
 
 **Follow-up polish on impersonation deploy.** After the silent auto-impersonate went live, header briefly (~200-500ms) showed the `'Toko Anda'` fallback before `bootstrap_tenant_context` RPC resolved and set the real tenant name. Race between initial render and async fetch. Cosmetic, single-render flash — but visible enough to distract on every login/reload.
