@@ -16,8 +16,9 @@ import ModulSwitchesPanel from './pengaturan/ModulSwitchesPanel';
 import JenisJasaCrudPanel from './pengaturan/JenisJasaCrudPanel';
 import ApprovalRulesPanel from './pengaturan/ApprovalRulesPanel';
 import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
+import SupportAccessPanel from './pengaturan/SupportAccessPanel';
 
-type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -52,8 +53,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
     if (isVisible('whatsappAi')) list.push({ id: 'whatsapp-ai', label: 'WhatsApp AI' });
     if (isVisible('canConfigureSalesChannels')) list.push({ id: 'kanal-penjualan', label: 'Kanal Penjualan' });
+    // Support Access: owner-only. F-10 Phase 2b.
+    if (currentUserRole === 'Owner') list.push({ id: 'support-access', label: 'Support Access' });
     return list;
-  }, [props.permissions]);
+  }, [props.permissions, currentUserRole]);
 
   const [activeTab, setActiveTab] = useState<PengaturanTab>(() => {
     if (props.initialTab && tabs.some(t => t.id === props.initialTab)) return props.initialTab;
@@ -487,6 +490,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           />
         )}
         {activeTab === 'kanal-penjualan' && <SalesChannelConfigPanel showToast={showToast} />}
+        {activeTab === 'support-access' && <SupportAccessPanel showToast={showToast} />}
       </div>
     </div>
   );
