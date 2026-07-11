@@ -72,6 +72,50 @@ No code changes.
 
 ---
 
+## 2026-07-11 (Phase 2 F-10) — grant-gated impersonation, tenant consent required
+
+**Follow-up to Phase 1.** Impersonation START is now consent-based. Any VOSI staff who wants to impersonate a tenant must have an active grant from that tenant OR a native seat in `tenant_users`. Shipped in three sub-phases:
+
+### Phase 2a — DB layer (migration `20261115000050` + `000051`)
+- New table `tenant_impersonation_grants(tenant_id, admin_user_id, admin_email, granted_by_*, granted_at, expires_at, revoked_*, reason)` with atomic revocation constraint + non-empty reason + future expiry checks. Two partial indexes on active grants.
+- RLS: tenant owner reads their own grants (via `_resolve_tenant_id`), grantee admin reads own cross-tenant grants (gated on `_is_platform_admin_active_from_jwt`). No client write policies — all writes via SECDEF postgres RPCs.
+- `grant_impersonation(email, hours, reason)` — owner-only, 1-720h window, denormalizes emails for display, audits `IMPERSONATION_GRANT_ISSUED`.
+- `revoke_impersonation(grant_id, reason)` — owner-only, marks revoked atomically AND deletes any active impersonation row for that admin+tenant (kicks them out mid-session), audits `IMPERSONATION_GRANT_REVOKED`.
+- `list_impersonation_grants()` — returns grant history with derived `is_active` flag.
+- Rewrote `impersonate_tenant(slug)`: requires native seat OR active grant, else `IMPERSONATION_NOT_GRANTED`. Audit records `via: native_seat | grant`.
+- Extended `platform_admin_audit.action` CHECK to include the two new event kinds (memory-relevant: enum-CHECK constraint sync).
+- `admin_impersonation_access_status(text[])` (migration `000051`) — batch lookup returning `{ slug, status: 'native'|'grant'|'blocked', expires_at }` for the caller admin, used by the VOSI Admin tenants list.
+- In-place smoke test (4 scenarios: no grant → blocked, owner grants → succeeds, owner revokes → session evicted + future blocked, native seat still works). All passed.
+
+### Phase 2b — Tenant Pengaturan → Support Access UI
+- New `src/lib/impersonationGrantsService.ts` service wrapper.
+- New `src/components/pengaturan/SupportAccessPanel.tsx`:
+  * Owner-only tab (visible when `currentUserRole === 'Owner'`).
+  * Active grants list with admin email, expiry, granted-by, reason, revoke button.
+  * Historical table (revoked or expired) — audit trail visible to owner.
+  * "Beri akses baru" modal: email input, preset durations (4h/1d/7d/30d), required reason, amber info block reminding about audit + expiry.
+  * `humanErr()` maps every RPC error code to Bahasa messages.
+- Wired into `PengaturanScreen.tsx` as a new `'support-access'` tab.
+
+### Phase 2c — VOSI Admin gating on grant status
+- `TenantsList` fetches statuses after rows load and passes `Map<slug, {status, expires_at}>` to the table.
+- `ImpersonateButton` disabled when status is `blocked` or unloaded (safer default). Shows "No access" label + gray styling when blocked. Tooltip explains reason ("Butuh grant dari tenant...", "akses lewat native seat", or "grant expires in Xh").
+- `handleImpersonate` humanizes the three RPC error codes (`IMPERSONATION_NOT_GRANTED` / `NOT_PLATFORM_ADMIN` / `TENANT_NOT_FOUND`) so click-through still fails cleanly if the status becomes stale.
+- Tests updated: `TenantsTable.test.tsx` defaultProps injects native-status map for every row; `TenantsList.test.tsx` supabase mock exposes `rpc()` granting native to every slug. 313/315 admin tests pass (2 pre-existing failures unrelated).
+
+### End-to-end model after Phase 2
+| Scenario | Reads scoped (Phase 1) | Impersonate allowed (Phase 2) |
+|---|---|---|
+| Tenant user | ✓ tenant-only | N/A |
+| Admin, not impersonating | ✓ cross-tenant (admin surface) | N/A |
+| Admin impersonating with grant | ✓ tenant-only | ✓ |
+| Admin impersonating with native seat | ✓ tenant-only | ✓ (escape hatch) |
+| Admin no grant no native seat | — | ✗ REJECTED |
+
+**Follow-up not in this commit:** onboarding wizard opt-in ("allow VOSI support access by default during setup?") deferred to Phase 2d. Live click-through verification pending Cloud Run deploy.
+
+---
+
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
 
 **Goal:** produce 5 pitch-ready fullpage PNGs of the tenant UI for founder's deck, packaged as a zip for drop-in to a Claude Project.

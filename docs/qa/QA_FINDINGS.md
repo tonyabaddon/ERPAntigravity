@@ -164,4 +164,4 @@ _(Entries added per session below. Newest at top.)_
 | F-6 | 🔴 P0 | 1 | Dashboard + Laporan (impersonation) | Impersonation retains platform_admin claim → cross-tenant read leak | ✅ Fixed — 20261115000049 (`_is_platform_admin_active_from_jwt()` helper + 87 policies + 14 RPCs) + AdminRouteGuard update |
 | F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | ✅ Resolved as side-effect of F-6 |
 | F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |
-| F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | 🟡 Open — Phase 2 |
+| F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
