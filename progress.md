@@ -155,6 +155,24 @@ No code changes.
 
 ---
 
+## 2026-07-11 (Session 2 QA — Scenario B) — Tempo credit sale lifecycle GREEN
+
+**Coverage:** Sales Invoice wizard (tempo path), Pelanggan tempo profile, Piutang list + AR aging, Catat Bayar (payment recording), GL auto-post for both sale + payment.
+
+**Flow verified end-to-end under garindo impersonation:**
+- Created tempo sale to "Smoke TEMPO PT Kabel Jaya" (limit Rp 5jt, term 14 hari, existing outstanding Rp 90k).
+- Wizard credit-status card correctly rendered Limit / Outstanding / Sisa / Jatuh Tempo / "Outstanding setelah" post-preview.
+- Save produced order `8f71040a` (Rp 50k, INVOICE_TEMPO, due 25 Jul) + GL `JE-202607-0012` balanced (Piutang 50k D, Penjualan Tempo Kredit 50k C, HPP 30k D, Persediaan 30k C).
+- Piutang list auto-updated: total 90k→140k, count 2→3, new invoice appearing as "H-14 Akan Datang".
+- Catat Bayar modal → Kas Toko → Konfirmasi Lunas → GL `JE-202607-0013` balanced (Kas Toko 50k D, Piutang 50k C). Order transitioned to LUNAS.
+- Piutang list contracted: total 140k→90k, count 3→2. Invoice removed from Overdue+Akan-Datang buckets, Kas Toko balance +50k.
+
+**Finding: F-11 (P1)** — Catat Bayar modal has no partial-payment field. Only "Konfirmasi Lunas" full-close option. Real B2B tempo customers commonly pay partial; recommend a "Jumlah Bayar" input (default = full total, max = outstanding) + "Sisa setelah bayar" preview. Backend RPC name (`record_piutang_payment`) suggests it can handle partial; only the UI is limited. Deferred, not blocking.
+
+**Session status:** Tempo write path GREEN. Session 3 (Purchase cycle, Scenario C) queued next.
+
+---
+
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
 
 **Goal:** produce 5 pitch-ready fullpage PNGs of the tenant UI for founder's deck, packaged as a zip for drop-in to a Claude Project.

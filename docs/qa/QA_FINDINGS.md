@@ -152,6 +152,43 @@ _(Entries added per session below. Newest at top.)_
 
 ---
 
+### Session 2 — Scenario B: Tempo credit sale lifecycle
+
+**Date:** 2026-07-11
+
+**Modules covered:** Sales Invoice wizard (tempo path), Pelanggan (tempo profile), Piutang (list + AR aging), Catat Bayar (payment recording), Akuntansi (GL auto-post).
+
+**Test flow executed:**
+1. Impersonate garindo → Kasir → Catat Penjualan → Grosir channel → pick "Smoke TEMPO PT Kabel Jaya" (credit limit Rp 5jt, term 14 hari)
+2. Add QA-TEST-SKU-1780990972155 × 1 = Rp 50k
+3. Choose TEMPO payment
+4. Verify credit-status card renders (Limit Rp 5jt, Outstanding Rp 90k, Sisa Rp 4.91jt, Jatuh Tempo 25 Jul 2026, "Rp 50k cukup di sisa kredit")
+5. Verify total shows "TEMPO · Jatuh tempo 25 Jul 2026 · Outstanding setelah Rp 140k"
+6. Save → toast "Faktur tempo dibuat (Jatuh tempo 14 hari)" → auto-navigated to Piutang
+7. Verify new invoice `8f71040a` shows Rp 50k H-14 "Akan Datang"
+8. Catat Bayar → pick Kas Toko → Konfirmasi Lunas
+9. Verify Piutang total 140k → 90k, invoice count 3 → 2, `8f71040a` removed from list
+
+**Findings:**
+
+### F-11 [🟠 P1] Piutang Catat Bayar modal has no partial-payment support
+- **Module:** Piutang → Catat Bayar modal.
+- **Reproduction:** Impersonate any tenant with an open tempo invoice → Piutang → click "Catat Bayar" on any row. Modal shows Customer, Total (read-only), Jatuh Tempo, account picker, upload proof, "Konfirmasi Lunas" button. No "Jumlah Bayar" input.
+- **Impact:** B2B tempo customers commonly pay partial (e.g., customer owes Rp 5jt, pays Rp 3jt this week + Rp 2jt next week). Currently no way to record that — either enter as full closure (wrong) or don't record until customer pays 100% (bad AR hygiene).
+- **Recommendation:** Add "Jumlah bayar" numeric input (default = full total, max = outstanding). Backend RPC `record_piutang_payment` presumably already supports partial (per name); frontend modal just doesn't expose it. Also add "Sisa outstanding setelah bayar" preview.
+- **Fix status:** open.
+
+### F-12 [✅ PASS] Tempo sale + payment end-to-end
+- Sale `8f71040a` created via wizard → GL `JE-202607-0012` posted with 4 balanced lines (Piutang Usaha 50k D, Penjualan Tempo Kredit 50k C, HPP 30k D, Persediaan 30k C). ✓
+- Payment recorded via Catat Bayar → GL `JE-202607-0013` posted with 2 balanced lines (Kas Toko 50k D, Piutang Usaha 50k C). ✓
+- `orders.status` transition: `INVOICE_TEMPO` → LUNAS. ✓
+- Piutang list auto-refreshed: total 140k→90k, count 3→2. ✓
+- AR aging on the 2 remaining overdue invoices (0-30 days bucket, Rp 90k). ✓
+
+**Session status:** Tempo lifecycle GREEN end-to-end. One P1 UX gap (F-11 no partial payment). Two pre-existing overdue invoices left in Piutang for continued testing next session.
+
+---
+
 ## Findings summary (all sessions)
 
 | # | Severity | Session | Module | Title | Status |
@@ -165,3 +202,4 @@ _(Entries added per session below. Newest at top.)_
 | F-7 | 🟠 P1 | 1 | Laporan Performa | Produk Terlaris revenue column always Rp 0 | ✅ Resolved as side-effect of F-6 |
 | F-8 | 🟠 P1 | 1 | Laporan Performa | "7 Hari" toggle shows 30-day chart | 🟡 Open |
 | F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
+| F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | 🟡 Open |
