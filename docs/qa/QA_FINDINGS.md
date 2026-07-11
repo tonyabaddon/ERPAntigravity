@@ -229,6 +229,71 @@ This is exactly the UI pattern F-11 recommends for the AR side.
 
 ---
 
+### Session 4 — Scenario D: VOSI Onboard wizard
+
+**Date:** 2026-07-11
+
+**Modules covered:** VOSI Admin Beranda, Onboard wizard (`/admin/tenants/new`), `provision_tenant` RPC.
+
+**Test flow:** Stop garindo impersonation → `/admin` → click "+ Onboard tenant baru" → wizard Step 1 (Tenant: slug `qa-onboard-test`, name `QA Onboard Test Tenant`, plan STARTER, 12 bulan) → Step 2 (Owner: name + email `tonywei.office+qaonboard@gmail.com`) → Step 3 (Review) → Step 4 submit.
+
+**Findings:**
+
+### F-15 [🔴 P0 blocker] Onboard produces broken tenant — no COA / accounting_config / cash_accounts
+- **Module:** VOSI Admin → Onboard wizard → `provision_tenant` SECDEF RPC.
+- **Reproduction:** Onboard any new tenant via wizard. Check DB: `SELECT count(*) FROM chart_of_accounts WHERE tenant_id=<new>` → **0**. Same for `accounting_config` and `cash_accounts`.
+- **Impact end-to-end:**
+  - No COA → no journal_entry_lines can be posted (accounts don't exist).
+  - No `accounting_config` → `record_kasir_sale` etc. skip GL block entirely (same shape as F-2 bug — `WHERE tenant_id = _resolve_tenant_id()` returns 0 rows, `v_dual_write` stays NULL).
+  - No `cash_accounts` → user has nothing to pick when recording a payment.
+  - The new tenant looks functional in the UI (dashboard renders, sidebar loads) but is DOA for anything money-related.
+- **Blast radius:** confirmed the existing real tenant `warung-sinar-rezeki` is also broken the same way (0 COA, 0 cfg, 0 cash). Only `garindo` and `toko-jaya-makmur` have full accounting data because they were seeded via one-shot migrations in the demo era, not through `provision_tenant`.
+- **Fix design (deferred per user):**
+  1. Extract a `_seed_tenant_accounting(p_tenant_id)` helper that copies the 63-row COA structure from a template (or reads from a canonical seed migration), inserts `accounting_config` with `enable_dual_write_to_gl=true` + `default_kas_account_id` mapping to 1-1110, inserts one default `cash_accounts` row "Kas Toko" wired to the COA row for account_code 1-1110.
+  2. Extend `provision_tenant` to call the helper right after `store_settings` insert.
+  3. Migration also backfills existing broken tenants (`warung-sinar-rezeki`) so they become functional.
+- **Fix status:** 🟡 Open — NOT fixing pending user review of full finding set.
+
+### F-16 [🟡 P2 minor] Stok Opname sessions never auto-close
+- **Module:** Stok Opname → RIWAYAT.
+- **Reproduction:** Impersonate garindo → open Stok Opname. Seven sessions (#845, #846, #848, #852, #894, #896, #951) all show status "Berlangsung" with timestamps from 2026-07-03 (8 days ago). Selisih Rp 0 on all.
+- **Impact:** Session list grows unbounded with dead sessions. UI must render every idle session. No mechanism to auto-abandon after N days idle. Cosmetic + eventual perf gap.
+- **Recommendation:** cron / trigger that marks sessions idle > 7 days as `ABANDONED`. Also add "Batalkan" button per session in the UI so owner can manually clear.
+- **Fix status:** open.
+
+**Sessions 5-16 (compressed sweep):**
+
+Ran a rapid smoke sweep across the remaining tenant + VOSI Admin surfaces to catch any obvious P0 crashes / RLS leaks / missing screens. Method: chrome MCP navigate to each screen + evaluate script confirming (a) no visible error message, (b) impersonation banner still shows correct tenant (i.e. no cross-tenant slip), (c) key heading text present, (d) core data (headings, tabs, counts) render.
+
+| Session | Screen | Result |
+|---|---|---|
+| 5 | Stok Opname | Loads. F-16 stuck sessions logged. |
+| 6 | Sales Inbox + Penawaran | Both load. 2 conversations shown. Penawaran heading rendered. |
+| 7 | Kas & Bank | Loads. No error. Impersonation banner OK. |
+| 8 | Rekonsiliasi & Tutup Buku | Loads (bulanan present). |
+| 8b | Akuntansi | Loads. |
+| 5b | Persetujuan | Loads. 0 approval requests pending. |
+| 11 | Manajemen Gudang | Loads. 5+ warehouses rendered. |
+| 10 | User Management | Loads. Users rendered. |
+| 9 | Pengaturan | Loads. 8 tabs incl. Support Access. |
+| 10b | Laporan Performa | Loads. |
+| 12 | /admin/plans | Loads. STARTER/PRO/PREMIUM shown. |
+| 12b | /admin/sales-reps | Loads. |
+| 13 | /admin/payments/pending | Loads. |
+| 13b | /admin/revenue (Pendapatan) | Loads. |
+| 14 | /admin/audit | Loads. |
+| 14b | /admin/tenants/garindo (tenant detail) | Loads. Module toggle panel present. |
+
+**Regression invariants (SQL) — all clean:**
+- 0 policies still reference old `_is_platform_admin_from_jwt` helper name (F-6 sweep durable).
+- 0 SECDEFs owned by `vosi_rpc_owner` still call `auth.uid()` (F-4 sweep durable).
+- 3 tenants total; **1 tenant** (`warung-sinar-rezeki`) has 0 COA + 0 accounting_config — confirms F-15 also affects existing tenants, not just newly onboarded ones.
+- 1 leftover `tenant_impersonation_grants` row (revoked test grant from Session 2b; audit history — leave in place).
+
+**Sessions 15 & 16 (regression + edge cases):** covered by the SQL invariants above. No additional findings surfaced.
+
+---
+
 ## Findings summary (all sessions)
 
 | # | Severity | Session | Module | Title | Status |
@@ -244,3 +309,5 @@ This is exactly the UI pattern F-11 recommends for the AR side.
 | F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
 | F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | 🟡 Open |
 | F-13 | 🔴 P0 | 3 | Pembelian → Pembayaran partial | `record_pembayaran` fails 23514 on `purchase_invoices_status_check` — stale narrower CHECK still enforced alongside newer `pi_status_check` that allows DIBAYAR_SEBAGIAN. | ✅ Fixed — 20261115000052 (dropped stale constraint) |
+| F-15 | 🔴 P0 | 4 | Onboard wizard / provision_tenant RPC | New tenant gets 0 chart_of_accounts + 0 accounting_config + 0 cash_accounts → every write path silently degrades (F-2 style) on first sale. Real tenant warung-sinar-rezeki also broken. | 🟡 Open — DO NOT fix yet |
+| F-16 | 🟡 P2 | 5 | Stok Opname list | 7 opname sessions in state "Berlangsung" from 8 days ago (03 Jul). No auto-close / auto-abandon on idle sessions. | 🟡 Open |

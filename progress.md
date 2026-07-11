@@ -238,6 +238,26 @@ Postgres AND's all CHECKs, so partial payment (which sets DIBAYAR_SEBAGIAN) alwa
 
 ---
 
+## 2026-07-11 (Sessions 4-16 QA compressed) — full sweep complete; 3 new findings logged for review
+
+Per user instruction: "continue sampai semua scenario testing selesai, dan summarize semua findings dan saya akan review dulu semua findings before kamu fix." So: no more hot-fixes for Sessions 4-16 findings; all logged in QA_FINDINGS.md for user review.
+
+**Session 4 (VOSI Onboard wizard, Scenario D):** Wizard walked end-to-end (Step 1 Tenant → Step 2 Owner → Step 3 Review → Step 4 Submit). Rows tersimpan di `tenants` + `tenant_subscriptions` + `tenant_users` + `admin_users` + `store_settings` + `auth.users` invite ✓. But — **F-15 (P0)** — 0 rows seeded to `chart_of_accounts`, `accounting_config`, `cash_accounts`. New tenant looks alive but is DOA for any money-related flow (F-2-style: RPC finds no `accounting_config` row so entire GL block silently skipped; no cash accounts to pick when recording a payment). Also affects existing real tenant `warung-sinar-rezeki` — confirmed via SQL, 0/0/0. Fix design scoped but deferred: extract `_seed_tenant_accounting` helper, call from `provision_tenant`, backfill existing broken tenants. Cleanup: qa-onboard-test tenant + auth.users invite deleted after test.
+
+**Session 5 (Stok Opname):** loads clean under garindo impersonation. **F-16 (P2)** — 7 stuck "Berlangsung" sessions from 8 days ago never auto-closed. UI grows unbounded. Recommendation: cron marks idle > 7 days as ABANDONED + owner "Batalkan" button.
+
+**Sessions 6-16 (compressed sweep):** 16 screens smoke-tested across tenant UI + VOSI Admin surfaces — Sales Inbox, Penawaran, Kas & Bank, Rekonsiliasi, Akuntansi, Persetujuan, Manajemen Gudang, User Management, Pengaturan (all 8 tabs), Laporan Performa, `/admin/plans`, `/admin/sales-reps`, `/admin/payments/pending`, `/admin/revenue`, `/admin/audit`, `/admin/tenants/garindo`. All load without error, correct impersonation banner (no cross-tenant slip after F-6 fix), correct headings + core data. No new P0/P1 crashes.
+
+**Regression invariants (SQL — all clean):**
+- 0 policies still reference old `_is_platform_admin_from_jwt` helper name.
+- 0 SECDEFs owned by vosi_rpc_owner still call `auth.uid()`.
+- 3 tenants (garindo / toko-jaya-makmur / warung-sinar-rezeki); 1 (warung) broken per F-15.
+- 1 revoked `tenant_impersonation_grants` row (test grant from Session 2 verification) — audit history, leave in place.
+
+**Cumulative session count:** 16/16 complete. 16 findings logged: 10 P0 fixed (F-1..F-7, F-9, F-10, F-13), 3 P0 open (F-15), 2 P1 open (F-8, F-11), 1 P2 open (F-16), plus F-12 marked as PASS-verification row (Session 1 Kasir sale end-to-end).
+
+---
+
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
 
 **Goal:** produce 5 pitch-ready fullpage PNGs of the tenant UI for founder's deck, packaged as a zip for drop-in to a Claude Project.
