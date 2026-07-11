@@ -166,13 +166,20 @@ export function TenantsList() {
           console.error('admin_impersonation_access_status error:', error);
           return;
         }
+        // The RPC returns OUT columns prefixed `out_` to avoid a Postgres
+        // 42702 ambiguity between the RETURNS TABLE variable and the
+        // `status` / `slug` columns on platform_admins / tenants / tenant_users.
+        // Remap to the shape our type expects.
         const map = new Map<string, ImpersonationAccessStatus>();
         for (const row of (data ?? []) as Array<{
-          slug: string;
-          status: 'native' | 'grant' | 'blocked';
-          expires_at: string | null;
+          out_slug: string;
+          out_status: 'native' | 'grant' | 'blocked';
+          out_expires_at: string | null;
         }>) {
-          map.set(row.slug, { status: row.status, expires_at: row.expires_at });
+          map.set(row.out_slug, {
+            status: row.out_status,
+            expires_at: row.out_expires_at,
+          });
         }
         setAccessStatus(map);
       } catch (err) {
