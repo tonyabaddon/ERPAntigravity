@@ -53,7 +53,11 @@ interface LaporanScreenProps {
 export default function LaporanScreen(props: LaporanScreenProps) {
   const showToast = props.showToast ?? (() => {});
   const [activeTab, setActiveTab] = useState<LaporanTab>('performa');
-  const [period, setPeriod] = useState<Period>('30d');
+  // F-8: match the Dashboard default of 7d for consistency across surfaces.
+  // The toggle itself was already wired correctly (useEffect refetches on
+  // period change); the finding was really about the two screens showing
+  // different default ranges without any user action.
+  const [period, setPeriod] = useState<Period>('7d');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dailyRevenueByChannel, setDailyRevenueByChannel] = useState<Array<{
     Day: string; 'Walk-in': number; Tokopedia: number; Grosir: number; 'WA AI': number;
