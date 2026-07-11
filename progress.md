@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 (Session 1 QA cycle) — Kasir cash-walkin flow + 5 cross-cutting P0 write-path fixes
+
+**Context:** kicked off the end-to-end QA cycle (per plan in `docs/qa/QA_FINDINGS.md`). Session 1 scenario A = single walk-in cash sale via Sales Invoice wizard, impersonating garindo. Ran into cascading RLS write-path failures — each fix uncovered the next layer. All 5 findings are permanent DB-level fixes, no frontend changes needed.
+
+**Findings (all P0, all fixed):**
+1. **F-1 — customers/T-tables INSERT missing tenant_id → 42501.** Frontend pattern is "omit tenant_id, DB fills from JWT," but 78 T-tables never got a default. Fix: migration `20261115000045` — `ALTER COLUMN tenant_id SET DEFAULT public._resolve_tenant_id()` on every T-table. RLS `WITH CHECK` still fires so cross-tenant payloads are still rejected.
+2. **F-2 — GL dual-write skipped in every kasir sale (and record_pi / record_pembayaran / record_piutang_payment / backfill).** All 5 RPCs queried `accounting_config WHERE tenant_id IS NULL` — correct pre-multi-tenant, but current per-tenant rows have `tenant_id SET`, so lookup returns 0 → `v_dual_write` stays NULL → entire GL block skipped. Historical: only 11 of 83 Garindo kasir income txns have GL entries; the rest are pre-Phase-A. Fix: migration `20261115000046` — regex-replace `WHERE tenant_id IS NULL` → `WHERE tenant_id = _resolve_tenant_id()` via `pg_get_functiondef` + `EXECUTE`.
+3. **F-3 — `_post_journal_entry` inserted NULL tenant_id into `accounting_periods`.** All callers pass `p_tenant_id => NULL` (legacy single-tenant signature). Fix: migration `20261115000047` — inject `p_tenant_id := COALESCE(p_tenant_id, public._resolve_tenant_id())` at the top of the function body via idempotent regex + `EXECUTE`.
+4. **F-4 / F-5 — every write RPC calls `auth.uid()` from a SECDEF owned by `vosi_rpc_owner`, which lacks USAGE on schema `auth`.** Audit showed **64** SECDEFs in `public` in this state; any one of them would raise `permission denied for schema auth` when first exercised. We cannot `GRANT USAGE ON SCHEMA auth` (owner = `supabase_admin`, no GRANT OPTION). Fix: migration `20261115000048` — (a) new `public._current_user_id()` STABLE SQL helper reading `current_setting('request.jwt.claims', true)::jsonb->>'sub'`, granted to authenticated / service_role / vosi_rpc_owner; (b) `pg_get_functiondef` sweep across all 64 SECDEFs replacing `auth.uid()` with the helper; (c) unwind the ad-hoc inline JWT read that 47 injected into `_post_journal_entry`, using the helper for consistency. Post-migration audit: 0 remaining `auth.uid()` references in vosi_rpc_owner SECDEFs.
+
+**Verification:**
+- Two consecutive kasir walk-in cash sales through the Sales Invoice wizard (WLK-20260711-005, WLK-20260711-006), both saved and posted `JE-202607-0010` / `JE-202607-0011` with 4 balanced lines each: Kas Toko debit 50 000, Penjualan Walkin credit 50 000, HPP debit 30 000, Persediaan credit 30 000. `gl_dual_write_anomalies` empty for both.
+- Kasir dashboard re-verified after WLK-005: TOTAL PEMASUKAN +50 000, HPP +30 000, LABA BERSIH +20 000, Rekap Tunai +50 000, Tutup Buku Walk-In +50 000. All figures reconcile.
+
+**Files touched:**
+- New migrations: `supabase/migrations/20261115000045_tenant_id_default_all_ttables.sql`, `..._46_fix_accounting_config_tenant_scope.sql`, `..._47_post_journal_entry_multitenant_and_no_auth_schema.sql`, `..._48_current_user_id_helper_and_secdef_sweep.sql`.
+- QA docs: `docs/qa/QA_FINDINGS.md` (session 1 log with F-1..F-5 and roll-up table).
+- DB (cloud, ekhhojaezdfjfwuxyjkl / garindo only for verification): WLK-005, WLK-006, JE-202607-0010, JE-202607-0011 created via wizard for testing. Stock `QA-TEST-SKU-1780990972155.quantity_top` 94 → 93 → 92.
+
+**Follow-ups not blocking Session 1:**
+- Backfill missing GL entries for historical kasir sales that ran under the F-2 bug (72 of 83 Garindo kasir_transactions). Defer to Session 8 (bulanan close prep).
+- Adopt a `pg_get_functiondef` CI check that flags any new `auth.uid()` reference in a `vosi_rpc_owner`-owned SECDEF before merge.
+- Continue Session 1 remaining checks: Laporan revenue chart update, Dashboard KPI update, Tutup Buku Harian preview + PDF.
+
+---
+
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
 
 **Goal:** produce 5 pitch-ready fullpage PNGs of the tenant UI for founder's deck, packaged as a zip for drop-in to a Claude Project.
