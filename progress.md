@@ -1,5 +1,35 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-11 (Session 2 QA) — 4 P0 bugfixes across sales funnel, kasir picker, and opname RPC
+
+**Context:** founder QA smoke of the app surfaced four independent bugs. Root-caused each before touching code; two required DB migrations, two were pure frontend.
+
+**Findings (all P0, all fixed in this session):**
+
+1. **Bug #1 — Daftar Pesanan StageStrip: empty stages become unclickable.** `StageStrip.tsx:20` disabled stage buttons when `count === 0 && !isSel`. Default landing stage is 2 (Konfirmasi & belum bayar); when tenant has 0 orders there and user clicks another stage, they can't navigate back. Fix: remove the `disabled` predicate + cursor/opacity conditionals so all six stages are always clickable. `src/components/sales/StageStrip.tsx`.
+
+2. **Bug #2 — CashAccountPicker silently empty when tenant has no BANK account.** Picker filter kicks in for Transfer/QRIS/EDC and requires `account_type='BANK'`; if the tenant hasn't seeded one, the `<select>` renders only the "Pilih akun..." placeholder with no explanation. Combined with the parent's toast-on-click-when-null flow (Bug #3-adjacent), users perceive "save button broken." Fix (code-only, no seed change): (a) `CashAccountPicker` now renders an amber empty-state card with "Tambah dulu di Sidebar → Kas & Bank" CTA when zero accounts pass the filter; (b) Step3Payment "Simpan Sales Invoice" is now visibly disabled with reason text ("Pilih akun tujuan pembayaran dulu" / "Pilih sub-tipe EDC") instead of enabled-then-toast. `src/components/akuntansi/CashAccountPicker.tsx`, `src/components/penjualan/wizard/Step3Payment.tsx`. **Flag for founder:** memory `project_garindo_account_types` says Garindo uses BANK+KAS+E_WALLET but the demo tenant seed only has KAS "Kas Toko". Data seed vs. onboarding UX is a separate decision — not touched in this fix.
+
+3. **Bug #3 — Simpan Sales Order/Invoice appears unresponsive → hidden RLS RETURNING gap on every SECDEF write RPC.** Root cause: `20261115000044` added `vosi_rpc_owner` to `t_insert_own` / `t_update_own` / `t_delete_own` on every T-table, but not to `t_select_own`. Postgres RLS evaluates the SELECT policy on `INSERT ... RETURNING`, and when it fails from a SECDEF context it raises 42501 with the misleading `new row violates row-level security policy` message. Symptom surface: `create_sales_order`, `next_sales_order_number`, and every other SECDEF that uses RETURNING on a T-table (potentially 77 tables). Fix: migration `20261115000060_fix_secdef_select_returning_gap.sql` — idempotent policy rewrite that adds `vosi_rpc_owner` to `t_select_own` on every table that already has a `t_insert_own`. USING predicate unchanged (`tenant_id = _resolve_tenant_id()`), so tenant isolation intact. Verified: `create_sales_order` now returns `SO-WLK-20260711-001` end-to-end with correct tenant_id.
+
+4. **Bug #4 — "Mulai Sesi Opname Baru" fails with 42703 column "id" does not exist.** `_opname_require_witness()` still does `SELECT ... FROM company_settings ORDER BY id LIMIT 1` — stale from single-tenant era; the multi-tenant refactor swapped `id` for `tenant_id`. Fix: migration `20261115000061_fix_opname_require_witness_tenant_scope.sql` — rewrite helper to `WHERE tenant_id = _resolve_tenant_id() LIMIT 1`, default TRUE fallback preserved. Verified: `start_opname_session` now succeeds (returns session id=963 in smoke).
+
+**Files touched:**
+- Frontend: `src/components/sales/StageStrip.tsx`, `src/components/akuntansi/CashAccountPicker.tsx`, `src/components/penjualan/wizard/Step3Payment.tsx`.
+- New migrations (applied via MCP to ekhhojaezdfjfwuxyjkl): `20261115000060_fix_secdef_select_returning_gap.sql`, `20261115000061_fix_opname_require_witness_tenant_scope.sql`.
+
+**Discriminating evidence for Bug #3 (keep for future audits):**
+- Direct INSERT into `sales_order_counters` as vosi_rpc_owner (top-level, no SECDEF): succeeds.
+- SECDEF INSERT without RETURNING: succeeds.
+- SECDEF INSERT with RETURNING: fails 42501 → identifies SELECT policy as the culprit.
+- Same test on `customers` (no RETURNING): succeeds. With RETURNING: fails. Confirms it's not a per-table oddity — it's the RETURNING interaction with `TO {authenticated}`-only SELECT policies.
+
+**Follow-ups not blocking:**
+- `sales_order_counters` and `kasir_counters` still have `(channel, date)` PKs missing `tenant_id`. Two tenants with the same channel/date will race for the counter. Real fix is a schema migration extending the PK. Not urgent because in practice the SECDEF holds a per-txn lock via ON CONFLICT DO UPDATE, but the RLS UPDATE policy will start blocking cross-tenant conflicts as soon as more than one tenant lands on the same date + channel. Log as tech-debt for the next cutover window.
+- CI check that flags any new `t_insert_own` policy without a matching `TO {authenticated, vosi_rpc_owner}` on `t_select_own`.
+
+---
+
 ## 2026-07-11 (later) — Access links & logins doc
 
 **Goal:** founder needs a single doc with tenant dashboard URLs, VOSI Admin URL, and every login that works today.

@@ -17,19 +17,18 @@ export function StageStrip({ active, counts, onChange }: Props) {
           <button
             key={n}
             onClick={() => onChange(n)}
-            disabled={count === 0 && !isSel}
             style={{
               background: isSel ? 'var(--color-primary)' : 'white',
-              color: isSel ? 'white' : (count > 0 ? 'var(--color-primary)' : '#9ca3af'),
-              border: `1px solid ${isSel ? 'transparent' : (count > 0 ? '#c7d7f5' : '#e5e7eb')}`,
+              color: isSel ? 'white' : (count > 0 ? 'var(--color-primary)' : '#6b7280'),
+              border: `1px solid ${isSel ? 'transparent' : (count > 0 ? '#c7d7f5' : '#d1d5db')}`,
               boxShadow: isSel ? '0 2px 8px rgba(30,61,96,0.2)' : 'none',
-              opacity: count === 0 && !isSel ? 0.55 : 1,
+              opacity: 1,
               borderRadius: 999,
               padding: '7px 14px',
               fontSize: 12,
               fontWeight: 700,
               whiteSpace: 'nowrap',
-              cursor: count > 0 || isSel ? 'pointer' : 'default',
+              cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,

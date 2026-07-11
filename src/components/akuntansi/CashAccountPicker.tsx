@@ -160,6 +160,30 @@ export default function CashAccountPicker({
     );
   }
 
+  // Empty state — no accounts match the current filter
+  // (e.g. tenant hasn't seeded any BANK account yet for transfer/qris/edc)
+  if (filteredAccounts.length === 0) {
+    const expectedTypeLabel =
+      paymentMethod === 'cash' ? 'Kas'
+      : paymentMethod === 'transfer' || paymentMethod === 'qris' || paymentMethod === 'edc' ? 'Bank'
+      : 'Kas / Bank';
+    return (
+      <div>
+        {label && (
+          <label className="block font-bold mb-1 text-[13px]" style={{ color: '#1e3d60' }}>
+            {label}
+            {required && <span className="text-rose-600"> *</span>}
+          </label>
+        )}
+        <div className="w-full border border-amber-300 bg-amber-50 rounded-xl px-3 py-2.5 text-[12px] text-amber-900 leading-snug">
+          Belum ada akun <strong>{expectedTypeLabel}</strong> aktif untuk tenant ini.
+          <br />
+          Tambah dulu di <strong>Sidebar → Kas &amp; Bank → + Akun Baru</strong>, lalu balik ke halaman ini.
+        </div>
+      </div>
+    );
+  }
+
   // Normal render
   return (
     <div>

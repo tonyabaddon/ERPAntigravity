@@ -476,18 +476,38 @@ export default function Step3Payment(props: Props) {
               </div>
             );
           })()}
-          {/* Save button — full-width green per mockup */}
-          <button
-            type="button"
-            onClick={onSimpan}
-            disabled={submitting || !validation.ok || overLimit}
-            className="w-full px-6 py-3 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
-          </button>
-          {!validation.ok && validation.errors?.[0] && (
-            <p className="text-[11px] text-rose-600 text-center">{validation.errors[0]}</p>
-          )}
+          {/* Save button — full-width green per mockup.
+              Also gated on cashAccountId when a non-cash method is picked, so
+              the button reflects reality instead of firing a toast on click. */}
+          {(() => {
+            const needsCashAccount = !isTempo && props.method !== 'cash';
+            const cashAccountMissing = needsCashAccount && !props.cashAccountId;
+            const edcSubtypeMissing = !isTempo && props.method === 'edc' && !props.subtype;
+            const saveDisabled =
+              submitting || !validation.ok || overLimit ||
+              cashAccountMissing || edcSubtypeMissing;
+            const saveHint =
+              !validation.ok ? validation.errors?.[0]
+              : overLimit ? 'Pesanan melewati sisa kredit customer.'
+              : edcSubtypeMissing ? 'Pilih sub-tipe EDC (Debit / QRIS).'
+              : cashAccountMissing ? 'Pilih akun tujuan pembayaran dulu.'
+              : null;
+            return (
+              <>
+                <button
+                  type="button"
+                  onClick={onSimpan}
+                  disabled={saveDisabled}
+                  className="w-full px-6 py-3 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
+                </button>
+                {saveHint && (
+                  <p className="text-[11px] text-rose-600 text-center">{saveHint}</p>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
     );
