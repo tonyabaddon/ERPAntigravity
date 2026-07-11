@@ -43,11 +43,14 @@ describe('dualWrite.ts', () => {
       const result = await dualWriteModule.recordPiutangPayment(input);
 
       expect(supabase.rpc).toHaveBeenCalledOnce();
+      // F-11: RPC now accepts optional p_amount; default null → full close for
+      // callers that don't set input.amount.
       expect(supabase.rpc).toHaveBeenCalledWith('record_piutang_payment', {
         p_order_id: 'ORD-2026-001',
         p_cash_account_id: 'cash-001',
         p_proof_url: 'https://example.com/proof.png',
         p_verified_by_user_id: 'user-verified-id',
+        p_amount: null,
       });
       expect(result).toEqual(mockResult);
       expect(result.ok).toBe(true);
@@ -79,6 +82,7 @@ describe('dualWrite.ts', () => {
         p_cash_account_id: 'cash-002',
         p_proof_url: null,
         p_verified_by_user_id: 'user-verified-id',
+        p_amount: null,
       });
       expect(result.ok).toBe(true);
     });

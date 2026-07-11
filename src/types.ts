@@ -305,6 +305,10 @@ export interface DbOrder {
   created_at: string;
   updated_at: string;
   hpp_total?: number;
+  /** F-11: cumulative partial payments collected against this tempo invoice.
+   *  Outstanding = total - piutang_paid_amount. Flips to PAYMENT_VERIFIED
+   *  when piutang_paid_amount >= total. Defaults to 0 on non-tempo orders. */
+  piutang_paid_amount?: number;
 }
 
 export interface DbWaRecipient {

@@ -224,6 +224,14 @@ export interface PiutangKpi {
   h3Count: number;
 }
 
+// F-11: outstanding = total minus any partial payments already collected.
+// Falls back to full total when piutang_paid_amount is absent (pre-migration
+// data, or non-tempo orders never touched by the RPC).
+export function outstandingOf(row: PiutangRow): number {
+  const paid = row.order.piutang_paid_amount ?? 0;
+  return Math.max(0, row.order.total - paid);
+}
+
 export function computeKpi(rows: PiutangRow[]): PiutangKpi {
   const acc = {
     totalPiutang: 0, totalCount: 0,
@@ -232,11 +240,12 @@ export function computeKpi(rows: PiutangRow[]): PiutangKpi {
     h3Amount: 0, h3Count: 0,
   };
   for (const r of rows) {
-    acc.totalPiutang += r.order.total;
+    const outstanding = outstandingOf(r);
+    acc.totalPiutang += outstanding;
     acc.totalCount += 1;
-    if (r.tier === 'overdue') { acc.overdueAmount += r.order.total; acc.overdueCount += 1; }
-    if (r.tier === 'today')   { acc.todayAmount   += r.order.total; acc.todayCount   += 1; }
-    if (r.tier === 'h3')      { acc.h3Amount      += r.order.total; acc.h3Count      += 1; }
+    if (r.tier === 'overdue') { acc.overdueAmount += outstanding; acc.overdueCount += 1; }
+    if (r.tier === 'today')   { acc.todayAmount   += outstanding; acc.todayCount   += 1; }
+    if (r.tier === 'h3')      { acc.h3Amount      += outstanding; acc.h3Count      += 1; }
   }
   return acc;
 }
@@ -277,7 +286,7 @@ export function computeAging(rows: PiutangRow[], buckets: number[] = [30, 60, 90
     let idx = sorted.findIndex(b => overdueDays <= b);
     if (idx === -1) idx = sorted.length;
     segments[idx].count += 1;
-    segments[idx].amount += r.order.total;
+    segments[idx].amount += outstandingOf(r);
   }
   return segments;
 }

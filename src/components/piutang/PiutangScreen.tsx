@@ -14,6 +14,7 @@ import {
   fetchPiutangRows,
   computeKpi,
   computeAging,
+  outstandingOf,
   PIUTANG_TIERS,
   uploadTempoPaymentProof,
   validateTempoProofFile,
@@ -198,7 +199,15 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(r.order.total)}</td>
+                    {/* F-11: show sisa outstanding (post-partial). Fall back to total when nothing paid yet. */}
+                    <td className="px-5 py-3 text-right font-bold" style={{ color: '#012749' }}>
+                      {fmtRp(outstandingOf(r))}
+                      {(r.order.piutang_paid_amount ?? 0) > 0 && (
+                        <div className="text-[10px] font-medium text-gray-500 mt-0.5">
+                          dari {fmtRp(r.order.total)}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-5 py-3 text-right">
                       <div className="text-sm font-semibold">{fmtDate(r.order.due_date)}</div>
                       <div className="text-[11px] text-gray-500">{daysLabel}</div>
@@ -321,17 +330,28 @@ function AgingBar({ segments, onSelect }: { segments: ReturnType<typeof computeA
 }
 
 // ── CatatBayarModal ──
+// F-11: supports partial payment. Amount input defaults to full outstanding
+// (sisa), and users can enter any amount 1 ≤ x ≤ sisa. Backend RPC
+// record_piutang_payment(..., p_amount) accepts the value; NULL falls back to
+// full-close for pre-fix callers.
 function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   row: PiutangRow; onClose: () => void; onPaid: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   currentUserId: string;
 }) {
+  const outstandingSisa = outstandingOf(row);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'uploading' | 'verifying'>('idle');
-  // Phase 0b dual-write: cash_account_id is REQUIRED for piutang payment.
-  // record_piutang_payment RPC replaces direct UPDATE pattern and posts to GL.
   const [cashAccountId, setCashAccountId] = useState<string | null>(null);
+  // F-11: amount input. Defaults to full sisa so "just tap Confirm" behaves
+  // like the pre-fix full-close flow.
+  const [amountStr, setAmountStr] = useState<string>(String(outstandingSisa));
+
+  const amount = Math.max(0, Math.floor(Number(amountStr) || 0));
+  const isFullClose = amount >= outstandingSisa;
+  const sisaAfter = Math.max(0, outstandingSisa - amount);
+  const amountValid = amount > 0 && amount <= outstandingSisa;
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -344,6 +364,10 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
   async function handleConfirm() {
     if (!cashAccountId) {
       showToast('Pilih akun penerima pembayaran', 'warning');
+      return;
+    }
+    if (!amountValid) {
+      showToast(`Jumlah bayar harus antara Rp 1 dan ${fmtRp(outstandingSisa)}`, 'warning');
       return;
     }
     setSaving(true);
@@ -359,11 +383,20 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         cashAccountId,
         proofUrl,
         verifiedByUserId: currentUserId,
+        amount,
       });
-      showToast(`Invoice ${row.order.id.slice(0, 8)} ditandai Lunas${proofUrl ? ' (bukti tersimpan)' : ''}.`, 'success');
+      const shortId = row.order.id.slice(0, 8);
+      if (isFullClose) {
+        showToast(`Invoice ${shortId} ditandai Lunas${proofUrl ? ' (bukti tersimpan)' : ''}.`, 'success');
+      } else {
+        showToast(
+          `Pembayaran parsial ${fmtRp(amount)} tercatat untuk invoice ${shortId}. Sisa ${fmtRp(sisaAfter)}.`,
+          'success'
+        );
+      }
       onPaid();
     } catch (e: any) {
-      showToast(e?.message ?? 'Gagal mark lunas', 'warning');
+      showToast(e?.message ?? 'Gagal catat bayar', 'warning');
     } finally {
       setSaving(false);
       setPhase('idle');
@@ -381,10 +414,53 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>
         </div>
         <div className="px-5 py-4 space-y-3">
-          <div className="bg-gray-50 rounded-lg px-3 py-3 text-xs space-y-1">
+          <div className="bg-gray-50 rounded-lg px-3 py-3 text-[13px] space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{fmtRp(row.order.total)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{fmtRp(row.order.total)}</span></div>
+            {(row.order.piutang_paid_amount ?? 0) > 0 && (
+              <div className="flex justify-between"><span className="text-gray-500">Sudah Dibayar</span><span className="font-semibold">{fmtRp(row.order.piutang_paid_amount ?? 0)}</span></div>
+            )}
+            <div className="flex justify-between"><span className="text-gray-500">Sisa Outstanding</span><span className="font-bold text-[#012749]">{fmtRp(outstandingSisa)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Jatuh Tempo</span><span className="font-semibold">{fmtDate(row.order.due_date)}</span></div>
+          </div>
+          {/* F-11: partial-payment amount input + sisa-setelah-bayar preview. */}
+          <div>
+            <label className="text-[13px] font-semibold text-slate-700 block mb-1">
+              Jumlah Bayar <span className="text-rose-600">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-500">Rp</span>
+              <input
+                type="number"
+                min={1}
+                max={outstandingSisa}
+                step={1}
+                value={amountStr}
+                onChange={(e) => setAmountStr(e.target.value)}
+                className={`w-full pl-9 pr-3 py-2 rounded-lg border text-[13px] font-mono focus:outline-none focus:ring-2 ${
+                  amountValid
+                    ? 'border-slate-300 focus:ring-emerald-500'
+                    : 'border-rose-300 focus:ring-rose-500 bg-rose-50/40'
+                }`}
+              />
+            </div>
+            <div className="flex items-center justify-between mt-1 text-[12px]">
+              <button
+                type="button"
+                onClick={() => setAmountStr(String(outstandingSisa))}
+                className="text-[11px] font-semibold text-emerald-700 hover:underline"
+              >
+                Isi penuh (lunasi)
+              </button>
+              {amountValid ? (
+                <span className="text-slate-600">
+                  Sisa setelah bayar: <b>{fmtRp(sisaAfter)}</b>
+                  {isFullClose ? ' — invoice akan Lunas' : ' — invoice tetap tempo'}
+                </span>
+              ) : (
+                <span className="text-rose-600">Isi antara Rp 1 dan {fmtRp(outstandingSisa)}</span>
+              )}
+            </div>
           </div>
           <CashAccountPicker
             value={cashAccountId}
@@ -419,9 +495,15 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
           <button onClick={onClose} disabled={saving} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50">Batal</button>
-          <button onClick={handleConfirm} disabled={saving}
+          <button onClick={handleConfirm} disabled={saving || !amountValid}
             className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">
-            {phase === 'uploading' ? 'Mengupload bukti...' : phase === 'verifying' ? 'Menyimpan...' : 'Konfirmasi Lunas'}
+            {phase === 'uploading'
+              ? 'Mengupload bukti...'
+              : phase === 'verifying'
+              ? 'Menyimpan...'
+              : isFullClose
+              ? 'Konfirmasi Lunas'
+              : `Catat Bayar ${fmtRp(amount)}`}
           </button>
         </div>
       </div>
