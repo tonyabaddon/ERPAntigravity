@@ -91,6 +91,45 @@ Founder said "PLEASE FIX ALL OF THEM." Rolled through the remaining audit findin
 
 ---
 
+## 2026-07-11 — P0 pre-launch: unblock SECDEF write path across all T-tables
+
+**Catastrophic root-cause finding during Batch 1 deferred investigation.** Founder asked to verify cash-account creation live before commercial launch; live HTTP tracing revealed that **every SECDEF write RPC in the app has been blocked at the RLS layer since Phase A** — the tenant tables that appear populated hold seed data only.
+
+**Root cause chain (both must be true for writes to fail):**
+
+1. **Guard predicate always false.** `_guard_expiry_write()` returns `void`. The RLS check `_guard_expiry_write() IS NULL` evaluates to false always. Every `t_insert_own` / `t_update_own` / `t_delete_own` WITH CHECK ANDs against false → deny.
+
+2. **SECDEF role gap.** `t_*_own` policies are scoped `TO {authenticated}`. Inside a SECURITY DEFINER function owned by `vosi_rpc_owner`, current_user is `vosi_rpc_owner`, which is NOT a member of authenticated (verified: 000002b GRANT was reverted by 000002c because Postgres role membership does not confer RLS role applicability). Policies never fire → 42501 with no policy match.
+
+Net effect: `record_kasir_sale`, `record_pesanan`, `record_pembayaran`, `createCashAccount`, and every `.from(t_table).insert()` from an authenticated user have been silently failing under RLS.
+
+**Evidence — live via browser + real JWT (impersonating garindo):**
+- `create_cash_account_with_coa` → 42501 RLS violation
+- `_debug_insert_customer_vs_cash` → 42501 on both customers and cash_accounts
+- Latest tenant_transaction: 2026-07-01 (10 days pre-audit; all seed)
+- Adding role to policy alone did NOT unblock; guard predicate was the second bug.
+
+**Fix — migration `20261115000044_fix_secdef_write_path_all_ttables.sql`:**
+
+A. New `public._check_expiry_ok() RETURNS boolean` — behavior identical to the old `_guard_expiry_write` (raises `P0402 SUBSCRIPTION_EXPIRED_READONLY` when JWT `tenant_expiry_mode = 'READONLY'`, returns true otherwise), but usable as a real predicate. Old function retained so existing `PERFORM _guard_expiry_write();` sites keep working.
+
+B. Loop over every T-table (78 tables identified by presence of `t_insert_own`), DROP + CREATE each of `t_insert_own` / `t_update_own` / `t_delete_own` with:
+   - Role list widened to `authenticated, vosi_rpc_owner` (SECDEF RPCs now match)
+   - Predicate replaced from `_guard_expiry_write() IS NULL` to `_check_expiry_ok()` (evaluates truthy or aborts with P0402)
+
+**Verification — live via browser + real JWT (post-migration):**
+- `create_cash_account_with_coa` → **201 Created**, full row returned, tenant_id correct
+- Direct `POST /rest/v1/customers` from authenticated tenant user → **201 Created**, RLS passed, row inserted
+- Test data cleaned up post-verification
+
+**Blast radius:** 78 tables × 3 policies each = 234 policy rewrites, atomic transaction. Read policies untouched (`t_select_own` + `p_platform_admin_readall` unchanged). READONLY subscription enforcement preserved via P0402 raise inside `_check_expiry_ok()`.
+
+**Frontend impact:** ZERO code change. The frontend has been calling these RPCs correctly all along — the DB layer was rejecting them.
+
+**Commercial impact:** without this fix, every new tenant hitting the app day-1 would experience "silent save failures" or cryptic 42501 errors on every write action (record sale, add customer, save purchase order, add cash account, etc.). This is the single most commercially-blocking issue found in the audit and must be applied before any new-tenant onboarding.
+
+---
+
 ## 2026-07-11 — Tenant isolation audit findings + fixes
 
 **Audit trigger:** founder requested end-to-end audit confirming no cross-tenant data leakage after the impersonation stack landed. Dispatched 3 parallel agents (frontend data sources, RLS policies, state leaks).
