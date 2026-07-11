@@ -7,6 +7,7 @@ import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { isPreOrder } from '../../lib/wizard/validation';
 import { DiscountInlineInput, useDiscountBinding } from '../ui/discount';
+import { NumberInput } from '../ui/NumberInput';
 
 // Map from seeded service_types.code → legacy RakitServiceType union value (mirrors RakitButtonsRow).
 const CODE_TO_RAKIT: Record<string, RakitServiceType> = {
@@ -102,8 +103,7 @@ function CartRow({
   const stockAtWh = stockMap[`${itemForCheck.sku}|${itemForCheck.warehouse_id ?? ''}`] ?? 0;
   const shortage = preOrder ? Math.max(0, item.qty - stockAtWh) : 0;
 
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
+  const handlePriceChange = (v: number) => {
     binding.setTypedPrice(v);
     if (onDiscountChange) {
       // After setTypedPrice the binding state hasn't flushed yet (React batch),
@@ -169,10 +169,7 @@ function CartRow({
             </div>
           )}
           {modulDiskonOn ? (
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
+            <NumberInput
               value={binding.state.typed_price}
               onChange={handlePriceChange}
               className="w-28 text-right text-[12px] font-mono border border-slate-200 rounded px-2 py-1 bg-white"
@@ -195,14 +192,11 @@ function CartRow({
       {/* Qty stepper */}
       <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
         <button type="button" onClick={() => onQtyChange(item._key, Math.max(1, item.qty - 1))} className="w-6 h-6 rounded bg-slate-100 font-extrabold">−</button>
-        <input
-          type="number"
-          min={1}
+        <NumberInput
+          allowDecimal={false}
           value={item.qty}
-          onChange={e => {
-            const n = Number(e.target.value);
-            if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n);
-          }}
+          emptyAs={1}
+          onChange={n => { if (Number.isInteger(n) && n >= 1) onQtyChange(item._key, n); }}
           className="w-10 text-center font-extrabold text-[12px] bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button type="button" onClick={() => onQtyChange(item._key, item.qty + 1)} className="w-6 h-6 rounded bg-slate-100 font-extrabold">+</button>

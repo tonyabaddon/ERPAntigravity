@@ -3,11 +3,17 @@ import type { FunnelSubStage, ProofSource } from './types';
 
 export interface TransitionResult {
   ok: boolean;
-  code?: 'STALE_VERSION' | 'STAGE_MISMATCH' | 'NOT_FOUND';
+  code?: 'STALE_VERSION' | 'STAGE_MISMATCH' | 'NOT_FOUND' | 'INVALID_TRANSITION'
+       | 'PAYMENT_TYPE_MISMATCH' | 'INCOMPLETE_PAYMENT';
   newVersion?: number;
   newSubStage?: FunnelSubStage;
   currentVersion?: number;
   currentSubStage?: FunnelSubStage;
+  /** Present when code === 'INVALID_TRANSITION' — echoes the pair the RPC rejected. */
+  fromSubStage?: FunnelSubStage;
+  toSubStage?: FunnelSubStage;
+  /** Human-readable reason from PAYMENT_TYPE_MISMATCH / INCOMPLETE_PAYMENT guards. */
+  reason?: string;
 }
 
 export async function transitionOrder(params: {
@@ -32,6 +38,9 @@ export async function transitionOrder(params: {
     newSubStage: data.new_sub_stage,
     currentVersion: data.current_version,
     currentSubStage: data.current_sub_stage,
+    fromSubStage: data.from_sub_stage,
+    toSubStage: data.to_sub_stage,
+    reason: data.reason,
   };
 }
 

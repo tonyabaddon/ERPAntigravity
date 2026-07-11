@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Landmark, Banknote, Bike } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { createCashAccount, updateCashAccount } from '../../lib/kasbank/service';
+import { NumberInput } from '../ui/NumberInput';
 import type {
   CashAccount,
   CashAccountInput,
@@ -406,11 +407,9 @@ export default function AccountFormModal({
                 <label className="block font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
                   Saldo awal
                 </label>
-                <input
-                  type="number"
-                  min="0"
+                <NumberInput
                   value={form.opening_balance}
-                  onChange={(e) => updateField('opening_balance', Number(e.target.value))}
+                  onChange={(n) => updateField('opening_balance', n)}
                   placeholder="0"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                 />

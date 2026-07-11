@@ -29,7 +29,21 @@ export function getQuickAction(order: Order): QuickAction | null {
   switch (order.funnel_sub_stage) {
     case '2b': return { label: 'Setujui', toSubStage: '2c' };
     case '2c': return { label: 'Reminder', toSubStage: '2c', intent: 'wa-reminder' };
-    case '2d': return { label: 'Verify', toSubStage: '3a', requiresProof: true };
+    case '2d': {
+      // Bug 3 fix: branch on payment_type so DP-only orders land in the
+      // "tunggu pelunasan" holding state (3d for KOMPONEN, 3f for workshop)
+      // instead of jumping straight to 3a (Sedang Siapkan Barang) which
+      // eventually reaches 4a Dikirim. TEMPO orders skip the funnel and go
+      // straight to 3a because tempo defers payment separately — the
+      // Piutang module tracks their outstanding.
+      let target: FunnelSubStage;
+      if (order.payment_type === 'DP') {
+        target = (order.order_type === 'CUSTOM_PANEL' || order.order_type === 'RAKIT_PANEL') ? '3f' : '3d';
+      } else {
+        target = '3a';
+      }
+      return { label: 'Verify', toSubStage: target, requiresProof: true };
+    }
     case '3a': {
       const target: FunnelSubStage = order.delivery_method === 'PICKUP' ? '4b' : '4a';
       return { label: 'Siap', toSubStage: target };

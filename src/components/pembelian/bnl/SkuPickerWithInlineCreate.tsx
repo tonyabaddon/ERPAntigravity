@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import type { StockItem } from '../../../types';
+import { NumberInput } from '../../ui/NumberInput';
 
 interface Props {
   value: { sku: string; name: string; sell_price?: number } | null;
@@ -109,7 +110,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Harga jual (Rp)</label>
-                <input type="number" value={draftSellPrice} onChange={e => setDraftSellPrice(Number(e.target.value))}
+                <NumberInput value={draftSellPrice} onChange={setDraftSellPrice}
                   className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
               </div>
               <div className="text-[11px] text-gray-500">

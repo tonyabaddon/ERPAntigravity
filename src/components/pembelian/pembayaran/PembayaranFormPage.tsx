@@ -14,6 +14,7 @@ import { supplierService } from '../../../lib/pembelianService';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import { supabase } from '../../../lib/supabaseClient';
 import CashAccountPicker from '../../akuntansi/CashAccountPicker';
+import { NumberInput } from '../../ui/NumberInput';
 import type {
   DbSupplier,
   RecordPembayaranPayload,
@@ -363,13 +364,21 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                                 className="w-4 h-4 accent-indigo-600" />
                             </td>
                             <td className="py-2">
-                              <div className="font-bold text-sm text-indigo-800">{r.display_number}</div>
+                              <a
+                                href={`${window.location.pathname}?tagihan=${encodeURIComponent(r.display_number)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Buka detail Tagihan di tab baru untuk final check"
+                                className="font-bold text-sm text-indigo-800 hover:text-indigo-950 hover:underline decoration-dotted underline-offset-2"
+                              >
+                                {r.display_number}
+                              </a>
                             </td>
                             <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
                             <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
                             <td className="py-2">
-                              <input type="number" min="0" disabled={!r.selected} value={r.amount}
-                                onChange={e => updateRow(idx, { amount: Number(e.target.value) || 0 })}
+                              <NumberInput disabled={!r.selected} value={r.amount}
+                                onChange={n => updateRow(idx, { amount: n })}
                                 className={`w-full text-sm text-right py-1 px-2 rounded-lg border ${overpay ? 'border-red-400 bg-red-50' : 'border-gray-200'} disabled:bg-gray-50 disabled:text-gray-400`} />
                             </td>
                           </tr>
@@ -429,8 +438,8 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                             <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
                             <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
                             <td className="py-2">
-                              <input type="number" min="0" disabled={!r.selected} value={r.amount}
-                                onChange={e => updateRow(idx, { amount: Number(e.target.value) || 0 })}
+                              <NumberInput disabled={!r.selected} value={r.amount}
+                                onChange={n => updateRow(idx, { amount: n })}
                                 className={`w-full text-sm text-right py-1 px-2 rounded-lg border ${overpay ? 'border-red-400 bg-red-50' : 'border-gray-200'} disabled:bg-gray-50 disabled:text-gray-400`} />
                             </td>
                           </tr>
@@ -497,7 +506,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Diskon (opsional)</label>
-              <input type="number" min="0" value={discount} onChange={e => setDiscount(Number(e.target.value) || 0)}
+              <NumberInput value={discount} onChange={setDiscount}
                 className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
               <div className="text-[11px] text-gray-500 mt-1">Misal supplier kasih potongan, isi di sini.</div>
             </div>

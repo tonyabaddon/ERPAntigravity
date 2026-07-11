@@ -6,6 +6,7 @@ import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } fro
 import { indexPhotos } from '../../lib/cariByFotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
+import { NumberInput } from '../ui/NumberInput';
 
 interface Props {
   initial?: Partial<StockItem>;
@@ -392,7 +393,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
                 {showGrosir ? 'Harga Eceran (Rp) *' : 'Harga Jual (Rp) *'}
               </label>
-              <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))}
+              <NumberInput value={price} onChange={setPrice}
                      className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
               <p className="text-[10px] text-slate-400 pl-1">per {unit}</p>
             </div>
@@ -407,8 +408,8 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   {hargaModalIsAktual ? '🔒 Dari Pembelian' : 'Estimasi'}
                 </span>
               </div>
-              <input type="number" value={hargaModal ?? ''} readOnly={hargaModalIsAktual}
-                     onChange={e => setHargaModal(e.target.value === '' ? null : Number(e.target.value))}
+              <NumberInput nullable value={hargaModal ?? null} readOnly={hargaModalIsAktual}
+                     onChange={setHargaModal}
                      className={`w-full rounded-xl px-3 py-2.5 border text-[13px] font-semibold ${
                        hargaModalIsAktual ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white border-slate-200'
                      }`} />
@@ -422,11 +423,10 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
           {showGrosir && (
             <div className="mb-3 space-y-1">
               <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Harga Grosir (Rp)</label>
-              <input
-                type="number"
-                min="0"
-                value={priceGrosir ?? ''}
-                onChange={e => setPriceGrosir(e.target.value === '' ? null : Number(e.target.value))}
+              <NumberInput
+                nullable
+                value={priceGrosir ?? null}
+                onChange={setPriceGrosir}
                 placeholder="Kosongkan jika belum di-set"
                 className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
               />
@@ -441,7 +441,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Jumlah Stok (opsional)</label>
-                <input type="number" value={stokAwal} onChange={e => setStokAwal(Number(e.target.value))}
+                <NumberInput allowDecimal={false} value={stokAwal} onChange={setStokAwal}
                        className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
               </div>
               <div className="space-y-1 sm:col-span-2">
@@ -509,7 +509,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                   <div className="flex items-center justify-center pb-1.5"><span className="text-base font-black text-slate-400">=</span></div>
                   <div className="space-y-1">
                     <label className="text-[9px] font-extrabold text-gray-500 uppercase tracking-widest">Berapa</label>
-                    <input type="number" min={2} value={unitAltFactor ?? ''} onChange={e => setUnitAltFactor(Number(e.target.value) || null)}
+                    <NumberInput nullable allowDecimal={false} value={unitAltFactor ?? null} onChange={setUnitAltFactor}
                            className="w-full bg-white rounded-lg px-2.5 py-1.5 border border-slate-200 text-[11px] font-bold" />
                   </div>
                   <div className="space-y-1">
@@ -525,8 +525,8 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">Batas Stok Min</label>
-                <input type="number" value={minStockPerProduct ?? ''}
-                       onChange={e => setMinStockPerProduct(e.target.value === '' ? null : Number(e.target.value))}
+                <NumberInput nullable allowDecimal={false} value={minStockPerProduct ?? null}
+                       onChange={setMinStockPerProduct}
                        placeholder="kosong = global"
                        className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold" />
                 <p className="text-[10px] text-slate-400">Alert kalau stok ≤ angka ini</p>

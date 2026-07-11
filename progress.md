@@ -1,5 +1,187 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 (scalability batch) — class-fix pass across 7 class-problems
+
+**Context:** founder asked to review the 8-issue QA batch through a **scalability lens** — "pakai prinsip scalable, supaya jangan sampai masalah yang sama happen di tenant2 lain". Framed as three axes: class-fix > point-fix, server-side enforcement > client hopes, recurrence prevention via audit scripts. Identified 7 class-problems from the 8 bugs; addressed each.
+
+### CP1 — SECDEF NULL tenant_id (Bug 1 shape)
+
+Class audit: regex-scan of all SECURITY DEFINER function bodies. Zero remaining matches for "INSERT ... (tenant_id, ...) VALUES (..., NULL, ...)" — migration 20261115000200 was the last carrier. Also verified that only view + platform-admin scoped tables lack the `_resolve_tenant_id()` default; no user-facing tenant table is at risk.
+
+**Recurrence prevention:** `scripts/audit-secdef-null-tenant.ts` + `npm run audit:secdef-null-tenant` — parses migration files for the pattern. Currently CLEAN across 340 migrations. Wire into CI when Cloud Build touches next.
+
+### CP2 — Storage bucket policy incompleteness (Bug 2a shape)
+
+Class audit: 7 buckets. **1 real bug found — `chat-media` had ZERO write policies.** `uploadChatMedia` (WhatsApp admin media inbox) was silently 42501 for all tenants. **Migration `20261115000202_storage_bucket_policy_hardening.sql`** — adds `chat_media_authenticated_write` matching the `branding_authenticated_write` shape. 3 buckets (accounting-proofs, payment-proofs, stock-evidence) are INSERT-only by design (audit trail preservation) — left as-is. Flagged for follow-up: chat-media path lacks tenant prefix; cross-tenant read leakage risk via public URLs.
+
+### CP3 — State machine without server-side guard (Bug 3 real fix)
+
+**Bug 3 was only PARTIALLY solved by the first pass** (adjacency migration 20261115000201). The remaining hole: client `quickActionMap` hardcoded `2d → 3a` on Verify regardless of payment_type, so DP-only orders bypassed the 3d holding state entirely and went 2d → 3a → 4a via "legal" adjacency-approved transitions. **Both sides fixed this pass:**
+
+- **Client** (`quickActionMap.ts:32`): 2d Verify now branches — DP + KOMPONEN → 3d, DP + workshop (CP/RP) → 3f, FULL/TEMPO → 3a. Matches the funnel spec.
+- **Server** (`20261115000203_transition_payment_type_enforcement.sql`): defence-in-depth guards on `transition_order_stage`:
+  - `2d → 3a` when `payment_type='DP'` → `{ok:false, code:'PAYMENT_TYPE_MISMATCH', reason: 'DP orders must verify to 3d/3f (tunggu pelunasan), not 3a'}`.
+  - Any `→ 4a/4b` when `payment_type='DP'` AND `lunas_payment_method IS NULL` → `{ok:false, code:'INCOMPLETE_PAYMENT', reason: 'DP pelunasan belum diverifikasi. Selesaikan 3b Verify Pelunasan dulu.'}`.
+  - TEMPO orders exempt (piutang path). CP/RP fabrication 3f/3g/3h loop unchanged.
+- **Client error surfacing** (`explainTransitionError`): new codes get human messages so operators see actionable guidance instead of raw error codes.
+- **mutations.ts** TransitionResult extended with the new codes + `reason` field.
+
+Other state machines audited: create_sales_order/close_sales_order/mark_sales_order_converted already have status checks. Purchase orders / Tagihan / Opname changes gated by per-status checks in their RPCs. No class-wide missing-guard pattern found beyond kasir orders.
+
+### CP4 — Client numeric input coercion (Bug 6b sweep)
+
+Swept the remaining 22 sites. Extended `NumberInput` with a `nullable` prop so the "null represents unset" pattern (harga_modal, price_grosir, minStockPerProduct, unitAltFactor, hargaModal) can use the same shared component instead of open-coding the `e.target.value === '' ? null : Number(...)` dance. **Files:** PajakSettingsPanel, TenantWizard, SplitMode, OpeningBalanceWizard, BNL FormPage + SkuPicker, PesananFormPage (taxRate), StockTableView, ProductForm (5 fields), CartRows (price + qty stepper).
+
+**Recurrence prevention:** `npm run audit:numinput` — greps for the raw `Number(e.target.value)` pattern with word-boundary matching to skip false positives. Currently CLEAN.
+
+### CP5 — PDF template consistency (Bug 2b + Bug 7 shape)
+
+- `tandaTerimaPdf.ts` was hardcoded to "Toko Anda" placeholder for all tenants (TODO comment from Phase 3 plan). Now accepts `companyName` param; `printTandaTerima()` fetches `store_settings.nama_toko` before generating. Fallback to placeholder on fetch failure.
+- `purchaseOrderPdf.ts` already gained logo + dot-matrix in earlier pass. Confirmed all sales PDFs (SO, invoice DP/lunas/pelunasan, surat jalan, catatan pembatalan) support both.
+- **Not touched:** `src/lib/akuntansi/pdfExport.ts` (517 lines, generateLabaRugiPDF + generateNeracaPDF) has zero logo integration. Follow-up. BNL A6 receipt — too small to justify split-mode PDF.
+
+### CP6 — Silent RPC failure (G2 fix + sweep)
+
+`PaymentProofLightbox` onApprove/onReject in `DaftarPesananScreen.tsx` previously called `await transitionOrder(...)` without checking `result.ok`. Server-side rejects (INVALID_TRANSITION, PAYMENT_TYPE_MISMATCH, etc.) closed the modal + refetched with no error surfaced. **Now both handlers check ok** and alert via `explainTransitionError` on failure; also catch throws with a clear "connection failed" message. All 4 transitionOrder callers now consistent.
+
+### CP7 — Dormant multi-tenant features
+
+Audit: 12 tenant-scoped tables with zero rows in prod (ai_call_log, bank_imports, cash_deposit_batches, rakit_components, reconciliation_periods, etc.) — all Phase 3+ scaffolding. Zero UI components reference these table names, so no leads-shape silent-empty-metric risk. Bug 5's leads case remains the only customer-visible dormant feature (already handled via tooltip).
+
+### Cleanup
+
+Deactivated smoke-test warehouses VER + MCP01 for Garindo via `deactivate_warehouse` RPC. Cleared `store_settings.logo_url`. Orphan branding file in Storage left (protected against direct DELETE — user can remove via Supabase Storage panel).
+
+### Files touched (scalability batch)
+
+- New: `scripts/audit-secdef-null-tenant.ts`; migrations `20261115000201_sales_funnel_transition_adjacency.sql`, `20261115000202_storage_bucket_policy_hardening.sql`, `20261115000203_transition_payment_type_enforcement.sql`.
+- Modified: `src/components/ui/NumberInput.tsx` (added nullable), `src/lib/sales/quickActionMap.ts` (DP branching), `src/lib/sales/mutations.ts` (new codes + reason), `src/lib/tandaTerimaPdf.ts` (multi-tenant), `src/components/sales/DaftarPesananScreen.tsx` (silent-failure fix), `package.json` (audit scripts), + 12 numeric-input swap sites.
+
+### Verification
+
+- `npm run lint` clean.
+- `npm run audit:numinput` clean.
+- `npm run audit:secdef-null-tenant` clean (340 migrations scanned).
+- Server-side guards smoke-tested: `3d→4a` returns INVALID_TRANSITION, `2b→5a` returns INVALID_TRANSITION, NOT_FOUND surfaces on missing order.
+- Client-only fixes NOT yet exercised in browser — need bundle deploy first. **⚠️ Server migrations applied but client bundle stale: any DP order Verify click today will hit PAYMENT_TYPE_MISMATCH server-side because old bundle still sends 2d→3a. Deploy the client to close the mismatch window.**
+
+### Follow-up items
+
+- CI wiring for `audit:numinput` + `audit:secdef-null-tenant` (currently manual `npm run`).
+- pdfExport.ts logo integration for laba rugi + neraca.
+- chat-media path tenant-prefixing + narrower public-read policy.
+- BNL A6 dot-matrix mode if user re-requests.
+- Payment-amount enforcement (requires_lunas / requires_dp columns) on transition_order_stage — DB scaffolding present, not enforced.
+
+---
+
+## 2026-07-12 (later still) — 8-issue QA batch: all 8 shipped after second pass
+
+**Follow-up session** to the batch below. User asked me to verify Bugs 1/2a via Chrome MCP (browser was locked earlier by a stale MCP-managed Chrome from 1:04 AM; killed with user approval) and continue with Bug 3, 4, 7. All three now shipped.
+
+### Verified in prod via Chrome DevTools MCP (Cloud Run + garindo tenant)
+
+- **Bug 1 — Gudang Simpan.** Clicked Tambah Gudang → filled MCP01 / "Gudang MCP Verify" → Simpan. Toast **"✅ Gudang berhasil ditambahkan"**. New row rendered in list; audit log entry `CREATE · Gudang MCP Verify · oleh Tony Wei · 0 detik lalu`. Zero console errors. Backend fix ef48325 + migration `20261115000200` confirmed working end-to-end.
+- **Bug 2a — Upload Logo.** Uploaded 100×100 test PNG (workspace-local at `tmp/test_logo.png`, since removed). Toast **"Logo berhasil di-upload."**. `<img src="…/branding/logo_11111111-1111-1111-1111-111111111111_1783799804222.png">` rendered under LOGO TOKO section. Button flipped from "Upload Logo" to "Ganti Logo" + "Hapus Logo" appeared. `branding_authenticated_write` storage policy + `store_settings.logo_url` UPDATE both confirmed working.
+
+**Prod artefacts left in place** (user can clean up if desired): `Gudang MCP Verify` (MCP01) in Garindo warehouses list; test PNG logo at `store_settings.logo_url` for Garindo. Both were smoke-test artifacts — the test logo actually helps verify the PO PDF logo wiring since it's now a real logo.
+
+### Shipped this pass
+
+- **Bug 4 — Tutup button on Sales Order list.** `close_sales_order` RPC verified to correctly set `status='CLOSED'` (never CONVERTED). User's CONVERTED-on-Tutup complaint was likely a misclick on the adjacent green "→ Jadi Sales Invoice" button — the two sit side-by-side with no separator when SO status = OPEN. Fix: renamed row button to **"✕ Batal (Lost)"** with tooltip, added a 3-px spacer between it and the Convert button. Close modal rewritten as "Batalkan Sales Order (Lost Deal)" with an explicit "Bukan sama dengan Jadi Sales Invoice" line, rose-tinted warning card, "Alasan Lost" label, submit button "✕ Batalkan SO (Lost)", cancel button "Kembali" (was "Batal" which is confusingly close to the primary action name now). `DaftarPenawaranScreen.tsx`.
+
+- **Bug 3 — DP-only order can move to Dikirim funnel.** Root cause was `transition_order_stage` RPC with **zero adjacency validation** — it accepted any `(from, to)` pair as long as version + current sub_stage matched. Fix: **migration `20261115000201_sales_funnel_transition_adjacency.sql`** (applied):
+  - New reference table `public.sales_funnel_transitions` = whitelist of legal `(from_sub_stage, to_sub_stage)` pairs.
+  - Seeded from `src/lib/sales/stageMapping.ts`: covers the full sales funnel (1a→2 handoff, 2a→2b→2c→2d verify, 2d→[3a|3d|3f] branches based on payment type + product type, pelunasan loop 3d/3h→3b→3c, reject recoveries 2e→2d and 3e→3b, CP/RP fabrication 3f→3g→3h with owner-reject 3g→3f loop, 3→4→5 flow, delivery-problem 4→4d→[4a|5a], cancel-from-any→6a, final-reject→6b).
+  - `transition_order_stage` now checks the whitelist BEFORE any state change; illegal pair returns `{ok:false, code:'INVALID_TRANSITION', from_sub_stage, to_sub_stage}`.
+  - **Smoke test proved** it: 3d→4a (Bug 3's exact scenario) now returns `INVALID_TRANSITION`; so does 2b→5a; NOT_FOUND still surfaces on missing order (proving adjacency passes for legal pairs).
+  - **Client shape update**: `mutations.ts` TransitionResult extended with `'INVALID_TRANSITION'` code + `fromSubStage`/`toSubStage` echo fields. `DaftarPesananScreen.tsx` picked up an `explainTransitionError()` so operators see `"Transisi 3d → 4a tidak diizinkan oleh spec funnel..."` instead of raw code.
+  - **Side-catch client bug**: `onReject` in the payment-proof lightbox hardcoded `toSubStage: '2e'` regardless of source. When rejecting the pelunasan proof (fromSub='3b'), that would have put the record in the wrong bucket — and would now trip the new adjacency guard (3b→2e is not seeded). Fixed to use '3e' when fromSub === '3b', '2e' otherwise. Both are legal.
+  - **Deferred**: `requires_lunas` / `requires_dp` columns exist on the seed table but aren't enforced yet. That check needs a single source of truth for paid-amount per order and is a follow-up.
+
+- **Enh 7 — Dot-matrix Purchase Order PDF.** `generatePoPdf` now accepts `printMode: 'normal' | 'dot_matrix'` matching the sales-side `PdfPrintMode` type. `paletteFor()` local to purchaseOrderPdf.ts (independent of sales palette so PO layout can evolve). Dot-matrix branch: pure-black mono, no fills, Courier body font, hairline strokes, outlined initial box instead of solid emerald brand block, amber urgent-cell uses bold text instead of a fill. `PembelianDetailPage.tsx` Download button split into two: **"PDF A4"** (color) and **"Dot Matrix"** (mono) with tooltips explaining which is which. Dot-matrix downloads get a `-dotmatrix` filename suffix. Sales-side dot-matrix was already fully wired (ActionPanel toggle → all six sales PDF templates thread `printMode` through renderHeader / paletteFor). BelanjaNumpangLewat (A6 receipt — too small for the split) and tandaTerima (legacy single-tenant) intentionally skipped.
+
+### Files touched (second pass)
+
+- Modified: `src/components/penjualan/DaftarPenawaranScreen.tsx`, `src/components/sales/DaftarPesananScreen.tsx`, `src/lib/sales/mutations.ts`, `src/lib/pdf/purchaseOrderPdf.ts`, `src/components/pembelian/PembelianDetailPage.tsx`.
+- New migration: `supabase/migrations/20261115000201_sales_funnel_transition_adjacency.sql` (applied to `ekhhojaezdfjfwuxyjkl` via MCP).
+
+### Verification (second pass)
+
+`npm run lint` (tsc --noEmit) clean, zero errors. Bugs 1 + 2a verified end-to-end in the deployed Cloud Run app via Chrome DevTools MCP. Bug 3 migration smoke-tested against real orders (all illegal jumps rejected, legal-but-not-found returns NOT_FOUND as expected). Bugs 4 and Enh 7 not exercised in-browser this pass — code paths only.
+
+### Still deferred (not in this batch)
+
+- Payment-amount enforcement in transition guard (Bug 3 has partial fix — adjacency only).
+- ~25 remaining `Number(e.target.value)` sites for the NumberInput sweep (list in previous entry below).
+- Dot-matrix for BelanjaNumpangLewat + tandaTerima receipts.
+
+---
+
+## 2026-07-12 (earlier) — 8-issue QA batch: root-caused all, shipped 5 fixes
+
+**Context:** founder QA raised 8 issues across Gudang / Logo / Sales funnel / SO list / Pelanggan / Piutang / numeric input / PO PDF / Pembayaran hyperlinks. Root-caused each; shipped what was ready this session; explicitly deferred the rest with reason.
+
+### Shipped
+
+1. **Bug 2b — Logo missing in Purchase Order PDF.** Sales PDFs already fetch and embed the tenant logo via `fetchLogoDataUrl` + `renderHeader(mode=…, logoDataUrl=…)`. Pembelian side wasn't wired. Added `await fetchLogoDataUrl(storeSettings)` at top of `generatePoPdf`, replaced the hardcoded lightning-bolt brand box in the header with `doc.addImage(logoDataUrl, format, margin, margin, 36, 36)` when present; falls back to the box otherwise. `generatePoPdf` is now async; `PembelianDetailPage.tsx` caller awaits. `belanjaNumpangLewatPdf.ts` (A6 receipt) and `tandaTerimaPdf.ts` (single-tenant legacy) intentionally skipped.
+
+2. **Bug 5 — Pelanggan "Leads" / "Konversi" columns look empty.** Root cause: `leads` table exists (8 rows for Garindo) but no code writes to it — the WA AI (Calista) chat pipeline that would populate it isn't wired in the multi-tenant world, so every customer reads 0 / "—". Per advisor note, user was asking "what does it do?" not "remove it" — kept the columns visible, added `title` tooltips on each stat cell ("aktif saat modul WA AI dihidupkan") so the tenant understands the intent + status.
+
+3. **Bug 6b — Numeric input `0` can't be cleared.** Root cause: 32 sites of `<input type="number" value={n} onChange={e => setN(Number(e.target.value) || 0)}>`. When `n=0`, deleting the "0" fires `onChange('')`, `Number('') || 0 = 0`, state stays 0, re-render shows "0" → clear appears to do nothing. Fix: new shared `<NumberInput>` (`src/components/ui/NumberInput.tsx`) stores a local string draft, allows empty transient state, only propagates finite numbers to parent, commits `emptyAs` (default 0) on blur. Swapped into 7 hot spots:
+   - `PembayaranFormPage` — Tagihan outstanding amount, TF outstanding amount, Diskon (3 sites)
+   - `TagihanFormPage` — qty + unit_cost per row (2 sites, handlers refactored to take number instead of event)
+   - `PesananFormPage` — qty + unit_cost per row (2 sites)
+   - `AccountFormModal` — opening_balance
+   - `RekeningBankCard` — sort_order
+
+4. **Enh 6a — Piutang closed/lunas history view.** Added "Lunas (Histori)" filter pill next to "Tulis-off". `fetchPiutangRows` now accepts `{ includeLunas }` which pulls `status = 'PAYMENT_VERIFIED'` on top of the existing INVOICE_TEMPO / INVOICE_WRITTEN_OFF pull (mark_tempo_invoice_paid flips a fully-paid tempo order to PAYMENT_VERIFIED, so AR history lives in that status). Filter logic + count + label updated.
+
+5. **Enh 8 — Pembayaran outstanding "Tagihan" cell hyperlink.** `PembayaranFormPage` Tagihan-outstanding table cell rendered `display_number` as plain text. Wrapped in `<a target="_blank">` pointing at `${window.location.pathname}?tagihan=${encodeURIComponent(number)}` — App.tsx already routes `?tagihan=…` → PembelianScreen's tagihan-detail view. Opens in new tab so the form state on the Pembayaran page isn't lost while user does final check. TF row left as plain text (no equivalent detail-page routing hook yet).
+
+### Root-caused, deferred with reason
+
+- **Bug 1 (Gudang tambah baru save error) & Bug 2a (Logo upload fails).** Migration `20261115000200_fix_secdef_null_tenant_id_and_branding_upload` is applied in prod (verified via `list_migrations`); `create_warehouse` RPC now uses `_resolve_tenant_id()` and smoke-tests cleanly as Tony/Garindo; `branding_authenticated_write` policy on `storage.objects` allows the upload; `store_settings.logo_url` UPDATE also passes smoke. Commit ef48325 is the frontend fix. **Blocked on user:** Chrome DevTools MCP is locked by user's own browser session — I can't attach and reproduce. User needs to (a) hard-refresh Cloud Run after ef48325 deploys, (b) paste DevTools console error text if it still fails post-refresh.
+
+- **Bug 3 (DP-only order visible in "Dikirim / siap diambil" funnel).** `transition_order_stage` RPC has **zero adjacency validation** — takes `(from, to)` params and blindly updates as long as version + current sub_stage match. Client controls the target. DaftarPesananScreen exposes `handleResolveContinue → runTransition(order, '4a')` which can be reached from any stage. Fix requires a DB migration adding an allowed-transitions table + guard function, plus per-stage lunas checks (3d/3h → 4a/4b requires `pelunasan_proof_url IS NOT NULL AND payment_verified_at IS NOT NULL`). Substantial write-path change, needs standalone session + smoke tests per stage pair.
+
+- **Bug 4 (Tutup button on Sales Order list changes status to Converted).** `close_sales_order` RPC correctly sets `status = 'CLOSED'`; smoke-tested. UI in DaftarPenawaranScreen renders "→ Jadi Sales Invoice" (green) directly adjacent to "Tutup" (rose border) when SO status = 'OPEN' — high misclick risk hypothesized. Can't reproduce the reported CONVERTED-on-Tutup-click from code alone. **Blocked on user:** exact repro steps + a screenshot, or unlock Chrome so I can attach and reproduce.
+
+- **Enh 7 (Dot-matrix PO / Invoice PDF).** Sales-side `renderHeader` already has `mode: 'normal' | 'dotmatrix'` plumbing (initial box + no fills in dot-matrix). Gaps: no UI toggle at print time on sales OR pembelian; pembelian PDFs don't share the mode-aware header. Needs new template variants for both sides plus a print-mode picker in the PdfPreviewModal.
+
+### Numeric-input sites NOT swapped this session
+
+`Number(e.target.value)` pattern still present in ~25 more sites — call sites we didn't touch this pass. Follow-up sweep should hit these:
+
+- `src/components/NotificationSettingsScreen.tsx`
+- `src/components/WarehouseTransferModal.tsx`
+- `src/components/KasirScreen.tsx`
+- `src/components/OrderHistoryScreen.tsx`
+- `src/components/ManajemenGudangScreen.tsx` (sort order in Edit modal)
+- `src/components/ui/discount/DiscountInlineInput.tsx`
+- `src/components/piutang/PiutangScreen.tsx` (Catat Bayar amount)
+- `src/components/pengaturan/PajakSettingsPanel.tsx` (3 tax rate inputs)
+- `src/components/admin/TenantWizard.tsx` (expiresInMonths)
+- `src/components/penjualan/CartRows.tsx` (2)
+- `src/components/produk/StockTableView.tsx` (harga_modal + price_grosir)
+- `src/components/rekonsiliasi/SplitMode.tsx`
+- `src/components/akuntansi/OpeningBalanceWizard.tsx`
+- `src/components/pembelian/bnl/SkuPickerWithInlineCreate.tsx`
+- `src/components/sales/EditOrderModal.tsx`
+- (and any I missed — full sweep: `grep -rn 'Number(e.target.value)' src/`)
+
+### Files touched
+
+- New: `src/components/ui/NumberInput.tsx`
+- Modified: `src/components/PelangganScreen.tsx`, `src/components/piutang/PiutangScreen.tsx`, `src/lib/piutangService.ts`, `src/components/pembelian/pembayaran/PembayaranFormPage.tsx`, `src/components/pembelian/tagihan/TagihanFormPage.tsx`, `src/components/pembelian/pesanan/PesananFormPage.tsx`, `src/components/kasbank/AccountFormModal.tsx`, `src/components/pengaturan/RekeningBankCard.tsx`, `src/lib/pdf/purchaseOrderPdf.ts`, `src/components/pembelian/PembelianDetailPage.tsx`.
+- No DB migrations. Bug 1/2a/3/4 all involve DB state that was either already fixed (1/2a) or requires substantial migration work (3).
+
+### Verification
+
+`npm run lint` (tsc --noEmit) clean, zero errors. UI paths NOT exercised in-browser this session — Chrome DevTools MCP was locked by user's session. User to verify locally + on Cloud Run.
+
+---
+
 ## 2026-07-12 — Pesanan diskon + RLS bug brainstorm → no code change
 
 User asked (a) where to enter discount on Pembelian → Buat Pesanan and

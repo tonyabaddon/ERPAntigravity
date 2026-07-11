@@ -172,19 +172,24 @@ export async function markTempoInvoicePaid(orderId: string, proofUrl: string | n
 
 // ── Query: outstanding tempo orders + their customers ──
 export async function fetchPiutangRows(
-  opts?: { includeWrittenOff?: boolean },
+  opts?: { includeWrittenOff?: boolean; includeLunas?: boolean },
 ): Promise<PiutangRow[]> {
   if (!supabase) return [];
   // Fetch tempo orders. Default to open-only (INVOICE_TEMPO). When opts.includeWrittenOff
-  // is set, also pull INVOICE_WRITTEN_OFF so the Tulis-off filter pill in
-  // PiutangScreen can show history + offer the Owner-only Batal Tulis-off action.
+  // is set, also pull INVOICE_WRITTEN_OFF for the Tulis-off filter pill. When
+  // opts.includeLunas is set, also pull PAYMENT_VERIFIED for the closed-history
+  // filter (Enh 6a) — mark_tempo_invoice_paid flips a fully-paid tempo order
+  // to PAYMENT_VERIFIED, so the AR history lives in that status.
   const baseSelect = supabase
     .from('orders')
     .select('*')
     .eq('payment_type', 'TEMPO');
-  const filtered = opts?.includeWrittenOff
-    ? baseSelect.in('status', ['INVOICE_TEMPO', 'INVOICE_WRITTEN_OFF'])
-    : baseSelect.eq('status', 'INVOICE_TEMPO');
+  const statusFilters: string[] = ['INVOICE_TEMPO'];
+  if (opts?.includeWrittenOff) statusFilters.push('INVOICE_WRITTEN_OFF');
+  if (opts?.includeLunas) statusFilters.push('PAYMENT_VERIFIED');
+  const filtered = statusFilters.length === 1
+    ? baseSelect.eq('status', statusFilters[0])
+    : baseSelect.in('status', statusFilters);
   const { data: orders, error: oErr } = await filtered.order('due_date', { ascending: true });
   if (oErr) throw oErr;
 

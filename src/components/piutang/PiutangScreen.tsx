@@ -39,7 +39,7 @@ interface Props {
   isOwner?: boolean;
 }
 
-type FilterKey = 'all' | PiutangTier['key'] | 'written_off';
+type FilterKey = 'all' | PiutangTier['key'] | 'written_off' | 'lunas';
 
 export default function PiutangScreen({ currentUserId, showToast, isOwner = false }: Props) {
   const [rows, setRows] = useState<PiutangRow[]>([]);
@@ -53,7 +53,10 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
   async function reload() {
     setLoading(true);
     try {
-      setRows(await fetchPiutangRows({ includeWrittenOff: filter === 'written_off' }));
+      setRows(await fetchPiutangRows({
+        includeWrittenOff: filter === 'written_off',
+        includeLunas: filter === 'lunas',
+      }));
     } catch (e: any) {
       showToast(e?.message ?? 'Gagal load piutang', 'warning');
     } finally { setLoading(false); }
@@ -69,6 +72,8 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
         if (r.order.status !== 'INVOICE_TEMPO') return false;
       } else if (filter === 'written_off') {
         if (r.order.status !== 'INVOICE_WRITTEN_OFF') return false;
+      } else if (filter === 'lunas') {
+        if (r.order.status !== 'PAYMENT_VERIFIED') return false;
       } else {
         if (r.order.status !== 'INVOICE_TEMPO') return false;
         if (r.tier !== filter) return false;
@@ -131,15 +136,19 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       {/* Filter pills + search */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex gap-2">
-          {(['all', 'overdue', 'today', 'h3', 'future', 'written_off'] as FilterKey[]).map(k => {
+          {(['all', 'overdue', 'today', 'h3', 'future', 'written_off', 'lunas'] as FilterKey[]).map(k => {
             const active = filter === k;
-            const tier = (k === 'all' || k === 'written_off') ? null : PIUTANG_TIERS[k];
-            const label = k === 'all' ? 'Semua' : k === 'written_off' ? 'Tulis-off' : tier!.label;
+            const tier = (k === 'all' || k === 'written_off' || k === 'lunas') ? null : PIUTANG_TIERS[k];
+            const label = k === 'all' ? 'Semua'
+              : k === 'written_off' ? 'Tulis-off'
+              : k === 'lunas' ? 'Lunas (Histori)'
+              : tier!.label;
             const count = k === 'all' ? rows.filter(r => r.order.status === 'INVOICE_TEMPO').length :
               k === 'overdue' ? kpi.overdueCount :
               k === 'today' ? kpi.todayCount :
               k === 'h3' ? kpi.h3Count :
               k === 'written_off' ? rows.filter(r => r.order.status === 'INVOICE_WRITTEN_OFF').length :
+              k === 'lunas' ? rows.filter(r => r.order.status === 'PAYMENT_VERIFIED').length :
               rows.filter(r => r.tier === 'future' && r.order.status === 'INVOICE_TEMPO').length;
             return (
               <button key={k} onClick={() => setFilter(k)}

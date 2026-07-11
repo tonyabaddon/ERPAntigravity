@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { CalendarDays, ChevronRight, ChevronLeft, CheckCircle2, TriangleAlert, BookOpenCheck } from 'lucide-react';
 import { setOpeningBalance } from '../../lib/akuntansi/service';
 import type { OpeningBalanceLine } from '../../lib/akuntansi/types';
+import { NumberInput } from '../ui/NumberInput';
 
 interface Props {
   onDone: () => void;
@@ -215,12 +216,9 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                       </span>
                     </td>
                     <td className="py-2.5 text-right">
-                      <input
-                        type="number"
-                        min="0"
-                        step="1000"
+                      <NumberInput
                         value={a.amount}
-                        onChange={e => updateAmount(i, Number(e.target.value))}
+                        onChange={n => updateAmount(i, n)}
                         className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-36 text-right font-bold"
                       />
                     </td>

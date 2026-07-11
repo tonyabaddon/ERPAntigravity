@@ -4,9 +4,7 @@
 import jsPDF from 'jspdf';
 import type { DbTukarFaktur } from '../types';
 import { tukarFakturService } from './tukarFakturService';
-
-// TODO: Phase 3 multi-tenant — read from store_settings.
-const COMPANY_NAME = 'Toko Anda';
+import { fetchStoreSettings } from './pengaturan/queries';
 
 function fmtDate(s?: string | null) {
   return s
@@ -22,7 +20,7 @@ function fmtRp(n: number) {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
 }
 
-export function generateTandaTerima(tf: DbTukarFaktur): Blob {
+export function generateTandaTerima(tf: DbTukarFaktur, companyName: string = 'Toko Anda'): Blob {
   const doc = new jsPDF({ format: 'a5', unit: 'mm', orientation: 'portrait' });
   // A5 portrait is 148 x 210mm
   const pageW = 148;
@@ -45,7 +43,7 @@ export function generateTandaTerima(tf: DbTukarFaktur): Blob {
   const headerRows: Array<[string, string]> = [
     ['Tanggal', fmtDate(tf.tukar_date)],
     ['Supplier', tf.supplier?.name ?? '—'],
-    ['Penerima', COMPANY_NAME],
+    ['Penerima', companyName],
     ['JT Bayar', fmtDate(tf.payment_due_at)],
   ];
   headerRows.forEach(([k, v]) => {
@@ -85,7 +83,7 @@ export function generateTandaTerima(tf: DbTukarFaktur): Blob {
   y += 6;
   doc.setFontSize(6).setFont('courier', 'italic');
   doc.text(
-    `Dicetak otomatis · ${COMPANY_NAME} · ${new Date().toLocaleString('id-ID')}`,
+    `Dicetak otomatis · ${companyName} · ${new Date().toLocaleString('id-ID')}`,
     centerX,
     y,
     { align: 'center' },
@@ -95,7 +93,15 @@ export function generateTandaTerima(tf: DbTukarFaktur): Blob {
 }
 
 export async function printTandaTerima(tf: DbTukarFaktur) {
-  const blob = generateTandaTerima(tf);
+  // Fetch the tenant's store name so the receipt reflects "PT Sinar Elektrik"
+  // instead of the "Toko Anda" placeholder. Non-fatal — if fetch fails,
+  // fall back to the placeholder rather than blocking the print.
+  let companyName = 'Toko Anda';
+  try {
+    const settings = await fetchStoreSettings();
+    if (settings?.nama_toko) companyName = settings.nama_toko;
+  } catch { /* ignore, use fallback */ }
+  const blob = generateTandaTerima(tf, companyName);
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank');
   // Mark printed timestamp (audit) — non-fatal if it fails

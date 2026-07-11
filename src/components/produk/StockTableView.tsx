@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { StockItem, Warehouse } from '../../types';
 import PendingApprovalBadge from '../approval/PendingApprovalBadge';
+import { NumberInput } from '../ui/NumberInput';
 
 // TODO(Task 2.11): consolidate CATEGORY_SPECS / generateName / renderSpecForm
 // with ProductForm + StockManagerScreen. Duplicated here during Phase 2 split
@@ -455,11 +456,10 @@ export default function StockTableView({
                       <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
                         Harga Modal (HPP)
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={vals.harga_modal ?? ''}
-                        onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], harga_modal: e.target.value ? Number(e.target.value) : null } }))}
+                      <NumberInput
+                        nullable
+                        value={vals.harga_modal ?? null}
+                        onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], harga_modal: n } }))}
                         placeholder="Harga beli / modal"
                         className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                       />
@@ -467,11 +467,10 @@ export default function StockTableView({
                     {showGrosir ? (
                       <div className="space-y-1">
                         <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">Harga Grosir (Rp)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={vals.price_grosir ?? ''}
-                          onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price_grosir: e.target.value ? Number(e.target.value) : null } }))}
+                        <NumberInput
+                          nullable
+                          value={vals.price_grosir ?? null}
+                          onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price_grosir: n } }))}
                           placeholder="Harga untuk pembeli grosir"
                           className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                         />

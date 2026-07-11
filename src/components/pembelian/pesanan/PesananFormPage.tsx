@@ -8,6 +8,7 @@ import { pesananService } from '../../../lib/pesananService';
 import { supplierService } from '../../../lib/pembelianService';
 import type { DbPesanan, DbSupplier, PesananItemDraft, RecordPesananPayload } from '../../../types';
 import SkuPickerWithInlineCreate from '../bnl/SkuPickerWithInlineCreate';
+import { NumberInput } from '../../ui/NumberInput';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -162,13 +163,10 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Pajak (%)</label>
-            <input type="number" min="0" max="1" step="0.01" value={taxRate}
-              onChange={e => {
-                // HTML max=1 is bypassable by paste/keyboard on some browsers,
-                // and `Number(e.target.value) || 0` doesn't clamp. Enforce
-                // 0 ≤ rate ≤ 1 in JS so entering `11` doesn't yield 1100% tax.
-                const raw = Number(e.target.value) || 0;
-                setTaxRate(Math.min(1, Math.max(0, raw)));
+            <NumberInput value={taxRate}
+              onChange={n => {
+                // Enforce 0 ≤ rate ≤ 1 so pasting `11` doesn't yield 1100% tax.
+                setTaxRate(Math.min(1, Math.max(0, n)));
               }}
               className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
             <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
@@ -211,11 +209,11 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                     <span className="text-sm">{it.product_name}</span>
                   </div>
                 </td>
-                <td className="py-3 px-2"><input type="number" min="1" value={it.qty}
-                  onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: Number(e.target.value) || 0 } : p))}
+                <td className="py-3 px-2"><NumberInput allowDecimal={false} value={it.qty}
+                  onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: n } : p))}
                   className="w-full text-sm text-center py-1 px-2 rounded-lg border border-gray-200" /></td>
-                <td className="py-3 px-2"><input type="number" min="0" value={it.unit_cost}
-                  onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: Number(e.target.value) || 0 } : p))}
+                <td className="py-3 px-2"><NumberInput value={it.unit_cost}
+                  onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
                 <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">

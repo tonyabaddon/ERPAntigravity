@@ -12,6 +12,7 @@ import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import { pesananService } from '../../../lib/pesananService';
 import { warehousesService } from '../../../lib/supabaseClient';
 import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanServices';
+import { NumberInput } from '../../ui/NumberInput';
 import type { DbPesanan, PiPaymentMethod, Warehouse, DiscountType } from '../../../types';
 import PaymentMethodPicker from '../bnl/PaymentMethodPicker';
 import { DiscountInlineInput, DiscountRow, useDiscountBinding, computeDiscountAmount } from '../../ui/discount';
@@ -62,8 +63,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
   const overReceive = it.qty > remaining;
 
   // When user edits the unit_cost input directly (Path B: typed price → infer discount)
-  const handleUnitCostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const typed = Number(e.target.value) || 0;
+  const handleUnitCostChange = (typed: number) => {
     if (modulOn) {
       binding.setTypedPrice(typed);
       const perUnitOff = it.master_unit_cost - typed;
@@ -98,8 +98,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
     onChange(idx, { unit_cost: newUnitCost, discount_type: type, discount_value: value, discount_amount_rp: amount });
   };
 
-  const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newQty = Number(e.target.value) || 0;
+  const handleQtyChange = (newQty: number) => {
     // Recompute discount amount for new qty
     const newBase = it.master_unit_cost * newQty;
     const newAmount = computeDiscountAmount(it.discount_value, it.discount_type, newBase);
@@ -119,7 +118,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
       <td className="py-3 text-center font-semibold">{it.qty_ordered}</td>
       <td className="py-3 text-center text-gray-500">{it.qty_received_already}</td>
       <td className="py-3">
-        <input type="number" min="0" max={remaining} value={it.qty}
+        <NumberInput allowDecimal={false} value={it.qty}
           onChange={handleQtyChange}
           className={`w-full text-sm text-center py-1 px-2 rounded-lg border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
         <div className="text-[10px] text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
@@ -130,7 +129,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
             List {fmtRp(it.master_unit_cost)}
           </div>
         )}
-        <input type="number" min="0"
+        <NumberInput
           value={modulOn ? (it.master_unit_cost - Math.round((it.discount_amount_rp ?? 0) / Math.max(1, it.qty))) : it.unit_cost}
           onChange={handleUnitCostChange}
           className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" />

@@ -12,7 +12,9 @@
     "test": "vitest run src",
     "test:integration": "vitest run --no-file-parallelism tests/integration",
     "test:isolation": "vitest run --dir tests/isolation --no-coverage",
-    "audit:views": "tsx scripts/audit-view-security-invoker.ts"
+    "audit:views": "tsx scripts/audit-view-security-invoker.ts",
+    "audit:numinput": "! grep -rnE '(^|[^a-zA-Z_])Number\\(e\\.target\\.value\\)' src --include='*.tsx' --include='*.ts' | grep -v -E '(NumberInput\\.tsx|\\.test\\.)' | grep .",
+    "audit:secdef-null-tenant": "tsx scripts/audit-secdef-null-tenant.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

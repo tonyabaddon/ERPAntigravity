@@ -101,7 +101,7 @@ export default function PembelianDetailPage({
     });
   }, [poNumber]);
 
-  async function handleDownloadPdf() {
+  async function handleDownloadPdf(printMode: 'normal' | 'dot_matrix' = 'normal') {
     if (!po || downloadingPdf) return;
     if (!po.supplier) {
       showToast('Data supplier tidak lengkap. Reload halaman.', 'warning');
@@ -121,17 +121,19 @@ export default function PembelianDetailPage({
           if (author) createdByName = author.name;
         } catch { /* fallback */ }
       }
-      const blob = generatePoPdf({
+      const blob = await generatePoPdf({
         po,
         supplier: po.supplier,
         items: po.items ?? [],
         storeSettings,
         createdByName,
+        printMode,
       });
       const url = URL.createObjectURL(blob);
+      const suffix = printMode === 'dot_matrix' ? '-dotmatrix' : '';
       const a = document.createElement('a');
       if ('download' in a) {
-        a.href = url; a.download = `${po.po_number}.pdf`;
+        a.href = url; a.download = `${po.po_number}${suffix}.pdf`;
         document.body.appendChild(a); a.click(); a.remove();
       } else {
         window.open(url, '_blank');
@@ -296,13 +298,24 @@ export default function PembelianDetailPage({
 
         <div className="flex gap-2 items-center">
           {po.status !== 'DRAFT' && (
-            <button
-              type="button" onClick={handleDownloadPdf} disabled={downloadingPdf}
-              className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              {downloadingPdf ? 'Memproses...' : 'Download PDF'}
-            </button>
+            <>
+              <button
+                type="button" onClick={() => handleDownloadPdf('normal')} disabled={downloadingPdf}
+                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
+                title="A4 warna untuk printer laser/inkjet"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {downloadingPdf ? 'Memproses...' : 'PDF A4'}
+              </button>
+              <button
+                type="button" onClick={() => handleDownloadPdf('dot_matrix')} disabled={downloadingPdf}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+                title="Mono hitam-putih untuk Epson LX-310 / LX-2190 dan printer dot matrix lain"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                {downloadingPdf ? 'Memproses...' : 'Dot Matrix'}
+              </button>
+            </>
           )}
           <button onClick={() => window.print()} className="text-xs text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center gap-1">
             <Printer className="w-3.5 h-3.5" /> Print

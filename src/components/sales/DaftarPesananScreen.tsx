@@ -4,7 +4,7 @@ import type { Order, FunnelStage } from '../../lib/sales/types';
 import { filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
 import { getQuickAction } from '../../lib/sales/quickActionMap';
-import { transitionOrder } from '../../lib/sales/mutations';
+import { transitionOrder, type TransitionResult } from '../../lib/sales/mutations';
 import { fetchStoreSettings, fetchBankAccounts } from '../../lib/pengaturan/queries';
 import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { TypeTabs } from './TypeTabs';
@@ -23,6 +23,30 @@ import {
 } from '../../lib/supabaseClient';
 import { buildWhatsAppReminderUrl } from '../../lib/sales/waReminder';
 import { fetchRecentRejectsByOrder, type RejectInfo } from '../../lib/sales/recentRejects';
+
+// Human-readable error for a failed transition_order_stage RPC. The
+// server-side adjacency guard (migration 20261115000201) surfaces
+// INVALID_TRANSITION which needs different wording than STALE_VERSION or
+// STAGE_MISMATCH — otherwise operators just see a code and refresh, missing
+// the actual "this transition is illegal per the funnel spec" signal.
+function explainTransitionError(result: TransitionResult): string {
+  switch (result.code) {
+    case 'INVALID_TRANSITION':
+      return `Transisi ${result.fromSubStage} → ${result.toSubStage} tidak diizinkan oleh spec funnel. Kemungkinan step verifikasi (mis. bukti pelunasan) belum dilewati. Cek Riwayat Persetujuan.`;
+    case 'PAYMENT_TYPE_MISMATCH':
+      return result.reason ?? 'Rute transisi tidak sesuai dengan jenis pembayaran order ini.';
+    case 'INCOMPLETE_PAYMENT':
+      return result.reason ?? 'DP pelunasan belum diverifikasi. Selesaikan 3b Verify Pelunasan dulu sebelum mengirim.';
+    case 'STALE_VERSION':
+      return 'Data pesanan berubah di tab lain. Refresh dan coba lagi.';
+    case 'STAGE_MISMATCH':
+      return 'Stage pesanan sudah berubah. Refresh dan coba lagi.';
+    case 'NOT_FOUND':
+      return 'Pesanan tidak ditemukan.';
+    default:
+      return `Gagal: ${result.code ?? 'unknown'}. Refresh dan coba lagi.`;
+  }
+}
 
 interface DaftarPesananScreenProps {
   /** Reserved for future Owner-only gating; currently unused. */
@@ -227,7 +251,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       });
       if (!result.ok) {
         // eslint-disable-next-line no-alert
-        alert(`Gagal: ${result.code}. Refresh dan coba lagi.`);
+        alert(explainTransitionError(result));
       }
     } catch (err) {
       console.error('transitionOrder failed', err);
@@ -282,7 +306,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       });
       if (!result.ok) {
         // eslint-disable-next-line no-alert
-        alert(`Gagal: ${result.code}. Refresh dan coba lagi.`);
+        alert(explainTransitionError(result));
       }
     } catch (err) {
       console.error('transitionOrder failed', err);
@@ -409,14 +433,23 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
           orderId={proofModal.orderId}
           onApprove={async () => {
             try {
-              await transitionOrder({
+              const result = await transitionOrder({
                 id: proofModal.orderId,
                 fromSubStage: proofModal.fromSub as Order['funnel_sub_stage'],
                 toSubStage: proofModal.toSub as Order['funnel_sub_stage'],
                 expectedVersion: proofModal.version,
               });
+              if (!result.ok) {
+                // Server rejected the transition (adjacency, payment-guard,
+                // stale version, ...). Surface it so the operator knows the
+                // status didn't change, not silently close the modal.
+                // eslint-disable-next-line no-alert
+                alert(explainTransitionError(result));
+              }
             } catch (err) {
               console.error('approve failed', err);
+              // eslint-disable-next-line no-alert
+              alert('Gagal terhubung ke server. Refresh dan coba lagi.');
             }
             setProofModal(null);
             const fresh = await fetchOrdersWithArchive().catch(() => null);
@@ -424,15 +457,29 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
           }}
           onReject={async (reason) => {
             try {
-              await transitionOrder({
+              // Reject target depends on WHICH proof is being rejected: 3b
+              // (pelunasan bukti) rejects to 3e (Bukti Pelunasan Ditolak);
+              // any other proof stage rejects to 2e (Ditolak). Before the
+              // 20261115000201 adjacency guard, this used '2e' for both,
+              // which put pelunasan rejections in the wrong bucket AND is
+              // now blocked by INVALID_TRANSITION for 3b → 2e.
+              const rejectTarget: Order['funnel_sub_stage'] =
+                proofModal.fromSub === '3b' ? '3e' : '2e';
+              const result = await transitionOrder({
                 id: proofModal.orderId,
                 fromSubStage: proofModal.fromSub as Order['funnel_sub_stage'],
-                toSubStage: '2e',
+                toSubStage: rejectTarget,
                 expectedVersion: proofModal.version,
                 reason,
               });
+              if (!result.ok) {
+                // eslint-disable-next-line no-alert
+                alert(explainTransitionError(result));
+              }
             } catch (err) {
               console.error('reject failed', err);
+              // eslint-disable-next-line no-alert
+              alert('Gagal terhubung ke server. Refresh dan coba lagi.');
             }
             setProofModal(null);
             const fresh = await fetchOrdersWithArchive().catch(() => null);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { NumberInput } from '../ui/NumberInput';
 import type { DbTenantSettings, PajakMode, JenisBadan } from '../../types';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
@@ -126,8 +127,8 @@ export default function PajakSettingsPanel({ showToast }: Props) {
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tarif PPh Final</label>
               <div className="flex items-center gap-2">
-                <input type="number" step="0.01" value={settings.pajak_final_rate}
-                       onChange={e => save({ pajak_final_rate: Number(e.target.value) })}
+                <NumberInput value={settings.pajak_final_rate}
+                       onChange={n => save({ pajak_final_rate: n })}
                        className="w-24 px-3 py-2 text-sm border border-slate-300 rounded-lg text-right" />
                 <span className="text-sm font-semibold text-slate-600">% dari omzet bulanan</span>
               </div>
@@ -181,8 +182,8 @@ export default function PajakSettingsPanel({ showToast }: Props) {
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tarif PPN Umum</label>
               <div className="flex items-center gap-2">
-                <input type="number" step="0.01" value={settings.pajak_ppn_rate_umum}
-                       onChange={e => save({ pajak_ppn_rate_umum: Number(e.target.value) })}
+                <NumberInput value={settings.pajak_ppn_rate_umum}
+                       onChange={n => save({ pajak_ppn_rate_umum: n })}
                        className="w-24 px-3 py-2 text-sm border border-slate-300 rounded-lg text-right" />
                 <span className="text-sm text-slate-500">% (PMK 131/2024)</span>
               </div>
@@ -190,8 +191,8 @@ export default function PajakSettingsPanel({ showToast }: Props) {
             <div>
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tarif PPN Barang Mewah</label>
               <div className="flex items-center gap-2">
-                <input type="number" step="0.01" value={settings.pajak_ppn_rate_mewah}
-                       onChange={e => save({ pajak_ppn_rate_mewah: Number(e.target.value) })}
+                <NumberInput value={settings.pajak_ppn_rate_mewah}
+                       onChange={n => save({ pajak_ppn_rate_mewah: n })}
                        className="w-24 px-3 py-2 text-sm border border-slate-300 rounded-lg text-right" />
                 <span className="text-sm text-slate-500">% (LBO)</span>
               </div>

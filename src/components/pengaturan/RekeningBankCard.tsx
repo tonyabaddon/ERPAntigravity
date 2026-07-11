@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CreditCard, Plus, Trash2, Edit2, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { fetchBankAccounts } from '../../lib/pengaturan/queries';
 import { createBankAccount, updateBankAccount, deleteBankAccount } from '../../lib/pengaturan/mutations';
+import { NumberInput } from '../ui/NumberInput';
 import type { BankAccount } from '../../lib/pengaturan/types';
 
 interface Props {
@@ -224,10 +225,10 @@ export default function RekeningBankCard({ showToast }: Props) {
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="text-xs font-semibold text-gray-700">Urutan</span>
-                  <input
-                    type="number"
+                  <NumberInput
+                    allowDecimal={false}
                     value={form.sort_order}
-                    onChange={e => setForm({ ...form, sort_order: Number(e.target.value) || 0 })}
+                    onChange={n => setForm({ ...form, sort_order: n })}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-32"
                   />
                 </label>

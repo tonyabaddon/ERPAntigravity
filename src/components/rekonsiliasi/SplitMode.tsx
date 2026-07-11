@@ -1,5 +1,6 @@
 // src/components/rekonsiliasi/SplitMode.tsx
 import React, { useState } from 'react';
+import { NumberInput } from '../ui/NumberInput';
 
 interface SplitRow { slotId: string; slotLabel: string; amount: number }
 interface Props {
@@ -41,10 +42,9 @@ export default function SplitMode({ open, totalAmount, candidates, onApply, onCl
               <option value="">— pilih target —</option>
               {candidates.map(c => <option key={c.id} value={c.id}>{c.label} ({fmt(c.expected)})</option>)}
             </select>
-            <input
-              type="number"
+            <NumberInput
               value={r.amount}
-              onChange={e => updateRow(i, { amount: Number(e.target.value) })}
+              onChange={n => updateRow(i, { amount: n })}
               className="w-32 px-3 py-2 border border-[#e5eeff] rounded-xl text-xs"
             />
             <button onClick={() => deleteRow(i)} className="text-red-600 px-2">×</button>

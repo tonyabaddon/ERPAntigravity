@@ -226,9 +226,15 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
                                 className="px-2.5 py-1 text-[10px] font-bold rounded bg-[#2d8a4e] text-white hover:bg-[#236b3d]">
                                 → Jadi Sales Invoice
                               </button>
+                              {/* Spacer prevents accidental clicks between the primary green Convert
+                                  button and the destructive Batal (Lost Deal) button — same row,
+                                  opposite intents. Button label is explicit about outcome ("Lost") to
+                                  distinguish from "Tutup" which readers may misread as "close the modal". */}
+                              <span className="w-3" aria-hidden="true" />
                               <button onClick={() => setCloseModal({ so: r, reason: '' })}
+                                title="Tandai SO sebagai LOST — customer batal / pilih supplier lain. Tidak bisa di-reopen."
                                 className="px-2.5 py-1 text-[10px] font-bold rounded bg-white border border-rose-300 text-rose-700 hover:bg-rose-50">
-                                Tutup
+                                ✕ Batal (Lost)
                               </button>
                             </>
                           )}
@@ -386,15 +392,25 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
         </div>
       )}
 
-      {/* Close modal */}
+      {/* Close modal — labelled as "Batalkan (Lost)" because "Tutup" is
+          ambiguous with the modal-close semantic. This action marks the SO
+          as a lost deal — customer walked away, and the record stays for
+          conversion-rate reporting. Different from "Converted" which means
+          the SO became a Sales Invoice; different from deletion (SOs never
+          get deleted — audit trail). */}
       {closeModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full">
-            <div className="text-lg font-extrabold text-[#012749] mb-2">Tutup Sales Order</div>
-            <div className="text-xs text-slate-600 mb-4">
-              SO <strong>{closeModal.so.so_number}</strong> akan ditandai CLOSED. Operasi ini tidak bisa di-undo.
+            <div className="text-lg font-extrabold text-rose-700 mb-1">Batalkan Sales Order (Lost Deal)</div>
+            <div className="text-[11px] text-slate-500 mb-3">
+              Bukan sama dengan &ldquo;Jadi Sales Invoice&rdquo; — pastikan Anda memilih yang benar.
             </div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Alasan <span className="text-red-500">*</span></label>
+            <div className="text-xs text-slate-700 mb-4 bg-rose-50 border border-rose-200 rounded-lg p-3">
+              SO <strong>{closeModal.so.so_number}</strong> akan ditandai <strong>CLOSED (Lost)</strong>.
+              Customer dianggap batal / pilih supplier lain. Operasi ini <strong>tidak bisa di-undo</strong>;
+              kalau customer berubah pikiran, bikin SO baru.
+            </div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Alasan Lost <span className="text-red-500">*</span></label>
             <textarea rows={3}
               value={closeModal.reason}
               onChange={(e) => setCloseModal({ ...closeModal, reason: e.target.value })}
@@ -402,11 +418,11 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
               className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" />
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setCloseModal(null)} disabled={closing}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-50">Kembali</button>
               <button onClick={onCloseSubmit}
                 disabled={closing || closeModal.reason.trim().length === 0}
                 className="px-4 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50">
-                {closing ? 'Menutup…' : 'Tutup SO'}
+                {closing ? 'Membatalkan…' : '✕ Batalkan SO (Lost)'}
               </button>
             </div>
           </div>

@@ -13,6 +13,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { NumberInput } from '../ui/NumberInput';
 import { adminToast } from '../../lib/adminToast';
 import { PaymentInstructionBlock } from './PaymentInstructionBlock';
 
@@ -369,12 +370,10 @@ function TenantStep({ form, update }: StepProps) {
         </div>
       </Field>
       <Field label="Masa aktif (bulan)" hint="1–60. Default 12 bulan.">
-        <input
-          type="number"
+        <NumberInput
+          allowDecimal={false}
           value={form.expiresInMonths}
-          onChange={e => update('expiresInMonths', Number(e.target.value))}
-          min={1}
-          max={60}
+          onChange={n => update('expiresInMonths', n)}
           className="w-full border rounded-lg px-3 py-2 text-[13px]"
           style={{ borderColor: C.border }}
         />

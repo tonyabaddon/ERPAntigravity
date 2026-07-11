@@ -9,6 +9,7 @@ import type { DbSupplier, PiPaymentMethod, RecordPiPayload, DbPurchaseInvoice } 
 import OrderPicker from './OrderPicker';
 import SkuPickerWithInlineCreate from './SkuPickerWithInlineCreate';
 import PaymentMethodPicker from './PaymentMethodPicker';
+import { NumberInput } from '../../ui/NumberInput';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -264,14 +265,14 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                     <span className="text-sm">{it.product_name}</span>
                   </div>
                 </td>
-                <td className="py-3 px-2"><input type="number" min="1" value={it.qty}
-                  onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: Number(e.target.value) || 0 } : p))}
+                <td className="py-3 px-2"><NumberInput allowDecimal={false} value={it.qty}
+                  onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: n } : p))}
                   className="w-full text-sm text-center py-1 px-2 rounded-lg border border-gray-200" /></td>
-                <td className="py-3 px-2"><input type="number" min="0" value={it.unit_cost}
-                  onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: Number(e.target.value) || 0 } : p))}
+                <td className="py-3 px-2"><NumberInput value={it.unit_cost}
+                  onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
-                <td className="py-3 px-2"><input type="number" min="0" value={it.sell_price}
-                  onChange={e => setItems(prev => prev.map((p, i) => i === idx ? { ...p, sell_price: Number(e.target.value) || 0 } : p))}
+                <td className="py-3 px-2"><NumberInput value={it.sell_price}
+                  onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, sell_price: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
                 <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
