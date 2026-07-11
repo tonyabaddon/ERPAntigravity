@@ -252,7 +252,11 @@ This is exactly the UI pattern F-11 recommends for the AR side.
   1. Extract a `_seed_tenant_accounting(p_tenant_id)` helper that copies the 63-row COA structure from a template (or reads from a canonical seed migration), inserts `accounting_config` with `enable_dual_write_to_gl=true` + `default_kas_account_id` mapping to 1-1110, inserts one default `cash_accounts` row "Kas Toko" wired to the COA row for account_code 1-1110.
   2. Extend `provision_tenant` to call the helper right after `store_settings` insert.
   3. Migration also backfills existing broken tenants (`warung-sinar-rezeki`) so they become functional.
-- **Fix status:** 🟡 Open — NOT fixing pending user review of full finding set.
+- **Fix status:** ✅ Applied 2026-07-12. Migration `20261115000053_seed_tenant_accounting_on_provision.sql`:
+  1. `_seed_tenant_accounting(p_tenant_id)` helper — idempotent early-exit; 2-pass COA copy from garindo template (pass 1 with parent_id NULL, pass 2 repairs parent_id by `account_code` join); inserts default Kas Toko `cash_accounts` FIRST (order matters — accounting_config FKs `cash_accounts.id`, hit 23503 first time when I had these reversed); inserts `accounting_config` with `enable_dual_write_to_gl=true` + `default_kas_account_id` wired to the new cash_account.
+  2. Rewrote `provision_tenant` to `PERFORM public._seed_tenant_accounting(v_tenant_id)` after `store_settings` insert. Preserves all existing behaviour.
+  3. Backfill DO-block iterated tenants with 0 COA rows (excluding template) and called the helper. Ran twice due to a FK-order bug in the first attempt that rolled back the `provision_tenant` rewrite via 23503 (found + fixed via retry).
+- **Live verification:** onboarded fresh test tenant `qa-f15-verify` via UI wizard → 63 COA seeded, `accounting_config` present with dual_write=true, 1 `cash_accounts` "Kas Toko" wired to 1-1110. All 3 real tenants now have full accounting (`warung-sinar-rezeki` was backfilled from 0/0/0). qa-f15-verify test tenant cleaned up after verify.
 
 ### F-16 [🟡 P2 minor] Stok Opname sessions never auto-close
 - **Module:** Stok Opname → RIWAYAT.
@@ -309,5 +313,5 @@ Ran a rapid smoke sweep across the remaining tenant + VOSI Admin surfaces to cat
 | F-10 | 🔴 P0 | 2 | Cross-cutting (impersonation trust model) | Any platform_admin can impersonate any tenant without consent | ✅ Fixed — 20261115000050 + 000051 + Pengaturan/Support Access + VOSI Admin gating |
 | F-11 | 🟠 P1 | 2 | Piutang → Catat Bayar modal | No partial payment field — modal only offers "Konfirmasi Lunas" full-close. B2B tempo customers commonly pay partial. | 🟡 Open |
 | F-13 | 🔴 P0 | 3 | Pembelian → Pembayaran partial | `record_pembayaran` fails 23514 on `purchase_invoices_status_check` — stale narrower CHECK still enforced alongside newer `pi_status_check` that allows DIBAYAR_SEBAGIAN. | ✅ Fixed — 20261115000052 (dropped stale constraint) |
-| F-15 | 🔴 P0 | 4 | Onboard wizard / provision_tenant RPC | New tenant gets 0 chart_of_accounts + 0 accounting_config + 0 cash_accounts → every write path silently degrades (F-2 style) on first sale. Real tenant warung-sinar-rezeki also broken. | 🟡 Open — DO NOT fix yet |
+| F-15 | 🔴 P0 | 4 | Onboard wizard / provision_tenant RPC | New tenant gets 0 chart_of_accounts + 0 accounting_config + 0 cash_accounts → every write path silently degrades (F-2 style) on first sale. Real tenant warung-sinar-rezeki also broken. | ✅ Fixed — 20261115000053 (`_seed_tenant_accounting()` helper + provision_tenant integration + backfill) |
 | F-16 | 🟡 P2 | 5 | Stok Opname list | 7 opname sessions in state "Berlangsung" from 8 days ago (03 Jul). No auto-close / auto-abandon on idle sessions. | 🟡 Open |

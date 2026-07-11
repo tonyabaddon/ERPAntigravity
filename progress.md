@@ -256,6 +256,19 @@ Per user instruction: "continue sampai semua scenario testing selesai, dan summa
 
 **Cumulative session count:** 16/16 complete. 16 findings logged: 10 P0 fixed (F-1..F-7, F-9, F-10, F-13), 3 P0 open (F-15), 2 P1 open (F-8, F-11), 1 P2 open (F-16), plus F-12 marked as PASS-verification row (Session 1 Kasir sale end-to-end).
 
+## 2026-07-12 — F-15 fixed: onboard now seeds full accounting
+
+Migration `20261115000053_seed_tenant_accounting_on_provision.sql`:
+- New helper `_seed_tenant_accounting(p_tenant_id)` — idempotent, 2-pass COA copy from garindo template (63 rows with parent_id fixup via `account_code` join), inserts default Kas Toko cash_account + accounting_config with dual_write=true.
+- Rewrote `provision_tenant` to call the helper after `store_settings` insert (preserving all existing behaviour).
+- Backfill DO-block seeded existing broken tenants — caught `warung-sinar-rezeki` which was silently DOA.
+
+Deployment quirk: first apply hit 23503 because `accounting_config.default_kas_account_id` is FK to `cash_accounts.id` (not to `chart_of_accounts` as its name suggests). Reordered to insert `cash_accounts` first, then `accounting_config` referencing its id. Retry applied both the helper fix and the `provision_tenant` rewrite together.
+
+Live verify: fresh onboard via UI wizard produced 63 COA + 1 cfg + 1 cash for the new tenant. All 4 tenants (3 real + test) now pass invariant `count(chart_of_accounts) > 0`. Test tenant cleaned up.
+
+**Findings state after F-15:** 11 P0 fixed, 0 P0 open, 2 P1 open (F-8, F-11), 1 P2 open (F-16).
+
 ---
 
 ## 2026-07-11 (later) — Pitch-deck tenant UI screenshots (5 highlights, Toko Jaya Makmur)
