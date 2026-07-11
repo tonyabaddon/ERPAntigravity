@@ -67,6 +67,9 @@ function defaultProps(
     onSort: vi.fn(),
     onImpersonate: overrides.onImpersonate ?? vi.fn(),
     impersonating: null,
+    // Default super_admin so the existing tests (which pre-date the gate)
+    // continue to see the Impersonasi button.
+    canImpersonate: true,
     onRowActionSuccess: overrides.onRowActionSuccess ?? vi.fn(),
   };
 }

@@ -63,6 +63,40 @@
 
 ---
 
+## 2026-07-11 — QA audit fixes (10 findings across 4 batches)
+
+**Trigger:** founder requested end-to-end audit of all frontend modules. 6 parallel agents reviewed 30+ files, produced 44 findings (2 CRITICAL, ~25 MAJOR, ~17 MINOR). Fixed 10 highest-signal issues in a single commit.
+
+**Batch 1 CRITICAL (band-aid; RPC rewrite deferred):**
+- `RekonsiliasiScreen.handlePick` — direct `.update()` on `bank_statement_lines.lane` silently no-ops when RLS blocks (guard predicate always false); toast "✓ Cocok" fires anyway. Wrap in try/catch, destructure error, warning toast on failure.
+- `RekonsiliasiScreen.handleCloseBook` — added `closingBook` state (debounce double-click) + try/catch around `closeMonth` RPC.
+- Note: full RPC rewrite for cash_accounts + chart_of_accounts was drafted (`create_cash_account_with_coa`) but hit a SECDEF+RLS role wall (vosi_rpc_owner has no policy match on T-tables for non-admin JWTs). Reverted; investigation deferred to a dedicated migration cycle.
+
+**Batch 2 Data correctness:**
+- `PembayaranFormPage` — submit-time discount validation: reject negative, reject `discount > runningTotal`. Was writing corrupt discount_amount to supplier ledger + GL on typo.
+- `PesananFormPage` — tax rate clamp `Math.min(1, Math.max(0, raw))` in onChange. HTML `max=1` was paste-bypassable → typing `11` gave 1100% tax.
+- `TagihanDetailPage` — real `pesanan_number` fetched via `pesanan` table lookup, replaces fabricated `PSN-<uuid-prefix>` display.
+- `NotificationSettingsScreen` — low-stock + delay threshold: empty input coerces to `1` (min), not `0` which silently disabled alerts.
+- `CatatPenjualanWizard` — tempoOutstanding fetch checks error, sets sentinel `-1` on failure (was silently defaulting to 0 → wrong credit-limit UI).
+
+**Batch 3 Auth/permission:**
+- `TenantsList` / `TenantsTable` — Impersonasi button gated on `isSuperAdmin()` (backend RPC narrowed to super_admin via 20261115000034; sales_reps were seeing an action that would always error).
+- `StockManagerScreen` — removed the "Simpan Semua Perubahan" floating button. It was firing `onStockUpdate(stockList)` with the same list reference → empty diff → nothing persisted, but toasted "Berhasil Menyimpan". Every individual edit already routes through onStockUpdate, so button was a lying no-op.
+
+**Batch 4 Silent-failure UX:**
+- `UserManagementScreen` — `supabase.functions.invoke('send-admin-invite')` returns `{data, error}` (doesn't throw for edge-function failures). Now destructures `error`, tracks `inviteSent` boolean, adjusts final toast so failures are visible ("undangan GAGAL — kirim manual") vs the false-positive "Email undangan terkirim" it always toasted before.
+- `LaporanScreen` — `Promise.allSettled` on 5 report fetches: if ALL five reject (auth expired / RLS scope wrong), show warning toast. KPI cards no longer stuck at "..." with no signal.
+- `SalesInboxScreen` — `handleSend` clears input BEFORE await, no restore on failure → typed message lost silently. Added `sending`/`uploading` state, try/catch, restore input on failure, inline error banner, and disable Send button during in-flight. Same treatment for file upload (`handleFileChange`).
+
+**Tests:** `tsc --noEmit` clean. 26/26 vitest pass (TenantsTable fixture updated with `canImpersonate: true` so pre-gate tests still see the button).
+
+**Deferred:**
+- Cash account SECDEF RPC (needs investigation of SECDEF+RLS role behavior on T-tables; direct writes DO fail per policy check but production RPCs like `record_kasir_sale` work somehow — need to reconcile before writing a broken migration).
+- Admin route-level gate for `/admin/sales-reps`, `/admin/settings/payment`, `/admin/payments/pending`, `/admin/revenue` (sidebar hides links but URL still reachable for sales_reps).
+- ~17 MINOR findings from the audit report (UX polish, less time-sensitive).
+
+---
+
 ## 2026-07-11 — Fix "Toko Anda" flash on post-login/reload render
 
 **Follow-up polish on impersonation deploy.** After the silent auto-impersonate went live, header briefly (~200-500ms) showed the `'Toko Anda'` fallback before `bootstrap_tenant_context` RPC resolved and set the real tenant name. Race between initial render and async fetch. Cosmetic, single-render flash — but visible enough to distract on every login/reload.

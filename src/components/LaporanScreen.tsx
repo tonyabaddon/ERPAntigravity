@@ -73,7 +73,8 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       reportsService.fetchChannelTotals(since),
       reportsService.fetchDailyConversations(since, days),
       reportsService.fetchTopProducts(since),
-    ]).then(([sRes, revRes, chRes, convsRes, prodsRes]) => {
+    ]).then((results) => {
+      const [sRes, revRes, chRes, convsRes, prodsRes] = results;
       if (sRes.status === 'fulfilled') setSummary(sRes.value);
       else console.error('fetchSummary failed:', sRes.reason);
       if (revRes.status === 'fulfilled') setDailyRevenueByChannel(revRes.value);
@@ -84,6 +85,12 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       else console.error('fetchDailyConversations failed:', convsRes.reason);
       if (prodsRes.status === 'fulfilled') setTopProducts(prodsRes.value);
       else console.error('fetchTopProducts failed:', prodsRes.reason);
+      // If ALL five failed, don't leave KPI cards showing "..." forever —
+      // surface a warning so the user can retry (via period change).
+      const allFailed = results.every((r) => r.status === 'rejected');
+      if (allFailed) {
+        showToast('Gagal memuat laporan. Cek koneksi dan coba pilih periode lagi.', 'warning');
+      }
     });
   }, [period]);
 

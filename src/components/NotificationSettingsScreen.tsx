@@ -254,10 +254,16 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#eff4ff]/60 p-6 rounded-3xl border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
             <span className="text-xs font-bold text-slate-700 leading-none">Picu notifikasi jika stok kurang dari</span>
             <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-full border border-blue-50 shrink-0">
-              <input 
+              <input
                 type="number"
+                min="1"
                 value={lowStockLimit}
-                onChange={(e) => setLowStockLimit(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  // Coerce empty/NaN to 1 (not 0) — 0 would mean "notify when
+                  // stock < 0", i.e. never; user would silently disable alerts.
+                  const raw = parseInt(e.target.value, 10);
+                  setLowStockLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
+                }}
                 className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[#012749] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Pcs</span>
@@ -280,10 +286,14 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#eff4ff]/60 p-6 rounded-3xl border border-transparent hover:border-slate-100 hover:bg-white transition-all duration-300">
             <span className="text-xs font-bold text-slate-700 leading-none">Picu peringatan jika respon terhambat lebih dari</span>
             <div className="flex items-center gap-2 bg-[#eff4ff] px-4 py-2 rounded-full border border-blue-50 shrink-0">
-              <input 
+              <input
                 type="number"
+                min="1"
                 value={delayLimit}
-                onChange={(e) => setDelayLimit(parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value, 10);
+                  setDelayLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
+                }}
                 className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[#012749] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Menit</span>

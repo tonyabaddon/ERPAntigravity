@@ -150,10 +150,21 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
     cashBatches.filter(b => b.status === 'DEPOSITED' || b.status === 'CARRY_OVER').length / cashBatches.length * 100,
   );
 
+  const [closingBook, setClosingBook] = useState(false);
   const handleCloseBook = async () => {
-    const r = await reconciliationService.closeMonth(period.year, period.month);
-    if (r.ok) showToast('✓ Buku ditutup', 'success'); else showToast(`❌ ${r.reason ?? 'gagal'}`, 'warning');
-    refresh();
+    if (closingBook) return;
+    setClosingBook(true);
+    try {
+      const r = await reconciliationService.closeMonth(period.year, period.month);
+      if (r.ok) showToast('✓ Buku ditutup', 'success');
+      else showToast(`❌ ${r.reason ?? 'gagal'}`, 'warning');
+      refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`❌ Gagal tutup buku: ${msg}`, 'warning');
+    } finally {
+      setClosingBook(false);
+    }
   };
 
   /**
@@ -243,19 +254,26 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
     }
   };
 
-  /** Standard single-pick handler (non-GL mode) */
+  /** Standard single-pick handler (non-GL mode). Both the allocation insert
+   *  and the lane update can silently no-op if RLS blocks the write; check
+   *  the error and surface it rather than firing a false-positive success. */
   const handlePick = async (candidateId: string) => {
     if (!drawer.source) return;
-    if (drawer.source.type === 'mutasi') {
-      const line = bankLines.find(l => l.id === drawer.source!.id);
-      if (!line || !supabase) return;
+    if (drawer.source.type !== 'mutasi') return;
+    const line = bankLines.find(l => l.id === drawer.source!.id);
+    if (!line || !supabase) return;
+    try {
       await reconciliationService.createAllocation(line.id, candidateId, line.amount);
-      await supabase.from('bank_statement_lines')
+      const { error: updErr } = await supabase.from('bank_statement_lines')
         .update({ lane: 'GREEN', match_reason: 'manual', match_confidence: 1.0 })
         .eq('id', line.id);
+      if (updErr) throw updErr;
       showToast('✓ Cocok', 'success');
       setDrawer({ open: false, source: null, cands: [], glMode: false });
       refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`Gagal cocokkan: ${msg}`, 'warning');
     }
   };
 

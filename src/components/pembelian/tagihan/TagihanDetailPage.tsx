@@ -67,6 +67,10 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
   // We use a separate fetch (no FK constraint exists on purchase_invoices.tukar_faktur_id
   // — Supabase's relationship embed wouldn't infer it).
   const [tfNumber, setTfNumber] = useState<string | null>(null);
+  // Real pesanan_number lookup — was previously fabricating `PSN-<uuid-prefix>`
+  // which doesn't match the tenant sequence (PSN-2026-0042), breaking any
+  // cross-reference during audits or supplier disputes.
+  const [pesananNumber, setPesananNumber] = useState<string | null>(null);
 
   async function reload() {
     setLoading(true);
@@ -100,6 +104,28 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
     })();
     return () => { cancelled = true; };
   }, [tgh?.tukar_faktur_id]);
+
+  // Resolve real pesanan_number when pesanan_id is present.
+  useEffect(() => {
+    const psId = tgh?.pesanan_id;
+    if (!psId || !supabase) { setPesananNumber(null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('pesanan')
+        .select('pesanan_number')
+        .eq('id', psId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        console.error('Failed to fetch pesanan_number:', error);
+        setPesananNumber(null);
+        return;
+      }
+      setPesananNumber((data as { pesanan_number?: string } | null)?.pesanan_number ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [tgh?.pesanan_id]);
 
   if (loading) return <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>;
   if (!tgh) return <div className="p-8 text-center text-sm text-gray-500">Tagihan tidak ditemukan.</div>;
@@ -183,7 +209,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Pesanan Terkait</div>
           </div>
           <div className="text-sm font-bold text-indigo-700">
-            {tgh.pesanan_id ? `PSN-${tgh.pesanan_id.slice(0, 8).toUpperCase()}` : '—'}
+            {tgh.pesanan_id ? (pesananNumber ?? 'Memuat…') : '—'}
           </div>
           {tgh.pesanan_id && onOpenPesanan && (
             <button onClick={() => onOpenPesanan(tgh.pesanan_id!)} className="text-[11px] text-indigo-600 font-semibold hover:underline mt-2">Lihat Pesanan →</button>

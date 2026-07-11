@@ -118,6 +118,8 @@ interface TenantsTableProps {
   onSort: (col: string) => void;
   onImpersonate: (slug: string) => void;
   impersonating: string | null;
+  /** Only super_admins see the Impersonasi button. Backend rejects sales_reps. */
+  canImpersonate?: boolean;
   onRowActionSuccess: () => void;
 }
 
@@ -128,6 +130,7 @@ export function TenantsTable({
   onSort,
   onImpersonate,
   impersonating,
+  canImpersonate = false,
   onRowActionSuccess,
 }: TenantsTableProps) {
   // Suspend modal state
@@ -263,12 +266,14 @@ export function TenantsTable({
               {/* Aksi */}
               <td className="px-3 py-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <ImpersonateButton
-                    slug={t.slug}
-                    name={t.name}
-                    onImpersonate={onImpersonate}
-                    impersonating={impersonating}
-                  />
+                  {canImpersonate && (
+                    <ImpersonateButton
+                      slug={t.slug}
+                      name={t.name}
+                      onImpersonate={onImpersonate}
+                      impersonating={impersonating}
+                    />
+                  )}
                   {t.status === 'ACTIVE' && (
                     <button
                       aria-label={`Suspend ${t.name}`}

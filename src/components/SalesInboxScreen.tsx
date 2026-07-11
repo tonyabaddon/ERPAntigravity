@@ -101,6 +101,9 @@ export default function SalesInboxScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<InboxCategory>('butuhAksi');
   const [inputText, setInputText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
   // Force re-render every 60s to refresh lock countdown display
   const [, forceTick] = useState(0);
@@ -138,17 +141,38 @@ export default function SalesInboxScreen({
   });
 
   const handleSend = async () => {
-    if (!inputText.trim() || !activeChatId) return;
+    if (!inputText.trim() || !activeChatId || sending) return;
     const text = inputText.trim();
+    // Clear input optimistically but be ready to restore on failure.
     setInputText('');
-    await sendAdminMessage(activeChatId, text);
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendAdminMessage(activeChatId, text);
+    } catch (err) {
+      // Restore the text so admin can retry — was silently lost on failure.
+      setInputText(text);
+      setSendError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !activeChatId) return;
-    await sendAdminMedia(activeChatId, file);
-    e.target.value = '';
+    if (!file || !activeChatId || uploading) return;
+    setUploading(true);
+    setSendError(null);
+    try {
+      await sendAdminMedia(activeChatId, file);
+      // Only clear picker on success — was clearing on failure too, so retry
+      // required re-picking the file.
+      e.target.value = '';
+    } catch (err) {
+      setSendError(`Upload gagal: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (loading) {
@@ -383,12 +407,20 @@ export default function SalesInboxScreen({
               />
               <button
                 onClick={handleSend}
-                disabled={!inputText.trim()}
+                disabled={!inputText.trim() || sending}
                 className="bg-[#012749] text-white rounded-lg p-1.5 disabled:opacity-40"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
             </div>
+            {sendError && (
+              <div
+                className="mx-3 mb-2 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1"
+                role="alert"
+              >
+                Gagal kirim: {sendError}
+              </div>
+            )}
           </div>
 
           {/* RIGHT PANEL */}

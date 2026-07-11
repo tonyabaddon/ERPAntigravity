@@ -185,10 +185,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       }
     }
 
-    // Send invitation email (best-effort — failure does not block user creation)
+    // Send invitation email (best-effort — failure does not block user creation).
+    // supabase.functions.invoke returns { data, error } — does NOT throw on
+    // edge-function failures, so try/catch alone let false-positive success
+    // through. Track invite outcome and adjust final toast.
+    let inviteSent = false;
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.functions.invoke('send-admin-invite', {
+        const { error: inviteErr } = await supabase.functions.invoke('send-admin-invite', {
           body: {
             email: newAdmin.email,
             name: newAdmin.name,
@@ -197,7 +201,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
             appUrl: window.location.origin,
           },
         });
-      } catch {
+        if (inviteErr) {
+          console.error('send-admin-invite returned error:', inviteErr);
+          showToast(`⚠️ Admin dibuat tapi gagal kirim email undangan: ${inviteErr.message}`);
+        } else {
+          inviteSent = true;
+        }
+      } catch (err) {
+        console.error('send-admin-invite threw:', err);
         showToast('⚠️ Admin dibuat tapi gagal kirim email undangan.');
       }
     }
@@ -206,7 +217,11 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     setNewEmail('');
     setNewWhatsapp('');
     setNewRole('Pilih Peran...');
-    showToast(`🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`);
+    showToast(
+      inviteSent
+        ? `🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`
+        : `✓ Akun baru dibuat untuk ${newAdmin.name}. Undangan email GAGAL — kirim manual.`,
+    );
   };
 
   const handleRemoveAdmin = async (id: string) => {

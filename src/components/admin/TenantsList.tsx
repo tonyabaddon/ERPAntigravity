@@ -7,6 +7,7 @@ import { listTenantsAdmin } from '../../lib/adminApi';
 import type { AdminTenantRow, PlanCode, TenantStatus, TenantsListFilters } from '../../lib/adminTypes';
 import { tenantContextService } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
+import { isSuperAdmin } from '../../lib/adminAuth';
 import { TenantsTable } from './TenantsTable';
 import type { SortBy } from './TenantsTable';
 
@@ -55,6 +56,15 @@ export function TenantsList() {
 
   // Impersonation state
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  // Super-admin-only gate for the "Impersonasi" button. Backend `impersonate_tenant`
+  // RPC is narrowed to super_admin (20261115000034); frontend needs to match so
+  // sales_reps don't see a UI action that always errors.
+  const [canImpersonate, setCanImpersonate] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    isSuperAdmin().then((v) => { if (!cancelled) setCanImpersonate(v); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Refresh key — bumped after suspend/activate to re-fetch current page
   const [refreshKey, setRefreshKey] = useState(0);
@@ -254,6 +264,7 @@ export function TenantsList() {
           onSort={handleSort}
           onImpersonate={handleImpersonate}
           impersonating={impersonating}
+          canImpersonate={canImpersonate}
           onRowActionSuccess={() => setRefreshKey((k) => k + 1)}
         />
       )}

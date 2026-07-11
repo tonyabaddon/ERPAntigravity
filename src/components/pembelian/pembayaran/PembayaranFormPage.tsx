@@ -220,6 +220,18 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         return;
       }
     }
+    // Discount validation — was silently accepting > running total or negative,
+    // corrupting supplier ledger + GL posting on typo (e.g. 50000000 instead of
+    // 50000). Cap at runningTotal and reject negative.
+    const discountNum = Number(discount) || 0;
+    if (discountNum < 0) {
+      showToast('Diskon tidak boleh negatif', 'warning');
+      return;
+    }
+    if (discountNum > runningTotal) {
+      showToast(`Diskon (${fmtRp(discountNum)}) melebihi total bayar (${fmtRp(runningTotal)})`, 'warning');
+      return;
+    }
 
     setSaving(true);
     try {

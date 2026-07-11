@@ -247,13 +247,20 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     }
     let cancelled = false;
     void (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .select('total')
         .eq('customer_id', customer.id)
         .eq('payment_type', 'TEMPO')
         .eq('status', 'INVOICE_TEMPO');
       if (cancelled) return;
+      if (error) {
+        // Was silently defaulting to 0 → wrong credit-limit UI. Surface
+        // and set sentinel so Step3 disables TEMPO save until retry.
+        console.error('tempoOutstanding fetch failed:', error);
+        setTempoOutstanding(-1);
+        return;
+      }
       const sum = (data ?? []).reduce(
         (a: number, o: { total: number }) => a + Number(o.total ?? 0),
         0,

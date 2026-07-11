@@ -164,9 +164,15 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Pajak (%)</label>
             <input type="number" min="0" max="1" step="0.01" value={taxRate}
-              onChange={e => setTaxRate(Number(e.target.value) || 0)}
+              onChange={e => {
+                // HTML max=1 is bypassable by paste/keyboard on some browsers,
+                // and `Number(e.target.value) || 0` doesn't clamp. Enforce
+                // 0 ≤ rate ≤ 1 in JS so entering `11` doesn't yield 1100% tax.
+                const raw = Number(e.target.value) || 0;
+                setTaxRate(Math.min(1, Math.max(0, raw)));
+              }}
               className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300" />
-            <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%.</div>
+            <div className="text-[11px] text-gray-500 mt-1">Format decimal — 0.11 untuk 11%. Maks 1 (=100%).</div>
           </div>
           <div>
             <div className="text-xs font-semibold text-gray-600 mb-1.5">Status Awal</div>
