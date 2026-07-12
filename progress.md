@@ -1,5 +1,53 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 — Warehouse Transfer (two-step state machine) — DB shipped, FE deploying
+
+**Feature:** two-step warehouse transfer replacing legacy single-shot `transfer_warehouse` RPC. State machine `IN_TRANSIT → RECEIVED / PARTIAL / CANCELLED`. Multi-SKU per surat jalan. Client-side jsPDF surat jalan (no paid service). In-transit chip on `StockManager`. Aging alerts in Owner Decision Inbox for stuck > 24h.
+
+**Design memo:** `docs/superpowers/specs/2026-07-12-warehouse-transfer-two-step-design.md` (15 sections + irreversible-decision memo)
+**Impl plan:** `docs/superpowers/plans/2026-07-12-warehouse-transfer-plan.md` (26 tasks, 4 phases)
+**SDD ledger:** `.claude/worktrees/warehouse-transfer/.superpowers/sdd/progress.md`
+**Feedback memory added:** `feedback_warehouse_transfer_naming` (use "Transfer" not "Mutasi")
+
+**Migrations shipped to Garindo prod (13):** slots 210-219, 222, 223, 224, 226. Smoke migration 221 (RAISE-EXCEPTION rollback) kept out of prod. Slot 220 (wrong-name permission seed) superseded by 222 fixup and skipped from apply-pending-migrations.sh.
+
+**E2E smoke on Garindo (Task 25):** DO block with `set_config` fake auth exercised full lifecycle inside intentional-rollback transaction — initiate → receive full (RECEIVED), initiate → receive partial (PARTIAL loss=3), initiate → cancel (CANCELLED), all ASSERT-verified.
+
+**3 fix commits from prod-smoke defect discovery:**
+- **admin_users.id ≠ auth.users.id** (mapped by email, not id in this repo) → slot 224 drops 4 FKs, matches `stock_movements.actor_user_id` convention
+- **`_log_stock_movement` helper NOT NULL qty_before + doesn't accept warehouse_id** → slot 226 uses direct INSERT (matches `resolve_supplier_claim` + `_apply_opname_change` damage-loop pattern per memory `smoke_test_bug_fixes` Bug 2/3)
+- **`stock_movements.actor_role` + `evidence_urls` NOT NULL** → slot 226 sets both explicitly
+
+**2 plan-defect fix commits (controller-level):**
+- Task 11: plan assumed column-per-permission, real pattern is JSONB (`admin_users.permissions`) — resolved in-brief before dispatch
+- Task 16 / slot 222: plan invented new permission keys (`can_transfer_warehouse` / `can_receive_warehouse_transfer`) that don't exist in `PermissionSet`; correct existing keys are `can_initiate_transfer` / `can_receive_transfer`. Fixup: drop wrong keys from `admin_users.permissions`, seed correct keys (Owner=true / non-Owner=false), re-issue initiate RPC with correct receiver check, revert Sidebar `permKey`
+
+**Advisor findings post-apply:**
+- 1 ERROR — `v_pengawasan_transfer_aging` runs as SECDEF → fixed by slot 223 (`security_invoker=true`) to inherit caller RLS
+- 1 INFO — `warehouse_transfer_doc_seq` RLS enabled with no policies → intentional deny-all, `REVOKE ALL FROM authenticated` covers direct access
+- 7 INFO — unindexed FKs on `*_user_id` + `*_warehouse_id` columns — MVP acceptable, defer to post-monitor observation
+- 5 INFO — unused indexes (table just created, expected)
+- 16 WARN — SECDEF RPCs anon+authenticated exposure — baseline noise, all internally tenant-scoped
+
+**FE (Phases B+C, 11 tasks):** `src/lib/warehouseTransferService.ts`, `src/lib/pdf/warehouseTransferPDF.ts`, `src/hooks/useInTransitBySKU.ts`, `src/components/warehouseTransfer/{ListScreen, CreateScreen, DetailScreen, SKUPicker, InTransitChip}.tsx` + 5 test files (15 vitest tests, all pass). `WarehouseTransferModal.tsx` + `pembelianService.transferWarehouse` deleted. Sidebar entry "Transfer Gudang" (icon: ArrowRightLeft, category: inventory, permKey: `[can_initiate_transfer, can_receive_transfer]`). App.tsx routes wire warehouse-transfer / -create / -detail.
+
+**Stop-hook `audit:numinput` catch (Task 20 implementer):** `WarehouseTransferDetailScreen.tsx:278` used raw `Number(e.target.value)` → swapped to `NumberInput` from `src/components/ui/NumberInput.tsx`. Also fixed 2 pre-existing hits in `ApprovalGateEditor.tsx` (from parallel Item #4 discount-approval merge) as they blocked the same gate.
+
+**Deploy status:**
+- Merge to main: `6c6d5ba merge: warehouse-transfer feature (worktree-warehouse-transfer → main)` — 30 worktree commits merged with 10 main-side commits (no conflicts)
+- Cloud Build: rev `garindo-jaya-panel-msme-erp-frontend-00336-dek` (image `ca05c9e0`) SUCCESS
+- Traffic: promoted to `00336-dek` at 100%
+- **Stage 3 prod smoke on Toko Jaya Makmur: PENDING** (Chrome MCP blocked by user's running Chrome; founder + Claude coordinating)
+
+**Follow-ups tracked:**
+- Owner-force RPCs (`admin_force_receive_transfer`, `admin_force_cancel_transfer`) — Phase 2 per spec §11
+- Legacy `transfer_warehouse` compat shim removal — next release cycle
+- Opname RPCs cutover to `warehouse_id` uuid — separate ticket per memory `project_phase3_warehouse_cutover_pending`
+- Optional FK indexes on `sender_user_id` / `receiver_user_id` / warehouse FKs — monitor query patterns first
+- Slot 220 file left in-tree as historical artifact but skipped from apply script
+
+---
+
 ## 2026-07-12 — Item #4 Task 2: check_kasir_discount_gate RPC DONE
 
 Migration applied to prod (Garindo):
