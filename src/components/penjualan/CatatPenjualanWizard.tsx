@@ -58,6 +58,13 @@ import Step3Payment from './wizard/Step3Payment';
 import { validateStep1, validateStep2 } from '../../lib/wizard/validation';
 import { isFieldVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings } from '../../types';
+import {
+  checkDiscountGate,
+  requestDiscountApproval,
+  linkSaleToApproval,
+  cancelDiscountRequest,
+  subscribeToApprovalRequest,
+} from '../../lib/discountApproval/api';
 
 // Module-scoped sequence for stable cart row keys, mirroring the legacy
 // _itemSeq pattern in PenjualanBaruScreen. Per-row _key lets CartRows track
@@ -171,6 +178,17 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   // ── Order-level discount state (Task 14) ──────────────────────────────────
   const [orderDiscountValue, setOrderDiscountValue] = useState<number | null>(null);
   const [orderDiscountType, setOrderDiscountType] = useState<DiscountType>(null);
+
+  // Item #4: discount approval state
+  // - discountReason: admin-typed reason (visible when gate triggers)
+  // - approvedApprovalId: set once owner approves; carries through until sale commits, then attached via linkSaleToApproval
+  // - pendingApprovalId: request in-flight (awaiting owner)
+  // - reasonPromptOpen: modal open state for reason entry when gate first triggers
+  const [discountReason, setDiscountReason] = useState('');
+  const [approvedApprovalId, setApprovedApprovalId] = useState<number | null>(null);
+  const [pendingApprovalId, setPendingApprovalId] = useState<number | null>(null);
+  const [reasonPromptOpen, setReasonPromptOpen] = useState(false);
+  const [gateThresholds, setGateThresholds] = useState<{ amount: number | null; percent: number | null } | null>(null);
 
   // ── Step 3: payment fields ────────────────────────────────────────────────
   const [paymentMethod, setPaymentMethod] = useState<KasirPaymentMethod>('cash');
@@ -528,10 +546,95 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   // Called by Step3Payment with the dispatched path. The Step3 component
   // already validated payment_type via validateStep3; we re-guard server-facing
   // invariants (TEMPO eligibility, mixed-cart constraint).
+  // Item #4: pre-submit discount gate. If discount > threshold and no
+  // approved request yet, halt the save and either (a) open the reason
+  // modal on first hit, or (b) request approval + show waiting state if
+  // reason was already entered.
+  const checkAndRequestDiscountApproval = async (): Promise<boolean> => {
+    // Returns true when it's safe to proceed with the actual save.
+    // Returns false when we've dispatched a request or need reason input.
+    if (orderDiscountAmountRp <= 0) return true;
+    if (approvedApprovalId !== null) return true; // already approved this session
+    if (pendingApprovalId !== null) {
+      showToast('Menunggu persetujuan owner…', 'info');
+      return false;
+    }
+    let gate;
+    try {
+      gate = await checkDiscountGate(orderDiscountAmountRp, subtotalAfterLineDiscount);
+    } catch (err) {
+      // Non-fatal: if gate check errors (e.g. missing settings row), let sale proceed
+      console.error('checkDiscountGate failed', err);
+      return true;
+    }
+    if (!gate.gate_triggered) return true;
+
+    setGateThresholds({ amount: gate.threshold_amount, percent: gate.threshold_percent });
+
+    // If we've never asked for a reason, open the modal and stop the save.
+    if (discountReason.trim().length < 3) {
+      setReasonPromptOpen(true);
+      showToast('Diskon melewati ambang. Isi alasan → owner approve.', 'info');
+      return false;
+    }
+
+    // Reason present — dispatch approval request.
+    try {
+      const requestId = await requestDiscountApproval({
+        discountAmountRp: orderDiscountAmountRp,
+        discountType: orderDiscountType === 'PERCENT' ? 'PERCENT' : 'AMOUNT',
+        discountValue: orderDiscountValue ?? 0,
+        subtotalRp: subtotalAfterLineDiscount,
+        reason: discountReason.trim(),
+      });
+      if (requestId === -1) {
+        // bypass_self path — settings say Owner-as-kasir can skip; no request
+        // row created. Mark internally as pre-approved so we skip on next
+        // save iteration.
+        setApprovedApprovalId(-1);
+        return true;
+      }
+      setPendingApprovalId(requestId);
+      showToast('Request approval owner terkirim. Menunggu…', 'success');
+    } catch (err) {
+      showToast(`Gagal minta approval: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+    }
+    return false;
+  };
+
+  // Realtime subscription: when the pending approval row transitions,
+  // reflect it in UI. On 'approved', flip state so the next Save click
+  // will proceed with the actual sale.
+  useEffect(() => {
+    if (!pendingApprovalId) return;
+    return subscribeToApprovalRequest(pendingApprovalId, (newStatus) => {
+      if (newStatus === 'approved') {
+        setApprovedApprovalId(pendingApprovalId);
+        setPendingApprovalId(null);
+        showToast('Owner approve. Klik Simpan lagi untuk commit sale.', 'success');
+      } else if (newStatus === 'rejected') {
+        setPendingApprovalId(null);
+        setApprovedApprovalId(null);
+        setDiscountReason('');
+        showToast('Owner tolak. Diskon dibatalkan — coba tanpa diskon atau ubah nilainya.', 'warning');
+      } else if (newStatus === 'expired') {
+        setPendingApprovalId(null);
+        showToast('Request kedaluwarsa. Ajukan ulang bila perlu.', 'warning');
+      }
+    });
+  }, [pendingApprovalId, showToast]);
+
   const onSave = async (path: 'tempo' | 'wip' | 'standard'): Promise<void> => {
     if (!customer) {
       showToast('Customer wajib dipilih.', 'warning');
       throw new Error('customer_missing');
+    }
+
+    // Item #4: discount approval gate — halt save if gate needs owner
+    // action. Runs early so we don't dispatch createTempoInvoice or
+    // recordSale until the discount is authorized.
+    if (!(await checkAndRequestDiscountApproval())) {
+      throw new Error('discount_approval_required');
     }
     if (paymentType === 'DP' && dpInputType === 'PERCENT' && (dpAmount <= 0 || dpAmount > 100)) {
       showToast('Persen DP harus antara 1 dan 100.', 'warning');
@@ -753,6 +856,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         await markSalesOrderConverted(fromSalesOrderId, { kasirTxId: tx.id });
       } catch (err) {
         showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      }
+    }
+    // Item #4: link committed sale to its discount approval for audit
+    // (only for real request rows; -1 sentinel = Owner bypass, no link).
+    if (approvedApprovalId !== null && approvedApprovalId > 0) {
+      try {
+        await linkSaleToApproval({ saleId: tx.id, requestId: approvedApprovalId });
+      } catch (err) {
+        showToast(`Sale tersimpan tapi audit-link gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
       }
     }
     onSaved(tx.id);
@@ -997,6 +1109,98 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           </div>
         )}
       </div>
+
+      {/* Item #4: discount approval modal — reason entry */}
+      {reasonPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white shadow-lg" style={{ fontSize: '14px' }}>
+            <div className="border-b border-slate-200 px-5 py-3">
+              <h2 className="font-semibold text-slate-800">⚠ Diskon butuh approval owner</h2>
+            </div>
+            <div className="space-y-3 px-5 py-4">
+              <div className="rounded bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800">
+                Diskon Rp {Math.round(orderDiscountAmountRp).toLocaleString('id-ID')}
+                {gateThresholds?.amount != null && (
+                  <> · melewati ambang Rp {gateThresholds.amount.toLocaleString('id-ID')}</>
+                )}
+                {gateThresholds?.percent != null && (
+                  <> · atau &gt; {gateThresholds.percent}%</>
+                )}
+              </div>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">Alasan diskon (min 3 huruf)</span>
+                <textarea
+                  value={discountReason}
+                  onChange={(e) => setDiscountReason(e.target.value)}
+                  rows={3}
+                  placeholder="Contoh: Customer loyal 5 tahun · match harga kompetitor · barang display"
+                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                />
+              </label>
+              <p className="text-xs text-slate-500">
+                Setelah kirim, owner akan review di menu Persetujuan. Kamu bisa cancel selama menunggu.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+              <button
+                type="button"
+                className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                onClick={() => { setReasonPromptOpen(false); setDiscountReason(''); }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={discountReason.trim().length < 3}
+                className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                onClick={async () => {
+                  setReasonPromptOpen(false);
+                  // Trigger request via onSave — checkAndRequestDiscountApproval
+                  // will see the reason and dispatch. onSave will throw
+                  // discount_approval_required which we catch here to keep UI happy.
+                  try { await onSave('standard'); } catch { /* expected: pending */ }
+                }}
+              >
+                Kirim ke Owner
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Item #4: waiting-for-owner state banner */}
+      {pendingApprovalId !== null && !reasonPromptOpen && (
+        <div className="fixed bottom-4 right-4 z-40 max-w-sm rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-lg" style={{ fontSize: '14px' }}>
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">⏳</div>
+            <div className="flex-1">
+              <div className="font-semibold text-blue-900">Menunggu approval owner</div>
+              <div className="mt-1 text-xs text-blue-800">
+                Diskon Rp {Math.round(orderDiscountAmountRp).toLocaleString('id-ID')} · Alasan: "{discountReason}"
+              </div>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  className="rounded border border-blue-300 bg-white px-3 py-1 text-xs text-blue-700 hover:bg-blue-100"
+                  onClick={async () => {
+                    if (pendingApprovalId === null) return;
+                    try {
+                      await cancelDiscountRequest(pendingApprovalId);
+                      setPendingApprovalId(null);
+                      setDiscountReason('');
+                      showToast('Request dibatalkan. Kamu bisa lanjut tanpa diskon.', 'info');
+                    } catch (err) {
+                      showToast(`Cancel gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+                    }
+                  }}
+                >
+                  Batalkan request
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
