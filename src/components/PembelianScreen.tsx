@@ -12,6 +12,7 @@ import ReceiveGoodsModal from './pembelian/ReceiveGoodsModal';
 import MarkAsPaidModal from './pembelian/MarkAsPaidModal';
 import PurchaseOrderFormPage from './pembelian/PurchaseOrderFormPage';
 import PembelianDetailPage from './pembelian/PembelianDetailPage';
+import KlaimSupplierPanel from './pembelian/KlaimSupplierPanel';
 import BelanjaNumpangLewatList from './pembelian/bnl/BelanjaNumpangLewatList';
 import BelanjaNumpangLewatFormPage from './pembelian/bnl/BelanjaNumpangLewatFormPage';
 import BelanjaNumpangLewatDetailPage from './pembelian/bnl/BelanjaNumpangLewatDetailPage';
@@ -70,6 +71,7 @@ type Tab =
   | 'tagihan'
   | 'tukar-faktur'
   | 'bnl'
+  | 'klaim'
   | 'pembayaran'
   | 'suppliers';
 
@@ -471,12 +473,20 @@ export default function PembelianScreen({
                 Belanja Numpang Lewat
               </button>
               <button
+                onClick={() => setTab('klaim')}
+                className={`px-4 py-2.5 text-sm font-semibold -mb-px ${tab === 'klaim' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Klaim Supplier
+              </button>
+              <button
                 onClick={() => { setTab('suppliers'); setViewMode({ kind: 'list' }); }}
                 className={`px-4 py-2.5 text-sm font-medium -mb-px ${tab === 'suppliers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Supplier
               </button>
             </div>
+
+            {tab === 'klaim' && <KlaimSupplierPanel showToast={showToast} />}
 
             {/* Beranda — supplier AP snapshot KPI strip + per-supplier outstanding */}
             {tab === 'beranda' && (
