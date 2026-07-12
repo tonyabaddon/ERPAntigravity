@@ -1,5 +1,15 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 — Item #4 Task 2: check_kasir_discount_gate RPC DONE
+
+Migration applied to prod (Garindo):
+- `20261115000112_kasir_discount_rpcs` — `check_kasir_discount_gate(p_discount_amount_rp, p_subtotal_rp) → JSONB`
+- SECDEF + OWNER TO vosi_rpc_owner + GRANT EXECUTE TO authenticated
+- Smoke: 4/4 tests PASS — opt-out default, threshold_amount gate, threshold_percent gate, zero-subtotal edge case
+- TDD: FAIL confirmed (42883 no function) before migration; all 4 PASS after
+- Commit: `c31bb64` on feat/discount-approval
+- Note: slot 112 (111 consumed by seed in Task 1); Tasks 3-5 append to this same file
+
 ## 2026-07-12 — Item #4 Task 1: kasir_discount schema migration DONE
 
 Migrations applied to prod (Garindo):
