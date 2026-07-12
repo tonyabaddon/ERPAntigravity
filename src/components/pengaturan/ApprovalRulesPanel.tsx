@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { approvalSettingsService, tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
 import { isApprovalGateVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbApprovalSettings, DbTenantSettings, ApprovalRequestType } from '../../types';
+import { ApprovalGateEditor, type ApprovalGateSettings } from './ApprovalGateEditor';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
 
@@ -14,6 +15,7 @@ const GROUPS: Array<{ heading: string; icon: string; bgClass: string; gates: Gat
     { type: 'initial_stock',  title: 'Set saldo awal stok produk baru',         description: 'Saat input first-time stock.' },
   ]},
   { heading: 'KASIR / POS', icon: '💳', bgClass: '', gates: [
+    { type: 'kasir_discount' as ApprovalRequestType,        title: 'Diskon manual di kasir', description: 'Kasir kasih diskon melewati ambang → owner approve. Cegah fraud karyawan.' },
     { type: 'kasir_price_override', title: 'Override harga di kasir', description: 'Kasir set harga manual ≠ list price.' },
     { type: 'kasir_void',           title: 'Void transaksi',            description: 'Batal transaksi sebelum/sesudah cetak.' },
     { type: 'kasir_refund',         title: 'Refund tunai',              description: 'Refund cash ke pelanggan.' },
@@ -45,13 +47,15 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
   const [settings, setSettings] = useState<DbApprovalSettings[]>([]);
   const [tenant, setTenant] = useState<DbTenantSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedType, setExpandedType] = useState<ApprovalRequestType | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     Promise.all([approvalSettingsService.fetch(), tenantSettingsService.fetch()])
       .then(([s, t]) => { setSettings(s); setTenant(t); })
       .catch(err => { console.error(err); showToast('Gagal memuat approval settings', 'warning'); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshTick]);
 
   const findSetting = (type: ApprovalRequestType) => settings.find(s => s.request_type === type);
 
@@ -99,34 +103,65 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
               {visibleGates.map(g => {
                 const s = findSetting(g.type);
                 if (!s) return null;
+                const isExpanded = expandedType === g.type;
+                const initialEditor: ApprovalGateSettings = {
+                  approval_required: s.approval_required,
+                  verification_method: (s.verification_method as ApprovalGateSettings['verification_method']) ?? 'APP_INBOX',
+                  threshold_amount: s.threshold_amount ?? null,
+                  threshold_percent: s.threshold_percent ?? null,
+                  threshold_qty: s.threshold_qty ?? null,
+                  approver_role: s.approver_role ?? 'Owner',
+                  requestor_bypass_self: s.requestor_bypass_self ?? false,
+                  reason_required: s.reason_required ?? false,
+                };
                 return (
-                  <label key={g.type} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={s.approval_required}
-                      onChange={e => handleToggle(g.type, e.target.checked)}
-                      className="w-4 h-4"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-slate-800">{g.title}</div>
-                      <div className="text-[11px] text-slate-500">{g.description}</div>
+                  <div key={g.type} className="border-t border-slate-100 first:border-t-0">
+                    <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={s.approval_required}
+                        onChange={e => handleToggle(g.type, e.target.checked)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <div className="flex-1 cursor-pointer" onClick={() => setExpandedType(isExpanded ? null : g.type)}>
+                        <div className="text-sm font-semibold text-slate-800">{g.title}</div>
+                        <div className="text-[11px] text-slate-500">{g.description}</div>
+                      </div>
+                      {g.thresholdLabel && (
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <span className="text-slate-500">{g.thresholdLabel}</span>
+                          <input
+                            type="text"
+                            value={s.threshold_amount?.toLocaleString('id-ID') ?? ''}
+                            onChange={e => {
+                              const cleaned = e.target.value.replace(/[^\d]/g, '');
+                              handleThreshold(g.type, cleaned ? Number(cleaned) : null);
+                            }}
+                            className="w-28 px-2 py-1 border border-slate-300 rounded text-xs text-right bg-white"
+                            placeholder="0"
+                          />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedType(isExpanded ? null : g.type)}
+                        className="text-xs text-slate-400 hover:text-slate-600 ml-2 px-2 py-1 rounded hover:bg-slate-100"
+                        title="Pengaturan lanjutan (semua 7 knob)"
+                      >
+                        {isExpanded ? '▲' : '⚙'}
+                      </button>
                     </div>
-                    {g.thresholdLabel && (
-                      <div className="flex items-center gap-2 text-[11px]">
-                        <span className="text-slate-500">{g.thresholdLabel}</span>
-                        <input
-                          type="text"
-                          value={s.threshold_amount?.toLocaleString('id-ID') ?? ''}
-                          onChange={e => {
-                            const cleaned = e.target.value.replace(/[^\d]/g, '');
-                            handleThreshold(g.type, cleaned ? Number(cleaned) : null);
-                          }}
-                          className="w-28 px-2 py-1 border border-slate-300 rounded text-xs text-right bg-white"
-                          placeholder="0"
+                    {isExpanded && (
+                      <div className="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
+                        <ApprovalGateEditor
+                          requestType={g.type}
+                          initialValues={initialEditor}
+                          onSaved={() => { setExpandedType(null); setRefreshTick(t => t + 1); }}
+                          showToast={showToast}
                         />
                       </div>
                     )}
-                  </label>
+                  </div>
                 );
               })}
             </div>
