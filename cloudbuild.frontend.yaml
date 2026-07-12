@@ -44,6 +44,40 @@ steps:
       - '--no-traffic'
       - '--tag=c$SHORT_SHA'
 
+  # Smoke test the tag URL, then promote to 100% traffic. Preserves the
+  # 2026-06-16 safety net (deploy at 0% first) while eliminating the manual
+  # `update-traffic` step for clean builds. If the smoke fails, traffic stays
+  # on the previous revision — investigate at the tag URL then re-trigger.
+  #
+  # Gotcha discovered 2026-07-12: without this step, frontend revisions built
+  # from main sit at 0% traffic indefinitely, so shipped fixes never reach
+  # users until a founder runs the gcloud command manually.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME \
+          --region=$_DEPLOY_REGION --format='value(status.url)')
+        TAG_URL=$(echo "$$SERVICE_URL" | sed "s|https://|https://c$SHORT_SHA---|")
+        echo "Smoke-testing $$TAG_URL (up to 6 attempts, 10s apart) ..."
+        for i in 1 2 3 4 5 6; do
+          HTTP_CODE=$(curl -sfo /dev/null -w "%{http_code}" "$$TAG_URL" || echo "000")
+          if [ "$$HTTP_CODE" = "200" ]; then
+            echo "Attempt $$i: HTTP 200 — promoting c$SHORT_SHA to 100% traffic"
+            gcloud run services update-traffic $_SERVICE_NAME \
+              --region=$_DEPLOY_REGION \
+              --to-tags=c$SHORT_SHA=100
+            exit 0
+          fi
+          echo "Attempt $$i: HTTP $$HTTP_CODE — retrying in 10s"
+          sleep 10
+        done
+        echo "Smoke test failed after 6 attempts. Revision c$SHORT_SHA stays at 0% traffic."
+        echo "Investigate at $$TAG_URL then re-trigger the build."
+        exit 1
+
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
 
