@@ -30,45 +30,64 @@ After push + Cloud Run traffic migration (`00319-nuw` → `00321-kid` at commit 
 
 ---
 
-## 2026-07-12 (engineering discipline) — CLAUDE.md protocol + typecheck Stop hook
+## 2026-07-12 (engineering discipline v5) — full protocol + 4-gate Stop hook
 
-**Context:** founder flagged repeated "miss" incidents where Claude built or fixed
-things without end-to-end analysis. Standing gates were needed so every future
-turn — build, refactor, bug fix — is disciplined by default.
+**Context:** founder wants Claude to operate as a proper engineering team — no
+future turn misses impact analysis, scale-forward architecture, UI/UX approval,
+or staged verification. Iterated 5× with founder input:
+- v1: CLAUDE.md protocols + Stop-hook typecheck
+- v2: advisor caught that typecheck alone doesn't gate compile-clean/runtime-
+  fail bugs the memories describe → added `audit:numinput` +
+  `audit:secdef-null-tenant`
+- v3: added Impact-analysis protocol (founder's #1 miss class per interview:
+  "kritis untuk analisa impacted module dan juga difix"), `vitest --changed`
+  Stop-hook gate, `/code-review` before commit, `advisor()` for large diffs
+- v3-scale: added Backend scale-forward architecture (reversibility rating,
+  ceiling/partition/idempotency checks for irreversible decisions) — founder
+  building for billion-dollar-scale SaaS
+- v4: added Ship & verify staged flow — Local → Deploy → prod-testing-tenant
+  chrome test; NEVER real customer tenant
+- v5: added FE UI/UX approval gate (default to CURRENT design system, get
+  founder sign-off before locking requirements)
 
-**Changes:**
-- **`CLAUDE.md` rewritten** with hard protocols:
-  - Task type → required skill (brainstorming for build, systematic-debugging
-    for bugs, verification-before-completion before "done").
-  - **Build protocol** (brainstorm → plan → read callers → implement → verify
-    in actual runtime → update progress.md).
-  - **Fix-permanently protocol** (reproduce → state root cause explicitly →
-    search for same pattern elsewhere → add regression test → progress.md).
-  - **Multi-tenant / RLS / SECDEF guardrails** cross-referencing project
-    memories (`guard_expiry_write_broken_predicate`, `secdef_returning_gap`,
-    `check_constraints_before_rpc_rewrite`, `smoke_test_security_definer_rpcs`,
-    `migration_slot_allocation`).
-  - **Scalability defaults** (no unbounded queries, new index in same migration,
-    no N+1, tenant-scoped realtime).
-  - **Definition of "done"** — verification evidence required (browser
-    exercised for UI, RPC smoke-tested for SQL, progress.md updated).
-- **`.claude/settings.json` (new, committed)** — Stop hook runs THREE gates
-  in sequence (short-circuits on first failure):
-  1. `npm run lint` — TypeScript typecheck (~3.5s).
-  2. `npm run audit:numinput` — grep for raw `Number(e.target.value)`
-     that should use `NumberInput` (~0.3s).
-  3. `npm run audit:secdef-null-tenant` — regression guard for the
-     CP1 class-fix pattern (~0.3s).
-  Total ~4s. On failure, hook returns `decision: block` with the failing
-  check name + error tail, forcing a fix before the turn ends. If mid-
-  refactor with intentional WIP, `/hooks` menu can disable for one turn.
+**Files:**
+- **`CLAUDE.md` rewritten (~238 lines, 12 sections):**
+  1. Task type → required skill
+  2. Impact analysis (before any non-trivial edit)
+  3. Building protocol
+  4. FE UI/UX approval — design-system-first
+  5. Fix-permanently protocol
+  6. Multi-tenant / RLS / SECDEF guardrails
+  7. Backend scale-forward architecture (reversibility rating)
+  8. Scalability defaults (tactical)
+  9. Ship & verify staged flow (Local → Deploy → Toko Jaya Makmur chrome)
+  10. Push back
+  11. Definition of "done"
+  12. GOTCHAS
+- **`.claude/settings.json` (new, committed)** — Stop hook chains 4 gates
+  (~5.7s total, short-circuits on first failure):
+  1. `npm run lint` (~3.5s)
+  2. `npm run audit:numinput` (~0.3s)
+  3. `npm run audit:secdef-null-tenant` (~0.3s)
+  4. `npx vitest run --changed` (~2.5s)
+  Failure → `decision: block` with failing gate name + error tail. Escape
+  hatch for intentional WIP: `/hooks` disable for one turn.
+- **`memory/project_production_testing_tenant.md`** — records "Toko Jaya
+  Makmur" as the Stage-3 prod-testing tenant so future sessions know.
 
-**Not yet wired (intentional):** test-run gate on Stop (`npm test` too slow
-for every turn — enforced by Definition of done in CLAUDE.md instead);
-`audit:views` (needs review to see if fast enough); PostToolUse agent hook
-on `*.sql` writes to remind about SECDEF pattern, CHECK constraint
-enumeration, and migration slot claim — candidate for next iteration if
-misses continue.
+**Security flag surfaced (not fixed this task):** `cloudbuild.yaml:38`
+hardcodes Supabase `service_role` JWT (full-DB-bypass, valid until 2033) in
+`--update-env-vars`. Rotate and move to Secret Manager.
+
+**Verification:** Stop hook pipe-tested on clean tree (silent, exit 0) and
+forced-failure input (JSON block structure valid); `jq -e` confirms schema.
+Since `.claude/settings.json` is a NEW file, the settings watcher may not
+pick it up until founder opens `/hooks` once (or restarts).
+
+**Not auto-gated (intentional):**
+- `npm test` full suite (Stage 1 covers via `--changed`).
+- PostToolUse agent hook on `*.sql` (deferred; add if SQL misses reappear).
+- UI browser-verification hook (enforced by CLAUDE.md Stage 3 discipline).
 
 **Handoff note:** because `.claude/settings.json` is a NEW file, the settings
 watcher may not pick it up until the user opens the `/hooks` menu once (or
@@ -12677,3 +12696,65 @@ Live smoke tests (JWT-simulated as Garindo Owner, then RAISE-rollback):
 
 
 
+
+---
+
+## 2026-07-12 — Item #1 Opname Damage + Unified Supplier Claims (schema shipped)
+
+**Spec:** `docs/superpowers/specs/2026-07-12-opname-damage-supplier-claims-design.md` (rev 3)
+**Plan:** `docs/superpowers/plans/2026-07-12-opname-damage-supplier-claims-plan.md`
+**Blocked doc:** `docs/superpowers/plans/2026-07-12-opname-damage-BLOCKED.md`
+**Branch:** `feat/opname-damage-supplier-claims`
+
+### Design decisions (rev 3, locked by user)
+
+- **A: Full Unify** — supplier_claims model spans opname + PO receipt + ad-hoc adjustment. Includes record_pi split (feature-flagged `enable_pi_damage_split`, default OFF per tenant)
+- **B: Bypass stock_adjustments for opname damage** — opname damage writes directly to stock_movements + journal + supplier_claim (session-level approval, not adjustment-level)
+- **C: Per-tenant COA seed loop** matching `20261115000053_seed_tenant_accounting_on_provision.sql` pattern
+- **Owner-decision workflow:** admin flags at opname (qty + photo + notes), owner decides Dispose vs Klaim post-opname (top-level Sidebar "Keputusan Owner" nav)
+- **Option A speculative accounting:** at opname commit, journal Dr `1-1460 Piutang Klaim Supplier` / Cr `1-1510 Persediaan Barang Jadi`. Owner Dispose reclassifies to Dr `5-3160 Beban Barang Rusak` / Cr `1-1460`
+- **Approval methods:** PIN + APP_INBOX only. WA_BUTTON explicitly not supported for `RESOLVE_SUPPLIER_CLAIM` (per new memory `feedback_no_wa_owner_approval.md`)
+
+### What shipped tonight
+
+**Migration slot 100 applied to Garindo prod** (`ekhhojaezdfjfwuxyjkl`) — commit `653bd9a`:
+- `supplier_claims` table (UUID PK) with 7-state lifecycle: AWAITING_OWNER_DECISION → (DISPOSED | PENDING → RESOLVED_REPLACED/CREDITED/CASHED/REJECTED)
+- `supplier_claim_events` audit trail table
+- RLS: `p_select_own` via `_resolve_tenant_id()`, block-all direct writes, `vosi_rpc_owner` SECDEF policy with USING+WITH CHECK true (per `secdef_returning_gap` memory), `p_platform_admin_readall`
+- Column additions:
+  - `stock_opname_counts`: `damaged_qty` + `damage_notes` + `damage_evidence_urls` (CHECK: damaged_qty ≤ counted_qty)
+  - `stock_adjustments`: `damage_disposition` + `damage_supplier_id` + `supplier_claim_id` (CHECK: KLAIM_SUPPLIER requires supplier)
+  - `purchase_order_items`: `supplier_claim_id`
+  - `accounting_config`: `enable_pi_damage_split BOOLEAN NOT NULL DEFAULT false`
+- Enum extensions:
+  - `journal_entry_source` += `SUPPLIER_CLAIM`
+  - `stock_movement_source` += `opname_damage`, `supplier_claim_return`
+  - `approval_request_type` += `resolve_supplier_claim`
+- Per-tenant COA seed loop: 3 tenants × 2 accounts = 6 new COA rows verified
+
+**13-check smoke query all pass.** No RPCs yet — pure schema. Zero behavior change to existing code (all additive).
+
+### Not yet shipped (deferred to next session)
+
+- Slot 101: RPCs (`_insert_supplier_claim` helper, `create_supplier_claim_from_opname` direct-write, `decide_supplier_claim` owner-only, `resolve_supplier_claim` with 4 outcomes + variance handling, `create_supplier_claim_from_po_receipt`)
+- Slot 102: Existing RPC modifications (`commit_opname_session` loops damaged rows, `receive_purchase_order` auto-creates claim, `_apply_adjustment_change` for ad-hoc KLAIM disposition, `record_pi` feature-flagged split)
+- Slot 103: Read RPCs (list, get, events)
+- Slot 105: `approval_settings` seed for `RESOLVE_SUPPLIER_CLAIM` per tenant
+- Frontend: `<DamageFlagModal>` (simplified per owner-decision UX), `<OwnerDecisionInbox>` (new top-level nav), `<KlaimSupplierPanel>` in Pembelian, `<ClaimResolveModal>`, integration into `StockOpnameSessionView` + `StockAdjustmentModal`
+- No frontend built, no gcloud deploy, main branch untouched
+
+### Journey log (tonight was messy — for future reference)
+
+1. Brainstormed 5 items, decided to tackle Item #1 first (opname damage)
+2. Original spec assumed unify with existing PO damage workflow
+3. Wrote 26-task implementation plan
+4. Started subagent-driven-development execution
+5. Pre-dispatch schema audit found 8 drift items → halted, wrote BLOCKED doc with 3 architecture decisions
+6. User picked A(unify)+B(bypass)+C(per-tenant COA)
+7. Continued schema audit → found 4 more drift items → halted again for approval defaults
+8. User approved defaults + owner-decision workflow refinement + Option A accounting
+9. Wrote spec rev 3
+10. Wrote migration 100, hit `is_platform_admin(uuid)` mismatch (takes no args in prod), fixed, applied successfully
+11. Verified all schema in prod. RPCs still pending.
+
+**Lesson for future work:** always run live schema audit against prod before writing spec+plan, not after. The plan was ~40% wrong due to schema drift and required 3 revision rounds.
