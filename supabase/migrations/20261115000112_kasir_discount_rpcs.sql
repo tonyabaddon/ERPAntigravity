@@ -176,3 +176,106 @@ END $$;
 ALTER FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) OWNER TO vosi_rpc_owner;
 REVOKE ALL ON FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) TO authenticated;
+
+-- =========================================================
+-- Part C (rev 2): link_kasir_sale_to_approval
+-- =========================================================
+-- REPLACES complete_kasir_sale_after_approval from the initial plan.
+-- Frontend calls this after existing record_kasir_sale succeeds on an
+-- approved discount request, to link the sale row back to the approval
+-- for audit trail. Idempotent — safe to call multiple times.
+
+CREATE OR REPLACE FUNCTION public.link_kasir_sale_to_approval(
+  p_sale_id    UUID,
+  p_request_id BIGINT
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_tenant  UUID;
+  v_sale    RECORD;
+  v_req     RECORD;
+BEGIN
+  v_tenant := public._resolve_tenant_id();
+
+  SELECT id, tenant_id, discount_approval_status INTO v_sale
+    FROM public.kasir_transactions WHERE id = p_sale_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'kasir sale % not found', p_sale_id; END IF;
+  IF v_sale.tenant_id <> v_tenant THEN
+    RAISE EXCEPTION 'sale % is not accessible from current tenant', p_sale_id;
+  END IF;
+
+  SELECT id, tenant_id, status INTO v_req
+    FROM public.approval_requests WHERE id = p_request_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'approval request % not found', p_request_id; END IF;
+  IF v_req.tenant_id <> v_tenant THEN
+    RAISE EXCEPTION 'approval request % is not accessible from current tenant', p_request_id;
+  END IF;
+  IF v_req.status <> 'approved' THEN
+    RAISE EXCEPTION 'cannot link — approval request status is % (must be approved)', v_req.status;
+  END IF;
+
+  UPDATE public.kasir_transactions
+     SET discount_approval_request_id = p_request_id,
+         discount_approval_status     = 'approved'
+   WHERE id = p_sale_id;
+END $$;
+
+ALTER FUNCTION public.link_kasir_sale_to_approval(UUID, BIGINT) OWNER TO vosi_rpc_owner;
+REVOKE ALL ON FUNCTION public.link_kasir_sale_to_approval(UUID, BIGINT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.link_kasir_sale_to_approval(UUID, BIGINT) TO authenticated;
+
+-- =========================================================
+-- Part D (rev 2): cancel_kasir_discount_request
+-- =========================================================
+-- Admin (or Owner) cancels a pending approval request. Uses `expired`
+-- (only enum value available for cancel-equivalent state; enum lacks
+-- dedicated `canceled`). The decision_channel `canceled_by_user`
+-- distinguishes admin-cancellation from time-based auto-expire.
+
+CREATE OR REPLACE FUNCTION public.cancel_kasir_discount_request(
+  p_request_id BIGINT
+) RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_tenant   UUID;
+  v_user_id  UUID;
+  v_req      RECORD;
+  v_caller_role TEXT;
+BEGIN
+  v_tenant := public._resolve_tenant_id();
+  v_user_id := public._current_user_id();
+
+  SELECT id, tenant_id, request_type, requested_by, status INTO v_req
+    FROM public.approval_requests WHERE id = p_request_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'approval request % not found', p_request_id; END IF;
+  IF v_req.tenant_id <> v_tenant THEN
+    RAISE EXCEPTION 'request % is not accessible from current tenant', p_request_id;
+  END IF;
+  IF v_req.request_type <> 'kasir_discount' THEN
+    RAISE EXCEPTION 'not a kasir_discount request (type=%)', v_req.request_type;
+  END IF;
+  IF v_req.status <> 'pending' THEN
+    RAISE EXCEPTION 'cannot cancel — request already %', v_req.status;
+  END IF;
+
+  -- Guard: only requester or Owner can cancel
+  IF v_req.requested_by <> v_user_id THEN
+    SELECT role INTO v_caller_role FROM public.admin_users WHERE id = v_user_id;
+    IF v_caller_role <> 'Owner' THEN
+      RAISE EXCEPTION 'only requester or Owner may cancel this request';
+    END IF;
+  END IF;
+
+  PERFORM public._transition_approval(
+    p_request_id,
+    'expired'::approval_status,
+    v_user_id,
+    'canceled_by_user'
+  );
+END $$;
+
+ALTER FUNCTION public.cancel_kasir_discount_request(BIGINT) OWNER TO vosi_rpc_owner;
+REVOKE ALL ON FUNCTION public.cancel_kasir_discount_request(BIGINT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.cancel_kasir_discount_request(BIGINT) TO authenticated;
