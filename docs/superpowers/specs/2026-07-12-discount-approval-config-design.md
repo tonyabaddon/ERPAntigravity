@@ -439,9 +439,31 @@ Update project memory `project_migration_slot_allocation.md` after applying.
 
 ## 11. Open Items / Future Work
 
-Explicitly deferred:
-1. Per-line discount gating — could add per-line threshold as separate approval_settings row (`kasir_line_discount`) if a tenant asks; not built now
-2. Customer-tier discount rules — VIP customer gets higher threshold auto-applied; needs customer segmentation, defer to Item #2 (custom panel) sync
+### 11.1 Planned follow-up: Item #4b — Product-level discount cap (hybrid direction)
+
+**Locked as next step after Item #4 ships.** Owner sets `max_discount_percent` per SKU (or per category) via Produk & Stok. Kasir freely gives discount UP TO that cap without approval; anything ABOVE cap falls back to Item #4's runtime approval flow (unchanged).
+
+**Rationale for hybrid:**
+- Item #4 alone puts owner on the hook for every above-threshold discount (approval load scales with transaction volume)
+- Product-level cap covers 95% common cases (owner sets policy once per SKU, kasir stays fast)
+- Runtime approval remains the safety net for the 5% exceptions (VIP customer, competitor match, damaged goods)
+- Modern POS pattern (Alfamart, Ace Hardware, etc.)
+
+**Sequencing rationale:** Item #4 first because runtime approval covers ALL cases (including ones the product rules would miss); product-level cap is an OPTIMIZATION layered on top to reduce approval load. Reverse order would leave exceptions unhandled.
+
+**Item #4b scope preview (not final):**
+- Schema: `stocks.max_discount_percent NUMERIC(5,2) NULL`, `stock_categories.default_max_discount_percent NUMERIC(5,2) NULL` (category-level fallback)
+- Backend: extend `check_kasir_discount_gate` to check line-level against product cap before the tenant-level threshold
+- Frontend: Produk & Stok gets a "Max diskon %" column + inline edit; Pengaturan gets category-level default config
+- Cap enforcement: kasir UI blocks discount > cap on the input side (per-line); if cap = NULL, fall back to tenant threshold check
+- Bulk import: CSV upload for setting caps across many SKUs
+
+### 11.2 Other deferred
+
+1. Per-line discount runtime approval — still deferred; product cap in Item #4b covers most per-line concerns
+2. Customer-tier discount rules — VIP customer gets higher threshold auto-applied; needs customer segmentation, defer to future item
 3. Push notifications via PWA — needs service worker + PWA setup, defer
 4. Aging report for pending approvals — dashboard card, defer
 5. Historical fraud audit — retro analysis of old sales for suspicious discounts, defer (SQL query is fine for now)
+6. Time-based/promo discount rules — weekend promo, clearance sale as configurable auto-apply rules, defer
+7. Volume-based discount tiers — buy 100 units get 15% auto, defer
