@@ -1,9 +1,22 @@
 # Opname Damage Flag + Unified Supplier Claims — Design
 
-**Status:** Draft (pending user review)
+**Status:** Approved with schema-audit corrections (2026-07-12)
 **Author:** Tony Wei + Claude
-**Date:** 2026-07-12
+**Date:** 2026-07-12 (rev 2 post schema audit)
 **Scope:** Item #1 in a 5-item brainstorm sweep. Items #2-5 are separate specs.
+
+## Schema audit corrections (2026-07-12 rev 2)
+
+Applied after live audit of Garindo prod (`ekhhojaezdfjfwuxyjkl`) before execution:
+- `damage_status` on `purchase_order_items` is TEXT with app-level convention, NOT an enum. All references to `damage_status_enum` removed.
+- `purchase_order_items.id` is UUID, not BIGINT. `supplier_claims.source_ref_id` changed to TEXT to accommodate both UUID (PO) and BIGINT (opname session, adjustment) refs.
+- `chart_of_accounts` is per-tenant; COA additions use per-tenant seed loop matching `20261115000053_seed_tenant_accounting_on_provision.sql`. Parent reference uses `parent_id UUID` lookup, not `parent_code TEXT`.
+- Opname damage bypasses `stock_adjustments` entirely — direct write to `stock_movements` + journal + `supplier_claims`. Reason: `stock_adjustments.approval_request_id NOT NULL` doesn't fit opname's session-level approval.
+- `stock_adjustments.status` valid values are `'pending_approval' | 'approved' | 'rejected' | 'expired'` (not `'COMMITTED'`).
+- `stock_adjustments.evidence_urls NOT NULL DEFAULT '{}'`; `chk_evidence_for_loss` requires cardinality >= 1 when reason IN ('rusak','hilang'). UI enforces mandatory photo for damage flag routed through adjustments.
+- RLS tenant helper is `_resolve_tenant_id()` — used in all new tenant-scoped policies.
+- `approval_request_type` is a Postgres enum requiring new value `'resolve_supplier_claim'` via `ALTER TYPE ... ADD VALUE`.
+- Zero rows in production have `damage_status ≠ 'NONE'` — backfill migration is a no-op but ships anyway for correctness on future tenants.
 
 ---
 
@@ -50,7 +63,7 @@ CREATE TABLE public.supplier_claims (
   unit_cost             NUMERIC(15,2) NOT NULL CHECK (unit_cost >= 0),
   currency_code         TEXT NOT NULL DEFAULT 'IDR',  -- future multi-currency
   source_type           TEXT NOT NULL CHECK (source_type IN ('PO_RECEIPT','STOCK_OPNAME','STOCK_ADJUSTMENT')),
-  source_ref_id         BIGINT NOT NULL,
+  source_ref_id         TEXT NOT NULL,  -- stringified: UUID for PO_RECEIPT (po_item.id), BIGINT for STOCK_OPNAME (session_id) and STOCK_ADJUSTMENT (adjustment_id)
   damage_notes          TEXT,
   evidence_urls         TEXT[],
   status                TEXT NOT NULL DEFAULT 'PENDING'
@@ -108,13 +121,13 @@ ALTER TABLE stock_adjustments ADD CONSTRAINT klaim_requires_supplier
   CHECK (damage_disposition != 'KLAIM_SUPPLIER' OR damage_supplier_id IS NOT NULL);
 ```
 
-**`purchase_order_items`** — link ke claim + extend damage_status enum:
+**`purchase_order_items`** — link ke claim (damage_status stays TEXT, app-level convention):
 ```sql
 ALTER TABLE purchase_order_items ADD COLUMN supplier_claim_id BIGINT REFERENCES supplier_claims(id);
--- damage_status enum extension (Gap 3 decision A)
-ALTER TYPE damage_status_enum ADD VALUE 'RESOLVED_CREDITED';
-ALTER TYPE damage_status_enum ADD VALUE 'RESOLVED_CASHED';
-ALTER TYPE damage_status_enum ADD VALUE 'REJECTED';
+-- damage_status column is TEXT in prod (no enum). Values managed at app level.
+-- Valid app-level values: 'NONE' | 'PENDING_RETURN' | 'RETURNED' | 'REPLACED'
+--                       | 'RESOLVED_CREDITED' | 'RESOLVED_CASHED' | 'REJECTED'
+-- No ALTER TYPE. TypeScript union in src/lib/supplierClaims/types.ts enforces.
 ```
 
 **`stock_opname_counts`** — capture damage at count time:
@@ -130,16 +143,49 @@ ALTER TABLE stock_opname_counts ADD COLUMN damage_notes TEXT;
 ALTER TABLE stock_opname_counts ADD COLUMN damage_evidence_urls TEXT[];
 ```
 
-### 2.4 Chart of Accounts additions
+### 2.4 Chart of Accounts additions (per-tenant loop)
+
+`chart_of_accounts` is per-tenant, not global. Migration seeds both new accounts for every existing tenant + patches `20261115000053_seed_tenant_accounting_on_provision.sql` (or its successor) so future tenants get them at provision time.
 
 ```sql
-INSERT INTO chart_of_accounts (account_code, account_name, account_type, parent_code) VALUES
-  ('1-1460', 'Piutang Klaim Supplier', 'ASET',  '1-1400'),
-  ('5-3160', 'Beban Barang Rusak',     'BEBAN', '5-3000');
+-- Per-tenant seed loop
+DO $$
+DECLARE v_tenant RECORD; v_parent_1400 UUID; v_parent_5000 UUID;
+BEGIN
+  FOR v_tenant IN SELECT id FROM public.tenants LOOP
+    -- Look up parent IDs per tenant
+    SELECT id INTO v_parent_1400 FROM public.chart_of_accounts
+      WHERE tenant_id = v_tenant.id AND account_code = '1-1400';
+    SELECT id INTO v_parent_5000 FROM public.chart_of_accounts
+      WHERE tenant_id = v_tenant.id AND account_code IN ('5-3000','5-3100')
+      ORDER BY account_code LIMIT 1;
+
+    -- 1-1460 Piutang Klaim Supplier (ASET)
+    INSERT INTO public.chart_of_accounts (
+      tenant_id, account_code, account_name, account_type,
+      parent_id, is_control_account, normal_balance, is_active, is_system
+    ) VALUES (
+      v_tenant.id, '1-1460', 'Piutang Klaim Supplier', 'ASET',
+      v_parent_1400, false, 'DEBIT', true, true
+    ) ON CONFLICT (tenant_id, account_code) DO NOTHING;
+
+    -- 5-3160 Beban Barang Rusak (BEBAN)
+    INSERT INTO public.chart_of_accounts (
+      tenant_id, account_code, account_name, account_type,
+      parent_id, is_control_account, normal_balance, is_active, is_system
+    ) VALUES (
+      v_tenant.id, '5-3160', 'Beban Barang Rusak', 'BEBAN',
+      v_parent_5000, false, 'DEBIT', true, true
+    ) ON CONFLICT (tenant_id, account_code) DO NOTHING;
+  END LOOP;
+END $$;
 ```
 
 - `1-1460` — suspense asset holding pending klaim value
 - `5-3160` — expense untuk damage loss (dispose, reject supplier, partial refund variance)
+- Both accounts marked `is_system=true` so tenant admin can't delete them
+
+**Follow-up:** patch `20261115000053_seed_tenant_accounting_on_provision.sql` (or the successor file that runs at tenant provision) to include these two accounts for new tenants.
 
 ### 2.5 CHECK constraint enumeration (existing tables to be modified)
 
@@ -159,12 +205,18 @@ Implementation plan will enumerate exact current CHECKs from live schema before 
 
 **Convention:** semua SECURITY DEFINER, OWNED BY `vosi_rpc_owner`. Tenant scope derived dari JWT `auth.uid()`. Idempotency key optional.
 
-**`create_supplier_claim_from_opname(session_id, sku, warehouse, damaged_qty, disposition, supplier_id, notes, evidence_urls[], idempotency_key)`**
+**`create_supplier_claim_from_opname(session_id, sku, warehouse, damaged_qty, disposition, supplier_id, unit_cost, notes, evidence_urls[], idempotency_key)`**
+- **Bypasses `stock_adjustments` entirely** (per B decision — opname damage has session-level approval, not adjustment-level; stock_adjustments.approval_request_id NOT NULL doesn't fit)
 - Guard: caller must be admin/owner in tenant
 - Validate `damaged_qty > 0`, `damaged_qty <= counted_qty` for the opname row
-- For `disposition='DISPOSE'`: create `stock_adjustments` row (reason='rusak', damage_disposition='DISPOSE'), commit stock decrement, post journal (Dr 5-3160 / Cr 1-1510)
-- For `disposition='KLAIM_SUPPLIER'`: create `stock_adjustments` row (damage_disposition='KLAIM_SUPPLIER'), call `_insert_supplier_claim(...)`, link back, post journal (Dr 1-1460 / Cr 1-1510)
-- Return `{adjustment_id, claim_id}`
+- Directly:
+  1. Insert `stock_movements` row (qty_delta=-damaged_qty, cost=unit_cost, source_type='OPNAME_DAMAGE', source_ref_id=session_id)
+  2. Update `stock_levels` (decrement sellable qty)
+  3. Post journal via `_post_journal_entry`:
+     - DISPOSE: `Dr 5-3160 Beban Barang Rusak / Cr 1-1510 Persediaan Barang Jadi` (amount = damaged_qty × unit_cost)
+     - KLAIM_SUPPLIER: `Dr 1-1460 Piutang Klaim Supplier / Cr 1-1510 Persediaan Barang Jadi`
+  4. For KLAIM_SUPPLIER: call `_insert_supplier_claim(source_type='STOCK_OPNAME', source_ref_id=session_id::TEXT, supplier_id, sku, warehouse, damaged_qty, unit_cost, notes, evidence_urls)`
+- Return `{claim_id BIGINT | NULL, journal_id BIGINT, movement_id BIGINT}`
 
 **`create_supplier_claim_from_po_receipt(po_item_id, qty, notes, evidence_urls[], idempotency_key)`**
 - Called from `receive_purchase_order` when `qty_damaged > 0`
