@@ -188,13 +188,28 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
             </thead>
             <tbody>
               {filtered.map(r => {
-                const tier = PIUTANG_TIERS[r.tier];
-                const daysLabel =
-                  r.daysToDue < 0 ? `${Math.abs(r.daysToDue)} hari telat` :
-                  r.daysToDue === 0 ? 'hari ini' :
-                  `H-${r.daysToDue}`;
+                // Tier chip is a due-date bucket ("Overdue" / "Akan Datang").
+                // When the invoice is already Lunas (PAYMENT_VERIFIED) or
+                // Written-off, that due-date bucket is meaningless — the row
+                // isn't waiting anymore. Override the chip + row tint so
+                // the historical rows stop screaming "Overdue" (2026-07-12
+                // QA — flagged during V3 validation of Bug 6a Lunas tab).
+                const isLunas = r.order.status === 'PAYMENT_VERIFIED';
+                const isWrittenOff = r.order.status === 'INVOICE_WRITTEN_OFF';
+                const dueTier = PIUTANG_TIERS[r.tier];
+                const badgeLabel = isLunas ? 'Selesai'
+                  : isWrittenOff ? 'Tulis-off'
+                  : dueTier.label;
+                const badgeClass = isLunas ? 'bg-emerald-100 text-emerald-800'
+                  : isWrittenOff ? 'bg-gray-200 text-gray-600'
+                  : dueTier.badgeClass;
+                const rowBg = isLunas || isWrittenOff ? 'bg-white' : dueTier.rowBg;
+                const daysLabel = isLunas || isWrittenOff ? ''
+                  : r.daysToDue < 0 ? `${Math.abs(r.daysToDue)} hari telat`
+                  : r.daysToDue === 0 ? 'hari ini'
+                  : `H-${r.daysToDue}`;
                 return (
-                  <tr key={r.order.id} className={`${tier.rowBg} border-b border-gray-100 hover:brightness-95`}>
+                  <tr key={r.order.id} className={`${rowBg} border-b border-gray-100 hover:brightness-95`}>
                     <td className="px-5 py-3">
                       <div className="font-semibold text-sm">{r.customer?.name ?? r.order.customer_name}</div>
                       <div className="text-[11px] text-gray-500">{r.customer?.wa_number ?? r.order.customer_phone ?? '—'}</div>
@@ -222,8 +237,8 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                       <div className="text-[11px] text-gray-500">{daysLabel}</div>
                     </td>
                     <td className="px-5 py-3 text-center">
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${tier.badgeClass}`}>
-                        {tier.label}
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${badgeClass}`}>
+                        {badgeLabel}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
