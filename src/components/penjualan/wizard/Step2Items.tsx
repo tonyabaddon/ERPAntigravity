@@ -7,6 +7,7 @@ import RakitButtonsRow from '../RakitButtonsRow';
 import RakitInlineForm from '../RakitInlineForm';
 import { isPreOrder } from '../../../lib/wizard/validation';
 import NewProductInlineForm from './NewProductInlineForm';
+import type { PromoRow } from '../../../lib/promoProduk/types';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -50,12 +51,14 @@ interface Props {
   activeTier?: 'eceran' | 'grosir';
   onTierChange?: (tier: 'eceran' | 'grosir') => void;
   showTierPill?: boolean;
+  /** Item #4b: active promos by SKU — passed through to CartRows for badge display. */
+  promos?: Map<string, PromoRow>;
 }
 
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
   const [showNewProductForm, setShowNewProductForm] = useState(false);
-  const { activeTier = 'eceran', onTierChange, showTierPill = false } = props;
+  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos } = props;
 
   // Derive categories for the form's datalist
   const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
@@ -242,6 +245,7 @@ export default function Step2Items(props: Props) {
           modulDiskonOn={props.modulDiskonOn}
           activeTier={activeTier}
           showTierPill={showTierPill}
+          promos={promos}
         />
 
         {preOrderCount > 0 && (

@@ -45,6 +45,8 @@ import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
 import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { useActivePromos } from '../../hooks/useActivePromos';
+import { computeLinePromoDiscount } from '../../lib/promoProduk/types';
 import { createTempoInvoice } from '../../lib/piutangService';
 import {
   createSalesOrder,
@@ -214,6 +216,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const [serviceTypes, setServiceTypes] = useState<DbServiceType[]>([]);
 
   const { warehouses } = useWarehouses();
+  // Item #4b: active promos by SKU for badge display + auto-apply at save time.
+  const { promos } = useActivePromos();
 
   // Load stocks + customers once on mount
   useEffect(() => {
@@ -234,11 +238,21 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   // ── Derived totals ────────────────────────────────────────────────────────
   const rakitTotal = rakitLines.reduce((s, r) => s + r.estimatedPrice, 0);
   const skuSubtotal = cart.reduce((s, i) => s + i.subtotal, 0);
-  // Task 14: subtotal after per-line discounts (master × qty − discount_amount_rp per line)
+  // Task 14: subtotal after per-line discounts (master × qty − effectiveDiscount per line).
+  // Item #4b: when promo applies and no manual discount set, use promo discount amount.
   const skuSubtotalAfterLineDiscount = cart.reduce((s, i) => {
     const master = i.master_price_at_sale ?? i.unit_price;
-    const discAmt = i.discount_amount_rp ?? 0;
-    return s + (master * i.qty - discAmt);
+    const manualDisc = i.discount_amount_rp ?? 0;
+    const hasManual = (i.discount_type != null) && manualDisc > 0;
+    let effectiveDisc = manualDisc;
+    if (!hasManual && i.sku) {
+      const promo = promos.get(i.sku);
+      if (promo) {
+        const pd = computeLinePromoDiscount(master, i.qty, promo);
+        if (pd.discount > 0 && pd.snapshot !== null) effectiveDisc = pd.discount;
+      }
+    }
+    return s + (master * i.qty - effectiveDisc);
   }, 0);
   const subtotalAfterLineDiscount = skuSubtotalAfterLineDiscount + rakitTotal;
   const subtotal = skuSubtotal + rakitTotal;
@@ -805,7 +819,51 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
     // path === 'standard'
     // Task 14: include per-line discount fields in items sent to RPC.
-    const skuItems = cart.map(({ _key, ...rest }) => rest);
+    // Item #4b: inject promo discount fields + promo_snapshot for lines with
+    // an active promo, but ONLY when no manual discount is already set.
+    // computeLinePromoDiscount returns discount=0 / snapshot=null if promo
+    // amount > unit_price — skip inject in that case too.
+    const skuItems = cart.map(({ _key, ...rest }) => {
+      if (!rest.sku) return rest;
+      const promo = promos.get(rest.sku);
+      if (!promo) return rest;
+      // Preserve existing manual discount — operator's choice overrides promo.
+      const hasManualDiscount = rest.discount_type != null && (rest.discount_amount_rp ?? 0) > 0;
+      if (hasManualDiscount) return rest;
+      const masterPrice = rest.master_price_at_sale ?? rest.unit_price;
+      const { discount, snapshot } = computeLinePromoDiscount(masterPrice, rest.qty, promo);
+      if (discount <= 0 || snapshot === null) {
+        // Edge case: promo AMOUNT > unit_price → skip silently (toast shown below)
+        return rest;
+      }
+      return {
+        ...rest,
+        discount_type: promo.promo_discount_type,
+        discount_value: promo.promo_discount_value,
+        discount_amount_rp: discount,
+        promo_snapshot: {
+          type: promo.promo_discount_type,
+          value: promo.promo_discount_value,
+          expires_at: promo.promo_expires_at,
+          applied_at: new Date().toISOString(),
+        },
+      };
+    });
+    // Edge-case toast: AMOUNT promo > unit_price (snapshot=null → skipped above)
+    for (const item of cart) {
+      if (!item.sku) continue;
+      const promo = promos.get(item.sku);
+      if (!promo || promo.promo_discount_type !== 'AMOUNT') continue;
+      const hasManualDiscount = item.discount_type != null && (item.discount_amount_rp ?? 0) > 0;
+      if (hasManualDiscount) continue;
+      const masterPrice = item.master_price_at_sale ?? item.unit_price;
+      if (promo.promo_discount_value > masterPrice) {
+        showToast(
+          `Promo Rp ${promo.promo_discount_value.toLocaleString('id-ID')}/unit tidak berlaku di ${item.sku} karena harga saat ini Rp ${masterPrice.toLocaleString('id-ID')}`,
+          'info',
+        );
+      }
+    }
     const serviceItems = rakitLines.map((l) => ({
       sku: null,
       name: l.description,
@@ -997,6 +1055,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 subtotalAfterLineDiscount={skuSubtotalAfterLineDiscount}
                 rakitSubtotal={rakitTotal}
                 modulDiskonOn={modulDiskonOn}
+                promos={promos}
                 activeTier={activeTier}
                 onTierChange={setActiveTier}
                 showTierPill={showTierPill}

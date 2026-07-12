@@ -8,6 +8,8 @@ import WarehousePicker from '../warehouse/WarehousePicker';
 import { isPreOrder } from '../../lib/wizard/validation';
 import { DiscountInlineInput, useDiscountBinding } from '../ui/discount';
 import { NumberInput } from '../ui/NumberInput';
+import type { PromoRow } from '../../lib/promoProduk/types';
+import { computeLinePromoDiscount } from '../../lib/promoProduk/types';
 
 // Map from seeded service_types.code → legacy RakitServiceType union value (mirrors RakitButtonsRow).
 const CODE_TO_RAKIT: Record<string, RakitServiceType> = {
@@ -53,6 +55,8 @@ export interface CartRowsProps {
   activeTier?: 'eceran' | 'grosir';
   /** Task 7: when false, tier warnings are hidden. */
   showTierPill?: boolean;
+  /** Item #4b: active promos by SKU. When present, displays a promo badge per matching line. */
+  promos?: Map<string, PromoRow>;
 }
 
 // ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
@@ -68,12 +72,14 @@ interface CartRowProps {
   modulDiskonOn: boolean;
   activeTier?: 'eceran' | 'grosir';
   showTierPill?: boolean;
+  /** Item #4b: promo active for this SKU, if any. */
+  promo?: PromoRow;
 }
 
 function CartRow({
   item, stock, warehouses, stockMap,
   onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
-  activeTier, showTierPill,
+  activeTier, showTierPill, promo,
 }: CartRowProps) {
   const masterPrice = item.master_price_at_sale ?? item.unit_price;
 
@@ -134,7 +140,16 @@ function CartRow({
     }
   };
 
-  const lineAfterDiscount = masterPrice * item.qty - binding.state.discount_amount_rp;
+  // Item #4b: compute promo badge info (read-only, separate from editable discount)
+  const promoDiscount = promo ? computeLinePromoDiscount(masterPrice, item.qty, promo) : null;
+  const showPromoBadge = promoDiscount !== null && promoDiscount.discount > 0 && promoDiscount.snapshot !== null;
+
+  // Effective discount for subtotal display: promo takes effect when no manual discount set.
+  const hasManualDiscount = (item.discount_type != null) && (binding.state.discount_amount_rp > 0);
+  const effectiveDiscount = hasManualDiscount
+    ? binding.state.discount_amount_rp
+    : (showPromoBadge && promoDiscount ? promoDiscount.discount : binding.state.discount_amount_rp);
+  const lineAfterDiscount = masterPrice * item.qty - effectiveDiscount;
 
   return (
     <div
@@ -161,6 +176,19 @@ function CartRow({
             <span className="text-amber-600 text-[10px]">⚠ Harga grosir belum di-set — pakai eceran</span>
           )}
         </div>
+        {/* Item #4b: Promo Produk badge — shown when a promo applies to this SKU */}
+        {showPromoBadge && promoDiscount && promo && (
+          <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-700 font-semibold">
+            <span>🏷</span>
+            <span>
+              Promo:{' '}
+              {promo.promo_discount_type === 'PERCENT'
+                ? `${promo.promo_discount_value}%`
+                : `Rp ${promo.promo_discount_value.toLocaleString('id-ID')}/unit`}{' '}
+              = -{formatRp(promoDiscount.discount)}
+            </span>
+          </div>
+        )}
         {/* Harga input with List label above */}
         <div className="mt-1">
           {modulDiskonOn && masterPrice > 0 && (
@@ -220,7 +248,7 @@ function CartRow({
   );
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos }: CartRowsProps) {
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -235,12 +263,23 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
   const { warehouses } = useWarehouses();
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   // Net subtotal when modul diskon on — matches per-row display formula
-  // (master_price × qty − discount_amount_rp). Without this, the Keranjang
+  // (master_price × qty − effectiveDiscount). Without this, the Keranjang
   // header showed gross while each row showed net → visual mismatch.
+  // Item #4b: when promo applies and no manual discount is set, use promo discount.
   const subtotalNet = modulDiskonOn
     ? items.reduce((s, i) => {
         const masterPrice = i.master_price_at_sale ?? i.unit_price;
-        return s + (masterPrice * i.qty - (i.discount_amount_rp ?? 0));
+        const manualDiscount = i.discount_amount_rp ?? 0;
+        const hasManual = (i.discount_type != null) && manualDiscount > 0;
+        let effectiveDiscount = manualDiscount;
+        if (!hasManual && i.sku && promos) {
+          const p = promos.get(i.sku);
+          if (p) {
+            const pd = computeLinePromoDiscount(masterPrice, i.qty, p);
+            if (pd.discount > 0 && pd.snapshot !== null) effectiveDiscount = pd.discount;
+          }
+        }
+        return s + (masterPrice * i.qty - effectiveDiscount);
       }, 0)
     : subtotal;
   const rakitSubtotal = (rakitLines ?? []).reduce((s, r) => s + r.estimatedPrice, 0);
@@ -270,6 +309,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
 
       {items.map(item => {
         const stock = stocks.find(s => s.sku === item.sku);
+        const promo = item.sku ? promos?.get(item.sku) : undefined;
         return (
           <CartRow
             key={item._key}
@@ -284,6 +324,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             modulDiskonOn={modulDiskonOn}
             activeTier={activeTier}
             showTierPill={showTierPill}
+            promo={promo}
           />
         );
       })}
