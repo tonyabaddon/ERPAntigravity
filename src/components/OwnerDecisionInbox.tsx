@@ -13,6 +13,7 @@ import { AlertTriangle, CheckCircle2, XCircle, Package, Building2, RefreshCcw } 
 import { listSupplierClaims, decideSupplierClaim } from '../lib/supplierClaims/api';
 import type { SupplierClaimRow } from '../lib/supplierClaims/types';
 import { supabase } from '../lib/supabaseClient';
+import { useWarehouses } from '../hooks/useWarehouses';
 
 interface OwnerDecisionInboxProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -22,6 +23,19 @@ interface Supplier {
   id: string;
   name: string;
 }
+
+type AgingRow = {
+  tenant_id: string;
+  id: number;
+  doc_no: string;
+  from_warehouse_id: string;
+  to_warehouse_id: string;
+  sender_user_id: string;
+  receiver_user_id: string;
+  total_qty_sent: number;
+  initiated_at: string;
+  hours_pending: number;
+};
 
 function formatIDR(n: number): string {
   try {
@@ -50,7 +64,9 @@ const SOURCE_LABEL: Record<SupplierClaimRow['sourceType'], string> = {
 export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProps) {
   const [claims, setClaims] = useState<SupplierClaimRow[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [agingRows, setAgingRows] = useState<AgingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { warehouses } = useWarehouses();
   const [decidingId, setDecidingId] = useState<string | null>(null);
   const [choosingKlaimFor, setChoosingKlaimFor] = useState<string | null>(null);
   const [chosenSupplierId, setChosenSupplierId] = useState<string>('');
@@ -80,6 +96,17 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from('v_pengawasan_transfer_aging')
+      .select('*')
+      .then(({ data }) => setAgingRows((data ?? []) as AgingRow[]));
+  }, []);
+
+  const whName = (id: string): string =>
+    warehouses.find((w) => w.id === id)?.name ?? id;
 
   const totalPendingValue = useMemo(
     () => claims.reduce((sum, c) => sum + c.bookValue, 0),
@@ -286,6 +313,26 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
           })}
         </div>
       )}
+
+      {/* ── Aging alerts: warehouse transfers pending > 24 hours ── */}
+      <section className="mt-6">
+        <h2 className="text-lg font-semibold text-slate-800">Transfer tertunda &gt; 24 jam</h2>
+        {agingRows.length === 0 && (
+          <div className="mt-2 text-sm text-slate-500">Tidak ada transfer yang tertunda.</div>
+        )}
+        {agingRows.map((a) => (
+          <div key={a.id} className="mt-2 rounded border border-amber-200 bg-amber-50 p-3">
+            <div className="font-mono text-xs text-amber-800">{a.doc_no}</div>
+            <div className="mt-1 text-sm font-semibold text-slate-800">
+              {whName(a.from_warehouse_id)} → {whName(a.to_warehouse_id)} · {a.total_qty_sent} pcs
+            </div>
+            <div className="text-xs text-slate-500">
+              {Math.round(a.hours_pending)} jam mengambang · dikirim{' '}
+              {new Date(a.initiated_at).toLocaleString('id-ID')}
+            </div>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }

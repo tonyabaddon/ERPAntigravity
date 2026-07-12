@@ -11,6 +11,7 @@ import {
 import { StockItem, Warehouse } from '../../types';
 import PendingApprovalBadge from '../approval/PendingApprovalBadge';
 import { NumberInput } from '../ui/NumberInput';
+import { InTransitChip } from '../warehouseTransfer/InTransitChip';
 
 // TODO(Task 2.11): consolidate CATEGORY_SPECS / generateName / renderSpecForm
 // with ProductForm + StockManagerScreen. Duplicated here during Phase 2 split
@@ -359,37 +360,43 @@ export default function StockTableView({
                 </div>
 
                 <div className="w-full md:w-36 shrink-0">
-                  <div className="flex gap-1 text-[10px] font-bold">
-                    <button
-                      type="button"
-                      onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'ATAS')?.id ?? '')}
-                      disabled={isEditing || !currentUser}
-                      title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Atas' : 'Login diperlukan'}
-                      className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
-                    >
-                      Atas: {item.stock_atas ?? item.stock}
-                      {pendingIndex.adjMap.has(`${item.sku}|atas`) && (
-                        <PendingApprovalBadge
-                          count={pendingIndex.adjMap.get(`${item.sku}|atas`)}
-                          tooltip="Penyesuaian Gudang Atas menunggu"
-                        />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'BAWAH')?.id ?? '')}
-                      disabled={isEditing || !currentUser}
-                      title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Bawah' : 'Login diperlukan'}
-                      className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
-                    >
-                      Bawah: {item.stock_bawah ?? 0}
-                      {pendingIndex.adjMap.has(`${item.sku}|bawah`) && (
-                        <PendingApprovalBadge
-                          count={pendingIndex.adjMap.get(`${item.sku}|bawah`)}
-                          tooltip="Penyesuaian Gudang Bawah menunggu"
-                        />
-                      )}
-                    </button>
+                  <div className="flex flex-wrap gap-1 text-[10px] font-bold">
+                    <span className="inline-flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'ATAS')?.id ?? '')}
+                        disabled={isEditing || !currentUser}
+                        title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Atas' : 'Login diperlukan'}
+                        className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                      >
+                        Atas: {item.stock_atas ?? item.stock}
+                        {pendingIndex.adjMap.has(`${item.sku}|atas`) && (
+                          <PendingApprovalBadge
+                            count={pendingIndex.adjMap.get(`${item.sku}|atas`)}
+                            tooltip="Penyesuaian Gudang Atas menunggu"
+                          />
+                        )}
+                      </button>
+                      <InTransitChip warehouseId={warehouses.find(w => w.code === 'ATAS')?.id ?? ''} sku={item.sku} />
+                    </span>
+                    <span className="inline-flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'BAWAH')?.id ?? '')}
+                        disabled={isEditing || !currentUser}
+                        title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Bawah' : 'Login diperlukan'}
+                        className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                      >
+                        Bawah: {item.stock_bawah ?? 0}
+                        {pendingIndex.adjMap.has(`${item.sku}|bawah`) && (
+                          <PendingApprovalBadge
+                            count={pendingIndex.adjMap.get(`${item.sku}|bawah`)}
+                            tooltip="Penyesuaian Gudang Bawah menunggu"
+                          />
+                        )}
+                      </button>
+                      <InTransitChip warehouseId={warehouses.find(w => w.code === 'BAWAH')?.id ?? ''} sku={item.sku} />
+                    </span>
                   </div>
                   <div className="text-[9px] text-slate-400 mt-0.5 font-semibold">
                     Total: {item.stock} pcs

@@ -223,6 +223,28 @@ MIGRATIONS=(
   # stock_movements id=1565, all 4 side-effects landed). Idempotent (CREATE
   # OR REPLACE FUNCTION).
   "20260620000051_commit_initial_stock_rpc_fix_movement_insert.sql"
+
+  # ─── Warehouse transfer feature (spec 2026-07-12) ───
+  # 12 migrations total: schema, RLS policies, RPCs (initiate/receive/cancel),
+  # read RPCs, legacy shim, and permissions seed. All idempotent.
+  # Slot 221 is a smoke-test migration that RAISE EXCEPTIONs at end for
+  # rollback. Include only when running against a scratch branch, not prod.
+  "20261115000210_drop_warehouse_transfers_stub.sql"
+  "20261115000211_warehouse_transfers_schema.sql"
+  "20261115000212_recreate_transfer_aging_view.sql"
+  "20261115000213_extend_stock_movement_source_enum.sql"
+  "20261115000214_warehouse_transfers_rls.sql"
+  "20261115000215_initiate_warehouse_transfer.sql"
+  "20261115000216_receive_warehouse_transfer.sql"
+  "20261115000217_cancel_warehouse_transfer.sql"
+  "20261115000218_warehouse_transfer_read_rpcs.sql"
+  "20261115000219_legacy_transfer_warehouse_shim.sql"
+  "20261115000220_seed_warehouse_transfer_permissions.sql"
+  # "20261115000221_smoke_test_warehouse_transfer.sql"  # smoke-test only; rolls back via RAISE EXCEPTION
+  "20261115000222_warehouse_transfer_permission_naming_fix.sql"
+  "20261115000223_aging_view_security_invoker.sql"
+  "20261115000224_drop_auth_fks_and_map_actor.sql"
+  "20261115000226_final_rpc_bodies_after_prod_smoke.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

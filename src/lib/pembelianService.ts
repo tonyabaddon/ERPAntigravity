@@ -184,17 +184,6 @@ export const purchaseOrderService = {
     if (error) throw error;
   },
 
-  async transferWarehouse(sku: string, fromId: string, toId: string, qty: number): Promise<void> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase.rpc('transfer_warehouse', {
-      p_sku: sku,
-      p_from_warehouse_id: fromId,
-      p_to_warehouse_id: toId,
-      p_qty: qty,
-    });
-    if (error) throw error;
-  },
-
   async markPaid(poId: string, paymentProofUrl?: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase

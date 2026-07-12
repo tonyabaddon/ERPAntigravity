@@ -63,6 +63,9 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'akuntansi',
   'kasBank',
   'kasBankDetail',
+  'warehouse-transfer',
+  'warehouse-transfer-create',
+  'warehouse-transfer-detail',
 ]);
 
 export interface RouteState {
