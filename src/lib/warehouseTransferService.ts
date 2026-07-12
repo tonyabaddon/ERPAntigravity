@@ -8,7 +8,13 @@ export interface WarehouseTransferHeader {
   from_warehouse_id: string;
   to_warehouse_id: string;
   sender_user_id: string;
+  sender_name?: string | null;
   receiver_user_id: string;
+  receiver_name?: string | null;
+  received_by_user_id?: string | null;
+  received_by_name?: string | null;
+  cancelled_by_user_id?: string | null;
+  cancelled_by_name?: string | null;
   status: WarehouseTransferStatus;
   total_qty_sent: number;
   total_qty_received: number | null;

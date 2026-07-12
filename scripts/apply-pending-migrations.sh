@@ -245,6 +245,7 @@ MIGRATIONS=(
   "20261115000223_aging_view_security_invoker.sql"
   "20261115000224_drop_auth_fks_and_map_actor.sql"
   "20261115000226_final_rpc_bodies_after_prod_smoke.sql"
+  "20261115000227_list_transfers_include_actor_names.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

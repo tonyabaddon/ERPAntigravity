@@ -97,13 +97,25 @@ function TransferRow({ row, warehouses, onClick }: { row: WarehouseTransferHeade
   const from = warehouses.find(w => w.id === row.from_warehouse_id)?.name ?? '?';
   const to   = warehouses.find(w => w.id === row.to_warehouse_id)?.name   ?? '?';
   const badge = statusBadge(row.status);
+  const senderName = row.sender_name || '—';
+  // Show the actual person who confirmed receipt (received_by_name) if available,
+  // otherwise fall back to the intended receiver (receiver_name). Cancelled rows
+  // show who cancelled instead.
+  const receivedByLabel =
+    row.status === 'CANCELLED' ? `Dibatal oleh: ${row.cancelled_by_name ?? '—'}` :
+    row.received_by_name ? `Diterima oleh: ${row.received_by_name}` :
+    `Menunggu: ${row.receiver_name ?? '—'}`;
   return (
     <button onClick={onClick} className="w-full text-left rounded border border-slate-200 bg-white p-4 shadow-sm hover:bg-slate-50">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="font-mono text-xs text-slate-500">{row.doc_no}</div>
           <div className="mt-1 text-sm font-semibold text-slate-800">{from} → {to}</div>
           <div className="text-xs text-slate-500">{row.n_items} SKU · {row.total_qty_sent} pcs · {new Date(row.initiated_at).toLocaleString('id-ID')}</div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-600">
+            <span>Dikirim oleh: <span className="font-medium text-slate-700">{senderName}</span></span>
+            <span>{receivedByLabel}</span>
+          </div>
         </div>
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${badge.className}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${badge.dotClassName}`} />{badge.label}
