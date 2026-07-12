@@ -13037,3 +13037,60 @@ Until Task 8 lands, tenant Owner can already CONFIGURE the gate via Pengaturan �
 ### Cost/pace note
 
 This session hit real design drift (Task 3 wrong signature required revert + rev 2 pivot), consuming ~2h of extra work. Backend fully green + frontend Pengaturan config UI + inbox row shipped in one session. Task 8 deserves fresh session focus given the wizard's size.
+
+## 2026-07-12 (later) — Item #4 Task 8 shipped, feature now fully wired
+
+**Merge commit:** `2d09ec1`  
+**Cloud Build:** `ca9b660b` (frontend, 3.5 min) SUCCESS  
+**Tag URL:** `https://c2d09ec1---garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app`
+
+### Task 8 wiring (CatatPenjualanWizard.tsx)
+
+Frontend now completes the discount approval loop:
+
+1. On save intercept: if orderDiscountAmountRp > 0 and no prior approval this session,
+   call `check_kasir_discount_gate`. If not triggered → save proceeds. If triggered
+   AND reason not yet entered → open modal, throw `discount_approval_required`.
+2. Modal "⚠ Diskon butuh approval owner" shows discount amount, threshold, reason
+   textarea (min 3 chars), "Kirim ke Owner" button.
+3. On Kirim: `request_kasir_discount_approval` dispatched. `-1` sentinel = Owner
+   bypass_self (settings-driven) → treated as pre-approved. Real request_id →
+   waiting banner appears (bottom-right).
+4. Realtime subscription on `approval_requests` filtered by id:
+   - `approved` → clear pending, set approvedApprovalId, toast prompts admin to
+     click Simpan again → save proceeds → after `record_kasir_sale` succeeds,
+     call `link_kasir_sale_to_approval(saleId, requestId)` for audit trail.
+   - `rejected` → clear state, admin can retry sans diskon.
+   - `expired` → same as rejected + notify.
+5. Waiting banner has "Batalkan request" → `cancel_kasir_discount_request` →
+   state clears, admin can lanjut tanpa diskon.
+
+TEMPO path (createTempoInvoice) also runs the gate but skips linkSaleToApproval —
+TEMPO returns orders.id, not kasir_transactions.id. The approval_requests row
+alone is sufficient audit for TEMPO discounts.
+
+### Bundle verification (Chrome MCP fetch on tag URL)
+
+Confirmed all 7 hooks present in built JS bundle:
+- check_kasir_discount_gate ✓
+- request_kasir_discount_approval ✓
+- link_kasir_sale_to_approval ✓
+- cancel_kasir_discount_request ✓
+- Reason prompt modal ("Diskon butuh approval owner", "Kirim ke Owner") ✓
+- Waiting banner ("Menunggu approval owner", "Batalkan request") ✓
+- Realtime subscribe pattern (`approval_request_${...}`) ✓
+
+### Full Item #4 status: SHIPPED (not yet 100% traffic)
+
+Backend (RPCs applied to Garindo prod), Pengaturan config UI, Approval Inbox row,
+and now the kasir wizard integration — all merged to main, deployed to tag URL
+at 0% traffic. Ready for owner smoke test on tag URL before promoting traffic.
+
+Traffic promote command:
+```bash
+gcloud run services update-traffic garindo-jaya-panel-msme-erp-frontend \
+  --region=asia-southeast1 --to-tags=c2d09ec1=100
+```
+
+Zero user impact at production traffic until owner enables `approval_required=true`
+via Pengaturan → Aturan Persetujuan → KASIR/POS → "Diskon manual di kasir" (⚙).
