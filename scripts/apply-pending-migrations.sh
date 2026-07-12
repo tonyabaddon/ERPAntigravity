@@ -243,6 +243,8 @@ MIGRATIONS=(
   # "20261115000221_smoke_test_warehouse_transfer.sql"  # smoke-test only; rolls back via RAISE EXCEPTION
   "20261115000222_warehouse_transfer_permission_naming_fix.sql"
   "20261115000223_aging_view_security_invoker.sql"
+  "20261115000224_drop_auth_fks_and_map_actor.sql"
+  "20261115000226_final_rpc_bodies_after_prod_smoke.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
