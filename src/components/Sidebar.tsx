@@ -25,6 +25,7 @@ import {
   Wallet,
   Coins,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import type { DbTenantSettings } from '../types';
@@ -94,6 +95,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, category: 'inventory', permKey: 'can_manage_warehouses' },
     // Kontrol & Laporan
     { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
+    { id: 'keputusan-owner', label: 'Keputusan Owner', icon: AlertTriangle, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_commit_opname'] },
     { id: 'rekonsiliasi', label: 'Rekonsiliasi & Tutup Buku', icon: BookCheck, category: 'kontrol', permKey: 'reconciliation' as keyof PermissionSet },
     { id: 'akuntansi', label: 'Akuntansi', icon: BookOpenCheck, category: 'kontrol', permKey: 'laporan' as keyof PermissionSet },
     { id: 'laporan', label: 'Laporan', icon: BarChart2, category: 'kontrol', permKey: 'laporan' },

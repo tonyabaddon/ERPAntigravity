@@ -445,7 +445,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail' | 'daftarPenawaran';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail' | 'daftarPenawaran' | 'keputusan-owner';
 
 // ─── Kasir types ────────────────────────────────────────────
 
@@ -693,6 +693,11 @@ export interface OpnameCount {
   countedQty?: number | null;
   variance: number | null; // generated
   varianceValue: number;
+  // Rev 3: admin-flagged damage during counting. Owner decides Dispose/Klaim
+  // post-opname via decide_supplier_claim RPC.
+  damagedQty?: number;
+  damageNotes?: string | null;
+  damageEvidenceUrls?: string[] | null;
 }
 
 export interface PriceChangeRequest {
