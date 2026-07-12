@@ -12928,3 +12928,64 @@ Additional commits on feat/opname-damage-supplier-claims:
 - OR KLAIM → REJECTED: Dr 5-3160 / Cr 1-1460
 
 **Total tonight: 16 commits on feat branch, 8 migrations applied to prod, full end-to-end feature.**
+
+## 2026-07-12 — Item #4 Discount Approval (PARTIAL SHIP)
+
+**Spec:** `docs/superpowers/specs/2026-07-12-discount-approval-config-design.md` (rev 2)
+**Plan:** `docs/superpowers/plans/2026-07-12-discount-approval-plan.md`
+**Feature branch:** `feat/discount-approval` (merged to main via `695429c`)
+
+### What shipped
+
+**Backend (Tasks 1-6, migrations 20261115000110-000113, all applied to Garindo prod):**
+- Enum `approval_request_type` += `kasir_discount`
+- Columns on `kasir_transactions`: `discount_approval_request_id`, `discount_approval_status`
+- Per-tenant seed of `approval_settings.kasir_discount` (opt-in default: approval_required=false, verification_method='APP_INBOX', reason_required=true)
+- `check_kasir_discount_gate(discount_amount, subtotal) → JSONB` — read-only gate check with % + Rp threshold semantics
+- `request_kasir_discount_approval(discount, type, value, subtotal, reason) → BIGINT` — creates approval row (no sale_draft_id per rev 2 pivot); bypass_self returns -1
+- `link_kasir_sale_to_approval(sale_id UUID, request_id BIGINT) → VOID` — links committed sale to its approval for audit
+- `cancel_kasir_discount_request(request_id BIGINT) → VOID` — admin/Owner cancel via `_transition_approval(expired, canceled_by_user)`
+- `upsert_approval_settings(request_type, ...9 knobs)` — full per-gate config UI backend
+
+**Frontend (Tasks 7, 9, 10, minimal 11):**
+- `src/lib/discountApproval/{types,api}.ts` — typed RPC wrappers + Supabase realtime subscribe helper
+- `<ApprovalGateEditor>` — reusable 7-knob config component (approval_required toggle, threshold Rp/%, verification PIN vs APP_INBOX radio, reason_required, bypass_self, approver_role)
+- `<ApprovalRulesPanel>` extended: new `kasir_discount` row in KASIR/POS group + per-row ⚙ expand-to-editor
+- `<ApprovalRequestRow>` renders `kasir_discount` payload (discount amount/%, subtotal, trigger reason, admin's reason quote) so owner can approve via existing PIN flow
+- `ApprovalRequestType` union backfilled with `kasir_discount` + `resolve_supplier_claim` (Item #1 backfill)
+
+### Design pivot mid-execution (rev 2)
+
+Task 3 first-pass discovered `kasir_transactions` has no `draft` state (values: PAID/AWAITING_LUNAS/COMPLETED/CANCELLED/WIP/PENDING_LOCK_APPROVAL) — sale is one-shot at `record_kasir_sale` time. Reverted, pivoted to frontend-holds-state design: sale data stays in browser during approval; on approve, frontend calls existing `record_kasir_sale` then `link_kasir_sale_to_approval` for audit. Spec + plan updated to rev 2.
+
+### What's DEFERRED — feature is NOT triggerable yet from customer-facing UI
+
+**Task 8 — kasir wizard integration.** `Step3Payment.tsx` + `CatatPenjualanWizard.tsx` need:
+- gate check on discount value change (via `checkDiscountGate` from api.ts)
+- inline reason input when gate triggers
+- "Menunggu approval owner" state during pending
+- Realtime subscription on the approval request; on 'approved' event, call existing `record_kasir_sale` with cart + discount → get sale_id → call `linkSaleToApproval(saleId, requestId)` → navigate to success
+- Cancel button that calls `cancelDiscountRequest(requestId)` → sale returns to editable
+
+Deferred because the 1000-line `CatatPenjualanWizard.tsx` submit flow needs careful walkthrough. Backend RPCs verified via SQL smoke (rollback-marker pattern, zero residual on Garindo prod) so wiring is straightforward when done.
+
+### Deploy status
+
+- Cloud Build `780af083` (frontend, 4.5 min) SUCCESS
+- Cloud Build `2bbaeb2b` (backend) SUCCESS
+- Both deployed at `--no-traffic` tag URL: `https://c695429c---garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app`
+- Bundle verified via Chrome MCP fetch: contains `ApprovalGateEditor`, "Diskon manual di kasir", audit fraud copy. `checkDiscountGate`/`requestDiscountApproval` API strings absent (expected — Task 8 doesn't consume them yet)
+- Main-traffic revision untouched (previous Item #1 revision at 100%)
+
+### To fully ship
+
+1. **Task 8** — wire kasir wizard integration
+2. Deploy → smoke test full end-to-end flow (admin trigger → owner approve → sale commit with audit link)
+3. Owner enables approval_required=true in Pengaturan for Garindo (opt-in per tenant)
+4. Promote traffic to 100% on the tag URL with Task 8
+
+Until Task 8 lands, tenant Owner can already CONFIGURE the gate via Pengaturan → Aturan Persetujuan → KASIR/POS → "Diskon manual di kasir" (⚙ expand for full 7 knobs). Requests won't appear in the inbox because kasir UI can't trigger them yet — feature is dormant infrastructure ready for Task 8 to activate.
+
+### Cost/pace note
+
+This session hit real design drift (Task 3 wrong signature required revert + rev 2 pivot), consuming ~2h of extra work. Backend fully green + frontend Pengaturan config UI + inbox row shipped in one session. Task 8 deserves fresh session focus given the wizard's size.
