@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { StockItem, Warehouse, ProductPhoto } from '../../types';
+import type { PromoDiscountType } from '../../lib/promoProduk/types';
+import { formatIDR } from '../../lib/formatIDR';
 import StokGudangInline from './StokGudangInline';
 import InlineExpandPanel from './InlineExpandPanel';
+import PromoInlineEdit from '../promo/PromoInlineEdit';
 
 interface Props {
   items: StockItem[];
@@ -15,6 +18,8 @@ interface Props {
   onEdit: (sku: string) => void;
   onAddPhoto: (sku: string) => void;
   onHistory: (sku: string) => void;
+  showToast?: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  onPromoUpdated?: (sku: string, promo: { promo_discount_type: PromoDiscountType | null; promo_discount_value: number | null; promo_expires_at: string | null }) => void;
 }
 
 function photoUrlsToMeta(urls?: ProductPhoto[]): ProductPhoto[] {
@@ -30,11 +35,28 @@ function buildStockMap(item: StockItem, warehouses: Warehouse[]): Map<string, nu
   return m;
 }
 
+function promoDisplayLabel(item: StockItem): string {
+  if (!item.promo_discount_type || item.promo_discount_value == null) return '—';
+  if (item.promo_discount_type === 'PERCENT') return `${item.promo_discount_value}%`;
+  return `${formatIDR(item.promo_discount_value)}/unit`;
+}
+
+function expiryDisplayLabel(item: StockItem): string {
+  if (!item.promo_discount_type) return '—';
+  if (!item.promo_expires_at) return '∞ permanen';
+  const d = new Date(item.promo_expires_at);
+  if (d < new Date()) return 'Kadaluwarsa';
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function CatalogListView({
   items, warehouses, minStockThreshold,
   expandedRows, currentPhotoIndex,
   onToggleRow, onPhotoSelect, onCloseRow, onEdit, onAddPhoto, onHistory,
+  showToast, onPromoUpdated,
 }: Props) {
+  const [promoPopoverSku, setPromoPopoverSku] = useState<string | null>(null);
+
   return (
     <div className="bg-white rounded-3xl border border-[#e5eeff] shadow-sm overflow-hidden">
       <table className="w-full text-sm">
@@ -45,6 +67,8 @@ export default function CatalogListView({
             <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Nama Produk</th>
             <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Kategori</th>
             <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Harga</th>
+            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Promo</th>
+            <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider">Berlaku Hingga</th>
             <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-center">Stok</th>
             <th className="py-2.5 px-2 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider w-10"></th>
             <th className="py-2.5 px-2 pr-3 text-[10.5px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
@@ -58,6 +82,9 @@ export default function CatalogListView({
             const photoIndex = currentPhotoIndex.get(item.sku) ?? 0;
             const firstPhoto = photos[0];
             const hasPhoto = !!firstPhoto;
+            const hasPromo = !!item.promo_discount_type;
+            const promoPopoverOpen = promoPopoverSku === item.sku;
+
             return (
               <React.Fragment key={item.sku}>
                 <tr className={`border-b border-slate-100 hover:bg-blue-50/40 group ${isExpanded ? 'bg-violet-50/40' : ''}`}>
@@ -83,6 +110,41 @@ export default function CatalogListView({
                   <td className="py-2 px-2 text-slate-600">{item.category}</td>
                   <td className="py-2 px-2 text-right font-extrabold text-[#012749]">
                     Rp {new Intl.NumberFormat('id-ID').format(item.price)}
+                  </td>
+                  {/* Promo column */}
+                  <td className="py-2 px-2 relative">
+                    <button
+                      type="button"
+                      onClick={() => setPromoPopoverSku(promoPopoverOpen ? null : item.sku)}
+                      className={`text-xs font-semibold rounded px-2 py-0.5 transition-colors ${
+                        hasPromo
+                          ? 'text-blue-700 bg-blue-50 hover:bg-blue-100'
+                          : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                      title={hasPromo ? 'Klik untuk edit promo' : 'Klik untuk set promo'}
+                    >
+                      {hasPromo ? promoDisplayLabel(item) : '+ Set promo'}
+                    </button>
+                    {promoPopoverOpen && showToast && (
+                      <PromoInlineEdit
+                        sku={item.sku}
+                        skuName={item.name}
+                        price={item.price}
+                        currentType={item.promo_discount_type}
+                        currentValue={item.promo_discount_value}
+                        currentExpiresAt={item.promo_expires_at}
+                        onClose={() => setPromoPopoverSku(null)}
+                        onSaved={(promo) => {
+                          onPromoUpdated?.(item.sku, promo);
+                          setPromoPopoverSku(null);
+                        }}
+                        showToast={showToast}
+                      />
+                    )}
+                  </td>
+                  {/* Berlaku hingga column */}
+                  <td className="py-2 px-2 text-xs text-slate-500">
+                    {expiryDisplayLabel(item)}
                   </td>
                   <td className="py-2 px-2 text-center">
                     <StokGudangInline
@@ -119,7 +181,7 @@ export default function CatalogListView({
                 </tr>
                 {isExpanded && (
                   <tr className="bg-violet-50/40 border-b-2 border-violet-300">
-                    <td colSpan={8} className="px-3 pb-5 pt-1">
+                    <td colSpan={10} className="px-3 pb-5 pt-1">
                       <InlineExpandPanel
                         item={item}
                         photos={photos}

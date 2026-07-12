@@ -335,6 +335,9 @@ export default function App() {
         description: item.description ?? null,
         min_stock_per_product: item.min_stock_per_product ?? null,
         initial_stock_approved: item.initial_stock_approved ?? true,
+        promo_discount_type: item.promo_discount_type ?? null,
+        promo_discount_value: item.promo_discount_value != null ? Number(item.promo_discount_value) : null,
+        promo_expires_at: item.promo_expires_at ?? null,
       }));
       setStockList(mapped);
       if (mapped.length > 0) {
@@ -370,6 +373,9 @@ export default function App() {
           description: item.description ?? null,
           min_stock_per_product: item.min_stock_per_product ?? null,
           initial_stock_approved: item.initial_stock_approved ?? true,
+          promo_discount_type: item.promo_discount_type ?? null,
+          promo_discount_value: item.promo_discount_value != null ? Number(item.promo_discount_value) : null,
+          promo_expires_at: item.promo_expires_at ?? null,
         }));
         setStockList(mapped);
       }

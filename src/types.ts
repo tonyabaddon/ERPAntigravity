@@ -177,6 +177,10 @@ export interface StockItem {
   description?: string | null;
   min_stock_per_product?: number | null;
   initial_stock_approved?: boolean;
+  // Promo fields (Item 4b) — present when the stocks table has promo columns
+  promo_discount_type?: 'PERCENT' | 'AMOUNT' | null;
+  promo_discount_value?: number | null;
+  promo_expires_at?: string | null;
 }
 
 export interface NotificationConfig {
@@ -484,6 +488,14 @@ export interface KasirItem {
   discount_amount_rp?: number;
   // Multi-tier pricing
   pricing_tier_used?: 'eceran' | 'grosir' | null;
+  // Item #4b: Promo Produk snapshot — attached when a Promo Produk auto-applies
+  // at save time. Passes through to RPC JSONB untouched (v_item || merge).
+  promo_snapshot?: {
+    type: 'PERCENT' | 'AMOUNT';
+    value: number;
+    expires_at: string | null;
+    applied_at: string;
+  } | null;
 }
 
 export interface KasirTransaction {

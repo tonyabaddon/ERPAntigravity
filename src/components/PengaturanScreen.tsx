@@ -17,9 +17,10 @@ import JenisJasaCrudPanel from './pengaturan/JenisJasaCrudPanel';
 import ApprovalRulesPanel from './pengaturan/ApprovalRulesPanel';
 import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
 import SupportAccessPanel from './pengaturan/SupportAccessPanel';
+import PromoProdukPanel from './pengaturan/PromoProdukPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 
-type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -49,6 +50,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       { id: 'umum', label: 'Umum' },
       { id: 'modul-jasa', label: 'Modul & Jasa' },
       { id: 'approval', label: 'Approval' },
+      { id: 'promo-produk', label: '🏷 Promo Produk' },
       { id: 'pajak', label: 'Pajak' },
     ];
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
@@ -483,6 +485,17 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           </div>
         )}
         {activeTab === 'approval' && <ApprovalRulesPanel showToast={showToast} />}
+        {activeTab === 'promo-produk' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div>
+              <h3 className="text-base font-bold text-[#012749] mb-1">🏷 Promo Produk — auto-apply diskon per SKU</h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Set diskon otomatis per SKU. Kasir tidak perlu input manual — diskon langsung terapplied saat SKU ditambahkan ke nota.
+              </p>
+            </div>
+            <PromoProdukPanel showToast={showToast} />
+          </div>
+        )}
         {activeTab === 'pajak' && <PajakSettingsPanel showToast={showToast} />}
         {activeTab === 'notifikasi' && (
           <NotificationSettingsScreen

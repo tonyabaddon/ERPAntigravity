@@ -16,6 +16,7 @@ import {
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { statsService, reportsService, isSupabaseConfigured } from '../lib/supabaseClient';
 import PreOrderFulfillmentsCard from './dashboard/PreOrderFulfillmentsCard';
+import PromoProdukCard from './dashboard/PromoProdukCard';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -287,6 +288,9 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
 
       {/* Pre-order fulfillments — last 7 days */}
       <PreOrderFulfillmentsCard showToast={showToast} />
+
+      {/* Promo Produk summary — hidden when all zeros */}
+      <PromoProdukCard onNavigateToPengaturan={() => onNavigate('settings')} />
 
       {/* Recent Activity Log */}
       <div className="bg-white p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl">

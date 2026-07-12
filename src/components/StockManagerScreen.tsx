@@ -323,6 +323,16 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           onEdit={setEditingSku}
           onAddPhoto={setEditingSku}
           onHistory={(sku) => showToast(`Riwayat stok ${sku} — TODO`, 'info')}
+          showToast={showToast}
+          onPromoUpdated={(sku, promo) => {
+            onStockUpdate(
+              stockList.map((s) =>
+                s.sku === sku
+                  ? { ...s, promo_discount_type: promo.promo_discount_type ?? undefined, promo_discount_value: promo.promo_discount_value ?? undefined, promo_expires_at: promo.promo_expires_at ?? undefined }
+                  : s,
+              ),
+            );
+          }}
         />
       ))}
 

@@ -79,6 +79,10 @@ export interface SupabaseStockItem {
   description?: string | null;
   min_stock_per_product?: number | null;
   initial_stock_approved?: boolean;
+  // Promo fields (Item 4b)
+  promo_discount_type?: 'PERCENT' | 'AMOUNT' | null;
+  promo_discount_value?: number | null;
+  promo_expires_at?: string | null;
 }
 
 // Resilient API services with local fallback

@@ -15,7 +15,7 @@ const GROUPS: Array<{ heading: string; icon: string; bgClass: string; gates: Gat
     { type: 'initial_stock',  title: 'Set saldo awal stok produk baru',         description: 'Saat input first-time stock.' },
   ]},
   { heading: 'KASIR / POS', icon: '💳', bgClass: '', gates: [
-    { type: 'kasir_discount' as ApprovalRequestType,        title: 'Diskon manual di kasir', description: 'Kasir kasih diskon melewati ambang → owner approve. Cegah fraud karyawan.' },
+    { type: 'kasir_discount' as ApprovalRequestType,        title: 'Diskon Nota (di kasir)', description: 'Kasir kasih diskon melewati batas di nota → owner approve. Cegah fraud karyawan.' },
     { type: 'kasir_price_override', title: 'Override harga di kasir', description: 'Kasir set harga manual ≠ list price.' },
     { type: 'kasir_void',           title: 'Void transaksi',            description: 'Batal transaksi sebelum/sesudah cetak.' },
     { type: 'kasir_refund',         title: 'Refund tunai',              description: 'Refund cash ke pelanggan.' },
