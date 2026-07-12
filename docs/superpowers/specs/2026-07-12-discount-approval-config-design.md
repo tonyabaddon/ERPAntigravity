@@ -452,11 +452,159 @@ Update project memory `project_migration_slot_allocation.md` after applying.
 **Sequencing rationale:** Item #4 first because runtime approval covers ALL cases (including ones the product rules would miss); product-level cap is an OPTIMIZATION layered on top to reduce approval load. Reverse order would leave exceptions unhandled.
 
 **Item #4b scope preview (not final):**
-- Schema: `stocks.max_discount_percent NUMERIC(5,2) NULL`, `stock_categories.default_max_discount_percent NUMERIC(5,2) NULL` (category-level fallback)
-- Backend: extend `check_kasir_discount_gate` to check line-level against product cap before the tenant-level threshold
-- Frontend: Produk & Stok gets a "Max diskon %" column + inline edit; Pengaturan gets category-level default config
-- Cap enforcement: kasir UI blocks discount > cap on the input side (per-line); if cap = NULL, fall back to tenant threshold check
-- Bulk import: CSV upload for setting caps across many SKUs
+
+### Schema
+
+Caps support **% OR Rp** and **optional expiration** (for promo periods):
+
+```sql
+-- Per-SKU cap (override)
+ALTER TABLE stocks
+  ADD COLUMN max_discount_type TEXT CHECK (max_discount_type IN ('PERCENT','AMOUNT')),
+  ADD COLUMN max_discount_value NUMERIC(15,2) CHECK (max_discount_value > 0),
+  ADD COLUMN max_discount_expires_at TIMESTAMPTZ,
+  ADD CONSTRAINT max_disc_type_value_consistency
+    CHECK ((max_discount_type IS NULL AND max_discount_value IS NULL)
+        OR (max_discount_type IS NOT NULL AND max_discount_value IS NOT NULL));
+
+-- Category default (fallback)
+ALTER TABLE stock_categories
+  ADD COLUMN default_max_discount_type TEXT CHECK (default_max_discount_type IN ('PERCENT','AMOUNT')),
+  ADD COLUMN default_max_discount_value NUMERIC(15,2) CHECK (default_max_discount_value > 0),
+  ADD COLUMN default_max_discount_expires_at TIMESTAMPTZ,
+  ADD CONSTRAINT default_max_disc_type_value_consistency CHECK (...);
+```
+
+### Cap resolution fallback chain
+
+At kasir discount check time, look up in this order:
+1. **SKU-level cap** (if set AND not expired) → use it
+2. **Category default** (if set AND not expired) → use it
+3. **Tenant threshold** from `approval_settings.kasir_discount` (Item #4) → use it
+4. **None of above** → no cap, admin bebas (or approval based on tenant setting)
+
+### Backend RPC extension
+
+`check_kasir_discount_gate` gets extended per-line context:
+```
+Input: line_items[]{sku, unit_price, discount_amount_rp}, subtotal_rp, discount_type, discount_value
+Logic:
+  For each line:
+    Resolve SKU/category/tenant cap chain → active_cap (type + value + source)
+    Normalize admin's discount to same unit as cap (% ↔ Rp via unit_price)
+    If admin_discount > active_cap → line_over_cap = true, needs approval
+  If any line_over_cap OR invoice-level discount > tenant threshold → gate_triggered
+Return: {gate_triggered, per_line_violations[], invoice_violation}
+```
+
+### UI — Category default (setup awal)
+
+**Pengaturan → Katalog → Aturan Diskon:**
+
+```
+Kategori         Jumlah SKU   Max Diskon              Berlaku sampai
+──────────────────────────────────────────────────────────────────────
+Kabel                 127     [  5.0] [% ▾]           [———] (∞)
+MCB                    89     [  8.0] [% ▾]           [2026-12-31] promo
+Kontaktor              45     [10.000] [Rp ▾] /unit   [———]
+Panel Kosong           38     [  7.5] [% ▾]           [2026-05-15] lebaran
+Custom Panel           12     [   ——] (no cap)        —
+Aksesoris             234     [ 15.0] [% ▾]           [———]
+```
+
+### UI — Per-product override (exception)
+
+**Produk & Stok** — tambah 2 kolom:
+
+```
+SKU        Nama                Max Diskon                Berlaku       Sumber
+────────────────────────────────────────────────────────────────────────────
+MCB-16A    MCB 16A             8% (kategori)             ∞             ⚙ default
+MCB-32A    MCB 32A             15% override              2026-12-31    🔒 SKU
+KBL-2.5    Kabel NYA 2.5       Rp 3.000/unit override    ∞             🔒 SKU
+KBL-4      Kabel NYA 4mm       5% (kategori)             ∞             ⚙ default
+PANEL-CST  Custom Panel        (no cap)                  —             🚫 none
+```
+
+- Inline edit: klik nilai → input muncul dengan % / Rp toggle + date picker
+- "↺ pakai default kategori" mini-button per row
+- Bulk action: select N SKU → apply cap + expiration to all
+
+### UI — Kasir real-time enforcement
+
+Saat admin input diskon:
+
+```
+Kabel NYA 2.5mm × 10 unit @ Rp 20.000
+  Cap: Rp 3.000/unit (SKU override, berlaku ∞)
+  Diskon input: [Rp 2.500] /unit  → ✓ Dalam batas
+  Total diskon line: Rp 25.000
+
+MCB Schneider 32A × 5 @ Rp 85.000
+  Cap: 15% (SKU override, berlaku 2026-12-31)
+  Diskon input: [18]%  → ⚠ MELEBIHI cap 15%
+  → Butuh approval owner (Item #4 flow trigger)
+```
+
+**Unit normalization:** admin bebas input dalam % ATAU Rp, sistem convert ke unit cap untuk compare. Contoh: cap = 10%, admin input Rp 8.000 pada harga Rp 100.000 → converted to 8% → dalam batas ✓.
+
+### UI — Expiration handling
+
+- Expired cap = ignored, fallback ke next layer
+- Owner dashboard: card "Cap expiring soon" list SKU dengan expiration < 7 hari
+- Kasir side: expired cap tidak muncul di UI, ga block apapun
+
+### Import/export CSV (bulk setup)
+
+Template CSV:
+```
+sku,max_discount_type,max_discount_value,max_discount_expires_at
+MCB-16A,PERCENT,8,
+MCB-32A,PERCENT,15,2026-12-31
+KBL-2.5,AMOUNT,3000,
+KBL-4,,,             ← kosong = pakai default kategori / hapus override
+```
+
+Owner download template → edit di Excel → upload → validation report (X berhasil, Y error dengan alasan).
+
+### Cap enforcement priority
+
+Cap enforcement flow di kasir sale RPC:
+```
+For each cart item:
+  1. Check SKU cap (not expired) → if set, enforce
+  2. Else check category default (not expired) → if set, enforce
+  3. Else check tenant threshold from Item #4 → if triggered, gate
+  4. Else no cap, submit langsung
+
+For invoice-level total discount:
+  Also check tenant threshold (as per Item #4 spec)
+  If gate at either line OR invoice level → route to approval
+```
+
+### Dashboard card untuk owner
+
+```
+┌─ Aturan Diskon ──────────────────────────────┐
+│  📊 500 SKU total                            │
+│  ⚙  445 pakai default kategori               │
+│  🔒 42 override manual                        │
+│  🚫 13 no cap (Custom Panel dll)              │
+│  ⏰ 8 cap expiring 7 hari                     │
+│                                              │
+│  Approval hari ini: 3 pending                │
+│  [Kelola aturan] [Buka inbox]                │
+└──────────────────────────────────────────────┘
+```
+
+### Ship priority within Item #4b
+
+1. Schema + fallback resolution logic — most impactful, minimal effort
+2. Category default UI (Pengaturan → Katalog → Aturan Diskon) — 90% impact
+3. Kasir real-time enforcement — critical untuk feature bekerja
+4. Per-product override UI — for exceptions
+5. Dashboard card — nice-to-have
+6. CSV import — bulk convenience, defer sampai user complain
 
 ### 11.2 Other deferred
 
