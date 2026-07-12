@@ -8,6 +8,7 @@
 // per request_type. Rejects WA_BUTTON verification (per feedback memory).
 
 import { useState } from 'react';
+import { NumberInput } from '../ui/NumberInput';
 import { upsertApprovalSettings } from '../../lib/discountApproval/api';
 import type { VerificationMethod } from '../../lib/discountApproval/types';
 
@@ -77,28 +78,25 @@ export function ApprovalGateEditor({ requestType, initialValues, onSaved, showTo
             <div className="text-xs font-medium text-slate-500 mb-1">Ambang batas approval</div>
             <label className="block mb-1">
               <span className="text-xs text-slate-600">Nominal Rp</span>
-              <input
-                type="number"
+              <NumberInput
+                nullable
                 min={0}
-                value={settings.threshold_amount ?? ''}
-                onChange={(e) =>
-                  update('threshold_amount', e.target.value ? Number(e.target.value) : null)
-                }
+                allowDecimal={false}
+                value={settings.threshold_amount ?? null}
+                onChange={(n) => update('threshold_amount', n)}
                 placeholder="kosong = tidak dicek"
                 className="mt-0.5 w-full rounded border border-slate-300 px-3 py-1.5 text-sm"
               />
             </label>
             <label className="block">
               <span className="text-xs text-slate-600">Persentase %</span>
-              <input
-                type="number"
+              <NumberInput
+                nullable
                 min={0}
                 max={100}
-                step={0.1}
-                value={settings.threshold_percent ?? ''}
-                onChange={(e) =>
-                  update('threshold_percent', e.target.value ? Number(e.target.value) : null)
-                }
+                allowDecimal
+                value={settings.threshold_percent ?? null}
+                onChange={(n) => update('threshold_percent', n)}
                 placeholder="kosong = tidak dicek"
                 className="mt-0.5 w-full rounded border border-slate-300 px-3 py-1.5 text-sm"
               />

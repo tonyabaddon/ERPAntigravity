@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, Printer, AlertTriangle } from 'lucide-react';
+import { NumberInput } from '../ui/NumberInput';
 import {
   warehouseTransferService,
   WarehouseTransferDetail,
@@ -267,15 +268,15 @@ export default function WarehouseTransferDetailScreen({
                   <td className="px-4 py-2 text-right tabular-nums">{sentQty}</td>
                   <td className="px-4 py-2 text-right">
                     {isReceiver ? (
-                      <input
-                        type="number"
+                      <NumberInput
                         min={0}
                         max={sentQty}
+                        allowDecimal={false}
                         value={receivedQty[item.sku] ?? sentQty}
                         aria-label={`Qty Diterima ${item.sku}`}
-                        onChange={e => setReceivedQty(prev => ({
+                        onChange={n => setReceivedQty(prev => ({
                           ...prev,
-                          [item.sku]: Math.max(0, Number(e.target.value)),
+                          [item.sku]: Math.max(0, Math.min(n, sentQty)),
                         }))}
                         className="w-20 rounded border border-slate-200 px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       />
