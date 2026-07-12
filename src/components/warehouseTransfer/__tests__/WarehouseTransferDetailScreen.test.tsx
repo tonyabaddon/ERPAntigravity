@@ -18,9 +18,11 @@ const IN_TRANSIT_DETAIL = {
             from_warehouse_id: 'wa', to_warehouse_id: 'wb',
             sender_user_id: 'sender-u', receiver_user_id: 'me',
             total_qty_sent: 10, total_qty_received: null, total_loss_qty: null,
+            total_loss_value_rp: null,
             initiated_at: '2026-07-12T10:00:00Z', received_at: null, cancelled_at: null,
             n_items: 1, notes: null },
-  items: [{ transfer_id: 7, line_no: 1, sku: 'S1', qty_sent: 10, qty_received: null, loss_qty: null, loss_movement_id: null }],
+  items: [{ transfer_id: 7, line_no: 1, sku: 'S1', qty_sent: 10, qty_received: null,
+            loss_qty: null, loss_movement_id: null, harga_modal: 30000, loss_value_rp: null }],
 };
 
 describe('WarehouseTransferDetailScreen', () => {
@@ -64,13 +66,52 @@ describe('WarehouseTransferDetailScreen', () => {
     expect(screen.queryByRole('button', { name: /Konfirmasi Terima/i })).not.toBeInTheDocument();
   });
 
-  it('warns about PARTIAL when qty_received < qty_sent for any line', async () => {
+  it('warns about PARTIAL with live loss value when qty_received < qty_sent', async () => {
     (warehouseTransferService.getTransferDetail as any).mockResolvedValue(IN_TRANSIT_DETAIL);
     render(<WarehouseTransferDetailScreen id={7} currentUserId="me" onBack={() => {}} />);
     await waitFor(() => screen.getByRole('button', { name: /Konfirmasi Terima/i }));
     const qtyInput = screen.getByLabelText(/Qty Diterima.*S1/i);
     fireEvent.change(qtyInput, { target: { value: '8' } });
     expect(screen.getByText(/Selisih -2/)).toBeInTheDocument();
-    expect(screen.getByText(/Stock Adjustment.*TRANSFER_LOSS/)).toBeInTheDocument();
+    // Live loss value: 2 pcs × 30000 harga_modal = Rp 60.000
+    expect(screen.getByText(/Rp 60\.000/)).toBeInTheDocument();
+    // New copy replaces "Stock Adjustment TRANSFER_LOSS"
+    expect(screen.getByText(/Catat kerugian ke pembukuan/)).toBeInTheDocument();
+  });
+
+  it('shows Nilai Kerugian chip on closed PARTIAL transfer', async () => {
+    (warehouseTransferService.getTransferDetail as any).mockResolvedValue({
+      ...IN_TRANSIT_DETAIL,
+      header: {
+        ...IN_TRANSIT_DETAIL.header,
+        status: 'PARTIAL',
+        total_qty_received: 7,
+        total_loss_qty: 3,
+        total_loss_value_rp: 90000,
+        received_at: '2026-07-12T11:00:00Z',
+      },
+      items: [{ ...IN_TRANSIT_DETAIL.items[0], qty_received: 7, loss_qty: 3, loss_value_rp: 90000 }],
+    });
+    render(<WarehouseTransferDetailScreen id={7} currentUserId="other" onBack={() => {}} />);
+    await waitFor(() => expect(screen.getByText(/Nilai Kerugian/i)).toBeInTheDocument());
+    expect(screen.getByText(/Rp 90\.000/)).toBeInTheDocument();
+    expect(screen.getByText(/3 pcs/)).toBeInTheDocument();
+  });
+
+  it('shows legacy fallback text for PARTIAL with null loss value', async () => {
+    (warehouseTransferService.getTransferDetail as any).mockResolvedValue({
+      ...IN_TRANSIT_DETAIL,
+      header: {
+        ...IN_TRANSIT_DETAIL.header,
+        status: 'PARTIAL',
+        total_qty_received: 7,
+        total_loss_qty: 3,
+        total_loss_value_rp: null,
+        received_at: '2026-07-12T11:00:00Z',
+      },
+      items: [{ ...IN_TRANSIT_DETAIL.items[0], qty_received: 7, loss_qty: 3, loss_value_rp: null }],
+    });
+    render(<WarehouseTransferDetailScreen id={7} currentUserId="other" onBack={() => {}} />);
+    await waitFor(() => expect(screen.getByText(/Nilai belum tercatat/i)).toBeInTheDocument());
   });
 });

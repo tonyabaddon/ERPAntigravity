@@ -19,6 +19,10 @@ export interface WarehouseTransferHeader {
   total_qty_sent: number;
   total_qty_received: number | null;
   total_loss_qty: number | null;
+  total_loss_value_rp?: number | null;
+  initiate_journal_id?: string | null;
+  receive_journal_id?: string | null;
+  cancel_journal_id?: string | null;
   initiated_at: string;
   received_at: string | null;
   cancelled_at: string | null;
@@ -35,6 +39,8 @@ export interface WarehouseTransferItem {
   qty_received: number | null;
   loss_qty: number | null;
   loss_movement_id: number | null;
+  harga_modal?: number | null;
+  loss_value_rp?: number | null;
 }
 
 export interface WarehouseTransferDetail {
@@ -72,7 +78,7 @@ async function receiveTransfer(
     p_transfer_id: transferId, p_items: items,
   });
   if (error) throw error;
-  return data as { status: WarehouseTransferStatus; total_loss_qty: number };
+  return data as { status: WarehouseTransferStatus; total_loss_qty: number; total_loss_value?: number };
 }
 
 async function cancelTransfer(transferId: number, reason: string) {

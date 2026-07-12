@@ -105,7 +105,16 @@ export default function WarehouseTransferDetailScreen({
   // PARTIAL warning: any line where the entered qty_received < qty_sent
   const lossLines = items.filter(item => (receivedQty[item.sku] ?? item.qty_sent) < item.qty_sent);
   const totalLoss = lossLines.reduce((acc, item) => acc + (item.qty_sent - (receivedQty[item.sku] ?? item.qty_sent)), 0);
+  // Live-computed loss value in Rp using per-line harga_modal snapshot from the RPC.
+  // Falls back to 0 if the row is legacy (pre-slot-229 initiate) and harga_modal is null.
+  const totalLossValueLive = lossLines.reduce((acc, item) => {
+    const loss = item.qty_sent - (receivedQty[item.sku] ?? item.qty_sent);
+    return acc + loss * (item.harga_modal ?? 0);
+  }, 0);
   const showPartialWarning = isReceiver && totalLoss > 0;
+  // Persisted loss value shown for closed PARTIAL transfers (from RPC).
+  const persistedLossValue = header.status === 'PARTIAL' ? header.total_loss_value_rp ?? null : null;
+  const fmtRp = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
   // ── actions ────────────────────────────────────────────────────────────────
 
@@ -222,6 +231,19 @@ export default function WarehouseTransferDetailScreen({
             </div>
           </div>
         )}
+        {header.status === 'PARTIAL' && (
+          <div>
+            <span className="text-xs text-slate-400 uppercase tracking-wide">Nilai Kerugian</span>
+            <div className="mt-0.5 font-semibold tabular-nums text-red-700">
+              {persistedLossValue !== null && persistedLossValue > 0
+                ? `${fmtRp(persistedLossValue)} (${header.total_loss_qty ?? 0} pcs)`
+                : `— (${header.total_loss_qty ?? 0} pcs)`}
+            </div>
+            {persistedLossValue === null && (
+              <div className="mt-0.5 text-xs text-slate-500">Nilai belum tercatat (transaksi lama)</div>
+            )}
+          </div>
+        )}
         {header.notes && (
           <div className="col-span-2">
             <span className="text-xs text-slate-400 uppercase tracking-wide">Catatan</span>
@@ -235,9 +257,16 @@ export default function WarehouseTransferDetailScreen({
         <div className="flex gap-2 rounded border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Ada <strong>Selisih -{totalLoss} pcs</strong>. Setelah &ldquo;Konfirmasi&rdquo;, sistem otomatis:{' '}
+            Ada <strong>Selisih -{totalLoss} pcs</strong>
+            {totalLossValueLive > 0 && (
+              <>
+                {' '}
+                (≈ <strong className="tabular-nums">{fmtRp(totalLossValueLive)}</strong>)
+              </>
+            )}
+            . Setelah &ldquo;Konfirmasi&rdquo;, sistem otomatis:{' '}
             Tambah {header.total_qty_sent - totalLoss} pcs ke Gudang <strong>{toName}</strong>,{' '}
-            Buat Stock Adjustment &ldquo;TRANSFER_LOSS&rdquo; -{totalLoss} pcs,{' '}
+            Catat kerugian ke pembukuan (Kerugian Selisih Transfer Gudang),{' '}
             Notifikasi Owner via Keputusan Owner inbox.
           </span>
         </div>
