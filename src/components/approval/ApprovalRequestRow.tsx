@@ -33,6 +33,8 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   bnl_create: 'Buat BNL',
   tukar_faktur: 'Tukar Faktur',
   purchase_return: 'Retur Pembelian',
+  resolve_supplier_claim: 'Resolve Klaim Supplier',
+  kasir_discount: 'Diskon Kasir',
 };
 
 const TYPE_ICON: Record<
@@ -58,6 +60,8 @@ const TYPE_ICON: Record<
   bnl_create:                   { icon: '📄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   tukar_faktur:                 { icon: '🔄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   purchase_return:              { icon: '↩️', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  resolve_supplier_claim:       { icon: '🎯', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
+  kasir_discount:               { icon: '🏷️', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {
@@ -190,6 +194,21 @@ function summarisePayload(req: ApprovalRequest): string {
       if (qty !== undefined) parts.push(`+${qty} ${unit}`);
       if (cost !== undefined && cost > 0) parts.push(`HPP ${formatRupiah(cost)}/${unit}`);
       return parts.join(' · ') || 'Stok awal produk baru';
+    }
+    case 'kasir_discount': {
+      const discountAmt = num('discount_amount_rp');
+      const subtotal = num('subtotal_rp');
+      const dtype = str('discount_type');
+      const dvalue = num('discount_value');
+      const reason = str('reason');
+      const trigger = str('trigger_reason');
+      const parts: string[] = ['Diskon manual'];
+      if (dtype === 'PERCENT' && dvalue !== undefined) parts.push(`${dvalue}%`);
+      if (discountAmt !== undefined) parts.push(formatRupiah(discountAmt));
+      if (subtotal !== undefined) parts.push(`dari ${formatRupiah(subtotal)}`);
+      if (trigger) parts.push(`⚠ ${trigger}`);
+      if (reason) parts.push(`alasan: "${reason}"`);
+      return parts.join(' · ');
     }
     case 'customer_credit_activate':
       return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;

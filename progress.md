@@ -1,5 +1,24 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 — Item #4 Task 2: check_kasir_discount_gate RPC DONE
+
+Migration applied to prod (Garindo):
+- `20261115000112_kasir_discount_rpcs` — `check_kasir_discount_gate(p_discount_amount_rp, p_subtotal_rp) → JSONB`
+- SECDEF + OWNER TO vosi_rpc_owner + GRANT EXECUTE TO authenticated
+- Smoke: 4/4 tests PASS — opt-out default, threshold_amount gate, threshold_percent gate, zero-subtotal edge case
+- TDD: FAIL confirmed (42883 no function) before migration; all 4 PASS after
+- Commit: `c31bb64` on feat/discount-approval
+- Note: slot 112 (111 consumed by seed in Task 1); Tasks 3-5 append to this same file
+
+## 2026-07-12 — Item #4 Task 1: kasir_discount schema migration DONE
+
+Migrations applied to prod (Garindo):
+- `20261115000110_kasir_discount_schema` — adds `kasir_discount` to `approval_request_type` enum + 2 columns on `kasir_transactions`
+- `20261115000111_kasir_discount_seed` — seeds 3 approval_settings rows (one per tenant), `approval_required=false` opt-in default
+- Smoke test: 5/5 assertions PASS
+- Commit: `ddbdc9e` on feat/discount-approval
+- Note: slot 111 consumed for seed (Postgres 55P04 requires separate transaction after ALTER TYPE ADD VALUE); RPC migrations shift to slots 112-113
+
 ## 2026-07-12 (post-deploy validation) — 8/8 Chrome MCP end-to-end validations passed
 
 After push + Cloud Run traffic migration (`00319-nuw` → `00321-kid` at commit `414e9e1`), ran the full validation checklist through Chrome DevTools MCP against the deployed Garindo tenant:

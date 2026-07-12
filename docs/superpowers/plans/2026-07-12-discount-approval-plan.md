@@ -8,6 +8,63 @@
 
 **Tech Stack:** Supabase Postgres + PL/pgSQL RPCs, React + TypeScript frontend (Vitest + RTL for tests), existing OwnerPinPad component (unused for discount MVP since APP_INBOX is default), Supabase Realtime.
 
+## REVISION NOTE (2026-07-12 rev 2, post Task 3 schema audit)
+
+Live schema drift discovered mid-execution required design pivot. Read this before executing Tasks 3-5, 7-8, 11, 13.
+
+**What changed:**
+- `kasir_transactions.id` is UUID (not BIGINT as plan assumed)
+- `kasir_transactions.status` has no `draft` value (actual values: PAID/AWAITING_LUNAS/COMPLETED/CANCELLED/WIP/PENDING_LOCK_APPROVAL)
+- `approval_requests.expires_at` is NOT NULL with default `now() + 30 min` (plan wanted NULL for no-expire)
+
+**Design pivot — frontend-holds-state (see spec §3.2-3.5 rev 2):**
+- Sale doesn't exist in `kasir_transactions` during approval — sale data stays in browser
+- On approval, frontend calls existing `record_kasir_sale` then `link_kasir_sale_to_approval`
+- 4-RPC surface becomes: check_gate (unchanged, done), request (no sale_draft_id), **link** (replaces complete), cancel (takes request_id)
+
+**Slot allocation post-pivot:**
+- 110: enum + columns (done)
+- 111: seed (done)
+- 112: `check_kasir_discount_gate` (done) + append `request_kasir_discount_approval` + `link_kasir_sale_to_approval` + `cancel_kasir_discount_request` (Tasks 3-5 all in this file)
+- 113: `upsert_approval_settings` (Task 6)
+
+**Task 3 REDO signature:**
+```
+request_kasir_discount_approval(
+  p_discount_amount_rp NUMERIC,
+  p_discount_type TEXT,
+  p_discount_value NUMERIC,
+  p_subtotal_rp NUMERIC,
+  p_reason TEXT
+) RETURNS BIGINT
+```
+No sale_draft_id. Returns approval_request_id (or -1 on bypass_self).
+Payload JSONB: `{discount_type, discount_value, discount_amount_rp, subtotal_rp, reason, admin_user_id, trigger_reason}`.
+Do NOT UPDATE kasir_transactions (no sale exists yet).
+Accept `expires_at` DB default (30 min); admin can cancel via Task 5.
+
+**Task 4 REPLACED — no complete_kasir_sale_after_approval:**
+Instead: `link_kasir_sale_to_approval(p_sale_id UUID, p_request_id BIGINT) RETURNS VOID`
+- Guard: sale + request tenant match caller; request must be status='approved'
+- Set `kasir_transactions.discount_approval_request_id = p_request_id, discount_approval_status = 'approved'`
+- Idempotent
+
+**Task 5 REDO signature:**
+```
+cancel_kasir_discount_request(p_request_id BIGINT) RETURNS VOID
+```
+Takes request_id (not sale_draft_id). Guards: requestor or Owner. Transitions request status via `_transition_approval` with channel='canceled_by_user'. Uses `expired` enum value (approval_status enum has: pending/approved/rejected/expired — no dedicated canceled).
+
+**Task 7 (frontend types + api):** rewrite `RequestDiscountApprovalInput` to omit `saleDraftId`; add `LinkSaleToApprovalInput { saleId: string; requestId: number }`. `completeKasirSaleAfterApproval` → replace with call to existing `record_kasir_sale` + `linkSaleToApproval`.
+
+**Task 8 (Step3Payment):** on approved event, call existing `record_kasir_sale` RPC with cart + discount → get sale_id → call `link_kasir_sale_to_approval(sale_id, request_id)` → navigate to success.
+
+**Task 11 (owner detail view):** unchanged — payload includes all info needed. Owner just approves; frontend handles record_kasir_sale on kasir side.
+
+**Task 13 (E2E smoke):** update rollback-marker to test: request → simulate owner approve → simulate frontend calling record_kasir_sale → link_sale_to_approval → verify audit chain intact.
+
+---
+
 ## Global Constraints
 
 - **Migration slots claimed:** `20261115000110` through `20261115000113`.

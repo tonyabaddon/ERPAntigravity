@@ -120,40 +120,41 @@ trigger = (threshold_amount IS NOT NULL AND discount_amount_rp > threshold_amoun
        OR (threshold_percent IS NOT NULL AND computed_percent > threshold_percent)
 ```
 
-### 3.2 `request_kasir_discount_approval(sale_draft_id BIGINT, discount_amount_rp NUMERIC, discount_type TEXT, discount_value NUMERIC, subtotal_rp NUMERIC, reason TEXT) → BIGINT`
+### 3.2 `request_kasir_discount_approval(discount_amount_rp NUMERIC, discount_type TEXT, discount_value NUMERIC, subtotal_rp NUMERIC, reason TEXT) → BIGINT`
 
-Creates an approval request when gate is triggered.
+**REVISED (rev 2 post schema audit):** VOSI kasir is one-shot — sales insert at `record_kasir_sale` time, no intermediate draft row exists in `kasir_transactions` (statuses: PAID/AWAITING_LUNAS/COMPLETED/CANCELLED/WIP/PENDING_LOCK_APPROVAL, no `draft`). This RPC therefore does NOT take a sale_draft_id; sale data stays in frontend state until approval succeeds.
 
-- Validate `reason` non-empty (matches `approval_settings.reason_required`)
-- Insert `approval_requests` row with `request_type='kasir_discount'`, `payload=jsonb {sale_draft_id, discount, subtotal, reason, admin_user_id, customer_id}`, `expires_at=NULL` (no auto-expire), `status='pending'`
-- Set `kasir_transactions.discount_approval_request_id + status='awaiting'` on the sale draft
-- Return approval_request_id
+Behavior:
+- Re-check gate server-side (defense against setting change between frontend check and submit)
+- Validate reason non-empty when `approval_settings.reason_required=true`
+- Handle `requestor_bypass_self` — if caller has approver role and bypass is enabled, return sentinel `-1` (no request row)
+- Insert `approval_requests` row with `request_type='kasir_discount'`, `payload=jsonb {discount_type, discount_value, discount_amount_rp, subtotal_rp, reason, admin_user_id, trigger_reason}`, `expires_at` inherits DB default of `now() + 30 min` (safety net — admin can cancel anytime before)
+- Return approval_request_id (or `-1` for bypass)
 
-### 3.3 `complete_kasir_sale_after_approval(sale_draft_id BIGINT) → JSONB`
+### 3.3 `link_kasir_sale_to_approval(sale_id UUID, request_id BIGINT) → VOID`
 
-Called after owner approves in inbox.
+**REVISED:** Called by frontend after `record_kasir_sale` succeeds for a discount that was gated by an approved request. Links the sale row back to the approval for audit trail.
 
-- Verify `kasir_transactions.discount_approval_status='awaiting'` AND linked `approval_requests.status='approved'`
-- Call existing `record_kasir_sale` with the pre-set discount → sale committed
-- Update `discount_approval_status='approved'`
-- Return `{sale_id, journal_id}` from record_kasir_sale
+- Guard: caller's tenant matches sale + request tenant; request must be `'approved'`
+- Update `kasir_transactions.discount_approval_request_id = request_id, discount_approval_status = 'approved'` on the sale row
+- Idempotent (re-invocation safe)
 
-### 3.4 `cancel_kasir_discount_request(sale_draft_id BIGINT) → VOID`
+### 3.4 `cancel_kasir_discount_request(request_id BIGINT) → VOID`
 
-Admin action from kasir UI.
+**REVISED:** Takes `request_id` directly (no sale draft exists yet — sale never got inserted).
 
-- Guard: caller must be the requesting admin OR owner
-- Update `approval_requests.status='canceled'` (via `_transition_approval`)
-- Update `kasir_transactions.discount_approval_status='canceled'`
-- Clear `discount_amount_rp / discount_type / discount_value` on the draft (admin can now edit)
+- Guard: caller must be the request's `requested_by` OR the tenant Owner
+- Transition `approval_requests.status='expired'` via `_transition_approval(decision_channel='canceled_by_user')` — `expired` is the enum's terminal cancel-equivalent; the decision_channel note captures the "canceled by admin" semantic
 
 ### 3.5 Existing RPC modifications
 
-**`record_kasir_sale`** — no change to behavior. Existing signature preserved.
-- If gate not triggered (`gate_triggered=false` from check), admin submits normally via `record_kasir_sale`.
-- If gate triggered, admin submits via `request_kasir_discount_approval` → later `complete_kasir_sale_after_approval` calls existing `record_kasir_sale`.
+**`record_kasir_sale`** — no change to signature/behavior. Existing RPC is called unchanged from frontend:
+- If gate not triggered: admin submits normally.
+- If gate triggered and later approved: admin's frontend calls `record_kasir_sale` with the pre-decided discount, then `link_kasir_sale_to_approval` to associate the sale with the approval.
 
-**`_transition_approval`** — no change. Already handles all state transitions.
+**`_transition_approval`** — no change.
+
+**Note on flow change from earlier draft:** The initial spec draft assumed a "sale draft → approval → commit" chain in `kasir_transactions`. Live schema check during Task 3 implementation revealed VOSI kasir has no draft state. Redesigned to keep sale state in browser until approval succeeds, then commit via existing `record_kasir_sale`. Cleaner + fits codebase.
 
 ---
 

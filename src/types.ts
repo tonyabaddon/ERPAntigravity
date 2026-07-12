@@ -627,7 +627,11 @@ export type ApprovalRequestType =
   | 'supplier_payment'
   | 'bnl_create'
   | 'tukar_faktur'
-  | 'purchase_return';
+  | 'purchase_return'
+  // Item #1 (Aug 2026): supplier claim resolution
+  | 'resolve_supplier_claim'
+  // Item #4 (Aug 2026): kasir discount above threshold
+  | 'kasir_discount';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
