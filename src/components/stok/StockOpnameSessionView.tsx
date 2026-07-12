@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import {
   fetchOpnameCounts,
   getOpnameSession,
@@ -15,6 +16,7 @@ import type {
 } from '../../types';
 import { formatRpDelta } from '../../lib/format';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { DamageFlagModal } from './DamageFlagModal';
 
 interface StockOpnameSessionViewProps {
   sessionId: number;
@@ -91,6 +93,9 @@ export default function StockOpnameSessionView({
   // Local draft of counted_qty so user can type then commit on blur without
   // each keystroke roundtripping to the DB.
   const [draft, setDraft] = useState<Record<string, string>>({});
+
+  // Rev 3: damage flag modal state.
+  const [flaggingKey, setFlaggingKey] = useState<string | null>(null);
 
   const refresh = async () => {
     try {
@@ -402,9 +407,10 @@ export default function StockOpnameSessionView({
                 ) : (
                   <div className="grid grid-cols-12 px-3 py-1 items-center border-t border-slate-100 text-xs text-slate-400 uppercase tracking-wide bg-slate-50/50">
                     <div className="col-span-2">Gudang</div>
-                    <div className="col-span-3 text-right">Sistem</div>
-                    <div className="col-span-3 text-right">Fisik (input)</div>
-                    <div className="col-span-4 text-right">Selisih</div>
+                    <div className="col-span-2 text-right">Sistem</div>
+                    <div className="col-span-2 text-right">Fisik (input)</div>
+                    <div className="col-span-3 text-right">Selisih</div>
+                    <div className="col-span-3 text-right">Rusak</div>
                   </div>
                 )}
                 {/* Iterate over the warehouse keys actually present for this SKU (supports N warehouses) */}
@@ -414,6 +420,36 @@ export default function StockOpnameSessionView({
                   const inputValue = draftValue !== undefined
                     ? draftValue
                     : (c.countedQty !== null && c.countedQty !== undefined ? String(c.countedQty) : '');
+                  const damagedQty = c.damagedQty ?? 0;
+                  const canFlagDamage =
+                    isEditable
+                    && c.countedQty !== null
+                    && c.countedQty !== undefined
+                    && c.countedQty > 0
+                    && session?.status === 'in_progress';
+                  const flagButton = canFlagDamage ? (
+                    <button
+                      type="button"
+                      onClick={() => setFlaggingKey(key)}
+                      className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                        damagedQty > 0
+                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                          : 'border border-slate-200 text-slate-500 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300'
+                      }`}
+                      title={damagedQty > 0
+                        ? `${damagedQty} unit ditandai rusak — klik untuk ubah`
+                        : 'Flag ada barang rusak dari hasil hitungan'}
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      {damagedQty > 0 ? `${damagedQty} rusak` : 'Flag rusak'}
+                    </button>
+                  ) : damagedQty > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
+                      <AlertTriangle className="h-3 w-3" />
+                      {damagedQty} rusak
+                    </span>
+                  ) : null;
+
                   return isBlindMode ? (
                     <div
                       key={key}
@@ -432,7 +468,7 @@ export default function StockOpnameSessionView({
                           className="border border-slate-300 rounded px-2 py-1 w-32 text-right text-sm disabled:bg-slate-50"
                         />
                       </div>
-                      <div className="col-span-3"></div>
+                      <div className="col-span-3 flex justify-end">{flagButton}</div>
                     </div>
                   ) : (
                     <div
@@ -442,10 +478,10 @@ export default function StockOpnameSessionView({
                       <div className="col-span-2 text-xs uppercase tracking-wide text-slate-500">
                         {warehouseName(wh)}
                       </div>
-                      <div className="col-span-3 text-right text-slate-800 font-medium">
+                      <div className="col-span-2 text-right text-slate-800 font-medium">
                         {c.systemQtySnapshot ?? '—'}
                       </div>
-                      <div className="col-span-3 text-right">
+                      <div className="col-span-2 text-right">
                         <input
                           type="number"
                           value={inputValue}
@@ -456,7 +492,7 @@ export default function StockOpnameSessionView({
                         />
                       </div>
                       <div
-                        className={`col-span-4 text-right font-semibold ${
+                        className={`col-span-3 text-right font-semibold ${
                           (c.varianceValue ?? 0) < 0 ? 'text-rose-600'
                           : (c.varianceValue ?? 0) > 0 ? 'text-emerald-700'
                           : 'text-slate-400'
@@ -472,6 +508,7 @@ export default function StockOpnameSessionView({
                           : <span className="text-xs italic">belum dihitung</span>
                         }
                       </div>
+                      <div className="col-span-3 flex justify-end">{flagButton}</div>
                     </div>
                   );
                 })}
@@ -539,6 +576,31 @@ export default function StockOpnameSessionView({
           Sesi ditolak oleh Owner.
         </div>
       )}
+
+      {(() => {
+        if (!flaggingKey) return null;
+        const flagRow = counts.find((c) => `${c.sku}-${c.warehouse}` === flaggingKey);
+        if (!flagRow || flagRow.countedQty == null) return null;
+        return (
+          <DamageFlagModal
+            open
+            sessionId={sessionId}
+            sku={flagRow.sku}
+            skuName={skuMeta[flagRow.sku]?.name}
+            warehouse={flagRow.warehouse}
+            countedQty={flagRow.countedQty}
+            initialDamagedQty={flagRow.damagedQty ?? 0}
+            initialNotes={flagRow.damageNotes ?? ''}
+            initialEvidenceUrls={flagRow.damageEvidenceUrls ?? undefined}
+            onClose={() => setFlaggingKey(null)}
+            onSaved={() => {
+              setFlaggingKey(null);
+              void refresh();
+            }}
+            showToast={showToast}
+          />
+        );
+      })()}
     </div>
   );
 }

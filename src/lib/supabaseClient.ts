@@ -1954,6 +1954,9 @@ export function toOpnameCount(row: any): OpnameCount {
     countedQty: row.counted_qty ?? null,
     variance: row.variance ?? null,
     varianceValue: Number(row.variance_value ?? 0),
+    damagedQty: row.damaged_qty ?? 0,
+    damageNotes: row.damage_notes ?? null,
+    damageEvidenceUrls: row.damage_evidence_urls ?? null,
   };
 }
 

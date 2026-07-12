@@ -693,6 +693,11 @@ export interface OpnameCount {
   countedQty?: number | null;
   variance: number | null; // generated
   varianceValue: number;
+  // Rev 3: admin-flagged damage during counting. Owner decides Dispose/Klaim
+  // post-opname via decide_supplier_claim RPC.
+  damagedQty?: number;
+  damageNotes?: string | null;
+  damageEvidenceUrls?: string[] | null;
 }
 
 export interface PriceChangeRequest {
