@@ -1,171 +1,87 @@
-# SDD Progress Ledger — Multi-Tenant Phase B Wave 5 (Payment Tracking + Revenue)
+# SDD Progress Ledger — Warehouse Transfer (Two-Step)
 
-Plan: docs/superpowers/plans/2026-07-05-multi-tenant-phase-b-wave5-payment-revenue.md
-Spec: docs/superpowers/specs/2026-07-04-multi-tenant-phase-b-design.md (§15 + §10.1)
-Worktree: .claude/worktrees/phase-b-wave5
-Branch: worktree-phase-b-wave5
-Base commit: d69319a (fix(admin): E2E audit polish)
-Started: 2026-07-05
-Preceded by: Wave 1 (efc7f40) + Wave 4a (54dc434) + audit polish (d69319a). Cloud Run: 00235-cam.
+Plan: docs/superpowers/plans/2026-07-12-warehouse-transfer-plan.md
+Spec: docs/superpowers/specs/2026-07-12-warehouse-transfer-two-step-design.md
+Worktree: .claude/worktrees/warehouse-transfer
+Branch: worktree-warehouse-transfer
+Started: 2026-07-12
+Preceded by: Wave 5 payment tracking (see progress-wave5-payment-tracking.md in main worktree — archived at start of this session)
 
 ## Pre-flight decisions
 
-- Worktree isolation: YES
-- Migration slot range: 20261115000020–20261115000029 (Wave 5 reserved; Wave 4a used 000010–000013 + suffix hotfixes)
-- Prod DB: Garindo `ekhhojaezdfjfwuxyjkl`
-- Ownership pattern: `postgres` for SECDEF RPCs touching auth.uid / platform_admins / storage.functions; `vosi_rpc_owner` for pure reads
-- Language: Bahasa Indonesia (per Wave 4a Global Constraints)
-- VOSI Design System: new files use tokens (`bg-vosi-*` etc)
-- Custom router: `src/lib/urlRoute.ts` (AdminRoutes.tsx inline regex)
-- Deferred per memory `phase-b-wave-reorder`: onboarding wizard step 6 (§15.3a) — wizard is BLOCKED
+- **Worktree isolation:** YES (`.claude/worktrees/warehouse-transfer` + branch `worktree-warehouse-transfer`).
+- **Migration slot range:** `20261115000210 – 20261115000221` (12 slots claimed; verified free across all 18 sibling worktrees; slots 222-229 reserved buffer for fix migrations).
+- **Prod DB:** Garindo `ekhhojaezdfjfwuxyjkl` (deploy target); prod smoke on Toko Jaya Makmur test tenant only (per memory `production-testing-tenant`).
+- **Design system tokens:** newer canonical from `OwnerDecisionInbox.tsx` (Tailwind emerald/slate, `rounded border-slate-200`, `font-semibold`) — NOT the older `#2d8a4e` + `rounded-3xl` from legacy `WarehouseTransferModal.tsx` (which is deleted in Task 23).
+- **Language:** Bahasa Indonesia. Terminology: "Transfer" NEVER "Mutasi" (memory `warehouse_transfer_naming`). Doc-no prefix `TR-YYYY-MM-NNN`.
+- **Status enum:** `IN_TRANSIT | RECEIVED | PARTIAL | CANCELLED` (uppercase; replaces stub's `initiated/received/disputed/cancelled`).
+- **RPC ownership:** `vosi_rpc_owner` for SECDEF write RPCs (initiate/receive/cancel); RLS `t_select_own` inclusive of `vosi_rpc_owner` per memory `secdef_returning_gap`.
+- **No approval workflow:** per memory `no_approval_workflow` — receiver acts directly, no admin gate.
+- **No WA:** APP_INBOX bell only per memory `no_wa_owner_approval`.
+- **No paid API:** PDF is client-side jsPDF, no cost impact per memory `cost_upgrade_approval`.
+- **Legacy shim:** `transfer_warehouse(text,text,text,int)` kept for 1 release cycle as compat proxy to new RPCs.
 
-## Carryover from Wave 1 + 4a
+## Pre-flight plan review — resolved before execution
 
-- `platform_admin_audit.action` CHECK whitelist includes 12 codes: IMPERSONATE_START/END, CREATE_TENANT, CHANGE_PLAN, CHANGE_FEATURES, SUSPEND, ACTIVATE, ARCHIVE, RENEW_SUBSCRIPTION, SUSPEND_TENANT, ACTIVATE_TENANT, UPDATE_PLAN. Task 2 (Wave 5) will extend with +RECORD_PAYMENT +UPDATE_PAYMENT +DELETE_PAYMENT +UPLOAD_PAYMENT_PROOF.
-- `platform_admin_audit.tenant_id` is nullable (Wave 4a Task 3 relaxation) — payment audit rows tie to a real tenant so this doesn't matter here, but noted.
-- `plans.g_read_all` policy TO {authenticated, vosi_rpc_owner} (Wave 1 002c fix). Task 1 extension via ALTER doesn't need policy changes.
-- Storage bucket work: NEW territory in this wave. Verify `storage.buckets` + `storage.objects` RLS shape via MCP before writing Task 3.
+Two potential defect-risk spots identified in plan draft; both fixed inline before Task 1 dispatch:
+
+1. **Tasks 7 & 8 — direct INSERT into `stock_movements`** (bypasses `_log_stock_movement` helper).
+   - Cited memory `smoke_test_bug_fixes` Bug 2/3 verbatim in the RPC body comments.
+   - Pattern is intentional (helper doesn't accept warehouse_id; post-insert UPDATE blocked by `trg_deny_sm_update`).
+   - Same pattern as `resolve_supplier_claim` + `_apply_opname_change` damage loop.
+2. **Task 20 Step 1 — test skeleton was comment placeholder only.**
+   - Expanded to 5 concrete test cases with full body: read-only when RECEIVED, Konfirmasi Terima visibility, mapped-payload submit, Batal Kirim visibility for sender, PARTIAL warning banner.
+
+## Base commit
+
+Worktree base: `a2e83a5` (docs commit — spec + plan). All 26 implementation tasks branch from here.
 
 ## Tasks
 
-### Task 1 — plans.price_annual (COMPLETE)
-- Migration: `20261115000020_phase_b_wave5_plans_price_annual.sql`
-- Test: `supabase/tests/wave5/plans_price_annual.sql`
-- Applied to Garindo prod. Verified price_annual column + 3 seed values.
+Task 1: complete (commits a2e83a5..c9c1f0a, review clean, DONE_WITH_CONCERNS — branch-apply deferred to Task 25 per cost_upgrade_approval; 12 test-data rows pre-approved for drop by founder 2026-07-12)
+Task 2: complete (commits c9c1f0a..2632b11, review clean, DONE_WITH_CONCERNS — branch-apply deferred; parent+child tables + doc_seq + 5 indexes + helper fn all match spec §4.1-§6 verbatim)
+Task 3: complete (commits 2632b11..8ef87a2, self-review only — 26-line CREATE OR REPLACE VIEW verbatim from plan, trivial, save-token decision; DONE_WITH_CONCERNS branch-apply deferred)
+Task 4: complete (commits 8ef87a2..6f73d70, self-review only — 27-line ALTER TYPE with idempotent pg_enum guards verbatim from plan; DONE_WITH_CONCERNS branch-apply deferred)
+Task 5: complete (commits 6f73d70..5eabcb3, self-review only — RLS policies for both new tables with t_select_own TO authenticated, vosi_rpc_owner per memory secdef_returning_gap verified in diff; DONE_WITH_CONCERNS branch-apply deferred)
+Task 6: complete (commits 5eabcb3..b0489b5, formal reviewer approved — initiate_warehouse_transfer RPC 6-param signature, idempotency, FOR UPDATE lock, per-SKU deduct + _log_stock_movement transfer_out, app_inbox best-effort wrap all correct; receiver permission gate deferred to Task 11 by design; DONE_WITH_CONCERNS branch-apply deferred)
+Task 7: complete (commits b0489b5..32cccd7, formal reviewer approved — receive_warehouse_transfer RPC status/receiver guards, order-agnostic SKU match, destination stock credit w/ INSERT-if-missing, direct-INSERT transfer_loss row w/ loss_movement_id backfill, RECEIVED/PARTIAL status computation, PARTIAL owner-inbox best-effort wrap all correct; DONE_WITH_CONCERNS branch-apply deferred)
+Task 8: complete (commits 32cccd7..8e8b610, self-review only — cancel_warehouse_transfer 81 lines, sender-only guard, source stock credit + transfer_cancel_return audit row, status→CANCELLED, receiver inbox best-effort wrap; DONE_WITH_CONCERNS branch-apply deferred)
+Task 9: complete (commits 8e8b610..70a76da, self-review only — 3 read RPCs list/detail/in_transit all SECDEF STABLE with GRANT EXECUTE authenticated; DONE_WITH_CONCERNS branch-apply deferred)
+Task 10: complete (commits 70a76da..c90c9ac, self-review only — legacy transfer_warehouse SECDEF shim: RAISE WARNING deprecation, warehouse UUID lookup, initiate+receive chain with sender=receiver=v_actor; DONE_WITH_CONCERNS branch-apply deferred)
 
-### Task 2 — tenant_payments table + RLS + audit CHECK (COMPLETE)
-- Migration: `20261115000021_phase_b_wave5_tenant_payments_table.sql`
-- Test: `supabase/tests/wave5/tenant_payments_table.sql`
-- Applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`). Verified:
-  - Table exists, both indexes present
-  - RLS=true, FORCE RLS=true
-  - Policy `p_platform_admin_only` on {authenticated, vosi_rpc_owner}
-  - Audit CHECK extended to 16 codes (+ RECORD_PAYMENT, UPDATE_PAYMENT, DELETE_PAYMENT, UPLOAD_PAYMENT_PROOF)
-  - Smoke INSERT (BANK_TRANSFER + BCA) succeeded + rolled back
-- Drift fix: `audit_id BIGINT` (spec said UUID; platform_admin_audit.id is BIGINT per Wave 1 Task 3)
-- Added `set_updated_at` trigger (consistent with project convention)
+**Plan defect discovered pre-Task 11:** Plan assumes column-per-permission (`ALTER TABLE ... ADD COLUMN can_transfer_warehouse boolean`) but actual pattern is `admin_users.permissions` JSONB blob (verified in `20260613000004_backfill_can_manage_warehouses.sql`). Role value is `'Owner'` title-case, not `'OWNER'`. Task 11 implementer instructed to deviate from brief and use JSONB `jsonb_set` pattern matching `can_manage_warehouses` migration. Task 6 initiate RPC's receiver permission check (deferred to Task 11) also uses JSONB lookup `permissions ->> 'can_receive_warehouse_transfer' = 'true'`.
 
-### Task 4 — record_payment + update_payment + delete_payment RPCs (COMPLETE)
-- Migration: `20261115000023_phase_b_wave5_payment_write_rpcs.sql`
-- Tests: `supabase/tests/wave5/record_payment.sql` (12 assertions) + `supabase/tests/wave5/update_delete_payment.sql` (18 assertions)
-- Applied to Garindo prod. All 3 RPCs: owner=postgres, SECDEF, EXECUTE to authenticated ✓
-- Smoke test: record (1M→OVERDUE) → update (3M) → delete → audit trail all verified live ✓
-- Validation: UNKNOWN_FIELD, INVALID_AMOUNT, INVALID_PERIOD, REASON_REQUIRED, P0403, P0404 all correct ✓
-- Coverage formula §15.5 implemented: LUNAS/DP_60/DP_30/OVERDUE/UNPAID/UNKNOWN ✓
-- Drift: tenant_subscriptions has no `status` column; price_annual NULL guarded with UNKNOWN status
+Task 11: complete (commits c90c9ac..b354f6e, self-review only — 4 jsonb_set backfills [Owner/non-Owner × can_transfer_warehouse/can_receive_warehouse_transfer], initiate RPC re-issued with COALESCE(permissions ->> 'can_receive_warehouse_transfer', 'false') = 'true' receiver gate; DONE_WITH_CONCERNS branch-apply deferred; plan-defect resolved inline via JSONB pattern per referenced migration)
+Task 12: complete (commits b354f6e..a3ac4cd, self-review — smoke migration DO block w/ set_config fake auth + ASSERT + RAISE EXCEPTION rollback, JSONB-pattern fix applied to sender/receiver discovery queries per Task 11, apply-pending-migrations.sh updated with 210-220 (221 commented smoke-only); DONE_WITH_CONCERNS branch-apply deferred, actual smoke run at Task 25)
 
-### Task 5 — list_payments + get_revenue_stats read RPCs (COMPLETE)
-- Migration: `20261115000024_phase_b_wave5_payment_read_rpcs.sql`
-- Fix patches applied in prod via `20261115000024b` (RAISE syntax) + `20261115000024c` (nested aggregate)
-- Tests: `supabase/tests/wave5/list_payments.sql` (11 assertions) + `supabase/tests/wave5/get_revenue_stats.sql` (10 assertions) + `supabase/tests/wave5/generate_payment_proof_signed_url.sql` (1 assertion — documents non-existence)
-- Applied + smoke-tested on Garindo prod (`ekhhojaezdfjfwuxyjkl`). All 15 smoke cases PASSED:
-  - list_payments: admin no-filter → 0 rows ✓
-  - list_payments: admin with tenant_id filter → 0 rows ✓
-  - list_payments: unknown key → 22023 UNKNOWN_FIELD ✓
-  - list_payments: bad sort_by → 22023 ✓
-  - list_payments: non-admin no filter → P0403 ✓
-  - list_payments: non-admin foreign tenant_id → P0403 ✓
-  - list_payments: tenant-owner own tenant_id → 0 rows ✓
-  - get_revenue_stats: non-admin → P0403 ✓
-  - get_revenue_stats: unknown key → 22023 ✓
-  - get_revenue_stats: bad group_by → 22023 INVALID_GROUP_BY ✓
-  - get_revenue_stats: total=0 ✓
-  - get_revenue_stats: breakdown=[] ✓
-  - get_revenue_stats: monthly_trend=12 rows ✓
-  - get_revenue_stats: newest-first ✓
-  - get_revenue_stats: all totals=0 ✓
-- Supplementary RLS policy `p_tenant_owner_read` added to `tenant_payments` (tenant_id = _resolve_tenant_id()); needed because 002c DO-loop ran before tenant_payments existed
-- DONE_WITH_CONCERNS: `generate_payment_proof_signed_url` NOT implemented — storage.*sign* SQL functions absent from project. FE must use `supabase.storage.from('payment-proofs').createSignedUrl(key, 3600)`
-- Drift fixes found during smoke-test:
-  - `RAISE EXCEPTION 'msg' USING ERRCODE=..., MESSAGE=...` → illegal (positional + USING message conflict); changed to pure `RAISE EXCEPTION USING errcode=..., message=...`
-  - `jsonb_agg(...ORDER BY SUM(...) DESC)` → nested aggregate (42803); fixed by pre-aggregating in subquery
-  - `_resolve_tenant_id()` reads `tenant_id` from `request.jwt.claims`, NOT `app.current_tenant_id` GUC — test JWT shape corrected
+## Phase A complete — 12 migrations shipped
 
-### Task 7 — FE paymentsApi + paymentsTypes + adminApi extension (COMPLETE)
+All 12 Phase A migrations authored and committed to worktree branch `worktree-warehouse-transfer`. Commit range: `a2e83a5..a3ac4cd`. Zero branch-applies performed (deferred per `cost_upgrade_approval` — actual DB apply happens at Task 25 local + Task 26 prod). Ready to begin Phase B (FE service layer).
 
-- Files created: `src/lib/paymentsTypes.ts`, `src/lib/paymentsApi.ts`, `src/lib/paymentsApi.test.ts`
-- Files modified: `src/lib/adminTypes.ts`, `src/lib/adminApi.ts`
-- Types: `PaymentMethod`, `BankName`, `EwalletProvider`, `CoverageStatus` (added to adminTypes), plus full input/output shapes verbatim from brief
-- 9 error classes added to `adminTypes.ts`: InvalidAmountError, InvalidPeriodError, MethodMismatchError, PaymentNotFoundError, StorageAccessDeniedError, ReasonRequiredError, InvalidGroupByError, PaymentFileTooLargeError, PaymentFileWrongTypeError
-- `normalizeRpcError` in `adminApi.ts` extended with PAYMENT_NOT_FOUND (P0404 sub-branch before TENANT_NOT_FOUND), 23514 (MethodMismatchError), and all 4 new 22023 sub-branches; prior Wave 1/4a mappings intact
-- `paymentsApi.ts`: 7 wrappers — recordPayment, updatePayment, deletePayment, listPayments, getRevenueStats, generatePaymentProofSignedUrl (client-side SDK), uploadPaymentProof (5MB+mime validation)
-- RPC param names verified from migrations: `p_payload`, `p_payment_id`, `p_updates`, `p_reason`, `p_filters`
-- `generate_payment_proof_signed_url` confirmed absent from SQL; FE uses storage SDK `createSignedUrl`
-- Vitest: 43 new tests pass; 42 existing adminApi tests still pass; no new failures
-- TypeScript: `npx tsc --noEmit` — zero errors in new/modified files (pre-existing 9 errors all from pg/yaml/sonner/jsonwebtoken type stubs)
-- CONCERN: `PaymentRow` omits `tenant_slug`, `tenant_name`, `total_count` (per brief verbatim); Task 8 consumer will need those for pagination — extend at that point
-- CONCERN: Commit message says 8 error classes but spec body lists 9; shipped 9 as correct
+Task 13: complete (commits a3ac4cd..d4486c2, TDD RED→GREEN — warehouseTransferService.ts + types + 2 unit tests pass; node_modules symlinked from main worktree for vitest)
+Task 14: complete (commits d4486c2..8737c4d, TDD RED→GREEN — useInTransitBySKU hook 42 LOC + 2 unit tests pass)
+Task 15: complete (commits 8737c4d..e00a486, TDD RED→GREEN — warehouseTransferPDF.ts jsPDF A5 renderer + 1 blob-shape test pass)
 
-### Task 8 — FE RecordPaymentModal + PembayaranTab + Renew chain (COMPLETE)
+## Phase B complete — 3 FE service files shipped
 
-- Commits: 6bdbd99 (8a), 4aa92ad (8b+8c), abe6c6c (8d)
-- Files created: `src/components/admin/RecordPaymentModal.tsx` + `.test.tsx`, `src/components/admin/TenantDetail/PembayaranTab.tsx` + `.test.tsx`, `.superpowers/sdd/task-8-report.md`
-- Files modified: `src/lib/adminPlansApi.ts` (price_annual), `src/components/admin/TenantDetail/TenantDetailShell.tsx` (4th tab), `src/components/admin/RenewSubscriptionModal.tsx` (payment chain)
-- RecordPaymentModal: record+edit modes, 6 payment methods, conditional bank/ewallet dropdowns, file upload (mandatory if !CASH), client-side file validation, period inputs, 26 Vitest tests
-- PembayaranTab: coverage summary strip (CoverageStatus computed client-side per §15.5), table with Edit/Delete/Bukti actions, DeleteConfirmDialog, signed-URL preview, 15 Vitest tests
-- TenantDetailShell: 'pembayaran' added as 4th tab; existing 9 tests still pass
-- RenewSubscriptionModal: optional payment chain (checkbox), partial-success toasts for upload/record failures, 28 Vitest tests (21 original + 7 new)
-- TypeScript: zero new errors (same 9 pre-existing stubs); no new test failures beyond pre-existing 5
-- CONCERN: CoverageStatus uses hardcoded plan prices (matches Task 1 seeds); Task 10/11 should wire v_tenant_payment_coverage view
-- CONCERN: PaymentRow still lacks tenant_slug/tenant_name/total_count; pagination deferred (page_size=100 sufficient)
+Service layer (`warehouseTransferService.ts`) + hook (`useInTransitBySKU.ts`) + PDF renderer (`warehouseTransferPDF.ts`) all authored with TDD. 5/5 vitest tests pass. Ready for Phase C (8 FE screens).
 
-### Task 9 — FE AdminRevenue dashboard + charts (COMPLETE)
+Task 16: complete (commits e00a486..7a7986b — implementer d50f6e2 added Sidebar entry + 3 route cases in App.tsx + 3 placeholder screen stubs + updated types.ts + urlRoute.ts registry; controller fix 7a7986b initially corrected permKey — but that direction was itself wrong; final naming fixed by slot 222 later, see below)
+Task 17: complete (680547c — list screen with KPI + tab pills + status badges, matches design tokens from OwnerDecisionInbox)
+Task 18: complete (f8f0ffc — SKU picker autocomplete + line-add/edit/delete + qty bounds)
+Task 19: complete (a8b0f1f — sender form 6/6 tests pass; PDF via dynamic import; clientRequestId via useMemo)
+Task 20: complete (38c9dba — detail screen 5/5 tests pass; conditional Konfirmasi Terima / Batal Kirim per role+status; PARTIAL warning banner)
+Task 21: complete (6cda8e4 — InTransitChip + StockTableView integration; 2/2 chip tests + 21/21 full suite pass; legacy WarehouseTransferModal use removed from StockManagerScreen)
+Task 22: complete (1df9926 — OwnerDecisionInbox aging alerts panel; fetches v_pengawasan_transfer_aging on mount; useWarehouses lookup for names)
 
-- Commit: 2dc009a
-- Files created (12 new):
-  - `src/lib/formatIDR.ts` + `.test.ts` — Indonesian Rupiah formatter "Rp X.XXX.XXX"
-  - `src/components/admin/AdminRevenue.tsx` + `.test.tsx` — orchestrator (parallel fetch, loading/error/empty/happy states, coverage gap callout)
-  - `src/components/admin/RevenueKPIRow.tsx` + `.test.tsx` — 4 KPI cards (Bulan ini/YTD/MRR/ARR)
-  - `src/components/admin/RevenuePlanBreakdown.tsx` + `.test.tsx` — horizontal bar chart SVG
-  - `src/components/admin/RevenueMonthlyTrend.tsx` + `.test.tsx` — 12-month polyline chart SVG
-  - `src/components/admin/RevenueTopTenants.tsx` + `.test.tsx` — top-10 table with plan/coverage badges
-- Files modified:
-  - `src/components/admin/AdminSidebar.tsx` — "Pendapatan" nav item with Coins icon
-  - `src/components/admin/AdminRoutes.tsx` — /admin/revenue route dispatched to AdminRevenue
-- Chart decision: hand-rolled SVG (no recharts) — keeps deploy surface small, VOSI palette adherence
-- MRR/ARR computed client-side from listTenantsAdmin + plans.price_annual
-- Coverage gaps: direct supabase.from('v_tenant_payment_coverage').select(OVERDUE) — admin-readable per Task 6 design
-- RecordPaymentModal reused for "Catat pembayaran" CTA in coverage gaps callout
-- 43 new Vitest tests pass; 0 new TS errors; 7 pre-existing failures unchanged
-- CONCERN: v_tenant_payment_coverage client-side SELECT requires platform admin JWT — works correctly since admin panel always has that; no additional grants needed
+**Plan defect discovered post-Task 22 (slot 222 fixup):** Plan invented permission key names (`can_transfer_warehouse` + `can_receive_warehouse_transfer`) that don't exist in existing `PermissionSet` type. Correct existing keys are `can_initiate_transfer` + `can_receive_transfer` (already in ALL_PERMISSIONS from legacy transfer_warehouse feature). Fixup migration 20261115000222 (a) drops wrong keys from admin_users.permissions, (b) seeds correct keys Owner=true/non-Owner=false, (c) re-issues initiate_warehouse_transfer with correct receiver check. Also fixed smoke migration 221 sender/receiver discovery queries. Sidebar permKey reverted to `can_initiate_transfer` + `can_receive_transfer`. All committed as 9516fc5. Added to apply-pending-migrations.sh at slot 222.
 
-### Task 3 — payment-proofs Storage bucket + RLS (COMPLETE)
-- Migration: `20261115000022_phase_b_wave5_payment_proofs_bucket.sql`
-- Test: `supabase/tests/wave5/payment_proofs_bucket.sql`
-- Applied to Garindo prod. Verified:
-  - Bucket `payment-proofs` private, 5MB limit, mime={image/jpeg,image/png,application/pdf}
-  - `p_platform_admin_crud` (ALL, platform_admin JWT check) created ✓
-  - `t_tenant_owner_read` (SELECT, own-slug path scoping) created ✓
-  - Legacy "authenticated full access payment-proofs" (ALL, no path scope) dropped ✓
-- Drift: bucket pre-existed with public=true, 10MB, wrong mime types — corrected via ON CONFLICT DO UPDATE
-- pgTAP: 7 assertions; anon/cross-tenant isolation tests documented as manual only (SET ROLE not available in Supabase Cloud pgTAP)
+Task 23: complete (2b964b8 — deleted WarehouseTransferModal.tsx 91 lines + pembelianService.transferWarehouse 11 lines; grep confirms 0 remaining refs; 970 tests pass in full suite)
+Task 24: complete (abb838d — cross-tenant isolation pinning test, 3/3 tests pass; verifies client contract, actual isolation enforced server-side by RLS)
+Task 25: complete (commits abb838d..01bf232 including two fix commits d2f92f0 + 01bf232) — Applied 13 migrations (slots 210-219, 222-224, 226) directly to Garindo prod via MCP one-by-one (deferred paid branch tier per cost policy). Advisors flagged v_pengawasan_transfer_aging as SECDEF ERROR → fixed by slot 223 (security_invoker). Prod smoke uncovered 3 defects during actual RPC execution (schema-apply only validates DDL): (1) FK to auth.users vs admin_users.id mismatch, (2) _log_stock_movement helper NOT NULL qty_before, (3) stock_movements NOT NULL actor_role + evidence_urls. Fixed by slots 224+226. Final smoke on Garindo: initiate → receive FULL / receive PARTIAL (loss=3) / cancel all ASSERT-verified inside DO block + intentional-rollback RAISE EXCEPTION so no persistent side effects. Slot 220 (wrong-name permission seed) and 221 (smoke migration DO block) intentionally skipped from prod apply.
 
-### Task 10 — CoverageStatusBadge + TenantsTable Pembayaran + AttentionQueue OVERDUE + regression (COMPLETE)
+## Phase C complete — 8 FE screens + integration shipped
 
-- Commits: 35905a5 (10a), dfcbb8a (10b), 10c = progress commit
-- Files created: `src/components/admin/CoverageStatusBadge.tsx` + `.test.tsx` (13 tests)
-- Files modified:
-  - `src/lib/adminTypes.ts` — `AdminTenantRow.coverage_status?: CoverageStatus | null`, `AttentionReason` extended with `'OVERDUE'`
-  - `src/lib/adminApi.ts` — `listTenantsAdmin` now parallel-fetches `v_tenant_payment_coverage`, merges `coverage_status` onto rows
-  - `src/lib/adminApi.test.ts` — `mockFrom` added to supabase mock; `listTenantsAdmin` describe setup with empty coverage
-  - `src/components/admin/TenantsTable.tsx` — "Pembayaran" column (header + cell) using CoverageStatusBadge
-  - `src/components/admin/TenantDetail/PembayaranTab.tsx` — inline CoverageBadge replaced by CoverageStatusBadge
-  - `src/components/admin/RevenueTopTenants.tsx` — inline badge replaced by CoverageStatusBadge; COVERAGE_BADGE const removed
-  - `src/components/admin/RevenueTopTenants.test.tsx` — OVERDUE label updated "Lewat" → "Terlambat"
-  - `src/components/admin/AttentionQueue.tsx` — parallel fetch of OVERDUE rows, merge + dedupe by tenant_id, priority sort
-  - `src/components/admin/AttentionQueue.test.tsx` — supabaseClient mock + 6 new OVERDUE tests
-- TypeScript: 0 new errors (same 9 pre-existing stubs)
-- Vitest: 0 new failures (same 7 pre-existing; 847 total tests, 842 pass)
-- CONCERN: `npm run build` likely fails locally in worktree (sonner not in worktree node_modules) — Cloud Build handles fresh install
-- CONCERN: `listTenantsAdmin` now issues 1 extra select per page load; acceptable for admin panel scale (max 50 tenants per page)
+All Phase C tasks done. Sidebar entry, list/create/detail screens with tests, SKU picker, InTransitChip in StockManager, Owner Inbox aging panel, legacy modal deleted. 970 tests pass across suite. One controller fix (9516fc5) resolved permission-key naming plan defect. Ready for Phase D (Tasks 24-26).
 
-### Task 16 (Wave 6, dispatched early) — platform_admin_audit action CHECK extension (COMPLETE)
-- Migration: `supabase/migrations/20261115000040_platform_admin_audit_action_extension.sql`
-- Test: `supabase/tests/wave6/platform_admin_audit_action_check.sql`
-- Applied to Garindo prod (`ekhhojaezdfjfwuxyjkl`). Verified:
-  - Pre-flight: 16 existing values matched Note B verbatim (no schema drift)
-  - Existing rows: RECORD_PAYMENT (3), DELETE_PAYMENT (2), UPDATE_PAYMENT (1) — all in preserve list
-  - Post-migration: 23 values confirmed via pg_get_constraintdef
-  - DO-block smoke: all 7 new values (PROVISION_TENANT, DEPROVISION_TENANT, CREATE_SALES_REP, DEACTIVATE_SALES_REP, TOGGLE_MODULE, VERIFY_PAYMENT, REJECT_PAYMENT) accepted by CHECK; rolled back cleanly
-- pgTAP: plan(8) = 7 lives_ok + 1 throws_ok; Docker unavailable so MCP prod smoke substitutes
-- DONE_WITH_CONCERNS: pgTAP not runnable locally (Docker unavailable); MCP smoke covers prod verification per Note H
+Task 24: complete (commit abb838d — cross-tenant isolation pinning test; 3/3 vitest pass; mocks supabase.rpc to verify service layer correctly calls RPC without fabricating cross-tenant data client-side; real isolation is DB-side via Postgres RLS+SECDEF)
