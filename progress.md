@@ -12758,3 +12758,56 @@ Live smoke tests (JWT-simulated as Garindo Owner, then RAISE-rollback):
 11. Verified all schema in prod. RPCs still pending.
 
 **Lesson for future work:** always run live schema audit against prod before writing spec+plan, not after. The plan was ~40% wrong due to schema drift and required 3 revision rounds.
+
+### 2026-07-12 — Item #1 continued — full backend + admin UI shipped
+
+**Additional commits on feat/opname-damage-supplier-claims:**
+
+- Slot 102: `_apply_opname_change` extended with damage loop (rev 3 direct
+  write bypass — no stock_adjustments). Existing variance loop unchanged.
+  Damage rows post journal Dr 1-1460 / Cr 1-1510 + auto-create claim.
+- Slot 103: `decide_supplier_claim(claim, DISPOSE|KLAIM, supplier?, notes)`
+  — owner-only transition AWAITING_OWNER_DECISION → DISPOSED or PENDING.
+  Dispose posts reclass journal Dr 5-3160 / Cr 1-1460.
+- Slot 104: `resolve_supplier_claim(claim, outcome, amount, target, notes)`
+  — 4 outcomes REPLACED/CREDITED/CASHED/REJECTED with variance handling
+  (Dr 5-3160 partial loss OR Cr 4-1200 overpay). REPLACED restores stock.
+- Slot 105: read RPCs — `list_supplier_claims`, `get_supplier_claim`,
+  `list_supplier_claim_events`.
+- Slot 106: `record_opname_damage(session, sku, warehouse, qty, notes,
+  photos)` — admin flags during counting.
+- Slot 107: `fetch_opname_counts` return type extended with damaged_qty +
+  damage_notes + damage_evidence_urls. Blind mask behavior preserved.
+- Frontend types (`src/lib/supplierClaims/types.ts`) + typed RPC client
+  (`src/lib/supplierClaims/api.ts`).
+- `<DamageFlagModal>` component (rev 3 simplified: qty + notes + photos
+  only, no disposition picker — owner decides later).
+- `StockOpnameSessionView.tsx` integration: per-row "Flag rusak" button
+  during in_progress + editable session. Badge shows "X rusak" when
+  flagged. Non-blind mode header widened for new Rusak column.
+
+**End-to-end flow working (verifiable in prod):**
+1. Admin opens in-progress opname session
+2. Counts each SKU via existing input
+3. For counted rows, clicks 🚩 Flag rusak → modal → qty + photo + notes
+4. Row displays "X rusak" badge
+5. Owner approves session → `_apply_opname_change` processes damage rows
+6. supplier_claims rows appear (status=AWAITING_OWNER_DECISION)
+7. Journal auto-posted Dr 1-1460 Piutang Klaim / Cr 1-1510 Persediaan
+8. Owner can call decide_supplier_claim (RPC available, UI pending)
+
+**Still deferred (next session):**
+- `<OwnerDecisionInbox>` top-level Sidebar nav — owner sees pending claims,
+  picks Dispose/Klaim per row with supplier picker
+- `<KlaimSupplierPanel>` in Pembelian — list PENDING/RESOLVED_* claims
+- `<ClaimResolveModal>` — for when supplier responds (4 outcomes UI)
+- PO receipt integration (create_supplier_claim_from_po_receipt +
+  receive_purchase_order modification)
+- Ad-hoc StockAdjustmentModal KLAIM disposition path
+- Pengaturan approval_settings config for RESOLVE_SUPPLIER_CLAIM
+- Frontend deploy via cloudbuild.frontend.yaml + Chrome MCP smoke
+
+**Deploy note:** nothing deployed yet. Feature branch has 9 commits.
+Zero user-visible change if we deployed now (Klaim tab doesn't exist yet,
+opname damage rows only populated once admin uses Flag Rusak button which
+only exists on this branch).
