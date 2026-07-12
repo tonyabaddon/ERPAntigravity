@@ -10,7 +10,6 @@ import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
 import { useWarehouses } from '../hooks/useWarehouses';
-import WarehouseTransferModal from './WarehouseTransferModal';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
 import PriceChangeRequestModal from './stok/PriceChangeRequestModal';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
@@ -72,8 +71,6 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
   });
   const closeAll = () => { setExpandedRows(new Set()); setCurrentPhotoIndex(new Map()); };
   const selectPhoto = (sku: string, idx: number) => setCurrentPhotoIndex(prev => new Map(prev).set(sku, idx));
-
-  const [transferItem, setTransferItem] = useState<StockItem | null>(null);
 
   const { warehouses } = useWarehouses();
 
@@ -336,7 +333,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           currentUser={currentUser}
           pendingIndex={pendingIndex}
           onDelete={handleDeleteItem}
-          onTransfer={(item) => setTransferItem(item)}
+          onTransfer={(_item) => { /* Task 23: wired to WarehouseTransferCreateScreen */ }}
           onInlineUpdate={handleInlineSave}
           onRequestPriceChange={(item, field) => setPriceTarget({ item, field })}
           onRequestAdjustment={(item, warehouseId) => setAdjustmentTarget({ item, warehouseId })}
@@ -372,7 +369,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           currentUser={currentUser}
           pendingIndex={pendingIndex}
           onDelete={handleDeleteItem}
-          onTransfer={(item) => setTransferItem(item)}
+          onTransfer={(_item) => { /* Task 23: wired to WarehouseTransferCreateScreen */ }}
           onInlineUpdate={handleInlineSave}
           onRequestPriceChange={(item, field) => setPriceTarget({ item, field })}
           onRequestAdjustment={(item, warehouseId) => setAdjustmentTarget({ item, warehouseId })}
@@ -389,18 +386,6 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           button re-fired the same list, computed an empty diff, persisted
           nothing, but toasted "Berhasil Menyimpan". Users trusted a lie.
           Refresh-from-cloud is available inline per row action. */}
-
-      {transferItem && (
-        <WarehouseTransferModal
-          item={transferItem}
-          onClose={() => setTransferItem(null)}
-          onTransferred={() => {
-            setTransferItem(null);
-            showToast('✅ Transfer stok berhasil.');
-          }}
-          showToast={showToast}
-        />
-      )}
 
       {adjustmentTarget && (
         <StockAdjustmentModal
