@@ -113,3 +113,13 @@ Task 10 (menu restructure): DEFERRED — full Diskon parent grouping not shipped
 Advisor: complete (mig 126 revokes anon EXECUTE on all 4 new SECDEF RPCs; only 1 pre-existing ERROR unrelated to item-4b)
 Deploy: pending Cloud Build da358fbd
 Prod smoke MCP chrome: pending
+Deploy: complete (Cloud Build da358fbd → revision 00352-raf → tag c6203500 at 100% traffic)
+Prod smoke MCP chrome: complete
+  - Dashboard loads, no console errors
+  - Pengaturan → 🏷 Promo Produk tab renders (uid 8_62)
+  - Panel empty state: "Belum ada SKU dengan promo..."
+  - + Tambah Promo modal: SKU picker + type toggle + value + expiry radio + validation working
+  - After SQL insert on SKU 0671d9fd: promo row renders (SKU + Nama + Kategori + "15%" + "31 Des 2026" + Aktif badge + ⋯ menu)
+  - Dashboard PromoProdukCard renders conditionally: "1 SKU sedang promo" + "Kelola promo →"
+  - Test promo cleaned up
+Feature LIVE 2026-07-13

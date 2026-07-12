@@ -1,5 +1,54 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-13 — Item #4b Promo Produk (auto-apply diskon per SKU) — LIVE
+
+**Founder ask:** Layer 1 discount system paired with Item #4 (Diskon Nota) as safety net. Owner sets per-SKU promo in advance (% or Rp/unit + optional expiry), kasir wizard auto-applies at cart line — no approval needed.
+
+**Model:** B (auto-apply) — kasir sees promo pre-applied on each line, cannot reduce/remove. Kasir can still add invoice-level "Diskon Nota" that triggers Item #4 gate.
+
+**Backend (slots 120, 122–124, 126):**
+- `stocks` extended with `promo_discount_type/value/expires_at` + audit trail (updated_at/by) + CHECK constraints (type IN PERCENT|AMOUNT, value > 0, type-value consistency, PERCENT range 0.01-100) + partial index `idx_stocks_active_promo (tenant_id, promo_expires_at) WHERE promo_discount_type IS NOT NULL`
+- `upsert_stock_promo(sku, type, value, expires_at)` — SECDEF, validates AMOUNT ≤ stocks.price, expiry > now(), clears when both NULL
+- `bulk_upsert_stock_promo(skus[], type, value, expires_at)` — tolerant, dedup, max 500, per-SKU status
+- `list_active_promos(filter)` — `active|expiring_7d|expired|all`, LIMIT 5000
+- `get_promo_summary()` — dashboard counts (active/expiring_7d/expired_30d)
+- Migration 121 SKIPPED — `kasir_transaction_items` table does not exist; items live in `kasir_transactions.items` JSONB with existing per-line `discount_type/value/amount_rp` fields
+- `record_kasir_sale` extension SKIPPED — RPC already processes per-line discounts natively via items JSONB; `promo_snapshot` field passes through the existing `v_item || jsonb_build_object(...)` merge; no signature/behavior change needed
+- Slot 126 revokes anon EXECUTE (advisor WARN; anon inherited grant despite REVOKE FROM PUBLIC)
+- Advisor post-migration: no new ERRORs
+
+**FE:**
+- `src/lib/promoProduk/{types,api}.ts` — typed API + `computeLinePromoDiscount()` helper
+- `src/components/pengaturan/PromoProdukPanel.tsx` — full CRUD (list + tambah + edit + bulk delete + filter status + search + inline modal); wired into PengaturanScreen tab bar
+- `src/components/dashboard/PromoProdukCard.tsx` — 3-metric summary, hides when all-zero
+- `src/components/promo/PromoInlineEdit.tsx` — popover mini-form for quick fix from Produk & Stok
+- `src/components/produk/CatalogListView.tsx` — +2 columns Promo + Berlaku hingga
+- `src/hooks/useActivePromos.ts` — Map<sku, PromoRow> cache
+- `src/components/penjualan/{CatatPenjualanWizard,CartRows,wizard/Step2Items}.tsx` — auto-apply promo per line: line badge "🏷 Promo: 15% = -Rp X", populates `discount_type/value/amount_rp` + `promo_snapshot` in items JSONB when no manual operator discount; skips if AMOUNT > unit_price (edge case guard)
+- `src/components/pengaturan/ApprovalRulesPanel.tsx` — kasir_discount row renamed to "Diskon Nota (di kasir)"
+- Design: 13-14px UI font per feedback, Bahasa MSME tone, badge palette emerald/amber/slate
+
+**Item #4 interaction:** unchanged. Item #4 gate compares only invoice-level "Diskon Nota" against tenant threshold; auto-promo per line is owner-pre-approved and bypasses gate. Subtotal passed to gate reflects post-promo amount, so % threshold is against effective post-promo subtotal.
+
+**Deferred (nice-to-have, non-blocking):**
+- Category-level default caps (data model `product_categories` exists, add on demand)
+- Full "Pengaturan → Diskon" parent grouping with landing page + standalone `AturanDiskonNotaPage` — kept flat under existing Pengaturan tabs for MVP
+- CSV bulk import
+- Auto-apply Promo Produk in modul Penjualan (SO) / Faktur — MVP kasir only
+- Realtime cache refresh in kasir wizard when owner edits mid-transaction
+- PDF receipt template update to break down "Promo Produk: -Rp X" per line
+
+**Ship path:** 
+- Commits `41a32c8` (mig 120) → `c2f1a75` (mig 122-124) → `42da586` (mig 126 anon revoke) → `bec5ce3` (TS types+API) → `39054f3` (admin UI) → `6203500` (kasir wizard integration)
+- Push `main` → Cloud Build `da358fbd` SUCCESS → Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00352-raf` → tag `c6203500` → traffic 100%
+- Prod smoke MCP chrome (Garindo tonywei.office as Owner): Pengaturan tab loads, panel empty state renders, modal opens, SQL-inserted promo appears in table with proper formatting (15% + "31 Des 2026" + Aktif badge), Dashboard PromoProdukCard renders "1 SKU sedang promo" + CTA, no console errors, test promo cleaned up
+
+**Spec:** `docs/superpowers/specs/2026-07-13-promo-produk-design.md`
+**Plan:** `docs/superpowers/plans/2026-07-13-promo-produk-plan.md`
+**SDD ledger:** `.superpowers/sdd/progress.md`
+
+---
+
 ## 2026-07-12 — Warehouse Transfer follow-up: sender/receiver names in list history (slot 227)
 
 **Founder feedback:** list rows harus tampil "Dikirim oleh" + "Diterima oleh" langsung, tanpa perlu klik masuk detail.
