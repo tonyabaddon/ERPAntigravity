@@ -1,5 +1,22 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-12 — Warehouse Transfer follow-up: sender/receiver names in list history (slot 227)
+
+**Founder feedback:** list rows harus tampil "Dikirim oleh" + "Diterima oleh" langsung, tanpa perlu klik masuk detail.
+
+**Backend:** slot 227 (`20261115000227_list_transfers_include_actor_names.sql`) — DROP + CREATE `list_warehouse_transfers` (return type change, tidak bisa CREATE OR REPLACE) dengan 4 kolom nama tambahan via LEFT JOIN admin_users: `sender_name`, `receiver_name`, `received_by_name`, `cancelled_by_name`. GRANT EXECUTE TO authenticated diulang setelah recreate.
+
+**FE:** `WarehouseTransferHeader` type nambah 4 field optional (nullable, backward compat kalau old row belum ada received_by). `TransferRow` di list screen render baris kedua: `Dikirim oleh: <sender>` + label kanan status-dependent:
+- `IN_TRANSIT` → `Menunggu: <intended receiver>`
+- `RECEIVED / PARTIAL` → `Diterima oleh: <actual receiver>` (menampilkan orang aktual yang klik konfirmasi, bukan cuma yang di-assign)
+- `CANCELLED` → `Dibatal oleh: <who cancelled>`
+
+**Prod smoke on Garindo:** TR-2026-07-001 (Tony Wei kirim + Tony Wei terima) muncul di list dengan label live: "Dikirim oleh: Tony Wei · Diterima oleh: Tony Wei · Diterima". KPI card "DITERIMA HARI INI: 1" ter-refresh.
+
+**Ship path:** commit `78e2ac8` → Cloud Build → rev `garindo-jaya-panel-msme-erp-frontend-00347-mek` → traffic 100%. 42/42 vitest tests still pass. Migration `20261115000227` applied Garindo prod + persisted di worktree file + apply-pending script.
+
+---
+
 ## 2026-07-12 — Warehouse Transfer (two-step state machine) — DB shipped, FE deploying
 
 **Feature:** two-step warehouse transfer replacing legacy single-shot `transfer_warehouse` RPC. State machine `IN_TRANSIT → RECEIVED / PARTIAL / CANCELLED`. Multi-SKU per surat jalan. Client-side jsPDF surat jalan (no paid service). In-transit chip on `StockManager`. Aging alerts in Owner Decision Inbox for stuck > 24h.
