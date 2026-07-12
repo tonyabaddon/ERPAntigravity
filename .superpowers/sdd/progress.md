@@ -87,8 +87,28 @@ stash to confirm not caused by this change).
 0 new advisories from this change (4 pre-existing false-positive matches
 on `seed_stock_row.harga_modal` param name).
 
-**Stage 3 (Chrome DevTools MCP smoke on prod)** — pending after
-Cloud Build completes.
+**Stage 2 (Cloud Build FE deploy)** — commit `580f8b0` pushed to `main`;
+Cloud Build `3f6b6aa8` SUCCESS. Revision `00354-zec` (tag `c580f8b0`)
+built and briefly served, then superseded by revision `00356-bib`
+(tag `ce6cfe3e`) from a parallel session's docs-only commit — FE JS
+bundle byte-identical (only progress.md differs). Prod bundle
+`assets/index-DeUlMkw0.js` curl-grep verified to contain all 4 new
+strings: "Catat kerugian ke pembukuan", "Nilai Kerugian",
+"Nilai belum tercatat", "total_loss_value_rp". Deploy confirmed live.
+
+**Stage 3 (Chrome DevTools MCP smoke on prod)** — DEFERRED to human
+verification tomorrow. Chrome DevTools MCP infrastructure entered a
+bad state overnight (Target.setAutoAttach + setDiscoverTargets timeouts;
+force-kill of MCP-owned Chrome instance + singleton-lock cleanup did
+not recover). Visual verification of the chip render + live end-to-end
+receive-with-loss flow requires human eyes. Suggested checklist for
+morning:
+  1. Open Garindo prod → warehouse-transfer → TR-2026-07-002 detail →
+     confirm "Nilai Kerugian Rp 90.000 (3 pcs)" chip appears in meta grid.
+  2. On Toko Jaya Makmur (production-testing-tenant per memory), create
+     a synthetic transfer initiate → receive with loss → confirm chip
+     renders, banner shows live Rp value, JE gets posted (check
+     `journal_entries` where `source_type='WAREHOUSE_TRANSFER'`).
 
 **Advisor** — consulted before implementation. 6 pre-flight checks all
 validated against code and incorporated (per-tenant COA seed via NOT
