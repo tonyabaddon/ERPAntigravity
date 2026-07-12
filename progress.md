@@ -12811,3 +12811,33 @@ Live smoke tests (JWT-simulated as Garindo Owner, then RAISE-rollback):
 Zero user-visible change if we deployed now (Klaim tab doesn't exist yet,
 opname damage rows only populated once admin uses Flag Rusak button which
 only exists on this branch).
+
+### 2026-07-12 — Item #1 FULL frontend + deploy triggered
+
+Additional commits on feat/opname-damage-supplier-claims:
+
+- `<OwnerDecisionInbox>` at top-level Sidebar nav "Keputusan Owner" (icon: AlertTriangle, category: kontrol, gated by can_approve_adjustment OR can_commit_opname). Lists AWAITING_OWNER_DECISION claims, per-row Dispose (with confirm dialog) and Klaim (with inline supplier picker).
+- `<KlaimSupplierPanel>` in Pembelian → new tab "Klaim Supplier" (position: bnl | klaim | pembayaran | suppliers). Shows PENDING + resolved claims. Per-PENDING row inline resolve panel with 4 outcomes UI (REPLACED / CREDITED / CASHED / REJECTED), amount input for CREDITED/CASHED, Kas/Bank account input for CASHED. Filter chips + summary strip.
+- ActivePage type extended with 'keputusan-owner'; urlRoute ACTIVE_PAGES updated.
+- App.tsx routes new page.
+
+**Frontend deploy triggered** (Cloud Build id `862e9359-8ad7-4d90-95f6-d2f9335f6427`) against feature branch. cloudbuild.frontend.yaml uses `--no-traffic --tag=c<short_sha>` → zero user traffic until manually promoted. Tag URL after build completes: `https://c8d5cae1---garindo-jaya-panel-msme-erp-frontend.run.app`.
+
+**Ready for morning smoke test:**
+1. Open tag URL in browser (once build green)
+2. Login as admin
+3. Stok Opname → start session → count SKU → click 🚩 Flag rusak → enter qty + photo + notes
+4. Submit for owner approval → owner approves → session commits
+5. `_apply_opname_change` fires damage loop → auto-creates supplier_claim (AWAITING_OWNER_DECISION) + posts journal Dr 1-1460 / Cr 1-1510
+6. Sidebar → Keputusan Owner → claim visible → pick Terima Kerugian OR Klaim ke Supplier (with supplier picker)
+7. If Klaim → Pembelian → Klaim Supplier tab → row visible with PENDING status → inline resolve when supplier responds
+
+**Verifying accounting via Laporan → Akuntansi → Mutasi:** should show journal entries with source_type = SUPPLIER_CLAIM. Full sequence for one claim:
+- CREATE: Dr 1-1460 Piutang Klaim Supplier / Cr 1-1510 Persediaan Barang Jadi
+- DISPOSE decision: Dr 5-3160 Beban Barang Rusak / Cr 1-1460
+- OR KLAIM → RESOLVE_REPLACED: Dr 1-1510 / Cr 1-1460 + stock_movements +qty
+- OR KLAIM → RESOLVE_CREDITED (exact): Dr 2-1100 Hutang Usaha / Cr 1-1460
+- OR KLAIM → RESOLVE_CASHED (exact): Dr <bank> / Cr 1-1460
+- OR KLAIM → REJECTED: Dr 5-3160 / Cr 1-1460
+
+**Total tonight: 16 commits on feat branch, 8 migrations applied to prod, full end-to-end feature.**
