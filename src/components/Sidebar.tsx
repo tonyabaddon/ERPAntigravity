@@ -26,6 +26,7 @@ import {
   Coins,
   FileText,
   AlertTriangle,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { ActivePage, PermissionSet } from '../types';
 import type { DbTenantSettings } from '../types';
@@ -93,6 +94,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     { id: 'stok-opname', label: 'Stok Opname', icon: PackageSearch, category: 'inventory', permKey: 'can_start_opname' },
     { id: 'pembelian', label: 'Pembelian', icon: ShoppingBag, category: 'inventory', permKey: 'pembelian' },
     { id: 'manajemen-gudang', label: 'Manajemen Gudang', icon: Warehouse, category: 'inventory', permKey: 'can_manage_warehouses' },
+    { id: 'warehouse-transfer', label: 'Transfer Gudang', icon: ArrowRightLeft, category: 'inventory', permKey: ['can_initiate_transfer', 'can_receive_transfer'] },
     // Kontrol & Laporan
     { id: 'persetujuan', label: 'Persetujuan', icon: ClipboardCheck, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_approve_price_change', 'can_commit_opname'] },
     { id: 'keputusan-owner', label: 'Keputusan Owner', icon: AlertTriangle, category: 'kontrol', permKey: ['can_approve_adjustment', 'can_commit_opname'] },
@@ -112,6 +114,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     'piutang':         'piutang',
     'tukar-faktur':    'tukarFaktur',
     'transfer-gudang': 'transferGudang',
+    'warehouse-transfer': 'transferGudang',
     'pesanan-wip':     'pesananWip',
     'akuntansi':       'akuntansi',
   };

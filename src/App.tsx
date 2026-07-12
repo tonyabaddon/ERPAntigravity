@@ -60,6 +60,9 @@ import DaftarPenawaranScreen from './components/penjualan/DaftarPenawaranScreen'
 import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
 import KasBankScreen from './components/kasbank/KasBankScreen';
 import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
+import WarehouseTransferListScreen from './components/warehouseTransfer/WarehouseTransferListScreen';
+import WarehouseTransferCreateScreen from './components/warehouseTransfer/WarehouseTransferCreateScreen';
+import WarehouseTransferDetailScreen from './components/warehouseTransfer/WarehouseTransferDetailScreen';
 
 import { INITIAL_CONFIG } from './initialData';
 
@@ -602,6 +605,32 @@ export default function App() {
           <ManajemenGudangScreen
             currentUser={currentUser}
             showToast={triggerToast}
+          />
+        );
+      case 'warehouse-transfer':
+        return (
+          <WarehouseTransferListScreen
+            currentUserId={currentUser?.id ?? ''}
+            onOpenDetail={(id) => navigate('warehouse-transfer-detail', { id: String(id) })}
+            onOpenCreate={() => navigate('warehouse-transfer-create')}
+          />
+        );
+      case 'warehouse-transfer-create':
+        return (
+          <WarehouseTransferCreateScreen
+            currentUserId={currentUser?.id ?? ''}
+            onDone={(id) => navigate('warehouse-transfer-detail', { id: String(id) })}
+            onCancel={() => navigate('warehouse-transfer')}
+            searchSKU={async () => []}
+            listReceivers={async () => []}
+          />
+        );
+      case 'warehouse-transfer-detail':
+        return (
+          <WarehouseTransferDetailScreen
+            id={Number(route.params?.id ?? 0)}
+            currentUserId={currentUser?.id ?? ''}
+            onBack={() => navigate('warehouse-transfer')}
           />
         );
       case 'persetujuan':
