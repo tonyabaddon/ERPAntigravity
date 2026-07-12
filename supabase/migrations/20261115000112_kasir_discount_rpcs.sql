@@ -90,3 +90,89 @@ END $$;
 ALTER FUNCTION public.check_kasir_discount_gate(NUMERIC, NUMERIC) OWNER TO vosi_rpc_owner;
 REVOKE ALL ON FUNCTION public.check_kasir_discount_gate(NUMERIC, NUMERIC) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.check_kasir_discount_gate(NUMERIC, NUMERIC) TO authenticated;
+
+-- =========================================================
+-- Part B (rev 2): request_kasir_discount_approval
+-- =========================================================
+-- Design pivot per spec §3.2 rev 2: NO p_sale_draft_id.
+-- Sale data stays in browser during approval. On approve, frontend calls
+-- existing record_kasir_sale + link_kasir_sale_to_approval (Task 4 REDO).
+-- expires_at inherits DB default (now() + 30 min); admin can cancel via
+-- cancel_kasir_discount_request (Task 5).
+
+CREATE OR REPLACE FUNCTION public.request_kasir_discount_approval(
+  p_discount_amount_rp NUMERIC,
+  p_discount_type      TEXT,
+  p_discount_value     NUMERIC,
+  p_subtotal_rp        NUMERIC,
+  p_reason             TEXT
+) RETURNS BIGINT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tenant       UUID;
+  v_user_id      UUID;
+  v_gate         JSONB;
+  v_settings     RECORD;
+  v_caller_role  TEXT;
+  v_req_id       BIGINT;
+BEGIN
+  v_tenant := public._resolve_tenant_id();
+  v_user_id := public._current_user_id();
+  IF v_user_id IS NULL OR v_tenant = '00000000-0000-0000-0000-000000000000'::UUID THEN
+    RAISE EXCEPTION 'unauthenticated';
+  END IF;
+
+  -- Re-check gate server-side (defense against setting change mid-flow)
+  v_gate := public.check_kasir_discount_gate(p_discount_amount_rp, p_subtotal_rp);
+  IF NOT (v_gate->>'gate_triggered')::BOOLEAN THEN
+    RAISE EXCEPTION 'gate not triggered — should not request approval';
+  END IF;
+
+  SELECT * INTO v_settings FROM public.approval_settings
+   WHERE tenant_id = v_tenant AND request_type = 'kasir_discount';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'no approval_settings row for kasir_discount in tenant';
+  END IF;
+
+  -- Reason validation
+  IF v_settings.reason_required THEN
+    IF p_reason IS NULL OR length(trim(p_reason)) < 3 THEN
+      RAISE EXCEPTION 'reason required (min 3 chars)';
+    END IF;
+  END IF;
+
+  -- Bypass self: caller with approver role → auto-approve, no request row
+  IF v_settings.requestor_bypass_self THEN
+    SELECT role INTO v_caller_role FROM public.admin_users WHERE id = v_user_id;
+    IF v_caller_role = v_settings.approver_role THEN
+      RETURN -1;
+    END IF;
+  END IF;
+
+  -- Insert approval request (expires_at inherits DB default)
+  INSERT INTO public.approval_requests (
+    tenant_id, request_type, payload,
+    requested_by, requested_at, status
+  ) VALUES (
+    v_tenant, 'kasir_discount',
+    jsonb_build_object(
+      'discount_type', p_discount_type,
+      'discount_value', p_discount_value,
+      'discount_amount_rp', p_discount_amount_rp,
+      'subtotal_rp', p_subtotal_rp,
+      'reason', p_reason,
+      'admin_user_id', v_user_id,
+      'trigger_reason', v_gate->>'trigger_reason'
+    ),
+    v_user_id, now(), 'pending'
+  ) RETURNING id INTO v_req_id;
+
+  RETURN v_req_id;
+END $$;
+
+ALTER FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) OWNER TO vosi_rpc_owner;
+REVOKE ALL ON FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.request_kasir_discount_approval(NUMERIC, TEXT, NUMERIC, NUMERIC, TEXT) TO authenticated;
