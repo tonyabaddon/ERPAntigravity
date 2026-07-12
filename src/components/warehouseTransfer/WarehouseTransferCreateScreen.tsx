@@ -282,7 +282,7 @@ export default function WarehouseTransferCreateScreen({
           className="flex items-center gap-1.5 rounded border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-          Kirim Mutasi
+          Kirim Transfer
         </button>
         <button
           onClick={() => submit(true)}

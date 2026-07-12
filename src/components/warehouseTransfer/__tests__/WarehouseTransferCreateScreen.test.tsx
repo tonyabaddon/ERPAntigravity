@@ -63,7 +63,7 @@ describe('WarehouseTransferCreateScreen', () => {
     expect(fromSelect).toContainHTML('Gudang Bawah');
   });
 
-  it('calls initiateTransfer with correct payload when Kirim Mutasi is clicked', async () => {
+  it('calls initiateTransfer with correct payload when Kirim Transfer is clicked', async () => {
     renderScreen();
 
     // Select from/to warehouses
@@ -86,7 +86,7 @@ describe('WarehouseTransferCreateScreen', () => {
     fireEvent.click(screen.getByText(/Cat Biru/i));
 
     // Submit
-    fireEvent.click(screen.getByRole('button', { name: /Kirim Mutasi/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Kirim Transfer/i }));
 
     await waitFor(() =>
       expect(warehouseTransferService.initiateTransfer).toHaveBeenCalledWith(
@@ -109,7 +109,7 @@ describe('WarehouseTransferCreateScreen', () => {
     fireEvent.change(screen.getByLabelText(/Dikirim Kepada/i), { target: { value: 'u2' } });
 
     // Submit without adding items
-    fireEvent.click(screen.getByRole('button', { name: /Kirim Mutasi/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Kirim Transfer/i }));
 
     await waitFor(() =>
       expect(screen.getByText(/Tambahkan minimal 1 barang/i)).toBeInTheDocument()

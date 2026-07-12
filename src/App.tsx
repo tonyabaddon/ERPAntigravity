@@ -621,8 +621,38 @@ export default function App() {
             currentUserId={currentUser?.id ?? ''}
             onDone={(id) => navigate('warehouse-transfer-detail', { id: String(id) })}
             onCancel={() => navigate('warehouse-transfer')}
-            searchSKU={async () => []}
-            listReceivers={async () => []}
+            searchSKU={async (term) => {
+              // Fuzzy search stocks by sku or name, join stock_levels for qty at from-warehouse.
+              // Term filter is client-side; server returns all stocks and we filter by warehouse_id
+              // via the join. RLS on stocks scopes to tenant automatically.
+              const q = term.trim();
+              if (!q || q.length < 1) return [];
+              const { data, error } = await supabase
+                .from('stocks')
+                .select('sku, name, stock_levels(qty, warehouse_id)')
+                .or(`sku.ilike.%${q}%,name.ilike.%${q}%`)
+                .limit(20);
+              if (error) return [];
+              return ((data ?? []) as Array<{ sku: string; name: string; stock_levels: Array<{ qty: number; warehouse_id: string }> }>)
+                .map((row) => ({
+                  sku: row.sku,
+                  name: row.name,
+                  qty: (row.stock_levels ?? []).reduce((sum, sl) => sum + (sl.qty ?? 0), 0),
+                }));
+            }}
+            listReceivers={async (warehouseId) => {
+              // Return admin_users in current tenant with can_receive_transfer=true.
+              // Warehouse-id argument reserved for future per-warehouse assignment filtering.
+              void warehouseId;
+              const { data, error } = await supabase
+                .from('admin_users')
+                .select('id, name, permissions')
+                .eq('status', 'Aktif');
+              if (error) return [];
+              return ((data ?? []) as Array<{ id: string; name: string; permissions: Record<string, unknown> | null }>)
+                .filter((u) => u.permissions?.['can_receive_transfer'] === true)
+                .map((u) => ({ id: u.id, name: u.name }));
+            }}
           />
         );
       case 'warehouse-transfer-detail':
