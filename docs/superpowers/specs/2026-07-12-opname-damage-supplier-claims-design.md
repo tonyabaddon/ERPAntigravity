@@ -5,6 +5,43 @@
 **Date:** 2026-07-12 (rev 2 post schema audit)
 **Scope:** Item #1 in a 5-item brainstorm sweep. Items #2-5 are separate specs.
 
+## Owner-decision workflow (2026-07-12 rev 3)
+
+Refinement to separate concerns: **admin flags, owner decides.** Admin counts + records damage at opname time. Owner picks Dispose vs Klaim Supplier post-opname — matches responsibility (owner bears cost).
+
+**New state:** `AWAITING_OWNER_DECISION` inserted before `PENDING` in the claim lifecycle:
+
+```
+Admin flags rusak (opname commit)  →  AWAITING_OWNER_DECISION
+Owner picks Dispose               →  REJECTED     (loss booked)
+Owner picks Klaim + supplier      →  PENDING      (waiting supplier reply)
+Supplier responds                  →  RESOLVED_REPLACED / _CREDITED / _CASHED / REJECTED
+```
+
+**Speculative accounting (Option A):** at opname commit, book to `1-1460 Piutang Klaim Supplier` (asset suspense). Owner's later decision reclassifies:
+- **Dispose** → journal reversal: `Dr 5-3160 Beban Barang Rusak / Cr 1-1460 Piutang Klaim Supplier`
+- **Klaim** → no journal, just set `supplier_id` on the claim and status → PENDING
+
+Rationale: fewest new accounts, optimistic default (owner usually claims when possible), avoids over-recognizing losses if owner delays decision.
+
+**Admin UX (opname flag modal) simplifies:** qty + photo + notes only. No disposition radio, no supplier picker.
+
+**Owner UX:** new top-level Sidebar nav "Keputusan Owner" with badge counter. Each pending item shows SKU, qty, book value, condition notes, photos, opname source. Actions: `[Terima Kerugian]` / `[Klaim ke Supplier →]` (opens supplier picker).
+
+**Notifications:** in-app badge + Beranda card only. No WA (per feedback memory).
+
+**Timeout policy:** none for v1. Aging alert in v2 if actually needed. No auto-dispose.
+
+**Data model deltas from rev 2:**
+- `supplier_claims.status` CHECK adds `'AWAITING_OWNER_DECISION'` as new valid state
+- `supplier_claims.supplier_id` becomes NULLABLE (unknown at opname commit)
+- `stock_opname_counts` drops `damage_disposition` + `damage_supplier_id` columns (moved to owner decision, not captured at count time)
+- New event type `'OWNER_DECIDED'` in `supplier_claim_events`
+
+**New RPC:** `decide_supplier_claim(claim_id, decision, supplier_id?, notes?)` — owner-only. Transitions AWAITING_OWNER_DECISION → REJECTED (Dispose) or PENDING (Klaim + supplier). Posts reclassification journal for Dispose. Always requires owner role (no threshold config — this is a governance action, not a monetary threshold gate).
+
+**`resolve_supplier_claim` unchanged** — still handles PENDING → RESOLVED_* transitions for external supplier responses.
+
 ## Schema audit corrections (2026-07-12 rev 2)
 
 Applied after live audit of Garindo prod (`ekhhojaezdfjfwuxyjkl`) before execution:
@@ -54,9 +91,9 @@ Single source of truth untuk pending goods claim ke supplier.
 
 ```sql
 CREATE TABLE public.supplier_claims (
-  id                    BIGSERIAL PRIMARY KEY,
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- UUID matches journal_entries.source_ref_id
   tenant_id             UUID NOT NULL REFERENCES tenants(id),
-  supplier_id           UUID NOT NULL REFERENCES suppliers(id) ON DELETE RESTRICT,
+  supplier_id           UUID NULL REFERENCES suppliers(id) ON DELETE RESTRICT,  -- NULLABLE: unknown at opname commit; set by owner decision
   sku                   TEXT NOT NULL,
   warehouse             TEXT NOT NULL,  -- migrate to warehouse_id post-Phase 3 cutover
   qty                   INTEGER NOT NULL CHECK (qty > 0),
@@ -66,8 +103,8 @@ CREATE TABLE public.supplier_claims (
   source_ref_id         TEXT NOT NULL,  -- stringified: UUID for PO_RECEIPT (po_item.id), BIGINT for STOCK_OPNAME (session_id) and STOCK_ADJUSTMENT (adjustment_id)
   damage_notes          TEXT,
   evidence_urls         TEXT[],
-  status                TEXT NOT NULL DEFAULT 'PENDING'
-                          CHECK (status IN ('PENDING','RESOLVED_REPLACED','RESOLVED_CREDITED','RESOLVED_CASHED','REJECTED')),
+  status                TEXT NOT NULL DEFAULT 'AWAITING_OWNER_DECISION'
+                          CHECK (status IN ('AWAITING_OWNER_DECISION','PENDING','RESOLVED_REPLACED','RESOLVED_CREDITED','RESOLVED_CASHED','REJECTED')),
   resolution_amount     NUMERIC(15,2),  -- actual refund/credit amount (may differ from qty*unit_cost)
   resolution_target_id  TEXT,           -- e.g. AP invoice id for CREDITED, Kas/Bank account code for CASHED
   resolved_at           TIMESTAMPTZ,
@@ -130,17 +167,15 @@ ALTER TABLE purchase_order_items ADD COLUMN supplier_claim_id BIGINT REFERENCES 
 -- No ALTER TYPE. TypeScript union in src/lib/supplierClaims/types.ts enforces.
 ```
 
-**`stock_opname_counts`** — capture damage at count time:
+**`stock_opname_counts`** — capture damage at count time (admin only records; owner decides post-opname per rev 3):
 ```sql
 ALTER TABLE stock_opname_counts ADD COLUMN damaged_qty INTEGER NOT NULL DEFAULT 0
   CHECK (damaged_qty >= 0);
 ALTER TABLE stock_opname_counts ADD CONSTRAINT damaged_qty_within_counted
   CHECK (damaged_qty <= counted_qty);
-ALTER TABLE stock_opname_counts ADD COLUMN damage_disposition TEXT
-  CHECK (damage_disposition IS NULL OR damage_disposition IN ('DISPOSE','KLAIM_SUPPLIER'));
-ALTER TABLE stock_opname_counts ADD COLUMN damage_supplier_id UUID REFERENCES suppliers(id);
 ALTER TABLE stock_opname_counts ADD COLUMN damage_notes TEXT;
 ALTER TABLE stock_opname_counts ADD COLUMN damage_evidence_urls TEXT[];
+-- No damage_disposition or damage_supplier_id: owner decides post-opname via decide_supplier_claim RPC
 ```
 
 ### 2.4 Chart of Accounts additions (per-tenant loop)
