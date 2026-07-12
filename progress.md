@@ -30,6 +30,74 @@ After push + Cloud Run traffic migration (`00319-nuw` → `00321-kid` at commit 
 
 ---
 
+## 2026-07-12 (engineering discipline v7) — 425-line policy + 4-gate Stop hook
+
+**Context:** founder wants Claude to operate as a proper engineering team so
+that as complexity grows, no future turn misses impact analysis, scale-forward
+architecture, UI/UX approval, staged verification, cost discipline, or
+observability. Iterated 7× with founder input:
+- v1: CLAUDE.md protocols + Stop-hook typecheck
+- v2: advisor caught compile-clean/runtime-fail gap → added `audit:numinput`
+  + `audit:secdef-null-tenant`
+- v3: added Impact-analysis protocol (founder's #1 miss class:
+  "kritis untuk analisa impacted module dan juga difix"), `vitest --changed`
+  Stop-hook gate, `/code-review` before commit, `advisor()` for large diffs
+- v3-scale: added Backend scale-forward architecture (reversibility rating,
+  ceiling / partition / idempotency checks) — founder building for
+  billion-dollar-scale SaaS
+- v4: added Ship & verify staged flow — Local → Deploy → prod-testing-tenant
+  chrome test; NEVER touch real customer tenants; deploy path documented
+- v5: added FE UI/UX approval gate (current design system default, founder
+  sign-off before locking requirements)
+- v6: added Multi-role thinking POLICY — seven internal cognitive lenses
+  (Senior PM, UI/UX Designer, Senior FE Eng, Senior BE Eng, Infra / DB Eng,
+  Principal Architect, Senior QA); internal cognition, not recital template
+- v7: added Observability requirement (log + counter per feature), Cost /
+  paid-service discipline (ANY service cost upgrade needs founder approval),
+  Incident logging (docs/incidents/ separate from progress.md), Rollback
+  rehearsal quarterly, memory prune rhythm, design system extension rule,
+  Irreversible-decision memo template, expanded advisor() triggers
+  (irreversible decisions, RLS/SECDEF changes, migrations >1000 rows,
+  financial-impact, "final fix" claims), migrations-must-be-idempotent rule
+
+**Files committed:**
+- **`CLAUDE.md`** (~425 lines, 15 top-level sections) — see section index
+  in doc. Loaded per turn as the policy contract.
+- **`.claude/settings.json` (new, committed)** — Stop hook chains 4 gates
+  (~5.7s total, short-circuits on first failure):
+  1. `npm run lint` (~3.5s)
+  2. `npm run audit:numinput` (~0.3s)
+  3. `npm run audit:secdef-null-tenant` (~0.3s)
+  4. `npx vitest run --changed` (~2.5s)
+  Failure → `decision: block` with failing gate name + error tail. Escape
+  hatch for intentional WIP: `/hooks` disable for one turn.
+
+**Memory (not in this repo's git):**
+- `memory/project_production_testing_tenant.md` — records "Toko Jaya
+  Makmur" as the Stage-3 prod-testing tenant.
+
+**Security flag surfaced (not fixed here):** `cloudbuild.yaml:38` hardcodes
+Supabase `service_role` JWT (full-DB-bypass, valid until 2033) in
+`--update-env-vars`. Rotate and move to Secret Manager.
+
+**Verification:** Stop hook pipe-tested on clean tree (silent, exit 0) and
+forced-failure input (JSON block structure valid); `jq -e` confirms schema.
+Since `.claude/settings.json` is a NEW file, founder should open `/hooks`
+once (or restart) so the settings watcher picks it up.
+
+**Explicitly deferred (not gaps, just later):**
+- PII discipline (Indonesian MSME data: NIK / NPWP / phone).
+- `docs/design-tokens.md` + component catalog scaffold (create on first
+  design-system extension).
+- Specific observability backend choice (generic log + counter now; pick a
+  backend at first-use).
+
+**Explicit tradeoff acknowledged:** v7 is untested policy. Real usage may
+reveal ceremony-vs-value gaps. Founder has granted permission to trim
+after 1–2 real tasks if friction outweighs prevention.
+
+---
+
 ## 2026-07-12 (engineering discipline v5) — full protocol + 4-gate Stop hook
 
 **Context:** founder wants Claude to operate as a proper engineering team — no
