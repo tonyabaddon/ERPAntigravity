@@ -241,6 +241,7 @@ MIGRATIONS=(
   "20261115000219_legacy_transfer_warehouse_shim.sql"
   "20261115000220_seed_warehouse_transfer_permissions.sql"
   # "20261115000221_smoke_test_warehouse_transfer.sql"  # smoke-test only; rolls back via RAISE EXCEPTION
+  "20261115000222_warehouse_transfer_permission_naming_fix.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

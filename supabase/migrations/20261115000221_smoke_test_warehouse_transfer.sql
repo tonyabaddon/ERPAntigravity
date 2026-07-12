@@ -29,11 +29,11 @@ BEGIN
 
   SELECT id INTO v_sender FROM public.admin_users
    WHERE tenant_id = v_tenant
-     AND COALESCE(permissions ->> 'can_transfer_warehouse', 'false') = 'true'
+     AND COALESCE(permissions ->> 'can_initiate_transfer', 'false') = 'true'
    LIMIT 1;
   SELECT id INTO v_receiver FROM public.admin_users
    WHERE tenant_id = v_tenant
-     AND COALESCE(permissions ->> 'can_receive_warehouse_transfer', 'false') = 'true'
+     AND COALESCE(permissions ->> 'can_receive_transfer', 'false') = 'true'
    LIMIT 1;
   IF v_sender IS NULL OR v_receiver IS NULL THEN
     RAISE EXCEPTION 'smoke test: no eligible sender/receiver in tenant %', v_tenant;
