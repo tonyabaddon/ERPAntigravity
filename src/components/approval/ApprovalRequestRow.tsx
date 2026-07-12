@@ -33,6 +33,8 @@ const TYPE_LABEL: Record<ApprovalRequestType, string> = {
   bnl_create: 'Buat BNL',
   tukar_faktur: 'Tukar Faktur',
   purchase_return: 'Retur Pembelian',
+  resolve_supplier_claim: 'Resolve Klaim Supplier',
+  kasir_discount: 'Diskon Kasir',
 };
 
 const TYPE_ICON: Record<
@@ -58,6 +60,8 @@ const TYPE_ICON: Record<
   bnl_create:                   { icon: '📄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   tukar_faktur:                 { icon: '🔄', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
   purchase_return:              { icon: '↩️', bg: 'bg-orange-50',  fg: 'text-orange-700'  },
+  resolve_supplier_claim:       { icon: '🎯', bg: 'bg-blue-50',    fg: 'text-blue-700'    },
+  kasir_discount:               { icon: '🏷️', bg: 'bg-violet-50',  fg: 'text-violet-700'  },
 };
 
 const STATUS_PILL: Record<ApprovalStatus, string> = {
