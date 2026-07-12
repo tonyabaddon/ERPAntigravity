@@ -50,6 +50,7 @@ import CatatPenjualanWizard from './components/penjualan/CatatPenjualanWizard';
 import InvoicePreviewScreen from './components/penjualan/InvoicePreviewScreen';
 import PenjualanScreen from './components/PenjualanScreen';
 import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
+import OwnerDecisionInbox from './components/OwnerDecisionInbox';
 import StockOpnameScreen from './components/stok/StockOpnameScreen';
 import RekonsiliasiScreen from './components/RekonsiliasiScreen';
 import ManajemenGudangScreen from './components/ManajemenGudangScreen';
@@ -610,6 +611,8 @@ export default function App() {
             showToast={triggerToast}
           />
         );
+      case 'keputusan-owner':
+        return <OwnerDecisionInbox showToast={triggerToast} />;
       case 'stok-opname':
         return (
           <StockOpnameScreen
