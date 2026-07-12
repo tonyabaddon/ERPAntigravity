@@ -191,6 +191,21 @@ function summarisePayload(req: ApprovalRequest): string {
       if (cost !== undefined && cost > 0) parts.push(`HPP ${formatRupiah(cost)}/${unit}`);
       return parts.join(' · ') || 'Stok awal produk baru';
     }
+    case 'kasir_discount': {
+      const discountAmt = num('discount_amount_rp');
+      const subtotal = num('subtotal_rp');
+      const dtype = str('discount_type');
+      const dvalue = num('discount_value');
+      const reason = str('reason');
+      const trigger = str('trigger_reason');
+      const parts: string[] = ['Diskon manual'];
+      if (dtype === 'PERCENT' && dvalue !== undefined) parts.push(`${dvalue}%`);
+      if (discountAmt !== undefined) parts.push(formatRupiah(discountAmt));
+      if (subtotal !== undefined) parts.push(`dari ${formatRupiah(subtotal)}`);
+      if (trigger) parts.push(`⚠ ${trigger}`);
+      if (reason) parts.push(`alasan: "${reason}"`);
+      return parts.join(' · ');
+    }
     case 'customer_credit_activate':
       return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;
 
