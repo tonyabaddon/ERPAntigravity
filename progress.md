@@ -1,5 +1,30 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-13 — Item #5 aging integration: opening_ar_lines + opening_ap_lines — SHIPPED
+
+**What changed:** Extend piutang/hutang aging + Dashboard maintenance counts to include opening AR/AP lines from the Saldo Awal wizard (once a snapshot is posted and not reversed).
+
+**Migration 20261115000143** — `CREATE OR REPLACE FUNCTION get_dashboard_maintenance_counts()`:
+- Extends piutang overdue count/sum: existing kasir TEMPO rows + `opening_ar_lines` where `original_due_date < CURRENT_DATE` AND snapshot is `posted` AND `reversed_at IS NULL`
+- Extends hutang overdue count/sum: existing `purchase_invoices` rows + `opening_ap_lines` same predicate
+- Same TABLE return shape — no consumer change required
+- Smoke tested with rollback marker: +2 AR lines (Rp 8jt) + 1 AP line (Rp 7jt) correctly added; future + NULL due date lines correctly excluded; reversal of snapshot correctly excluded lines
+
+**FE: `src/lib/piutangService.ts`:**
+- New: `OpeningARLine` interface + `fetchOpeningARLines()` — reads from `opening_ar_lines` joined to `saldo_awal_snapshots` (posted, not reversed) via Supabase inner join filter
+- Extended: `computeAging(rows, buckets, openingLines?)` — opening lines bucketed by `original_due_date`; NULL due date excluded
+- Extended: `computeKpi(rows, openingLines?)` — opening lines add to `totalPiutang`/`totalCount`; overdue when `original_due_date < today`
+- Extended: `fetchOverdueCount()` — adds opening overdue count to kasir TEMPO count (feeds PiutangBadge)
+
+**FE: `src/lib/purchaseInvoiceService.ts`:**
+- New: `OpeningAPLine` interface + `fetchOpeningAPLines()` — parallel to AR, reads `opening_ap_lines` for AP aging integration
+
+**Semantic note documented:** kasir TEMPO overdue uses age-of-creation proxy (created_at < now()-30d); opening AR/AP uses explicit `original_due_date < CURRENT_DATE`. Intentionally different — do not unify.
+
+**All gates green:** tsc clean, lint clean, audit:numinput clean, audit:secdef-null-tenant clean, vitest passed.
+
+**Pending (Tranche B):** PiutangScreen component integration (fetchOpeningARLines → pass to computeAging/computeKpi) deferred to FE wizard UI tranche — table view excludes opening lines (no mark_paid/write-off semantics), aging chart + KPI cards to be wired in same session as wizard.
+
 ## 2026-07-13 — Item #3 Dashboard vs Laporan split + Reports redesign — LIVE
 
 **Founder ask:** Dashboard dan Laporan tampilkan metric duplikat → owner bingung "cari data di mana". Reports juga kurang optimal untuk owner MSME (no Gross Profit, no delta, no slow-mover, no top-customer analysis).

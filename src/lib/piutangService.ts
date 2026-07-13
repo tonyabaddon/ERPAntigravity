@@ -8,6 +8,8 @@
 //   needed — DB grant already allows authenticated UPDATE per existing RLS)
 // - fetchPiutangRows: joined query of INVOICE_TEMPO orders + their customer for
 //   the Piutang screen; tiers them by daysToDue.
+// - fetchOpeningARLines: reads opening_ar_lines from posted saldo_awal_snapshots
+//   for AR aging + KPI integration (Item #5).
 
 import { supabase } from './supabaseClient';
 import type {
@@ -237,27 +239,60 @@ export function outstandingOf(row: PiutangRow): number {
   return Math.max(0, row.order.total - paid);
 }
 
-export function computeKpi(rows: PiutangRow[]): PiutangKpi {
-  const acc = {
-    totalPiutang: 0, totalCount: 0,
-    overdueAmount: 0, overdueCount: 0,
-    todayAmount: 0, todayCount: 0,
-    h3Amount: 0, h3Count: 0,
-  };
-  for (const r of rows) {
-    const outstanding = outstandingOf(r);
-    acc.totalPiutang += outstanding;
-    acc.totalCount += 1;
-    if (r.tier === 'overdue') { acc.overdueAmount += outstanding; acc.overdueCount += 1; }
-    if (r.tier === 'today')   { acc.todayAmount   += outstanding; acc.todayCount   += 1; }
-    if (r.tier === 'h3')      { acc.h3Amount      += outstanding; acc.h3Count      += 1; }
-  }
-  return acc;
+// ── Opening AR lines (Item #5) ────────────────────────────────────────────────
+// AR receivables entered via the Saldo Awal wizard (detail mode).
+// Only from snapshots that are posted and not reversed.
+// amount = full outstanding balance (no paid_amount column on opening lines).
+// original_due_date used for aging; NULL = no due date, excluded from overdue aging.
+// Fallback: if original_due_date IS NULL, treat as 'no-bucket' (not overdue).
+export interface OpeningARLine {
+  id: string;
+  snapshot_id: string;
+  customer_id: string | null;
+  customer_name: string;
+  amount: number;
+  original_due_date: string | null;  // ISO date or null
+  invoice_ref: string | null;
+  notes: string | null;
+}
+
+export async function fetchOpeningARLines(): Promise<OpeningARLine[]> {
+  if (!supabase) return [];
+  // RLS p_select_own on opening_ar_lines gates to tenant automatically.
+  // Join to saldo_awal_snapshots to filter posted+not-reversed.
+  const { data, error } = await supabase
+    .from('opening_ar_lines')
+    .select(`
+      id,
+      snapshot_id,
+      customer_id,
+      customer_name,
+      amount,
+      original_due_date,
+      invoice_ref,
+      notes,
+      saldo_awal_snapshots!inner(status, reversed_at)
+    `)
+    .eq('saldo_awal_snapshots.status', 'posted')
+    .is('saldo_awal_snapshots.reversed_at', null);
+  if (error) return [];
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    snapshot_id: row.snapshot_id,
+    customer_id: row.customer_id ?? null,
+    customer_name: row.customer_name,
+    amount: Number(row.amount),
+    original_due_date: row.original_due_date ?? null,
+    invoice_ref: row.invoice_ref ?? null,
+    notes: row.notes ?? null,
+  }));
 }
 
 // ── AR Aging bucket computation ──
 // Reads aging_buckets array from piutang_settings (default [30, 60, 90]).
 // Produces segments [0-30, 31-60, 61-90, >90] (4 segments for 3 boundaries).
+// Optional openingLines: opening_ar_lines from Saldo Awal wizard (Item #5).
+// Opening lines use original_due_date for aging; NULL due date = excluded.
 export interface AgingSegment {
   label: string;      // e.g., "0–30 hari"
   count: number;
@@ -267,7 +302,11 @@ export interface AgingSegment {
 
 const SEGMENT_COLORS = ['#10b981', '#f59e0b', '#fb923c', '#ef4444']; // green, yellow, orange, red
 
-export function computeAging(rows: PiutangRow[], buckets: number[] = [30, 60, 90]): AgingSegment[] {
+export function computeAging(
+  rows: PiutangRow[],
+  buckets: number[] = [30, 60, 90],
+  openingLines: OpeningARLine[] = [],
+): AgingSegment[] {
   const sorted = [...buckets].sort((a, b) => a - b);
   const segments: AgingSegment[] = [];
   let prev = 0;
@@ -285,6 +324,7 @@ export function computeAging(rows: PiutangRow[], buckets: number[] = [30, 60, 90
     color: SEGMENT_COLORS[sorted.length] ?? '#7f1d1d',
   });
 
+  // Transaction rows
   for (const r of rows) {
     const overdueDays = -r.daysToDue; // overdueDays > 0 means past due
     if (overdueDays < 0) continue;     // not yet overdue — exclude from aging
@@ -293,19 +333,76 @@ export function computeAging(rows: PiutangRow[], buckets: number[] = [30, 60, 90
     segments[idx].count += 1;
     segments[idx].amount += outstandingOf(r);
   }
+
+  // Opening AR lines — use original_due_date; NULL = no bucket (skip)
+  const todayStr = todayWIB();
+  for (const line of openingLines) {
+    if (!line.original_due_date) continue; // no due date — excluded from aging
+    const overdueDays = Math.round(
+      (new Date(todayStr + 'T00:00:00Z').getTime() -
+       new Date(line.original_due_date + 'T00:00:00Z').getTime()) / 86_400_000,
+    );
+    if (overdueDays < 0) continue; // not yet overdue
+    let idx = sorted.findIndex(b => overdueDays <= b);
+    if (idx === -1) idx = sorted.length;
+    segments[idx].count += 1;
+    segments[idx].amount += line.amount;
+  }
+
   return segments;
 }
 
-// ── Sidebar badge: count of overdue ──
+// ── KPI: extend computeKpi to include opening AR lines ───────────────────────
+// Opening lines have no tier; they contribute to totalPiutang + overdueAmount
+// when original_due_date < today. Lines with NULL due date count toward total
+// but NOT overdue.
+export function computeKpi(rows: PiutangRow[], openingLines: OpeningARLine[] = []): PiutangKpi {
+  const acc = {
+    totalPiutang: 0, totalCount: 0,
+    overdueAmount: 0, overdueCount: 0,
+    todayAmount: 0, todayCount: 0,
+    h3Amount: 0, h3Count: 0,
+  };
+  for (const r of rows) {
+    const outstanding = outstandingOf(r);
+    acc.totalPiutang += outstanding;
+    acc.totalCount += 1;
+    if (r.tier === 'overdue') { acc.overdueAmount += outstanding; acc.overdueCount += 1; }
+    if (r.tier === 'today')   { acc.todayAmount   += outstanding; acc.todayCount   += 1; }
+    if (r.tier === 'h3')      { acc.h3Amount      += outstanding; acc.h3Count      += 1; }
+  }
+  // Opening lines
+  const todayStr = todayWIB();
+  for (const line of openingLines) {
+    acc.totalPiutang += line.amount;
+    acc.totalCount   += 1;
+    if (line.original_due_date && line.original_due_date < todayStr) {
+      acc.overdueAmount += line.amount;
+      acc.overdueCount  += 1;
+    }
+  }
+  return acc;
+}
+
+// ── Sidebar badge: count of overdue (kasir TEMPO + opening AR lines) ─────────
+// Includes opening_ar_lines from posted saldo_awal_snapshots where due date < today.
 export async function fetchOverdueCount(): Promise<number> {
   if (!supabase) return 0;
   const today = todayWIB();
-  const { count, error } = await supabase
+
+  // Kasir TEMPO overdue
+  const { count: kasirCount, error: kasirErr } = await supabase
     .from('orders')
     .select('id', { count: 'exact', head: true })
     .eq('payment_type', 'TEMPO')
     .eq('status', 'INVOICE_TEMPO')
     .lt('due_date', today);
-  if (error) return 0;
-  return count ?? 0;
+  if (kasirErr) return 0;
+
+  // Opening AR overdue (via join filter using fetchOpeningARLines)
+  // Use a lightweight count query rather than fetching all rows.
+  const lines = await fetchOpeningARLines();
+  const openingOverdue = lines.filter(l => l.original_due_date && l.original_due_date < today).length;
+
+  return (kasirCount ?? 0) + openingOverdue;
 }

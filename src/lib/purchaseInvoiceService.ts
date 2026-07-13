@@ -2,6 +2,8 @@
 // BNL Phase 1 — service layer for purchase_invoices CRUD + COGS view fetch.
 // Backend RPCs handle Kasir expense bookkeeping atomically; this layer is a
 // thin wrapper.
+// Also hosts fetchOpeningAPLines: reads opening_ap_lines from posted
+// saldo_awal_snapshots for AP aging integration (Item #5).
 
 import { supabase } from './supabaseClient';
 import type {
@@ -130,4 +132,52 @@ export function isDueSoon(pi: DbPurchaseInvoice, today: string = new Date().toIS
 export function shortOrderRef(orderId: string | null | undefined): string {
   if (!orderId) return '—';
   return 'ORD-' + orderId.slice(0, 8).toUpperCase();
+}
+
+// ── Opening AP lines (Item #5) ────────────────────────────────────────────────
+// AP payables entered via the Saldo Awal wizard (detail mode).
+// Only from snapshots that are posted and not reversed.
+// amount = full outstanding balance (no paid_amount column on opening lines).
+// original_due_date used for aging; NULL = no due date, excluded from overdue.
+export interface OpeningAPLine {
+  id: string;
+  snapshot_id: string;
+  supplier_id: string | null;
+  supplier_name: string;
+  amount: number;
+  original_due_date: string | null;  // ISO date or null
+  invoice_ref: string | null;
+  notes: string | null;
+}
+
+export async function fetchOpeningAPLines(): Promise<OpeningAPLine[]> {
+  if (!supabase) return [];
+  // RLS p_select_own on opening_ap_lines gates to tenant automatically.
+  // Join to saldo_awal_snapshots to filter posted+not-reversed.
+  const { data, error } = await supabase
+    .from('opening_ap_lines')
+    .select(`
+      id,
+      snapshot_id,
+      supplier_id,
+      supplier_name,
+      amount,
+      original_due_date,
+      invoice_ref,
+      notes,
+      saldo_awal_snapshots!inner(status, reversed_at)
+    `)
+    .eq('saldo_awal_snapshots.status', 'posted')
+    .is('saldo_awal_snapshots.reversed_at', null);
+  if (error) return [];
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    snapshot_id: row.snapshot_id,
+    supplier_id: row.supplier_id ?? null,
+    supplier_name: row.supplier_name,
+    amount: Number(row.amount),
+    original_due_date: row.original_due_date ?? null,
+    invoice_ref: row.invoice_ref ?? null,
+    notes: row.notes ?? null,
+  }));
 }
