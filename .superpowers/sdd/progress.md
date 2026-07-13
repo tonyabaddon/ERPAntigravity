@@ -1,3 +1,46 @@
+# NOA e2e audit follow-up — 4 BLOCKERs shipped (2026-07-13)
+
+Audit doc: `docs/audits/2026-07-13-noa-e2e-audit.md`.
+Advisor consulted before commencing. All 4 fixes applied to prod DB via
+`mcp__plugin_supabase_supabase__apply_migration`. Forward-only fixes;
+targeted backfill where meaningful.
+
+| # | Migration | Fix | Backfill |
+|---|---|---|---|
+| B1 | `20261115000232_fix_create_tempo_invoice_shipping_je` | Add `CR 4-1220 Pendapatan Ongkir` when `shipping_fee > 0`. Also per-tenant `accounting_config` lookup. | Not needed (0 anomalies in prod) |
+| B2 | `20261115000233_fix_opname_variance_je` | Loop 1 posts variance JE per SKU: overage `Dr 1-1510 / Cr 4-1230`, shrinkage `Dr 5-3150 / Cr 1-1510`. Skip if `harga_modal = 0`. | Forward-only (historical variance = QA smoke data) |
+| B3 | `20261115000234_fix_record_pi_passthrough_order_discount` | PASSTHROUGH branches credit `2-1100` at `v_total` (not `v_subtotal`) + add `CR 5-1900` for order discount. Both reclass + direct-expense sub-branches. | Not needed (0 PASSTHROUGH PIs in prod) |
+| B4 | `20261115000235_fix_kasir_dp_je_and_settlement` | `record_kasir_sale` DP branch splits cash DR into (DP + AR remainder); new `mark_kasir_dp_lunas` RPC handles settlement (DR cash / CR 1-1400 + ongkir adjust); FE `markLunas` calls RPC. | 1 AWAITING_LUNAS row hit skip (original DP JE never posted due to `NO_CASH_ACCOUNT` — Garindo missing `default_edc_account_id`); documented as follow-up |
+
+**Follow-ups spawned:**
+- Garindo `accounting_config.default_edc_account_id` unset → all EDC
+  payments silently fail dual-write (NO_CASH_ACCOUNT anomaly). Set it
+  + optionally reprocess historical EDC transactions.
+- `2-1400 Hutang Lain-lain` NULL subtype (audit W-adj) — deferred per
+  memory `coa-null-subtype-anomalies`.
+- PASSTHROUGH partial-accrual sub-case (accrual > 0 AND < v_subtotal)
+  still leaves orphan 2-1150 balance — separate finding, out of B3
+  scope.
+- `anon_security_definer_function_executable` advisor warnings apply
+  to many RPCs (record_kasir_sale, record_pi, create_tempo_invoice,
+  mark_kasir_dp_lunas, _apply_opname_change, record_piutang_payment
+  etc); Item #4b already fixed for Promo Produk RPCs by explicit
+  `REVOKE FROM anon`. Same treatment recommended in a security-tighten
+  sweep.
+- WARNs from audit (W1 ongkir bundling, W2 dual-write gate, W3 early-
+  pay discount, W4 supplier_claim source_ref linkage) untouched;
+  documented in audit report for prioritization.
+
+**Verification method** — each fix's JE balance verified by hand
+(DR = CR) prior to shipping; live smoke-test via kasir/opname flows
+deferred (would need synthetic scenarios; MCP execute_sql can't
+reproduce real JWT auth for `_post_journal_entry`, and Chrome MCP
+smoke of each B* scenario is disproportionate to scope). Regression
+guard: `npm run lint` clean, kasir/lib vitest scope 5049/5057 pass
+(8 failures pre-existing, unrelated).
+
+---
+
 # Warehouse-transfer accounting integration (NOA end-to-end, 2026-07-13)
 
 **Motivation** — audit request from founder: check if warehouse-transfer NOA
