@@ -280,7 +280,7 @@ export default function Step4EkuitasPreview({
             className="mt-0.5 shrink-0"
           />
           <span className="text-[12px] text-slate-700">
-            Saya mengerti bahwa setelah di-post, data masuk ke Jurnal Umum sebagai Opening Balance JE dan tidak bisa diedit langsung (harus melalui Reverse & Edit).
+            Saya mengerti bahwa setelah di-post, data masuk ke Jurnal Umum sebagai jurnal Saldo Awal dan tidak bisa diedit langsung (harus melalui Reverse & Edit).
           </span>
         </label>
       </section>

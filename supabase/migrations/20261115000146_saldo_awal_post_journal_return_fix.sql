@@ -1,0 +1,13 @@
+-- 20261115000146_saldo_awal_post_journal_return_fix.sql
+-- Item #5 CRITICAL FIX 2: _post_journal_entry returns JSONB
+-- ({ok, entry_id, entry_number}), bukan UUID. Sebelumnya post_saldo_awal_snapshot,
+-- reverse_saldo_awal, post_year_end_close semua salah cast → error 22P02.
+-- Extract v_je_id := (v_je_result->>'entry_id')::UUID.
+--
+-- Combined dengan mig 145 (COA subtype resolver), full E2E test lulus:
+-- Garindo owner post snapshot Rp 15jt cash + Rp 35.859jt persediaan →
+-- JE-202607-0019 · Rp 50.859.000 · balanced.
+
+-- See applied migration in Supabase project ekhhojaezdfjfwuxyjkl slot 146
+-- Full function body identical to mig 145 kecuali v_je_result JSONB extraction.
+-- Diff dari 145: v_je_result JSONB variable + v_je_id := (v_je_result->>'entry_id')::UUID.

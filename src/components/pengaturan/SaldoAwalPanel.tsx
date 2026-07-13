@@ -117,7 +117,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
             <div className="text-[11px] text-emerald-700">
               Dipost pada {postedFormatted}
               {snapshot.posted_je_id && (
-                <span className="ml-2 font-mono">(JE ID: {snapshot.posted_je_id.slice(0, 8)}…)</span>
+                <span className="ml-2 font-mono">(Jurnal Umum ID: {snapshot.posted_je_id.slice(0, 8)}…)</span>
               )}
             </div>
           </div>

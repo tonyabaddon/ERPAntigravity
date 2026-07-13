@@ -174,7 +174,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
           />
           <span className="text-[11px] text-slate-500">
-            JE Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)
+            Jurnal Umum Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)
           </span>
         </div>
 
