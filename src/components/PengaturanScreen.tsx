@@ -18,9 +18,10 @@ import ApprovalRulesPanel from './pengaturan/ApprovalRulesPanel';
 import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
 import SupportAccessPanel from './pengaturan/SupportAccessPanel';
 import PromoProdukPanel from './pengaturan/PromoProdukPanel';
+import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 
-type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -51,6 +52,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       { id: 'modul-jasa', label: 'Modul & Jasa' },
       { id: 'approval', label: 'Approval' },
       { id: 'promo-produk', label: '🏷 Promo Produk' },
+      { id: 'akuntansi', label: '🧾 Akuntansi' },
       { id: 'pajak', label: 'Pajak' },
     ];
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
@@ -494,6 +496,18 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </p>
             </div>
             <PromoProdukPanel showToast={showToast} />
+          </div>
+        )}
+        {activeTab === 'akuntansi' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div>
+              <h3 className="text-base font-bold text-[#012749] mb-1">🧾 Akuntansi — Saldo Awal</h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Input saldo awal (neraca) per tanggal cutover untuk onboarding akuntansi mid-year.
+                Setelah dipost, laporan Neraca dan Aging Piutang/Hutang akan mencerminkan kondisi sebenarnya.
+              </p>
+            </div>
+            <SaldoAwalPanel showToast={showToast} />
           </div>
         )}
         {activeTab === 'pajak' && <PajakSettingsPanel showToast={showToast} />}
