@@ -14,7 +14,7 @@ export interface KpiCardProps {
   badgeClass: string;          // tailwind class, e.g. 'bg-blue-50 text-[#1e3d60]'
   label: string;
   value: string;
-  sub: string;
+  sub: React.ReactNode;        // string or inline element (e.g. DeltaBadge)
   alarming?: boolean;          // when true: card uses rose-tinted bg (for cards like Terlambat Bayar)
 }
 
