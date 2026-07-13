@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, ShoppingBag, Receipt, Zap, BarChart2 } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Receipt, DollarSign, BarChart2 } from 'lucide-react';
 import KpiCard from './ui/KpiCard';
 import AkuntansiLaporanTab from './laporan/akuntansi/AkuntansiLaporanTab';
+import SlowMoverTable from './laporan/SlowMoverTable';
+import TopCustomerTable from './laporan/TopCustomerTable';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer,
-  PieChart, Pie, Cell,
 } from 'recharts';
 import { reportsService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { CHANNEL_VISUAL } from '../lib/salesChannels';
+import {
+  getPerformaSummaryWithDelta,
+  getProfitPerChannel,
+} from '../lib/dashboardReports/api';
+import { computeDelta } from '../lib/dashboardReports/types';
+import type { PerformaSummaryWithDelta, ChannelProfitRow, PeriodDays, DeltaResult } from '../lib/dashboardReports/types';
 import type { SalesChannel } from '../types';
 
 function colorForChannel(name: string): string {
@@ -38,12 +45,18 @@ function formatRupiah(val: number): string {
   }).format(val);
 }
 
-interface Summary {
-  revenue: number;
-  orderCount: number;
-  avgOrderValue: number;
-  convCount: number;
-  aiConvCount: number;
+function DeltaBadge({ current, previous }: { current: number; previous: number }) {
+  const d: DeltaResult = computeDelta(current, previous);
+  if (d.pct == null) {
+    return <span className="text-[11px] text-slate-400">— tidak ada data periode sebelumnya</span>;
+  }
+  const arrow = d.direction === 'up' ? '▲' : d.direction === 'down' ? '▼' : '—';
+  const cls = d.direction === 'up' ? 'text-emerald-600' : d.direction === 'down' ? 'text-rose-600' : 'text-slate-500';
+  return (
+    <span className={`text-[11px] font-semibold ${cls}`}>
+      {arrow} {d.pct > 0 ? '+' : ''}{d.pct}% vs periode sebelumnya
+    </span>
+  );
 }
 
 interface LaporanScreenProps {
@@ -54,53 +67,47 @@ export default function LaporanScreen(props: LaporanScreenProps) {
   const showToast = props.showToast ?? (() => {});
   const [activeTab, setActiveTab] = useState<LaporanTab>('performa');
   // F-8: match the Dashboard default of 7d for consistency across surfaces.
-  // The toggle itself was already wired correctly (useEffect refetches on
-  // period change); the finding was really about the two screens showing
-  // different default ranges without any user action.
   const [period, setPeriod] = useState<Period>('7d');
-  const [summary, setSummary] = useState<Summary | null>(null);
   const [dailyRevenueByChannel, setDailyRevenueByChannel] = useState<Array<{
     Day: string; 'Walk-in': number; Tokopedia: number; Grosir: number; 'WA AI': number;
   }>>([]);
-  const [channelTotals, setChannelTotals] = useState<Array<{ name: string; value: number }>>([]);
-  const [dailyConvs, setDailyConvs] = useState<Array<{ Day: string; 'Dijawab AI': number; 'Respon Manual': number }>>([]);
   const [topProducts, setTopProducts] = useState<Array<{ name: string; qty: number; revenue: number }>>([]);
+
+  // New: performa summary with delta + profit per channel
+  const [perfSummary, setPerfSummary] = useState<PerformaSummaryWithDelta | null>(null);
+  const [profitPerChannel, setProfitPerChannel] = useState<ChannelProfitRow[]>([]);
+
+  // Convert string period to numeric PeriodDays for API calls
+  const days = (period === '7d' ? 7 : period === '30d' ? 30 : 90) as PeriodDays;
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const since = periodStart(period);
-    const days = periodDays(period);
-    setSummary(null);
+    const numDays = periodDays(period);
+    setPerfSummary(null);
+    setProfitPerChannel([]);
     Promise.allSettled([
-      reportsService.fetchSummary(since),
-      reportsService.fetchDailyRevenueByChannel(since, days),
-      reportsService.fetchChannelTotals(since),
-      reportsService.fetchDailyConversations(since, days),
+      getPerformaSummaryWithDelta(days),
+      getProfitPerChannel(days),
+      reportsService.fetchDailyRevenueByChannel(since, numDays),
       reportsService.fetchTopProducts(since),
     ]).then((results) => {
-      const [sRes, revRes, chRes, convsRes, prodsRes] = results;
-      if (sRes.status === 'fulfilled') setSummary(sRes.value);
-      else console.error('fetchSummary failed:', sRes.reason);
+      const [perfRes, profitRes, revRes, prodsRes] = results;
+      if (perfRes.status === 'fulfilled') setPerfSummary(perfRes.value);
+      else console.error('getPerformaSummaryWithDelta failed:', perfRes.reason);
+      if (profitRes.status === 'fulfilled') setProfitPerChannel(profitRes.value);
+      else console.error('getProfitPerChannel failed:', profitRes.reason);
       if (revRes.status === 'fulfilled') setDailyRevenueByChannel(revRes.value);
       else console.error('fetchDailyRevenueByChannel failed:', revRes.reason);
-      if (chRes.status === 'fulfilled') setChannelTotals(chRes.value);
-      else console.error('fetchChannelTotals failed:', chRes.reason);
-      if (convsRes.status === 'fulfilled') setDailyConvs(convsRes.value);
-      else console.error('fetchDailyConversations failed:', convsRes.reason);
       if (prodsRes.status === 'fulfilled') setTopProducts(prodsRes.value);
       else console.error('fetchTopProducts failed:', prodsRes.reason);
-      // If ALL five failed, don't leave KPI cards showing "..." forever —
-      // surface a warning so the user can retry (via period change).
+
       const allFailed = results.every((r) => r.status === 'rejected');
       if (allFailed) {
         showToast('Gagal memuat laporan. Cek koneksi dan coba pilih periode lagi.', 'warning');
       }
     });
   }, [period]);
-
-  const aiRate = summary
-    ? Math.round((summary.aiConvCount / Math.max(summary.convCount, 1)) * 100)
-    : 0;
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -131,7 +138,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded-3xl border border-white/60 shadow-sm">
           <div>
             <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, pesanan, dan efisiensi AI</p>
+            <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, gross profit, pesanan, dan pergerakan stok</p>
           </div>
           <div className="flex gap-2">
             {(['7d', '30d', '90d'] as Period[]).map(p => (
@@ -165,58 +172,55 @@ export default function LaporanScreen(props: LaporanScreenProps) {
           badge="Revenue"
           badgeClass="text-[#2d8a4e] bg-emerald-50"
           label="Total Omset"
-          value={summary ? formatRupiah(summary.revenue) : '...'}
-          sub={`Pesanan terverifikasi`}
+          value={perfSummary ? formatRupiah(perfSummary.revenue) : '...'}
+          sub={perfSummary
+            ? <DeltaBadge current={perfSummary.revenue} previous={perfSummary.prev_revenue} />
+            : 'Memuat...'}
+        />
+        <KpiCard
+          icon={<DollarSign className="w-6 h-6" />}
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-700"
+          badge={perfSummary && perfSummary.revenue > 0
+            ? `${Math.round((perfSummary.gross_profit / perfSummary.revenue) * 100)}% margin`
+            : 'Margin'}
+          badgeClass="text-emerald-700 bg-emerald-50"
+          label="Gross Profit"
+          value={perfSummary ? formatRupiah(perfSummary.gross_profit) : '...'}
+          sub={perfSummary
+            ? <DeltaBadge current={perfSummary.gross_profit} previous={perfSummary.prev_gross_profit} />
+            : 'Memuat...'}
         />
         <KpiCard
           icon={<ShoppingBag className="w-6 h-6" />}
-          iconBg="bg-emerald-50"
-          iconColor="text-[#2d8a4e]"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-600"
           badge="Selesai"
           badgeClass="text-blue-600 bg-blue-50"
           label="Pesanan Terproses"
-          value={summary ? `${summary.orderCount} Transaksi` : '...'}
-          sub="PAYMENT_VERIFIED"
+          value={perfSummary ? `${perfSummary.order_count} Transaksi` : '...'}
+          sub={perfSummary
+            ? <DeltaBadge current={perfSummary.order_count} previous={perfSummary.prev_order_count} />
+            : 'Memuat...'}
         />
         <KpiCard
           icon={<Receipt className="w-6 h-6" />}
-          iconBg="bg-amber-50"
-          iconColor="text-amber-600"
-          badge="Rata-rata"
-          badgeClass="text-amber-700 bg-amber-50"
-          label="Nilai Rata-rata Pesanan"
-          value={summary ? formatRupiah(summary.avgOrderValue) : '...'}
-          sub="Per transaksi selesai"
-        />
-        <KpiCard
-          icon={<Zap className="w-6 h-6" />}
           iconBg="bg-violet-50"
           iconColor="text-violet-600"
-          badge="AI"
+          badge="Rata-rata"
           badgeClass="text-violet-700 bg-violet-50"
-          label="Tingkat Otomasi AI"
-          value={summary ? `${aiRate}%` : '...'}
-          sub={summary ? `${summary.aiConvCount} dari ${summary.convCount} chat` : 'Memuat...'}
+          label="Nilai Rata-rata Pesanan"
+          value={perfSummary ? formatRupiah(perfSummary.avg_order_value) : '...'}
+          sub={perfSummary
+            ? <DeltaBadge current={perfSummary.avg_order_value} previous={perfSummary.prev_avg_order_value} />
+            : 'Memuat...'}
         />
       </div>
 
-      {/* Top 3 Kanal */}
-      {channelTotals.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          {channelTotals.slice(0, 3).map((c, idx) => (
-            <div key={c.name} className="bg-white border border-slate-200 rounded-xl p-3">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">#{idx + 1} Kanal</div>
-              <div className="mt-1 font-extrabold text-sm text-slate-800">{c.name}</div>
-              <div className="text-xs font-semibold text-slate-600">Rp {c.value.toLocaleString('id-ID')}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Revenue by channel: stacked bar (left) + donut (right) */}
+      {/* Revenue by channel: stacked bar (left) + Profit per Channel list (right) */}
       <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
         <h4 className="text-lg font-bold text-[#012749] mb-1">Revenue per Channel</h4>
-        <p className="text-xs text-gray-400 mb-6">Breakdown harian dan proporsi total periode</p>
+        <p className="text-xs text-gray-400 mb-6">Breakdown harian dan profit margin per channel</p>
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Stacked bar — daily trend */}
           <div className="flex-1 h-[280px]">
@@ -225,66 +229,37 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="Day" stroke="#94a3b8" fontSize={10} />
                 <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(v) => v >= 1000000 ? `${(v/1000000).toFixed(0)}jt` : v >= 1000 ? `${(v/1000).toFixed(0)}rb` : v} />
-                <Tooltip formatter={(value: any, name: string) => [formatRupiah(Number(value)), name]} />
+                <Tooltip formatter={(value: unknown, name: string) => [formatRupiah(Number(value)), name]} />
                 <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                <Bar dataKey="Walk-in" stackId="a" fill="#2d8a4e" />
-                <Bar dataKey="Tokopedia" stackId="a" fill="#f97316" />
-                <Bar dataKey="Grosir" stackId="a" fill="#1e3d60" />
-                <Bar dataKey="WA AI" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Walk-in" stackId="a" fill={colorForChannel('Walk-in')} />
+                <Bar dataKey="Tokopedia" stackId="a" fill={colorForChannel('Tokopedia')} />
+                <Bar dataKey="Grosir" stackId="a" fill={colorForChannel('Grosir')} />
+                <Bar dataKey="WA AI" stackId="a" fill={colorForChannel('WA AI')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Donut — period totals */}
-          <div className="lg:w-52 flex flex-col items-center justify-center">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Total Periode</p>
-            {channelTotals.length === 0 ? (
+          {/* Right: Profit per Channel (replaces old channel-total donut) */}
+          <div className="lg:w-64 flex flex-col">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Profit per Channel</p>
+            {profitPerChannel.length === 0 ? (
               <p className="text-xs text-gray-300 italic">Belum ada data</p>
             ) : (
-              <>
-                <PieChart width={160} height={160}>
-                  <Pie data={channelTotals} cx={80} cy={80} innerRadius={48} outerRadius={72} dataKey="value" paddingAngle={3}>
-                    {channelTotals.map((c, i) => (
-                      <Cell key={i} fill={colorForChannel(c.name)} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: any) => formatRupiah(Number(value))} />
-                </PieChart>
-                <div className="space-y-1.5 mt-2 w-full">
-                  {channelTotals.map(c => (
-                    <div key={c.name} className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: colorForChannel(c.name) }} />
-                        <span className="text-gray-600 font-medium">{c.name}</span>
-                      </div>
-                      <span className="font-bold text-gray-800">{formatRupiah(c.value)}</span>
+              <div className="space-y-2">
+                {profitPerChannel.map((row) => (
+                  <div key={row.channel} className="border border-slate-100 rounded-xl p-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700">{row.channel}</span>
+                      <span className="font-bold text-emerald-700">{Math.round(row.margin_pct)}%</span>
                     </div>
-                  ))}
-                </div>
-              </>
+                    <div className="mt-0.5 text-[11px] text-slate-500">
+                      {formatRupiah(row.revenue)} · Profit {formatRupiah(row.gross_profit)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* AI Chat chart */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
-        <div className="mb-6">
-          <h4 className="text-lg font-bold text-[#012749]">Interaksi Chat — AI vs Manual</h4>
-          <p className="text-xs text-gray-400 mt-0.5">Volume percakapan harian berdasarkan mode penanganan</p>
-        </div>
-        <div className="h-[280px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dailyConvs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="Day" stroke="#94a3b8" fontSize={11} />
-              <YAxis stroke="#94a3b8" fontSize={11} />
-              <Tooltip />
-              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
-              <Bar dataKey="Dijawab AI" fill="#2d8a4e" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Respon Manual" fill="#abc9f3" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
@@ -317,6 +292,20 @@ export default function LaporanScreen(props: LaporanScreenProps) {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Slow-moving stock */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+          <h4 className="text-lg font-bold text-[#012749] mb-4">Produk Slow-Moving</h4>
+          <p className="text-xs text-slate-500 mb-4">SKU dengan penjualan rendah dalam periode. Pertimbangkan bundling, diskon, atau retur ke supplier.</p>
+          <SlowMoverTable days={days} />
+        </div>
+
+        {/* Top Customer */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#e5eeff] shadow-xl">
+          <h4 className="text-lg font-bold text-[#012749] mb-4">Top 10 Customer</h4>
+          <p className="text-xs text-slate-500 mb-4">Customer dengan total belanja tertinggi dalam periode.</p>
+          <TopCustomerTable days={days} />
         </div>
       </div>
       )}
