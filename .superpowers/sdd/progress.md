@@ -271,3 +271,42 @@ Prod smoke MCP chrome: complete
   - Dashboard PromoProdukCard renders conditionally: "1 SKU sedang promo" + "Kelola promo →"
   - Test promo cleaned up
 Feature LIVE 2026-07-13
+
+---
+
+# Item #2 Service Catalog SDD progress ledger
+
+Started: 2026-07-13 evening (founder offline)
+
+## Task 1: Pre-flight investigation — COMPLETE (inline, no commit)
+
+**Findings that update Tasks 2-9:**
+
+**Schema — rakit_job_lines** (mig 20260608000008):
+- PK: `id UUID` (single, NOT composite — decision memo correct)
+- Columns: `transaction_id` (NOT `kasir_transaction_id`), `line_number INT NOT NULL`, `service_type TEXT NOT NULL`, `description TEXT NOT NULL`, `estimated_price NUMERIC NOT NULL`, `final_price NUMERIC NULL`, `tracking_mode TEXT DEFAULT 'detail'`, `labor_cost NUMERIC DEFAULT 0`, `lump_sum_hpp NUMERIC DEFAULT 0`, `hpp_owner_override NUMERIC NULL`, `hpp_final NUMERIC NULL`, `stock_adjustment_id UUID NULL`, `tenant_id UUID DEFAULT _resolve_tenant_id()`
+- UNIQUE: `(transaction_id, line_number)`
+- FK: `transaction_id → kasir_transactions(id)`
+
+**Constraints on rakit_job_lines** (all critical):
+- `chk_rakit_service_type` — DROP as planned (allow catalog-linked rows)
+- `chk_rakit_tracking_mode` — KEEP (accepts 'detail' or 'lumpsum')
+- `chk_rakit_mode_consistency` — CRITICAL: `((tracking_mode='detail' AND lump_sum_hpp=0) OR (tracking_mode='lumpsum' AND labor_cost=0))`. **Impact:** attach_service_to_order RPC must use `tracking_mode='detail'` ALWAYS for catalog-linked rows (avoid lumpsum constraint that forces labor_cost=0). Empty-BOM services still use 'detail' mode; BOM count is derived semantically not from tracking_mode.
+- `chk_rakit_prices_positive` — `estimated_price > 0 AND (final_price IS NULL OR final_price > 0)`. **Impact:** attach_service_to_order must validate p_final_price > 0 OR fallback to labor > 0. Reject 0.
+
+**Schema — rakit_components:**
+- Columns: `id`, `rakit_line_id UUID NOT NULL`, `sku TEXT NOT NULL`, `name TEXT NOT NULL` (must provide from stocks.name), `qty NUMERIC NOT NULL`, `warehouse TEXT NOT NULL DEFAULT 'atas'`, `fifo_cost_snapshot NUMERIC NOT NULL DEFAULT 0`, `tenant_id UUID DEFAULT _resolve_tenant_id()`
+- **NO `warehouse NULL` allowed** — must specify or use default 'atas'.
+
+**chart_of_accounts** schema:
+- `account_subtype TEXT` (NOT enum) — **NO enum ADD VALUE needed. Task 4 simplifies.**
+- Columns: `is_control_account BOOLEAN` (not `is_group`), `is_system BOOLEAN`, `is_active BOOLEAN`
+- FE COA dropdown filter: use `is_control_account=false` (not `is_group=false`)
+
+**journal_entry_source enum** — need ADD VALUE 'SERVICE_DELIVERY' in Task 6 (not present in current 34 values).
+
+**transition_order_stage source (fetched):** insert hook AFTER the successful `UPDATE kasir_transactions SET funnel_sub_stage = p_to_sub_stage ...`, before the `INSERT INTO audit_log ...` OR after audit_log. Full source captured for Task 6.
+
+**Migration slots claimed:** 148, 149, 150, 151, 152.
+
+Task 1: complete (inline, findings recorded)
