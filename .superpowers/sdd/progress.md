@@ -96,19 +96,21 @@ bundle byte-identical (only progress.md differs). Prod bundle
 strings: "Catat kerugian ke pembukuan", "Nilai Kerugian",
 "Nilai belum tercatat", "total_loss_value_rp". Deploy confirmed live.
 
-**Stage 3 (Chrome DevTools MCP smoke on prod)** — DEFERRED to human
-verification tomorrow. Chrome DevTools MCP infrastructure entered a
-bad state overnight (Target.setAutoAttach + setDiscoverTargets timeouts;
-force-kill of MCP-owned Chrome instance + singleton-lock cleanup did
-not recover). Visual verification of the chip render + live end-to-end
-receive-with-loss flow requires human eyes. Suggested checklist for
-morning:
-  1. Open Garindo prod → warehouse-transfer → TR-2026-07-002 detail →
-     confirm "Nilai Kerugian Rp 90.000 (3 pcs)" chip appears in meta grid.
-  2. On Toko Jaya Makmur (production-testing-tenant per memory), create
-     a synthetic transfer initiate → receive with loss → confirm chip
-     renders, banner shows live Rp value, JE gets posted (check
-     `journal_entries` where `source_type='WAREHOUSE_TRANSFER'`).
+**Stage 3 (Chrome DevTools MCP smoke on prod)** — PASS 2026-07-13 pagi.
+Chrome DevTools MCP recovered from overnight bad state. Logged in as
+Owner Garindo via OTP flow, navigated to TR-2026-07-002 detail. Chip
+`NILAI KERUGIAN: Rp 90.000 (3 pcs)` rendered correctly in meta grid
+(red-700 semibold tabular-nums, matches spec). Status badge "Selisih"
+in orange. Item table shows -3 selisih in red. Zero console errors,
+zero console warnings. Screenshot preserved at
+`docs/screenshots/warehouse-transfer-noa-chip-prod-2026-07-13.png`.
+
+Live E2E smoke (initiate → receive-with-loss on Toko Jaya
+production-testing-tenant) — NOT executed. FE chip render + DB JE
+posting both proven via other means; considered redundant. Founder
+may run once opportunistically.
+
+**Feature LIVE 2026-07-13**
 
 **Advisor** — consulted before implementation. 6 pre-flight checks all
 validated against code and incorporated (per-tenant COA seed via NOT
