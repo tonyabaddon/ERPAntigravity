@@ -13421,3 +13421,38 @@ until 5M rows.
 Panel Box tanpa BOM). Buat kasir sale via existing flow → InvoicePreview
 → 🛠 Tambah Layanan → snapshot BOM per order. On next stage transition
 to 4a/4b delivery, backend auto-posts JE + FIFO decrement.
+
+---
+
+## 2026-07-13 tengah malam — Item #2 Service Catalog follow-ups
+
+Remaining deferred items shipped tonight:
+
+**Laporan Performa → 🛠 Layanan section** (`src/components/laporan/LayananSection.tsx`):
+- Aggregates rakit_job_lines with service_catalog_id NOT NULL by service
+- Columns: layanan, kategori, order count, revenue, HPP, margin %
+- Color-coded margin: emerald ≥30%, amber ≥15%, rose <15%
+- Filter by period (7d/30d/90d — reuses existing period selector)
+- Total row when >1 service
+
+**SalesInvoicePDF service line rendering**:
+- Auto-fetches rakit_job_lines with rakit_components snapshot on transaction load
+- 🛠 Layanan section renders below product items table
+- **Lump-sum branch**: single row per service (name + final_price)
+- **Itemized branch**: parent row + indented BOM sub-rows + labor line
+- Adds 'Layanan' subtotal to totals block; adjusts grand total
+
+**TambahLayananModal enhancements**:
+- Mode toggle: Paket (dengan material) vs Labor only
+- Toggle preserves master BOM if paket, clears if labor-only
+- Invoice display override radio: Default catalog / Lump Sum / Itemized (per-order)
+- Passes invoiceDisplayOverride to attach_service_to_order RPC
+
+**Wizard Step2Items direct integration DEFERRED to Phase 2** (state
+coupling complexity outweighs value tonight — InvoicePreview path already
+provides functional flow).
+
+**Item #2 fully complete**: catalog CRUD, sales flow attach, BOM snapshot,
+FIFO decrement + JE post at delivery, invoice PDF branches, per-service
+reporting. Everything from spec's MVP scope shipped except wizard direct
+integration (workaround via InvoicePreview).
