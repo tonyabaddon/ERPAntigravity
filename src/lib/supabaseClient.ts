@@ -1455,27 +1455,13 @@ export const kasirService = {
     lunasPayment: { method: KasirPaymentMethod; subtype?: KasirPaymentSubtype; ongkirAdjust?: number }
   ): Promise<KasirTransaction> {
     if (!supabase) throw new Error('Supabase not configured');
-    const updates: Record<string, unknown> = {
-      status: 'COMPLETED',
-      lunas_at: new Date().toISOString(),
-      lunas_payment_method: lunasPayment.method,
-      lunas_payment_subtype: lunasPayment.subtype ?? null,
-    };
-    if (typeof lunasPayment.ongkirAdjust === 'number') {
-      // Fetch current row to recompute total_amount
-      const { data: cur, error: e1 } = await supabase
-        .from('kasir_transactions').select('subtotal,ongkir_amount').eq('id', id).single();
-      if (e1) throw e1;
-      const newOngkir = ((cur?.ongkir_amount as number) ?? 0) + lunasPayment.ongkirAdjust;
-      updates.ongkir_amount = newOngkir;
-      updates.total_amount = ((cur?.subtotal as number) ?? 0) + newOngkir;
-    }
-    const { data, error } = await supabase
-      .from('kasir_transactions')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('mark_kasir_dp_lunas', {
+      p_id:              id,
+      p_method:          lunasPayment.method,
+      p_subtype:         lunasPayment.subtype ?? null,
+      p_ongkir_adjust:   lunasPayment.ongkirAdjust ?? 0,
+      p_cash_account_id: null,
+    });
     if (error) throw error;
     return data as KasirTransaction;
   },
