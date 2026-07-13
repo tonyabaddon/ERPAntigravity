@@ -13281,3 +13281,57 @@ gcloud run services update-traffic garindo-jaya-panel-msme-erp-frontend \
 
 Zero user impact at production traffic until owner enables `approval_required=true`
 via Pengaturan → Aturan Persetujuan → KASIR/POS → "Diskon manual di kasir" (⚙).
+
+---
+
+## 2026-07-13 — Item #5 MCP smoke + hotfix
+
+### Untested features validated
+- **Year-End Close (`preview_year_end_close` + `post_year_end_close`)**:
+  modal preview renders correctly (Rp 0 all zeros for Garindo 2025 since
+  no P&L data), post returns clear message "Tidak ada transaksi
+  Pendapatan/Beban untuk tahun 2025".
+- **Detail mode wizard (per-customer AR + per-supplier AP)**: after
+  hotfix, JE-202607-0021 posted balanced Rp 53.359.000 (Kas 15M + Piutang
+  2.5M + Persediaan 35.859M = Hutang 1.5M + Laba Ditahan 51.859M), with
+  `opening_ar_lines` + `opening_ap_lines` also populated. Reversed
+  cleanly for prod cleanup.
+- **Item #3 Dashboard counts visible in sidebar**: Sales Inbox "9+"
+  unread, Piutang "1" overdue. Working.
+
+### Bugs found & fixed
+
+**Bug 1 — FE: Year-End Close toast showed "Unknown error"** (commit 076c34b)
+Supabase `PostgrestError` is a plain object with `.message`, not an
+Error instance. The `err instanceof Error` check fell through to the
+generic fallback, hiding useful backend messages. Fixed with
+`extractErrMessage()` helper that also reads `.message` from plain
+objects. Applied to all three catch sites in `YearEndCloseButton.tsx`.
+
+**Bug 2 — Backend: Detail mode data loss** (migration 20261115000147, commit 36b668b)
+`preview_saldo_awal_totals` + `post_saldo_awal_snapshot` both read only
+`step_data->piutang/hutang_usaha->>aggregate_amount`, which is 0 when
+`mode='detail'`. Effect: Detail-mode post would silently write a JE with
+Piutang=0 + Hutang=0 while `opening_ar_lines`/`opening_ap_lines` got the
+correct amounts — Neraca ↔ Aging mismatch, `laba_ditahan_balancing`
+absorbed the delta.
+
+Root cause: original RPCs assumed the FE would populate
+`aggregate_amount` in both modes (Aggregate + Detail), but the wizard
+zeroes it when the user toggles to Detail. Prod check verified zero
+tenants had posted with Detail mode, so no historical corruption to
+remediate.
+
+Fix: symmetric `CASE mode='detail' → SUM(lines[].amount) ELSE
+aggregate_amount END` applied to both RPCs. Idempotent via CREATE OR
+REPLACE.
+
+Verified end-to-end: JE-202607-0021 balanced with Piutang Usaha
+(1-1400) Rp 2.500.000 DEBIT + Hutang Usaha (2-1100) Rp 1.500.000 CREDIT
+correctly included. Reversed post-verify (JE-202607-0022) for prod
+cleanup — Garindo panel back to "Belum ada Saldo Awal" empty state.
+
+### Item #5 status: SHIPPED (fully validated end-to-end)
+All flows tested: Aggregate mode post/reverse (earlier), Year-End Close
+gate + preview + graceful error, Detail mode post/reverse with detail
+lines flowing to opening_ar/ap_lines. Both hotfixes live in prod.
