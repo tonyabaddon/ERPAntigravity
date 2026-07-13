@@ -13,6 +13,16 @@ export interface YearEndCloseButtonProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// Supabase PostgrestError is a plain object with .message, not an Error instance.
+function extractErrMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const m = (err as { message: unknown }).message;
+    if (typeof m === 'string' && m.length > 0) return m;
+  }
+  return 'Unknown error';
+}
+
 /**
  * Determine which fiscal year the button targets.
  *
@@ -80,7 +90,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       .catch(err => {
         if (!cancelled) {
           console.error('[YearEndCloseButton] checkAlreadyClosed error', err);
-          setCheckError(err instanceof Error ? err.message : 'Unknown error');
+          setCheckError(extractErrMessage(err));
           setAlreadyClosed(false); // fail-open: show button, modal will surface error
         }
       });
@@ -98,7 +108,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       const data = await previewYearEndClose(fiscalYear);
       setPreview(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
+      const msg = extractErrMessage(err);
       console.error('[YearEndCloseButton] previewYearEndClose error', err);
       setPreviewError(msg);
     } finally {
@@ -117,7 +127,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       // Reload the page so all report data reflects the new closing JE
       window.location.reload();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
+      const msg = extractErrMessage(err);
       console.error('[YearEndCloseButton] postYearEndClose error', err);
       showToast(`Gagal tutup buku: ${msg}`, 'warning');
     } finally {
