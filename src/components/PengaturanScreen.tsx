@@ -19,9 +19,10 @@ import PajakSettingsPanel from './pengaturan/PajakSettingsPanel';
 import SupportAccessPanel from './pengaturan/SupportAccessPanel';
 import PromoProdukPanel from './pengaturan/PromoProdukPanel';
 import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
+import LayananPanel from './pengaturan/LayananPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 
-type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -51,6 +52,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       { id: 'umum', label: 'Umum' },
       { id: 'modul-jasa', label: 'Modul & Jasa' },
       { id: 'approval', label: 'Approval' },
+      { id: 'layanan', label: '🛠 Layanan' },
       { id: 'promo-produk', label: '🏷 Promo Produk' },
       { id: 'akuntansi', label: '🧾 Akuntansi' },
       { id: 'pajak', label: 'Pajak' },
@@ -487,6 +489,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           </div>
         )}
         {activeTab === 'approval' && <ApprovalRulesPanel showToast={showToast} />}
+        {activeTab === 'layanan' && <LayananPanel showToast={showToast} />}
         {activeTab === 'promo-produk' && (
           <div className="space-y-4 animate-fadeIn">
             <div>
