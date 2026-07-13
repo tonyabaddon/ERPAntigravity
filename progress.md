@@ -13456,3 +13456,8 @@ provides functional flow).
 FIFO decrement + JE post at delivery, invoice PDF branches, per-service
 reporting. Everything from spec's MVP scope shipped except wizard direct
 integration (workaround via InvoicePreview).
+
+**ActionPanel 🛠 Tambah Layanan button** (commit 2c81291): Founder can
+now attach services to ANY existing order via DaftarPesanan detail
+(ActionPanel component), not just fresh post-save invoices. Button always
+renders below the action rows.
