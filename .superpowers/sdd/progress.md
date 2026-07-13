@@ -32,12 +32,39 @@ targeted backfill where meaningful.
   documented in audit report for prioritization.
 
 **Verification method** — each fix's JE balance verified by hand
-(DR = CR) prior to shipping; live smoke-test via kasir/opname flows
-deferred (would need synthetic scenarios; MCP execute_sql can't
-reproduce real JWT auth for `_post_journal_entry`, and Chrome MCP
-smoke of each B* scenario is disproportionate to scope). Regression
-guard: `npm run lint` clean, kasir/lib vitest scope 5049/5057 pass
-(8 failures pre-existing, unrelated).
+(DR = CR) prior to shipping; regression guard: `npm run lint` clean,
+kasir/lib vitest scope 5049/5057 pass (8 failures pre-existing,
+unrelated).
+
+**Post-ship live verification (2026-07-13 pagi + siang, Toko Jaya
+production-testing-tenant via Chrome MCP)**:
+
+| # | E2E Status | Evidence |
+|---|---|---|
+| B1 | ✅ UI + DB | Tempo invoice WLK dgn shipping 15k → JE-202607-0003: DR 1-1400 70k + DR 5-1100 34.1k / CR 4-1140 55k + CR **4-1220 Pendapatan Ongkir 15k** + CR 1-1510 34.1k. Balance 104.1k = 104.1k |
+| B2 | 🟡 Code-only | Direct SQL simulation blocked by RLS+JWT gap in MCP execute_sql; UI blocked by 2-user requirement + witness picker cache. Pattern proven via B1+B4 |
+| B3 | 🟡 Code-only | Requires customer-order pre-setup + PI wizard (~15+ steps). Same soft-catch pattern proven via B1+B4 |
+| B4 | ✅ UI + DB | Kasir DP WLK-002 → JE-202607-0001: DR Kas 10k + DR **1-1400 15k** + DR HPP 15.5k / CR 4-1110 25k + CR Persediaan 15.5k. Settlement WLK-001 → JE-202607-0002: DR Kas 125k / CR 1-1400 125k. Both balance |
+
+**Infrastructure gaps discovered during verification (documented, out
+of this session's scope):**
+- Toko Jaya `cash_accounts.coa_account_id` was NULL for all 3 accounts
+  → dual-write silent-fail. Fixed inline via SQL as test tenant setup.
+  Same class as Garindo's missing `default_edc` — silent-fail UX gap
+  affects tenants who never notice their GL is empty.
+- Toko Jaya `accounting_config` defaults NULL (kas/bank/qris/edc) →
+  set kas→Kas Utama, bank/qris/edc→BCA Utama for testing purpose.
+  Same silent-fail as above.
+- Test tenants (Toko Jaya) provisioned with only 1 admin_user; opname
+  workflow requires 2 (counter + witness) → can't UI-verify opname
+  flow without seeding a 2nd user first.
+- MCP `execute_sql` cannot propagate JWT to `_resolve_tenant_id()`
+  used by SECDEF RPCs, so RPC-level smoke testing via SQL is
+  infeasible for auth-gated flows. Chrome MCP UI-flow is the only
+  reliable path.
+- FE cache-bypass reload required after Cloud Build deploy — browser
+  clung to prior bundle hash until manual reload. Consider adding
+  hash-versioned service-worker or explicit `?v=` bust.
 
 ---
 
