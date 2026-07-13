@@ -7,6 +7,7 @@ import type {
 } from '../../../lib/serviceCatalog/types';
 import { saveServiceCatalog } from '../../../lib/serviceCatalog/api';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import { NumberInput } from '../../ui/NumberInput';
 import BOMEditor from './BOMEditor';
 
 interface Props {
@@ -167,10 +168,10 @@ export default function ServiceCatalogEditModal({
               <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                 Labor Default (Rp)
               </label>
-              <input
-                type="number"
+              <NumberInput
                 value={defaultLabor}
-                onChange={(e) => setDefaultLabor(Number(e.target.value))}
+                onChange={setDefaultLabor}
+                allowDecimal={false}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
               />
             </div>

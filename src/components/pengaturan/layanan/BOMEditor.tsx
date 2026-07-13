@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { ServiceCatalogBOMItem } from '../../../lib/serviceCatalog/types';
+import { NumberInput } from '../../ui/NumberInput';
 import ComponentPicker from './ComponentPicker';
 
 interface Props {
@@ -72,13 +73,10 @@ export default function BOMEditor({
                     </div>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <input
-                      type="number"
-                      step="0.01"
+                    <NumberInput
                       value={item.default_qty}
-                      onChange={(e) =>
-                        updateItem(idx, { default_qty: Number(e.target.value) })
-                      }
+                      onChange={(n) => updateItem(idx, { default_qty: n })}
+                      allowDecimal={true}
                       className="w-20 border border-slate-200 rounded px-2 py-1 text-right text-[13px]"
                     />
                   </td>

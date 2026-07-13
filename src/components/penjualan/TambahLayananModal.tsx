@@ -9,6 +9,7 @@ import {
 } from '../../lib/serviceCatalog/api';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
 import { formatIDR } from '../../lib/formatIDR';
+import { NumberInput } from '../ui/NumberInput';
 import BOMEditor from '../pengaturan/layanan/BOMEditor';
 
 interface Props {
@@ -157,13 +158,10 @@ export default function TambahLayananModal({
                     <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                       Qty
                     </label>
-                    <input
-                      type="number"
-                      min={1}
+                    <NumberInput
                       value={qty}
-                      onChange={(e) =>
-                        setQty(Math.max(1, Number(e.target.value)))
-                      }
+                      onChange={(n) => setQty(Math.max(1, n))}
+                      allowDecimal={false}
                       className="w-32 border border-slate-200 rounded-lg px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                     />
                   </div>
@@ -172,10 +170,10 @@ export default function TambahLayananModal({
                     <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                       Labor (Rp)
                     </label>
-                    <input
-                      type="number"
+                    <NumberInput
                       value={labor}
-                      onChange={(e) => setLabor(Number(e.target.value))}
+                      onChange={setLabor}
+                      allowDecimal={false}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                     />
                     <div className="text-[11px] text-slate-400 mt-1">
@@ -189,10 +187,10 @@ export default function TambahLayananModal({
                     <label className="block text-[12px] font-semibold text-slate-700 mb-1">
                       Harga Jual (Rp) *
                     </label>
-                    <input
-                      type="number"
+                    <NumberInput
                       value={finalPrice}
-                      onChange={(e) => setFinalPrice(Number(e.target.value))}
+                      onChange={setFinalPrice}
+                      allowDecimal={false}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                     />
                   </div>
