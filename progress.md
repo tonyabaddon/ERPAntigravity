@@ -1,5 +1,61 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-13 — Item #3 Dashboard vs Laporan split + Reports redesign — LIVE
+
+**Founder ask:** Dashboard dan Laporan tampilkan metric duplikat → owner bingung "cari data di mana". Reports juga kurang optimal untuk owner MSME (no Gross Profit, no delta, no slow-mover, no top-customer analysis).
+
+**Split model:** Dashboard = action items (semua role sama, auto-hide when N=0). Laporan Performa = periode-based analytics. Laporan Akuntansi = tetap (4 sub-tab).
+
+**Dashboard changes:**
+- Delete: 3 KPI cards (Total Omset, Pesanan Terproses, Otomasi AI), 2 recharts panels (Revenue per Channel + Chat AI/Manual), period toggle
+- Add: `TodayStripCard` (revenue + count for CURRENT_DATE, snapshot only), `DashboardMaintenanceSection` (5 auto-hiding cards: Persetujuan pending, Piutang overdue, Hutang supplier overdue, Fulfillment antrean, Sales Inbox unread)
+- Add: MaintenanceCard for Stok Tipis (was old KPI, restyled)
+- Preserve: greeting header, Pre-order Fulfillments card, Promo Produk card (Item #4b), Detak Jantung Log AI
+
+**Laporan Performa changes:**
+- KPI row rebuild: Total Omset + **Gross Profit (NEW, margin % badge)** + Pesanan Terproses + AOV — all with `DeltaBadge` (▲/▼ vs previous period)
+- Remove: AI Efficiency KPI card, Chat AI vs Manual chart panel
+- Replace channel-total donut with `Profit per Channel` list (revenue + margin %)
+- Add sections: "Produk Slow-Moving" (SKUs with low turnover, dead/slow severity badges), "Top 10 Customer" (aggregate by customer_id, dormancy warning >14 days, click → Pelanggan detail deep link)
+
+**Backend (slot 130):**
+- `get_dashboard_maintenance_counts()` — single-round-trip aggregate for Dashboard 4 cards
+- `get_today_snapshot()` — revenue + count for CURRENT_DATE
+- `get_performa_summary_with_delta(p_days INT)` — current + previous period aggregates for KPI delta
+- `get_slow_moving_stock(p_days INT, p_limit INT)` — SKUs with stock > 0 AND low turnover; severity: dead (45d+ no sale) / slow (<10% turnover)
+- `get_top_customers(p_days INT, p_limit INT)` — aggregate kasir_transactions by customer_id
+- `get_profit_per_channel(p_days INT)` — revenue + gross_profit + margin per channel
+
+All SECDEF STABLE, owned by `vosi_rpc_owner`, tenant-scoped via `_resolve_tenant_id()`, `REVOKE FROM anon`, `GRANT EXECUTE TO authenticated`. Zero schema change.
+
+**FE:**
+- `src/lib/dashboardReports/{types,api}.ts` — typed API client, 6 wrappers + `computeDelta()` helper
+- `src/components/dashboard/{TodayStripCard,MaintenanceCard,DashboardMaintenanceSection}.tsx` — new reusable cards
+- `src/components/laporan/{SlowMoverTable,TopCustomerTable}.tsx` — new self-fetching tables
+- `src/components/DashboardScreen.tsx` — reshuffled (delete + add + preserve pattern)
+- `src/components/LaporanScreen.tsx` — KPI rebuild + Profit per Channel + new sections
+- `src/components/ui/KpiCard.tsx` — extended `sub` prop from `string` to `React.ReactNode` (support DeltaBadge)
+
+**Interaction with prior work:** Zero touch to Akuntansi tab (Mutasi + Laba Rugi + Neraca + Cash Flow unchanged). Item #4b PromoProdukCard preserved on Dashboard.
+
+**Ship path:**
+- Commits `85bc292` (backend RPCs) → `848572f` (types+api) → `cd8f00a` (Dashboard reshuffle) → `633dc38` (Laporan KPI+delta+profit-per-channel) → `694741e` (Laporan slow-mover+top-customer)
+- Push `main` → Cloud Build `f9b1f24d` SUCCESS → Cloud Run revision `garindo-jaya-panel-msme-erp-frontend-00378-pof` → tag `c694741e` → traffic 100%
+- Prod smoke: 6 backend RPCs return correct shape via impersonation JWT; tag URL 200 OK; login page renders (session-timeout state expected). Backend + build validated.
+
+**Deferred (nice-to-have):**
+- Year-over-year comparison
+- Sales rep productivity dashboard
+- Supplier reliability analytics
+- Detail drill-down modals per KPI
+- Customer dormancy alerts as separate section
+- Customizable Dashboard per user preference
+
+**Spec:** `docs/superpowers/specs/2026-07-13-dashboard-laporan-split-design.md`
+**Plan:** `docs/superpowers/plans/2026-07-13-dashboard-laporan-split-plan.md`
+
+---
+
 ## 2026-07-13 — Item #4b Promo Produk (auto-apply diskon per SKU) — LIVE
 
 **Founder ask:** Layer 1 discount system paired with Item #4 (Diskon Nota) as safety net. Owner sets per-SKU promo in advance (% or Rp/unit + optional expiry), kasir wizard auto-applies at cart line — no approval needed.
