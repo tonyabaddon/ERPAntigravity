@@ -19,6 +19,7 @@ import { ChevronLeft } from 'lucide-react';
 import type { KasirTransaction } from '../../types';
 import { supabase } from '../../lib/supabaseClient';
 import SalesInvoicePDF, { type InvoiceVariant, type InvoicePrintMode } from './SalesInvoicePDF';
+import TambahLayananModal from './TambahLayananModal';
 
 interface Props {
   orderId: string;
@@ -48,6 +49,7 @@ export default function InvoicePreviewScreen({
   // before opening the modal so @page size + monospace stylesheet match the
   // operator's chosen printer family.
   const [pdfPrintMode, setPdfPrintMode] = useState<InvoicePrintMode>('normal');
+  const [layananModalOpen, setLayananModalOpen] = useState(false);
 
   useEffect(() => {
     // Reset error state when orderId changes; without this, stale error from
@@ -176,6 +178,13 @@ export default function InvoicePreviewScreen({
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setLayananModalOpen(true)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
+            title="Tambah layanan (Wiring / Jasa) dari katalog"
+          >
+            🛠 Tambah Layanan
+          </button>
+          <button
             onClick={onLihatDaftar}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100"
           >
@@ -189,6 +198,18 @@ export default function InvoicePreviewScreen({
           </button>
         </div>
       </div>
+
+      {layananModalOpen && (
+        <TambahLayananModal
+          orderId={orderId}
+          onDone={() => {
+            setLayananModalOpen(false);
+            showToast('Layanan berhasil ditambahkan ke pesanan', 'success');
+          }}
+          onCancel={() => setLayananModalOpen(false)}
+          showToast={showToast}
+        />
+      )}
 
       <div className="bg-white border-x border-b border-slate-200 rounded-b-lg p-5 md:p-6 shadow-sm">
         {loadError ? (
