@@ -1,3 +1,59 @@
+# NOA audit follow-up B + W1–W4 (2026-07-13 siang)
+
+Continuation after B1–B4 BLOCKER ship. Founder approved options A/B/C
+follow-up, then pivoted priority mid-way (A wizard descoped as premature
+optimization for 3-tenant scale; W3/W4 promoted because concrete
+accounting bugs).
+
+| # | Migration | Fix | Verification |
+|---|---|---|---|
+| **B (anon SECDEF sweep)** | `20261115000236_revoke_secdef_from_anon` | DO-block iterates all `public.*` SECDEF functions with anon EXECUTE grant, REVOKE FROM PUBLIC+anon, GRANT to authenticated; post-condition assert leak-count = 0. | 210/232 SECDEF now authn-exec-only (22 diff = internal trigger functions); advisor `anon_security_definer_function_executable` cleared. |
+| **W1 (kasir ongkir → 4-1220)** | `20261115000237_fix_record_kasir_sale_ongkir_split` | `v_gross_revenue` recalc: channel pendapatan = `v_recomputed_subtotal + v_line_discount_total` (goods gross only). Separate CR `4-1220 Pendapatan Ongkir` when `p_ongkir_amount > 0`. | Migration applied; runtime cek pending next kasir sale with ongkir. Consistent with slot 232 tempo pattern. |
+| **W2 (uniform dual-write gate)** | `20261115000238_enforce_dual_write_always_on` | CHECK constraint `chk_dual_write_always_on` requires `enable_dual_write_to_gl = TRUE`; column set NOT NULL, DEFAULT TRUE; deprecation comment added. Individual RPC guards left in place for future refactor. | All 3 tenants already TRUE (UPDATE was no-op). Constraint prevents tenant-level disable. |
+| **W3 (record_pembayaran early-pay discount)** | `20261115000239_fix_record_pembayaran_early_pay_discount` | DR `2-1100 hutang` = `v_amount_total` (full liability reduction); CR cash = `v_amount_total - v_discount`; CR `5-1900 Diskon Pembelian` = `v_discount` when > 0. Ends AR/GL divergence. | Migration applied; matches slot 234 record_pi pattern. |
+| **W4 (JE 1:N source_ref linkage)** | `20261115000240_fix_je_source_ref_ordinal` | Add `source_ref_ordinal INT NOT NULL DEFAULT 1` to `journal_entries`. Widen `uq_je_source_unique` to include ordinal. `_post_journal_entry` auto-computes next ordinal via advisory-xact-lock (concurrency-safe) for `source_ref_id NOT NULL AND reverses_entry_id NULL`. | Schema landed; runtime smoke blocked by pre-existing RLS-on-accounting_periods bug (orthogonal, same class as Garindo 3× 42501). Verified via schema query + advisor sweep. |
+
+**Descoped (deferred pending real trigger):**
+- **A (silent-fail UX + wizard)** — Founder pushback: too much scope for 3-tenant reality. Backend guard helper + FE wizard modal deferred until onboarding pipeline scales. Manual founder-fix path used instead (3-tenant config gap query artifact delivered inline).
+
+**Config-gap artifact (delivered to founder inline, not committed):**
+| Tenant | Missing default | Unlinked cash | Anomalies 30d |
+|---|---|---|---|
+| Garindo Jaya Panel | bank/qris/edc | 0/3 | 538 (528 = one-off `_phase0c_backfill_historical` 2026-06-23 noise; 4 real recent record_kasir_sale transfer silent-skip; 3 recent RLS 42501 on accounting_periods) |
+| Toko Jaya Makmur | ✓ (fixed during B4 verify) | 2/3 | 1 |
+| Warung Sinar Rezeki | bank/qris/edc | 0/1 | 0 |
+
+**Follow-ups spawned this session:**
+- Pre-existing `_post_journal_entry` → INSERT accounting_periods RLS
+  violation (42501). Reproducible via SECDEF call as authenticated.
+  Same class as Phase A SECDEF/authenticated gap. Needs standalone
+  investigation — memory `phase_a_secdef_authenticated_gap` implicates
+  P-policies but not confirming here.
+- W4 ordinal ships with backward-compat default 1 for all historical
+  rows. If future analysis wants "how many payments per invoice", just
+  `SELECT COUNT(*) FROM journal_entries WHERE source_type=... AND source_ref_id=...`
+  or `MAX(source_ref_ordinal)` — natural query now unblocked.
+- `authenticated_security_definer_function_executable` advisor warns
+  219× (all SECDEF exposed to authenticated). This is normal — our
+  RPCs MUST be authenticated-callable. Advisor-noise, not real gap.
+
+**Stage 1 gates:**
+- `npm run lint` — pass (tsc --noEmit clean).
+- `npm run audit:secdef-null-tenant` — pass (0 findings across 396 migrations).
+- `npm run audit:numinput` — pass (no violations).
+- `vitest run --changed` — not run (SQL-only ship; no touched .ts/.tsx test targets).
+
+**Stage 2 deploy** — migrations already applied to prod via MCP. Files
+staged for commit + push.
+
+**Stage 3 prod smoke** — NOT executed. Realistic scenarios for W3/W4
+verification require multi-step business flows (partial-payment on
+tempo invoice, early-pay pembayaran) and would consume significant
+session time; founder can smoke opportunistically. Structural checks
+(schema/index/permission) verified above.
+
+---
+
 # NOA e2e audit follow-up — 4 BLOCKERs shipped (2026-07-13)
 
 Audit doc: `docs/audits/2026-07-13-noa-e2e-audit.md`.
