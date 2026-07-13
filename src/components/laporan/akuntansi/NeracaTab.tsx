@@ -14,6 +14,7 @@ import type { DbTenantSettings } from '../../../types';
 import { generateNeracaPDF } from '../../../lib/akuntansi/pdfExport';
 import type { NeracaData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -178,7 +179,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
       URL.revokeObjectURL(url);
       showToast('PDF Neraca berhasil di-download', 'success');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
+      const msg = extractErrorMessage(err);
       showToast(`Gagal generate PDF: ${msg}`, 'warning');
     } finally {
       setExporting(false);

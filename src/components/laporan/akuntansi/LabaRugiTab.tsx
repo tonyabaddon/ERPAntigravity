@@ -16,6 +16,7 @@ import type { DbTenantSettings } from '../../../types';
 import { generateLabaRugiPDF } from '../../../lib/akuntansi/pdfExport';
 import type { LabaRugiData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -216,7 +217,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
       URL.revokeObjectURL(url);
       showToast('PDF berhasil di-download', 'success');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
+      const msg = extractErrorMessage(err);
       showToast(`Gagal generate PDF: ${msg}`, 'warning');
     } finally {
       setExporting(false);
