@@ -669,9 +669,37 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       throw new Error('cash_account_missing');
     }
 
+    // Item #4b: helper — inject Promo Produk discount fields + promo_snapshot
+    // into SKU items when an active promo exists AND no manual discount is
+    // set. Shared across quote / tempo / standard paths so promo auto-apply
+    // reaches all three sale flows. Preserves operator manual discount.
+    const injectPromo = (items: Array<Omit<typeof cart[number], '_key'>>) =>
+      items.map((rest) => {
+        if (!rest.sku) return rest;
+        const promo = promos.get(rest.sku);
+        if (!promo) return rest;
+        const hasManualDiscount = rest.discount_type != null && (rest.discount_amount_rp ?? 0) > 0;
+        if (hasManualDiscount) return rest;
+        const masterPrice = rest.master_price_at_sale ?? rest.unit_price;
+        const { discount, snapshot } = computeLinePromoDiscount(masterPrice, rest.qty, promo);
+        if (discount <= 0 || snapshot === null) return rest;
+        return {
+          ...rest,
+          discount_type: promo.promo_discount_type,
+          discount_value: promo.promo_discount_value,
+          discount_amount_rp: discount,
+          promo_snapshot: {
+            type: promo.promo_discount_type,
+            value: promo.promo_discount_value,
+            expires_at: promo.promo_expires_at,
+            applied_at: new Date().toISOString(),
+          },
+        };
+      });
+
     // New: mode='quote' → createSalesOrder, no payment/ongkir/alamat
     if (mode === 'quote') {
-      const skuItems = cart.map(({ _key, ...rest }) => rest);
+      const skuItems = injectPromo(cart.map(({ _key, ...rest }) => rest));
       const serviceItems = rakitLines.map((l) => ({
         sku: null,
         name: l.description,
@@ -724,7 +752,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         channel,
         sales_channel: channel,
         delivery_type: deliveryAddress.trim() ? 'DELIVERY' : 'PICKUP',
-        items: cart.map(({ _key, ...rest }) => rest),
+        items: injectPromo(cart.map(({ _key, ...rest }) => rest)),
         subtotal: subtotalAfterLineDiscount,
         shipping_fee: ongkirOn ? ongkirAmount : 0,
         total: totalInvoice,
@@ -819,36 +847,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
     // path === 'standard'
     // Task 14: include per-line discount fields in items sent to RPC.
-    // Item #4b: inject promo discount fields + promo_snapshot for lines with
-    // an active promo, but ONLY when no manual discount is already set.
-    // computeLinePromoDiscount returns discount=0 / snapshot=null if promo
-    // amount > unit_price — skip inject in that case too.
-    const skuItems = cart.map(({ _key, ...rest }) => {
-      if (!rest.sku) return rest;
-      const promo = promos.get(rest.sku);
-      if (!promo) return rest;
-      // Preserve existing manual discount — operator's choice overrides promo.
-      const hasManualDiscount = rest.discount_type != null && (rest.discount_amount_rp ?? 0) > 0;
-      if (hasManualDiscount) return rest;
-      const masterPrice = rest.master_price_at_sale ?? rest.unit_price;
-      const { discount, snapshot } = computeLinePromoDiscount(masterPrice, rest.qty, promo);
-      if (discount <= 0 || snapshot === null) {
-        // Edge case: promo AMOUNT > unit_price → skip silently (toast shown below)
-        return rest;
-      }
-      return {
-        ...rest,
-        discount_type: promo.promo_discount_type,
-        discount_value: promo.promo_discount_value,
-        discount_amount_rp: discount,
-        promo_snapshot: {
-          type: promo.promo_discount_type,
-          value: promo.promo_discount_value,
-          expires_at: promo.promo_expires_at,
-          applied_at: new Date().toISOString(),
-        },
-      };
-    });
+    // Item #4b: inject Promo Produk via shared injectPromo() helper (defined
+    // above, applied consistently to quote / tempo / standard paths).
+    const skuItems = injectPromo(cart.map(({ _key, ...rest }) => rest));
     // Edge-case toast: AMOUNT promo > unit_price (snapshot=null → skipped above)
     for (const item of cart) {
       if (!item.sku) continue;
