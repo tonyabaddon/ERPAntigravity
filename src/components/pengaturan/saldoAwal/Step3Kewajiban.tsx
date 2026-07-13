@@ -3,7 +3,7 @@
 // Sections: Hutang Usaha (aggregate|detail per-supplier),
 // and collapsible "Kewajiban lain (opsional)".
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { Step3Kewajiban as Step3KewajibanType, OpeningAPDetailLine, LainLainLine } from '../../../lib/saldoAwal/types';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
@@ -32,7 +32,7 @@ function SupplierPicker({
   const [query, setQuery] = useState(value?.name ?? '');
   const [results, setResults] = useState<SupplierOption[]>([]);
   const [open, setOpen] = useState(false);
-  const debounceRef = { current: null as ReturnType<typeof setTimeout> | null };
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const search = async (q: string) => {
     if (!supabase || !q.trim()) { setResults([]); return; }

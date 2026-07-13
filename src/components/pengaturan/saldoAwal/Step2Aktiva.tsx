@@ -3,7 +3,7 @@
 // Sections: Piutang Usaha (aggregate|detail), Persediaan (auto|override),
 // Aktiva Tetap, and collapsible "Akun Aktiva lain (opsional)".
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Step2Aktiva as Step2AktivaType, OpeningARDetailLine, LainLainLine } from '../../../lib/saldoAwal/types';
 import { getPersediaanAutoValue } from '../../../lib/saldoAwal/api';
 import { NumberInput } from '../../ui/NumberInput';
@@ -34,7 +34,7 @@ function CustomerPicker({
   const [query, setQuery] = useState(value?.name ?? '');
   const [results, setResults] = useState<CustomerOption[]>([]);
   const [open, setOpen] = useState(false);
-  const debounceRef = { current: null as ReturnType<typeof setTimeout> | null };
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const search = async (q: string) => {
     if (!supabase || !q.trim()) { setResults([]); return; }
