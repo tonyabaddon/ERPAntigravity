@@ -61,6 +61,8 @@ function DeltaBadge({ current, previous }: { current: number; previous: number }
 
 interface LaporanScreenProps {
   showToast?: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  /** Navigate to another app page (forwarded from App.tsx for inter-screen navigation). */
+  onNavigate?: (page: string) => void;
 }
 
 export default function LaporanScreen(props: LaporanScreenProps) {
@@ -311,7 +313,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       )}
 
       {/* Akuntansi Tab */}
-      {activeTab === 'akuntansi' && <AkuntansiLaporanTab showToast={showToast} />}
+      {activeTab === 'akuntansi' && <AkuntansiLaporanTab showToast={showToast} onNavigate={props.onNavigate} />}
     </div>
   );
 }

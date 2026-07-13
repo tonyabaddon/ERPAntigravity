@@ -750,7 +750,7 @@ export default function App() {
           />
         );
       case 'laporan':
-        return <LaporanScreen showToast={triggerToast} />;
+        return <LaporanScreen showToast={triggerToast} onNavigate={(page) => navigate(page as import('./types').ActivePage)} />;
       case 'pembelian':
         return (
           <PembelianScreen

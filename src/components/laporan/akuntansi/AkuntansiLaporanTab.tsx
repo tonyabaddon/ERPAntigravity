@@ -4,9 +4,13 @@ import MutasiTab from './MutasiTab';
 import LabaRugiTab from './LabaRugiTab';
 import NeracaTab from './NeracaTab';
 import CashFlowTab from './CashFlowTab';
+import SaldoAwalBanner from './SaldoAwalBanner';
+import YearEndCloseButton from './YearEndCloseButton';
 
 export interface AkuntansiLaporanTabProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  /** Navigate to another app page (e.g. 'settings' for Pengaturan). */
+  onNavigate?: (page: string) => void;
 }
 
 type AkuntansiSubTab = 'mutasi' | 'laba-rugi' | 'neraca' | 'cash-flow';
@@ -23,7 +27,12 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
 
   return (
     <div className="space-y-4 animate-fadeIn">
-      {/* Sub-tab navigation — pill-style buttons */}
+      {/* Saldo Awal nudge banner — shown when saldo awal not yet posted */}
+      {props.onNavigate && (
+        <SaldoAwalBanner onNavigate={props.onNavigate} />
+      )}
+
+      {/* Sub-tab navigation row with Year-End Close button */}
       <div className="card p-4 flex items-center gap-2 overflow-x-auto bg-white rounded-3xl shadow-sm border border-[#c7d7f5]">
         {subtabs.map(t => {
           const IconComponent = t.icon;
@@ -42,6 +51,10 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
             </button>
           );
         })}
+        {/* Spacer + Year-End Close button aligned right */}
+        <div className="ml-auto shrink-0">
+          <YearEndCloseButton showToast={props.showToast} />
+        </div>
       </div>
 
       {/* Mutasi Tab */}
