@@ -31,6 +31,10 @@ export default function TambahLayananModal({
   const [labor, setLabor] = useState(0);
   const [finalPrice, setFinalPrice] = useState(0);
   const [bom, setBom] = useState<ServiceCatalogBOMItem[]>([]);
+  const [includeMaterial, setIncludeMaterial] = useState(true);
+  const [invoiceDisplayOverride, setInvoiceDisplayOverride] = useState<
+    'lump_sum' | 'itemized' | null
+  >(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -52,11 +56,15 @@ export default function TambahLayananModal({
   useEffect(() => {
     if (!selected) return;
     setLabor(selected.default_labor_amount * qty);
+    setIncludeMaterial(selected.default_include_material);
+    setInvoiceDisplayOverride(null); // fall back to catalog default
     setBom(
-      selected.bom.map((b) => ({
-        ...b,
-        default_qty: b.default_qty * qty,
-      })),
+      selected.default_include_material
+        ? selected.bom.map((b) => ({
+            ...b,
+            default_qty: b.default_qty * qty,
+          }))
+        : [],
     );
     if (finalPrice === 0) {
       setFinalPrice(selected.default_labor_amount * qty);
@@ -91,13 +99,16 @@ export default function TambahLayananModal({
         orderId,
         serviceCatalogId: selectedId,
         qty,
-        overrideBom: bom.map((b) => ({
-          component_sku: b.component_sku,
-          qty: b.default_qty,
-          service_catalog_bom_id: b.id ?? null,
-        })),
+        overrideBom: includeMaterial
+          ? bom.map((b) => ({
+              component_sku: b.component_sku,
+              qty: b.default_qty,
+              service_catalog_bom_id: b.id ?? null,
+            }))
+          : [],
         overrideLabor: labor,
         finalPrice,
+        invoiceDisplayOverride,
       });
       showToast('Layanan ditambahkan ke pesanan', 'success');
       onDone();
@@ -196,11 +207,82 @@ export default function TambahLayananModal({
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-semibold text-slate-700 mb-2">
-                      BOM Snapshot{' '}
-                      {bom.length === 0 && '(kosong = labor only)'}
+                    <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                      Mode
                     </label>
-                    <BOMEditor value={bom} onChange={setBom} qtyLabel="Qty" />
+                    <div className="flex gap-4 items-center mb-2">
+                      <label className="flex items-center gap-2 text-[13px]">
+                        <input
+                          type="radio"
+                          checked={includeMaterial}
+                          onChange={() => {
+                            setIncludeMaterial(true);
+                            if (selected) {
+                              setBom(
+                                selected.bom.map((b) => ({
+                                  ...b,
+                                  default_qty: b.default_qty * qty,
+                                })),
+                              );
+                            }
+                          }}
+                        />
+                        Paket (dengan material)
+                      </label>
+                      <label className="flex items-center gap-2 text-[13px]">
+                        <input
+                          type="radio"
+                          checked={!includeMaterial}
+                          onChange={() => {
+                            setIncludeMaterial(false);
+                            setBom([]);
+                          }}
+                        />
+                        Labor only (customer bawa material)
+                      </label>
+                    </div>
+                  </div>
+
+                  {includeMaterial && (
+                    <div>
+                      <label className="block text-[12px] font-semibold text-slate-700 mb-2">
+                        BOM Snapshot{' '}
+                        {bom.length === 0 && '(kosong — labor only)'}
+                      </label>
+                      <BOMEditor value={bom} onChange={setBom} qtyLabel="Qty" />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[12px] font-semibold text-slate-700 mb-1">
+                      Invoice Display (override)
+                    </label>
+                    <div className="flex gap-4 items-center">
+                      <label className="flex items-center gap-2 text-[13px]">
+                        <input
+                          type="radio"
+                          checked={invoiceDisplayOverride === null}
+                          onChange={() => setInvoiceDisplayOverride(null)}
+                        />
+                        Default catalog ({selected.invoice_display === 'lump_sum' ? 'Lump Sum' : 'Itemized'})
+                      </label>
+                      <label className="flex items-center gap-2 text-[13px]">
+                        <input
+                          type="radio"
+                          checked={invoiceDisplayOverride === 'lump_sum'}
+                          onChange={() => setInvoiceDisplayOverride('lump_sum')}
+                        />
+                        Lump Sum
+                      </label>
+                      <label className="flex items-center gap-2 text-[13px]">
+                        <input
+                          type="radio"
+                          checked={invoiceDisplayOverride === 'itemized'}
+                          onChange={() => setInvoiceDisplayOverride('itemized')}
+                        />
+                        Itemized
+                      </label>
+                    </div>
                   </div>
 
                   <div className="border border-slate-200 rounded-lg bg-slate-50 p-3 text-[12px]">

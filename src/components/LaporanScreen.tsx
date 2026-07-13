@@ -4,6 +4,7 @@ import KpiCard from './ui/KpiCard';
 import AkuntansiLaporanTab from './laporan/akuntansi/AkuntansiLaporanTab';
 import SlowMoverTable from './laporan/SlowMoverTable';
 import TopCustomerTable from './laporan/TopCustomerTable';
+import LayananSection from './laporan/LayananSection';
 import {
   BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -309,6 +310,9 @@ export default function LaporanScreen(props: LaporanScreenProps) {
           <p className="text-xs text-slate-500 mb-4">Customer dengan total belanja tertinggi dalam periode.</p>
           <TopCustomerTable days={days} />
         </div>
+
+        {/* Layanan / Service Catalog performance */}
+        <LayananSection days={days} />
       </div>
       )}
 

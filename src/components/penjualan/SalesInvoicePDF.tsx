@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X, Printer } from 'lucide-react';
 import { KasirTransaction } from '../../types';
 import type { SalesChannel } from '../../types';
-import { isSupabaseConfigured } from '../../lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from '../../lib/supabaseClient';
 import { fetchStoreSettings, fetchBankAccounts } from '../../lib/pengaturan/queries';
 import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { formatRp } from '../../lib/format';
@@ -34,10 +34,80 @@ export interface SalesInvoicePDFProps {
   onClose: () => void;
 }
 
+interface ServiceLineDisplay {
+  id: string;
+  service_name: string;
+  invoice_display: 'lump_sum' | 'itemized';
+  qty_estimate: number;
+  labor_cost: number;
+  final_price: number;
+  bom: Array<{ sku: string; name: string; qty: number; fifo_cost_snapshot: number }>;
+}
+
 export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, printMode = 'normal', onClose }: SalesInvoicePDFProps) {
   const [store, setStore] = useState<StoreSettings | null>(null);
   const [bank, setBank] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
+  const [serviceLines, setServiceLines] = useState<ServiceLineDisplay[]>([]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('rakit_job_lines')
+        .select(
+          `
+          id, labor_cost, final_price, invoice_display_override,
+          service_catalog:service_catalog!inner ( name, invoice_display ),
+          rakit_components ( sku, name, qty, fifo_cost_snapshot )
+          `,
+        )
+        .eq('transaction_id', transaction.id)
+        .not('service_catalog_id', 'is', null)
+        .order('line_number');
+      if (error || cancelled) return;
+      setServiceLines(
+        (data ?? []).map((row) => {
+          const r = row as unknown as {
+            id: string;
+            labor_cost: number | string;
+            final_price: number | string;
+            invoice_display_override: 'lump_sum' | 'itemized' | null;
+            service_catalog:
+              | { name: string; invoice_display: 'lump_sum' | 'itemized' }
+              | Array<{ name: string; invoice_display: 'lump_sum' | 'itemized' }>;
+            rakit_components: Array<{
+              sku: string;
+              name: string | null;
+              qty: number | string;
+              fifo_cost_snapshot: number | string;
+            }>;
+          };
+          const sc = Array.isArray(r.service_catalog)
+            ? r.service_catalog[0]
+            : r.service_catalog;
+          return {
+            id: r.id,
+            service_name: sc?.name ?? 'Layanan',
+            invoice_display: r.invoice_display_override ?? sc?.invoice_display ?? 'lump_sum',
+            qty_estimate: 1,
+            labor_cost: Number(r.labor_cost ?? 0),
+            final_price: Number(r.final_price ?? 0),
+            bom: (r.rakit_components ?? []).map((c) => ({
+              sku: c.sku,
+              name: c.name ?? c.sku,
+              qty: Number(c.qty),
+              fifo_cost_snapshot: Number(c.fifo_cost_snapshot ?? 0),
+            })),
+          };
+        }),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [transaction.id]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -138,7 +208,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
           ) : (
-            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} printMode={printMode} />
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} printMode={printMode} serviceLines={serviceLines} />
           )}
         </div>
       </div>
@@ -155,11 +225,12 @@ interface InvoiceBodyProps {
   channelLabel: string;
   paymentLabel: string;
   printMode: InvoicePrintMode;
+  serviceLines: ServiceLineDisplay[];
 }
 
 // Body extracted to its own function for clarity (still in the same file).
 function InvoiceBody({
-  transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel, printMode,
+  transaction: t, variant, adminName, store, bank, channelLabel, paymentLabel, printMode, serviceLines,
 }: InvoiceBodyProps) {
   const isQuotation = variant === 'quotation';
   const subtotal = t.subtotal;
@@ -168,7 +239,9 @@ function InvoiceBody({
     (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
   );
   const ongkir = t.ongkir_amount ?? 0;
-  const total = t.total_amount ?? t.subtotal + ongkir;
+  const serviceSubtotal = serviceLines.reduce((s, l) => s + l.final_price, 0);
+  const baseTotal = t.total_amount ?? t.subtotal + ongkir;
+  const total = baseTotal + serviceSubtotal;
   const dp = t.dp_amount ?? 0;
   // I-1 fix: total discount = per-line + order-level (mirrors KasirInvoiceModal lines 155-175).
   const lineDiscount = (t.items as any[]).reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
@@ -311,6 +384,62 @@ function InvoiceBody({
         </tbody>
       </table>
 
+      {/* Service lines (Item #2: Layanan / Wiring / Custom Panel) */}
+      {serviceLines.length > 0 && (
+        <table className="w-full text-[11px] my-2 border-collapse">
+          <thead>
+            <tr>
+              <th colSpan={5} className="border-t border-b border-slate-900 px-1 py-1 text-left font-extrabold text-[10px] uppercase tracking-wide bg-slate-50">
+                🛠 Layanan
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {serviceLines.map((line, idx) => {
+              if (line.invoice_display === 'itemized' && line.bom.length > 0) {
+                return (
+                  <React.Fragment key={line.id}>
+                    <tr className="align-top">
+                      <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
+                      <td className="px-1 py-1 border-b border-dotted border-slate-300 font-bold" colSpan={3}>
+                        {line.service_name}
+                      </td>
+                      <td className="px-1 py-1 text-right border-b border-dotted border-slate-300 font-bold">{formatRp(line.final_price).replace('Rp', '').trim()}</td>
+                    </tr>
+                    {line.bom.map((c, cIdx) => (
+                      <tr key={`${line.id}-c${cIdx}`} className="align-top text-slate-600">
+                        <td className="px-1 py-0.5"></td>
+                        <td className="px-1 py-0.5 pl-4 text-[10px] italic">↳ {c.name}</td>
+                        <td className="px-1 py-0.5 text-center text-[10px]">{c.qty}</td>
+                        <td className="px-1 py-0.5"></td>
+                        <td className="px-1 py-0.5"></td>
+                      </tr>
+                    ))}
+                    <tr className="align-top text-slate-600">
+                      <td className="px-1 py-0.5"></td>
+                      <td className="px-1 py-0.5 pl-4 text-[10px] italic">↳ Jasa / Labor</td>
+                      <td className="px-1 py-0.5"></td>
+                      <td className="px-1 py-0.5"></td>
+                      <td className="px-1 py-0.5 text-right text-[10px]">{formatRp(line.labor_cost).replace('Rp', '').trim()}</td>
+                    </tr>
+                  </React.Fragment>
+                );
+              }
+              // lump_sum branch (default)
+              return (
+                <tr key={line.id} className="align-top">
+                  <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
+                  <td className="px-1 py-1 border-b border-dotted border-slate-300 font-bold" colSpan={3}>
+                    {line.service_name}
+                  </td>
+                  <td className="px-1 py-1 text-right border-b border-dotted border-slate-300">{formatRp(line.final_price).replace('Rp', '').trim()}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+
       {/* Notes */}
       {t.notes && (
         <div className="border border-dashed border-slate-400 px-2 py-1.5 my-2 text-[11px]">
@@ -322,7 +451,8 @@ function InvoiceBody({
       {/* Totals */}
       <div className="ml-auto w-3/5 text-[12px] mt-2">
         {/* I-1 fix: show gross subtotal so Gross − Diskon = Total is transparent to customer */}
-        <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal</span><span>{formatRp(grossSubtotal)}</span></div>
+        <div className="flex justify-between py-0.5 border-t border-slate-900 mt-1 pt-1"><span>Subtotal Barang</span><span>{formatRp(grossSubtotal)}</span></div>
+        {serviceSubtotal > 0 && <div className="flex justify-between py-0.5"><span>Layanan</span><span>{formatRp(serviceSubtotal)}</span></div>}
         {!isQuotation && ongkir > 0 && <div className="flex justify-between py-0.5"><span>Biaya Ongkir</span><span>{formatRp(ongkir)}</span></div>}
         {totalDiscount > 0 && (
           <div className="flex justify-between py-0.5 text-[11px] text-slate-700">
