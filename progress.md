@@ -1,5 +1,45 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-13 — Item #5 Saldo Awal + Tutup Buku Tahunan — LIVE
+
+**Founder ask:** MSME onboard mid-year butuh mekanisme masukin data historis. Tanpa Saldo Awal, Neraca kosong + Laba Rugi partial + AR aging tidak akurat. Plus annual year-end rollover.
+
+**Model (aligned Jurnal.id + Accurate Online + PSAK-ETAP):**
+- Layer 1: 4-step Saldo Awal Wizard (Kas/Aktiva/Kewajiban/Ekuitas)
+- Layer 2: Year-End Close button (revenue+expense → Laba Ditahan)
+- Persediaan auto dari `stocks × harga_modal`
+- Modal Owner + Laba Ditahan split (balancing auto)
+- Optional per-customer AR + per-supplier AP detail (opt-in toggle)
+- Aktiva Tetap aggregate; optional Prive (contra-equity)
+- Collapsible "lain-lain" via CoAPicker (Hutang Bank, UM Pelanggan, Pajak, dll)
+
+**Backend (slots 140-143 all applied):**
+- 140: enum ADD VALUE `OPENING_BALANCE` + `YEAR_END_CLOSE`
+- 141: 4 tables (saldo_awal_snapshots + opening_ar/ap_lines + year_end_close_events) — RLS tenant-scoped
+- 142: 8 SECDEF RPCs — draft/preview/persediaan/state/post/reverse + year_end preview/post
+- 143: extended `get_dashboard_maintenance_counts` — Piutang/Hutang overdue include opening lines
+
+**FE (13 files):**
+- `src/lib/saldoAwal/{types,api}.ts` — typed API + EMPTY_STEP_DATA
+- Wizard shell + 4 steps + CoAPicker + inline preview (debounced 400ms) + auto-save draft
+- `SaldoAwalPanel.tsx` — Pengaturan entry (empty/draft/posted state display + Reverse & Edit)
+- `SaldoAwalBanner.tsx` — Laporan Akuntansi nudge banner (sessionStorage dismissable)
+- `YearEndCloseButton.tsx` — button + confirmation modal with revenue/expense/net income preview
+- `SaldoAwalPDF.tsx` — printable PDF via jsPDF+autoTable untuk akuntan review
+- Extended `piutangService.ts` + `purchaseInvoiceService.ts` — fetchOpeningAR/APLines + computeAging/Kpi optional param
+- PengaturanScreen tab "🧾 Akuntansi" wired
+
+**Ship path:** Commits `91bd8cb → 0a87999 → 07c15ea → 325c5aa → 4d2f0b9 → b232917 → a2a807e → a4a8a4f` → Cloud Build 8f667d9d SUCCESS → revision 00387-heq → tag `ca4a8a4f` at 100% traffic. Tag URL 200 OK.
+
+**Standard COA codes:** 1-1010/1020 Kas/Bank (via cash_accounts.coa_account_id) · 1-1210 Piutang Usaha · 1-1510 Persediaan · 1-2100 Aktiva Tetap · 2-1110 Hutang Usaha · 3-1100 Modal Owner · 3-1150 Prive · 3-1200 Laba Ditahan. Lain-lain rows carry custom coa_code from CoAPicker.
+
+**Deferred:** CSV import, multi-user concurrent editing, rollback protection (disable reversal after N days), auto-suggest per tenant category, YTD P&L blob, fixed asset depreciation schedule, multi-currency FX, custom fiscal year non-Jan-Dec.
+
+**Spec:** `docs/superpowers/specs/2026-07-13-saldo-awal-year-end-close-design.md`
+**Plan:** `docs/superpowers/plans/2026-07-13-saldo-awal-year-end-close-plan.md`
+
+---
+
 ## 2026-07-13 — Item #5 aging integration: opening_ar_lines + opening_ap_lines — SHIPPED
 
 **What changed:** Extend piutang/hutang aging + Dashboard maintenance counts to include opening AR/AP lines from the Saldo Awal wizard (once a snapshot is posted and not reversed).
