@@ -12,6 +12,7 @@ import { generateSuratJalanPdf } from '../../lib/sales/pdf/suratJalanPdf';
 import { generateCatatanPembatalanPdf } from '../../lib/sales/pdf/catatanPembatalanPdf';
 import type { PdfPrintMode } from '../../lib/sales/pdf/common';
 import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
+import TambahLayananModal from '../penjualan/TambahLayananModal';
 
 interface Props {
   order: Order;
@@ -72,6 +73,8 @@ export function ActionPanel({
   const [generating, setGenerating] = useState<AvailablePdf | null>(null);
   const [preview, setPreview] = useState<{ blob: Blob; filename: string } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  const [layananModalOpen, setLayananModalOpen] = useState(false);
+  const [layananToast, setLayananToast] = useState<string | null>(null);
   // Print target picker: normal = A4 with colors; dot_matrix = mono, no fills,
   // sized for LX-310 / LX-2190 fanfold impact printers. The mode toggle wraps
   // every generate*Pdf call below.
@@ -94,8 +97,9 @@ export function ActionPanel({
     (order.funnel_sub_stage === '3g' || order.funnel_sub_stage === '3h') &&
     (order.order_type === 'CUSTOM_PANEL' || order.order_type === 'RAKIT_PANEL');
 
-  // Hide the whole panel if there's nothing to show.
-  if (!isVerifyStage && pdfs.length === 0 && !showEdit && !showExtraRow && !showRiwayat) return null;
+  // Item #2: panel always shown so 🛠 Tambah Layanan is reachable regardless
+  // of stage. Original early-return kept as a soft check — if genuinely
+  // nothing else is showing, the button itself still renders below.
 
   const proofUrl = order.funnel_sub_stage === '3b'
     ? order.pelunasan_proof_url
@@ -293,6 +297,27 @@ export function ActionPanel({
         </div>
       )}
 
+      {/* Item #2: 🛠 Tambah Layanan — always available for any order */}
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #e5e7eb' }}>
+        <button
+          type="button"
+          onClick={() => setLayananModalOpen(true)}
+          style={{
+            fontSize: 12,
+            padding: '6px 12px',
+            borderRadius: 8,
+            background: '#ecfdf5',
+            color: '#047857',
+            border: '1px solid #a7f3d0',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+          title="Attach layanan (Wiring / Custom Panel) dari katalog"
+        >
+          🛠 + Tambah Layanan
+        </button>
+      </div>
+
       {showRiwayat && <RiwayatPersetujuanPanel orderId={order.id} />}
 
       {preview && (
@@ -301,6 +326,29 @@ export function ActionPanel({
           filename={preview.filename}
           onClose={() => setPreview(null)}
         />
+      )}
+
+      {layananModalOpen && (
+        <TambahLayananModal
+          orderId={order.id}
+          onDone={() => {
+            setLayananModalOpen(false);
+            setLayananToast('Layanan ditambahkan');
+            setTimeout(() => setLayananToast(null), 3000);
+          }}
+          onCancel={() => setLayananModalOpen(false)}
+          showToast={(msg) => setLayananToast(msg)}
+        />
+      )}
+      {layananToast && (
+        <div style={{
+          position: 'fixed', top: 16, right: 16, zIndex: 60,
+          background: '#065f46', color: 'white',
+          padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+        }}>
+          {layananToast}
+        </div>
       )}
     </div>
   );
