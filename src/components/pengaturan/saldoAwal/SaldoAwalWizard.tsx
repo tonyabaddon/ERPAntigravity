@@ -21,6 +21,7 @@ import Step4EkuitasPreview from './Step4EkuitasPreview';
 
 interface Props {
   initialSnapshot: SaldoAwalSnapshot | null;
+  storeName: string;
   onDone: () => void;
   onCancel: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -42,7 +43,7 @@ function defaultCutoverDate(): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function SaldoAwalWizard({ initialSnapshot, onDone, onCancel, showToast }: Props) {
+export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, onCancel, showToast }: Props) {
   const [step, setStep] = useState<WizardStep>(1);
   const [cutoverDate, setCutoverDate] = useState<string>(
     initialSnapshot?.cutover_date ?? defaultCutoverDate(),
@@ -241,6 +242,8 @@ export default function SaldoAwalWizard({ initialSnapshot, onDone, onCancel, sho
               onChange={(d) => updateStepData({ step4_ekuitas: d })}
               stepData={stepData}
               snapshotId={snapshotId}
+              cutoverDate={cutoverDate}
+              storeName={storeName}
               preview={preview}
               previewLoading={previewLoading}
               showToast={showToast}

@@ -4,8 +4,9 @@
 // full Neraca preview table, balance check, 2 checkboxes, submit button.
 
 import React, { useState } from 'react';
-import type { Step4Ekuitas, PreviewTotals, SaldoAwalStepData } from '../../../lib/saldoAwal/types';
+import type { Step4Ekuitas, PreviewTotals, SaldoAwalStepData, SaldoAwalSnapshot } from '../../../lib/saldoAwal/types';
 import { postSaldoAwalSnapshot } from '../../../lib/saldoAwal/api';
+import { renderSaldoAwalPDF } from './SaldoAwalPDF';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
 
@@ -14,6 +15,8 @@ interface Props {
   onChange: (data: Step4Ekuitas) => void;
   stepData: SaldoAwalStepData;
   snapshotId: string | null;
+  cutoverDate: string;
+  storeName: string;
   preview: PreviewTotals | null;
   previewLoading: boolean;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -25,6 +28,8 @@ export default function Step4EkuitasPreview({
   onChange,
   stepData,
   snapshotId,
+  cutoverDate,
+  storeName,
   preview,
   previewLoading,
   showToast,
@@ -33,6 +38,33 @@ export default function Step4EkuitasPreview({
   const [check1, setCheck1] = useState(false);
   const [check2, setCheck2] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  async function handlePrint() {
+    if (!snapshotId || !preview) {
+      showToast('Data belum lengkap untuk cetak. Isi wizard sampai preview muncul.', 'warning');
+      return;
+    }
+    setPrinting(true);
+    try {
+      const snap: SaldoAwalSnapshot = {
+        id: snapshotId,
+        cutover_date: cutoverDate,
+        status: 'draft',
+        posted_je_id: null,
+        step_data: stepData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      await renderSaldoAwalPDF(snap, storeName);
+      showToast('PDF Ringkasan Saldo Awal berhasil diunduh.', 'success');
+    } catch (err) {
+      console.error('[SaldoAwalPDF]', err);
+      showToast(`Gagal mencetak PDF: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   const labaDitahan = preview?.laba_ditahan_balancing ?? null;
   const isBalanced =
@@ -254,7 +286,7 @@ export default function Step4EkuitasPreview({
       </section>
 
       {/* ── Submit ────────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 pt-2">
+      <div className="flex items-center gap-3 pt-2 flex-wrap">
         <button
           type="button"
           onClick={handleSubmit}
@@ -262,6 +294,14 @@ export default function Step4EkuitasPreview({
           className="px-6 py-2.5 bg-[#012749] text-white text-[13px] font-bold rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {submitting ? 'Menyimpan & Post…' : 'Simpan & Post Saldo Awal'}
+        </button>
+        <button
+          type="button"
+          onClick={handlePrint}
+          disabled={printing || previewLoading || preview === null}
+          className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 text-[13px] font-semibold rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {printing ? 'Mencetak…' : '📄 Cetak Ringkasan (PDF)'}
         </button>
         {!isBalanced && !previewLoading && (
           <p className="text-[12px] text-rose-600">Neraca belum seimbang. Periksa angka Aktiva dan Kewajiban + Ekuitas.</p>

@@ -10,9 +10,10 @@ import SaldoAwalWizard from './saldoAwal/SaldoAwalWizard';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  storeName?: string;
 }
 
-export default function SaldoAwalPanel({ showToast }: Props) {
+export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda' }: Props) {
   const [snapshot, setSnapshot] = useState<SaldoAwalSnapshot | null | undefined>(undefined); // undefined = loading
   const [wizardOpen, setWizardOpen] = useState(false);
   const [reverseOpen, setReverseOpen] = useState(false);
@@ -227,8 +228,9 @@ export default function SaldoAwalPanel({ showToast }: Props) {
         {wizardOpen && (
           <SaldoAwalWizard
             initialSnapshot={snapshot}
+            storeName={storeName}
             onDone={async () => { setWizardOpen(false); await loadState(); }}
-            onCancel={() => setWizardOpen(false)}
+            onCancel={async () => { setWizardOpen(false); await loadState(); }}
             showToast={showToast}
           />
         )}
@@ -261,8 +263,9 @@ export default function SaldoAwalPanel({ showToast }: Props) {
       {wizardOpen && (
         <SaldoAwalWizard
           initialSnapshot={null}
+          storeName={storeName}
           onDone={async () => { setWizardOpen(false); await loadState(); }}
-          onCancel={() => setWizardOpen(false)}
+          onCancel={async () => { setWizardOpen(false); await loadState(); }}
           showToast={showToast}
         />
       )}

@@ -507,7 +507,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                 Setelah dipost, laporan Neraca dan Aging Piutang/Hutang akan mencerminkan kondisi sebenarnya.
               </p>
             </div>
-            <SaldoAwalPanel showToast={showToast} />
+            <SaldoAwalPanel showToast={showToast} storeName={company?.name ?? 'Perusahaan Anda'} />
           </div>
         )}
         {activeTab === 'pajak' && <PajakSettingsPanel showToast={showToast} />}
