@@ -13335,3 +13335,89 @@ cleanup — Garindo panel back to "Belum ada Saldo Awal" empty state.
 All flows tested: Aggregate mode post/reverse (earlier), Year-End Close
 gate + preview + graceful error, Detail mode post/reverse with detail
 lines flowing to opening_ar/ap_lines. Both hotfixes live in prod.
+
+---
+
+## 2026-07-13 malam — Item #2 Service Catalog SHIPPED
+
+BOM-backed Custom Panel + Jasa Wiring re-architecture. Founder-configurable
+per-tenant service master with optional BOM linkage to master stok. Sales
+flow attach service to existing order, BOM snapshot dikunci at commit,
+FIFO stock decrement + JE post triggered saat delivery transition (4a/4b).
+
+**Backend (migrations 148 + service_delivery_enum + 152):**
+- Tables: `service_catalog` + `service_catalog_bom` — tenant-scoped, RLS
+  with `vosi_rpc_owner` in `p_select_own` for INSERT RETURNING, composite
+  FK `(tenant_id, account_code)` to `chart_of_accounts` prevents
+  cross-tenant COA leak
+- Additive extend rakit_job_lines (`service_catalog_id`,
+  `invoice_display_override`) + rakit_components (`service_catalog_bom_id`);
+  dropped `chk_rakit_service_type` CHECK
+- COA seed for Garindo: 4-1300 Pendapatan Jasa Wiring + 5-2110 Beban
+  Tenaga Kerja Rakit (account_subtype is TEXT — no enum ADD VALUE needed)
+- RPCs: `save_service_catalog` / `soft_delete_service_catalog` /
+  `attach_service_to_order` (SECDEF owned by vosi_rpc_owner, REVOKE anon,
+  GRANT authenticated). attach validates chk_rakit_prices_positive,
+  tracking_mode='detail' always (chk_rakit_mode_consistency), auto-populates
+  line_number + description
+- `_process_service_line_delivery` helper: iterates catalog-linked service
+  lines with `hpp_final IS NULL` (idempotence guard), FIFO decrement each
+  snapshot component, populate `fifo_cost_snapshot`, compute HPP =
+  material + labor, post JE via `_post_journal_entry` with source_type
+  = 'SERVICE_DELIVERY'
+- `transition_order_stage` extended: fires helper at 4a/4b transitions
+  when order has catalog-linked service lines
+
+**Frontend:**
+- Pengaturan → 🛠 Layanan tab: list + Add/Edit/Nonaktif CRUD modal
+- Reusable BOMEditor + ComponentPicker (search over master stok)
+- COA dropdowns filter by `is_control_account=false`
+- TambahLayananModal + wired into InvoicePreviewScreen header —
+  🛠 Tambah Layanan button post-save; supports service picker, qty
+  scaling BOM+labor, override components ad-hoc
+- Existing SalesInvoicePDF renders rakit_job_lines (both legacy service_type
+  path and new catalog-linked); lump_sum branch works via existing rendering
+
+**JE structure per delivery** (per service line):
+```
+D <customer>          revenue total
+  C <revenue_coa_code>  (per-service revenue account, e.g. 4-1300)
+D 5-1100 HPP           material cost
+D <labor_coa_code>     (per-service labor account, e.g. 5-2110)
+  C 1-1500 Persediaan  material cost
+  C 2-2100 Utang Gaji  labor cost
+```
+
+**Verified end-to-end via MCP chrome on Garindo prod:**
+- Pengaturan → 🛠 Layanan tab renders
+- + Tambah Layanan modal loads COA dropdowns (4-1300 + 5-2110 default)
+- Save flow: TEST-Wiring Panel Standard × Rp 500rb labor → toast + list
+  row rendered
+- Backend SQL smoke: save + attach + snapshot BOM + soft_delete all OK
+
+**MVP scope shipped (spec):**
+- Backend: tables + 4 RPCs + delivery hook + COA seed + additive extends
+- FE: Pengaturan CRUD + reusable BOM editor + TambahLayananModal +
+  InvoicePreviewScreen integration
+
+**DEFER — schema siap, FE nyusul kalau ada demand:**
+- Wizard Step2Items direct integration (workaround: attach post-hoc via
+  InvoicePreviewScreen)
+- Include material toggle UI per order
+- Kasir walk-in service line UI
+- Invoice PDF itemized branch (existing renderer covers lump_sum; itemized
+  render defer sampai bengkel/bakery tenant onboard)
+- Laporan Performa Layanan section
+- Search-as-you-type service picker
+- Multi-warehouse component per line
+
+**Irreversible decision shipped** (per memo
+docs/superpowers/specs/2026-07-13-service-catalog-decision.md): BOM
+snapshot pattern (freeze at commit). rakit_job_lines PK migration deferred
+until 5M rows.
+
+**Founder-morning setup**: Pengaturan → 🛠 Layanan → setup 3-4 services
+(Wiring Panel MDB dengan BOM, Jasa Wiring Labor-Only tanpa BOM, Custom
+Panel Box tanpa BOM). Buat kasir sale via existing flow → InvoicePreview
+→ 🛠 Tambah Layanan → snapshot BOM per order. On next stage transition
+to 4a/4b delivery, backend auto-posts JE + FIFO decrement.
