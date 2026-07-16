@@ -1,5 +1,26 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Phase 1 Hardening: Composite PK Batch 2 (Task 6) — APPLIED
+
+**What changed:** Extended composite `(tenant_id, id)` PK hardening to 3 more high-volume tables: `purchase_orders`, `purchase_invoices`, `journal_entries`. All migrations idempotent + all child FK constraints upgraded to composite refs in same transaction.
+
+**Migrations applied:**
+- **307** `composite_pk_purchase_orders` — PK `(tenant_id, id)`; composite FKs on `purchase_order_items.po_id` + `stock_lots.po_id`; covering indexes `idx_poi_tenant_po`, `idx_sl_tenant_po`
+- **308** `composite_pk_purchase_invoices` — PK `(tenant_id, id)`; composite FKs on `purchase_invoice_items.pi_id` + `pembayaran_items.tagihan_id`; covering indexes `idx_pii_tenant_pi`, `idx_pmi_tenant_tagihan`
+- **309** `composite_pk_journal_entries` — PK `(tenant_id, id)`; 6 composite FKs re-created (2 self-refs + entry_id on journal_entry_lines + 3 supplier_claims/events); 6 covering indexes
+
+**Pre-flight checks (all passed):** zero NULL tenant_id on all affected tables; zero cross-tenant FK violations on all 9 FK pairs.
+
+**Advisor triage post-migration:** No new unindexed FK findings for our new composite FKs. Pre-existing unindexed FK findings (supplier_id, created_by, posted_by, sku) deferred to future index sweep.
+
+**Deferred (with rationale):** `kasir_transactions` (5-child FK fan-out, hottest write path — Task 7); `pesanan` + `pembayaran` (medium complexity — Task 8); `stock_opname_sessions`, `stock_adjustments`, `approval_requests` (Task 9).
+
+**Inventory doc:** `docs/superpowers/specs/2026-07-17-composite-pk-inventory.md`
+
+**All local gates green:** tsc clean, lint clean, audit:numinput clean, audit:secdef-null-tenant clean (413 files), vitest no changed tests.
+
+---
+
 ## 2026-07-13 — Item #5 Saldo Awal + Tutup Buku Tahunan — LIVE
 
 **Founder ask:** MSME onboard mid-year butuh mekanisme masukin data historis. Tanpa Saldo Awal, Neraca kosong + Laba Rugi partial + AR aging tidak akurat. Plus annual year-end rollover.
