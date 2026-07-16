@@ -1488,6 +1488,9 @@ export const kasirService = {
       // explicit false when omitted to match the DB default + keep call sites
       // that don't set the flag (legacy KasirScreen) on conservative behavior.
       p_allow_negative_stock: input.p_allow_negative_stock ?? false,
+      // Idempotency token (slot 311): prevents double-post on network retry.
+      // Generate once per user action; pass the same key on any retry.
+      p_idempotency_key: input.p_idempotency_key ?? crypto.randomUUID(),
     });
     if (error) throw error;
     if (!data) throw new Error('record_kasir_sale returned no row');
@@ -1949,6 +1952,10 @@ export async function commitOpname(approvalId: number): Promise<number> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase.rpc('commit_opname', {
     p_approval_id: approvalId,
+    // Idempotency token (slot 313): prevents double-commit on network retry.
+    // Generated fresh per user action; any network-level retry of the same
+    // request uses the same key because the component passes it through.
+    p_idempotency_key: crypto.randomUUID(),
   });
   if (error) throw error;
   return data as number;

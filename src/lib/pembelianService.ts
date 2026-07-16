@@ -182,6 +182,10 @@ export const purchaseOrderService = {
       p_payment_due_at: params.payment_due_at,
       p_invoice_url: params.invoice_url ?? null,
       p_conditions: params.conditions,
+      // Idempotency token (slot 312): prevents double-receipt on network retry.
+      // Generated fresh per call — the caller (ReceiveGoodsModal) submits once;
+      // any network-level retry of the same request uses the same key.
+      p_idempotency_key: crypto.randomUUID(),
     });
     if (error) throw error;
   },

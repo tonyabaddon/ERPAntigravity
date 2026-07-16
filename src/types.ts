@@ -591,6 +591,13 @@ export interface RecordKasirSaleInput {
    * are embedded in the items JSONB as discount_amount_rp fields.
    */
   discount?: DiscountTriple;
+  /**
+   * Idempotency key for double-post prevention on network retry.
+   * Generate once per user action (crypto.randomUUID()) and pass the same
+   * key on any retry. When omitted, the RPC executes without idempotency
+   * protection (backward compat for legacy call sites).
+   */
+  p_idempotency_key?: string;
 }
 
 export interface NewExpense {
