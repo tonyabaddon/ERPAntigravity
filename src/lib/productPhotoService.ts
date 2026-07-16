@@ -49,19 +49,46 @@ function loadImage(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Upload compressed photo to product-photos bucket at `{sku}/{order}.jpg`.
- * Returns public URL + storage path.
+ * Upload compressed photo to product-photos bucket.
+ * New path pattern: tenants/{tenant_id}/products/{uuid}.jpg
+ *
+ * Tenant-scoped: enforced by storage RLS policy product_photos_insert_own_tenant
+ * (migration 302). UUID path prevents cross-tenant enumeration even on a public bucket.
+ *
+ * Signature change from pre-302: sku and order are no longer in the path.
+ * Callers should track display order in stocks.photo_urls[].order separately.
  */
 export async function uploadProductPhoto(
-  sku: string,
-  order: number,
   blob: Blob
 ): Promise<{ url: string; path: string }> {
-  const path = `${sku}/${order}.jpg`;
+  // Decode tenant_id from JWT claim — mirrors server-side _resolve_tenant_id().
+  // Same pattern as uploadChatMedia in supabaseClient.ts:260-296.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Must be authenticated to upload product photos');
+
+  let tenantId: string | null = null;
+  try {
+    const payloadPart = session.access_token.split('.')[1];
+    if (payloadPart) {
+      const b64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      const claims = JSON.parse(atob(padded));
+      tenantId = claims.tenant_id ?? null;
+    }
+  } catch {
+    tenantId = null;
+  }
+  if (!tenantId) throw new Error('User has no tenant assigned (missing tenant_id JWT claim)');
+
+  // Path: tenants/{tenant_id}/products/{uuid}.jpg
+  const uuid = crypto.randomUUID();
+  const path = `tenants/${tenantId}/products/${uuid}.jpg`;
+
   const { error: upErr } = await supabase.storage
     .from('product-photos')
-    .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+    .upload(path, blob, { upsert: false, contentType: 'image/jpeg' });
   if (upErr) throw upErr;
+
   const { data } = supabase.storage.from('product-photos').getPublicUrl(path);
   return { url: data.publicUrl, path };
 }

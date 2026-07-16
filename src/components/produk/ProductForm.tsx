@@ -183,7 +183,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
       }]);
       try {
         const { blob } = await compressImage(file);
-        const { url, path } = await uploadProductPhoto(targetSku, order, blob);
+        const { url, path } = await uploadProductPhoto(blob);
         setPhotos(curr => curr.map(p => p.order === order
           ? { ...p, url, path, uploaded_at: new Date().toISOString(), status: 'uploaded', localUrl: undefined }
           : p));

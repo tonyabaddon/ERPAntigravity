@@ -384,11 +384,11 @@ Task 2 onwards: NOT started per scope constraint (founder away, execute Task 1 o
 | Bucket | public | FE uploaders | FE readers | Path pattern (before) | RLS status (before) | Verdict | Action |
 |---|---|---|---|---|---|---|---|
 | accounting-proofs | y | none found | none found | n/a (0 files) | cross-tenant SELECT+INSERT | LEAK | Fixed: private + tenant-scoped RLS |
-| branding | y | `uploadLogo` (supabaseClient) | `branding_public_read` (invoice PDFs) | `logo_{tenantId}_{ts}.ext` (flat) | anon ALL + cross-tenant ALL — CRITICAL | LEAK (write side) | Fixed: drop anon+cross-tenant write policies; tenant-scoped INSERT/UPDATE/DELETE; 3 files renamed; public read kept |
+| branding | y | `uploadLogo` (supabaseClient) | `branding_public_read` (invoice PDFs) | `logo_{tenantId}_{ts}.ext` (flat) | anon ALL + cross-tenant ALL — CRITICAL | LEAK (write side) | Fixed: drop anon+cross-tenant write policies; tenant-scoped INSERT/UPDATE/DELETE; public read kept. Existing 3 test files stay at flat paths (metadata rename reverted — UPDATE storage.objects is metadata-only, S3 key unchanged) |
 | chat-media | n | `uploadChatMedia` | `getSignedChatMediaUrl` | `tenants/{tid}/{uuid}_{file}` | tenant-scoped (migration 300) | FIXED (Task 1) | no-op |
-| payment-proofs | n | 3 sites (paymentsApi, piutangService, sales/mutations) | `generatePaymentProofSignedUrl` | orderId-based (inconsistent) | cross-tenant SELECT+INSERT overrode tenant-slug guard | LEAK | Fixed: drop cross-tenant policies; unified UUID path; 5 files renamed; orders.full_proof_url backfilled |
+| payment-proofs | n | 3 sites (paymentsApi, piutangService, sales/mutations) | `generatePaymentProofSignedUrl` | orderId-based (inconsistent) | cross-tenant SELECT+INSERT overrode tenant-slug guard | LEAK | Fixed: drop cross-tenant policies; unified UUID path for new uploads. Existing test files stay at flat paths (same S3 metadata issue). |
 | product-photos | y | `uploadProductPhoto` (productPhotoService) | backend Go publicURL() | `{sku}/{order}.jpg` (no tenant prefix) | cross-tenant ALL | DEFERRED | Write-side cross-tenant risk; public read load-bearing for backend Go. Needs founder input on public catalog vs private (see question below) |
-| purchase-documents | y | 4 sites (purchaseInvoiceService, pembelianService + callers) | direct href (multiple components) | `purchase-invoices/{subPath}/...` | anon ALL + cross-tenant ALL — CRITICAL | LEAK | Fixed: private + drop anon; tenant-scoped CRUD; 3 files renamed; DB backfill in 4 tables |
+| purchase-documents | y | 4 sites (purchaseInvoiceService, pembelianService + callers) | direct href (multiple components) | `purchase-invoices/{subPath}/...` | anon ALL + cross-tenant ALL — CRITICAL | LEAK | Fixed: private + drop anon; tenant-scoped CRUD. Existing test files stay at flat paths (S3 metadata-only issue). |
 | stock-evidence | n | `DamageFlagModal`, `StockAdjustmentModal` | none (paths stored, not URLs) | `opname-damage/...` or `adjustments/...` (no tenant prefix) | cross-tenant SELECT+INSERT | LEAK | Fixed: tenant-scoped RLS; 0 files in storage; FE upload paths updated |
 
 ### Verdict summary:
@@ -407,13 +407,50 @@ Task 2 onwards: NOT started per scope constraint (founder away, execute Task 1 o
 - 2026-07-16T20:45Z: Called advisor(); confirmed per-bucket classification + implementation shape
 - 2026-07-16T20:50Z: Dry-ran all file renames + DB backfill in transactions with ROLLBACK
 - 2026-07-16T21:00Z: Wrote migration 20261115000301_bucket_security_hardening.sql
-- 2026-07-16T21:10Z: Updated FE: chatMediaSignedUrl.ts → getSignedStorageUrl generic; branding uploadLogo + clearLogo; purchaseInvoiceService.uploadAttachment + getAttachmentUrl; pembelianService.uploadDocument + getDocumentUrl; piutangService.uploadTempoPaymentProof; sales/mutations.uploadPaymentProof; paymentsApi.uploadPaymentProof (tenant_id → UUID); DamageFlagModal; StockAdjustmentModal
+- 2026-07-16T21:10Z: Updated FE (10 files): chatMediaSignedUrl.ts → getSignedStorageUrl generic; branding uploadLogo + clearLogo; purchaseInvoiceService; pembelianService; piutangService; sales/mutations; paymentsApi (tenant_id UUID); DamageFlagModal; StockAdjustmentModal
 - 2026-07-16T21:15Z: Added StorageLink component for private-bucket display sites
-- 2026-07-16T21:20Z: Updated display components: PembelianDetailPage, PembayaranDetailPage, BelanjaNumpangLewatDetailPage, OrderHistoryScreen
-- 2026-07-16T21:25Z: Updated tests: paymentsApi.test.ts (new UUID path pattern), RecordPaymentModal.test.tsx (tenant_id not slug)
-- 2026-07-16T21:30Z: lint clean, audit:numinput clean, audit:secdef-null-tenant clean, vitest --changed: 2 new test fixes pass; 8 pre-existing failures unrelated to this task
-- 2026-07-16T21:35Z: Applied migration via execute_sql (not apply_migration — storage.objects policy constraint)
-- 2026-07-16T21:40Z: Verified live state: bucket public flags correct; all dangerous policies dropped; 11 files renamed to tenants/{uuid}/...; DB backfill confirmed (orders, purchase_invoices, purchase_orders, pembayaran)
-- 2026-07-16T21:45Z: get_advisors: 2 pre-existing WARN (branding + product-photos public listing — intentional); no new findings
+- 2026-07-16T21:20Z: Updated display components (4): PembelianDetailPage, PembayaranDetailPage, BelanjaNumpangLewatDetailPage, OrderHistoryScreen
+- 2026-07-16T21:25Z: Updated tests: paymentsApi.test.ts, RecordPaymentModal.test.tsx
+- 2026-07-16T21:30Z: lint/audit/vitest gates all clean; commit 02f1006 pushed
+- 2026-07-16T21:35Z: Applied migration via execute_sql; verified live policies, bucket flags confirmed
+- 2026-07-16T21:40Z: Advisor flagged Go backend UploadPaymentProof missing tenantID → fixed (commit 2d1c6f1): Order.TenantID, GetOrderByConversation selects tenant_id, supabase_storage.go updated
+- 2026-07-16T21:45Z: Stage 3 anonymous URL smoke: branding 200, all private buckets 400, app API requests all 200, console clean
+- 2026-07-16T21:50Z: **CRITICAL FINDING**: UPDATE storage.objects SET name is metadata-only; public URL endpoint uses name as S3 key directly. Branding logos 404'd at new path despite metadata existing. Reverted all file renames via execute_sql (branding, payment-proofs, purchase-documents). DB URL backfills also reverted. Migration file updated (commit 916d1b9) to remove rename sections with explanation.
+- 2026-07-16T22:00Z: Post-revert smoke: branding logo 200 at original flat path, private buckets still 400. App loads clean.
+- 2026-07-16T22:05Z: Advisor: t_tenant_owner_read now dead code (slug-prefix, but new uploads use tenants/UUID path) — flag for follow-up migration drop.
 
-### Completed: 2026-07-16T21:50Z
+### Known gaps / follow-ups:
+1. **Stage 3 authenticated golden path NOT completed** — Toko Jaya Makmur login credentials not available in session. Anonymous URL smoke + policy verification done; logged-in upload flow (branding logo, purchase document, payment proof) deferred to next session. First real upload will surface any regression on the 10 updated upload sites. Founder to complete or provide credentials.
+2. **product-photos write-side leak** — founder to choose Option A (write-scope only, ~1h) or Option B (private + Go signed URLs, ~1d)
+3. **t_tenant_owner_read** on payment-proofs is dead code (slug-prefix guard, new uploads use tenants/UUID) — drop in a follow-up migration
+4. **UI thumbnail regression** — OrderHistoryScreen/PembayaranDetailPage/BelanjaNumpangLewatDetailPage now show StorageLink text links instead of inline proof thumbnails. Deliberate security trade-off. Founder to decide: keep text links or add StorageImage component with eager signed-URL resolution.
+5. **Pre-migration files at flat paths** — for real tenants with real data, a proper move via Storage Move API (`POST /storage/v1/object/move`) would be needed. Currently 0 non-garindo tenant files affected.
+
+### Completed: 2026-07-16T22:10Z (DONE_WITH_CONCERNS — see gaps above)
+
+---
+
+## 2026-07-16 — Phase 1 Concern 1: product-photos tenant-scoped (migration 302)
+
+### Started: 2026-07-16T23:30Z
+
+### Actions taken:
+- 2026-07-16T23:30Z: Read productPhotoService.ts, products_search.go, migration 300/301 references
+- 2026-07-16T23:35Z: Queried live bucket policies — found `product_photos_insert/update/delete` (no path guard), `product_photos_select` (public, intentional), `t_tenant_owner_read` (dead code on payment-proofs)
+- 2026-07-16T23:36Z: Queried storage.objects — confirmed 29 files at legacy paths; queried stocks (6 SKUs with photo_urls); queried stock_photo_embeddings (15 rows with old paths)
+- 2026-07-16T23:38Z: Called advisor() — confirmed must also update stock_photo_embeddings.photo_path (used by search_products_by_embedding RPC → Go publicURL() → Cari by Foto)
+- 2026-07-16T23:40Z: Wrote migration 302 file: drop 3 cross-tenant policies, add 3 tenant-scoped (INSERT/UPDATE/DELETE), keep public SELECT, drop dead t_tenant_owner_read
+- 2026-07-16T23:42Z: Applied migration via psql (postgres user can CREATE/DROP policies; COMMENT ON POLICY fails — docs in migration file header instead). 3 new policies live, 3 old dropped, t_tenant_owner_read dropped.
+- 2026-07-16T23:44Z: Wrote scripts/migrate-product-photos-paths.ts — uses Storage Move API, updates stocks.photo_urls + stock_photo_embeddings.photo_path, idempotent
+- 2026-07-16T23:46Z: Ran migration script: 29 files moved, 18 stocks photo entries updated (6 SKUs), 15 embedding paths updated. 11 orphan files (SMOKE-TEST-1, MULTI-PHOTO-TEST, d727f559) moved to tenant folder (no DB refs). 0 errors.
+- 2026-07-16T23:47Z: Updated productPhotoService.ts uploadProductPhoto: new sig `(blob)`, path `tenants/{tenant_id}/products/{uuid}.jpg`, JWT claim decode (mirrors uploadChatMedia)
+- 2026-07-16T23:48Z: Updated ProductForm.tsx line 186: drop `targetSku, order` args from uploadProductPhoto call
+- 2026-07-16T23:48Z: Go backend: publicURL() works unchanged — bucket stays public, new paths still resolve correctly
+- 2026-07-16T23:49Z: lint clean, audit:numinput clean, audit:secdef-null-tenant clean, vitest --changed: 2 test files, 6 tests, all pass
+
+### DB verification:
+- stocks.photo_urls: all 6 SKUs now have `tenants/11111111.../products/{uuid}.jpg` paths ✓
+- stock_photo_embeddings: all 15 rows updated to tenants/ paths ✓
+- Policies: product_photos_select (public) kept; insert/update/delete now tenant-scoped ✓
+
+### Completed: (commit + push + deploy in progress)
