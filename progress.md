@@ -13533,3 +13533,20 @@ Required deployment order — STRICT, do not deviate:
 - V4: Extra latency from `uploadChatMedia` (auth.getUser + users query added) — acceptable at 1-tenant scale, negligible
 
 **Task 2 onwards**: NOT started per scope constraint. Founder decides when to proceed.
+
+**Update 13:27 UTC — Task 1 PROD DEPLOY COMPLETE**:
+- Migration 300 applied to prod via `execute_sql` (not `apply_migration` — storage.objects owned by supabase_storage_admin, postgres role can't CREATE POLICY via apply_migration path; execute_sql works because it runs in a different context)
+- Additional fix commit `1e7b410`: `public.users` doesn't exist in this codebase — replaced with `public._resolve_tenant_id()` in migration + JWT claim decode in `uploadChatMedia`
+- Cloud Build both succeeded (frontend rev 00255-2b9, backend rev)
+- FE serving at real URL `https://garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app/` returns 200
+- BE `/api/health` returns 200 with JSON `{"status":"online",...}`
+- Bundle verified contains new code: `createSignedUrl`, JWT `access_token` decode, `tenant_id JWT` error message
+- SQL policy simulation PASSED: Toko Jaya JWT can't read Garindo file path, own-tenant read allowed
+- 0 legacy chat media rows in prod → no data migration script needed
+
+**Task 1 status: DONE. Memory update: chat-media cross-tenant leak RESOLVED.**
+
+**Known follow-ups from this task**:
+- Cloudbuild.yaml has SUPABASE_SERVICE_KEY hardcoded in plaintext (line 38) — flagged per CLAUDE.md gotcha, pre-existing (not created by Task 1). Should move to Secret Manager as part of secret rotation policy (Day 12).
+- HTML `<title>` still says "VOSI MSME ERP" — Day 15 cleanup (landing rebrand day).
+- Other buckets flagged by advisor as public + broad SELECT — Task 2 (Day 2) scope.
