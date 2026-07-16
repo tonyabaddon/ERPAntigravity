@@ -70,22 +70,38 @@ async function main() {
 
   // Fetch all messages with media_url that look like legacy full URLs
   // (new-style paths start with "tenants/" and are not http URLs)
+  // LIMIT 10000: PostgREST default max is 1000 rows — without an explicit limit
+  // only the first 1000 rows would be processed silently. 10000 is a safe upper
+  // bound for a single-instance migration; if hit, re-run (idempotency ensures
+  // already-migrated rows are excluded by the media_url LIKE http% filter).
   const { data: legacyMessages, error: fetchErr } = await supabase
     .from('messages')
     .select('id, tenant_id, media_url, conversation_id')
-    .like('media_url', 'http%');
+    .like('media_url', 'http%')
+    .limit(10000);
 
   if (fetchErr) {
     console.error('Failed to fetch legacy messages:', fetchErr);
     process.exit(1);
   }
 
-  if (!legacyMessages || legacyMessages.length === 0) {
+  const legacyCount = legacyMessages?.length ?? 0;
+
+  if (legacyCount === 0) {
     console.log('No legacy media_url rows found. Nothing to migrate.');
     return;
   }
 
-  console.log(`Found ${legacyMessages.length} legacy media_url row(s) to process.`);
+  // Warn if we hit the requested limit — result may be truncated
+  if (legacyCount === 10000) {
+    console.warn(
+      '⚠️  WARNING: Reached limit of 10000 legacy rows. Result may be truncated.\n' +
+      '   Re-run this script after this batch completes to process remaining rows.\n' +
+      '   Idempotency guarantee: already-migrated rows are excluded by media_url LIKE http% filter.'
+    );
+  }
+
+  console.log(`Found ${legacyCount} legacy media_url row(s) to process.`);
   console.log('');
 
   let migrated = 0;

@@ -22,8 +22,10 @@
 - Run data migration script: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/migrate-chat-media-paths.ts`
 - `git push` to trigger Cloud Build FE deploy (triggeres `cloudbuild.frontend.yaml`)
 - Prod smoke test: upload chat media as Garindo, verify tenant-prefixed path; attempt cross-tenant access from Toko Jaya Makmur, verify 403
-- DEPLOYMENT ORDER: (1) apply migration 300 → (2) run data script → (3) git push FE deploy
-  (renderer dual-format handling makes order flexible, but preferred sequence avoids window where new paths hit old policies)
+- DEPLOYMENT ORDER IS STRICT: (1) apply migration 300 → (2) run data script to COMPLETION → (3) THEN git push FE deploy
+  WARNING: After migration 300 applies, Supabase's public URL endpoint returns HTTP 400 for ALL chat-media files.
+  Legacy URL passthrough in getSignedChatMediaUrl() only works BEFORE migration 300 applies.
+  If FE deploys before data script completes, existing chat attachments break for all legacy conversations.
 ### Blockers (if any):
 - None. 9 pre-existing test failures are not caused by this change (worktree artifact).
 ### Status: LOCAL WORK COMPLETE

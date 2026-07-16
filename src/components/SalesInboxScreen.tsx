@@ -509,13 +509,25 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   // Resolve chat-media URL (handles both legacy public URLs and new tenant-prefixed paths)
+  // State machine: 'loading' → 'loaded' | 'error' (distinguishes "still loading" from "broken")
+  const [mediaState, setMediaState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (msg.media_url) {
-      getSignedChatMediaUrl(msg.media_url).then(setResolvedMediaUrl);
-    } else {
+    if (!msg.media_url) {
+      setMediaState('error');
       setResolvedMediaUrl(null);
+      return;
     }
+    setMediaState('loading');
+    setResolvedMediaUrl(null);
+    getSignedChatMediaUrl(msg.media_url).then(url => {
+      if (url) {
+        setResolvedMediaUrl(url);
+        setMediaState('loaded');
+      } else {
+        setMediaState('error');
+      }
+    });
   }, [msg.media_url]);
 
   if (msg.sender === 'system') {
@@ -543,13 +555,19 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
         <span className="text-[9px] text-gray-400 mb-0.5 px-1">{senderLabel}</span>
         <div className={`px-3 py-2 text-xs leading-relaxed ${bubbleClass}`}>
           {msg.media_url ? (
-            resolvedMediaUrl ? (
-              <a href={resolvedMediaUrl} target="_blank" rel="noreferrer" className="underline opacity-80">
-                [{msg.media_type?.toUpperCase() ?? 'FILE'} attachment]
-              </a>
-            ) : (
-              <span className="opacity-60">[lampiran memuat…]</span>
-            )
+            <>
+              {mediaState === 'loading' && (
+                <span className="opacity-60">[lampiran memuat…]</span>
+              )}
+              {mediaState === 'error' && (
+                <span className="text-red-400 opacity-80">[lampiran tidak tersedia]</span>
+              )}
+              {mediaState === 'loaded' && resolvedMediaUrl && (
+                <a href={resolvedMediaUrl} target="_blank" rel="noreferrer" className="underline opacity-80">
+                  [{msg.media_type?.toUpperCase() ?? 'FILE'} attachment]
+                </a>
+              )}
+            </>
           ) : (
             msg.text
           )}
