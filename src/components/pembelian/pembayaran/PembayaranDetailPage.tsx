@@ -9,6 +9,7 @@ import {
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { DbPembayaran } from '../../../types';
 import { StorageLink } from '../../ui/StorageLink';
+import { StorageImage } from '../../ui/StorageImage';
 
 interface Props {
   pembayaranNumber: string;
@@ -159,8 +160,15 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
       {pmb.proof_url && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Bukti Bayar</div>
-          <StorageLink bucket="purchase-documents" storageRef={pmb.proof_url} className="block">
-            <span className="text-sm text-indigo-600 hover:underline">Lihat Bukti Bayar</span>
+          <StorageImage
+            bucket="purchase-documents"
+            path={pmb.proof_url}
+            alt="Bukti Bayar"
+            className="w-full max-w-xs"
+            aspectRatio="4/3"
+          />
+          <StorageLink bucket="purchase-documents" storageRef={pmb.proof_url} className="block mt-2">
+            <span className="text-xs text-indigo-600 hover:underline">Lihat Ukuran Penuh ↗</span>
           </StorageLink>
         </div>
       )}

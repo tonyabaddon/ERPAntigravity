@@ -8,6 +8,7 @@ import PiStatusBadge from './PiStatusBadge';
 import MarkPaidModal from './MarkPaidModal';
 import VoidConfirmModal from './VoidConfirmModal';
 import { StorageLink } from '../../ui/StorageLink';
+import { StorageImage } from '../../ui/StorageImage';
 
 interface Props {
   piNumber: string;
@@ -120,17 +121,31 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
       {(pi.supplier_invoice_photo_url || pi.payment_proof_url) && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Lampiran</div>
-          <div className="flex gap-3">
+          <div className="flex gap-4 flex-wrap">
             {pi.supplier_invoice_photo_url && (
-              <div>
-                <div className="text-[11px] font-semibold text-gray-600 mb-1">Faktur Supplier</div>
-                <StorageLink bucket="purchase-documents" storageRef={pi.supplier_invoice_photo_url} className="block text-sm text-indigo-600 hover:underline">Lihat Faktur Supplier</StorageLink>
+              <div className="flex flex-col gap-1">
+                <div className="text-[11px] font-semibold text-gray-600">Faktur Supplier</div>
+                <StorageImage
+                  bucket="purchase-documents"
+                  path={pi.supplier_invoice_photo_url}
+                  alt="Faktur Supplier"
+                  className="w-24 h-28 border border-gray-200"
+                  aspectRatio="3/4"
+                />
+                <StorageLink bucket="purchase-documents" storageRef={pi.supplier_invoice_photo_url} className="text-xs text-indigo-600 hover:underline">Lihat Penuh ↗</StorageLink>
               </div>
             )}
             {pi.payment_proof_url && (
-              <div>
-                <div className="text-[11px] font-semibold text-gray-600 mb-1">Bukti Bayar</div>
-                <StorageLink bucket="purchase-documents" storageRef={pi.payment_proof_url} className="block text-sm text-indigo-600 hover:underline">Lihat Bukti Bayar</StorageLink>
+              <div className="flex flex-col gap-1">
+                <div className="text-[11px] font-semibold text-gray-600">Bukti Bayar</div>
+                <StorageImage
+                  bucket="purchase-documents"
+                  path={pi.payment_proof_url}
+                  alt="Bukti Bayar"
+                  className="w-24 h-28 border border-gray-200"
+                  aspectRatio="3/4"
+                />
+                <StorageLink bucket="purchase-documents" storageRef={pi.payment_proof_url} className="text-xs text-indigo-600 hover:underline">Lihat Penuh ↗</StorageLink>
               </div>
             )}
           </div>

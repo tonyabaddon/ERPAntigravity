@@ -8,6 +8,7 @@ import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../lib/salesChann
 import { useSalesChannels } from '../contexts/SalesChannelsContext';
 import InvoiceModal from './InvoiceModal';
 import { StorageLink } from './ui/StorageLink';
+import { StorageImage } from './ui/StorageImage';
 
 type ChannelFilterGroup = 'all' | 'offline' | 'marketplace' | 'direct';
 type ChannelFilter = ChannelFilterGroup | SalesChannel;
@@ -708,12 +709,15 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                           <div className="flex items-start gap-3">
                             {order.full_proof_url ? (
-                              <div className="w-16 h-20 bg-blue-50 border-2 border-blue-200 rounded-lg flex flex-col items-center justify-center gap-1">
-                                <span className="text-blue-400 text-lg">🖼</span>
-                                <span className="text-[9px] text-blue-400 font-semibold">Bukti</span>
-                              </div>
+                              <StorageImage
+                                bucket="payment-proofs"
+                                path={order.full_proof_url}
+                                alt="Bukti Transfer"
+                                className="w-16 h-20 flex-shrink-0 border-2 border-blue-200"
+                                aspectRatio="4/5"
+                              />
                             ) : (
-                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
                                 <span className="text-[9px] text-indigo-400 font-semibold">Foto Bukti</span>
                               </div>
@@ -783,12 +787,15 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                           <div className="flex items-start gap-3">
                             {order.dp_proof_url ? (
-                              <div className="w-16 h-20 bg-indigo-50 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
-                                <span className="text-indigo-400 text-lg">🖼</span>
-                                <span className="text-[9px] text-indigo-400 font-semibold">Bukti DP</span>
-                              </div>
+                              <StorageImage
+                                bucket="payment-proofs"
+                                path={order.dp_proof_url}
+                                alt="Bukti DP"
+                                className="w-16 h-20 flex-shrink-0 border-2 border-indigo-200"
+                                aspectRatio="4/5"
+                              />
                             ) : (
-                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
                                 <span className="text-[9px] text-indigo-400 font-semibold">Foto DP</span>
                               </div>

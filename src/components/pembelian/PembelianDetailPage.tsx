@@ -19,6 +19,7 @@ import { fetchStoreSettings } from '../../lib/pengaturan/queries';
 import type { StoreSettings } from '../../lib/pengaturan/types';
 import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf';
 import { StorageLink } from '../ui/StorageLink';
+import { StorageImage } from '../ui/StorageImage';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
 import MarkAsPaidModal from './MarkAsPaidModal';
 import ReceiveReplacementModal from './ReceiveReplacementModal';
@@ -474,12 +475,32 @@ export default function PembelianDetailPage({
 
         {/* Attachments */}
         {(po.invoice_url || po.payment_proof_url) && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-2 print:hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 print:hidden">
             {po.invoice_url && (
-              <StorageLink bucket="purchase-documents" storageRef={po.invoice_url} className="text-sm text-indigo-600 hover:underline block">Lihat Invoice Supplier</StorageLink>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Invoice Supplier</div>
+                <StorageImage
+                  bucket="purchase-documents"
+                  path={po.invoice_url}
+                  alt="Invoice Supplier"
+                  className="w-32 h-40 border border-gray-200"
+                  aspectRatio="4/5"
+                />
+                <StorageLink bucket="purchase-documents" storageRef={po.invoice_url} className="text-xs text-indigo-600 hover:underline block mt-1">Lihat Penuh ↗</StorageLink>
+              </div>
             )}
             {po.payment_proof_url && (
-              <StorageLink bucket="purchase-documents" storageRef={po.payment_proof_url} className="text-sm text-indigo-600 hover:underline block">Lihat Bukti Pembayaran</StorageLink>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Bukti Pembayaran</div>
+                <StorageImage
+                  bucket="purchase-documents"
+                  path={po.payment_proof_url}
+                  alt="Bukti Pembayaran"
+                  className="w-32 h-40 border border-gray-200"
+                  aspectRatio="4/5"
+                />
+                <StorageLink bucket="purchase-documents" storageRef={po.payment_proof_url} className="text-xs text-indigo-600 hover:underline block mt-1">Lihat Penuh ↗</StorageLink>
+              </div>
             )}
           </div>
         )}
