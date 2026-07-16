@@ -1,3 +1,29 @@
+## 2026-07-17 — Phase 1 Task 7 (Day 7): Structured logging + tenant_id middleware (backend Go)
+
+### Started: 2026-07-17T02:00Z
+
+### Actions taken:
+- 2026-07-17T02:00Z: Read task-7-brief.md; scoped 188 log.Printf sites via grep across backend-go/
+- 2026-07-17T02:05Z: Called advisor(); locked Cloud Logging field mapping (severity/message/timestamp), JWT tenant_id confirmed via custom_access_token_hook, approvals poller WithLogger API preserved
+- 2026-07-17T02:10Z: Created internal/logging/slog_handler.go — CloudHandler (WARN→WARNING, context fields)
+- 2026-07-17T02:15Z: Created internal/api/context_middleware.go — JWT base64url decode, X-Request-Id, RequestContextMiddleware
+- 2026-07-17T02:20Z: Migrated 11 files: main.go + db/client + db/conversations + engine/machine + followup/poller + heartbeat/poller + recon/handler + scheduler/timeout + whatsapp/client + whatsapp/debounce + whatsapp/handler
+- 2026-07-17T02:35Z: Wired logging.Init() + RequestContextMiddleware into main.go HTTP chain
+- 2026-07-17T02:40Z: go build ./... clean; all tests pass; 3 smoke tests verify JSON shape/severity/empty-field omission
+- 2026-07-17T02:45Z: npm run lint clean; commit 0f1d687 pushed; Cloud Build triggered
+
+### Design decisions:
+- config/config.go log.Println kept (fires before logging.Init())
+- approvals/expiry_poller.go WithLogger(*log.Logger) kept (test API stability)
+- cmd/ binaries excluded (dev tools, not production daemon)
+- Zero log.Printf remaining in production daemon path (verified by grep)
+
+### Report: .superpowers/sdd/task-7-report.md
+
+### Completed: 2026-07-17T02:50Z — commit 0f1d687, DONE
+
+---
+
 ## 2026-07-16 — Phase 1 Task 1 (Day 1): Chat-media security fix
 ### Started: 2026-07-16T19:40:00Z
 ### Progress log:

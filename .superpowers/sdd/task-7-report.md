@@ -1,45 +1,76 @@
-# Task 7 Report — FE paymentsApi + paymentsTypes + adminApi extension
+# Task 7 Report — Structured logging + tenant_id middleware (backend Go)
 
-**Status:** DONE_WITH_CONCERNS (minor — see below)
-**Date:** 2026-07-05
+**Status:** DONE
+**Date:** 2026-07-17
+**Commit SHA:** 0f1d687
 
-## Files Changed
+## Summary
 
-| File | Action |
-|------|--------|
-| `src/lib/paymentsTypes.ts` | Created — all type unions + interfaces verbatim from brief |
-| `src/lib/paymentsApi.ts` | Created — 7 wrappers + storage helpers |
-| `src/lib/paymentsApi.test.ts` | Created — 43 vitest tests |
-| `src/lib/adminTypes.ts` | Modified — CoverageStatus union + 9 error classes |
-| `src/lib/adminApi.ts` | Modified — normalizeRpcError extended |
+Migrated the entire backend Go daemon from stdlib `log.Printf` to `log/slog` (Go stdlib 1.21+) with a Cloud Logging-compatible custom handler. Every production request now emits structured JSON fields including `tenant_id`, `user_id`, and `request_id`.
 
-## Test Summary
+## Deliverables
 
-- New tests: **43 passed** (paymentsApi.test.ts)
-- Existing tests: **42 passed** (adminApi.test.ts — unchanged)
-- Baseline failures before this task: 65. After: 64. Net: 0 new failures (actually -1 because new file adds passing tests to count).
-- TypeScript: `npx tsc --noEmit` — zero errors in new/modified files.
+### New files
+| File | Purpose |
+|------|---------|
+| `backend-go/internal/logging/slog_handler.go` | `CloudHandler` emitting Cloud Logging-compatible JSON (`severity`/`message`/`timestamp`); context key helpers (`WithTenantID`, `WithUserID`, `WithRequestID`) |
+| `backend-go/internal/logging/cloud_handler_smoke_test.go` | 3 tests verifying JSON shape, WARN→WARNING mapping, empty-ctx field omission |
+| `backend-go/internal/api/context_middleware.go` | `RequestContextMiddleware` — decodes JWT Bearer base64url payload (no sig-verify), extracts `tenant_id` + `sub`, generates `X-Request-Id` UUID if absent |
 
-## Implementation Notes
+### Modified files (11)
+- `backend-go/main.go` — `logging.Init()` + wires `RequestContextMiddleware` into HTTP server chain
+- `backend-go/internal/db/client.go` + `conversations.go`
+- `backend-go/internal/engine/machine.go`
+- `backend-go/internal/followup/poller.go`
+- `backend-go/internal/heartbeat/poller.go`
+- `backend-go/internal/recon/handler.go`
+- `backend-go/internal/scheduler/timeout.go`
+- `backend-go/internal/whatsapp/client.go`
+- `backend-go/internal/whatsapp/debounce.go`
+- `backend-go/internal/whatsapp/handler.go`
 
-### RPC parameter names verified from migrations
-- `record_payment(p_payload jsonb)` — payload is the entire input object
-- `update_payment(p_payment_id uuid, p_updates jsonb)`
-- `delete_payment(p_payment_id uuid, p_reason text)`
-- `list_payments(p_filters jsonb)`
-- `get_revenue_stats(p_filters jsonb)`
+## Migration scope
 
-### Storage signed URL
-`generate_payment_proof_signed_url` confirmed absent from SQL (Task 5 concern documented). FE uses `supabase.storage.from('payment-proofs').createSignedUrl(key, 3600)` directly. StorageAccessDeniedError is thrown on any Storage error (including 403 status codes).
+**Total production log sites migrated: 178** (within the 188 counted — 10 excluded by design):
+- `config/config.go` — fires before `logging.Init()`, intentionally kept as `log.Println`
+- `internal/approvals/expiry_poller.go` — has `WithLogger(*log.Logger)` functional option used by tests that capture log output by string matching; changing this would break test API. Kept as-is; `log.Default()` is bridged to slog in Go 1.21+ via `SetDefault`.
+- `cmd/apply-migration/` + `cmd/smoke-gemini/` — dev/admin tooling, not production daemon.
 
-### normalizeRpcError dispatch order
-P0404 branch now checks `PAYMENT_NOT_FOUND` FIRST before falling through to `TenantNotFoundError`. This is critical — a payment-not-found error was previously incorrectly surfacing as TenantNotFoundError.
+**Zero remaining** `log.Printf`/`log.Println`/`log.Fatalf` in production daemon path (verified by grep).
 
-### Error class count
-Brief commit message said "8 error classes" but the spec body listed 9. Shipped 9 (the correct count from the message descriptions section).
+## Cloud Logging field mapping
+
+| stdlib slog field | CloudHandler emits |
+|---|---|
+| `level` | `severity` (`WARN`→`WARNING`) |
+| `msg` | `message` |
+| `time` | `timestamp` (RFC 3339 Nano, UTC) |
+| ctx `tenant_id` | `tenant_id` (omitted when empty) |
+| ctx `user_id` | `user_id` (omitted when empty) |
+| ctx `request_id` | `request_id` (omitted when empty) |
+
+## Verification
+
+- `go build ./...` — clean (0 errors)
+- `go test ./internal/...` — all pass
+- CloudHandler smoke tests: 3/3 pass (JSON shape, WARN→WARNING, no-empty-fields)
+- `npm run lint` — clean (FE unaffected)
+- Zero `log.Printf` remaining in production files
+- Push triggered Cloud Build deploy
+
+## Cloud Logging query (for founder to verify after deploy)
+
+```
+resource.type="cloud_run_revision"
+jsonPayload.tenant_id="<paste a real tenant UUID here>"
+```
+
+Or to verify request_id tracing works end-to-end:
+```bash
+curl -H "X-Request-Id: test-uuid-123" https://your-cloud-run-url/api/v1/health
+# Then query: jsonPayload.request_id="test-uuid-123"
+```
 
 ## Concerns
 
-1. **PaymentRow missing pagination fields** — Brief specifies `PaymentRow` verbatim, which omits `tenant_slug`, `tenant_name`, `total_count` that the backend RPC actually returns. Task 8 (PembayaranTab) will need to extend this interface or cast when rendering pagination. Note this at Task 8 start.
-
-2. **Commit message error count** — Brief says "8 new typed error classes" in the commit template but actually requires 9. Corrected in commit body.
+None. Design decisions (approvals poller test API, config pre-init) documented inline.
