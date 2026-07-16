@@ -13738,6 +13738,11 @@ BLOCKERS remaining (need founder action, morning):
 - `npm run audit:numinput` — clean
 - `npm run audit:secdef-null-tenant` — clean
 
-**Phase 1 Day 4 (Task 4) status: DONE — deploying via git push**
+**Phase 1 Day 4 (Task 4) status: DONE — prod verified**
+
+**Prod verification (post-build):**
+- `/api/v1/health` → HTTP/2 200 ✓
+- `/api/health` → HTTP/2 200 + `x-deprecated-path: /api/v1/health` ✓
+- FE bundle: 7/7 `/api/v1/` paths confirmed in deployed JS (wa/qr, wa/logout, wa/pair-code, products/search-by-photo, products/index-photos, recon/upload, recon/close)
 
 **Next: Task 4 (API v1 prefix) dispatched autonomously**

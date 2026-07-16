@@ -1,86 +1,120 @@
-# Task 4 Report: create_sales_rep + deactivate_sales_rep RPCs (Wave 6)
+# Task 4 Report: API /api/v1/* prefix + backward compat (Caleo Phase 1 Day 4)
 
-**Date:** 2026-07-10
-**Commit:** `48e354e` feat(rls): create_sales_rep + deactivate_sales_rep RPCs (super_admin only)
-**Status:** DONE_WITH_CONCERNS (Docker unavailable → MCP smoke only, as expected)
-
----
-
-## MCP Pre-flight Verifications
-
-| Check | Result |
-|---|---|
-| `platform_admin_audit_action_check` contains CREATE_SALES_REP + DEACTIVATE_SALES_REP | PASS |
-| `platform_admins.email` is NOT NULL | PASS (is_nullable=NO) |
-| `suspend_tenant` Wave 5 pattern fetched | PASS — `v_admin_email` from `platform_admins WHERE user_id = auth.uid()` |
-| `platform_admin_audit` columns | id, admin_user_id (NN), admin_email (NN), tenant_id (nullable), action (NN), detail, ip_address, user_agent, created_at |
-| `platform_admins_user_id_fkey` → `auth.users(id)` | Confirmed via `pg_constraint` (cross-schema FK; invisible to information_schema cross-join) |
-| `platform_admins` columns | user_id, email (NN), role (default super_admin), created_at, created_by, status (default active), name |
-
-**Key correction from pre-flight:** Note B's example showed `admin_email` resolved via `auth.users` subquery. Wave 5 canonical pattern (suspend_tenant) resolves it via `SELECT email FROM public.platform_admins WHERE user_id = auth.uid()`. Used Wave 5 pattern.
-
-**Cross-schema FK discovery:** information_schema FK query returned empty for `platform_admins`; `pg_constraint` query revealed `platform_admins_user_id_fkey` → `auth.users(id)`. Caught in smoke DO-block (FK violation), fixed by seeding auth.users for the actor as well as the target before platform_admins INSERT.
+**Date:** 2026-07-17
+**Commit SHA:** 254223e
+**Status:** DONE
 
 ---
 
 ## What Was Implemented
 
-### Migration `supabase/migrations/20261115000036_sales_rep_lifecycle_rpcs.sql`
+### Backend Go
 
-**`create_sales_rep(p_user_id UUID, p_email TEXT, p_name TEXT) RETURNS JSONB`**
-- P0403 SUPER_ADMIN_REQUIRED gate via `_is_super_admin_from_jwt()`
-- 22023 USER_ID_REQUIRED — p_user_id IS NULL check
-- 22023 INVALID_EMAIL_FORMAT — regex check
-- P0002 USER_NOT_FOUND_IN_AUTH — `EXISTS (SELECT 1 FROM auth.users WHERE id = p_user_id)`
-- 22023 CANNOT_DEMOTE_SUPER_ADMIN — guard against demoting existing super_admin (Note E)
-- INSERT with email (Note A fix), ON CONFLICT DO UPDATE
-- `platform_admin_audit` INSERT: admin_user_id=auth.uid(), admin_email=v_admin_email (from platform_admins), tenant_id=NULL, action='CREATE_SALES_REP'
-- OWNER TO postgres, REVOKE ALL FROM PUBLIC, GRANT EXECUTE TO authenticated
-- `SET search_path TO 'public', 'pg_catalog'` per Wave 5 pattern
+**New file: `backend-go/internal/api/version_middleware.go`**
+- `VersionRouter(inner http.Handler) http.Handler` middleware
+- `/api/v1/<path>` → rewrites URL to `/api/<path>` → delegates to inner mux
+- `/api/<path>` (legacy) → sets `X-Deprecated-Path: /api/v1/<path>` header + `slog.WarnContext` → delegates to inner mux as-is
+- Any other prefix → `http.NotFound`
+- No new dependencies — stdlib only (`log/slog`, `net/http`, `strings`)
 
-**`deactivate_sales_rep(p_user_id UUID, p_reason TEXT) RETURNS JSONB`**
-- P0403 SUPER_ADMIN_REQUIRED gate
-- UPDATE WHERE user_id = p_user_id AND role = 'sales_rep' (Note C: protects super_admin from accidental deactivation)
-- P0002 SALES_REP_NOT_FOUND if NOT FOUND
-- `platform_admin_audit` INSERT: action='DEACTIVATE_SALES_REP', tenant_id=NULL
-- Same OWNER + GRANT pattern
+**Modified: `backend-go/main.go`** (1-line change)
+- `http.Serve(ln, mux)` → `http.Serve(ln, api.VersionRouter(mux))`
+- All 11 route registrations unchanged — keep `/api/` prefix on inner mux
 
-### pgTAP Test `supabase/tests/wave6/sales_rep_lifecycle.sql`
+**Modified: `cloudbuild.yaml`**
+- Added `API_VERSION=v1` to `--update-env-vars` (cosmetic marker, inferred from URL)
 
-plan(6) per Note F:
-1. `lives_ok` — create_sales_rep succeeds for super_admin
-2. `results_eq` — role=sales_rep, status=active
-3. `throws_ok` — P0403 for sales_rep JWT
-4. `lives_ok` — deactivate_sales_rep succeeds
-5. `results_eq` — email column populated from p_email
-6. `results_eq` — audit row: action=CREATE_SALES_REP, tenant_id NULL, email in detail
+### Frontend (8 fetch paths → `/api/v1/`)
 
-**Seed order corrected from plan:** auth.users for BOTH actor (22222222) AND target (55555555) seeded before `SET LOCAL role` — required by `platform_admins_user_id_fkey`.
+- `src/components/WhatsappAiScreen.tsx`:
+  - `/api/wa/qr` → `/api/v1/wa/qr`
+  - `/api/wa/logout` → `/api/v1/wa/logout`
+  - `/api/wa/pair-code` → `/api/v1/wa/pair-code`
+  - Line 870 (`app.post('/api/whatsapp/webhook', ...)`) left unchanged — dead Express.js code inside JSX, not a live fetch call
+- `src/lib/cariByFotoService.ts`:
+  - `/api/products/search-by-photo` → `/api/v1/products/search-by-photo`
+  - `/api/products/index-photos` → `/api/v1/products/index-photos`
+- `src/lib/supabaseClient.ts`:
+  - `/api/recon/upload` → `/api/v1/recon/upload`
+  - `/api/recon/close` → `/api/v1/recon/close`
 
 ---
 
-## Prod Smoke Evidence (MCP DO-blocks, all RAISE-rolled-back)
+## Verification
 
-| Smoke | Result |
+### Local gates (all green)
+
+| Gate | Result |
 |---|---|
-| create_sales_rep super_admin path | SMOKE_ROLLBACK: role=sales_rep status=active email=smokerep@test.com audit=CREATE_SALES_REP |
-| create_sales_rep P0403 gate | SMOKE_ROLLBACK: P0403 gate WORKS for create_sales_rep. sales_rep correctly blocked. |
-| deactivate_sales_rep super_admin path | SMOKE_ROLLBACK: status=disabled audit=DEACTIVATE_SALES_REP |
-| deactivate_sales_rep P0403 gate | SMOKE_ROLLBACK: P0403 gate WORKS for deactivate_sales_rep. sales_rep correctly blocked. |
+| `go build ./...` | PASS — clean |
+| `go test ./internal/api/...` | PASS — 7/7 (approval_webhook tests unaffected) |
+| `npm run lint` (tsc --noEmit) | PASS — clean |
+| `npm run audit:numinput` | PASS — clean |
+| `npm run audit:secdef-null-tenant` | PASS — clean |
 
-RPC metadata: both `owner=postgres`, `security_definer=true`, `acl` includes authenticated.
+### Pre-deploy prod state
+
+```
+curl -sI $BE_URL/api/v1/health → HTTP/2 404 (expected — old build)
+curl -sI $BE_URL/api/health → HTTP/2 200 (working)
+```
+
+### Post-deploy prod verification (VERIFIED)
+
+Cloud Builds: `d1744f83` (backend) — SUCCESS, `11cd8f58` (frontend) — SUCCESS.
+
+```
+curl -sI $BE_URL/api/v1/health:
+  HTTP/2 200
+  access-control-allow-headers: Content-Type, Authorization
+  access-control-allow-methods: GET, POST, OPTIONS, PUT, DELETE
+  access-control-allow-origin: *
+  content-type: application/json
+
+curl -sI $BE_URL/api/health:
+  HTTP/2 200
+  access-control-allow-headers: Content-Type, Authorization
+  access-control-allow-methods: GET, POST, OPTIONS, PUT, DELETE
+  access-control-allow-origin: *
+  content-type: application/json
+  x-deprecated-path: /api/v1/health    <-- backward compat header
+```
+
+FE bundle verification: 7/7 `/api/v1/` paths confirmed in deployed JS bundle:
+- `/api/v1/products/index-photos`
+- `/api/v1/products/search-by-photo`
+- `/api/v1/recon/close`
+- `/api/v1/recon/upload`
+- `/api/v1/wa/logout`
+- `/api/v1/wa/pair-code`
+- `/api/v1/wa/qr`
+
+No stale `/api/` non-v1 paths in bundle (only `/api/broadcast` from Supabase Realtime library — not a backend-go route).
+
+---
+
+## Design decisions
+
+1. **`VersionRouter(inner http.Handler)`** vs brief's callback form — simpler, no callback needed, composes cleanly with main.go's scattered route registration pattern (routes added at 3 points after async inits).
+
+2. **Routes keep `/api/` prefix** on inner mux — zero route renaming. The middleware handles rewriting. WA bridge daemon at `/api/approval/wa-webhook` continues working without any external coordination.
+
+3. **Rewrite logic:** `/api/v1/health` → strip `/api/v1/` → prepend `/api/` → `/api/health`. Works for all paths including nested ones.
+
+---
+
+## Backward compat contract
+
+- Legacy `/api/*` callers (WA bridge daemon at `/api/approval/wa-webhook`) continue working with deprecation header
+- Sunset plan: legacy `/api/*` removed 2027-Q3 after 1 release cycle
+- **Rollback plan:** `git revert 254223e` — all routes at `/api/*` continue to work with no middleware overhead
 
 ---
 
 ## Concerns
 
-1. **ACL includes anon** — existing global GRANTs give `anon=X/postgres` in addition to `authenticated`. Not introduced by this migration. SECDEF super_admin gate blocks unauthorized callers regardless. Cleanup in a dedicated ACL audit if needed.
-2. **Docker unavailable** — pgTAP run substituted by 4 MCP DO-block smoke tests (all pass + rollback). DONE_WITH_CONCERNS per escalation policy.
-3. **Founder JWT refresh** — founder must refresh JWT to pick up `platform_admin_role=super_admin` claim before calling these RPCs from the UI. Migration is unaffected.
+None. Clean implementation.
 
----
-
-## Files Produced
-
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000036_sales_rep_lifecycle_rpcs.sql`
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/sales_rep_lifecycle.sql`
+- Pre-existing vitest failures (warehouse-transfer worktree) are from a parallel session — unrelated
+- No new dependencies (stdlib only)
+- External WA bridge daemon protected by legacy backward-compat path
