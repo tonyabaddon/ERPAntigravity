@@ -144,14 +144,13 @@ COMMENT ON POLICY "branding_update_own_tenant" ON storage.objects IS
 COMMENT ON POLICY "branding_delete_own_tenant" ON storage.objects IS
   'Migration 301: tenant-scoped DELETE for branding (clearLogo removes old file).';
 
--- File rename: flat logo_* → tenants/{garindo_uuid}/logo_*
--- Only affects 3 garindo test files; safe for all tenants since path structure
--- was previously flat (no tenant prefix). store_settings.logo_url = NULL so no
--- DB backfill needed for branding.
-UPDATE storage.objects
-SET name = 'tenants/11111111-1111-1111-1111-111111111111/' || name
-WHERE bucket_id = 'branding'
-  AND name NOT LIKE 'tenants/%';
+-- NOTE: File renames via UPDATE storage.objects SET name = ... are metadata-only.
+-- Supabase Storage's public URL endpoint resolves files by name → S3 key directly,
+-- so renaming metadata without moving the physical S3 object breaks public URLs.
+-- Existing flat-path logo files (logo_{tenantId}_{ts}.png) are left as-is.
+-- New uploads from updated uploadLogo() will correctly create S3 objects at
+-- tenants/{tenant_id}/... paths. store_settings.logo_url = NULL (no active rows)
+-- so no DB backfill needed for branding.
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 3. PAYMENT-PROOFS: already private; fix cross-tenant SELECT + INSERT policies
@@ -189,23 +188,13 @@ COMMENT ON POLICY "payment_proofs_read_own_tenant" ON storage.objects IS
 COMMENT ON POLICY "payment_proofs_insert_own_tenant" ON storage.objects IS
   'Migration 301: tenant-scoped INSERT for payment-proofs. Enforces tenants/{tenant_id}/... prefix.';
 
--- File renames: existing files → tenants/{garindo_uuid}/... prefix
--- Skip test/ artifact (not linked to any DB record)
-UPDATE storage.objects
-SET name = 'tenants/11111111-1111-1111-1111-111111111111/' || name
-WHERE bucket_id = 'payment-proofs'
-  AND name NOT LIKE 'tenants/%'
-  AND name NOT LIKE 'test/%';
-
--- DB backfill: orders.full_proof_url stored old public/ URLs for payment-proofs
--- Convert to storage paths. All affected rows are garindo tenant (verified).
-UPDATE public.orders
-SET full_proof_url = REGEXP_REPLACE(
-  full_proof_url,
-  '^https?://[^/]+/storage/v1/object/public/payment-proofs/',
-  'tenants/11111111-1111-1111-1111-111111111111/'
-)
-WHERE full_proof_url LIKE '%/storage/v1/object/public/payment-proofs/%';
+-- NOTE: File renames omitted — UPDATE storage.objects SET name doesn't physically
+-- move S3 objects. Pre-migration files at flat paths (orderId/ms) remain accessible
+-- at their original S3 keys. Existing orders.full_proof_url values store full public
+-- URLs from when the bucket was public; those URLs now return 400 since the bucket
+-- is private (pre-existing state since a prior migration made payment-proofs private).
+-- StorageLink component's legacy passthrough handles these gracefully (shows broken
+-- link rather than crashing). New uploads create properly-scoped tenant-prefixed paths.
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 4. PURCHASE-DOCUMENTS: public → private; drop anon + cross-tenant policies
@@ -277,38 +266,12 @@ COMMENT ON POLICY "purchase_docs_update_own_tenant" ON storage.objects IS
 COMMENT ON POLICY "purchase_docs_delete_own_tenant" ON storage.objects IS
   'Migration 301: tenant-scoped DELETE for purchase-documents.';
 
--- File renames: existing 3 files → tenants/{garindo_uuid}/... prefix
-UPDATE storage.objects
-SET name = 'tenants/11111111-1111-1111-1111-111111111111/' || name
-WHERE bucket_id = 'purchase-documents'
-  AND name NOT LIKE 'tenants/%';
-
--- DB backfill: purchase_invoices.payment_proof_url + purchase_orders.payment_proof_url
--- + pembayaran.proof_url stored full public URLs for purchase-documents bucket.
--- All affected rows are garindo tenant (verified). Convert to storage paths.
-UPDATE public.purchase_invoices
-SET payment_proof_url = REGEXP_REPLACE(
-  payment_proof_url,
-  '^https?://[^/]+/storage/v1/object/public/purchase-documents/',
-  'tenants/11111111-1111-1111-1111-111111111111/'
-)
-WHERE payment_proof_url LIKE '%/storage/v1/object/public/purchase-documents/%';
-
-UPDATE public.purchase_orders
-SET payment_proof_url = REGEXP_REPLACE(
-  payment_proof_url,
-  '^https?://[^/]+/storage/v1/object/public/purchase-documents/',
-  'tenants/11111111-1111-1111-1111-111111111111/'
-)
-WHERE payment_proof_url LIKE '%/storage/v1/object/public/purchase-documents/%';
-
-UPDATE public.pembayaran
-SET proof_url = REGEXP_REPLACE(
-  proof_url,
-  '^https?://[^/]+/storage/v1/object/public/purchase-documents/',
-  'tenants/11111111-1111-1111-1111-111111111111/'
-)
-WHERE proof_url LIKE '%/storage/v1/object/public/purchase-documents/%';
+-- NOTE: File renames omitted — UPDATE storage.objects SET name doesn't move S3 objects.
+-- Pre-migration purchase-documents files at flat paths remain in S3 at their original keys.
+-- DB backfill omitted: purchase_invoices/purchase_orders/pembayaran stored full public URLs;
+-- those URLs now return 400 since the bucket is private. StorageLink component handles this
+-- gracefully (legacy https:// passthrough shows broken link without crashing). New uploads
+-- create properly-scoped tenant-prefixed paths that work with signed URL access.
 
 -- ═══════════════════════════════════════════════════════════════════════════
 -- 5. STOCK-EVIDENCE: already private; replace cross-tenant SELECT with tenant-scoped
