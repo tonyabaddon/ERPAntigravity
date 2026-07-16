@@ -13550,3 +13550,48 @@ Required deployment order — STRICT, do not deviate:
 - Cloudbuild.yaml has SUPABASE_SERVICE_KEY hardcoded in plaintext (line 38) — flagged per CLAUDE.md gotcha, pre-existing (not created by Task 1). Should move to Secret Manager as part of secret rotation policy (Day 12).
 - HTML `<title>` still says "VOSI MSME ERP" — Day 15 cleanup (landing rebrand day).
 - Other buckets flagged by advisor as public + broad SELECT — Task 2 (Day 2) scope.
+
+**Update 2026-07-17 — Concerns 1+2+3 SHIPPED**:
+
+Following Task 2's DONE_WITH_CONCERNS report, all 3 concerns addressed:
+
+**Concern 1 (product-photos)** — commit `fa8b5bb`:
+- Migration 302 applied (tenant-scoped INSERT/UPDATE/DELETE, public SELECT preserved for CDN pattern)
+- Data migration: 29 Garindo product photos moved via Storage Move API (`{sku}/{n}.jpg` → `tenants/{garindo}/products/{uuid}.jpg`)
+- 18 `stocks.photo_urls` + 15 `stock_photo_embeddings.photo_path` entries updated atomically
+- 11 orphan test files also moved defensively
+- Dropped dead `t_tenant_owner_read` policy on payment-proofs
+- FE `uploadProductPhoto(blob)` refactored (signature change: drop `sku`, `order` args; UUID path derived from JWT claim)
+- Go backend: no changes needed (`publicURL()` works unchanged for tenant-prefixed paths)
+
+**Concern 2 (StorageImage)** — commit `d29b7c8`:
+- New `src/components/ui/StorageImage.tsx` with lazy IntersectionObserver, module-level URL Map cache, 3-state loading/loaded/error, onError retry, aspect-ratio layout stability, PDF fallback via extension check
+- 4 sites restored inline thumbnails: OrderHistoryScreen, PembayaranDetailPage, BelanjaNumpangLewatDetailPage, PembelianDetailPage
+- StorageLink kept alongside for "open full size" open-in-new-tab workflow
+
+**Concern 3 (Stage 3 baseline + delta verify)** — SQL policy simulation:
+- Baseline (Task 1 chat-media + Task 2's 5 buckets): all 6 tenant-scoped correctly (cross-tenant blocked, own-tenant allowed)
+- Delta post-Concern-1 (product-photos): tenant-scoped write verified, public read preserved
+- Chrome MCP authenticated E2E deferred to Day 14 (per Phase 1 plan, no Toko Jaya credentials in session)
+
+**Deploy verification**:
+- Both commits pushed, Cloud Build triggered + completed
+- New bundle `assets/index-D6OuxdqB.js` live at Cloud Run
+- Bundle contains: `tenants/${n}/products` path pattern (Concern 1) + `IntersectionObserver` code (Concern 2)
+
+**Storage security state (post-Concerns)**:
+- 7 of 7 storage buckets tenant-scoped (chat-media, accounting-proofs, branding, payment-proofs, purchase-documents, stock-evidence, product-photos)
+- product-photos = public read (Shopify/e-commerce pattern) + tenant-scoped write + UUID paths
+- All other buckets = private + tenant-scoped R/W
+
+**Memory updates**:
+- New: `project_all_buckets_tenant_scoped.md` — documents all 7 buckets + psql-required workaround for storage.objects DDL
+- `chat-media` gap → RESOLVED (was documented in migration `20261115000202`)
+
+**Known follow-ups (not blocking)**:
+- Legacy `SUPABASE_SERVICE_KEY` hardcoded in `cloudbuild.yaml:38` — flagged, pre-existing (address at Day 12 secret rotation policy)
+- HTML `<title>` still says "VOSI MSME ERP" — Day 15 landing rebrand
+- Chrome MCP authenticated E2E smoke — Day 14 Playwright scaffold
+- `stocks.photo_url` (singular) query in `backend-go/products_search.go:126` — subagent flagged mystery (column doesn't exist in schema), needs investigation but not blocking
+
+**Phase 1 Day 2 (Task 2) status: COMPLETE**
