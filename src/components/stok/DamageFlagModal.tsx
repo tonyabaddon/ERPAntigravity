@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { AlertTriangle, X, Camera } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { decodeJwt } from '../../lib/jwt';
 import { recordOpnameDamage } from '../../lib/supplierClaims/api';
 
 interface DamageFlagModalProps {
@@ -52,11 +53,16 @@ export function DamageFlagModal({
 
   const uploadFiles = async (): Promise<string[]> => {
     if (!supabase) throw new Error('Supabase belum dikonfigurasi');
+    // Get tenant_id from JWT for tenant-prefixed path (RLS: stock_evidence_insert_own_tenant)
+    const { data: { session } } = await supabase.auth.getSession();
+    const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+    if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload evidence');
     const urls: string[] = [];
     for (const f of files) {
       const safeName = f.name.replace(/[^\w.-]/g, '_').slice(0, 80);
       const rand = Math.random().toString(36).slice(2, 10);
-      const path = `opname-damage/${sessionId}/${Date.now()}-${rand}-${safeName}`;
+      // Path: tenants/{tenant_id}/opname-damage/{sessionId}/{ts}-{rand}-{filename}
+      const path = `tenants/${tenantId}/opname-damage/${sessionId}/${Date.now()}-${rand}-${safeName}`;
       const { error } = await supabase.storage.from('stock-evidence').upload(path, f);
       if (error) throw error;
       urls.push(path);

@@ -303,7 +303,8 @@ describe('RecordPaymentModal', () => {
   });
 
   it('uploads file then records payment on happy path', async () => {
-    uploadMock.mockResolvedValue({ objectKey: 'garindo-jaya/2026-07-abc.png' });
+    // Migration 301: uploadPaymentProof now called with tenant_id (UUID), not slug
+    uploadMock.mockResolvedValue({ objectKey: 'tenants/tid-001/2026-07-abc.png' });
     recordMock.mockResolvedValue(fakeRecordResult);
     const { onSuccess } = renderRecord({ defaultAmount: 3_600_000 });
 
@@ -319,11 +320,12 @@ describe('RecordPaymentModal', () => {
     fireEvent.click(screen.getByTestId('rp-submit'));
 
     await waitFor(() => {
-      expect(uploadMock).toHaveBeenCalledWith('garindo-jaya', goodFile);
+      // tenant.tenant_id = 'tid-001' (not slug 'garindo-jaya')
+      expect(uploadMock).toHaveBeenCalledWith('tid-001', goodFile);
       expect(recordMock).toHaveBeenCalledWith(
         expect.objectContaining({
           bank_name:       'BCA',
-          proof_object_key: 'garindo-jaya/2026-07-abc.png',
+          proof_object_key: 'tenants/tid-001/2026-07-abc.png',
         })
       );
     });

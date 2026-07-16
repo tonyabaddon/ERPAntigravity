@@ -7,6 +7,7 @@ import type { DbPurchaseInvoice } from '../../../types';
 import PiStatusBadge from './PiStatusBadge';
 import MarkPaidModal from './MarkPaidModal';
 import VoidConfirmModal from './VoidConfirmModal';
+import { StorageLink } from '../../ui/StorageLink';
 
 interface Props {
   piNumber: string;
@@ -121,16 +122,16 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Lampiran</div>
           <div className="flex gap-3">
             {pi.supplier_invoice_photo_url && (
-              <a href={pi.supplier_invoice_photo_url} target="_blank" rel="noreferrer" className="block">
+              <div>
                 <div className="text-[11px] font-semibold text-gray-600 mb-1">Faktur Supplier</div>
-                <img src={pi.supplier_invoice_photo_url} alt="Faktur" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
-              </a>
+                <StorageLink bucket="purchase-documents" storageRef={pi.supplier_invoice_photo_url} className="block text-sm text-indigo-600 hover:underline">Lihat Faktur Supplier</StorageLink>
+              </div>
             )}
             {pi.payment_proof_url && (
-              <a href={pi.payment_proof_url} target="_blank" rel="noreferrer" className="block">
+              <div>
                 <div className="text-[11px] font-semibold text-gray-600 mb-1">Bukti Bayar</div>
-                <img src={pi.payment_proof_url} alt="Bukti" className="w-32 h-32 object-cover rounded-lg border border-gray-200" />
-              </a>
+                <StorageLink bucket="purchase-documents" storageRef={pi.payment_proof_url} className="block text-sm text-indigo-600 hover:underline">Lihat Bukti Bayar</StorageLink>
+              </div>
             )}
           </div>
         </div>

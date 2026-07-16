@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { decodeJwt } from '../jwt';
 import type { FunnelSubStage, ProofSource } from './types';
 
 export interface TransitionResult {
@@ -50,21 +51,26 @@ export async function uploadPaymentProof(params: {
   source: ProofSource;
   field: 'payment_proof_url' | 'pelunasan_proof_url' | 'marketplace_proof_url';
 }): Promise<string> {
+  // Get tenant_id from JWT for tenant-prefixed path (RLS policy payment_proofs_insert_own_tenant)
+  const { data: { session } } = await supabase.auth.getSession();
+  const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+  if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload payment proof');
   const safeName = params.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const filename = `${params.orderId}/${Date.now()}-${safeName}`;
-  const { error: upErr } = await supabase.storage.from('payment-proofs').upload(filename, params.file);
+  // Path: tenants/{tenant_id}/{orderId}/{ts}-{filename}
+  const storagePath = `tenants/${tenantId}/${params.orderId}/${Date.now()}-${safeName}`;
+  const { error: upErr } = await supabase.storage.from('payment-proofs').upload(storagePath, params.file);
   if (upErr) throw upErr;
-  const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(filename);
   const { data: userResp } = await supabase.auth.getUser();
   const { error: updErr } = await supabase
     .from('kasir_transactions')
     .update({
-      [params.field]: publicUrl,
+      [params.field]: storagePath,
       proof_source: params.source,
       proof_uploaded_at: new Date().toISOString(),
       proof_uploaded_by: userResp.user?.id ?? null,
     })
     .eq('id', params.orderId);
   if (updErr) throw updErr;
-  return publicUrl;
+  // Return storage path — callers display via getSignedStorageUrl('payment-proofs', path)
+  return storagePath;
 }

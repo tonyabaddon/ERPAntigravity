@@ -372,3 +372,48 @@ Deferred to founder on return (prod deploy — Steps 14-16 of Task 1):
   5. Update memory `chat-media` gap → resolved
 
 Task 2 onwards: NOT started per scope constraint (founder away, execute Task 1 only)
+
+---
+
+## 2026-07-16 — Phase 1 Task 2 (Day 2): Bucket audit + fix
+
+### Started: 2026-07-16T20:30:00Z
+
+### Bucket audit table:
+
+| Bucket | public | FE uploaders | FE readers | Path pattern (before) | RLS status (before) | Verdict | Action |
+|---|---|---|---|---|---|---|---|
+| accounting-proofs | y | none found | none found | n/a (0 files) | cross-tenant SELECT+INSERT | LEAK | Fixed: private + tenant-scoped RLS |
+| branding | y | `uploadLogo` (supabaseClient) | `branding_public_read` (invoice PDFs) | `logo_{tenantId}_{ts}.ext` (flat) | anon ALL + cross-tenant ALL — CRITICAL | LEAK (write side) | Fixed: drop anon+cross-tenant write policies; tenant-scoped INSERT/UPDATE/DELETE; 3 files renamed; public read kept |
+| chat-media | n | `uploadChatMedia` | `getSignedChatMediaUrl` | `tenants/{tid}/{uuid}_{file}` | tenant-scoped (migration 300) | FIXED (Task 1) | no-op |
+| payment-proofs | n | 3 sites (paymentsApi, piutangService, sales/mutations) | `generatePaymentProofSignedUrl` | orderId-based (inconsistent) | cross-tenant SELECT+INSERT overrode tenant-slug guard | LEAK | Fixed: drop cross-tenant policies; unified UUID path; 5 files renamed; orders.full_proof_url backfilled |
+| product-photos | y | `uploadProductPhoto` (productPhotoService) | backend Go publicURL() | `{sku}/{order}.jpg` (no tenant prefix) | cross-tenant ALL | DEFERRED | Write-side cross-tenant risk; public read load-bearing for backend Go. Needs founder input on public catalog vs private (see question below) |
+| purchase-documents | y | 4 sites (purchaseInvoiceService, pembelianService + callers) | direct href (multiple components) | `purchase-invoices/{subPath}/...` | anon ALL + cross-tenant ALL — CRITICAL | LEAK | Fixed: private + drop anon; tenant-scoped CRUD; 3 files renamed; DB backfill in 4 tables |
+| stock-evidence | n | `DamageFlagModal`, `StockAdjustmentModal` | none (paths stored, not URLs) | `opname-damage/...` or `adjustments/...` (no tenant prefix) | cross-tenant SELECT+INSERT | LEAK | Fixed: tenant-scoped RLS; 0 files in storage; FE upload paths updated |
+
+### Verdict summary:
+- LEAK (fixed): 5 (accounting-proofs, branding, payment-proofs, purchase-documents, stock-evidence)
+- INTENTIONAL PUBLIC: 0
+- INSERT-ONLY: 0 (reclassified; all have tenant-scoped policies now)
+- DEFERRED: 1 (product-photos)
+
+### Deferred question for founder (product-photos):
+> `product-photos` is `public=true` with cross-tenant write (any tenant can overwrite any SKU photos). Public read is load-bearing: `backend-go/products_search.go:78` calls `publicURL()` to serve search results. Fixing requires either (a) keeping public read + tenant-scoping writes only, or (b) making private + teaching Go backend to mint signed URLs. Option (a) is safe and minimal. Option (b) is a Go backend change. Which is preferred?
+
+### Actions taken:
+- 2026-07-16T20:30Z: Read task-2-brief.md + migration 300 reference
+- 2026-07-16T20:35Z: Grepped all bucket usage across src/ + backend-go/
+- 2026-07-16T20:40Z: Queried live bucket state + all policies + file counts + path samples
+- 2026-07-16T20:45Z: Called advisor(); confirmed per-bucket classification + implementation shape
+- 2026-07-16T20:50Z: Dry-ran all file renames + DB backfill in transactions with ROLLBACK
+- 2026-07-16T21:00Z: Wrote migration 20261115000301_bucket_security_hardening.sql
+- 2026-07-16T21:10Z: Updated FE: chatMediaSignedUrl.ts → getSignedStorageUrl generic; branding uploadLogo + clearLogo; purchaseInvoiceService.uploadAttachment + getAttachmentUrl; pembelianService.uploadDocument + getDocumentUrl; piutangService.uploadTempoPaymentProof; sales/mutations.uploadPaymentProof; paymentsApi.uploadPaymentProof (tenant_id → UUID); DamageFlagModal; StockAdjustmentModal
+- 2026-07-16T21:15Z: Added StorageLink component for private-bucket display sites
+- 2026-07-16T21:20Z: Updated display components: PembelianDetailPage, PembayaranDetailPage, BelanjaNumpangLewatDetailPage, OrderHistoryScreen
+- 2026-07-16T21:25Z: Updated tests: paymentsApi.test.ts (new UUID path pattern), RecordPaymentModal.test.tsx (tenant_id not slug)
+- 2026-07-16T21:30Z: lint clean, audit:numinput clean, audit:secdef-null-tenant clean, vitest --changed: 2 new test fixes pass; 8 pre-existing failures unrelated to this task
+- 2026-07-16T21:35Z: Applied migration via execute_sql (not apply_migration — storage.objects policy constraint)
+- 2026-07-16T21:40Z: Verified live state: bucket public flags correct; all dangerous policies dropped; 11 files renamed to tenants/{uuid}/...; DB backfill confirmed (orders, purchase_invoices, purchase_orders, pembayaran)
+- 2026-07-16T21:45Z: get_advisors: 2 pre-existing WARN (branding + product-photos public listing — intentional); no new findings
+
+### Completed: 2026-07-16T21:50Z

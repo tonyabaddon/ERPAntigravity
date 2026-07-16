@@ -12,6 +12,7 @@
 //   for AR aging + KPI integration (Item #5).
 
 import { supabase } from './supabaseClient';
+import { decodeJwt } from './jwt';
 import type {
   CreateTempoInvoicePayload,
   CreateTempoInvoiceResult,
@@ -141,16 +142,21 @@ export async function uploadTempoPaymentProof(file: File, orderId: string): Prom
   if (!supabase) throw new Error('Supabase not configured');
   const err = validateTempoProofFile(file);
   if (err) throw new Error(err);
+  // Get tenant_id from JWT for tenant-prefixed path (RLS policy payment_proofs_insert_own_tenant)
+  const { data: { session } } = await supabase.auth.getSession();
+  const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+  if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload proof');
   // Sanitize filename: keep ext, replace any non-[A-Za-z0-9._-] with _
   const safeName = file.name.replace(/[^A-Za-z0-9._-]/g, '_');
-  const path = `tempo-payments/${orderId}/${Date.now()}-${safeName}`;
+  // Path: tenants/{tenant_id}/tempo-payments/{orderId}/{ts}-{filename}
+  const path = `tenants/${tenantId}/tempo-payments/${orderId}/${Date.now()}-${safeName}`;
   const { error } = await supabase.storage.from('payment-proofs').upload(path, file, {
     cacheControl: '3600',
     upsert: false,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
-  return data.publicUrl;
+  // Return storage path — callers display via getSignedStorageUrl('payment-proofs', path)
+  return path;
 }
 
 // ── Mark tempo invoice paid ──

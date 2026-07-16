@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { DbPembayaran } from '../../../types';
+import { StorageLink } from '../../ui/StorageLink';
 
 interface Props {
   pembayaranNumber: string;
@@ -158,9 +159,9 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
       {pmb.proof_url && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Bukti Bayar</div>
-          <a href={pmb.proof_url} target="_blank" rel="noreferrer" className="block">
-            <img src={pmb.proof_url} alt="Bukti" className="w-40 h-40 object-cover rounded-lg border border-gray-200" />
-          </a>
+          <StorageLink bucket="purchase-documents" storageRef={pmb.proof_url} className="block">
+            <span className="text-sm text-indigo-600 hover:underline">Lihat Bukti Bayar</span>
+          </StorageLink>
         </div>
       )}
 

@@ -1,127 +1,72 @@
-# Task 2 Report: Wave 6 RLS + Narrowed RPC Gates
+# Phase 1 Task 2 Report — Bucket audit + fix
 
-**Date:** 2026-07-10
-**Status:** DONE_WITH_CONCERNS (Docker unavailable; MCP smoke substitutes for local pgTAP RED/GREEN)
-**Commit:** `f0c3a47` feat(rls): narrow tenant writes + suspend/activate/renew to super_admin
-
----
-
-## 1. Verification Results (Pre-flight)
-
-### plans.g_read_all
-```
-polname    | polcmd | using_clause | roles
-g_read_all | r      | true         | authenticated,vosi_rpc_owner
-```
-Confirmed `USING (true)` — skipped per Note A. No change to plans policy.
-
-### tenants + tenant_subscriptions existing policies
-```
-table                   | polname              | polcmd | using_clause                    | roles
-tenants                 | p_platform_admin_only | *     | _is_platform_admin_from_jwt()   | authenticated,vosi_rpc_owner
-tenant_subscriptions    | p_platform_admin_only | *     | _is_platform_admin_from_jwt()   | authenticated,vosi_rpc_owner
-```
-Confirmed: FOR ALL (`*`), TO authenticated,vosi_rpc_owner, USING _is_platform_admin_from_jwt(). Matches expected.
-
-### RPC signatures (from pg_get_function_identity_arguments)
-- `suspend_tenant(p_tenant_id uuid, p_reason text)` — matches (uuid, text)
-- `activate_tenant(p_tenant_id uuid)` — matches (uuid)
-- `renew_subscription(p_tenant_id uuid, p_new_expires_at date, p_new_plan_code text DEFAULT NULL, p_notes text DEFAULT NULL)` — matches (uuid, date, text, text)
-
-No signature deviations. Proceeded with full implementation.
+**Date:** 2026-07-16
+**Status:** DONE_WITH_CONCERNS (1 bucket deferred — product-photos needs founder input)
 
 ---
 
-## 2. What Was Implemented
+## Bucket verdicts
 
-### Files Created
-1. `supabase/migrations/20261115000033_rls_role_gates.sql`
-   - DROP `p_platform_admin_only` on `tenants` + `tenant_subscriptions`
-   - CREATE 8 replacement policies (4 per table):
-     - `p_platform_admin_select` FOR SELECT `TO authenticated, vosi_rpc_owner` USING `_is_platform_admin_from_jwt()`
-     - `p_super_admin_write` FOR INSERT `TO authenticated, vosi_rpc_owner` WITH CHECK `_is_super_admin_from_jwt()`
-     - `p_super_admin_update` FOR UPDATE `TO authenticated, vosi_rpc_owner` USING+WITH CHECK `_is_super_admin_from_jwt()`
-     - `p_super_admin_delete` FOR DELETE `TO authenticated, vosi_rpc_owner` USING `_is_super_admin_from_jwt()`
+| Bucket | Verdict | Severity (before) | Action |
+|---|---|---|---|
+| accounting-proofs | LEAK → FIXED | cross-tenant SELECT+INSERT on public bucket | private + tenant-scoped RLS |
+| branding | LEAK → FIXED | anon ALL write (internet-writable!) + cross-tenant ALL | drop anon+authenticated write; tenant-scoped INSERT/UPDATE/DELETE; public read kept; 3 files renamed |
+| chat-media | FIXED (Task 1) | — | no-op |
+| payment-proofs | LEAK → FIXED | cross-tenant SELECT+INSERT overrode slug-based guard | drop cross-tenant policies; UUID path; 5 files renamed; DB backfill orders.full_proof_url |
+| product-photos | DEFERRED | cross-tenant write; backend Go serves public URLs | see concern below |
+| purchase-documents | LEAK → FIXED | anon ALL (internet-writable!) + cross-tenant ALL on public bucket | private; drop anon; tenant-scoped CRUD; 3 files renamed; DB backfill 4 tables |
+| stock-evidence | LEAK → FIXED | cross-tenant SELECT+INSERT (already private bucket) | tenant-scoped RLS; FE upload paths updated |
 
-2. `supabase/migrations/20261115000034_narrow_rpc_gates_to_super.sql`
-   - `suspend_tenant`: gate → `_is_super_admin_from_jwt()`, message → `SUPER_ADMIN_REQUIRED` (P0403)
-   - `activate_tenant`: same gate change
-   - `renew_subscription`: same gate change
-   - OWNER TO postgres + REVOKE + GRANT preserved verbatim on all 3 RPCs
-   - All other logic (audit inserts, idempotency guards, TENANT_NOT_FOUND, etc.) preserved verbatim from prod
-
-3. `supabase/tests/wave6/rls_role_gates.sql`
-   - 5 pgTAP assertions; seeds own test tenant UUID `11111111-2222-3333-4444-555555555555`
-   - Tests: sales_rep SELECT (pass), UPDATE (blocked 42501), DELETE (blocked 42501), plans SELECT (pass), super_admin UPDATE (pass)
-
-4. `supabase/tests/wave6/narrow_rpc_gates.sql`
-   - 3 pgTAP assertions; seeds own test tenant UUID `99999999-9999-9999-9999-999999999999`
-   - Tests: sales_rep → suspend_tenant P0403, activate_tenant P0403, renew_subscription P0403
+**Summary: LEAK: 5 fixed, INTENTIONAL: 0, DEFERRED: 1**
 
 ---
 
-## 3. Prod Smoke Evidence
+## Key concern: product-photos deferred
 
-### Policy verification (post-000033 apply)
-All 8 policies confirmed on prod:
-```
-table                | polname               | polcmd | using_clause
-tenant_subscriptions | p_platform_admin_select | r    | _is_platform_admin_from_jwt()
-tenant_subscriptions | p_super_admin_delete    | d    | _is_super_admin_from_jwt()
-tenant_subscriptions | p_super_admin_update    | w    | _is_super_admin_from_jwt()
-tenant_subscriptions | p_super_admin_write     | a    | (WITH CHECK only)
-tenants              | p_platform_admin_select | r    | _is_platform_admin_from_jwt()
-tenants              | p_super_admin_delete    | d    | _is_super_admin_from_jwt()
-tenants              | p_super_admin_update    | w    | _is_super_admin_from_jwt()
-tenants              | p_super_admin_write     | a    | (WITH CHECK only)
-```
+`product-photos` is `public=true` with `product_photos_insert/update/delete` policies scoped only to `authenticated` (no tenant filter) — any tenant can overwrite any other tenant's SKU photos.
 
-### RPC gate smokes (post-000034 apply)
-All ran as DO-block with `RAISE EXCEPTION 'SMOKE_ROLLBACK'` at end (no side effects on prod data).
+The reason for deferral: `backend-go/products_search.go:78` calls `publicURL()` which constructs `https://{ref}.supabase.co/storage/v1/object/public/product-photos/{path}`. Making the bucket private would require the Go backend to mint signed URLs on every search result.
 
-- `suspend_tenant` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS (SMOKE_ROLLBACK reached, not SMOKE_FAIL)
-- `activate_tenant` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS
-- `renew_subscription` with sales_rep JWT → P0403 SUPER_ADMIN_REQUIRED — PASS
-- Message correctness: SQLERRM verified as `'SUPER_ADMIN_REQUIRED'` (not old `'PLATFORM_ADMIN_REQUIRED'`)
+**Recommended fix (Option A, minimal):** Keep public read, add tenant-scoped INSERT/UPDATE/DELETE policies (path pattern: `tenants/{tenant_id}/{sku}/{order}.jpg`). Closes write-side leak without touching Go backend. FE `uploadProductPhoto` needs tenant prefix. ~1 hour of work.
+
+**Option B (complete):** Private bucket + Go backend signed URLs. Correct long-term. ~1 day of work.
 
 ---
 
-## 4. Concerns
+## Changes shipped
 
-1. **Docker still unavailable** — pgTAP tests written but not run locally. No RED/GREEN cycle. MCP prod smoke is the only live verification. Tests are structurally correct (BEGIN/ROLLBACK, seeded UUIDs, correct errcode/message assertions) but CI has not confirmed GREEN.
+### Migration: `supabase/migrations/20261115000301_bucket_security_hardening.sql`
+Applied via execute_sql (apply_migration fails for storage.objects policies — known from Task 1).
 
-2. **Garindo dashboard regression** — The `tenants` SELECT is preserved via `p_platform_admin_select` USING `_is_platform_admin_from_jwt()` (same predicate as old `p_platform_admin_only`). No regression expected, but human should verify Garindo dashboard renders normally post-migration as noted in Note E.
+- Dropped: `branding_anon_write`, `anon full access purchase-documents` (both internet-writable), `branding_authenticated_write`, `authenticated full access purchase-documents`, `Authenticated users can view/upload payment proofs`, `authenticated can read/upload accounting-proofs`, `authenticated can read/upload stock-evidence`
+- Added: tenant-scoped policies on 5 buckets, `tenants/{tenant_id}/...` UUID pattern (consistent with migration 300)
+- Bucket flags: accounting-proofs → private, purchase-documents → private, branding stays public
+- File renames: 11 total (3 branding + 5 payment-proofs + 3 purchase-documents) to tenant-prefixed paths
+- DB backfill: `orders.full_proof_url`, `purchase_invoices.payment_proof_url`, `purchase_orders.payment_proof_url`, `pembayaran.proof_url` converted from full public URLs to storage paths
 
-3. **REVOKE/GRANT explicit in 000034** — The original prod function bodies did not include REVOKE/GRANT in their pg_get_functiondef output (those were applied in separate prior migrations). Migration 000034 adds them explicitly following the Wave 5 OWNER TO postgres pattern. This is additive and correct, not a regression.
+### New component: `src/components/ui/StorageLink.tsx`
+Reusable link that resolves private storage paths to signed URLs on click. Handles both legacy full URLs (passthrough) and new storage paths. Used by all display sites for private buckets.
 
----
+### FE upload sites updated (10 files):
+All now produce `tenants/{tenant_id}/...` paths and return storage paths (not public URLs) for private buckets.
 
-## 5. Post-Review Fix
-
-### Finding
-`rls_role_gates.sql` used `throws_ok(..., '42501', ...)` to assert RLS blocking on UPDATE/DELETE. Postgres RLS USING-clause silently filters rows rather than raising 42501; the test pattern was semantically incorrect.
-
-### Replacement (Commit 70692cd)
-Two assertions replaced:
-- **Before:** `throws_ok($$UPDATE ... WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$, '42501', ...)`
-- **After:** UPDATE statement executed, followed by `is((SELECT name FROM public.tenants WHERE ...), 'Test RLS Wave6', 'sales_rep UPDATE silently filtered — row unchanged')`
-
-- **Before:** `throws_ok($$DELETE ... WHERE id = '11111111-2222-3333-4444-555555555555'::uuid$$, '42501', ...)`
-- **After:** DELETE statement executed, followed by `is((SELECT count(*)::int FROM public.tenants WHERE ...), 1, 'sales_rep DELETE silently filtered — row still exists')`
-
-**plan(5) unchanged:** 3 lives_ok + 2 is() = 5 total assertions.
-
-### Caveats
-- Seeded row name verified as `'Test RLS Wave6'` (line 12 of original file)
-- Seeded UUID verified as `11111111-2222-3333-4444-555555555555` (line 12)
-- SQL parses; assertion count preserved
+### FE display sites updated (4 components):
+PembelianDetailPage, PembayaranDetailPage, BelanjaNumpangLewatDetailPage, OrderHistoryScreen — all use StorageLink for private-bucket references.
 
 ---
 
-## 6. Files Changed
+## Test summary
 
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000033_rls_role_gates.sql`
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/migrations/20261115000034_narrow_rpc_gates_to_super.sql`
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/rls_role_gates.sql` (post-review fix)
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/supabase/tests/wave6/narrow_rpc_gates.sql`
-- `/Users/tonywei/IdeaProjects/ERPAntigravity/progress.md` (updated per CLAUDE.md requirement)
+- `npm run lint`: CLEAN
+- `npm run audit:numinput`: CLEAN
+- `npm run audit:secdef-null-tenant`: CLEAN
+- `npx vitest run --changed`: 628 pass; 8 pre-existing failures in unrelated files (AdminRoutes, TenantsList, pengaturan/mutations, productWrappers)
+- `get_advisors`: 2 WARN (branding + product-photos public listing) — pre-existing, intentional; no new findings
+
+---
+
+## Follow-up items
+
+1. **product-photos write-side leak** — choose Option A or B above
+2. **`paymentsApi.uploadPaymentProof` signature change** (`tenantId` UUID, not slug) — confirmed in RecordPaymentModal.test.tsx; RenewSubscriptionModal also updated
+3. Existing `test/1780598141.jpg` artifact in payment-proofs bucket intentionally left (not linked to any DB record, not renamed — orphan test file)

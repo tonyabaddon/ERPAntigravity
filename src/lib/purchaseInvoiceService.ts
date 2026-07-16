@@ -6,6 +6,8 @@
 // saldo_awal_snapshots for AP aging integration (Item #5).
 
 import { supabase } from './supabaseClient';
+import { decodeJwt } from './jwt';
+import { getSignedStorageUrl } from './chatMediaSignedUrl';
 import type {
   DbPurchaseInvoice, RecordPiPayload, OrderCogsBreakdownRow,
 } from '../types';
@@ -95,11 +97,25 @@ export const purchaseInvoiceService = {
 
   async uploadAttachment(file: File, subPath: string): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
-    const fullPath = `purchase-invoices/${subPath}/${Date.now()}-${file.name}`;
+    // Get tenant_id from JWT for tenant-prefixed path (RLS policy purchase_docs_insert_own_tenant)
+    const { data: { session } } = await supabase.auth.getSession();
+    const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+    if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload attachment');
+    // Path: tenants/{tenant_id}/purchase-invoices/{subPath}/{ts}-{filename}
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fullPath = `tenants/${tenantId}/purchase-invoices/${subPath}/${Date.now()}-${safeName}`;
     const { error } = await supabase.storage.from('purchase-documents').upload(fullPath, file);
     if (error) throw error;
-    const { data } = supabase.storage.from('purchase-documents').getPublicUrl(fullPath);
-    return data.publicUrl;
+    // Return storage path — callers display via getSignedStorageUrl('purchase-documents', path)
+    return fullPath;
+  },
+
+  /**
+   * Resolve a purchase-documents storage reference to a signed URL.
+   * Accepts both legacy full public URLs and new storage paths.
+   */
+  async getAttachmentUrl(pathOrUrl: string): Promise<string | null> {
+    return getSignedStorageUrl('purchase-documents', pathOrUrl);
   },
 
   async fetchCogsForOrder(orderId: string): Promise<OrderCogsBreakdownRow[]> {

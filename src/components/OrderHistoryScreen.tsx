@@ -7,6 +7,7 @@ import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/sa
 import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../lib/salesChannels';
 import { useSalesChannels } from '../contexts/SalesChannelsContext';
 import InvoiceModal from './InvoiceModal';
+import { StorageLink } from './ui/StorageLink';
 
 type ChannelFilterGroup = 'all' | 'offline' | 'marketplace' | 'direct';
 type ChannelFilter = ChannelFilterGroup | SalesChannel;
@@ -697,8 +698,8 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 ✓ DP Terverifikasi — Rp {Number(order.dp_amount ?? 0).toLocaleString('id-ID')}
                               </div>
                               {order.dp_proof_url && (
-                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
-                                  className="text-xs text-teal-700 underline font-semibold">Lihat Bukti DP ↗</a>
+                                <StorageLink bucket="payment-proofs" storageRef={order.dp_proof_url}
+                                  className="text-xs text-teal-700 underline font-semibold">Lihat Bukti DP ↗</StorageLink>
                               )}
                             </div>
                           )}
@@ -707,24 +708,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                           <div className="flex items-start gap-3">
                             {order.full_proof_url ? (
-                              order.full_proof_url.endsWith('.pdf') ? (
-                                <a
-                                  href={order.full_proof_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="w-16 h-20 bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-red-100 transition-colors"
-                                >
-                                  <span className="text-red-500 text-2xl">📄</span>
-                                  <span className="text-[9px] text-red-500 font-semibold">PDF</span>
-                                </a>
-                              ) : (
-                                <img
-                                  src={order.full_proof_url}
-                                  alt="Bukti bayar"
-                                  className="w-16 h-20 object-cover rounded-lg border-2 border-blue-200 cursor-pointer"
-                                  onClick={() => window.open(order.full_proof_url!, '_blank')}
-                                />
-                              )
+                              <div className="w-16 h-20 bg-blue-50 border-2 border-blue-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                                <span className="text-blue-400 text-lg">🖼</span>
+                                <span className="text-[9px] text-blue-400 font-semibold">Bukti</span>
+                              </div>
                             ) : (
                               <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
                                 <span className="text-indigo-400 text-lg">🖼</span>
@@ -733,14 +720,13 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             )}
                             <div>
                               {order.full_proof_url && (
-                                <a
-                                  href={order.full_proof_url}
-                                  target="_blank"
-                                  rel="noreferrer"
+                                <StorageLink
+                                  bucket="payment-proofs"
+                                  storageRef={order.full_proof_url}
                                   className="text-xs text-blue-600 font-semibold underline"
                                 >
                                   Lihat Ukuran Penuh ↗
-                                </a>
+                                </StorageLink>
                               )}
                               <p className="text-[10px] text-gray-400 mt-1">
                                 Dikirim {formatDate(order.updated_at)}
@@ -797,17 +783,10 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                           </div>
                           <div className="flex items-start gap-3">
                             {order.dp_proof_url ? (
-                              order.dp_proof_url.endsWith('.pdf') ? (
-                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
-                                  className="w-16 h-20 bg-red-50 border-2 border-red-200 rounded-lg flex flex-col items-center justify-center gap-1 hover:bg-red-100">
-                                  <span className="text-red-500 text-2xl">📄</span>
-                                  <span className="text-[9px] text-red-500 font-semibold">PDF</span>
-                                </a>
-                              ) : (
-                                <img src={order.dp_proof_url} alt="Bukti DP"
-                                  className="w-16 h-20 object-cover rounded-lg border-2 border-indigo-200 cursor-pointer"
-                                  onClick={() => window.open(order.dp_proof_url!, '_blank')} />
-                              )
+                              <div className="w-16 h-20 bg-indigo-50 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
+                                <span className="text-indigo-400 text-lg">🖼</span>
+                                <span className="text-[9px] text-indigo-400 font-semibold">Bukti DP</span>
+                              </div>
                             ) : (
                               <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-lg flex flex-col items-center justify-center gap-1">
                                 <span className="text-indigo-400 text-lg">🖼</span>
@@ -816,8 +795,8 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             )}
                             <div>
                               {order.dp_proof_url && (
-                                <a href={order.dp_proof_url} target="_blank" rel="noreferrer"
-                                  className="text-xs text-blue-600 font-semibold underline">Lihat Ukuran Penuh ↗</a>
+                                <StorageLink bucket="payment-proofs" storageRef={order.dp_proof_url}
+                                  className="text-xs text-blue-600 font-semibold underline">Lihat Ukuran Penuh ↗</StorageLink>
                               )}
                               <p className="text-[10px] text-gray-400 mt-1">Dikirim {formatDate(order.updated_at)}</p>
                             </div>

@@ -990,7 +990,9 @@ export const companySettingsService = {
   async uploadLogo(tenantId: string, file: File): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
     const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-    const path = `logo_${tenantId}_${Date.now()}.${ext}`;
+    // Path: tenants/{tenant_id}/logo_{tenant_id}_{ts}.{ext}
+    // Enforces branding_write_own_tenant RLS policy (migration 301).
+    const path = `tenants/${tenantId}/logo_${tenantId}_${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from('branding').upload(path, file, { upsert: true, cacheControl: '3600' });
     if (upErr) throw upErr;
     const { data: pub } = supabase.storage.from('branding').getPublicUrl(path);
@@ -1019,9 +1021,16 @@ export const companySettingsService = {
       .select('logo_url').maybeSingle();
     if (fetchErr) throw fetchErr;
     if (!settings?.logo_url) return;
-    const filename = settings.logo_url.split('/').pop();
-    if (filename) {
-      await supabase.storage.from('branding').remove([filename]);
+    // Extract storage path from public URL (new: tenants/{id}/logo_*.ext)
+    // or fall back to filename-only for legacy flat paths.
+    // Match the tenants/ prefix if present, else just the filename.
+    const logoUrl = settings.logo_url as string;
+    const tenantPathMatch = logoUrl.match(/\/object\/public\/branding\/(tenants\/.+)$/);
+    const storagePath = tenantPathMatch
+      ? tenantPathMatch[1]
+      : (logoUrl.split('/').pop() ?? null);
+    if (storagePath) {
+      await supabase.storage.from('branding').remove([storagePath]);
     }
     await supabase.from('store_settings')
       .update({ logo_url: null } as any)

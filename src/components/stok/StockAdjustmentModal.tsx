@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { requestAdjustment, supabase } from '../../lib/supabaseClient';
+import { decodeJwt } from '../../lib/jwt';
 import type { StockItem, StockAdjustmentReason } from '../../types';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { useWarehouses } from '../../hooks/useWarehouses';
@@ -37,15 +38,19 @@ export default function StockAdjustmentModal({
 
   const uploadFiles = async (): Promise<string[]> => {
     if (!supabase) throw new Error('Supabase belum dikonfigurasi');
+    // Get tenant_id from JWT for tenant-prefixed path (RLS: stock_evidence_insert_own_tenant)
+    const { data: { session } } = await supabase.auth.getSession();
+    const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+    if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload evidence');
     const urls: string[] = [];
     for (const f of files) {
       // Sanitize filename (raw `f.name` can contain `/`, unicode, path
       // traversal segments) and randomize suffix to prevent same-millisecond
-      // collisions. Storage bucket RLS still enforces per-tenant read/write,
-      // but the object key should still be discipline-safe.
+      // collisions.
       const safeName = f.name.replace(/[^\w.-]/g, '_').slice(0, 80);
       const rand = Math.random().toString(36).slice(2, 10);
-      const path = `adjustments/pending/${Date.now()}-${rand}-${safeName}`;
+      // Path: tenants/{tenant_id}/adjustments/pending/{ts}-{rand}-{filename}
+      const path = `tenants/${tenantId}/adjustments/pending/${Date.now()}-${rand}-${safeName}`;
       const { error } = await supabase.storage.from('stock-evidence').upload(path, f);
       if (error) throw error;
       urls.push(path);

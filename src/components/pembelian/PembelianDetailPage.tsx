@@ -18,6 +18,7 @@ import { adminUsersService } from '../../lib/supabaseClient';
 import { fetchStoreSettings } from '../../lib/pengaturan/queries';
 import type { StoreSettings } from '../../lib/pengaturan/types';
 import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf';
+import { StorageLink } from '../ui/StorageLink';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
 import MarkAsPaidModal from './MarkAsPaidModal';
 import ReceiveReplacementModal from './ReceiveReplacementModal';
@@ -475,10 +476,10 @@ export default function PembelianDetailPage({
         {(po.invoice_url || po.payment_proof_url) && (
           <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-2 print:hidden">
             {po.invoice_url && (
-              <a href={po.invoice_url} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline block">Lihat Invoice Supplier</a>
+              <StorageLink bucket="purchase-documents" storageRef={po.invoice_url} className="text-sm text-indigo-600 hover:underline block">Lihat Invoice Supplier</StorageLink>
             )}
             {po.payment_proof_url && (
-              <a href={po.payment_proof_url} target="_blank" rel="noreferrer" className="text-sm text-indigo-600 hover:underline block">Lihat Bukti Pembayaran</a>
+              <StorageLink bucket="purchase-documents" storageRef={po.payment_proof_url} className="text-sm text-indigo-600 hover:underline block">Lihat Bukti Pembayaran</StorageLink>
             )}
           </div>
         )}

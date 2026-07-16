@@ -244,7 +244,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
       // Step 2: Upload proof if present
       if (payProofFile) {
         try {
-          const { objectKey } = await uploadPaymentProof(tenant.slug, payProofFile);
+          const { objectKey } = await uploadPaymentProof(tenant.tenant_id, payProofFile);
           proofObjectKey = objectKey;
         } catch (_uploadErr) {
           // Upload failed but renewal succeeded — partial success

@@ -225,7 +225,7 @@ export function RecordPaymentModal({
       let proofObjectKey: string | null = null;
 
       if (proofFile) {
-        const { objectKey } = await uploadPaymentProof(tenant.slug, proofFile);
+        const { objectKey } = await uploadPaymentProof(tenant.tenant_id, proofFile);
         proofObjectKey = objectKey;
       }
 

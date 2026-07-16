@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 import { wibDateString } from './format';
+import { decodeJwt } from './jwt';
+import { getSignedStorageUrl } from './chatMediaSignedUrl';
 import type { DbSupplier, DbPurchaseOrder } from '../types';
 
 export const supplierService = {
@@ -210,14 +212,27 @@ export const purchaseOrderService = {
 
   async uploadDocument(file: File, path: string): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
+    // Get tenant_id from JWT for tenant-prefixed path (RLS policy purchase_docs_insert_own_tenant)
+    const { data: { session } } = await supabase.auth.getSession();
+    const tenantId: string = (session ? (decodeJwt(session.access_token).tenant_id as string | undefined) : undefined) ?? '';
+    if (!tenantId) throw new Error('Missing tenant_id in JWT — cannot upload document');
     const ext = file.name.split('.').pop() ?? 'pdf';
-    const fullPath = `${path}.${ext}`;
+    // Path: tenants/{tenant_id}/{caller-path}.{ext}
+    const fullPath = `tenants/${tenantId}/${path}.${ext}`;
     const { error } = await supabase.storage
       .from('purchase-documents')
       .upload(fullPath, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase.storage.from('purchase-documents').getPublicUrl(fullPath);
-    return data.publicUrl;
+    // Return storage path — callers display via getSignedStorageUrl('purchase-documents', path)
+    return fullPath;
+  },
+
+  /**
+   * Resolve a purchase-documents storage reference to a signed URL.
+   * Accepts both legacy full public URLs and new storage paths.
+   */
+  async getDocumentUrl(pathOrUrl: string): Promise<string | null> {
+    return getSignedStorageUrl('purchase-documents', pathOrUrl);
   },
 
   async delete(poId: string): Promise<void> {

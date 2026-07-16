@@ -375,41 +375,48 @@ const makeFile = (name: string, size: number, type: string): File => {
   return new File([blob], name, { type });
 };
 
+// Migration 301: uploadPaymentProof now takes tenantId (UUID) instead of tenantSlug,
+// and produces paths like tenants/{uuid}/YYYY-MM-{uuid}.{ext}
+const TEST_TENANT_UUID = '11111111-1111-1111-1111-111111111111';
+
 describe('uploadPaymentProof', () => {
   beforeEach(() => { mockUpload.mockReset(); });
 
-  it('happy path — returns objectKey with correct path shape', async () => {
-    mockUpload.mockResolvedValue({ data: { path: 'garindo/2026-07-uuid.pdf' }, error: null });
+  it('happy path — returns objectKey with correct path shape (tenants/{uuid}/...)', async () => {
+    mockUpload.mockResolvedValue({ data: { path: `tenants/${TEST_TENANT_UUID}/2026-07-uuid.pdf` }, error: null });
     const file = makeFile('proof.pdf', 100, 'application/pdf');
-    const result = await uploadPaymentProof('garindo', file);
-    expect(result.objectKey).toMatch(/^garindo\/\d{4}-\d{2}-[0-9a-f-]{36}\.pdf$/);
+    const result = await uploadPaymentProof(TEST_TENANT_UUID, file);
+    // Path must be: tenants/{tenant_uuid}/YYYY-MM-{uuid}.{ext}
+    expect(result.objectKey).toMatch(
+      /^tenants\/[0-9a-f-]{36}\/\d{4}-\d{2}-[0-9a-f-]{36}\.pdf$/
+    );
     expect(mockUpload).toHaveBeenCalledTimes(1);
   });
 
   it('happy path — jpg file accepted', async () => {
-    mockUpload.mockResolvedValue({ data: { path: 'garindo/2026-07-uuid.jpg' }, error: null });
+    mockUpload.mockResolvedValue({ data: { path: `tenants/${TEST_TENANT_UUID}/2026-07-uuid.jpg` }, error: null });
     const file = makeFile('proof.jpg', 100, 'image/jpeg');
-    const result = await uploadPaymentProof('garindo', file);
+    const result = await uploadPaymentProof(TEST_TENANT_UUID, file);
     expect(result.objectKey).toMatch(/\.jpg$/);
   });
 
   it('happy path — png file accepted', async () => {
-    mockUpload.mockResolvedValue({ data: { path: 'garindo/2026-07-uuid.png' }, error: null });
+    mockUpload.mockResolvedValue({ data: { path: `tenants/${TEST_TENANT_UUID}/2026-07-uuid.png` }, error: null });
     const file = makeFile('proof.png', 100, 'image/png');
-    const result = await uploadPaymentProof('garindo', file);
+    const result = await uploadPaymentProof(TEST_TENANT_UUID, file);
     expect(result.objectKey).toMatch(/\.png$/);
   });
 
   it('throws PaymentFileTooLargeError BEFORE upload when file exceeds 5MB', async () => {
     const bigFile = makeFile('big.pdf', 5 * 1024 * 1024 + 1, 'application/pdf');
-    await expect(uploadPaymentProof('garindo', bigFile)).rejects.toBeInstanceOf(PaymentFileTooLargeError);
+    await expect(uploadPaymentProof(TEST_TENANT_UUID, bigFile)).rejects.toBeInstanceOf(PaymentFileTooLargeError);
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('PaymentFileTooLargeError carries Bahasa Indonesia userMessage', async () => {
     const bigFile = makeFile('big.pdf', 6 * 1024 * 1024, 'application/pdf');
     try {
-      await uploadPaymentProof('garindo', bigFile);
+      await uploadPaymentProof(TEST_TENANT_UUID, bigFile);
     } catch (err) {
       expect((err as PaymentFileTooLargeError).userMessage).toContain('5 MB');
     }
@@ -417,14 +424,14 @@ describe('uploadPaymentProof', () => {
 
   it('throws PaymentFileWrongTypeError BEFORE upload for disallowed mime type', async () => {
     const wrongFile = makeFile('proof.gif', 100, 'image/gif');
-    await expect(uploadPaymentProof('garindo', wrongFile)).rejects.toBeInstanceOf(PaymentFileWrongTypeError);
+    await expect(uploadPaymentProof(TEST_TENANT_UUID, wrongFile)).rejects.toBeInstanceOf(PaymentFileWrongTypeError);
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
   it('PaymentFileWrongTypeError carries Bahasa Indonesia userMessage', async () => {
     const wrongFile = makeFile('proof.svg', 100, 'image/svg+xml');
     try {
-      await uploadPaymentProof('garindo', wrongFile);
+      await uploadPaymentProof(TEST_TENANT_UUID, wrongFile);
     } catch (err) {
       expect((err as PaymentFileWrongTypeError).userMessage).toContain('JPG, PNG, atau PDF');
     }
@@ -432,12 +439,12 @@ describe('uploadPaymentProof', () => {
 
   it('throws PaymentFileWrongTypeError for mp4 (video not allowed)', async () => {
     const videoFile = makeFile('receipt.mp4', 100, 'video/mp4');
-    await expect(uploadPaymentProof('garindo', videoFile)).rejects.toBeInstanceOf(PaymentFileWrongTypeError);
+    await expect(uploadPaymentProof(TEST_TENANT_UUID, videoFile)).rejects.toBeInstanceOf(PaymentFileWrongTypeError);
   });
 
   it('throws generic Error when storage upload fails', async () => {
     mockUpload.mockResolvedValue({ data: null, error: { message: 'Bucket not found' } });
     const file = makeFile('proof.pdf', 100, 'application/pdf');
-    await expect(uploadPaymentProof('garindo', file)).rejects.toThrow('Upload failed');
+    await expect(uploadPaymentProof(TEST_TENANT_UUID, file)).rejects.toThrow('Upload failed');
   });
 });

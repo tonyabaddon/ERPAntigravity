@@ -258,14 +258,19 @@ export async function generatePaymentProofSignedUrl(
  *   - File size ≤ 5 MB → PaymentFileTooLargeError
  *   - MIME type must be image/jpeg, image/png, or application/pdf → PaymentFileWrongTypeError
  *
- * Object key: `<tenantSlug>/YYYY-MM-<uuid>.<ext>`
+ * Object key: `tenants/<tenantId>/YYYY-MM-<uuid>.<ext>`
+ * Path prefix uses tenant UUID (not slug) — consistent with chat-media and migration 301
+ * tenant-scoped RLS policy (payment_proofs_read_own_tenant / payment_proofs_insert_own_tenant).
  * Returns the object key for use in RecordPaymentInput.proof_object_key.
+ *
+ * @param tenantId  - Tenant UUID (tenant.tenant_id from TenantRow)
+ * @param file      - Proof file to upload
  *
  * @throws PaymentFileTooLargeError    when file.size > 5MB
  * @throws PaymentFileWrongTypeError   when file.type is not JPG/PNG/PDF
  */
 export async function uploadPaymentProof(
-  tenantSlug: string,
+  tenantId: string,
   file: File,
 ): Promise<{ objectKey: string }> {
   if (!supabase) throw new Error('Supabase client not configured');
@@ -282,12 +287,13 @@ export async function uploadPaymentProof(
     );
   }
 
-  // Build object key: <tenantSlug>/YYYY-MM-<uuid>.<ext>
+  // Build object key: tenants/{tenant_id}/YYYY-MM-<uuid>.<ext>
+  // UUID path enforces payment_proofs_insert_own_tenant RLS (migration 301).
   const now = new Date();
   const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const uuid = crypto.randomUUID();
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
-  const objectKey = `${tenantSlug}/${monthPrefix}-${uuid}.${ext}`;
+  const objectKey = `tenants/${tenantId}/${monthPrefix}-${uuid}.${ext}`;
 
   const { error } = await supabase.storage
     .from('payment-proofs')
