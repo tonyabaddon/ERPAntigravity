@@ -147,3 +147,94 @@ cd supabase/functions/create-tenant-owner && deno test --allow-net
 **Commit:** `e6e0562`  
 **Fix:** Replaced try/catch on `deleteUser()` with `{ error }` return inspection (sbAdmin.auth.admin.deleteUser returns {data, error}, not throws)  
 **Report path:** `/.superpowers/sdd/task-9-report.md`
+
+---
+
+# Task 9 Report — Caleo Phase 1 Hardening (Day 9): Idempotency batch 2 + health probe split
+
+**Status:** DONE_WITH_CONCERNS  
+**Date:** 2026-07-17 (autonomous session)
+
+---
+
+## What shipped
+
+### Part A: Idempotency
+
+#### `record_pembayaran` — DONE (migration slot 315)
+
+**File:** `supabase/migrations/20261115000315_idempotency_record_pembayaran.sql`
+
+Changes vs slot 239:
+1. New overload: `record_pembayaran(payload jsonb, p_idempotency_key uuid DEFAULT NULL)` — backward compatible via DEFAULT NULL
+2. Added `SET search_path TO 'public'` — slot 239 omitted this (pre-existing security gap fixed as side benefit)
+3. `v_tenant_id := public._resolve_tenant_id()` extracted at function start (needed for idempotency lookup)
+4. Idempotency short-circuit at top: checks `t_rpc_idempotency` by `(tenant_id, rpc_name, idempotency_key)` — returns stored `{pembayaran_number, pembayaran_id}` on replay
+5. Stores result on success — no refetch needed (simpler than kasir_transactions pattern)
+6. Both overloads GRANTed: `record_pembayaran(jsonb)` AND `record_pembayaran(jsonb, uuid)` — avoids the slot-314 overload-grant gap that affected Task 8
+
+FE update: `src/lib/pembayaranService.ts` — `record()` now passes `p_idempotency_key: crypto.randomUUID()`.
+
+#### `initiate_warehouse_transfer` — SKIPPED (intentional deviation from brief)
+
+Slot 229 already implements idempotency via `p_client_request_id text`. The RPC checks `warehouse_transfers.client_request_id`, returns `{transfer_id, doc_no, idempotent: true}` on replay. FE already passes `clientRequestId`. Adding `t_rpc_idempotency` wrapping on top would create two overlapping sources of truth. No gap identified — existing mechanism covers network retry, timeout retry, and double-submit. No migration allocated.
+
+### Part B: Health probe split
+
+Files modified: `backend-go/main.go`, `cloudbuild.yaml`
+
+- `/api/v1/live` — liveness probe. Returns 200 + "ok" unconditionally. No dep checks. Process-alive signal for Cloud Run restart.
+- `/api/v1/ready` — readiness probe. Pings `dbClient.DB` with 2s timeout. Returns 503 if nil or Postgres unreachable. Returns 200 + "ready" when DB confirmed.
+- `/api/v1/health` — preserved for backward compat.
+
+Go structural fix: `var dbClient *db.Client` moved before mux handler setup (matches `var waClient *whatsapp.Client` pattern) so the `/api/ready` closure can reference it before assignment.
+
+cloudbuild.yaml probe flags (syntax verified against `gcloud run deploy --help`):
+- `--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12`
+- `--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3`
+
+---
+
+## Gates
+
+| Gate | Status |
+|---|---|
+| `npm run lint` (tsc --noEmit) | PASS |
+| `npm run audit:numinput` | PASS |
+| `npm run audit:secdef-null-tenant` | PASS |
+| `npx vitest run --changed` | PASS (no changed test files) |
+| `go build ./...` | PASS |
+| Migration smoke test (pre-apply, RAISE EXCEPTION rollback) | PASS |
+| Post-apply overload verification | PASS — both overloads confirmed |
+| Advisors (post-migration) | PASS — no new findings |
+
+---
+
+## Migration slots
+
+| Slot | Purpose | Status |
+|---|---|---|
+| 315 | `record_pembayaran` idempotency | Applied to prod |
+| (316) | Originally `initiate_warehouse_transfer` | NOT USED — skipped (rationale above) |
+
+Next free slot: **316**
+
+---
+
+## Concerns
+
+1. **Prod curl verification pending** — `/live` + `/ready` probe endpoints registered in code and cloudbuild.yaml but not yet deployed. Stage 2 (Cloud Build) + Stage 3 (curl `/api/v1/live` + `/api/v1/ready` on prod URL) must follow commit + push.
+
+2. **`initiate_warehouse_transfer` deviation from brief** — Founder may prefer consolidating to a single mechanism. Options: (a) keep `client_request_id` as-is; (b) deprecate `client_request_id` in favor of `t_rpc_idempotency` for consistency with other RPCs. Currently: option (a). No action needed unless founder disagrees.
+
+3. **Old 1-arg `record_pembayaran(jsonb)` still has mutable search_path** — pre-existing WARN from slot 239. New 2-arg overload is clean (`SET search_path = public`). A future migration can DROP the old overload once all callers are confirmed passing the idempotency key.
+
+---
+
+## Return values
+
+- **Status:** DONE_WITH_CONCERNS
+- **Commit SHA:** pending (follows this session)
+- **RPCs modified:** `record_pembayaran` (slot 315)
+- **RPCs skipped:** `initiate_warehouse_transfer` (existing mechanism sufficient)
+- **Probe endpoints verified:** registered + `go build` clean; prod curl pending deploy

@@ -81,9 +81,11 @@ func main() {
 	cfg := config.Load()
 	ctx := context.Background()
 
-	// waClient is declared here so HTTP handler closures can reference it.
-	// It remains nil until whatsapp.NewClient completes below; handlers guard against nil.
+	// waClient and dbClient are declared here so HTTP handler closures can
+	// reference them. Both remain nil until their respective init loops
+	// complete below; handlers guard against nil.
 	var waClient *whatsapp.Client
+	var dbClient *db.Client
 
 	// Start HTTP server FIRST — Cloud Run startup probe checks port 8080.
 	// If DB or WA init hangs, the probe still passes and Cloud Run marks the
@@ -96,6 +98,40 @@ func main() {
 			"status": "online",
 			"time":   time.Now().Format(time.RFC3339),
 		})
+	})
+	// /api/v1/live — liveness probe (process alive, no deps).
+	// Cloud Run uses this to detect a stuck process and restart it.
+	// Returns 200 unconditionally while the process is running.
+	// Accessible as /api/v1/live (VersionRouter rewrites → /api/live).
+	mux.HandleFunc("/api/live", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+	// /api/v1/ready — readiness probe (dependency check).
+	// Cloud Run uses this to stop sending traffic when deps are unavailable.
+	// Checks Postgres reachability with a short timeout.
+	// dbClient is nil during startup (before DB connect loop below); during
+	// that window the probe returns 503, which is correct — don't route traffic
+	// until the DB is confirmed reachable.
+	// Accessible as /api/v1/ready (VersionRouter rewrites → /api/ready).
+	mux.HandleFunc("/api/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		if dbClient == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("db not yet connected"))
+			return
+		}
+		pingCtx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := dbClient.DB.PingContext(pingCtx); err != nil {
+			slog.WarnContext(r.Context(), "[READY] DB ping failed", slog.Any("error", err))
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("db unreachable"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ready"))
 	})
 	mux.HandleFunc("/api/wa/status", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
@@ -255,7 +291,6 @@ func main() {
 	}()
 
 	// DB — retry until connected so waClient can initialize even after a transient failure.
-	var dbClient *db.Client
 	for attempt := 1; ; attempt++ {
 		dbClient, err = db.NewClient(cfg.SupabaseDBConn)
 		if err == nil {

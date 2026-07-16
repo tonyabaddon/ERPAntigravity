@@ -13827,3 +13827,51 @@ BLOCKERS remaining (need founder action, morning):
 **Gates:** lint ✓, audit:numinput ✓, audit:secdef-null-tenant ✓, vitest --changed (no changed tests) ✓
 
 **Phase 1 Day 5 (Task 5) status: DONE — migrations applied to prod**
+
+---
+
+## Phase 1 Hardening — Task 9 (Day 9): Idempotency batch 2 + health probe split
+
+**When:** 2026-07-17 (autonomous session)
+
+**Why:**
+- `record_pembayaran` (payment RPC) had no idempotency protection — a network timeout on submission could cause double-payment. Adding the same `t_rpc_idempotency` pattern from Task 8.
+- `initiate_warehouse_transfer` — evaluated but SKIPPED. Already has a native `p_client_request_id` mechanism (checks `warehouse_transfers.client_request_id`, returns `{idempotent:true}` on replay). Adding a second overlapping mechanism via `t_rpc_idempotency` would create two sources of truth. No gap identified.
+- Cloud Run had no liveness/readiness probe split — all health checking used the default `/api/v1/health`. Splitting into `/live` (no deps) + `/ready` (DB ping) allows Cloud Run to distinguish "process stuck" from "process booting / dep unavailable".
+
+**What changed:**
+
+- **Migration 315** (`20261115000315_idempotency_record_pembayaran.sql`):
+  - Adds `p_idempotency_key uuid DEFAULT NULL` as 2nd param (new overload, backward compatible)
+  - Adds `SET search_path TO 'public'` (slot 239 omitted it — pre-existing security gap now fixed)
+  - Extracts `v_tenant_id := _resolve_tenant_id()` at function start
+  - Idempotency short-circuit at top; stores `{pembayaran_number, pembayaran_id}` in `t_rpc_idempotency` on success
+  - GRANTs both overloads: `record_pembayaran(jsonb)` + `record_pembayaran(jsonb, uuid)`
+
+- **FE — `src/lib/pembayaranService.ts`**:
+  - `record()` now passes `p_idempotency_key: crypto.randomUUID()` on every call
+  - Pattern matches `pembelianService.ts` slot 312 pattern
+
+- **Go — `backend-go/main.go`**:
+  - `var dbClient *db.Client` moved to early declaration (alongside `waClient`) so probe closure can reference it
+  - `/api/live` handler — returns 200 always while process running; no deps checked
+  - `/api/ready` handler — pings `dbClient.DB` with 2s timeout; 503 if nil or unreachable
+  - Both accessible as `/api/v1/live` and `/api/v1/ready` via VersionRouter rewrite
+
+- **`cloudbuild.yaml`**:
+  - `--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12` (60s max window)
+  - `--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3`
+
+**Smoke tests (pre-apply, with RAISE EXCEPTION rollback):**
+- t_rpc_idempotency table exists ✓
+- _resolve_tenant_id() callable ✓
+- generate_pembayaran_number() callable ✓
+- Old 1-arg overload raises as expected ✓
+- 2-arg overload registered ✓
+- Idempotency record insert/read-back ✓
+
+**Advisors (post-migration):** No new findings. Existing WARNs on `function_search_path_mutable` for old 1-arg overload are pre-existing (not introduced by this migration). The new 2-arg overload has `SET search_path = public` — clean.
+
+**Gates:** lint (tsc) ✓, audit:numinput ✓, audit:secdef-null-tenant ✓, vitest --changed (no changed tests) ✓, go build ✓
+
+**Phase 1 Day 9 (Task 9) status: DONE — migration applied, code committed, pending deploy**

@@ -31,7 +31,13 @@ export const pembayaranService = {
   },
   async record(payload: RecordPembayaranPayload): Promise<{ pembayaran_number: string; pembayaran_id: string }> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { data, error } = await supabase.rpc('record_pembayaran', { payload });
+    // Idempotency token (slot 315): prevents double-payment on network retry.
+    // Generated fresh per call — the caller (PembayaranFormPage) submits once;
+    // any network-level retry of the same request uses the same key.
+    const { data, error } = await supabase.rpc('record_pembayaran', {
+      payload,
+      p_idempotency_key: crypto.randomUUID(),
+    });
     if (error) throw error;
     return data as any;
   },
