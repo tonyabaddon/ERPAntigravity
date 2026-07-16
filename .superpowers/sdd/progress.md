@@ -1,3 +1,36 @@
+## 2026-07-16 — Phase 1 Task 1 (Day 1): Chat-media security fix
+### Started: 2026-07-16T19:40:00Z
+### Progress log:
+- 2026-07-16T19:40Z: Read task-1-brief.md; identified scope (Steps 1-13, no prod deploy)
+- 2026-07-16T19:42Z: Grepped chat consumers — table `messages`, column `media_url` (not `t_chat_messages`/`media_path`)
+- 2026-07-16T19:43Z: Verified existing bucket policy: single `chat_media_authenticated_write` ALL-policy (not two separate read/write policies as plan assumed)
+- 2026-07-16T19:44Z: Read `supabaseClient.ts:260-266` — `uploadChatMedia` uses `${Date.now()}_${name}` path and returns full publicUrl; `messages.media_url` stores full public URL (not path)
+- 2026-07-16T19:46Z: Called advisor(); confirmed 3 critical blockers: (1) media_url stores URLs not paths; (2) dual-format renderer needed; (3) data script needs URL parsing
+- 2026-07-16T19:50Z: Verified `messages.tenant_id` NOT NULL via migration 20261001000003; `insertAdminMediaMessage` relies on RLS `_resolve_tenant_id()`
+- 2026-07-16T19:52Z: Migration 300 SQL written to `supabase/migrations/20261115000300_chat_media_tenant_prefix.sql` with correct DROP (chat_media_authenticated_write)
+- 2026-07-16T19:53Z: `src/lib/chatMediaSignedUrl.ts` created with dual-format handling (legacy URL passthrough + new path signed URL)
+- 2026-07-16T19:54Z: `src/lib/supabaseClient.ts` uploadChatMedia refactored to tenant-prefixed path, returns path (not publicUrl)
+- 2026-07-16T19:55Z: `src/components/SalesInboxScreen.tsx` updated — added import, ChatBubble now uses useState+useEffect+getSignedChatMediaUrl; loading state shows "[lampiran memuat…]"
+- 2026-07-16T19:56Z: `scripts/migrate-chat-media-paths.ts` written with URL parsing (extractObjectName), tenant fallback via conversations, idempotent (skips tenants/ prefix)
+- 2026-07-16T19:58Z: lint (tsc --noEmit): PASS
+- 2026-07-16T19:58Z: audit:numinput: PASS
+- 2026-07-16T19:58Z: audit:secdef-null-tenant: PASS
+- 2026-07-16T19:59Z: vitest --changed: 9 pre-existing failures in unrelated tests (productWrappers, mutations, AdminHome, AdminRoutes, TenantsList); all reference .claude/worktrees/warehouse-transfer paths — pre-existing worktree artifact, not caused by this change. No tests exist for SalesInboxScreen/chatMediaSignedUrl/uploadChatMedia (true prior to this change too).
+- 2026-07-16T20:00Z: Committed locally
+### Deferred to founder (prod deploy):
+- Apply migration 300 to prod via `mcp__plugin_supabase_supabase__apply_migration`
+- Run data migration script: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/migrate-chat-media-paths.ts`
+- `git push` to trigger Cloud Build FE deploy (triggeres `cloudbuild.frontend.yaml`)
+- Prod smoke test: upload chat media as Garindo, verify tenant-prefixed path; attempt cross-tenant access from Toko Jaya Makmur, verify 403
+- DEPLOYMENT ORDER: (1) apply migration 300 → (2) run data script → (3) git push FE deploy
+  (renderer dual-format handling makes order flexible, but preferred sequence avoids window where new paths hit old policies)
+### Blockers (if any):
+- None. 9 pre-existing test failures are not caused by this change (worktree artifact).
+### Status: LOCAL WORK COMPLETE
+### Completed: 2026-07-16T20:00:00Z
+
+---
+
 # NOA audit follow-up B + W1–W4 (2026-07-13 siang)
 
 Continuation after B1–B4 BLOCKER ship. Founder approved options A/B/C
@@ -310,3 +343,12 @@ Started: 2026-07-13 evening (founder offline)
 **Migration slots claimed:** 148, 149, 150, 151, 152.
 
 Task 1: complete (inline, findings recorded)
+
+## Task 2: complete (commit 7ccde4c, migration 148 applied — service_catalog + BOM tables, composite FK to COA, RLS with vosi_rpc_owner)
+## Task 3: complete (commit 7ccde4c, migration 149 applied — rakit_job_lines + rakit_components additive extend, dropped chk_rakit_service_type)
+## Task 4: complete (commit 7ccde4c, migration 150 applied — COA seed 4-1300 + 5-2110 for Garindo; account_subtype is TEXT so no enum ADD VALUE)
+## Task 5: complete (commit 7ccde4c, migration 151 applied — save/soft_delete/attach RPCs; SQL smoke lulus: save + attach + snapshot + soft_delete all OK)
+## Task 6: complete (commit 7ccde4c, migrations service_delivery_enum + 152 applied — _process_service_line_delivery helper + transition_order_stage hook at 4a/4b with idempotence guard hpp_final IS NULL)
+## Task 7: complete (commit 8027060, FE Pengaturan Layanan CRUD + BOM editor + ComponentPicker + reusable component wired)
+## Task 8: complete (commit e420e98, TambahLayananModal + InvoicePreviewScreen integration via 🛠 Tambah Layanan button in header)
+## Task 9: in-progress (Cloud Build deploying 8027060 + e420e98, then MCP chrome smoke)

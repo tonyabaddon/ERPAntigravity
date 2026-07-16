@@ -259,11 +259,36 @@ export const conversationService = {
 
   async uploadChatMedia(file: File): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
-    const path = `${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from('chat-media').upload(path, file);
+
+    // Get tenant_id from authenticated user profile
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Must be authenticated to upload chat media');
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('tenant_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.tenant_id) throw new Error('User has no tenant assigned');
+
+    // Path: tenants/{tenant_id}/{uuid}_{sanitized_filename}
+    // tenant_id in path enforces storage RLS (policy chat_media_write_own_tenant)
+    const uuid = crypto.randomUUID();
+    const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `tenants/${profile.tenant_id}/${uuid}_${sanitized}`;
+
+    const { error } = await supabase.storage
+      .from('chat-media')
+      .upload(path, file, {
+        contentType: file.type,
+        upsert: false,
+      });
+
     if (error) throw error;
-    const { data } = supabase.storage.from('chat-media').getPublicUrl(path);
-    return data.publicUrl;
+
+    // Return storage path only — signed URL generated on-demand via getSignedChatMediaUrl
+    return path;
   },
 
   async insertAdminMediaMessage(conversationId: string, mediaUrl: string, mediaType: string): Promise<DbMessage> {

@@ -5,6 +5,7 @@ import type { DbMessage, ConversationState } from '../types';
 import type { ActivePage } from '../types';
 import { categorize, categoryCounts, type InboxCategory } from '../lib/salesInboxCategorize';
 import { conversationService } from '../lib/supabaseClient';
+import { getSignedChatMediaUrl } from '../lib/chatMediaSignedUrl';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -507,6 +508,16 @@ interface ChatBubbleProps { msg: DbMessage; }
 const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  // Resolve chat-media URL (handles both legacy public URLs and new tenant-prefixed paths)
+  const [resolvedMediaUrl, setResolvedMediaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (msg.media_url) {
+      getSignedChatMediaUrl(msg.media_url).then(setResolvedMediaUrl);
+    } else {
+      setResolvedMediaUrl(null);
+    }
+  }, [msg.media_url]);
+
   if (msg.sender === 'system') {
     return (
       <div className="text-center text-[9px] text-gray-400 italic py-1">
@@ -532,9 +543,13 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
         <span className="text-[9px] text-gray-400 mb-0.5 px-1">{senderLabel}</span>
         <div className={`px-3 py-2 text-xs leading-relaxed ${bubbleClass}`}>
           {msg.media_url ? (
-            <a href={msg.media_url} target="_blank" rel="noreferrer" className="underline opacity-80">
-              [{msg.media_type?.toUpperCase() ?? 'FILE'} attachment]
-            </a>
+            resolvedMediaUrl ? (
+              <a href={resolvedMediaUrl} target="_blank" rel="noreferrer" className="underline opacity-80">
+                [{msg.media_type?.toUpperCase() ?? 'FILE'} attachment]
+              </a>
+            ) : (
+              <span className="opacity-60">[lampiran memuat…]</span>
+            )
           ) : (
             msg.text
           )}
