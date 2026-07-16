@@ -13671,3 +13671,42 @@ curl -s "https://api.cloudflare.com/client/v4/zones?name=caleo.web.id" -H "Autho
 - caleo.web.id redirect: deferred until zone active
 
 **Phase 1 Day 3 (Task 3) status: DONE_WITH_CONCERNS (2 founder actions required)**
+
+**2026-07-17 overnight — Task 3 partial + Task 4 dispatch**:
+
+**Task 3 (Day 3) status: DONE_WITH_2_BLOCKERS**:
+
+Shipped by subagent + follow-up:
+- ✅ Migration 303: `platform_admin` seed + index (subagent found `platform_admins` table + JWT hook already existed from earlier waves — column was scope-adjusted to documentation + seed + index)
+- ✅ Cloudflare DNS: CNAME `app.caleo.id → ghs.googlehosted.com` (DNS-only, proxied=false)
+- ✅ Cloudflare Workers: `caleo-placeholder` service-worker with hostname-routing serves 4 subdomains
+  - `caleo.id` → 200 "Website segera hadir"
+  - `admin.caleo.id` → 200 "Platform admin — under construction"
+  - `staging.caleo.id` → 200 "Staging environment — internal only"
+  - `admin.staging.caleo.id` → 4th-level SSL not ready (Cloudflare Universal SSL doesn't cover 4th-level; needs Advanced Certificate Manager or wildcard cert, non-critical for placeholder)
+- ✅ `caleo.web.id` 301 redirect to `caleo.id` LIVE (Cloudflare Rulesets + proxied AAAA record). Verified curl returns HTTP/2 301 Location: https://caleo.id/.
+- ✅ Supabase Auth config: `site_url=https://app.caleo.id`, `uri_allow_list` includes both app.caleo.id and legacy Cloud Run URL for transition
+- ✅ FE build (`cloudbuild.frontend.yaml` + `Dockerfile`): now passes `VITE_APP_URL=https://app.caleo.id` as build-arg
+- ✅ Commit `c7a7a69` pushed, Cloud Build succeeded, bundle live with new env
+
+BLOCKERS remaining (need founder action, morning):
+- **B-1**: Cloud Run domain mapping for `app.caleo.id` → frontend service. `gcloud` is now working (installed python3.13 + beta components), but the only credentialed account is `tinythinkers.co.id@gmail.com` which lacks IAM on `garindo-jaya-panel-msme-erp` project. Founder needs to run ONE of:
+  - `gcloud auth login tonywei.office@gmail.com` (browser flow) then:
+    ```
+    gcloud beta run domain-mappings create \
+      --service=garindo-jaya-panel-msme-erp-frontend \
+      --domain=app.caleo.id \
+      --region=asia-southeast1 \
+      --project=garindo-jaya-panel-msme-erp
+    ```
+  - OR add tinythinkers as IAM role `roles/run.admin` on project (broader, defer)
+  - Once mapping done, SSL cert auto-provisions 10-30 min, then `https://app.caleo.id/` serves ERP frontend
+- **B-2**: `admin.staging.caleo.id` 4th-level SSL — Cloudflare Universal SSL doesn't cover 4th-level subdomains on Free plan. Options: (1) upgrade to Advanced Certificate Manager (~$10/mo — violates zero-cost), (2) accept as-is for placeholder (won't be user-facing until Phase 2), (3) rename to `admin-staging.caleo.id` (3rd-level → covered). Recommend option 2 for now, revisit at Phase 2.
+
+**Task 3 verification**:
+- SQL policy simulation for storage buckets: unchanged (Task 2 Concern 3 baseline)
+- 3/4 placeholder subdomains verified 200
+- `caleo.web.id` 301 verified
+- Supabase auth config verified via GET
+
+**Next: Task 4 (API v1 prefix) dispatched autonomously**
