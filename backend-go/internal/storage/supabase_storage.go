@@ -9,17 +9,21 @@ import (
 )
 
 // UploadPaymentProof uploads image bytes to the Supabase Storage `payment-proofs` bucket.
-// Returns the permanent public URL on success, or ("", err) on failure.
+// Uses tenant-prefixed path: tenants/{tenantID}/{orderID}/{ms}[.pdf]
+// This matches the payment_proofs_read_own_tenant RLS policy (migration 301).
+// Returns the storage path (not a public URL — bucket is private; readers must use signed URLs).
 // Caller should log the error and continue — a failed upload must not drop the payment flow.
-func UploadPaymentProof(ctx context.Context, supabaseURL, serviceKey, orderID string, data []byte, contentType string) (string, error) {
+func UploadPaymentProof(ctx context.Context, supabaseURL, serviceKey, tenantID, orderID string, data []byte, contentType string) (string, error) {
 	if contentType == "" {
 		contentType = "image/jpeg"
 	}
-	filename := fmt.Sprintf("%s/%d", orderID, time.Now().UnixMilli())
+	// Path: tenants/{tenantID}/{orderID}/{ms}[.pdf]
+	// tenantID prefix enforces RLS policy on reads; service key bypasses RLS on write.
+	storagePath := fmt.Sprintf("tenants/%s/%s/%d", tenantID, orderID, time.Now().UnixMilli())
 	if contentType == "application/pdf" {
-		filename += ".pdf"
+		storagePath += ".pdf"
 	}
-	uploadURL := fmt.Sprintf("%s/storage/v1/object/payment-proofs/%s", supabaseURL, filename)
+	uploadURL := fmt.Sprintf("%s/storage/v1/object/payment-proofs/%s", supabaseURL, storagePath)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, uploadURL, bytes.NewReader(data))
 	if err != nil {
@@ -38,6 +42,7 @@ func UploadPaymentProof(ctx context.Context, supabaseURL, serviceKey, orderID st
 		return "", fmt.Errorf("storage: upload failed with HTTP %d", resp.StatusCode)
 	}
 
-	publicURL := fmt.Sprintf("%s/storage/v1/object/public/payment-proofs/%s", supabaseURL, filename)
-	return publicURL, nil
+	// Return the storage path — not a public URL (bucket is private).
+	// FE reads via createSignedUrl or StorageLink component.
+	return storagePath, nil
 }

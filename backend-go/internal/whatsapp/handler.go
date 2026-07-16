@@ -496,13 +496,19 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	}
 
 	// Payment proof flow — image or document (PDF) from customer with WAITING_PAYMENT order.
+	// Fallback tenantID: empty string means upload succeeds (service key bypasses RLS) but
+	// the resulting path won't match tenant-scoped read policy. Log and monitor.
+	tenantID := order.TenantID
+	if tenantID == "" {
+		log.Printf("[HANDLER] WARNING: order %s has no tenant_id; proof will upload to unscoped path", order.ID)
+	}
 	var proofURL string
 	if img != nil {
 		data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
 		if dlErr != nil {
 			log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
 		} else {
-			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
+			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, tenantID, order.ID, data, contentType)
 			if upErr != nil {
 				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
 			} else {
@@ -514,7 +520,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		if dlErr != nil {
 			log.Printf("[HANDLER] DownloadDocument error for order %s: %v", order.ID, dlErr)
 		} else {
-			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, order.ID, data, contentType)
+			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, tenantID, order.ID, data, contentType)
 			if upErr != nil {
 				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
 			} else {

@@ -140,6 +140,7 @@ type Message struct {
 
 type Order struct {
 	ID               string       `json:"id"`
+	TenantID         string       `json:"tenant_id"`
 	ConversationID   string       `json:"conversation_id"`
 	GJPOrderID       string       `json:"gjp_order_id,omitempty"`
 	OrderType        OrderType    `json:"order_type"`
