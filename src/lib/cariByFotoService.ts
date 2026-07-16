@@ -15,7 +15,7 @@ const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL ?? '';
 export async function searchByPhoto(blob: Blob): Promise<{ results: SearchResult[] }> {
   const fd = new FormData();
   fd.append('photo', blob, 'query.jpg');
-  const resp = await fetch(`${BACKEND_URL}/api/products/search-by-photo`, {
+  const resp = await fetch(`${BACKEND_URL}/api/v1/products/search-by-photo`, {
     method: 'POST',
     body: fd,
   });
@@ -28,7 +28,7 @@ export async function searchByPhoto(blob: Blob): Promise<{ results: SearchResult
 }
 
 export async function indexPhotos(sku: string, photoPaths: string[]): Promise<{ indexed: number; error?: string }> {
-  const resp = await fetch(`${BACKEND_URL}/api/products/index-photos`, {
+  const resp = await fetch(`${BACKEND_URL}/api/v1/products/index-photos`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ sku, photo_paths: photoPaths }),

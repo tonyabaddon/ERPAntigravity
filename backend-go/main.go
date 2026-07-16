@@ -238,7 +238,7 @@ func main() {
 	}
 	go func() {
 		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
-		if err := http.Serve(ln, mux); err != nil {
+		if err := http.Serve(ln, api.VersionRouter(mux)); err != nil {
 			log.Printf("[MAIN] HTTP error: %v", err)
 		}
 	}()

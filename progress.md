@@ -13709,4 +13709,35 @@ BLOCKERS remaining (need founder action, morning):
 - `caleo.web.id` 301 verified
 - Supabase auth config verified via GET
 
+---
+
+## 2026-07-17 — Caleo Phase 1 Day 4 (Task 4): API /api/v1/* prefix + backward compat — DONE
+
+**What shipped:**
+
+- `backend-go/internal/api/version_middleware.go` — `VersionRouter(inner http.Handler)` middleware:
+  - `/api/v1/<path>` → rewrites to `/api/<path>` → inner mux (canonical versioned route)
+  - `/api/<path>` (legacy) → sets `X-Deprecated-Path: /api/v1/<path>` header + emits `slog.Warn` → serves normally (backward compat)
+  - All other paths → 404
+- `backend-go/main.go` — `http.Serve(ln, api.VersionRouter(mux))` — one-line change, all 11 route registrations unchanged (keep `/api/` prefix on mux)
+- `cloudbuild.yaml` — added `API_VERSION=v1` to `--update-env-vars` (cosmetic marker, middleware infers from URL)
+- FE — 8 hardcoded `/api/` fetch calls updated to `/api/v1/`:
+  - `src/components/WhatsappAiScreen.tsx` — `/api/wa/qr`, `/api/wa/logout`, `/api/wa/pair-code`
+  - `src/lib/cariByFotoService.ts` — `/api/products/search-by-photo`, `/api/products/index-photos`
+  - `src/lib/supabaseClient.ts` — `/api/recon/upload`, `/api/recon/close`
+  - Line 870 in WhatsappAiScreen.tsx (`/api/whatsapp/webhook`) intentionally left — dead Express.js code in comment block, not a live fetch call
+
+**Backward compat contract:**
+- Legacy `/api/*` callers (WA bridge daemon hitting `/api/approval/wa-webhook`) continue to work with deprecation header
+- Sunset plan: legacy `/api/*` routes removed 2027-Q3 after 1 release cycle
+
+**Gates:**
+- `go build ./...` clean
+- `go test ./internal/api/...` — 7/7 pass
+- `npm run lint` (tsc --noEmit) — clean
+- `npm run audit:numinput` — clean
+- `npm run audit:secdef-null-tenant` — clean
+
+**Phase 1 Day 4 (Task 4) status: DONE — deploying via git push**
+
 **Next: Task 4 (API v1 prefix) dispatched autonomously**
