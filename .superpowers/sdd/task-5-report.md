@@ -1,4 +1,95 @@
-# Task 5 Report: /admin/sales-reps UI
+# Task 5 Report: /admin/sales-reps UI (Wave 6 — archived below)
+
+---
+
+# Caleo Phase 1 Hardening — Task 5 (Day 5): Composite PK Migration Batch 1
+
+**Status:** DONE
+**Date:** 2026-07-17
+
+## Commit
+
+See git log for commit SHA.
+
+## Row Counts (at migration time)
+
+| Table | Rows |
+|---|---|
+| `stock_movements` | 1,589 |
+| `journal_entry_lines` | 687 |
+
+## Pre-flight Checks
+
+| Check | Result |
+|---|---|
+| `stock_movements.tenant_id` NOT NULL | PASS |
+| `journal_entry_lines.tenant_id` NOT NULL | PASS |
+| NULL tenant_id rows in either table | 0 — PASS |
+| Cross-tenant FK violations (sa ↔ sm) | 0 — PASS |
+| Cross-tenant FK violations (sm self-ref) | 0 — PASS |
+| Tenant-agnostic `id`-only lookups in src/ + migrations/ | None found — PASS |
+
+## Migrations Applied
+
+### Slot 304 — `composite_pk_stock_movements`
+- `stock_movements` PK: `(id)` → `(tenant_id, id)`
+- `stock_movements_related_movement_id_fkey` (self-ref) upgraded to composite `(tenant_id, related_movement_id) REFERENCES stock_movements(tenant_id, id) ON DELETE SET NULL`
+- `stock_adjustments_committed_movement_id_fkey` upgraded to composite `(tenant_id, committed_movement_id) REFERENCES stock_movements(tenant_id, id) ON DELETE SET NULL`
+
+### Slot 305 — `composite_pk_journal_entry_lines`
+- `journal_entry_lines` PK: `(id)` → `(tenant_id, id)`
+- No inbound FKs — no FK changes needed
+
+### Slot 306 — `composite_pk_fk_indexes`
+- `idx_sm_related_movement ON stock_movements(tenant_id, related_movement_id) WHERE NOT NULL`
+- `idx_sa_committed_movement ON stock_adjustments(tenant_id, committed_movement_id) WHERE NOT NULL`
+- Added after advisors flagged the two new composite FKs as unindexed
+
+## EXPLAIN Regression Analysis
+
+| Query | Verdict |
+|---|---|
+| `stock_movements WHERE tenant_id=? AND sku=?` | NO REGRESSION — `idx_sm_sku_created` |
+| `stock_movements WHERE tenant_id=? AND source=?` | NO REGRESSION — `idx_sm_source` |
+| `journal_entry_lines WHERE tenant_id=? ORDER BY created_at` | NO REGRESSION — Seq Scan expected at 687 rows |
+| `journal_entry_lines WHERE tenant_id=? AND account_id=?` | NO REGRESSION — `idx_jel_account_date` |
+
+## Advisor Findings (post-migration)
+
+**New → RESOLVED:** `stock_movements_related_movement_id_fkey` unindexed → fixed in migration 306.
+
+**Pre-existing (deferred):** `stock_movements_warehouse_id_fkey` unindexed; unused partial indexes on jel; dual permissive SELECT policies (intentional).
+
+## Standard Gates
+
+| Gate | Result |
+|---|---|
+| `npm run lint` | PASS |
+| `npm run audit:numinput` | PASS |
+| `npm run audit:secdef-null-tenant` | PASS |
+| `npx vitest run --changed` | PASS |
+
+## Rollback Plan
+
+```sql
+-- stock_movements
+ALTER TABLE stock_adjustments DROP CONSTRAINT IF EXISTS stock_adjustments_committed_movement_id_fkey;
+ALTER TABLE stock_movements DROP CONSTRAINT IF EXISTS stock_movements_related_movement_id_fkey;
+ALTER TABLE stock_movements DROP CONSTRAINT IF EXISTS stock_movements_pkey;
+ALTER TABLE stock_movements ADD PRIMARY KEY (id);
+ALTER TABLE stock_movements ADD CONSTRAINT stock_movements_related_movement_id_fkey
+  FOREIGN KEY (related_movement_id) REFERENCES stock_movements(id);
+ALTER TABLE stock_adjustments ADD CONSTRAINT stock_adjustments_committed_movement_id_fkey
+  FOREIGN KEY (committed_movement_id) REFERENCES stock_movements(id);
+
+-- journal_entry_lines
+ALTER TABLE journal_entry_lines DROP CONSTRAINT IF EXISTS journal_entry_lines_pkey;
+ALTER TABLE journal_entry_lines ADD PRIMARY KEY (id);
+```
+
+---
+
+# (Archived) Task 5 Report: /admin/sales-reps UI
 
 **Status:** DONE
 **Date:** 2026-07-10

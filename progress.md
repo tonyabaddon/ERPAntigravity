@@ -13746,3 +13746,42 @@ BLOCKERS remaining (need founder action, morning):
 - FE bundle: 7/7 `/api/v1/` paths confirmed in deployed JS (wa/qr, wa/logout, wa/pair-code, products/search-by-photo, products/index-photos, recon/upload, recon/close)
 
 **Next: Task 4 (API v1 prefix) dispatched autonomously**
+
+---
+
+## Phase 1 Hardening — Task 5 (Day 5): Composite PK migration batch 1
+
+**When:** 2026-07-17 (autonomous session)
+
+**Why:** `stock_movements` (bigint PK) and `journal_entry_lines` (UUID PK) will grow past 10M rows at 10-tenant scale. Partitioning-by-tenant requires composite PK `(tenant_id, id)`. Migration at ~1.5K / ~687 rows takes seconds; at 10M+ rows would be weeks of downtime.
+
+**What changed:**
+
+- Migration 304 (`20261115000304_composite_pk_stock_movements.sql`):
+  - `stock_movements` PK changed from `(id)` → `(tenant_id, id)`
+  - `stock_movements_related_movement_id_fkey` (self-ref) upgraded to composite: `(tenant_id, related_movement_id) → (tenant_id, id)`
+  - `stock_adjustments_committed_movement_id_fkey` upgraded to composite: `(tenant_id, committed_movement_id) → stock_movements(tenant_id, id)`
+
+- Migration 305 (`20261115000305_composite_pk_journal_entry_lines.sql`):
+  - `journal_entry_lines` PK changed from `(id)` → `(tenant_id, id)`
+  - No inbound FKs — cleaner migration; existing outbound FKs and UNIQUE(entry_id, line_number) untouched
+
+- Migration 306 (`20261115000306_composite_pk_fk_indexes.sql`):
+  - `idx_sm_related_movement ON stock_movements(tenant_id, related_movement_id) WHERE NOT NULL`
+  - `idx_sa_committed_movement ON stock_adjustments(tenant_id, committed_movement_id) WHERE NOT NULL`
+  - Added after advisors flagged the two new composite FKs as unindexed
+
+**Pre-flight checks (all passed):**
+- `tenant_id`: NOT NULL on both tables, 0 NULL rows
+- Cross-tenant FK violations: 0 (stock_adjustments ↔ stock_movements, self-ref check)
+- Tenant-agnostic `id`-only lookups: none found in migrations/ or src/
+
+**EXPLAIN regression:** No regression. All hot queries still hit the same secondary indexes (`idx_sm_sku_created`, `idx_sm_source`, `idx_jel_account_date`). The composite PK adds a new `(tenant_id, id)` btree that improves future tenant-scoped point lookups.
+
+**Advisors (post-migration):** No new WARN/ERROR findings for these tables. Pre-existing infos: unindexed warehouse_id FK on stock_movements (pre-existing, deferred), unused partial indexes on journal_entry_lines (pre-existing), dual permissive SELECT policies (intentional design).
+
+**Rollback plan:** `DROP CONSTRAINT stock_movements_pkey; ADD PRIMARY KEY (id);` + restore single-col FKs. `DROP CONSTRAINT journal_entry_lines_pkey; ADD PRIMARY KEY (id);`
+
+**Gates:** lint ✓, audit:numinput ✓, audit:secdef-null-tenant ✓, vitest --changed (no changed tests) ✓
+
+**Phase 1 Day 5 (Task 5) status: DONE — migrations applied to prod**
