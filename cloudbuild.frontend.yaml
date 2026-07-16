@@ -7,6 +7,8 @@ steps:
       - '--build-arg'
       - 'VITE_BACKEND_URL=$_VITE_BACKEND_URL'
       - '--build-arg'
+      - 'VITE_APP_URL=$_VITE_APP_URL'
+      - '--build-arg'
       - 'VITE_SUPABASE_URL=$_VITE_SUPABASE_URL'
       - '--build-arg'
       - 'VITE_SUPABASE_ANON_KEY=$_VITE_SUPABASE_ANON_KEY'
@@ -83,6 +85,7 @@ images:
 
 substitutions:
   _VITE_BACKEND_URL: https://garindo-jaya-panel-msme-erp-422860632808.asia-southeast1.run.app
+  _VITE_APP_URL: https://app.caleo.id
 
 options:
   logging: CLOUD_LOGGING_ONLY

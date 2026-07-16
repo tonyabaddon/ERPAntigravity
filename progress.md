@@ -13595,3 +13595,79 @@ Following Task 2's DONE_WITH_CONCERNS report, all 3 concerns addressed:
 - `stocks.photo_url` (singular) query in `backend-go/products_search.go:126` — subagent flagged mystery (column doesn't exist in schema), needs investigation but not blocking
 
 **Phase 1 Day 2 (Task 2) status: COMPLETE**
+
+---
+
+## 2026-07-17 — Phase 1 Day 3 (Task 3): Custom domain + subdomain architecture + platform_admin gate (DONE_WITH_CONCERNS)
+
+### What shipped
+
+**Part A — app.caleo.id domain setup (partial, requires founder action)**:
+- Cloudflare DNS: CNAME `app.caleo.id → ghs.googlehosted.com` (DNS-only, proxied=false) — DONE
+- Cloud Run domain mapping: BLOCKED — `gcloud` broken on host (Python 3.9 incompatible). Founder must run this manually (see hand-off instructions below).
+
+**Part B — 4 subdomain placeholder Workers**:
+- Deployed `caleo-placeholder` Cloudflare Worker (service-worker format, handles all 4 subdomains via hostname switch)
+- Proxied AAAA `100::` records created for: `caleo.id`, `admin.caleo.id`, `staging.caleo.id`, `admin.staging.caleo.id`, `www.caleo.id`
+- Worker routes attached: `caleo.id/*`, `admin.caleo.id/*`, `staging.caleo.id/*`, `admin.staging.caleo.id/*`
+- Each subdomain returns branded Caleo placeholder with correct per-subdomain message
+
+**Part C — caleo.web.id 301 redirect**: DEFERRED — zone still `pending` nameserver switch. Instructions written in hand-off doc below.
+
+**Part D — platform_admin column migration**:
+- Re-scoped: `platform_admins` table + JWT hook (`custom_access_token_hook`) + `_is_platform_admin_active_from_jwt()` already fully in place from earlier waves
+- Migration 303 applied: comments + idempotent founder seed + `ix_platform_admins_email` index
+- Founder (tonywei.office@gmail.com, UUID 227c28f4) confirmed seeded as `super_admin` status `active`
+- Zero new security/perf advisors post-migration
+
+**Part E — Cross-subdomain session verify**: REQUIRES FOUNDER ACTION (Supabase Auth Dashboard settings — cannot do programmatically)
+
+**cloudbuild.frontend.yaml + Dockerfile**: Updated to add `VITE_APP_URL=https://app.caleo.id` as build arg
+
+### Founder hand-off actions required (in order)
+
+#### Action 1: Cloud Run domain mapping (10 min)
+Run this in a terminal with working Python (3.10+):
+```bash
+gcloud beta run domain-mappings create \
+  --service=garindo-jaya-panel-msme-erp-frontend \
+  --domain=app.caleo.id \
+  --region=asia-southeast1 \
+  --project=garindo-jaya-panel-msme-erp
+```
+Google will output required DNS records. The CNAME `app.caleo.id → ghs.googlehosted.com` is already in Cloudflare DNS.
+Wait 15-60 min for SSL certificate provisioning (Google-managed, automatic).
+Verification: `curl -sI https://app.caleo.id | head -3` should return HTTP 200.
+
+#### Action 2: Supabase Auth Dashboard settings (5 min)
+Go to: https://supabase.com/dashboard/project/ekhhojaezdfjfwuxyjkl/auth/url-configuration
+
+Set:
+- **Site URL**: `https://app.caleo.id`
+- **Redirect URLs** (add): `https://app.caleo.id/*`
+- Keep existing redirect URLs (don't remove the run.app URL until verified working)
+
+For cookie domain (cross-subdomain SSO — needed for Phase 2 admin.caleo.id):
+Go to: Auth → Settings (JWT settings section) → Session cookie settings
+- **Cookie domain**: `.caleo.id`
+
+WARNING: Changing cookie domain will invalidate existing sessions. Coordinate timing with Garindo team — they'll need to re-login once. Best to do this off-hours.
+
+#### Action 3: caleo.web.id 301 redirect (when zone becomes active)
+Once Cloudflare shows caleo.web.id zone as ACTIVE (nameserver switch complete):
+```bash
+export CLOUDFLARE_API_TOKEN=<from .env>
+# Get caleo.web.id zone ID first:
+curl -s "https://api.cloudflare.com/client/v4/zones?name=caleo.web.id" -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+# Then create Page Rule:
+# URL: *caleo.web.id/*
+# Setting: Forwarding URL → 301 Permanent → https://caleo.id/$2
+```
+
+### Known follows-ups
+- SSL cert for app.caleo.id: depends on Action 1 (Cloud Run mapping)
+- Supabase Auth settings: depends on Action 2
+- Cross-subdomain cookie: .caleo.id session verify only possible after Actions 1+2
+- caleo.web.id redirect: deferred until zone active
+
+**Phase 1 Day 3 (Task 3) status: DONE_WITH_CONCERNS (2 founder actions required)**

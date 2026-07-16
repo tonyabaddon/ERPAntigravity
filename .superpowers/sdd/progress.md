@@ -453,4 +453,4 @@ Task 2 onwards: NOT started per scope constraint (founder away, execute Task 1 o
 - stock_photo_embeddings: all 15 rows updated to tenants/ paths ✓
 - Policies: product_photos_select (public) kept; insert/update/delete now tenant-scoped ✓
 
-### Completed: (commit + push + deploy in progress)
+### Completed: 2026-07-16T23:55Z — commit fa8b5bb pushed, Cloud Build triggered
