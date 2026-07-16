@@ -1,5 +1,26 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Phase 1 Hardening: Idempotency Tokens Batch 1 (Task 8) — DONE
+
+**What changed:** Added idempotency double-post prevention to the 3 highest-risk write RPCs. Network retries are now short-circuited at the DB layer for `record_kasir_sale`, `receive_purchase_order`, and `commit_opname`.
+
+**Migrations applied (310–314) — already live in production before this session:**
+- **310** `rpc_idempotency_table` — `t_rpc_idempotency (tenant_id, rpc_name, idempotency_key) PRIMARY KEY`; RLS: `vosi_rpc_owner` ALL + `authenticated` SELECT; index on `created_at` for future TTL sweep
+- **311** `idempotency_record_kasir_sale` — adds `p_idempotency_key uuid DEFAULT NULL`; replay returns original `kasir_transactions` row by stored ID
+- **312** `idempotency_receive_purchase_order` — adds `p_idempotency_key uuid DEFAULT NULL`; replay returns early (void)
+- **313** `idempotency_commit_opname` — adds `p_idempotency_key uuid DEFAULT NULL`; replay returns cached `int` result
+- **314** `fix_idempotency_overload_grants` — re-grants EXECUTE on all 3 `receive_purchase_order` overloads
+
+**FE changes:** `kasirService.recordSale`, `purchaseOrderService.receivePurchaseOrder`, `commitOpname` all now pass `crypto.randomUUID()` per user action.
+
+**Smoke test:** Idempotency store + ON CONFLICT DO NOTHING + tenant RLS isolation verified — PASSED (expected rollback).
+
+**Advisor triage:** `ix_rpc_idempotency_created` flagged INFO/unused — expected for new table; index is pre-placed for Phase 2 TTL cron job.
+
+**Commit:** `539f1f7`
+
+---
+
 ## 2026-07-17 — Phase 1 Hardening: Composite PK Batch 2 (Task 6) — APPLIED
 
 **What changed:** Extended composite `(tenant_id, id)` PK hardening to 3 more high-volume tables: `purchase_orders`, `purchase_invoices`, `journal_entries`. All migrations idempotent + all child FK constraints upgraded to composite refs in same transaction.
