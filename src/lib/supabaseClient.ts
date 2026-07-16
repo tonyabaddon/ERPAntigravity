@@ -260,23 +260,33 @@ export const conversationService = {
   async uploadChatMedia(file: File): Promise<string> {
     if (!supabase) throw new Error('Supabase not configured');
 
-    // Get tenant_id from authenticated user profile
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Must be authenticated to upload chat media');
+    // Get tenant_id from JWT claim (mirrors server-side _resolve_tenant_id()).
+    // Tenant identity is baked into JWT by the Auth Hook per Multi-Tenant Phase A —
+    // no `public.users` table exists here; the app uses admin_users/tenant_users
+    // with JWT claim as source of truth for tenant_id.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Must be authenticated to upload chat media');
 
-    const { data: profile } = await supabase
-      .from('users')
-      .select('tenant_id')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.tenant_id) throw new Error('User has no tenant assigned');
+    let tenantId: string | null = null;
+    try {
+      const payloadPart = session.access_token.split('.')[1];
+      if (payloadPart) {
+        // base64url → base64 → JSON
+        const b64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+        const claims = JSON.parse(atob(padded));
+        tenantId = claims.tenant_id ?? null;
+      }
+    } catch {
+      tenantId = null;
+    }
+    if (!tenantId) throw new Error('User has no tenant assigned (missing tenant_id JWT claim)');
 
     // Path: tenants/{tenant_id}/{uuid}_{sanitized_filename}
     // tenant_id in path enforces storage RLS (policy chat_media_write_own_tenant)
     const uuid = crypto.randomUUID();
     const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `tenants/${profile.tenant_id}/${uuid}_${sanitized}`;
+    const path = `tenants/${tenantId}/${uuid}_${sanitized}`;
 
     const { error } = await supabase.storage
       .from('chat-media')

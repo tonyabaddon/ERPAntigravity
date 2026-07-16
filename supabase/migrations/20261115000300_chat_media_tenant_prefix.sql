@@ -12,7 +12,8 @@
 --      from migration 000202 (which allowed any authenticated user to read/write
 --      any file in the bucket)
 --   3. Add tenant-scoped RLS policies: tenants/{tenant_id}/{uuid}_{filename}
---      path pattern, enforced via users table lookup
+--      path pattern, enforced via public._resolve_tenant_id() (canonical
+--      pattern in this codebase — reads tenant_id from JWT claim)
 --
 -- New path pattern: tenants/{tenant_id}/{uuid}_{sanitized_filename}
 -- Storage access: signed URLs with 1-hour TTL (via getSignedChatMediaUrl helper)
@@ -35,6 +36,7 @@ DROP POLICY IF EXISTS "chat_media_write_authenticated" ON storage.objects;
 
 -- 3. Tenant-scoped read: only tenant members can read their tenant's files
 --    Path structure: tenants/{tenant_id}/{uuid}_{filename}
+--    tenant_id resolved from JWT claim via public._resolve_tenant_id()
 DROP POLICY IF EXISTS "chat_media_read_own_tenant" ON storage.objects;
 CREATE POLICY "chat_media_read_own_tenant" ON storage.objects
   FOR SELECT
@@ -42,12 +44,7 @@ CREATE POLICY "chat_media_read_own_tenant" ON storage.objects
   USING (
     bucket_id = 'chat-media'
     AND (storage.foldername(name))[1] = 'tenants'
-    AND (storage.foldername(name))[2] = (
-      SELECT tenant_id::text
-      FROM public.users
-      WHERE id = auth.uid()
-      LIMIT 1
-    )
+    AND (storage.foldername(name))[2] = public._resolve_tenant_id()::text
   );
 
 -- 4. Tenant-scoped write: only tenant members can upload to their tenant's folder
@@ -58,12 +55,7 @@ CREATE POLICY "chat_media_write_own_tenant" ON storage.objects
   WITH CHECK (
     bucket_id = 'chat-media'
     AND (storage.foldername(name))[1] = 'tenants'
-    AND (storage.foldername(name))[2] = (
-      SELECT tenant_id::text
-      FROM public.users
-      WHERE id = auth.uid()
-      LIMIT 1
-    )
+    AND (storage.foldername(name))[2] = public._resolve_tenant_id()::text
   );
 
 -- 5. Tenant-scoped delete: only tenant members can delete their own files
@@ -74,16 +66,11 @@ CREATE POLICY "chat_media_delete_own_tenant" ON storage.objects
   USING (
     bucket_id = 'chat-media'
     AND (storage.foldername(name))[1] = 'tenants'
-    AND (storage.foldername(name))[2] = (
-      SELECT tenant_id::text
-      FROM public.users
-      WHERE id = auth.uid()
-      LIMIT 1
-    )
+    AND (storage.foldername(name))[2] = public._resolve_tenant_id()::text
   );
 
 COMMENT ON POLICY "chat_media_read_own_tenant" ON storage.objects IS
-  'Migration 300: tenant-scoped read for chat-media. Path pattern: tenants/{tenant_id}/{uuid}_{filename}. Access via signed URLs (1-hour TTL).';
+  'Migration 300: tenant-scoped read for chat-media. Path pattern: tenants/{tenant_id}/{uuid}_{filename}. Access via signed URLs (1-hour TTL). tenant_id from JWT claim via _resolve_tenant_id().';
 
 COMMENT ON POLICY "chat_media_write_own_tenant" ON storage.objects IS
   'Migration 300: tenant-scoped write for chat-media. Enforces tenants/{tenant_id}/... prefix.';
