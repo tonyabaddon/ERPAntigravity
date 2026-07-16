@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -73,7 +73,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 		MaxTokens:      maxTokensForState(conv.State),
 	})
 	if err != nil {
-		log.Printf("[ENGINE] LLM error in state %s: %v", conv.State, err)
+		slog.ErrorContext(ctx, "[ENGINE] LLM error", slog.String("state", string(conv.State)), slog.Any("error", err))
 		result.Reply = FallbackReply(conv.Language)
 		result.LLMError = err
 		if errors.Is(err, ErrChainExhausted) {
@@ -88,7 +88,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateGreeting:
 		resp, err := ParseGreeting(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse greeting error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse greeting error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}
@@ -99,7 +99,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateCollecting:
 		resp, err := ParseCollecting(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse collecting error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse collecting error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}
@@ -125,7 +125,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateClarifying:
 		resp, err := ParseClarifying(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse clarifying error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse clarifying error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}
@@ -156,7 +156,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateStockCheck:
 		resp, err := ParseStockCheck(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse stock_check error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse stock_check error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}
@@ -170,7 +170,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateConfirming:
 		resp, err := ParseConfirming(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse confirming error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse confirming error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}
@@ -210,7 +210,7 @@ func (m *Machine) Process(ctx context.Context, conv *models.Conversation, incomi
 	case models.StateDelivery:
 		resp, err := ParseDelivery(rawJSON)
 		if err != nil {
-			log.Printf("[ENGINE] Parse delivery error: %v — raw: %s", err, rawJSON)
+			slog.ErrorContext(ctx, "[ENGINE] Parse delivery error", slog.Any("error", err), slog.String("raw", rawJSON))
 			result.Reply = FallbackReply(conv.Language)
 			return result, nil
 		}

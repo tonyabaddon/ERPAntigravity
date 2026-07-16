@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/lib/pq"
@@ -34,12 +34,12 @@ func NewClient(connStr string) (*Client, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
-	log.Println("[DB] Connected to Supabase PostgreSQL")
+	slog.Info("[DB] Connected to Supabase PostgreSQL")
 
 	listener := pq.NewListener(connStr, 10*time.Second, time.Minute,
 		func(ev pq.ListenerEventType, err error) {
 			if err != nil {
-				log.Printf("[DB] Listener event error: %v", err)
+				slog.Error("[DB] Listener event error", slog.Any("error", err))
 			}
 		})
 
@@ -86,7 +86,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					MessageID      string `json:"message_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] admin_messages parse error: %v", err)
+					slog.Error("[DB] admin_messages parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnAdminMessage != nil {
@@ -100,7 +100,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					ShippingFee    float64 `json:"shipping_fee"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] order_approved parse error: %v", err)
+					slog.Error("[DB] order_approved parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnOrderApproved != nil {
@@ -113,7 +113,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] payment_verified parse error: %v", err)
+					slog.Error("[DB] payment_verified parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnPaymentVerified != nil {
@@ -126,7 +126,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] payment_rejected parse error: %v", err)
+					slog.Error("[DB] payment_rejected parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnPaymentRejected != nil {
@@ -139,7 +139,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					ConversationID string `json:"conversation_id"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] dp_verified parse error: %v", err)
+					slog.Error("[DB] dp_verified parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnDPVerified != nil {
@@ -153,7 +153,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 					Reason         string `json:"reason"`
 				}
 				if err := json.Unmarshal([]byte(notification.Extra), &p); err != nil {
-					log.Printf("[DB] dp_proof_rejected parse error: %v", err)
+					slog.Error("[DB] dp_proof_rejected parse error", slog.Any("error", err))
 					continue
 				}
 				if h.OnDPProofRejected != nil {
@@ -163,7 +163,7 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 		}
 	}()
 
-	log.Println("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected")
+	slog.Info("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected")
 	return nil
 }
 

@@ -2,7 +2,7 @@ package whatsapp
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -88,19 +88,19 @@ func (h *DebounceHandler) Push(ctx context.Context, phone, text string) {
 		pb.texts = []string{text}
 		h.startTimers(pb, phone)
 		h.startTyping(pb, phone)
-		log.Printf("[DEBOUNCE] action=push phone=%s state=IDLE→BUFFERING", phone)
+		slog.Info("[DEBOUNCE] action=push state=IDLE→BUFFERING", slog.String("phone", phone))
 	case stateBuffering:
 		if len(pb.texts) >= maxBufferTexts {
-			log.Printf("[DEBOUNCE] action=spam phone=%s dropped=true state=BUFFERING texts_count=%d", phone, len(pb.texts))
+			slog.Warn("[DEBOUNCE] action=spam dropped=true state=BUFFERING", slog.String("phone", phone), slog.Int("texts_count", len(pb.texts)))
 			pb.mu.Unlock()
 			return
 		}
 		pb.texts = append(pb.texts, text)
 		h.resetSoftTimer(pb, phone)
-		log.Printf("[DEBOUNCE] action=push phone=%s state=BUFFERING texts_count=%d", phone, len(pb.texts))
+		slog.Info("[DEBOUNCE] action=push state=BUFFERING", slog.String("phone", phone), slog.Int("texts_count", len(pb.texts)))
 	case stateProcessing:
 		if len(pb.nextBuffer) >= maxBufferTexts {
-			log.Printf("[DEBOUNCE] action=spam phone=%s dropped=true state=PROCESSING next_count=%d", phone, len(pb.nextBuffer))
+			slog.Warn("[DEBOUNCE] action=spam dropped=true state=PROCESSING", slog.String("phone", phone), slog.Int("next_count", len(pb.nextBuffer)))
 			pb.mu.Unlock()
 			return
 		}
@@ -216,7 +216,7 @@ func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 	pb.state = stateProcessing
 	pb.mu.Unlock()
 
-	log.Printf("[DEBOUNCE] action=flush phone=%s reason=%s texts_count=%d wait_ms=%d", phone, reason, len(texts), waitMs)
+	slog.Info("[DEBOUNCE] action=flush", slog.String("phone", phone), slog.String("reason", reason), slog.Int("texts_count", len(texts)), slog.Int64("wait_ms", waitMs))
 
 	// IMPORTANT: defer order matters. defer postFlush is registered FIRST,
 	// so it runs LAST (after recover). The defer recover() is registered
@@ -224,13 +224,13 @@ func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 	defer h.postFlush(pb, phone)
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("[DEBOUNCE] action=panic phone=%s err=%v", phone, r)
+			slog.Error("[DEBOUNCE] action=panic", slog.String("phone", phone), slog.Any("error", r))
 		}
 	}()
 
 	joined := joinTexts(texts)
 	if err := h.flushFn(context.Background(), phone, joined, texts); err != nil {
-		log.Printf("[DEBOUNCE] action=flush_err phone=%s err=%v", phone, err)
+		slog.Error("[DEBOUNCE] action=flush_err", slog.String("phone", phone), slog.Any("error", err))
 	}
 }
 

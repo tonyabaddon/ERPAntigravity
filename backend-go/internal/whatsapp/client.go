@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -51,16 +51,16 @@ func NewClient(ctx context.Context, pgConnStr string) (*Client, error) {
 }
 
 func (c *Client) Connect(ctx context.Context) error {
-	log.Printf("[WA] Connect called — Store.ID=%v Store.Deleted=%v", c.WA.Store.ID, c.WA.Store.Deleted)
+	slog.Info("[WA] Connect called", slog.Any("store_id", c.WA.Store.ID), slog.Bool("store_deleted", c.WA.Store.Deleted))
 	if c.WA.Store.ID == nil {
 		qrChan, err := c.WA.GetQRChannel(ctx)
 		if err != nil {
 			// Don't crash the daemon — schedule a retry so the HTTP server stays up.
-			log.Printf("[WA] GetQRChannel error: %v — retrying in 5s", err)
+			slog.Error("[WA] GetQRChannel error — retrying in 5s", slog.Any("error", err))
 			go func() {
 				time.Sleep(5 * time.Second)
 				if err2 := c.Connect(context.Background()); err2 != nil {
-					log.Printf("[WA] Retry connect error: %v", err2)
+					slog.Error("[WA] Retry connect error", slog.Any("error", err2))
 				}
 			}()
 			return nil
@@ -72,7 +72,7 @@ func (c *Client) Connect(ctx context.Context) error {
 			// without the retry, the daemon proceeds without WA for the
 			// instance's whole lifetime (see progress.md 2026-07-02 finding).
 			// Backoff: 30s → 60s → 120s (cap), max 100 attempts (~3.3h ceiling).
-			log.Printf("[WA] Connect (Store.ID=nil, pre-pair) error: %v — starting backoff retry", err)
+			slog.Error("[WA] Connect (Store.ID=nil, pre-pair) error — starting backoff retry", slog.Any("error", err))
 			go c.retryPreparePairing(ctx)
 			return nil
 		}
@@ -80,16 +80,16 @@ func (c *Client) Connect(ctx context.Context) error {
 	} else {
 		if err := c.WA.Connect(); err != nil {
 			// Don't fatally crash — log and let HTTP server stay up.
-			log.Printf("[WA] Reconnect error: %v — retrying in 10s", err)
+			slog.Error("[WA] Reconnect error — retrying in 10s", slog.Any("error", err))
 			go func() {
 				time.Sleep(10 * time.Second)
 				if err2 := c.Connect(context.Background()); err2 != nil {
-					log.Printf("[WA] Retry reconnect error: %v", err2)
+					slog.Error("[WA] Retry reconnect error", slog.Any("error", err2))
 				}
 			}()
 			return nil
 		}
-		log.Println("[WA] Connected (resuming stored session)")
+		slog.Info("[WA] Connected (resuming stored session)")
 	}
 	return nil
 }
@@ -108,10 +108,10 @@ func (c *Client) retryPreparePairing(ctx context.Context) {
 		if attempt < len(delays) {
 			d = delays[attempt]
 		}
-		log.Printf("[WA] retryPreparePairing: attempt %d, waiting %s", attempt+1, d)
+		slog.Info("[WA] retryPreparePairing waiting", slog.Int("attempt", attempt+1), slog.String("wait", d.String()))
 		select {
 		case <-ctx.Done():
-			log.Printf("[WA] retryPreparePairing: ctx cancelled after %d attempts", attempt)
+			slog.Info("[WA] retryPreparePairing: ctx cancelled", slog.Int("attempts", attempt))
 			return
 		case <-time.After(d):
 		}
@@ -124,37 +124,37 @@ func (c *Client) retryPreparePairing(ctx context.Context) {
 		}
 		// Rare race: another path paired the session during our sleep.
 		if c.WA.Store.ID != nil {
-			log.Printf("[WA] retryPreparePairing: Store.ID appeared during backoff, exiting retry loop")
+			slog.Info("[WA] retryPreparePairing: Store.ID appeared during backoff, exiting retry loop")
 			return
 		}
 		qrChan, err := c.WA.GetQRChannel(ctx)
 		if err != nil {
-			log.Printf("[WA] retryPreparePairing attempt %d: GetQRChannel error: %v", attempt+1, err)
+			slog.Error("[WA] retryPreparePairing GetQRChannel error", slog.Int("attempt", attempt+1), slog.Any("error", err))
 			continue
 		}
 		if err := c.WA.Connect(); err != nil {
-			log.Printf("[WA] retryPreparePairing attempt %d: WA.Connect error: %v", attempt+1, err)
+			slog.Error("[WA] retryPreparePairing WA.Connect error", slog.Int("attempt", attempt+1), slog.Any("error", err))
 			continue
 		}
-		log.Printf("[WA] retryPreparePairing attempt %d: connected — starting QR loop", attempt+1)
+		slog.Info("[WA] retryPreparePairing: connected — starting QR loop", slog.Int("attempt", attempt+1))
 		go c.runQRLoop(ctx, qrChan)
 		return
 	}
-	log.Printf("[WA] retryPreparePairing: exhausted after 100 attempts — daemon staying up without WA pairing")
+	slog.Warn("[WA] retryPreparePairing: exhausted after 100 attempts — daemon staying up without WA pairing")
 }
 
 func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelItem) {
-	log.Println("[WA] QR loop started — waiting for QR code events")
+	slog.Info("[WA] QR loop started — waiting for QR code events")
 	for {
 		for evt := range ch {
 			if evt.Event == "code" {
-				log.Printf("[WA] QR Code ready for scanning")
+				slog.Info("[WA] QR Code ready for scanning")
 				c.setQR(evt.Code)
 			} else {
-				log.Printf("[WA] QR channel event: %s", evt.Event)
+				slog.Info("[WA] QR channel event", slog.String("event", evt.Event))
 				c.setQR("")
 				if evt.Event == "success" {
-					log.Println("[WA] Pairing successful — connected")
+					slog.Info("[WA] Pairing successful — connected")
 					return
 				}
 				break // timeout or error — fall through to reconnect
@@ -165,7 +165,7 @@ func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelIte
 			return
 		default:
 		}
-		log.Println("[WA] QR timed out — reconnecting for new QR")
+		slog.Info("[WA] QR timed out — reconnecting for new QR")
 		c.WA.Disconnect()
 		// Wait until IsConnected returns false before calling GetQRChannel again.
 		// Without this, GetQRChannel returns ErrQRAlreadyConnected and the loop exits silently.
@@ -180,24 +180,24 @@ func (c *Client) runQRLoop(ctx context.Context, ch <-chan whatsmeow.QRChannelIte
 			if err == nil {
 				break
 			}
-			log.Printf("[WA] GetQRChannel attempt %d error: %v — retrying in 3s", attempt, err)
+			slog.Error("[WA] GetQRChannel error — retrying in 3s", slog.Int("attempt", attempt), slog.Any("error", err))
 			if errors.Is(err, whatsmeow.ErrQRStoreContainsID) {
 				// Session was restored while we waited — exit QR loop.
-				log.Println("[WA] Store now has a session ID — exiting QR loop")
+				slog.Info("[WA] Store now has a session ID — exiting QR loop")
 				return
 			}
 			c.WA.Disconnect()
 			time.Sleep(3 * time.Second)
 		}
 		if err != nil {
-			log.Printf("[WA] GetQRChannel failed after 3 attempts: %v — exiting QR loop", err)
+			slog.Error("[WA] GetQRChannel failed after 3 attempts — exiting QR loop", slog.Any("error", err))
 			return
 		}
 		for attempt := 1; ; attempt++ {
 			if err := c.WA.Connect(); err == nil {
 				break
 			} else {
-				log.Printf("[WA] QR loop connect attempt %d error: %v — retrying in 5s", attempt, err)
+				slog.Error("[WA] QR loop connect error — retrying in 5s", slog.Int("attempt", attempt), slog.Any("error", err))
 				time.Sleep(5 * time.Second)
 				select {
 				case <-ctx.Done():
@@ -219,13 +219,13 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 			// After Store.Delete(), the device is marked Deleted and WA.Connect() returns
 			// ErrDeviceDeleted — we cannot reuse the same client object. Restart the process
 			// so Cloud Run creates a fresh client (Store.ID = nil → QR pairing).
-			log.Printf("[WA] Session invalidated by server (on_connect=%v) — clearing store and restarting process", evt.OnConnect)
+			slog.Warn("[WA] Session invalidated by server — clearing store and restarting process", slog.Bool("on_connect", evt.OnConnect))
 			c.setQR("")
 			c.WA.Disconnect()
 			if err := c.WA.Store.Delete(context.Background()); err != nil {
-				log.Printf("[WA] Store.Delete error: %v", err)
+				slog.Error("[WA] Store.Delete error", slog.Any("error", err))
 			}
-			log.Println("[WA] Restarting process for clean QR pairing...")
+			slog.Info("[WA] Restarting process for clean QR pairing...")
 			time.Sleep(time.Second)
 			os.Exit(0)
 		case *events.Disconnected:
@@ -233,13 +233,13 @@ func (c *Client) AddEventHandler(handler func(evt interface{})) {
 			// whatsmeow has EnableAutoReconnect=true by default, but add an
 			// explicit fallback in case the internal reconnect loop gives up.
 			if c.WA.Store.ID != nil {
-				log.Println("[WA] Disconnected — triggering reconnect in 10s")
+				slog.Info("[WA] Disconnected — triggering reconnect in 10s")
 				go func() {
 					time.Sleep(10 * time.Second)
 					if !c.WA.IsConnected() {
-						log.Println("[WA] Still disconnected — reconnecting")
+						slog.Info("[WA] Still disconnected — reconnecting")
 						if err := c.WA.Connect(); err != nil {
-							log.Printf("[WA] Reconnect error: %v", err)
+							slog.Error("[WA] Reconnect error", slog.Any("error", err))
 						}
 					}
 				}()
@@ -258,12 +258,12 @@ func (c *Client) Disconnect() {
 func (c *Client) Logout(ctx context.Context) error {
 	if c.WA.Store.ID == nil {
 		// No stored session — nothing to delete, just restart for QR pairing.
-		log.Println("[WA] Logout called with no stored session — restarting for QR pairing")
+		slog.Info("[WA] Logout called with no stored session — restarting for QR pairing")
 	} else {
 		if err := c.WA.Logout(ctx); err != nil {
 			// Graceful logout failed (WA WebSocket not connected).
 			// Force-clear the local session so the user can re-pair.
-			log.Printf("[WA] Graceful logout failed (%v) — forcing local session clear", err)
+			slog.Error("[WA] Graceful logout failed — forcing local session clear", slog.Any("error", err))
 			c.WA.Disconnect()
 			if err2 := c.WA.Store.Delete(ctx); err2 != nil {
 				return fmt.Errorf("whatsapp: clear session: %w", err2)
@@ -274,7 +274,7 @@ func (c *Client) Logout(ctx context.Context) error {
 	// Restart after a brief pause so the HTTP response is flushed first.
 	go func() {
 		time.Sleep(time.Second)
-		log.Println("[WA] Restarting process after logout for clean QR pairing...")
+		slog.Info("[WA] Restarting process after logout for clean QR pairing...")
 		os.Exit(0)
 	}()
 	return nil

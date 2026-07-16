@@ -3,7 +3,7 @@ package whatsapp
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"go.mau.fi/whatsmeow/types/events"
@@ -56,7 +56,7 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	// Only process direct messages. Skip group chats (g.us), broadcast lists,
 	// and WhatsApp Status updates (broadcast server). These are not customer DMs.
 	if evt.Info.IsGroup || evt.Info.Chat.Server == "g.us" || evt.Info.Chat.Server == "broadcast" {
-		log.Printf("[HANDLER] Skipping non-DM message from chat %s sender %s", evt.Info.Chat, evt.Info.Sender)
+		slog.Info("[HANDLER] Skipping non-DM message", slog.String("chat", evt.Info.Chat.String()), slog.String("sender", evt.Info.Sender.String()))
 		return
 	}
 
@@ -82,11 +82,11 @@ func (h *Handler) Handle(rawEvt interface{}) {
 	// than 5 minutes before daemon start). Messages sent during a brief restart
 	// window (≤5 min) pass through so new customers are never silently dropped.
 	if evt.Info.Timestamp.Before(h.startedAt.Add(-5 * time.Minute)) {
-		log.Printf("[HANDLER] Dropping stale backlog from %s (msg=%v started=%v)", evt.Info.Sender, evt.Info.Timestamp, h.startedAt)
+		slog.Info("[HANDLER] Dropping stale backlog", slog.String("sender", evt.Info.Sender.String()), slog.Time("msg_ts", evt.Info.Timestamp), slog.Time("started_at", h.startedAt))
 		return
 	}
 
-	log.Printf("[HANDLER] Processing text from %s: %q", evt.Info.Sender, text)
+	slog.Info("[HANDLER] Processing text", slog.String("sender", evt.Info.Sender.String()))
 
 	h.routeMessage(context.Background(), senderJID, text, false, nil)
 }
@@ -116,7 +116,7 @@ func (h *Handler) routeMessage(ctx context.Context, senderJID string, text strin
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("[HANDLER] escalation goroutine panic for %s: %v", senderJID, r)
+					slog.Error("[HANDLER] escalation goroutine panic", slog.String("sender_jid", senderJID), slog.Any("error", r))
 				}
 			}()
 			switch esc {
@@ -154,13 +154,13 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	// 2. Get or create conversation
 	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
-		log.Printf("[HANDLER] GetOrCreateConversation error for %s: %v", senderPhone, err)
+		slog.ErrorContext(ctx, "[HANDLER] GetOrCreateConversation error", slog.String("phone", senderPhone), slog.Any("error", err))
 		return
 	}
 
 	// Reset follow-up counter — customer has replied.
 	if err := h.db.ResetFollowupCounter(conv.ID); err != nil {
-		log.Printf("[HANDLER] ResetFollowupCounter error for conv %s: %v", conv.ID, err)
+		slog.ErrorContext(ctx, "[HANDLER] ResetFollowupCounter error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 	}
 
 	// 3. Ensure customer record exists; create lead on new conversations.
@@ -168,13 +168,13 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	var leadsID, customerID string
 	customer, err := h.db.GetOrCreateCustomer(senderPhone)
 	if err != nil {
-		log.Printf("[HANDLER] GetOrCreateCustomer error for %s: %v", senderPhone, err)
+		slog.ErrorContext(ctx, "[HANDLER] GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else {
 		customerID = customer.ID
 		if created {
 			lead, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone)
 			if err != nil {
-				log.Printf("[HANDLER] CreateLead error for conv %s: %v", conv.ID, err)
+				slog.ErrorContext(ctx, "[HANDLER] CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 			} else {
 				leadsID = lead.ID
 			}
@@ -193,14 +193,13 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 			conv.AIActive = true
 			conv.StateLockedUntil = nil
 		} else {
-			log.Printf("[HANDLER] AutoResumeConv failed for %s: %v", conv.ID, err)
+			slog.ErrorContext(ctx, "[HANDLER] AutoResumeConv failed", slog.String("conv_id", conv.ID), slog.Any("error", err))
 		}
 	}
 
 	// 4c. AI-off guard: admin locked this conversation, skip auto-reply.
 	if !conv.AIActive {
-		log.Printf("[HANDLER] AI off for conv %s (locked until %v), skip auto-reply",
-			conv.ID, conv.StateLockedUntil)
+		slog.InfoContext(ctx, "[HANDLER] AI off — skip auto-reply", slog.String("conv_id", conv.ID), slog.Any("locked_until", conv.StateLockedUntil))
 		return
 	}
 
@@ -213,10 +212,10 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 			reply = "Your order is awaiting confirmation from our admin team. Please wait a moment 🙏"
 		}
 		if _, err := h.db.InsertMessage(conv.ID, models.SenderAI, reply); err != nil {
-			log.Printf("[HANDLER] BOOKED InsertMessage error: %v", err)
+			slog.ErrorContext(ctx, "[HANDLER] BOOKED InsertMessage error", slog.Any("error", err))
 		}
 		if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
-			log.Printf("[HANDLER] BOOKED holding reply send error: %v", err)
+			slog.ErrorContext(ctx, "[HANDLER] BOOKED holding reply send error", slog.Any("error", err))
 		}
 		return
 	}
@@ -225,7 +224,7 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	// ESCALATED states stay as-is (admin is handling them).
 	if conv.State == models.StateCompleted || conv.State == models.StateCancelled {
 		if err := h.db.UpdateConversationState(conv.ID, models.StateGreeting); err != nil {
-			log.Printf("[HANDLER] Reset conv state error for %s: %v", conv.ID, err)
+			slog.ErrorContext(ctx, "[HANDLER] Reset conv state error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 			return
 		}
 		conv.State = models.StateGreeting
@@ -246,7 +245,7 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	}
 	for _, original := range texts {
 		if _, err := h.db.InsertMessage(conv.ID, models.SenderCustomer, original); err != nil {
-			log.Printf("[HANDLER] InsertMessage error for conv %s: %v", conv.ID, err)
+			slog.ErrorContext(ctx, "[HANDLER] InsertMessage error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 			// continue — Gemini call doesn't depend on this
 		}
 	}
@@ -270,25 +269,25 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	result := engine.RetryProcess(ctx, h.machine, conv, text, history, stockContext, 3, func() {
 		h.db.InsertMessage(conv.ID, models.SenderAI, holdingMsg)
 		if sendErr := h.sender.SendText(ctx, senderPhone, holdingMsg); sendErr != nil {
-			log.Printf("[HANDLER] holding message send error: %v", sendErr)
+			slog.ErrorContext(ctx, "[HANDLER] holding message send error", slog.Any("error", sendErr))
 		}
 	})
 
 	if result.LLMError != nil {
-		log.Printf("[HANDLER] LLM failed after all retries for %s: %v", senderPhone, result.LLMError)
+		slog.ErrorContext(ctx, "[HANDLER] LLM failed after all retries", slog.String("phone", senderPhone), slog.Any("error", result.LLMError))
 		h.db.InsertMessage(conv.ID, models.SenderSystem, "ESCALATED: LLM failed after 10 retries")
 		if dbErr := h.db.UpdateConversationState(conv.ID, models.StateEscalatedAdmin); dbErr != nil {
-			log.Printf("[HANDLER] UpdateConversationState (escalation) error: %v", dbErr)
+			slog.ErrorContext(ctx, "[HANDLER] UpdateConversationState (escalation) error", slog.Any("error", dbErr))
 		}
 		recipients, recErr := h.db.GetActiveRecipients()
 		if recErr != nil {
-			log.Printf("[HANDLER] GetActiveRecipients error during escalation: %v", recErr)
+			slog.ErrorContext(ctx, "[HANDLER] GetActiveRecipients error during escalation", slog.Any("error", recErr))
 			return
 		}
 		notif := fmt.Sprintf("⚠️ *Calista Gagal*\n\nSistem tidak dapat memproses pesan dari %s setelah 10x percobaan.\n\nPesan pelanggan: %s\n\nMohon tangani secara manual.", senderPhone, text)
 		for _, r := range recipients {
 			if notifErr := h.sender.SendText(ctx, r.WANumber, notif); notifErr != nil {
-				log.Printf("[HANDLER] escalation notify error (%s): %v", r.WANumber, notifErr)
+				slog.ErrorContext(ctx, "[HANDLER] escalation notify error", slog.String("wa_number", r.WANumber), slog.Any("error", notifErr))
 			}
 		}
 		return
@@ -298,22 +297,21 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	// Concurrency guard: if admin locked the conversation after we loaded conv (race window),
 	// skip the AI state recompute write so we don't overwrite the admin's decision.
 	if conv.StateLockedUntil != nil && conv.StateLockedUntil.After(time.Now()) {
-		log.Printf("[HANDLER] State locked until %v, skip recompute for conv %s",
-			*conv.StateLockedUntil, conv.ID)
+		slog.InfoContext(ctx, "[HANDLER] State locked — skip recompute", slog.Time("locked_until", *conv.StateLockedUntil), slog.String("conv_id", conv.ID))
 	} else {
 		if result.NewData != nil {
 			if err := h.db.UpdateCollectedData(conv.ID, *result.NewData, result.ClarificationRound); err != nil {
-				log.Printf("[HANDLER] UpdateCollectedData error: %v", err)
+				slog.ErrorContext(ctx, "[HANDLER] UpdateCollectedData error", slog.Any("error", err))
 			}
 		}
 		if result.Language != conv.Language {
 			if err := h.db.UpdateLanguage(conv.ID, result.Language); err != nil {
-				log.Printf("[HANDLER] UpdateLanguage error: %v", err)
+				slog.ErrorContext(ctx, "[HANDLER] UpdateLanguage error", slog.Any("error", err))
 			}
 		}
 		if result.NextState != conv.State {
 			if err := h.db.UpdateConversationState(conv.ID, result.NextState); err != nil {
-				log.Printf("[HANDLER] UpdateConversationState error: %v", err)
+				slog.ErrorContext(ctx, "[HANDLER] UpdateConversationState error", slog.Any("error", err))
 			}
 		}
 	}
@@ -331,7 +329,7 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	if result.Reply != "" {
 		h.db.InsertMessage(conv.ID, models.SenderAI, result.Reply)
 		if err := h.sender.SendText(ctx, senderPhone, result.Reply); err != nil {
-			log.Printf("[HANDLER] SendText error: %v", err)
+			slog.ErrorContext(ctx, "[HANDLER] SendText error", slog.Any("error", err))
 		}
 	}
 }
@@ -346,7 +344,7 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, 
 		}}
 	}
 	if len(cart) == 0 {
-		log.Printf("[HANDLER] Warning: no cart items for conv %s, order will be empty", conv.ID)
+		slog.WarnContext(ctx, "[HANDLER] Warning: no cart items — order will be empty", slog.String("conv_id", conv.ID))
 	}
 
 	orderItems, subtotal := buildOrderItems(cart, func(product string) ([]models.StockItem, error) {
@@ -355,11 +353,11 @@ func (h *Handler) handleBooking(ctx context.Context, conv *models.Conversation, 
 
 	order, err := h.db.CreateOrder(conv, orderItems, subtotal, leadsID, customerID, models.OrderTypeStandard, deliveryType)
 	if err != nil {
-		log.Printf("[HANDLER] CreateOrder error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] CreateOrder error", slog.Any("error", err))
 		return
 	}
 	h.scheduler.Schedule(order.ID, order.BookingExpiresAt)
-	log.Printf("[HANDLER] Order %s created, timer scheduled until %v", order.ID, order.BookingExpiresAt)
+	slog.InfoContext(ctx, "[HANDLER] Order created", slog.String("order_id", order.ID), slog.Time("expires_at", order.BookingExpiresAt))
 }
 
 // buildOrderItems constructs OrderItems from a cart, using lookup to resolve stock data.
@@ -370,7 +368,7 @@ func buildOrderItems(cart []models.CartItem, lookup func(string) ([]models.Stock
 	for _, cartItem := range cart {
 		stockItems, _ := lookup(cartItem.Product)
 		if len(stockItems) == 0 {
-			log.Printf("[HANDLER] buildOrderItems: no stock found for %q", cartItem.Product)
+			slog.Warn("[HANDLER] buildOrderItems: no stock found", slog.String("product", cartItem.Product))
 			continue
 		}
 		stock := stockItems[0]
@@ -398,10 +396,10 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 	// Errors here are non-fatal — log and continue so the escalation is never dropped.
 	customer, err := h.db.GetOrCreateCustomer(senderPhone)
 	if err != nil {
-		log.Printf("[HANDLER] handleWiringEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+		slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else if created {
 		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
-			log.Printf("[HANDLER] handleWiringEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+			slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 		}
 	}
 
@@ -415,14 +413,14 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
 	if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
-		log.Printf("[HANDLER] handleWiringEscalation: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: SendText error", slog.Any("error", err))
 	}
 }
 
 func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text string) {
 	conv, created, err := h.db.GetOrCreateConversation(senderPhone, h.waNumberID)
 	if err != nil {
-		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateConversation error for %s: %v", senderPhone, err)
+		slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: GetOrCreateConversation error", slog.String("phone", senderPhone), slog.Any("error", err))
 		return
 	}
 
@@ -430,10 +428,10 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text s
 	// Errors here are non-fatal — log and continue so the escalation is never dropped.
 	customer, err := h.db.GetOrCreateCustomer(senderPhone)
 	if err != nil {
-		log.Printf("[HANDLER] handleAdminEscalation: GetOrCreateCustomer error for %s: %v", senderPhone, err)
+		slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else if created {
 		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
-			log.Printf("[HANDLER] handleAdminEscalation: CreateLead error for conv %s: %v", conv.ID, err)
+			slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 		}
 	}
 
@@ -447,7 +445,7 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text s
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, reply)
 	if err := h.sender.SendText(ctx, senderPhone, reply); err != nil {
-		log.Printf("[HANDLER] handleAdminEscalation: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: SendText error", slog.Any("error", err))
 	}
 }
 
@@ -500,17 +498,17 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	// the resulting path won't match tenant-scoped read policy. Log and monitor.
 	tenantID := order.TenantID
 	if tenantID == "" {
-		log.Printf("[HANDLER] WARNING: order %s has no tenant_id; proof will upload to unscoped path", order.ID)
+		slog.Warn("[HANDLER] WARNING: order has no tenant_id; proof will upload to unscoped path", slog.String("order_id", order.ID))
 	}
 	var proofURL string
 	if img != nil {
 		data, contentType, dlErr := h.sender.DownloadMedia(context.Background(), img)
 		if dlErr != nil {
-			log.Printf("[HANDLER] DownloadMedia error for order %s: %v", order.ID, dlErr)
+			slog.Error("[HANDLER] DownloadMedia error", slog.String("order_id", order.ID), slog.Any("error", dlErr))
 		} else {
 			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, tenantID, order.ID, data, contentType)
 			if upErr != nil {
-				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
+				slog.Error("[HANDLER] UploadPaymentProof error", slog.String("order_id", order.ID), slog.Any("error", upErr))
 			} else {
 				proofURL = url
 			}
@@ -518,11 +516,11 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	} else {
 		data, contentType, dlErr := h.sender.DownloadDocument(context.Background(), doc)
 		if dlErr != nil {
-			log.Printf("[HANDLER] DownloadDocument error for order %s: %v", order.ID, dlErr)
+			slog.Error("[HANDLER] DownloadDocument error", slog.String("order_id", order.ID), slog.Any("error", dlErr))
 		} else {
 			url, upErr := storage.UploadPaymentProof(context.Background(), h.supabaseURL, h.supabaseServiceKey, tenantID, order.ID, data, contentType)
 			if upErr != nil {
-				log.Printf("[HANDLER] UploadPaymentProof error for order %s: %v", order.ID, upErr)
+				slog.Error("[HANDLER] UploadPaymentProof error", slog.String("order_id", order.ID), slog.Any("error", upErr))
 			} else {
 				proofURL = url
 			}
@@ -531,7 +529,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 
 	if proofURL == "" {
 		// Upload failed — do not advance the order status. Ask customer to resend.
-		log.Printf("[HANDLER] Payment proof upload failed for order %s; status unchanged", order.ID)
+		slog.Warn("[HANDLER] Payment proof upload failed; status unchanged", slog.String("order_id", order.ID))
 		retry := "Mohon maaf, foto bukti transfer gagal kami terima. Tolong kirim ulang foto atau dokumen PDF bukti transfernya."
 		if conv.Language == "en" {
 			retry = "Sorry, we could not receive your payment proof. Please resend the photo or PDF of your transfer receipt."
@@ -544,11 +542,11 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	switch order.Status {
 	case models.OrderStatusWaitingDP, models.OrderStatusDPUploaded:
 		if err := h.db.UpdateDPProof(order.ID, proofURL); err != nil {
-			log.Printf("[HANDLER] UpdateDPProof error for order %s: %v", order.ID, err)
+			slog.Error("[HANDLER] UpdateDPProof error", slog.String("order_id", order.ID), slog.Any("error", err))
 		}
 	default: // WAITING_PAYMENT, PAYMENT_UPLOADED, DP_VERIFIED
 		if err := h.db.UpdatePaymentProof(order.ID, proofURL); err != nil {
-			log.Printf("[HANDLER] UpdatePaymentProof error for order %s: %v", order.ID, err)
+			slog.Error("[HANDLER] UpdatePaymentProof error", slog.String("order_id", order.ID), slog.Any("error", err))
 		}
 	}
 	h.db.InsertMessage(conv.ID, models.SenderCustomer, "[Payment proof uploaded]")
@@ -559,12 +557,12 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 	}
 	h.db.InsertMessage(conv.ID, models.SenderAI, ack)
 	if err := h.sender.SendText(context.Background(), senderPhone, ack); err != nil {
-		log.Printf("[HANDLER] Payment ack send error: %v", err)
+		slog.Error("[HANDLER] Payment ack send error", slog.Any("error", err))
 	}
 
 	recipients, err := h.db.GetActiveRecipients()
 	if err != nil {
-		log.Printf("[HANDLER] GetActiveRecipients error: %v", err)
+		slog.Error("[HANDLER] GetActiveRecipients error", slog.Any("error", err))
 		return
 	}
 	orderRef := order.GJPOrderID
@@ -575,7 +573,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 		senderPhone, orderRef, order.CustomerName)
 	for _, r := range recipients {
 		if err := h.sender.SendText(context.Background(), r.WANumber, notif); err != nil {
-			log.Printf("[HANDLER] Recipient notify error (%s): %v", r.WANumber, err)
+			slog.Error("[HANDLER] Recipient notify error", slog.String("wa_number", r.WANumber), slog.Any("error", err))
 		}
 	}
 }
@@ -586,7 +584,7 @@ func (h *Handler) handleMediaMessage(evt *events.Message) {
 func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversationID string, shippingFee float64) {
 	order, err := h.db.GetOrderByConversation(conversationID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] GetOrderByConversation error for %s: %v", conversationID, err)
+		slog.ErrorContext(ctx, "[HANDLER] GetOrderByConversation error", slog.String("conversation_id", conversationID), slog.Any("error", err))
 		return
 	}
 	h.scheduler.Cancel(orderID)
@@ -596,12 +594,12 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 
 	total := order.Subtotal + shippingFee
 	if err := h.db.UpdateOrderTotal(orderID, total); err != nil {
-		log.Printf("[HANDLER] UpdateOrderTotal error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] UpdateOrderTotal error", slog.Any("error", err))
 	}
 
 	bank, err := h.db.GetActiveBankConfig()
 	if err != nil {
-		log.Printf("[HANDLER] GetActiveBankConfig error (using fallback): %v", err)
+		slog.WarnContext(ctx, "[HANDLER] GetActiveBankConfig error (using fallback)", slog.Any("error", err))
 	}
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "ORDER_APPROVED: payment instructions sent")
@@ -610,20 +608,20 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 		dpMsg := fmt.Sprintf("💳 *Instruksi Pembayaran DP*\n\nHalo Bapak/Ibu %s,\norder Anda telah dikonfirmasi!\n\nSilakan transfer *DP sebesar Rp %.0f* ke rekening kami dan kirim foto bukti pembayarannya di sini. 🙏",
 			order.CustomerName, order.DPAmount)
 		if err := h.sender.SendText(ctx, order.CustomerPhone, dpMsg); err != nil {
-			log.Printf("[HANDLER] DP instruction send error: %v", err)
+			slog.ErrorContext(ctx, "[HANDLER] DP instruction send error", slog.Any("error", err))
 		}
 		h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingDP))
 	} else {
 		invoice := buildInvoiceMessage(order, shippingFee, total, lang, bank)
 		if err := h.sender.SendText(ctx, order.CustomerPhone, invoice); err != nil {
-			log.Printf("[HANDLER] Invoice send error: %v", err)
+			slog.ErrorContext(ctx, "[HANDLER] Invoice send error", slog.Any("error", err))
 		}
 		h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingPayment))
 	}
 
 	recipients, err := h.db.GetActiveRecipients()
 	if err != nil {
-		log.Printf("[HANDLER] GetActiveRecipients error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] GetActiveRecipients error", slog.Any("error", err))
 	} else {
 		orderRef := order.GJPOrderID
 		if orderRef == "" {
@@ -633,7 +631,7 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 			orderRef, order.CustomerName, order.CustomerPhone, total)
 		for _, r := range recipients {
 			if err := h.sender.SendText(ctx, r.WANumber, notif); err != nil {
-				log.Printf("[HANDLER] Recipient notify error (%s): %v", r.WANumber, err)
+				slog.ErrorContext(ctx, "[HANDLER] Recipient notify error", slog.String("wa_number", r.WANumber), slog.Any("error", err))
 			}
 		}
 	}
@@ -645,7 +643,7 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversationID string) {
 	order, err := h.db.GetOrderByIDWithPayment(orderID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] HandlePaymentVerified: GetOrderByIDWithPayment error for %s: %v", orderID, err)
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: GetOrderByIDWithPayment error", slog.String("order_id", orderID), slog.Any("error", err))
 		return
 	}
 
@@ -657,7 +655,7 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 		msg = "✅ *Payment Confirmed!*\n\nThank you " + order.CustomerName + ", your payment has been verified.\nYour order is being processed. Thank you for shopping at Garindo Jaya Panel! 😊"
 	}
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		log.Printf("[HANDLER] HandlePaymentVerified: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: SendText error", slog.Any("error", err))
 	}
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "PAYMENT_VERIFIED: confirmed by admin")
@@ -666,7 +664,7 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 
 	if order.LeadsID != "" {
 		if err := h.db.UpdateLeadStatus(order.LeadsID, models.LeadStatusOrdered); err != nil {
-			log.Printf("[HANDLER] UpdateLeadStatus error for lead %s: %v", order.LeadsID, err)
+			slog.ErrorContext(ctx, "[HANDLER] UpdateLeadStatus error", slog.String("lead_id", order.LeadsID), slog.Any("error", err))
 		}
 	}
 
@@ -676,13 +674,13 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 	for _, item := range order.Items {
 		cost, err := h.db.DeductStockAndGetHPP(item.SKU, item.Qty, orderID)
 		if err != nil {
-			log.Printf("[HANDLER] DeductStockAndGetHPP error for %s x%d: %v", item.SKU, item.Qty, err)
+			slog.ErrorContext(ctx, "[HANDLER] DeductStockAndGetHPP error", slog.String("sku", item.SKU), slog.Int("qty", item.Qty), slog.Any("error", err))
 			continue
 		}
 		totalHpp += cost
 	}
 	if err := h.db.UpdateOrderHpp(orderID, totalHpp); err != nil {
-		log.Printf("[HANDLER] UpdateOrderHpp error for order %s: %v", orderID, err)
+		slog.ErrorContext(ctx, "[HANDLER] UpdateOrderHpp error", slog.String("order_id", orderID), slog.Any("error", err))
 	}
 }
 
@@ -691,7 +689,7 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversationID string) {
 	order, err := h.db.GetOrderByConversation(conversationID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] HandlePaymentRejected: GetOrderByConversation error for %s: %v", conversationID, err)
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: GetOrderByConversation error", slog.String("conversation_id", conversationID), slog.Any("error", err))
 		return
 	}
 
@@ -703,12 +701,12 @@ func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversati
 		msg = "⚠️ *Payment Confirmation*\n\nWe could not confirm your payment, " + order.CustomerName + ".\nThe transfer proof image may not be clear enough.\n\nPlease resend a valid transfer proof (clear photo, amount visible).\nThank you. 🙏"
 	}
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		log.Printf("[HANDLER] HandlePaymentRejected: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: SendText error", slog.Any("error", err))
 	}
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "PAYMENT_REJECTED: rejected by admin")
 	if err := h.db.RejectPayment(orderID); err != nil {
-		log.Printf("[HANDLER] RejectPayment error for order %s: %v", orderID, err)
+		slog.ErrorContext(ctx, "[HANDLER] RejectPayment error", slog.String("order_id", orderID), slog.Any("error", err))
 	}
 }
 
@@ -716,7 +714,7 @@ func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversati
 func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID string) {
 	order, err := h.db.GetOrderByConversation(conversationID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] HandleDPVerified: GetOrderByConversation error for %s: %v", conversationID, err)
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: GetOrderByConversation error", slog.String("conversation_id", conversationID), slog.Any("error", err))
 		return
 	}
 
@@ -725,7 +723,7 @@ func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID 
 		order.CustomerName, order.DPAmount, remaining)
 
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		log.Printf("[HANDLER] HandleDPVerified: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: SendText error", slog.Any("error", err))
 	}
 	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_VERIFIED: customer notified to send full payment")
 	// Note: conversation stays in BOOKED state intentionally.
@@ -737,7 +735,7 @@ func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID 
 func (h *Handler) HandleDPProofRejected(ctx context.Context, orderID, conversationID, reason string) {
 	order, err := h.db.GetOrderByConversation(conversationID)
 	if err != nil || order == nil {
-		log.Printf("[HANDLER] HandleDPProofRejected: GetOrderByConversation error for %s: %v", conversationID, err)
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPProofRejected: GetOrderByConversation error", slog.String("conversation_id", conversationID), slog.Any("error", err))
 		return
 	}
 
@@ -752,11 +750,11 @@ func (h *Handler) HandleDPProofRejected(ctx context.Context, orderID, conversati
 		order.CustomerName, reasonSuffix)
 
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		log.Printf("[HANDLER] HandleDPProofRejected: SendText error: %v", err)
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPProofRejected: SendText error", slog.Any("error", err))
 	}
 	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_PROOF_REJECTED: customer notified")
 	if err := h.db.ResetDPToWaiting(orderID); err != nil {
-		log.Printf("[HANDLER] ResetDPToWaiting error for order %s: %v", orderID, err)
+		slog.ErrorContext(ctx, "[HANDLER] ResetDPToWaiting error", slog.String("order_id", orderID), slog.Any("error", err))
 	}
 }
 

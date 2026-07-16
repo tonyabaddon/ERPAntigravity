@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -109,7 +109,7 @@ func (c *Client) UpdateConversationState(id string, state models.ConversationSta
 	}
 	rows, raErr := result.RowsAffected()
 	if raErr == nil && rows == 0 {
-		log.Printf("[HANDLER] UpdateConversationState skipped for conv %s (state_locked_until active or row missing)", id)
+		slog.Info("[HANDLER] UpdateConversationState skipped", slog.String("conv_id", id), slog.String("reason", "state_locked_until active or row missing"))
 	}
 	return nil
 }

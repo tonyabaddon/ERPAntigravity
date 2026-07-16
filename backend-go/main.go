@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -24,6 +24,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/llm"
+	"github.com/username/sinar-elektrik-backend/internal/logging"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
@@ -72,6 +73,11 @@ func (a approvalStoreAdapter) DecideViaWAButton(approvalID int64, decision, owne
 }
 
 func main() {
+	// Init structured logging first — all subsequent log calls use slog.
+	// CloudHandler emits JSON to stdout compatible with Cloud Logging's
+	// jsonPayload ingestion (severity/message/timestamp field names).
+	logging.Init()
+
 	cfg := config.Load()
 	ctx := context.Background()
 
@@ -198,12 +204,12 @@ func main() {
 		// else WA server returns 400 (see whatsmeow pair-code.go:88-89).
 		code, err := waClient.WA.PairPhone(r.Context(), cleaned, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 		if err != nil {
-			log.Printf("[WA] PairPhone error for %s: %v", cleaned, err)
+			slog.ErrorContext(r.Context(), "[WA] PairPhone error", slog.String("phone", cleaned), slog.Any("error", err))
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		log.Printf("[WA] Pair code generated for %s: %s", cleaned, code)
+		slog.InfoContext(r.Context(), "[WA] Pair code generated", slog.String("phone", cleaned))
 		json.NewEncoder(w).Encode(map[string]string{"code": code, "phone": cleaned})
 	})
 	mux.HandleFunc("/api/wa/debug", func(w http.ResponseWriter, r *http.Request) {
@@ -234,12 +240,17 @@ func main() {
 	// in the OS before we do anything else.
 	ln, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
-		log.Fatalf("[MAIN] Cannot bind :%s: %v", cfg.Port, err)
+		slog.Error("[MAIN] Cannot bind port", slog.String("port", cfg.Port), slog.Any("error", err))
+		os.Exit(1)
 	}
 	go func() {
-		log.Printf("[MAIN] HTTP server on :%s", cfg.Port)
-		if err := http.Serve(ln, api.VersionRouter(mux)); err != nil {
-			log.Printf("[MAIN] HTTP error: %v", err)
+		slog.Info("[MAIN] HTTP server starting", slog.String("port", cfg.Port))
+		// RequestContextMiddleware wraps all requests to extract tenant_id/user_id/
+		// request_id from JWT + X-Request-Id header into the request context so
+		// every slog.InfoContext / slog.ErrorContext call in handlers emits those
+		// fields as structured jsonPayload fields in Cloud Logging.
+		if err := http.Serve(ln, api.RequestContextMiddleware(api.VersionRouter(mux))); err != nil {
+			slog.Error("[MAIN] HTTP error", slog.Any("error", err))
 		}
 	}()
 
@@ -250,7 +261,7 @@ func main() {
 		if err == nil {
 			break
 		}
-		log.Printf("[MAIN] DB connect attempt %d failed: %v — retrying in 10s (check SUPABASE_DB_CONNECTION)", attempt, err)
+		slog.Error("[MAIN] DB connect attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.Any("error", err))
 		time.Sleep(10 * time.Second)
 	}
 	defer dbClient.Close()
@@ -262,7 +273,7 @@ func main() {
 		if err == nil {
 			break
 		}
-		log.Printf("[MAIN] Gemini init attempt %d failed: %v — retrying in 10s (check GEMINI_API_KEY)", attempt, err)
+		slog.Error("[MAIN] Gemini init attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.Any("error", err))
 		time.Sleep(10 * time.Second)
 	}
 	defer geminiClient.Close()
@@ -270,7 +281,8 @@ func main() {
 	// Initialize Gemini Document Client (separate from Calista's flash-lite)
 	docClient, err := gemini.NewDocumentClient(ctx, cfg.GeminiAPIKey)
 	if err != nil {
-		log.Fatalf("[MAIN] failed to init Gemini Document Client: %v", err)
+		slog.Error("[MAIN] failed to init Gemini Document Client", slog.Any("error", err))
+		os.Exit(1)
 	}
 	defer docClient.Close()
 
@@ -284,7 +296,7 @@ func main() {
 	searchH := NewSearchHandler(dbClient.DB)
 	mux.HandleFunc("/api/products/search-by-photo", searchH.SearchByPhoto)
 	mux.HandleFunc("/api/products/index-photos", searchH.IndexPhotos)
-	log.Println("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
+	slog.Info("[MAIN] Recon endpoints registered: /api/recon/upload, /api/recon/close")
 
 	// State machine — wire LLMClient based on LLM_BACKEND + ENABLE_OPENROUTER.
 	// Three modes:
@@ -300,7 +312,8 @@ func main() {
 		calistaStore := db.NewCalistaStore(dbClient.DB)
 		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
 		if cdErr != nil {
-			log.Fatalf("[MAIN] llm cooldown registry: %v", cdErr)
+			slog.Error("[MAIN] llm cooldown registry", slog.Any("error", cdErr))
+			os.Exit(1)
 		}
 		pinMgr := llm.NewPinManager(calistaStore)
 		recorder := llm.NewRecorder(calistaStore)
@@ -314,22 +327,24 @@ func main() {
 		})
 		probeCancel()
 		if probeErr != nil && llm.IsAuth(probeErr) {
-			log.Fatalf("[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY: %v", probeErr)
+			slog.Error("[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY", slog.Any("error", probeErr))
+			os.Exit(1)
 		}
 		if probeErr != nil {
-			log.Printf("[CALISTA] Gemini probe non-fatal error (proceeding): %v", probeErr)
+			slog.Warn("[CALISTA] Gemini probe non-fatal error (proceeding)", slog.Any("error", probeErr))
 		} else {
-			log.Println("[CALISTA] Gemini auth probe OK")
+			slog.Info("[CALISTA] Gemini auth probe OK")
 		}
 
 		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgentGemini())
 		llmClient = llm.NewEngineAdapter(router)
-		log.Println("[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]")
+		slog.Info("[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]")
 	} else if cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != "" {
 		calistaStore := db.NewCalistaStore(dbClient.DB)
 		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
 		if cdErr != nil {
-			log.Fatalf("[MAIN] llm cooldown registry: %v", cdErr)
+			slog.Error("[MAIN] llm cooldown registry", slog.Any("error", cdErr))
+			os.Exit(1)
 		}
 		pinMgr := llm.NewPinManager(calistaStore)
 		recorder := llm.NewRecorder(calistaStore)
@@ -347,27 +362,29 @@ func main() {
 		})
 		probeCancel()
 		if probeErr != nil && llm.IsAuth(probeErr) {
-			log.Fatalf("[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY: %v", probeErr)
+			slog.Error("[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY", slog.Any("error", probeErr))
+			os.Exit(1)
 		}
 		if probeErr != nil {
-			log.Printf("[CALISTA] OpenRouter probe non-fatal error (proceeding): %v", probeErr)
+			slog.Warn("[CALISTA] OpenRouter probe non-fatal error (proceeding)", slog.Any("error", probeErr))
 		} else {
-			log.Println("[CALISTA] OpenRouter auth probe OK")
+			slog.Info("[CALISTA] OpenRouter auth probe OK")
 		}
 
 		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgent())
 		llmClient = llm.NewEngineAdapter(router)
-		log.Println("[CALISTA] OpenRouter chain ENABLED — 10-model fallback active")
+		slog.Info("[CALISTA] OpenRouter chain ENABLED — 10-model fallback active")
 	} else {
 		llmClient = gemini.NewEngineAdapter(geminiClient)
-		log.Println("[CALISTA] OpenRouter DISABLED — using direct Gemini 2.5 Flash Lite")
+		slog.Info("[CALISTA] OpenRouter DISABLED — using direct Gemini 2.5 Flash Lite")
 	}
 	machine := engine.NewMachine(llmClient)
 
 	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys)
 	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
 	if err != nil {
-		log.Fatalf("[MAIN] WA client init failed: %v", err)
+		slog.Error("[MAIN] WA client init failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 	sender := whatsapp.NewSender(waClient.WA)
 
@@ -377,7 +394,7 @@ func main() {
 		func(orderID string) {
 			order, err := dbClient.GetOrderByID(orderID)
 			if err != nil {
-				log.Printf("[MAIN] Reminder: lookup failed for order %s: %v", orderID, err)
+				slog.Error("[MAIN] Reminder: lookup failed", slog.String("order_id", orderID), slog.Any("error", err))
 				return
 			}
 			var lang string
@@ -387,13 +404,13 @@ func main() {
 				reminderText = "Your order will expire in 24 hours. Please confirm payment or it will be automatically cancelled."
 			}
 			if err := sender.SendText(ctx, order.CustomerPhone, reminderText); err != nil {
-				log.Printf("[MAIN] Reminder: WA send failed: %v", err)
+				slog.Error("[MAIN] Reminder: WA send failed", slog.Any("error", err))
 			}
 			dbClient.MarkReminderSent(orderID)
 			dbClient.UpdateConversationState(order.ConversationID, models.StateTimeoutReminder)
 		},
 		func(orderID string) {
-			log.Printf("[MAIN] Auto-cancelling order %s", orderID)
+			slog.Info("[MAIN] Auto-cancelling order", slog.String("order_id", orderID))
 			dbClient.UpdateOrderStatus(orderID, "CANCELLED")
 		},
 	)
@@ -428,7 +445,7 @@ func main() {
 			HardWait: time.Duration(hardWaitMs) * time.Millisecond,
 			Typing:   &whatsapp.WATypingNotifier{Client: waClient.WA},
 		})
-		log.Printf("[MAIN] Debounce enabled soft=%dms hard=%dms", softWaitMs, hardWaitMs)
+		slog.Info("[MAIN] Debounce enabled", slog.Int("soft_ms", softWaitMs), slog.Int("hard_ms", hardWaitMs))
 	}
 
 	// Pass UNTYPED nil when the debounce handler wasn't constructed. Without
@@ -444,16 +461,16 @@ func main() {
 	}
 	waClient.AddEventHandler(waHandler.Handle)
 	followup.NewPoller(dbClient, sender).Start(ctx)
-	log.Println("[MAIN] Follow-up poller started (1-minute tick)")
+	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, sender).Start(ctx)
-	log.Println("[MAIN] Heartbeat poller started (1-minute tick)")
+	slog.Info("[MAIN] Heartbeat poller started (1-minute tick)")
 
 	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
 	// the public.expire_pending_approvals() RPC once per minute. Matches the
 	// heartbeat/follow-up Start(ctx) pattern: goroutine exits when ctx is
 	// cancelled (process shutdown).
 	approvals.NewPoller(dbClient).Start(ctx)
-	log.Println("[MAIN] Approval expiry poller started (1-minute tick)")
+	slog.Info("[MAIN] Approval expiry poller started (1-minute tick)")
 
 	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
 	// button replies here. The adapter translates sql.ErrNoRows to the
@@ -461,12 +478,12 @@ func main() {
 	// leak into HTTP status mapping.
 	approvalHandler := api.NewApprovalWebhookHandler(approvalStoreAdapter{client: dbClient})
 	mux.Handle("/api/approval/wa-webhook", approvalHandler)
-	log.Println("[MAIN] Approval WA webhook registered at /api/approval/wa-webhook")
+	slog.Info("[MAIN] Approval WA webhook registered at /api/approval/wa-webhook")
 
 	// Restore booking timers after restart
 	bookings, err := dbClient.ListActiveBookings()
 	if err != nil {
-		log.Printf("[MAIN] RestoreOnBoot: list bookings error: %v", err)
+		slog.Error("[MAIN] RestoreOnBoot: list bookings error", slog.Any("error", err))
 	} else {
 		entries := make([]scheduler.BookingEntry, len(bookings))
 		for i, b := range bookings {
@@ -478,17 +495,17 @@ func main() {
 	// LISTEN/NOTIFY handlers
 	if err := dbClient.StartListening(db.NotifyHandlers{
 		OnAdminMessage: func(conversationID, messageID string) {
-			log.Printf("[MAIN] Admin message in conversation %s", conversationID)
+			slog.Info("[MAIN] Admin message in conversation", slog.String("conversation_id", conversationID))
 			msg, err := dbClient.GetMessageByID(messageID)
 			if err != nil {
-				log.Printf("[MAIN] GetMessageByID failed for %s: %v", messageID, err)
+				slog.Error("[MAIN] GetMessageByID failed", slog.String("message_id", messageID), slog.Any("error", err))
 				return
 			}
 			var customerPhone string
 			dbClient.DB.QueryRow(`SELECT customer_phone FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone)
 			if customerPhone != "" && msg.Text != "" {
 				if err := sender.SendText(ctx, customerPhone, msg.Text); err != nil {
-					log.Printf("[MAIN] Admin forward WA send failed: %v", err)
+					slog.Error("[MAIN] Admin forward WA send failed", slog.Any("error", err))
 				}
 			}
 		},
@@ -508,21 +525,22 @@ func main() {
 			waHandler.HandleDPProofRejected(ctx, orderID, conversationID, reason)
 		},
 	}); err != nil {
-		log.Fatalf("[MAIN] StartListening failed: %v", err)
+		slog.Error("[MAIN] StartListening failed", slog.Any("error", err))
+		os.Exit(1)
 	}
 
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
 	if err := waClient.Connect(ctx); err != nil {
-		log.Printf("[MAIN] WA connect failed: %v — daemon will keep running with HTTP only", err)
+		slog.Warn("[MAIN] WA connect failed — daemon will keep running with HTTP only", slog.Any("error", err))
 	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("[MAIN] Shutting down...")
+	slog.Info("[MAIN] Shutting down...")
 	if debounceHandler != nil {
-		log.Println("[MAIN] draining debounce buffers...")
+		slog.Info("[MAIN] draining debounce buffers...")
 		drainCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 		debounceHandler.Shutdown(drainCtx)
 		cancel()
@@ -545,7 +563,7 @@ func getEnvIntDefault(key string, def int) int {
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil {
-		log.Printf("[CONFIG] bad %s=%q, using default %d: %v", key, v, def, err)
+		slog.Warn("[CONFIG] bad env value, using default", slog.String("key", key), slog.String("value", v), slog.Int("default", def), slog.Any("error", err))
 		return def
 	}
 	return n

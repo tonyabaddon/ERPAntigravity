@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -38,13 +38,13 @@ func (s *Scheduler) Schedule(orderID string, expiresAt time.Time) {
 	reminderAt := expiresAt.Add(-24 * time.Hour)
 	if reminderAt.After(now) {
 		s.reminderTimers[orderID] = time.AfterFunc(time.Until(reminderAt), func() {
-			log.Printf("[SCHEDULER] Reminder firing for order %s", orderID)
+			slog.Info("[SCHEDULER] Reminder firing", slog.String("order_id", orderID))
 			s.onReminder(orderID)
 		})
 	}
 	if expiresAt.After(now) {
 		s.cancelTimers[orderID] = time.AfterFunc(time.Until(expiresAt), func() {
-			log.Printf("[SCHEDULER] Cancellation firing for order %s", orderID)
+			slog.Info("[SCHEDULER] Cancellation firing", slog.String("order_id", orderID))
 			s.onCancel(orderID)
 		})
 	}
@@ -54,7 +54,7 @@ func (s *Scheduler) Cancel(orderID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.stopLocked(orderID)
-	log.Printf("[SCHEDULER] Timers cancelled for order %s", orderID)
+	slog.Info("[SCHEDULER] Timers cancelled", slog.String("order_id", orderID))
 }
 
 func (s *Scheduler) stopLocked(orderID string) {
@@ -73,7 +73,7 @@ func (s *Scheduler) RestoreOnBoot(entries []BookingEntry) {
 	for _, e := range entries {
 		if e.ExpiresAt.After(time.Now()) {
 			s.Schedule(e.ID, e.ExpiresAt)
-			log.Printf("[SCHEDULER] Restored timer for order %s (expires %v)", e.ID, e.ExpiresAt)
+			slog.Info("[SCHEDULER] Restored timer", slog.String("order_id", e.ID), slog.Time("expires_at", e.ExpiresAt))
 		}
 	}
 }

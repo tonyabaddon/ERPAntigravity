@@ -3,7 +3,7 @@ package heartbeat
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -45,7 +45,7 @@ func (p *Poller) Start(ctx context.Context) {
 func (p *Poller) tick(ctx context.Context) {
 	cfg, err := p.db.GetHeartbeatConfig()
 	if err != nil {
-		log.Printf("[HEARTBEAT] GetHeartbeatConfig error: %v", err)
+		slog.Error("[HEARTBEAT] GetHeartbeatConfig error", slog.Any("error", err))
 		return
 	}
 	if cfg == nil || !cfg.Enabled {
@@ -64,12 +64,12 @@ func (p *Poller) tick(ctx context.Context) {
 
 	omset, err := p.db.GetTodayOmset()
 	if err != nil {
-		log.Printf("[HEARTBEAT] GetTodayOmset error: %v", err)
+		slog.Error("[HEARTBEAT] GetTodayOmset error", slog.Any("error", err))
 		return
 	}
 	hpp, err := p.db.GetTodayHpp()
 	if err != nil {
-		log.Printf("[HEARTBEAT] GetTodayHpp error: %v", err)
+		slog.Error("[HEARTBEAT] GetTodayHpp error", slog.Any("error", err))
 		return
 	}
 
@@ -77,7 +77,7 @@ func (p *Poller) tick(ctx context.Context) {
 	if cfg.ReportStatus {
 		lowStock, err = p.db.GetLowStockItems(cfg.LowStockAlert)
 		if err != nil {
-			log.Printf("[HEARTBEAT] GetLowStockItems error: %v", err)
+			slog.Error("[HEARTBEAT] GetLowStockItems error", slog.Any("error", err))
 			// Non-fatal — send report without low stock section.
 		}
 	}
@@ -86,18 +86,18 @@ func (p *Poller) tick(ctx context.Context) {
 
 	recipients, err := p.db.GetActiveRecipients()
 	if err != nil {
-		log.Printf("[HEARTBEAT] GetActiveRecipients error: %v", err)
+		slog.Error("[HEARTBEAT] GetActiveRecipients error", slog.Any("error", err))
 		return
 	}
 
 	for _, r := range recipients {
 		if err := p.sender.SendText(ctx, r.WANumber, msg); err != nil {
-			log.Printf("[HEARTBEAT] SendText to %s (%s) error: %v", r.Name, r.WANumber, err)
+			slog.Error("[HEARTBEAT] SendText error", slog.String("name", r.Name), slog.String("wa_number", r.WANumber), slog.Any("error", err))
 		}
 	}
 
 	p.lastFiredAt = now
-	log.Printf("[HEARTBEAT] Report sent to %d recipients (omset=%.0f, laba=%.0f)", len(recipients), omset, omset-hpp)
+	slog.Info("[HEARTBEAT] Report sent", slog.Int("recipients", len(recipients)), slog.Float64("omset", omset), slog.Float64("laba", omset-hpp))
 }
 
 func buildReport(cfg *db.HeartbeatConfig, omset, hpp float64, lowStock []models.StockItem) string {
