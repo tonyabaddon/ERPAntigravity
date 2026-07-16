@@ -13461,3 +13461,75 @@ integration (workaround via InvoicePreview).
 now attach services to ANY existing order via DaftarPesanan detail
 (ActionPanel component), not just fresh post-save invoices. Button always
 renders below the action rows.
+
+---
+
+# 2026-07-16 — Phase 1 Task 1 (Day 1): Chat-media security fix (LOCAL COMPLETE, prod deploy DEFERRED)
+
+**Context**: Started Phase 1 multi-tenant hardening per spec `docs/superpowers/specs/2026-07-15-scale-forward-phasing-design.md` and plan `docs/superpowers/plans/2026-07-16-phase1-multi-tenant-hardening.md`. Founder away 4h during execution, so subagent scoped to local work + commit only.
+
+**Commits**:
+- `7e52597` — fix(security): chat-media tenant-prefixed path + private bucket + signed URL
+- `40dc720` — fix(chat-media): address review findings — deployment note + row limit + error state
+
+**Files touched**:
+- `supabase/migrations/20261115000300_chat_media_tenant_prefix.sql` (NEW)
+- `scripts/migrate-chat-media-paths.ts` (NEW)
+- `src/lib/chatMediaSignedUrl.ts` (NEW)
+- `src/lib/supabaseClient.ts` (`uploadChatMedia` refactored)
+- `src/components/SalesInboxScreen.tsx` (`ChatBubble` uses signed URL with 3-state loading/loaded/error)
+
+**Ambiguities resolved by implementer** (brief was wrong on these — subagent investigated and corrected):
+1. Chat message table is `messages.media_url` (NOT `t_chat_messages.media_path` as brief assumed)
+2. `media_url` stores full public URLs (NOT paths — data migration must extract object name)
+3. Existing bucket policy from migration 000202 is `chat_media_authenticated_write` (single FOR ALL, not the two names the brief assumed)
+4. Dual-format renderer added proactively — passthrough for legacy URLs (`http://` prefix), signed URL for new paths
+
+**Review findings addressed** (all 3 fixed in commit 40dc720):
+- Critical C1: Comment in `chatMediaSignedUrl.ts` + progress note clarified — deployment order is STRICT (migration → data script COMPLETE → FE deploy), not flexible. Legacy passthrough only works BEFORE migration 300 applies.
+- Important I1: Data migration script now `.limit(10000)` with truncation warning if `count === 10000` (prevents silent 1000-row cap issue)
+- Important I2: ChatBubble now distinguishes 3 states (`loading` → gray `[lampiran memuat…]`, `error` → red `[lampiran tidak tersedia]`, `loaded` → image). Was infinite spinner on error before.
+
+**Stage 1 gates** (all pass):
+- `npm run lint` — clean
+- `npm run audit:numinput` — clean
+- `npm run audit:secdef-null-tenant` — clean (404 migrations scanned)
+- `npx vitest run --changed` — 9 pre-existing failures unrelated to Task 1 (verified via `git stash` — root cause: `.claude/worktrees/warehouse-transfer/` divergent test code that mocks supabaseClient)
+
+**Stage 2 & 3 DEFERRED to founder review** (per scope constraint — founder unreachable during autonomous execution):
+
+Required deployment order — STRICT, do not deviate:
+1. **Apply migration 300** to prod Supabase:
+   ```
+   mcp__plugin_supabase_supabase__apply_migration
+     name: chat_media_tenant_prefix
+     query: [contents of supabase/migrations/20261115000300_chat_media_tenant_prefix.sql]
+   ```
+   Then run `get_advisors` (security + performance) — verify no new advisories.
+
+2. **Run data migration script** — MUST complete before FE deploy:
+   ```
+   SUPABASE_URL=<prod-url> SUPABASE_SERVICE_ROLE_KEY=<prod-service-key> \
+     npx tsx scripts/migrate-chat-media-paths.ts
+   ```
+   Expected: logs each file, no errors. If reaches 10000 rows, re-run to process remainder.
+
+3. **FE deploy** — `git push origin main` triggers Cloud Build:
+   - Pushes `7e52597` + `40dc720` (both commits)
+   - Cloud Build runs `cloudbuild.frontend.yaml` → deploys to Cloud Run at 0% traffic with tag
+   - Automated tag-URL smoke → 100% traffic on 200 OK
+
+4. **Stage 3 prod smoke** (via Chrome DevTools MCP against "Toko Jaya Makmur"):
+   - Log in as Garindo owner → upload chat media → verify path is `tenants/<garindo-uuid>/<uuid>_file`
+   - Log in as Toko Jaya Makmur → attempt GET on Garindo's file path → HTTP 403/400
+   - Verify existing chat messages still display (dual-format renderer + data migration completed)
+
+5. **Post-prod-smoke**: update memory `chat-media` gap → resolved.
+
+**Review-verifiable items subagent could not confirm** (flag for founder verification during Stage 3):
+- V1: `storage.foldername` behavior on deployed Supabase version — verify by testing cross-tenant leak block
+- V2: SQL migration syntactically valid on deployed Postgres version — apply_migration will verify
+- V3: `public.users` cross-schema access from storage RLS — verify by uploading + reading own tenant's file
+- V4: Extra latency from `uploadChatMedia` (auth.getUser + users query added) — acceptable at 1-tenant scale, negligible
+
+**Task 2 onwards**: NOT started per scope constraint. Founder decides when to proceed.

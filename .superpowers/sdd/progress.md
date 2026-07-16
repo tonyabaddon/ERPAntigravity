@@ -354,3 +354,21 @@ Task 1: complete (inline, findings recorded)
 ## Task 7: complete (commit 8027060, FE Pengaturan Layanan CRUD + BOM editor + ComponentPicker + reusable component wired)
 ## Task 8: complete (commit e420e98, TambahLayananModal + InvoicePreviewScreen integration via 🛠 Tambah Layanan button in header)
 ## Task 9: in-progress (Cloud Build deploying 8027060 + e420e98, then MCP chrome smoke)
+
+---
+
+# Phase 1 Task 1 (Day 1) — SDD progress ledger
+
+Task 1: complete (commits 7e52597..40dc720, review clean, LOCAL ONLY per founder-away scope)
+  - 7e52597: initial implementation (fix(security): chat-media tenant-prefixed path + private bucket + signed URL)
+  - 40dc720: review-fix pass (fix(chat-media): address review findings — deployment note + row limit + error state)
+
+Deferred to founder on return (prod deploy — Steps 14-16 of Task 1):
+  1. Apply migration 300 to prod Supabase via `mcp__plugin_supabase_supabase__apply_migration`
+  2. Run data migration script: `SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/migrate-chat-media-paths.ts`
+     - MUST complete before FE deploy (deployment order STRICT — see chatMediaSignedUrl.ts comment)
+  3. `git push origin main` → triggers Cloud Build FE deploy
+  4. Prod smoke test: cross-tenant leak verification (Session A upload, Session B block)
+  5. Update memory `chat-media` gap → resolved
+
+Task 2 onwards: NOT started per scope constraint (founder away, execute Task 1 only)
