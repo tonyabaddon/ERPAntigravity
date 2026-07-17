@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -19,39 +20,70 @@ type NotifyHandlers struct {
 }
 
 type Client struct {
-	DB       *sql.DB
+	DB       *sql.DB // HTTP handlers + RPC calls via transaction pooler
+	ListenDB *sql.DB // pq.Listener only via direct connection
 	listener *pq.Listener
 }
 
-func NewClient(connStr string) (*Client, error) {
-	db, err := sql.Open("postgres", connStr)
+// NewClient initialises a split-pool DB client:
+//   - queryConn: transaction pooler URL (port 6543) — used by all HTTP handlers
+//     and RPC calls. Supavisor multiplexes hundreds of clients over a small
+//     number of server connections, so MaxOpenConns=10 is safe at scale.
+//   - listenConn: direct connection URL (port 5432) — used by pq.Listener only.
+//     One persistent connection per instance; direct pool has ~45-55 slots so
+//     this scales to 40+ backend instances with headroom.
+//
+// Both connections are pinged on init. If the second ping fails the first
+// connection is closed before returning the error.
+//
+// Split-pool rationale: session pooler (port 5432 via pooler) caps at 15
+// clients on the free tier (Bug D, 2026-07-17). Transaction pooler has no
+// effective client cap but drops LISTEN. Direct connection preserves LISTEN
+// but counts against the real-connection quota.
+func NewClient(queryConn, listenConn string) (*Client, error) {
+	query, err := sql.Open("postgres", queryConn)
 	if err != nil {
 		return nil, err
 	}
-	// Supabase session pooler free-tier caps at 15 client connections.
-	// Cloud Run rolling deploys briefly run 2 revisions in parallel: with
-	// MaxOpenConns=10 each, 2 × 10 = 20 clients → new revision startup fails
-	// with EMAXCONNSESSION (see 2026-07-17 Bug D). MaxOpenConns=5 gives
-	// 2 × 5 = 10 in-use, plus room for backup Cloud Run Job + operator MCP.
-	db.SetMaxOpenConns(5)
-	db.SetMaxIdleConns(2)
-	db.SetConnMaxLifetime(5 * time.Minute)
-	if err := db.Ping(); err != nil {
+	// Restore MaxOpenConns=10: txn pooler multiplexes so this doesn't exhaust
+	// server connections. Previous MaxOpenConns=5 was a session-pooler workaround.
+	query.SetMaxOpenConns(10)
+	query.SetMaxIdleConns(5)
+	query.SetConnMaxLifetime(5 * time.Minute)
+	if err := query.Ping(); err != nil {
+		query.Close()
+		return nil, fmt.Errorf("db: query pool ping failed: %w", err)
+	}
+
+	listen, err := sql.Open("postgres", listenConn)
+	if err != nil {
+		query.Close()
 		return nil, err
 	}
-	slog.Info("[DB] Connected to Supabase PostgreSQL")
+	// Listener pool: only holds the pq.Listener persistent conn + 1 spare.
+	// ConnMaxLifetime=0 means never rotate — pq.Listener needs a stable conn.
+	listen.SetMaxOpenConns(2)
+	listen.SetMaxIdleConns(1)
+	listen.SetConnMaxLifetime(0)
+	if err := listen.Ping(); err != nil {
+		query.Close()
+		listen.Close()
+		return nil, fmt.Errorf("db: listener pool ping failed: %w", err)
+	}
 
-	listener := pq.NewListener(connStr, 10*time.Second, time.Minute,
+	slog.Info("[DB] Connected — queries via txn pooler, listener via direct")
+
+	listener := pq.NewListener(listenConn, 10*time.Second, time.Minute,
 		func(ev pq.ListenerEventType, err error) {
 			if err != nil {
 				slog.Error("[DB] Listener event error", slog.Any("error", err))
 			}
 		})
 
-	return &Client{DB: db, listener: listener}, nil
+	return &Client{DB: query, ListenDB: listen, listener: listener}, nil
 }
 
-// NewClientWithoutListener returns a *Client with only the SQL connection
+// NewClientWithoutListener returns a *Client with only the query SQL connection
 // initialised. Used by integration tests where the LISTEN/NOTIFY plumbing is
 // irrelevant and slow to set up.
 func NewClientWithoutListener(connStr string) (*Client, error) {
@@ -59,8 +91,8 @@ func NewClientWithoutListener(connStr string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(5)
-	db.SetMaxIdleConns(2)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	if err := db.Ping(); err != nil {
 		db.Close()
@@ -177,4 +209,7 @@ func (c *Client) Close() {
 		c.listener.Close()
 	}
 	c.DB.Close()
+	if c.ListenDB != nil {
+		c.ListenDB.Close()
+	}
 }

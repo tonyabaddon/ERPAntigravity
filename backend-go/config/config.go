@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	SupabaseDBConn     string
-	GeminiAPIKey       string
-	Port               string
-	SupabaseURL        string
-	SupabaseServiceKey string
+	SupabaseDBConn         string // SUPABASE_DB_CONNECTION — transaction pooler URL
+	SupabaseDBListenerConn string // SUPABASE_DB_LISTENER_CONNECTION — direct URL for pq.Listener
+	GeminiAPIKey           string
+	Port                   string
+	SupabaseURL            string
+	SupabaseServiceKey     string
 
 	// Phase 1A — Calista OpenRouter wiring
 	OpenRouterAPIKey string // OPENROUTER_API_KEY
@@ -30,8 +31,9 @@ func Load() *Config {
 		log.Println("[CONFIG] No .env file, reading from environment")
 	}
 	return &Config{
-		SupabaseDBConn:     getEnv("SUPABASE_DB_CONNECTION", "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
-		GeminiAPIKey:       getEnv("GEMINI_API_KEY", ""),
+		SupabaseDBConn:         getEnv("SUPABASE_DB_CONNECTION", "postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
+		SupabaseDBListenerConn: getEnv("SUPABASE_DB_LISTENER_CONNECTION", ""),
+		GeminiAPIKey:           getEnv("GEMINI_API_KEY", ""),
 		Port:               getEnv("PORT", "8080"),
 		SupabaseURL:        getEnv("SUPABASE_URL", "https://ekhhojaezdfjfwuxyjkl.supabase.co"),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),

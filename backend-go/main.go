@@ -306,9 +306,15 @@ func main() {
 		}
 	}()
 
-	// DB — retry until connected so waClient can initialize even after a transient failure.
+	// DB — split-pool init: query pool → txn pooler; listener pool → direct.
+	// SUPABASE_DB_LISTENER_CONNECTION defaults to queryConn for local dev
+	// (session pooler or local Postgres both support LISTEN).
+	listenConn := cfg.SupabaseDBListenerConn
+	if listenConn == "" {
+		listenConn = cfg.SupabaseDBConn
+	}
 	for attempt := 1; ; attempt++ {
-		dbClient, err = db.NewClient(cfg.SupabaseDBConn)
+		dbClient, err = db.NewClient(cfg.SupabaseDBConn, listenConn)
 		if err == nil {
 			break
 		}
@@ -431,8 +437,11 @@ func main() {
 	}
 	machine := engine.NewMachine(llmClient)
 
-	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys)
-	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
+	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys).
+	// Routes to direct connection (listenConn) so WA session writes are session-stable.
+	// Whatsmeow sqlstore does not use db.Prepare(), but session data (identity keys,
+	// prekeys) must be durable — direct pool avoids any pooler-side risk.
+	waClient, err = whatsapp.NewClient(ctx, listenConn)
 	if err != nil {
 		slog.Error("[MAIN] WA client init failed", slog.Any("error", err))
 		os.Exit(1)

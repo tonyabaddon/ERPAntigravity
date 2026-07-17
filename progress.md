@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Split-pool DB connection refactor — DONE (pending Cloud Build)
+
+**What**: Real fix for Bug D (session pooler cap 15). Split backend into two `*sql.DB` pools:
+- `DB` (query pool) → transaction pooler `:6543` — HTTP handlers + RPC calls, multiplexed, no cap
+- `ListenDB` (listener pool) → direct `:5432` — `pq.Listener` only, 1 conn/instance
+
+**Root cause fixed**: Single `*sql.DB` at session pooler hitting 15-client cap during rolling deploys. Now query traffic goes through txn pooler (effectively unlimited), listener uses 1 direct slot per instance (45-55 direct slots = 40+ instance headroom).
+
+**Changes**:
+- `backend-go/internal/db/client.go` — `NewClient(queryConn, listenConn string)` 2-arg; `ListenDB` field; restored `MaxOpenConns=10`
+- `backend-go/config/config.go` — `SupabaseDBListenerConn` field (`SUPABASE_DB_LISTENER_CONNECTION` env)
+- `backend-go/main.go` — 2-arg wiring; `whatsapp.NewClient` routes to direct URL (session-safe)
+- `cloudbuild.yaml` — both staging + prod `--update-secrets` extended with new secret
+- GCP Secret Manager: `supabase-db-connection-prod` bumped to v3 (txn pooler), new `supabase-db-connection-listener-prod` v1 (direct)
+
+**Spec**: `docs/superpowers/specs/2026-07-17-split-pool-design.md`  
+**Report**: `.superpowers/sdd/split-pool-report.md`
+
 ## 2026-07-17 — Task 12a: Daily pg_dump backup to GCS — DONE
 
 **What**: Automated daily database backup. Cloud Scheduler triggers a Cloud Run Job at 03:00 UTC (10:00 WIB). Job runs `pg_dump -Fc` (custom format, compressed) and uploads to GCS. 30-day lifecycle retention. Log-based alert fires if no backup in 24.5h.
