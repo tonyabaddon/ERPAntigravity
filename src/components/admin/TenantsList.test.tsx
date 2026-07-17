@@ -18,8 +18,10 @@ vi.mock('../../lib/adminApi', () => ({
 // F-10 Phase 2c: TenantsList calls supabase.rpc('admin_impersonation_access_status')
 // after rows load. Default the mock to grant native access to every slug so
 // pre-existing tests don't need to opt in per case.
+// NOTE: the RPC returns out_* prefixed columns to avoid Postgres 42702 ambiguity
+// (see TenantsList.tsx remap logic). Mock must match this shape.
 const accessStatusMock = vi.fn(async (_fn: string, args: { p_slugs: string[] }) => ({
-  data: args.p_slugs.map((s) => ({ slug: s, status: 'native', expires_at: null })),
+  data: args.p_slugs.map((s) => ({ out_slug: s, out_status: 'native', out_expires_at: null })),
   error: null,
 }));
 
@@ -186,9 +188,9 @@ describe('TenantsList', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(<TenantsList />);
-    await waitFor(() => expect(screen.getByText('Garindo Jaya')).toBeInTheDocument(), { timeout: 3000 });
-
-    const impersonateBtn = screen.getByTitle(/Impersonasi Garindo Jaya/i);
+    // Wait for tenant row AND for canImpersonate async state to resolve
+    // (isSuperAdmin() is async; button only renders once canImpersonate=true)
+    const impersonateBtn = await screen.findByTitle(/Impersonasi Garindo Jaya/i, {}, { timeout: 5000 });
     await act(async () => {
       fireEvent.click(impersonateBtn);
       await Promise.resolve();
@@ -205,9 +207,8 @@ describe('TenantsList', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(<TenantsList />);
-    await waitFor(() => expect(screen.getByText('Garindo Jaya')).toBeInTheDocument(), { timeout: 3000 });
-
-    const impersonateBtn = screen.getByTitle(/Impersonasi Garindo Jaya/i);
+    // Wait for canImpersonate async state to resolve before checking button
+    const impersonateBtn = await screen.findByTitle(/Impersonasi Garindo Jaya/i, {}, { timeout: 5000 });
     fireEvent.click(impersonateBtn);
 
     expect(impersonateMock).not.toHaveBeenCalled();

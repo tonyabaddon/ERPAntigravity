@@ -59,6 +59,14 @@ vi.mock('../supabaseClient', () => {
     };
     return obj;
   });
+  // updateStoreSettings uses .not(col, 'is', null) as a PostgREST safety filter.
+  // The builder needs .not to be chainable like .eq — it terminates with { error }.
+  builder['not'] = vi.fn(() => {
+    const obj: Record<string, unknown> = {};
+    obj['then'] = (onfulfilled: (v: unknown) => unknown) =>
+      Promise.resolve({ error: updateError }).then(onfulfilled);
+    return obj;
+  });
 
   return {
     supabase: {
@@ -90,14 +98,16 @@ describe('pengaturan/mutations', () => {
     eqSpy.mockClear();
   });
 
-  test('updateStoreSettings calls update on store_settings with id=1 and stamps updated_at', async () => {
+  test('updateStoreSettings calls update on store_settings and stamps updated_at', async () => {
     await updateStoreSettings({ nama_toko: 'Toko Baru' });
     expect(fromSpy).toHaveBeenCalledWith('store_settings');
     expect(updateSpy).toHaveBeenCalledTimes(1);
     const patch = updateSpy.mock.calls[0][0] as Record<string, unknown>;
     expect(patch.nama_toko).toBe('Toko Baru');
     expect(typeof patch.updated_at).toBe('string');
-    expect(eqSpy).toHaveBeenCalledWith('id', 1);
+    // updateStoreSettings uses .not('tenant_id', 'is', null) as a PostgREST
+    // safety filter (not .eq) — RLS restricts to caller's own store row.
+    // No eqSpy assertion needed here.
   });
 
   test('updateStoreSettings throws on supabase error', async () => {

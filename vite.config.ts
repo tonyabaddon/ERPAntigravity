@@ -22,6 +22,10 @@ export default defineConfig(() => {
       environment: 'jsdom',
       setupFiles: ['./vitest.setup.ts'],
       globals: true,
+      // Exclude git-worktrees kept under .claude/worktrees/ (gitignored).
+      // These contain duplicate test files from feature branches that are not
+      // part of main; vitest's default glob would recurse into them locally.
+      exclude: ['**/node_modules/**', '**/dist/**', '.claude/**'],
     },
   };
 });
