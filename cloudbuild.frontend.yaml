@@ -1,5 +1,6 @@
 steps:
-  # CI gate — runs BEFORE docker build so a failing test blocks the deploy.
+  # ── Step 0: CI gate ────────────────────────────────────────────────────────
+  # Runs BEFORE docker build so a failing test blocks the deploy.
   # Uses npm test (vitest run src) + linting + two audit scripts.
   # Integration tests (tests/integration/**) are excluded — they require live
   # Supabase credentials not available in Cloud Build.
@@ -16,15 +17,17 @@ steps:
         npm run audit:secdef-null-tenant
         npm test
 
+  # ── Step 1: Build single image ─────────────────────────────────────────────
+  # Backend URL is resolved at RUNTIME via window.location.hostname (see
+  # src/lib/backendUrl.ts) — no longer baked into the bundle. This means
+  # one image validates in staging and promotes directly to prod unchanged.
+  # VITE_SUPABASE_* vars are baked in (same project for staging + prod per
+  # Option X decision — single Supabase project with test tenants for staging).
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
       - '-t'
       - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
-      - '--build-arg'
-      - 'VITE_BACKEND_URL=$_VITE_BACKEND_URL'
-      - '--build-arg'
-      - 'VITE_APP_URL=$_VITE_APP_URL'
       - '--build-arg'
       - 'VITE_SUPABASE_URL=$_VITE_SUPABASE_URL'
       - '--build-arg'
@@ -33,11 +36,104 @@ steps:
       - 'Dockerfile'
       - '.'
 
+  # ── Step 2: Push image ─────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - push
       - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
 
+  # ── Step 3: Deploy to STAGING ──────────────────────────────────────────────
+  # Staging is scaled-to-zero — no real users. Deploy at 100% traffic directly.
+  # The same image SHA that passes smoke tests here is what gets promoted to prod.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - 'garindo-jaya-panel-msme-erp-frontend-staging'
+      - '--image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+      - '--region=$_DEPLOY_REGION'
+      - '--platform=$_PLATFORM'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=2'
+
+  # ── Step 4: Automated smoke tests against staging ─────────────────────────
+  # BE checks via curl + Playwright FE smoke tests.
+  # If ANY smoke check fails, the build exits non-zero here and prod is NOT
+  # deployed. Staging stays at the new revision; prod stays on its previous
+  # working revision. Debug at the staging URL, fix, re-push.
+  - name: 'node:20'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+
+        STAGING_FE_URL="https://garindo-jaya-panel-msme-erp-frontend-staging-422860632808.asia-southeast1.run.app"
+        STAGING_BE_URL="https://garindo-jaya-panel-msme-erp-staging-422860632808.asia-southeast1.run.app"
+        # Use direct Cloud Run URLs for smoke tests — custom domains (staging.app.caleo.id /
+        # staging.admin.caleo.id) require SSL cert to be provisioned. Direct URLs are always
+        # reachable. T3 Playwright test auto-skips when URL doesn't include staging.admin.caleo.id.
+        # TODO: switch to custom domains once staging SSL confirmed stable (check via:
+        #   gcloud beta run domain-mappings describe --domain=staging.app.caleo.id)
+        STAGING_APP_DOMAIN="$$STAGING_FE_URL"
+        STAGING_ADMIN_DOMAIN="$$STAGING_FE_URL"
+
+        echo "=== Staging curl smoke tests ==="
+
+        # FE root returns 200
+        echo "Checking FE root ..."
+        for i in 1 2 3 4 5; do
+          HTTP=$(curl -sfo /dev/null -w "%{http_code}" "$$STAGING_FE_URL/" || echo "000")
+          [ "$$HTTP" = "200" ] && { echo "FE root: 200 OK"; break; }
+          [ "$$i" -eq 5 ] && { echo "FE root: $$HTTP after 5 attempts"; exit 1; }
+          echo "Attempt $$i: $$HTTP — retrying in 5s"; sleep 5
+        done
+
+        # BE /live → 200
+        echo "Checking BE /live ..."
+        for i in 1 2 3 4 5; do
+          HTTP=$(curl -sfo /dev/null -w "%{http_code}" "$$STAGING_BE_URL/api/v1/live" || echo "000")
+          [ "$$HTTP" = "200" ] && { echo "BE /live: 200 OK"; break; }
+          [ "$$i" -eq 5 ] && { echo "BE /live: $$HTTP after 5 attempts"; exit 1; }
+          echo "Attempt $$i: $$HTTP — retrying in 5s"; sleep 5
+        done
+
+        # BE /ready → 200 (DB ping)
+        echo "Checking BE /ready ..."
+        HTTP=$(curl -sfo /dev/null -w "%{http_code}" "$$STAGING_BE_URL/api/v1/ready" || echo "000")
+        [ "$$HTTP" = "200" ] || { echo "BE /ready: $$HTTP — DB unreachable on staging"; exit 1; }
+        echo "BE /ready: 200 OK"
+
+        # Bundle present (check index.html has assets/ reference)
+        echo "Checking FE bundle reference ..."
+        BUNDLE=$(curl -s "$$STAGING_FE_URL/" | grep -oE 'src="/assets/index-[^"]+\.js"' | head -1)
+        [ -n "$$BUNDLE" ] || { echo "Bundle reference not found in index.html"; exit 1; }
+        echo "Bundle found: $$BUNDLE"
+
+        echo ""
+        echo "=== Playwright smoke tests ==="
+
+        cd tests/e2e
+        npm ci --prefer-offline
+
+        # Use pre-installed Chromium cache if available; otherwise install
+        npx playwright install chromium --with-deps 2>&1 | tail -5
+
+        STAGING_APP_URL="$$STAGING_FE_URL" \
+        STAGING_ADMIN_URL="$$STAGING_ADMIN_DOMAIN" \
+        STAGING_BE_URL="$$STAGING_BE_URL" \
+        npx playwright test --config=playwright.staging.config.ts
+
+        echo ""
+        echo "=== All staging smoke tests passed ==="
+
+  # ── Step 5: Promote to PROD ────────────────────────────────────────────────
+  # Deploy the SAME image SHA that passed staging smoke tests.
+  # Preserves the 2026-06-16 safety net: deploy at 0% traffic with tag URL,
+  # then smoke the tag URL, then promote to 100% traffic.
+  # If prod smoke fails, traffic stays on previous revision — safe rollback.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -54,16 +150,11 @@ steps:
       # service name 'garindo-jaya-panel-msme-erp-frontend' is 36 chars so the
       # tag must be ≤10 chars. 'c$SHORT_SHA' is 8 chars (leading letter required
       # by some tooling for tag names that start with a digit).
-      # Smoke-test the tag URL, then promote with:
-      #   gcloud run services update-traffic $_SERVICE_NAME \
-      #     --region=$_DEPLOY_REGION --to-revisions=<rev>=100
-      # Root cause from 2026-06-16 Produk & Stok regression: deploys without
-      # --no-traffic auto-shifted traffic to revisions built from main HEAD
-      # before all feature branches were merged. See progress.md post-mortem.
       - '--no-traffic'
       - '--tag=c$SHORT_SHA'
 
-  # Smoke test the tag URL, then promote to 100% traffic. Preserves the
+  # ── Step 6: Prod tag-URL smoke + promote to 100% ──────────────────────────
+  # Smoke-test the tag URL, then promote to 100% traffic. Preserves the
   # 2026-06-16 safety net (deploy at 0% first) while eliminating the manual
   # `update-traffic` step for clean builds. If the smoke fails, traffic stays
   # on the previous revision — investigate at the tag URL then re-trigger.
@@ -80,7 +171,7 @@ steps:
         SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME \
           --region=$_DEPLOY_REGION --format='value(status.url)')
         TAG_URL=$(echo "$$SERVICE_URL" | sed "s|https://|https://c$SHORT_SHA---|")
-        echo "Smoke-testing $$TAG_URL (up to 6 attempts, 10s apart) ..."
+        echo "Prod smoke-testing $$TAG_URL (up to 6 attempts, 10s apart) ..."
         for i in 1 2 3 4 5 6; do
           HTTP_CODE=$(curl -sfo /dev/null -w "%{http_code}" "$$TAG_URL" || echo "000")
           if [ "$$HTTP_CODE" = "200" ]; then
@@ -93,7 +184,7 @@ steps:
           echo "Attempt $$i: HTTP $$HTTP_CODE — retrying in 10s"
           sleep 10
         done
-        echo "Smoke test failed after 6 attempts. Revision c$SHORT_SHA stays at 0% traffic."
+        echo "Prod smoke test failed after 6 attempts. Revision c$SHORT_SHA stays at 0%."
         echo "Investigate at $$TAG_URL then re-trigger the build."
         exit 1
 
@@ -101,8 +192,10 @@ images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
 
 substitutions:
-  _VITE_BACKEND_URL: https://garindo-jaya-panel-msme-erp-422860632808.asia-southeast1.run.app
-  _VITE_APP_URL: https://app.caleo.id
+  # VITE_BACKEND_URL and VITE_APP_URL removed — backend URL resolved at runtime
+  # from window.location.hostname (see src/lib/backendUrl.ts). One image for
+  # both staging and prod.
+  _VITE_SUPABASE_URL: https://ekhhojaezdfjfwuxyjkl.supabase.co
 
 options:
   logging: CLOUD_LOGGING_ONLY

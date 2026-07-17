@@ -1,13 +1,14 @@
 steps:
-  # 0. Download CLIP ONNX model (~150MB, gitignored).
-  #    Dockerfile Step 15/17 expects it at models/clip-vit-base-patch32.onnx
-  #    via repo-root build context. Without this, backend build fails at COPY.
-  #    Build trigger has been failing since ~2026-06-18 (post foto-search commit
-  #    5a2d9b8) until this step was added.
+  # ── Step 0: Download CLIP model ────────────────────────────────────────────
+  # Dockerfile Step 15/17 expects it at models/clip-vit-base-patch32.onnx
+  # via repo-root build context. Without this, backend build fails at COPY.
+  # Build trigger has been failing since ~2026-06-18 (post foto-search commit
+  # 5a2d9b8) until this step was added.
   - name: 'gcr.io/cloud-builders/curl'
     entrypoint: 'bash'
     args: ['scripts/download-clip-model.sh']
 
+  # ── Step 1: Build image ────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
@@ -17,11 +18,69 @@ steps:
       - 'backend-go/Dockerfile'
       - '.'
 
+  # ── Step 2: Push image ─────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - push
       - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
 
+  # ── Step 3: Deploy to STAGING backend ─────────────────────────────────────
+  # Staging is scaled-to-zero — no real users. Deploy at 100% traffic directly.
+  # Same image SHA validates here, then promotes to prod if smoke passes.
+  # NOTE: SUPABASE_SERVICE_KEY is duplicated here from the prod step below.
+  # Sub D will move both to GCP Secret Manager — see progress.md for tracking.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - 'garindo-jaya-panel-msme-erp-staging'
+      - '--image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+      - '--region=$_DEPLOY_REGION'
+      - '--platform=$_PLATFORM'
+      - '--allow-unauthenticated'
+      - '--min-instances=0'
+      - '--max-instances=2'
+      - '--memory=4Gi'
+      - '--cpu=2'
+      - '--timeout=60s'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_SERVICE_KEY=$_SUPABASE_SERVICE_KEY,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
+      - '--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12'
+      - '--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3'
+
+  # ── Step 4: Staging BE smoke test ─────────────────────────────────────────
+  # Minimal BE health checks before promoting to prod.
+  - name: 'gcr.io/cloud-builders/curl'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        STAGING_BE_URL="https://garindo-jaya-panel-msme-erp-staging-422860632808.asia-southeast1.run.app"
+
+        echo "=== Staging BE smoke tests ==="
+
+        # Wait for staging to be ready (scaled-to-zero cold start may take ~10s)
+        for i in 1 2 3 4 5 6; do
+          HTTP=$(curl -sfo /dev/null -w "%{http_code}" "$$STAGING_BE_URL/api/v1/live" || echo "000")
+          [ "$$HTTP" = "200" ] && { echo "BE /live: 200 OK"; break; }
+          [ "$$i" -eq 6 ] && { echo "BE /live: $$HTTP after 6 attempts"; exit 1; }
+          echo "Attempt $$i: $$HTTP — retrying in 10s"; sleep 10
+        done
+
+        # DB connectivity
+        HTTP=$(curl -sfo /dev/null -w "%{http_code}" "$$STAGING_BE_URL/api/v1/ready" || echo "000")
+        [ "$$HTTP" = "200" ] || { echo "BE /ready: $$HTTP — DB unreachable on staging"; exit 1; }
+        echo "BE /ready: 200 OK"
+
+        echo "=== All staging BE smoke tests passed ==="
+
+  # ── Step 5: Deploy to PROD backend ────────────────────────────────────────
+  # Deploy the SAME image SHA that passed staging smoke.
+  # Added 0%-traffic + tag-URL pattern (mirrors frontend safety net from
+  # 2026-06-16 post-mortem). Tag URL: https://c<SHORT_SHA>---<service>.run.app
+  # Service name 'garindo-jaya-panel-msme-erp' is 28 chars, so tag ≤18 chars.
+  # 'c$SHORT_SHA' is 8 chars — well within limit.
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -35,7 +94,7 @@ steps:
       - '--memory=4Gi'
       - '--cpu=2'
       - '--timeout=60s'
-      - '--update-env-vars=SUPABASE_URL=https://ekhhojaezdfjfwuxyjkl.supabase.co,SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVraGhvamFlemRmamZ3dXh5amtsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE3NjUzMSwiZXhwIjoyMDk1NzUyNTMxfQ.lQNcQcpZRngHtfDxkNjLne9zGZlvyiofWHUP19HRA20,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=ekhhojaezdfjfwuxyjkl,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_SERVICE_KEY=$_SUPABASE_SERVICE_KEY,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
       # Health probe split (slot 315 / Task 9):
       # /api/v1/live  — liveness (process alive, no deps) — periodic restart guard.
       # /api/v1/ready — readiness (DB ping) — stops traffic if Postgres unreachable.
@@ -43,6 +102,35 @@ steps:
       # failureThreshold=12 @ periodSeconds=5 = 60s max startup window.
       - '--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12'
       - '--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3'
+      - '--no-traffic'
+      - '--tag=c$SHORT_SHA'
+
+  # ── Step 6: Prod BE tag-URL smoke + promote to 100% ───────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME \
+          --region=$_DEPLOY_REGION --format='value(status.url)')
+        TAG_URL=$(echo "$$SERVICE_URL" | sed "s|https://|https://c$SHORT_SHA---|")
+        echo "Prod BE smoke-testing $$TAG_URL (up to 6 attempts, 10s apart) ..."
+        for i in 1 2 3 4 5 6; do
+          HTTP_CODE=$(curl -sfo /dev/null -w "%{http_code}" "$$TAG_URL/api/v1/live" || echo "000")
+          if [ "$$HTTP_CODE" = "200" ]; then
+            echo "Attempt $$i: HTTP 200 — promoting c$SHORT_SHA to 100% traffic"
+            gcloud run services update-traffic $_SERVICE_NAME \
+              --region=$_DEPLOY_REGION \
+              --to-tags=c$SHORT_SHA=100
+            exit 0
+          fi
+          echo "Attempt $$i: HTTP $$HTTP_CODE — retrying in 10s"
+          sleep 10
+        done
+        echo "Prod smoke test failed after 6 attempts. Revision c$SHORT_SHA stays at 0%."
+        echo "Investigate at $$TAG_URL then re-trigger the build."
+        exit 1
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
@@ -54,3 +142,9 @@ substitutions:
   _DEBOUNCE_ENABLED: 'false'
   _DEBOUNCE_SOFT_WAIT_MS: '5000'
   _DEBOUNCE_HARD_WAIT_MS: '12000'
+  _SUPABASE_URL: 'https://ekhhojaezdfjfwuxyjkl.supabase.co'
+  _SUPABASE_PROJECT_REF: 'ekhhojaezdfjfwuxyjkl'
+  _LLM_BACKEND: 'gemini'
+  _ENABLE_OPENROUTER: 'true'
+  # _OPENROUTER_API_KEY + _SUPABASE_SERVICE_KEY + _GEMINI_API_KEY + _SUPABASE_DB_CONN:
+  # set at trigger level (sensitive values, not in yaml defaults)

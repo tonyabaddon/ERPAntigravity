@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { WhatsappAiNumber, StockItem, ActivePage } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { getBackendUrl } from '../lib/backendUrl';
 
 interface WhatsappAiScreenProps {
   stockList: StockItem[];
@@ -105,7 +106,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   // Poll /api/wa/qr while not connected
   const fetchQR = useCallback(async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/wa/qr`);
+      const res = await fetch(`${getBackendUrl()}/api/v1/wa/qr`);
       const data = await res.json();
       setDaemonOnline(true);
       setWaConnected(data.connected);
@@ -152,7 +153,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   const handleLogout = async () => {
     try {
       pushTerminalLog('Memutus sesi WhatsApp...');
-      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/wa/logout`, { method: 'POST' });
+      const res = await fetch(`${getBackendUrl()}/api/v1/wa/logout`, { method: 'POST' });
       if (!res.ok) throw new Error('Logout gagal');
       setWaConnected(false);
       setQrCode('');
@@ -401,7 +402,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                           setPairCodeError('');
                           setPairCode('');
                           try {
-                            const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/wa/pair-code`, {
+                            const res = await fetch(`${getBackendUrl()}/api/v1/wa/pair-code`, {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ phone: pairPhone }),

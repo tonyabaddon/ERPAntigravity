@@ -1,0 +1,13 @@
+{
+  "name": "caleo-e2e-smoke",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright smoke tests for staging gate",
+  "scripts": {
+    "test": "playwright test",
+    "test:staging": "playwright test --config=playwright.staging.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}

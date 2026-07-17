@@ -1,5 +1,61 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Sub E: Real staging environment + gated auto-promote + Playwright — DONE
+
+**What**: Phase 1 finalization Sub E — 6 parts:
+
+**E1 — Create staging Cloud Run services**:
+- `garindo-jaya-panel-msme-erp-frontend-staging` (asia-southeast1, min=0, max=2, 512Mi, 1 CPU)
+- `garindo-jaya-panel-msme-erp-staging` (asia-southeast1, min=0, max=2, 4Gi, 2 CPU — same as prod, needs CLIP model mem)
+- Both bootstrapped with current prod image SHA; Cloud Build replaces on next push.
+
+**E2 — Domain mappings + DNS**:
+- Deleted `staging.admin.caleo.id` → `caleo-placeholder-admin-staging` mapping (old placeholder).
+- Created `staging.app.caleo.id` → `garindo-jaya-panel-msme-erp-frontend-staging`.
+- Created `staging.admin.caleo.id` → `garindo-jaya-panel-msme-erp-frontend-staging`.
+- CF DNS: `staging.app.caleo.id` AAAA `100::` (proxied) → CNAME `ghs.googlehosted.com` (DNS-only).
+- Deleted CF Worker route `staging.app.caleo.id/*` (was caleo-placeholder).
+- Deleted old `caleo-placeholder-admin-staging` service.
+- Google-managed SSL cert provisioning started (15–45 min async).
+
+**E3 — Gated auto-promote pipeline** (`cloudbuild.frontend.yaml` + `cloudbuild.yaml`):
+- New sequential pipeline: CI gate → build (1 image) → deploy staging → smoke tests → deploy prod (0% traffic) → prod smoke → 100% traffic.
+- **Runtime URL resolution**: `src/lib/backendUrl.ts` maps `window.location.hostname` → backend URL. One image validates in staging, promotes to prod unchanged. `VITE_BACKEND_URL` build-arg removed.
+- FE pipeline: 7 steps total (CI gate, build, push, staging deploy, smoke tests, prod deploy --no-traffic, prod smoke + promote).
+- BE pipeline: 7 steps total (CLIP download, build, push, staging deploy, staging smoke, prod deploy --no-traffic + probes, prod smoke + promote).
+- Prod BE now also uses 0%-traffic + tag-URL pattern (previously was direct 100% — now matches FE safety net from 2026-06-16).
+
+**E4 — Playwright FE smoke tests** (`tests/e2e/`):
+- `playwright.staging.config.ts`: Chromium-only, 30s timeout, staging URL via env var.
+- `tests/staging-smoke.spec.ts`: T1 (FE loads no JS errors), T2 (login form renders), T3 (admin redirect — skips if not on real domain), T4 (BE /ready 200), T5 (admin tenants — skipped, pending Sub D).
+- 3 tests pass, 2 skipped when run against direct Cloud Run URL (T3 auto-skips before DNS).
+- `scripts/staging-smoke.sh`: Manual smoke script (mirrors Cloud Build Step 4 curl checks).
+
+**E5 — SOP documentation** (`docs/superpowers/specs/staging-deploy-sop.md`):
+- Founder workflow, rollback procedures (traffic rollback + git revert), failure debugging, emergency bypass, test tenant discipline.
+
+**Updated backend URL call sites** (5 files):
+- `src/lib/backendUrl.ts` (NEW) — hostname → backend URL mapper
+- `src/components/WhatsappAiScreen.tsx` — 3 usages
+- `src/lib/cariByFotoService.ts` — 2 usages
+- `src/lib/supabaseClient.ts` — 2 usages (recon/upload + recon/close)
+
+**Known deferred**:
+- T4+T5 Playwright (auth session injection) — pending Sub D.
+- Sub D still needs to move `SUPABASE_SERVICE_KEY` to Secret Manager (currently duplicated in `cloudbuild.yaml` staging + prod steps — flagged, not worsened).
+
+**Verified (local Stage 1)**:
+- `npm run lint` → clean
+- `npm run audit:numinput` → clean
+- `npm run audit:secdef-null-tenant` → clean
+- `npx vitest run src` → 112 files, 967 tests, 2 skipped, 0 failed
+- Playwright smoke → 3 passed, 2 skipped (T3+T5), 0 failed
+- `./scripts/staging-smoke.sh` → 6/6 passed (FE root, /login, BE /live, /ready, /health, bundle)
+
+**Commit**: see below | **Report**: `.superpowers/sdd/sub-e-report.md`
+
+---
+
 ## 2026-07-17 — Sub A: admin.caleo.id routing + staging subdomain rename + FP-1 + cookie — DONE
 
 **What**: Phase 1 finalization Sub A — 5 parts:

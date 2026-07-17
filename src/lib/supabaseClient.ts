@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
+import { getBackendUrl } from './backendUrl';
 import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel, ConversationState } from '../types';
 import type {
   ApprovalRequest,
@@ -2398,14 +2399,14 @@ export const reconciliationService = {
     fd.append('bank_code', bankCode);
     fd.append('period_start', periodStart);
     fd.append('period_end', periodEnd);
-    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/v1/recon/upload';
+    const url = getBackendUrl() + '/api/v1/recon/upload';
     const resp = await fetch(url, { method: 'POST', body: fd });
     if (!resp.ok) throw new Error(await resp.text());
     return resp.json() as Promise<{ import_id: string; line_count: number; matched_count: number }>;
   },
 
   async closeMonth(year: number, month: number) {
-    const url = ((import.meta as any).env?.VITE_BACKEND_URL || '') + '/api/v1/recon/close';
+    const url = getBackendUrl() + '/api/v1/recon/close';
     const resp = await fetch(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ year, month }),

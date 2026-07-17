@@ -12,5 +12,9 @@ __pycache__
 .env.local
 .DS_Store
 
+# E2E test artifacts (Cloud Build installs Playwright dependencies in-step)
+tests/e2e/node_modules
+tests/e2e/test-results
+
 # CLIP model IS included for Cloud Build (overrides .gitignore exclusion).
 !models/clip-vit-base-patch32.onnx
