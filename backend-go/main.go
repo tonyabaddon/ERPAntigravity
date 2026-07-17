@@ -92,6 +92,10 @@ func main() {
 	// If DB or WA init hangs, the probe still passes and Cloud Run marks the
 	// revision healthy. WA-dependent endpoints return safe defaults while nil.
 	mux := http.NewServeMux()
+	// Task 16 gap-fix: CSP violation reports from FE Cloud Run land here.
+	// Frontend serve.json sets `report-uri` to this endpoint. Reports are
+	// logged to slog + Cloud Logging for observation before CSP is enforced.
+	mux.HandleFunc("/security/csp-report", api.CSPReportHandler)
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
@@ -295,13 +299,14 @@ func main() {
 	go func() {
 		slog.Info("[MAIN] HTTP server starting", slog.String("port", cfg.Port))
 		// Middleware layer order (outermost → innermost):
-		//   1. RequestContextMiddleware — extracts tenant_id/user_id/request_id from JWT
-		//   2. rateLimiter.Wrap       — enforces per-tenant token-bucket rate limits
-		//   3. VersionRouter          — rewrites /api/v1/* → /api/*
-		//   4. mux                   — actual handlers
-		// RequestContextMiddleware must run first so tenant_id is in context
-		// when the rate limiter reads it.
-		if err := http.Serve(ln, api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux)))); err != nil {
+		//   1. SecurityHeadersMiddleware — HSTS, X-Content-Type-Options, X-Frame, Referrer, Permissions
+		//   2. RequestContextMiddleware — extracts tenant_id/user_id/request_id from JWT
+		//   3. rateLimiter.Wrap        — enforces per-tenant token-bucket rate limits
+		//   4. VersionRouter           — rewrites /api/v1/* → /api/*
+		//   5. mux                    — actual handlers
+		// SecurityHeadersMiddleware wraps outermost so headers apply to every
+		// response including 4xx/5xx that bypass inner middleware. Task 16 (2026-07-18).
+		if err := http.Serve(ln, api.SecurityHeadersMiddleware(api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux))))); err != nil {
 			slog.Error("[MAIN] HTTP error", slog.Any("error", err))
 		}
 	}()
