@@ -27,6 +27,7 @@
     "supabase/functions/**",
     "node_modules",
     "dist",
-    "backend-go"
+    "backend-go",
+    "tests/e2e"
   ]
 }
