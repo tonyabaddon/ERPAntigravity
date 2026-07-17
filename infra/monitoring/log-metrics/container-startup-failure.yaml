@@ -1,6 +1,6 @@
 name: container_startup_failure_count
-description: "Cloud Run container startup probe failures (STARTUP HTTP probe failed)"
-filter: 'resource.type="cloud_run_revision" severity=ERROR textPayload=~"STARTUP HTTP probe failed"'
+description: "Cloud Run container startup failures — probe timeouts OR self-exit(1)"
+filter: 'resource.type="cloud_run_revision" AND ((severity=ERROR AND textPayload:"STARTUP HTTP probe failed") OR textPayload:"Container called exit(1)")'
 
 # Metric type: logging.googleapis.com/user/container_startup_failure_count
 # Used by: alert-policies/alert-7-container-startup-failure.yaml
@@ -14,8 +14,12 @@ filter: 'resource.type="cloud_run_revision" severity=ERROR textPayload=~"STARTUP
 #
 # Deviation from R2 task spec: Task said filter on "startup probe" (lowercase, partial).
 # Actual text is "STARTUP HTTP probe failed" (uppercase). Filter uses exact case.
-# Also excludes textPayload=~"container failed to start" — this pattern was not observed in live logs;
-# the actual pattern is the STARTUP HTTP probe message above.
+#
+# 2026-07-17 update: broadened filter to ALSO match "Container called exit(1)".
+# Rationale: Task 12 rehearsal surfaced revision 00319-wih which died via
+# self-exit on init failure (WA client couldn't init due to DB pool limit) —
+# it never got to the STARTUP HTTP probe stage. Original filter missed this
+# class entirely. exit(0) is graceful (not matched); exit(1) is failure.
 #
 # If Alert 7 is too noisy from staging restarts, add:
 #   resource.labels.service_name!="garindo-jaya-panel-msme-erp-staging"

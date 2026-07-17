@@ -28,8 +28,13 @@ func NewClient(connStr string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(5)
+	// Supabase session pooler free-tier caps at 15 client connections.
+	// Cloud Run rolling deploys briefly run 2 revisions in parallel: with
+	// MaxOpenConns=10 each, 2 × 10 = 20 clients → new revision startup fails
+	// with EMAXCONNSESSION (see 2026-07-17 Bug D). MaxOpenConns=5 gives
+	// 2 × 5 = 10 in-use, plus room for backup Cloud Run Job + operator MCP.
+	db.SetMaxOpenConns(5)
+	db.SetMaxIdleConns(2)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	if err := db.Ping(); err != nil {
 		return nil, err
