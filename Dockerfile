@@ -29,6 +29,10 @@ RUN npm install -g serve
 
 COPY --from=builder /app/dist ./dist
 
+# Task 16 (2026-07-18): custom security headers served by 'serve'.
+# `serve` picks up serve.json from the served directory (./dist).
+COPY serve.json ./dist/serve.json
+
 EXPOSE 8080
 
 CMD sh -c "serve -s dist -l ${PORT:-8080}"
