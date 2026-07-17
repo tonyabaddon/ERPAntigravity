@@ -149,4 +149,34 @@ describe('urlRoute — /t/<slug>/* parsing', () => {
     expect(r.tenantSlug).toBeNull();
     expect(r.screen).toBe('dashboard');
   });
+
+  // ── Task 14 (2026-07-18): unknown subpaths surface as 'not-found' ──────
+  // Previously silent-fallback to 'dashboard' hid broken bookmarks + typos.
+  // Now App.tsx switch renders <NotFound> for the sentinel screen.
+
+  it('unknown tenant subpath /t/garindo/foobar → not-found sentinel', () => {
+    const r = parseRoute('/t/garindo/foobar', new URLSearchParams());
+    expect(r.tenantSlug).toBe('garindo');
+    expect(r.screen).toBe('not-found');
+    expect(r.isPlatformAdminArea).toBe(false);
+  });
+
+  it('unknown legacy path /foobar → not-found sentinel', () => {
+    const r = parseRoute('/foobar', new URLSearchParams());
+    expect(r.tenantSlug).toBeNull();
+    expect(r.screen).toBe('not-found');
+  });
+
+  it('empty tenant subpath /t/garindo/ → dashboard (landing)', () => {
+    // Root URL for a tenant should land on dashboard, NOT 404
+    const r = parseRoute('/t/garindo/', new URLSearchParams());
+    expect(r.tenantSlug).toBe('garindo');
+    expect(r.screen).toBe('dashboard');
+  });
+
+  it('bare / → dashboard (landing)', () => {
+    const r = parseRoute('/', new URLSearchParams());
+    expect(r.tenantSlug).toBeNull();
+    expect(r.screen).toBe('dashboard');
+  });
 });
