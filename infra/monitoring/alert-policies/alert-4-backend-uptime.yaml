@@ -1,0 +1,36 @@
+displayName: "Backend /api/v1/live down"
+combiner: OR
+conditions:
+- displayName: "Backend uptime check failing"
+  conditionThreshold:
+    filter: 'metric.type="monitoring.googleapis.com/uptime_check/check_passed" resource.type="uptime_url" metric.labels.check_id="backend-api-v1-live-406wNLiEo3Y"'
+    comparison: COMPARISON_LT
+    thresholdValue: 1
+    duration: 120s
+    aggregations:
+    - alignmentPeriod: 60s
+      perSeriesAligner: ALIGN_NEXT_OLDER
+      crossSeriesReducer: REDUCE_COUNT_TRUE
+      groupByFields:
+      - resource.labels.host
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Backend /api/v1/live Down
+
+    The backend service is not responding to uptime checks.
+    Check: https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app/api/v1/live
+
+    **Immediate action**:
+    1. Check Cloud Run service status:
+       https://console.cloud.google.com/run/detail/asia-southeast1/garindo-jaya-panel-msme-erp/revisions?project=gen-lang-client-0410251117
+    2. Check backend logs for crash loops or startup failures.
+    3. If the latest revision is unhealthy, roll back to the previous revision.
+    4. Check Alert 3 (DB pool exhaustion) — pool saturation can cause startup probe failures.
+
+    **Uptime check ID**: backend-api-v1-live-406wNLiEo3Y
+    **Endpoint**: /api/v1/live (liveness probe, not readiness — DB issues are separate Alert 3)
+  mimeType: text/markdown

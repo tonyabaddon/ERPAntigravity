@@ -1,0 +1,38 @@
+displayName: "Frontend app.caleo.id root"
+monitoredResource:
+  type: uptime_url
+  labels:
+    host: app.caleo.id
+    project_id: gen-lang-client-0410251117
+httpCheck:
+  path: /
+  port: 443
+  useSsl: true
+  validateSsl: true
+  requestMethod: GET
+period: 60s
+timeout: 10s
+checkerType: STATIC_IP_CHECKERS
+
+# Resource name (created 2026-07-17):
+# projects/gen-lang-client-0410251117/uptimeCheckConfigs/frontend-app-caleo-id-root-_iGNn-hDUWQ
+#
+# Used by: alert-policies/alert-5-frontend-uptime.yaml
+#
+# What this catches:
+# - app.caleo.id DNS failure
+# - Cloudflare Worker routing failure
+# - SSL certificate expiry (GCP uptime check fails on cert errors)
+# - Cloud Run frontend container down
+#
+# To re-create:
+#   gcloud monitoring uptime create "Frontend app.caleo.id root" \
+#     --resource-type=uptime-url \
+#     --resource-labels="host=app.caleo.id,project_id=gen-lang-client-0410251117" \
+#     --path=/ \
+#     --port=443 \
+#     --protocol=https \
+#     --validate-ssl=true \
+#     --period=1 \
+#     --timeout=10 \
+#     --project=gen-lang-client-0410251117

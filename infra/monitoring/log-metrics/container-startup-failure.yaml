@@ -1,0 +1,27 @@
+name: container_startup_failure_count
+description: "Cloud Run container startup probe failures (STARTUP HTTP probe failed)"
+filter: 'resource.type="cloud_run_revision" severity=ERROR textPayload=~"STARTUP HTTP probe failed"'
+
+# Metric type: logging.googleapis.com/user/container_startup_failure_count
+# Used by: alert-policies/alert-7-container-startup-failure.yaml
+#
+# Filter verified 2026-07-17 against live logs:
+# - Filter uses UPPERCASE "STARTUP" — confirmed case-sensitive match works
+# - severity=ERROR confirmed for probe failure events (successes are INFO)
+# - Exact observed text: "STARTUP HTTP probe failed 12 times consecutively for
+#   container \"garindo-jaya-panel-msme-erp-1\" on port 8080 path \"/api/v1/ready\""
+# - Covers ALL Cloud Run services (no service_name filter) — staging failures help diagnose infra issues
+#
+# Deviation from R2 task spec: Task said filter on "startup probe" (lowercase, partial).
+# Actual text is "STARTUP HTTP probe failed" (uppercase). Filter uses exact case.
+# Also excludes textPayload=~"container failed to start" — this pattern was not observed in live logs;
+# the actual pattern is the STARTUP HTTP probe message above.
+#
+# If Alert 7 is too noisy from staging restarts, add:
+#   resource.labels.service_name!="garindo-jaya-panel-msme-erp-staging"
+#
+# To re-create:
+#   gcloud logging metrics create container_startup_failure_count \
+#     --description="Cloud Run container startup probe failures (STARTUP HTTP probe failed)" \
+#     --log-filter='resource.type="cloud_run_revision" severity=ERROR textPayload=~"STARTUP HTTP probe failed"' \
+#     --project=gen-lang-client-0410251117

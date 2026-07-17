@@ -1,0 +1,52 @@
+displayName: "Cloud Run 5xx rate spike"
+combiner: OR
+conditions:
+- displayName: "Backend prod 5xx count > 5 in 5min"
+  conditionThreshold:
+    filter: 'metric.type="run.googleapis.com/request_count" resource.type="cloud_run_revision" metric.labels.response_code_class="5xx" resource.labels.service_name="garindo-jaya-panel-msme-erp"'
+    comparison: COMPARISON_GT
+    thresholdValue: 5
+    duration: 300s
+    aggregations:
+    - alignmentPeriod: 300s
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+- displayName: "Frontend prod 5xx count > 5 in 5min"
+  conditionThreshold:
+    filter: 'metric.type="run.googleapis.com/request_count" resource.type="cloud_run_revision" metric.labels.response_code_class="5xx" resource.labels.service_name="garindo-jaya-panel-msme-erp-frontend"'
+    comparison: COMPARISON_GT
+    thresholdValue: 5
+    duration: 300s
+    aggregations:
+    - alignmentPeriod: 300s
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Cloud Run 5xx Rate Spike
+
+    More than 5 HTTP 5xx errors in 5 minutes from backend or frontend.
+    This catches: RPC panics, auth middleware failures, DB timeouts, startup probe 503s.
+
+    **Threshold**: >5 absolute 5xx count in 5 minutes (no ratio gate in this version;
+    the absolute count avoids false positives during off-hours low-traffic periods).
+
+    **Immediate action**:
+    1. Check which service triggered the alert (backend or frontend).
+    2. Review recent Cloud Run logs for the affected service.
+    3. Check recent deployments — a bad revision may have promoted.
+    4. If a bad revision: roll back to previous via Cloud Run console.
+
+    **Backend logs**:
+    https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%20resource.labels.service_name%3D%22garindo-jaya-panel-msme-erp%22?project=gen-lang-client-0410251117
+
+    **Frontend logs**:
+    https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%20resource.labels.service_name%3D%22garindo-jaya-panel-msme-erp-frontend%22?project=gen-lang-client-0410251117
+
+    **Note**: Staging services are excluded from this alert.
+    If threshold is too sensitive (off-hours noise), raise thresholdValue from 5 to 20.
+  mimeType: text/markdown

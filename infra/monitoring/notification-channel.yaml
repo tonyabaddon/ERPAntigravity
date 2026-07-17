@@ -1,0 +1,24 @@
+displayName: "Founder email — Tony"
+type: email
+labels:
+  email_address: tonywei.office@gmail.com
+enabled: true
+
+# Resource name (created 2026-07-17):
+# projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+#
+# IMPORTANT: GCP sends a verification email to tonywei.office@gmail.com.
+# Alerts fire immediately, but delivery is blocked until the email is verified.
+# Check Gmail (and spam folder) for the GCP verification link and click it.
+#
+# To re-create:
+#   gcloud alpha monitoring channels create \
+#     --display-name="Founder email — Tony" \
+#     --type=email \
+#     --channel-labels="email_address=tonywei.office@gmail.com" \
+#     --project=gen-lang-client-0410251117
+#
+# To verify status:
+#   gcloud alpha monitoring channels describe \
+#     projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972 \
+#     --project=gen-lang-client-0410251117

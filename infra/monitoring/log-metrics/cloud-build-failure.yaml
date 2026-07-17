@@ -1,0 +1,17 @@
+name: cloud_build_failure_count
+description: "Count of Cloud Build FAILURE events (any build trigger)"
+filter: 'resource.type="build" severity=ERROR'
+
+# Metric type: logging.googleapis.com/user/cloud_build_failure_count
+# Used by: alert-policies/alert-1-cloud-build-failure.yaml
+#
+# Filter verified 2026-07-17 against live logs:
+# - resource.type="build" AND severity=ERROR returns audit log entries
+#   where protoPayload.status.code=9 (FAILED)
+# - Log structure: cloudaudit.googleapis.com/activity entries
+#
+# To re-create:
+#   gcloud logging metrics create cloud_build_failure_count \
+#     --description="Count of Cloud Build FAILURE events (any build trigger)" \
+#     --log-filter='resource.type="build" severity=ERROR' \
+#     --project=gen-lang-client-0410251117

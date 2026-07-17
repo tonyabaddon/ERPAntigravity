@@ -1,0 +1,41 @@
+displayName: "DB pool exhaustion"
+combiner: OR
+conditions:
+- displayName: "db_pool_saturation_count > 0 in 5min"
+  conditionThreshold:
+    filter: 'metric.type="logging.googleapis.com/user/db_pool_saturation_count" resource.type="cloud_run_revision"'
+    comparison: COMPARISON_GT
+    thresholdValue: 0
+    duration: 300s
+    aggregations:
+    - alignmentPeriod: 300s
+      perSeriesAligner: ALIGN_COUNT
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Supabase DB Pool Exhaustion
+
+    The backend reported "remaining connection slots are reserved for roles with the SUPERUSER
+    attribute" — Supabase session pooler is saturated.
+
+    **Incident reference**: 2026-07-17 Bug C — pool exhaustion blocked all new connections,
+    failed new revision startup, and blocked MCP calls.
+
+    **Note**: The metric filter matches `jsonPayload.message` at severity=INFO (not ERROR).
+    This is correct — pool exhaustion errors log at INFO in the Go backend.
+
+    **Check backend logs**:
+    https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%20jsonPayload.message%3D~%22remaining%20connection%20slots%22?project=gen-lang-client-0410251117
+
+    **Immediate action**:
+    1. Check Supabase Dashboard → Database → Connection Pooler metrics.
+    2. Check Cloud Run backend concurrency — is max-instances too high?
+    3. If pool is saturated: temporarily reduce Cloud Run backend min-instances.
+    4. Long-term fix: migrate to session pooler endpoint (see incident doc 2026-07-17).
+
+    **After session-pooler migration**: This alert may go quiet. If zero fires for 2 weeks
+    post-pooler, consider raising threshold to >5.
+  mimeType: text/markdown

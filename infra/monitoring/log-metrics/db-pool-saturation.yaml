@@ -1,0 +1,25 @@
+name: db_pool_saturation_count
+description: "Supabase connection pool exhaustion (pq: remaining connection slots). Note: fires at severity=INFO per observed log structure."
+filter: 'resource.type="cloud_run_revision" jsonPayload.message=~"remaining connection slots"'
+
+# Metric type: logging.googleapis.com/user/db_pool_saturation_count
+# Used by: alert-policies/alert-3-db-pool-saturation.yaml
+#
+# Filter verified 2026-07-17 against live logs:
+# - Field is jsonPayload.message (NOT jsonPayload.error — R2 task spec had wrong field)
+# - Severity is INFO (NOT ERROR) — Postgres pq errors log at INFO in the Go backend
+# - Observed message: "[APPROVALS] expire error: pq: remaining connection slots are reserved
+#   for roles with the SUPERUSER attribute"
+# - No severity filter needed — jsonPayload.message match is sufficient
+#
+# Deviation from R2 task spec: Task said filter on jsonPayload.error + severity>=ERROR.
+# Actual log structure uses jsonPayload.message at severity=INFO. Filter adjusted.
+#
+# NOTE: After session-pooler migration, this may go quiet. Monitor for 2 weeks post-fix.
+# If zero fires after pooler, consider raising threshold to >5 or lowering severity.
+#
+# To re-create:
+#   gcloud logging metrics create db_pool_saturation_count \
+#     --description="Supabase connection pool exhaustion (pq: remaining connection slots)" \
+#     --log-filter='resource.type="cloud_run_revision" jsonPayload.message=~"remaining connection slots"' \
+#     --project=gen-lang-client-0410251117

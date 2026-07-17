@@ -1,0 +1,45 @@
+displayName: "Container startup failure"
+combiner: OR
+conditions:
+- displayName: "container_startup_failure_count > 0 in 10min"
+  conditionThreshold:
+    filter: 'metric.type="logging.googleapis.com/user/container_startup_failure_count" resource.type="cloud_run_revision"'
+    comparison: COMPARISON_GT
+    thresholdValue: 0
+    duration: 600s
+    aggregations:
+    - alignmentPeriod: 600s
+      perSeriesAligner: ALIGN_COUNT
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Container Startup Failure
+
+    A Cloud Run revision failed its startup probe. The failed revision is at 0% traffic
+    — the previous revision is still serving. But the new deployment did NOT succeed.
+
+    **Incident reference**: 2026-07-17 — revision 00295-p4t failed startup probe 12 times
+    due to pool exhaustion. Traffic never promoted (correctly), but the failure was completely silent.
+
+    **Log pattern**: "STARTUP HTTP probe failed N times consecutively for container..."
+    **Severity**: ERROR in Cloud Logging.
+
+    **Immediate action**:
+    1. Identify the failing revision in Cloud Run console:
+       https://console.cloud.google.com/run/detail/asia-southeast1/garindo-jaya-panel-msme-erp/revisions?project=gen-lang-client-0410251117
+    2. Click the failing revision → Logs tab → look for the startup probe error body.
+    3. Common causes:
+       - DB pool exhaustion (check Alert 3 — fired at same time?)
+       - Application crash on startup (nil pointer, missing env var)
+       - Secret not accessible (Secret Manager permission issue)
+    4. Fix the root cause, push a new commit to redeploy.
+
+    **Scope**: All Cloud Run services (prod + staging). Startup failures on staging also
+    indicate infra-layer issues worth knowing about.
+
+    **If staging fires too often**: Update filter to exclude staging:
+    resource.labels.service_name!="garindo-jaya-panel-msme-erp-staging"
+  mimeType: text/markdown

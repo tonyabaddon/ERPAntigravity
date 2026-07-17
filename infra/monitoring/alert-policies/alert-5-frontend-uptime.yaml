@@ -1,0 +1,43 @@
+displayName: "Frontend app.caleo.id down"
+combiner: OR
+conditions:
+- displayName: "Frontend uptime check failing"
+  conditionThreshold:
+    filter: 'metric.type="monitoring.googleapis.com/uptime_check/check_passed" resource.type="uptime_url" metric.labels.check_id="frontend-app-caleo-id-root-_iGNn-hDUWQ"'
+    comparison: COMPARISON_LT
+    thresholdValue: 1
+    duration: 120s
+    aggregations:
+    - alignmentPeriod: 60s
+      perSeriesAligner: ALIGN_NEXT_OLDER
+      crossSeriesReducer: REDUCE_COUNT_TRUE
+      groupByFields:
+      - resource.labels.host
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Frontend app.caleo.id Down
+
+    The production frontend URL is not returning 200.
+    Check: https://app.caleo.id/
+
+    **What this may indicate**:
+    - DNS failure for app.caleo.id
+    - Cloudflare Worker routing failure (app.caleo.id → Cloud Run)
+    - SSL certificate expiry
+    - Cloud Run frontend container down
+    - Network path failure between Cloudflare and Cloud Run
+
+    **Immediate action**:
+    1. Open https://app.caleo.id/ in a browser — confirm the error type.
+    2. Check Cloud Run frontend status:
+       https://console.cloud.google.com/run/detail/asia-southeast1/garindo-jaya-panel-msme-erp-frontend/revisions?project=gen-lang-client-0410251117
+    3. Check Cloudflare dashboard for Worker errors.
+    4. Check SSL cert expiry in browser (click the lock icon).
+    5. If frontend Cloud Run is healthy but Cloudflare fails, roll back Cloudflare Worker.
+
+    **Uptime check ID**: frontend-app-caleo-id-root-_iGNn-hDUWQ
+  mimeType: text/markdown

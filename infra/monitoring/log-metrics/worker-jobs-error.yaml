@@ -1,0 +1,19 @@
+name: worker_jobs_error_count
+description: "[JOBS] worker errors from Cloud Run backend (excludes WA HEARTBEAT/FOLLOWUP noise)"
+filter: 'resource.type="cloud_run_revision" jsonPayload.message=~"^\[JOBS\]" severity>=ERROR'
+
+# Metric type: logging.googleapis.com/user/worker_jobs_error_count
+# Used by: alert-policies/alert-2-worker-jobs-error.yaml
+#
+# Filter verified 2026-07-17 against live logs:
+# - Field is jsonPayload.message (NOT jsonPayload.msg — confirmed by sampling)
+# - WA noise ([HEARTBEAT], [FOLLOWUP] prefixes) does NOT match ^\[JOBS\]
+# - Real worker errors: "[JOBS] claim_next_job scan failed", "[JOBS] worker context cancelled"
+#
+# WARNING: Do not change prefix match if a [JOBS] WA integration is added.
+#
+# To re-create:
+#   gcloud logging metrics create worker_jobs_error_count \
+#     --description="[JOBS] worker errors from Cloud Run backend (excludes WA HEARTBEAT/FOLLOWUP noise)" \
+#     --log-filter='resource.type="cloud_run_revision" jsonPayload.message=~"^\[JOBS\]" severity>=ERROR' \
+#     --project=gen-lang-client-0410251117

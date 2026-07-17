@@ -1,0 +1,34 @@
+displayName: "Cloud Build — Any failure"
+combiner: OR
+conditions:
+- displayName: "cloud_build_failure_count > 0 in 5min"
+  conditionThreshold:
+    filter: 'metric.type="logging.googleapis.com/user/cloud_build_failure_count" resource.type="build"'
+    comparison: COMPARISON_GT
+    thresholdValue: 0
+    duration: 300s
+    aggregations:
+    - alignmentPeriod: 300s
+      perSeriesAligner: ALIGN_COUNT
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Cloud Build Failure
+
+    A Cloud Build pipeline failed. Check the build console for details:
+    https://console.cloud.google.com/cloud-build/builds?project=gen-lang-client-0410251117
+
+    **Scope**: Any build trigger (frontend + backend).
+
+    **Incident reference**: 2026-07-17 — 8 silent build failures over 40 minutes.
+
+    **Immediate action**:
+    1. Open the link above, find the FAILURE status builds.
+    2. Click the failing build → check step-by-step logs.
+    3. Fix the root cause (broken test, missing file, compile error).
+    4. Push a fix commit to re-trigger the build.
+    5. Verify the next build shows SUCCESS before moving on.
+  mimeType: text/markdown

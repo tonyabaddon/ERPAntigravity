@@ -1,0 +1,35 @@
+displayName: "Worker [JOBS] error loop"
+combiner: OR
+conditions:
+- displayName: "worker_jobs_error_count > 5 in 5min"
+  conditionThreshold:
+    filter: 'metric.type="logging.googleapis.com/user/worker_jobs_error_count" resource.type="cloud_run_revision"'
+    comparison: COMPARISON_GT
+    thresholdValue: 5
+    duration: 300s
+    aggregations:
+    - alignmentPeriod: 300s
+      perSeriesAligner: ALIGN_COUNT
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Worker [JOBS] Error Loop
+
+    The backend worker (P2-E job queue) is emitting [JOBS] errors at a high rate.
+    At a 5-second poll interval, a stuck worker generates ~60 errors/5min.
+    Threshold is >5 errors in 5 minutes to skip transient network hiccups.
+
+    **Incident reference**: 2026-07-17 Bug B — `claim_next_job` errored every 5s for 5 minutes.
+
+    **Check backend logs**:
+    https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%20jsonPayload.message%3D~%22%5C%5BJOBS%5C%5D%22?project=gen-lang-client-0410251117
+
+    **Immediate action**:
+    1. Check the [JOBS] error message — `claim_next_job scan failed` usually means a SQL issue.
+    2. Check recent migrations for ambiguous column references or constraint violations.
+    3. Check Supabase DB health at https://supabase.com/dashboard
+    4. If worker is in a tight loop, redeploy the backend to reset state.
+  mimeType: text/markdown
