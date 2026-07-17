@@ -1,5 +1,56 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Sub A: admin.caleo.id routing + staging subdomain rename + FP-1 + cookie — DONE
+
+**What**: Phase 1 finalization Sub A — 5 parts:
+
+**A1 — FE hostname detection** (`src/App.tsx`):
+- Added `isAdminHostname` check BEFORE auth gate; admin.caleo.id + staging.admin.caleo.id auto-redirect to `/admin` if not already there.
+- No infinite redirect: once pathname starts with `/admin`, check is skipped.
+
+**A2 — Cloud Run domain mapping**:
+- `gcloud beta run domain-mappings create --domain=admin.caleo.id --service=garindo-jaya-panel-msme-erp-frontend` — created, Google-managed SSL provisioning started.
+
+**A3 — DNS + Worker cutover for admin.caleo.id**:
+- Deleted AAAA `admin.caleo.id → 100::` (CF proxied).
+- Added CNAME `admin.caleo.id → ghs.googlehosted.com` (DNS-only, proxied=false).
+- Deleted Worker route `admin.caleo.id/*` from caleo-placeholder.
+- Updated Worker source: removed `admin.caleo.id` branch.
+
+**A4 — Staging subdomain rename**:
+- `staging.caleo.id` → `staging.app.caleo.id`: deleted old AAAA + Worker route; added new AAAA `100::` (proxied) + new Worker route → caleo-placeholder.
+- `admin.staging.caleo.id` → `staging.admin.caleo.id`: deleted old Cloud Run mapping + CNAME; created new Cloud Run mapping (`caleo-placeholder-admin-staging`) + new CNAME (DNS-only).
+- Worker source updated: `staging.caleo.id` branch renamed to `staging.app.caleo.id`; `admin.staging.caleo.id` branch renamed to `staging.admin.caleo.id`.
+
+**A5 — FP-1 migration script** (`scripts/apply-migration.sh`):
+- Multi-target: `SUPABASE_PROJECT_REF=<ref> ./scripts/apply-migration.sh <slot>`.
+- Finds migration file by slot number, applies via Supabase Management API.
+- Usage documented in plan appendix.
+
+**A6 — Cross-subdomain cookie investigation**:
+- `GET /v1/projects/{ref}/config/auth` — **no `cookie_domain` field**. Not configurable via API.
+- Added admin.caleo.id + staging subdomains to Supabase URI allowlist (Redirect URLs).
+- Decision: accept separate login UX for now; @supabase/ssr refactor deferred to Phase 3+.
+- See appendix in `docs/superpowers/specs/2026-07-17-phase-1-2-final-plan.md`.
+
+**Async pending**: `admin.caleo.id` Google-managed SSL cert (5–15 min from mapping creation). `staging.admin.caleo.id` SSL cert (15–45 min). Both are async — Sub A is otherwise complete.
+
+**Updated subdomain matrix post-Sub-A**:
+| Subdomain | Status | Serving | SSL |
+|---|---|---|---|
+| caleo.id | ✅ 200 | Cloudflare Worker | Universal |
+| www.caleo.id | ✅ 200 | Cloudflare Worker | Universal |
+| app.caleo.id | ✅ 200 (ERP) | Cloud Run frontend | Google-managed |
+| admin.caleo.id | 🟡 DNS-only CNAME live, SSL provisioning | Cloud Run frontend | Google-managed (async ~15 min) |
+| staging.app.caleo.id | ✅ 200 | Cloudflare Worker placeholder | Universal |
+| staging.admin.caleo.id | 🟡 Cloud Run mapping created, SSL provisioning | Cloud Run placeholder | Google-managed (async ~30 min) |
+| caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal |
+| www.caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal |
+
+**Old subdomains decommissioned**: `staging.caleo.id` (DNS + Worker deleted), `admin.staging.caleo.id` (mapping + CNAME deleted).
+
+---
+
 ## 2026-07-17 — Sub B: CI/CD Test Gate + Cloud Build Notifications — DONE
 
 **What**: Added CI test gate to `cloudbuild.frontend.yaml` (first step before docker build). Fixed 6 stale unit tests, skipped 2 obsolete stub tests. Updated Cloud Build trigger to include logs with GitHub commit status.

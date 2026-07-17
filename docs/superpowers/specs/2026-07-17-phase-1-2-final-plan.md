@@ -265,8 +265,37 @@ Task 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17
 - **PII in logs audit** — founder explicitly deferred earlier, respect
 - **Chaos testing, 100-tenant load test** — Phase 4
 
+## Appendix: FP-1 migration script
+
+`scripts/apply-migration.sh` — apply any migration slot to any Supabase project ref.
+
+```bash
+# Apply slot 316 to prod
+source .env
+SUPABASE_PROJECT_REF=ekhhojaezdfjfwuxyjkl ./scripts/apply-migration.sh 316
+
+# Apply slot 316 to staging project
+SUPABASE_PROJECT_REF=<staging-ref> ./scripts/apply-migration.sh 316
+```
+
+Requires `SUPABASE_ACCESS_TOKEN` (Supabase Management API PAT) and `SUPABASE_PROJECT_REF`. Both available after `source .env`.
+
+## Appendix: Cross-subdomain session cookie (A6 finding)
+
+**Supabase Management API does NOT expose `cookie_domain`** for hosted projects. Confirmed 2026-07-17 via `GET /v1/projects/{ref}/config/auth` — no `cookie_domain` field in response.
+
+**Impact**: Supabase client sessions (localStorage + in-memory) are NOT automatically shared between `app.caleo.id` and `admin.caleo.id`. Admin users must log in separately on `admin.caleo.id`.
+
+**Workaround options** (in order of complexity):
+1. **Manual Dashboard** — Go to Supabase Dashboard → Authentication → Settings → Cookie Domain → set `.caleo.id`. Requires Supabase Support (hosted plans may not expose this).
+2. **@supabase/ssr refactor** — Move to server-side session management with httpOnly cookies on `.caleo.id` domain. Deferred to Phase 3+.
+3. **Accept the UX** — Admin users log in on both subdomains. At current scale (founders + 1-2 ops staff), acceptable.
+
+**Current decision**: Accept separate login UX for now. Admin panel is internal-only. Revisit when @supabase/ssr refactor is done.
+
 ## Change log
 
 | Date | Change | Author |
 |---|---|---|
 | 2026-07-17 | Initial end-to-end plan post overnight sessions + audit findings | Claude + Founder |
+| 2026-07-17 | Sub A executed: admin.caleo.id Cloud Run + DNS cutover, staging subdomain rename, FP-1 script, cookie investigation | Claude |

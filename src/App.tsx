@@ -902,6 +902,18 @@ export default function App() {
   // Detail-tab detection: route carries po param and we want a chromeless shell.
   const isDetailTab = route.screen === 'pembelian' && route.params.po != null;
 
+  // ── Hostname-based admin routing (admin.caleo.id + staging.admin.caleo.id) ──
+  // Must run BEFORE auth gate so the URL is always /admin/* on admin hostnames,
+  // regardless of auth state. No infinite loop: once pathname starts with /admin
+  // this branch is skipped.
+  const isAdminHostname =
+    window.location.hostname === 'admin.caleo.id' ||
+    window.location.hostname === 'staging.admin.caleo.id';
+  if (isAdminHostname && !window.location.pathname.startsWith('/admin')) {
+    window.location.replace('/admin');
+    return null;
+  }
+
   // Switch to Auth Screen if no session active. activePage no longer encodes
   // 'auth' (URL never carries ?screen=auth) — gate purely on currentUser.
   if (!currentUser) {
