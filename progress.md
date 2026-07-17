@@ -13999,3 +13999,25 @@ Recommend Option A. No action needed now.
 7. **Founder**: Once B-1 done, ping to continue Task 10+
 
 **Phase 1 progress**: 9 of 17 tasks complete (53%). On track for 2-week timeline if founder unblocks B-1 in morning.
+
+**2026-07-17 morning update — B-1 RESOLVED, B-2 SSL provisioning**:
+
+**B-1: `app.caleo.id` LIVE serving ERP**
+- Founder verified Google Search Console TXT for `caleo.id` domain property
+- Domain mapping created: `app.caleo.id → garindo-jaya-panel-msme-erp-frontend` (project `gen-lang-client-0410251117`)
+- SSL cert auto-provisioned by Google Trust Services (issuer: WR3)
+- `curl -sI https://app.caleo.id/` → HTTP/2 200 + serves ERP index.html (content-disposition: inline)
+- Bundle contains all Tasks 1-9 code confirmed via grep for `IntersectionObserver`, `createSignedUrl`, `tenants/${n}/products` — all present
+
+**Key learning**: Actual GCP project name is `gen-lang-client-0410251117` (Google-auto-generated Gemini project name), NOT `garindo-jaya-panel-msme-erp` which is just the SERVICE name. Both Garindo + Sinar Elektrik + Toko Jaya + Warung Sinar Rezeki all live in the same GCP project.
+
+**B-2: `admin.staging.caleo.id` — Cloud Run + Google-managed SSL (in progress)**
+- Founder approved Option F: use Cloud Run for 4th-level SSL (zero-cost, dot-preserved, scalable)
+- Subagent commit `fdc3df0`: created `caleo-placeholder-admin-staging` Cloud Run service (128Mi, scaled-to-zero), deployed placeholder HTML, domain mapping created, Cloudflare DNS CNAME + Worker route cleaned up
+- SSL cert issuance async (Google ACME challenge in progress via new CNAME → ghs.googlehosted.com)
+- Background poller running every 90s, up to 60 min max
+- Currently: DomainRoutable=True, CertificateProvisioned=Unknown (expected 15-45 min from 03:24 UTC)
+
+**Task 3 status update: 95% complete**
+- Only remaining: wait for admin.staging.caleo.id SSL cert provision (async)
+- Once cert done + curl 200 verified, Task 3 fully closed
