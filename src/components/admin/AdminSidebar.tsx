@@ -11,6 +11,7 @@ import {
   UsersRound,
   Banknote,
   ClipboardCheck,
+  DollarSign,
 } from 'lucide-react';
 import { isSuperAdmin } from '../../lib/adminAuth';
 import { paymentVerificationApi } from '../../lib/paymentVerificationApi';
@@ -72,6 +73,12 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/settings/payment',
     label: 'Pengaturan Pembayaran',
     icon: <Banknote size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
+  },
+  {
+    to: '/admin/billing',
+    label: 'Biaya Tenant',
+    icon: <DollarSign size={16} strokeWidth={1.8} strokeLinecap="round" />,
     superAdminOnly: true,
   },
   {

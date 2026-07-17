@@ -1,5 +1,43 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — P2-A: Cost tracking per tenant MVP — DONE
+
+**What**: Per-tenant cost signals dashboard at `/admin/billing` (Phase 2 item 1).
+
+**Schema**: `t_tenant_cost_daily (tenant_id, usage_date) PRIMARY KEY` — tracks Gemini tokens, Cloud Run requests, storage bytes per tenant per day. RLS: tenants read own, platform_admin reads all, vosi_rpc_owner unrestricted (SECDEF gap fix).
+
+**Backfill RPC**: `backfill_tenant_cost_daily(date)` — aggregates `storage.objects` by `tenants/{uuid}/` path prefix into the table. SECURITY DEFINER, platform_admin gate, idempotent ON CONFLICT upsert. `SET search_path = public, storage`.
+
+**Dashboard**: `/admin/billing` — super_admin gated. Shows all active tenants LEFT JOIN cost data (zeros for tenants without data). Outlier detection: >3× median flagged with banner. Date picker, "Refresh Storage" backfill button. Cost estimates: Gemini $0.075/1M input + $0.30/1M output; Storage >1GB at $0.021/GB/month.
+
+**Gemini call count deferred**: `llm_calls` table has no `tenant_id` column (conversation→whatsapp_numbers path also lacks it). Instrumentation is a follow-up task — noted in dashboard footnote.
+
+**Migration**: slot 318 (`20261115000318_tenant_cost_daily.sql`).
+
+**Playwright test**: added to `phase1-authenticated.spec.ts` — verifies `/admin/billing` renders dashboard, date picker, backfill button, and at least one cost row or empty state.
+
+**Verification**: lint clean, audits clean, 967 tests pass, RLS smoke tests confirm unauthorized callers get P0403, all 3 policies in place, storage regex matches 1 tenant live.
+
+## 2026-07-17 — Playwright authenticated E2E tests — DONE
+
+**What**: Extended Playwright suite with session-injected authenticated flows (Phase 1 coverage gap closed).
+
+**Test users created** (via direct SQL, idempotent):
+- `playwright-toko-owner@caleo.id` (UUID `aaaaaaaa-0001-…`) — Toko Jaya Makmur owner; rows in auth.users + auth.identities + tenant_users + admin_users
+- `playwright-admin@caleo.id` (UUID `aaaaaaaa-0002-…`) — platform super_admin; rows in auth.users + auth.identities + platform_admins
+
+**Key discovery**: GoTrue scanner fails on NULL string columns (`confirmation_token` etc.) → must set all token columns to `''` not NULL. Also: `admin.caleo.id` redirect race requires navigating directly to `/admin` before `page.evaluate()`.
+
+**Results**: 8/8 tests pass against prod (35.8s). Tenant dashboard, tenant name assertion, kasir screen, sidebar, admin shell, /admin Beranda heading, /admin/tenants list, admin console errors.
+
+**Files**: `tests/e2e/fixtures/auth.ts`, `tests/e2e/tests/phase1-authenticated.spec.ts`, `tests/e2e/playwright.prod.config.ts`. Credentials in `.env` (git-ignored).
+
+**CI**: Auth tests auto-skip if `PLAYWRIGHT_TOKO_EMAIL` not set — Cloud Build unaffected. Local run: `set -a && source .env && set +a && cd tests/e2e && npm run test:auth`
+
+Full report: `.superpowers/sdd/playwright-auth-report.md`
+
+---
+
 ## 2026-07-17 — Sub C: kasir_transactions composite PK + record_pembayaran cleanup — DONE
 
 **What**: Phase 1 finalization Sub C (final sub). Migrations 316 + 317.

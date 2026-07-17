@@ -16,6 +16,7 @@ import { TenantWizard } from './TenantWizard';
 import { SalesRepsList } from './SalesRepsList';
 import { PlatformSettings } from './PlatformSettings';
 import { PendingPaymentsQueue } from './PendingPaymentsQueue';
+import { CostDashboard } from './CostDashboard';
 import { isSuperAdmin } from '../../lib/adminAuth';
 
 // Sub-paths that require super_admin (not just any platform_admin). Backend
@@ -30,6 +31,8 @@ const SUPER_ADMIN_ONLY_PATHS = new Set([
   '/admin/settings/payment/',
   '/admin/revenue',
   '/admin/revenue/',
+  '/admin/billing',
+  '/admin/billing/',
 ]);
 
 function SuperAdminGate({ children }: { children: React.ReactNode }) {
@@ -95,6 +98,9 @@ function resolveAdminContent(pathname: string): React.ReactNode {
   }
   if (pathname === '/admin/settings/payment' || pathname === '/admin/settings/payment/') {
     return <PlatformSettings />;
+  }
+  if (pathname === '/admin/billing' || pathname === '/admin/billing/') {
+    return <CostDashboard />;
   }
   // Unknown sub-path — fallback to home
   return <AdminHome />;
