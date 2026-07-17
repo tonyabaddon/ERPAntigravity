@@ -1,5 +1,34 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Sub B: CI/CD Test Gate + Cloud Build Notifications — DONE
+
+**What**: Added CI test gate to `cloudbuild.frontend.yaml` (first step before docker build). Fixed 6 stale unit tests, skipped 2 obsolete stub tests. Updated Cloud Build trigger to include logs with GitHub commit status.
+
+**CI gate step** (runs before docker build on every push to main):
+- `npm ci --prefer-offline` → install deps
+- `npm run lint` → TypeScript type-check
+- `npm run audit:numinput` → no unsafe Number(e.target.value) patterns
+- `npm run audit:secdef-null-tenant` → no SECDEF INSERTs with NULL tenant_id
+- `npm test` → vitest run src (967 tests, 2 skipped, exit 0)
+
+If any step fails → Cloud Build fails at step 0, docker build never runs, no deploy.
+
+**Test fixes (root causes)**:
+- `productWrappers.test.ts` ×3 — mock used `supabase.from()` but code migrated to `supabase.rpc('admin_upsert_product')`
+- `mutations.test.ts` ×1 — mock missing `.not()` method; assertion checked `.eq()` for function that uses `.not()`
+- `TenantsList.test.tsx` ×2 — RPC returns `out_*` prefixed columns but mock returned unprefixed; used `getByTitle` (sync) when `canImpersonate` state is async
+- `AdminRoutes.test.tsx` ×2 — skipped (stub placeholder text "Beranda Admin.*Task 8" from old dev scaffolding; real components don't have this text)
+
+**vite.config.ts**: Added `.claude/**` to vitest exclude list — prevents 22 local worktrees (gitignored) from being scanned during `npx vitest run`
+
+**Cloud Build trigger**: Added `includeBuildLogs: INCLUDE_BUILD_LOGS_WITH_STATUS` to `sinar-elektrik-frontend` trigger — build failures now link to full logs in GitHub commit status (email to tonywei.office@gmail.com)
+
+**Verified**: Build `1312de71` (2026-07-17 04:31 UTC) — all 5 steps SUCCESS including new CI gate step
+
+**Commit**: `2a591e0` | **Report**: `.superpowers/sdd/sub-b-report.md`
+
+---
+
 ## 2026-07-17 — B-2: admin.staging.caleo.id 4th-Level SSL Fix — DONE (cert provisioning async)
 
 **Root cause:** Cloudflare Universal SSL Free only covers up to 3 DNS levels. `admin.staging.caleo.id` (4th level) had no valid cert.
