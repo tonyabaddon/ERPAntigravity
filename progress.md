@@ -14600,3 +14600,126 @@ Memory: `supabase-split-pool` (new). `supabase-session-pooler` marked SUPERSEDED
 
 ## Ready for next work
 Tasks 13-17 per Phase-2-final-plan doc.
+
+---
+
+# 🏁 SESSION LEDGER — 2026-07-18 (through session end)
+
+**Duration**: ~2 calendar days (2026-07-17 morning → 2026-07-18 early morning). **50 commits total** across Phase 2 + Tasks 10-16.
+
+## Shipped by feature area
+
+### Phase 2
+- **P2-A** cost tracking MVP + /admin/billing dashboard (verified in prod)
+- **P2-B** per-tenant rate limiting (token bucket middleware in Go backend)
+- **P2-C R1** audit gap survey (97 sensitive RPCs, 30% audited baseline)
+- **P2-C R2** kasir/tempo/pembayaran audit + audit_log.tenant_id + drop broken submit_rakit_lock
+- **P2-E** async job queue infra (t_jobs, worker, migrations 320-323)
+- ~~P2-D~~ skipped (YAGNI, 0 tenant demand)
+
+### Bundle B-F (monitoring completion)
+- audit_log retention (prune_audit_log, 180-day) — mig 328
+- scheduler_backfill_tenant_cost_daily — mig 329
+- Cost backfill + audit prune wired into daily backup job
+- Whatsmeow WA store pool cap (3 conns)
+- Cost budget alert documented (founder manual)
+- Alert 6 ratio fix (ALIGN_SUM instead of ALIGN_RATE)
+
+### Task 10 monitoring baseline
+- 9 alert policies (Cloud Build failure, worker error, DB pool, backend uptime, frontend uptime, 5xx spike, container startup, backup missing 24.5h, CSP violations spike)
+- 5 log-based metrics (cloud_build_failure_count, worker_jobs_error_count, db_pool_saturation_count, container_startup_failure_count, csp_violation_count)
+- 2 uptime checks (backend /api/v1/live + frontend /)
+- 1 email notification channel (Founder email — Tony)
+
+### Task 12 data recovery
+- Daily pg_dump backup via Cloud Scheduler + Cloud Run Job → GCS (caleo-backups-gen-lang-client-0410251117)
+- 30-day retention lifecycle
+- Restore runbook (3 scenarios, docs/runbooks/restore-from-backup.md)
+- Rollback runbook (6 scenarios, docs/runbooks/rollback-procedures.md)
+- Rehearsal: 2 min actual RTO vs 30 min SLA target
+
+### Task 14 FE resilience
+- AppErrorBoundary at src/components/errors/AppErrorBoundary.tsx
+- NotFound at src/components/errors/NotFound.tsx
+- Gap fix: added not-found sentinel to ActivePage type + urlRoute.ts fallbacks (initial version was dead code)
+- 4 regression tests for parseRoute unknown-path handling
+- Playwright verification passed against prod
+
+### Task 15 Vosi → Caleo rebrand
+- 28 UI-visible string changes across 16 files (subagent-driven)
+- Gap fix: TenantDetailShell URL vosi.id → app.caleo.id/t/
+- Gap fix: Calista fallback prompt toko Vosi → toko ini
+- Gap fix: tripwire.go URL whitelist vosi.* → caleo.*
+- Multi-tenant Calista prompt refactor documented as Phase 3 follow-up (memory: calista-prompt-multitenant-refactor)
+
+### Task 16 email + security
+- Cloudflare Email Routing (6 rules: support, info, hello, admin, no-reply, catch-all → tonywei.office@gmail.com)
+- Resend transactional email (caleo.id domain verified — DKIM+SPF+MX via CF API)
+- Supabase Auth SMTP → Resend (OTPs from Caleo <no-reply@caleo.id>)
+- Security headers on FE Cloud Run (6 headers, 4 subdomains) via serve.json
+- Security headers on backend Cloud Run (5 headers, JSON API) via Go middleware
+- CSP report endpoint at /api/v1/security/csp-report
+- HSTS on caleo.id root + www via CF zone settings
+- HTTP→HTTPS redirect via CF Always Use HTTPS
+- DMARC record on caleo.id
+- HSTS preload submitted (status: pending in Chromium queue)
+- Landing (caleo.id + www) full 6 security headers via CF Transform Rules
+
+### Infra / architecture / security
+- Split-pool DB refactor (backend uses txn pooler for queries + direct for pq.Listener) — real fix for Bug D
+- SUPABASE_DB_CONNECTION moved from plaintext env → GCP Secret Manager
+- Staging Playwright config restricted to staging-smoke.spec.ts (unblocked 8 chained deploy failures)
+- Session pooler migration (superseded by split-pool)
+- claim_next_job #variable_conflict use_column fix (mig 323)
+
+## Bugs found + fixed (4 today, all via audit)
+- **Bug A** staging Playwright missing testMatch (8 silent build failures)
+- **Bug B** claim_next_job ambiguous column reference
+- **Bug C** Supabase pool exhaustion + plaintext DB env
+- **Bug D** session pooler 15-client cap — fixed via split-pool architecture
+
+Incident memo: `docs/incidents/2026-07-17-phase2-silent-deploy-failures.md`
+
+## Memories added (7)
+- feedback_deploy_verify_after_push
+- project_supabase_session_pooler (later marked SUPERSEDED)
+- project_supabase_split_pool
+- project_calista_prompt_multitenant
+
+## Runbooks added (3 in docs/runbooks/)
+- restore-from-backup.md
+- rollback-procedures.md
+- (docs/tenant-onboarding-runbook.md pre-existing)
+
+## Design specs written (5)
+- 2026-07-17-p2-c-audit-coverage-gaps.md
+- 2026-07-17-task-10-monitoring-baseline-design.md
+- 2026-07-17-task-11-sentry-design.md (design only — Sentry code deferred)
+- 2026-07-17-split-pool-design.md
+- 2026-07-18-task-16-security-headers-design.md
+
+## Deferred deliberately
+- P2-D per-tenant export (YAGNI at 3 tenants)
+- Task 11 Sentry (needs founder Sentry account signup)
+- Task 13 cold-start / load test / feature flags (over-engineered for 3 tenants; feature flags already exist via tenant_settings.modul_*)
+- Task 15 legal docs (Privacy Policy / ToS — needs Termly + founder)
+- Task 16 Firebase deploy (needs Caleo landing content)
+- Task 17 DNS cutover (blocked on Firebase)
+- Multi-tenant Calista prompt refactor (blocker only at N=2)
+- CSP enforce flip (scheduled ~24h from now after Alert 9 baseline)
+
+## Pending founder actions (all optional, none prod-blocking)
+1. Click GCP email verification link (unlocks 9 alerts email delivery)
+2. Create $10/mo Cloud Billing budget via Console (CLI got INVALID_ARGUMENT)
+3. Check Gmail Inbox+Spam for 2 Task 16 D verification emails
+4. (Optional) Rotate DB password via Supabase Dashboard
+5. (When ready) Sign up for Sentry → paste DSN → I ship Task 11
+6. (When designed) Caleo landing content → I ship Task 17 Firebase deploy + DNS cutover
+
+## Prod state summary
+- Backend: garindo-jaya-panel-msme-erp revision 00330+ (split-pool, security headers, CSP endpoint)
+- FE: garindo-jaya-panel-msme-erp-frontend serving app+admin+staging (security headers via serve.json)
+- Landing: Cloudflare Worker with 6 security headers via Transform Rules
+- Health: /api/v1/live + /api/v1/ready both 200
+- 3 tenants: Garindo Jaya Panel, Toko Jaya Makmur, Warung Sinar Rezeki
+- Zero-cost stack: Cloud Run + Supabase Free + Cloudflare Free + Resend Free + GCS Free tier
