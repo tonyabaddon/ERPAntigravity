@@ -1,0 +1,17 @@
+name: csp_violation_count
+description: "Task 16 addendum: CSP violation reports received at /api/v1/security/csp-report"
+filter: 'resource.type="cloud_run_revision" AND resource.labels.service_name="garindo-jaya-panel-msme-erp" AND jsonPayload.message=~"CSP-REPORT"'
+
+# Metric type: logging.googleapis.com/user/csp_violation_count
+# Wired via: infra/monitoring/alert-policies/alert-9-csp-violations.yaml
+#
+# jsonPayload.message (not textPayload or jsonPayload.msg) is where Go slog.Warn
+# lands in Cloud Logging for this project — verified 2026-07-18 with a real
+# POST to the CSP endpoint. If future field-name changes silently break this,
+# no violations will be counted and the alert never fires.
+#
+# To re-create:
+#   gcloud logging metrics create csp_violation_count \
+#     --description="Task 16 addendum: CSP violation reports received at /api/v1/security/csp-report" \
+#     --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="garindo-jaya-panel-msme-erp" AND jsonPayload.message=~"CSP-REPORT"' \
+#     --project=gen-lang-client-0410251117

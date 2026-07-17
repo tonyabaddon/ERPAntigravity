@@ -1,0 +1,34 @@
+alertStrategy:
+  autoClose: 604800s
+combiner: OR
+conditions:
+- conditionThreshold:
+    aggregations:
+    - alignmentPeriod: 900s
+      perSeriesAligner: ALIGN_SUM
+    comparison: COMPARISON_GT
+    duration: 0s
+    filter: metric.type="logging.googleapis.com/user/csp_violation_count" resource.type="cloud_run_revision"
+    thresholdValue: 10.0
+  displayName: csp_violation_count > 10 in 15min window
+  name: projects/gen-lang-client-0410251117/alertPolicies/3991888688529449258/conditions/3991888688529452927
+creationRecord:
+  mutateTime: '2026-07-17T19:13:55.593163915Z'
+  mutatedBy: tinythinkers.co.id@gmail.com
+displayName: CSP violations spike (>10 in 15min)
+documentation:
+  content: |
+    CSP violation reports are pouring in at >10 in 15 min.
+    This means real users are hitting CSP restrictions. Likely causes:
+    - New script/style source not listed in serve.json CSP
+    - CSP flipped to enforcing without full observation
+    - Tenant browser extension injecting content
+    Check: gcloud logging read "resource.type=cloud_run_revision AND jsonPayload.message=~\"CSP-REPORT\"" --limit=20
+  mimeType: text/markdown
+enabled: true
+mutationRecord:
+  mutateTime: '2026-07-17T19:13:55.593163915Z'
+  mutatedBy: tinythinkers.co.id@gmail.com
+name: projects/gen-lang-client-0410251117/alertPolicies/3991888688529449258
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
