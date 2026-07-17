@@ -3,6 +3,11 @@ build/
 dist/
 coverage/
 .DS_Store
+
+# Playwright E2E test artifacts
+tests/e2e/node_modules/
+tests/e2e/test-results/
+tests/e2e/playwright-report/
 *.log
 .env*
 !.env.example
