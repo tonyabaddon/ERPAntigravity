@@ -271,6 +271,18 @@ func main() {
 			"has_qr":        waClient.GetQR() != "",
 		})
 	})
+	// P2-B: Rate limit middleware — constructed before the server starts.
+	// Uses a lazy getter for *sql.DB because the DB retry loop runs AFTER the
+	// HTTP server goroutine is spawned. During the startup window (dbClient==nil)
+	// the getter returns nil and loadRateConfig falls back to the safe default
+	// (100 req/s). Health probes bypass rate limiting entirely regardless.
+	rateLimiter := api.NewRateLimitMiddleware(func() *sql.DB {
+		if dbClient == nil {
+			return nil
+		}
+		return dbClient.DB
+	})
+
 	// Bind port synchronously so Cloud Run startup probe passes even if
 	// subsequent init (DB, WA) fails or hangs. net.Listen reserves the port
 	// in the OS before we do anything else.
@@ -281,11 +293,14 @@ func main() {
 	}
 	go func() {
 		slog.Info("[MAIN] HTTP server starting", slog.String("port", cfg.Port))
-		// RequestContextMiddleware wraps all requests to extract tenant_id/user_id/
-		// request_id from JWT + X-Request-Id header into the request context so
-		// every slog.InfoContext / slog.ErrorContext call in handlers emits those
-		// fields as structured jsonPayload fields in Cloud Logging.
-		if err := http.Serve(ln, api.RequestContextMiddleware(api.VersionRouter(mux))); err != nil {
+		// Middleware layer order (outermost → innermost):
+		//   1. RequestContextMiddleware — extracts tenant_id/user_id/request_id from JWT
+		//   2. rateLimiter.Wrap       — enforces per-tenant token-bucket rate limits
+		//   3. VersionRouter          — rewrites /api/v1/* → /api/*
+		//   4. mux                   — actual handlers
+		// RequestContextMiddleware must run first so tenant_id is in context
+		// when the rate limiter reads it.
+		if err := http.Serve(ln, api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux)))); err != nil {
 			slog.Error("[MAIN] HTTP error", slog.Any("error", err))
 		}
 	}()
