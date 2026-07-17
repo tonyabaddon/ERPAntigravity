@@ -14021,3 +14021,21 @@ Recommend Option A. No action needed now.
 **Task 3 status update: 95% complete**
 - Only remaining: wait for admin.staging.caleo.id SSL cert provision (async)
 - Once cert done + curl 200 verified, Task 3 fully closed
+
+**2026-07-17 subdomain audit — all live except admin.staging (SSL provisioning)**:
+
+Founder asked to verify all subdomains. Found `www.caleo.id` was returning 522 — missing Worker route (only had `caleo.id/*`, `admin.caleo.id/*`, `staging.caleo.id/*`). Added `www.caleo.id/*` route to same `caleo-placeholder` Worker. Worker's default fallback (else branch) serves the root Caleo message for www hostname. Now 200.
+
+**Final subdomain matrix**:
+| Subdomain | Status | Serving | SSL |
+|---|---|---|---|
+| caleo.id | ✅ 200 | Cloudflare Worker | Universal (Free) |
+| www.caleo.id | ✅ 200 | Cloudflare Worker | Universal (Free) |
+| app.caleo.id | ✅ 200 (ERP) | Cloud Run frontend | Google Trust Services |
+| admin.caleo.id | ✅ 200 | Cloudflare Worker | Universal (Free) |
+| staging.caleo.id | ✅ 200 | Cloudflare Worker | Universal (Free) |
+| admin.staging.caleo.id | 🟡 Provisioning | Cloud Run placeholder | Google-managed (async) |
+| caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal (Free) |
+| www.caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal (Free) |
+
+**7/8 fully live. admin.staging.caleo.id awaiting Google-managed cert provision** (Retry=True, next Google poll in ~1h from mapping creation at 03:24 UTC).
