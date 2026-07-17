@@ -1,5 +1,21 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — B-2: admin.staging.caleo.id 4th-Level SSL Fix — DONE (cert provisioning async)
+
+**Root cause:** Cloudflare Universal SSL Free only covers up to 3 DNS levels. `admin.staging.caleo.id` (4th level) had no valid cert.
+
+**Fix:** Cloud Run service `caleo-placeholder-admin-staging` (asia-southeast1, min=0, scaled-to-zero free) + Cloud Run domain mapping → Google-managed SSL cert covers any DNS depth for free. Cloudflare DNS updated: AAAA (proxied) replaced with CNAME `ghs.googlehosted.com` (DNS-only).
+
+**Status at commit:** `DomainRoutable: True`, `CertificateProvisioned: Unknown` (cert issuance started; resolves in 15–60 min).
+
+**Verify cert:** `gcloud beta run domain-mappings describe --domain=admin.staging.caleo.id --region=asia-southeast1 --project=gen-lang-client-0410251117 --format="value(status.conditions[?type=='CertificateProvisioned'].status)"`
+
+**Report:** `.superpowers/sdd/b2-report.md`
+
+**Commit:** see below
+
+---
+
 ## 2026-07-17 — Phase 1 Hardening: Idempotency Tokens Batch 1 (Task 8) — DONE
 
 **What changed:** Added idempotency double-post prevention to the 3 highest-risk write RPCs. Network retries are now short-circuited at the DB layer for `record_kasir_sale`, `receive_purchase_order`, and `commit_opname`.
