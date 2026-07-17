@@ -248,6 +248,35 @@ current prod is unrecoverable AND you have founder approval.
 
 ---
 
+## Rehearsal history
+
+**2026-07-17** — First rehearsal against local Postgres 17 (Homebrew):
+- Backup file: `db-2026-07-17.dump` (3.2 MiB compressed)
+- `initdb --auth=trust -D /tmp/pg-restore-scratch -U postgres` + `pg_ctl start`
+- `pg_restore --no-owner --no-privileges -d postgres <dump>` — 481 warnings (all Supabase-managed role/extension missing, benign)
+- **Wall clock: ~2 min end-to-end** (well under 30-min RTO target)
+- Verified restored: 3 tenants, `audit_log.tenant_id` column present (P2-C R2), `claim_next_job` has `#variable_conflict use_column` (mig 323 fix), `t_jobs` + `t_tenant_cost_daily` tables present
+- Cleanup: `pg_ctl stop` + `rm -rf /tmp/pg-restore-scratch`
+
+### Correct table names (from rehearsal — for verification queries)
+
+| Purpose | Actual table name |
+|---|---|
+| Kasir transactions | `kasir_transactions` (no `t_` prefix) |
+| Customers | `customers` (no `t_` prefix) |
+| Products (SKUs) | `stocks` (products refactored) |
+| Orders | `orders` |
+| Product metadata | `product_brands`, `product_categories`, `product_units` |
+| Audit log | `audit_log` |
+| Async jobs (P2-E) | `t_jobs` |
+| Cost tracking (P2-A) | `t_tenant_cost_daily` |
+| Tenants | `tenants` |
+
+Note: not everything is `t_*` prefixed. The `t_*` prefix is for tables that
+went through the RLS hardening pass; older tables use bare names. When
+writing a restore query, verify the real name via
+`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename ILIKE 'kasir%';`
+
 ## Related runbooks
 - [Rollback procedures](rollback-procedures.md) — Cloud Run revert, migration revert, secret rotation
 - [Cloud Run promote](../cloud-run-promote-runbook.md) — post-merge traffic promotion (legacy — mostly automated now)
