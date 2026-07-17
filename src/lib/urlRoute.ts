@@ -96,9 +96,11 @@ export interface Route {
 function parseScreenFromPath(pathname: string, _search: URLSearchParams): { screen: RouteScreen; params: Record<string, string> } {
   // Strip leading slash and take the first path segment as the screen name
   const segment = pathname.replace(/^\//, '').split('/')[0] ?? '';
-  const screen: RouteScreen = ACTIVE_PAGES.has(segment as ActivePage)
-    ? (segment as ActivePage)
-    : 'dashboard';
+  // Empty segment (root URL "/" or "/t/<slug>/") → dashboard (landing).
+  // Non-empty but unknown segment → 'not-found' sentinel (App.tsx renders 404).
+  const screen: RouteScreen = segment === ''
+    ? 'dashboard'
+    : (ACTIVE_PAGES.has(segment as ActivePage) ? (segment as ActivePage) : 'not-found');
   return { screen, params: {} };
 }
 
@@ -149,9 +151,11 @@ export function parseSearch(search: string): RouteState {
     params.forEach((value, key) => { out[key] = value; });
     return { screen: 'sales-inbox', params: out };
   }
-  const screen: ActivePage = ACTIVE_PAGES.has(rawScreen as ActivePage)
-    ? (rawScreen as ActivePage)
-    : 'dashboard';
+  // Empty ?screen= (root URL with no screen param) → dashboard (landing).
+  // Non-empty but unknown → 'not-found' sentinel (App.tsx renders 404).
+  const screen: ActivePage = rawScreen === ''
+    ? 'dashboard'
+    : (ACTIVE_PAGES.has(rawScreen as ActivePage) ? (rawScreen as ActivePage) : 'not-found');
   params.delete('screen');
   const out: Record<string, string> = {};
   params.forEach((value, key) => { out[key] = value; });

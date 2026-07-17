@@ -45,8 +45,10 @@ describe('urlRoute.parseSearch', () => {
     });
   });
 
-  test('unknown screen falls back to dashboard', () => {
-    expect(parseSearch('?screen=xyz-not-real')).toEqual({ screen: 'dashboard', params: {} });
+  test('unknown ?screen= resolves to not-found sentinel (Task 14 2026-07-18)', () => {
+    // Previously: silent fallback to 'dashboard' hid typos + broke bookmarks.
+    // Now: non-empty unknown value → 'not-found' so App.tsx renders <NotFound>.
+    expect(parseSearch('?screen=xyz-not-real')).toEqual({ screen: 'not-found', params: {} });
   });
 
   test('missing screen param falls back to dashboard', () => {
