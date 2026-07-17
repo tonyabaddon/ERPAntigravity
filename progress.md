@@ -14039,3 +14039,12 @@ Founder asked to verify all subdomains. Found `www.caleo.id` was returning 522 �
 | www.caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal (Free) |
 
 **7/8 fully live. admin.staging.caleo.id awaiting Google-managed cert provision** (Retry=True, next Google poll in ~1h from mapping creation at 03:24 UTC).
+
+**2026-07-17 03:45 UTC — B-2 SSL PROVISIONED**:
+- `admin.staging.caleo.id` cert issuance completed via Google Trust Services
+- Full domain mapping status: Ready=True, CertificateProvisioned=True, DomainRoutable=True
+- HTTP/2 200 serving placeholder Cloud Run service (caleo-placeholder-admin-staging)
+- Note: this subdomain will be RENAMED to `staging.admin.caleo.id` in Phase 1 finalization per founder decision (staging-prefix pattern for safety)
+- Total async wait for cert: ~20 min from mapping creation
+
+**Phase 1 status: 9.5/17 tasks complete. Task 3 (custom domain) FULLY RESOLVED for original scope. Awaiting founder approval for revised Phase 1 finalization scope (admin.caleo.id proper routing, staging subdomain rename, + 3 CRITICAL audit-found items C-1/C-2/C-3).**
