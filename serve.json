@@ -25,7 +25,7 @@
         },
         {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://ekhhojaezdfjfwuxyjkl.supabase.co https://*.supabase.co https://storage.googleapis.com; connect-src 'self' https://ekhhojaezdfjfwuxyjkl.supabase.co wss://ekhhojaezdfjfwuxyjkl.supabase.co https://*.supabase.co wss://*.supabase.co https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app https://garindo-jaya-panel-msme-erp-staging-xnrhcw7onq-as.a.run.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; report-uri https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app/security/csp-report"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://ekhhojaezdfjfwuxyjkl.supabase.co https://*.supabase.co https://storage.googleapis.com; connect-src 'self' https://ekhhojaezdfjfwuxyjkl.supabase.co wss://ekhhojaezdfjfwuxyjkl.supabase.co https://*.supabase.co wss://*.supabase.co https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app https://garindo-jaya-panel-msme-erp-staging-xnrhcw7onq-as.a.run.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; report-uri https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app/api/v1/security/csp-report"
         }
       ]
     }

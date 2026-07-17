@@ -18,10 +18,11 @@ import (
 // Task 16 gap-fix 2026-07-18. Zero-cost (self-hosted, no third-party SaaS).
 //
 // Wire in main.go with:
-//   mux.HandleFunc("/security/csp-report", api.CSPReportHandler)
+//   mux.HandleFunc("/api/security/csp-report", api.CSPReportHandler)
+// (VersionRouter strips /api/v1/ → /api/, so clients hit /api/v1/security/csp-report)
 //
 // Then update serve.json CSP to include:
-//   report-uri https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app/security/csp-report
+//   report-uri https://garindo-jaya-panel-msme-erp-xnrhcw7onq-as.a.run.app/api/v1/security/csp-report
 func CSPReportHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

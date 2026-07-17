@@ -95,7 +95,10 @@ func main() {
 	// Task 16 gap-fix: CSP violation reports from FE Cloud Run land here.
 	// Frontend serve.json sets `report-uri` to this endpoint. Reports are
 	// logged to slog + Cloud Logging for observation before CSP is enforced.
-	mux.HandleFunc("/security/csp-report", api.CSPReportHandler)
+	// Registered as /api/security/csp-report so VersionRouter (which strips
+	// /api/v1/ → /api/) delivers a client request to /api/v1/security/csp-report
+	// here. Non-/api/* paths are 404'd by VersionRouter.
+	mux.HandleFunc("/api/security/csp-report", api.CSPReportHandler)
 	mux.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		enableCors(&w)
 		w.Header().Set("Content-Type", "application/json")
