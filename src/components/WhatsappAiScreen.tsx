@@ -772,7 +772,7 @@ func respondWithGemini(sender types.JID, prompt string) {
 
 	// Create inference query with system role and live store inventory instructions
 	promptPayload := fmt.Sprintf(
-		"VOSI MSME ERP Live Context. Chat query received: %s. Please generate a polite brief Indonesian reply.",
+		"Caleo ERP Live Context. Chat query received: %s. Please generate a polite brief Indonesian reply.",
 		prompt,
 	)
 

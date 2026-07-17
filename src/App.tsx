@@ -1097,7 +1097,7 @@ export default function App() {
               </div>
               <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
                 <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
-                  © 2026 VOSI MSME ERP • Powered by DeepMind &amp; Gemini AI
+                  © 2026 Caleo ERP • Powered by DeepMind &amp; Gemini AI
                 </p>
                 <div className="flex gap-4">
                   <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>
@@ -1238,7 +1238,7 @@ export default function App() {
         {/* Global Footer credits */}
         <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
           <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
-            © 2026 VOSI MSME ERP • Powered by DeepMind &amp; Gemini AI
+            © 2026 Caleo ERP • Powered by DeepMind &amp; Gemini AI
           </p>
           <div className="flex gap-4">
             <span className="text-[10px] text-[#43474e]/50 font-bold hover:text-slate-700 cursor-pointer" onClick={() => triggerToast("📜 Syarat Ketentuan Layanan Cloud SaaS Berlaku.", 'info')}>Terms</span>

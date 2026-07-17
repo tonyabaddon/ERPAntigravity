@@ -168,7 +168,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
           style={{ background: '#F9B233', color: '#0B2545' }}
-          aria-label="VOSI logo"
+          aria-label="Caleo logo"
         >
           V
         </div>
@@ -176,7 +176,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
           className="text-sm font-bold tracking-tight"
           style={{ color: '#0B2545' }}
         >
-          VOSI Admin
+          Caleo Admin
         </span>
       </div>
 

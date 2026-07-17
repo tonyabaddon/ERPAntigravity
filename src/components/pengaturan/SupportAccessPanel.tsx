@@ -42,7 +42,7 @@ function humanErr(err: unknown): string {
   if (msg.includes('IMPERSONATION_NOT_GRANTED'))
     return 'Akses belum diberikan tenant.';
   if (msg.includes('ADMIN_NOT_FOUND'))
-    return 'Email VOSI admin tidak ditemukan atau tidak aktif.';
+    return 'Email Caleo admin tidak ditemukan atau tidak aktif.';
   if (msg.includes('NOT_TENANT_OWNER'))
     return 'Hanya Owner yang bisa mengelola akses ini.';
   if (msg.includes('REASON_REQUIRED')) return 'Alasan grant wajib diisi.';
@@ -87,7 +87,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
 
   const handleGrant = async () => {
     if (!grantForm.admin_email.trim()) {
-      showToast('Email VOSI admin wajib diisi.', 'warning');
+      showToast('Email Caleo admin wajib diisi.', 'warning');
       return;
     }
     if (!grantForm.reason.trim()) {
@@ -146,9 +146,9 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <div className="flex-1">
             <h3 className="text-base font-bold text-[#012749]">Support Access</h3>
             <p className="text-[13px] text-slate-600 mt-0.5">
-              Berikan akses login ke tim VOSI kalau butuh bantuan support. Akses selalu
+              Berikan akses login ke tim Caleo kalau butuh bantuan support. Akses selalu
               time-boxed dan bisa dicabut kapan saja. Tanpa grant aktif, tidak ada tim
-              VOSI yang bisa masuk ke akun ini.
+              Caleo yang bisa masuk ke akun ini.
             </p>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-[13px] text-slate-500 space-y-1">
             <div className="text-slate-700 font-semibold">Belum ada akses support aktif.</div>
             <div>
-              Klik <b>Beri akses baru</b> di atas kalau tim VOSI perlu bantu debug atau
+              Klik <b>Beri akses baru</b> di atas kalau tim Caleo perlu bantu debug atau
               setup akun.
             </div>
           </div>
@@ -291,14 +291,14 @@ export default function SupportAccessPanel({ showToast }: Props) {
               <div>
                 <h3 className="text-lg font-bold text-[#012749]">Beri akses support</h3>
                 <p className="text-[13px] text-slate-600 mt-0.5">
-                  VOSI admin akan bisa impersonate akun ini sampai batas waktu.
+                  Caleo admin akan bisa impersonate akun ini sampai batas waktu.
                 </p>
               </div>
             </div>
 
             <div>
               <label className="block text-[13px] font-semibold text-slate-700 mb-1">
-                Email VOSI admin
+                Email Caleo admin
               </label>
               <input
                 type="email"
@@ -307,7 +307,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 onChange={(e) =>
                   setGrantForm((f) => ({ ...f, admin_email: e.target.value }))
                 }
-                placeholder="support@vosi.co.id"
+                placeholder="support@caleo.id"
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
@@ -352,7 +352,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
             <div className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
               <Info className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
-                Grant ini masuk audit log. Setelah durasi habis atau dicabut, VOSI
+                Grant ini masuk audit log. Setelah durasi habis atau dicabut, Caleo
                 admin nggak bisa masuk lagi tanpa grant baru.
               </div>
             </div>

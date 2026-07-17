@@ -141,7 +141,7 @@ describe('AdminRouteGuard', () => {
       expect(mockAssign).toHaveBeenCalledWith('/t/garindo/dashboard?screen=dashboard')
     );
     expect(mockAdminToastError).toHaveBeenCalledWith(
-      'Stop impersonation dulu sebelum masuk VOSI Admin'
+      'Stop impersonation dulu sebelum masuk Caleo Admin'
     );
     expect(screen.queryByText('Tidak boleh terlihat')).not.toBeInTheDocument();
   });

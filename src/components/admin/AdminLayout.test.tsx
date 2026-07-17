@@ -52,8 +52,8 @@ describe('AdminLayout', () => {
         <div>Konten Beranda</div>
       </AdminLayout>
     );
-    // "VOSI Admin" appears in both the header and sidebar brand — both should be present
-    const vosiAdminInstances = screen.getAllByText('VOSI Admin');
+    // "Caleo Admin" appears in both the header and sidebar brand — both should be present
+    const vosiAdminInstances = screen.getAllByText('Caleo Admin');
     expect(vosiAdminInstances.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Konten Beranda')).toBeInTheDocument();
     // Sidebar nav items should be present

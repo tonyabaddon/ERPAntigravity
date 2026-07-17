@@ -61,7 +61,7 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
         const slug = await readImpersonationSlug();
         if (cancelled) return;
         if (slug) {
-          adminToast.error('Stop impersonation dulu sebelum masuk VOSI Admin');
+          adminToast.error('Stop impersonation dulu sebelum masuk Caleo Admin');
           setImpersonatingSlug(slug);
           setState('deny-impersonating');
           return;

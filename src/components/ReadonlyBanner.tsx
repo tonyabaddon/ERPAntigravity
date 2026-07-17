@@ -20,7 +20,7 @@ export const ReadonlyBanner: React.FC = () => {
     <div className="bg-rose-100 border-b border-rose-300 text-rose-900 px-4 py-3 flex items-center gap-2 text-sm">
       <AlertCircle size={18} />
       <span>
-        <strong>Subscription VOSI kamu expired {daysExpired} hari lalu.</strong> Mode read-only aktif.
+        <strong>Subscription Caleo kamu expired {daysExpired} hari lalu.</strong> Mode read-only aktif.
       </span>
       <a href="https://wa.me/62..." className="ml-auto underline font-medium">Hubungi untuk renew</a>
     </div>

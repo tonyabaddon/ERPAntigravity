@@ -58,9 +58,9 @@ describe('AdminSidebar', () => {
     expect(tenantLink).toHaveAttribute('aria-current', 'page');
   });
 
-  it('renders VOSI Admin brand text', () => {
+  it('renders Caleo Admin brand text', () => {
     render(<AdminSidebar activePath="/admin" />);
-    expect(screen.getByText('VOSI Admin')).toBeInTheDocument();
+    expect(screen.getByText('Caleo Admin')).toBeInTheDocument();
   });
 
   it('super_admin sees all nav items including Paket, Pendapatan, and Verifikasi Pembayaran', async () => {

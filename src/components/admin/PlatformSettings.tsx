@@ -181,7 +181,7 @@ export function PlatformSettings() {
               type="text"
               value={bankAccountName}
               onChange={(e) => setBankAccountName(e.target.value)}
-              placeholder="PT VOSI Digital"
+              placeholder="PT Caleo Digital"
               className="w-full px-3 py-2 rounded-xl border text-[13px] outline-none focus:ring-2"
               style={{
                 borderColor: '#ECEEF1',

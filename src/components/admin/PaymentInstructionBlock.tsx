@@ -47,7 +47,7 @@ function formatIDR(n: number): string {
 }
 
 function buildMessage(t: TenantInfo, s: PlatformSettings, p: Plan): string {
-  return `Selamat! Toko Anda "${t.name}" sudah aktif di VOSI.
+  return `Selamat! Toko Anda "${t.name}" sudah aktif di Caleo.
 
 Untuk aktivasi paket ${t.plan_code} (Rp ${formatIDR(p.price_annual)}/tahun):
 🏦 Transfer ke: ${s.bank_name ?? '-'} ${s.bank_account_no ?? '-'}

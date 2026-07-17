@@ -83,7 +83,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
       >
         <div className="flex items-center gap-2 text-[13px] font-semibold">
           <ShieldCheck size={16} strokeWidth={1.8} strokeLinecap="round" style={{ color: '#F9B233' }} />
-          <span>VOSI Admin</span>
+          <span>Caleo Admin</span>
         </div>
         <div className="flex items-center gap-4 text-[12px]" style={{ color: '#9DB2CE' }}>
           {adminEmail && <span className="truncate max-w-[200px]">{adminEmail}</span>}

@@ -10,7 +10,7 @@ export const TenantNotFound: React.FC<Props> = ({ slug, onBackToLogin }) => (
       <AlertCircle className="mx-auto text-rose-500" size={48} />
       <h1 className="text-lg font-semibold mt-4">Tenant tidak ditemukan</h1>
       <p className="text-sm text-slate-600 mt-2">
-        {slug ? <>Alamat <code className="bg-slate-100 px-1 rounded">/t/{slug}</code> tidak terdaftar di VOSI.</> :
+        {slug ? <>Alamat <code className="bg-slate-100 px-1 rounded">/t/{slug}</code> tidak terdaftar di Caleo.</> :
                 'URL tidak mengarah ke tenant yang valid.'}
       </p>
       <button onClick={onBackToLogin}
