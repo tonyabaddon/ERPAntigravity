@@ -21,14 +21,16 @@ const (
 
 const replyMaxChars = 800
 
-// urlWhitelist is the canonical Vosi-owned-domain set. URLs to these are
+// urlWhitelist is the canonical Caleo-owned-domain set. URLs to these are
 // considered safe for inclusion in replies (e.g. catalog links, terms page).
 // Anything else fires FlagNonWhitelistURL.
+// Only domains we actually own are here — adding untrusted domains would
+// let AI-generated URLs bypass phishing prevention. app.caleo.id is the
+// tenant app; admin.caleo.id is platform admin; caleo.id root is landing.
 var urlWhitelist = []string{
-	"vosi.id",
-	"vosi.app",
-	"vosi.co.id",
-	"calista.vosi.id",
+	"caleo.id",
+	"app.caleo.id",
+	"admin.caleo.id",
 }
 
 var urlPattern = regexp.MustCompile(`https?://([\w.-]+)`)

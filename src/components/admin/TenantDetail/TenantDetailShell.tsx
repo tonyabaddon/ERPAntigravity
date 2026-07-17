@@ -268,7 +268,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
             className="text-[12px] mt-1"
             style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
           >
-            vosi.id/{tenant.slug}
+            app.caleo.id/t/{tenant.slug}
             {tenant.expires_at && (
               <span style={{ color: '#5A6472' }}>
                 {' '}· exp {tenant.expires_at}
