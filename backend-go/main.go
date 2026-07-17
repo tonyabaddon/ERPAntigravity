@@ -23,6 +23,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
+	"github.com/username/sinar-elektrik-backend/internal/jobs"
 	"github.com/username/sinar-elektrik-backend/internal/llm"
 	"github.com/username/sinar-elektrik-backend/internal/logging"
 	"github.com/username/sinar-elektrik-backend/internal/models"
@@ -510,6 +511,18 @@ func main() {
 		waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, nil)
 	}
 	waClient.AddEventHandler(waHandler.Handle)
+	// P2-E: Async job worker — polls t_jobs every 5s, dispatches to handlers.
+	// Runs co-located with the HTTP server. Uses the same service_role DB
+	// connection (bypasses RLS for cross-tenant polling via claim_next_job).
+	// FOR UPDATE SKIP LOCKED in claim_next_job makes this safe if Cloud Run
+	// scales to multiple instances.
+	jobWorker := jobs.NewWorker(dbClient.DB)
+	jobWorker.Register("echo_test", jobs.EchoHandler)
+	// P2-D will add: jobWorker.Register("export_data", exportHandler)
+	workerCtx, workerCancel := context.WithCancel(ctx)
+	go jobWorker.Start(workerCtx)
+	slog.Info("[MAIN] Async job worker started (5s poll interval)")
+
 	followup.NewPoller(dbClient, sender).Start(ctx)
 	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, sender).Start(ctx)
@@ -589,6 +602,8 @@ func main() {
 	<-quit
 
 	slog.Info("[MAIN] Shutting down...")
+	workerCancel()
+	jobWorker.Stop()
 	if debounceHandler != nil {
 		slog.Info("[MAIN] draining debounce buffers...")
 		drainCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)

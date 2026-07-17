@@ -1,5 +1,47 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — P2-E: Async job infrastructure — DONE
+
+**What**: Postgres-backed async job queue + Go worker (Phase 2 item 3). Foundation for P2-D (per-tenant CSV export) and Task 14 (import wizard). Zero external dependencies — no Redis, no Celery.
+
+**Schema** (migrations 320, 320b, 321, 322):
+- `t_jobs`: composite PK `(tenant_id, id)`, status CHECK, idempotency partial unique index (active/succeeded only — FAILED/CANCELED allow re-enqueue), 2 indexes (status/priority partial, tenant/status/created_at). RLS: tenant reads own jobs (`_resolve_tenant_id()`), platform admin reads all (`is_platform_admin()`), `vosi_rpc_owner` bypass (FOR ALL USING true).
+- `t_job_runs`: append-only run log (STARTED/SUCCEEDED/FAILED) per job. Index on `(job_id, run_at DESC)`. Same RLS pattern.
+
+**RPCs** (migrations 321+322, all SECDEF owned by `vosi_rpc_owner`):
+- `enqueue_job(type, payload, priority, idempotency_key)` → uuid — authenticated, idempotent by key (dedup skips FAILED/CANCELED)
+- `claim_next_job(worker_id)` → table row — service_role only, `FOR UPDATE SKIP LOCKED` (multi-instance safe), composite PK WHERE in UPDATE
+- `complete_job(job_id, status, ...)` — service_role only, derives tenant_id then filters UPDATE on composite `(tenant_id, id)`
+
+**Key fix discovered**: `vosi_rpc_owner` SECDEF functions can't see RLS-protected rows without an explicit bypass policy (`FOR ALL TO vosi_rpc_owner USING (true)`). Added in migration 320b and backfilled into 320 source. Pattern matches memory `secdef_returning_gap`.
+
+**Go worker** (`backend-go/internal/jobs/worker.go`):
+- 5s poll interval, 10min max job timeout, structured logging with `job_id/tenant_id/job_type/attempt`
+- `Register(jobType, handler)` — extensible handler registry
+- Graceful shutdown: `workerCancel()` + `worker.Stop()` on SIGTERM; `complete()` uses `context.Background()+10s` so job completion survives SIGTERM (Fix 1)
+- Wired into `main.go` as goroutine after `dbClient` ready
+
+**Sample handler** (`handlers.go`): `EchoHandler` — returns payload unchanged, smoke test vehicle
+
+**Tests** (7 unit tests, all pass):
+- `TestEchoHandler`, `TestWorkerNoHandler` (→ FAILED+NO_HANDLER), `TestWorkerHandlerSuccess`, `TestWorkerHandlerError`, `TestWorkerNoRows`, `TestWorkerContextCancellation`, `TestCompleteWithCancelledContext` (Fix 1 regression)
+- Mock via `go-sqlmock` v1.5.2
+
+**Smoke test** (`smoke_test.go`, -tags smoke): inserts echo_test job → processOne claims+executes → verifies status=SUCCEEDED, result=payload, 2 t_job_runs entries. Passed live against `ekhhojaezdfjfwuxyjkl`.
+
+**FE helper** (`src/lib/jobsApi.ts`): `enqueueJob`, `getJob`, `pollJobUntilDone(jobId, intervalMs=2000, timeoutMs=5min)`
+
+**Fix wave (migration 322)** — 3 correctness issues fixed post-implementation-review:
+1. **Shutdown race** (HIGH): `complete()` used parent ctx which gets cancelled on SIGTERM → job stayed RUNNING. Fixed: fresh `context.Background()+10s` for ExecContext. Test: `TestCompleteWithCancelledContext`.
+2. **Composite PK WHERE** (medium): `claim_next_job` and `complete_job` WHERE clauses used only `id`; structurally wrong for composite PK `(tenant_id, id)`. Fixed in migration 322 with SELECT INTO both columns then UPDATE WHERE both.
+3. **Idempotency re-enqueue** (medium): old full UNIQUE constraint blocked re-enqueue of FAILED jobs. Fixed: dropped constraint, added partial unique index on `(tenant_id, job_type, idempotency_key) WHERE status IN ('QUEUED','RUNNING','SUCCEEDED')`; idempotency SELECT also filters same statuses.
+
+**Advisors** (post-322): No new findings for t_jobs/t_job_runs. One expected WARN for `enqueue_job` (`authenticated_security_definer_function_executable`) — intentional, all authenticated write RPCs follow this pattern. `t_jobs` multiple permissive SELECT policies — intentional two-policy pattern (tenant+admin), same as all 80+ t_* tables.
+
+**Gates**: `npm run lint` clean, `go build ./...` clean, 7/7 unit tests pass.
+
+**Commit**: see below.
+
 ## 2026-07-17 — P2-B: Per-tenant rate limiting — DONE
 
 **What**: Token-bucket rate limiting per tenant on the backend Go API (Phase 2 item 2).
