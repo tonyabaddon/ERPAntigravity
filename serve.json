@@ -1,5 +1,4 @@
 {
-  "$comment": "Task 16 security headers — served by npm 'serve' package from /dist. Cloud Run frontend serves app.caleo.id, admin.caleo.id (same service via hostname), and staging.* equivalents. See docs/superpowers/specs/2026-07-18-security-headers-design.md for rationale + rollout plan.",
   "headers": [
     {
       "source": "**/*",
