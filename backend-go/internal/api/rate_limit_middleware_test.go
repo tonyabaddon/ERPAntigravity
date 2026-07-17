@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -56,9 +55,8 @@ func TestRateLimit_AboveLimit(t *testing.T) {
 	rl := NewRateLimitMiddleware(nilDBGetter)
 
 	// Pre-load a limiter with rate=1, burst=2 for this tenant to force 429 quickly.
-	import_rate := 1 // 1 req/s
 	tl := &tenantLimiter{
-		limiter:  newLimiterForTest(import_rate),
+		limiter:  newLimiterForTest(1), // 1 req/s, burst=2
 		loadedAt: time.Now(),
 	}
 	rl.limiters.Store("tenant-tight", tl)
@@ -249,5 +247,3 @@ func newLimiterForTest(rps int) *rate.Limiter {
 	return rate.NewLimiter(rate.Limit(rps), rps*2)
 }
 
-// Compile-time check: ensure we import context (used in ctxWithTenant via logging).
-var _ context.Context = context.Background()
