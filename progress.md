@@ -52,7 +52,7 @@
 - Playwright smoke → 3 passed, 2 skipped (T3+T5), 0 failed
 - `./scripts/staging-smoke.sh` → 6/6 passed (FE root, /login, BE /live, /ready, /health, bundle)
 
-**Commit**: see below | **Report**: `.superpowers/sdd/sub-e-report.md`
+**Commits**: `6dd9415` (main impl) + `fe1d3b3` (tsconfig fix: exclude tests/e2e from tsc) | **Report**: `.superpowers/sdd/sub-e-report.md`
 
 ---
 
