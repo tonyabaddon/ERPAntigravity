@@ -14454,3 +14454,51 @@ Phase 2 remaining (per revised value-order):
 Total: ~15-23h.
 
 Then Tasks 10-17 (~40-50h).
+
+---
+
+# 🎯 PHASE 2 PROGRESS — 2026-07-17 (afternoon session)
+
+**Duration**: ~5-6 hours. Chain-mode initially, then disciplined mode after advisor caught silent-fail cascade.
+
+## Shipped
+
+| Item | Commit | Verification |
+|---|---|---|
+| P2-A Cost tracking MVP + `/admin/billing` dashboard | `7d45d3c` | ✅ Screenshot: 3 tenants listed, table+refresh button render, no console errors |
+| P2-B Per-tenant rate limiting (token bucket middleware) | `ecb907f` | ✅ Middleware in prod backend rev `00297-n22`; bypass proven via 20× `/api/v1/live` all 200 |
+| P2-E Async job queue + Go worker (migrations 320-323) | `f395622` + `34f10ac` | ✅ Smoke job `d9efed65` completed SUCCEEDED in 400ms w/ correct payload echo |
+| P2-C R1 Audit coverage survey (97 RPCs, 30% audited, gap list) | (report file) | ✅ `docs/superpowers/specs/2026-07-17-p2-c-audit-coverage-gaps.md` |
+| P2-C R2 Migrations 324/325 (kasir/tempo/pembayaran audit + tenant_id column + drop broken submit_rakit_lock) | `3819e06` | ✅ Verified via SQL: tenant_id col + index present, 3 RPCs have audit inserts, submit_rakit_lock count=0 |
+| Session pooler migration (backend uses `aws-1-ap-northeast-1.pooler.supabase.com:5432`) | Cloud Run rev `00297-n22` | ✅ /api/v1/ready 200, startup probe passed, LISTEN compat confirmed |
+| Security fix: `SUPABASE_DB_CONNECTION` moved to Secret Manager (`supabase-db-connection-prod`) | `851b22f` | ✅ Cloud Run env now uses valueFrom.secretKeyRef; plaintext env removed |
+
+**P2-D SKIPPED** — YAGNI. 0 tenants asked for export, Indonesia has no GDPR-strict portability requirement, admin can SQL directly for debug. Revisit when real tenant requests it or when >100 tenants.
+
+## Incident logged
+`docs/incidents/2026-07-17-phase2-silent-deploy-failures.md` covers:
+- Bug A: staging Playwright config missing `testMatch` → 8 chained deploy failures over ~40min
+- Bug B: claim_next_job `column reference "tenant_id" is ambiguous` (fixed via migration 323 `#variable_conflict use_column`)
+- Bug C: Supabase pool exhaustion + plaintext DB password in Cloud Run env (both fixed via session pooler switch + Secret Manager)
+
+## Memories added
+- `feedback_deploy_verify_after_push` — mandatory `gcloud builds list --limit=2` after every push; "triggered" ≠ "shipped"
+- `project_supabase_session_pooler` — new backend DB connection pattern (pooler URL + role behavior + rollback)
+
+## Phase 2 status: 4/5 items complete, P2-D deferred
+
+Remaining before Tasks 10-17:
+- ⏳ Build for `851b22f` in flight (validates cloudbuild.yaml secret pattern on staging+prod)
+- (Optional) Founder rotate DB password now that Secret Manager is in place — old plaintext value was in Cloud Build trigger config
+
+## Ready for Tasks 10-17
+
+Next per Phase-2-final-plan doc:
+- Task 10: Monitoring dashboard (Prometheus/Grafana on GCP)
+- Task 11: Sentry error tracking (free tier)
+- Task 12: Supabase PITR / backup verification
+- Task 13: Cloud Run cold-start optimization
+- Task 14: Onboarding wizard (blocked pending real UI capture per memory `phase_b_wave_reorder`)
+- Task 15: Landing page rewrite
+- Task 16: Firebase deploy alternative eval
+- Task 17: DNS cutover plan
