@@ -43,8 +43,8 @@ steps:
       - '--memory=4Gi'
       - '--cpu=2'
       - '--timeout=60s'
-      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
-      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
+      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest'
       - '--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12'
       - '--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3'
 
@@ -94,8 +94,8 @@ steps:
       - '--memory=4Gi'
       - '--cpu=2'
       - '--timeout=60s'
-      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_DB_CONNECTION=$_SUPABASE_DB_CONN,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
-      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER'
+      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest'
       # Health probe split (slot 315 / Task 9):
       # /api/v1/live  — liveness (process alive, no deps) — periodic restart guard.
       # /api/v1/ready — readiness (DB ping) — stops traffic if Postgres unreachable.
@@ -147,6 +147,9 @@ substitutions:
   _SUPABASE_PROJECT_REF: 'ekhhojaezdfjfwuxyjkl'
   _LLM_BACKEND: 'gemini'
   _ENABLE_OPENROUTER: 'true'
-  # _OPENROUTER_API_KEY + _GEMINI_API_KEY + _SUPABASE_DB_CONN: set at trigger level.
+  # _OPENROUTER_API_KEY + _GEMINI_API_KEY: set at trigger level.
   # SUPABASE_SERVICE_KEY: moved to GCP Secret Manager (supabase-service-key-prod:latest).
+  # SUPABASE_DB_CONNECTION: moved to GCP Secret Manager (supabase-db-connection-prod:latest)
+  #   — 2026-07-17 security fix, plaintext password was exposed in Cloud Run env.
+  #   Follow-up: remove _SUPABASE_DB_CONN from trigger substitutions after confirming deploy.
   # Remove _SUPABASE_SERVICE_KEY from trigger substitutions after confirming deploy.
