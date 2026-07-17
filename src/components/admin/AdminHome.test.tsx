@@ -24,6 +24,19 @@ vi.mock('../../lib/adminToast', () => ({
   },
 }));
 
+// AttentionQueue queries v_tenant_payment_coverage directly via supabase client
+// (in parallel with listAttentionTenants). Without mocking, the promise never
+// resolves and the loading skeleton persists forever, causing waitFor timeouts.
+vi.mock('../../lib/supabaseClient', () => ({
+  supabase: {
+    from: () => ({
+      select: () => ({
+        eq: () => Promise.resolve({ data: [], error: null }),
+      }),
+    }),
+  },
+}));
+
 // Minimal tenant fixture matching AdminTenantRow
 const garindoTenant = {
   tenant_id: 'g1',
