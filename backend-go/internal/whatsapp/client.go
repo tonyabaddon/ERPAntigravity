@@ -2,6 +2,7 @@ package whatsapp
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	_ "github.com/lib/pq"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types/events"
@@ -35,14 +37,37 @@ func (c *Client) setQR(qr string) {
 
 // NewClient creates a WhatsApp client backed by PostgreSQL so the session
 // persists across Cloud Run restarts and redeploys.
+//
+// Uses sqlstore.NewWithDB with an explicit bounded *sql.DB so whatsmeow's
+// internal pool cannot exhaust the direct-connection slot budget on the
+// Supabase side. Without this cap whatsmeow uses database/sql defaults
+// (unbounded MaxOpenConns) — 2026-07-17 audit flagged this as scale risk.
 func NewClient(ctx context.Context, pgConnStr string) (*Client, error) {
 	dbLog := waLog.Stdout("WAStore", "WARN", true)
-	container, err := sqlstore.New(ctx, "postgres", pgConnStr, dbLog)
+
+	db, err := sql.Open("postgres", pgConnStr)
 	if err != nil {
-		return nil, fmt.Errorf("whatsapp: open store: %w", err)
+		return nil, fmt.Errorf("whatsapp: open db: %w", err)
+	}
+	// WA session writes (identity keys, prekeys, session data) are infrequent
+	// bursts. Cap tightly to leave direct-pool slots for pq.Listener and query
+	// spillover. 3 concurrent WA session ops is plenty at 10-1000 tenant scale.
+	db.SetMaxOpenConns(3)
+	db.SetMaxIdleConns(1)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("whatsapp: db ping: %w", err)
+	}
+
+	container := sqlstore.NewWithDB(db, "postgres", dbLog)
+	if err := container.Upgrade(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("whatsapp: sqlstore upgrade: %w", err)
 	}
 	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
+		db.Close()
 		return nil, fmt.Errorf("whatsapp: get device: %w", err)
 	}
 	clientLog := waLog.Stdout("WAClient", "INFO", true)

@@ -34,3 +34,23 @@ rm -f "$DUMP_FILE"
 
 # Structured success marker — log-based metric 'backup_success_count' watches for this line
 echo "BACKUP_SUCCESS date=${DATE} size=${SIZE}"
+
+# ── Daily maintenance (2026-07-17 addition) ────────────────────────────────
+# Runs after successful backup so any failures here don't block the backup
+# metric. Both operations are idempotent and safe on failure.
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Running cost backfill for yesterday ..."
+if psql "$SUPABASE_DB_CONNECTION" -c "SELECT public.scheduler_backfill_tenant_cost_daily(CURRENT_DATE - 1);" >/dev/null 2>&1; then
+    echo "COST_BACKFILL_SUCCESS date=$(date -u +%Y-%m-%d)"
+else
+    echo "WARN: cost backfill failed (non-blocking)"
+fi
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Pruning audit_log entries older than 180 days ..."
+if PRUNED=$(psql "$SUPABASE_DB_CONNECTION" -tAc "SELECT public.prune_audit_log(180);" 2>&1); then
+    echo "AUDIT_PRUNE_SUCCESS deleted=${PRUNED}"
+else
+    echo "WARN: audit prune failed (non-blocking): ${PRUNED}"
+fi
+
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Daily maintenance complete."
