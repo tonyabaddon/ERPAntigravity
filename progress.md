@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — P2-C Round 2: Audit log coverage — DONE_WITH_CONCERNS
+
+**What**: Added `tenant_id` column+index to `audit_log`, instrumented 3 high-value RPCs with audit events, and cleaned up the dead `submit_rakit_lock` function.
+
+**Migrations**:
+- `20261115000324_audit_log_tenant_id.sql` — `ADD COLUMN IF NOT EXISTS tenant_id uuid` + `idx_audit_log_tenant_created` partial index. **Was a no-op**: Phase A (migration 20261001000003) had already added `tenant_id NOT NULL DEFAULT _resolve_tenant_id()` to audit_log. The Round 1 gap list was incorrect on this point. Index applied successfully.
+- `20261115000325_audit_kasir_and_pembelian.sql` — Drops `submit_rakit_lock` (3 overloads, IF EXISTS, dead code). CREATE OR REPLACE for `record_kasir_sale` (26-arg), `create_tempo_invoice`, `record_pembayaran` — each gains a soft-fail audit INSERT after their core commit path.
+
+**Audit events added**:
+- `kasir_sale_recorded` — `{transaction_id, invoice_number, total_amount, channel, payment_type, payment_method, customer_id, item_count}`
+- `tempo_invoice_created` — `{order_id, customer_id, total, channel, discount_type, discount_amount_rp, item_count}`
+- `pembayaran_recorded` — `{pembayaran_id, pembayaran_number, supplier_id, amount_total, payment_method, account_id, tagihan_ids}`
+
+**Concerns** (see full report `.superpowers/sdd/p2-c-r2-report.md`):
+- Legacy 25-arg `record_kasir_sale` overload (no idempotency key, no audit INSERT). Current FE always passes idempotency key → routes to 26-arg audited overload. Recommend DROP in P4 housekeeping.
+- `anon` can call `record_pembayaran` via REST — pre-existing security advisor finding, runtime-blocked by `_guard_expiry_write()`.
+
+**submit_rakit_lock resolution**: DEAD CODE DROP. Already dropped in migration 000010. Only reference in FE is a code comment, not a call.
+
+**Gates**: lint clean, audit:numinput clean, audit:secdef-null-tenant clean (430 files), vitest clean. Migrations applied to `ekhhojaezdfjfwuxyjkl`. Advisors run — no new findings from P2-C R2.
+
+**Coverage after R2**: 3 of top-5 revenue-path RPCs audited. 62 remaining RPCs deferred to P4.
+
 ## 2026-07-17 — P2-E: Async job infrastructure — DONE
 
 **What**: Postgres-backed async job queue + Go worker (Phase 2 item 3). Foundation for P2-D (per-tenant CSV export) and Task 14 (import wizard). Zero external dependencies — no Redis, no Celery.
