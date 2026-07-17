@@ -27,6 +27,7 @@ import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
 import { AccessDenied } from './components/errors/AccessDenied';
 import { TenantBootstrapError } from './components/errors/TenantBootstrapError';
+import { NotFound } from './components/errors/NotFound';
 import { TenantImpersonationBanner } from './components/TenantImpersonationBanner';
 import { decodeJwt } from './lib/jwt';
 import { ReadonlyBanner } from './components/ReadonlyBanner';
@@ -895,7 +896,13 @@ export default function App() {
           />
         );
       default:
-        return null;
+        // Unknown screen — show 404 instead of blank page.
+        return (
+          <NotFound
+            attempted={window.location.pathname + window.location.search}
+            onGoHome={() => replaceRoute('dashboard')}
+          />
+        );
     }
   };
 
