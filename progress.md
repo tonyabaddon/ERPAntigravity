@@ -1,5 +1,30 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — P2-B: Per-tenant rate limiting — DONE
+
+**What**: Token-bucket rate limiting per tenant on the backend Go API (Phase 2 item 2).
+
+**Schema**: Migration 319 — `rate_limit_per_second int NOT NULL DEFAULT 100` added to `tenant_subscriptions`. Idempotent (`ADD COLUMN IF NOT EXISTS`).
+
+**Middleware**: `RateLimitMiddleware` in `backend-go/internal/api/rate_limit_middleware.go`:
+- Token bucket via `golang.org/x/time/rate`; burst = 2× rate
+- In-memory `sync.Map` per tenant; 5-min TTL cache (reloads from DB after expiry)
+- Lazy DB getter (`func() *sql.DB`) — safe during startup window before DB connects
+- Health probes (`/api/v1/live`, `/api/v1/ready`, etc.) bypass always
+- No tenant_id in JWT → bypass (unauthenticated)
+- 429 response: `{"error":"RATE_LIMIT_EXCEEDED","message":"..."}` + `Retry-After: 1`
+
+**Known limitation**: rate limit state resets on Cloud Run restart (token bucket fill level). Acceptable at 10-tenant scale. Document: upgrade to Redis for multi-instance deploys.
+
+**Layer order**: `RequestContextMiddleware` → `RateLimitMiddleware.Wrap` → `VersionRouter` → `mux`.
+
+**Tests** (7 cases, all pass):
+- BelowLimit, AboveLimit (verifies 429 + JSON body + Retry-After), HealthProbeBypass, NoTenantIDBypass, IndependentTenants, CacheExpiryReloadsConfig, NilDB_UsesDefault
+
+**Gates**: go build clean, 14/14 api tests pass, npm lint clean, 969 frontend tests pass.
+
+**Commits**: `ecb907f` (main), `8485ac9` (test cleanup). Pushed to main → Cloud Build triggered.
+
 ## 2026-07-17 — P2-A: Cost tracking per tenant MVP — DONE
 
 **What**: Per-tenant cost signals dashboard at `/admin/billing` (Phase 2 item 1).
