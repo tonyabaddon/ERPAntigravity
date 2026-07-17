@@ -1,5 +1,27 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Sub C: kasir_transactions composite PK + record_pembayaran cleanup — DONE
+
+**What**: Phase 1 finalization Sub C (final sub). Migrations 316 + 317.
+
+**Migration 316 — kasir_transactions composite PK (tenant_id, id)**:
+- Hottest write path table (every kasir sale = 1 row). Done at 123 rows; at 1.8M rows/year would
+  need hours-long ACCESS EXCLUSIVE lock — done NOW while small.
+- PK: `(id)` → `(tenant_id, id)`. All 5 child FKs upgraded to composite references.
+  `rakit_job_lines` UNIQUE(transaction_id, line_number) re-added as
+  UNIQUE(tenant_id, transaction_id, line_number). 5 covering composite indexes added.
+- Pre-flight: 0 NULL tenant_id, 0 cross-tenant violations across all child tables ✓
+
+**Migration 317 — DROP legacy record_pembayaran(jsonb) 1-arg overload**:
+- Eliminates mutable-search-path advisor WARN on legacy overload.
+- Non-obvious: `record_pi` calls `PERFORM record_pembayaran(<1-arg>)` internally.
+  Safe to drop: PostgreSQL routes 1-arg call to 2-arg (pronargdefaults=1, NULL default =
+  same behavior). No `record_pi` rewrite needed.
+
+**Commit**: d3aad51. Full report: `.superpowers/sdd/sub-c-report.md`
+
+---
+
 ## 2026-07-17 — Sub D: SUPABASE_SERVICE_KEY → GCP Secret Manager — DONE (rotation pending founder)
 
 **What**: Phase 1 finalization Sub D — secret management for service role key.
@@ -14228,3 +14250,79 @@ Founder asked to verify all subdomains. Found `www.caleo.id` was returning 522 �
 - Total async wait for cert: ~20 min from mapping creation
 
 **Phase 1 status: 9.5/17 tasks complete. Task 3 (custom domain) FULLY RESOLVED for original scope. Awaiting founder approval for revised Phase 1 finalization scope (admin.caleo.id proper routing, staging subdomain rename, + 3 CRITICAL audit-found items C-1/C-2/C-3).**
+
+---
+
+# 🎉 PHASE 1 FINALIZATION COMPLETE — 2026-07-17
+
+**Duration**: ~5 hours of subagent work over 5 sequential dispatches (Sub A → B → E → D → C).
+
+## Commits shipped (12 total)
+
+```
+d3aad51 feat(schema): composite PK kasir_transactions (mig 316) + drop legacy record_pembayaran (mig 317)  [Sub C]
+08ea283 docs(sub-d): progress.md update — Secret Manager migration complete
+e792112 chore(sub-d): re-trigger build to verify Secret Manager pipeline
+d9aac9f feat(sub-d): move SUPABASE_SERVICE_KEY to GCP Secret Manager                                        [Sub D]
+1d0e930 chore(sub-e): gitignore tests/e2e artifacts; fix CI gate set -e
+ae3c1e6 fix(sub-e): add set -e to CI gate
+f5ccb7e docs(progress): update Sub E commit refs
+fe1d3b3 fix(sub-e): exclude tests/e2e from tsconfig
+6dd9415 feat(sub-e): real staging env + gated auto-promote + Playwright smoke tests                        [Sub E]
+0982791 feat(infra): admin.caleo.id → real VOSI admin + staging rename + FP-1                              [Sub A]
+d57f381 docs(progress): Sub B CI test gate DONE
+2a591e0 ci(sub-b): add test gate to Cloud Build + fix 6 stale tests                                        [Sub B]
+```
+
+## Verification checklist (all ✅ except founder-manual items)
+
+- ✅ `https://admin.caleo.id/` → 200 + serves ERP HTML (hostname detection → /admin route)
+- ✅ `https://staging.app.caleo.id/` → 200 (staging FE Cloud Run)
+- ✅ `https://staging.admin.caleo.id/` → 200 (same staging FE, hostname detect)
+- ✅ CI test gate LIVE — 967 tests passing, 2 skipped, verified via build `1312de71`
+- ✅ Gated auto-promote pipeline VERIFIED end-to-end (build `8a77885c`) — CI → build → staging → Playwright smoke → prod
+- ✅ Playwright smoke: 3 pass / 2 skip (skipped tests: T3 admin redirect waiting SSL, T5 auth injection deferred to Sub D done)
+- ✅ `SUPABASE_SERVICE_KEY` no longer in cloudbuild.yaml plaintext — Secret Manager entry `supabase-service-key-prod`
+- ✅ Backend Go connects to Supabase via Secret Manager mount (verified via prod smoke)
+- ✅ `\d kasir_transactions` shows composite PK (tenant_id, id) — verified via advisors
+- ✅ `record_pembayaran(jsonb)` 1-arg overload dropped (mutable search_path WARN gone)
+- 🟡 Cross-subdomain SSO — Supabase Management API doesn't expose cookie_domain, deferred to Phase 3+ (@supabase/ssr refactor)
+
+## All 8 subdomains state
+
+| Subdomain | Status | Serving | SSL |
+|---|---|---|---|
+| caleo.id | ✅ 200 | Cloudflare Worker | Universal Free |
+| www.caleo.id | ✅ 200 | Cloudflare Worker | Universal Free |
+| app.caleo.id | ✅ 200 (ERP) | Cloud Run frontend | Google Trust Services |
+| admin.caleo.id | ✅ 200 (VOSI admin) | Cloud Run frontend (same as app) | Google Trust Services |
+| staging.app.caleo.id | ✅ 200 | Cloud Run staging FE | Google Trust Services |
+| staging.admin.caleo.id | ✅ 200 | Cloud Run staging FE (same) | Google Trust Services |
+| caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal Free |
+| www.caleo.web.id | ✅ 301 → caleo.id | Cloudflare Ruleset | Universal Free |
+
+## Backend health
+
+- `/api/v1/live` → 200
+- `/api/v1/ready` → 200 (DB reachable via Secret Manager)
+- `/api/v1/health` → 200 (backward compat)
+
+## Pending founder actions (non-blocking)
+
+1. **Rotate SUPABASE_SERVICE_KEY** via Supabase Dashboard (`https://supabase.com/dashboard/project/ekhhojaezdfjfwuxyjkl/settings/api`) — Sub D docs the 5-step procedure. Old key still valid in git history until rotated.
+2. **MI-2 Rollback drill** (optional) — deliberately push a bad commit, verify CI gate blocks OR verify rollback command works. Confirms safety net actually operational.
+
+## Ready for Phase 2
+
+Next step: dispatch P2-A (Cost tracking per tenant MVP) as first item of Phase 2.
+
+Phase 2 remaining (per revised value-order):
+1. P2-A Cost tracking MVP (~2-4h)
+2. P2-B Rate limiting per tenant (~3-4h)
+3. P2-E Async job infrastructure (elevated per value analysis) (~5-8h)
+4. P2-C Audit log completeness verification (~2-3h)
+5. P2-D Per-tenant export/import RPC (~3-4h)
+
+Total: ~15-23h.
+
+Then Tasks 10-17 (~40-50h).
