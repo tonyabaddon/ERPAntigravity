@@ -14554,3 +14554,49 @@ Next per Phase-2-final-plan doc:
 - Task 15: Landing page rewrite
 - Task 16: Firebase deploy alternative eval
 - Task 17: DNS cutover plan
+
+---
+
+# 🎯 SPLIT-POOL SHIP + FINAL STATUS — 2026-07-17 evening
+
+Bug D fix shipped via split-pool refactor. Backend Go now uses 2 *sql.DB instances:
+- `DB` → transaction pooler (`:6543`) for HTTP queries + RPC — 200+ effective slots via Supavisor multiplex
+- `ListenDB` → direct connection (`:5432`) for `pq.Listener` only — 1 conn per instance out of ~45-55 direct slots
+
+**Commit**: `0f769e5`
+**Prod revision**: `garindo-jaya-panel-msme-erp-00322-cuw` (100% traffic)
+**Log evidence**: `[DB] Connected — queries via txn pooler, listener via direct` + `[DB] LISTEN/NOTIFY active on ...`
+
+Memory: `supabase-split-pool` (new). `supabase-session-pooler` marked SUPERSEDED.
+
+## Full session shipping tally
+
+| Domain | Item | Status |
+|---|---|---|
+| P2-A cost dashboard + `/admin/billing` | shipped | ✅ verified prod |
+| P2-B rate limiting | shipped | ✅ verified prod |
+| P2-E job queue + Go worker (migrations 320-323) | shipped | ✅ smoke tested |
+| P2-C R1 audit gap survey (97 RPCs, gap list) | shipped | ✅ doc |
+| P2-C R2 kasir/tempo/pembayaran audit + tenant_id | shipped | ✅ verified prod |
+| Session pooler switch (Bug D compound) | shipped then superseded | — |
+| Split-pool refactor (Bug D real fix) | shipped | ✅ verified prod |
+| Security: DB conn to Secret Manager | shipped | ✅ verified |
+| Staging Playwright config fix | shipped | ✅ CI unblocked |
+| Task 10 monitoring baseline (8 alerts + email channel) | shipped | ✅ verified |
+| Task 12a daily backup (Cloud Scheduler + Job + GCS) | shipped | ✅ verified |
+| Task 12b restore runbook | shipped | ✅ rehearsed (2min RTO) |
+| Task 12c rollback runbook | shipped | ✅ 3 scenarios rehearsed |
+| Task 12d rehearsal | shipped | ✅ RTO << 30min SLA |
+
+**Skipped (deliberate)**: P2-D per-tenant export (YAGNI), Task 11 Sentry (deferred until safety net proven first).
+
+## Founder actions pending
+
+1. Click GCP email verification link for `tonywei.office@gmail.com` (Task 10 alerts blocked from delivery until verified)
+2. (Optional) Rotate DB password via Supabase Dashboard — old plaintext value was in Cloud Build trigger config
+
+## Incidents logged
+- `docs/incidents/2026-07-17-phase2-silent-deploy-failures.md` — Bugs A (staging Playwright), B (claim_next_job ambiguity), C (pool exhaustion + plaintext DB env), D (session pooler cap)
+
+## Ready for next work
+Tasks 13-17 per Phase-2-final-plan doc.
