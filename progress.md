@@ -1,5 +1,39 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Task 12a: Daily pg_dump backup to GCS — DONE
+
+**What**: Automated daily database backup. Cloud Scheduler triggers a Cloud Run Job at 03:00 UTC (10:00 WIB). Job runs `pg_dump -Fc` (custom format, compressed) and uploads to GCS. 30-day lifecycle retention. Log-based alert fires if no backup in 24.5h.
+
+**Connection**: Session pooler tested and confirmed compatible with pg_dump on Supabase 17.6. Uses existing `supabase-db-connection-prod` secret. No separate direct-connection secret needed.
+
+**Dump file size**: 3.23 MiB compressed (46 MB uncompressed DB, 3 tenants, 123 tables).
+
+**Resources created** (all in `gen-lang-client-0410251117`, `asia-southeast1`):
+- GCS bucket: `caleo-backups-gen-lang-client-0410251117` (uniform IAM, public access blocked, 30-day lifecycle)
+- Cloud Run Job: `caleo-daily-backup` (512Mi, 1 CPU, 15min timeout, 1 retry)
+- Cloud Scheduler: `caleo-daily-backup-trigger` (03:00 UTC daily)
+- Log-based metric: `backup_success_count` (filters `BACKUP_SUCCESS` from job logs)
+- Alert policy: "Backup missing — no successful backup in 24.5h" (GCP max = 88200s; spec said 26h but GCP rejects >88200s)
+- Notification: reuses existing `Founder email — Tony` channel
+
+**Deviation from spec**: Alert window is 24.5h (88200s), not 26h — GCP Cloud Monitoring hard limit is 88200s. 24.5h is sufficient to catch any missed daily backup.
+
+**Free-tier usage**: GCS ~97 MB/month (~2% of 5 GB free), Scheduler 1/3 free jobs, Cloud Run Jobs ~$0.001/day.
+
+**Committed files**:
+- `infra/backup/Dockerfile` — google/cloud-sdk:slim + postgresql-client-17 (pgdg repo)
+- `infra/backup/backup.sh` — pg_dump → gsutil cp → BACKUP_SUCCESS log marker
+- `infra/backup/cloudbuild.yaml` — image build + push + job update
+- `infra/backup/README.md` — runbook + resource list + manual trigger command
+- `infra/monitoring/log-metrics/backup-success-count.yaml`
+- `infra/monitoring/alert-policies/alert-8-backup-missing.yaml`
+
+**Manual test run**: `caleo-daily-backup-l4vxs` — SUCCESS. File `db-2026-07-17.dump` (3.23 MiB) confirmed in bucket.
+
+**Next**: Task 12b/c/d — restore rehearsal (joint with founder).
+
+---
+
 ## 2026-07-17 — P2-C Round 2: Audit log coverage — DONE_WITH_CONCERNS
 
 **What**: Added `tenant_id` column+index to `audit_log`, instrumented 3 high-value RPCs with audit events, and cleaned up the dead `submit_rakit_lock` function.

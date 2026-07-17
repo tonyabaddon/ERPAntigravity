@@ -1,0 +1,56 @@
+displayName: "Backup missing — no successful backup in 24.5h"
+combiner: OR
+conditions:
+- displayName: "backup_success_count < 1 in 24.5h rolling window"
+  conditionThreshold:
+    filter: 'metric.type="logging.googleapis.com/user/backup_success_count" resource.type="cloud_run_job"'
+    comparison: COMPARISON_LT
+    thresholdValue: 1
+    duration: 88200s    # 24.5 hours = GCP Cloud Monitoring max supported window (26h is over limit)
+    aggregations:
+    - alignmentPeriod: 88200s
+      perSeriesAligner: ALIGN_COUNT
+notificationChannels:
+- projects/gen-lang-client-0410251117/notificationChannels/14760023346272465972
+alertStrategy:
+  autoClose: 604800s
+documentation:
+  content: |
+    ## Backup Missing Alert
+
+    No successful database backup has been recorded in the past 26 hours.
+    Expected schedule: 03:00 UTC (10:00 WIB) daily.
+
+    **Possible causes**:
+    1. Cloud Scheduler job failed to trigger (check Scheduler console)
+    2. Cloud Run Job `caleo-daily-backup` failed (check Job execution logs)
+    3. pg_dump failed (connection issue, Supabase maintenance window)
+    4. gsutil upload failed (GCS permission or quota issue)
+    5. Secret `supabase-db-connection-prod` rotated without updating the Job
+
+    **Immediate action**:
+    1. Check Cloud Scheduler:
+       https://console.cloud.google.com/cloudscheduler?project=gen-lang-client-0410251117
+    2. Check Cloud Run Job execution history:
+       https://console.cloud.google.com/run/jobs/details/asia-southeast1/caleo-daily-backup/executions?project=gen-lang-client-0410251117
+    3. Trigger a manual run to recover:
+       `gcloud run jobs execute caleo-daily-backup --region=asia-southeast1 --project=gen-lang-client-0410251117 --wait`
+    4. Verify backup landed:
+       `gsutil ls -l gs://caleo-backups-gen-lang-client-0410251117/db-*.dump`
+
+    **Retention**: 30 daily backups kept. Missing one day is non-critical; missing
+    3+ consecutive days requires escalation.
+
+    **Log filter to see job logs**:
+    `resource.type="cloud_run_job" resource.labels.job_name="caleo-daily-backup"`
+  mimeType: text/markdown
+
+# Resource name (created 2026-07-17):
+# projects/gen-lang-client-0410251117/alertPolicies/14394812785035636006
+#
+# GCP constraint: conditionThreshold.duration max = 88200s (24h30m). The spec
+# called for 26h but GCP rejects >88200s. 24.5h still catches any missed daily backup.
+#
+# To re-create:
+#   gcloud alpha monitoring policies create --policy-from-file=alert-8-backup-missing.json \
+#     --project=gen-lang-client-0410251117

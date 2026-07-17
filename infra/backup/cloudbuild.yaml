@@ -1,0 +1,58 @@
+steps:
+  # ── Step 1: Build backup image ─────────────────────────────────────────────
+  # Based on google/cloud-sdk:slim + postgresql-client-17 (matches Supabase 17.x).
+  # Context is infra/backup/ to keep build context minimal.
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup:$COMMIT_SHA'
+      - '-t'
+      - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup:latest'
+      - 'infra/backup'
+
+  # ── Step 2: Push image ─────────────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - '--all-tags'
+      - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup'
+
+  # ── Step 3: Update Cloud Run Job with new image ───────────────────────────
+  # `gcloud run jobs update` fails if the job doesn't exist (first deploy).
+  # Use bash to try update first, fall back to create.
+  # Job config (secrets, env vars, SA, resources) is authoritative in jobs create
+  # below — update only needs to set the new image.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        IMAGE=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup:$COMMIT_SHA
+        if gcloud run jobs describe caleo-daily-backup \
+            --project=$_PROJECT_ID --region=$_DEPLOY_REGION --format=none 2>/dev/null; then
+          echo "Job exists — updating image to $$IMAGE"
+          gcloud run jobs update caleo-daily-backup \
+            --project=$_PROJECT_ID \
+            --region=$_DEPLOY_REGION \
+            --image=$$IMAGE
+        else
+          echo "Job not found — this build only updates an existing job."
+          echo "Create the job first with: gcloud run jobs create (see README.md)"
+          exit 1
+        fi
+
+images:
+  - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup:$COMMIT_SHA'
+  - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/caleo-db-backup:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _AR_HOSTNAME: asia-southeast1-docker.pkg.dev
+  _AR_PROJECT_ID: gen-lang-client-0410251117
+  _AR_REPOSITORY: cloud-run-source-deploy
+  _PROJECT_ID: gen-lang-client-0410251117
+  _DEPLOY_REGION: asia-southeast1

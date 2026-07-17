@@ -1,0 +1,22 @@
+name: backup_success_count
+description: "Successful pg_dump backups from caleo-daily-backup Cloud Run Job"
+filter: 'resource.type="cloud_run_job" resource.labels.job_name="caleo-daily-backup" textPayload=~"BACKUP_SUCCESS"'
+
+# Metric type: logging.googleapis.com/user/backup_success_count
+# Used by: alert-policies/alert-8-backup-missing.yaml
+#
+# Fires once per successful daily backup (the BACKUP_SUCCESS log line at end of backup.sh).
+# Alert fires when count < 1 over a 26-hour rolling window — catches missed runs and failures.
+#
+# Filter notes:
+# - resource.type="cloud_run_job" — Jobs use "cloud_run_job", not "cloud_run_revision"
+# - textPayload (not jsonPayload) — backup.sh uses echo (plain text), not structured JSON
+# - The BACKUP_SUCCESS line is only emitted AFTER gsutil upload succeeds (set -euo pipefail)
+#
+# Created 2026-07-17. Confirmed live: textPayload is used (backup.sh uses plain echo).
+#
+# To re-create:
+#   gcloud logging metrics create backup_success_count \
+#     --description="Successful pg_dump backups from caleo-daily-backup Cloud Run Job" \
+#     --log-filter='resource.type="cloud_run_job" resource.labels.job_name="caleo-daily-backup" textPayload=~"BACKUP_SUCCESS"' \
+#     --project=gen-lang-client-0410251117
