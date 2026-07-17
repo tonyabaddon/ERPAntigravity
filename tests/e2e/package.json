@@ -5,7 +5,9 @@
   "description": "Playwright smoke tests for staging gate",
   "scripts": {
     "test": "playwright test",
-    "test:staging": "playwright test --config=playwright.staging.config.ts"
+    "test:staging": "playwright test --config=playwright.staging.config.ts",
+    "test:prod": "playwright test tests/phase1-comprehensive.spec.ts --config=playwright.prod.config.ts",
+    "test:auth": "playwright test tests/phase1-authenticated.spec.ts --config=playwright.prod.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0"

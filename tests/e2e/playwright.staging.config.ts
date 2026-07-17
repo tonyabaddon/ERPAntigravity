@@ -17,6 +17,11 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
+  // Staging gate runs ONLY staging-smoke.spec — other suites (phase1-authenticated,
+  // phase1-comprehensive) target PROD URLs and require env vars not present in
+  // Cloud Build. Uncontrolled testMatch means every commit's staging step tries
+  // to run prod-only auth tests → gate fails silently. See 2026-07-17 incident.
+  testMatch: /staging-smoke\.spec\.ts$/,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
