@@ -1,5 +1,49 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-17 — Sub D: SUPABASE_SERVICE_KEY → GCP Secret Manager — DONE (rotation pending founder)
+
+**What**: Phase 1 finalization Sub D — secret management for service role key.
+
+**D1 — Secret Manager entry created**:
+- Secret `supabase-service-key-prod` in `gen-lang-client-0410251117`, region `asia-southeast1`.
+- Initial version 1 = current (exposed) key from git history.
+- IAM: `422860632808@cloudbuild.gserviceaccount.com` + `422860632808-compute@developer.gserviceaccount.com` → `roles/secretmanager.secretAccessor`.
+
+**D2 — cloudbuild.yaml updated**:
+- Staging (step 3) + prod (step 5): removed `SUPABASE_SERVICE_KEY=$_SUPABASE_SERVICE_KEY` from `--update-env-vars`.
+- Added `--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest` to both steps.
+- No hardcoded or substitution-variable reference to the service key remains in `cloudbuild.yaml`.
+- `git grep SUPABASE_SERVICE_KEY cloudbuild.yaml` → no sensitive value exposed.
+
+**D3 — Pipeline verified end-to-end**:
+- First build attempt (commit `d9aac9f`) failed: Cloud Run rejected `--update-secrets` because service had `SUPABASE_SERVICE_KEY` as env-var type (conflicting).
+- Fix: `gcloud run services update --remove-env-vars=SUPABASE_SERVICE_KEY` on both staging + prod, then `--update-secrets=...` to immediately restore connectivity.
+- Prod smoke (`/api/v1/ready` + `/api/v1/live`) → 200 OK throughout.
+- Second build (commit `e792112`) → SUCCESS. Pipeline works end-to-end with Secret Manager.
+
+**D4 — Key rotation PENDING (manual, founder must do)**:
+Key in git history (commit `4e1e992`, 2026-06-05) — rotation is the only remediation.
+Steps (founder action):
+1. Supabase Dashboard → `https://supabase.com/dashboard/project/ekhhojaezdfjfwuxyjkl/settings/api` → Service Role Key → Reset.
+2. Copy new JWT.
+3. Run: `echo -n "<NEW_KEY>" | gcloud secrets versions add supabase-service-key-prod --data-file=- --project=gen-lang-client-0410251117`
+4. Trigger no-op redeploy: `gcloud run services update garindo-jaya-panel-msme-erp --region=asia-southeast1 --project=gen-lang-client-0410251117`
+   (Secret Manager `:latest` resolves at deploy time — running revision keeps old secret until redeployed.)
+5. Update `backend-go/.env` with new key for local dev.
+6. Remove `_SUPABASE_SERVICE_KEY` from Cloud Build trigger substitutions (no longer referenced).
+
+**D5 — Git history cleanup**: NOT done. Decision: rotate key (old key becomes useless) is sufficient. Force-push rewrites history and breaks all local clones — bad tradeoff. Documented.
+
+**Verified**:
+- `npm run lint` → clean
+- `npm run audit:numinput` + `audit:secdef-null-tenant` → clean
+- Cloud Build pipeline SUCCESS (commit `e792112`)
+- Prod BE `/api/v1/ready` + `/api/v1/live` → 200 OK (Secret Manager serving correctly)
+
+**Commits**: `d9aac9f` (cloudbuild.yaml change) + `e792112` (re-trigger after env-var type conflict fix) | **Report**: `.superpowers/sdd/sub-d-report.md`
+
+---
+
 ## 2026-07-17 — Sub E: Real staging environment + gated auto-promote + Playwright — DONE
 
 **What**: Phase 1 finalization Sub E — 6 parts:
