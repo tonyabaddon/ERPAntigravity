@@ -1,0 +1,27 @@
+name = "caleo-landing"
+main = "worker.js"
+compatibility_date = "2026-07-19"
+
+[assets]
+directory = "../../public"
+binding = "ASSETS"
+run_worker_first = true
+
+[observability]
+enabled = true
+
+# Staging: deploy to auto-generated *.workers.dev URL for pre-production
+# testing. No caleo.id route binding. Deploy via:
+#   npx wrangler deploy --env staging
+[env.staging]
+name = "caleo-landing-staging"
+
+# Production: binds caleo.id/* route. Deploy via:
+#   npx wrangler deploy --env production
+# ONLY after staging has passed the full test matrix in Task 9.
+[env.production]
+name = "caleo-landing"
+
+[[env.production.routes]]
+pattern = "caleo.id/*"
+zone_name = "caleo.id"
