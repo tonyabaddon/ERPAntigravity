@@ -341,7 +341,7 @@ func main() {
 		if err == nil {
 			break
 		}
-		slog.Error("[MAIN] DB connect attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.Any("error", err))
+		slog.Error("[MAIN] DB connect attempt failed — retrying in 10s", slog.Int("attempt", attempt), slog.String("error", err.Error()))
 		time.Sleep(10 * time.Second)
 	}
 	defer dbClient.Close()
