@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -123,6 +125,14 @@ func (w *Worker) processOne(ctx context.Context) {
 		logger.ErrorContext(ctx, "[JOBS] handler returned error",
 			slog.String("error", jobErr.Error()),
 			slog.Int("duration_ms", duration))
+		// Forward job failures to Sentry with tenant/job context.
+		// Safe no-op when Sentry SDK is uninitialised (DSN absent).
+		sentry.WithScope(func(scope *sentry.Scope) {
+			scope.SetTag("tenant_id", tenantID)
+			scope.SetTag("job_type", jobType)
+			scope.SetTag("job_id", jobID)
+			sentry.CaptureException(jobErr)
+		})
 		w.complete(ctx, jobID, "FAILED", nil, "HANDLER_ERROR", jobErr.Error(), duration)
 		return
 	}

@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	_ "github.com/lib/pq"
 	"github.com/username/sinar-elektrik-backend/config"
 	"github.com/username/sinar-elektrik-backend/internal/api"
@@ -29,6 +31,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
+	"github.com/username/sinar-elektrik-backend/internal/sentryutil"
 	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
 	"go.mau.fi/whatsmeow"
 )
@@ -74,6 +77,13 @@ func (a approvalStoreAdapter) DecideViaWAButton(approvalID int64, decision, owne
 }
 
 func main() {
+	// Init Sentry BEFORE logging so panics during startup are captured.
+	// No-op (dormant) when SENTRY_DSN env var is absent.
+	sentryutil.Init()
+	// Always flush buffered Sentry events on shutdown, even if Init returned
+	// false — sentry.Flush is safe to call on an uninitialised SDK.
+	defer sentry.Flush(2 * time.Second)
+
 	// Init structured logging first — all subsequent log calls use slog.
 	// CloudHandler emits JSON to stdout compatible with Cloud Logging's
 	// jsonPayload ingestion (severity/message/timestamp field names).
@@ -302,14 +312,19 @@ func main() {
 	go func() {
 		slog.Info("[MAIN] HTTP server starting", slog.String("port", cfg.Port))
 		// Middleware layer order (outermost → innermost):
-		//   1. SecurityHeadersMiddleware — HSTS, X-Content-Type-Options, X-Frame, Referrer, Permissions
-		//   2. RequestContextMiddleware — extracts tenant_id/user_id/request_id from JWT
-		//   3. rateLimiter.Wrap        — enforces per-tenant token-bucket rate limits
-		//   4. VersionRouter           — rewrites /api/v1/* → /api/*
-		//   5. mux                    — actual handlers
-		// SecurityHeadersMiddleware wraps outermost so headers apply to every
-		// response including 4xx/5xx that bypass inner middleware. Task 16 (2026-07-18).
-		if err := http.Serve(ln, api.SecurityHeadersMiddleware(api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux))))); err != nil {
+		//   1. sentryhttp.Handle       — panic capture + Sentry request context (Task 11)
+		//   2. SecurityHeadersMiddleware — HSTS, X-Content-Type-Options, X-Frame, Referrer, Permissions
+		//   3. RequestContextMiddleware — extracts tenant_id/user_id/request_id from JWT
+		//   4. rateLimiter.Wrap        — enforces per-tenant token-bucket rate limits
+		//   5. VersionRouter           — rewrites /api/v1/* → /api/*
+		//   6. mux                    — actual handlers
+		// sentryhttp wraps outermost so panics anywhere in the chain are captured.
+		// Repanic:true re-panics after capture so Cloud Run logs the crash too.
+		// No-op when Sentry SDK is uninitialised (DSN absent).
+		sh := sentryhttp.New(sentryhttp.Options{Repanic: true})
+		handler := sh.Handle(api.SecurityHeadersMiddleware(api.RequestContextMiddleware(rateLimiter.Wrap(api.VersionRouter(mux)))))
+		if err := http.Serve(ln, handler); err != nil {
+			sentry.CaptureException(err)
 			slog.Error("[MAIN] HTTP error", slog.Any("error", err))
 		}
 	}()

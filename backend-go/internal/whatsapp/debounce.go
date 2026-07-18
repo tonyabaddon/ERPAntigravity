@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/getsentry/sentry-go"
 )
 
 type bufferState int
@@ -225,6 +227,8 @@ func (h *DebounceHandler) flushBuffer(pb *phoneBuffer, phone, reason string) {
 	defer func() {
 		if r := recover(); r != nil {
 			slog.Error("[DEBOUNCE] action=panic", slog.String("phone", phone), slog.Any("error", r))
+			// Forward panic to Sentry. Safe no-op when SDK is uninitialised.
+			sentry.CurrentHub().Recover(r)
 		}
 	}()
 

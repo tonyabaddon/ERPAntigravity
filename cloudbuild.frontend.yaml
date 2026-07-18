@@ -24,6 +24,8 @@ steps:
   # one image validates in staging and promotes directly to prod unchanged.
   # VITE_SUPABASE_* vars are baked in (same project for staging + prod per
   # Option X decision — single Supabase project with test tenants for staging).
+  # VITE_SENTRY_DSN and VITE_COMMIT_SHA are empty by default — Sentry stays
+  # dormant until DSN is set at trigger level (_VITE_SENTRY_DSN substitution).
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
@@ -33,9 +35,50 @@ steps:
       - 'VITE_SUPABASE_URL=$_VITE_SUPABASE_URL'
       - '--build-arg'
       - 'VITE_SUPABASE_ANON_KEY=$_VITE_SUPABASE_ANON_KEY'
+      - '--build-arg'
+      - 'VITE_SENTRY_DSN=$_VITE_SENTRY_DSN'
+      - '--build-arg'
+      - 'VITE_COMMIT_SHA=$COMMIT_SHA'
       - '-f'
       - 'Dockerfile'
       - '.'
+
+  # ── Step 1b: Upload source maps to Sentry (conditional) ───────────────────
+  # Only runs when _SENTRY_AUTH_TOKEN is set at trigger level.
+  # Produces a local ./dist build (separate from the Docker build — Cloud Build
+  # workspace doesn't have Docker's intermediate layer), injects debug IDs,
+  # uploads .map files to Sentry associated with this release, then deletes
+  # .map files so they don't ship in the Docker image (Nginx would serve them).
+  # This step is a no-op (exits 0) when _SENTRY_AUTH_TOKEN is empty.
+  - name: 'node:20'
+    entrypoint: 'sh'
+    env:
+      - 'SENTRY_AUTH_TOKEN=$_SENTRY_AUTH_TOKEN'
+      - 'SENTRY_ORG=caleo'
+      - 'SENTRY_PROJECT=caleo-frontend'
+      - 'VITE_SENTRY_DSN=$_VITE_SENTRY_DSN'
+      - 'VITE_COMMIT_SHA=$COMMIT_SHA'
+    args:
+      - '-c'
+      - |
+        set -e
+        if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+          echo "Sentry: SENTRY_AUTH_TOKEN not set — skipping source map upload (dormant mode)"
+          exit 0
+        fi
+        echo "Sentry: installing dependencies for source map upload ..."
+        npm ci --prefer-offline
+        echo "Sentry: building to produce local dist/ with source maps ..."
+        npm run build
+        echo "Sentry: injecting debug IDs into source maps ..."
+        npx @sentry/cli@latest sourcemaps inject ./dist
+        echo "Sentry: uploading source maps for release $COMMIT_SHA ..."
+        npx @sentry/cli@latest sourcemaps upload \
+          --release "$COMMIT_SHA" \
+          ./dist
+        echo "Sentry: removing .map files so they don't land in the final image ..."
+        find ./dist -name '*.map' -delete
+        echo "Sentry: source map upload complete."
 
   # ── Step 2: Push image ─────────────────────────────────────────────────────
   - name: 'gcr.io/cloud-builders/docker'
@@ -197,6 +240,10 @@ substitutions:
   # from window.location.hostname (see src/lib/backendUrl.ts). One image for
   # both staging and prod.
   _VITE_SUPABASE_URL: https://ekhhojaezdfjfwuxyjkl.supabase.co
+  # Sentry: empty defaults so build works without Sentry credentials.
+  # Set at trigger level once Sentry account is created.
+  _VITE_SENTRY_DSN: ''
+  _SENTRY_AUTH_TOKEN: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY

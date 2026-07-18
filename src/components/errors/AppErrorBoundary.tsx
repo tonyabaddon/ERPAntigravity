@@ -4,9 +4,10 @@
 // whole app doesn't blank out on one component crash. Every FE deploy from
 // 2026-07-18 forward should have this wrapping <App /> in main.tsx.
 //
-// Sentry integration deliberately deferred (Task 11) — for now errors go to
-// console + a text fallback screen with a reload button.
+// Task 11 (2026-07-18): Reports to Sentry via captureException in
+// componentDidCatch. Safe no-op when Sentry is not initialised (DSN absent).
 import * as React from 'react';
+import * as Sentry from '@sentry/react';
 import { AlertTriangle } from 'lucide-react';
 
 // children typed as `any` because this project ships without @types/react —
@@ -24,12 +25,16 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    // Best-effort structured log. Sentry hook goes here when Task 11 ships.
     // eslint-disable-next-line no-console
     console.error('[AppErrorBoundary] Uncaught render error', {
       message: error.message,
       stack: error.stack,
       componentStack: info.componentStack,
+    });
+    // Report to Sentry with component stack context.
+    // Safe no-op when Sentry SDK is uninitialised (DSN absent in dormant mode).
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: info.componentStack } },
     });
   }
 

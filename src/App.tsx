@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import * as Sentry from '@sentry/react';
 import {
   Bot,
   Search,
@@ -255,6 +256,16 @@ export default function App() {
         } finally {
           setSessionTenantLoaded(true);
         }
+        // Sentry tenant scope: tag every subsequent event with tenant_id +
+        // user_id so Sentry's Issues view can filter by tenant.
+        // Reads tenant_id from the JWT payload (already decoded above).
+        // Safe no-op when Sentry is uninitialised (DSN absent in dormant mode).
+        if (session.access_token) {
+          const claims = decodeJwt(session.access_token);
+          const tenantId = typeof claims.tenant_id === 'string' ? claims.tenant_id : undefined;
+          if (tenantId) Sentry.setTag('tenant_id', tenantId);
+          Sentry.setUser({ id: user.id });
+        }
         // Restore deep-link if stashed by AuthScreen; otherwise preserve the
         // current URL when it carries a valid screen (page reload while
         // logged in). Only normalize to dashboard when the URL is empty,
@@ -452,6 +463,8 @@ export default function App() {
       }
     }
     setCurrentUser(null);
+    // Clear Sentry user/tenant scope on logout.
+    Sentry.setUser(null);
     // Clear URL params so a refresh post-logout starts clean. AuthScreen renders
     // via the !currentUser gate, not via ?screen=auth.
     window.history.replaceState({}, '', window.location.pathname);

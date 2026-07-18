@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
@@ -117,6 +118,8 @@ func (h *Handler) routeMessage(ctx context.Context, senderJID string, text strin
 			defer func() {
 				if r := recover(); r != nil {
 					slog.Error("[HANDLER] escalation goroutine panic", slog.String("sender_jid", senderJID), slog.Any("error", r))
+					// Forward panic to Sentry. Safe no-op when SDK is uninitialised.
+					sentry.CurrentHub().Recover(r)
 				}
 			}()
 			switch esc {

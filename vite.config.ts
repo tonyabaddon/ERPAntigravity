@@ -11,6 +11,13 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      // 'hidden' generates .map files alongside the bundle but does NOT add
+      // //# sourceMappingURL comments to JS files — browsers never download
+      // them, but Sentry CLI can find and upload them (see cloudbuild.frontend.yaml).
+      // Task 11 (2026-07-18).
+      sourcemap: 'hidden' as const,
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify – file watching is disabled to prevent flickering during agent edits.
