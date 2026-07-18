@@ -548,7 +548,14 @@ func main() {
 	// connection (bypasses RLS for cross-tenant polling via claim_next_job).
 	// FOR UPDATE SKIP LOCKED in claim_next_job makes this safe if Cloud Run
 	// scales to multiple instances.
-	jobWorker := jobs.NewWorker(dbClient.DB)
+	// Task 11 debug 2026-07-18: worker uses ListenDB (direct connection),
+	// NOT dbClient.DB (which routes to transaction pooler).
+	// lib/pq's parameterised queries use extended protocol + prepared
+	// statements. Supavisor transaction mode drops prepared statements
+	// between transactions → "pq: unnamed prepared statement does not exist"
+	// error every 5s poll. Direct connection preserves prepared statement
+	// lifetime for the connection's duration → worker functions correctly.
+	jobWorker := jobs.NewWorker(dbClient.ListenDB)
 	jobWorker.Register("echo_test", jobs.EchoHandler)
 	// P2-D will add: jobWorker.Register("export_data", exportHandler)
 	workerCtx, workerCancel := context.WithCancel(ctx)
