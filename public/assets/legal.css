@@ -1,0 +1,49 @@
+:root {
+  --navy: #0B2545;
+  --slate: #5A6472;
+  --gold: #F59E0B;
+  --border: #E2E8F0;
+  --bg-alt: #F8FAFC;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--navy);
+  background: #fff;
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 60px 24px 100px;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 780px;
+  margin: 0 auto;
+}
+nav.legal-nav {
+  max-width: 780px;
+  margin: 0 auto 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--slate);
+}
+nav.legal-nav a { color: var(--slate); text-decoration: none; font-weight: 600; }
+nav.legal-nav a:hover { color: var(--navy); }
+nav.legal-nav img { height: 32px; width: auto; display: block; }
+h1 { font-size: 32px; font-weight: 900; letter-spacing: -0.8px; margin-bottom: 8px; line-height: 1.2; }
+h2 { font-size: 22px; font-weight: 800; margin: 36px 0 12px; letter-spacing: -0.3px; }
+h3 { font-size: 17px; font-weight: 700; margin: 24px 0 8px; }
+p { margin-bottom: 14px; }
+strong { color: var(--navy); font-weight: 700; }
+ul, ol { margin: 12px 0 16px 24px; }
+li { margin-bottom: 6px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+table th, table td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+table th { background: var(--bg-alt); font-weight: 700; }
+code { background: var(--bg-alt); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'SF Mono', Menlo, monospace; }
+hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+blockquote { border-left: 3px solid var(--gold); background: var(--bg-alt); padding: 12px 16px; margin: 16px 0; font-style: italic; color: var(--slate); }
+a { color: var(--gold); text-decoration: underline; }
+footer.legal-foot { max-width: 780px; margin: 60px auto 0; padding-top: 24px; border-top: 1px solid var(--border); font-size: 12px; color: var(--slate); text-align: center; }

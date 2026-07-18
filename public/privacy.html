@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id-ID">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kebijakan Privasi — Caleo</title>
+<meta name="description" content="Kebijakan Privasi Caleo — bagaimana kami memproses data Anda di platform ERP Caleo.">
+<meta name="robots" content="index,follow">
+<link rel="icon" type="image/png" href="/assets/CALEO-icon-HD.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/legal.css">
+</head>
+<body>
+<nav class="legal-nav">
+  <a href="/"><img src="/assets/CALEO-logo-horizontal-HD-v2.png" alt="Caleo"></a>
+  <a href="/">← Kembali ke Beranda</a>
+</nav>
+<main>
+<h1 id="kebijakan-privasi-caleo">Kebijakan Privasi Caleo</h1>
+<p><strong>Efektif sejak</strong>: 2026-07-18 <strong>Versi</strong>:
+1.0</p>
+<p>Dokumen ini menjelaskan bagaimana Caleo memproses data Anda saat
+menggunakan aplikasi <code>app.caleo.id</code>, situs
+<code>caleo.id</code>, panel admin <code>admin.caleo.id</code>, dan
+layanan pendukungnya (selanjutnya “Layanan”). “Kami” = Caleo. “Anda” =
+pengguna Layanan.</p>
+<hr />
+<h2 id="tldr-untuk-pemilik-toko">TL;DR untuk pemilik toko</h2>
+<p>Ringkasan singkat — versi lengkap tetap yang mengikat:</p>
+<ul>
+<li><strong>Data toko Anda milik Anda.</strong> Kami tidak menjual,
+tidak membagikan ke pesaing, tidak memakainya untuk melatih AI.</li>
+<li><strong>Vendor cloud terpercaya</strong> (Supabase, Google Cloud,
+Cloudflare — daftar lengkap di bawah). Data disimpan terenkripsi.</li>
+<li><strong>Setiap tenant terisolasi</strong> di level database
+(Row-Level Security). Toko A tidak bisa melihat data toko B.</li>
+<li><strong>Anda bisa minta ekspor atau penghapusan data kapan
+saja</strong> lewat <code>privacy@caleo.id</code>. Kami merespon paling
+lambat 14 hari kalender.</li>
+</ul>
+<hr />
+<h2 id="identitas-pengendali-data">1. Identitas Pengendali Data</h2>
+<ul>
+<li><strong>Nama entitas</strong>: Caleo (usaha perorangan)</li>
+<li><strong>Alamat kantor</strong>: Lindeteves Trade Center (LTC)
+Glodok, Blok C30 No. 15 Lantai UG, Jakarta Barat</li>
+<li><strong>Email privasi</strong>: <code>privacy@caleo.id</code></li>
+<li><strong>Email umum</strong>: <code>halo@caleo.id</code></li>
+<li><strong>WhatsApp support</strong>: +62-852-6478-7775</li>
+</ul>
+<p>Petugas Perlindungan Data (DPO) formal akan ditunjuk saat skala
+pemrosesan mewajibkan. Sementara ini, fungsi DPO dijalankan founder
+Caleo.</p>
+<h2 id="data-yang-kami-kumpulkan">2. Data yang Kami Kumpulkan</h2>
+<p><strong>Data akun</strong> (Anda berikan saat mendaftar): nama,
+email, nomor telepon (bila integrasi WhatsApp aktif), password (hash —
+tidak pernah teks asli).</p>
+<p><strong>Data tenant / bisnis</strong> (Anda berikan saat mengelola
+bisnis): nama dan alamat toko, NPWP (bila dimasukkan), data pelanggan,
+supplier, karyawan, produk, stok, transaksi, akuntansi.</p>
+<p><strong>Penting</strong>: Anda sebagai pemilik tenant adalah
+<strong>Pengendali Data</strong> atas data pelanggan/supplier/karyawan
+yang Anda masukkan. Caleo bertindak sebagai <strong>Prosesor
+Data</strong>. Anda bertanggung jawab memperoleh dasar hukum (misal
+persetujuan) dari mereka sebelum memasukkan datanya.</p>
+<p><strong>Data teknis</strong> (otomatis): IP, jenis perangkat,
+browser, OS, timestamp aktivitas, log error (dianonimkan bila
+memungkinkan), counter agregat penggunaan fitur.</p>
+<p><strong>Data pihak ketiga</strong> (opsional): pesan WhatsApp
+inbound/outbound (bila modul WA dan AI Calista aktif), data payment
+gateway (bila diaktifkan di masa depan).</p>
+<h2 id="dasar-hukum-pemrosesan">3. Dasar Hukum Pemrosesan</h2>
+<p>Kami memproses data Anda berdasarkan persetujuan Anda saat mendaftar
+dan sepanjang diperlukan untuk menjalankan Layanan, menjaga keamanan,
+dan memenuhi kewajiban hukum (misal retensi pajak).</p>
+<h2 id="tujuan-pemrosesan">4. Tujuan Pemrosesan</h2>
+<ol type="1">
+<li>Menyediakan Layanan ERP; mengelola akun dan tenant Anda.</li>
+<li>Memproses transaksi bisnis Anda.</li>
+<li>Mengirim notifikasi operasional (verifikasi, reset password, alert,
+tagihan).</li>
+<li>Memberikan dukungan pelanggan (<code>halo@caleo.id</code> /
+WhatsApp).</li>
+<li>Menganalisis penggunaan agregat untuk perbaikan fitur (data
+dianonimkan).</li>
+<li>Menjalankan kewajiban hukum (pajak, audit, permintaan penegak hukum
+sah).</li>
+<li>Mendeteksi dan mencegah fraud atau serangan keamanan.</li>
+</ol>
+<p>Kami <strong>TIDAK</strong> menjual data Anda ke pihak ketiga untuk
+iklan.</p>
+<h2 id="kerahasiaan-data-bisnis-anda">5. Kerahasiaan Data Bisnis
+Anda</h2>
+<p>Selain perlindungan data pribadi, kami menjaga <strong>kerahasiaan
+data bisnis Anda</strong> — penjualan, margin, daftar pelanggan, harga
+supplier, laporan keuangan. Kami <strong>tidak</strong> mengungkapkannya
+ke publik, media, pesaing, atau afiliasi tanpa persetujuan tertulis
+Anda; <strong>tidak</strong> memakainya untuk keuntungan komersial kami
+(benchmarking teridentifikasi, penjualan insight). Akses internal
+dibatasi untuk dukungan teknis dan hanya dengan izin Anda, kecuali
+diwajibkan proses hukum sah. Karyawan/kontraktor kami terikat kewajiban
+kerahasiaan.</p>
+<p>Bila kami diwajibkan mengungkapkan data oleh perintah pengadilan atau
+penegak hukum, kami akan berupaya memberitahu Anda terlebih dahulu
+(kecuali dilarang) agar Anda dapat menempuh upaya hukum yang
+tersedia.</p>
+<h2 id="pihak-ketiga-sub-prosesor">6. Pihak Ketiga (Sub-Prosesor)</h2>
+<p>Sub-prosesor berikut kami evaluasi untuk kepatuhan keamanan setara
+atau lebih tinggi:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Sub-prosesor</th>
+<th>Fungsi</th>
+<th>Lokasi data</th>
+<th>Kepatuhan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Supabase Inc.</td>
+<td>Database Postgres + Auth</td>
+<td>Singapura (ap-southeast-1)</td>
+<td>SOC 2 Type II, GDPR</td>
+</tr>
+<tr>
+<td>Google Cloud Platform</td>
+<td>Cloud Run hosting + backup storage</td>
+<td>Singapura (asia-southeast1)</td>
+<td>ISO 27001, SOC 2, GDPR</td>
+</tr>
+<tr>
+<td>Cloudflare Inc.</td>
+<td>CDN + DNS + edge routing</td>
+<td>Global edge (at-rest US)</td>
+<td>ISO 27001, SOC 2, GDPR</td>
+</tr>
+<tr>
+<td>Sentry (Functional Software)</td>
+<td>Error monitoring</td>
+<td>Uni Eropa</td>
+<td>SOC 2 Type II, GDPR</td>
+</tr>
+<tr>
+<td>Resend Inc.</td>
+<td>Email transaksional</td>
+<td>Amerika Serikat</td>
+<td>SOC 2</td>
+</tr>
+<tr>
+<td>OpenRouter</td>
+<td>LLM routing (Calista, opsional)</td>
+<td>Amerika Serikat</td>
+<td>Tidak menyimpan prompt untuk pelatihan model</td>
+</tr>
+<tr>
+<td>Google AI Studio (Gemini)</td>
+<td>LLM inference (Calista, opsional)</td>
+<td>Amerika Serikat / global</td>
+<td>ISO 27001; tier berbayar tidak dipakai untuk pelatihan model</td>
+</tr>
+</tbody>
+</table>
+<p>Kami akan memberitahukan penambahan atau perubahan sub-prosesor via
+email atau notifikasi in-app.</p>
+<h2 id="transfer-data-lintas-negara">7. Transfer Data Lintas Negara</h2>
+<p>Sebagian data Anda diproses di server luar Indonesia (Singapura, Uni
+Eropa, AS) sesuai daftar di atas. Transfer dilakukan berdasarkan
+kepatuhan sub-prosesor pada standar perlindungan data yang setara,
+klausul kontraktual standar (SCC), dan mekanisme transfer internasional
+yang diterima (Data Privacy Framework). Salinan mekanisme transfer
+tersedia via <code>privacy@caleo.id</code>.</p>
+<h2 id="retensi-data">8. Retensi Data</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Kategori data</th>
+<th>Periode retensi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data akun aktif</td>
+<td>Selama akun aktif</td>
+</tr>
+<tr>
+<td>Data akun setelah penutupan</td>
+<td>Maksimal 30 hari, kecuali kewajiban hukum pajak (10 tahun untuk
+dokumen fiskal)</td>
+</tr>
+<tr>
+<td>Data transaksi bisnis</td>
+<td>10 tahun (kewajiban hukum pajak)</td>
+</tr>
+<tr>
+<td>Log teknis (IP, timestamp)</td>
+<td>180 hari (auto-prune)</td>
+</tr>
+<tr>
+<td>Backup harian</td>
+<td>30 hari (lifecycle Google Cloud Storage)</td>
+</tr>
+<tr>
+<td>Data WhatsApp inbound/outbound</td>
+<td>90 hari, kecuali Anda minta lebih lama untuk audit</td>
+</tr>
+</tbody>
+</table>
+<p>Setelah periode retensi berakhir, data <strong>dihapus
+permanen</strong> atau dianonimkan.</p>
+<h2 id="hak-anda-sebagai-subjek-data">9. Hak Anda sebagai Subjek
+Data</h2>
+<p>Anda berhak untuk:</p>
+<ol type="1">
+<li>Mendapatkan <strong>informasi</strong> tentang pemrosesan data
+Anda.</li>
+<li><strong>Mengakses</strong> salinan data pribadi Anda.</li>
+<li><strong>Memperbaiki</strong> data yang tidak akurat.</li>
+<li><strong>Menghapus</strong> data (kecuali diwajibkan disimpan oleh
+hukum).</li>
+<li><strong>Menarik persetujuan</strong> kapan saja.</li>
+<li><strong>Menolak</strong> pemrosesan otomatis yang berakibat hukum
+bagi Anda.</li>
+<li><strong>Portabilitas data</strong> — menerima data dalam format CSV
+/ JSON.</li>
+<li><strong>Mengajukan keberatan</strong> ke lembaga pengawas.</li>
+</ol>
+<p><strong>Cara</strong>: kirim email ke <code>privacy@caleo.id</code>
+dengan subjek “Permintaan Hak Subjek Data — [jenis hak]”. Kami respon
+<strong>maksimal 14 hari kalender</strong>. Permintaan kompleks dapat
+diperpanjang dengan pemberitahuan alasan.</p>
+<h2 id="keamanan-data">10. Keamanan Data</h2>
+<ul>
+<li><strong>Enkripsi in-transit</strong> TLS 1.2+;
+<strong>at-rest</strong> storage PostgreSQL + Google Cloud Storage.</li>
+<li><strong>Row-Level Security</strong>: setiap tenant hanya akses
+datanya sendiri, dienforce di level database.</li>
+<li><strong>Autentikasi</strong>: password bcrypt + JWT session
+token.</li>
+<li><strong>Backup harian</strong> retensi 30 hari, disimpan terpisah;
+<strong>uji restore</strong> kuartalan.</li>
+<li><strong>Monitoring</strong>: audit log + alert otomatis aktivitas
+mencurigakan; rotasi secret terjadwal.</li>
+</ul>
+<p>Tidak ada sistem 100% aman. Bila Anda mengetahui pelanggaran
+keamanan, hubungi <code>privacy@caleo.id</code> atau WA
++62-852-6478-7775.</p>
+<h2 id="notifikasi-insiden-keamanan">11. Notifikasi Insiden
+Keamanan</h2>
+<p>Bila terjadi kegagalan perlindungan data (data breach), kami
+akan:</p>
+<ol type="1">
+<li>Menyelidiki dan mengendalikan insiden segera.</li>
+<li>Memberitahukan <strong>Anda</strong> dalam <strong>maksimal 72
+jam</strong> setelah kami mengetahui, bila insiden berpotensi risiko
+tinggi.</li>
+<li>Memberitahukan <strong>Kementerian Komunikasi dan Digital</strong>
+dalam maksimal 72 jam.</li>
+<li>Mendokumentasikan insiden, dampak, dan pemulihan.</li>
+</ol>
+<p>Notifikasi mencakup jenis data terdampak, potensi dampak, mitigasi
+kami, dan langkah yang disarankan untuk Anda.</p>
+<h2 id="cookie-dan-tracking">12. Cookie dan Tracking</h2>
+<p>Kami memakai cookie / localStorage untuk session login (essential),
+preferensi tampilan (tema, bahasa), dan analytics agregat (Sentry
+breadcrumbs — tidak melacak identitas personal). Kami
+<strong>TIDAK</strong> memakai cookie iklan pihak ketiga, tracking
+pixel, atau analytics pihak ketiga yang melacak identitas Anda di luar
+Layanan.</p>
+<h2 id="data-anak-anak">13. Data Anak-Anak</h2>
+<p>Layanan ditujukan untuk pemilik dan karyawan bisnis dewasa (minimal
+18 tahun). Kami tidak sengaja mengumpulkan data anak di bawah 17 tahun.
+Bila Anda tahu kami memproses data anak tanpa dasar hukum sah, hubungi
+kami untuk penghapusan segera.</p>
+<h2 id="perubahan-kebijakan">14. Perubahan Kebijakan</h2>
+<p>Perubahan material diberitahukan via email ke pemilik akun minimal
+<strong>30 hari</strong> sebelum berlaku, dan dipublikasikan di halaman
+ini dengan versi + tanggal efektif baru. Bila mengurangi hak Anda secara
+material, kami minta persetujuan ulang. Perubahan minor (perbaikan
+bahasa, ejaan) berlaku segera tanpa pemberitahuan formal.</p>
+<h2 id="hukum-yang-berlaku-dan-penyelesaian-sengketa">15. Hukum yang
+Berlaku dan Penyelesaian Sengketa</h2>
+<p>Kebijakan ini tunduk pada hukum <strong>Republik Indonesia</strong>.
+Sengketa diselesaikan melalui:</p>
+<ol type="1">
+<li><strong>Musyawarah</strong> (penyelesaian non-litigasi lewat
+komunikasi langsung): hubungi <code>privacy@caleo.id</code> — kami
+respon dalam 14 hari kalender.</li>
+<li><strong>Lembaga pengawas perlindungan data</strong> bila musyawarah
+tidak berhasil.</li>
+<li><strong>Pengadilan Negeri Jakarta Barat</strong> sebagai forum
+terakhir, sesuai domisili kantor kami.</li>
+</ol>
+<h2 id="kontak">16. Kontak</h2>
+<ul>
+<li><strong>Hak subjek data &amp; insiden keamanan</strong>:
+<code>privacy@caleo.id</code></li>
+<li><strong>Pertanyaan umum</strong>: <code>halo@caleo.id</code></li>
+<li><strong>WhatsApp support</strong>: +62-852-6478-7775</li>
+<li><strong>Alamat surat</strong>: Lindeteves Trade Center (LTC) Glodok,
+Blok C30 No. 15 Lantai UG, Jakarta Barat</li>
+</ul>
+</main>
+<footer class="legal-foot">
+  © 2026 Caleo · LTC Glodok Jakarta · WA <a href="https://wa.me/6285264787775">0852-6478-7775</a> · <a href="mailto:halo@caleo.id">halo@caleo.id</a><br>
+  <a href="/">Beranda</a> · <a href="/terms.html">Syarat &amp; Ketentuan</a>
+</footer>
+</body>
+</html>
