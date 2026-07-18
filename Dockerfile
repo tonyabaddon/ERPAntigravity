@@ -25,6 +25,12 @@ ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 ENV VITE_COMMIT_SHA=$VITE_COMMIT_SHA
 
 RUN npm run build
+# Remove source maps so they don't ship in the serve image.
+# 'hidden' sourcemaps (Task 11) produce .map files alongside the bundle —
+# serve would serve them at predictable /assets/*.js.map URLs. The
+# cloudbuild.frontend.yaml node:20 step runs its own build + uploads maps to
+# Sentry before this Docker layer, so this delete only affects the image.
+RUN find /app/dist -name '*.map' -delete
 
 # Serve stage — Node reads $PORT from Cloud Run
 FROM node:20-alpine

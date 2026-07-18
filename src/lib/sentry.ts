@@ -24,12 +24,12 @@ const PII_KEYS = new Set([
  * Walk a value tree and scrub PII in-place.
  * Operates on plain objects and arrays only; primitives are returned as-is
  * (or redacted if they look like a JWT or WA phone).
+ * NOTE: call scrubString() for bare strings instead of this function — this
+ * is intended for nested object/array trees coming from breadcrumb.data etc.
  */
 function scrubValue(value: unknown): unknown {
   if (typeof value === 'string') {
-    return value
-      .replace(JWT_RE, '[JWT_REDACTED]')
-      .replace(WA_PHONE_RE, '[PHONE_REDACTED]');
+    return scrubString(value);
   }
   if (Array.isArray(value)) {
     return value.map(scrubValue);
@@ -45,11 +45,22 @@ function scrubValue(value: unknown): unknown {
   return value;
 }
 
+/** Scrub PII patterns from a string. Resets regex lastIndex after use. */
+function scrubString(s: string): string {
+  const result = s
+    .replace(JWT_RE, '[JWT_REDACTED]')
+    .replace(WA_PHONE_RE, '[PHONE_REDACTED]');
+  JWT_RE.lastIndex = 0;
+  WA_PHONE_RE.lastIndex = 0;
+  return result;
+}
+
 /**
  * Scrub PII from a Sentry event before transmission.
- * - Removes Authorization headers from captured request data.
- * - Strips JWT tokens and WA phone numbers from all string values.
- * - Redacts known PII JSON keys in breadcrumb data.
+ * - Removes Authorization/Cookie headers.
+ * - Strips JWT tokens and WA phone numbers from message and exception text.
+ * - Strips JWT/phone from breadcrumb messages and data values.
+ * - Redacts known PII JSON key names in breadcrumb data.
  */
 function scrubbedEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
   // Scrub request headers.
@@ -61,6 +72,20 @@ function scrubbedEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
     if (headers['cookie']) headers['cookie'] = '[REDACTED]';
   }
 
+  // Scrub top-level message.
+  if (typeof event.message === 'string') {
+    event.message = scrubString(event.message);
+  }
+
+  // Scrub exception values (the thrown Error's message text).
+  if (event.exception?.values) {
+    for (const exc of event.exception.values) {
+      if (typeof exc.value === 'string') {
+        exc.value = scrubString(exc.value);
+      }
+    }
+  }
+
   // Scrub breadcrumb messages and data.
   if (Array.isArray(event.breadcrumbs)) {
     for (const crumb of event.breadcrumbs) {
@@ -68,12 +93,7 @@ function scrubbedEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
         crumb.data = scrubValue(crumb.data) as Record<string, string>;
       }
       if (typeof crumb.message === 'string') {
-        crumb.message = crumb.message
-          .replace(JWT_RE, '[JWT_REDACTED]')
-          .replace(WA_PHONE_RE, '[PHONE_REDACTED]');
-        // Reset lastIndex because the regexes use the /g flag.
-        JWT_RE.lastIndex = 0;
-        WA_PHONE_RE.lastIndex = 0;
+        crumb.message = scrubString(crumb.message);
       }
     }
   }

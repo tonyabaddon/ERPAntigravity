@@ -54,7 +54,7 @@ steps:
     entrypoint: 'sh'
     env:
       - 'SENTRY_AUTH_TOKEN=$_SENTRY_AUTH_TOKEN'
-      - 'SENTRY_ORG=caleo'
+      - 'SENTRY_ORG=$_SENTRY_ORG'
       - 'SENTRY_PROJECT=caleo-frontend'
       - 'VITE_SENTRY_DSN=$_VITE_SENTRY_DSN'
       - 'VITE_COMMIT_SHA=$COMMIT_SHA'
@@ -244,6 +244,7 @@ substitutions:
   # Set at trigger level once Sentry account is created.
   _VITE_SENTRY_DSN: ''
   _SENTRY_AUTH_TOKEN: ''
+  _SENTRY_ORG: 'caleo'
 
 options:
   logging: CLOUD_LOGGING_ONLY
