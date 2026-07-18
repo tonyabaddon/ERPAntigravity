@@ -57,10 +57,11 @@ func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 	return result, nil
 }
 
-// IncrementFollowup records a follow-up send. If it is a new WIB day since the
-// last follow-up, the count resets to 1 rather than incrementing.
+// IncrementFollowup records a successful follow-up send. If it is a new WIB day
+// since the last follow-up, the count resets to 1 rather than incrementing.
 // After 6 cumulative sends (3 days × 2/day) with no customer reply,
 // ai_active is set to false to stop further follow-ups automatically.
+// Also resets followup_failed_attempts because success ends any prior failure streak.
 func (c *Client) IncrementFollowup(convID string) error {
 	_, err := c.DB.Exec(`
 		UPDATE conversations SET
@@ -72,8 +73,27 @@ func (c *Client) IncrementFollowup(convID string) error {
 		  END,
 		  last_followup_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta')::date,
 		  followup_sends_total = followup_sends_total + 1,
+		  followup_failed_attempts = 0,
 		  ai_active = CASE
 		    WHEN followup_sends_total + 1 >= 6 THEN false
+		    ELSE ai_active
+		  END
+		WHERE id = $1
+	`, convID)
+	return err
+}
+
+// IncrementFollowupFailed records a failed SendText attempt. After 3 consecutive
+// failures, ai_active is auto-set to false to stop the runaway loop pattern
+// discovered 2026-07-18 (invalid phones, unpaired WA sessions, etc). Successful
+// sends via IncrementFollowup reset this counter, so intermittent failures
+// don't compound with successes.
+func (c *Client) IncrementFollowupFailed(convID string) error {
+	_, err := c.DB.Exec(`
+		UPDATE conversations SET
+		  followup_failed_attempts = followup_failed_attempts + 1,
+		  ai_active = CASE
+		    WHEN followup_failed_attempts + 1 >= 3 THEN false
 		    ELSE ai_active
 		  END
 		WHERE id = $1
@@ -84,12 +104,15 @@ func (c *Client) IncrementFollowup(convID string) error {
 // ResetFollowupCounter clears follow-up tracking when the customer replies.
 // Called at the start of processMessage so any customer reply resets the state,
 // including the cumulative sends counter so the 3-day auto-disable window restarts.
+// Also resets followup_failed_attempts because a customer reply proves the WA
+// channel works — any prior failure streak was transient.
 func (c *Client) ResetFollowupCounter(convID string) error {
 	_, err := c.DB.Exec(`
 		UPDATE conversations
 		SET followup_count_today = 0,
 		    last_followup_date = NULL,
-		    followup_sends_total = 0
+		    followup_sends_total = 0,
+		    followup_failed_attempts = 0
 		WHERE id = $1
 	`, convID)
 	return err

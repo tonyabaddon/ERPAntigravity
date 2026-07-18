@@ -59,7 +59,13 @@ func (p *Poller) poll(ctx context.Context) {
 		msg := buildFollowupMessage(conv, effectiveCount+1)
 		if err := p.sender.SendText(ctx, conv.CustomerPhone, msg); err != nil {
 			slog.Error("[FOLLOWUP] SendText error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
-			// Do NOT update DB on send failure — avoid phantom follow-up count.
+			// Safety valve: increment failed_attempts; auto-disable ai_active
+			// after 3 consecutive failures to stop the runaway loop pattern
+			// (2026-07-18: invalid phones + unpaired WA sessions caused
+			// unbounded retry every 30s).
+			if failErr := p.db.IncrementFollowupFailed(conv.ID); failErr != nil {
+				slog.Error("[FOLLOWUP] IncrementFollowupFailed error", slog.String("conv_id", conv.ID), slog.String("error", failErr.Error()))
+			}
 			continue
 		}
 		if err := p.db.IncrementFollowup(conv.ID); err != nil {
