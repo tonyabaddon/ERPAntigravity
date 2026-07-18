@@ -1,76 +1,70 @@
-# Task 7 Report — Structured logging + tenant_id middleware (backend Go)
+# Task 7 Report — Playwright smoke tests: `tests/e2e/tests/landing-smoke.spec.ts`
 
 **Status:** DONE
-**Date:** 2026-07-17
-**Commit SHA:** 0f1d687
+**Date:** 2026-07-19
+**Commit SHA:** (see below)
 
 ## Summary
 
-Migrated the entire backend Go daemon from stdlib `log.Printf` to `log/slog` (Go stdlib 1.21+) with a Cloud Logging-compatible custom handler. Every production request now emits structured JSON fields including `tenant_id`, `user_id`, and `request_id`.
+Wrote 12 Playwright smoke tests for the Caleo landing site (caleo.id). Suite runs against local wrangler dev, staging, or production via `CALEO_LANDING_BASE` env var. All 12/12 pass against local wrangler dev at `http://localhost:8787`.
 
 ## Deliverables
 
-### New files
 | File | Purpose |
 |------|---------|
-| `backend-go/internal/logging/slog_handler.go` | `CloudHandler` emitting Cloud Logging-compatible JSON (`severity`/`message`/`timestamp`); context key helpers (`WithTenantID`, `WithUserID`, `WithRequestID`) |
-| `backend-go/internal/logging/cloud_handler_smoke_test.go` | 3 tests verifying JSON shape, WARN→WARNING mapping, empty-ctx field omission |
-| `backend-go/internal/api/context_middleware.go` | `RequestContextMiddleware` — decodes JWT Bearer base64url payload (no sig-verify), extracts `tenant_id` + `sub`, generates `X-Request-Id` UUID if absent |
+| `tests/e2e/tests/landing-smoke.spec.ts` | 12 Playwright smoke tests for caleo.id landing |
 
-### Modified files (11)
-- `backend-go/main.go` — `logging.Init()` + wires `RequestContextMiddleware` into HTTP server chain
-- `backend-go/internal/db/client.go` + `conversations.go`
-- `backend-go/internal/engine/machine.go`
-- `backend-go/internal/followup/poller.go`
-- `backend-go/internal/heartbeat/poller.go`
-- `backend-go/internal/recon/handler.go`
-- `backend-go/internal/scheduler/timeout.go`
-- `backend-go/internal/whatsapp/client.go`
-- `backend-go/internal/whatsapp/debounce.go`
-- `backend-go/internal/whatsapp/handler.go`
+## Test coverage
 
-## Migration scope
+| # | Test name | What it asserts |
+|---|-----------|-----------------|
+| T1 | home page loads with expected structure | HTTP 200, `h1` contains "Toko makin rapi", `.nav-cta` visible |
+| T2 | all WA links contain the correct number | `>=10` `.js-wa-link` elements, each href contains `wa.me/6285264787775` |
+| T3 | case-study page loads with back link to / | HTTP 200, h1 visible, `a.back-link` has `href="/"` |
+| T4 | privacy.html loads with expected structure | HTTP 200, h1 contains "Kebijakan Privasi", TL;DR section visible |
+| T5 | terms.html loads with expected structure | HTTP 200, h1 matches `/Syarat.*Ketentuan/`, TL;DR section visible |
+| T6 | robots.txt served with Sitemap directive | HTTP 200, contains `User-agent: *`, Sitemap directive matches `/Sitemap:\s+https?:\/\/\S+\/sitemap\.xml/` |
+| T7 | sitemap.xml served as valid XML | HTTP 200, content-type is XML, body contains `<urlset` and `/case-study` |
+| T8 | CSP header present + script-src is self only | Response header `content-security-policy` contains `script-src 'self'` and `default-src 'self'` |
+| T9 | landing.js loads (external, not inline) | HTTP 200 on `/assets/landing.js`, body contains `roi-staff` and `pricing` |
+| T10 | OG image is served | HTTP 200 on `/assets/og-image.png`, content-type is `image/png` |
+| T11 | Phase 3.1 semantic markers preserved on home | `>=10` `.js-wa-link`, `#js-slot-counter` attached, `>=10` `.js-testi-card`, `=4` `.js-stat-card`, `=10` `.js-promo-item` |
+| T12 | all Phase 3.0 sections render on home | 16 section IDs visible (#hero through #cta), 8 `.aud-card`, 10 `.mod-icon-card`, 4 `.onb-step` |
 
-**Total production log sites migrated: 178** (within the 188 counted — 10 excluded by design):
-- `config/config.go` — fires before `logging.Init()`, intentionally kept as `log.Println`
-- `internal/approvals/expiry_poller.go` — has `WithLogger(*log.Logger)` functional option used by tests that capture log output by string matching; changing this would break test API. Kept as-is; `log.Default()` is bridged to slog in Go 1.21+ via `SetDefault`.
-- `cmd/apply-migration/` + `cmd/smoke-gemini/` — dev/admin tooling, not production daemon.
+## Run command
 
-**Zero remaining** `log.Printf`/`log.Println`/`log.Fatalf` in production daemon path (verified by grep).
+```bash
+# Against local wrangler dev (port 8787):
+CALEO_LANDING_BASE=http://localhost:8787 npx playwright test tests/e2e/tests/landing-smoke.spec.ts
 
-## Cloud Logging field mapping
+# Against staging (Task 9):
+CALEO_LANDING_BASE=https://<staging-workers-dev-url> npx playwright test tests/e2e/tests/landing-smoke.spec.ts
 
-| stdlib slog field | CloudHandler emits |
-|---|---|
-| `level` | `severity` (`WARN`→`WARNING`) |
-| `msg` | `message` |
-| `time` | `timestamp` (RFC 3339 Nano, UTC) |
-| ctx `tenant_id` | `tenant_id` (omitted when empty) |
-| ctx `user_id` | `user_id` (omitted when empty) |
-| ctx `request_id` | `request_id` (omitted when empty) |
+# Against production:
+npx playwright test tests/e2e/tests/landing-smoke.spec.ts  # defaults to https://caleo.id
+```
+
+Run from `tests/e2e/` directory (or use `--config` pointing to a config without testMatch restrictions).
+
+## Design decisions
+
+### T6 robots.txt — URL-agnostic assertion
+`robots.txt` hardcodes `https://caleo.id/sitemap.xml` (static file). The brief's `${BASE}/sitemap.xml` interpolation would fail on `localhost:8787` and staging. Instead, the test asserts the `Sitemap:` directive exists and points to any valid `sitemap.xml` URL using a regex. This makes the test valid across all environments without modifying the static file.
+
+### T7 sitemap.xml — partial URL match
+Same reason: `<loc>` entries hardcode `https://caleo.id/...`. We assert the path fragment `/case-study` is present, which is true across all serving environments.
+
+### T11 #js-slot-counter — toBeAttached not toBeVisible
+The slot counter div `#js-slot-counter` exists in the DOM but may have zero height when the slot JS hasn't populated it yet (legitimate DOM presence test vs. CSS visibility). Using `toBeAttached()` is the accurate contract.
+
+### No playwright.config used for this suite
+Both existing configs (`playwright.staging.config.ts`, `playwright.prod.config.ts`) have `testMatch` or `baseURL` that conflict with this suite's full-URL pattern. Running with `npx playwright test tests/e2e/tests/landing-smoke.spec.ts` from `tests/e2e/` uses Playwright zero-config defaults (Chromium, no baseURL override).
 
 ## Verification
 
-- `go build ./...` — clean (0 errors)
-- `go test ./internal/...` — all pass
-- CloudHandler smoke tests: 3/3 pass (JSON shape, WARN→WARNING, no-empty-fields)
-- `npm run lint` — clean (FE unaffected)
-- Zero `log.Printf` remaining in production files
-- Push triggered Cloud Build deploy
-
-## Cloud Logging query (for founder to verify after deploy)
-
-```
-resource.type="cloud_run_revision"
-jsonPayload.tenant_id="<paste a real tenant UUID here>"
-```
-
-Or to verify request_id tracing works end-to-end:
-```bash
-curl -H "X-Request-Id: test-uuid-123" https://your-cloud-run-url/api/v1/health
-# Then query: jsonPayload.request_id="test-uuid-123"
-```
+- Local wrangler dev started with `--compatibility-date 2024-12-01` (wrangler.toml's `2026-07-19` date is unsupported by local wrangler 4.112.0)
+- **12/12 pass** in 3.5s against `http://localhost:8787`
 
 ## Concerns
 
-None. Design decisions (approvals poller test API, config pre-init) documented inline.
+None for the test file itself. One observation for the operator: `wrangler.toml` has `compatibility_date = "2026-07-19"` which is beyond what local wrangler 4.112.0 supports. This is fine for production deploys to Cloudflare (which runs a newer runtime) but requires `--compatibility-date 2024-12-01` override for local dev testing. Consider pinning `wrangler.toml` to a supported date or documenting the `--compatibility-date` flag in the worker's README.
