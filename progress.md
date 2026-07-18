@@ -1,5 +1,32 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-19 — Phase 3 landing shipped
+
+**Deliverable**: Public landing at `caleo.id/` (was placeholder "Segera Hadir") + legal pages + case study + email routing.
+
+### Shipped components
+
+| Component | Status | Notes |
+|---|---|---|
+| Landing at `caleo.id/` | ✅ LIVE | Replaces placeholder "Segera Hadir"; Playwright smoke suite (10 tests) 12/12 pass in 5.9s |
+| Case study page | ✅ LIVE | `caleo.id/case-study` (founder story + Garindo Jaya Panel use case) |
+| Legal: privacy + terms | ✅ LIVE | `caleo.id/privacy.html` + `caleo.id/terms.html` |
+| Email routing | ✅ LIVE | `halo@caleo.id` → `tonywei.office@gmail.com` via Cloudflare Email Routing (rule 7ba62ac88743484699bea2094d96abcc) |
+| Cloudflare Worker deployment | ✅ LIVE | `caleo-landing` deployed; `wrangler rollback` runbook at `docs/runbooks/caleo-id-landing-ops.md` |
+| Performance (Lighthouse) | ✅ PASS | Desktop: 0.98/1.00/0.96/1.00 (perf/a11y/best-practices/seo). Mobile: 0.87/1.00/0.96/1.00. Both meet targets. |
+
+### Scalability & cost
+
+- **Zero infra cost**: Cloudflare Workers + Email Routing free tier (no Cloud Run service added)
+- **Phase 3.1 queued** (config-driven Caleo Admin sidebar per spec §12 + §16): additive, no rebuild needed
+
+### Deferred to Phase 4
+
+- **Enhanced landing analytics** — current static Playwright smoke only; event tracking + funnel analytics deferred
+- **Localization** — en-US only; ID + regional variants post-launch
+
+---
+
 ## 2026-07-18 — Phase 2 re-evaluated + closed (5 items shipped)
 
 **Trigger**: Founder ask ("di evaluasi ulang phase 2 yang benar-benar kasih value dan bangun foundation, scalable, zero cost and best practices"). Chose "Foundation infrastructure (deep tech)" outcome goal. Autonomous session extended "sampai malam".
