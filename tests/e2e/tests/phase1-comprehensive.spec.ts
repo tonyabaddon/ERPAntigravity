@@ -48,14 +48,14 @@ function collectConsoleErrors(page: any): string[] {
 test.describe('PROD app.caleo.id', () => {
   test('loads without critical console errors', async ({ page }) => {
     const errors = collectConsoleErrors(page);
-    const response = await page.goto(PROD_APP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    const response = await page.goto(PROD_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     expect(response?.status()).toBe(200);
     await page.waitForTimeout(1500);
     expect(errors, `Console errors:\n${errors.join('\n')}`).toHaveLength(0);
   });
 
   test('tenant login page (email + OTP button) renders', async ({ page }) => {
-    await page.goto(PROD_APP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(PROD_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]');
     await expect(emailInput.first()).toBeVisible({ timeout: 15_000 });
     const otpButton = page.locator('button:has-text("OTP"), button:has-text("Masuk"), button:has-text("Kirim")');
@@ -63,7 +63,7 @@ test.describe('PROD app.caleo.id', () => {
   });
 
   test('title contains Caleo/VOSI branding (marks page loaded)', async ({ page }) => {
-    await page.goto(PROD_APP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(PROD_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     const title = await page.title();
     expect(title.length).toBeGreaterThan(3);
   });
@@ -71,7 +71,7 @@ test.describe('PROD app.caleo.id', () => {
 
 test.describe('PROD admin.caleo.id', () => {
   test('auto-redirects to /admin route (Sub A hostname detection)', async ({ page }) => {
-    await page.goto(PROD_ADMIN_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(PROD_ADMIN_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     await page.waitForTimeout(2000);  // allow window.location.replace('/admin') to fire
     const finalUrl = page.url();
     expect(finalUrl).toMatch(/\/admin/);
@@ -79,7 +79,7 @@ test.describe('PROD admin.caleo.id', () => {
 
   test('admin login screen loads without critical errors', async ({ page }) => {
     const errors = collectConsoleErrors(page);
-    await page.goto(PROD_ADMIN_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(PROD_ADMIN_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     await page.waitForTimeout(2500);
     expect(errors, `Console errors:\n${errors.join('\n')}`).toHaveLength(0);
   });
@@ -115,14 +115,14 @@ test.describe('PROD backend health', () => {
 test.describe('STAGING staging.app.caleo.id', () => {
   test('loads without critical console errors', async ({ page }) => {
     const errors = collectConsoleErrors(page);
-    const response = await page.goto(STAGING_APP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    const response = await page.goto(STAGING_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     expect(response?.status()).toBe(200);
     await page.waitForTimeout(1500);
     expect(errors, `Console errors:\n${errors.join('\n')}`).toHaveLength(0);
   });
 
   test('staging tenant login renders', async ({ page }) => {
-    await page.goto(STAGING_APP_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(STAGING_APP_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]');
     await expect(emailInput.first()).toBeVisible({ timeout: 15_000 });
   });
@@ -130,7 +130,7 @@ test.describe('STAGING staging.app.caleo.id', () => {
 
 test.describe('STAGING staging.admin.caleo.id', () => {
   test('auto-redirects to /admin route', async ({ page }) => {
-    await page.goto(STAGING_ADMIN_URL, { waitUntil: 'networkidle', timeout: 30_000 });
+    await page.goto(STAGING_ADMIN_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 });
     await page.waitForTimeout(2000);
     const finalUrl = page.url();
     expect(finalUrl).toMatch(/\/admin/);
