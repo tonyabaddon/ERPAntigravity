@@ -67,7 +67,30 @@ No paid tier upgrades, no new SaaS subscriptions, no infra cost bumps this pass.
 ### Commits shipped this session
 
 - `b485e65 docs(runbooks): Task 12b+12d closure — pg_restore drill PASS + secret rotation doc`
-- (this commit) Task 13 + 15b + Task 14/17 verification
+- `4408454 docs: Phase 1 close — Task 13 + 15b + verify`
+- `e7c09c8 fix(logs): slog.String for FOLLOWUP/HEARTBEAT + zombie cleanup + data patch`
+
+### Prod hygiene cleanup this session (bonus, per founder "no critical/important gaps" bar)
+
+**Zombie Cloud Run revisions**: Deleted 20+ old BE revisions (00276-00342) that still ran pre-Bug-E worker code. These emitted `[JOBS] claim_next_job scan failed` every 5s despite serving traffic being on the fixed revision. Only current serving + 2 recent post-fix revisions kept.
+
+**Fake WA test data**: Discovered `wa_recipients.name LIKE 'T20%'` (24 test fixture rows, 21-digit invalid phones) still `is_active=true` on Garindo tenant + Toko Jaya Makmur conversations with fake `+62812-1000-000X` phones still `ai_active=true`. HEARTBEAT + FOLLOWUP pollers were iterating these + failing SendText every 30s. Errors were hidden by `slog.Any("error", err)` rendering `{}`. Data patched: `is_active=false` for T20 recipients + `ai_active=false` for test tenant convs.
+
+**slog error format bug** (same class as commit `96f3687`): fixed in `internal/followup/poller.go` (4 sites) + `internal/heartbeat/poller.go` (6 sites). Errors now visible in Cloud Logging.
+
+**Post-cleanup verification (2 min window)**:
+- JOBS errors: 0
+- FOLLOWUP errors: 0  
+- HEARTBEAT errors: 0
+- All ERROR-level logs: 0
+- All WARN+ logs: 0
+- Prod BE `/api/v1/ready`: 200 in 253ms
+- Prod FE `/`: 200 in 254ms
+- Prod landing `caleo.id`: 200 in 317ms
+
+Prod is genuinely clean for the first time this session. Ready for 10-tenant onboarding.
+
+**Memoried**: `wa-test-data-noise` — cleanup pattern + how to prevent recurrence (filter tenants without real whatsmeow device before poller iteration).
 
 ---
 
