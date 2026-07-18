@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
-	"github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib" // pgx driver for database/sql — kills Bug E class (P2-#8)
+	"github.com/lib/pq"                 // still used for pq.NewListener (LISTEN/NOTIFY)
 )
 
 type NotifyHandlers struct {
@@ -41,14 +43,27 @@ type Client struct {
 // effective client cap but drops LISTEN. Direct connection preserves LISTEN
 // but counts against the real-connection quota.
 func NewClient(queryConn, listenConn string) (*Client, error) {
-	query, err := sql.Open("postgres", queryConn)
+	// P2-#8 pgx migration: use pgx driver with simple_protocol exec mode.
+	// This kills Bug E class ("pq: unnamed prepared statement does not exist")
+	// permanently — pgx in simple_protocol mode doesn't use extended-protocol
+	// prepared statements, so parameterised queries survive Supavisor
+	// transaction pooler rebinding between server connections.
+	//
+	// Append default_query_exec_mode=simple_protocol to the connection URL if
+	// not already present. Works for both libpq keyword-value strings and URL
+	// forms (pgx parses both). We add via URL query param for maximum
+	// compatibility with the pgx URL parser.
+	pgxConn := addPgxExecMode(queryConn)
+
+	query, err := sql.Open("pgx", pgxConn)
 	if err != nil {
 		return nil, err
 	}
-	// Restore MaxOpenConns=10: txn pooler multiplexes so this doesn't exhaust
-	// server connections. Previous MaxOpenConns=5 was a session-pooler workaround.
-	query.SetMaxOpenConns(10)
-	query.SetMaxIdleConns(5)
+	// pgx + txn pooler with simple_protocol: safe to run higher MaxOpenConns
+	// because Supavisor multiplexes hundreds of client conns onto a small
+	// number of server conns. 50 gives headroom for 10-tenant burst load.
+	query.SetMaxOpenConns(50)
+	query.SetMaxIdleConns(10)
 	query.SetConnMaxLifetime(5 * time.Minute)
 	if err := query.Ping(); err != nil {
 		query.Close()
@@ -87,7 +102,7 @@ func NewClient(queryConn, listenConn string) (*Client, error) {
 // initialised. Used by integration tests where the LISTEN/NOTIFY plumbing is
 // irrelevant and slow to set up.
 func NewClientWithoutListener(connStr string) (*Client, error) {
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("pgx", addPgxExecMode(connStr))
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +114,28 @@ func NewClientWithoutListener(connStr string) (*Client, error) {
 		return nil, err
 	}
 	return &Client{DB: db}, nil
+}
+
+// addPgxExecMode appends default_query_exec_mode=simple_protocol to the
+// connection string so pgx uses simple query protocol (Bug E fix).
+// Handles both URL-form ("postgres://...") and libpq keyword-value form.
+func addPgxExecMode(conn string) string {
+	const mode = "default_query_exec_mode=simple_protocol"
+	if strings.Contains(conn, mode) {
+		return conn
+	}
+	if strings.HasPrefix(conn, "postgres://") || strings.HasPrefix(conn, "postgresql://") {
+		sep := "?"
+		if strings.Contains(conn, "?") {
+			sep = "&"
+		}
+		return conn + sep + mode
+	}
+	// libpq keyword-value form: append as space-separated kv
+	if strings.TrimSpace(conn) == "" {
+		return mode
+	}
+	return conn + " " + mode
 }
 
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
