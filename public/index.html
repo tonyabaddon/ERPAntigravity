@@ -68,7 +68,7 @@
   --cream: #FFF7F0; --bg-alt: #F8FAFC; --border: #E2E8F0;
   --success: #16A34A; --success-soft: #DCFCE7;
   --danger: #DC2626; --danger-soft: #FEE2E2;
-  --wa: #25D366;
+  --wa: #1a7a3d; /* a11y: darkened from #25D366 — white on #1a7a3d = 5.36:1 (AA) */
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
@@ -140,7 +140,7 @@ nav {
   padding: 5px 12px; border-radius: 999px;
   background: rgba(11,37,69,0.06); margin-bottom: 14px;
 }
-.eyebrow.gold { color: var(--gold-2); background: var(--gold-soft); }
+.eyebrow.gold { color: #92400E; background: var(--gold-soft); } /* a11y: #92400E on gold-soft = 6.45:1 */
 .s-title { font-size: 34px; font-weight: 900; letter-spacing: -1.2px; color: var(--navy); margin-bottom: 12px; line-height: 1.1; }
 .s-title em { font-style: normal; background: linear-gradient(120deg, var(--gold), var(--gold-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .s-sub { font-size: 15px; color: var(--slate); max-width: 600px; margin-bottom: 40px; line-height: 1.65; }
@@ -199,7 +199,7 @@ nav {
 .hero-micro { display: flex; gap: 20px; font-size: 12.5px; color: var(--slate); font-weight: 600; flex-wrap: wrap; animation: fadeUp .6s ease-out .5s both; }
 @media (max-width: 900px) { .hero-micro { justify-content: center; } }
 .hero-micro span { display: inline-flex; align-items: center; gap: 5px; }
-.tick { color: var(--success); font-weight: 900; }
+.tick { color: #166534; font-weight: 900; } /* a11y: 7.17:1 on white */
 
 /* Hero visual — polished dashboard mock */
 .hero-visual {
@@ -223,19 +223,19 @@ nav {
 .mock-stat { padding: 12px 14px; border-radius: 10px; background: var(--bg-alt); }
 .mock-stat.big { background: linear-gradient(135deg, var(--gold-soft), var(--cream)); }
 .mock-stat.danger { background: var(--danger-soft); }
-.mock-stat-label { font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+.mock-stat-label { font-size: 9px; letter-spacing: 0.5px; text-transform: uppercase; color: #64748B; font-weight: 700; margin-bottom: 4px; } /* a11y: 4.52:1 on bg-alt */
 .mock-stat-value { font-size: 16px; font-weight: 900; color: var(--navy); }
 .mock-stat-value.up { color: var(--success); }
 .mock-stat-value.danger { color: var(--danger); }
-.mock-stat-delta { font-size: 10px; color: var(--success); font-weight: 800; margin-left: 4px; }
+.mock-stat-delta { font-size: 10px; color: #166534; font-weight: 800; margin-left: 4px; } /* a11y: 7.17:1 on bg-alt */
 .ai-card { background: linear-gradient(135deg, var(--navy-2), var(--navy-3)); border-radius: 10px; padding: 13px 15px; color: #fff; margin-bottom: 14px; position: relative; }
 .ai-card::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; background: var(--gold); border-radius: 0 3px 3px 0; }
-.ai-card-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); font-weight: 900; margin-bottom: 4px; }
+.ai-card-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); font-weight: 900; margin-bottom: 4px; } /* a11y: gold #FBBF24 on ai-card dark-navy bg = 8.02:1 AA — earlier sweep mis-tagged bg as white */
 .ai-card-text { font-size: 12px; line-height: 1.55; color: rgba(255,255,255,0.94); }
-.mock-chart-label { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+.mock-chart-label { font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; } /* a11y: 4.52:1 on bg-alt */
 .mock-chart { height: 44px; display: flex; align-items: flex-end; gap: 5px; margin-bottom: 14px; }
 .mock-chart div { flex: 1; border-radius: 3px 3px 0 0; background: linear-gradient(to top, var(--gold), #FCD34D); }
-.mock-top-label { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+.mock-top-label { font-size: 10px; color: #64748B; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; } /* a11y: 4.52:1 on bg-alt */
 .mock-top-row { display: flex; justify-content: space-between; padding: 7px 0; font-size: 11px; border-bottom: 1px solid #F1F5F9; }
 .mock-top-row:last-child { border-bottom: none; }
 .mock-top-name { color: var(--slate); font-weight: 500; }
@@ -245,7 +245,7 @@ nav {
 .trust { padding: 40px 24px; background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .trust-inner { max-width: 1000px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 32px; font-size: 13px; color: var(--slate); font-weight: 600; }
 .trust-item { display: flex; align-items: center; gap: 8px; }
-.trust-item .ck { width: 24px; height: 24px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; flex-shrink: 0; }
+.trust-item .ck { width: 24px; height: 24px; border-radius: 50%; background: #166534; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; flex-shrink: 0; } /* a11y: white on #166534 = 7.17:1 */
 
 /* ═══ STATS ROW (concise · credibility "ratusan join") ═══ */
 #stats { padding: 60px 24px; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%); color: #fff; }
@@ -286,7 +286,7 @@ nav {
   .deep-row, .deep-row:nth-child(even) { grid-template-columns: 1fr; gap: 28px; margin-bottom: 48px; }
   .deep-row:nth-child(even) .deep-visual { order: 0; }
 }
-.deep-label { font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-2); margin-bottom: 10px; }
+.deep-label { font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: #92400E; margin-bottom: 10px; } /* a11y: #92400E on white = 7.16:1 */
 .deep-title { font-size: 30px; font-weight: 900; color: var(--navy); letter-spacing: -0.8px; margin-bottom: 14px; line-height: 1.15; }
 .deep-desc { font-size: 15px; color: var(--slate); line-height: 1.7; margin-bottom: 20px; }
 .deep-features { list-style: none; padding: 0; }
@@ -310,7 +310,7 @@ nav {
   box-shadow: 0 12px 32px rgba(11,37,69,0.15);
   padding: 20px; width: 100%; position: relative; z-index: 1;
 }
-.demo-title { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.demo-title { font-size: 12px; color: #64748B; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; } /* a11y: 4.72:1 on white */
 .demo-line { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #F1F5F9; font-size: 12.5px; }
 .demo-line:last-child { border-bottom: none; }
 .demo-lbl { color: var(--slate); font-weight: 500; }
@@ -368,7 +368,7 @@ nav {
   border-bottom: 1px solid var(--border);
 }
 .po-stat { padding: 10px 12px; background: #fff; border: 1px solid var(--border); border-radius: 10px; }
-.po-stat-lbl { font-size: 9.5px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+.po-stat-lbl { font-size: 9.5px; letter-spacing: 0.5px; text-transform: uppercase; color: #64748B; font-weight: 700; margin-bottom: 4px; } /* a11y: 4.72:1 on white */
 .po-stat-val { font-size: 16px; font-weight: 900; color: var(--navy); letter-spacing: -0.3px; }
 .po-filters {
   display: flex; gap: 8px; align-items: center;
@@ -386,7 +386,7 @@ nav {
 .po-search {
   padding: 6px 14px; border-radius: 999px;
   background: var(--bg-alt); border: 1px solid var(--border);
-  font-size: 11.5px; color: var(--muted); font-weight: 500;
+  font-size: 11.5px; color: #64748B; font-weight: 500; /* a11y: 4.52:1 on bg-alt */
 }
 .po-table {}
 .po-row {
@@ -400,7 +400,7 @@ nav {
 .po-row.po-head { background: var(--bg-alt); font-size: 10.5px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; color: var(--slate); padding: 12px 26px; }
 .po-row:not(.po-head):hover { background: rgba(251,191,36,0.04); }
 .po-no { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11.5px; color: var(--navy); font-weight: 700; }
-.po-sub { font-size: 10.5px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.po-sub { font-size: 10.5px; color: #64748B; font-weight: 500; margin-top: 2px; } /* a11y: 4.72:1 on white */
 .po-amt { font-weight: 800; color: var(--navy); }
 .po-badge {
   display: inline-block;
@@ -411,7 +411,7 @@ nav {
 .po-badge-y { background: var(--gold-soft); color: #78350F; }
 .po-badge-r { background: var(--danger-soft); color: #991B1B; }
 .po-badge-b { background: #DBEAFE; color: #1E40AF; }
-.po-actions { font-size: 11px; color: var(--gold-2); font-weight: 700; }
+.po-actions { font-size: 11px; color: #92400E; font-weight: 700; } /* a11y: #92400E on white = 7.16:1 */
 @media (max-width: 720px) {
   .po-chrome { padding: 8px 10px; gap: 8px; }
   .po-url { font-size: 10px; padding: 4px 8px; }
@@ -458,7 +458,7 @@ nav {
 .compare-cell.compare-label { justify-content: flex-start; padding-left: 20px; text-align: left; color: var(--navy); font-weight: 700; }
 .compare-manual { color: var(--danger); gap: 5px; }
 .compare-manual::before { content: '✕'; font-weight: 900; }
-.compare-partial { color: var(--gold-2); gap: 5px; }
+.compare-partial { color: #92400E; gap: 5px; } /* a11y: 7.16:1 on white */
 .compare-partial::before { content: '~'; font-weight: 900; }
 .compare-caleo { color: var(--success); gap: 6px; font-weight: 700; background: rgba(22,163,74,0.04); }
 .compare-caleo::before { content: '✓'; font-weight: 900; }
@@ -591,7 +591,7 @@ nav {
   font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.6px;
-  color: var(--gold-2);
+  color: #92400E; /* a11y: 6.45:1 on gold-soft */
   background: var(--gold-soft);
   padding: 4px 12px;
   border-radius: 999px;
@@ -667,7 +667,7 @@ nav {
 .testi-quote::before { content: '"'; font-size: 28px; color: var(--gold); line-height: 0; margin-right: 3px; vertical-align: -8px; }
 .testi-impact {
   display: inline-block;
-  font-size: 11px; font-weight: 800; color: var(--success);
+  font-size: 11px; font-weight: 800; color: #166534; /* a11y: 6.55:1 on success-soft */
   background: var(--success-soft); padding: 4px 10px; border-radius: 6px;
   letter-spacing: 0.2px;
 }
@@ -699,7 +699,7 @@ nav {
   padding: 3px 8px; border-radius: 6px;
   margin-bottom: 10px;
 }
-.scenario-badge.pain { background: var(--danger-soft); color: var(--danger); }
+.scenario-badge.pain { background: var(--danger-soft); color: #991B1B; } /* a11y: #991B1B on danger-soft = 6.93:1 */
 .scenario-badge.gain { background: var(--success-soft); color: #166534; }
 .scenario-icon { font-size: 40px; margin-bottom: 10px; line-height: 1; }
 .scenario-text { font-size: 12.5px; color: var(--slate); line-height: 1.5; font-weight: 500; }
@@ -793,9 +793,9 @@ nav {
 .term-btn.active { background: var(--navy); color: #fff; box-shadow: 0 4px 12px rgba(11,37,69,0.2); }
 .term-btn .savings-pill {
   font-size: 10px; padding: 2px 8px; border-radius: 999px;
-  background: var(--success); color: #fff; font-weight: 900;
+  background: #166534; color: #fff; font-weight: 900; /* a11y: white on #166534 = 7.17:1 */
 }
-.term-btn:not(.active) .savings-pill { background: var(--gold-soft); color: var(--gold-2); }
+.term-btn:not(.active) .savings-pill { background: var(--gold-soft); color: #92400E; } /* a11y: 6.45:1 on gold-soft */
 @media (max-width: 480px) { .term-btn { padding: 8px 14px; font-size: 12px; } }
 
 .pricing-grid { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
@@ -1097,7 +1097,6 @@ nav {
 @media (max-width: 720px) {
   .mobile-cta-bar { display: flex; }
   body { padding-bottom: 72px; }
-  .fab-wa { display: none; }
 }
 
 /* ═══ SCROLL REVEAL (elegant fade-up on scroll into view) ═══ */
@@ -1128,7 +1127,7 @@ nav {
 @keyframes fab-ring { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.35); opacity: 0; } }
 .fab-wa:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 14px 36px rgba(37,211,102,0.6); }
 @keyframes fab-pop { from { transform: translateY(80px) scale(0.5); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-@media (max-width: 720px) { .fab-wa { bottom: 16px; right: 16px; padding: 12px 18px; font-size: 13px; } .fab-wa .fab-label-long { display: none; } }
+@media (max-width: 720px) { .fab-wa { display: none; } /* hide FAB on mobile; sticky bar takes over */ }
 
 /* ═══ Footer ═══ */
 footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px solid var(--border); }
@@ -1164,7 +1163,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
 <!-- ═══ NAV (decluttered — 4 items only) ═══ -->
 <nav>
   <a href="#" class="brand" aria-label="Caleo — Toko Rapi, Untung Jelas">
-    <img src="/assets/CALEO-logo-horizontal-HD-v2.png" alt="Caleo">
+    <img src="/assets/CALEO-logo-horizontal-HD-v2.png" alt="Caleo" width="152" height="40">
   </a>
   <div class="nav-links">
     <a href="#modul">Modul</a>
@@ -1172,13 +1171,15 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
     <a href="#cerita">Cerita</a>
     <a href="#promos">Harga</a>
     <a href="#faq">FAQ</a>
-    <a href="https://app.caleo.id" rel="noopener" style="color:var(--muted); font-weight:500;">Tenant Login</a>
+    <a href="https://app.caleo.id" rel="noopener" style="color:#64748B; font-weight:500;">Tenant Login</a>
   </div>
   <a class="js-wa-link nav-cta" href="https://wa.me/6285264787775?text=Halo%20Caleo,%20saya%20mau%20tanya">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/></svg>
     Ngobrol WA
   </a>
 </nav>
+
+<main>
 
 <!-- ═══ HERO ═══ -->
 <section id="hero">
@@ -1261,7 +1262,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
   <div class="stats-header">
     <div class="eyebrow">Angka Real Tenant Existing</div>
     <h2>Sudah dipakai distributor UMKM<br>di jantung <em>Glodok</em>.</h2>
-    <p style="font-size:13px;color:var(--slate);margin-top:8px;">Data operasional dari distributor UMKM di Jakarta Barat — <a href="caleo-case-study.html" style="color:var(--gold-2);font-weight:700;">baca cerita lengkap →</a></p>
+    <p style="font-size:13px;color:var(--slate);margin-top:8px;">Data operasional dari distributor UMKM di Jakarta Barat — <a href="caleo-case-study.html" style="color:#92400E;font-weight:700;">baca cerita lengkap →</a></p>
   </div>
 
   <div class="stats-grid">
@@ -1407,15 +1408,15 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
         <div class="demo-frame">
           <div class="demo-title"><span>AI INSIGHTS · Hari Ini</span><span class="demo-tag y">3 REKOMENDASI</span></div>
           <div style="padding:10px 0;border-bottom:1px solid #F1F5F9">
-            <div style="font-size:11px;color:var(--gold-2);font-weight:800;margin-bottom:4px">💰 MARGIN OPPORTUNITY</div>
+            <div style="font-size:11px;color:#92400E;font-weight:800;margin-bottom:4px">💰 MARGIN OPPORTUNITY</div>
             <div style="font-size:12.5px;color:var(--navy);line-height:1.5">Naikkan share supplier A untuk MCB 10A — margin 18% vs supplier B 11%. Potensi tambah profit Rp 340K/bulan.</div>
           </div>
           <div style="padding:10px 0;border-bottom:1px solid #F1F5F9">
-            <div style="font-size:11px;color:var(--danger);font-weight:800;margin-bottom:4px">📦 STOK ALERT</div>
+            <div style="font-size:11px;color:#991B1B;font-weight:800;margin-bottom:4px">📦 STOK ALERT</div>
             <div style="font-size:12.5px;color:var(--navy);line-height:1.5">Kabel NYA 1.5mm laku 40% lebih cepat 2 minggu ini. Restock 100 rol sebelum 22 Jul.</div>
           </div>
           <div style="padding:10px 0">
-            <div style="font-size:11px;color:var(--success);font-weight:800;margin-bottom:4px">⭐ CUSTOMER VIP</div>
+            <div style="font-size:11px;color:#166534;font-weight:800;margin-bottom:4px">⭐ CUSTOMER VIP</div>
             <div style="font-size:12.5px;color:var(--navy);line-height:1.5">Pak Anton beli Rp 8.4jt bulan ini (top-3). Reminder ulang tahun 15 Aug — kirim WA promo.</div>
           </div>
         </div>
@@ -1499,7 +1500,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
 
   <!-- Product tour: Modul Pembelian mockup + case study link -->
   <div style="max-width:960px; margin:56px auto 0; padding:0 24px; text-align:center;">
-    <div style="font-size:11px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold-2); margin-bottom:12px;">Product Tour</div>
+    <div style="font-size:11px; font-weight:900; letter-spacing:1.5px; text-transform:uppercase; color:#92400E; margin-bottom:12px;">Product Tour</div>
     <h3 style="font-size:24px; font-weight:900; color:var(--navy); letter-spacing:-0.5px; margin-bottom:8px;">Modul Pembelian di aksi.</h3>
     <p style="font-size:14px; color:var(--slate); max-width:520px; margin:0 auto 24px;">Kelola PO, tagihan, dan pembayaran ke supplier — semua tercatat rapi.</p>
 
@@ -1519,7 +1520,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
       <!-- App header inside browser -->
       <div class="po-header">
         <div>
-          <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:700;">PEMBELIAN &raquo; Purchase Orders</div>
+          <div style="font-size:11px;color:#64748B;letter-spacing:1px;text-transform:uppercase;font-weight:700;">PEMBELIAN &raquo; Purchase Orders</div>
           <div style="font-size:20px;font-weight:900;color:var(--navy);margin-top:4px;letter-spacing:-0.3px;">Daftar Purchase Order</div>
         </div>
         <button class="po-cta-btn">+ Buat PO Baru</button>
@@ -1529,7 +1530,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
       <div class="po-stats">
         <div class="po-stat"><div class="po-stat-lbl">Total PO Bulan Ini</div><div class="po-stat-val">28 PO</div></div>
         <div class="po-stat"><div class="po-stat-lbl">Total Nilai</div><div class="po-stat-val">Rp 187,4 jt</div></div>
-        <div class="po-stat"><div class="po-stat-lbl">Menunggu Bayar</div><div class="po-stat-val" style="color:var(--gold-2);">Rp 42,8 jt</div></div>
+        <div class="po-stat"><div class="po-stat-lbl">Menunggu Bayar</div><div class="po-stat-val" style="color:#92400E;">Rp 42,8 jt</div></div>
         <div class="po-stat"><div class="po-stat-lbl">Jatuh Tempo Minggu Ini</div><div class="po-stat-val" style="color:var(--danger);">3 PO</div></div>
       </div>
 
@@ -2047,13 +2048,13 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
     <div class="roi-card">
       <div class="roi-header">
         <div class="eyebrow gold">Hitung Sendiri</div>
-        <h2>Berapa yang bisa toko Anda <em style="color:var(--gold-2);font-style:normal">hemat</em>?</h2>
+        <h2>Berapa yang bisa toko Anda <em style="color:#92400E;font-style:normal">hemat</em>?</h2>
         <p>Kalkulator kasar berdasarkan tenant existing. Angka final saat demo.</p>
       </div>
 
       <div class="roi-form">
         <div class="roi-field">
-          <label>Jumlah Karyawan/Kasir</label>
+          <label for="roi-staff">Jumlah Karyawan/Kasir</label>
           <select id="roi-staff">
             <option value="1">1 orang</option>
             <option value="2">2 orang</option>
@@ -2063,7 +2064,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
           </select>
         </div>
         <div class="roi-field">
-          <label>Transaksi per hari</label>
+          <label for="roi-txn">Transaksi per hari</label>
           <select id="roi-txn">
             <option value="20">~20 transaksi</option>
             <option value="50" selected>~50 transaksi</option>
@@ -2083,17 +2084,17 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
         <div class="roi-item">
           <div class="roi-item-val" id="roi-time">-</div>
           <div class="roi-item-lbl">Jam kerja hemat/bulan</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">45 min/hari × staff</div>
+          <div style="font-size:10px;color:#64748B;margin-top:2px">45 min/hari × staff</div>
         </div>
         <div class="roi-item">
           <div class="roi-item-val" id="roi-error">-</div>
           <div class="roi-item-lbl">Selisih kas dihindari</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">audit trail per user</div>
+          <div style="font-size:10px;color:#64748B;margin-top:2px">audit trail per user</div>
         </div>
         <div class="roi-item">
           <div class="roi-item-val" id="roi-piutang">-</div>
           <div class="roi-item-lbl">Piutang lebih cepat tertagih</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:2px">auto WA reminder</div>
+          <div style="font-size:10px;color:#64748B;margin-top:2px">auto WA reminder</div>
         </div>
       </div>
 
@@ -2118,7 +2119,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
     <p>Pilih 12 bulan untuk penghematan maksimal. Toggle di bawah untuk lihat harga 6 bulan.</p>
     <div class="promos-slot" id="js-slot-counter">
       🔥 <strong>Kuota terbatas · sampai habis</strong>
-      <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:6px;">setelah kuota habis, harga kembali normal</div>
+      <div style="font-size:11px;color:#64748B;margin-top:6px;">setelah kuota habis, harga kembali normal</div>
     </div>
   </div>
 
@@ -2376,10 +2377,10 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
       </div>
       <div class="kantor-name">Lindeteves Trade Center (LTC Glodok)</div>
       <div class="kantor-addr">Lantai UG, Blok C30 15<br>RT.1/RW.6, Mangga Besar, Kec. Taman Sari<br>Kota Jakarta Barat, DKI Jakarta 11120</div>
-      <div class="kantor-hours"><strong>Jam buka:</strong> Senin–Sabtu, 09:00–17:00 WIB<br><span style="color:var(--muted);font-size:11px;">(chat WA dulu biar kami siap sambut ☕)</span></div>
+      <div class="kantor-hours"><strong>Jam buka:</strong> Senin–Sabtu, 09:00–17:00 WIB<br><span style="color:#64748B;font-size:11px;">(chat WA dulu biar kami siap sambut ☕)</span></div>
     </div>
     <div class="kantor-map-wrap">
-      <iframe src="https://www.google.com/maps?q=Lindeteves%20Trade%20Center%20LTC%20Glodok%20Blok%20C30%2015%20Lantai%20UG%20Jakarta%20Barat&output=embed" loading="lazy" allowfullscreen></iframe>
+      <iframe src="https://www.google.com/maps?q=Lindeteves%20Trade%20Center%20LTC%20Glodok%20Blok%20C30%2015%20Lantai%20UG%20Jakarta%20Barat&output=embed" loading="lazy" allowfullscreen title="Lokasi Kantor Caleo — LTC Glodok, Jakarta Barat"></iframe>
       <div class="kantor-map-overlay">
         <span>📍 LTC Glodok · Lt UG C30-15</span>
         <span class="kantor-map-overlay-btn">Buka di Maps →</span>
@@ -2393,7 +2394,7 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
 <section id="cta">
   <div class="cta-grid">
     <div class="qr-block">
-      <div class="qr-img"><img src="/assets/caleo-qr.png" alt="QR Code Caleo — scan untuk chat WhatsApp"></div>
+      <div class="qr-img"><img src="/assets/caleo-qr.png" alt="QR Code Caleo — scan untuk chat WhatsApp" width="190" height="190"></div>
       <div class="qr-cta-label">Arahkan kamera HP</div>
       <div class="qr-cta-sub">SCAN → Chat WhatsApp</div>
     </div>
@@ -2418,11 +2419,11 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
 <footer>
   <div class="foot-inner">
     <div class="foot-brand">
-      <img src="/assets/CALEO-logo-horizontal-HD-v2.png" alt="Caleo">
+      <img src="/assets/CALEO-logo-horizontal-HD-v2.png" alt="Caleo" width="152" height="40">
       <div class="foot-brand-txt">
         Dibuat dengan ❤ oleh sesama pemilik toko UMKM<br>
         © 2026 · LTC Glodok Jakarta<br>
-        WA <a href="https://wa.me/6285264787775" style="color:var(--wa);font-weight:700">0852-6478-7775</a> · 📧 <a href="mailto:halo@caleo.id" style="color:var(--slate);font-weight:700">halo@caleo.id</a>
+        WA <a href="https://wa.me/6285264787775" style="color:#1a7a3d;font-weight:700">0852-6478-7775</a> · 📧 <a href="mailto:halo@caleo.id" style="color:var(--slate);font-weight:700">halo@caleo.id</a>
       </div>
     </div>
     <div class="foot-links">
@@ -2432,6 +2433,8 @@ footer { padding: 36px 24px 32px; background: var(--bg-alt); border-top: 1px sol
     </div>
   </div>
 </footer>
+
+</main>
 
 <!-- ═══ MOBILE STICKY CTA BAR (only mobile) ═══ -->
 <div class="mobile-cta-bar">
