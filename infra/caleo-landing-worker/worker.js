@@ -7,12 +7,15 @@
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // static.cloudflareinsights.com: Cloudflare auto-injects Web Analytics beacon on zones with Analytics enabled.
+  // Whitelisting it here prevents the CSP violation + console error (which Lighthouse penalizes).
+  "script-src 'self' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: https://www.google.com https://maps.google.com",
   "frame-src https://www.google.com",
-  "connect-src 'self'",
+  // cloudflareinsights.com endpoint that the beacon posts to.
+  "connect-src 'self' https://cloudflareinsights.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
