@@ -14723,3 +14723,44 @@ Incident memo: `docs/incidents/2026-07-17-phase2-silent-deploy-failures.md`
 - Health: /api/v1/live + /api/v1/ready both 200
 - 3 tenants: Garindo Jaya Panel, Toko Jaya Makmur, Warung Sinar Rezeki
 - Zero-cost stack: Cloud Run + Supabase Free + Cloudflare Free + Resend Free + GCS Free tier
+
+---
+
+# 🌅 SESSION LEDGER — 2026-07-18 morning autonomous phase
+
+Founder stepped away for 2h; ran autonomously with instruction "make sure all validated/tested, continue plan, all recommendations scalable/zero-cost/best-practices".
+
+## Task 11 Sentry — FULLY SHIPPED
+
+- Sentry account setup via API (used founder auth token to bypass manual signup)
+- Created org caleo + 2 projects (caleo-frontend + caleo-backend)
+- Wrote all wiring: @sentry/react + sentry-go + PII scrubbing + source-map upload
+- Both DSNs + auth token stored in Cloud Build trigger substitutions
+- FE Sentry ACTIVE in prod bundle (DSN baked, verified via grep)
+- Synthetic test events landed in both projects successfully
+- Zero-cost Developer plan (5k errors/month, 10x headroom at 3 tenants)
+
+## Bug E surfaced (mid-Sentry-deploy)
+
+Backend deploy failed on staging with `error={}` logs. Fixed logging first (slog.Any → slog.String) to see real error. Discovered: worker's claim_next_job errors every 5s with "pq: unnamed prepared statement does not exist". Root cause: lib/pq prepared statements incompatible with Supavisor transaction pooler (which is what split-pool architecture uses for queryDB).
+
+Fix (commit `2559361`): route P2-E worker via ListenDB (direct pool) instead of dbClient.DB (txn pooler). Direct connection preserves prepared statement lifetime.
+
+Discovered secondary issue: other parameterised queries (main.go:484, main.go:600) also use dbClient.DB — will silently fail same way when invoked. Follow-up: migrate lib/pq to pgx with simple_protocol mode.
+
+## Task 16 CSP violation observed
+
+Log-based metric caught real violations: 5x CloudflareInsights beacon blocked. Landing CSP updated via Transform Rules to allow `static.cloudflareinsights.com`. CSP enforce flip still requires 24h clean observation before safe (window restarted after fix).
+
+## Deferred to founder return
+
+- Multi-tenant Calista prompt refactor (documented as Phase 3; too large for autonomous window)
+- CSP enforce flip (needs 24h clean observation)
+- Backend security-headers deploy failing intermittently on direct pool saturation (65+ active connections on ~45-slot cap during rolling deploys) — needs pgx migration for real fix
+
+## Memories added
+- `project_sentry_setup` — full Sentry setup, rollback, verification
+
+## Sentry-project decisions
+- Deleted misconfigured `javascript-react` project (empty from founder's interrupted signup)
+- Created `caleo-frontend` (platform: javascript-react) and `caleo-backend` (platform: go-http) via API using founder's user auth token
