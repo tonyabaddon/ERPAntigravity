@@ -24,6 +24,13 @@ type Config struct {
 	// (direct Google AI Studio via OpenAI-compatible endpoint — uses your
 	// own free-tier quota rather than OpenRouter's shared pool).
 	LLMBackend string // LLM_BACKEND
+
+	// Calista prompt identity — injected into system prompt at startup.
+	// MVP (Phase 3 will add per-tenant SKU catalog + staff names).
+	// If not set, defaults fall back to Garindo Jaya Panel values so
+	// existing deployments are unaffected.
+	TenantName          string // TENANT_NAME
+	TenantPickupAddress string // TENANT_PICKUP_ADDRESS
 }
 
 func Load() *Config {
@@ -37,9 +44,11 @@ func Load() *Config {
 		Port:               getEnv("PORT", "8080"),
 		SupabaseURL:        getEnv("SUPABASE_URL", "https://ekhhojaezdfjfwuxyjkl.supabase.co"),
 		SupabaseServiceKey: getEnv("SUPABASE_SERVICE_KEY", ""),
-		OpenRouterAPIKey:   os.Getenv("OPENROUTER_API_KEY"),
-		EnableOpenRouter:   os.Getenv("ENABLE_OPENROUTER") == "true",
-		LLMBackend:         os.Getenv("LLM_BACKEND"),
+		OpenRouterAPIKey:    os.Getenv("OPENROUTER_API_KEY"),
+		EnableOpenRouter:    os.Getenv("ENABLE_OPENROUTER") == "true",
+		LLMBackend:          os.Getenv("LLM_BACKEND"),
+		TenantName:          os.Getenv("TENANT_NAME"),
+		TenantPickupAddress: os.Getenv("TENANT_PICKUP_ADDRESS"),
 	}
 }
 

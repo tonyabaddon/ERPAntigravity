@@ -1,6 +1,8 @@
 package llm
 
-import "github.com/username/sinar-elektrik-backend/internal/assets"
+import (
+	"github.com/username/sinar-elektrik-backend/internal/assets"
+)
 
 // DefaultCalistaAgent returns Calista's Phase 1A runtime config. All 10 models
 // are OpenRouter free-tier as of June 2026 (spec §1, §6.3 mockup). When one
@@ -19,7 +21,16 @@ import "github.com/username/sinar-elektrik-backend/internal/assets"
 // The model order is locked from the spec's "Pricing v2" decision (no paid
 // fallback in Phase 1A). Re-order or substitute by editing this slice; the
 // router reads it once per Call so changes apply on next request.
+// DefaultCalistaAgent returns Calista's config using DefaultTenantIdentity
+// (Garindo Jaya Panel values). Tests use this; production uses
+// DefaultCalistaAgentWithIdentity to supply per-tenant values from config.
 func DefaultCalistaAgent() AgentConfig {
+	return DefaultCalistaAgentWithIdentity(DefaultTenantIdentity())
+}
+
+// DefaultCalistaAgentWithIdentity is the production entry point: applies
+// tenant-specific identity strings to the Calista system prompt at startup.
+func DefaultCalistaAgentWithIdentity(id TenantIdentity) AgentConfig {
 	prompt := assets.CalistaSystemPrompt
 	if prompt == "" {
 		// Embedded asset failed to load — fall back to the abbreviated prompt
@@ -28,6 +39,7 @@ func DefaultCalistaAgent() AgentConfig {
 		// guard avoids a silent empty-prompt regression if assets.go is broken.
 		prompt = calistaSystemPrompt
 	}
+	prompt = InterpolatePrompt(prompt, id)
 	return AgentConfig{
 		Name:         "Calista",
 		SystemPrompt: prompt,
@@ -73,10 +85,17 @@ func DefaultCalistaAgent() AgentConfig {
 //   - gemini-2.5-flash-lite emits clean JSON in one round with no thinking
 //     overhead — matches the legacy direct-SDK model choice for parity.
 func DefaultCalistaAgentGemini() AgentConfig {
+	return DefaultCalistaAgentGeminiWithIdentity(DefaultTenantIdentity())
+}
+
+// DefaultCalistaAgentGeminiWithIdentity is the production entry point for
+// the Gemini direct backend. Applies tenant identity strings at startup.
+func DefaultCalistaAgentGeminiWithIdentity(id TenantIdentity) AgentConfig {
 	prompt := assets.CalistaSystemPrompt
 	if prompt == "" {
 		prompt = calistaSystemPrompt
 	}
+	prompt = InterpolatePrompt(prompt, id)
 	return AgentConfig{
 		Name:         "Calista",
 		SystemPrompt: prompt,

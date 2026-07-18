@@ -92,6 +92,19 @@ func main() {
 	cfg := config.Load()
 	ctx := context.Background()
 
+	// Build tenant identity for Calista prompt interpolation (MVP).
+	// Falls back to Garindo Jaya Panel defaults when env vars are unset,
+	// preserving zero-config behaviour for the current single tenant.
+	calistaIdentity := llm.DefaultTenantIdentity()
+	if cfg.TenantName != "" {
+		calistaIdentity.Name = cfg.TenantName
+	}
+	if cfg.TenantPickupAddress != "" {
+		calistaIdentity.PickupAddress = cfg.TenantPickupAddress
+	}
+	slog.Info("[CALISTA] tenant identity loaded",
+		slog.String("tenant_name", calistaIdentity.Name))
+
 	// waClient and dbClient are declared here so HTTP handler closures can
 	// reference them. Both remain nil until their respective init loops
 	// complete below; handlers guard against nil.
@@ -349,7 +362,7 @@ func main() {
 	// Gemini — retry until connected.
 	var geminiClient *gemini.Client
 	for attempt := 1; ; attempt++ {
-		geminiClient, err = gemini.NewClient(ctx, cfg.GeminiAPIKey, assets.CalistaSystemPrompt)
+		geminiClient, err = gemini.NewClient(ctx, cfg.GeminiAPIKey, llm.InterpolatePrompt(assets.CalistaSystemPrompt, calistaIdentity))
 		if err == nil {
 			break
 		}
@@ -416,7 +429,7 @@ func main() {
 			slog.Info("[CALISTA] Gemini auth probe OK")
 		}
 
-		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgentGemini())
+		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgentGeminiWithIdentity(calistaIdentity))
 		llmClient = llm.NewEngineAdapter(router)
 		slog.Info("[CALISTA] Direct Gemini backend ENABLED — chain: [gemini-2.5-flash-lite]")
 	} else if cfg.EnableOpenRouter && cfg.OpenRouterAPIKey != "" {
@@ -451,7 +464,7 @@ func main() {
 			slog.Info("[CALISTA] OpenRouter auth probe OK")
 		}
 
-		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgent())
+		router := llm.NewRouter(completer, cooldownReg, pinMgr, recorder, llm.DefaultCalistaAgentWithIdentity(calistaIdentity))
 		llmClient = llm.NewEngineAdapter(router)
 		slog.Info("[CALISTA] OpenRouter chain ENABLED — 10-model fallback active")
 	} else {
