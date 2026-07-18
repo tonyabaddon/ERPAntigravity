@@ -1,5 +1,92 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-18 — Task 12 remaining (12b + 12d) — CLOSED (12c deferred)
+
+**Trigger**: Founder push: "task 12b/c foundation ga? tema-nya kan foundation strengthen sebelum onboard tenant real." Reframed 12b/12c/12d from YAGNI to real foundation. Then: "12c nanti aja, seluruh data saya ga mau delete" → 12c deferred.
+
+**12b — pg_restore drill (PASS)**:
+End-to-end verification that daily `pg_dump` files ship-to-GCS actually restore. Never proven before.
+- Target env: Homebrew `postgres@17` local (zero cost, no Docker install, no cloud data exposure). Rejected: Supabase branching (Pro-tier only), `supabase start` (Docker not on founder machine), hosted scratch project (worse security posture).
+- Dump: `db-2026-07-18.dump` (3.3 MiB), pulled from GCS to throwaway cluster on port 54329.
+- Command: `pg_restore --schema=public --no-owner --no-privileges -d restore_target /tmp/latest.dump`
+- Result: exit 0, 490 errors ALL environmental (missing `authenticated` role, `auth` schema, `pgvector`, `vosi_rpc_owner`, `supabase_realtime` publication, `pgsodium`/`vault` extensions). Zero data-restore failures.
+- **Verification: 11/11 rowcount parity vs production** — tenants=3, customers=41, stocks=494, kasir_transactions=123, pesanan=42, journal_entries=295, suppliers=296, audit_log=28, stock_movements=1589, orders=15, garindo_kasir=104.
+- Wall clock: ~6s end-to-end (dataset is small; well under 30-min RTO target).
+- Teardown clean: `pg_ctl stop`, `rm -rf /tmp/pg-restore-drill`.
+- Report: `infra/backup/drills/2026-07-18-report.md` — full findings + error categorization.
+- Runbook updated: `infra/backup/README.md § Restore procedure (verified 2026-07-18)` — two paths documented (A: real DR into fresh Supabase project = zero errors expected; B: local drill into Homebrew Postgres = environmental errors expected & benign).
+
+**12d — Operational runbooks (rollback + secret rotation)**:
+Existing `docs/runbooks/rollback-procedures.md` was already comprehensive from prior work. Additions this pass:
+- Extended Scenario 4 (secret rotation) from 6 secrets to **8 secrets** (added Sentry auth token, Resend API, OpenRouter, Google AI Studio Gemini — Gap 2 from design review).
+- Added "Recent worked examples" section with Bug D (2026-07-16, split-pool architecture, ~5 min traffic revert) + Bug E (2026-07-17, lib/pq prepared statement fix, forward fix within 30 min) — codifies lessons from this week's real events.
+- Linked to new companion doc `docs/runbooks/secret-rotation.md` (per-secret deep dive with blast radius, verification steps, revert-on-fail path).
+- **Created** `docs/runbooks/secret-rotation.md` (400+ lines) — 8-secret inventory table + per-secret rotation flow (source, GCP secret path, deploy target, verification, revert). Traffic-revert (10s) called out as primary FE recovery vs Cloud Build re-run (5+ min fallback).
+- **Created** `docs/runbooks/README.md` — index with "when to use which" decision matrix.
+- Updated `docs/runbooks/restore-from-backup.md § Rehearsal history` — added 2026-07-18 drill entry with 11/11 rowcount parity + links to drill report.
+
+**12c — Tenant deprovision — DEFERRED**:
+Founder call: don't delete any prod-testing tenant data now. Existing `rollback-procedures.md § Scenario 5` already covers the flow (deprovision RPC + cleanup). Skeleton exists; real execution deferred to first real deprovision request when we can build from real context, not imagination.
+
+**Spec**: `docs/superpowers/specs/2026-07-18-task-12b-12d-design.md` — design incl. self-review + 4 must-fix items resolved (target env clarified, secret list extended to 8, drill report location moved from `docs/incidents/` to `infra/backup/drills/`, FE traffic-revert clarified as primary).
+
+**Verification (docs-only change)**: `npm run lint` clean (tsc --noEmit no output). No code path changed → skip audits/vitest. No prod deploy required.
+
+**Files changed**:
+- Created: `docs/runbooks/README.md`, `docs/runbooks/secret-rotation.md`, `infra/backup/drills/2026-07-18-report.md`, `docs/superpowers/specs/2026-07-18-task-12b-12d-design.md`
+- Modified: `docs/runbooks/rollback-procedures.md`, `docs/runbooks/restore-from-backup.md`, `infra/backup/README.md`, `progress.md`
+
+**Future enhancement (deferred, memoried)**: Fold pg_restore drill INTO daily backup Cloud Run Job → continuous restore verification at ~$0.001/day extra. Revisit at 5+ paying tenants.
+
+---
+
+## 2026-07-18 — Task 11 remaining gaps 1+2+3 — CLOSED
+
+**Trigger**: Founder push: "kenapa yang remaining known gaps tidak diclosed sekarang? terutama nomor 1-3. Klo nomor 4 setuju phase 3." Gap 4 (landing redesign) explicitly deferred to Phase 3.
+
+**Gap 1 — HEARTBEAT/FOLLOWUP parameterised query pattern (Bug E variant)**:
+Same lib/pq prepared-statement issue as commit `2559361`. Two more call sites in `backend-go/main.go` used `dbClient.DB` (txn pooler) with parameterised queries — silently 500'd under Supavisor:
+- `main.go:484` (reminder language lookup) → routed to `dbClient.ListenDB`
+- `main.go:607` (admin-message customer phone lookup) → routed to `dbClient.ListenDB`
+All 3 known parameterised-query call sites in main.go now use direct connection. Commit `933867b`.
+
+**Gap 2 — Calista tenant-name interpolation MVP**:
+Prompt was hardcoded to "Garindo Jaya Panel"; would leak founder identity to any second tenant. MVP fix: env-var-driven `TenantIdentity` interpolation at startup.
+- `backend-go/internal/llm/prompt_interpolate.go` (NEW) — `InterpolatePrompt(rawPrompt, id)` replaces `{{TENANT_NAME}}` × 11 and `{{PICKUP_ADDRESS}}` × 2
+- `backend-go/internal/assets/calista_system_prompt.txt` — 13 placeholder occurrences; zero remaining "Garindo" refs
+- `backend-go/internal/llm/chain.go` — `DefaultCalistaAgentWithIdentity(id)` + Gemini variant; old `DefaultCalistaAgent()` delegates for test back-compat
+- `backend-go/config/config.go` — `TenantName`, `TenantPickupAddress` env
+- `backend-go/main.go:98-106` — loaded at startup, logged as `[CALISTA] tenant identity loaded`
+Fallback const `calistaSystemPrompt` also rebranded to "toko ini" (Task 15).
+Full DB-lookup + per-tenant SKU/staff customization deferred to Phase 3. Commit `98fd3d4`.
+
+**Gap 3 — CSP enforce flip**:
+CSP was Report-Only for 24h observation. Observation-window finding: Sentry ingest itself was blocked (missing from connect-src). Fixed by adding `https://*.ingest.us.sentry.io`, then flipped `Content-Security-Policy-Report-Only` → `Content-Security-Policy`. Report-uri still points at backend `/api/v1/security/csp-report`; Alert 9 (>10 violations/15min) armed. Commit `933867b`, `serve.json`.
+
+**Gap 4 (deferred, per founder)**: Landing page caleo.id redesign — Phase 3, needs founder design input.
+
+**Verification** (all live in prod):
+- Backend serving revision `garindo-jaya-panel-msme-erp-00382-caw` (tag `c8c69ebf`) — 100% traffic
+- `/live` + `/ready` both 200; 5 security headers present
+- `[CALISTA] tenant identity loaded tenant_name=Garindo Jaya Panel` on startup
+- Zero pq errors on serving revision (post-cutover)
+- JOBS worker started clean on split-pool ListenDB
+- FE `content-security-policy` (enforce, NOT Report-Only) served on `app.caleo.id` with Sentry ingest allowlisted
+- Zero CSP violation events in 10-min observation window post-enforce
+- Alert 9 (CSP violations spike) enabled
+
+**Follow-ups (Phase 3, memoried)**:
+- pgx driver migration with `default_query_exec_mode=simple_protocol` — enables txn pooler for ALL parameterised queries (approvals.go and other internal/db/*.go call sites still on c.DB)
+- Multi-tenant Calista full refactor — DB-based tenant identity lookup with cache, SKU catalog, staff names customization
+- Landing page caleo.id redesign
+
+**Commits shipped this pass**:
+- `933867b fix: close Task 11 gaps 1+3 — HEARTBEAT/FOLLOWUP via ListenDB + CSP enforce`
+- `98fd3d4 feat(llm): Task 11 gap 2 MVP — Calista tenant-name interpolation`
+- `8c69ebf test(tripwire): update whitelist test caleo.id (Task 15 rebrand)`
+
+---
+
 ## 2026-07-17 — Split-pool DB connection refactor — DONE (pending Cloud Build)
 
 **What**: Real fix for Bug D (session pooler cap 15). Split backend into two `*sql.DB` pools:

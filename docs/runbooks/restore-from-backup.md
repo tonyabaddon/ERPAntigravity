@@ -250,6 +250,15 @@ current prod is unrecoverable AND you have founder approval.
 
 ## Rehearsal history
 
+**2026-07-18** — Task 12b formal drill against local Postgres 17 (Homebrew). Full report: [infra/backup/drills/2026-07-18-report.md](../../infra/backup/drills/2026-07-18-report.md):
+- Backup file: `db-2026-07-18.dump` (3.3 MiB compressed)
+- Target: throwaway cluster on port 54329, `--schema=public` only
+- pg_restore exit 0; 490 errors ALL environmental (missing `authenticated` role, `auth` schema, `pgvector`, `vosi_rpc_owner`, `supabase_realtime`, `pgsodium`/`vault`) — categorized in drill report
+- **11/11 rowcount parity vs production**: tenants=3, customers=41, stocks=494, kasir=123, pesanan=42, je=295, suppliers=296, audit=28, stock_mv=1589, orders=15, garindo_kasir=104
+- **Wall clock: ~6 s end-to-end** (well under 30-min RTO target — small dataset)
+- Two verified paths documented in `infra/backup/README.md`: (A) Real DR into fresh Supabase project — zero errors expected, (B) Local drill into Homebrew Postgres — environmental errors expected & benign
+- Next re-drill: 2026-10-18 (quarterly) OR immediately after any schema migration adding new extensions/schemas
+
 **2026-07-17** — First rehearsal against local Postgres 17 (Homebrew):
 - Backup file: `db-2026-07-17.dump` (3.2 MiB compressed)
 - `initdb --auth=trust -D /tmp/pg-restore-scratch -U postgres` + `pg_ctl start`

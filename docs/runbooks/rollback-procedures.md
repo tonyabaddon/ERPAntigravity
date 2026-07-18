@@ -196,16 +196,22 @@ insecure channel, or as a scheduled rotation).
 
 **Time**: ~15-20 min
 
-### Secrets in play
+**See [secret-rotation.md](secret-rotation.md) for per-secret detail** — this scenario is the FLOW; the companion doc has blast-radius, verification steps, and revert-on-fail path for each of the 8 production secrets.
 
-| Secret | Where used | Rotation source |
-|---|---|---|
-| `SUPABASE_SERVICE_KEY` | Cloud Run backend + FE build | Supabase Dashboard → Settings → API |
-| `SUPABASE_DB_CONNECTION` (password) | Backend + backup Cloud Run Job | Supabase Dashboard → Settings → Database |
-| `SUPABASE_ACCESS_TOKEN` (PAT) | Local `.env`, Management API calls | Supabase Dashboard → Account → Access Tokens |
-| `CLOUDFLARE_API_TOKEN` | Local `.env`, Worker deploys | Cloudflare Dashboard → Profile → API Tokens |
-| GCP `SUPABASE_SERVICE_KEY` secret | GCP Secret Manager entry `supabase-service-key-prod` | See rotation flow below |
-| GCP `SUPABASE_DB_CONNECTION` secret | GCP Secret Manager entry `supabase-db-connection-prod` | See rotation flow below |
+### Secrets in scope (8)
+
+| # | Secret | Where used | Rotation source |
+|---|---|---|---|
+| 1 | Supabase service_role JWT | GCP `supabase-service-key-prod` | Supabase Dashboard → Settings → API |
+| 2 | Supabase DB password | GCP `supabase-db-connection-prod` + `supabase-db-connection-listener-prod` | Supabase Dashboard → Settings → Database |
+| 3 | Supabase access PAT | Local `.env` only | Supabase Dashboard → Account → Access Tokens |
+| 4 | GCP SA key | Managed identity (no manual rotation) | See secret-rotation.md § 4 for exception |
+| 5 | Sentry auth token | Local `.env` + Cloud Build trigger sub | Sentry → Settings → Auth Tokens |
+| 6 | Resend API key | Supabase Auth SMTP config | Resend Dashboard → API Keys |
+| 7 | Cloudflare API token | Local `.env` + Workers | Cloudflare Dashboard → Profile → API Tokens |
+| 8 | Google AI Studio (Gemini) API key | Cloud Run env or GCP secret `gemini-api-key-prod` | https://aistudio.google.com/apikey |
+
+Also: OpenRouter API key (Calista alt backend). Same rotation pattern.
 
 ### Rotation flow (example: DB password)
 
@@ -350,8 +356,29 @@ If SSL cert failed to provision, delete + recreate the mapping (24h SSL re-issue
 
 ---
 
+## Recent worked examples (learning from real events)
+
+### 2026-07-16 — Bug D (session pooler cap)
+
+**Symptom**: Backend intermittent 503s + `db: too many clients already` after rolling deploy.
+**Root cause**: Single `*sql.DB` pool against Supabase session pooler hit 15-client cap during 3-instance rolling deploy (15 slots / 3 old + 3 new = pool exhaustion).
+**Recovery path**: Rolled back via Scenario 2 (traffic to previous revision), then implemented split-pool architecture (`0f769e5 feat(be): split-pool DB connection`). Recovery took ~5 min via traffic revert.
+**Lesson**: When pool errors surface, do NOT try to scale up — traffic revert first, root-cause after. Memoried at `supabase_split_pool`.
+
+### 2026-07-17 — Bug E (lib/pq prepared statement + txn pooler incompatibility)
+
+**Symptom**: Async job worker crashing with `pq: unnamed prepared statement does not exist` after Bug D fix.
+**Root cause**: `lib/pq` prepares statements for parameterized queries, incompatible with Supavisor transaction pooler multiplexing.
+**Recovery path**: Committed `2559361 fix(worker): route P2-E job worker via ListenDB (direct connection)` — parameterized queries via direct connection, non-parameterized via txn pooler. Extended to HEARTBEAT/FOLLOWUP paths in `933867b`. No traffic revert needed — forward fix within 30 min.
+**Lesson**: Migration to pgx driver with `simple_protocol` mode would allow ALL queries via txn pooler. Deferred to Phase 3. Memoried at `supabase_split_pool`.
+
+### Meta-lesson
+
+Both incidents were fixable in <30 min because (a) rollback via traffic-revert is 10s, (b) split-pool architecture localized the fix, (c) we had zero real customer traffic during the window. **Rollback discipline works. Rehearse it before scale forces us to learn under pressure.**
+
 ## Related runbooks
-- [Restore from backup](restore-from-backup.md) — data recovery scenarios
+- [Restore from backup](restore-from-backup.md) — data recovery scenarios (pg_restore drill verified 2026-07-18, see `infra/backup/drills/2026-07-18-report.md`)
+- [Secret rotation](secret-rotation.md) — per-secret rotation detail (companion to Scenario 4 above)
 - [Cloud Run promote](../cloud-run-promote-runbook.md) — post-merge traffic (legacy, mostly automated now)
 
 ## When to update this doc
