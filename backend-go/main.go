@@ -481,7 +481,12 @@ func main() {
 				return
 			}
 			var lang string
-			dbClient.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, order.ConversationID).Scan(&lang)
+			// Task 11 gap-fix 2026-07-18: use ListenDB (direct connection).
+			// Parameterised queries via txn pooler fail with lib/pq
+			// "unnamed prepared statement does not exist" — same root cause
+			// as worker fix (commit 2559361). Follow-up: pgx migration will
+			// let this go back to dbClient.DB for txn pooler multiplex.
+			dbClient.ListenDB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, order.ConversationID).Scan(&lang)
 			reminderText := "Pesanan Anda akan kadaluarsa dalam 24 jam. Harap segera konfirmasi atau pesanan dibatalkan otomatis."
 			if lang == "en" {
 				reminderText = "Your order will expire in 24 hours. Please confirm payment or it will be automatically cancelled."
@@ -604,7 +609,9 @@ func main() {
 				return
 			}
 			var customerPhone string
-			dbClient.DB.QueryRow(`SELECT customer_phone FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone)
+			// Task 11 gap-fix 2026-07-18: use ListenDB (direct connection).
+			// See note at main.go:484 above.
+			dbClient.ListenDB.QueryRow(`SELECT customer_phone FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone)
 			if customerPhone != "" && msg.Text != "" {
 				if err := sender.SendText(ctx, customerPhone, msg.Text); err != nil {
 					slog.Error("[MAIN] Admin forward WA send failed", slog.Any("error", err))
