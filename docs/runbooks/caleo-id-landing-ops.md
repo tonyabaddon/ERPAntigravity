@@ -29,8 +29,26 @@ npx wrangler rollback --name caleo-landing
 ```bash
 git log --oneline -5   # find the offending commit
 git revert <commit>
-cd infra/caleo-landing-worker && npx wrangler deploy
+cd infra/caleo-landing-worker && npx wrangler deploy --env production
 ```
+
+**Emergency escape hatch — reassign route to placeholder Worker:**
+
+The original `caleo-placeholder` Worker is preserved on the Cloudflare
+account. If both wrangler rollback and git revert are unavailable, the
+`caleo.id/*` route can be pointed back at the placeholder via CF API:
+
+```bash
+set -a; source /Users/tonywei/IdeaProjects/ERPAntigravity/.env; set +a
+curl -X PUT \
+  "https://api.cloudflare.com/client/v4/zones/0eebe4a22b779baf8d419eabb5ec73b6/workers/routes/2397b6a79f2140b2bb9f25da41c1cc25" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"pattern":"caleo.id/*","script":"caleo-placeholder"}'
+```
+
+Restores "Segera Hadir" placeholder. Use only if wrangler channels
+are unavailable.
 
 ## Post-deploy smoke test
 
@@ -38,7 +56,7 @@ cd infra/caleo-landing-worker && npx wrangler deploy
 CALEO_LANDING_BASE=https://caleo.id npx playwright test tests/e2e/tests/landing-smoke.spec.ts
 ```
 
-Expected: all 10 tests pass.
+Expected: all 12 tests pass.
 
 Manual checks:
 - Chrome desktop → open https://caleo.id → click all CTAs → verify WA opens with pre-filled message
