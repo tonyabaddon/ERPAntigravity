@@ -43,7 +43,7 @@ func (p *Poller) Start(ctx context.Context) {
 func (p *Poller) poll(ctx context.Context) {
 	convs, err := p.db.GetEligibleForFollowup()
 	if err != nil {
-		slog.Error("[FOLLOWUP] GetEligibleForFollowup error", slog.Any("error", err))
+		slog.Error("[FOLLOWUP] GetEligibleForFollowup error", slog.String("error", err.Error()))
 		return
 	}
 
@@ -58,15 +58,15 @@ func (p *Poller) poll(ctx context.Context) {
 
 		msg := buildFollowupMessage(conv, effectiveCount+1)
 		if err := p.sender.SendText(ctx, conv.CustomerPhone, msg); err != nil {
-			slog.Error("[FOLLOWUP] SendText error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+			slog.Error("[FOLLOWUP] SendText error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
 			// Do NOT update DB on send failure — avoid phantom follow-up count.
 			continue
 		}
 		if err := p.db.IncrementFollowup(conv.ID); err != nil {
-			slog.Error("[FOLLOWUP] IncrementFollowup error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+			slog.Error("[FOLLOWUP] IncrementFollowup error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
 		}
 		if _, err := p.db.InsertMessage(conv.ID, models.SenderAI, msg); err != nil {
-			slog.Error("[FOLLOWUP] InsertMessage error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+			slog.Error("[FOLLOWUP] InsertMessage error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
 		}
 		slog.Info("[FOLLOWUP] sent follow-up", slog.Int("count", effectiveCount+1), slog.String("conv_id", conv.ID))
 	}

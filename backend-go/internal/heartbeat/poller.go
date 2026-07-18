@@ -45,7 +45,7 @@ func (p *Poller) Start(ctx context.Context) {
 func (p *Poller) tick(ctx context.Context) {
 	cfg, err := p.db.GetHeartbeatConfig()
 	if err != nil {
-		slog.Error("[HEARTBEAT] GetHeartbeatConfig error", slog.Any("error", err))
+		slog.Error("[HEARTBEAT] GetHeartbeatConfig error", slog.String("error", err.Error()))
 		return
 	}
 	if cfg == nil || !cfg.Enabled {
@@ -64,12 +64,12 @@ func (p *Poller) tick(ctx context.Context) {
 
 	omset, err := p.db.GetTodayOmset()
 	if err != nil {
-		slog.Error("[HEARTBEAT] GetTodayOmset error", slog.Any("error", err))
+		slog.Error("[HEARTBEAT] GetTodayOmset error", slog.String("error", err.Error()))
 		return
 	}
 	hpp, err := p.db.GetTodayHpp()
 	if err != nil {
-		slog.Error("[HEARTBEAT] GetTodayHpp error", slog.Any("error", err))
+		slog.Error("[HEARTBEAT] GetTodayHpp error", slog.String("error", err.Error()))
 		return
 	}
 
@@ -77,7 +77,7 @@ func (p *Poller) tick(ctx context.Context) {
 	if cfg.ReportStatus {
 		lowStock, err = p.db.GetLowStockItems(cfg.LowStockAlert)
 		if err != nil {
-			slog.Error("[HEARTBEAT] GetLowStockItems error", slog.Any("error", err))
+			slog.Error("[HEARTBEAT] GetLowStockItems error", slog.String("error", err.Error()))
 			// Non-fatal — send report without low stock section.
 		}
 	}
@@ -86,13 +86,13 @@ func (p *Poller) tick(ctx context.Context) {
 
 	recipients, err := p.db.GetActiveRecipients()
 	if err != nil {
-		slog.Error("[HEARTBEAT] GetActiveRecipients error", slog.Any("error", err))
+		slog.Error("[HEARTBEAT] GetActiveRecipients error", slog.String("error", err.Error()))
 		return
 	}
 
 	for _, r := range recipients {
 		if err := p.sender.SendText(ctx, r.WANumber, msg); err != nil {
-			slog.Error("[HEARTBEAT] SendText error", slog.String("name", r.Name), slog.String("wa_number", r.WANumber), slog.Any("error", err))
+			slog.Error("[HEARTBEAT] SendText error", slog.String("name", r.Name), slog.String("wa_number", r.WANumber), slog.String("error", err.Error()))
 		}
 	}
 
