@@ -62,7 +62,7 @@ steps:
       - '-c'
       - |
         set -e
-        if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+        if [ -z "$$SENTRY_AUTH_TOKEN" ]; then
           echo "Sentry: SENTRY_AUTH_TOKEN not set — skipping source map upload (dormant mode)"
           exit 0
         fi
