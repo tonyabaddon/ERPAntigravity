@@ -31,7 +31,8 @@ func TestTripwire_NonWhitelistURL(t *testing.T) {
 }
 
 func TestTripwire_WhitelistURL_NoFlag(t *testing.T) {
-	flags := InspectOutbound("Lihat di https://vosi.id/promo ya.")
+	// Task 15 rebrand: whitelist changed from vosi.id → caleo.id
+	flags := InspectOutbound("Lihat di https://caleo.id/promo ya.")
 	if slices.Contains(flags, FlagNonWhitelistURL) {
 		t.Errorf("did not expect URL flag for whitelist domain, got %v", flags)
 	}
