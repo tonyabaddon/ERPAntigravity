@@ -15177,3 +15177,38 @@ Advisor pushback: founder's earlier explicit instruction ("review findings, then
 4. Memory correction approval for `guard_expiry_write_broken_predicate`
 5. Green-light Day 1 UI phase (requires prod auth)
 
+
+---
+
+# 🔬 QA WEEK SESSION 3 — 2026-07-19 final push before founder returns
+
+Continued findings sweep — targeted static-analysis. Zero new prod changes.
+
+## Artifact
+- `docs/qa-week/2026-07-19-session3-findings.md`
+
+## New P1 candidate
+- **P1-07 DOMPurify CVE via jspdf** — 14 dompurify CVEs (XSS, prototype pollution, sanitization bypasses). Our jspdf ^2.5.2 + jspdf-autotable ^3.8.4 = vulnerable. Fix = `npm audit fix --force` (breaking jspdf major bump, need regression test on 8 PDF generators). Exploitability LOW in prod (PDF output not JS-executable in most viewers).
+
+## Positive Session 3
+- Zero `dangerouslySetInnerHTML` (no direct XSS surface)
+- Zero SQL injection risk in migrations
+- Zero hardcoded credentials
+- Zero console.log in FE prod
+- Only 4 TODO/FIXME in src (very clean)
+- Icon-only buttons a11y OK (0 without aria-label)
+- Sentry PII scrub wired FE + BE
+- 6 runbooks comprehensive (rollback, restore, secret rotation, tenant offboarding, DNS)
+- Backend Go coverage: rules 100%, scheduler 92.9%, storage 88.9%, jobs 88.7%
+- FE tests: 971 pass / 2 skip / 0 fail across 112 files
+- .env in .gitignore, no secrets in git history
+- Dockerfile multi-stage slim base
+
+## Cumulative (3 sessions)
+- P0: 0
+- P1: ~6 open (was 4 → −1 corrected, +2 Session 2 new, +1 Session 3 new)
+- P2: 11
+- P3: 6
+
+Foundation **very strong**. Zero blocker onboarding. All P1 localized fixes with reviewable drafts.
+
