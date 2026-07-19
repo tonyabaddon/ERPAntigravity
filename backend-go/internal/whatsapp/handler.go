@@ -12,6 +12,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/notification/templates"
 	"github.com/username/sinar-elektrik-backend/internal/rules"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/storage"
@@ -607,9 +608,25 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "ORDER_APPROVED: payment instructions sent")
 
+	// Fetch toko_nama for order_approved template.
+	var tokoNama string
+	h.db.DB.QueryRow(`SELECT name FROM tenants WHERE id = $1`, order.TenantID).Scan(&tokoNama)
+	invoiceNo := order.ID
+	if len(invoiceNo) > 8 {
+		invoiceNo = invoiceNo[len(invoiceNo)-8:]
+	}
+
 	if order.PaymentType == "DP" {
-		dpMsg := fmt.Sprintf("💳 *Instruksi Pembayaran DP*\n\nHalo Bapak/Ibu %s,\norder Anda telah dikonfirmasi!\n\nSilakan transfer *DP sebesar Rp %.0f* ke rekening kami dan kirim foto bukti pembayarannya di sini. 🙏",
-			order.CustomerName, order.DPAmount)
+		dpMsg, buildErr := templates.OrderApproved{}.Build(ctx, map[string]any{
+			"customer_nama": order.CustomerName,
+			"toko_nama":     tokoNama,
+			"invoice_no":    invoiceNo,
+		})
+		if buildErr != nil {
+			slog.ErrorContext(ctx, "[HANDLER] OrderApproved template build error", slog.Any("error", buildErr))
+			dpMsg = fmt.Sprintf("💳 *Instruksi Pembayaran DP*\n\nHalo Bapak/Ibu %s,\norder Anda telah dikonfirmasi!\n\nSilakan transfer *DP sebesar Rp %.0f* ke rekening kami dan kirim foto bukti pembayarannya di sini. 🙏",
+				order.CustomerName, order.DPAmount)
+		}
 		if err := h.sender.SendText(ctx, order.CustomerPhone, dpMsg); err != nil {
 			slog.ErrorContext(ctx, "[HANDLER] DP instruction send error", slog.Any("error", err))
 		}
@@ -650,12 +667,23 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 		return
 	}
 
-	lang := "id"
-	h.db.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, conversationID).Scan(&lang)
+	// Fetch toko_nama for payment_verified template.
+	var tokoNamaVerif string
+	h.db.DB.QueryRow(`SELECT name FROM tenants WHERE id = $1`, order.TenantID).Scan(&tokoNamaVerif)
+	invoiceNoVerif := order.ID
+	if len(invoiceNoVerif) > 8 {
+		invoiceNoVerif = invoiceNoVerif[len(invoiceNoVerif)-8:]
+	}
 
-	msg := "✅ *Pembayaran Dikonfirmasi!*\n\nTerima kasih Bapak/Ibu " + order.CustomerName + ", pembayaran Anda telah kami verifikasi.\nPesanan Anda sedang diproses. Terima kasih telah berbelanja di Garindo Jaya Panel! 😊"
-	if lang == "en" {
-		msg = "✅ *Payment Confirmed!*\n\nThank you " + order.CustomerName + ", your payment has been verified.\nYour order is being processed. Thank you for shopping at Garindo Jaya Panel! 😊"
+	msg, buildErr := templates.PaymentVerified{}.Build(ctx, map[string]any{
+		"customer_nama": order.CustomerName,
+		"toko_nama":     tokoNamaVerif,
+		"invoice_no":    invoiceNoVerif,
+		"amount":        fmt.Sprintf("%.0f", order.Total),
+	})
+	if buildErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: template build error", slog.Any("error", buildErr))
+		msg = "✅ *Pembayaran Dikonfirmasi!*\n\nTerima kasih Bapak/Ibu " + order.CustomerName + ", pembayaran Anda telah kami verifikasi.\nPesanan Anda sedang diproses. Terima kasih! 😊"
 	}
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: SendText error", slog.Any("error", err))
@@ -696,12 +724,27 @@ func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversati
 		return
 	}
 
-	lang := "id"
-	h.db.DB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, conversationID).Scan(&lang)
+	// Fetch toko_nama for payment_rejected template.
+	var tokoNamaRej string
+	h.db.DB.QueryRow(`SELECT name FROM tenants WHERE id = $1`, order.TenantID).Scan(&tokoNamaRej)
+	invoiceNoRej := order.ID
+	if len(invoiceNoRej) > 8 {
+		invoiceNoRej = invoiceNoRej[len(invoiceNoRej)-8:]
+	}
+	reason := order.RejectionReason
+	if reason == "" {
+		reason = "Foto bukti transfer tidak terbaca dengan jelas"
+	}
 
-	msg := "⚠️ *Konfirmasi Pembayaran*\n\nKami belum dapat mengkonfirmasi pembayaran Bapak/Ibu " + order.CustomerName + ".\nKemungkinan foto bukti transfer tidak terbaca dengan jelas.\n\nMohon kirim ulang bukti transfer yang valid (foto jelas, nominal terlihat).\nTerima kasih. 🙏"
-	if lang == "en" {
-		msg = "⚠️ *Payment Confirmation*\n\nWe could not confirm your payment, " + order.CustomerName + ".\nThe transfer proof image may not be clear enough.\n\nPlease resend a valid transfer proof (clear photo, amount visible).\nThank you. 🙏"
+	msg, buildErr := templates.PaymentRejected{}.Build(ctx, map[string]any{
+		"customer_nama": order.CustomerName,
+		"toko_nama":     tokoNamaRej,
+		"invoice_no":    invoiceNoRej,
+		"reason":        reason,
+	})
+	if buildErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: template build error", slog.Any("error", buildErr))
+		msg = "⚠️ *Konfirmasi Pembayaran*\n\nKami belum dapat mengkonfirmasi pembayaran Bapak/Ibu " + order.CustomerName + ".\nMohon kirim ulang bukti transfer yang valid.\nTerima kasih. 🙏"
 	}
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: SendText error", slog.Any("error", err))
@@ -722,8 +765,27 @@ func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID 
 	}
 
 	remaining := order.Total - order.DPAmount
-	msg := fmt.Sprintf("✅ *DP Terverifikasi!*\n\nTerima kasih Bapak/Ibu %s, DP Anda sebesar Rp %.0f telah kami konfirmasi.\n\nSilakan lunasi sisa pembayaran sebesar *Rp %.0f* dan kirim bukti transfernya di sini. 🙏",
-		order.CustomerName, order.DPAmount, remaining)
+
+	// Fetch toko_nama for dp_verified template.
+	var tokoNamaDP string
+	h.db.DB.QueryRow(`SELECT name FROM tenants WHERE id = $1`, order.TenantID).Scan(&tokoNamaDP)
+	invoiceNoDP := order.ID
+	if len(invoiceNoDP) > 8 {
+		invoiceNoDP = invoiceNoDP[len(invoiceNoDP)-8:]
+	}
+
+	msg, buildErr := templates.DPVerified{}.Build(ctx, map[string]any{
+		"customer_nama": order.CustomerName,
+		"toko_nama":     tokoNamaDP,
+		"invoice_no":    invoiceNoDP,
+		"sisa_amount":   fmt.Sprintf("%.0f", remaining),
+		"due_date":      "2×24 jam",
+	})
+	if buildErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: template build error", slog.Any("error", buildErr))
+		msg = fmt.Sprintf("✅ *DP Terverifikasi!*\n\nTerima kasih Bapak/Ibu %s, DP Anda sebesar Rp %.0f telah kami konfirmasi.\n\nSilakan lunasi sisa pembayaran sebesar *Rp %.0f* dan kirim bukti transfernya di sini. 🙏",
+			order.CustomerName, order.DPAmount, remaining)
+	}
 
 	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: SendText error", slog.Any("error", err))
