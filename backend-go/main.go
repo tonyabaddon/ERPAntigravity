@@ -634,6 +634,9 @@ func main() {
 	// lifetime for the connection's duration → worker functions correctly.
 	jobWorker := jobs.NewWorker(dbClient.ListenDB)
 	jobWorker.Register("echo_test", jobs.EchoHandler)
+	// Task 2.5: manual piutang WA reminder — enqueued by send_piutang_reminder_manual RPC.
+	// Uses dbClient.DB (transaction pooler) for the handler's SQL queries.
+	jobWorker.Register("piutang_manual_send", jobs.NewPiutangManualSendHandler(notifier, dbClient.DB))
 	// P2-D will add: jobWorker.Register("export_data", exportHandler)
 	workerCtx, workerCancel := context.WithCancel(ctx)
 	go jobWorker.Start(workerCtx)
