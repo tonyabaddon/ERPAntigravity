@@ -20,6 +20,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/config"
 	"github.com/username/sinar-elektrik-backend/internal/api"
 	"github.com/username/sinar-elektrik-backend/internal/approvals"
+	"github.com/username/sinar-elektrik-backend/internal/testapi"
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
@@ -913,6 +914,12 @@ func main() {
 	}); err != nil {
 		slog.Error("[MAIN] StartListening failed", slog.Any("error", err))
 		os.Exit(1)
+	}
+
+	// E2E test endpoints — gated by E2E_TEST_MODE=true env var.
+	// NEVER enabled in production. Registered after dbClient is fully wired.
+	if os.Getenv("E2E_TEST_MODE") == "true" {
+		testapi.Register(mux, dbClient.DB, waNumberID)
 	}
 
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
