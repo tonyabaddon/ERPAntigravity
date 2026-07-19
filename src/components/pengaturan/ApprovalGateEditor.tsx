@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { NumberInput } from '../ui/NumberInput';
 import { upsertApprovalSettings } from '../../lib/discountApproval/api';
 import type { VerificationMethod } from '../../lib/discountApproval/types';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 export interface ApprovalGateSettings {
   approval_required: boolean;
@@ -55,7 +56,7 @@ export function ApprovalGateEditor({ requestType, initialValues, onSaved, showTo
       showToast?.('Aturan disimpan', 'success');
       onSaved?.();
     } catch (e) {
-      showToast?.(e instanceof Error ? e.message : String(e), 'warning');
+      showToast?.(extractErrorMessage(e), 'warning');
     } finally {
       setSaving(false);
     }

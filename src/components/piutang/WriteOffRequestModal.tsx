@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PiutangRow } from '../../types';
 import { requestTempoWriteOff } from '../../lib/piutang/writeOff';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface WriteOffRequestModalProps {
   row: PiutangRow;
@@ -40,7 +41,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
       showToast('Tulis-off diajukan ke Owner', 'success');
       onSubmitted();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       showToast(mapErrorToToast(msg), 'warning');
     } finally {
       setSubmitting(false);

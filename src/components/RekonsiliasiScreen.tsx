@@ -25,6 +25,7 @@ import {
   autoMatchJournalLinesToBank,
   type UnreconciledJournalLine,
 } from '../lib/akuntansi/journalReconService';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 interface Props {
   currentUser: { name: string; role: string; permissions: { reconciliation?: boolean } } | null;
@@ -160,7 +161,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
       else showToast(`❌ ${r.reason ?? 'gagal'}`, 'warning');
       refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`❌ Gagal tutup buku: ${msg}`, 'warning');
     } finally {
       setClosingBook(false);
@@ -275,7 +276,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
       setDrawer({ open: false, source: null, cands: [], glMode: false });
       refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal cocokkan: ${msg}`, 'warning');
     }
   };
@@ -323,7 +324,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
       setGlRefreshKey(k => k + 1);
       refresh();
     } catch (err: unknown) {
-      showToast(`❌ Auto-match gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      showToast(`❌ Auto-match gagal: ${extractErrorMessage(err)}`, 'warning');
     }
   }, [accounts, period.year, period.month, showToast, refresh]);
 

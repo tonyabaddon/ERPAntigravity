@@ -26,6 +26,7 @@ import {
 import { WhatsappAiNumber, StockItem, ActivePage } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { getBackendUrl } from '../lib/backendUrl';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 interface WhatsappAiScreenProps {
   stockList: StockItem[];
@@ -415,7 +416,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                               pushTerminalLog(`Pair code generated for ${data.phone}: ${data.code}`);
                             }
                           } catch (e) {
-                            setPairCodeError(e instanceof Error ? e.message : String(e));
+                            setPairCodeError(extractErrorMessage(e));
                           } finally {
                             setPairCodeLoading(false);
                           }

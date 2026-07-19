@@ -7,6 +7,7 @@ import type { SaldoAwalSnapshot } from '../../lib/saldoAwal/types';
 import { getSaldoAwalState, reverseSaldoAwal } from '../../lib/saldoAwal/api';
 import { formatIDR } from '../../lib/formatIDR';
 import SaldoAwalWizard from './saldoAwal/SaldoAwalWizard';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -25,7 +26,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
       const s = await getSaldoAwalState();
       setSnapshot(s);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal memuat status Saldo Awal: ${msg}`, 'warning');
       setSnapshot(null);
     }
@@ -49,7 +50,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
       setReverseReason('');
       await loadState();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal reverse: ${msg}`, 'warning');
     } finally {
       setReversing(false);

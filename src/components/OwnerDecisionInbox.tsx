@@ -14,6 +14,7 @@ import { listSupplierClaims, decideSupplierClaim } from '../lib/supplierClaims/a
 import type { SupplierClaimRow } from '../lib/supplierClaims/types';
 import { supabase } from '../lib/supabaseClient';
 import { useWarehouses } from '../hooks/useWarehouses';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 interface OwnerDecisionInboxProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -77,7 +78,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
       const rows = await listSupplierClaims({ status: ['AWAITING_OWNER_DECISION'] });
       setClaims(rows);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     }
   };
 
@@ -128,7 +129,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
       setDecisionNotes('');
       await refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setDecidingId(null);
     }
@@ -159,7 +160,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
       setDecisionNotes('');
       await refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setDecidingId(null);
     }

@@ -17,6 +17,7 @@ import type {
 } from '../../lib/promoProduk/types';
 import { computeLinePromoDiscount } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -248,7 +249,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal simpan: ${msg}`, 'warning');
     } finally {
       setSaving(false);
@@ -454,7 +455,7 @@ export default function PromoProdukPanel({ showToast }: Props) {
       const data = await listActivePromos(f);
       setRows(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal memuat promo: ${msg}`, 'warning');
     } finally {
       setLoading(false);
@@ -510,7 +511,7 @@ export default function PromoProdukPanel({ showToast }: Props) {
       showToast('Promo berhasil dihapus', 'success');
       void load(filter);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal hapus: ${msg}`, 'warning');
     }
   };

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon, Smartphone, Send } from 'lucide-react';
 import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
-import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { normalizePhone } from '../lib/phone';
 import { useTenant } from '../contexts/TenantContext';
 import TabBar, { TabDef } from './ui/TabBar';
 import CostingMethodPanel from './pengaturan/CostingMethodPanel';
@@ -21,6 +22,7 @@ import PromoProdukPanel from './pengaturan/PromoProdukPanel';
 import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
 import LayananPanel from './pengaturan/LayananPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan';
 
@@ -91,6 +93,8 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     wa_number: '',
   });
   const [addSaving, setAddSaving] = useState(false);
+  // testSendingId: id of recipient whose test-send is in flight (null = none)
+  const [testSendingId, setTestSendingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -153,21 +157,45 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     }
   };
 
+  const handleTestSend = async (id: number): Promise<void> => {
+    if (!supabase) { showToast('Supabase belum terkonfigurasi.', 'warning'); return; }
+    setTestSendingId(id);
+    try {
+      const { data, error } = await supabase.rpc('send_notification_test', { p_template_id: 'test' });
+      if (error) {
+        showToast(`Gagal kirim tes: ${error.message}`, 'warning');
+      } else {
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row?.status === 'ERROR') {
+          showToast(`Gagal kirim tes: ${row.message}`, 'warning');
+        } else {
+          showToast('Tes WA dikirim! Cek WhatsApp kamu dalam beberapa detik.', 'success');
+        }
+      }
+    } catch (err) {
+      console.error('handleTestSend error:', err);
+      showToast('Gagal kirim tes WA.', 'warning');
+    } finally {
+      setTestSendingId(null);
+    }
+  };
+
   const handleAddRecipient = async (): Promise<void> => {
     if (!addForm.name || !addForm.wa_number) {
       showToast('Nama dan nomor WA wajib diisi.', 'warning');
       return;
     }
+    // Normalize input: accept 085X, +628X, 62 8X, 62-8X variants
+    const normalized = normalizePhone(addForm.wa_number);
     // WA format guard — DB may reject silently or accept malformed nums that
     // then fail at WA API send time. Require Indonesian format 62xxxxxxxxxx.
-    const cleaned = addForm.wa_number.replace(/[\s+()-]/g, '');
-    if (!/^62\d{8,13}$/.test(cleaned)) {
-      showToast('Nomor WA harus format 62xxxxxxxxxx (tanpa 0/+62).', 'warning');
+    if (!/^62\d{8,13}$/.test(normalized)) {
+      showToast('Nomor WA tidak valid. Contoh: 085123456789 atau 628123456789.', 'warning');
       return;
     }
     setAddSaving(true);
     try {
-      await waRecipientsService.add(addForm);
+      await waRecipientsService.add({ ...addForm, wa_number: normalized });
       const refreshed = await waRecipientsService.fetchAll();
       setRecipients(refreshed);
       setAddForm({ role: 'admin', name: '', wa_number: '' });
@@ -642,7 +670,7 @@ function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success'
       setHasPin(true);
     } catch (err) {
       console.error('changeOwnerPin error:', err);
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal: ${msg}`, 'warning');
     } finally {
       setSaving(false);

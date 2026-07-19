@@ -6,6 +6,7 @@ import type { ActivePage } from '../types';
 import { categorize, categoryCounts, type InboxCategory } from '../lib/salesInboxCategorize';
 import { conversationService } from '../lib/supabaseClient';
 import { getSignedChatMediaUrl } from '../lib/chatMediaSignedUrl';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 const CONV_STATE_DISPLAY: Record<string, { label: string; badgeClass: string }> = {
   GREETING:         { label: 'Sapa',             badgeClass: 'bg-violet-100 text-violet-700' },
@@ -153,7 +154,7 @@ export default function SalesInboxScreen({
     } catch (err) {
       // Restore the text so admin can retry — was silently lost on failure.
       setInputText(text);
-      setSendError(err instanceof Error ? err.message : String(err));
+      setSendError(extractErrorMessage(err));
     } finally {
       setSending(false);
     }
@@ -170,7 +171,7 @@ export default function SalesInboxScreen({
       // required re-picking the file.
       e.target.value = '';
     } catch (err) {
-      setSendError(`Upload gagal: ${err instanceof Error ? err.message : String(err)}`);
+      setSendError(`Upload gagal: ${extractErrorMessage(err)}`);
     } finally {
       setUploading(false);
     }
@@ -337,7 +338,7 @@ export default function SalesInboxScreen({
                             await conversationService.manuallyOverrideConversationState(activeChat.id, newState);
                             setStateDropdownOpen(false);
                           } catch (e) {
-                            alert(`Gagal ubah status: ${e instanceof Error ? e.message : String(e)}`);
+                            alert(`Gagal ubah status: ${extractErrorMessage(e)}`);
                           }
                         }}
                         onClose={() => setStateDropdownOpen(false)}
@@ -360,7 +361,7 @@ export default function SalesInboxScreen({
                         try {
                           await conversationService.clearConversationLock(activeChat.id);
                         } catch (e) {
-                          alert(`Gagal clear lock: ${e instanceof Error ? e.message : String(e)}`);
+                          alert(`Gagal clear lock: ${extractErrorMessage(e)}`);
                         }
                       } else {
                         const isEscalated =

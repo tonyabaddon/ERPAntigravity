@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PiutangRow } from '../../types';
 import { revertTempoWriteOff } from '../../lib/piutang/writeOff';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface RevertWriteOffConfirmModalProps {
   row: PiutangRow;
@@ -32,7 +33,7 @@ export default function RevertWriteOffConfirmModal({
       showToast('Tulis-off dibatalkan', 'success');
       onReverted();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       showToast(mapErrorToToast(msg), 'warning');
     } finally {
       setSubmitting(false);

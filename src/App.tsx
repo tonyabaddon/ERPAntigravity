@@ -21,6 +21,7 @@ import {
 
 import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIONS, KasirChannel } from './types';
 import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES, parseRoute } from './lib/urlRoute';
+import { extractErrorMessage } from './lib/extractErrorMessage';
 import { TenantProvider } from './contexts/TenantContext';
 import { AdminRoutes } from './components/admin/AdminRoutes';
 import { SelectTenantScreen } from './components/SelectTenantScreen';
@@ -582,8 +583,7 @@ export default function App() {
         if (!cancelled) window.location.reload();
       } catch (err) {
         if (!cancelled) {
-          const msg = err instanceof Error ? err.message : String(err);
-          setImpersonateError(msg);
+          setImpersonateError(extractErrorMessage(err));
           setImpersonateGate('failed');
         }
       }
