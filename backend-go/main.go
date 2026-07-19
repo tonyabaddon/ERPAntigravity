@@ -679,14 +679,27 @@ func main() {
 				slog.Error("[MAIN] GetMessageByID failed", slog.String("message_id", messageID), slog.Any("error", err))
 				return
 			}
-			var customerPhone string
+			var customerPhone, waNumberID string
 			// Task 11 gap-fix 2026-07-18: use ListenDB (direct connection).
 			// See note at main.go:484 above.
-			dbClient.ListenDB.QueryRow(`SELECT customer_phone FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone)
-			if customerPhone != "" && msg.Text != "" {
-				if err := sender.SendText(ctx, customerPhone, msg.Text); err != nil {
-					slog.Error("[MAIN] Admin forward WA send failed", slog.Any("error", err))
-				}
+			// waNumberID is used as tenantID surrogate — same approach as followup
+			// poller. Sprint 2+ will add a proper tenant_id column to conversations.
+			dbClient.ListenDB.QueryRow(`SELECT customer_phone, wa_number_id FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone, &waNumberID)
+			if customerPhone == "" || msg.Text == "" {
+				return
+			}
+			// B3 fix (Task 1.7): previously called sender.SendText directly,
+			// skipping InsertMessage — messages typed in Sales Inbox were never
+			// written to the audit trail. Route through NotifyCustomer for atomic
+			// audit row write + quota enforcement.
+			tmpl := templates.AdminForward{}
+			rendered, err := tmpl.Build(ctx, map[string]any{"text": msg.Text})
+			if err != nil {
+				slog.ErrorContext(ctx, "[MAIN] admin_forward render failed", slog.Any("error", err))
+				return
+			}
+			if err := notifier.NotifyCustomer(ctx, waNumberID, conversationID, customerPhone, "id", rendered); err != nil {
+				slog.ErrorContext(ctx, "[MAIN] admin_forward send failed", slog.Any("error", err))
 			}
 		},
 		OnOrderApproved: func(orderID, conversationID string, shippingFee float64) {
