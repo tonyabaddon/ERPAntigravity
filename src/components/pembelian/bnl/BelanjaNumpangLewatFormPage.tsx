@@ -10,6 +10,7 @@ import OrderPicker from './OrderPicker';
 import SkuPickerWithInlineCreate from './SkuPickerWithInlineCreate';
 import PaymentMethodPicker from './PaymentMethodPicker';
 import { NumberInput } from '../../ui/NumberInput';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -38,7 +39,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
   const [supplier, setSupplier] = useState<DbSupplier | null>(editing?.supplier ?? null);
   const [supplierQuery, setSupplierQuery] = useState('');
   const [supplierResults, setSupplierResults] = useState<DbSupplier[]>([]);
-  const [purchaseDate, setPurchaseDate] = useState(editing?.purchase_date ?? new Date().toISOString().slice(0, 10));
+  const [purchaseDate, setPurchaseDate] = useState(editing?.purchase_date ?? wibDateString());
   const [supplierInvNum, setSupplierInvNum] = useState(editing?.supplier_invoice_number ?? '');
   const [supplierInvoicePhoto, setSupplierInvoicePhoto] = useState<File | null>(null);
   const [supplierInvoicePhotoUrl, setSupplierInvoicePhotoUrl] = useState(editing?.supplier_invoice_photo_url ?? '');
@@ -71,7 +72,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       const term = supplier.payment_term_days ?? 0;
       const d = new Date(purchaseDate);
       d.setDate(d.getDate() + term);
-      setPaymentDueAt(d.toISOString().slice(0, 10));
+      setPaymentDueAt(wibDateString(d));
     }
   }, [supplier, paymentMethod, initialStatus, purchaseDate]);
 

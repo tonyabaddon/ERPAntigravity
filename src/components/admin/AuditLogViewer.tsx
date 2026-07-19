@@ -9,6 +9,7 @@ import { listAuditEvents } from '../../lib/adminApi';
 import type { AuditEventRow, AuditListFilters } from '../../lib/adminTypes';
 import { adminToast } from '../../lib/adminToast';
 import { AuditTable, AuditTableSkeleton } from './AuditTable';
+import { wibDateString } from '../../lib/format';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ function downloadCsv(events: AuditEventRow[]): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `audit-log-${wibDateString()}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }

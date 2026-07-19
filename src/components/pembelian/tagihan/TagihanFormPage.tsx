@@ -16,6 +16,7 @@ import { NumberInput } from '../../ui/NumberInput';
 import type { DbPesanan, PiPaymentMethod, Warehouse, DiscountType } from '../../../types';
 import PaymentMethodPicker from '../bnl/PaymentMethodPicker';
 import { DiscountInlineInput, DiscountRow, useDiscountBinding, computeDiscountAmount } from '../../ui/discount';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -162,7 +163,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
   const [pesanan, setPesanan] = useState<DbPesanan | null>(prefillPesanan ?? null);
   const [pesananQuery, setPesananQuery] = useState('');
   const [pesananResults, setPesananResults] = useState<DbPesanan[]>([]);
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [purchaseDate, setPurchaseDate] = useState(wibDateString());
   const [supplierInvNum, setSupplierInvNum] = useState('');
   const [supplierInvoicePhoto, setSupplierInvoicePhoto] = useState<File | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PiPaymentMethod>('TEMPO');
@@ -242,7 +243,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
     if (!pesanan || pesanan.supplier?.payment_term_days == null) return;
     const d = new Date(purchaseDate);
     d.setDate(d.getDate() + (pesanan.supplier.payment_term_days ?? 0));
-    setPaymentDueAt(d.toISOString().slice(0, 10));
+    setPaymentDueAt(wibDateString(d));
   }, [pesanan, purchaseDate]);
 
   const updateItem = (idx: number, patch: Partial<ItemRow>) => {

@@ -10,11 +10,12 @@ import {
   type TenantCostRow,
 } from '../../lib/costDashboardApi';
 import { adminToast } from '../../lib/adminToast';
+import { wibDateString } from '../../lib/format';
 
 // ─── Helpers ────────────���─────────────────────────────────────────────────────
 
 function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+  return wibDateString();
 }
 
 function fmtBytes(bytes: number): string {

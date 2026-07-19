@@ -18,6 +18,7 @@ import Step1KasBank from './Step1KasBank';
 import Step2Aktiva from './Step2Aktiva';
 import Step3Kewajiban from './Step3Kewajiban';
 import Step4EkuitasPreview from './Step4EkuitasPreview';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   initialSnapshot: SaldoAwalSnapshot | null;
@@ -40,7 +41,7 @@ const STEP_LABELS: Record<WizardStep, string> = {
 function defaultCutoverDate(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return wibDateString(d);
 }
 
 export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, onCancel, showToast }: Props) {
@@ -169,7 +170,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
           <input
             type="date"
             value={cutoverDate}
-            max={new Date().toISOString().slice(0, 10)}
+            max={wibDateString()}
             onChange={(e) => setCutoverDate(e.target.value)}
             className="border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white"
           />

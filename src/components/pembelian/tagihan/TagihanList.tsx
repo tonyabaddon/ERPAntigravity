@@ -6,6 +6,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -24,7 +25,7 @@ type Row = DbPurchaseInvoice & {
   pesanan?: { pesanan_number: string } | null;
 };
 
-function effectiveStatus(t: Row, today = new Date().toISOString().slice(0, 10)): TagihanStatus | 'TERLAMBAT' | 'VOID' {
+function effectiveStatus(t: Row, today = wibDateString()): TagihanStatus | 'TERLAMBAT' | 'VOID' {
   if (t.voided_at) return 'VOID';
   const s = t.status as TagihanStatus;
   if (s === 'LUNAS') return 'LUNAS';
@@ -74,7 +75,7 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
   useEffect(() => { reload(); }, []);
 
   const filtered = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = wibDateString();
     return list.filter(t => {
       const eff = effectiveStatus(t, today);
       if (statusFilter !== 'ALL') {

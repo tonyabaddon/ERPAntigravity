@@ -11,6 +11,7 @@ import { getSignedStorageUrl } from './chatMediaSignedUrl';
 import type {
   DbPurchaseInvoice, RecordPiPayload, OrderCogsBreakdownRow,
 } from '../types';
+import { wibDateString } from './format';
 
 type RecordPiResult =
   | { kind: 'ok'; pi_number: string; pi_id: string }
@@ -127,7 +128,7 @@ export const purchaseInvoiceService = {
   },
 };
 
-export function isTerlambat(pi: DbPurchaseInvoice, today: string = new Date().toISOString().slice(0, 10)): boolean {
+export function isTerlambat(pi: DbPurchaseInvoice, today: string = wibDateString()): boolean {
   return pi.status === 'BELUM_LUNAS' && !!pi.payment_due_at && pi.payment_due_at < today;
 }
 
@@ -136,7 +137,7 @@ export function isTerlambat(pi: DbPurchaseInvoice, today: string = new Date().to
  * Returns true if PI is BELUM_LUNAS and due_date is within [today, today+3] (inclusive).
  * Excludes Terlambat (already overdue) — those flow through isTerlambat instead.
  */
-export function isDueSoon(pi: DbPurchaseInvoice, today: string = new Date().toISOString().slice(0, 10)): boolean {
+export function isDueSoon(pi: DbPurchaseInvoice, today: string = wibDateString()): boolean {
   if (pi.status !== 'BELUM_LUNAS' || !pi.payment_due_at || pi.voided_at) return false;
   if (pi.payment_due_at < today) return false; // already terlambat
   const due = new Date(pi.payment_due_at + 'T00:00:00');

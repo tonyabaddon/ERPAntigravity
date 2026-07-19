@@ -15,6 +15,7 @@ import type {
   CashAccountPurpose,
   BankCode,
 } from '../../lib/kasbank/types';
+import { wibDateString } from '../../lib/format';
 
 interface AccountFormModalProps {
   open: boolean;
@@ -59,7 +60,7 @@ const EMPTY_FORM: FormState = {
   purpose: 'OPERATIONAL',
   show_in_invoice: true,
   opening_balance: 0,
-  opening_balance_date: new Date().toISOString().slice(0, 10),
+  opening_balance_date: wibDateString(),
 };
 
 /**
@@ -148,7 +149,7 @@ export default function AccountFormModal({
         purpose: editingAccount.purpose,
         show_in_invoice: editingAccount.show_in_invoice,
         opening_balance: editingAccount.opening_balance,
-        opening_balance_date: editingAccount.opening_balance_date ?? new Date().toISOString().slice(0, 10),
+        opening_balance_date: editingAccount.opening_balance_date ?? wibDateString(),
       });
     } else {
       setForm(EMPTY_FORM);

@@ -21,6 +21,7 @@ import type {
   SuggestOutstandingTagihanRow,
   SuggestOutstandingTukarFakturRow,
 } from '../../../types';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -70,7 +71,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
   const prefillTfAppliedRef = useRef(false);
   const tfRowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
 
-  const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
+  const [paidAt, setPaidAt] = useState(wibDateString());
   const [paymentMethod, setPaymentMethod] = useState<Method>('TRANSFER');
   const [accountLabel, setAccountLabel] = useState('');
   // Phase 0b dual-write: cash_accounts.id where the payment leaves from.

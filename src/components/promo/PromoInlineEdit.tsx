@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { upsertStockPromo } from '../../lib/promoProduk/api';
 import type { PromoDiscountType } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
+import { wibDateString } from '../../lib/format';
 
 interface Props {
   sku: string;
@@ -170,7 +171,7 @@ export default function PromoInlineEdit({
           <input
             type="date"
             value={expiryDate}
-            min={new Date().toISOString().slice(0, 10)}
+            min={wibDateString()}
             onChange={(e) => setExpiryDate(e.target.value)}
             className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
           />

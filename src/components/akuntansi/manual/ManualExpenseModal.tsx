@@ -12,6 +12,7 @@ import { fetchCashAccountBalances } from '../../../lib/kasbank/service';
 import JournalEntryPreview from './JournalEntryPreview';
 import type { JEPreviewLine } from './JournalEntryPreview';
 import type { CoaOption } from '../../../lib/akuntansi/coaQueries';
+import { wibDateString } from '../../../lib/format';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,7 +39,7 @@ interface CashAccountOption {
 // ---------------------------------------------------------------------------
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return wibDateString();
 }
 
 /** Format integer as Rupiah string: e.g. 3000000 → "Rp 3.000.000" */

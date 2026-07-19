@@ -12,6 +12,7 @@ import { recordBalanceAdjustment } from '../../../lib/akuntansi/manualEntry';
 import type { AdjustmentDirection } from '../../../lib/akuntansi/manualEntry';
 import JournalEntryPreview from './JournalEntryPreview';
 import type { JEPreviewLine } from './JournalEntryPreview';
+import { wibDateString } from '../../../lib/format';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,7 +31,7 @@ export interface BalanceAdjustmentModalProps {
 // ---------------------------------------------------------------------------
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return wibDateString();
 }
 
 /** Format integer as Rupiah string: e.g. 3000000 → "Rp 3.000.000" */

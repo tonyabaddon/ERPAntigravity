@@ -9,6 +9,7 @@ import type { CashAccount } from '../../../lib/kasbank/types';
 import type { Step1Cash, Step1CashAccount } from '../../../lib/saldoAwal/types';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   data: Step1Cash;
@@ -31,7 +32,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
             cash_account_id: a.id,
             cash_account_name: a.internal_label,
             opening_balance: a.opening_balance ?? 0,
-            as_of: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
+            as_of: a.opening_balance_date ?? wibDateString(),
           }));
           onChange({ accounts: seeded });
         }
@@ -84,7 +85,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
         cash_account_id: a.id,
         cash_account_name: a.internal_label,
         opening_balance: a.opening_balance ?? 0,
-        as_of: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
+        as_of: a.opening_balance_date ?? wibDateString(),
       })),
     });
     showToast('Saldo disinkronkan dari data Kas & Bank', 'success');

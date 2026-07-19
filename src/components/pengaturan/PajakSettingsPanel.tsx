@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
 import { NumberInput } from '../ui/NumberInput';
 import type { DbTenantSettings, PajakMode, JenisBadan } from '../../types';
+import { wibDateString } from '../../lib/format';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
 
@@ -14,7 +15,7 @@ function computeExpiresAt(jenis: JenisBadan, terdaftar: string): string {
   const years = UMKM_DURATION[jenis];
   const expiry = new Date(start);
   expiry.setFullYear(start.getFullYear() + years);
-  return expiry.toISOString().slice(0, 10);
+  return wibDateString(expiry);
 }
 
 function timeUntil(dateStr: string): string {

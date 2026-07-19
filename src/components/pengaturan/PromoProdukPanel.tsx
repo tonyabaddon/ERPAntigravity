@@ -18,6 +18,7 @@ import type {
 import { computeLinePromoDiscount } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import { wibDateString } from '../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -373,7 +374,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
               <input
                 type="date"
                 value={expiryDate}
-                min={new Date().toISOString().slice(0, 10)}
+                min={wibDateString()}
                 onChange={(e) => setExpiryDate(e.target.value)}
                 className="border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />

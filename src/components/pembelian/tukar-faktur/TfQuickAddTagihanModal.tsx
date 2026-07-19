@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { X, Check, Info } from 'lucide-react';
 import type { TfQuickAddTagihanDraft } from '../../../types';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   prefillSupplierInvoice?: string;
@@ -18,14 +19,14 @@ export default function TfQuickAddTagihanModal({
   onCancel,
   onSave,
 }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = wibDateString();
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + (defaultPaymentTermDays || 30));
 
   const [supplierInv, setSupplierInv] = useState(prefillSupplierInvoice ?? '');
   const [purchaseDate, setPurchaseDate] = useState(today);
   const [total, setTotal] = useState('');
-  const [dueAt, setDueAt] = useState(dueDate.toISOString().slice(0, 10));
+  const [dueAt, setDueAt] = useState(wibDateString(dueDate));
 
   function handleSave() {
     const totalNum = parseFloat(total.replace(/[^0-9.-]/g, ''));

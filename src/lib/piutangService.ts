@@ -22,6 +22,7 @@ import type {
   PiutangRow,
   PiutangTier,
 } from '../types';
+import { wibDateString } from './format';
 
 // ── Tier classification ──
 export const PIUTANG_TIERS: Record<PiutangTier['key'], PiutangTier> = {
@@ -61,7 +62,7 @@ export function classifyTier(daysToDue: number): PiutangTier['key'] {
 function todayWIB(): string {
   // Jakarta = UTC+7
   const now = new Date(Date.now() + 7 * 3600_000);
-  return now.toISOString().slice(0, 10);
+  return wibDateString(now);
 }
 
 function daysBetween(fromISO: string, toISO: string): number {

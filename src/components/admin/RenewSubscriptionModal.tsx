@@ -21,6 +21,7 @@ import {
   PaymentFileWrongTypeError,
 } from '../../lib/adminTypes';
 import type { PaymentMethod, BankName, EwalletProvider } from '../../lib/paymentsTypes';
+import { wibDateString } from '../../lib/format';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -37,12 +38,12 @@ interface Props {
 function addOneYear(iso: string): string {
   const d = new Date(iso);
   d.setFullYear(d.getFullYear() + 1);
-  return d.toISOString().slice(0, 10);
+  return wibDateString(d);
 }
 
 /** Today as ISO YYYY-MM-DD. */
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return wibDateString();
 }
 
 /** Default new_expires_at: tenant.expires_at + 1 year, or today + 1 year when null. */

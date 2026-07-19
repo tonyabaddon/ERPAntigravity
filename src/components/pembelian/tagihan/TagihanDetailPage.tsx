@@ -10,6 +10,7 @@ import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import { supabase } from '../../../lib/supabaseClient';
 import { navigate } from '../../../lib/urlRoute';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
+import { wibDateString } from '../../../lib/format';
 
 type TagihanRow = DbPurchaseInvoice & {
   pesanan_id?: string | null;
@@ -29,7 +30,7 @@ const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-function effectiveStatus(t: TagihanRow, today = new Date().toISOString().slice(0, 10)): TagihanStatus | 'TERLAMBAT' | 'VOID' {
+function effectiveStatus(t: TagihanRow, today = wibDateString()): TagihanStatus | 'TERLAMBAT' | 'VOID' {
   if (t.voided_at) return 'VOID';
   const s = t.status as TagihanStatus;
   if (s === 'LUNAS') return 'LUNAS';

@@ -16,6 +16,7 @@ import type {
   TfQuickAddTagihanDraft,
 } from '../../../types';
 import TfQuickAddTagihanModal from './TfQuickAddTagihanModal';
+import { wibDateString } from '../../../lib/format';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -61,7 +62,7 @@ export default function TukarFakturFormPage({
   prefillSupplierId,
   prefillTagihanId,
 }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = wibDateString();
 
   const [supplier, setSupplier] = useState<DbSupplier | null>(null);
   const [supplierQuery, setSupplierQuery] = useState('');
@@ -85,7 +86,7 @@ export default function TukarFakturFormPage({
     }
     const due = new Date();
     due.setDate(due.getDate() + (supplier.payment_term_days || 30));
-    setPaymentDueAt(due.toISOString().slice(0, 10));
+    setPaymentDueAt(wibDateString(due));
   }, [supplier]);
 
   // Reload outstanding list whenever supplier or selected ids change

@@ -10,6 +10,7 @@ import { fetchCashAccountBalances } from '../../../lib/kasbank/service';
 import { recordOwnerDrawing } from '../../../lib/akuntansi/manualEntry';
 import JournalEntryPreview from './JournalEntryPreview';
 import type { JEPreviewLine } from './JournalEntryPreview';
+import { wibDateString } from '../../../lib/format';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,7 +29,7 @@ export interface OwnerDrawingModalProps {
 // ---------------------------------------------------------------------------
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return wibDateString();
 }
 
 /** Format integer as Rupiah string: e.g. 3000000 → "Rp 3.000.000" */
