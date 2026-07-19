@@ -23,6 +23,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/followup"
+	"github.com/username/sinar-elektrik-backend/internal/piutang"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
 	"github.com/username/sinar-elektrik-backend/internal/jobs"
@@ -642,6 +643,13 @@ func main() {
 	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, notifier).Start(ctx)
 	slog.Info("[MAIN] Heartbeat poller started (1-minute tick)")
+
+	// Piutang WA reminder poller — fires daily at 09:00 WIB.
+	// Scans Premium tenants for tempo/kredit invoices due H-3 or H+3 and
+	// sends reminder via NotifyCustomer. Every attempt is recorded in the
+	// piutang_reminder_sent audit table (Task 2.1).
+	piutang.NewReminderPoller(dbClient.DB, notifier).Start(ctx)
+	slog.Info("[MAIN] Piutang reminder poller started (daily 09:00 WIB)")
 
 	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
 	// the public.expire_pending_approvals() RPC once per minute. Matches the
