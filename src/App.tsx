@@ -65,6 +65,7 @@ import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
 import WarehouseTransferListScreen from './components/warehouseTransfer/WarehouseTransferListScreen';
 import WarehouseTransferCreateScreen from './components/warehouseTransfer/WarehouseTransferCreateScreen';
 import WarehouseTransferDetailScreen from './components/warehouseTransfer/WarehouseTransferDetailScreen';
+import { PiutangWaReminderScreen } from './components/pengaturan/PiutangWaReminderScreen';
 
 import { INITIAL_CONFIG } from './initialData';
 
@@ -908,6 +909,8 @@ export default function App() {
             currentUserName={currentUser?.name}
           />
         );
+      case 'piutang-wa-reminder':
+        return <PiutangWaReminderScreen />;
       default:
         // Unknown screen — show 404 instead of blank page.
         return (

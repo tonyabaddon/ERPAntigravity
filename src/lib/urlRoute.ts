@@ -66,6 +66,7 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'warehouse-transfer',
   'warehouse-transfer-create',
   'warehouse-transfer-detail',
+  'piutang-wa-reminder',
 ]);
 
 export interface RouteState {
