@@ -11,6 +11,7 @@ import (
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
+	"github.com/username/sinar-elektrik-backend/internal/feedback"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/notification/templates"
 	"github.com/username/sinar-elektrik-backend/internal/rules"
@@ -181,6 +182,33 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 				slog.ErrorContext(ctx, "[HANDLER] CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
 			} else {
 				leadsID = lead.ID
+			}
+		}
+	}
+
+	// 3b. Post-order feedback capture — cheap digit guard before any DB call.
+	// If the first character is 1-5, check whether this customer has a pending
+	// feedback request. If yes, capture the rating and send an ack, then return
+	// without invoking Gemini. Runs even when AI is off so admin-handled customers
+	// can still submit feedback.
+	if len(text) > 0 && text[0] >= '1' && text[0] <= '5' {
+		if pendingOrder, hasPending, lookupErr := feedback.LookupPendingFeedback(ctx, h.db.DB, senderPhone); lookupErr != nil {
+			slog.ErrorContext(ctx, "[HANDLER] LookupPendingFeedback error",
+				slog.String("phone", senderPhone), slog.Any("error", lookupErr))
+		} else if hasPending {
+			captured, captureErr := feedback.HandleFeedbackResponse(ctx, h.db.DB, pendingOrder, text)
+			if captureErr != nil {
+				slog.ErrorContext(ctx, "[HANDLER] HandleFeedbackResponse error",
+					slog.String("order_id", pendingOrder.OrderID), slog.Any("error", captureErr))
+			} else if captured {
+				ack := "Terima kasih atas rating-nya! 🙏 Kami akan gunakan feedback ini untuk terus perbaiki layanan."
+				if _, insertErr := h.db.InsertMessage(conv.ID, models.SenderAI, ack); insertErr != nil {
+					slog.ErrorContext(ctx, "[HANDLER] feedback ack InsertMessage error", slog.Any("error", insertErr))
+				}
+				if sendErr := h.sender.SendText(ctx, senderPhone, ack); sendErr != nil {
+					slog.ErrorContext(ctx, "[HANDLER] feedback ack send error", slog.Any("error", sendErr))
+				}
+				return
 			}
 		}
 	}

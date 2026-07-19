@@ -23,6 +23,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
+	"github.com/username/sinar-elektrik-backend/internal/feedback"
 	"github.com/username/sinar-elektrik-backend/internal/followup"
 	"github.com/username/sinar-elektrik-backend/internal/hutang"
 	"github.com/username/sinar-elektrik-backend/internal/piutang"
@@ -680,6 +681,13 @@ func main() {
 	// has been pending for more than 2 hours without a response (Sprint 4 Task 4.3).
 	approvals.NewSLABreachPoller(dbClient.DB, notifier).Start(ctx)
 	slog.Info("[MAIN] Approval SLA breach poller started (15-min tick)")
+
+	// Post-order feedback request poller — fires daily at 10:00 WIB and sends
+	// a rating request (1-5) to customers whose COMPLETED order was 7 days ago
+	// and have not yet been asked. Responses are captured in customer_feedback
+	// table via the inbound message handler (Sprint 4 Task 4.4).
+	feedback.NewRequestPoller(dbClient.DB, notifier).Start(ctx)
+	slog.Info("[MAIN] Post-order feedback request poller started (daily 10:00 WIB)")
 
 	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
 	// button replies here. The adapter translates sql.ErrNoRows to the
