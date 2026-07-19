@@ -547,6 +547,30 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </div>
               <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
             </button>
+            {/* Quick link to Notification Cron config */}
+            <button
+              type="button"
+              onClick={() => props.onNavigate('notification-cron')}
+              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+            >
+              <div>
+                <div className="text-sm font-bold text-gray-800">🕗 Notifikasi Terjadwal</div>
+                <div className="text-xs text-gray-500 mt-0.5">Konfigurasi 4 notifikasi otomatis: ringkasan piutang/hutang, SLA breach, dan feedback customer.</div>
+              </div>
+              <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
+            </button>
+            {/* Quick link to Customer Feedback dashboard */}
+            <button
+              type="button"
+              onClick={() => props.onNavigate('customer-feedback')}
+              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+            >
+              <div>
+                <div className="text-sm font-bold text-gray-800">⭐ Feedback Customer</div>
+                <div className="text-xs text-gray-500 mt-0.5">Lihat rating dan komentar dari customer setelah order selesai.</div>
+              </div>
+              <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
+            </button>
             <WhatsappAiScreen
               stockList={props.stockList}
               showToast={showToast}
