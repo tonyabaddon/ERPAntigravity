@@ -2,13 +2,14 @@ package followup
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/models"
-	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
+	"github.com/username/sinar-elektrik-backend/internal/notification"
 )
 
 var wibLocation = time.FixedZone("WIB", 7*3600)
@@ -16,12 +17,12 @@ var wibLocation = time.FixedZone("WIB", 7*3600)
 // Poller sends automatic follow-up WA messages to conversations where the
 // customer has gone silent. Ticks every minute and respects WIB daily quotas.
 type Poller struct {
-	db     *db.Client
-	sender *whatsapp.Sender
+	db       *db.Client
+	notifier *notification.Notifier
 }
 
-func NewPoller(d *db.Client, s *whatsapp.Sender) *Poller {
-	return &Poller{db: d, sender: s}
+func NewPoller(d *db.Client, n *notification.Notifier) *Poller {
+	return &Poller{db: d, notifier: n}
 }
 
 // Start launches the polling goroutine. Stops when ctx is cancelled.
@@ -57,23 +58,40 @@ func (p *Poller) poll(ctx context.Context) {
 		}
 
 		msg := buildFollowupMessage(conv, effectiveCount+1)
-		if err := p.sender.SendText(ctx, conv.CustomerPhone, msg); err != nil {
-			slog.Error("[FOLLOWUP] SendText error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
-			// Safety valve: increment failed_attempts; auto-disable ai_active
-			// after 3 consecutive failures to stop the runaway loop pattern
-			// (2026-07-18: invalid phones + unpaired WA sessions caused
-			// unbounded retry every 30s).
-			if failErr := p.db.IncrementFollowupFailed(conv.ID); failErr != nil {
-				slog.Error("[FOLLOWUP] IncrementFollowupFailed error", slog.String("conv_id", conv.ID), slog.String("error", failErr.Error()))
+		// tenantID: Calista uses wa_number_id as the per-tenant discriminator.
+		// Sprint 2+ will add a proper tenant_id column to conversations once the
+		// backend migrates to full multi-tenancy. For now, wa_number_id satisfies
+		// the NotifyCustomer signature and the quota lookup will skip gracefully
+		// if no tenant_subscriptions row exists for this wa_number_id.
+		tenantID := conv.WANumberID
+		if err := p.notifier.NotifyCustomer(ctx, tenantID, conv.ID, conv.CustomerPhone, conv.Language, msg); err != nil {
+			if errors.Is(err, notification.ErrQuotaExceeded) {
+				// Quota exhausted for this tenant today — skip silently. Not a
+				// send failure; do NOT increment the failure counter.
+				slog.Info("[FOLLOWUP] tenant quota exceeded, skipping", slog.String("conv_id", conv.ID))
+				continue
 			}
+			if errors.Is(err, notification.ErrSendFailed) {
+				// Real WA send failure (invalid phone, unpaired session, etc.)
+				// Safety valve: increment failed_attempts; auto-disable ai_active
+				// after 3 consecutive failures to stop the runaway loop pattern
+				// (2026-07-18: invalid phones + unpaired WA sessions caused
+				// unbounded retry every 30s).
+				slog.Error("[FOLLOWUP] NotifyCustomer send error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
+				if failErr := p.db.IncrementFollowupFailed(conv.ID); failErr != nil {
+					slog.Error("[FOLLOWUP] IncrementFollowupFailed error", slog.String("conv_id", conv.ID), slog.String("error", failErr.Error()))
+				}
+				continue
+			}
+			// Infrastructure error (quota DB unavailable, etc.) — log and skip
+			// without penalising the conversation's failure counter.
+			slog.Error("[FOLLOWUP] NotifyCustomer infra error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
 			continue
 		}
 		if err := p.db.IncrementFollowup(conv.ID); err != nil {
 			slog.Error("[FOLLOWUP] IncrementFollowup error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
 		}
-		if _, err := p.db.InsertMessage(conv.ID, models.SenderAI, msg); err != nil {
-			slog.Error("[FOLLOWUP] InsertMessage error", slog.String("conv_id", conv.ID), slog.String("error", err.Error()))
-		}
+		// InsertMessage removed: NotifyCustomer handles audit trail atomically.
 		slog.Info("[FOLLOWUP] sent follow-up", slog.Int("count", effectiveCount+1), slog.String("conv_id", conv.ID))
 	}
 }

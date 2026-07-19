@@ -29,6 +29,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/llm"
 	"github.com/username/sinar-elektrik-backend/internal/logging"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/notification"
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/sentryutil"
@@ -74,6 +75,42 @@ func (a approvalStoreAdapter) LatestPendingApprovalID() (int64, error) {
 
 func (a approvalStoreAdapter) DecideViaWAButton(approvalID int64, decision, ownerUserID string) error {
 	return a.client.DecideViaWAButton(approvalID, decision, ownerUserID)
+}
+
+// messageInserterAdapter bridges *db.Client.InsertMessage (no ctx, returns
+// *models.Message) to notification.messageInserter (ctx-aware, returns error).
+// Discards the returned message — callers of NotifyCustomer don't need it.
+// Adaptor lives in main.go to keep db and notification packages decoupled.
+type messageInserterAdapter struct{ client *db.Client }
+
+func (a messageInserterAdapter) InsertMessage(_ context.Context, convID, sender, text string) error {
+	_, err := a.client.InsertMessage(convID, models.MessageSender(sender), text)
+	return err
+}
+
+// recipientResolverAdapter bridges *db.Client.GetActiveRecipients() (no args,
+// returns []*models.WaRecipient) to notification.recipientResolver (ctx +
+// tenantID + filter, returns []notification.Recipient).
+//
+// Current db.GetActiveRecipients has no tenant filter — single-tenant Calista
+// backend only has one set of recipients. Sprint 2+ will add per-tenant
+// filtering once the backend migrates to full multi-tenancy. The tenantID
+// arg is accepted but not forwarded to the DB query yet.
+type recipientResolverAdapter struct{ client *db.Client }
+
+func (a recipientResolverAdapter) GetActiveRecipients(_ context.Context, _ string, filter notification.RecipientFilter) ([]notification.Recipient, error) {
+	raw, err := a.client.GetActiveRecipients()
+	if err != nil {
+		return nil, err
+	}
+	var out []notification.Recipient
+	for _, r := range raw {
+		if filter.Role != "" && r.Role != filter.Role {
+			continue
+		}
+		out = append(out, notification.Recipient{Phone: r.WANumber, Role: r.Role})
+	}
+	return out, nil
 }
 
 func main() {
@@ -580,7 +617,14 @@ func main() {
 	go jobWorker.Start(workerCtx)
 	slog.Info("[MAIN] Async job worker started (5s poll interval)")
 
-	followup.NewPoller(dbClient, sender).Start(ctx)
+	followupNotifier := notification.NewNotifier(
+		sender,
+		messageInserterAdapter{dbClient},
+		notification.NewQuota(dbClient.DB),
+		notification.NewCachedResolver(recipientResolverAdapter{dbClient}),
+		slog.Default(),
+	)
+	followup.NewPoller(dbClient, followupNotifier).Start(ctx)
 	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, sender).Start(ctx)
 	slog.Info("[MAIN] Heartbeat poller started (1-minute tick)")
