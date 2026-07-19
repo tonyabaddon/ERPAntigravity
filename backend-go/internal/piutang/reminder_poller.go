@@ -73,25 +73,24 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 
 	for rows.Next() {
 		var (
-			invoiceID     string
-			customerID    string
-			tenantID      string
-			convID        string
-			ruleType      string
-			customerName  string
-			tokoName      string
-			customerPhone string
-			invoiceNo     string
-			tokoLang      string
-			jumlah        int64
-			dueDate       time.Time
-			templateH3    string
+			invoiceID      string
+			customerID     string
+			tenantID       string
+			convID         string
+			ruleType       string
+			customerName   string
+			tokoName       string
+			customerPhone  string
+			invoiceRef     string
+			jumlah         int64
+			dueDate        time.Time
+			templateH3     string
 			templateH3Plus string
 		)
 		if err := rows.Scan(
 			&invoiceID, &customerID, &tenantID, &convID, &ruleType,
-			&customerName, &tokoName, &customerPhone, &invoiceNo,
-			&tokoLang, &jumlah, &dueDate, &templateH3, &templateH3Plus,
+			&customerName, &tokoName, &customerPhone, &invoiceRef,
+			&jumlah, &dueDate, &templateH3, &templateH3Plus,
 		); err != nil {
 			log.ErrorContext(ctx, "row scan failed", slog.Any("error", err))
 			continue
@@ -100,7 +99,7 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 		params := map[string]any{
 			"customer_nama": customerName,
 			"toko_nama":     tokoName,
-			"invoice_no":    invoiceNo,
+			"invoice_no":    invoiceRef,
 			"jumlah":        formatRp(jumlah),
 			"due_date":      dueDate.Format("2 Jan 2006"),
 		}
@@ -131,7 +130,8 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 		}
 
 		// Send via NotifyCustomer — quota checked, audit trail written atomically.
-		sendErr := r.notifier.NotifyCustomer(ctx, tenantID, convID, customerPhone, tokoLang, msg)
+		// Language is hardcoded to "id" (Indonesian): tenants table has no language column.
+		sendErr := r.notifier.NotifyCustomer(ctx, tenantID, convID, customerPhone, "id", msg)
 		switch {
 		case sendErr == nil:
 			r.recordSent(ctx, tenantID, invoiceID, customerID, ruleType, msg, "SENT", "")
@@ -201,44 +201,52 @@ func (r *ReminderPoller) recordSent(ctx context.Context, tenantID, invoiceID, cu
 //   - H-3: invoice due exactly 3 calendar days from now
 //   - H+3: invoice due exactly 3 calendar days ago (overdue)
 //
-// Filters: Premium tier, active subscription, piutang WA feature enabled,
+// Filters: PREMIUM plan_code + grace window, piutang WA feature enabled,
 // customer WA consent enabled, tenant-level reminder config enabled,
 // and NOT already SENT today for the same rule.
+//
+// Schema notes (verified 2026-07-19):
+//   - tenant_subscriptions: plan_code='PREMIUM', grace_expires_at (no .tier, no .status)
+//   - orders: status='INVOICE_TEMPO' for open tempo invoices (no .amount_due, no .invoice_no)
+//   - customers: wa_number (not .phone)
+//   - tenants: no .language column — hardcoded to 'id'
+//   - amount_due derived as (o.total - COALESCE(o.piutang_paid_amount,0))
+//   - invoice_no derived as SUBSTR(o.id::TEXT, -8) (last 8 chars of UUID)
 func eligibleInvoicesQuery() string {
 	return `
 	SELECT
-	  o.id                                     AS invoice_id,
+	  o.id                                                           AS invoice_id,
 	  o.customer_id,
 	  o.tenant_id,
-	  COALESCE(cv.id::TEXT, '')               AS conv_id,
+	  COALESCE(cv.id::TEXT, '')                                     AS conv_id,
 	  CASE
 	    WHEN o.due_date = CURRENT_DATE + INTERVAL '3 days' THEN 'H-3'
 	    ELSE 'H+3'
-	  END                                      AS rule_type,
-	  c.name                                   AS customer_name,
-	  t.name                                   AS toko_name,
-	  c.phone                                  AS customer_phone,
-	  o.invoice_no,
-	  COALESCE(t.language, 'id')              AS toko_language,
-	  o.amount_due::BIGINT                     AS jumlah,
+	  END                                                            AS rule_type,
+	  c.name                                                         AS customer_name,
+	  t.name                                                         AS toko_name,
+	  COALESCE(c.wa_number, '')                                     AS customer_phone,
+	  SUBSTR(o.id::TEXT, LENGTH(o.id::TEXT) - 7)                   AS invoice_ref,
+	  (COALESCE(o.total, 0) - COALESCE(o.piutang_paid_amount, 0))::BIGINT AS jumlah,
 	  o.due_date,
-	  COALESCE(cfg.template_h3, '')           AS template_h3,
-	  COALESCE(cfg.template_h3_plus, '')      AS template_h3_plus
+	  COALESCE(cfg.template_h3, '')                                 AS template_h3,
+	  COALESCE(cfg.template_h3_plus, '')                            AS template_h3_plus
 	FROM public.orders o
-	JOIN public.customers    c   ON c.id       = o.customer_id
-	JOIN public.tenants      t   ON t.id       = o.tenant_id
-	JOIN public.tenant_subscriptions ts        ON ts.tenant_id = o.tenant_id
+	JOIN public.customers          c   ON c.id         = o.customer_id
+	                                  AND c.tenant_id  = o.tenant_id
+	JOIN public.tenants            t   ON t.id         = o.tenant_id
+	JOIN public.tenant_subscriptions ts ON ts.tenant_id = o.tenant_id
 	LEFT JOIN public.conversations cv
-	     ON cv.customer_phone = c.phone
+	     ON cv.customer_phone = c.wa_number
 	    AND cv.tenant_id      = o.tenant_id
 	LEFT JOIN public.tenant_wa_reminder_config cfg ON cfg.tenant_id = o.tenant_id
 	WHERE
-	  ts.tier = 'premium'
-	  AND ts.status = 'active'
+	  ts.plan_code = 'PREMIUM'
+	  AND ts.grace_expires_at >= CURRENT_DATE
 	  AND ts.piutang_wa_reminder_enabled = TRUE
-	  AND o.status = 'OPEN'
+	  AND o.status = 'INVOICE_TEMPO'
 	  AND o.payment_type IN ('tempo', 'kredit')
-	  AND c.phone IS NOT NULL AND c.phone <> ''
+	  AND c.wa_number IS NOT NULL AND c.wa_number <> ''
 	  AND c.wa_reminder_enabled = TRUE
 	  AND COALESCE(cfg.enabled, TRUE) = TRUE
 	  AND (
