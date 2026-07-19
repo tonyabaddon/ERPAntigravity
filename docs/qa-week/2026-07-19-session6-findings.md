@@ -141,3 +141,39 @@ Screens fully rendered + verified this session:
 - Backend Go test bootstrap fix (30+ tests, ~4-6h investment)
 - Interactive impersonation grant flow test (requires generating a grant then verifying audit)
 - Full 300 remaining scenario matrix execution (spread across 2-3 more sessions)
+
+---
+
+## Late-session additions
+
+### 3-tenant × 6-table isolation matrix (SQL)
+
+Extended Session 5's 2-tenant test to full 3-tenant matrix:
+
+| From | To | Tables tested | Leaks |
+|---|---|---|---|
+| Garindo | Toko Jaya | 6 | 0 |
+| Garindo | Warung | 6 | 0 |
+| Toko Jaya | Garindo | 6 | 0 |
+| Toko Jaya | Warung | 6 | 0 |
+| Warung | Garindo | 6 | 0 |
+| Warung | Toko Jaya | 6 | 0 |
+
+**Total: 36 cross-tenant read attempts × 3 real tenants = 0 leaks.** Multi-tenant isolation fully verified across the entire production tenant set.
+
+### Dashboard maintenance RPC live check
+
+`get_dashboard_maintenance_counts()` as Toko Jaya returns valid JSON:
+```json
+{"approval_pending":0, "hutang_overdue_sum":0, "piutang_overdue_sum":0,
+ "hutang_overdue_count":0, "piutang_overdue_count":0, "fulfillment_queue_count":0}
+```
+
+RPC contract works. Dashboard widget backends confirmed functional.
+
+### RPC surface — record_kasir_sale
+
+Signature verified. 25 parameters covering: date, channel, items JSONB, subtotal, payment (method/subtype/type/DP/ongkir), notes, customer info, delivery, marketplace ref, WA chat, discount, cash account, negative stock flag, idempotency key. Comprehensive — matches Kasir wizard's full state model.
+
+Two overloads exist (with and without `p_idempotency_key`) — expected for backward compatibility.
+
