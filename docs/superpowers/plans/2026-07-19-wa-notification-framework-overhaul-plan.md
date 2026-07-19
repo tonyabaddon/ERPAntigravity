@@ -28,6 +28,7 @@
 - **7 refs per file per pricing update**: schema.org JSON-LD price, `data-p6/p12/strike` attributes, `.v-strike` display, `.v-price` display, `.v-commit` tagline savings, WA CTA URL, FAQ #2 mention.
 - **Every sprint independently deployable**: If Sprint N fails E2E, roll back Sprint N without affecting Sprints 1..N-1.
 - **Deploy verify pattern**: after `git push main`, run `gcloud builds list --limit=2` and confirm `STATUS!=FAILURE` before treating deploy as shipped (per memory `deploy_verify_after_push`).
+- **Per-sprint validation gate (MANDATORY, founder rule)**: After development completes for a sprint, run E2E test on the sprint's new features PLUS potentially-impacted existing modules. Only if ZERO bugs → deploy to Cloud Run/Supabase. After deploy → validate/re-test on production URL (app.caleo.id + Garindo tenant) before marking sprint DONE. See "Per-Sprint Validation Protocol" section below.
 - **Backend split-pool config**: queries via txn pooler (`:6543`), listener via direct (`:5432`) — do NOT change (per memory `supabase_split_pool`).
 
 ---
@@ -139,6 +140,104 @@ tests/e2e/tests/
 ```
 
 ---
+
+## Per-Sprint Validation Protocol (MANDATORY)
+
+**Founder rule** (2026-07-19): every sprint MUST complete this 3-stage gate before marking DONE. Skipping = violation.
+
+### Stage 1 — Local E2E validation (BEFORE any deploy)
+
+Test scope covers:
+1. **New feature paths introduced by this sprint** — happy path + at least one edge case
+2. **Existing modules potentially impacted by this sprint** — identify via Impact Analysis grep (per CLAUDE.md protocol):
+   - `grep -rn "from.*<modified-package>"` for direct importers
+   - Existing tests that exercise the modified functions
+   - DB touchpoints for modified schema
+
+For each sprint the impact analysis is spelled out below in "Per-Sprint Impact Test Matrix".
+
+Run:
+- `cd backend-go && go test ./... -v` — full backend suite must be green
+- `npm run lint && npm run audit:numinput && npm run audit:secdef-null-tenant && npx vitest run --changed` — Stop hook gates green
+- `E2E_TEST_MODE=true npm run backend:dev &` then `npx playwright test tests/e2e/tests/wa-notifications/` — E2E paths A-G stay green (Sprint 6 gives us this suite; before Sprint 6 use manual chrome-devtools verification on new features)
+- If ANY failure → STOP, root-cause, fix, re-run from top. No cheat via `t.Skip` or ignoring failed asserts.
+
+### Stage 2 — Deploy to production (only after Stage 1 fully green)
+
+Backend + Frontend:
+```bash
+git push origin main
+sleep 30
+gcloud builds list --limit=2
+```
+Wait for STATUS = SUCCESS on the latest build. Do NOT proceed to Stage 3 if FAILURE.
+
+SQL migrations (if any):
+- Apply via `mcp__plugin_supabase_supabase__apply_migration` OR add to `scripts/apply-pending-migrations.sh` array + apply.
+- Run `mcp__plugin_supabase_supabase__get_advisors` — no new HIGH/CRITICAL findings.
+
+### Stage 3 — Production validation on Garindo (prod-testing-tenant)
+
+Reopen the Sprint's changed flows on production URL (app.caleo.id) logged in as Garindo owner:
+- Exercise happy path end-to-end for each new feature this sprint shipped
+- Exercise ONE regression check per potentially-impacted module (per Impact Matrix)
+- Verify: no console errors (open chrome-devtools MCP), no failed network requests, no visible regression in adjacent modules
+
+If regression appears:
+- **Rollback immediately**: revert Cloud Run revision to previous tag OR revert migration
+- Log incident to `docs/incidents/YYYY-MM-DD-<slug>.md`
+- Root-cause + refix + re-run Sprint validation from Stage 1
+
+Only after Stage 3 fully green → mark sprint DONE + update progress.md.
+
+### Per-Sprint Impact Test Matrix
+
+**Sprint 1 (harmonization)** — potentially impacts:
+- All 5 legacy WA send paths (Path A Calista, D followup, E booking expiry, G admin forward, H heartbeat) — regression test: send test WA on each path, verify arrives
+- `messages` audit table — check row count grows for every send (B2/B3 fix)
+- `tenant_subscriptions.wa_daily_quota_used` — increments correctly (B4 fix)
+- `approval_requests` — INSERT triggers `approval_created` NOTIFY (B1 fix)
+- Existing Calista replies still work (no quota over-count regression)
+
+**Sprint 2 (Piutang scheduler)** — potentially impacts:
+- PiutangScreen — button previously disabled now enabled; verify tier-gate blocks Starter/Pro
+- Manual send RPC — 1x/invoice/day dedup enforced
+- `customers` table — new `wa_reminder_enabled` column defaults TRUE (existing customers get default opt-in)
+- Sprint 1 wrappers — Piutang poller uses them; ensure quota still tracked correctly
+
+**Sprint 3 (universal templates + order lifecycle)** — potentially impacts:
+- ALL 8 existing customer paths (A-G) + heartbeat — regression test each still fires + uses correct template
+- `handler.go` — 5 lifecycle events refactored; smoke each (payment_verified, dp_verified, payment_rejected, order_approved, order_shipped)
+- `orders` INSERT — verify `order_created` NOTIFY fires + customer receives WA
+- `tenant_notification_templates_history` trigger — every UPDATE creates history row
+
+**Sprint 4 (new notifications)** — potentially impacts:
+- Owner recipients — daily 07:30 + 08:00 messages arrive without overlapping/losing prior notifications
+- `approval_requests` — SLA breach column doesn't conflict with existing approval flow
+- Post-order feedback response handler — doesn't intercept non-feedback WA messages (Calista LLM path still works)
+- `customer_feedback` table — RLS scopes tenant correctly (no cross-tenant leaks)
+
+**Sprint 5 (quiet hours + session health)** — potentially impacts:
+- ALL staff broadcasts — critical (approval SLA + Sprint 1 approval card) STILL bypass quiet hours
+- Heartbeat — silent-day skip doesn't accidentally skip when omset > 0
+- Consolidation window — doesn't drop urgent messages
+- Session health monitor — Caleo ops email arrives + is not sent to tenant owner (founder rule)
+
+**Sprint 6 (E2E + WA recipient CRUD)** — potentially impacts:
+- WA recipient CRUD — existing recipients still work after phone normalize
+- No hardcoded numbers remain (`grep -rEn "62[0-9]{8,}"`)
+- All E2E paths A-G still green after refactors
+
+**Sprint 7 (Caleo Admin WA Bot)** — potentially impacts:
+- Landing 13 CTAs — every one leads to bot number, not founder personal
+- Existing customer support via founder personal — still functional (founder receives new prospect notifications separately)
+- Sentinel tenant `00000000-0000-0000-0000-000000000000` — no cross-tenant RLS bypass
+- FAQ matcher — doesn't match false positives on real customer messages (only Caleo bot session, not tenant Calista sessions)
+
+**All sprints — cross-cutting regression**:
+- Existing landing (caleo.id) — visual + interactive elements still work post-CTA swap
+- Existing app (app.caleo.id) — Login + navigation + module screens all render
+- Existing Calista tenants (Garindo) — WA responses within normal latency
 
 ## Task Numbering Convention
 
