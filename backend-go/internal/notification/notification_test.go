@@ -129,3 +129,32 @@ func TestNotifyCustomer_ReturnsQuotaExceeded(t *testing.T) {
 		t.Fatalf("expected ErrQuotaExceeded, got %v", err)
 	}
 }
+
+type mockRecipientResolver struct {
+	recipients []Recipient
+	called     bool
+}
+
+func (m *mockRecipientResolver) GetActiveRecipients(ctx context.Context, tenantID string, filter RecipientFilter) ([]Recipient, error) {
+	m.called = true
+	return m.recipients, nil
+}
+
+func TestBroadcastToStaff_HappyPath(t *testing.T) {
+	sender := &mockSender{}
+	resolver := &mockRecipientResolver{
+		recipients: []Recipient{
+			{Phone: "628111", Role: "owner"},
+			{Phone: "628222", Role: "admin"},
+		},
+	}
+	notifier := &Notifier{sender: sender, resolver: resolver}
+
+	err := notifier.BroadcastToStaff(context.Background(), "t1", RecipientFilter{}, "alert!")
+	if err != nil {
+		t.Fatalf("expected pass, got %v", err)
+	}
+	if !resolver.called {
+		t.Fatal("expected resolver to be called")
+	}
+}

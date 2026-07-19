@@ -29,12 +29,14 @@ type Notifier struct {
 	sender   sendClient
 	inserter messageInserter
 	quota    quotaChecker
+	resolver recipientResolver
 	logger   *slog.Logger
 }
 
 // NewNotifier returns a Notifier bound to the given collaborators.
-func NewNotifier(s sendClient, i messageInserter, q quotaChecker, l *slog.Logger) *Notifier {
-	return &Notifier{sender: s, inserter: i, quota: q, logger: l}
+// Pass nil for resolver if BroadcastToStaff will not be used.
+func NewNotifier(s sendClient, i messageInserter, q quotaChecker, r recipientResolver, l *slog.Logger) *Notifier {
+	return &Notifier{sender: s, inserter: i, quota: q, resolver: r, logger: l}
 }
 
 // NotifyCustomer sends a WA message to a customer with atomic audit trail write
