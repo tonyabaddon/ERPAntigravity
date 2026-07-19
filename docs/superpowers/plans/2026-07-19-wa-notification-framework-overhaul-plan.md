@@ -141,6 +141,162 @@ tests/e2e/tests/
 
 ---
 
+## Plan Errata (2026-07-19 gap-analysis pass)
+
+These are additions/clarifications identified during self-review after plan authoring. Subagent implementers MUST apply these when executing the referenced tasks.
+
+### Errata 1 — Sprint 2 additional migration
+
+Add to Task 2.2 (`tenant_wa_reminder_config` migration file):
+
+```sql
+-- Also in 20261115000412_tenant_wa_reminder_config.sql, add:
+ALTER TABLE public.tenant_subscriptions
+  ADD COLUMN IF NOT EXISTS piutang_wa_reminder_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+
+COMMENT ON COLUMN public.tenant_subscriptions.piutang_wa_reminder_enabled IS
+  'Sprint 2 (2026-07-19): tenant-wide feature flag for Piutang WA reminder auto-scheduler. Required by piutang.eligibleInvoicesQuery(). Default TRUE (Premium opt-in on ship).';
+```
+
+Task 2.4 eligibility SQL references `ts.piutang_wa_reminder_enabled` — this column is required.
+
+### Errata 2 — Test-send RPCs (Sprint 2 + Sprint 3)
+
+Add new migration `20261115000414_test_send_rpcs.sql` between Tasks 2.5 and 2.6:
+
+```sql
+-- supabase/migrations/20261115000414_test_send_rpcs.sql
+-- Sprint 2/3: test-send RPCs enqueue a WA to the caller's own phone.
+-- Used by PiutangWaReminderScreen + NotificationTemplatesScreen "Kirim tes" buttons.
+
+CREATE OR REPLACE FUNCTION public.send_piutang_reminder_test(p_rule_type TEXT)
+RETURNS TABLE (status TEXT, message TEXT)
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_tenant_id UUID := public._resolve_tenant_id();
+  v_user_id UUID := auth.uid();
+  v_phone TEXT;
+BEGIN
+  IF p_rule_type NOT IN ('H-3','H+3') THEN
+    RETURN QUERY SELECT 'ERROR'::TEXT, 'rule_type invalid'::TEXT; RETURN;
+  END IF;
+  SELECT phone INTO v_phone FROM public.wa_recipients WHERE tenant_id = v_tenant_id AND user_id = v_user_id AND active = TRUE LIMIT 1;
+  IF v_phone IS NULL THEN
+    RETURN QUERY SELECT 'ERROR'::TEXT, 'Nomor WA kamu belum terdaftar di Pengaturan → WA Recipients'::TEXT; RETURN;
+  END IF;
+  INSERT INTO public.t_jobs (tenant_id, job_type, payload, status)
+  VALUES (v_tenant_id, 'piutang_test_send', jsonb_build_object('phone', v_phone, 'rule_type', p_rule_type), 'PENDING');
+  RETURN QUERY SELECT 'OK'::TEXT, 'Tes akan dikirim dalam beberapa detik'::TEXT;
+END; $$;
+
+GRANT EXECUTE ON FUNCTION public.send_piutang_reminder_test(TEXT) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.send_notification_test(p_template_id TEXT)
+RETURNS TABLE (status TEXT, message TEXT)
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+LANGUAGE plpgsql AS $$
+DECLARE
+  v_tenant_id UUID := public._resolve_tenant_id();
+  v_user_id UUID := auth.uid();
+  v_phone TEXT;
+BEGIN
+  SELECT phone INTO v_phone FROM public.wa_recipients WHERE tenant_id = v_tenant_id AND user_id = v_user_id AND active = TRUE LIMIT 1;
+  IF v_phone IS NULL THEN
+    RETURN QUERY SELECT 'ERROR'::TEXT, 'Nomor WA kamu belum terdaftar'::TEXT; RETURN;
+  END IF;
+  INSERT INTO public.t_jobs (tenant_id, job_type, payload, status)
+  VALUES (v_tenant_id, 'notification_test_send', jsonb_build_object('phone', v_phone, 'template_id', p_template_id), 'PENDING');
+  RETURN QUERY SELECT 'OK'::TEXT, 'Tes akan dikirim dalam beberapa detik'::TEXT;
+END; $$;
+
+GRANT EXECUTE ON FUNCTION public.send_notification_test(TEXT) TO authenticated;
+```
+
+Backend job handlers for `piutang_test_send` and `notification_test_send`: render template with sample data (Sprint 2 sample data map), send via `NotifyCustomer` with `convID=''` (test sends bypass conversation tracking).
+
+### Errata 3 — Sprint 5 explicit consolidated broadcast job
+
+Add explicit task 5.2b **between Tasks 5.2 and 5.3**:
+
+**Task 5.2b: Consolidated broadcast job handler**
+
+Files: `backend-go/internal/jobs/handlers_broadcast.go`
+
+Implements:
+- `handleBroadcastConsolidated(ctx, payload)` — reads job payload `{tenant_id, messages: [m1, m2, ...]}`, renders combined format `"N kejadian dalam W menit terakhir:\n\n1. m1\n\n2. m2..."`, sends via `BroadcastToStaff` (recursion protected: bypass consolidation logic on this specific send).
+- `handleQuietHoursDelay(ctx, payload)` — reads `{tenant_id, msg, filter}`, calls `BroadcastToStaff` (respecting current time now that quiet hours have passed).
+- Both registered as job types in `jobWorker.Register(...)` in main.go.
+
+Migration slot 442 (bumps existing 442+ if any):
+```sql
+-- t_jobs schema assumed to exist. If NOT (grep 't_jobs' migrations to verify):
+CREATE TABLE IF NOT EXISTS public.t_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES public.tenants(id),
+  job_type TEXT NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}'::JSONB,
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','RUNNING','DONE','FAILED')),
+  scheduled_for TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (id)
+);
+CREATE INDEX IF NOT EXISTS idx_t_jobs_status_scheduled ON public.t_jobs (status, scheduled_for) WHERE status='PENDING';
+```
+
+Recursion note: when the consolidated job handler calls `BroadcastToStaff`, pass an `internal:true` context marker (via `context.WithValue`) that `BroadcastToStaff` checks to skip its own consolidation check. Avoids infinite job re-enqueue.
+
+### Errata 4 — Caleo bot RLS bypass strategy (Sprint 7, IMPORTANT)
+
+Sentinel tenant `00000000-0000-0000-0000-000000000000` needs a way to access `caleo_admin_bot_faq` + `caleo_admin_bot_analytics`. Options:
+- **Recommended**: bot code uses direct DB connection (not going through PostgREST/Supabase RLS). Bot session runs in backend Go, has access to same DB pool as pollers.
+- Grant `service_role` explicit SELECT/UPDATE on these tables — sufficient since bot code runs backend-side, no client access needed.
+
+Migration `20261115000470_caleo_admin_bot.sql` should include:
+```sql
+-- Bot tables have NO RLS (backend-only access via service role).
+-- Explicitly document this decision:
+COMMENT ON TABLE public.caleo_admin_bot_faq IS 'Backend-only table. No RLS. Accessed by caleobot service.';
+COMMENT ON TABLE public.caleo_admin_bot_analytics IS 'Backend-only table. No RLS. Accessed by caleobot service.';
+
+GRANT SELECT, INSERT, UPDATE ON public.caleo_admin_bot_faq TO service_role;
+GRANT SELECT, INSERT, UPDATE ON public.caleo_admin_bot_analytics TO service_role;
+```
+
+Do NOT insert sentinel tenant row into `tenants` — it's an artificial construct. Instead:
+- Remove `INSERT INTO public.tenants` step from Task 7.1 migration
+- Bot code hardcodes `const sentinelTenantID = "00000000-0000-0000-0000-000000000000"` for logging only
+
+Frontend admin dashboard (Task 7.4) accesses these tables via a service-role edge function, not client-side supabase query.
+
+### Errata 5 — main.go extraction (Sprint 5 addition, IMPORTANT)
+
+By Sprint 5, main.go has 6+ new pollers + 2+ LISTEN handlers registered. Extract to `backend-go/internal/pollers/register.go`:
+
+```go
+// backend-go/internal/pollers/register.go
+package pollers
+
+func RegisterAll(ctx context.Context, db *sql.DB, notifier *notification.Notifier, waSessions *whatsapp.SessionManager) {
+    piutang.NewReminderPoller(db, notifier).Start(ctx)
+    piutang.NewOverdueSummaryPoller(db, notifier).Start(ctx)
+    hutang.NewOverdueSummaryPoller(db, notifier).Start(ctx)
+    approvals.NewSlaBreachPoller(db, notifier).Start(ctx)
+    feedback.NewRequestPoller(db, notifier).Start(ctx)
+    notification.NewSessionHealthPoller(db, waSessions.CheckClient).Start(ctx)
+}
+```
+
+Main.go calls `pollers.RegisterAll(ctx, db, notifier, waSessions)`.
+
+Similarly extract LISTEN handlers to `internal/listeners/register.go`.
+
+Do this AS PART OF Sprint 5 Task 5.6 (deploy step) — no separate task needed; refactor drops main.go size back to manageable.
+
+---
+
 ## Per-Sprint Validation Protocol (MANDATORY)
 
 **Founder rule** (2026-07-19): every sprint MUST complete this 3-stage gate before marking DONE. Skipping = violation.
