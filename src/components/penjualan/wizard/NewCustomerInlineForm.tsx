@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DbCustomer } from '../../../types';
 import { insertNewCustomer, requestCustomerCreditActivate } from '../../../lib/customers/customerWrappers';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 interface Props {
   onSaved: (customer: DbCustomer) => void;
@@ -49,8 +50,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
       }
       onSaved(customer);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      showToast(`Gagal simpan customer: ${msg}`, 'warning');
+      showToast(`Gagal simpan customer: ${extractErrorMessage(e)}`, 'warning');
     } finally {
       setSubmitting(false);
     }

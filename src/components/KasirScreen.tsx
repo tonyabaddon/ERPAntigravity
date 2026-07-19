@@ -254,7 +254,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           </button>
           <button
             type="button"
-            onClick={onOpenPenjualanBaru}
+            onClick={() => onOpenPenjualanBaru?.()}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#2d8a4e] text-white font-extrabold text-[13px] rounded-xl hover:bg-green-700"
           >
             📋 Catat Penjualan
