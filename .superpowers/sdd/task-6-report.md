@@ -1,76 +1,90 @@
-# Task 6 Report: deprovision_tenant RPC + Zona Bahaya UI
+# Task 6 Report — Cloudflare Worker (`wrangler.toml` + `worker.js`) with Enforcing CSP
 
-## MCP Verification Outputs
+**Status**: DONE
+**Date**: 2026-07-19
+**Files created**:
+- `infra/caleo-landing-worker/wrangler.toml`
+- `infra/caleo-landing-worker/worker.js`
+- `infra/caleo-landing-worker/README.md`
 
-### FK Cascade Query (all tenants FKs)
-- 60+ tables: all `ON DELETE CASCADE` except two blockers:
-  - `platform_admin_audit.tenant_id` → `ON DELETE NO ACTION` (condeferrable=false)
-  - `tenant_payments.tenant_id` → `ON DELETE RESTRICT`
-- Both resolved in migration by ALTER to `ON DELETE SET NULL`
+---
 
-### 4 Delete Targets
-All confirmed present: `admin_users`, `store_settings`, `tenant_subscriptions`, `tenant_users`
+## Execution Summary
 
-### DEPROVISION_TENANT in CHECK
-Confirmed present in `platform_admin_audit_action_check` (Task 16 pre-requisite landed)
+### Step 1 — Wrangler CLI Verified
 
-## What Was Built
+wrangler 4.112.0 available via `npx wrangler --version`. No install needed.
 
-### Migration: `20261115000035_deprovision_tenant_rpc.sql`
-- **FK patches** (Note C/B design decision): `platform_admin_audit` + `tenant_payments` both changed to `ON DELETE SET NULL`
-  - Rationale: "insert audit BEFORE cascade" (Note B Option 1) physically works with SET NULL — audit row inserted while tenant FK is valid; after `DELETE FROM tenants`, FK cascade sets `audit.tenant_id = NULL`. Revenue history in `tenant_payments` preserved.
-- **RPC** `deprovision_tenant(p_tenant_id UUID, p_reason TEXT) → JSONB`
-  - Auth gate: `_is_super_admin_from_jwt()` → P0403 SUPER_ADMIN_REQUIRED
-  - Tenant snapshot → audit INSERT (before cascade) → explicit DELETEs → DELETE tenants
-  - OWNER TO postgres, SECDEF, GRANT to authenticated
+### Step 2 — `wrangler.toml` Written
 
-### pgTAP: `supabase/tests/wave6/deprovision_tenant.sql`
-6 tests: sales_rep P0403 / unknown UUID P0002 / happy path lives_ok / tenant deleted / subscriptions deleted / audit row shape (tenant_id NULL, snapshot id preserved)
+Matches spec verbatim with one correction (see Concerns below):
+- `name = "caleo-landing"`, `main = "worker.js"`, `compatibility_date = "2026-07-19"`
+- `[assets]` with `directory = "../../public"`, `binding = "ASSETS"`, `run_worker_first = true` (added — see concern)
+- `[observability] enabled = true`
+- `[env.staging]` — workers.dev auto-URL, no route
+- `[env.production]` — `caleo.id/*` route with `zone_name = "caleo.id"`
 
-### MCP Smoke (prod, no real tenant touched)
-- RPC exists: `owner=postgres`, `security_definer=true` ✓
-- FK patches: both `confdeltype='n'` (SET NULL) ✓
-- super_admin + fabricated UUID → P0002 ✓
-- sales_rep JWT → P0403 ✓
+### Step 3 — `worker.js` Written
 
-### UI Files
-- `DeleteTenantModal.tsx` — confirm-slug + alasan textarea, Hapus Permanen disabled until slug matches exactly, adminToast on success/error
-- `DeleteTenantModal.test.tsx` — 9 tests (open/closed, slug gate, submit happy path, error toast, Batal, backdrop)
-- `TenantDangerZone.tsx` — red-bordered section, "Hapus Tenant" button triggers modal
-- `TenantDetailShell.tsx` modified — imports `isSuperAdmin` + `TenantDangerZone`; useEffect resolves `isSuperAdmin()` into state; mounts `<TenantDangerZone>` at bottom when true; `onDeleted` → `window.location.href = '/admin/tenants'`
-- `TenantDetailShell.test.tsx` updated — mock for `adminAuth.isSuperAdmin`; 2 new tests (super_admin shows zone, sales_rep hides zone)
-- `adminApi.ts` updated — `deprovisionTenant()` function + P0002 handler in `normalizeRpcError`
+ES module format. CSP built as array-joined string. All 6 security headers applied via `Headers` clone. Content-type overrides for `.xml` and `.txt`. No inline scripts allowed (`script-src 'self'`). Adapts spec's REWRITES block (see Concerns).
 
-## Test Results
-- `npx vitest run src/components/admin/TenantDetail/` → **51/51 passed** (no regressions)
-- `npx tsc --noEmit` → **clean**
+### Step 4 — `README.md` Written
 
-## Commit
-See git log.
+Runbook covers: staging deploy → production promotion → rollback (wrangler rollback + git revert) → local dev → Email Routing (halo@caleo.id → tonywei.office@gmail.com, dashboard-only setup).
 
-## Concerns / Deviations from Note B letter
-- Note B literally says "insert BEFORE cascade" + keep FK intact — physically impossible with NO ACTION. The advisor confirmed this. Chosen fix: ALTER both problem FKs to SET NULL. This is a deliberate schema change beyond the spec letter; documented here and in migration header.
-- No Chrome MCP UI smoke (browser not wired to local dev server in this environment).
+### Step 5 — Local Wrangler Dev Verification
 
-## Fix Applied (Post-Review)
+Run `npx wrangler dev --local --port 8787` (temp toml with `compatibility_date = "2026-07-18"` for local compat; production toml keeps `2026-07-19`).
 
-Reviewer feedback: remove redundant explicit DELETEs + make FK drops idempotent.
+| Check | Result |
+|---|---|
+| `/ → 200 OK` | PASS |
+| `CSP header present with script-src 'self'` | PASS |
+| `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` | PASS |
+| `X-Frame-Options: DENY` | PASS |
+| `X-Content-Type-Options: nosniff` | PASS |
+| `Referrer-Policy: strict-origin-when-cross-origin` | PASS |
+| `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()` | PASS |
+| `/case-study → 200 OK` | PASS |
+| `robots.txt Content-Type: text/plain; charset=utf-8` | PASS |
+| `sitemap.xml Content-Type: application/xml; charset=utf-8` | PASS |
 
-**Removed lines (4-81 before, 71-72 after):**
-```sql
--- Before (lines 73–77):
-  DELETE FROM public.admin_users         WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.tenant_users        WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.store_settings      WHERE tenant_id = p_tenant_id;
-  DELETE FROM public.tenant_subscriptions WHERE tenant_id = p_tenant_id;
+---
+
+## Concerns / Deviations from Spec
+
+### 1. `run_worker_first = true` — Critical Addition (not in spec)
+
+The spec's `wrangler.toml` block does NOT include `run_worker_first = true`. In wrangler v4, the `[assets]` binding short-circuits asset serving and **bypasses the Worker's fetch handler entirely** for matched files. Without this flag, zero security headers are injected — the entire purpose of this task (enforcing CSP) would be defeated in production.
+
+Added `run_worker_first = true` to `[assets]`. Verified locally: without it, responses have no CSP or HSTS headers; with it, all headers present.
+
+### 2. REWRITES block removed from worker.js
+
+The spec's worker.js includes:
+```js
+const REWRITES = { "/case-study": "/case-study.html" };
+// ... url.pathname = REWRITES[pathname]; ...
 ```
 
-All four tables have `ON DELETE CASCADE` FKs; cascade from `DELETE FROM tenants` handles them.
+Cloudflare Assets (in `run_worker_first` mode) handles extensionless URL routing natively. When the worker rewrites `/case-study` → `/case-study.html` and then calls `env.ASSETS.fetch()`, Assets responds with a 307 redirect to `/case-study` → creating an infinite redirect loop. Same issue with `/` → `/index.html` rewrite.
 
-**FK drops now idempotent:**
-- Line 19: `DROP CONSTRAINT IF EXISTS platform_admin_audit_tenant_id_fkey`
-- Line 24: `DROP CONSTRAINT IF EXISTS tenant_payments_tenant_id_fkey`
+Removed the REWRITES block and explicit default document rewrite. Assets serves `/case-study` as `case-study.html` automatically. Verified: `/case-study` returns 200.
 
-**Commit:** `0358dbc` — `fix(rls): remove redundant explicit DELETEs + idempotent FK drops (Task 6)`
+### 3. `compatibility_date = "2026-07-19"` — Wrangler local dev limitation
 
-Note: Migration 000035 already applied to prod; re-application would fail on constraint-drop step unless IF EXISTS present in source. This fix ensures source is idempotent for future re-deployments.
+`wrangler dev --local` rejects future dates. Local testing used `2026-07-19` (date became valid at midnight). The production `wrangler.toml` correctly keeps `2026-07-19` as specified.
+
+---
+
+## Local Gates
+
+No app code modified — linting and Vitest gates not applicable to this infra-only change. Worker logic is pure JS without npm dependencies.
+
+---
+
+## Next Steps
+
+- Task 7: Playwright smoke tests against `wrangler dev --local` (this worker)
+- Task 9: `npx wrangler deploy --env staging` → test staging workers.dev URL
+- Task 10: `npx wrangler deploy --env production` → caleo.id goes live

@@ -1,120 +1,117 @@
-# Task 4 Report: API /api/v1/* prefix + backward compat (Caleo Phase 1 Day 4)
+# Task 4 Report: Hand-convert legal MDs to HTML + shared legal.css (Phase 3 Landing)
 
-**Date:** 2026-07-17
-**Commit SHA:** 254223e
+**Date:** 2026-07-19
+**Commit SHA:** 2a41122
 **Status:** DONE
 
 ---
 
 ## What Was Implemented
 
-### Backend Go
+### Files Created
 
-**New file: `backend-go/internal/api/version_middleware.go`**
-- `VersionRouter(inner http.Handler) http.Handler` middleware
-- `/api/v1/<path>` → rewrites URL to `/api/<path>` → delegates to inner mux
-- `/api/<path>` (legacy) → sets `X-Deprecated-Path: /api/v1/<path>` header + `slog.WarnContext` → delegates to inner mux as-is
-- Any other prefix → `http.NotFound`
-- No new dependencies — stdlib only (`log/slog`, `net/http`, `strings`)
+**`public/assets/legal.css`** (49 lines)
+- CSS custom properties: `--navy: #0B2545`, `--slate: #5A6472`, `--gold: #F59E0B`, `--border`, `--bg-alt`
+- Matches Inter/navy/gold palette from landing mockup
+- Shared by both `privacy.html` and `terms.html`
+- Covers: `nav.legal-nav`, `main`, headings (h1/h2/h3), tables, blockquote with gold left border, footer
 
-**Modified: `backend-go/main.go`** (1-line change)
-- `http.Serve(ln, mux)` → `http.Serve(ln, api.VersionRouter(mux))`
-- All 11 route registrations unchanged — keep `/api/` prefix on inner mux
+**`public/privacy.html`** (321 lines)
+- Converted from `docs/legal/kebijakan-privasi.md` (231 lines) via pandoc 3.10
+- pandoc flag: `-f markdown+pipe_tables` to ensure pipe tables → `<table>` HTML
+- Contains: h1 "Kebijakan Privasi Caleo", TL;DR section, 2 HTML tables (sub-processor + data retention), all 16 sections
+- Nav: `← Kembali ke Beranda` href="/"
+- Footer: WA + halo@caleo.id + link to `/terms.html`
 
-**Modified: `cloudbuild.yaml`**
-- Added `API_VERSION=v1` to `--update-env-vars` (cosmetic marker, inferred from URL)
+**`public/terms.html`** (451 lines)
+- Converted from `docs/legal/syarat-ketentuan.md` (423 lines) via pandoc 3.10
+- Contains: h1 "Syarat & Ketentuan Layanan Caleo", TL;DR section, SLA severity table (Kritis/Tinggi/Sedang/Rendah), all 19 sections
+- Nav: `← Kembali ke Beranda` href="/"
+- Footer: WA + halo@caleo.id + link to `/privacy.html`
 
-### Frontend (8 fetch paths → `/api/v1/`)
+---
 
-- `src/components/WhatsappAiScreen.tsx`:
-  - `/api/wa/qr` → `/api/v1/wa/qr`
-  - `/api/wa/logout` → `/api/v1/wa/logout`
-  - `/api/wa/pair-code` → `/api/v1/wa/pair-code`
-  - Line 870 (`app.post('/api/whatsapp/webhook', ...)`) left unchanged — dead Express.js code inside JSX, not a live fetch call
-- `src/lib/cariByFotoService.ts`:
-  - `/api/products/search-by-photo` → `/api/v1/products/search-by-photo`
-  - `/api/products/index-photos` → `/api/v1/products/index-photos`
-- `src/lib/supabaseClient.ts`:
-  - `/api/recon/upload` → `/api/v1/recon/upload`
-  - `/api/recon/close` → `/api/v1/recon/close`
+## Steps Executed
+
+1. **pandoc install**: Not found → `brew install pandoc` → pandoc 3.10 installed
+2. **legal.css**: Written verbatim from brief spec to `public/assets/legal.css`
+3. **privacy.html**: pandoc conversion via template file at `/tmp/privacy-template.html`
+4. **terms.html**: pandoc conversion via template file at `/tmp/terms-template.html`
+5. **Browser smoke** (localhost:8765 via MCP chrome-devtools): both pages verified
 
 ---
 
 ## Verification
 
-### Local gates (all green)
+### Browser smoke — localhost:8765
 
-| Gate | Result |
-|---|---|
-| `go build ./...` | PASS — clean |
-| `go test ./internal/api/...` | PASS — 7/7 (approval_webhook tests unaffected) |
-| `npm run lint` (tsc --noEmit) | PASS — clean |
-| `npm run audit:numinput` | PASS — clean |
-| `npm run audit:secdef-null-tenant` | PASS — clean |
+| Check | privacy.html | terms.html |
+|---|---|---|
+| Page loads, correct `<title>` | PASS | PASS |
+| h1 text | "Kebijakan Privasi Caleo" | "Syarat & Ketentuan Layanan Caleo" |
+| TL;DR heading renders | PASS | PASS |
+| Tables render as `<table>` (not raw pipe text) | 2 tables | 1 table |
+| Sub-processor / SLA table content | Supabase Inc. present | Kritis row present |
+| Nav "← Kembali ke Beranda" href | "/" | "/" |
+| Footer reciprocal link | → /terms.html | → /privacy.html |
+| Footer WA + halo@caleo.id | PASS | PASS |
+| Logo renders (CALEO-logo-horizontal-HD-v2.png) | PASS | PASS |
 
-### Pre-deploy prod state
+### JS evaluation output (MCP chrome-devtools evaluate_script)
 
-```
-curl -sI $BE_URL/api/v1/health → HTTP/2 404 (expected — old build)
-curl -sI $BE_URL/api/health → HTTP/2 200 (working)
-```
-
-### Post-deploy prod verification (VERIFIED)
-
-Cloud Builds: `d1744f83` (backend) — SUCCESS, `11cd8f58` (frontend) — SUCCESS.
-
-```
-curl -sI $BE_URL/api/v1/health:
-  HTTP/2 200
-  access-control-allow-headers: Content-Type, Authorization
-  access-control-allow-methods: GET, POST, OPTIONS, PUT, DELETE
-  access-control-allow-origin: *
-  content-type: application/json
-
-curl -sI $BE_URL/api/health:
-  HTTP/2 200
-  access-control-allow-headers: Content-Type, Authorization
-  access-control-allow-methods: GET, POST, OPTIONS, PUT, DELETE
-  access-control-allow-origin: *
-  content-type: application/json
-  x-deprecated-path: /api/v1/health    <-- backward compat header
+**privacy.html:**
+```json
+{
+  "tableCount": 2,
+  "h1": "Kebijakan Privasi Caleo",
+  "navBackLink": "/",
+  "footerLinks": [
+    {"href": "https://wa.me/6285264787775", "text": "0852-6478-7775"},
+    {"href": "mailto:halo@caleo.id", "text": "halo@caleo.id"},
+    {"href": "/", "text": "Beranda"},
+    {"href": "/terms.html", "text": "Syarat & Ketentuan"}
+  ]
+}
 ```
 
-FE bundle verification: 7/7 `/api/v1/` paths confirmed in deployed JS bundle:
-- `/api/v1/products/index-photos`
-- `/api/v1/products/search-by-photo`
-- `/api/v1/recon/close`
-- `/api/v1/recon/upload`
-- `/api/v1/wa/logout`
-- `/api/v1/wa/pair-code`
-- `/api/v1/wa/qr`
-
-No stale `/api/` non-v1 paths in bundle (only `/api/broadcast` from Supabase Realtime library — not a backend-go route).
+**terms.html:**
+```json
+{
+  "tableCount": 1,
+  "h1": "Syarat & Ketentuan Layanan\nCaleo",
+  "tldr": "TL;DR untuk pemilik toko",
+  "navBackLink": "/",
+  "kritisInTable": true,
+  "footerLinks": [
+    {"href": "https://wa.me/6285264787775", "text": "0852-6478-7775"},
+    {"href": "mailto:halo@caleo.id", "text": "halo@caleo.id"},
+    {"href": "/", "text": "Beranda"},
+    {"href": "/privacy.html", "text": "Kebijakan Privasi"}
+  ]
+}
+```
 
 ---
 
-## Design decisions
+## Design Decisions
 
-1. **`VersionRouter(inner http.Handler)`** vs brief's callback form — simpler, no callback needed, composes cleanly with main.go's scattered route registration pattern (routes added at 3 points after async inits).
+1. **Template file vs heredoc**: Used `/tmp/privacy-template.html` and `/tmp/terms-template.html` as separate template files rather than piping a heredoc via `--template=-`. More reliable across zsh/bash and avoids escaping issues with `$body$` and `$lang$` pandoc variables.
 
-2. **Routes keep `/api/` prefix** on inner mux — zero route renaming. The middleware handles rewriting. WA bridge daemon at `/api/approval/wa-webhook` continues working without any external coordination.
+2. **`-f markdown+pipe_tables` flag**: Added explicitly to ensure pandoc treats `|col|col|` syntax as pipe tables → `<table>` HTML. Without this flag, pandoc can silently render them as raw text depending on default reader settings.
 
-3. **Rewrite logic:** `/api/v1/health` → strip `/api/v1/` → prepend `/api/` → `/api/health`. Works for all paths including nested ones.
+3. **Content faithfulness**: Zero re-authoring — pandoc converts MD structure to HTML only. All legal wording identical to source `.md` files.
 
 ---
 
-## Backward compat contract
+## Rollback Plan
 
-- Legacy `/api/*` callers (WA bridge daemon at `/api/approval/wa-webhook`) continue working with deprecation header
-- Sunset plan: legacy `/api/*` removed 2027-Q3 after 1 release cycle
-- **Rollback plan:** `git revert 254223e` — all routes at `/api/*` continue to work with no middleware overhead
+`git revert 2a41122` — removes all 3 files. Source MDs in `docs/legal/` are untouched and remain the source of truth for regeneration.
 
 ---
 
 ## Concerns
 
-None. Clean implementation.
+None blocking.
 
-- Pre-existing vitest failures (warehouse-transfer worktree) are from a parallel session — unrelated
-- No new dependencies (stdlib only)
-- External WA bridge daemon protected by legacy backward-compat path
+- `h1` in terms.html shows a line break (`"Syarat & Ketentuan Layanan\nCaleo"`) because pandoc wraps long headings. Visually it renders correctly as a single heading line in the browser — the `\n` is just whitespace in the DOM text content, not a visible break. Not a defect.
+- pandoc 3.10 installed globally via brew — not pinned. If pandoc is upgraded and template syntax changes, re-run the conversion commands from this brief.

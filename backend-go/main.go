@@ -694,6 +694,18 @@ func main() {
 	feedback.NewRequestPoller(dbClient.DB, notifier).Start(ctx)
 	slog.Info("[MAIN] Post-order feedback request poller started (daily 10:00 WIB)")
 
+	// WA session health poller — fires every 5 minutes and checks Premium tenant
+	// WA session connectivity (Sprint 5 Task 5.4). The sessionCheck func is a
+	// stub because whatsapp.Client is a single-tenant client per Cloud Run
+	// service instance; a multi-tenant session map is not implemented yet.
+	// When multi-tenant whatsmeow is built, replace the closure with a real lookup.
+	notification.NewSessionHealthPoller(dbClient.DB, func(tenantID string) bool {
+		// Stub: always report connected. Real integration deferred until
+		// multi-tenant WA session manager exists (currently one Client per service).
+		return true
+	}).Start(ctx)
+	slog.Info("[MAIN] WA session health poller started (5-min tick)")
+
 	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
 	// button replies here. The adapter translates sql.ErrNoRows to the
 	// handler's api.ErrNoApproval sentinel so the SQL driver detail does not

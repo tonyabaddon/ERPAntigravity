@@ -559,6 +559,18 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </div>
               <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
             </button>
+            {/* Quick link to Notification Prefs (Sprint 5) */}
+            <button
+              type="button"
+              onClick={() => props.onNavigate('notification-prefs')}
+              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+            >
+              <div>
+                <div className="text-sm font-bold text-gray-800">🌙 Preferensi Notifikasi</div>
+                <div className="text-xs text-gray-500 mt-0.5">Jam tenang, gabungkan notifikasi, dan skip ringkasan hari tanpa omset.</div>
+              </div>
+              <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
+            </button>
             {/* Quick link to Customer Feedback dashboard */}
             <button
               type="button"

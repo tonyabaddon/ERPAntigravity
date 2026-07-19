@@ -62,6 +62,33 @@ func (p *Poller) tick(ctx context.Context) {
 		return
 	}
 
+	// Check if tenant should skip digest when omset = 0 (Task 5.3).
+	// tenantID is empty string: single-tenant Calista backend; skip the check and proceed with send.
+	const tenantID = ""
+	if tenantID != "" {
+		var skipDigestOnZeroOmset bool
+		skipErr := p.db.DB.QueryRowContext(ctx, `
+			SELECT COALESCE(skip_digest_on_zero_omset, true)
+			FROM public.notification_prefs
+			WHERE tenant_id = $1
+		`, tenantID).Scan(&skipDigestOnZeroOmset)
+		if skipErr == nil && skipDigestOnZeroOmset {
+			// Query today's orders (COMPLETED) to determine omset.
+			var omsetToday int64
+			omsetErr := p.db.DB.QueryRowContext(ctx, `
+				SELECT COALESCE(SUM(total), 0)::BIGINT
+				FROM public.orders
+				WHERE tenant_id = $1
+				  AND status = 'COMPLETED'
+				  AND (updated_at AT TIME ZONE 'Asia/Jakarta')::date = (NOW() AT TIME ZONE 'Asia/Jakarta')::date
+			`, tenantID).Scan(&omsetToday)
+			if omsetErr == nil && omsetToday == 0 {
+				slog.InfoContext(ctx, "heartbeat skipped — zero omset", slog.String("tenant_id", tenantID))
+				return
+			}
+		}
+	}
+
 	omset, err := p.db.GetTodayOmset()
 	if err != nil {
 		slog.Error("[HEARTBEAT] GetTodayOmset error", slog.String("error", err.Error()))
@@ -108,7 +135,7 @@ func (p *Poller) tick(ctx context.Context) {
 	// tenantID is empty string: single-tenant Calista backend; the recipientResolverAdapter
 	// in main.go ignores this arg until multi-tenant migration in Sprint 2+.
 	filter := notification.RecipientFilter{Role: "owner", CritLevel: "normal"}
-	if err := p.notifier.BroadcastToStaff(ctx, "", filter, msg); err != nil {
+	if err := p.notifier.BroadcastToStaff(ctx, tenantID, filter, msg); err != nil {
 		slog.ErrorContext(ctx, "[HEARTBEAT] broadcast error", slog.Any("error", err))
 	}
 

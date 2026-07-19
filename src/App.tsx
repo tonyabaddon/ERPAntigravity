@@ -69,6 +69,7 @@ import { PiutangWaReminderScreen } from './components/pengaturan/PiutangWaRemind
 import { NotificationTemplatesScreen } from './components/pengaturan/NotificationTemplatesScreen';
 import { NotificationCronScreen } from './components/pengaturan/NotificationCronScreen';
 import { CustomerFeedbackScreen } from './components/feedback/CustomerFeedbackScreen';
+import { NotificationPrefsScreen } from './components/pengaturan/NotificationPrefsScreen';
 
 import { INITIAL_CONFIG } from './initialData';
 
@@ -920,6 +921,8 @@ export default function App() {
         return <NotificationCronScreen />;
       case 'customer-feedback':
         return <CustomerFeedbackScreen />;
+      case 'notification-prefs':
+        return <NotificationPrefsScreen />;
       default:
         // Unknown screen — show 404 instead of blank page.
         return (
