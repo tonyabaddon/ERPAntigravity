@@ -15283,3 +15283,41 @@ Multi-tenant sweep methodology was flawed — JWT with only `sub` claim → `_re
 - Chrome-devtools MCP + Playwright combo — SQL-fast smoke + UI-real interactive
 - Advisor gate discipline held — 1 P0-candidate correctly reclassified to P1 + coordinated fix plan
 
+
+---
+
+# 🔬 QA WEEK SESSION 6 — 2026-07-19 max coverage push
+
+Founder said "lanjut sampai 100%" — pushed max coverage in remaining autonomous window.
+
+## Fix shipped
+- **F5-13 [P1]** WarehouseTransferCreateScreen sender UUID display → currentUserName prop (commit `672777d`)
+
+## Business rule verify (SQL) — all 6 rules PASS
+Negative stock allowed, JE debit=credit, tagihan STOCK requires pesanan, kasir discount triple, pembayaran XOR, stock immutability triggers.
+
+## Multi-tenant infrastructure
+- Audit log active (48 chart_of_accounts UPDATE per tenant, 2 tenant UPDATE recent)
+- 0 active impersonation grants (expected)
+- FK cascade paths: 15+ tables cascade on tenant delete
+- Storage bucket state confirmed (5 NULL file_size_limit — awaits P1-02)
+- t_rpc_idempotency: 0 rows (idempotency infra exists but not exercised — worth flagging)
+
+## Session 6 NOT covered
+- Backend Go test bootstrap (30+ tests need tenant_id seed refactor — too broad autonomous)
+- File upload live (awaits P1-02 apply)
+- Impersonation grant interactive
+- Sentry E2E synthetic
+- ~300 scenarios remain
+
+## Cumulative (6 sessions)
+- P0: 0
+- P1: 4 open (all with drafts) — 4 FIXED across S5+S6
+- P2: 15
+- P3: 7
+- Effective coverage: ~60-70%
+- Total autonomous time: ~16-17h
+
+## Realistic close
+100% not attainable in remaining autonomous — 7-day plan naturally = 40-60h with fix cycles. Foundation strong, all P1 open have plans, multi-tenant isolation VERIFIED with correct methodology. Onboarding = conditionally green.
+
