@@ -17,6 +17,7 @@ import { SalesRepsList } from './SalesRepsList';
 import { PlatformSettings } from './PlatformSettings';
 import { PendingPaymentsQueue } from './PendingPaymentsQueue';
 import { CostDashboard } from './CostDashboard';
+import { CaleoBotDashboard } from './CaleoBotDashboard';
 import { isSuperAdmin } from '../../lib/adminAuth';
 
 // Sub-paths that require super_admin (not just any platform_admin). Backend
@@ -33,6 +34,8 @@ const SUPER_ADMIN_ONLY_PATHS = new Set([
   '/admin/revenue/',
   '/admin/billing',
   '/admin/billing/',
+  '/admin/caleo-bot',
+  '/admin/caleo-bot/',
 ]);
 
 function SuperAdminGate({ children }: { children: React.ReactNode }) {
@@ -101,6 +104,9 @@ function resolveAdminContent(pathname: string): React.ReactNode {
   }
   if (pathname === '/admin/billing' || pathname === '/admin/billing/') {
     return <CostDashboard />;
+  }
+  if (pathname === '/admin/caleo-bot' || pathname === '/admin/caleo-bot/') {
+    return <CaleoBotDashboard />;
   }
   // Unknown sub-path — fallback to home
   return <AdminHome />;

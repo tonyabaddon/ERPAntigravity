@@ -12,6 +12,7 @@ import {
   Banknote,
   ClipboardCheck,
   DollarSign,
+  Bot,
 } from 'lucide-react';
 import { isSuperAdmin } from '../../lib/adminAuth';
 import { paymentVerificationApi } from '../../lib/paymentVerificationApi';
@@ -79,6 +80,12 @@ const NAV_ITEMS: NavItem[] = [
     to: '/admin/billing',
     label: 'Biaya Tenant',
     icon: <DollarSign size={16} strokeWidth={1.8} strokeLinecap="round" />,
+    superAdminOnly: true,
+  },
+  {
+    to: '/admin/caleo-bot',
+    label: 'Caleo Bot',
+    icon: <Bot size={16} strokeWidth={1.8} strokeLinecap="round" />,
     superAdminOnly: true,
   },
   {
