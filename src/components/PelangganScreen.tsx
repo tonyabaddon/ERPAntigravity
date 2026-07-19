@@ -465,6 +465,37 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   showToast={showToast}
                 />
               </div>
+
+              {/* WA Reminder opt-out section */}
+              <div className="px-5 py-4 border-t border-gray-100">
+                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                  WA Reminder Piutang
+                </div>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={profile.wa_reminder_enabled ?? true}
+                    onChange={async (e) => {
+                      const next = e.target.checked;
+                      setProfile(prev => prev ? { ...prev, wa_reminder_enabled: next } : prev);
+                      try {
+                        await customersService.updateWaReminderEnabled(profile.id, next);
+                        showToast(next ? 'WA reminder diaktifkan untuk customer ini.' : 'WA reminder dinonaktifkan untuk customer ini.', 'success');
+                      } catch {
+                        setProfile(prev => prev ? { ...prev, wa_reminder_enabled: !next } : prev);
+                        showToast('Gagal mengubah pengaturan reminder.', 'warning');
+                      }
+                    }}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <div className="text-sm font-medium text-gray-800">Kirim WA reminder otomatis untuk customer ini</div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      Uncheck kalau customer minta tidak di-remind lewat WA.
+                    </div>
+                  </div>
+                </label>
+              </div>
             </>
           ) : null}
         </div>

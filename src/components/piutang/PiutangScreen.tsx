@@ -1,15 +1,16 @@
-// PiutangScreen — main Piutang page (Phase 1B).
+// PiutangScreen — main Piutang page (Phase 1B / Sprint 2).
 // Layout: header + 4 KPI cards + AR aging chart + filter pills + invoice table.
 // Per spec §6.2.
 //
-// Actions per row (Phase 1B):
+// Actions per row (Sprint 2):
+//   - "💬 WA" → calls send_piutang_reminder_manual RPC; Premium-gated
 //   - "✓ Catat Bayar" → opens existing-style payment proof upload modal,
 //     calls markTempoInvoicePaid
-//   - "💬 WA" → Phase 1C will turn this into the preview-and-send modal; for
-//     1B it disabled with tooltip "Phase 1C — coming soon"
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Wallet, Search, Upload, X, MessageSquare, AlertTriangle, Clock, CalendarClock, ChartPie } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
+import { useTenant } from '../../contexts/TenantContext';
 import {
   fetchPiutangRows,
   computeKpi,
@@ -41,7 +42,17 @@ interface Props {
 
 type FilterKey = 'all' | PiutangTier['key'] | 'written_off' | 'lunas';
 
+// Latest reminder record per invoice (keyed by invoice_id)
+interface ReminderInfo {
+  sent_at: string;
+  rule_type: string;
+  status: string;
+}
+
 export default function PiutangScreen({ currentUserId, showToast, isOwner = false }: Props) {
+  const tenant = useTenant();
+  const isPremium = tenant?.plan_code === 'PREMIUM' && tenant?.expiry_mode !== 'READONLY';
+
   const [rows, setRows] = useState<PiutangRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -49,6 +60,25 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
   const [payTarget, setPayTarget] = useState<PiutangRow | null>(null);
   const [writeOffTarget, setWriteOffTarget] = useState<PiutangRow | null>(null);
   const [revertTarget, setRevertTarget] = useState<PiutangRow | null>(null);
+  const [reminderMap, setReminderMap] = useState<Record<string, ReminderInfo>>({});
+  const [sendingWa, setSendingWa] = useState<string | null>(null); // invoice_id being sent
+
+  const loadReminderMap = useCallback(async () => {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('piutang_reminder_sent')
+      .select('invoice_id, sent_at, rule_type, status')
+      .order('sent_at', { ascending: false });
+    if (!data) return;
+    // Keep latest per invoice_id
+    const map: Record<string, ReminderInfo> = {};
+    for (const r of data) {
+      if (!map[r.invoice_id]) {
+        map[r.invoice_id] = { sent_at: r.sent_at, rule_type: r.rule_type, status: r.status };
+      }
+    }
+    setReminderMap(map);
+  }, []);
 
   async function reload() {
     setLoading(true);
@@ -57,11 +87,35 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
         includeWrittenOff: filter === 'written_off',
         includeLunas: filter === 'lunas',
       }));
+      void loadReminderMap();
     } catch (e: any) {
       showToast(e?.message ?? 'Gagal load piutang', 'warning');
     } finally { setLoading(false); }
   }
   useEffect(() => { reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filter]);
+
+  async function handleSendWa(invoiceId: string) {
+    if (!supabase) return;
+    setSendingWa(invoiceId);
+    try {
+      const { data, error } = await supabase.rpc('send_piutang_reminder_manual', {
+        p_invoice_id: invoiceId,
+      });
+      if (error) throw error;
+      const result = Array.isArray(data) ? data[0] : data;
+      if (result?.status === 'OK') {
+        showToast(result.message ?? 'Reminder akan dikirim dalam beberapa detik', 'success');
+        // Refresh reminder map after a short delay to catch the new row
+        setTimeout(() => void loadReminderMap(), 2000);
+      } else {
+        showToast(result?.message ?? 'Gagal mengirim reminder', 'warning');
+      }
+    } catch (e: any) {
+      showToast(e?.message ?? 'Gagal mengirim reminder', 'warning');
+    } finally {
+      setSendingWa(null);
+    }
+  }
 
   const kpi = useMemo(() => computeKpi(rows), [rows]);
   const aging = useMemo(() => computeAging(rows), [rows]);
@@ -242,15 +296,31 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
+                      <div className="flex flex-col items-end gap-1">
+                        {/* Per-row reminder badge */}
+                        {reminderMap[r.order.id] && (
+                          <ReminderBadge info={reminderMap[r.order.id]} />
+                        )}
                       <div className="inline-flex gap-1">
                         {r.order.status === 'INVOICE_TEMPO' ? (
                           <>
-                            <button
-                              disabled
-                              title="Phase 1C — WA reminder otomatis"
-                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
-                              <MessageSquare className="w-3 h-3" /> WA
-                            </button>
+                            {isPremium ? (
+                              <button
+                                onClick={() => void handleSendWa(r.order.id)}
+                                disabled={sendingWa === r.order.id}
+                                title="Kirim WA reminder manual"
+                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <MessageSquare className="w-3 h-3" />
+                                {sendingWa === r.order.id ? '...' : 'WA'}
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                title="WA reminder tersedia di paket Premium"
+                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
+                                <MessageSquare className="w-3 h-3" /> WA
+                              </button>
+                            )}
                             <button
                               onClick={() => setPayTarget(r)}
                               className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
@@ -269,6 +339,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                             Batal Tulis-off
                           </button>
                         ) : null}
+                      </div>
                       </div>
                     </td>
                   </tr>
@@ -305,6 +376,25 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
         />
       )}
     </div>
+  );
+}
+
+// ── ReminderBadge — shows last reminder sent_at + status ──
+function ReminderBadge({ info }: { info: ReminderInfo }) {
+  const sentAgo = (() => {
+    const diff = Date.now() - new Date(info.sent_at).getTime();
+    const h = Math.floor(diff / 3_600_000);
+    const m = Math.floor((diff % 3_600_000) / 60_000);
+    if (h > 0) return `${h}j lalu`;
+    if (m > 0) return `${m}m lalu`;
+    return 'baru saja';
+  })();
+  const isSent = info.status === 'SENT';
+  return (
+    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isSent ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+      title={`${info.rule_type} · ${new Date(info.sent_at).toLocaleString('id-ID')}`}>
+      {isSent ? '✓' : '!'} {info.rule_type} · {sentAgo}
+    </span>
   );
 }
 

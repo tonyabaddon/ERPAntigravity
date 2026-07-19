@@ -339,6 +339,8 @@ export interface DbCustomer {
   tempo_activated_by?: string | null;
   // Multi-tier pricing
   default_pricing_tier?: 'eceran' | 'grosir';
+  // Sprint 2: per-customer WA reminder opt-out
+  wa_reminder_enabled?: boolean;
 }
 
 export interface DbLead {

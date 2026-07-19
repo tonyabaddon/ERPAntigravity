@@ -862,6 +862,15 @@ export const customersService = {
     if (error) throw error;
   },
 
+  async updateWaReminderEnabled(id: string, enabled: boolean): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase
+      .from('customers')
+      .update({ wa_reminder_enabled: enabled })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async fetchProfile(customerId: string): Promise<DbCustomerProfile> {
     if (!supabase) throw new Error('Supabase not configured');
     const [customerRes, kasirRes] = await Promise.all([
