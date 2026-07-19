@@ -717,6 +717,41 @@ func main() {
 		OnDPProofRejected: func(orderID, conversationID, reason string) {
 			waHandler.HandleDPProofRejected(ctx, orderID, conversationID, reason)
 		},
+		OnApprovalCreated: func(evt db.ApprovalCreatedEvent) {
+			// B1 fix (Task 1.8): approval WA card was built in internal/whatsapp but
+			// the call site never existed — approvals were silently dropped.
+			// Render the card template and broadcast to all owner-role recipients.
+			tmpl := templates.ApprovalCard{}
+			msg, err := tmpl.Build(ctx, map[string]any{
+				"approval_id": evt.ApprovalID,
+				"type":        evt.Type,
+				"details":     evt.Details,
+			})
+			if err != nil {
+				slog.ErrorContext(ctx, "[MAIN] approval_card render failed",
+					slog.String("approval_id", evt.ApprovalID),
+					slog.Any("error", err))
+				return
+			}
+			filter := notification.RecipientFilter{Role: "owner", CritLevel: "critical"}
+			if err := notifier.BroadcastToStaff(ctx, evt.TenantID, filter, msg); err != nil {
+				slog.ErrorContext(ctx, "[MAIN] approval broadcast failed",
+					slog.String("approval_id", evt.ApprovalID),
+					slog.String("tenant_id", evt.TenantID),
+					slog.Any("error", err))
+				return
+			}
+			// Dedup: mark sent so a restart doesn't re-broadcast pending approvals.
+			// Use DB (txn pooler) — the UPDATE is a short-lived write, no LISTEN needed.
+			if _, dbErr := dbClient.DB.ExecContext(ctx,
+				"UPDATE public.approval_requests SET sent_wa_card_at = NOW() WHERE id = $1 AND sent_wa_card_at IS NULL",
+				evt.ApprovalID,
+			); dbErr != nil {
+				slog.ErrorContext(ctx, "[MAIN] approval sent_wa_card_at update failed",
+					slog.String("approval_id", evt.ApprovalID),
+					slog.Any("error", dbErr))
+			}
+		},
 	}); err != nil {
 		slog.Error("[MAIN] StartListening failed", slog.Any("error", err))
 		os.Exit(1)

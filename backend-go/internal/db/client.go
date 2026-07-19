@@ -12,13 +12,24 @@ import (
 	"github.com/lib/pq"                 // still used for pq.NewListener (LISTEN/NOTIFY)
 )
 
+// ApprovalCreatedEvent is the decoded payload from the 'approval_created'
+// NOTIFY channel. Fields match the JSON keys emitted by migration 401's
+// notify_approval_created() trigger.
+type ApprovalCreatedEvent struct {
+	ApprovalID string `json:"approval_id"`
+	TenantID   string `json:"tenant_id"`
+	Type       string `json:"type"`        // request_type enum value, e.g. "kasir_discount"
+	Details    string `json:"details"`     // payload column cast to text (JSONB)
+}
+
 type NotifyHandlers struct {
-	OnAdminMessage    func(conversationID, messageID string)
-	OnOrderApproved   func(orderID, conversationID string, shippingFee float64)
-	OnPaymentVerified func(orderID, conversationID string)
-	OnPaymentRejected func(orderID, conversationID string)
-	OnDPVerified      func(orderID, conversationID string)
-	OnDPProofRejected func(orderID, conversationID, reason string)
+	OnAdminMessage      func(conversationID, messageID string)
+	OnOrderApproved     func(orderID, conversationID string, shippingFee float64)
+	OnPaymentVerified   func(orderID, conversationID string)
+	OnPaymentRejected   func(orderID, conversationID string)
+	OnDPVerified        func(orderID, conversationID string)
+	OnDPProofRejected   func(orderID, conversationID, reason string)
+	OnApprovalCreated   func(evt ApprovalCreatedEvent) // B1 fix (Task 1.8)
 }
 
 type Client struct {
@@ -141,7 +152,7 @@ func addPgxExecMode(conn string) string {
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
 func (c *Client) StartListening(h NotifyHandlers) error {
-	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected"}
+	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected", "approval_created"}
 	for _, ch := range channels {
 		if err := c.listener.Listen(ch); err != nil {
 			return err
@@ -233,11 +244,22 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 				if h.OnDPProofRejected != nil {
 					go h.OnDPProofRejected(p.OrderID, p.ConversationID, p.Reason)
 				}
+
+			case "approval_created":
+				// B1 fix (Task 1.8): broadcast approval WA card to owner-role recipients.
+				var evt ApprovalCreatedEvent
+				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
+					slog.Error("[DB] approval_created parse error", slog.Any("error", err))
+					continue
+				}
+				if h.OnApprovalCreated != nil {
+					go h.OnApprovalCreated(evt)
+				}
 			}
 		}
 	}()
 
-	slog.Info("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected")
+	slog.Info("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected, approval_created")
 	return nil
 }
 
