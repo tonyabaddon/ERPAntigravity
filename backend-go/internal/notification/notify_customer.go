@@ -68,9 +68,15 @@ func (n *Notifier) NotifyCustomer(ctx context.Context, tenantID, convID, phone, 
 		return errors.Join(ErrSendFailed, err)
 	}
 
-	if err := n.inserter.InsertMessage(ctx, convID, "AI", msg); err != nil {
-		// Audit failure is logged but does NOT fail the send — customer received message.
-		log.WarnContext(ctx, "audit insert failed post-send", slog.Any("error", err))
+	// Skip audit insert when convID is empty — kasir/pesanan-admin flows create
+	// orders without a conversation (only Calista chat orders have convID). The
+	// messages.conversation_id FK would 23503-reject an empty string. Send is
+	// what matters; audit gap for these specific paths is acceptable.
+	if convID != "" {
+		if err := n.inserter.InsertMessage(ctx, convID, "AI", msg); err != nil {
+			// Audit failure is logged but does NOT fail the send — customer received message.
+			log.WarnContext(ctx, "audit insert failed post-send", slog.Any("error", err))
+		}
 	}
 
 	log.InfoContext(ctx, "wa notification sent", slog.String("status", "SENT"))
