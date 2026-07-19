@@ -285,7 +285,7 @@ export function NotificationCronScreen() {
               max={480}
               step={30}
               value={slaThresholdMinutes}
-              onChange={(e) => setSlaThresholdMinutes(Number(e.target.value))}
+              onChange={(e) => setSlaThresholdMinutes(parseInt(e.target.value, 10))}
               className="ncs-slider"
               aria-label={`Threshold SLA: ${formatSlaThreshold(slaThresholdMinutes)}`}
             />
@@ -355,7 +355,7 @@ export function NotificationCronScreen() {
               max={14}
               step={1}
               value={feedbackDelayDays}
-              onChange={(e) => setFeedbackDelayDays(Number(e.target.value))}
+              onChange={(e) => setFeedbackDelayDays(parseInt(e.target.value, 10))}
               className="ncs-slider"
               aria-label={`Delay feedback: ${feedbackDelayDays} hari`}
             />
