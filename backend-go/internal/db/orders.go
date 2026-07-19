@@ -172,7 +172,7 @@ func (c *Client) GetOrderByID(orderID string) (*models.Order, error) {
 	var order models.Order
 	var itemsJSON []byte
 	err := c.DB.QueryRow(`
-		SELECT id, conversation_id,
+		SELECT id, COALESCE(tenant_id::text,''), conversation_id,
 		       COALESCE(gjp_order_id,''), order_type,
 		       COALESCE(leads_id,''), COALESCE(customer_id,''),
 		       customer_name, customer_company, customer_address, customer_phone,
@@ -181,7 +181,7 @@ func (c *Client) GetOrderByID(orderID string) (*models.Order, error) {
 		       created_at, updated_at
 		FROM orders WHERE id = $1
 	`, orderID).Scan(
-		&order.ID, &order.ConversationID,
+		&order.ID, &order.TenantID, &order.ConversationID,
 		&order.GJPOrderID, &order.OrderType,
 		&order.LeadsID, &order.CustomerID,
 		&order.CustomerName, &order.CustomerCompany, &order.CustomerAddress, &order.CustomerPhone,

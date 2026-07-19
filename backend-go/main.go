@@ -30,6 +30,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/logging"
 	"github.com/username/sinar-elektrik-backend/internal/models"
 	"github.com/username/sinar-elektrik-backend/internal/notification"
+	"github.com/username/sinar-elektrik-backend/internal/notification/templates"
 	"github.com/username/sinar-elektrik-backend/internal/recon"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
 	"github.com/username/sinar-elektrik-backend/internal/sentryutil"
@@ -521,28 +522,48 @@ func main() {
 	}
 	sender := whatsapp.NewSender(waClient.WA)
 
+	// Shared WA notifier — used by booking-expiry reminder (Sprint 1 B2 fix),
+	// follow-up poller, and any future path that must write an audit trail
+	// atomically with the WA send. Created here (before Scheduler) so the
+	// booking-expiry closure can capture it.
+	notifier := notification.NewNotifier(
+		sender,
+		messageInserterAdapter{dbClient},
+		notification.NewQuota(dbClient.DB),
+		notification.NewCachedResolver(recipientResolverAdapter{dbClient}),
+		slog.Default(),
+	)
+
 	// Scheduler
 	var waHandler *whatsapp.Handler
 	sched := scheduler.NewScheduler(
 		func(orderID string) {
+			// Booking expiry reminder — 24h before booking expires (Sprint 1 B2 fix).
+			// Previously used inline SendText with no InsertMessage → no audit trail.
+			// Now routes through NotifyCustomer: quota enforced + message persisted atomically.
+			ctx := context.Background()
 			order, err := dbClient.GetOrderByID(orderID)
 			if err != nil {
 				slog.Error("[MAIN] Reminder: lookup failed", slog.String("order_id", orderID), slog.Any("error", err))
 				return
 			}
-			var lang string
-			// Task 11 gap-fix 2026-07-18: use ListenDB (direct connection).
-			// Parameterised queries via txn pooler fail with lib/pq
-			// "unnamed prepared statement does not exist" — same root cause
-			// as worker fix (commit 2559361). Follow-up: pgx migration will
-			// let this go back to dbClient.DB for txn pooler multiplex.
-			dbClient.ListenDB.QueryRow(`SELECT language FROM conversations WHERE id = $1`, order.ConversationID).Scan(&lang)
-			reminderText := "Pesanan Anda akan kadaluarsa dalam 24 jam. Harap segera konfirmasi atau pesanan dibatalkan otomatis."
-			if lang == "en" {
-				reminderText = "Your order will expire in 24 hours. Please confirm payment or it will be automatically cancelled."
+			tmpl := templates.BookingExpiry{}
+			// invoice_no: prefer GJPOrderID if set (human-readable ref), fall back to order UUID.
+			invoiceNo := order.GJPOrderID
+			if invoiceNo == "" {
+				invoiceNo = order.ID
 			}
-			if err := sender.SendText(ctx, order.CustomerPhone, reminderText); err != nil {
-				slog.Error("[MAIN] Reminder: WA send failed", slog.Any("error", err))
+			msg, err := tmpl.Build(ctx, map[string]any{
+				"customer_nama": order.CustomerName,
+				"toko_nama":     cfg.TenantName,
+				"invoice_no":    invoiceNo,
+			})
+			if err != nil {
+				slog.ErrorContext(ctx, "[MAIN] Reminder: template render failed", slog.String("order_id", orderID), slog.Any("error", err))
+				return
+			}
+			if err := notifier.NotifyCustomer(ctx, order.TenantID, order.ConversationID, order.CustomerPhone, "id", msg); err != nil {
+				slog.ErrorContext(ctx, "[MAIN] Reminder: NotifyCustomer failed", slog.String("order_id", orderID), slog.Any("error", err))
 			}
 			dbClient.MarkReminderSent(orderID)
 			dbClient.UpdateConversationState(order.ConversationID, models.StateTimeoutReminder)
@@ -617,14 +638,7 @@ func main() {
 	go jobWorker.Start(workerCtx)
 	slog.Info("[MAIN] Async job worker started (5s poll interval)")
 
-	followupNotifier := notification.NewNotifier(
-		sender,
-		messageInserterAdapter{dbClient},
-		notification.NewQuota(dbClient.DB),
-		notification.NewCachedResolver(recipientResolverAdapter{dbClient}),
-		slog.Default(),
-	)
-	followup.NewPoller(dbClient, followupNotifier).Start(ctx)
+	followup.NewPoller(dbClient, notifier).Start(ctx)
 	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
 	heartbeat.NewPoller(dbClient, sender).Start(ctx)
 	slog.Info("[MAIN] Heartbeat poller started (1-minute tick)")
