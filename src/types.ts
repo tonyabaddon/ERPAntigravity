@@ -451,7 +451,7 @@ export interface DbPurchaseOrder {
   updated_by_user_id?: string;      // UUID, FK admin_users(id)
 }
 
-export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail' | 'daftarPenawaran' | 'keputusan-owner' | 'warehouse-transfer' | 'warehouse-transfer-create' | 'warehouse-transfer-detail' | 'piutang-wa-reminder' | 'not-found';
+export type ActivePage = 'dashboard' | 'sales-inbox' | 'ai-stock' | 'manajemen-gudang' | 'stok-opname' | 'user-management' | 'notifications' | 'auth' | 'whatsapp-ai' | 'settings' | 'pipeline' | 'order-history' | 'pelanggan' | 'piutang' | 'laporan' | 'pembelian' | 'kasir' | 'penjualanBaru' | 'persetujuan' | 'rekonsiliasi' | 'penjualan' | 'salesLanding' | 'daftarPesanan' | 'invoicePreview' | 'akuntansi' | 'kasBank' | 'kasBankDetail' | 'daftarPenawaran' | 'keputusan-owner' | 'warehouse-transfer' | 'warehouse-transfer-create' | 'warehouse-transfer-detail' | 'piutang-wa-reminder' | 'notification-templates' | 'not-found';
 
 // ─── Kasir types ────────────────────────────────────────────
 

@@ -66,6 +66,7 @@ import WarehouseTransferListScreen from './components/warehouseTransfer/Warehous
 import WarehouseTransferCreateScreen from './components/warehouseTransfer/WarehouseTransferCreateScreen';
 import WarehouseTransferDetailScreen from './components/warehouseTransfer/WarehouseTransferDetailScreen';
 import { PiutangWaReminderScreen } from './components/pengaturan/PiutangWaReminderScreen';
+import { NotificationTemplatesScreen } from './components/pengaturan/NotificationTemplatesScreen';
 
 import { INITIAL_CONFIG } from './initialData';
 
@@ -911,6 +912,8 @@ export default function App() {
         );
       case 'piutang-wa-reminder':
         return <PiutangWaReminderScreen />;
+      case 'notification-templates':
+        return <NotificationTemplatesScreen />;
       default:
         // Unknown screen — show 404 instead of blank page.
         return (

@@ -523,6 +523,18 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         )}
         {activeTab === 'whatsapp-ai' && (
           <div className="space-y-4 animate-fadeIn">
+            {/* Quick link to Universal Notification Template editor */}
+            <button
+              type="button"
+              onClick={() => props.onNavigate('notification-templates')}
+              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+            >
+              <div>
+                <div className="text-sm font-bold text-gray-800">📋 Semua Template Notifikasi</div>
+                <div className="text-xs text-gray-500 mt-0.5">Kustomisasi 10 template WA: order baru, pembayaran, pengiriman, stok, dan lainnya.</div>
+              </div>
+              <span className="text-gray-400 text-lg shrink-0 ml-3">›</span>
+            </button>
             {/* Quick link to Piutang WA Reminder template editor */}
             <button
               type="button"
