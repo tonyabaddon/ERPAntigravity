@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon, Smartphone, Send } from 'lucide-react';
+import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon, Smartphone } from 'lucide-react';
 import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
 import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { normalizePhone } from '../lib/phone';
@@ -353,6 +353,15 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
+                            onClick={() => handleTestSend(r.id)}
+                            disabled={testSendingId === r.id}
+                            title="Kirim pesan WA tes ke nomor ini"
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50"
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                            {testSendingId === r.id ? '...' : 'Kirim tes'}
+                          </button>
+                          <button
                             onClick={() => handleToggleRecipient(r.id, r.is_active)}
                             title={r.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                             className="text-gray-400 hover:text-gray-700"
@@ -404,7 +413,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor WA</label>
                       <input
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="628xxxx"
+                        placeholder="085x, +628x, atau 628x..."
                         value={addForm.wa_number}
                         onChange={e => setAddForm(prev => ({ ...prev, wa_number: e.target.value }))}
                       />
@@ -431,7 +440,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                 )}
 
                 <p className="text-xs text-gray-400 mt-3">
-                  Nomor-nomor ini menerima notifikasi WA saat pelanggan mengunggah bukti pembayaran, admin memverifikasi, atau pesanan disetujui.
+                  Nomor WA yang aktif akan terima semua notifikasi. Owner-role dapat notif approval + business digest. Admin-role dapat notif escalation.
                 </p>
               </>
             )}
