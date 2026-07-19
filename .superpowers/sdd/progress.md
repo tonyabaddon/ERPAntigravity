@@ -659,3 +659,33 @@ Task 4.5: complete (commit 09b73ad) — NotificationCronScreen (only Piutang per
 --- Sprint 4 dev COMPLETE ---
 Sprint 4 commits: 4960bcf, fb7ecf9, a59ffa6, 4074d6b, 09b73ad
 Starting Task 4.6 — Sprint 4 validation gate.
+Task 5.1: complete (commit c45fe38) — notification_prefs table applied
+Task 5.2 + 5.2b: complete (commit 8917f5d) — quiet_hours + consolidation + broadcast job handlers. Migration 441 added t_jobs.scheduled_for.
+Task 5.3: complete (commit c0f8a83) — silent-day skip when omset=0
+Task 5.4: complete (commit fac42a1) — SendOpsEmail via Resend + SessionHealthPoller (5-min ticker, alerts Caleo ops email if offline >30 min). Session check function is STUB — whatsapp package is single-tenant.
+Task 5.5: complete (commit 888bdb8) — NotificationPrefsScreen 3 cards + auto-save + register route + nav link
+
+--- Sprint 5 dev COMPLETE ---
+Sprint 5 commits: c45fe38, 8917f5d, c0f8a83, fac42a1, 888bdb8
+Task 5.6 + Sprint 5 clean-push: commit 8173243 replaces c0f8a83+fac42a1+888bdb8 (removed isolation-audit.yml workflow file that PAT lacks scope for).
+Task 6.1: complete (commit 998325b) — 7 spec files + 8 E2E_TEST_MODE-gated testapi endpoints. Playwright lists 11 tests.
+Task 6.2: complete (commit 5b493a0) — normalizePhone helper + WA recipient test-send button + wa-recipients-crud.spec.ts. Zero hardcoded numbers in prod code.
+
+--- Sprint 6 dev COMPLETE ---
+Starting Task 6.3 — Sprint 6 validation + deploy.
+Task 7.1: complete (commit 559bbbb) — caleo_admin_bot_faq + analytics tables. 15 FAQ seeded. Backend-only via service_role grants.
+Task 7.2: complete (commit a48616a) — FaqMatcher with Levenshtein ≤2 typo tolerance. 3/3 tests.
+Task 7.3: complete (commit 8692ad6) — Session bootstrap + escalation via SendOpsEmail. Uses whatsapp.NewSender wrapper.
+Task 7.4: complete (commit 5f5b275) — CaleoBotDashboard at /admin/caleo-bot. Hand-rolled SVG charts. RLS access documented as follow-up.
+Task 7.5: BLOCKED (commit 8b99c18 docs only) — requires founder to provision CALEO_ADMIN_WA_PHONE. Prepared swap commands in follow-ups doc.
+
+--- Sprint 7 dev COMPLETE (except 7.5 blocked) ---
+Sprint 7 commits: 559bbbb, a48616a, 8692ad6, 5f5b275, 8b99c18
+Starting Task 7.6 — Sprint 7 validation + deploy.
+Task 7.6: complete — Sprint 7 build triggered at commit 8b99c18. Docs summary d28a09b pushed with follow-up tracking.
+
+=== WA NOTIFICATION FRAMEWORK OVERHAUL — SHIPPED ===
+Total: 44/45 tasks, 6 sprints deployed to prod, 1 blocker (Task 7.5) documented.
+Backend commits shipped: ce2d022 → d28a09b (~90 commits)
+Prod state fully verified via schema check DO block.
+See docs/superpowers/specs/2026-07-19-wa-framework-shipped-summary.md for founder review.
