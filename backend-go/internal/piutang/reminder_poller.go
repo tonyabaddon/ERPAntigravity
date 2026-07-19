@@ -184,9 +184,9 @@ func (r *ReminderPoller) runOnce(ctx context.Context) {
 func (r *ReminderPoller) recordSent(ctx context.Context, tenantID, invoiceID, customerID, ruleType, msg, status, errMsg string) {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO public.piutang_reminder_sent
-		  (tenant_id, invoice_id, customer_id, rule_type, status, message_body, error_message)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''))
-		ON CONFLICT (invoice_id, rule_type, (DATE(sent_at))) DO NOTHING
+		  (tenant_id, invoice_id, customer_id, rule_type, status, message_body, error_message, sent_date)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), CURRENT_DATE)
+		ON CONFLICT (invoice_id, rule_type, sent_date) DO NOTHING
 	`, tenantID, invoiceID, customerID, ruleType, status, msg, errMsg)
 	if err != nil {
 		slog.ErrorContext(ctx, "piutang_reminder_sent audit insert failed",
