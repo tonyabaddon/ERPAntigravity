@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
-	"github.com/username/sinar-elektrik-backend/internal/models"
-	"github.com/username/sinar-elektrik-backend/internal/whatsapp"
+	"github.com/username/sinar-elektrik-backend/internal/notification"
+	"github.com/username/sinar-elektrik-backend/internal/notification/templates"
 )
 
 var wibLocation = time.FixedZone("WIB", 7*3600)
@@ -18,12 +18,12 @@ var wibLocation = time.FixedZone("WIB", 7*3600)
 // lastFiredAt is in-memory: resets to zero on restart so first eligible tick fires immediately.
 type Poller struct {
 	db          *db.Client
-	sender      *whatsapp.Sender
+	notifier    *notification.Notifier
 	lastFiredAt time.Time
 }
 
-func NewPoller(d *db.Client, s *whatsapp.Sender) *Poller {
-	return &Poller{db: d, sender: s}
+func NewPoller(d *db.Client, n *notification.Notifier) *Poller {
+	return &Poller{db: d, notifier: n}
 }
 
 // Start launches the polling goroutine. Stops when ctx is cancelled.
@@ -73,58 +73,50 @@ func (p *Poller) tick(ctx context.Context) {
 		return
 	}
 
-	var lowStock []models.StockItem
-	if cfg.ReportStatus {
-		lowStock, err = p.db.GetLowStockItems(cfg.LowStockAlert)
-		if err != nil {
-			slog.Error("[HEARTBEAT] GetLowStockItems error", slog.String("error", err.Error()))
-			// Non-fatal — send report without low stock section.
-		}
-	}
-
-	msg := buildReport(cfg, omset, hpp, lowStock)
-
-	recipients, err := p.db.GetActiveRecipients()
-	if err != nil {
-		slog.Error("[HEARTBEAT] GetActiveRecipients error", slog.String("error", err.Error()))
-		return
-	}
-
-	for _, r := range recipients {
-		if err := p.sender.SendText(ctx, r.WANumber, msg); err != nil {
-			slog.Error("[HEARTBEAT] SendText error", slog.String("name", r.Name), slog.String("wa_number", r.WANumber), slog.String("error", err.Error()))
-		}
-	}
-
-	p.lastFiredAt = now
-	slog.Info("[HEARTBEAT] Report sent", slog.Int("recipients", len(recipients)), slog.Float64("omset", omset), slog.Float64("laba", omset-hpp))
-}
-
-func buildReport(cfg *db.HeartbeatConfig, omset, hpp float64, lowStock []models.StockItem) string {
-	now := time.Now().In(wibLocation)
 	laba := omset - hpp
 
-	var sb strings.Builder
-	sb.WriteString("📊 *Laporan Detak Jantung*\n")
-	sb.WriteString(fmt.Sprintf("🕐 %s\n\n", now.Format("Monday, 02 Jan 2006 - 15:04 WIB")))
-
-	if cfg.ReportRevenue {
-		sb.WriteString(fmt.Sprintf("💰 Omset Hari Ini: Rp %s\n", formatRupiah(omset)))
-		sb.WriteString(fmt.Sprintf("📈 Laba Bersih: Rp %s\n", formatRupiah(laba)))
-	}
-
+	var lowStockNames []string
 	if cfg.ReportStatus {
-		sb.WriteString(fmt.Sprintf("\n📦 *Stok Menipis (≤%d unit):*\n", cfg.LowStockAlert))
-		if len(lowStock) == 0 {
-			sb.WriteString("Semua stok aman ✅\n")
+		items, stockErr := p.db.GetLowStockItems(cfg.LowStockAlert)
+		if stockErr != nil {
+			slog.Error("[HEARTBEAT] GetLowStockItems error", slog.String("error", stockErr.Error()))
+			// Non-fatal — send report without low stock section.
 		} else {
-			for _, item := range lowStock {
-				sb.WriteString(fmt.Sprintf("• %s — %s: %d unit\n", item.SKU, item.Name, item.Stock))
+			for _, item := range items {
+				lowStockNames = append(lowStockNames, fmt.Sprintf("%s — %s: %d unit", item.SKU, item.Name, item.Stock))
 			}
 		}
 	}
 
-	return sb.String()
+	tmpl := templates.HeartbeatDigest{}
+	params := map[string]any{
+		"tanggal":         now.Format("2 Jan 2006"),
+		"omset_hari":      omset,
+		"laba_hari":       laba,
+		"low_stock_count": len(lowStockNames),
+	}
+	if len(lowStockNames) > 0 {
+		params["low_stock_items"] = lowStockNames
+	}
+
+	msg, err := tmpl.Build(ctx, params)
+	if err != nil {
+		slog.ErrorContext(ctx, "[HEARTBEAT] template render error", slog.Any("error", err))
+		return
+	}
+
+	// tenantID is empty string: single-tenant Calista backend; the recipientResolverAdapter
+	// in main.go ignores this arg until multi-tenant migration in Sprint 2+.
+	filter := notification.RecipientFilter{Role: "owner", CritLevel: "normal"}
+	if err := p.notifier.BroadcastToStaff(ctx, "", filter, msg); err != nil {
+		slog.ErrorContext(ctx, "[HEARTBEAT] broadcast error", slog.Any("error", err))
+	}
+
+	p.lastFiredAt = now
+	slog.InfoContext(ctx, "[HEARTBEAT] report sent",
+		slog.Float64("omset", omset),
+		slog.Float64("laba", laba),
+		slog.Int("low_stock_count", len(lowStockNames)))
 }
 
 func parseInterval(label string) time.Duration {
@@ -146,22 +138,4 @@ func isWIBBusinessHours(t time.Time) bool {
 	wib := t.In(wibLocation)
 	hour := wib.Hour()
 	return hour >= 7 && hour < 22
-}
-
-func formatRupiah(amount float64) string {
-	sign := ""
-	if amount < 0 {
-		sign = "-"
-		amount = -amount
-	}
-	n := int64(amount)
-	s := fmt.Sprintf("%d", n)
-	result := make([]byte, 0, len(s)+len(s)/3)
-	for i, c := range s {
-		if i > 0 && (len(s)-i)%3 == 0 {
-			result = append(result, '.')
-		}
-		result = append(result, byte(c))
-	}
-	return sign + string(result)
 }

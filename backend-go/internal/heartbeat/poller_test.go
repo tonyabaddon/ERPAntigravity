@@ -1,12 +1,8 @@
 package heartbeat
 
 import (
-	"strings"
 	"testing"
 	"time"
-
-	"github.com/username/sinar-elektrik-backend/internal/db"
-	"github.com/username/sinar-elektrik-backend/internal/models"
 )
 
 func TestParseInterval(t *testing.T) {
@@ -52,36 +48,5 @@ func TestIsWIBBusinessHours(t *testing.T) {
 	}
 }
 
-func TestBuildReport_WithLowStock(t *testing.T) {
-	cfg := &db.HeartbeatConfig{ReportRevenue: true, ReportStatus: true, LowStockAlert: 5}
-	items := []models.StockItem{
-		{SKU: "SKU-001", Name: "Kabel NYM", Stock: 3},
-		{SKU: "SKU-002", Name: "MCB 16A", Stock: 1},
-	}
-	msg := buildReport(cfg, 15_000_000, 8_000_000, items)
-
-	if !strings.Contains(msg, "Rp 15.000.000") {
-		t.Errorf("expected omset in message, got: %s", msg)
-	}
-	if !strings.Contains(msg, "Rp 7.000.000") {
-		t.Errorf("expected laba bersih (15M-8M=7M) in message, got: %s", msg)
-	}
-	if !strings.Contains(msg, "Kabel NYM") {
-		t.Errorf("expected low stock item in message, got: %s", msg)
-	}
-	if !strings.Contains(msg, "MCB 16A") {
-		t.Errorf("expected low stock item in message, got: %s", msg)
-	}
-	if strings.Contains(msg, "Semua stok aman") {
-		t.Error("should not show 'aman' when there are low stock items")
-	}
-}
-
-func TestBuildReport_NoLowStock(t *testing.T) {
-	cfg := &db.HeartbeatConfig{ReportRevenue: true, ReportStatus: true, LowStockAlert: 5}
-	msg := buildReport(cfg, 5_000_000, 3_000_000, nil)
-
-	if !strings.Contains(msg, "Semua stok aman") {
-		t.Errorf("expected 'Semua stok aman' when no low stock, got: %s", msg)
-	}
-}
+// Note: buildReport removed in Task 1.9 — migrated to templates.HeartbeatDigest.
+// Message format coverage is in internal/notification/templates/heartbeat_digest_test.go.

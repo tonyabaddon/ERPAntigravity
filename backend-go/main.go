@@ -640,7 +640,7 @@ func main() {
 
 	followup.NewPoller(dbClient, notifier).Start(ctx)
 	slog.Info("[MAIN] Follow-up poller started (1-minute tick)")
-	heartbeat.NewPoller(dbClient, sender).Start(ctx)
+	heartbeat.NewPoller(dbClient, notifier).Start(ctx)
 	slog.Info("[MAIN] Heartbeat poller started (1-minute tick)")
 
 	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
