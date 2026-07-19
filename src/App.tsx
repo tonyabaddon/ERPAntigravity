@@ -644,6 +644,7 @@ export default function App() {
         return (
           <WarehouseTransferCreateScreen
             currentUserId={currentUser?.id ?? ''}
+            currentUserName={currentUser?.name}
             onDone={(id) => navigate('warehouse-transfer-detail', { id: String(id) })}
             onCancel={() => navigate('warehouse-transfer')}
             searchSKU={async (term) => {

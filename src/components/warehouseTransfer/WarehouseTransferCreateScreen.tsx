@@ -11,12 +11,14 @@ import WarehouseTransferSKUPicker, { TransferLine } from './WarehouseTransferSKU
 
 export default function WarehouseTransferCreateScreen({
   currentUserId,
+  currentUserName,
   onDone,
   onCancel,
   searchSKU,
   listReceivers,
 }: {
   currentUserId: string;
+  currentUserName?: string;
   onDone: (transferId: number) => void;
   onCancel: () => void;
   searchSKU: (term: string) => Promise<Array<{ sku: string; name: string; qty: number }>>;
@@ -198,7 +200,7 @@ export default function WarehouseTransferCreateScreen({
           </label>
           <input
             id="sender"
-            value={currentUserId}
+            value={currentUserName || currentUserId}
             disabled
             className="w-full rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500"
           />
