@@ -15212,3 +15212,30 @@ Continued findings sweep — targeted static-analysis. Zero new prod changes.
 
 Foundation **very strong**. Zero blocker onboarding. All P1 localized fixes with reviewable drafts.
 
+
+---
+
+# 🔬 QA WEEK SESSION 4 — 2026-07-19 continuation window
+
+Founder said "lanjutkan yang belum selesai" — continued drafting for new P1s + Playwright scaffolding. Zero prod changes.
+
+## New artifacts
+- 3 draft SQLs/plans (P1-05 WIB timezone, P1-06 FK constraints, P1-07 jspdf upgrade)
+- 10 Playwright QA-week spec skeletons in `tests/e2e/tests/qa-week/`
+- Session 4 findings report
+
+## Session 4 corrections
+- Session 2 said "8-10 tables missing FK" — actual 20 tables (pg_catalog query faster than info_schema). tenant_settings has 3 real orphans; financial tables clean.
+
+## New Session 4 finding
+- **P2-14 bundle size** — 3.13 MB main / 813 KB gzipped, over Vite 500KB warn. Dynamic import PDF flow recommended.
+
+## Cumulative (4 sessions)
+- P0: 0 | P1: 6 open (all with drafts) | P2: 12 | P3: 6
+- Zero prod changes across all 4 sessions
+- All P1 drafts ready in `docs/qa-week/pending-fixes/`
+- Playwright specs ready (skeleton) — credentials in `.env` already
+
+## Pending founder actions (unchanged from Session 3)
+Same batch as before + bundle size decision. See `docs/qa-week/2026-07-19-session4-findings.md` § "For founder discussion".
+
