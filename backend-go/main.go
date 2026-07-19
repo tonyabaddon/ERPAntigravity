@@ -675,6 +675,12 @@ func main() {
 	approvals.NewPoller(dbClient).Start(ctx)
 	slog.Info("[MAIN] Approval expiry poller started (1-minute tick)")
 
+	// Approval SLA breach poller — fires every 15 minutes and sends a critical
+	// alert (bypasses quiet hours) to owner role when any approval_requests row
+	// has been pending for more than 2 hours without a response (Sprint 4 Task 4.3).
+	approvals.NewSLABreachPoller(dbClient.DB, notifier).Start(ctx)
+	slog.Info("[MAIN] Approval SLA breach poller started (15-min tick)")
+
 	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
 	// button replies here. The adapter translates sql.ErrNoRows to the
 	// handler's api.ErrNoApproval sentinel so the SQL driver detail does not
