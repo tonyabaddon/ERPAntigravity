@@ -20,6 +20,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/config"
 	"github.com/username/sinar-elektrik-backend/internal/api"
 	"github.com/username/sinar-elektrik-backend/internal/approvals"
+	"github.com/username/sinar-elektrik-backend/internal/caleobot"
 	"github.com/username/sinar-elektrik-backend/internal/testapi"
 	"github.com/username/sinar-elektrik-backend/internal/assets"
 	"github.com/username/sinar-elektrik-backend/internal/db"
@@ -920,6 +921,17 @@ func main() {
 	// NEVER enabled in production. Registered after dbClient is fully wired.
 	if os.Getenv("E2E_TEST_MODE") == "true" {
 		testapi.Register(mux, dbClient.DB, waNumberID)
+	}
+
+	// Caleo Admin FAQ bot — only active when CALEO_ADMIN_WA_PHONE is set.
+	// Intended for the dedicated Caleo Admin Cloud Run deployment only.
+	// Do NOT set this env var on customer-tenant deployments.
+	if os.Getenv("CALEO_ADMIN_WA_PHONE") != "" {
+		if err := caleobot.StartCaleoAdminSession(ctx, dbClient.DB, waClient.WA); err != nil {
+			slog.Warn("[MAIN] Caleo Admin bot init failed — skipping bot", slog.Any("error", err))
+		}
+	} else {
+		slog.Info("[MAIN] CALEO_ADMIN_WA_PHONE not set — Caleo Admin bot disabled")
 	}
 
 	// Connect WhatsApp (non-blocking: QR loop runs in goroutine, stored for /api/wa/qr)
