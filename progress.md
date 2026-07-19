@@ -15132,3 +15132,48 @@ Founder said "nanti saya review hasil testingnya, baru kita discuss mana yang ma
 - Full FE state coverage per screen (visual)
 - Onboarding runbook validation
 
+
+---
+
+# 🔬 QA WEEK SESSION 2 — 2026-07-19 later autonomous window
+
+Founder pergi 5h lagi + minta plan-audit + autonomous execution. Advisor called → reset scope: earlier "review findings first" instruction supersedes "mulai autonomous" ambiguity. No prod-mutating changes. Findings-first, prepared fixes as review-ready SQL.
+
+## Artifacts written
+- `docs/qa-week/2026-07-19-session2-findings.md` — corrections + new findings
+- `docs/qa-week/pending-fixes/pending-fix-p1-01-revoke-debug-secdef.sql` — draft
+- `docs/qa-week/pending-fixes/pending-fix-p1-02-storage-bucket-limits.sql` — draft
+- `docs/qa-week/pending-fixes/pending-memory-correction.md` — queued for founder review
+
+## Session 1 corrections
+- **C1:** P1-03 (migration 331 idempotency) = FALSE POSITIVE. `CREATE OR REPLACE` + GRANT/REVOKE all idempotent. Session 1 grep too narrow.
+- **C2:** P1-04 (backend Go db+notification tests) = HISTORICAL BASELINE, last touched 2026-07-02. Test-DB seed setup missing on machine. Notification builds fine individually — earlier `[build failed]` was transient. Not autonomous-fix scope.
+
+## New Session 2 findings
+- **P1 candidate — WIB timezone bug**, 37 sites bypass `formatDateJakarta` helper. Highest risk: `admin/RecordPaymentModal.tsx` (financial). Payment recorded 17-23:59 WIB posts wrong date.
+- **P1 candidate — 8-10 tables have tenant_id column but no FK to tenants** (approval_settings, piutang_settings, product_units, product_brands, saldo_awal_snapshots, warehouses, service_types, tenant_settings). Orphan risk on tenant deletion.
+- **P2-11:** IDR formatting fragmented — 4+ implementations (formatIDR, formatRp, fmtRp inline, .toLocaleString inline). Round vs trunc inconsistency.
+- **P2-12:** 48/435 migrations non-idempotent per heuristic (may over-flag). Systemic gap, defer to test-DB bootstrap.
+- **P2-13:** 13 realtime subscriptions no client-side tenant filter. Not a leak (RLS enforced by Supabase realtime) — defense-in-depth improvement.
+
+## Positive posture (unchanged)
+Discount computation defensive, sequence exhaustion zero pressure, 231 FKs, comprehensive CHECK constraints, stock_movements immutable, cron/job queue clean, split-pool healthy, recon engine tested.
+
+## Cumulative open (both sessions)
+- P0: 0
+- P1: ~5 (was 4, +2 new, -1 corrected)
+- P2: 11 (was 8, +3)
+- P3: 6
+
+Zero blocker for onboarding — all P1s localized or need founder scope call.
+
+## Advisor call outcomes
+Advisor pushback: founder's earlier explicit instruction ("review findings, then discuss") should be respected. Rescoped Session 2 to findings + drafts only, no prod migrations.
+
+## Pending founder actions
+1. Review pending-fixes/*.sql + approve apply
+2. Prioritize WIB timezone bug fixes (RecordPaymentModal first?)
+3. Backend Go test bootstrap scope call
+4. Memory correction approval for `guard_expiry_write_broken_predicate`
+5. Green-light Day 1 UI phase (requires prod auth)
+
