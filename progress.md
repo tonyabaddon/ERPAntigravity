@@ -15075,3 +15075,60 @@ Log-based metric caught real violations: 5x CloudflareInsights beacon blocked. L
 ## Sentry-project decisions
 - Deleted misconfigured `javascript-react` project (empty from founder's interrupted signup)
 - Created `caleo-frontend` (platform: javascript-react) and `caleo-backend` (platform: go-http) via API using founder's user auth token
+
+---
+
+# 🔬 QA WEEK SESSION 1 — 2026-07-19 autonomous findings sweep
+
+Founder pergi ~6h autonomous window. Requested: plan comprehensive QA week + execute Day 0 pre-work sweep. Delivered both.
+
+## Artifacts written
+
+**Design + plan:**
+- `docs/superpowers/specs/2026-07-19-qa-week-comprehensive-design.md` — 580-line comprehensive design (7-day schedule, 8 tier ~50 module cluster, 12 functional + 5 non-functional scenario categories, tooling + tenant setup, bug workflow, success criteria)
+
+**Findings (Session 1):**
+- `docs/qa-week/2026-07-19-session1-findings.md` — Backend/DB/static-analysis sweep results
+
+## Session 1 approach
+
+Founder said "nanti saya review hasil testingnya, baru kita discuss mana yang mau diimprove" → mode berubah dari hybrid-fix ke **findings-first**. Zero fixes deployed. UI testing deferred (needs prod auth). Focus: SQL/DB security + integrity + backend Go + static analysis.
+
+## P0-P3 summary
+- **P0: 0** — zero critical
+- **P1: 4** — Debug SECDEF callable by authenticated (info disclosure); 5 storage buckets no size limit; migration 331 non-idempotent; backend Go db + notification tests failing
+- **P2: 8** — seq scans, 6 residual broken RLS predicate on warehouse_transfer, audit_log/pembayaran single-col PK, direct FE writes, storage MIME allowlist, FE state coverage, 100 `any` types, 84 hardcoded IDR
+- **P3: 6** — cleanup items
+
+## Positive posture signals (foundation strong)
+- 0 unbalanced JE (295 checked), 0 line-sum mismatches
+- 0 stock math violations
+- 0 NULL tenant_id in critical tables
+- 0 orphan records
+- **0 read leaks + 0 write leaks across 30 tables** — multi-tenant isolation VERIFIED
+- kasir_transactions composite PK (tenant_id, id) — partition-ready
+- All 7 storage buckets enforce `tenants/{tenant_id}/...` path pattern
+- Split-pool healthy — claim_next_job 169K calls at 0.32ms mean
+- Sentry init present FE + BE
+- TS lint + audit:secdef-null-tenant + audit:numinput all clean
+- 435 migrations scanned, 0 SECDEF INSERTs with NULL tenant_id
+
+## Memory updates recommended (post-review)
+- `guard_expiry_write_broken_predicate` — memory says ~100 policies broken; actual is 6 (all on warehouse_transfer). Most migrated to `_check_expiry_ok()` predicate. Memory needs correction.
+
+## Blocked on founder return
+- P1 fix approval + hotfix batch scheduling
+- Decision on P2-03 (audit_log + pembayaran PK migration — irreversible-adjacent, needs advisor gate + memo per CLAUDE.md)
+- Green-light Day 1 QA week execution (UI + interactive sweep) — needs prod auth
+- 6-hour Session 1 findings review + discuss "solusinya apa secara keseluruhan"
+
+## Testing NOT performed this session (deferred to Day 1+)
+- UI/UX visual audit (needs prod login)
+- PDF layout tests
+- Chrome-devtools MCP interactive sweep
+- File upload edge cases in browser
+- Realtime subscription tenant filter live observation
+- Sentry synthetic error capture verify
+- Full FE state coverage per screen (visual)
+- Onboarding runbook validation
+
