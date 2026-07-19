@@ -536,7 +536,7 @@ func main() {
 		notification.NewQuota(dbClient.DB),
 		notification.NewCachedResolver(recipientResolverAdapter{dbClient}),
 		slog.Default(),
-	)
+	).WithDB(dbClient.DB) // Sprint 5.2: enables quiet-hours + consolidation window
 
 	// Scheduler
 	var waHandler *whatsapp.Handler
@@ -640,6 +640,11 @@ func main() {
 	// Task 2.5: manual piutang WA reminder — enqueued by send_piutang_reminder_manual RPC.
 	// Uses dbClient.DB (transaction pooler) for the handler's SQL queries.
 	jobWorker.Register("piutang_manual_send", jobs.NewPiutangManualSendHandler(notifier, dbClient.DB))
+	// Sprint 5.2b (Errata 3): deferred broadcast handlers.
+	// broadcast_quiet_delay: re-fires a non-critical broadcast held during quiet hours.
+	// broadcast_consolidated: sends N coalesced messages as a single WA in one notification.
+	jobWorker.Register("broadcast_quiet_delay", jobs.NewBroadcastQuietDelayHandler(notifier))
+	jobWorker.Register("broadcast_consolidated", jobs.NewBroadcastConsolidatedHandler(notifier))
 	// P2-D will add: jobWorker.Register("export_data", exportHandler)
 	workerCtx, workerCancel := context.WithCancel(ctx)
 	go jobWorker.Start(workerCtx)

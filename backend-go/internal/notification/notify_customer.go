@@ -3,6 +3,7 @@ package notification
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 )
@@ -31,12 +32,24 @@ type Notifier struct {
 	quota    quotaChecker
 	resolver recipientResolver
 	logger   *slog.Logger
+	// db is used by BroadcastToStaff for notification_prefs lookup and
+	// enqueueing deferred t_jobs rows. May be nil in tests that only use
+	// NotifyCustomer (quiet-hours / consolidation is skipped when db is nil).
+	db *sql.DB
 }
 
 // NewNotifier returns a Notifier bound to the given collaborators.
+// Pass nil for db if BroadcastToStaff quiet-hours / consolidation won't be used.
 // Pass nil for resolver if BroadcastToStaff will not be used.
 func NewNotifier(s sendClient, i messageInserter, q quotaChecker, r recipientResolver, l *slog.Logger) *Notifier {
 	return &Notifier{sender: s, inserter: i, quota: q, resolver: r, logger: l}
+}
+
+// WithDB attaches a *sql.DB to the Notifier for BroadcastToStaff deferred-job
+// support (quiet hours, consolidation window). Call once after NewNotifier.
+func (n *Notifier) WithDB(db *sql.DB) *Notifier {
+	n.db = db
+	return n
 }
 
 // NotifyCustomer sends a WA message to a customer with atomic audit trail write
