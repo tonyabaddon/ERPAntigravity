@@ -24,6 +24,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/db"
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/followup"
+	"github.com/username/sinar-elektrik-backend/internal/hutang"
 	"github.com/username/sinar-elektrik-backend/internal/piutang"
 	"github.com/username/sinar-elektrik-backend/internal/gemini"
 	"github.com/username/sinar-elektrik-backend/internal/heartbeat"
@@ -660,6 +661,12 @@ func main() {
 	// summary to each tenant's owner role via BroadcastToStaff.
 	piutang.NewOverdueSummaryPoller(dbClient.DB, notifier).Start(ctx)
 	slog.Info("[MAIN] Piutang overdue summary poller started (daily 08:00 WIB)")
+
+	// Hutang overdue summary poller — fires daily at 07:30 WIB (Sprint 4 Task 4.2).
+	// Aggregates supplier invoices due this week per tenant and broadcasts a
+	// summary to each tenant's owner role via BroadcastToStaff.
+	hutang.NewOverdueSummaryPoller(dbClient.DB, notifier).Start(ctx)
+	slog.Info("[MAIN] Hutang overdue summary poller started (daily 07:30 WIB)")
 
 	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
 	// the public.expire_pending_approvals() RPC once per minute. Matches the
