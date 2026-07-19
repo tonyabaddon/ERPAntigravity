@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -761,6 +762,108 @@ func main() {
 				slog.ErrorContext(ctx, "[MAIN] approval sent_wa_card_at update failed",
 					slog.String("approval_id", evt.ApprovalID),
 					slog.Any("error", dbErr))
+			}
+		},
+
+		// Sprint 3 Task 3.2: send WA confirmation to customer on every new order.
+		// Fires on orders INSERT via pg_notify('order_created', ...).
+		// Skip if customer has no wa_number (kasir orders often have none).
+		OnOrderCreated: func(evt db.OrderCreatedEvent) {
+			var customerName, customerPhone, tokoName, customTmpl string
+			err := dbClient.DB.QueryRowContext(ctx, `
+				SELECT
+				  c.name,
+				  COALESCE(c.wa_number, '') AS customer_phone,
+				  t.name,
+				  COALESCE(tnt.content, '')
+				FROM public.orders o
+				JOIN public.customers c ON c.id = o.customer_id AND c.tenant_id = o.tenant_id
+				JOIN public.tenants   t ON t.id = o.tenant_id
+				LEFT JOIN public.tenant_notification_templates tnt
+				       ON tnt.tenant_id = o.tenant_id
+				      AND tnt.template_id = 'order_created'
+				WHERE o.id = $1 AND o.tenant_id = $2
+			`, evt.OrderID, evt.TenantID).Scan(&customerName, &customerPhone, &tokoName, &customTmpl)
+			if err != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_created: lookup failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", err))
+				return
+			}
+			if customerPhone == "" {
+				slog.InfoContext(ctx, "[MAIN] order_created: no wa_number, skipping",
+					slog.String("order_id", evt.OrderID),
+					slog.String("tenant_id", evt.TenantID))
+				return
+			}
+			tmpl := templates.OrderCreated{CustomTemplate: customTmpl}
+			msg, buildErr := tmpl.Build(ctx, map[string]any{
+				"customer_nama": customerName,
+				"toko_nama":     tokoName,
+				"invoice_no":    evt.InvoiceNo,
+				"amount":        fmt.Sprintf("%.0f", evt.Amount),
+			})
+			if buildErr != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_created: template build failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", buildErr))
+				return
+			}
+			if err := notifier.NotifyCustomer(ctx, evt.TenantID, evt.ConversationID, customerPhone, "id", msg); err != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_created: send failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", err))
+			}
+		},
+
+		// Sprint 3 Task 3.2: send WA notification when order reaches COMPLETED status.
+		// Fires on orders UPDATE OF status via pg_notify('order_shipped', ...).
+		// NOTE: 'SHIPPED' status does not exist in this schema; COMPLETED is the
+		// terminal fulfilled state. Channel name kept as 'order_shipped' per spec.
+		OnOrderShipped: func(evt db.OrderShippedEvent) {
+			var customerName, customerPhone, tokoName, customTmpl string
+			err := dbClient.DB.QueryRowContext(ctx, `
+				SELECT
+				  c.name,
+				  COALESCE(c.wa_number, '') AS customer_phone,
+				  t.name,
+				  COALESCE(tnt.content, '')
+				FROM public.orders o
+				JOIN public.customers c ON c.id = o.customer_id AND c.tenant_id = o.tenant_id
+				JOIN public.tenants   t ON t.id = o.tenant_id
+				LEFT JOIN public.tenant_notification_templates tnt
+				       ON tnt.tenant_id = o.tenant_id
+				      AND tnt.template_id = 'order_shipped'
+				WHERE o.id = $1 AND o.tenant_id = $2
+			`, evt.OrderID, evt.TenantID).Scan(&customerName, &customerPhone, &tokoName, &customTmpl)
+			if err != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_shipped: lookup failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", err))
+				return
+			}
+			if customerPhone == "" {
+				slog.InfoContext(ctx, "[MAIN] order_shipped: no wa_number, skipping",
+					slog.String("order_id", evt.OrderID),
+					slog.String("tenant_id", evt.TenantID))
+				return
+			}
+			tmpl := templates.OrderShipped{CustomTemplate: customTmpl}
+			msg, buildErr := tmpl.Build(ctx, map[string]any{
+				"customer_nama": customerName,
+				"toko_nama":     tokoName,
+				"invoice_no":    evt.InvoiceNo,
+			})
+			if buildErr != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_shipped: template build failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", buildErr))
+				return
+			}
+			if err := notifier.NotifyCustomer(ctx, evt.TenantID, evt.ConversationID, customerPhone, "id", msg); err != nil {
+				slog.ErrorContext(ctx, "[MAIN] order_shipped: send failed",
+					slog.String("order_id", evt.OrderID),
+					slog.Any("error", err))
 			}
 		},
 	}); err != nil {

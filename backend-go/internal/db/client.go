@@ -22,6 +22,30 @@ type ApprovalCreatedEvent struct {
 	Details    string `json:"details"`     // payload column cast to text (JSONB)
 }
 
+// OrderCreatedEvent is the decoded payload from the 'order_created' NOTIFY channel.
+// Emitted by migration 422's notify_order_created() trigger on every orders INSERT.
+// conversation_id may be empty for kasir/pesanan-admin orders (only Calista orders have one).
+type OrderCreatedEvent struct {
+	OrderID        string  `json:"order_id"`
+	TenantID       string  `json:"tenant_id"`
+	CustomerID     string  `json:"customer_id"`
+	InvoiceNo      string  `json:"invoice_no"` // SUBSTR(id::text, -8)
+	Amount         float64 `json:"amount"`     // total - piutang_paid_amount
+	ConversationID string  `json:"conversation_id"` // may be empty
+}
+
+// OrderShippedEvent is the decoded payload from the 'order_shipped' NOTIFY channel.
+// Emitted by migration 422's notify_order_shipped() trigger on transition to COMPLETED.
+// NOTE: fires on COMPLETED (no SHIPPED status in this schema as of 2026-07-19).
+// conversation_id may be empty for kasir/pesanan-admin orders.
+type OrderShippedEvent struct {
+	OrderID        string `json:"order_id"`
+	TenantID       string `json:"tenant_id"`
+	CustomerID     string `json:"customer_id"`
+	InvoiceNo      string `json:"invoice_no"` // SUBSTR(id::text, -8)
+	ConversationID string `json:"conversation_id"` // may be empty
+}
+
 type NotifyHandlers struct {
 	OnAdminMessage      func(conversationID, messageID string)
 	OnOrderApproved     func(orderID, conversationID string, shippingFee float64)
@@ -29,7 +53,9 @@ type NotifyHandlers struct {
 	OnPaymentRejected   func(orderID, conversationID string)
 	OnDPVerified        func(orderID, conversationID string)
 	OnDPProofRejected   func(orderID, conversationID, reason string)
-	OnApprovalCreated   func(evt ApprovalCreatedEvent) // B1 fix (Task 1.8)
+	OnApprovalCreated   func(evt ApprovalCreatedEvent)  // B1 fix (Task 1.8)
+	OnOrderCreated      func(evt OrderCreatedEvent)     // Sprint 3 Task 3.2
+	OnOrderShipped      func(evt OrderShippedEvent)     // Sprint 3 Task 3.2 (fires on COMPLETED)
 }
 
 type Client struct {
@@ -152,7 +178,7 @@ func addPgxExecMode(conn string) string {
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
 func (c *Client) StartListening(h NotifyHandlers) error {
-	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected", "approval_created"}
+	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected", "approval_created", "order_created", "order_shipped"}
 	for _, ch := range channels {
 		if err := c.listener.Listen(ch); err != nil {
 			return err
@@ -255,11 +281,33 @@ func (c *Client) StartListening(h NotifyHandlers) error {
 				if h.OnApprovalCreated != nil {
 					go h.OnApprovalCreated(evt)
 				}
+
+			case "order_created":
+				// Sprint 3 Task 3.2: send WA confirmation to customer on every order INSERT.
+				var evt OrderCreatedEvent
+				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
+					slog.Error("[DB] order_created parse error", slog.Any("error", err))
+					continue
+				}
+				if h.OnOrderCreated != nil {
+					go h.OnOrderCreated(evt)
+				}
+
+			case "order_shipped":
+				// Sprint 3 Task 3.2: send WA notification when order transitions to COMPLETED.
+				var evt OrderShippedEvent
+				if err := json.Unmarshal([]byte(notification.Extra), &evt); err != nil {
+					slog.Error("[DB] order_shipped parse error", slog.Any("error", err))
+					continue
+				}
+				if h.OnOrderShipped != nil {
+					go h.OnOrderShipped(evt)
+				}
 			}
 		}
 	}()
 
-	slog.Info("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected, approval_created")
+	slog.Info("[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected, approval_created, order_created, order_shipped")
 	return nil
 }
 
