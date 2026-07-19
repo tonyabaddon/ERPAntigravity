@@ -655,6 +655,12 @@ func main() {
 	piutang.NewReminderPoller(dbClient.DB, notifier).Start(ctx)
 	slog.Info("[MAIN] Piutang reminder poller started (daily 09:00 WIB)")
 
+	// Piutang overdue summary poller — fires daily at 08:00 WIB (Sprint 4 Task 4.1).
+	// Aggregates all overdue INVOICE_TEMPO orders per tenant and broadcasts a
+	// summary to each tenant's owner role via BroadcastToStaff.
+	piutang.NewOverdueSummaryPoller(dbClient.DB, notifier).Start(ctx)
+	slog.Info("[MAIN] Piutang overdue summary poller started (daily 08:00 WIB)")
+
 	// Approval auto-expiry poller — flips stale pending rows to 'expired' via
 	// the public.expire_pending_approvals() RPC once per minute. Matches the
 	// heartbeat/follow-up Start(ctx) pattern: goroutine exits when ctx is
