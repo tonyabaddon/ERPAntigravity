@@ -15239,3 +15239,47 @@ Founder said "lanjutkan yang belum selesai" — continued drafting for new P1s +
 ## Pending founder actions (unchanged from Session 3)
 Same batch as before + bundle size decision. See `docs/qa-week/2026-07-19-session4-findings.md` § "For founder discussion".
 
+
+---
+
+# 🔬 QA WEEK SESSION 5 — 2026-07-19 live interactive testing
+
+Founder unblocked live prod interactive testing (chrome-devtools MCP + Playwright with real auth injection). Fix-as-you-go policy per founder.
+
+## Artifacts
+- `docs/qa-week/2026-07-19-session5-findings.md` — full session report
+- `docs/qa-week/pending-fixes/cleanup-qa-week-testdata.sql` — QA data cleanup
+- 3 commits (39e017d + 3347833 + memory pending)
+
+## 3 P1 bugs FIXED (fix-as-you-go)
+- **F5-02** KasirScreen "Catat Penjualan" button URL bug (`onClick={onOpenPenjualanBaru}` passed MouseEvent as channel arg → URL had `[object Object]`)
+- **F5-03/F5-07** Error stringify bug — 11-file sweep. `err instanceof Error ? err.message : String(err)` → `extractErrorMessage(err)`. 20+ toast sites now show real DB errors
+- **F5-09** App.tsx IMPERSONATE_FAILED (same class, included in sweep)
+
+## Session 1 correction
+Multi-tenant sweep methodology was flawed — JWT with only `sub` claim → `_resolve_tenant_id()` returned zero-UUID → RLS trivially blocked all reads. "0 leaks across 30 tables" was false-positive of methodology.
+**Session 5 rerun with proper JWT (`sub` + `tenant_id` claims): 0 leaks VERIFIED on 20 tables.** Multi-tenant isolation now confidently confirmed.
+
+## 3 findings DEFERRED (coordinated fix needed)
+- **F5-05 [P1]** `uq_customers_wa` cross-tenant unique constraint. Migration + backend refactor (customers.go uses ON CONFLICT wa_number + gjp_cust_seq hardcoded Garindo). Advisor gate consulted, coordinated fix plan documented.
+- **F5-06 [P2]** GetOrCreateCustomer backend Garindo-hardcoded. Bundle with F5-05.
+- **F5-10 [P2]** Wrong error class "IMPERSONATE_FAILED" shown to regular tenant users navigating cross-tenant URL (should be "Access denied"). UX decision.
+
+## UI-side coverage
+- 20+ screens navigated cleanly via chrome-devtools MCP
+- 0 5xx across 23 screens (Playwright network health)
+- Kasir wizard, Pembelian PO form, Pengaturan Umum, Laporan (Neraca balances Rp 45.400 ✓), admin dashboard, admin tenant list all verified
+- Cross-tenant URL nav BLOCKED (as Toko Jaya owner trying /t/garindo — TenantBootstrapError renders)
+
+## Cumulative status (5 sessions)
+- P0: 0
+- P1: 4 open (all with drafts) + 3 fixed this session
+- P2: 15
+- P3: 7
+- Effective plan coverage: ~55-65%
+
+## Session 5 methodological wins
+- Real Supabase session injection for both tenant + admin fixtures — no OTP needed
+- Chrome-devtools MCP + Playwright combo — SQL-fast smoke + UI-real interactive
+- Advisor gate discipline held — 1 P0-candidate correctly reclassified to P1 + coordinated fix plan
+
