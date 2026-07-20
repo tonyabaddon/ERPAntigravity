@@ -1,111 +1,50 @@
 // src/components/admin/CaleoBotDashboard.tsx
 // Sprint 7 Task 7.4 — Caleo Admin Bot analytics dashboard at /admin/caleo-bot.
-// Reads from caleo_admin_bot_analytics (no RLS — service_role only). The
-// frontend uses the anon-key client, so queries may return empty rows if the
-// Supabase project's PostgREST is configured to block public reads. All data
-// states (loading / empty / error) are handled gracefully.
+// Data is fetched via SECDEF RPC get_bot_analytics_summary (restricted to
+// platform admins). All data states (loading / empty / error / forbidden)
+// are handled gracefully.
 import { useEffect, useState, useCallback } from 'react';
 import { Bot, Users, TrendingUp, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-// ─── Types ─────────────────────────────────────────────────────────────────────
+// ─── RPC response types ────────────────────────────────────────────────────────
 
-interface AnalyticsRow {
-  session_id: string;
-  first_message_at: string;
-  faq_hits: unknown; // JSONB — shape: string[] or null
-  escalated_at: string | null;
-  demo_scheduled_at: string | null;
-  converted_to_signup_at: string | null;
+interface BotAnalyticsSummary {
+  prospects_today: number;
+  prospects_week: number;
+  prospects_month: number;
+  top_faqs: Array<{ faq_id: string; count: number }>;
+  escalation_rate_7d: Array<{ date: string; rate_pct: number }>;
+  funnel: {
+    prospects: number;
+    demo_scheduled: number;
+    signup: number;
+  };
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
-function daysAgoIso(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
-function startOfDayIso(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function startOfWeekIso(): string {
-  const d = new Date();
-  const dow = d.getDay(); // 0=Sun
-  d.setDate(d.getDate() - dow);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function startOfMonthIso(): string {
-  const d = new Date();
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-/** Aggregate faq_hits across rows → {keyword: count} */
-function aggregateFaqHits(rows: AnalyticsRow[]): Record<string, number> {
-  const acc: Record<string, number> = {};
-  for (const row of rows) {
-    const hits = row.faq_hits;
-    if (!hits || !Array.isArray(hits)) continue;
-    for (const hit of hits as string[]) {
-      if (typeof hit === 'string' && hit.length > 0) {
-        acc[hit] = (acc[hit] ?? 0) + 1;
-      }
-    }
-  }
-  return acc;
-}
-
-/** Top N entries sorted by count desc */
-function topN(counts: Record<string, number>, n: number): Array<{ key: string; count: number }> {
-  return Object.entries(counts)
-    .map(([key, count]) => ({ key, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, n);
-}
-
-/** Day label for x-axis: "S", "S", "R", ... (Mon→Sun in ID) */
+/** Day label for x-axis: "Min", "Sen", "Sel", ... (ID locale) */
 const DAY_SHORT_ID = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 interface EscalationDay {
   label: string;
-  total: number;
-  escalated: number;
+  total: number;   // kept as 1 for any day with an escalation rate entry
+  escalated: number; // derived from rate_pct
+  rate_pct: number;
 }
 
-/** Build 7-day escalation trend (newest day last, oldest first) */
-function buildEscalationTrend(rows: AnalyticsRow[]): EscalationDay[] {
-  const days: EscalationDay[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const dayStart = new Date();
-    dayStart.setDate(dayStart.getDate() - i);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-
-    const dayRows = rows.filter((r) => {
-      const t = new Date(r.first_message_at).getTime();
-      return t >= dayStart.getTime() && t < dayEnd.getTime();
-    });
-
-    days.push({
-      label: DAY_SHORT_ID[dayStart.getDay()] ?? String(dayStart.getDate()),
-      total: dayRows.length,
-      escalated: dayRows.filter((r) => r.escalated_at !== null).length,
-    });
-  }
-  return days;
+/** Map RPC escalation_rate_7d array → EscalationDay[] expected by EscalationTrend */
+function mapEscalationDays(
+  items: Array<{ date: string; rate_pct: number }>,
+): EscalationDay[] {
+  return items.map((item) => {
+    const d = new Date(item.date + 'T00:00:00Z');
+    const label = DAY_SHORT_ID[d.getUTCDay()] ?? item.date.slice(5); // "MM-DD" fallback
+    // Synthesise total/escalated so EscalationTrend can compute the same ratio.
+    // We use total=100 sentinel so rate_pct maps directly.
+    const total = 100;
+    const escalated = item.rate_pct;
+    return { label, total, escalated, rate_pct: item.rate_pct };
+  });
 }
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
@@ -301,7 +240,8 @@ function EscalationTrend({ days }: EscalationTrendProps) {
     ? `M ${first.x},${baseY} ` + pts.map((p) => `L ${p.x},${p.y}`).join(' ') + ` L ${last.x},${baseY} Z`
     : '';
 
-  const allZero = days.every((d) => d.total === 0);
+  // allZero: true only when there are no escalation entries from the RPC
+  const allZero = days.length === 0;
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -352,7 +292,7 @@ function EscalationTrend({ days }: EscalationTrendProps) {
                 {p.label}
               </text>
               {p.total > 0 && (
-                <title>{`${p.label}: ${p.rate}% (${p.total} sesi)`}</title>
+                <title>{`${p.label}: ${p.rate}% eskalasi`}</title>
               )}
             </g>
           ))}
@@ -440,49 +380,36 @@ interface BotStats {
 async function fetchBotStats(): Promise<BotStats> {
   if (!supabase) throw new Error('Supabase client not configured');
 
-  const since30d = daysAgoIso(30);
-  const todayStart = startOfDayIso();
-  const weekStart = startOfWeekIso();
-  const monthStart = startOfMonthIso();
-  const now = nowIso();
-
-  // Single fetch for last 30 days of sessions (≤ 10K rows bounded).
-  const { data, error } = await supabase
-    .from('caleo_admin_bot_analytics')
-    .select('session_id,first_message_at,faq_hits,escalated_at,demo_scheduled_at,converted_to_signup_at')
-    .gte('first_message_at', since30d)
-    .lte('first_message_at', now)
-    .order('first_message_at', { ascending: false })
-    .limit(10000);
+  const { data, error } = await supabase.rpc('get_bot_analytics_summary', {
+    p_days: 30,
+  });
 
   if (error) {
+    // Surface a clear message for auth failures
+    if (error.code === 'P0403' || error.message?.includes('BOT_ANALYTICS_FORBIDDEN')) {
+      throw new Error('Akses ditolak: halaman ini hanya untuk Caleo platform admin.');
+    }
     throw new Error(`Gagal memuat data bot: ${error.message}`);
   }
 
-  const rows = (data ?? []) as AnalyticsRow[];
+  const summary = data as BotAnalyticsSummary;
 
-  const prospectsToday = rows.filter((r) => r.first_message_at >= todayStart).length;
-  const prospectsWeek = rows.filter((r) => r.first_message_at >= weekStart).length;
-  const prospectsMonth = rows.filter((r) => r.first_message_at >= monthStart).length;
+  const topFaq = (summary.top_faqs ?? []).map((item) => ({
+    key: item.faq_id,
+    count: item.count,
+  }));
 
-  const faqCounts = aggregateFaqHits(rows);
-  const topFaq = topN(faqCounts, 5);
-
-  const escalationDays = buildEscalationTrend(rows);
-
-  const demoCount = rows.filter((r) => r.demo_scheduled_at !== null).length;
-  const signupCount = rows.filter((r) => r.converted_to_signup_at !== null).length;
-  const totalProspects = rows.length;
+  const escalationDays = mapEscalationDays(summary.escalation_rate_7d ?? []);
 
   return {
-    prospectsToday,
-    prospectsWeek,
-    prospectsMonth,
+    prospectsToday: summary.prospects_today ?? 0,
+    prospectsWeek: summary.prospects_week ?? 0,
+    prospectsMonth: summary.prospects_month ?? 0,
     topFaq,
     escalationDays,
-    demoCount,
-    signupCount,
-    totalProspects,
+    demoCount: summary.funnel?.demo_scheduled ?? 0,
+    signupCount: summary.funnel?.signup ?? 0,
+    totalProspects: summary.funnel?.prospects ?? 0,
   };
 }
 
@@ -523,10 +450,6 @@ export function CaleoBotDashboard() {
           </div>
           <p className="text-[12px] mt-0.5" style={{ color: '#64748B' }}>
             Prospek masuk via landing page bot — data 30 hari terakhir.
-            {' '}
-            <span style={{ color: '#94A3B8' }}>
-              Catatan: tabel tanpa RLS, akses dari browser mungkin terbatas.
-            </span>
           </p>
         </div>
         <button
@@ -549,11 +472,6 @@ export function CaleoBotDashboard() {
           role="alert"
         >
           {error}
-          {error.includes('terbatas') || error.includes('permission') || error.includes('401') ? (
-            <p className="mt-1 text-[12px]" style={{ color: '#B91C1C' }}>
-              Tabel bot analytics hanya accessible via service_role. Pertimbangkan membuat SECDEF RPC untuk akses admin.
-            </p>
-          ) : null}
         </div>
       )}
 
@@ -633,9 +551,8 @@ export function CaleoBotDashboard() {
 
           {/* Footnote */}
           <div className="text-[11px]" style={{ color: '#94A3B8' }}>
-            Data dari <code>caleo_admin_bot_analytics</code>.
-            Jika kosong di browser, tambahkan SECDEF RPC
-            <code> get_bot_analytics_summary()</code> agar bisa diakses tanpa service_role.
+            Data dari <code>caleo_admin_bot_analytics</code> via{' '}
+            <code>get_bot_analytics_summary()</code>.
           </div>
         </>
       )}
