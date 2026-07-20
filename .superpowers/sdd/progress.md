@@ -1,3 +1,43 @@
+## 2026-07-20 — QA Week Phase 2 Wave 1 SHIPPED (2D + 2C + 2H; 2I deferred)
+
+**Plan:** docs/superpowers/plans/2026-07-20-qa-week-phase-2-wave-1.md
+**Base:** 82f0a03 → dbc848f
+
+### 2D: RLS predicate fix (commit 78a02cd)
+- Migration 503 swaps broken `_guard_expiry_write() IS NULL` (void IS NULL = always false) → working `_check_expiry_ok()` on 6 residual WT policies. Regression PASS 2/2, direct-write smoke PASS.
+- Fixes memory `guard_expiry_write_broken_predicate` (0 policies remain broken; was 6 at Wave 1 start, not ~100).
+
+### 2C: Perf indexes (commit 9b93377)
+- Migration 504: 4 CONCURRENTLY btrees via Management API (empirically verified accepts CONCURRENTLY, 4 separate POSTs).
+- All indisvalid=true. Q3 22× speedup (Seq Scan → Index Scan). Q4 flipped Seq Scan → Index Scan. Q1 kept partial-index path minus Sort. Q2 already covered.
+- Advisor gate: memo at `docs/superpowers/specs/2026-07-20-perf-indexes-decision.md`.
+
+### 2H: Realtime tenant filter (commit dbc848f)
+- 13/13 postgres_changes subscribers now `filter: 'tenant_id=eq.${currentTenantId}'`. Step-0 tenant_id column check: all 7 tables have column.
+- 9 source files modified. tsc clean; vitest 27/27 PASS.
+- Live-fire browser smoke deferred to founder (chrome-devtools MCP held).
+
+### Multi-tenant matrix re-verify
+3 tenants × 6 tables × cross-lookup = 36 attempts, **0 leaks**.
+
+### 2I DEFERRED
+Schema baseline needs `SUPABASE_DB_PASSWORD` (missing from .env). Founder sources from Supabase Dashboard → Wave 1.5.
+
+### P0 INCIDENT (unrelated to Wave 1)
+`docs/incidents/2026-07-20-backend-wa-init-crashloop.md` — backend Go crashloops with `[MAIN] WA client init failed` since ~14:08 UTC. Backend Go binary byte-identical to last-good 82f0a03. Wave 1 = SQL + FE only. Real error swallowed by `slog.Any(err)` empty-serialization bug. WA bot down; app.caleo.id ERP unaffected. Founder attention P0.
+
+### Progress ledger
+Task 0: complete (env preflight; DB_PASSWORD missing → 2I deferred)
+Task 2: complete (78a02cd, 2D 6/6 regression PASS + smoke PASS)
+Task 3: complete (9b93377, 2C 4 indexes + advisor memo + Q3 22× speedup)
+Task 4: complete (dbc848f, 2H 13/13 filtered + 27 vitest PASS)
+Task 5: complete (matrix 0 leaks + report + incident)
+
+**Wave 1 SHIPPED (2D/2C/2H).** Detail: docs/qa-week/phase-2-report.md
+Deferred: 2I (needs DB password). Incident: backend WA crashloop.
+
+---
+
 ## 2026-07-20 — QA Week Phase 1: F5-05 + P2-03 shipped
 
 **Plan:** docs/superpowers/plans/2026-07-20-qa-week-phase-1-plan.md
