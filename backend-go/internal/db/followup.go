@@ -12,7 +12,7 @@ import (
 // (max 2 follow-ups) is not exhausted.
 func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 	rows, err := c.DB.Query(`
-		SELECT id, customer_phone, language, state, collected_data, clarification_round,
+		SELECT id, wa_number_id, tenant_id, customer_phone, language, state, collected_data, clarification_round,
 		       ai_active, last_ai_message_at, followup_count_today, last_followup_date
 		FROM conversations
 		WHERE ai_active = true
@@ -36,7 +36,7 @@ func (c *Client) GetEligibleForFollowup() ([]*models.Conversation, error) {
 		var dataJSON []byte
 		var lastAIAt, lastFollowupDate sql.NullTime
 		if err := rows.Scan(
-			&conv.ID, &conv.CustomerPhone, &conv.Language, &conv.State,
+			&conv.ID, &conv.WANumberID, &conv.TenantID, &conv.CustomerPhone, &conv.Language, &conv.State,
 			&dataJSON, &conv.ClarificationRound, &conv.AIActive,
 			&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
 		); err != nil {

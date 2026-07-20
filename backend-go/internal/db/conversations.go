@@ -31,7 +31,7 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 	var lastFollowupDate sql.NullTime
 	var stateLockedUntil sql.NullTime
 	err := c.DB.QueryRow(`
-		SELECT id, wa_number_id, customer_phone, state, language,
+		SELECT id, wa_number_id, tenant_id, customer_phone, state, language,
 		       collected_data, clarification_round, ai_active, created_at, updated_at,
 		       last_ai_message_at, followup_count_today, last_followup_date,
 		       state_locked_until
@@ -40,7 +40,7 @@ func (c *Client) findActiveConversation(phone, waNumberID string) (*models.Conve
 		  AND state NOT IN ('CANCELLED','COMPLETED')
 		ORDER BY created_at DESC LIMIT 1
 	`, phone, waNumberID).Scan(
-		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
+		&conv.ID, &conv.WANumberID, &conv.TenantID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
@@ -69,14 +69,14 @@ func (c *Client) createConversation(phone, waNumberID string) (*models.Conversat
 	var lastFollowupDate sql.NullTime
 	var stateLockedUntil sql.NullTime
 	err := c.DB.QueryRow(`
-		INSERT INTO conversations (wa_number_id, customer_phone, state, language, collected_data, clarification_round)
-		VALUES ($1, $2, 'GREETING', 'id', '{}', 0)
-		RETURNING id, wa_number_id, customer_phone, state, language,
+		INSERT INTO conversations (wa_number_id, customer_phone, tenant_id, state, language, collected_data, clarification_round)
+		VALUES ($1, $2, (SELECT tenant_id FROM whatsapp_numbers WHERE id = $1), 'GREETING', 'id', '{}', 0)
+		RETURNING id, wa_number_id, tenant_id, customer_phone, state, language,
 		          collected_data, clarification_round, ai_active, created_at, updated_at,
 		          last_ai_message_at, followup_count_today, last_followup_date,
 		          state_locked_until
 	`, waNumberID, phone).Scan(
-		&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
+		&conv.ID, &conv.WANumberID, &conv.TenantID, &conv.CustomerPhone, &conv.State,
 		&conv.Language, &dataJSON, &conv.ClarificationRound,
 		&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 		&lastAIAt, &conv.FollowupCountToday, &lastFollowupDate,
@@ -134,7 +134,7 @@ func (c *Client) UpdateLanguage(id, language string) error {
 
 func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation, error) {
 	rows, err := c.DB.Query(`
-		SELECT id, wa_number_id, customer_phone, state, language,
+		SELECT id, wa_number_id, tenant_id, customer_phone, state, language,
 		       collected_data, clarification_round, ai_active, created_at, updated_at,
 		       state_locked_until
 		FROM conversations WHERE customer_phone = $1 ORDER BY created_at DESC
@@ -149,7 +149,7 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 		var dataJSON []byte
 		var stateLockedUntil sql.NullTime
 		if err := rows.Scan(
-			&conv.ID, &conv.WANumberID, &conv.CustomerPhone, &conv.State,
+			&conv.ID, &conv.WANumberID, &conv.TenantID, &conv.CustomerPhone, &conv.State,
 			&conv.Language, &dataJSON, &conv.ClarificationRound,
 			&conv.AIActive, &conv.CreatedAt, &conv.UpdatedAt,
 			&stateLockedUntil,
@@ -166,6 +166,16 @@ func (c *Client) ListConversationsByPhone(phone string) ([]*models.Conversation,
 		return nil, err
 	}
 	return result, nil
+}
+
+// LookupTenantIDByWANumber fetches tenant_id from whatsapp_numbers for the given
+// wa_number_id. This is a fallback for legacy conversation rows that were inserted
+// before the tenant_id column was populated. A hit here means a row was inserted
+// without tenant_id — log a Warn so the gap is visible in logs.
+func (c *Client) LookupTenantIDByWANumber(waNumberID string) (string, error) {
+	var tenantID string
+	err := c.DB.QueryRow(`SELECT tenant_id FROM whatsapp_numbers WHERE id = $1`, waNumberID).Scan(&tenantID)
+	return tenantID, err
 }
 
 // AutoResumeConv flips ai_active=true + clears lock for a single conversation.

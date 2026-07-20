@@ -114,6 +114,7 @@ type SpecsData struct {
 type Conversation struct {
 	ID                 string            `json:"id"`
 	WANumberID         string            `json:"wa_number_id"`
+	TenantID           string            `json:"tenant_id"`
 	CustomerPhone      string            `json:"customer_phone"`
 	State              ConversationState `json:"state"`
 	Language           string            `json:"language"`

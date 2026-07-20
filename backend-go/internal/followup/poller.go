@@ -58,12 +58,18 @@ func (p *Poller) poll(ctx context.Context) {
 		}
 
 		msg := buildFollowupMessage(conv, effectiveCount+1)
-		// tenantID: Calista uses wa_number_id as the per-tenant discriminator.
-		// Sprint 2+ will add a proper tenant_id column to conversations once the
-		// backend migrates to full multi-tenancy. For now, wa_number_id satisfies
-		// the NotifyCustomer signature and the quota lookup will skip gracefully
-		// if no tenant_subscriptions row exists for this wa_number_id.
-		tenantID := conv.WANumberID
+		tenantID := conv.TenantID
+		if tenantID == "" {
+			// Fallback: legacy row inserted before tenant_id column was populated.
+			// A hit here means a bug elsewhere — log so it's visible.
+			slog.Warn("[FOLLOWUP] conv.TenantID empty, falling back to wa_number lookup",
+				slog.String("conv_id", conv.ID), slog.String("wa_number_id", conv.WANumberID))
+			if t, lookupErr := p.db.LookupTenantIDByWANumber(conv.WANumberID); lookupErr == nil {
+				tenantID = t
+			} else {
+				slog.Error("[FOLLOWUP] LookupTenantIDByWANumber failed", slog.String("conv_id", conv.ID), slog.String("error", lookupErr.Error()))
+			}
+		}
 		if err := p.notifier.NotifyCustomer(ctx, tenantID, conv.ID, conv.CustomerPhone, conv.Language, msg); err != nil {
 			if errors.Is(err, notification.ErrQuotaExceeded) {
 				// Quota exhausted for this tenant today — skip silently. Not a

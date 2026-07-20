@@ -737,14 +737,19 @@ func main() {
 				slog.Error("[MAIN] GetMessageByID failed", slog.String("message_id", messageID), slog.Any("error", err))
 				return
 			}
-			var customerPhone, waNumberID string
+			var customerPhone, waNumID, tenantIDForConv string
 			// Task 11 gap-fix 2026-07-18: use ListenDB (direct connection).
 			// See note at main.go:484 above.
-			// waNumberID is used as tenantID surrogate — same approach as followup
-			// poller. Sprint 2+ will add a proper tenant_id column to conversations.
-			dbClient.ListenDB.QueryRow(`SELECT customer_phone, wa_number_id FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone, &waNumberID)
+			// F1 fix 2026-07-20: read tenant_id directly from conversations row;
+			// fall back to whatsapp_numbers lookup for any legacy NULL rows.
+			dbClient.ListenDB.QueryRow(`SELECT customer_phone, wa_number_id, COALESCE(tenant_id, '') FROM conversations WHERE id = $1`, conversationID).Scan(&customerPhone, &waNumID, &tenantIDForConv)
 			if customerPhone == "" || msg.Text == "" {
 				return
+			}
+			if tenantIDForConv == "" {
+				slog.Warn("[MAIN] admin_forward: conv tenant_id empty, falling back to wa_number lookup",
+					slog.String("conversation_id", conversationID), slog.String("wa_number_id", waNumID))
+				dbClient.ListenDB.QueryRow(`SELECT COALESCE(tenant_id, '') FROM whatsapp_numbers WHERE id = $1`, waNumID).Scan(&tenantIDForConv)
 			}
 			// B3 fix (Task 1.7): previously called sender.SendText directly,
 			// skipping InsertMessage — messages typed in Sales Inbox were never
@@ -756,7 +761,7 @@ func main() {
 				slog.ErrorContext(ctx, "[MAIN] admin_forward render failed", slog.Any("error", err))
 				return
 			}
-			if err := notifier.NotifyCustomer(ctx, waNumberID, conversationID, customerPhone, "id", rendered); err != nil {
+			if err := notifier.NotifyCustomer(ctx, tenantIDForConv, conversationID, customerPhone, "id", rendered); err != nil {
 				slog.ErrorContext(ctx, "[MAIN] admin_forward send failed", slog.Any("error", err))
 			}
 		},
