@@ -13,6 +13,7 @@ import (
 	"github.com/username/sinar-elektrik-backend/internal/engine"
 	"github.com/username/sinar-elektrik-backend/internal/feedback"
 	"github.com/username/sinar-elektrik-backend/internal/models"
+	"github.com/username/sinar-elektrik-backend/internal/notification"
 	"github.com/username/sinar-elektrik-backend/internal/notification/templates"
 	"github.com/username/sinar-elektrik-backend/internal/rules"
 	"github.com/username/sinar-elektrik-backend/internal/scheduler"
@@ -30,6 +31,7 @@ type Handler struct {
 	db                 *db.Client
 	machine            *engine.Machine
 	sender             *Sender
+	notifier           *notification.Notifier
 	scheduler          *scheduler.Scheduler
 	waNumberID         string
 	startedAt          time.Time
@@ -38,9 +40,9 @@ type Handler struct {
 	debounce           debouncer // may be nil when feature flag is off
 }
 
-func NewHandler(d *db.Client, m *engine.Machine, s *Sender, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce debouncer) *Handler {
+func NewHandler(d *db.Client, m *engine.Machine, s *Sender, n *notification.Notifier, sc *scheduler.Scheduler, waNumberID, supabaseURL, supabaseServiceKey string, debounce debouncer) *Handler {
 	return &Handler{
-		db: d, machine: m, sender: s, scheduler: sc,
+		db: d, machine: m, sender: s, notifier: n, scheduler: sc,
 		waNumberID: waNumberID, startedAt: time.Now(),
 		supabaseURL: supabaseURL, supabaseServiceKey: supabaseServiceKey,
 		debounce: debounce,
@@ -655,8 +657,11 @@ func (h *Handler) HandleApprovedOrder(ctx context.Context, orderID, conversation
 			dpMsg = fmt.Sprintf("💳 *Instruksi Pembayaran DP*\n\nHalo Bapak/Ibu %s,\norder Anda telah dikonfirmasi!\n\nSilakan transfer *DP sebesar Rp %.0f* ke rekening kami dan kirim foto bukti pembayarannya di sini. 🙏",
 				order.CustomerName, order.DPAmount)
 		}
-		if err := h.sender.SendText(ctx, order.CustomerPhone, dpMsg); err != nil {
-			slog.ErrorContext(ctx, "[HANDLER] DP instruction send error", slog.Any("error", err))
+		// Route through NotifyCustomer: quota enforcement + atomic audit trail.
+		// Log-and-continue on error so order status still advances (quota block
+		// must not strand the order in an unconfirmed state).
+		if err := h.notifier.NotifyCustomer(ctx, order.TenantID, conversationID, order.CustomerPhone, "id", dpMsg); err != nil {
+			slog.ErrorContext(ctx, "[HANDLER] OrderApproved NotifyCustomer error", slog.Any("error", err))
 		}
 		h.db.UpdateOrderStatus(orderID, string(models.OrderStatusWaitingDP))
 	} else {
@@ -713,8 +718,10 @@ func (h *Handler) HandlePaymentVerified(ctx context.Context, orderID, conversati
 		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: template build error", slog.Any("error", buildErr))
 		msg = "✅ *Pembayaran Dikonfirmasi!*\n\nTerima kasih Bapak/Ibu " + order.CustomerName + ", pembayaran Anda telah kami verifikasi.\nPesanan Anda sedang diproses. Terima kasih! 😊"
 	}
-	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: SendText error", slog.Any("error", err))
+	// Route through NotifyCustomer: quota enforcement + atomic customer-message audit.
+	// Log-and-continue so downstream stock deduction and state update still proceed.
+	if err := h.notifier.NotifyCustomer(ctx, order.TenantID, conversationID, order.CustomerPhone, "id", msg); err != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentVerified: NotifyCustomer error", slog.Any("error", err))
 	}
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "PAYMENT_VERIFIED: confirmed by admin")
@@ -774,8 +781,10 @@ func (h *Handler) HandlePaymentRejected(ctx context.Context, orderID, conversati
 		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: template build error", slog.Any("error", buildErr))
 		msg = "⚠️ *Konfirmasi Pembayaran*\n\nKami belum dapat mengkonfirmasi pembayaran Bapak/Ibu " + order.CustomerName + ".\nMohon kirim ulang bukti transfer yang valid.\nTerima kasih. 🙏"
 	}
-	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: SendText error", slog.Any("error", err))
+	// Route through NotifyCustomer: quota enforcement + atomic customer-message audit.
+	// Log-and-continue so RejectPayment still runs even on quota block.
+	if err := h.notifier.NotifyCustomer(ctx, order.TenantID, conversationID, order.CustomerPhone, "id", msg); err != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandlePaymentRejected: NotifyCustomer error", slog.Any("error", err))
 	}
 
 	h.db.InsertMessage(conversationID, models.SenderSystem, "PAYMENT_REJECTED: rejected by admin")
@@ -815,8 +824,10 @@ func (h *Handler) HandleDPVerified(ctx context.Context, orderID, conversationID 
 			order.CustomerName, order.DPAmount, remaining)
 	}
 
-	if err := h.sender.SendText(ctx, order.CustomerPhone, msg); err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: SendText error", slog.Any("error", err))
+	// Route through NotifyCustomer: quota enforcement + atomic customer-message audit.
+	// Log-and-continue so the system InsertMessage still records the event on error.
+	if err := h.notifier.NotifyCustomer(ctx, order.TenantID, conversationID, order.CustomerPhone, "id", msg); err != nil {
+		slog.ErrorContext(ctx, "[HANDLER] HandleDPVerified: NotifyCustomer error", slog.Any("error", err))
 	}
 	h.db.InsertMessage(conversationID, models.SenderSystem, "DP_VERIFIED: customer notified to send full payment")
 	// Note: conversation stays in BOOKED state intentionally.

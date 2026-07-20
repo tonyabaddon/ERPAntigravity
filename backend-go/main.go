@@ -620,9 +620,9 @@ func main() {
 	// Classic Go interface-vs-typed-nil pitfall; explicit nil at the call
 	// site is the cleanest fix.
 	if debounceHandler != nil {
-		waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, debounceHandler)
+		waHandler = whatsapp.NewHandler(dbClient, machine, sender, notifier, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, debounceHandler)
 	} else {
-		waHandler = whatsapp.NewHandler(dbClient, machine, sender, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, nil)
+		waHandler = whatsapp.NewHandler(dbClient, machine, sender, notifier, sched, waNumberID, cfg.SupabaseURL, cfg.SupabaseServiceKey, nil)
 	}
 	waClient.AddEventHandler(waHandler.Handle)
 	// P2-E: Async job worker — polls t_jobs every 5s, dispatches to handlers.
