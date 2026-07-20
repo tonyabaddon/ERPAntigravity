@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase, conversationService } from '../../lib/supabaseClient';
 import { categoryCounts } from '../../lib/salesInboxCategorize';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface SalesInboxBadgeProps {
   size?: 'sm' | 'md';
@@ -17,6 +18,8 @@ const SIZES = {
 } as const;
 
 export default function SalesInboxBadge({ size = 'md', className }: SalesInboxBadgeProps) {
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   const [count, setCount] = useState<number>(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -38,15 +41,19 @@ export default function SalesInboxBadge({ size = 'md', className }: SalesInboxBa
       .catch(() => {});
 
     if (!supabase) return;
+    if (!tenantId) return;
+    // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+    // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+    // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
     const ch = supabase
       .channel('sales-inbox-badge')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` }, refresh)
       .subscribe();
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase!.removeChannel(ch);
     };
-  }, []);
+  }, [tenantId]);
 
   if (count === 0) return null;
 

@@ -7,6 +7,7 @@
 import { useEffect, useId, useState } from 'react';
 import type { Warehouse } from '../types';
 import { warehousesService, supabase } from '../lib/supabaseClient';
+import { useTenant } from '../contexts/TenantContext';
 
 interface UseWarehousesResult {
   warehouses: Warehouse[];
@@ -17,6 +18,8 @@ interface UseWarehousesResult {
 
 export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehousesResult {
   const { activeOnly = true } = opts;
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +70,16 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
     if (!supabase) {
       return () => { mounted = false; };
     }
+    if (!tenantId) {
+      return () => { mounted = false; };
+    }
+    // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+    // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+    // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
     const ch = supabase
       .channel(`warehouses-realtime-${instanceId}`)
       .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'warehouses' },
+          { event: '*', schema: 'public', table: 'warehouses', filter: `tenant_id=eq.${tenantId}` },
           () => { void load(); })
       .subscribe();
     return () => {
@@ -78,7 +87,7 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
       supabase!.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeOnly]);
+  }, [activeOnly, tenantId]);
 
   return { warehouses, loading, error, refresh };
 }

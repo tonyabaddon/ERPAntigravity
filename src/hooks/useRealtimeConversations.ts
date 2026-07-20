@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { conversationService, orderService } from '../lib/supabaseClient';
 import type { DbConversation, DbMessage, DbOrder } from '../types';
+import { useTenant } from '../contexts/TenantContext';
 
 export interface ConversationWithMessages extends DbConversation {
   messages: DbMessage[];
 }
 
 export function useRealtimeConversations() {
+  const tenant = useTenant();
+  // Extract tenantId once at hook entry; used consistently across all 5 subscribers.
+  const tenantId = tenant?.tenant_id;
   const [conversations, setConversations] = useState<ConversationWithMessages[]>([]);
   const [orders, setOrders] = useState<DbOrder[]>([]);
   const [paymentUploadedOrders, setPaymentUploadedOrders] = useState<DbOrder[]>([]);
@@ -17,6 +21,7 @@ export function useRealtimeConversations() {
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
+    if (!tenantId) { setLoading(false); return; }
 
     let mounted = true;
 
@@ -45,10 +50,15 @@ export function useRealtimeConversations() {
       .catch(console.error)
       .finally(() => { if (mounted) setLoading(false); });
 
+    // tenant_id filter is REQUIRED on all 5 subscribers below. Realtime bandwidth
+    // is billed per-connection; unfiltered subscriptions receive all-tenant events +
+    // RLS-drop client-side. Server-side filter cuts inbound bytes and enforces
+    // isolation belt-and-suspenders.
+
     // Realtime: messages INSERT
     const msgSub = supabase
       .channel('messages-insert')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           const newMsg = payload.new as DbMessage;
           setConversations(prev =>
@@ -64,7 +74,7 @@ export function useRealtimeConversations() {
     // Realtime: conversations UPDATE (state changes)
     const convSub = supabase
       .channel('conversations-update')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations' },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           const updated = payload.new as DbConversation;
           setConversations(prev =>
@@ -80,7 +90,7 @@ export function useRealtimeConversations() {
     // Realtime: conversations INSERT (new conversation)
     const newConvSub = supabase
       .channel('conversations-insert')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations' },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `tenant_id=eq.${tenantId}` },
         async (payload) => {
           const newConv = payload.new as DbConversation;
           const msgs = await conversationService.fetchMessages(newConv.id);
@@ -92,7 +102,7 @@ export function useRealtimeConversations() {
     // Realtime: orders INSERT/UPDATE
     const orderSub = supabase
       .channel('orders-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           const newOrder = payload.new as DbOrder;
           if (newOrder.status === 'PENDING_ADMIN_CONFIRMATION') {
@@ -101,7 +111,7 @@ export function useRealtimeConversations() {
             setPaymentUploadedOrders(prev => [...prev, newOrder]);
           }
         })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           const updatedOrder = payload.new as DbOrder;
           // Manage pending-approval list
@@ -130,7 +140,7 @@ export function useRealtimeConversations() {
       supabase.removeChannel(newConvSub);
       supabase.removeChannel(orderSub);
     };
-  }, []);
+  }, [tenantId]);
 
   const sendAdminMessage = async (conversationId: string, text: string) => {
     await conversationService.insertAdminMessage(conversationId, text);

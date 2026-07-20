@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchOrdersWithArchive, subscribeOrders } from '../../lib/sales/queries';
+import { useTenant } from '../../contexts/TenantContext';
 import type { Order, FunnelStage } from '../../lib/sales/types';
 import { filterOrdersByTypeTab, subStageBelongsToTab, type TypeTab } from '../../lib/sales/typeTabConfig';
 import { getSubStagesForStage, isUrgentSubStage } from '../../lib/sales/stageMapping';
@@ -58,6 +59,8 @@ interface DaftarPesananScreenProps {
 }
 
 export function DaftarPesananScreen({ currentUserRole: _currentUserRole, currentUserId, currentUserName }: DaftarPesananScreenProps = {}) {
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
   const [stage, setStage] = useState<FunnelStage>(2);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -106,11 +109,12 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       console.error('fetchBankAccounts failed', err);
       setBanks(null);
     });
-    const sub = subscribeOrders(() => {
+    if (!tenantId) return;
+    const sub = subscribeOrders(tenantId, () => {
       fetchOrdersWithArchive().then(setOrders).catch(err => console.error('refresh fetch failed', err));
     });
     return () => { sub.unsubscribe?.(); };
-  }, []);
+  }, [tenantId]);
 
   // Refresh reject-reason map whenever orders change. Filter to CP/RP at 3f
   // (the only sub-stage that can carry a recent rakit_lock_rejected) so we

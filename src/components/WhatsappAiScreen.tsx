@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { WhatsappAiNumber, StockItem, ActivePage } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import { useTenant } from '../contexts/TenantContext';
 import { getBackendUrl } from '../lib/backendUrl';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 
@@ -35,6 +36,8 @@ interface WhatsappAiScreenProps {
 }
 
 export default function WhatsappAiScreen({ stockList: _stockList, showToast, onNavigate }: WhatsappAiScreenProps) {
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   // State for WhatsApp Numbers — loaded from Supabase
   const [waNumbers, setWaNumbers] = useState<WhatsappAiNumber[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +76,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
   // Load numbers from Supabase and subscribe to Realtime updates
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
+    if (!tenantId) { setLoading(false); return; }
 
     supabase.from('whatsapp_numbers').select('*').order('created_at').then(({ data }) => {
       if (data) setWaNumbers(data.map(row => ({
@@ -87,9 +91,12 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       setLoading(false);
     });
 
+    // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+    // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+    // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
     const sub = supabase
       .channel('wa-numbers-update')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'whatsapp_numbers' },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'whatsapp_numbers', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           const row = payload.new;
           setWaNumbers(prev => prev.map(n => n.id === row.id ? {
@@ -102,7 +109,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       .subscribe();
 
     return () => { supabase?.removeChannel(sub); };
-  }, []);
+  }, [tenantId]);
 
   // Poll /api/wa/qr while not connected
   const fetchQR = useCallback(async () => {

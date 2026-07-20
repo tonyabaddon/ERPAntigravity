@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { fetchOverdueCount } from '../../lib/piutangService';
+import { useTenant } from '../../contexts/TenantContext';
 
 interface PiutangBadgeProps {
   size?: 'sm' | 'md';
@@ -16,6 +17,8 @@ const SIZES = {
 } as const;
 
 export default function PiutangBadge({ size = 'md', className }: PiutangBadgeProps) {
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   const [count, setCount] = useState<number>(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -29,15 +32,19 @@ export default function PiutangBadge({ size = 'md', className }: PiutangBadgePro
   useEffect(() => {
     fetchOverdueCount().then(setCount).catch(() => {});
     if (!supabase) return;
+    if (!tenantId) return;
+    // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+    // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+    // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
     const ch = supabase
       .channel('piutang-badge')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` }, refresh)
       .subscribe();
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase!.removeChannel(ch);
     };
-  }, []);
+  }, [tenantId]);
 
   if (count === 0) return null;
 

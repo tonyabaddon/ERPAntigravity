@@ -9,6 +9,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import type { SalesChannel } from '../types';
 import { CHANNEL_GROUPS, CHANNEL_LOCKED, type ChannelGroup } from '../lib/salesChannels';
+import { useTenant } from './TenantContext';
 
 interface ChannelSetting {
   isVisible: boolean;
@@ -37,6 +38,10 @@ const SalesChannelsCtx = createContext<SalesChannelsCtxValue | null>(null);
 export function SalesChannelsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Record<SalesChannel, ChannelSetting>>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  // useTenant() returns null when SalesChannelsProvider is mounted outside TenantProvider
+  // (legacy non-tenant path in App.tsx). Guard the filter to avoid undefined filter string.
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
 
   // Load initial settings
   useEffect(() => {
@@ -73,8 +78,14 @@ export function SalesChannelsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Subscribe realtime — suffix UUID per spec to avoid multi-tab topic collision
+  // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+  // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+  // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
+    // If tenantId is unavailable (legacy non-tenant mount), skip filtered subscription.
+    // RLS on sales_channel_settings still enforces isolation; this just skips realtime.
+    if (!tenantId) return;
 
     const topic = `sales_channel_settings:${crypto.randomUUID()}`;
     const channel = supabase
@@ -83,6 +94,7 @@ export function SalesChannelsProvider({ children }: { children: ReactNode }) {
         event: '*',
         schema: 'public',
         table: 'sales_channel_settings',
+        filter: `tenant_id=eq.${tenantId}`,
       }, payload => {
         const row = (payload.new ?? payload.old) as { channel_code?: string; is_visible?: boolean; sort_order?: number };
         if (!row?.channel_code) return;
@@ -99,7 +111,7 @@ export function SalesChannelsProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase!.removeChannel(channel);
     };
-  }, []);
+  }, [tenantId]);
 
   const toggleVisibility = useCallback(async (code: SalesChannel): Promise<void> => {
     if (CHANNEL_LOCKED.has(code)) {

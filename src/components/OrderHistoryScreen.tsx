@@ -6,6 +6,7 @@ import { orderService, salesEntriesService, isSupabaseConfigured, supabase } fro
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 import { CHANNEL_GROUPS, CHANNEL_VISUAL, getChannelDef } from '../lib/salesChannels';
 import { useSalesChannels } from '../contexts/SalesChannelsContext';
+import { useTenant } from '../contexts/TenantContext';
 import InvoiceModal from './InvoiceModal';
 import { StorageLink } from './ui/StorageLink';
 import { StorageImage } from './ui/StorageImage';
@@ -212,6 +213,8 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
   const [specificChannel, setSpecificChannel] = useState<SalesChannel | ''>('');
   const { settings } = useSalesChannels();
+  const tenant = useTenant();
+  const tenantId = tenant?.tenant_id;
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [shippingFees, setShippingFees] = useState<Record<string, string>>({});
@@ -351,13 +354,17 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       .finally(() => { if (!cancelled) setLoading(false); });
 
     if (!supabase) return () => { cancelled = true; };
+    if (!tenantId) return () => { cancelled = true; };
+    // tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+    // unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+    // Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
     const sub = supabase
       .channel('order-history-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           setOrders(prev => [payload.new as DbOrder, ...prev]);
         })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' },
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           setOrders(prev => prev.map(o => o.id === (payload.new as DbOrder).id ? payload.new as DbOrder : o));
         })
@@ -366,7 +373,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       cancelled = true;
       supabase.removeChannel(sub);
     };
-  }, []);
+  }, [tenantId]);
 
   const entries = useMemo(() => mergeSalesEntries(orders, kasir), [orders, kasir]);
 

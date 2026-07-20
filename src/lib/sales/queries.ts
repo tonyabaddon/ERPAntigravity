@@ -49,10 +49,15 @@ export async function fetchDashboardStats(): Promise<SalesDashboardStats> {
   return data as SalesDashboardStats;
 }
 
-export function subscribeOrders(callback: (order: Order) => void) {
+/**
+ * tenant_id filter is REQUIRED. Realtime bandwidth is billed per-connection;
+ * unfiltered subscriptions receive all-tenant events + RLS-drop client-side.
+ * Server-side filter cuts inbound bytes and enforces isolation belt-and-suspenders.
+ */
+export function subscribeOrders(tenantId: string, callback: (order: Order) => void) {
   return supabase
     .channel('kasir-orders-funnel')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'kasir_transactions' }, (payload) => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'kasir_transactions', filter: `tenant_id=eq.${tenantId}` }, (payload) => {
       callback(rowToOrder(payload.new));
     })
     .subscribe();
