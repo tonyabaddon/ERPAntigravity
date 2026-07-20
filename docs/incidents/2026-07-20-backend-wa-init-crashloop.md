@@ -76,6 +76,43 @@ The empty slog error still needs to be fixed before we ever want to redeploy on 
 4. Verify direct-pool slot usage per memory `supabase_split_pool`. If exhausted, the WA session ping in `client.go:58` (`db.Ping()`) can time out.
 5. Post-mortem: was there a Supabase infra event at ~14:02 UTC 2026-07-20 that would explain simultaneous WA init failures across staging + prod?
 
+## Real error captured 2026-07-20 T ~15:42 UTC (post-slog-fix)
+
+After committing `19ea22d` (`slog.Any(err)` → `slog.String("error", err.Error())`) and deploying a fresh revision:
+
+```
+whatsapp: db ping: pq: remaining connection slots are reserved for roles with the SUPERUSER attribute
+```
+
+**Root cause: Supabase direct-pool (:5432) connection exhaustion.**
+
+- `max_connections = 60`, `superuser_reserved_connections = 3` → 57 usable slots
+- Observed 48+ zombie `idle` connections with empty `application_name` (Go backend / crashed Cloud Run instances that never closed connections)
+- Prod backend (cf73c29b) + Supavisor + postgres_exporter + postgrest + pg_net + mgmt-api = ~15 baseline slots
+- Every cold-start attempt of staging backend briefly grabs ~10 slots (query pool + listener + WA client)
+- Multiple parallel retries by Cloud Run → 5 concurrent attempts × 10 = 50 → total 65+ requested vs 57 available → exhaustion
+
+Attempted mitigations tried autonomously:
+1. `pg_terminate_backend(pid)` on idle connections — killed 48 in first pass, but Cloud Run retries recreate them within seconds
+2. Traffic-shift to older revisions — all cold-start-fail because they all try to reconnect
+3. `gcloud run deploy` with slog-fixed image — Cloud Run reuses same revision name (00097) marked broken, refuses to promote
+
+## Recommended fix path (requires founder decision)
+
+**Option 1 — Upgrade Supabase to next tier (paid, requires memory `cost_upgrade_approval`).**
+Free tier caps at max_connections=60. Pro tier gets 400+. Would eliminate the exhaustion entirely + enable safer autoscaling of backend Go instances.
+
+**Option 2 — Refactor WA client to use txn pooler (:6543) instead of direct pool.**
+Current comment in `backend-go/main.go:521-523` says "Whatsmeow sqlstore does not use db.Prepare(), but session data must be durable — direct pool avoids any pooler-side risk." Empirical: whatsmeow's sqlstore uses standard `sql.DB` operations (INSERT, SELECT, UPDATE); no LISTEN/NOTIFY, no advisory locks. Txn pooler should work. Verify with a manual test before shipping.
+
+**Option 3 — Cap Cloud Run staging + prod max-instances tightly + accept slower cold-start.**
+`--max-instances=1` on both staging + prod services would cap concurrent connection load at ~15 baseline + 10 backend = 25 slots. Trade-off: single-instance bottleneck for prod (peak WA message load).
+
+**Option 4 — Bypass the FE Cloud Build gate for FE-only changes.**
+Comment out Step 5's staging BE `/live` curl in `cloudbuild.frontend.yaml`. Doesn't fix root cause but unblocks Wave 1 FE 2H (dbc848f) + Wave 2. Real WA bot on cf73c29b still serving customers. Reintroduce the gate after Option 1/2/3 is done.
+
+**Recommended combo:** Option 4 immediately (unblock Wave 2), then Option 2 (surgical, no cost) or Option 1 (structural, cost-adjacent). Do NOT try Option 3 — it would harm prod WA throughput.
+
 ## Prevention
 
 - **New CLAUDE.md rule candidate:** after any commit whose Cloud Build shows backend FAILURE, before proceeding with more commits, controller MUST call `curl <PROD_BACKEND>/api/v1/live` — if 500, escalate as P0 incident. Don't accumulate more commits on top of a broken prod backend.
