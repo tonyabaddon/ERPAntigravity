@@ -70,6 +70,7 @@ export const ACTIVE_PAGES: ReadonlySet<ActivePage> = new Set<ActivePage>([
   'notification-templates',
   'notification-cron',
   'customer-feedback',
+  'notification-prefs',
 ]);
 
 export interface RouteState {
