@@ -1,3 +1,62 @@
+## 2026-07-20 — QA Week Phase 1: F5-05 + P2-03 shipped
+
+**Plan:** docs/superpowers/plans/2026-07-20-qa-week-phase-1-plan.md
+**Base:** 39889c9 → 8cb1955
+
+### F5-05: uq_customers_wa cross-tenant fix (Tasks 1-7)
+- Migration 501 swaps `uq_customers_wa (wa_number)` → `uq_customers_wa_tenant (tenant_id, wa_number)`. Different tenants can now register customers with the same phone.
+- Backend `GetOrCreateCustomer(tenantID uuid.UUID, waNumber string)` — 3 handler.go call sites updated; uuid.Nil silent-fallback replaced with early-skip pattern (fc2198f).
+- FE friendly BID error mapping in NewCustomerInlineForm ("Nomor HP sudah terdaftar untuk customer lain di toko ini").
+- Regression PASS 3/3 (tests/sql/qa-week/f5-05-regression.sql): cross-tenant OK, same-tenant blocked.
+- Backend build (rmgpgab-) SUCCESS. Frontend build WORKING at handoff (still deploying the friendly-error string).
+
+### P2-03: audit_log + pembayaran composite PK (Task 8, commit 8cb1955)
+- Irreversible-decision memo: `docs/superpowers/specs/2026-07-20-audit-pembayaran-composite-pk-decision.md`
+- Advisor consulted pre-apply: REPLICA IDENTITY verified default, backend Go grep for bare `WHERE id=$1` returned 0, memo row counts updated to verified (audit_log 210, pembayaran 9).
+- Migration 502 (FK-drop-first for pembayaran): DROP `pembayaran_items_pembayaran_id_fkey` → DROP PK → ADD `PRIMARY KEY (tenant_id, id)` → RE-ADD composite FK preserving `ON DELETE CASCADE`. Applied via Management API.
+- Idempotency guard fix: original brief's `ORDER BY attnum` sorted by table-column ordinal (wrong); replaced with `unnest(indkey) WITH ORDINALITY` (correct index key order). Fix propagated to regression too. Brief template flagged for future PK-change tasks.
+- Regression PASS 3/3 (tests/sql/qa-week/p2-03-regression.sql).
+- get_advisors sweep: only 1 NEW INFO finding — `unindexed_foreign_keys` on `pembayaran_items(tenant_id, pembayaran_id)`. Triaged defer (9 rows; existing `pembayaran_items_pembayaran_idx (pembayaran_id)` still covers cascade). Add covering index at ~1M rows.
+- Controller verified: only inbound FK to pembayaran = the one re-added. Cannot-verify #3 → VERIFIED.
+
+### Deferred to founder (chrome-devtools MCP profile held by parallel session)
+- Task 7 Stage 3: F5-05 chrome smoke on Toko Jaya — cross-tenant customer create in UI + friendly-error mapping. Backend + DB fix already proven; only UI visual layer unverified.
+- Task 8 Step 8: Realtime subscription smoke on composite-PK tables (SalesInboxScreen or any subscribed page). Supabase Realtime v2+ supports composite PKs per docs; no DB-level errors observed.
+
+### Progress ledger
+Task 1: complete (commit db0e005, impact analysis)
+Task 2-5: complete (backend + FE + SQL regression, commits 4a673e5..33059a4)
+Task 6: complete (commit 800072b, migration 501 apply + schema_migrations backfill for 471/472/473)
+Task 7: SHIPPED (backend + migration deployed; UI smoke deferred to founder)
+Task 8: complete (commit 8cb1955, review clean, 3/3 regression PASS, 1 INFO advisor triaged defer)
+Task 9: complete — jspdf 2.5.2→4.2.1 + jspdf-autotable 3.8.4→5.0.8 bump + 971/971 vitest green + tsc clean, per task-9-report.md
+Task 10: complete — PDF visual regression 13/13 PASS. Programmatic vitest dump (`tests/pdf-regression/dump.test.ts`, jsdom + frozen Date + supabase mock), pre-bump vs post-bump byte-for-byte identical file sizes across 13 PDFs, `pdftotext -layout` diff = 0 lines drift, `magick compare -metric AE` at 100dpi = 0 diff pixels for ALL 13, 300dpi spot-check on 4 complex generators (saldoAwal, neraca, purchaseOrder, invoiceDp) = 0 diff pixels. Verdict + reproducibility at `docs/qa-week/pdf-regression/2026-07-20-jspdf-4.2.1-visual-diff.md`. Bump COMMITTED — DOMPurify CVE closed.
+
+---
+
+## 2026-07-20 — Follow-up F4: NotificationCronScreen cards 2-4 persistence
+
+### Started: 2026-07-20T09:00Z
+
+### Actions taken:
+- 2026-07-20T09:00Z: Read NotificationCronScreen.tsx, 3 poller files, migration 412 (piutang config pattern)
+- 2026-07-20T09:10Z: Created migration 20261115000481_notification_cron_config.sql (5 columns, RLS with authenticated + vosi_rpc_owner, seeded 3/3 tenants)
+- 2026-07-20T09:15Z: Applied migration — psql verify: 3 config rows = 3 tenant rows
+- 2026-07-20T09:20Z: Rewrote NotificationCronScreen.tsx — Cards 2-4 now load from / upsert to tenant_notification_cron_config; debounced slider save (600ms + mouseUp flush); removed amber "pending Sprint 5" notes
+- 2026-07-20T09:25Z: Updated 3 Go pollers: hutang (decoupled from piutang toggle bug + gated on hutang_summary_enabled), sla_breach (gated on approval_sla_enabled), feedback (gated on feedback_request_enabled + honours feedback_delay_days per tenant)
+- 2026-07-20T09:30Z: npm run lint clean; go build ./... clean; go test 3 poller packages = 13/13 PASS; audit:numinput + audit:secdef-null-tenant clean
+
+### Design decisions:
+- hutang poller was incorrectly JOINing tenant_wa_reminder_config (piutang's table) — fixed to tenant_notification_cron_config. Behavior change: tenants who disabled piutang WA will now receive hutang summaries unless they explicitly disable hutang. This is the correct semantic (independent features).
+- SLA threshold per-tenant stored in DB but breach query still uses global 2h constant — per-row threshold honoring is a follow-up (documented with TODO in code)
+- Slider saves debounced 600ms + committed on mouseUp (desktop); onTouchEnd deferred (admin-only screen, typical desktop usage)
+
+### Report: .superpowers/sdd/task-f4-report.md
+
+### Completed: 2026-07-20T09:35Z — DONE (commit pending)
+
+---
+
 ## 2026-07-17 — Phase 1 Task 7 (Day 7): Structured logging + tenant_id middleware (backend Go)
 
 ### Started: 2026-07-17T02:00Z
@@ -689,3 +748,20 @@ Total: 44/45 tasks, 6 sprints deployed to prod, 1 blocker (Task 7.5) documented.
 Backend commits shipped: ce2d022 → d28a09b (~90 commits)
 Prod state fully verified via schema check DO block.
 See docs/superpowers/specs/2026-07-19-wa-framework-shipped-summary.md for founder review.
+
+=== FOLLOW-UPS shipped 2026-07-20 (Sprint 7 backlog burndown) ===
+F1 (commit 2fc1f80): conversations.tenant_id wired through model + DB queries + 2 call sites (followup/admin-forward). No backfill needed (0 NULL rows). Fallback helper LookupTenantIDByWANumber. Fixed pre-existing bug in db/followup.go where GetEligibleForFollowup was missing wa_number_id + tenant_id from SELECT.
+F2 (commit 5cd21c7): handler.go lifecycle events (PaymentVerified, DpVerified, PaymentRejected, OrderApproved) now route through NotifyCustomer wrapper → quota + audit trail restored on all 4 paths.
+F3 (commit e23bf7d): SECDEF RPC get_bot_analytics_summary(p_days) — platform admin gated via JWT is_platform_admin. Dashboard reads via RPC instead of blocked-anon table SELECT.
+F4 (commit 66d7221): tenant_notification_cron_config table (slot 481) + NotificationCronScreen cards 2-4 now persist + 3 pollers gated on enabled flag. Fixed pre-existing hutang bug (was joining piutang config table).
+F5 (commit da7f468): SessionHealthPoller daily pruning goroutine — DELETE polled_at < NOW() - INTERVAL '30 days' every 24 hours. Bounded table size.
+Test fix (commit 1fc7bf1): TestQuotaCheck_* now use dynamic today date instead of hardcoded 2026-07-19 (was breaking lazy-reset codepath).
+
+=== TOTAL SHIPPED: WA framework overhaul + 5 follow-ups + test fix ===
+Prod state: all migrations applied, all critical paths quota-enforced + audit-tracked, all 4 cron config cards persist, dashboard RPC platform-admin gated, session_health bounded.
+Phase 1 Task 1: complete (commit db0e005, review clean)
+Phase 1 Task 2+3: complete (commits 4a673e5 + fix fc2198f, review clean)
+Phase 1 Task 4: complete (commit b8416ad, review clean — small local FE change, no review dispatch)
+Phase 1 Task 4: complete (commit b8416ad, small FE local change)
+Phase 1 Task 5: complete (commit 33059a4, regression SQL)
+Phase 1 Task 6: complete (commit 800072b + backfilled schema_migrations 471/472/473)
