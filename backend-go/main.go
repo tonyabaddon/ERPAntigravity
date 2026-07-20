@@ -518,10 +518,16 @@ func main() {
 	machine := engine.NewMachine(llmClient)
 
 	// WhatsApp client — session stored in Supabase PostgreSQL (persists across redeploys).
-	// Routes to direct connection (listenConn) so WA session writes are session-stable.
-	// Whatsmeow sqlstore does not use db.Prepare(), but session data (identity keys,
-	// prekeys) must be durable — direct pool avoids any pooler-side risk.
-	waClient, err = whatsapp.NewClient(ctx, listenConn)
+	// 2026-07-20: MIGRATED from direct pool (listenConn :5432, ~57 usable slots)
+	// to query pool (cfg.SupabaseDBConn :6543 txn pooler, 200+ multiplex).
+	// Rationale: direct-pool exhaustion during Cloud Run cold-start storms was
+	// causing "[MAIN] WA client init failed: whatsapp: db ping: pq: remaining
+	// connection slots are reserved for roles with the SUPERUSER attribute"
+	// (see docs/incidents/2026-07-20-backend-wa-init-crashloop.md).
+	// Whatsmeow's sqlstore uses standard SQL (INSERT/SELECT/UPDATE) — no
+	// LISTEN/NOTIFY, no server-side prepared statements — so txn pooler works.
+	// Direct pool remains reserved for pq.Listener (dbClient LISTEN/NOTIFY).
+	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
 	if err != nil {
 		slog.Error("[MAIN] WA client init failed", slog.String("error", err.Error()))
 		os.Exit(1)
