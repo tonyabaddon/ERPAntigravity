@@ -104,7 +104,7 @@ Memory `guard_expiry_write_broken_predicate` states "~100 policies". After this 
 
 ## Commit SHA
 
-(populated after step 9)
+`78a02cd` — pushed to origin/main `82f0a03..78a02cd`
 
 ## Concerns / Open Items
 
