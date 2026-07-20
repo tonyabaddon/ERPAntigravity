@@ -20,12 +20,8 @@ import (
 const slaBreach15Min = 15 * time.Minute
 
 // slaThresholdDefault is the fallback threshold when a tenant has no config row.
-// Individual tenants can override via tenant_notification_cron_config.approval_sla_threshold_minutes.
-// TODO(F4): the per-tenant threshold is stored in the DB but not yet plumbed into
-// the breach query — all tenants currently use the per-row created_at vs now() check
-// against their own configured value. Full per-tenant threshold honoring is a
-// follow-up: the breach query must GROUP BY tenant + join config to apply each
-// tenant's own threshold rather than a single global constant.
+// Individual tenants override via tenant_notification_cron_config.approval_sla_threshold_minutes;
+// F7 wired that per-row via make_interval + COALESCE in the breach query below.
 const slaThresholdDefault = 2 * time.Hour
 
 // SLABreachPoller wakes every 15 minutes and sends a critical alert (bypasses
@@ -75,22 +71,20 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 	log := slog.Default().With("feature", "approval_sla_breach")
 	log.InfoContext(ctx, "15-min tick — scanning for SLA-breached approvals")
 
-	// Joins tenant_notification_cron_config to skip tenants that have disabled
-	// SLA alerts. COALESCE(cfg.approval_sla_enabled, TRUE) = fail-open for new
-	// tenants without a config row.
-	// Note: approval_sla_threshold_minutes is stored per-tenant but not yet used
-	// per-row — all tenants are currently checked against slaThresholdDefault (2h).
-	// Per-tenant threshold honoring is a follow-up (see TODO above).
+	// F7: per-tenant threshold now honored. LEFT JOIN cron_config; each row's
+	// breach cutoff is `requested_at + COALESCE(cfg.approval_sla_threshold_minutes, default_min) minutes`.
+	// COALESCE(cfg.approval_sla_enabled, TRUE) = fail-open for new tenants without config row.
+	defaultMinutes := int(slaThresholdDefault.Minutes())
 	rows, err := p.db.QueryContext(ctx, `
 		SELECT ar.tenant_id, ar.id, ar.request_type, ar.requested_at
 		FROM public.approval_requests ar
 		LEFT JOIN public.tenant_notification_cron_config cfg ON cfg.tenant_id = ar.tenant_id
 		WHERE ar.status = 'pending'
-		  AND ar.requested_at < NOW() - $1::INTERVAL
+		  AND ar.requested_at < NOW() - (make_interval(mins => COALESCE(cfg.approval_sla_threshold_minutes, $1)))
 		  AND ar.sla_breach_notified_at IS NULL
 		  AND COALESCE(cfg.approval_sla_enabled, TRUE) = TRUE
 		ORDER BY ar.tenant_id, ar.requested_at ASC
-	`, fmt.Sprintf("%d seconds", int(slaThresholdDefault.Seconds())))
+	`, defaultMinutes)
 	if err != nil {
 		log.ErrorContext(ctx, "breach query failed", slog.Any("error", err))
 		return
