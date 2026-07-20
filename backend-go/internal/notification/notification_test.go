@@ -42,10 +42,12 @@ func TestQuotaCheck_Passes_WhenUnderLimit(t *testing.T) {
 	defer db.Close()
 
 	tenantID := "11111111-1111-1111-1111-111111111111"
+	// reset_date=today so lazy-reset does NOT zero the counter; used stays at 50 → UPDATE with 51
+	today := time.Now().UTC().Truncate(24 * time.Hour)
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT wa_daily_quota_used, wa_daily_quota_limit, wa_daily_quota_reset_date FROM tenant_subscriptions").
 		WithArgs(tenantID).
-		WillReturnRows(sqlmock.NewRows([]string{"used", "limit", "reset_date"}).AddRow(50, 300, time.Date(2026, 7, 19, 0, 0, 0, 0, time.UTC)))
+		WillReturnRows(sqlmock.NewRows([]string{"used", "limit", "reset_date"}).AddRow(50, 300, today))
 	mock.ExpectExec("UPDATE tenant_subscriptions").
 		WithArgs(51, tenantID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
@@ -63,10 +65,12 @@ func TestQuotaCheck_Fails_WhenOverLimit(t *testing.T) {
 	defer db.Close()
 
 	tenantID := "11111111-1111-1111-1111-111111111111"
+	// reset_date=today so lazy-reset does NOT zero the counter; used stays at 300 → over limit
+	today := time.Now().UTC().Truncate(24 * time.Hour)
 	mock.ExpectBegin()
 	mock.ExpectQuery("SELECT wa_daily_quota_used, wa_daily_quota_limit, wa_daily_quota_reset_date FROM tenant_subscriptions").
 		WithArgs(tenantID).
-		WillReturnRows(sqlmock.NewRows([]string{"used", "limit", "reset_date"}).AddRow(300, 300, time.Date(2026, 7, 19, 0, 0, 0, 0, time.UTC)))
+		WillReturnRows(sqlmock.NewRows([]string{"used", "limit", "reset_date"}).AddRow(300, 300, today))
 	mock.ExpectRollback()
 
 	q := &Quota{db: db}
