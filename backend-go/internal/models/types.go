@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ConversationState string
 
@@ -193,10 +197,11 @@ type StockItem struct {
 }
 
 type Customer struct {
-	ID        string    `json:"id"`
-	WANumber  string    `json:"wa_number"`
-	Name      string    `json:"name"`
-	Company   string    `json:"company"`
+	ID       string    `json:"id"`
+	TenantID uuid.UUID `json:"tenant_id"`
+	WANumber string    `json:"wa_number"`
+	Name     string    `json:"name"`
+	Company  string    `json:"company"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

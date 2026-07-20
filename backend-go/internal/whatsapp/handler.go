@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
+	"github.com/google/uuid"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"github.com/username/sinar-elektrik-backend/internal/db"
@@ -173,7 +174,12 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	// 3. Ensure customer record exists; create lead on new conversations.
 	//    Errors here are non-fatal — log and continue so the message is never dropped.
 	var leadsID, customerID string
-	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
+	if parseErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
+		tenantUUID = uuid.Nil
+	}
+	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
 	if err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else {
@@ -428,7 +434,12 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 
 	// Ensure customer record exists; create lead on new conversations.
 	// Errors here are non-fatal — log and continue so the escalation is never dropped.
-	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
+	if parseErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
+		tenantUUID = uuid.Nil
+	}
+	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
 	if err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else if created {
@@ -460,7 +471,12 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text s
 
 	// Ensure customer record exists; create lead on new conversations.
 	// Errors here are non-fatal — log and continue so the escalation is never dropped.
-	customer, err := h.db.GetOrCreateCustomer(senderPhone)
+	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
+	if parseErr != nil {
+		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
+		tenantUUID = uuid.Nil
+	}
+	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
 	if err != nil {
 		slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
 	} else if created {
