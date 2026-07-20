@@ -526,6 +526,19 @@ func main() {
 		slog.Error("[MAIN] WA client init failed", slog.Any("error", err))
 		os.Exit(1)
 	}
+
+	// Multi-tenant session manager (F8). SERVES_TENANT_ID determines which
+	// tenant this Cloud Run instance is responsible for. When unset, register
+	// under the sentinel "" so CheckClient falls back to the single waClient
+	// for every tenant query — correct for single-tenant deployments.
+	sessionManager := whatsapp.NewSessionManager()
+	servesTenantID := os.Getenv("SERVES_TENANT_ID")
+	sessionManager.Register(servesTenantID, waClient.WA)
+	slog.Info("[MAIN] SessionManager registered",
+		slog.String("serves_tenant_id", servesTenantID),
+		slog.Bool("sentinel_mode", servesTenantID == ""),
+	)
+
 	sender := whatsapp.NewSender(waClient.WA)
 
 	// Shared WA notifier — used by booking-expiry reminder (Sprint 1 B2 fix),
@@ -697,15 +710,11 @@ func main() {
 	slog.Info("[MAIN] Post-order feedback request poller started (daily 10:00 WIB)")
 
 	// WA session health poller — fires every 5 minutes and checks Premium tenant
-	// WA session connectivity (Sprint 5 Task 5.4). The sessionCheck func is a
-	// stub because whatsapp.Client is a single-tenant client per Cloud Run
-	// service instance; a multi-tenant session map is not implemented yet.
-	// When multi-tenant whatsmeow is built, replace the closure with a real lookup.
-	notification.NewSessionHealthPoller(dbClient.DB, func(tenantID string) bool {
-		// Stub: always report connected. Real integration deferred until
-		// multi-tenant WA session manager exists (currently one Client per service).
-		return true
-	}).Start(ctx)
+	// WA session connectivity (Sprint 5 Task 5.4). Uses the real SessionManager
+	// (F8) instead of the former stub closure; CheckClient returns true (fail-safe)
+	// for tenants not served by this instance, and checks IsConnected() for those
+	// that are registered.
+	notification.NewSessionHealthPoller(dbClient.DB, sessionManager.CheckClient).Start(ctx)
 	slog.Info("[MAIN] WA session health poller started (5-min tick)")
 
 	// Approval WhatsApp button webhook — the WA bridge daemon POSTs decoded
