@@ -7,6 +7,68 @@ safe for ALL tenants — a single-tenant sanity check is never enough.
 
 ---
 
+## Session-start ritual (MANDATORY FIRST STEP EVERY CONVERSATION)
+
+**Before any tool call or reply**, read in this order:
+1. This CLAUDE.md file (you are reading it now — good)
+2. `docs/superpowers/miss-log.md` — last 5 entries. Prior founder-caught misses;
+   apply the prevention rules going forward
+3. `~/.claude/projects/-Users-tonywei-IdeaProjects-ERPAntigravity/memory/MEMORY.md`
+   — auto-memory index
+
+**Announce in first message:** "Read CLAUDE.md + miss-log + memory. Discipline
+active: advisor + verify + adversarial-critique + confidence-marking."
+
+Skipping this ritual = you will repeat past misses. Founder has caught you
+repeatedly asking for audit-ulang; the ritual exists so future-you does not.
+
+---
+
+## Pre-presentation discipline (NON-NEGOTIABLE)
+
+Every design spec, implementation plan, or recommendation list (>3 items) MUST
+pass these 3 gates BEFORE you present to founder. Not "kalau ingat" — required.
+
+### Gate 1: Advisor call
+Call `advisor()` in the same session before presenting. Not optional. Advisor
+sees your full context and catches bias you can't see in yourself. The pattern
+of founder asking "check ulang" repeatedly = you skipped this gate.
+
+### Gate 2: "## I verified" section with CONCRETE evidence
+Every recommendation lists what you actually checked, with output:
+- ❌ "I checked the codebase for usage" — vague, unfalsifiable
+- ✅ "grep 'GetOrCreateCustomer' backend-go/ = 4 refs at handler.go:176, 431, 463
+     and customers.go:8" — concrete, verifiable
+
+Empty section = recommendation incomplete. Fix before presenting.
+
+### Gate 3: "## Adversarial critique" section
+Before presenting, ask yourself: "what fact could invalidate this recommendation?"
+and answer honestly. Include a section listing what you attacked + how you handled.
+
+Example: "Adversarial critique: (a) npm overrides might work → verified: doesn't
+(v2→v3 API break); (b) uuidv7 better than v4 → verified: extension not on Supabase;
+(c) display_number improves UX → verified: MSME users use name/phone, YAGNI."
+
+### Confidence marking (every recommendation gets a tag)
+Tag every claim with:
+- **[VERIFIED]** — I ran the check + result matches claim (grep output, SQL result)
+- **[REASONED]** — I applied domain knowledge but did not run a check
+- **[ASSUMED]** — I'm guessing, needs verification before acting
+
+Founder scans tags to know which items to trust vs challenge. Reduces re-audit tax.
+
+### Miss-log feedback protocol
+When founder catches a miss during any session:
+1. Append entry to `docs/superpowers/miss-log.md` — what missed, root cause, prevention
+2. If prevention is a general rule, propose CLAUDE.md addition in same reply
+3. If pattern (2+ occurrences of similar miss), MUST update CLAUDE.md permanent rule
+
+This is agentic training via file-based feedback. Future-you inherits what
+past-you learned.
+
+---
+
 ## Task type → required skill (NON-NEGOTIABLE)
 
 Announce the skill by name in your first tool call. Skipping = violation.
