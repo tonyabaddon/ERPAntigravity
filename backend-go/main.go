@@ -523,7 +523,7 @@ func main() {
 	// prekeys) must be durable — direct pool avoids any pooler-side risk.
 	waClient, err = whatsapp.NewClient(ctx, listenConn)
 	if err != nil {
-		slog.Error("[MAIN] WA client init failed", slog.Any("error", err))
+		slog.Error("[MAIN] WA client init failed", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
