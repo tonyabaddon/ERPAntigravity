@@ -31,6 +31,10 @@ Task 7: SHIPPED (backend + migration deployed; UI smoke deferred to founder)
 Task 8: complete (commit 8cb1955, review clean, 3/3 regression PASS, 1 INFO advisor triaged defer)
 Task 9: complete — jspdf 2.5.2→4.2.1 + jspdf-autotable 3.8.4→5.0.8 bump + 971/971 vitest green + tsc clean, per task-9-report.md
 Task 10: complete — PDF visual regression 13/13 PASS. Programmatic vitest dump (`tests/pdf-regression/dump.test.ts`, jsdom + frozen Date + supabase mock), pre-bump vs post-bump byte-for-byte identical file sizes across 13 PDFs, `pdftotext -layout` diff = 0 lines drift, `magick compare -metric AE` at 100dpi = 0 diff pixels for ALL 13, 300dpi spot-check on 4 complex generators (saldoAwal, neraca, purchaseOrder, invoiceDp) = 0 diff pixels. Verdict + reproducibility at `docs/qa-week/pdf-regression/2026-07-20-jspdf-4.2.1-visual-diff.md`. Bump COMMITTED — DOMPurify CVE closed.
+Task 11: complete — 3-tenant × 6-table multi-tenant matrix (36 attempts, tables: customers/purchase_invoices/pembayaran/journal_entries/kasir_transactions/bank_accounts) = **0 leaks**. Phase 1 completion appended to `docs/qa-week/phase-1-report.md`.
+
+**Phase 1 SHIPPED — all 3 P1/architectural fixes live, multi-tenant verified.**
+See `docs/qa-week/phase-1-report.md` for the full completion report + rollback plan per fix.
 
 ---
 
