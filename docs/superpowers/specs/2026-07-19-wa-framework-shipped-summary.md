@@ -108,3 +108,35 @@ Founder actions needed to complete:
 2. Review Sprint 4/5/7 follow-up items and prioritize for next sprint
 3. Verify Piutang reminder scheduler by manually triggering (or wait for 09:00 WIB tomorrow) with an eligible tempo invoice on Garindo
 
+
+---
+
+## Follow-ups shipped (2026-07-20)
+
+Immediate backlog burndown after Sprint 7 completion. 5 follow-ups + 1 test hygiene commit.
+
+| ID | Commit | What |
+|---|---|---|
+| F1 | 2fc1f80 | conversations.tenant_id wired end-to-end (model + queries + 2 call sites + fallback helper). Fixes Sprint 1-2 wa_number_id surrogate concern → quota now enforced on followup/admin-forward paths. |
+| F2 | 5cd21c7 | handler.go lifecycle events (PaymentVerified/DpVerified/PaymentRejected/OrderApproved) migrated to NotifyCustomer wrapper. Closes quota + audit gap on 4 customer-facing sends. |
+| F3 | e23bf7d | SECDEF RPC get_bot_analytics_summary(p_days) — platform admin gated. CaleoBotDashboard now reads via RPC (was blocked by RLS). |
+| F4 | 66d7221 | tenant_notification_cron_config table (slot 481) + NotificationCronScreen cards 2-4 persist + 3 pollers gated on enabled flag. Also fixed pre-existing bug where hutang poller joined piutang config table. |
+| F5 | da7f468 | SessionHealthPoller daily pruning goroutine (24h ticker, DELETE >30d). Bounds wa_session_health table growth. |
+| Test | 1fc7bf1 | TestQuotaCheck_* now use dynamic today date. Was breaking lazy-reset codepath after date rolled over. |
+
+Follow-up prod verification (via DO block):
+- F1: 20 conversations, 0 NULL tenant_id ✓
+- F3: get_bot_analytics_summary RPC exists ✓
+- F4: tenant_notification_cron_config table, 3 seeded rows (all tenants) ✓
+- Backend + FE builds SUCCESS on Cloud Build for follow-up commits
+
+## Remaining founder actions
+
+**BLOCKED** (from Task 7.5): Provision Caleo bot WA number → set `CALEO_ADMIN_WA_PHONE` → run swap commands in `2026-07-19-sprint-7-followups.md`
+
+**Deferred to future sprint**:
+- Session health CheckClient stub → real multi-tenant session manager (Phase 2/3 initiative)
+- SLA per-tenant threshold_minutes value stored but not applied per-row in breach query (only global 2h constant)
+- Booking Card in Kompas: not applicable — no such feature
+- RESEND_API_KEY + CALEO_OPS_EMAIL to GCP Secret Manager (currently in .env)
+
