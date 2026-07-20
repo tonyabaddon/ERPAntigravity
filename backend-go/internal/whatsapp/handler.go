@@ -177,19 +177,20 @@ func (h *Handler) ProcessJoinedMessage(ctx context.Context, senderPhone, text st
 	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
 	if parseErr != nil {
 		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
-		tenantUUID = uuid.Nil
-	}
-	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
-	if err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
+		// skip customer create — do NOT fall back to uuid.Nil (routes to no-tenant)
 	} else {
-		customerID = customer.ID
-		if created {
-			lead, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone)
-			if err != nil {
-				slog.ErrorContext(ctx, "[HANDLER] CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
-			} else {
-				leadsID = lead.ID
+		customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
+		if err != nil {
+			slog.ErrorContext(ctx, "[HANDLER] GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
+		} else {
+			customerID = customer.ID
+			if created {
+				lead, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone)
+				if err != nil {
+					slog.ErrorContext(ctx, "[HANDLER] CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+				} else {
+					leadsID = lead.ID
+				}
 			}
 		}
 	}
@@ -437,14 +438,15 @@ func (h *Handler) handleWiringEscalation(ctx context.Context, senderPhone, text 
 	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
 	if parseErr != nil {
 		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
-		tenantUUID = uuid.Nil
-	}
-	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
-	if err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
-	} else if created {
-		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
-			slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+		// skip customer create — do NOT fall back to uuid.Nil (routes to no-tenant)
+	} else {
+		customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
+		if err != nil {
+			slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
+		} else if created {
+			if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+				slog.ErrorContext(ctx, "[HANDLER] handleWiringEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+			}
 		}
 	}
 
@@ -474,14 +476,15 @@ func (h *Handler) handleAdminEscalation(ctx context.Context, senderPhone, text s
 	tenantUUID, parseErr := uuid.Parse(conv.TenantID)
 	if parseErr != nil {
 		slog.ErrorContext(ctx, "[HANDLER] Failed to parse tenant_id as UUID", slog.String("tenant_id", conv.TenantID), slog.Any("error", parseErr))
-		tenantUUID = uuid.Nil
-	}
-	customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
-	if err != nil {
-		slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
-	} else if created {
-		if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
-			slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+		// skip customer create — do NOT fall back to uuid.Nil (routes to no-tenant)
+	} else {
+		customer, err := h.db.GetOrCreateCustomer(tenantUUID, senderPhone)
+		if err != nil {
+			slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: GetOrCreateCustomer error", slog.String("phone", senderPhone), slog.Any("error", err))
+		} else if created {
+			if _, err := h.db.CreateLead(customer.ID, conv.ID, senderPhone); err != nil {
+				slog.ErrorContext(ctx, "[HANDLER] handleAdminEscalation: CreateLead error", slog.String("conv_id", conv.ID), slog.Any("error", err))
+			}
 		}
 	}
 
