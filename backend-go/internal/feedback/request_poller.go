@@ -45,16 +45,20 @@ func (p *RequestPoller) Start(ctx context.Context) {
 	}()
 }
 
-// runOnce queries for COMPLETED orders exactly 7 days old (by updated_at)
+// runOnce queries for COMPLETED orders past their tenant-configured delay
+// (default 7 days, overridable via tenant_notification_cron_config.feedback_delay_days)
 // without a feedback_requested_at, sends the PostOrderFeedback template, then
 // marks feedback_requested_at. One send per eligible order.
+// Skips tenants where tenant_notification_cron_config.feedback_request_enabled = FALSE.
 func (p *RequestPoller) runOnce(ctx context.Context) {
 	log := slog.Default().With("feature", "post_order_feedback_request")
 	log.InfoContext(ctx, "cron tick — scanning orders for feedback requests")
 
-	// Join orders → customers → tenants to get all params in one pass.
-	// Filters: status=COMPLETED, updated_at exactly 7 days ago, no prior
-	// feedback_requested_at, customer has a wa_number.
+	// Join orders → customers → tenants → cron config to get all params in one pass.
+	// Filters: status=COMPLETED, updated_at exactly cfg.feedback_delay_days ago
+	//   (COALESCE to 7 if no config row — fail-open for new tenants),
+	//   no prior feedback_requested_at, customer has a wa_number.
+	// Tenants with feedback_request_enabled = FALSE are excluded.
 	// updated_at is used as a proxy for completion timestamp — no delivered_at column.
 	rows, err := p.db.QueryContext(ctx, `
 		SELECT
@@ -69,10 +73,12 @@ func (p *RequestPoller) runOnce(ctx context.Context) {
 		JOIN public.tenants t ON t.id = o.tenant_id
 		LEFT JOIN public.customers c
 		  ON c.id::TEXT = o.customer_id AND c.tenant_id = o.tenant_id
+		LEFT JOIN public.tenant_notification_cron_config cfg ON cfg.tenant_id = o.tenant_id
 		WHERE o.status = 'COMPLETED'
-		  AND DATE(o.updated_at) = CURRENT_DATE - INTERVAL '7 days'
+		  AND DATE(o.updated_at) = CURRENT_DATE - (COALESCE(cfg.feedback_delay_days, 7) || ' days')::INTERVAL
 		  AND o.feedback_requested_at IS NULL
 		  AND COALESCE(c.wa_number, o.customer_phone) IS NOT NULL
+		  AND COALESCE(cfg.feedback_request_enabled, TRUE) = TRUE
 		ORDER BY o.tenant_id, o.updated_at
 	`)
 	if err != nil {

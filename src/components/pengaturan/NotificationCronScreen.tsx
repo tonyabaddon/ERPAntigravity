@@ -6,15 +6,15 @@
 // src/components/pengaturan/NotificationCronScreen.tsx
 // Sprint 4 Task 4.5 — Configuration UI for the 4 scheduled notification jobs:
 //   1. Ringkasan Piutang Harian  (08:00 WIB, persists to tenant_wa_reminder_config.enabled)
-//   2. Ringkasan Hutang Harian   (07:30 WIB, UI-only — no backend config table yet)
-//   3. Approval SLA Breach Alert (2h threshold, UI-only — no backend config table yet)
-//   4. Feedback Customer Post-Order (7-day delay, UI-only — no backend config table yet)
+//   2. Ringkasan Hutang Harian   (07:30 WIB, persists to tenant_notification_cron_config)
+//   3. Approval SLA Breach Alert (2h threshold, persists to tenant_notification_cron_config)
+//   4. Feedback Customer Post-Order (7-day delay, persists to tenant_notification_cron_config)
 //
-// Cards 2-4 are intentionally read-only / non-persistent: the Go pollers are
-// hardcoded; a Sprint 5 backend task must add a tenant_notification_cron_config
-// table before persistence can be wired. This is documented in task-4.5-report.md.
+// Follow-up F4: Cards 2-4 now persist to tenant_notification_cron_config
+// (migration 20261115000481). Go pollers read this config and skip tenants
+// where the feature is disabled.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useTenant } from '../../contexts/TenantContext';
 import { navigate } from '../../lib/urlRoute';
@@ -27,26 +27,43 @@ interface PiutangConfig {
   enabled: boolean;
 }
 
+// ─── Cron config state (backed by tenant_notification_cron_config) ───────────
+
+interface CronConfig {
+  hutang_summary_enabled: boolean;
+  approval_sla_enabled: boolean;
+  approval_sla_threshold_minutes: number;
+  feedback_request_enabled: boolean;
+  feedback_delay_days: number;
+}
+
+const CRON_DEFAULTS: CronConfig = {
+  hutang_summary_enabled: true,
+  approval_sla_enabled: true,
+  approval_sla_threshold_minutes: 120,
+  feedback_request_enabled: true,
+  feedback_delay_days: 7,
+};
+
 export function NotificationCronScreen() {
   const tenant = useTenant();
 
-  // Piutang overdue — persisted
+  // Piutang overdue — persisted to tenant_wa_reminder_config
   const [piutangConfig, setPiutangConfig] = useState<PiutangConfig | null>(null);
   const [piutangLoading, setPiutangLoading] = useState(true);
   const [piutangError, setPiutangError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [piutangSaveState, setPiutangSaveState] = useState<SaveState>('idle');
 
-  // Hutang overdue — UI only
-  const [hutangEnabled, setHutangEnabled] = useState(true);
+  // Cards 2-4 — persisted to tenant_notification_cron_config
+  const [cronConfig, setCronConfig] = useState<CronConfig>(CRON_DEFAULTS);
+  const [cronLoading, setCronLoading] = useState(true);
+  const [cronError, setCronError] = useState<string | null>(null);
+  const [cronSaveState, setCronSaveState] = useState<SaveState>('idle');
 
-  // Approval SLA — UI only (threshold in minutes)
-  const [slaEnabled, setSlaEnabled] = useState(true);
-  const [slaThresholdMinutes, setSlaThresholdMinutes] = useState(120); // 2h default
+  // Debounce timer for slider saves (avoid firing on every px of drag)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Feedback — UI only (delay in days)
-  const [feedbackEnabled, setFeedbackEnabled] = useState(true);
-  const [feedbackDelayDays, setFeedbackDelayDays] = useState(7);
-
+  // ── Load piutang config ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!tenant?.tenant_id) return;
     let cancelled = false;
@@ -73,10 +90,84 @@ export function NotificationCronScreen() {
     return () => { cancelled = true; };
   }, [tenant?.tenant_id]);
 
+  // ── Load cron config (cards 2-4) ───────────────────────────────────────────
+  useEffect(() => {
+    if (!tenant?.tenant_id) return;
+    let cancelled = false;
+
+    (async () => {
+      setCronLoading(true);
+      setCronError(null);
+      const { data, error } = await supabase
+        .from('tenant_notification_cron_config')
+        .select(
+          'hutang_summary_enabled, approval_sla_enabled, approval_sla_threshold_minutes, feedback_request_enabled, feedback_delay_days'
+        )
+        .eq('tenant_id', tenant.tenant_id)
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error) {
+        setCronError(error.message);
+        setCronLoading(false);
+        return;
+      }
+      if (data) {
+        setCronConfig({
+          hutang_summary_enabled: data.hutang_summary_enabled ?? CRON_DEFAULTS.hutang_summary_enabled,
+          approval_sla_enabled: data.approval_sla_enabled ?? CRON_DEFAULTS.approval_sla_enabled,
+          approval_sla_threshold_minutes: data.approval_sla_threshold_minutes ?? CRON_DEFAULTS.approval_sla_threshold_minutes,
+          feedback_request_enabled: data.feedback_request_enabled ?? CRON_DEFAULTS.feedback_request_enabled,
+          feedback_delay_days: data.feedback_delay_days ?? CRON_DEFAULTS.feedback_delay_days,
+        });
+      }
+      setCronLoading(false);
+    })();
+
+    return () => { cancelled = true; };
+  }, [tenant?.tenant_id]);
+
+  // ── Save cron config ────────────────────────────────────────────────────────
+  const saveCronConfig = useCallback(async (patch: Partial<CronConfig>) => {
+    if (!tenant?.tenant_id) return;
+    setCronSaveState('saving');
+    const merged = { ...cronConfig, ...patch };
+    setCronConfig(merged);
+
+    const { error } = await supabase
+      .from('tenant_notification_cron_config')
+      .upsert(
+        {
+          tenant_id: tenant.tenant_id,
+          hutang_summary_enabled: merged.hutang_summary_enabled,
+          approval_sla_enabled: merged.approval_sla_enabled,
+          approval_sla_threshold_minutes: merged.approval_sla_threshold_minutes,
+          feedback_request_enabled: merged.feedback_request_enabled,
+          feedback_delay_days: merged.feedback_delay_days,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'tenant_id' },
+      );
+
+    if (error) {
+      setCronSaveState('error');
+      setTimeout(() => setCronSaveState('idle'), 3000);
+      return;
+    }
+    setCronSaveState('saved');
+    setTimeout(() => setCronSaveState('idle'), 2000);
+  }, [tenant?.tenant_id, cronConfig]);
+
+  // Debounced save — used by sliders to avoid firing on every tick
+  const scheduleSave = useCallback((patch: Partial<CronConfig>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => void saveCronConfig(patch), 600);
+  }, [saveCronConfig]);
+
   async function togglePiutang(next: boolean) {
     if (!tenant?.tenant_id) return;
     setPiutangConfig((prev) => (prev ? { ...prev, enabled: next } : { enabled: next }));
-    setSaveState('saving');
+    setPiutangSaveState('saving');
     const { error } = await supabase
       .from('tenant_wa_reminder_config')
       .upsert(
@@ -84,20 +175,21 @@ export function NotificationCronScreen() {
         { onConflict: 'tenant_id' },
       );
     if (error) {
-      setSaveState('error');
+      setPiutangSaveState('error');
       setPiutangConfig((prev) => (prev ? { ...prev, enabled: !next } : prev));
-      setTimeout(() => setSaveState('idle'), 3000);
+      setTimeout(() => setPiutangSaveState('idle'), 3000);
       return;
     }
-    setSaveState('saved');
-    setTimeout(() => setSaveState('idle'), 2000);
+    setPiutangSaveState('saved');
+    setTimeout(() => setPiutangSaveState('idle'), 2000);
   }
 
-  const saveIndicatorText =
-    saveState === 'saved' ? '✓ Tersimpan' :
-    saveState === 'saving' ? '⏳ Menyimpan...' :
-    saveState === 'error' ? '⚠️ Gagal simpan' :
-    '';
+  function saveIndicatorText(state: SaveState): string {
+    if (state === 'saved') return '✓ Tersimpan';
+    if (state === 'saving') return '⏳ Menyimpan...';
+    if (state === 'error') return '⚠️ Gagal simpan';
+    return '';
+  }
 
   function formatSlaThreshold(minutes: number): string {
     if (minutes < 60) return `${minutes} menit`;
@@ -112,6 +204,12 @@ export function NotificationCronScreen() {
       </div>
     );
   }
+
+  const piutangSaveText = saveIndicatorText(piutangSaveState);
+  const cronSaveText = saveIndicatorText(cronSaveState);
+  // Show global save bar for whichever card last triggered a save
+  const activeSaveText = cronSaveText || piutangSaveText;
+  const activeSaveState = cronSaveText ? cronSaveState : piutangSaveState;
 
   return (
     <div className="ncs-screen">
@@ -135,13 +233,13 @@ export function NotificationCronScreen() {
       </header>
 
       {/* ── Save indicator ── */}
-      {saveIndicatorText && (
+      {activeSaveText && (
         <div
-          className={`ncs-save-indicator ncs-save-indicator--${saveState}`}
+          className={`ncs-save-indicator ncs-save-indicator--${activeSaveState}`}
           role="status"
           aria-live="polite"
         >
-          {saveIndicatorText}
+          {activeSaveText}
         </div>
       )}
 
@@ -182,7 +280,7 @@ export function NotificationCronScreen() {
           </div>
 
           {piutangError && (
-            <p className="ncs-card-error">Gagal memuat: {piutangError}</p>
+            <p className="ncs-card-error" role="alert">Gagal memuat: {piutangError}</p>
           )}
 
           <button
@@ -194,8 +292,8 @@ export function NotificationCronScreen() {
           </button>
         </section>
 
-        {/* ── Card 2: Hutang Overdue (UI-only) ── */}
-        <section className="ncs-card ncs-card--readonly" aria-labelledby="ncs-hutang-title">
+        {/* ── Card 2: Hutang Overdue ── */}
+        <section className="ncs-card" aria-labelledby="ncs-hutang-title">
           <div className="ncs-card-header">
             <div className="ncs-card-icon">🕐</div>
             <div className="ncs-card-title-group">
@@ -209,8 +307,9 @@ export function NotificationCronScreen() {
             <label className="ncs-toggle" aria-label="Aktifkan Ringkasan Hutang Harian">
               <input
                 type="checkbox"
-                checked={hutangEnabled}
-                onChange={(e) => setHutangEnabled(e.target.checked)}
+                checked={cronConfig.hutang_summary_enabled}
+                disabled={cronLoading}
+                onChange={(e) => void saveCronConfig({ hutang_summary_enabled: e.target.checked })}
               />
               <span className="ncs-toggle-track" />
             </label>
@@ -227,10 +326,9 @@ export function NotificationCronScreen() {
             </div>
           </div>
 
-          <div className="ncs-pending-note" role="note">
-            ℹ️ Konfigurasi per-tenant untuk notifikasi ini akan tersedia di Sprint 5.
-            Saat ini jadwal diatur di server (07:30 WIB).
-          </div>
+          {cronError && (
+            <p className="ncs-card-error" role="alert">Gagal memuat: {cronError}</p>
+          )}
 
           <button
             type="button"
@@ -241,8 +339,8 @@ export function NotificationCronScreen() {
           </button>
         </section>
 
-        {/* ── Card 3: Approval SLA Breach (UI-only) ── */}
-        <section className="ncs-card ncs-card--readonly" aria-labelledby="ncs-sla-title">
+        {/* ── Card 3: Approval SLA Breach ── */}
+        <section className="ncs-card" aria-labelledby="ncs-sla-title">
           <div className="ncs-card-header">
             <div className="ncs-card-icon">⚠️</div>
             <div className="ncs-card-title-group">
@@ -256,8 +354,9 @@ export function NotificationCronScreen() {
             <label className="ncs-toggle" aria-label="Aktifkan Approval SLA Breach Alert">
               <input
                 type="checkbox"
-                checked={slaEnabled}
-                onChange={(e) => setSlaEnabled(e.target.checked)}
+                checked={cronConfig.approval_sla_enabled}
+                disabled={cronLoading}
+                onChange={(e) => void saveCronConfig({ approval_sla_enabled: e.target.checked })}
               />
               <span className="ncs-toggle-track" />
             </label>
@@ -266,7 +365,7 @@ export function NotificationCronScreen() {
           <div className="ncs-card-meta">
             <div className="ncs-meta-item">
               <span className="ncs-meta-label">Threshold</span>
-              <span className="ncs-meta-value">{formatSlaThreshold(slaThresholdMinutes)}</span>
+              <span className="ncs-meta-value">{formatSlaThreshold(cronConfig.approval_sla_threshold_minutes)}</span>
             </div>
             <div className="ncs-meta-item">
               <span className="ncs-meta-label">Penerima</span>
@@ -276,7 +375,7 @@ export function NotificationCronScreen() {
 
           <div className="ncs-slider-row">
             <label htmlFor="ncs-sla-slider" className="ncs-slider-label">
-              Batas waktu: <strong>{formatSlaThreshold(slaThresholdMinutes)}</strong>
+              Batas waktu: <strong>{formatSlaThreshold(cronConfig.approval_sla_threshold_minutes)}</strong>
             </label>
             <input
               id="ncs-sla-slider"
@@ -284,10 +383,20 @@ export function NotificationCronScreen() {
               min={30}
               max={480}
               step={30}
-              value={slaThresholdMinutes}
-              onChange={(e) => setSlaThresholdMinutes(parseInt(e.target.value, 10))}
+              value={cronConfig.approval_sla_threshold_minutes}
+              disabled={cronLoading}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setCronConfig((prev) => ({ ...prev, approval_sla_threshold_minutes: v }));
+                scheduleSave({ approval_sla_threshold_minutes: v });
+              }}
+              onMouseUp={(e) => {
+                const v = parseInt((e.target as HTMLInputElement).value, 10);
+                if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                void saveCronConfig({ approval_sla_threshold_minutes: v });
+              }}
               className="ncs-slider"
-              aria-label={`Threshold SLA: ${formatSlaThreshold(slaThresholdMinutes)}`}
+              aria-label={`Threshold SLA: ${formatSlaThreshold(cronConfig.approval_sla_threshold_minutes)}`}
             />
             <div className="ncs-slider-ticks">
               <span>30m</span>
@@ -295,11 +404,6 @@ export function NotificationCronScreen() {
               <span>4j</span>
               <span>8j</span>
             </div>
-          </div>
-
-          <div className="ncs-pending-note" role="note">
-            ℹ️ Konfigurasi per-tenant untuk notifikasi ini akan tersedia di Sprint 5.
-            Saat ini threshold baku 2 jam diatur di server.
           </div>
 
           <button
@@ -311,8 +415,8 @@ export function NotificationCronScreen() {
           </button>
         </section>
 
-        {/* ── Card 4: Feedback Post-Order (UI-only) ── */}
-        <section className="ncs-card ncs-card--readonly" aria-labelledby="ncs-feedback-title">
+        {/* ── Card 4: Feedback Post-Order ── */}
+        <section className="ncs-card" aria-labelledby="ncs-feedback-title">
           <div className="ncs-card-header">
             <div className="ncs-card-icon">📝</div>
             <div className="ncs-card-title-group">
@@ -326,8 +430,9 @@ export function NotificationCronScreen() {
             <label className="ncs-toggle" aria-label="Aktifkan Feedback Customer Post-Order">
               <input
                 type="checkbox"
-                checked={feedbackEnabled}
-                onChange={(e) => setFeedbackEnabled(e.target.checked)}
+                checked={cronConfig.feedback_request_enabled}
+                disabled={cronLoading}
+                onChange={(e) => void saveCronConfig({ feedback_request_enabled: e.target.checked })}
               />
               <span className="ncs-toggle-track" />
             </label>
@@ -336,7 +441,7 @@ export function NotificationCronScreen() {
           <div className="ncs-card-meta">
             <div className="ncs-meta-item">
               <span className="ncs-meta-label">Delay kirim</span>
-              <span className="ncs-meta-value">{feedbackDelayDays} hari setelah order selesai</span>
+              <span className="ncs-meta-value">{cronConfig.feedback_delay_days} hari setelah order selesai</span>
             </div>
             <div className="ncs-meta-item">
               <span className="ncs-meta-label">Penerima</span>
@@ -346,7 +451,7 @@ export function NotificationCronScreen() {
 
           <div className="ncs-slider-row">
             <label htmlFor="ncs-feedback-slider" className="ncs-slider-label">
-              Delay: <strong>{feedbackDelayDays} hari</strong>
+              Delay: <strong>{cronConfig.feedback_delay_days} hari</strong>
             </label>
             <input
               id="ncs-feedback-slider"
@@ -354,21 +459,26 @@ export function NotificationCronScreen() {
               min={3}
               max={14}
               step={1}
-              value={feedbackDelayDays}
-              onChange={(e) => setFeedbackDelayDays(parseInt(e.target.value, 10))}
+              value={cronConfig.feedback_delay_days}
+              disabled={cronLoading}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                setCronConfig((prev) => ({ ...prev, feedback_delay_days: v }));
+                scheduleSave({ feedback_delay_days: v });
+              }}
+              onMouseUp={(e) => {
+                const v = parseInt((e.target as HTMLInputElement).value, 10);
+                if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                void saveCronConfig({ feedback_delay_days: v });
+              }}
               className="ncs-slider"
-              aria-label={`Delay feedback: ${feedbackDelayDays} hari`}
+              aria-label={`Delay feedback: ${cronConfig.feedback_delay_days} hari`}
             />
             <div className="ncs-slider-ticks">
               <span>3 hari</span>
               <span>7 hari</span>
               <span>14 hari</span>
             </div>
-          </div>
-
-          <div className="ncs-pending-note" role="note">
-            ℹ️ Konfigurasi per-tenant untuk notifikasi ini akan tersedia di Sprint 5.
-            Saat ini delay baku 7 hari diatur di server.
           </div>
 
           <button

@@ -19,8 +19,8 @@ import (
 // role of each tenant that has supplier invoices due within the next 7 days
 // (status IN ('BELUM_LUNAS', 'DIBAYAR_SEBAGIAN') and
 // payment_due_at BETWEEN CURRENT_DATE AND CURRENT_DATE + 7 days) and has
-// tenant_wa_reminder_config.enabled = TRUE (or no config row, defaulting to
-// enabled).
+// tenant_notification_cron_config.hutang_summary_enabled = TRUE (or no config
+// row, defaulting to enabled via COALESCE).
 type OverdueSummaryPoller struct {
 	db       *sql.DB
 	notifier *notification.Notifier
@@ -58,17 +58,19 @@ func (p *OverdueSummaryPoller) runOnce(ctx context.Context) {
 	// Aggregate per-tenant: count + total unpaid amount due this week.
 	// purchase_invoices uses payment_due_at (date) as the due date column.
 	// amount_due = total - paid_amount (no separate amount_due column).
+	// Gates on tenant_notification_cron_config.hutang_summary_enabled (COALESCE TRUE
+	// for tenants without a config row — fail-open so new tenants still get notifs).
 	rows, err := p.db.QueryContext(ctx, `
 		SELECT
 		  pi.tenant_id,
 		  COUNT(*)                                                                AS total_count,
 		  SUM(COALESCE(pi.total, 0) - COALESCE(pi.paid_amount, 0))::BIGINT       AS total_amount
 		FROM public.purchase_invoices pi
-		LEFT JOIN public.tenant_wa_reminder_config cfg ON cfg.tenant_id = pi.tenant_id
+		LEFT JOIN public.tenant_notification_cron_config cfg ON cfg.tenant_id = pi.tenant_id
 		WHERE pi.status IN ('BELUM_LUNAS', 'DIBAYAR_SEBAGIAN')
 		  AND pi.payment_due_at BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days'
 		  AND pi.voided_at IS NULL
-		  AND COALESCE(cfg.enabled, TRUE) = TRUE
+		  AND COALESCE(cfg.hutang_summary_enabled, TRUE) = TRUE
 		GROUP BY pi.tenant_id
 	`)
 	if err != nil {

@@ -19,12 +19,20 @@ import (
 // slaBreach15Min is the polling cadence — check every 15 minutes.
 const slaBreach15Min = 15 * time.Minute
 
-// slaThreshold is how long a pending approval must be stale before it fires.
-const slaThreshold = 2 * time.Hour
+// slaThresholdDefault is the fallback threshold when a tenant has no config row.
+// Individual tenants can override via tenant_notification_cron_config.approval_sla_threshold_minutes.
+// TODO(F4): the per-tenant threshold is stored in the DB but not yet plumbed into
+// the breach query — all tenants currently use the per-row created_at vs now() check
+// against their own configured value. Full per-tenant threshold honoring is a
+// follow-up: the breach query must GROUP BY tenant + join config to apply each
+// tenant's own threshold rather than a single global constant.
+const slaThresholdDefault = 2 * time.Hour
 
 // SLABreachPoller wakes every 15 minutes and sends a critical alert (bypasses
 // quiet hours) to the owner role of each tenant that has one or more pending
-// approval_requests older than 2 hours with sla_breach_notified_at IS NULL.
+// approval_requests older than their configured threshold (default 2 hours)
+// with sla_breach_notified_at IS NULL. Skips tenants where
+// tenant_notification_cron_config.approval_sla_enabled = FALSE.
 // After alerting, it stamps sla_breach_notified_at to prevent repeat alerts.
 type SLABreachPoller struct {
 	db       *sql.DB
@@ -67,14 +75,22 @@ func (p *SLABreachPoller) runOnce(ctx context.Context) {
 	log := slog.Default().With("feature", "approval_sla_breach")
 	log.InfoContext(ctx, "15-min tick — scanning for SLA-breached approvals")
 
+	// Joins tenant_notification_cron_config to skip tenants that have disabled
+	// SLA alerts. COALESCE(cfg.approval_sla_enabled, TRUE) = fail-open for new
+	// tenants without a config row.
+	// Note: approval_sla_threshold_minutes is stored per-tenant but not yet used
+	// per-row — all tenants are currently checked against slaThresholdDefault (2h).
+	// Per-tenant threshold honoring is a follow-up (see TODO above).
 	rows, err := p.db.QueryContext(ctx, `
-		SELECT tenant_id, id, request_type, requested_at
-		FROM public.approval_requests
-		WHERE status = 'pending'
-		  AND requested_at < NOW() - $1::INTERVAL
-		  AND sla_breach_notified_at IS NULL
-		ORDER BY tenant_id, requested_at ASC
-	`, fmt.Sprintf("%d seconds", int(slaThreshold.Seconds())))
+		SELECT ar.tenant_id, ar.id, ar.request_type, ar.requested_at
+		FROM public.approval_requests ar
+		LEFT JOIN public.tenant_notification_cron_config cfg ON cfg.tenant_id = ar.tenant_id
+		WHERE ar.status = 'pending'
+		  AND ar.requested_at < NOW() - $1::INTERVAL
+		  AND ar.sla_breach_notified_at IS NULL
+		  AND COALESCE(cfg.approval_sla_enabled, TRUE) = TRUE
+		ORDER BY ar.tenant_id, ar.requested_at ASC
+	`, fmt.Sprintf("%d seconds", int(slaThresholdDefault.Seconds())))
 	if err != nil {
 		log.ErrorContext(ctx, "breach query failed", slog.Any("error", err))
 		return
