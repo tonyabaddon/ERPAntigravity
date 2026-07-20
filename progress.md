@@ -15321,3 +15321,46 @@ Negative stock allowed, JE debit=credit, tagihan STOCK requires pesanan, kasir d
 ## Realistic close
 100% not attainable in remaining autonomous — 7-day plan naturally = 40-60h with fix cycles. Foundation strong, all P1 open have plans, multi-tenant isolation VERIFIED with correct methodology. Onboarding = conditionally green.
 
+
+---
+
+# 🔬 QA WEEK SESSION 7 — 2026-07-19/20 fix-all-first batch
+
+Founder: "Fix all first + tested + deployed + tested again, then baru lanjut test remaining items."
+
+## Fixes SHIPPED (4 P1s applied to prod)
+- **P1-01** REVOKE debug SECDEF from authenticated (verified: 42501 raised on unauthorized call) — mig 471
+- **P1-02** storage bucket file_size_limit + MIME on 5 buckets — mig 472
+- **P1-06** 20 FK constraints on tenant_id + orphan cleanup (3 tenant_settings rows backed up) — mig 473
+- **P1-05** WIB timezone 36-site sweep — commit `91e2db0` (Cloud Build triggered, all 971 vitest still pass)
+
+## Fixes DEFERRED (founder decision needed)
+- **F5-05** uq_customers_wa — design memo committed `ad83b5a` with 3 options + impact grep results (Option A recommended: gen_random_uuid, zero FE breakage). Awaiting founder Option pick.
+- **P1-07** DOMPurify CVE via jspdf — draft plan ready, blocked on breaking bump acceptance.
+
+## Post-fix regression sweep (all PASS)
+- P1-01: 0 grants to authenticated for debug SECDEF ✓
+- P1-02: 0 buckets without file_size_limit ✓
+- P1-06: 20 FK constraints in place + INSERT with fake tenant_id BLOCKED (foreign_key_violation) ✓
+- Multi-tenant isolation: 0 cross-tenant leak (Toko Jaya as owner, Garindo rows) ✓
+
+## Migration file follow-up
+Applied fixes via psql direct, then persisted as numbered migrations 471-473 in `supabase/migrations/`. Idempotent — re-running against prod = no-op. Bootstrap on fresh test-DB will pick them up.
+
+## Advisor gates applied
+- Gate A (P1-01/02/06 + P1-05): approved, executed
+- Gate B (F5-05): design memo written, waiting founder Option pick
+- Gate C (P1-07): plan drafted, waiting founder OK on breaking bump
+
+## Cumulative (7 sessions)
+- P0: 0
+- P1: 0 blocking open (was 4 → all shipped) — 2 deferred to founder Option/OK
+- P2: 15
+- P3: 7
+- **Zero P0/P1 blocking onboarding.**
+
+## Commits Session 7
+- `ad83b5a` docs(spec): tenant-aware customer ID memo
+- `91e2db0` fix(wib-timezone): P1-05 36 sites
+- `8319e53` migrate(qa-week): persist P1-01/02/06 as mig 471-473
+
