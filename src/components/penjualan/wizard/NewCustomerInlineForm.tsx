@@ -50,7 +50,12 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
       }
       onSaved(customer);
     } catch (e) {
-      showToast(`Gagal simpan customer: ${extractErrorMessage(e)}`, 'warning');
+      const rawMsg = extractErrorMessage(e);
+      // F5-05: map unique constraint violation to Bahasa-friendly message
+      const friendlyMsg = rawMsg.includes('uq_customers_wa_tenant')
+        ? 'Nomor HP sudah terdaftar untuk customer lain di toko ini. Cek dulu di daftar Pelanggan.'
+        : rawMsg;
+      showToast(`Gagal simpan customer: ${friendlyMsg}`, 'warning');
     } finally {
       setSubmitting(false);
     }
