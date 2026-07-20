@@ -30,6 +30,8 @@ func NewSessionHealthPoller(db *sql.DB, check func(tenantID string) bool) *Sessi
 
 // Start launches the 5-minute polling loop in a background goroutine.
 // The goroutine exits when ctx is cancelled (e.g. on process shutdown).
+// Also starts a daily pruning goroutine that deletes rows older than 30 days
+// to keep the wa_session_health table bounded (was unbounded pre-F5).
 func (s *SessionHealthPoller) Start(ctx context.Context) {
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
@@ -43,6 +45,29 @@ func (s *SessionHealthPoller) Start(ctx context.Context) {
 			}
 		}
 	}()
+	go func() {
+		pruneTicker := time.NewTicker(24 * time.Hour)
+		defer pruneTicker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-pruneTicker.C:
+				s.prune(ctx)
+			}
+		}
+	}()
+}
+
+// prune deletes wa_session_health rows older than 30 days. Runs daily.
+func (s *SessionHealthPoller) prune(ctx context.Context) {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM public.wa_session_health WHERE polled_at < NOW() - INTERVAL '30 days'`)
+	if err != nil {
+		slog.ErrorContext(ctx, "[session_health] prune failed", slog.Any("error", err))
+		return
+	}
+	n, _ := res.RowsAffected()
+	slog.InfoContext(ctx, "[session_health] pruned old rows", slog.Int64("deleted", n))
 }
 
 // runOnce executes one polling cycle: for each Premium tenant, check the WA
