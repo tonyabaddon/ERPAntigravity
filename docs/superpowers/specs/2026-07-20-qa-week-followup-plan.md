@@ -334,3 +334,145 @@ Interactive gaps not yet executed (from original 7-day plan):
 - Phase 5: 2-3 days
 
 **Total: ~5-7 working days after Phase 0 decisions.**
+
+---
+
+## Cross-cutting protocols (per CLAUDE.md discipline)
+
+### Per-fix checklist (mandatory for every non-trivial change)
+
+Every fix in Phase 1-4 MUST include the following before execute:
+
+**1. Impact analysis** (CLAUDE.md protocol):
+- Direct importers: `grep -rn "from.*<module>"` output
+- Indirect callers: all sites affected for the specific function/symbol modified
+- Tests exercising the module: matching `*.test.*` files
+- DB touchpoints: SQL/RPCs called by this module
+- Verdict: "N call sites, M tests, K DB touchpoints. Plan covers all, or [list deferred + why]."
+
+**2. Regression test addition** (CLAUDE.md "bug fixed permanently"):
+- Bug that had no test → now has a test
+- Test path: Playwright spec / vitest / SQL smoke — pick one, add it
+
+**3. Observability** (CLAUDE.md for new user-facing feature / RPC):
+- Entry log: `{tenant_id, user_id, feature, action, timestamp}`
+- Error log: `{tenant_id, user_id, feature, error_code, error_message}`
+- Usage counter: `feature_usage_total{feature, tenant}`
+- Refactors of existing paths need NOT add new observability, but do NOT remove existing.
+
+**4. Ship & verify staged flow** (CLAUDE.md):
+- Stage 1: `npm run lint` + `audit:numinput` + `audit:secdef-null-tenant` + `vitest run --changed` all green
+- Stage 2: `git push main` → verify `gcloud builds list --limit=2` STATUS != FAILURE (memory `deploy_verify_after_push`)
+- Stage 3: chrome-devtools MCP smoke on Toko Jaya Makmur (or affected tenant)
+
+### FE UI/UX approval gate list
+
+**Requires founder approval BEFORE code:**
+- **2A F5-12** — WT same-warehouse block: propose disable behavior + toast text
+- **2A F5-14** — WT recipient dropdown empty state: propose helper text
+- **2A F5-01** — Pelanggan add button: propose button placement + modal shape
+- **2B F5-10** — error class text: propose "Access denied" wording for tenant users
+- **2J FE state coverage** — per screen, propose loading spinner + empty message + error toast (ASCII mockup if layout matters)
+
+Format: describe layout + text + tone. Wait for "approved" / "iteration" before writing code.
+
+### Migration slot allocation
+
+| Slot | Migration | Phase | Purpose |
+|---|---|---|---|
+| 500 | `20261115000500_baseline.sql` | 2I | Schema baseline snapshot (pg_dump) |
+| 501 | `20261115000501_uq_customers_wa_tenant.sql` | 1A | F5-05: swap unique constraint |
+| 502 | `20261115000502_audit_pembayaran_composite_pk.sql` | 1C | P2-03: composite PK |
+| 503 | `20261115000503_warehouse_transfer_check_expiry_ok.sql` | 2D | P2-02: migrate 6 policies |
+| 504 | `20261115000504_perf_indexes_hot_queries.sql` | 2C | P2-01: 4-table index adds |
+| 505 | `20261115000505_secdef_owner_migrate.sql` | 3 | P3-05: vosi_rpc_owner takeover |
+
+Reserved 506-519 for follow-ups. Update memory `migration_slot_allocation` after applying.
+
+### Multi-tenant re-verify gates
+
+Session 6 baseline (3-tenant × 6-table matrix, 0 leaks) — must re-run after:
+
+- **After Phase 1** (F5-05 uq_customers_wa migration + P2-03 composite PK) — re-run matrix, expect 0 leaks
+- **After Phase 2E** (direct-writes → SECDEF refactor) — re-run matrix + verify SECDEF RPCs return 42501 for cross-tenant attempts
+- **After Phase 2I** (schema baseline) — smoke test fresh DB bootstrap works
+- **End of each phase** — quick sanity re-check via `docs/qa-week/pending-fixes/rpc-smoke.sql` extended matrix
+
+### Cost impact statement
+
+**Total additional $/tenant/month across Phase 0-5: $0.**
+
+- No new paid services
+- No Cloud Run instance upgrade (fits current CPU/memory allocation)
+- No Supabase tier upgrade (schema changes fit Free tier limits: 500MB DB, 1GB storage, 2GB bandwidth)
+- No Cloudflare/Sentry/Resend tier change
+- jspdf 4.x upgrade = same dep, no runtime cost delta
+- Bundle size reduction (2G) = LOWER egress cost per tenant (small win)
+
+If ANY sub-fix during execution surfaces cost impact → HALT + notify founder per memory `cost_upgrade_approval`.
+
+### Rollback plan per phase
+
+| Phase | Trigger | Rollback |
+|---|---|---|
+| 1A F5-05 | WA bot fails on Garindo customer lookup post-deploy | Revert backend commit → rollback Cloud Run revision. Migration DROP CONSTRAINT ... ADD old. |
+| 1B P1-07 | Any PDF layout broken in visual regression | `npm install jspdf@2.5.2 jspdf-autotable@3.8.4` → commit → deploy |
+| 1C P2-03 | Composite PK migration errors on prod data | Migration wrapped in transaction — auto-rollback on any FK violation |
+| 2A-2K | Individual batch introduces regression | Revert per-batch commit, re-verify affected screen |
+| 3 | Dropped index causes slow query surface post-drop | Re-CREATE INDEX (postgres does not require exclusive lock for CONCURRENTLY on prod) |
+| 4 | Test helper refactor breaks other passing tests | Revert helper commit, keep skip fallback |
+
+Each phase report `docs/qa-week/phase-N-report.md` must document rollback readiness confirmation before phase start.
+
+### Concrete success criteria per phase
+
+**Phase 0:** Founder written decisions in this doc footer or dedicated file.
+
+**Phase 1 (all 3 must hit):**
+- 3+ commits tagged `[qa-week-followup]` in git log
+- Cloud Build for each commit = SUCCESS (verify `gcloud builds list --limit=5`)
+- `mcp__plugin_supabase_supabase__get_advisors` sweep post-migration = 0 new findings
+- Regression tests: 3 added (F5-05, P1-07, P2-03) — all green
+- 3-tenant matrix re-run: 0 leaks
+
+**Phase 2 (all 11 batches):**
+- Each batch = 1 commit tagged `[qa-week-followup-2X]`
+- No new console.error introduced (grep after commit)
+- No new 5xx introduced (Playwright T5 network health re-run)
+- FE bundle size ≤ 2.5 MB gzipped (down from 3.13 MB via 2G)
+- Multi-tenant matrix re-run after 2E: 0 leaks
+
+**Phase 3:**
+- 15 unused indexes dropped confirmed via `pg_stat_user_indexes`
+- 133 console.error wrapped with Sentry.captureException (grep after = 0 direct calls)
+- P3-05: postgres-owned SECDEF count reduced from 52 to ≤ 10 (auth hooks + intentional debug)
+
+**Phase 4:**
+- `go test ./internal/db/...` = green (0 skip, 0 fail)
+- All tests use newTenantForTest helper
+
+**Phase 5:**
+- 10 interactive gaps executed with findings documented in `docs/qa-week/session-N-findings.md`
+- ~300 scenarios: ≥ 90% executed with pass/fail recorded
+
+### Priority ordering rationale
+
+Phase order = **blast-radius × user-impact / effort**:
+
+- **Phase 0 first:** blockers for anything else. 30 min founder time = massive unblock.
+- **Phase 1 second:** F5-05 = onboarding blocker. P2-03 = irreversible-adjacent, cheap now / expensive later. P1-07 = CVE hygiene.
+- **Phase 2 third:** grouped-by-concern for context economy. Batch order within Phase 2:
+  1. 2A UX polish (visible to any onboarded tenant, low effort)
+  2. 2B routing (affects every deep link)
+  3. 2C perf indexes (invisible now, structural for scale)
+  4. 2D RLS cleanup (technical debt but visible after next migration audit)
+  5. 2E direct-writes (defense-in-depth for financial paths)
+  6. 2F formatting (visible but low-risk sweep)
+  7. 2G bundle size (invisible per-user, cumulative infra win)
+  8. 2H realtime filter (defense-in-depth)
+  9. 2I schema baseline (dev velocity, blocks Phase 4)
+  10. 2J FE state coverage (broad visible polish)
+  11. 2K idempotency verify (verification, not new code)
+- **Phase 3:** cleanup after Phase 2 stabilizes (unused indexes need 1-week stability from Phase 2C additions)
+- **Phase 4:** unblocked by Phase 2I baseline
+- **Phase 5:** verifies everything else works end-to-end; must run last
