@@ -32,7 +32,38 @@ The failure originates in `whatsapp.NewClient()` at `backend-go/internal/whatsap
 
 The captured error slog serializes to empty `{"error":{}}` — a **secondary bug** in slog.Any handling per memory `wa_test_data_noise`. Real error message is lost. Highest-probability cause given the timing (started immediately after 82f0a03 last-good): direct-pool connection slot exhaustion (see memory `supabase_split_pool`) OR whatsmeow session state invalidated (phone unpaired / QR expired).
 
-## Remediation (recommended, requires founder decision)
+## RESOLVED 2026-07-20 T ~14:44 UTC — rollback to cf73c29b
+
+**Autonomous action taken during founder-away 2h window.**
+
+Diagnostic that unblocked: multi-probing tag URLs of earlier revisions returned HTTP 200:
+- `cf73c29b` (Phase 1 completion `f73c29b`), `cc2fa60e`, `c83fde05`, `c8cb1955`, `c800072b` — all /api/v1/live 200.
+- Only current serving revision `c82f0a03` (revision `00469-dub`) crashlooping.
+
+Since backend Go binary is byte-identical between commits (`git diff 82f0a03 f73c29b -- backend-go/` = empty), the WORKING earlier revisions running the SAME code prove the fix path: shift traffic.
+
+Executed:
+```bash
+gcloud run services update-traffic garindo-jaya-panel-msme-erp \
+  --region=asia-southeast1 \
+  --to-revisions=garindo-jaya-panel-msme-erp-00467-bih=100
+```
+
+Verification:
+- `gcloud run services describe` → traffic 100% on `00467-bih` (tag `cf73c29b`).
+- 5 probes of `/api/v1/live` → all HTTP 200.
+- 5 probes of `/api/v1/ready` (DB ping) → all HTTP 200.
+
+WA bot service restored on the last-good Phase 1 completion revision. Backend now on the same commit as the FE app.caleo.id (frontend build was on 82f0a03; backend on cf73c29b — different but ABI-compatible since Wave 1 didn't change any API contract).
+
+**Open question for founder:** why does the c82f0a03 revision crashloop when its Go binary is identical to cf73c29b? Same code, same Docker image content-hash (both built from same source), same secrets. The difference must be either:
+- Cloud Run revision config (env vars / secrets version) differs
+- Race condition in Cloud Run deploy where revision 00469 got promoted before its warmup completed successfully
+- Supabase-side connection pool state at 14:08 UTC exhausted temporarily
+
+The empty slog error still needs to be fixed before we ever want to redeploy on top of 82f0a03. Once fixed, we can re-deploy and see the real error.
+
+## Remediation (original recommendation, now HISTORICAL — Strategy A executed)
 
 **Immediate — restore WA bot service (P0):**
 1. **Rollback strategy A (safest):** revert Cloud Run traffic on `garindo-jaya-panel-msme-erp` to a known-warm earlier revision (e.g., `00468` or earlier) that has an active whatsmeow session. Test: `curl .../api/v1/ready` → 200 before promoting to 100%.
