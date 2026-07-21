@@ -51,8 +51,28 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
         if (supabase) {
           await supabase.auth.refreshSession().catch(() => { /* ignore */ });
         }
-        const ok = await tenantContextService.isPlatformAdmin();
+        // Retry isPlatformAdmin up to 3× with 500ms backoff. During a Supabase
+        // direct-pool pinch (see 2026-07-22 incident) this RPC can transiently
+        // return 500/503 and the guard would kick a legit admin out to the
+        // login screen. Retrying isolates transient DB errors from real
+        // access denials — a genuine non-admin's JWT claim doesn't flip on
+        // retry, so they still land at deny-not-admin.
+        let ok = false;
+        let lastErr: unknown = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            ok = await tenantContextService.isPlatformAdmin();
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            if (attempt < 2) {
+              await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+            }
+          }
+        }
         if (cancelled) return;
+        if (lastErr) throw lastErr;
         if (!ok) {
           adminToast.error('Halaman khusus admin');
           setState('deny-not-admin');
