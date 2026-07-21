@@ -127,3 +127,85 @@ Systematic FE state coverage (loading + empty + error per screen) requires 2 day
 - Wave 3 2J FE state coverage (~2 days work)
 - Memory update: `guard_expiry_write_broken_predicate` → 0 remaining (was noted as ~100, actually was 6 at Wave 1 start; all fixed by 2D commit 78a02cd)
 - Systematic slog.Any → slog.String migration in backend-go (11 sites per grep; only 1 fixed inline for [MAIN] WA client init in commit 19ea22d)
+
+---
+
+## Session B + partials — 2026-07-21 (autonomous 8h window continued)
+
+### Session A: 2E financial SECDEF refactor — SHIPPED (commit 4b4770f)
+Adversarial gate ran: audit_log HAS RLS but tenant_id column defaults to
+`_resolve_tenant_id()` + t_insert_own policy checks same value → direct FE
+INSERT passes cleanly. Smoke via mgmt-api with fake JWT confirmed id=469
+INSERT succeeded (rolled back). **No SECDEF wrap needed.** Scope collapsed
+to (a) fix misleading `EditOrderModal` comment, (b) capture regression SQL
+at `tests/sql/qa-week/2e-regression.sql`. Zero new RPCs shipped.
+
+### P3-03: whatsmeow table comments — SHIPPED (commit 286e31a)
+Migration 505 adds COMMENT ON TABLE for 6 whatsmeow_* tables documenting
+the RLS-enabled + zero-policies rationale (daemon connects as postgres
+owner, bypasses RLS; multi-tenant isolation in Go layer). Applied +
+schema_migrations tracked.
+
+### Phase 4: backend Go test helper — HELPER SHIPPED (commit 94b484d)
+`backend-go/internal/db/testhelpers.go` — `NewTenantForTest(t, c) uuid.UUID`
+with `t.Cleanup(...)` CASCADE delete. `go build ./...` + `go vet ./...`
+clean. **Test refactor DEFERRED** — subagent found all 80+ tests fail
+with SQLSTATE 53300 (Supabase :5432 pool exhaustion) BEFORE reaching any
+tenant-FK failure. Actual test refactor needs live DB (pool clear).
+
+### P2-07: any-type sweep in src/lib — SHIPPED (commit cf6ff8b)
+**80 → 0** `any` occurrences across 13 files. Full clean:
+`supabaseClient.ts` (50), `backendUrl.ts` (1), `pembayaranService.ts` (5),
+`pembelianService.ts` (3), `pesananService.ts` (3), `purchaseInvoiceService.ts` (8),
+`tukarFakturService.ts` (2), `piutangService.ts` (1), `sales/orderMapper.ts` (2),
+`pdf/belanjaNumpangLewatPdf.ts` (1), `pdf/purchaseOrderPdf.ts` (1),
+`akuntansi/journalReconService.ts` (2), `akuntansi/service.ts` (2). Zero
+intentional-any left. 666 vitest tests pass; lint clean.
+
+### P3-02: Sentry captureException sweep — SHIPPED (commit 2b8d307)
+Helper `src/lib/captureError.ts` (calls console.error + Sentry.captureException,
+safe no-op when VITE_SENTRY_DSN absent). Swept 89 source files, wrapped
+**151 of 153** `console.error` sites with `captureError(err, {feature, action})`
+context. 2 sites preserved intentionally (AppErrorBoundary already wraps
+directly + WhatsappAiScreen has console.error inside a string template
+literal displayed to users). Lint clean; 60 vitest tests pass.
+
+### Session C partial 2J: 7 additional screens patched — SHIPPED (commit 3782b51)
+Beyond initial 3 (LaporanScreen already fixed via 6b6740f; PenjualanScreen +
+StockManagerScreen are prop-fed with no fetch), added missing states to
+7 screens: OrderHistoryScreen, UserManagementScreen, DashboardScreen,
+WhatsappAiScreen, ManajemenGudangScreen, PembelianListScreen, PiutangScreen.
+2 screens (PelangganScreen, NotificationPrefsScreen) already had complete
+coverage — no changes. Zero UI layout re-flow, additive-only.
+
+## Deferred (pool blocker, needs founder Dashboard action)
+
+- **P3-01** drop 15 unused indexes — deferred per spec's "verify 1-week
+  stability" requirement (Wave 1 indexes only 1 day old at Session B time)
+- **P3-04** wa_recipients + conversations test fixture cleanup — needs
+  pool free to query current fixture rows + DELETE
+- **P3-05** SECDEF ownership auto-audit — needs pool free to run the
+  candidate-list query + apply `ALTER FUNCTION ... OWNER TO vosi_rpc_owner`
+- **Phase 4 test refactor** — needs pool free to run `go test ./internal/db/...`
+  and identify actual failure modes (may be pool-related, not tenant-related)
+
+## Combined status after 2026-07-21 sessions
+
+- **Wave 1 (2D + 2C + 2H; 2I deferred DB pw):** SHIPPED
+- **Wave 2 (2A + 2B + 2E; nothing deferred):** SHIPPED
+- **Wave 3 (2F + 2K + 2G + 2J partial):** SHIPPED
+- **Phase 3 (P3-03 + P3-02):** SHIPPED  
+- **Phase 3 (P3-01 + P3-04 + P3-05):** DEFERRED (pool)
+- **Phase 4 helper:** SHIPPED (refactor deferred, pool)
+- **P2-07:** SHIPPED
+
+## Next-session priorities (post-pool-drain)
+
+1. Founder drains :5432 pool via Supabase Dashboard SQL Editor (~10 min)
+2. Phase 4 refactor tests using `NewTenantForTest` helper (~3h)
+3. P3-04 + P3-05 (~1h combined)
+4. P3-01 after 1 week + `pg_stat_user_indexes` stability review
+5. 2I schema baseline (needs SUPABASE_DB_PASSWORD in .env)
+6. Phase 5 test coverage (needs chrome-devtools MCP; may include Playwright fallback)
+7. Restore cloudbuild.yaml Step 5+6 (prod BE deploy) from git history
+
