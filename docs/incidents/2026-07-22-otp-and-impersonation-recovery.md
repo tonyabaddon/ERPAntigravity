@@ -53,10 +53,12 @@ Neither bug was caught earlier because:
 - `gcloud run services update garindo-jaya-panel-msme-erp-staging --max-instances=1` (was 2)
 - `gcloud run services update sinar-elektrik-msme-erp --max-instances=1` (was 12)
 - `DELETE FROM public.platform_admin_active_impersonation WHERE admin_user_id='227c28f4-...'`
+- **`PUT /v1/projects/{ref}/config/database/postgres {"max_connections":90}`** — 60→90 non-superuser cap, biggest single win. Free tier allowed via management API. No cost impact. Effective cap 87 vs prior 57.
 
 **Permanent (committed):**
 - `f953555` (parallel session): `fatal(dbClient, msg, err)` helper + bounded SIGTERM `waClient.Disconnect` with 5s timeout + explicit `dbClient.Close()` before exit
 - `eb2924c` (this incident): AuthScreen unlock-OTP-on-error + migration 20261115000508 `expire_stale_impersonations()` SECDEF + pg_cron `expire_impersonations` @`15 * * * *`
+- `0e40dfc` (this incident): AdminRouteGuard retries `isPlatformAdmin()` 3× with 500ms backoff before denying access — prevents transient 5xx from booting a legit admin to login
 
 ## Prevention rules added
 

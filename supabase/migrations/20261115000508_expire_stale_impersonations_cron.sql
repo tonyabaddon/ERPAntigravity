@@ -32,6 +32,20 @@ ALTER FUNCTION public.expire_stale_impersonations() OWNER TO vosi_rpc_owner;
 REVOKE ALL ON FUNCTION public.expire_stale_impersonations() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.expire_stale_impersonations() TO postgres;
 
+-- RLS policy: allow vosi_rpc_owner to SEE and DELETE aged rows without a JWT.
+-- The existing p_platform_admin_only policy uses `_is_platform_admin_active_from_jwt()`
+-- which returns false when the function is invoked by pg_cron (no request JWT).
+-- Without this policy the DELETE's internal SELECT filters out every row,
+-- returning 0 reaped even for 24h+ rows. Verified via EXPLAIN VERBOSE — the
+-- planner AND-combined _is_platform_admin_active_from_jwt() into the row scan.
+-- FOR ALL so both SELECT (used by DELETE...RETURNING) and DELETE pass.
+DROP POLICY IF EXISTS p_expire_stale_impersonations ON public.platform_admin_active_impersonation;
+CREATE POLICY p_expire_stale_impersonations
+  ON public.platform_admin_active_impersonation
+  FOR ALL
+  TO vosi_rpc_owner
+  USING (started_at < now() - interval '8 hours');
+
 -- Schedule: every hour on the 15th minute. Idempotent — cron.schedule replaces
 -- an existing schedule with the same name.
 CREATE EXTENSION IF NOT EXISTS pg_cron;
