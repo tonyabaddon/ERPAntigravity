@@ -77,8 +77,10 @@ export default function LaporanScreen(props: LaporanScreenProps) {
   const [topProducts, setTopProducts] = useState<Array<{ name: string; qty: number; revenue: number }>>([]);
 
   // New: performa summary with delta + profit per channel
-  const [perfSummary, setPerfSummary] = useState<PerformaSummaryWithDelta | null>(null);
-  const [profitPerChannel, setProfitPerChannel] = useState<ChannelProfitRow[]>([]);
+  // null = loading, false = fetch error, value = success
+  const [perfSummary, setPerfSummary] = useState<PerformaSummaryWithDelta | null | false>(null);
+  const [profitPerChannel, setProfitPerChannel] = useState<ChannelProfitRow[] | false>([]);
+  const [revenueChartError, setRevenueChartError] = useState(false);
 
   // Convert string period to numeric PeriodDays for API calls
   const days = (period === '7d' ? 7 : period === '30d' ? 30 : 90) as PeriodDays;
@@ -89,6 +91,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
     const numDays = periodDays(period);
     setPerfSummary(null);
     setProfitPerChannel([]);
+    setRevenueChartError(false);
     Promise.allSettled([
       getPerformaSummaryWithDelta(days),
       getProfitPerChannel(days),
@@ -97,17 +100,17 @@ export default function LaporanScreen(props: LaporanScreenProps) {
     ]).then((results) => {
       const [perfRes, profitRes, revRes, prodsRes] = results;
       if (perfRes.status === 'fulfilled') setPerfSummary(perfRes.value);
-      else console.error('getPerformaSummaryWithDelta failed:', perfRes.reason);
+      else { console.error('getPerformaSummaryWithDelta failed:', perfRes.reason); setPerfSummary(false); }
       if (profitRes.status === 'fulfilled') setProfitPerChannel(profitRes.value);
-      else console.error('getProfitPerChannel failed:', profitRes.reason);
+      else { console.error('getProfitPerChannel failed:', profitRes.reason); setProfitPerChannel(false); }
       if (revRes.status === 'fulfilled') setDailyRevenueByChannel(revRes.value);
-      else console.error('fetchDailyRevenueByChannel failed:', revRes.reason);
+      else { console.error('fetchDailyRevenueByChannel failed:', revRes.reason); setRevenueChartError(true); }
       if (prodsRes.status === 'fulfilled') setTopProducts(prodsRes.value);
       else console.error('fetchTopProducts failed:', prodsRes.reason);
 
-      const allFailed = results.every((r) => r.status === 'rejected');
-      if (allFailed) {
-        showToast('Gagal memuat laporan. Cek koneksi dan coba pilih periode lagi.', 'warning');
+      const anyFailed = results.some((r) => r.status === 'rejected');
+      if (anyFailed) {
+        showToast('Sebagian data laporan gagal dimuat. Coba pilih periode lagi.', 'warning');
       }
     });
   }, [period]);
@@ -167,6 +170,11 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       )}
 
       {/* KPI cards */}
+      {perfSummary === false ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700" role="alert">
+          Gagal memuat ringkasan performa. Coba pilih periode lagi atau periksa koneksi.
+        </div>
+      ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           icon={<TrendingUp className="w-6 h-6" />}
@@ -219,6 +227,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
             : 'Memuat...'}
         />
       </div>
+      )}
 
       {/* Revenue by channel: stacked bar (left) + Profit per Channel list (right) */}
       <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -227,6 +236,11 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Stacked bar — daily trend */}
           <div className="flex-1 h-[280px]">
+            {revenueChartError ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-sm text-red-600 italic" role="alert">Gagal memuat grafik revenue. Coba pilih periode lagi.</p>
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyRevenueByChannel} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -240,12 +254,15 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                 <Bar dataKey="WA AI" stackId="a" fill={colorForChannel('WA AI')} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
 
           {/* Right: Profit per Channel (replaces old channel-total donut) */}
           <div className="lg:w-64 flex flex-col">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Profit per Channel</p>
-            {profitPerChannel.length === 0 ? (
+            {profitPerChannel === false ? (
+              <p className="text-xs text-red-600 italic" role="alert">Gagal memuat data channel.</p>
+            ) : profitPerChannel.length === 0 ? (
               <p className="text-xs text-gray-300 italic">Belum ada data</p>
             ) : (
               <div className="space-y-2">
