@@ -176,16 +176,16 @@ export const purchaseOrderService = {
     conditions: Record<string, { warehouse_id: string; qty_received: number; qty_damaged: number; damage_notes?: string }>;
   }): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    // Idempotency token (slot 312): prevents double-receipt on network retry.
+    const idem312 = crypto.randomUUID();
+    console.info('[idempotency] receive_purchase_order po=%s key=%s', poId, idem312);
     const { error } = await supabase.rpc('receive_purchase_order', {
       p_po_id: poId,
       p_received_at: params.received_at,
       p_payment_due_at: params.payment_due_at,
       p_invoice_url: params.invoice_url ?? null,
       p_conditions: params.conditions,
-      // Idempotency token (slot 312): prevents double-receipt on network retry.
-      // Generated fresh per call — the caller (ReceiveGoodsModal) submits once;
-      // any network-level retry of the same request uses the same key.
-      p_idempotency_key: crypto.randomUUID(),
+      p_idempotency_key: idem312,
     });
     if (error) throw error;
   },
