@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
+import { captureError } from './lib/captureError';
 import {
   Bot,
   Search,
@@ -236,7 +237,7 @@ export default function App() {
             console.warn(`No admin_users row for ${user.id}; defaulting to Owner (provision via User Management)`);
           }
         } catch (err) {
-          console.error('Failed to fetch admin_users role on session restore:', err);
+          captureError(err, { feature: 'auth', action: 'fetch_admin_users_role_on_session_restore' });
         }
         setCurrentUser({
           id: user.id,
@@ -259,7 +260,7 @@ export default function App() {
           if (ctx?.slug) setSessionTenantSlug(ctx.slug);
           if (ctx?.name) setSessionTenantName(ctx.name);
         } catch (err) {
-          console.error('Failed to fetch tenant slug on session restore:', err);
+          captureError(err, { feature: 'auth', action: 'fetch_tenant_slug_on_session_restore' });
         } finally {
           setSessionTenantLoaded(true);
         }
@@ -363,7 +364,7 @@ export default function App() {
         triggerToast('🌐 Database Supabase Sinkron! Ketersediaan stok live dimuat.', 'success');
       }
     }).catch(err => {
-      console.error('Failed to load stocks:', err);
+      captureError(err, { feature: 'stock', action: 'load_stocks' });
       triggerToast('⚠️ Gagal memuat stok dari Supabase.', 'warning');
     });
   }, [sessionTenantSlug]);
@@ -399,7 +400,7 @@ export default function App() {
         setStockList(mapped);
       }
     } catch (err) {
-      console.error('Stock refresh failed:', err);
+      captureError(err, { feature: 'stock', action: 'refresh_stocks' });
     }
   };
 
@@ -431,7 +432,7 @@ export default function App() {
           await supabaseService.upsertStock(item);
         }
       } catch (err) {
-        console.error('Supabase update failed:', err);
+        captureError(err, { feature: 'stock', action: 'supabase_update' });
         triggerToast('⚠️ Sinkronisasi Cloud Supabase gagal. Simpan lokal sukses.', 'warning');
       }
     }

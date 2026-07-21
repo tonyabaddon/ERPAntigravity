@@ -12,6 +12,7 @@ import React, { useEffect, useState } from 'react';
 import type { RakitServiceType } from '../../types';
 import type { DbServiceType } from '../../types';
 import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
+import { captureError } from '../../lib/captureError';
 
 // Map from seeded service_types.code → legacy RakitServiceType union value.
 // Seeded codes: 'custom_panel', 'wiring_panel'.
@@ -33,7 +34,7 @@ export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitBut
   useEffect(() => {
     serviceTypesService.fetchActive()
       .then(setServiceTypes)
-      .catch((err: unknown) => console.error('serviceTypes fetch:', err));
+      .catch((err: unknown) => captureError(err, { feature: 'penjualan', action: 'fetch_service_types' }));
   }, []);
 
   // Filter to only service types whose code maps to a known RakitServiceType.

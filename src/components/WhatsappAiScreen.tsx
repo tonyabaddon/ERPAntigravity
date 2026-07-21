@@ -28,6 +28,7 @@ import { supabase } from '../lib/supabaseClient';
 import { useTenant } from '../contexts/TenantContext';
 import { getBackendUrl } from '../lib/backendUrl';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
+import { captureError } from '../lib/captureError';
 
 interface WhatsappAiScreenProps {
   stockList: StockItem[];
@@ -208,7 +209,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       if (error) throw error;
       showToast(`Nomor ${num.phoneNumber} ${newValue ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
     } catch (err) {
-      console.error('handleToggleEnable error:', err);
+      captureError(err, { feature: 'whatsapp_ai', action: 'toggle_enable' });
       setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isEnabled: !newValue } : n));
       showToast('Gagal mengubah status nomor.', 'warning');
     }
@@ -227,7 +228,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
       if (error) throw error;
       showToast(`Auto-reply AI untuk ${num.phoneNumber} ${newValue ? 'diaktifkan' : 'dinonaktifkan'}.`, 'success');
     } catch (err) {
-      console.error('handleToggleAiEnabled error:', err);
+      captureError(err, { feature: 'whatsapp_ai', action: 'toggle_ai_enabled' });
       setWaNumbers(prev => prev.map(n => n.id === id ? { ...n, isAiEnabled: !newValue } : n));
       showToast('Gagal mengubah status AI.', 'warning');
     }

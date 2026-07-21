@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { captureError } from '../../lib/captureError';
 import { cascadeImpactSummary, type UsageStats } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings, ModulSwitchKey } from '../../types';
 import SettingCard from './SettingCard';
@@ -31,7 +32,7 @@ export default function ModulSwitchesPanel({ showToast }: Props) {
   useEffect(() => {
     tenantSettingsService.fetch()
       .then(setSettings)
-      .catch(err => { console.error(err); showToast('Gagal memuat pengaturan modul', 'warning'); })
+      .catch(err => { captureError(err, { feature: 'pengaturan_modul', action: 'load_modul_settings' }); showToast('Gagal memuat pengaturan modul', 'warning'); })
       .finally(() => setLoading(false));
     // Future: fetch UsageStats from a dedicated RPC (defer V2 — show static for now)
   }, []);
@@ -43,7 +44,7 @@ export default function ModulSwitchesPanel({ showToast }: Props) {
       await tenantSettingsService.updateModul(key, newValue);
       showToast(`${key} → ${newValue ? 'ON' : 'OFF'}`, 'success');
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'pengaturan_modul', action: 'toggle_modul' });
       setSettings(settings);
       showToast('Gagal simpan; coba lagi', 'warning');
     }

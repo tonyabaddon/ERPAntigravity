@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { DbSupplier } from '../../../types';
 import { supplierService } from '../../../lib/pembelianService';
+import { captureError } from '../../../lib/captureError';
 
 interface InlineSupplierFormProps {
   prefillName?: string;
@@ -42,7 +43,7 @@ export default function InlineSupplierForm({
         showToast('Supplier disimpan tapi tidak ditemukan. Refresh halaman.', 'warning');
       }
     } catch (e: any) {
-      console.error('Inline supplier save error:', e);
+      captureError(e, { feature: 'pembelian', action: 'inline_supplier_save' });
       showToast(e?.message ?? 'Gagal menyimpan supplier.', 'warning');
     } finally {
       setSaving(false);

@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import type { Order, SalesDashboardStats } from './types';
 import { rowToOrder } from './orderMapper';
+import { captureError } from '../captureError';
 
 export type RakitLockHistoryEvent =
   | { type: 'requested';                created_at: string; actor_user_id: string | null; admin_submitted: unknown }
@@ -86,7 +87,7 @@ export async function fetchRakitLockHistory(orderId: string): Promise<RakitLockH
     ])
     .order('created_at', { ascending: false });
   if (error) {
-    console.error('fetchRakitLockHistory failed', error);
+    captureError(error, { feature: 'sales', action: 'fetch_rakit_lock_history' });
     return [];
   }
   const events: RakitLockHistoryEvent[] = [];

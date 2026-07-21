@@ -24,6 +24,7 @@ import {
 } from '../../lib/supabaseClient';
 import { buildWhatsAppReminderUrl } from '../../lib/sales/waReminder';
 import { fetchRecentRejectsByOrder, type RejectInfo } from '../../lib/sales/recentRejects';
+import { captureError } from '../../lib/captureError';
 
 // Human-readable error for a failed transition_order_stage RPC. The
 // server-side adjacency guard (migration 20261115000201) surfaces
@@ -100,18 +101,18 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
 
   // initial load + realtime
   useEffect(() => {
-    fetchOrdersWithArchive().then(setOrders).catch(err => console.error('fetchOrdersWithArchive failed', err));
+    fetchOrdersWithArchive().then(setOrders).catch(err => captureError(err, { feature: 'daftar_pesanan', action: 'fetch_orders_with_archive' }));
     fetchStoreSettings().then(setSettings).catch(err => {
-      console.error('fetchStoreSettings failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'fetch_store_settings' });
       setSettings(null);
     });
     fetchBankAccounts(true).then(setBanks).catch(err => {
-      console.error('fetchBankAccounts failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'fetch_bank_accounts' });
       setBanks(null);
     });
     if (!tenantId) return;
     const sub = subscribeOrders(tenantId, () => {
-      fetchOrdersWithArchive().then(setOrders).catch(err => console.error('refresh fetch failed', err));
+      fetchOrdersWithArchive().then(setOrders).catch(err => captureError(err, { feature: 'daftar_pesanan', action: 'refresh_fetch' }));
     });
     return () => { sub.unsubscribe?.(); };
   }, [tenantId]);
@@ -132,7 +133,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       .catch((err) => {
         // Was firing unhandledrejection on failure, and leaving rejectInfoMap
         // stale from a previous id-set. Clear + log so the reject chips reset.
-        console.error('fetchRecentRejectsByOrder failed:', err);
+        captureError(err, { feature: 'daftar_pesanan', action: 'fetch_recent_rejects' });
         setRejectInfoMap({});
       });
   }, [orders]);
@@ -221,7 +222,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
         }
         setLockModalOrder({ id: order.id, rakitLines: lines });
       } catch (err) {
-        console.error('fetchRakitJobLinesForOrder failed', err);
+        captureError(err, { feature: 'daftar_pesanan', action: 'fetch_rakit_job_lines' });
         // eslint-disable-next-line no-alert
         alert('Gagal memuat detail pesanan.');
       }
@@ -258,7 +259,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
         alert(explainTransitionError(result));
       }
     } catch (err) {
-      console.error('transitionOrder failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'transition_order' });
       // eslint-disable-next-line no-alert
       alert('Gagal: network/server error.');
     } finally {
@@ -313,7 +314,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
         alert(explainTransitionError(result));
       }
     } catch (err) {
-      console.error('transitionOrder failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'run_transition_order' });
       // eslint-disable-next-line no-alert
       alert('Gagal: network/server error.');
     } finally {
@@ -368,7 +369,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       }
       await withdrawRakitLock(approvalId, currentUserId);
     } catch (err) {
-      console.error('withdrawRakitLock failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'withdraw_rakit_lock' });
       // eslint-disable-next-line no-alert
       alert('Gagal menarik pengajuan. Coba lagi.');
     } finally {
@@ -451,7 +452,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
                 alert(explainTransitionError(result));
               }
             } catch (err) {
-              console.error('approve failed', err);
+              captureError(err, { feature: 'daftar_pesanan', action: 'approve_proof' });
               // eslint-disable-next-line no-alert
               alert('Gagal terhubung ke server. Refresh dan coba lagi.');
             }
@@ -481,7 +482,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
                 alert(explainTransitionError(result));
               }
             } catch (err) {
-              console.error('reject failed', err);
+              captureError(err, { feature: 'daftar_pesanan', action: 'reject_proof' });
               // eslint-disable-next-line no-alert
               alert('Gagal terhubung ke server. Refresh dan coba lagi.');
             }
@@ -577,7 +578,7 @@ function WhatsAppFallbackModal({ message, onClose }: { message: string; onClose:
       // eslint-disable-next-line no-alert
       alert('Pesan disalin ke clipboard.');
     } catch (err) {
-      console.error('clipboard write failed', err);
+      captureError(err, { feature: 'daftar_pesanan', action: 'clipboard_write' });
     }
   }
   return (

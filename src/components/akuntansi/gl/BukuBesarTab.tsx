@@ -12,6 +12,7 @@ import {
 import type { CoaTreeRow } from '../../../lib/akuntansi/glQueries';
 import type { GeneralLedgerRow, AccountType, NormalBalance } from '../../../lib/akuntansi/types';
 import { formatRp, wibDateString } from '../../../lib/format';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -191,7 +192,7 @@ export default function BukuBesarTab({
         if (!cancelled) setCoaAccounts(data);
       })
       .catch(err => {
-        console.error('[BukuBesarTab] fetchCoaTree error', err);
+        captureError(err, { feature: 'akuntansi_buku_besar', action: 'fetch_coa_tree' });
         if (!cancelled) showToast('Gagal memuat daftar akun', 'warning');
       })
       .finally(() => {
@@ -221,7 +222,7 @@ export default function BukuBesarTab({
       fetchGeneralLedger(acctId, fromDate, toDate)
         .then(data => setRows(data))
         .catch(err => {
-          console.error('[BukuBesarTab] fetchGeneralLedger error', err);
+          captureError(err, { feature: 'akuntansi_buku_besar', action: 'fetch_general_ledger' });
           showToast('Gagal memuat buku besar', 'warning');
         })
         .finally(() => setLoadingRows(false));

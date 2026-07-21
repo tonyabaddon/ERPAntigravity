@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { NotificationConfig, DbWaRecipient } from '../types';
 import { notificationConfigService, waRecipientsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { captureError } from '../lib/captureError';
 
 interface NotificationSettingsScreenProps {
   config: NotificationConfig;
@@ -51,7 +52,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    waRecipientsService.fetchAll().then(setRecipients).catch(console.error);
+    waRecipientsService.fetchAll().then(setRecipients).catch(err => captureError(err, { feature: 'notification_settings', action: 'fetch_wa_recipients' }));
     notificationConfigService.fetch().then(row => {
       if (!row) return;
       dbConfigIdRef.current = row.id;
@@ -63,7 +64,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
       setStatusChecked(row.report_status);
       setLowStockLimit(row.low_stock_alert);
       setDelayLimit(row.delay_alert);
-    }).catch(err => console.error('notificationConfig load error:', err));
+    }).catch(err => captureError(err, { feature: 'notification_settings', action: 'load_notification_config' }));
   }, []);
 
   // CRUD handlers for WA recipients moved to PengaturanScreen on 2026-06-12.
@@ -100,7 +101,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
           if (row) dbConfigIdRef.current = row.id;
         }
       } catch (err) {
-        console.error('notificationConfig save error:', err);
+        captureError(err, { feature: 'notification_settings', action: 'save_notification_config' });
         showToast("⚠️ Gagal menyimpan ke cloud. Tersimpan lokal.");
         onConfigChange(updated);
         return;

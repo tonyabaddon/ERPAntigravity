@@ -6,6 +6,7 @@ import type { MaintenanceCounts } from '../../lib/dashboardReports/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { categoryCounts } from '../../lib/salesInboxCategorize';
 import { conversationService } from '../../lib/supabaseClient';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   onNavigate: (screen: string) => void;
@@ -19,7 +20,7 @@ export default function DashboardMaintenanceSection({ onNavigate }: Props) {
     getDashboardMaintenanceCounts()
       .then(setCounts)
       .catch((err) => {
-        console.error('[DashboardMaintenanceSection]', err);
+        captureError(err, { feature: 'dashboard', action: 'fetch_maintenance_counts' });
         setCounts({
           approval_pending: 0,
           piutang_overdue_count: 0, piutang_overdue_sum: 0,
@@ -38,7 +39,7 @@ export default function DashboardMaintenanceSection({ onNavigate }: Props) {
         const cc = categoryCounts(convs);
         setInboxCount(cc.butuhAksi);
       } catch (err) {
-        console.error('[inbox count]', err);
+        captureError(err, { feature: 'dashboard', action: 'fetch_inbox_count' });
       }
     }
     void fetchInbox();

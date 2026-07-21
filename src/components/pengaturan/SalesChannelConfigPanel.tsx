@@ -1,5 +1,6 @@
 import React from 'react';
 import { ToggleLeft, ToggleRight, Lock } from 'lucide-react';
+import { captureError } from '../../lib/captureError';
 import { useSalesChannels } from '../../contexts/SalesChannelsContext';
 import { CHANNEL_GROUPS, CHANNEL_LOCKED, getChannelDef, type ChannelGroup } from '../../lib/salesChannels';
 import ChannelIcon from '../icons/ChannelIcon';
@@ -34,7 +35,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
     try {
       await toggleVisibility(code);
     } catch (err) {
-      console.error('toggleVisibility error:', err);
+      captureError(err, { feature: 'pengaturan_sales_channel', action: 'toggle_visibility' });
       showToast('Gagal mengubah status kanal.', 'warning');
     }
   };

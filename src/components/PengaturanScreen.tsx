@@ -23,6 +23,7 @@ import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
 import LayananPanel from './pengaturan/LayananPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
+import { captureError } from '../lib/captureError';
 
 type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan';
 
@@ -108,12 +109,12 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       fetchStoreSettings(),
     ]).then(([recipsResult, coResult, storeResult]) => {
       if (recipsResult.status === 'fulfilled') setRecipients(recipsResult.value);
-      else console.error('wa_recipients load error:', recipsResult.reason);
+      else captureError(recipsResult.reason, { feature: 'pengaturan', action: 'load_wa_recipients' });
 
       if (coResult.status === 'fulfilled') {
         setCompany(coResult.value);
       } else {
-        console.error('company_settings load error:', coResult.reason);
+        captureError(coResult.reason, { feature: 'pengaturan', action: 'load_company_settings' });
         showToast('Gagal memuat sebagian pengaturan. Coba refresh.', 'warning');
       }
 
@@ -122,7 +123,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       if (storeResult.status === 'fulfilled') {
         setLogoUrl(storeResult.value?.logo_url ?? null);
       } else {
-        console.error('store_settings load error:', storeResult.reason);
+        captureError(storeResult.reason, { feature: 'pengaturan', action: 'load_store_settings' });
       }
     }).finally(() => {
       setRecipientsLoading(false);
@@ -137,7 +138,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     try {
       await waRecipientsService.toggleActive(id, newActive);
     } catch (err) {
-      console.error('toggleActive error:', err);
+      captureError(err, { feature: 'pengaturan', action: 'toggle_wa_recipient' });
       setRecipients(prev => prev.map(r => r.id === id ? { ...r, is_active: currentActive } : r));
       showToast('Gagal mengubah status penerima.', 'warning');
     }
@@ -150,7 +151,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       await waRecipientsService.remove(id);
       showToast('Penerima berhasil dihapus.', 'success');
     } catch (err) {
-      console.error('remove recipient error:', err);
+      captureError(err, { feature: 'pengaturan', action: 'remove_wa_recipient' });
       showToast('Gagal menghapus penerima.', 'warning');
       const refreshed = await waRecipientsService.fetchAll();
       setRecipients(refreshed);
@@ -173,7 +174,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         }
       }
     } catch (err) {
-      console.error('handleTestSend error:', err);
+      captureError(err, { feature: 'pengaturan', action: 'test_send_wa' });
       showToast('Gagal kirim tes WA.', 'warning');
     } finally {
       setTestSendingId(null);
@@ -202,7 +203,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       setShowAddForm(false);
       showToast('Penerima berhasil ditambahkan.', 'success');
     } catch (err) {
-      console.error('add recipient error:', err);
+      captureError(err, { feature: 'pengaturan', action: 'add_wa_recipient' });
       showToast('Gagal menambahkan penerima.', 'warning');
     } finally {
       setAddSaving(false);
@@ -464,7 +465,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                     await companySettingsService.updateOpnameRequireWitness(tenant.tenant_id, v);
                     showToast(`Saksi wajib: ${v ? 'AKTIF' : 'NONAKTIF'}`, 'success');
                   } catch (err) {
-                    console.error('updateOpnameRequireWitness error:', err);
+                    captureError(err, { feature: 'pengaturan', action: 'update_opname_require_witness' });
                     setCompany(prev => prev ? { ...prev, opname_require_witness: !v } : prev);
                     showToast('Gagal menyimpan pengaturan.', 'warning');
                   }
@@ -651,7 +652,7 @@ function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success'
     adminUsersService.currentOwnerHasPin()
       .then(setHasPin)
       .catch((err) => {
-        console.error('currentOwnerHasPin error:', err);
+        captureError(err, { feature: 'pengaturan', action: 'check_owner_has_pin' });
         setHasPin(false);
       });
   }, []);
@@ -678,7 +679,7 @@ function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success'
       setConfirmPin('');
       setHasPin(true);
     } catch (err) {
-      console.error('changeOwnerPin error:', err);
+      captureError(err, { feature: 'pengaturan', action: 'change_owner_pin' });
       const msg = extractErrorMessage(err);
       showToast(`Gagal: ${msg}`, 'warning');
     } finally {

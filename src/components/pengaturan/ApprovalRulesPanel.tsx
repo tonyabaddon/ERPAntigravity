@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { approvalSettingsService, tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { captureError } from '../../lib/captureError';
 import { isApprovalGateVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbApprovalSettings, DbTenantSettings, ApprovalRequestType } from '../../types';
 import { ApprovalGateEditor, type ApprovalGateSettings } from './ApprovalGateEditor';
@@ -53,7 +54,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
   useEffect(() => {
     Promise.all([approvalSettingsService.fetch(), tenantSettingsService.fetch()])
       .then(([s, t]) => { setSettings(s); setTenant(t); })
-      .catch(err => { console.error(err); showToast('Gagal memuat approval settings', 'warning'); })
+      .catch(err => { captureError(err, { feature: 'pengaturan_approval', action: 'load_approval_settings' }); showToast('Gagal memuat approval settings', 'warning'); })
       .finally(() => setLoading(false));
   }, [refreshTick]);
 
@@ -70,7 +71,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
       });
       showToast(`${type} → ${newRequired ? 'ON (PIN)' : 'OFF'}`, 'success');
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'pengaturan_approval', action: 'toggle_approval' });
       setSettings(prev => prev.map(s => s.request_type === type ? existing : s));
       showToast('Gagal simpan', 'warning');
     }
@@ -79,7 +80,7 @@ export default function ApprovalRulesPanel({ showToast }: Props) {
   const handleThreshold = async (type: ApprovalRequestType, value: number | null) => {
     setSettings(prev => prev.map(s => s.request_type === type ? { ...s, threshold_amount: value } : s));
     try { await approvalSettingsService.updateOne(type, { threshold_amount: value }); }
-    catch (err) { console.error(err); showToast('Gagal simpan threshold', 'warning'); }
+    catch (err) { captureError(err, { feature: 'pengaturan_approval', action: 'save_threshold' }); showToast('Gagal simpan threshold', 'warning'); }
   };
 
   if (loading) return <p className="text-sm text-slate-500 p-6">Memuat…</p>;

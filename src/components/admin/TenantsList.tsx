@@ -10,6 +10,7 @@ import { adminToast } from '../../lib/adminToast';
 import { isSuperAdmin } from '../../lib/adminAuth';
 import { TenantsTable } from './TenantsTable';
 import type { SortBy, ImpersonationAccessStatus } from './TenantsTable';
+import { captureError } from '../../lib/captureError';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -163,7 +164,7 @@ export function TenantsList() {
         });
         if (cancelled) return;
         if (error) {
-          console.error('admin_impersonation_access_status error:', error);
+          captureError(error, { feature: 'admin_tenants', action: 'check_impersonation_access_status' });
           return;
         }
         // The RPC returns OUT columns prefixed `out_` to avoid a Postgres
@@ -183,7 +184,7 @@ export function TenantsList() {
         }
         setAccessStatus(map);
       } catch (err) {
-        console.error('access status fetch failed:', err);
+        captureError(err, { feature: 'admin_tenants', action: 'fetch_access_status' });
       }
     })();
     return () => {

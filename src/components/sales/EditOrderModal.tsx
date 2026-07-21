@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import type { Order, OrderItem } from '../../lib/sales/types';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   order: Order;
@@ -82,7 +83,7 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
         },
       });
       if (auditErr) {
-        console.error('audit_log insert failed', auditErr);
+        captureError(auditErr, { feature: 'sales', action: 'audit_log_insert' });
         throw new Error('Gagal mencatat audit. Edit dibatalkan.');
       }
 
@@ -103,7 +104,7 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
       alert('Pesanan berhasil diperbarui.');
       onClose();
     } catch (err) {
-      console.error('EditOrderModal save failed', err);
+      captureError(err, { feature: 'sales', action: 'edit_order_save' });
       setError(err instanceof Error ? err.message : 'Simpan gagal.');
     } finally {
       setSaving(false);

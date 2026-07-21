@@ -8,6 +8,7 @@ import InlineSupplierForm from './form/InlineSupplierForm';
 import StockPicker from './form/StockPicker';
 import ItemRow from './form/ItemRow';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 interface PurchaseOrderFormPageProps {
   po?: DbPurchaseOrder;                     // undefined = create, defined = edit
@@ -150,7 +151,7 @@ export default function PurchaseOrderFormPage({
       );
       onSaved(status);
     } catch (e: any) {
-      console.error('Save PO error:', e);
+      captureError(e, { feature: 'pembelian', action: 'save_po' });
       showToast(e?.message ?? 'Gagal menyimpan PO.', 'warning');
     } finally {
       setSaving(false);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSlowMovingStock } from '../../lib/dashboardReports/api';
 import type { SlowMovingRow, PeriodDays } from '../../lib/dashboardReports/types';
+import { captureError } from '../../lib/captureError';
 
 interface Props { days: PeriodDays; }
 
@@ -10,7 +11,7 @@ export default function SlowMoverTable({ days }: Props) {
   useEffect(() => {
     setRows(null);
     getSlowMovingStock(days, 20).then(setRows).catch((err) => {
-      console.error('[SlowMoverTable]', err);
+      captureError(err, { feature: 'laporan', action: 'fetch_slow_moving_stock' });
       setRows([]);
     });
   }, [days]);

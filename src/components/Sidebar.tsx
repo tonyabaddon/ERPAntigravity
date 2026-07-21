@@ -37,6 +37,7 @@ import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabase
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import PiutangBadge from './piutang/PiutangBadge';
 import SalesInboxBadge from './sales/SalesInboxBadge';
+import { captureError } from '../lib/captureError';
 
 interface SidebarProps {
   activePage: ActivePage;
@@ -73,7 +74,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   useEffect(() => {
     tenantSettingsService.fetch()
       .then(setTenantSettings)
-      .catch(err => console.error('tenant settings fetch:', err));
+      .catch(err => captureError(err, { feature: 'sidebar', action: 'fetch_tenant_settings' }));
   }, []);
 
   // If user is not logged in / is on auth screen, we don't render standard sidebar

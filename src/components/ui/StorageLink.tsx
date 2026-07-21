@@ -17,6 +17,7 @@
 
 import React, { useState } from 'react';
 import { getSignedStorageUrl } from '../../lib/chatMediaSignedUrl';
+import { captureError } from '../../lib/captureError';
 
 interface StorageLinkProps {
   bucket: string;
@@ -44,7 +45,7 @@ export function StorageLink({ bucket, storageRef, children, className }: Storage
       if (signedUrl) {
         window.open(signedUrl, '_blank', 'noreferrer');
       } else {
-        console.error('[StorageLink] failed to resolve signed URL', { bucket, storageRef });
+        captureError(new Error('Failed to resolve signed URL'), { feature: 'storage_link', action: 'resolve_signed_url', bucket, storageRef });
       }
     } finally {
       setResolving(false);

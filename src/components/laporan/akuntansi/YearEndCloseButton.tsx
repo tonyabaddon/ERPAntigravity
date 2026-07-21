@@ -5,6 +5,7 @@ import { previewYearEndClose, postYearEndClose } from '../../../lib/saldoAwal/ap
 import type { YearEndClosePreview } from '../../../lib/saldoAwal/types';
 import { formatIDR } from '../../../lib/formatIDR';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       .then(closed => { if (!cancelled) setAlreadyClosed(closed); })
       .catch(err => {
         if (!cancelled) {
-          console.error('[YearEndCloseButton] checkAlreadyClosed error', err);
+          captureError(err, { feature: 'laporan_year_end', action: 'check_already_closed' });
           setCheckError(extractErrorMessage(err));
           setAlreadyClosed(false); // fail-open: show button, modal will surface error
         }
@@ -100,7 +101,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       setPreview(data);
     } catch (err) {
       const msg = extractErrorMessage(err);
-      console.error('[YearEndCloseButton] previewYearEndClose error', err);
+      captureError(err, { feature: 'laporan_year_end', action: 'preview_year_end_close' });
       setPreviewError(msg);
     } finally {
       setPreviewLoading(false);
@@ -119,7 +120,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
       window.location.reload();
     } catch (err) {
       const msg = extractErrorMessage(err);
-      console.error('[YearEndCloseButton] postYearEndClose error', err);
+      captureError(err, { feature: 'laporan_year_end', action: 'post_year_end_close' });
       showToast(`Gagal tutup buku: ${msg}`, 'warning');
     } finally {
       setSubmitting(false);

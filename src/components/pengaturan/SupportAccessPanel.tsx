@@ -14,6 +14,7 @@ import {
   impersonationGrantsService,
   ImpersonationGrant,
 } from '../../lib/impersonationGrantsService';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -74,7 +75,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
       const rows = await impersonationGrantsService.list();
       setGrants(rows);
     } catch (err) {
-      console.error('list_impersonation_grants error:', err);
+      captureError(err, { feature: 'pengaturan_support_access', action: 'list_impersonation_grants' });
       showToast(humanErr(err), 'warning');
     } finally {
       setLoading(false);
@@ -106,7 +107,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
       setGrantForm({ admin_email: '', hours: 24, reason: '' });
       await load();
     } catch (err) {
-      console.error('grant_impersonation error:', err);
+      captureError(err, { feature: 'pengaturan_support_access', action: 'grant_impersonation' });
       showToast(humanErr(err), 'warning');
     } finally {
       setSaving(false);
@@ -126,7 +127,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
       setRevokeReason('');
       await load();
     } catch (err) {
-      console.error('revoke_impersonation error:', err);
+      captureError(err, { feature: 'pengaturan_support_access', action: 'revoke_impersonation' });
       showToast(humanErr(err), 'warning');
     } finally {
       setRevoking(false);

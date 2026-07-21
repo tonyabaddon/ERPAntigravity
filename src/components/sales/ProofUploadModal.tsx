@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { uploadPaymentProof } from '../../lib/sales/mutations';
 import type { ProofSource } from '../../lib/sales/types';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   orderId: string;
@@ -25,7 +26,7 @@ export function ProofUploadModal({ orderId, field, onUploaded, onClose }: Props)
       onUploaded(url);
       onClose();
     } catch (err) {
-      console.error('uploadPaymentProof failed', err);
+      captureError(err, { feature: 'sales', action: 'upload_payment_proof' });
       setError(err instanceof Error ? err.message : 'Upload gagal');
     } finally {
       setBusy(false);

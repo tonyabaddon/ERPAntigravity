@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   title: string;
@@ -46,7 +47,7 @@ export function ReasonInputModal({
       await onConfirm(reason.trim());
       onClose();
     } catch (err) {
-      console.error('ReasonInputModal confirm failed', err);
+      captureError(err, { feature: 'sales', action: 'reason_confirm' });
       setError(err instanceof Error ? err.message : 'Aksi gagal.');
     } finally {
       setSubmitting(false);

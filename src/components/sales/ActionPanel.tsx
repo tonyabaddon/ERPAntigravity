@@ -7,6 +7,7 @@ import { availablePdfsForOrder, type AvailablePdf } from '../../lib/sales/pdf/av
 import type { PdfPrintMode } from '../../lib/sales/pdf/common';
 import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
 import TambahLayananModal from '../penjualan/TambahLayananModal';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   order: Order;
@@ -141,7 +142,7 @@ export function ActionPanel({
       }
       setPreview({ blob: result!.blob, filename: result!.filename });
     } catch (err) {
-      console.error(`Generate ${kind} PDF failed`, err);
+      captureError(err, { feature: 'sales', action: 'generate_pdf', kind });
       setGenError(`Gagal generate ${PDF_LABELS[kind].label}.`);
     } finally {
       setGenerating(null);

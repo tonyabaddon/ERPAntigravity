@@ -7,6 +7,7 @@ import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice } from '../../../types';
 import PiStatusBadge from './PiStatusBadge';
 import { formatIDR } from '../../../lib/formatIDR';
+import { captureError } from '../../../lib/captureError';
 
 interface Props {
   orderId: string;
@@ -26,7 +27,7 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
     purchaseInvoiceService.fetchByOrderId(orderId)
       .then(setPis)
       .catch((err) => {
-        console.error('OrderBnlSection fetchByOrderId failed:', err);
+        captureError(err, { feature: 'pembelian_bnl', action: 'fetch_by_order_id' });
         setPis([]);
       })
       .finally(() => setLoading(false));

@@ -16,6 +16,7 @@ import { AdminUser, PermissionSet, DbAdminUser, ALL_PERMISSIONS } from '../types
 import { adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
 import { useTenant } from '../contexts/TenantContext';
+import { captureError } from '../lib/captureError';
 
 interface UserManagementScreenProps {
   showToast: (msg: string) => void;
@@ -106,7 +107,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         setAdmins(rows.map(dbToAdminUser));
       })
       .catch(err => {
-        console.error('Failed to load admin users:', err);
+        captureError(err, { feature: 'user_management', action: 'load_admin_users' });
         showToast('⚠️ Gagal memuat data admin dari Supabase.');
       })
       .finally(() => setLoading(false));
@@ -132,7 +133,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         await adminUsersService.upsert(adminUserToDb(changed, tenant.tenant_id));
         showToast('🛡️ Keamanan Diperbarui! Hak akses berhasil disesuaikan.');
       } catch (err) {
-        console.error('upsert permission failed:', err);
+        captureError(err, { feature: 'user_management', action: 'upsert_permission' });
         setAdmins(prev);
         showToast('⚠️ Gagal menyimpan perubahan hak akses.');
       }
@@ -177,7 +178,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       try {
         await adminUsersService.upsert(adminUserToDb(newAdmin, tenant.tenant_id));
       } catch (err) {
-        console.error('upsert new admin failed:', err);
+        captureError(err, { feature: 'user_management', action: 'upsert_new_admin' });
         // Revert optimistic add on failure
         setAdmins(prev => prev.filter(a => a.id !== newAdmin.id));
         showToast('⚠️ Gagal menyimpan admin baru ke Supabase.');
@@ -202,13 +203,13 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
           },
         });
         if (inviteErr) {
-          console.error('send-admin-invite returned error:', inviteErr);
+          captureError(inviteErr, { feature: 'user_management', action: 'send_admin_invite_rpc_error' });
           showToast(`⚠️ Admin dibuat tapi gagal kirim email undangan: ${inviteErr.message}`);
         } else {
           inviteSent = true;
         }
       } catch (err) {
-        console.error('send-admin-invite threw:', err);
+        captureError(err, { feature: 'user_management', action: 'send_admin_invite_threw' });
         showToast('⚠️ Admin dibuat tapi gagal kirim email undangan.');
       }
     }
@@ -231,7 +232,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       try {
         await adminUsersService.remove(id);
       } catch (err) {
-        console.error('delete admin failed:', err);
+        captureError(err, { feature: 'user_management', action: 'delete_admin' });
         if (removedAdmin) setAdmins(prev => [...prev, removedAdmin]);
         showToast('⚠️ Gagal menghapus admin dari Supabase.');
         return;

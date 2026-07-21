@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { serviceTypesService } from '../../lib/pengaturan/pengaturanServices';
 import type { DbServiceType, PricingModel } from '../../types';
+import { captureError } from '../../lib/captureError';
 
 interface Props { showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void; }
 
@@ -21,12 +22,12 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
   useEffect(() => {
     serviceTypesService.fetchAll()
       .then(setItems)
-      .catch(err => { console.error(err); showToast('Gagal memuat jenis jasa', 'warning'); })
+      .catch(err => { captureError(err, { feature: 'pengaturan_jenis_jasa', action: 'load_service_types' }); showToast('Gagal memuat jenis jasa', 'warning'); })
       .finally(() => setLoading(false));
   }, []);
 
   const reload = async () => {
-    try { setItems(await serviceTypesService.fetchAll()); } catch (err) { console.error(err); }
+    try { setItems(await serviceTypesService.fetchAll()); } catch (err) { captureError(err, { feature: 'pengaturan_jenis_jasa', action: 'reload_service_types' }); }
   };
 
   const handleSave = async (input: Partial<DbServiceType>) => {
@@ -50,7 +51,7 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
       setEditing(null);
       setShowAdd(false);
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'pengaturan_jenis_jasa', action: 'save_service_type' });
       showToast('Gagal simpan', 'warning');
     }
   };

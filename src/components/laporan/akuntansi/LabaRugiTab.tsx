@@ -16,6 +16,7 @@ import type { DbTenantSettings } from '../../../types';
 import type { LabaRugiData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -142,7 +143,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
         if (!cancelled) setData(result);
       })
       .catch((err: Error) => {
-        console.error('[LabaRugiTab] fetchLabaRugi error', err);
+        captureError(err, { feature: 'laporan_akuntansi', action: 'fetch_laba_rugi' });
         if (!cancelled) setError(err.message);
       })
       .finally(() => {

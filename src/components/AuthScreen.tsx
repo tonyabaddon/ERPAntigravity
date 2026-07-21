@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Rocket, Mail, Lock, Heart, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured, adminUsersService, tenantContextService } from '../lib/supabaseClient';
+import { captureError } from '../lib/captureError';
 import { PermissionSet, ALL_PERMISSIONS } from '../types';
 import { computePostLoginRoute } from '../lib/postLoginRoute';
 
@@ -271,7 +272,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           tenant_id: '',
         });
       } catch (err) {
-        console.error('Failed to create owner row in admin_users:', err);
+        captureError(err, { feature: 'auth', action: 'create_owner_admin_users' });
         // Non-fatal: continue login with all permissions
       }
     }

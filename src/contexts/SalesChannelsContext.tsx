@@ -10,6 +10,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 import type { SalesChannel } from '../types';
 import { CHANNEL_GROUPS, CHANNEL_LOCKED, type ChannelGroup } from '../lib/salesChannels';
 import { useTenant } from './TenantContext';
+import { captureError } from '../lib/captureError';
 
 interface ChannelSetting {
   isVisible: boolean;
@@ -57,7 +58,7 @@ export function SalesChannelsProvider({ children }: { children: ReactNode }) {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) {
-          console.error('SalesChannelsContext load error:', error);
+          captureError(error, { feature: 'sales_channels_context', action: 'load_channel_settings' });
           setIsLoading(false);
           return;
         }

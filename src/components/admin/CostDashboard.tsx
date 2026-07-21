@@ -11,6 +11,7 @@ import {
 } from '../../lib/costDashboardApi';
 import { adminToast } from '../../lib/adminToast';
 import { wibDateString } from '../../lib/format';
+import { captureError } from '../../lib/captureError';
 
 // ─── Helpers ────────────���─────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ export function CostDashboard() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      console.error('[CostDashboard] load error:', msg);
+      captureError(msg, { feature: 'admin_cost_dashboard', action: 'load_costs' });
     } finally {
       setLoading(false);
     }
@@ -232,7 +233,7 @@ export function CostDashboard() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       adminToast.error('Backfill gagal', msg);
-      console.error('[CostDashboard] backfill error:', msg);
+      captureError(msg, { feature: 'admin_cost_dashboard', action: 'backfill_cost' });
     } finally {
       setRefreshing(false);
     }

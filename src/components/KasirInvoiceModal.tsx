@@ -6,6 +6,7 @@ import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import type { StoreSettings } from '../lib/pengaturan/types';
 import { CHANNEL_VISUAL } from '../lib/salesChannels';
 import { formatIDR } from '../lib/formatIDR';
+import { captureError } from '../lib/captureError';
 
 interface KasirInvoiceModalProps {
   transaction: KasirTransaction;
@@ -32,7 +33,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
     if (!isSupabaseConfigured) { setLoading(false); return; }
     fetchStoreSettings()
       .then(setStore)
-      .catch(console.error)
+      .catch(err => captureError(err, { feature: 'kasir_invoice', action: 'fetch_store_settings' }))
       .finally(() => setLoading(false));
   }, []);
 

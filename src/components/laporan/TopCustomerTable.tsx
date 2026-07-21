@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getTopCustomers } from '../../lib/dashboardReports/api';
 import type { TopCustomerRow, PeriodDays } from '../../lib/dashboardReports/types';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   days: PeriodDays;
@@ -19,7 +20,7 @@ export default function TopCustomerTable({ days, onOpenCustomer }: Props) {
   useEffect(() => {
     setRows(null);
     getTopCustomers(days, 10).then(setRows).catch((err) => {
-      console.error('[TopCustomerTable]', err);
+      captureError(err, { feature: 'laporan', action: 'fetch_top_customers' });
       setRows([]);
     });
   }, [days]);

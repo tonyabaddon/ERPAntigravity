@@ -4,6 +4,7 @@ import { fetchBankAccounts } from '../../lib/pengaturan/queries';
 import { createBankAccount, updateBankAccount, deleteBankAccount } from '../../lib/pengaturan/mutations';
 import { NumberInput } from '../ui/NumberInput';
 import type { BankAccount } from '../../lib/pengaturan/types';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -43,7 +44,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       const data = await fetchBankAccounts();
       setAccounts(data);
     } catch (err) {
-      console.error('fetchBankAccounts failed', err);
+      captureError(err, { feature: 'pengaturan_rekening_bank', action: 'fetch_bank_accounts' });
       showToast('Gagal memuat daftar rekening', 'warning');
     } finally {
       setLoading(false);
@@ -96,7 +97,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       cancelForm();
       await refresh();
     } catch (err) {
-      console.error('save bank account failed', err);
+      captureError(err, { feature: 'pengaturan_rekening_bank', action: 'save_bank_account' });
       if (isRlsError(err)) {
         showToast('Anda harus Owner untuk mengubah rekening bank', 'warning');
       } else {
@@ -113,7 +114,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       await updateBankAccount(account.id, { is_active: !account.is_active });
       await refresh();
     } catch (err) {
-      console.error('toggle bank active failed', err);
+      captureError(err, { feature: 'pengaturan_rekening_bank', action: 'toggle_bank_active' });
       if (isRlsError(err)) {
         showToast('Anda harus Owner untuk mengubah rekening', 'warning');
       } else {
@@ -132,7 +133,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       showToast('Rekening dihapus', 'success');
       await refresh();
     } catch (err) {
-      console.error('delete bank account failed', err);
+      captureError(err, { feature: 'pengaturan_rekening_bank', action: 'delete_bank_account' });
       if (isRlsError(err)) {
         showToast('Anda harus Owner untuk menghapus rekening', 'warning');
       } else {

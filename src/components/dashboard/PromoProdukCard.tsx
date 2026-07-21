@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { getPromoSummary } from '../../lib/promoProduk/api';
 import type { PromoSummary } from '../../lib/promoProduk/types';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   onNavigateToPengaturan: () => void;
@@ -17,7 +18,7 @@ export default function PromoProdukCard({ onNavigateToPengaturan }: Props) {
     getPromoSummary()
       .then(setSummary)
       .catch((err) => {
-        console.error('PromoProdukCard getPromoSummary failed:', err);
+        captureError(err, { feature: 'dashboard', action: 'fetch_promo_summary' });
       });
   }, []);
 

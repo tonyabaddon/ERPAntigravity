@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchCashAccountBalances } from '../../lib/kasbank/service';
 import type { CashAccountBalance } from '../../lib/kasbank/types';
 import { formatRp } from '../../lib/format';
+import { captureError } from '../../lib/captureError';
 
 /**
  * Props for CashAccountPicker component.
@@ -60,7 +61,7 @@ export default function CashAccountPicker({
       })
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : 'Gagal memuat akun';
-        console.error('CashAccountPicker fetch error:', msg);
+        captureError(msg, { feature: 'akuntansi', action: 'cash_account_picker_fetch' });
         setError(msg);
       })
       .finally(() => {

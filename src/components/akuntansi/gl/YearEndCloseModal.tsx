@@ -10,6 +10,7 @@ import { fetchAccountingPeriods } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod } from '../../../lib/akuntansi/types';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatRp } from '../../../lib/format';
+import { captureError } from '../../../lib/captureError';
 
 interface YearEndCloseModalProps {
   open: boolean;
@@ -100,7 +101,7 @@ export default function YearEndCloseModal({
         totalMonths,
       });
     } catch (err) {
-      console.error('[YearEndCloseModal] loadSnapshot error', err);
+      captureError(err, { feature: 'akuntansi_year_end', action: 'load_snapshot' });
       showToast('Gagal memuat snapshot tahun ' + targetYear, 'warning');
       setSnapshot(null);
     } finally {

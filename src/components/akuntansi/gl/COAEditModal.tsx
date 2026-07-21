@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { updateCoaAccount } from '../../../lib/akuntansi/coaUpdate';
 import type { CoaTreeRow } from '../../../lib/akuntansi/glQueries';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ export default function COAEditModal({
       onSaved();
       onClose();
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'akuntansi_coa', action: 'update_coa_account' });
       const message = err instanceof Error ? err.message : 'Gagal mengupdate COA';
       showToast(message, 'warning');
     } finally {

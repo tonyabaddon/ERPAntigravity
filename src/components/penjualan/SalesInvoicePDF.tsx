@@ -7,6 +7,7 @@ import { fetchStoreSettings, fetchBankAccounts } from '../../lib/pengaturan/quer
 import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { formatRp } from '../../lib/format';
 import { CHANNEL_VISUAL } from '../../lib/salesChannels';
+import { captureError } from '../../lib/captureError';
 
 function formatDateTime(iso: string) {
   const d = new Date(iso);
@@ -113,7 +114,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
     if (!isSupabaseConfigured) { setLoading(false); return; }
     Promise.all([fetchStoreSettings(), fetchBankAccounts(true)])
       .then(([st, accounts]) => { setStore(st); setBank(accounts[0] ?? null); })
-      .catch(console.error)
+      .catch(err => captureError(err, { feature: 'penjualan', action: 'fetch_store_settings_for_invoice' }))
       .finally(() => setLoading(false));
   }, []);
 

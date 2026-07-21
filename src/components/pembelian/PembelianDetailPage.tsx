@@ -24,6 +24,7 @@ import MarkAsPaidModal from './MarkAsPaidModal';
 import ReceiveReplacementModal from './ReceiveReplacementModal';
 import PurchaseOrderFormPage from './PurchaseOrderFormPage';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 interface PembelianDetailPageProps {
   poNumber: string;
@@ -86,7 +87,7 @@ export default function PembelianDetailPage({
         document.title = `${row.po_number} — Pembelian`;
       }
     } catch (e: any) {
-      console.error('Load detail error:', e);
+      captureError(e, { feature: 'pembelian_detail', action: 'load_detail' });
       showToast(e?.message ?? 'Gagal memuat detail PO.', 'warning');
       setNotFound(true);
     } finally {
@@ -98,7 +99,7 @@ export default function PembelianDetailPage({
     document.title = `${poNumber} — Pembelian`;
     fetchPo();
     fetchStoreSettings().then(setStoreSettings).catch((err) => {
-      console.error('fetchStoreSettings (PembelianDetail) failed:', err);
+      captureError(err, { feature: 'pembelian_detail', action: 'fetch_store_settings' });
     });
   }, [poNumber]);
 
@@ -142,7 +143,7 @@ export default function PembelianDetailPage({
       }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (e: any) {
-      console.error('PDF generation error:', e);
+      captureError(e, { feature: 'pembelian_detail', action: 'generate_pdf' });
       showToast('Gagal generate PDF. Coba lagi.', 'warning');
     } finally {
       setDownloadingPdf(false);
@@ -156,7 +157,7 @@ export default function PembelianDetailPage({
       showToast(`${po.po_number} ditandai Dipesan.`, 'success');
       fetchPo();
     } catch (e: any) {
-      console.error('Mark ordered error:', e);
+      captureError(e, { feature: 'pembelian_detail', action: 'mark_ordered' });
       showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
     }
   }
@@ -170,7 +171,7 @@ export default function PembelianDetailPage({
       // Redirect to list URL so the operator isn't stranded on a deleted-PO URL.
       window.location.href = '/?screen=pembelian';
     } catch (e: any) {
-      console.error('Delete PO error:', e);
+      captureError(e, { feature: 'pembelian_detail', action: 'delete_po' });
       showToast(e?.message ?? 'Gagal menghapus PO.', 'warning');
     }
   }
@@ -182,7 +183,7 @@ export default function PembelianDetailPage({
       showToast('Status kerusakan diperbarui.', 'success');
       fetchPo();
     } catch (e: any) {
-      console.error('Damage status update error:', e);
+      captureError(e, { feature: 'pembelian_detail', action: 'update_damage_status' });
       showToast(e?.message ?? 'Gagal memperbarui status.', 'warning');
     } finally {
       setUpdatingItemId(null);

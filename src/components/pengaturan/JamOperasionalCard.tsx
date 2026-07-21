@@ -3,6 +3,7 @@ import { Clock, ToggleLeft, ToggleRight } from 'lucide-react';
 import { fetchOperatingHours } from '../../lib/pengaturan/queries';
 import { updateOperatingHour } from '../../lib/pengaturan/mutations';
 import type { OperatingHour } from '../../lib/pengaturan/types';
+import { captureError } from '../../lib/captureError';
 
 // 0=Senin .. 6=Minggu per migration 010 convention.
 const DAY_LABELS: Record<number, string> = {
@@ -72,7 +73,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
         setRows(merged);
       })
       .catch(err => {
-        console.error('fetchOperatingHours error:', err);
+        captureError(err, { feature: 'pengaturan_jam_operasional', action: 'fetch_operating_hours' });
         if (!cancelled) showToast('Gagal memuat jam operasional.', 'warning');
       })
       .finally(() => {
@@ -99,7 +100,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
       }
       showToast('Jam operasional diperbarui.', 'success');
     } catch (err) {
-      console.error('updateOperatingHour error:', err);
+      captureError(err, { feature: 'pengaturan_jam_operasional', action: 'update_operating_hour' });
       if (isRlsError(err)) {
         showToast('Anda harus Owner untuk mengubah jam operasional.', 'warning');
       } else {

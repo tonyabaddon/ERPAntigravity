@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { DbSupplier } from '../../types';
 import { supplierService } from '../../lib/pembelianService';
+import { captureError } from '../../lib/captureError';
 
 interface SupplierModalProps {
   supplier?: DbSupplier;
@@ -32,7 +33,7 @@ export default function SupplierModal({ supplier, onClose, onSaved, showToast }:
       onSaved();
       onClose();
     } catch (e: any) {
-      console.error('Supplier save error:', e);
+      captureError(e, { feature: 'pembelian', action: 'save_supplier' });
       showToast(e?.message ?? 'Gagal menyimpan supplier.', 'warning');
     } finally {
       setSaving(false);

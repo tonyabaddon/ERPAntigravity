@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { captureError } from '../captureError';
 
 export interface RejectInfo {
   reason: string;
@@ -29,7 +30,7 @@ export async function fetchRecentRejectsByOrder(
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('fetchRecentRejectsByOrder failed', error);
+    captureError(error, { feature: 'sales', action: 'fetch_recent_rejects_by_order' });
     return {};
   }
 

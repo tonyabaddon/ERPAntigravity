@@ -9,6 +9,7 @@ import { isSupabaseConfigured, listPendingApprovals, stockService } from '../lib
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
+import { captureError } from '../lib/captureError';
 import { useWarehouses } from '../hooks/useWarehouses';
 import StockAdjustmentModal from './stok/StockAdjustmentModal';
 import PriceChangeRequestModal from './stok/PriceChangeRequestModal';
@@ -119,7 +120,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
-    tenantSettingsService.fetch().then(setTenantSettings).catch(console.error);
+    tenantSettingsService.fetch().then(setTenantSettings).catch(err => captureError(err, { feature: 'stock_manager', action: 'fetch_tenant_settings' }));
   }, []);
 
   const showGrosir = tenantSettings ? isFieldVisible('price_grosir_column', tenantSettings) : false;

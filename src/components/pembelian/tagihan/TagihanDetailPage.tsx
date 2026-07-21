@@ -12,6 +12,7 @@ import { navigate } from '../../../lib/urlRoute';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
 import { formatIDR } from '../../../lib/formatIDR';
+import { captureError } from '../../../lib/captureError';
 
 type TagihanRow = DbPurchaseInvoice & {
   pesanan_id?: string | null;
@@ -97,7 +98,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         .maybeSingle();
       if (cancelled) return;
       if (error) {
-        console.error('Failed to fetch linked tf_number:', error);
+        captureError(error, { feature: 'pembelian_tagihan', action: 'fetch_tf_number' });
         setTfNumber(null);
         return;
       }
@@ -119,7 +120,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         .maybeSingle();
       if (cancelled) return;
       if (error) {
-        console.error('Failed to fetch pesanan_number:', error);
+        captureError(error, { feature: 'pembelian_tagihan', action: 'fetch_pesanan_number' });
         setPesananNumber(null);
         return;
       }

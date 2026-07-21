@@ -8,6 +8,7 @@ import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import NewCustomerInlineForm from './penjualan/wizard/NewCustomerInlineForm';
 import { formatIDR } from '../lib/formatIDR';
+import { captureError } from '../lib/captureError';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -77,7 +78,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    tenantSettingsService.fetch().then(setTenantSettings).catch(console.error);
+    tenantSettingsService.fetch().then(setTenantSettings).catch(err => captureError(err, { feature: 'pelanggan', action: 'fetch_tenant_settings' }));
   }, []);
 
   function refreshCustomers() {

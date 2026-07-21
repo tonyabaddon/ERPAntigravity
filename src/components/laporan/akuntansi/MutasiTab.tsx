@@ -10,6 +10,7 @@ import type { MutasiRow, MutasiFilters } from '../../../lib/akuntansi/reportQuer
 import { fetchCashAccountBalances } from '../../../lib/kasbank/service';
 import type { CashAccountBalance } from '../../../lib/kasbank/types';
 import { wibDateString } from '../../../lib/format';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -119,7 +120,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
         }
       })
       .catch(err => {
-        console.error('[MutasiTab] fetchCashAccountBalances error', err);
+        captureError(err, { feature: 'laporan_mutasi', action: 'fetch_cash_account_balances' });
         if (!cancelled) showToast('Gagal memuat daftar akun', 'warning');
       })
       .finally(() => {
@@ -148,7 +149,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
       fetchMutasi(filters)
         .then(data => setRows(data))
         .catch(err => {
-          console.error('[MutasiTab] fetchMutasi error', err);
+          captureError(err, { feature: 'laporan_mutasi', action: 'fetch_mutasi' });
           showToast('Gagal memuat mutasi', 'warning');
         })
         .finally(() => setLoadingRows(false));

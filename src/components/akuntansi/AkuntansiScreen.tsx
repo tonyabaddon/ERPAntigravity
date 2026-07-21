@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { BookOpenCheck, Scale, BookOpen, Lock, List } from 'lucide-react';
 import { fetchAccountingConfig } from '../../lib/akuntansi/service';
 import type { AccountingConfig } from '../../lib/akuntansi/types';
+import { captureError } from '../../lib/captureError';
 import OpeningBalanceWizard from './OpeningBalanceWizard';
 import TrialBalanceTab from './gl/TrialBalanceTab';
 import BukuBesarTab from './gl/BukuBesarTab';
@@ -31,7 +32,7 @@ export default function AkuntansiScreen({ currentUser, showToast }: Props) {
     fetchAccountingConfig()
       .then(setConfig)
       .catch(err => {
-        console.error(err);
+        captureError(err, { feature: 'akuntansi', action: 'load_accounting_config' });
         showToast('Gagal load akuntansi config', 'warning');
       })
       .finally(() => setLoading(false));

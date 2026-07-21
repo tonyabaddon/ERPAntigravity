@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Droplet } from 'lucide-react';
 import { fetchCashFlow } from '../../../lib/akuntansi/reportQueries';
 import type { CashFlowResult } from '../../../lib/akuntansi/reportQueries';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
         if (!cancelled) setData(result);
       })
       .catch(err => {
-        console.error('[CashFlowTab] fetchCashFlow error', err);
+        captureError(err, { feature: 'laporan_akuntansi', action: 'fetch_cash_flow' });
         if (!cancelled) showToast('Gagal memuat cash flow', 'warning');
       })
       .finally(() => {

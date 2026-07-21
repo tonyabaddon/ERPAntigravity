@@ -68,6 +68,7 @@ import {
   cancelDiscountRequest,
   subscribeToApprovalRequest,
 } from '../../lib/discountApproval/api';
+import { captureError } from '../../lib/captureError';
 
 // Module-scoped sequence for stable cart row keys, mirroring the legacy
 // _itemSeq pattern in PenjualanBaruScreen. Per-row _key lets CartRows track
@@ -129,7 +130,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       .catch((err) => {
         // Silent catch was hiding real config regressions — diskon column /
         // grosir tier pill would silently revert to permissive defaults.
-        console.error('tenantSettings fetch (wizard) failed:', err);
+        captureError(err, { feature: 'wizard', action: 'fetch_tenant_settings' });
       });
   }, []);
 
@@ -233,7 +234,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   useEffect(() => {
     serviceTypesService.fetchActive()
       .then(setServiceTypes)
-      .catch((err: unknown) => console.error('serviceTypes fetch (wizard):', err));
+      .catch((err: unknown) => captureError(err, { feature: 'wizard', action: 'fetch_service_types' }));
   }, []);
 
   // ── Derived totals ────────────────────────────────────────────────────────
@@ -294,7 +295,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       if (error) {
         // Was silently defaulting to 0 → wrong credit-limit UI. Surface
         // and set sentinel so Step3 disables TEMPO save until retry.
-        console.error('tempoOutstanding fetch failed:', error);
+        captureError(error, { feature: 'wizard', action: 'fetch_tempo_outstanding' });
         setTempoOutstanding(-1);
         return;
       }
@@ -579,7 +580,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       gate = await checkDiscountGate(orderDiscountAmountRp, subtotalAfterLineDiscount);
     } catch (err) {
       // Non-fatal: if gate check errors (e.g. missing settings row), let sale proceed
-      console.error('checkDiscountGate failed', err);
+      captureError(err, { feature: 'wizard', action: 'check_discount_gate' });
       return true;
     }
     if (!gate.gate_triggered) return true;

@@ -6,6 +6,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Bot, Users, TrendingUp, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { captureError } from '../../lib/captureError';
 
 // ─── RPC response types ────────────────────────────────────────────────────────
 
@@ -427,7 +428,7 @@ export function CaleoBotDashboard() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      console.error('[CaleoBotDashboard] load error:', msg);
+      captureError(msg, { feature: 'admin_caleo_bot', action: 'load_bot_analytics' });
     } finally {
       setLoading(false);
     }

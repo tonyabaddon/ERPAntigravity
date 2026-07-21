@@ -3,6 +3,7 @@ import { Building2 } from 'lucide-react';
 import { fetchStoreSettings } from '../../lib/pengaturan/queries';
 import { updateStoreSettings } from '../../lib/pengaturan/mutations';
 import type { StoreSettings } from '../../lib/pengaturan/types';
+import { captureError } from '../../lib/captureError';
 
 // Note: logo_url is intentionally NOT edited here. The dedicated "Logo Toko"
 // card in PengaturanScreen handles upload → Storage bucket 'branding' →
@@ -64,7 +65,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
         });
       })
       .catch(err => {
-        console.error('fetchStoreSettings error:', err);
+        captureError(err, { feature: 'pengaturan_identitas_toko', action: 'fetch_store_settings' });
         if (!cancelled) showToast('Gagal memuat identitas toko.', 'warning');
       })
       .finally(() => {
@@ -111,7 +112,7 @@ export default function IdentitasTokoCard({ showToast }: Props) {
       await updateStoreSettings(patch);
       showToast('Identitas toko diperbarui.', 'success');
     } catch (err) {
-      console.error('updateStoreSettings error:', err);
+      captureError(err, { feature: 'pengaturan_identitas_toko', action: 'update_store_settings' });
       if (isRlsError(err)) {
         showToast('Anda harus Owner untuk mengubah identitas toko.', 'warning');
       } else {

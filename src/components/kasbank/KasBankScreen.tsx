@@ -18,6 +18,7 @@ import { fetchCashAccountBalances, fetchCashAccounts } from '../../lib/kasbank/s
 import type { CashAccount, CashAccountBalance, CashAccountType } from '../../lib/kasbank/types';
 import { formatRp } from '../../lib/format';
 import AccountFormModal from './AccountFormModal';
+import { captureError } from '../../lib/captureError';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -245,7 +246,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
       setEditingAccount(found);
       setShowAddModal(true);
     } catch (err) {
-      console.error('[KasBankScreen] fetchCashAccounts error', err);
+      captureError(err, { feature: 'kasbank', action: 'fetch_cash_accounts' });
       showToast('Gagal memuat detail akun', 'warning');
     }
   }
@@ -255,7 +256,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
     fetchCashAccountBalances()
       .then(data => setAccounts(data))
       .catch(err => {
-        console.error('[KasBankScreen] fetchCashAccountBalances error', err);
+        captureError(err, { feature: 'kasbank', action: 'fetch_cash_account_balances' });
         showToast('Gagal memuat data kas & bank', 'warning');
       })
       .finally(() => setLoading(false));

@@ -19,6 +19,7 @@ import {
 import { computeDelta } from '../lib/dashboardReports/types';
 import type { PerformaSummaryWithDelta, ChannelProfitRow, PeriodDays, DeltaResult } from '../lib/dashboardReports/types';
 import type { SalesChannel } from '../types';
+import { captureError } from '../lib/captureError';
 
 function colorForChannel(name: string): string {
   const code = (Object.keys(CHANNEL_VISUAL) as SalesChannel[]).find(
@@ -100,13 +101,13 @@ export default function LaporanScreen(props: LaporanScreenProps) {
     ]).then((results) => {
       const [perfRes, profitRes, revRes, prodsRes] = results;
       if (perfRes.status === 'fulfilled') setPerfSummary(perfRes.value);
-      else { console.error('getPerformaSummaryWithDelta failed:', perfRes.reason); setPerfSummary(false); }
+      else { captureError(perfRes.reason, { feature: 'laporan', action: 'fetch_performa_summary' }); setPerfSummary(false); }
       if (profitRes.status === 'fulfilled') setProfitPerChannel(profitRes.value);
-      else { console.error('getProfitPerChannel failed:', profitRes.reason); setProfitPerChannel(false); }
+      else { captureError(profitRes.reason, { feature: 'laporan', action: 'fetch_profit_per_channel' }); setProfitPerChannel(false); }
       if (revRes.status === 'fulfilled') setDailyRevenueByChannel(revRes.value);
-      else { console.error('fetchDailyRevenueByChannel failed:', revRes.reason); setRevenueChartError(true); }
+      else { captureError(revRes.reason, { feature: 'laporan', action: 'fetch_daily_revenue_by_channel' }); setRevenueChartError(true); }
       if (prodsRes.status === 'fulfilled') setTopProducts(prodsRes.value);
-      else console.error('fetchTopProducts failed:', prodsRes.reason);
+      else captureError(prodsRes.reason, { feature: 'laporan', action: 'fetch_top_products' });
 
       const anyFailed = results.some((r) => r.status === 'rejected');
       if (anyFailed) {

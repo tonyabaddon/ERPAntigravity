@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { fetchStoreSettings, fetchBankAccounts } from '../lib/pengaturan/queries';
 import type { StoreSettings, BankAccount } from '../lib/pengaturan/types';
 import { formatIDR } from '../lib/formatIDR';
+import { captureError } from '../lib/captureError';
 
 interface InvoiceModalProps {
   order: DbOrder;
@@ -33,7 +34,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     Promise.all([fetchStoreSettings(), fetchBankAccounts(true)])
       .then(([st, accounts]) => { setStore(st); setBank(accounts[0] ?? null); })
-      .catch(console.error)
+      .catch(err => captureError(err, { feature: 'invoice', action: 'fetch_store_settings' }))
       .finally(() => setLoading(false));
   }, []);
 

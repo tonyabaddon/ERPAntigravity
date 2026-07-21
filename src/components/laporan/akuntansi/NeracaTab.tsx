@@ -14,6 +14,7 @@ import type { DbTenantSettings } from '../../../types';
 import type { NeracaData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
         if (!cancelled) setData(result);
       })
       .catch((err: Error) => {
-        console.error('[NeracaTab] fetchNeraca error', err);
+        captureError(err, { feature: 'laporan_neraca', action: 'fetch_neraca' });
         if (!cancelled) setError(err.message);
       })
       .finally(() => {

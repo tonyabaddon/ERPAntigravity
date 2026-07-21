@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   blob: Blob;
@@ -37,7 +38,7 @@ export function PdfPreviewModal({ blob, filename, onClose }: Props) {
       a.click();
       document.body.removeChild(a);
     } catch (err) {
-      console.error('PdfPreviewModal download failed', err);
+      captureError(err, { feature: 'sales', action: 'pdf_download' });
       setIframeError('Gagal download. Coba lagi.');
     }
   }

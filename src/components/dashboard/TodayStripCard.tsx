@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { getTodaySnapshot } from '../../lib/dashboardReports/api';
 import type { TodaySnapshot } from '../../lib/dashboardReports/types';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 export default function TodayStripCard() {
   const [snap, setSnap] = useState<TodaySnapshot | null>(null);
 
   useEffect(() => {
     getTodaySnapshot().then(setSnap).catch((err) => {
-      console.error('[TodayStripCard]', err);
+      captureError(err, { feature: 'dashboard', action: 'fetch_today_snapshot' });
       setSnap({ revenue_today: 0, count_today: 0 });
     });
   }, []);

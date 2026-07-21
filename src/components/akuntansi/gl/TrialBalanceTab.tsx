@@ -12,6 +12,7 @@ import {
 import type { TrialBalanceRowWithMetadata } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod, AccountType } from '../../../lib/akuntansi/types';
 import { formatRp } from '../../../lib/format';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -170,7 +171,7 @@ export default function TrialBalanceTab({
         }
       } catch (err) {
         if (!cancelled) {
-          console.error(err);
+          captureError(err, { feature: 'akuntansi_trial_balance', action: 'load_initial' });
           showToast('Gagal memuat Neraca Saldo', 'warning');
         }
       } finally {
@@ -196,7 +197,7 @@ export default function TrialBalanceTab({
         setRows(data);
       })
       .catch(err => {
-        console.error(err);
+        captureError(err, { feature: 'akuntansi_trial_balance', action: 'fetch_on_period_change' });
         showToast('Gagal memuat Neraca Saldo', 'warning');
       })
       .finally(() => setLoading(false));

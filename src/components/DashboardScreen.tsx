@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useRealtimeConversations } from '../hooks/useRealtimeConversations';
 import { statsService, isSupabaseConfigured } from '../lib/supabaseClient';
+import { captureError } from '../lib/captureError';
 import PreOrderFulfillmentsCard from './dashboard/PreOrderFulfillmentsCard';
 import PromoProdukCard from './dashboard/PromoProdukCard';
 import TodayStripCard from './dashboard/TodayStripCard';
@@ -37,7 +38,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
 
   useEffect(() => {
     if (isSupabaseConfigured) {
-      statsService.fetchRecentActivity().then(setRecentActivity).catch(console.error);
+      statsService.fetchRecentActivity().then(setRecentActivity).catch(err => captureError(err, { feature: 'dashboard', action: 'fetch_recent_activity' }));
     }
   }, []);
 

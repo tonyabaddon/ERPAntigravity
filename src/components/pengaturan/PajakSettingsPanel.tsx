@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tenantSettingsService } from '../../lib/pengaturan/pengaturanServices';
+import { captureError } from '../../lib/captureError';
 import { NumberInput } from '../ui/NumberInput';
 import type { DbTenantSettings, PajakMode, JenisBadan } from '../../types';
 import { wibDateString } from '../../lib/format';
@@ -35,7 +36,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
   useEffect(() => {
     tenantSettingsService.fetch()
       .then(setSettings)
-      .catch(err => { console.error(err); showToast('Gagal memuat pengaturan pajak', 'warning'); })
+      .catch(err => { captureError(err, { feature: 'pengaturan_pajak', action: 'load_pajak_settings' }); showToast('Gagal memuat pengaturan pajak', 'warning'); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -57,7 +58,7 @@ export default function PajakSettingsPanel({ showToast }: Props) {
       await tenantSettingsService.updatePajak(finalPatch);
       showToast('Pengaturan pajak disimpan', 'success');
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'pengaturan_pajak', action: 'save_pajak_settings' });
       setSettings(settings);
       showToast('Gagal simpan', 'warning');
     }

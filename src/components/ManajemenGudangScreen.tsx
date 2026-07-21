@@ -7,6 +7,7 @@ import { Plus, Crown, Trash2, Edit3, RotateCcw, X } from 'lucide-react';
 import type { PermissionSet, Warehouse, WarehouseAuditLogRow } from '../types';
 import { warehousesService, adminUsersService } from '../lib/supabaseClient';
 import { useWarehouses } from '../hooks/useWarehouses';
+import { captureError } from '../lib/captureError';
 
 interface Props {
   currentUser: {
@@ -45,7 +46,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
   useEffect(() => {
     if (canManage) {
       warehousesService.fetchAuditLog(50).then(setAudit).catch((err) => {
-        console.error('warehouses fetchAuditLog failed:', err);
+        captureError(err, { feature: 'manajemen_gudang', action: 'fetch_audit_log' });
       });
     }
   }, [canManage, warehouses]);

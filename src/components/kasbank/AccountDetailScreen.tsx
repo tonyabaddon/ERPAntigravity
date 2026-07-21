@@ -22,6 +22,7 @@ import { supabase } from '../../lib/supabaseClient';
 import type { CashAccountBalance } from '../../lib/kasbank/types';
 import type { GeneralLedgerRow, JournalSource } from '../../lib/akuntansi/types';
 import { formatRp, wibDateString } from '../../lib/format';
+import { captureError } from '../../lib/captureError';
 import AksiDropdown from '../akuntansi/manual/AksiDropdown';
 import type { AksiAction } from '../akuntansi/manual/AksiDropdown';
 import ManualTransferModal from '../akuntansi/manual/ManualTransferModal';
@@ -239,7 +240,7 @@ export default function AccountDetailScreen({
         }
       })
       .catch(err => {
-        console.error('[AccountDetailScreen] fetchCashAccountBalances error', err);
+        captureError(err, { feature: 'kasbank', action: 'fetch_cash_account_balances' });
         showToast('Gagal memuat data akun', 'warning');
       })
       .finally(() => setLoadingMeta(false));
@@ -263,7 +264,7 @@ export default function AccountDetailScreen({
         .then(data => { if (mySeq === ledgerSeqRef.current) setRows(data); })
         .catch(err => {
           if (mySeq !== ledgerSeqRef.current) return;
-          console.error('[AccountDetailScreen] fetchAccountLedger error', err);
+          captureError(err, { feature: 'kasbank', action: 'fetch_account_ledger' });
           showToast('Gagal memuat riwayat', 'warning');
         })
         .finally(() => { if (mySeq === ledgerSeqRef.current) setLoadingRows(false); });
@@ -290,7 +291,7 @@ export default function AccountDetailScreen({
     fetchUnreconciledJournalLines(balance.coa_account_id, period.fromDate, period.toDate)
       .then(setUnmatchedLines)
       .catch(err => {
-        console.error('[AccountDetailScreen] fetchUnreconciledJournalLines error', err);
+        captureError(err, { feature: 'kasbank', action: 'fetch_unreconciled_journal_lines' });
         showToast('Gagal memuat jurnal belum cocok', 'warning');
         setUnmatchedLines([]);
       })
@@ -330,7 +331,7 @@ export default function AccountDetailScreen({
         setBalance(found);
       })
       .catch(err => {
-        console.error('[AccountDetailScreen] refresh balance error', err);
+        captureError(err, { feature: 'kasbank', action: 'refresh_balance' });
       });
   }, [balance, period, loadLedger, cashAccountId]);
 

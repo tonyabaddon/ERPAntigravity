@@ -3,6 +3,7 @@ import { fetchDashboardStats, fetchActiveOrders } from '../../lib/sales/queries'
 import type { SalesDashboardStats, Order } from '../../lib/sales/types';
 import { navigate } from '../../lib/urlRoute';
 import { StatsCards } from './StatsCards';
+import { captureError } from '../../lib/captureError';
 import { SalesTabStrip } from './SalesTabStrip';
 import { UrgentOrdersPreview } from './UrgentOrdersPreview';
 
@@ -11,8 +12,8 @@ export function SalesLandingScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    fetchDashboardStats().then(setStats).catch(err => console.error('fetchDashboardStats failed', err));
-    fetchActiveOrders().then(setOrders).catch(err => console.error('fetchActiveOrders failed', err));
+    fetchDashboardStats().then(setStats).catch(err => captureError(err, { feature: 'sales_landing', action: 'fetch_dashboard_stats' }));
+    fetchActiveOrders().then(setOrders).catch(err => captureError(err, { feature: 'sales_landing', action: 'fetch_active_orders' }));
   }, []);
 
   if (!stats) {

@@ -5,6 +5,7 @@ import { purchaseOrderService } from '../../lib/pembelianService';
 import { kasirService } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 interface MarkAsPaidModalProps {
   po: DbPurchaseOrder;
@@ -34,14 +35,14 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
           subtotal: po.total,
         });
       } catch (expenseErr: any) {
-        console.error('Kasir expense insert failed:', expenseErr);
+        captureError(expenseErr, { feature: 'pembelian', action: 'kasir_expense_insert' });
         showToast('PO lunas. Gagal catat di kasir: ' + (expenseErr?.message ?? 'unknown'), 'warning');
       }
       showToast(`${po.po_number} ditandai Lunas.`, 'success');
       onPaid();
       onClose();
     } catch (e: any) {
-      console.error('Mark paid error:', e);
+      captureError(e, { feature: 'pembelian', action: 'mark_paid' });
       showToast(e?.message ?? 'Gagal menandai PO sebagai lunas.', 'warning');
     } finally {
       setSaving(false);

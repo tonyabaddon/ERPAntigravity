@@ -15,6 +15,7 @@ import type {
 } from '../../types';
 import { formatRpDelta } from '../../lib/format';
 import StockOpnameSessionView from './StockOpnameSessionView';
+import { captureError } from '../../lib/captureError';
 
 interface StockOpnameScreenProps {
   currentUser: {
@@ -104,7 +105,7 @@ export default function StockOpnameScreen({
     setAuditLoading(true);
     fetchOpnameAuditLog(7)
       .then(setAuditEntries)
-      .catch(err => console.error('audit fetch error:', err))
+      .catch(err => captureError(err, { feature: 'stok_opname', action: 'fetch_audit_log' }))
       .finally(() => setAuditLoading(false));
   }, [currentUser?.role, sessions.length]);
 

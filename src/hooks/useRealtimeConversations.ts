@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { conversationService, orderService } from '../lib/supabaseClient';
 import type { DbConversation, DbMessage, DbOrder } from '../types';
 import { useTenant } from '../contexts/TenantContext';
+import { captureError } from '../lib/captureError';
 
 export interface ConversationWithMessages extends DbConversation {
   messages: DbMessage[];
@@ -47,7 +48,7 @@ export function useRealtimeConversations() {
     }
 
     load()
-      .catch(console.error)
+      .catch(err => captureError(err, { feature: 'realtime_conversations', action: 'load_conversations' }))
       .finally(() => { if (mounted) setLoading(false); });
 
     // tenant_id filter is REQUIRED on all 5 subscribers below. Realtime bandwidth

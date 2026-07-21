@@ -9,6 +9,7 @@ import { fetchAccountingPeriods } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod } from '../../../lib/akuntansi/types';
 import PeriodCloseModal from './PeriodCloseModal';
 import YearEndCloseModal from './YearEndCloseModal';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
       // sorted DESC by year/month — limit to last 12
       setPeriods(data.slice(0, 12));
     } catch (err) {
-      console.error(err);
+      captureError(err, { feature: 'akuntansi_tutup_buku', action: 'load_periods' });
       showToast('Gagal memuat daftar periode akuntansi', 'warning');
     } finally {
       setLoading(false);

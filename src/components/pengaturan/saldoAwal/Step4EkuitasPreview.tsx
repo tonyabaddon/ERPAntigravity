@@ -8,6 +8,7 @@ import type { Step4Ekuitas, PreviewTotals, SaldoAwalStepData, SaldoAwalSnapshot 
 import { postSaldoAwalSnapshot } from '../../../lib/saldoAwal/api';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
+import { captureError } from '../../../lib/captureError';
 
 interface Props {
   data: Step4Ekuitas;
@@ -59,7 +60,7 @@ export default function Step4EkuitasPreview({
       await renderSaldoAwalPDF(snap, storeName);
       showToast('PDF Ringkasan Saldo Awal berhasil diunduh.', 'success');
     } catch (err) {
-      console.error('[SaldoAwalPDF]', err);
+      captureError(err, { feature: 'saldo_awal', action: 'generate_pdf' });
       showToast(`Gagal mencetak PDF: ${err instanceof Error ? err.message : String(err)}`, 'warning');
     } finally {
       setPrinting(false);

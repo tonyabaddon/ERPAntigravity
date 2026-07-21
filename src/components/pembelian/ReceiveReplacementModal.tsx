@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { DbPurchaseOrderItem } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
+import { captureError } from '../../lib/captureError';
 
 interface ReceiveReplacementModalProps {
   item: DbPurchaseOrderItem;
@@ -21,7 +22,7 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
       onReplaced();
       onClose();
     } catch (e: any) {
-      console.error('Receive replacement error:', e);
+      captureError(e, { feature: 'pembelian', action: 'receive_replacement' });
       showToast(e?.message ?? 'Gagal mengkonfirmasi penerimaan pengganti.', 'warning');
     } finally {
       setSaving(false);

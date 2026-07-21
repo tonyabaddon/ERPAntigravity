@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { captureError } from './captureError';
 
 /**
  * Resolves a storage reference to a displayable signed URL.
@@ -33,7 +34,7 @@ export async function getSignedStorageUrl(bucket: string, mediaRef: string): Pro
     .createSignedUrl(mediaRef, 60 * 60); // 1-hour TTL
 
   if (error) {
-    console.error(`[${bucket}] signed URL failed:`, { path: mediaRef, error });
+    captureError(error, { feature: 'chat_media', action: 'create_signed_url', bucket, path: mediaRef });
     return null;
   }
 

@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { captureError } from '../../lib/captureError';
 
 interface CustomerSummary {
   id: string;
@@ -46,7 +47,7 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
         .limit(20);
 
       if (error) {
-        console.error('PreOrderFulfillmentsCard fetch failed:', error);
+        captureError(error, { feature: 'dashboard', action: 'fetch_preorder_fulfillments' });
         setLoading(false);
         return;
       }

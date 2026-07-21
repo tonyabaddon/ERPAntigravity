@@ -9,6 +9,7 @@ import { fetchCoaTree } from '../../../lib/akuntansi/glQueries';
 import type { CoaTreeRow } from '../../../lib/akuntansi/glQueries';
 import type { AccountType } from '../../../lib/akuntansi/types';
 import COAEditModal from './COAEditModal';
+import { captureError } from '../../../lib/captureError';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ export default function COAManagementTab({
         }
       } catch (err) {
         if (!cancelled) {
-          console.error(err);
+          captureError(err, { feature: 'akuntansi_coa', action: 'load_coa_tree' });
           showToast('Gagal memuat Chart of Accounts', 'warning');
         }
       } finally {
@@ -151,7 +152,7 @@ export default function COAManagementTab({
         setAccounts(data);
       })
       .catch(err => {
-        console.error(err);
+        captureError(err, { feature: 'akuntansi_coa', action: 'reload_coa_tree_after_edit' });
         showToast('Gagal memuat Chart of Accounts', 'warning');
       })
       .finally(() => setLoading(false));

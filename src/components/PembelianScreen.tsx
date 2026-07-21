@@ -32,6 +32,7 @@ import TukarFakturDetailPage from './pembelian/tukar-faktur/TukarFakturDetailPag
 import { navigate } from '../lib/urlRoute';
 import type { DbPurchaseInvoice } from '../types';
 import { formatIDR } from '../lib/formatIDR';
+import { captureError } from '../lib/captureError';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -143,7 +144,7 @@ export default function PembelianScreen({
       setOrders(ords);
       setSuppliers(sups);
     } catch (e: any) {
-      console.error('Load pembelian error:', e);
+      captureError(e, { feature: 'pembelian', action: 'load_pembelian' });
       showToast(e?.message ?? 'Gagal memuat data pembelian.', 'warning');
     } finally {
       setLoading(false);
@@ -779,7 +780,7 @@ function OrdersTab({
       showToast(`${po.po_number} ditandai Dipesan.`, 'success');
       onRefresh();
     } catch (e: any) {
-      console.error('Mark ordered error:', e);
+      captureError(e, { feature: 'pembelian', action: 'mark_ordered' });
       showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
     }
   }
@@ -791,7 +792,7 @@ function OrdersTab({
       showToast(`${po.po_number} dihapus.`, 'success');
       onRefresh();
     } catch (e: any) {
-      console.error('Delete PO error:', e);
+      captureError(e, { feature: 'pembelian', action: 'delete_po' });
       showToast(e?.message ?? 'Gagal menghapus PO.', 'warning');
     }
   }
@@ -972,7 +973,7 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
       showToast('Supplier dihapus.', 'success');
       onRefresh();
     } catch (e: any) {
-      console.error('Delete supplier error:', e);
+      captureError(e, { feature: 'pembelian', action: 'delete_supplier' });
       showToast(e?.message ?? 'Gagal menghapus supplier.', 'warning');
     }
   }
