@@ -76,24 +76,62 @@ steps:
         echo "=== All staging BE smoke tests passed ==="
 
   # ── Step 5: Deploy to PROD backend ────────────────────────────────────────
-  # TEMPORARILY BYPASSED 2026-07-21: Supabase :5432 pool exhaustion prevents
-  # cold-start of new prod revisions. Prod holding on cf73c29b via warm
-  # instance. Re-enable this step after WA client migration to :6543 txn
-  # pooler stabilizes (Option 2 in docs/incidents/2026-07-20-backend-wa-init-crashloop.md)
-  # and pool has drained. See docs/incidents entry for full context.
+  # Deploy the SAME image SHA that passed staging smoke.
+  # Added 0%-traffic + tag-URL pattern (mirrors frontend safety net from
+  # 2026-06-16 post-mortem). Tag URL: https://c<SHORT_SHA>---<service>.run.app
+  # Service name 'garindo-jaya-panel-msme-erp' is 28 chars, so tag ≤18 chars.
+  # 'c$SHORT_SHA' is 8 chars — well within limit.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '$_SERVICE_NAME'
+      - '--image=$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
+      - '--region=$_DEPLOY_REGION'
+      - '--platform=$_PLATFORM'
+      - '--allow-unauthenticated'
+      - '--memory=4Gi'
+      - '--cpu=2'
+      - '--timeout=60s'
+      - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER,SENTRY_DSN=$_SENTRY_DSN_BE,ENVIRONMENT=production,COMMIT_SHA=$COMMIT_SHA'
+      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest,SUPABASE_DB_LISTENER_CONNECTION=supabase-db-connection-listener-prod:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CALEO_OPS_EMAIL=CALEO_OPS_EMAIL:latest'
+      # Health probe split (slot 315 / Task 9):
+      # /api/v1/live  — liveness (process alive, no deps) — periodic restart guard.
+      # /api/v1/ready — readiness (DB ping) — stops traffic if Postgres unreachable.
+      # Startup probe uses /ready so Cloud Run waits for DB before routing traffic.
+      # failureThreshold=12 @ periodSeconds=5 = 60s max startup window.
+      - '--startup-probe=httpGet.path=/api/v1/ready,initialDelaySeconds=5,periodSeconds=5,failureThreshold=12'
+      - '--liveness-probe=httpGet.path=/api/v1/live,periodSeconds=30,failureThreshold=3'
+      - '--no-traffic'
+      - '--tag=c$SHORT_SHA'
+
+  # ── Step 6: Prod BE tag-URL smoke + promote to 100% ───────────────────────
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
       - -c
       - |
-        echo "=== Prod deploy TEMPORARILY BYPASSED — pool exhaustion ==="
-        echo "See docs/incidents/2026-07-20-backend-wa-init-crashloop.md"
-        echo "Prod on cf73c29b; new backend revisions cannot cold-start."
-        exit 0
-
-  # ORIGINAL Steps 5 + 6 (prod deploy + tag URL smoke + promote) removed
-  # while bypass active. Restore from git history after pool fix stabilizes.
-  # git show HEAD~10:cloudbuild.yaml # to see the original steps
+        set -e
+        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME \
+          --region=$_DEPLOY_REGION --format='value(status.url)')
+        TAG_URL=$(echo "$$SERVICE_URL" | sed "s|https://|https://c$SHORT_SHA---|")
+        echo "Prod BE smoke-testing $$TAG_URL (up to 6 attempts, 10s apart) ..."
+        for i in 1 2 3 4 5 6; do
+          HTTP_CODE=$(curl -sfo /dev/null -w "%{http_code}" "$$TAG_URL/api/v1/live" || echo "000")
+          if [ "$$HTTP_CODE" = "200" ]; then
+            echo "Attempt $$i: HTTP 200 — promoting c$SHORT_SHA to 100% traffic"
+            gcloud run services update-traffic $_SERVICE_NAME \
+              --region=$_DEPLOY_REGION \
+              --to-tags=c$SHORT_SHA=100
+            exit 0
+          fi
+          echo "Attempt $$i: HTTP $$HTTP_CODE — retrying in 10s"
+          sleep 10
+        done
+        echo "Prod smoke test failed after 6 attempts. Revision c$SHORT_SHA stays at 0%."
+        echo "Investigate at $$TAG_URL then re-trigger the build."
+        exit 1
 
 images:
   - '$_AR_HOSTNAME/$_AR_PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME:$COMMIT_SHA'
