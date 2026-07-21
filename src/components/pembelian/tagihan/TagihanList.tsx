@@ -8,6 +8,7 @@ import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
 import { formatIDR } from '../../../lib/formatIDR';
+import { captureError } from '../../../lib/captureError';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -66,8 +67,9 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
     try {
       const data = await purchaseInvoiceService.fetchAll({ type: 'STOCK' });
       setList(data as unknown as Row[]);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal load Tagihan', 'warning');
+    } catch (e: unknown) {
+      captureError(e, { feature: 'tagihan', action: 'fetch_all' });
+      showToast((e as { message?: string })?.message ?? 'Gagal load Tagihan', 'warning');
     } finally {
       setLoading(false);
     }

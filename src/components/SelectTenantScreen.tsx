@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { supabase, tenantContextService } from '../lib/supabaseClient';
 import { Building2 } from 'lucide-react';
+import { captureError } from '../lib/captureError';
 
 interface TenantRow { tenant_id: string; slug: string; name: string; }
 
 export const SelectTenantScreen: React.FC = () => {
   const [tenants, setTenants] = useState<TenantRow[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -21,7 +23,11 @@ export const SelectTenantScreen: React.FC = () => {
           setTenants([]);
         }
       })
-      .catch(() => setTenants([]));
+      .catch((err) => {
+        captureError(err, { feature: 'select_tenant', action: 'bootstrap' });
+        setLoadError(true);
+        setTenants([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -30,7 +36,8 @@ export const SelectTenantScreen: React.FC = () => {
     }
   }, [tenants]);
 
-  if (!tenants) return <div className="p-6 text-slate-500">Loading…</div>;
+  if (!tenants) return <div className="p-6 text-slate-500">Memuat…</div>;
+  if (loadError) return <div className="p-6 text-rose-600">Gagal memuat data tenant. Coba refresh halaman.</div>;
   if (tenants.length === 0) return <div className="p-6 text-rose-600">Tidak ada tenant terdaftar untuk akun Anda.</div>;
 
   return (
