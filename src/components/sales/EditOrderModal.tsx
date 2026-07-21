@@ -14,9 +14,15 @@ interface Props {
  * and item quantities BEFORE the customer has paid (sub-stages 2a..2d). Records
  * a mandatory reason into `audit_log` so changes are traceable.
  *
- * Why client-side, not an RPC: the audit_log table has no RLS, the kasir_transactions
- * policy is permissive (`anon_all_kasir`), so a single transaction of UPDATE + INSERT
- * is enough. If this graduates to multi-admin tenancy, swap to a SECURITY DEFINER RPC.
+ * Why client-side, not an RPC: audit_log HAS RLS (t_insert_own policy for
+ * authenticated where tenant_id = _resolve_tenant_id() AND _check_expiry_ok());
+ * the tenant_id column defaults to _resolve_tenant_id() so this INSERT without
+ * an explicit tenant_id passes the policy check cleanly. kasir_transactions has
+ * a permissive policy (`anon_all_kasir`) that allows the UPDATE. This pair of
+ * writes is atomic-enough at MSME single-admin scale. Verified 2026-07-21 via
+ * `set_config('request.jwt.claims', ...) + SET LOCAL ROLE authenticated + INSERT`
+ * smoke — see tests/sql/qa-week/2e-regression.sql. If this graduates to
+ * multi-admin tenancy, swap to a SECURITY DEFINER RPC.
  */
 export function EditOrderModal({ order, onClose, onSaved }: Props) {
   const initialItems: OrderItem[] = order.items ?? [];
