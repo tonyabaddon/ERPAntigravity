@@ -6,16 +6,16 @@
 
 | Layer | Version | Notes |
 |---|---|---|
-| FE prod (`app.caleo.id`) | commit `6b6740f` (revision `00655-for`) | Wave 1 + 2 + 3 FE changes + Wave 3 2J partial (LaporanScreen fix) |
+| FE prod (`app.caleo.id`) | commit `7f1d7e2` (revision `00657-bes`) at audit time | Cloud Build cascade advances tag on every docs commit; content-wise all Wave 1+2+3 FE + Wave 3 2J partial + this plan doc |
 | BE prod | commit `cf73c29b` (revision `00467-bih`) | Phase 1 completion; warm-protected via `min-instances=1`; WA on direct pool |
 | Staging BE | commit `5b0f8a1` (revision `00102-jbc`) | Option 2 fix (WA on `:6543` txn pooler) — confirmed working |
 | Supabase migrations | slot 504 last-applied | 501 (F5-05), 502 (P2-03), 503 (2D), 504 (2C) all live + tracked |
 
-**Blockers active:**
-- Supabase `:5432` direct pool exhausted (48+ zombie idle sessions, mgmt-api returns 53300)
-- Cloud Run cannot cold-start any new backend revision (would need pool slots)
-- `SUPABASE_DB_PASSWORD` absent from `.env` — blocks `pg_dump`-based operations
-- Chrome-devtools MCP profile held by parallel session — blocks browser-based smoke
+**Blockers (updated 2026-07-21 T ~11:00 UTC audit):**
+- ~~Supabase `:5432` direct pool exhausted~~ → **CLEARED** naturally between initial write and audit. Mgmt-api now responsive; migrations 501-504 verified tracked in `schema_migrations`. Founder Action A no longer required.
+- `SUPABASE_DB_PASSWORD` absent from `.env` — still blocks `pg_dump`-based operations (2I)
+- Chrome-devtools MCP profile held by parallel session — still blocks browser-based smoke
+- Cloud Run cold-starts have not been re-tested since pool cleared; prod BE (`cf73c29b`) still fragile if warm instance dies before Option 2 image is promoted
 
 **Bypass in place:**
 - `cloudbuild.yaml` Step 5 (prod BE deploy) short-circuits to `echo bypass; exit 0` — restore from git history once pool drains
@@ -29,10 +29,10 @@
 
 ## Founder action items (unblock)
 
-**A. Drain :5432 pool (blocks everything backend-side)** ~15 min
+**~~A. Drain :5432 pool~~** — POOL CLEARED naturally between session end and audit (verified via `curl mgmt-api /database/query` returning migrations 501-504 list). Skip this action; go direct to C. Keep the SQL below for reference in case pool exhausts again:
 
-Open Supabase Dashboard → SQL Editor → run:
 ```sql
+-- Emergency zombie-connection reset (only if mgmt-api returns 53300 again)
 SELECT pg_terminate_backend(pid)
 FROM pg_stat_activity
 WHERE state = 'idle'
@@ -41,7 +41,6 @@ WHERE state = 'idle'
   AND pid <> pg_backend_pid()
   AND state_change < NOW() - INTERVAL '5 minutes';
 ```
-Verify `SELECT COUNT(*) FROM pg_stat_activity;` < 40 after.
 
 **B. Fetch `SUPABASE_DB_PASSWORD` (blocks 2I schema baseline)** ~5 min
 
@@ -75,17 +74,21 @@ Was noted ~100; actually was 6 at Wave 1 start; all fixed by 2D commit `78a02cd`
   - Refactor `EditOrderModal.tsx` to call new RPC
   - Regression SQL + commit
 
-### Session B: 2I + Phase 3 hygiene (~4-6h) [after founder actions A + B]
+### Session B: 2I + Phase 3 + P2-07 hygiene (~5-8h) [after founder action B (DB password)]
+
+Pool clearing means most items can start immediately; only 2I needs DB password.
 
 - **2I schema baseline** (Wave 1 leftover) — Task 1 in Wave 1 plan
   - `pg_dump --schema-only` → `20261115000500_baseline.sql`
   - Update `scripts/apply-pending-migrations.sh` for fresh-DB bootstrap path
   - Smoke via Supabase branch
-- **P3-01 drop 15 unused indexes** — advisor + apply DROP INDEX CONCURRENTLY
+- **P3-01 drop 15 unused indexes** — advisor + apply DROP INDEX CONCURRENTLY (verify 1-week zero-scan stability first per spec)
 - **P3-02 Sentry.captureException sweep (~153 sites)** — write helper `captureError(err, context)`, sweep all `console.error` in `src/**/*.ts{x}` non-test
 - **P3-03 whatsmeow comment migration** — single-line comment explaining daemon uses service_role, no policies needed
 - **P3-04 wa_recipients + conversations test fixture cleanup** — 25 + 20 rows per memory `wa_test_data_noise`
-- **P3-05 SECDEF ownership auto-audit** — run the query from spec, migrate ownership per candidate
+- **P3-05 SECDEF ownership auto-audit** — run the query from spec, `ALTER FUNCTION ... OWNER TO vosi_rpc_owner` per candidate
+- **P3-06 test tenant UUIDs randomize** — LOW priority per spec; skip unless real-tenant collision concern surfaces
+- **P2-07 `any` type sweep** — 100 `any` sites; prioritize `src/lib/**`; do as time allows (open-ended, cap at 2h)
 
 ### Session C: Wave 3 2J full (~1.5-2 days)
 
@@ -124,7 +127,7 @@ Session C (2J full, ~2d)    — FE only, independent
 Session E (Phase 5, ~3d)    — needs chrome-devtools MCP + all prior done
 ```
 
-**Critical path:** founder unblock → A → B → then C/D/E can parallelize.
+**Critical path (revised post-audit):** pool cleared, so Session A is unblocked NOW without founder action. Founder actions B (DB pw) + C (Option 2 deploy) still needed for their downstream unblocks. C/D/E can parallelize with A.
 
 ---
 
