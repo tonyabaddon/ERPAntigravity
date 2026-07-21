@@ -11,7 +11,7 @@ Written overnight while founder was asleep. **Read this before touching anything
 ## What works right now
 
 - **admin.caleo.id login flow** — full E2E: enter email → OTP → dashboard renders. No bounce to `/t/garindo`. Sidebar navigation works on all 10 implemented pages.
-- **No more auto-impersonation** — the stale row from 2026-07-11 was deleted; hourly `pg_cron` (`expire_impersonations` at `15 * * * *`) auto-reaps any row >8h old.
+- **No more auto-impersonation** — the stale row from 2026-07-11 was deleted; hourly `pg_cron` (`expire_impersonations` at `15 * * * *`) auto-reaps any row >8h old. **Migration 000508 shipped with a RLS bug that made the cron a no-op** — I caught it during E2E verification and shipped `611c78b` with a `p_expire_stale_impersonations` policy. Verified end-to-end: 9h row reaps, 1h row stays.
 - **AuthScreen UX** — the OTP input no longer stays disabled after a failed `Kirim OTP`. If the mail arrives via retry, you can paste the code.
 - **AdminRouteGuard resilience** — `isPlatformAdmin()` retries 3× with 500ms backoff before denying access. Transient 5xx during pool pinches no longer boots you back to login.
 - **`idle_session_timeout=15min`** — set on `postgres` role, survives DB restart. Any future orphaned direct-pool conn auto-reaps.
