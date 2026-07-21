@@ -58,18 +58,17 @@ ALTER FUNCTION send_notification_test(p_template_id text) OWNER TO vosi_rpc_owne
 ALTER FUNCTION send_piutang_reminder_test(p_rule_type text) OWNER TO vosi_rpc_owner;
 
 -- ============================================================================
--- TIER B (MEDIUM RISK) — advisor recommended before applying
+-- TIER B (MEDIUM RISK) — APPLIED 2026-07-22 via mgmt-api (post founder drain)
 -- ============================================================================
--- Uncomment after founder review + tenant-lifecycle smoke test:
--- ALTER FUNCTION activate_tenant(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION provision_tenant(text, text, text, text) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION suspend_tenant(uuid, text) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION deprovision_tenant(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION renew_subscription(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION grant_impersonation(uuid, uuid, interval) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION impersonate_tenant(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION revoke_impersonation(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION stop_impersonation() OWNER TO vosi_rpc_owner;
+ALTER FUNCTION activate_tenant(p_tenant_id uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION deprovision_tenant(p_tenant_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION grant_impersonation(p_admin_email text, p_expires_in_hours integer, p_reason text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION impersonate_tenant(p_slug text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION provision_tenant(p_owner_user_id uuid, p_slug text, p_name text, p_owner_name text, p_owner_email text, p_plan_code text, p_expires_in_months integer) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION renew_subscription(p_tenant_id uuid, p_new_expires_at date, p_new_plan_code text, p_notes text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION revoke_impersonation(p_grant_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION stop_impersonation() OWNER TO vosi_rpc_owner;
+ALTER FUNCTION suspend_tenant(p_tenant_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
 
 -- ============================================================================
 -- TIER C (HIGH RISK) — REQUIRES ADVISOR GATE + smoke test each
