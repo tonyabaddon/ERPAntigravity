@@ -10,11 +10,30 @@ import { UrgentOrdersPreview } from './UrgentOrdersPreview';
 export function SalesLandingScreen() {
   const [stats, setStats] = useState<SalesDashboardStats | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchDashboardStats().then(setStats).catch(err => captureError(err, { feature: 'sales_landing', action: 'fetch_dashboard_stats' }));
+    setFetchError(null);
+    fetchDashboardStats().then(setStats).catch(err => {
+      captureError(err, { feature: 'sales_landing', action: 'fetch_dashboard_stats' });
+      setFetchError('Gagal memuat data sales.');
+    });
     fetchActiveOrders().then(setOrders).catch(err => captureError(err, { feature: 'sales_landing', action: 'fetch_active_orders' }));
   }, []);
+
+  if (fetchError) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-sm font-semibold text-red-600 mb-2">{fetchError}</p>
+        <button
+          onClick={() => { setFetchError(null); fetchDashboardStats().then(setStats).catch(err => { captureError(err, { feature: 'sales_landing', action: 'fetch_dashboard_stats' }); setFetchError('Gagal memuat data sales.'); }); }}
+          className="text-xs font-bold text-[#012749] underline"
+        >
+          Coba lagi
+        </button>
+      </div>
+    );
+  }
 
   if (!stats) {
     return <div className="p-8 text-gray-500">Loading…</div>;

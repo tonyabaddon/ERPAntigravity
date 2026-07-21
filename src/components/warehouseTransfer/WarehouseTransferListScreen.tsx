@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { warehouseTransferService, WarehouseTransferHeader, WarehouseTransferStatus } from '../../lib/warehouseTransferService';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { captureError } from '../../lib/captureError';
 
 type TabKey = 'ALL' | 'IN_TRANSIT' | 'WAITING_ME' | 'DONE' | 'CANCELLED';
 
@@ -15,17 +16,24 @@ export default function WarehouseTransferListScreen({
   const [tab, setTab] = useState<TabKey>('ALL');
   const [rows, setRows] = useState<WarehouseTransferHeader[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { warehouses } = useWarehouses();
 
   useEffect(() => {
     setLoading(true);
+    setFetchError(null);
     const filter =
       tab === 'IN_TRANSIT' ? { statusFilter: ['IN_TRANSIT' as WarehouseTransferStatus] } :
       tab === 'DONE'       ? { statusFilter: ['RECEIVED','PARTIAL'] as WarehouseTransferStatus[] } :
       tab === 'CANCELLED'  ? { statusFilter: ['CANCELLED' as WarehouseTransferStatus] } :
       {};
     warehouseTransferService.listTransfers(filter)
-      .then(setRows).finally(() => setLoading(false));
+      .then(setRows)
+      .catch(err => {
+        captureError(err, { feature: 'warehouse_transfer', action: 'list_transfers' });
+        setFetchError('Gagal memuat daftar transfer.');
+      })
+      .finally(() => setLoading(false));
   }, [tab]);
 
   const visibleRows = tab === 'WAITING_ME'
@@ -65,12 +73,15 @@ export default function WarehouseTransferListScreen({
       </div>
 
       {loading && <div className="text-sm text-slate-500">Memuat…</div>}
-      {!loading && visibleRows.length === 0 && (
+      {!loading && fetchError && (
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-600">{fetchError}</div>
+      )}
+      {!loading && !fetchError && visibleRows.length === 0 && (
         <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
           {tab === 'WAITING_ME' ? 'Tidak ada transfer yang menunggu konfirmasi Anda.' : 'Belum ada transfer.'}
         </div>
       )}
-      {!loading && visibleRows.map(r => (
+      {!loading && !fetchError && visibleRows.map(r => (
         <TransferRow key={r.id} row={r} warehouses={warehouses} onClick={() => onOpenDetail(r.id)} />
       ))}
     </div>

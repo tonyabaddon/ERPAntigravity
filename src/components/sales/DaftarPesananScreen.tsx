@@ -65,6 +65,7 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
   const [typeTab, setTypeTab] = useState<TypeTab>('komponen');
   const [stage, setStage] = useState<FunnelStage>(2);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [expandedSubs, setExpandedSubs] = useState<Set<string>>(new Set());
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [proofModal, setProofModal] = useState<{ url: string; orderId: string; version: number; fromSub: string; toSub: string } | null>(null);
@@ -101,7 +102,8 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
 
   // initial load + realtime
   useEffect(() => {
-    fetchOrdersWithArchive().then(setOrders).catch(err => captureError(err, { feature: 'daftar_pesanan', action: 'fetch_orders_with_archive' }));
+    setLoadingOrders(true);
+    fetchOrdersWithArchive().then(data => { setOrders(data); setLoadingOrders(false); }).catch(err => { captureError(err, { feature: 'daftar_pesanan', action: 'fetch_orders_with_archive' }); setLoadingOrders(false); });
     fetchStoreSettings().then(setSettings).catch(err => {
       captureError(err, { feature: 'daftar_pesanan', action: 'fetch_store_settings' });
       setSettings(null);
@@ -403,8 +405,11 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
       <div style={{ background: 'white', borderRadius: 24, boxShadow: '0 2px 12px rgba(1,39,73,0.06)', border: '1px solid #e5eeff', overflow: 'hidden' }}>
         <TypeTabs active={typeTab} counts={totalCounts} onChange={setTypeTab} />
         <StageStrip active={stage} counts={stageCounts} onChange={setStage} />
+        {loadingOrders && (
+          <div className="p-8 text-center text-sm text-gray-400">Memuat pesanan...</div>
+        )}
         <div>
-          {subsForStage.map(sub => (
+          {!loadingOrders && subsForStage.map(sub => (
             <SubStageSection
               key={sub.id}
               sub={sub}
