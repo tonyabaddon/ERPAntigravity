@@ -55,6 +55,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
 
   const [rows, setRows] = useState<PiutangRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
   const [search, setSearch] = useState('');
   const [payTarget, setPayTarget] = useState<PiutangRow | null>(null);
@@ -82,6 +83,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
 
   async function reload() {
     setLoading(true);
+    setFetchError(null);
     try {
       setRows(await fetchPiutangRows({
         includeWrittenOff: filter === 'written_off',
@@ -89,6 +91,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       }));
       void loadReminderMap();
     } catch (e: any) {
+      setFetchError(e?.message ?? 'Gagal memuat data piutang.');
       showToast(e?.message ?? 'Gagal load piutang', 'warning');
     } finally { setLoading(false); }
   }
@@ -224,6 +227,16 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
+        ) : fetchError ? (
+          <div className="p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+            <button
+              onClick={() => void reload()}
+              className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+            >
+              Coba Lagi
+            </button>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-500">
             {rows.length === 0 ? 'Belum ada piutang tempo.' : 'Tidak ada invoice yang cocok dengan filter.'}

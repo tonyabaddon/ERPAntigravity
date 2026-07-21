@@ -75,6 +75,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
   const tenant = useTenant();
   const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newWhatsapp, setNewWhatsapp] = useState('');
@@ -97,20 +98,28 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     { key: 'kasir', label: 'Kasir' },
   ];
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      return;
-    }
+  function loadAdmins() {
+    setFetchError(null);
+    setLoading(true);
     adminUsersService.fetchAll()
       .then(rows => {
         setAdmins(rows.map(dbToAdminUser));
       })
       .catch(err => {
         captureError(err, { feature: 'user_management', action: 'load_admin_users' });
+        setFetchError('Gagal memuat data admin dari Supabase.');
         showToast('⚠️ Gagal memuat data admin dari Supabase.');
       })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+    loadAdmins();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleTogglePermission = async (adminId: string, permissionKey: keyof PermissionSet) => {
@@ -251,6 +260,20 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     return (
       <div className="flex items-center justify-center h-64 text-sm text-gray-400 font-semibold">
         Memuat data admin...
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+        <button
+          onClick={loadAdmins}
+          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+        >
+          Coba Lagi
+        </button>
       </div>
     );
   }

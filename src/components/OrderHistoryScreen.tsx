@@ -210,6 +210,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   const [orders, setOrders] = useState<DbOrder[]>([]);
   const [kasir, setKasir] = useState<KasirTransaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [tab, setTab] = useState<FilterTab>('all');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
   const [specificChannel, setSpecificChannel] = useState<SalesChannel | ''>('');
@@ -345,13 +346,19 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     let cancelled = false;
+    setFetchError(null);
     salesEntriesService.fetchAll()
       .then(({ orders: o, kasir: k }) => {
         if (cancelled) return;
         setOrders(o);
         setKasir(k);
       })
-      .catch(() => showToast('Gagal memuat riwayat pesanan.', 'warning'))
+      .catch((err) => {
+        if (cancelled) return;
+        setFetchError('Gagal memuat riwayat pesanan.');
+        showToast('Gagal memuat riwayat pesanan.', 'warning');
+        console.error(err);
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     if (!supabase) return () => { cancelled = true; };
@@ -506,6 +513,16 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       {/* List */}
       {loading ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat...</div>
+      ) : fetchError ? (
+        <div className="bg-white rounded-xl border border-red-100 p-8 text-center">
+          <p className="text-sm font-semibold text-red-600 mb-3">{fetchError}</p>
+          <button
+            onClick={() => { setFetchError(null); setLoading(true); salesEntriesService.fetchAll().then(({ orders: o, kasir: k }) => { setOrders(o); setKasir(k); }).catch((err) => { setFetchError('Gagal memuat riwayat pesanan.'); showToast('Gagal memuat riwayat pesanan.', 'warning'); console.error(err); }).finally(() => setLoading(false)); }}
+            className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+          >
+            Coba Lagi
+          </button>
+        </div>
       ) : visible.length === 0 ? (
         <EmptyState message={EMPTY_MESSAGES[tab]} />
       ) : (

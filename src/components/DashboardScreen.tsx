@@ -35,10 +35,20 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
   const { orders, paymentUploadedOrders } = useRealtimeConversations();
 
   const [recentActivity, setRecentActivity] = useState<Array<{ text: string; sender: string; created_at: string }>>([]);
+  const [activityLoading, setActivityLoading] = useState(isSupabaseConfigured);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isSupabaseConfigured) {
-      statsService.fetchRecentActivity().then(setRecentActivity).catch(err => captureError(err, { feature: 'dashboard', action: 'fetch_recent_activity' }));
+      setActivityLoading(true);
+      setActivityError(null);
+      statsService.fetchRecentActivity()
+        .then(setRecentActivity)
+        .catch(err => {
+          captureError(err, { feature: 'dashboard', action: 'fetch_recent_activity' });
+          setActivityError('Gagal memuat aktivitas.');
+        })
+        .finally(() => setActivityLoading(false));
     }
   }, []);
 
@@ -112,7 +122,16 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
           </div>
 
           <div className="space-y-4">
-            {recentActivity.length === 0 ? (
+            {activityLoading ? (
+              <div className="flex items-center gap-4 p-4 text-sm text-gray-400">
+                <div className="w-4 h-4 border-2 border-gray-200 border-t-[#2d8a4e] rounded-full animate-spin" />
+                Memuat aktivitas...
+              </div>
+            ) : activityError ? (
+              <div className="flex items-center gap-4 p-4 text-sm text-red-500 italic">
+                {activityError}
+              </div>
+            ) : recentActivity.length === 0 ? (
               <div className="flex items-center gap-4 p-4 text-sm text-gray-400 italic">
                 Belum ada aktivitas hari ini.
               </div>

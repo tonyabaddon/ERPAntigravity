@@ -29,7 +29,7 @@ function relativeId(iso: string): string {
 
 export default function ManajemenGudangScreen({ currentUser, showToast }: Props) {
   const canManage = !!currentUser?.permissions.can_manage_warehouses;
-  const { warehouses, loading, refresh } = useWarehouses({ activeOnly: false });
+  const { warehouses, loading, error: warehouseError, refresh } = useWarehouses({ activeOnly: false });
   const [showAdd, setShowAdd] = useState(false);
   const [newCode, setNewCode] = useState('');
   const [newName, setNewName] = useState('');
@@ -157,7 +157,19 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
             <Plus className="w-3 h-3" /> Tambah Gudang
           </button>
         </div>
-        {loading ? <p className="text-xs text-slate-400">Memuat…</p> : (
+        {loading ? <p className="text-xs text-slate-400">Memuat…</p> : warehouseError ? (
+          <div className="flex flex-col items-start gap-2">
+            <p className="text-xs font-semibold text-red-600">Gagal memuat daftar gudang: {warehouseError}</p>
+            <button
+              onClick={() => void refresh()}
+              className="text-xs font-bold text-[#012749] underline hover:opacity-70"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        ) : warehouses.length === 0 ? (
+          <p className="text-xs text-slate-400">Belum ada gudang terdaftar. Tambahkan gudang baru di atas.</p>
+        ) : (
           <div className="space-y-2">
             {warehouses.map((w: Warehouse) => (
               <div key={w.id}

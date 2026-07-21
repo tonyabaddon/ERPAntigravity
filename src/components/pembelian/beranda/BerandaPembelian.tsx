@@ -34,15 +34,18 @@ function daysFromToday(dateStr?: string | null): number | null {
 export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props) {
   const [data, setData] = useState<ApDashboardLite | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   async function reload() {
     setLoading(true);
+    setFetchError(null);
     try {
       const d = await pembayaranService.fetchDashboardLite();
       setData(d);
       setLastUpdated(new Date());
     } catch (e: any) {
+      setFetchError(e?.message ?? 'Gagal memuat dashboard pembelian.');
       showToast(e?.message ?? 'Gagal load dashboard', 'warning');
     } finally {
       setLoading(false);
@@ -60,6 +63,19 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
 
   if (loading && !data) {
     return <div className="p-8 text-center text-sm text-gray-500">Memuat dashboard...</div>;
+  }
+  if (fetchError && !data) {
+    return (
+      <div className="p-8 text-center space-y-3">
+        <p className="text-sm font-semibold text-red-600">{fetchError}</p>
+        <button
+          onClick={reload}
+          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    );
   }
   if (!data) {
     return <div className="p-8 text-center text-sm text-gray-500">Tidak ada data.</div>;

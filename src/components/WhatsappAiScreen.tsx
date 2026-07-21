@@ -79,16 +79,21 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
     if (!supabase) { setLoading(false); return; }
     if (!tenantId) { setLoading(false); return; }
 
-    supabase.from('whatsapp_numbers').select('*').order('created_at').then(({ data }) => {
-      if (data) setWaNumbers(data.map(row => ({
-        id: row.id,
-        phoneNumber: row.phone_number,
-        name: row.name,
-        status: row.status,
-        isEnabled: row.is_enabled,
-        isAiEnabled: row.is_ai_enabled,
-        createdAt: row.created_at,
-      } as WhatsappAiNumber)));
+    supabase.from('whatsapp_numbers').select('*').order('created_at').then(({ data, error }) => {
+      if (error) {
+        captureError(error, { feature: 'whatsapp_ai', action: 'load_wa_numbers' });
+        showToast('Gagal memuat data nomor WhatsApp.', 'warning');
+      } else if (data) {
+        setWaNumbers(data.map(row => ({
+          id: row.id,
+          phoneNumber: row.phone_number,
+          name: row.name,
+          status: row.status,
+          isEnabled: row.is_enabled,
+          isAiEnabled: row.is_ai_enabled,
+          createdAt: row.created_at,
+        } as WhatsappAiNumber)));
+      }
       setLoading(false);
     });
 
