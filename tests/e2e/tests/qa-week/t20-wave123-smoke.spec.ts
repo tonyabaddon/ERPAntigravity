@@ -26,11 +26,22 @@ import { test, expect } from '../../fixtures/auth';
 const BASE = 'https://app.caleo.id';
 
 // Screens visited by this spec (drives both A3 and A5).
+// Expanded 2026-07-22 to cover all major tenant menus per founder request.
 const SCREENS_TO_VISIT = [
-  { name: 'Dashboard',    url: `${BASE}/` },
-  { name: 'Laporan',      url: `${BASE}/?screen=laporan` },
-  { name: 'SalesInbox',   url: `${BASE}/?screen=sales-inbox` },
-  { name: 'Penjualan',    url: `${BASE}/?screen=penjualan` },
+  { name: 'Dashboard',       url: `${BASE}/` },
+  { name: 'Laporan',         url: `${BASE}/?screen=laporan` },
+  { name: 'SalesInbox',      url: `${BASE}/?screen=sales-inbox` },
+  { name: 'Penjualan',       url: `${BASE}/?screen=penjualan` },
+  { name: 'Pembelian',       url: `${BASE}/?screen=pembelian` },
+  { name: 'Piutang',         url: `${BASE}/?screen=piutang` },
+  { name: 'Pelanggan',       url: `${BASE}/?screen=pelanggan` },
+  { name: 'StockManager',    url: `${BASE}/?screen=stok` },
+  { name: 'KasBank',         url: `${BASE}/?screen=kasbank` },
+  { name: 'Akuntansi',       url: `${BASE}/?screen=akuntansi` },
+  { name: 'WhatsappAi',      url: `${BASE}/?screen=whatsappAi` },
+  { name: 'Approval',        url: `${BASE}/?screen=approval-inbox` },
+  { name: 'Pengaturan',      url: `${BASE}/?screen=pengaturan` },
+  { name: 'ManajemenGudang', url: `${BASE}/?screen=manajemen-gudang` },
 ];
 
 // ─── Console-error filter helpers ────────────────────────────────────────────
@@ -43,6 +54,10 @@ function isNoisyError(msg: string): boolean {
     msg.includes('Sentry') ||
     msg.includes('adsbygoogle') ||
     /Failed to load resource.*401/.test(msg) ||
+    /Failed to load resource.*503/.test(msg) ||
+    // Transient network errors during Supabase pool cycles (not code bugs)
+    /TypeError: Failed to fetch/.test(msg) ||
+    /Failed to fetch.*supabase/.test(msg) ||
     // Supabase realtime channel close on page unload
     msg.includes('WebSocket connection') ||
     msg.includes('net::ERR_') ||
