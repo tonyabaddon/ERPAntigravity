@@ -40,42 +40,19 @@ Written overnight while founder was asleep. **Read this before touching anything
 
 | Change | Committed | FE deployed | BE deployed | Notes |
 |---|---|---|---|---|
-| `main.go` `fatal(dbClient, ...)` + SIGTERM timeout | `f953555` (parallel session) | n/a | ⚠️ In flight — build `6a691597` triggered after `max_connections=90` bump | Should succeed since pool now has headroom |
+| `main.go` `fatal(dbClient, ...)` + SIGTERM timeout | `f953555` (parallel session) | n/a | ✅ Serving revision `00488-qug` tag `c14e6020`. /live 200, /ready 200 | Prod backend leak fix now LIVE. Combined with `idle_session_timeout=15min` and `max_connections=90` — pool cannot exhaust from Cloud Run churn anymore |
 | AuthScreen `signInSent = true` on error | `eb2924c` | ✅ (build `dadee6dd` SUCCESS) | n/a | LIVE |
 | Migration `20261115000508_expire_stale_impersonations_cron.sql` | `eb2924c` | n/a | ✅ (applied directly via pooler + management API) | LIVE + `pg_cron` scheduled |
 | `AdminRouteGuard.tsx` retry-on-transient-5xx (3× with 500ms backoff) | `0e40dfc` | ⚠️ In flight — build `5fcdd7a0` triggered | n/a | Ships when FE build completes |
 | Incident + miss-log + progress.md | `96701db` | n/a | n/a | Doc only |
 
-## Backend deploy attempts overnight
+## Backend deploy — RESOLVED
 
-Backend Cloud Build `adcd0d55-1e70-4175-b6c0-8ebfec2ba8c9` failed at Step 5 (prod deploy). Staging deploy at Step 3 succeeded. Failure cause: prod cold-start couldn't reserve DB slots from the exhausted direct pool within the 60s startup-probe budget (`--startup-probe=httpGet.path=/api/v1/ready,failureThreshold=12`).
+The first deploy attempts (`adcd0d55`, `9ae1c227`) failed at prod Step 5 (startup-probe timeout, pool at 60/60). Once I bumped `max_connections: 60→90` via management API, later deploys succeeded. **Serving now: `00488-qug` tag `c14e6020` at 100% traffic.** `/live` 200, `/ready` 200 verified. Old failed revisions (`00483-xow`, `00484-maz`, `00485-xuk`, etc.) sit at Ready=False and don't consume — Cloud Run correctly kept traffic on last-good revision until 00488 passed probe.
 
-Failed revisions accumulated: `00483-xow`, `00484-maz`, `00485-xuk`. All Ready=False. Currently serving revision: `00477-wim` (tag `cc12b44a` — SEMI-STABLE, pre-Sprint-1-completion code, still uses direct pool for whatsmeow store per the pre-refactor `main.go`).
+## AdminRouteGuard retry — LIVE
 
-**To retry**: once `pg_stat_activity` reports <25 conns steady-state, do:
-```bash
-# Confirm pool is clean
-PGPASSWORD='<see backend-go/.env>' psql "host=aws-1-ap-northeast-1.pooler.supabase.com port=6543 user=postgres.ekhhojaezdfjfwuxyjkl dbname=postgres sslmode=require" -tAc "SELECT count(*) FROM pg_stat_activity;"
-
-# Trigger fresh build from HEAD (which contains the fatal + SIGTERM fix at f953555)
-git commit --allow-empty -m "trigger: retry backend deploy after pool stabilization"
-git push origin main
-
-# Monitor
-gcloud builds list --limit=2
-```
-
-## AdminRouteGuard retry fix — un-shipped detail
-
-Working tree has an unshipped patch to `src/components/admin/AdminRouteGuard.tsx` that retries `tenantContextService.isPlatformAdmin()` up to 3× with 500ms backoff before failing to `deny-not-admin`. This prevents the pool-pinch → 500 → false-denial → bounce-to-login cascade you experienced overnight. To ship:
-
-```bash
-git add src/components/admin/AdminRouteGuard.tsx
-git commit -m "fix(admin): retry isPlatformAdmin 3× on transient 5xx during pool pinch"
-git push origin main
-```
-
-That will trigger another FE build (~10min) and another BE build attempt (may fail if pool still hot; harmless — old backend keeps serving).
+Shipped in `0e40dfc` via FE build cascade. `tenantContextService.isPlatformAdmin()` now retries 3× with 500ms backoff before failing to `deny-not-admin`. Prevents the pool-pinch → 500 → false-denial → bounce-to-login cascade.
 
 ## Known remaining bug I did NOT fix
 
