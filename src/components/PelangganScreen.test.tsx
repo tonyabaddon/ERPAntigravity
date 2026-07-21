@@ -26,6 +26,16 @@ vi.mock('../lib/supabaseClient', async (importOriginal) => {
   };
 });
 
+// NewCustomerInlineForm dependency mocks
+vi.mock('../lib/customers/customerWrappers', () => ({
+  insertNewCustomer: vi.fn(),
+  requestCustomerCreditActivate: vi.fn(),
+}));
+
+vi.mock('../lib/extractErrorMessage', () => ({
+  extractErrorMessage: (e: unknown) => (e instanceof Error ? e.message : String(e)),
+}));
+
 vi.mock('../lib/pengaturan/pengaturanServices', () => ({
   tenantSettingsService: {
     fetch: vi.fn(),
@@ -94,6 +104,87 @@ const BASE_PROPS = {
 };
 
 // ── tests ─────────────────────────────────────────────────────────────────────
+
+// ── F5-01: Tambah Pelanggan button + modal ─────────────────────────────────────
+
+describe('PelangganScreen — F5-01 Tambah Pelanggan', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Persistent defaults for all F5-01 tests
+    (supabaseClientModule.customersService.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...BASE_SETTINGS,
+      modul_multi_tier_price: false,
+    });
+  });
+
+  it('renders "+ Tambah Pelanggan" button in header', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    // Wait for the screen to finish initial load
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    const btn = screen.getByRole('button', { name: /tambah pelanggan/i });
+    expect(btn).toBeInTheDocument();
+  });
+
+  it('clicking button opens the Tambah Pelanggan modal', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    const btn = screen.getByRole('button', { name: /tambah pelanggan/i });
+    fireEvent.click(btn);
+    // Modal heading visible
+    expect(screen.getByText('Tambah Pelanggan Baru')).toBeInTheDocument();
+    // NewCustomerInlineForm renders inside modal (check for "Customer Baru" heading from the form)
+    expect(screen.getByText('Customer Baru')).toBeInTheDocument();
+    // Simpan & Pilih button exists inside modal
+    expect(screen.getByRole('button', { name: /simpan/i })).toBeInTheDocument();
+  });
+
+  it('clicking Tutup (×) button in modal closes it', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    const btn = screen.getByRole('button', { name: /tambah pelanggan/i });
+    fireEvent.click(btn);
+    expect(screen.getByText('Tambah Pelanggan Baru')).toBeInTheDocument();
+    // Click the X (Tutup) button in the modal header
+    fireEvent.click(screen.getByRole('button', { name: /tutup/i }));
+    expect(screen.queryByText('Tambah Pelanggan Baru')).not.toBeInTheDocument();
+  });
+
+  it('onSaved closes modal and shows toast with customer name', async () => {
+    const { insertNewCustomer } = await import('../lib/customers/customerWrappers');
+    const mockInsert = insertNewCustomer as ReturnType<typeof vi.fn>;
+    const savedCustomer = {
+      id: 'new-1', name: 'Dewi Rahayu', wa_number: '628111222333',
+      company: '', address: null, created_at: '2026-01-01T00:00:00Z',
+    };
+    mockInsert.mockResolvedValue(savedCustomer);
+
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+
+    // Open modal
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+    expect(screen.getByText('Tambah Pelanggan Baru')).toBeInTheDocument();
+
+    // Fill Nama and No HP fields (NewCustomerInlineForm uses role=textbox inputs)
+    const inputs = screen.getAllByRole('textbox');
+    // inputs[0] = Nama, inputs[1] = No HP/WA (labels are not associated via htmlFor)
+    fireEvent.change(inputs[0], { target: { value: 'Dewi Rahayu' } });
+    fireEvent.change(inputs[1], { target: { value: '628111222333' } });
+
+    // Submit
+    fireEvent.click(screen.getByRole('button', { name: /simpan/i }));
+
+    await waitFor(() => {
+      expect(BASE_PROPS.showToast).toHaveBeenCalledWith(
+        expect.stringContaining('Dewi Rahayu'),
+        'success'
+      );
+    });
+    // Modal closed after save
+    expect(screen.queryByText('Tambah Pelanggan Baru')).not.toBeInTheDocument();
+  });
+});
 
 describe('PelangganScreen — tier dropdown', () => {
   beforeEach(() => {

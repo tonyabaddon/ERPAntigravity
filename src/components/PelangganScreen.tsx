@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Pencil, Check, X } from 'lucide-react';
+import { Users, Search, Pencil, Check, X, UserPlus } from 'lucide-react';
 import { ActivePage, DbCustomerWithStats, DbCustomerProfile, DbTenantSettings } from '../types';
 import { customersService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { mergeSalesEntries, CHANNEL_LABEL, CHANNEL_BADGE_CLASS } from '../lib/salesEntries';
 import TempoCreditSection from './pelanggan/TempoCreditSection';
 import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
+import NewCustomerInlineForm from './penjualan/wizard/NewCustomerInlineForm';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -75,10 +76,18 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [saving, setSaving] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
   const [tierFilter, setTierFilter] = useState<'all' | 'eceran' | 'grosir'>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     tenantSettingsService.fetch().then(setTenantSettings).catch(console.error);
   }, []);
+
+  function refreshCustomers() {
+    if (!isSupabaseConfigured) return;
+    customersService.fetchAll()
+      .then(setCustomers)
+      .catch(() => showToast('Gagal memuat data pelanggan.', 'warning'));
+  }
 
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
@@ -164,10 +173,49 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex items-center gap-3">
-        <Users className="w-6 h-6 text-gray-700" />
-        <h1 className="text-2xl font-bold text-gray-800">Pelanggan</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Users className="w-6 h-6 text-gray-700" />
+          <h1 className="text-2xl font-bold text-gray-800">Pelanggan</h1>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 rounded-lg bg-[#012749] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+        >
+          <UserPlus className="w-4 h-4" />
+          Tambah Pelanggan
+        </button>
       </div>
+
+      {/* Modal: Tambah Pelanggan */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h2 className="text-sm font-bold text-gray-900">Tambah Pelanggan Baru</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+                aria-label="Tutup"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-4">
+              <NewCustomerInlineForm
+                onSaved={(customer) => {
+                  showToast(`Pelanggan ${customer.name} tersimpan.`, 'success');
+                  setShowAddModal(false);
+                  refreshCustomers();
+                }}
+                onCancel={() => setShowAddModal(false)}
+                showToast={showToast}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div className="flex bg-white rounded-xl border border-gray-200 overflow-hidden" style={{ minHeight: '520px' }}>
 

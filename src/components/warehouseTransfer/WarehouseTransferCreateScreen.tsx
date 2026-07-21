@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Info, Loader2 } from 'lucide-react';
 import { warehouseTransferService } from '../../lib/warehouseTransferService';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { buildHref } from '../../lib/urlRoute';
 import WarehouseTransferSKUPicker, { TransferLine } from './WarehouseTransferSKUPicker';
 
 export default function WarehouseTransferCreateScreen({
@@ -79,6 +80,9 @@ export default function WarehouseTransferCreateScreen({
   const toName = warehouses.find(w => w.id === toId)?.name ?? '';
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
+  // Belt-and-suspenders: guard submit even if UI filtering is bypassed (keyboard/AT)
+  const sameWarehouse = !!(fromId && toId && fromId === toId);
+
   // Validate and build payload
   function validate(): string | null {
     if (!fromId) return 'Pilih gudang pengirim.';
@@ -89,6 +93,11 @@ export default function WarehouseTransferCreateScreen({
   }
 
   async function submit(withPDF = false) {
+    // Belt-and-suspenders: catch same-warehouse even if the button wasn't disabled
+    if (sameWarehouse) {
+      setError('Gudang asal dan tujuan tidak boleh sama.');
+      return;
+    }
     const validationError = validate();
     if (validationError) { setError(validationError); return; }
 
@@ -221,6 +230,17 @@ export default function WarehouseTransferCreateScreen({
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
           </select>
+          {toId && receivers.length === 0 && (
+            <p className="text-xs text-slate-500 mt-1">
+              Belum ada penerima.{' '}
+              <a
+                href={buildHref('user-management')}
+                className="underline hover:text-slate-700"
+              >
+                Tambahkan user via Pengaturan → User Management.
+              </a>
+            </p>
+          )}
         </div>
       </div>
 
@@ -280,7 +300,7 @@ export default function WarehouseTransferCreateScreen({
         </button>
         <button
           onClick={() => submit(false)}
-          disabled={submitting}
+          disabled={submitting || sameWarehouse}
           className="flex items-center gap-1.5 rounded border border-emerald-600 bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -288,7 +308,7 @@ export default function WarehouseTransferCreateScreen({
         </button>
         <button
           onClick={() => submit(true)}
-          disabled={submitting}
+          disabled={submitting || sameWarehouse}
           className="flex items-center gap-1.5 rounded border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
