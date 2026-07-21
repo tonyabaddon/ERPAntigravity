@@ -221,8 +221,8 @@ export default function AccountFormModal({
       }
       onSaved();
       onClose();
-    } catch (e: any) {
-      showToast(`Gagal: ${e?.message ?? 'unknown error'}`, 'warning');
+    } catch (e) {
+      showToast(`Gagal: ${e instanceof Error ? e.message : 'unknown error'}`, 'warning');
     } finally {
       setSaving(false);
     }

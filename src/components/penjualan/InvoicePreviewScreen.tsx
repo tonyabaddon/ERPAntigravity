@@ -21,6 +21,7 @@ import { supabase } from '../../lib/supabaseClient';
 import SalesInvoicePDF, { type InvoiceVariant, type InvoicePrintMode } from './SalesInvoicePDF';
 import TambahLayananModal from './TambahLayananModal';
 import { formatIDR } from '../../lib/formatIDR';
+import { captureError } from '../../lib/captureError';
 
 interface Props {
   orderId: string;
@@ -72,6 +73,7 @@ export default function InvoicePreviewScreen({
         .maybeSingle();
       if (cancelled) return;
       if (error) {
+        captureError(error, { feature: 'invoice_preview', action: 'fetch_transaction', orderId });
         setLoadError(error.message ?? 'Gagal memuat invoice.');
         return;
       }
@@ -241,7 +243,7 @@ export default function InvoicePreviewScreen({
                   </div>
                   {/* I-1 fix: gross subtotal + totalDiscount so customer sees transparent math */}
                   {(() => {
-                    const items = (transaction.items ?? []) as any[];
+                    const items = transaction.items ?? [];
                     const grossSubtotal = items.reduce(
                       (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
                     );

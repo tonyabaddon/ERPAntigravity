@@ -10,10 +10,7 @@ import * as React from 'react';
 import * as Sentry from '@sentry/react';
 import { AlertTriangle } from 'lucide-react';
 
-// children typed as `any` because this project ships without @types/react —
-// React.ReactNode resolves to a stricter shape here than expected. Using any
-// preserves the runtime contract without forcing a project-wide types install.
-type Props = { children: any };
+type Props = { children: React.ReactNode };
 type State = { error: Error | null };
 
 export class AppErrorBoundary extends React.Component<Props, State> {

@@ -156,8 +156,8 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           tagihan_count: t.tagihan_count,
         }));
         setRows([...tagihanRows, ...tfRows]);
-      } catch (e: any) {
-        showToast(e?.message ?? 'Gagal load outstanding', 'warning');
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : 'Gagal load outstanding', 'warning');
       } finally {
         setLoadingOutstanding(false);
       }
@@ -258,8 +258,8 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
       const result = await pembayaranService.record(payload);
       showToast(`${result.pembayaran_number} dicatat. ${selectedRows.length} baris ter-update.`, 'success');
       onSaved(result.pembayaran_number);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal simpan Pembayaran', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal simpan Pembayaran', 'warning');
     } finally {
       setSaving(false);
     }

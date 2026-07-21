@@ -21,9 +21,9 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
       showToast(`${item.qty_damaged} unit pengganti "${item.product_name}" diterima. Stok bertambah.`, 'success');
       onReplaced();
       onClose();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'receive_replacement' });
-      showToast(e?.message ?? 'Gagal mengkonfirmasi penerimaan pengganti.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal mengkonfirmasi penerimaan pengganti.', 'warning');
     } finally {
       setSaving(false);
     }

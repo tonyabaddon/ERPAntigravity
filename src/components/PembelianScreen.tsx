@@ -143,9 +143,9 @@ export default function PembelianScreen({
       ]);
       setOrders(ords);
       setSuppliers(sups);
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'load_pembelian' });
-      showToast(e?.message ?? 'Gagal memuat data pembelian.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal memuat data pembelian.', 'warning');
     } finally {
       setLoading(false);
     }
@@ -779,9 +779,9 @@ function OrdersTab({
       await purchaseOrderService.markOrdered(po.id);
       showToast(`${po.po_number} ditandai Dipesan.`, 'success');
       onRefresh();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'mark_ordered' });
-      showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal mengubah status PO.', 'warning');
     }
   }
 
@@ -791,9 +791,9 @@ function OrdersTab({
       await purchaseOrderService.delete(po.id);
       showToast(`${po.po_number} dihapus.`, 'success');
       onRefresh();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'delete_po' });
-      showToast(e?.message ?? 'Gagal menghapus PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menghapus PO.', 'warning');
     }
   }
 
@@ -972,9 +972,9 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
       await supplierService.remove(s.id);
       showToast('Supplier dihapus.', 'success');
       onRefresh();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'delete_supplier' });
-      showToast(e?.message ?? 'Gagal menghapus supplier.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menghapus supplier.', 'warning');
     }
   }
 

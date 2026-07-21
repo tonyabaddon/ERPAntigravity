@@ -177,7 +177,7 @@ function JasaEditModal({ item, onClose, onSave, colorOptions }: ModalProps) {
               {colorOptions.map(c => (
                 <button key={c.hex} onClick={() => setForm({ ...form, color_hex: c.hex })} title={c.label}
                         className={`w-8 h-8 rounded-full ${form.color_hex === c.hex ? 'ring-2 ring-offset-2' : ''}`}
-                        style={{ backgroundColor: c.hex, ['--tw-ring-color' as any]: c.hex }} />
+                        style={{ backgroundColor: c.hex, '--tw-ring-color': c.hex } as React.CSSProperties} />
               ))}
             </div>
           </div>

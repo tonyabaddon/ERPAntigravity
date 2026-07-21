@@ -41,12 +41,18 @@ function serialise(v: number | null): string {
   return String(v);
 }
 
-export function NumberInput(props: Props) {
-  const {
-    value, onChange, allowDecimal = true, onBlur, onFocus, nullable = false, ...rest
-  } = props as any;
-  const emptyAs = ('emptyAs' in props ? (props as any).emptyAs : (nullable ? null : 0));
+// Internal implementation props — all fields explicitly typed.
+// This avoids spreading a discriminated union (which TypeScript forbids).
+interface NumberInputImpl extends NumberInputPropsBase {
+  value: number | null;
+  onChange: (n: number | null) => void;
+  nullable: boolean;
+  emptyAs: number | null;
+}
 
+function NumberInputImpl({
+  value, onChange, allowDecimal = true, onBlur, onFocus, nullable, emptyAs, ...rest
+}: NumberInputImpl) {
   const [draft, setDraft] = useState<string>(serialise(value));
   const [focused, setFocused] = useState(false);
 
@@ -55,9 +61,7 @@ export function NumberInput(props: Props) {
     setDraft(serialise(value));
   }, [value, focused]);
 
-  const commitEmpty = () => {
-    (onChange as any)(emptyAs);
-  };
+  const commitEmpty = () => { onChange(emptyAs); };
 
   return (
     <input
@@ -76,7 +80,7 @@ export function NumberInput(props: Props) {
           return;
         }
         const n = Number(raw);
-        if (Number.isFinite(n)) (onChange as any)(n);
+        if (Number.isFinite(n)) onChange(n);
       }}
       onBlur={e => {
         setFocused(false);
@@ -87,11 +91,20 @@ export function NumberInput(props: Props) {
           const n = Number(draft);
           if (Number.isFinite(n)) {
             setDraft(n === 0 ? '' : String(n));
-            (onChange as any)(n);
+            onChange(n);
           }
         }
         onBlur?.(e);
       }}
     />
   );
+}
+
+export function NumberInput(props: Props) {
+  if (props.nullable) {
+    const { value, onChange, nullable: _n, emptyAs = null, ...rest } = props;
+    return <NumberInputImpl value={value} onChange={onChange} nullable emptyAs={emptyAs} {...rest} />;
+  }
+  const { value, onChange, nullable: _n, emptyAs = 0, ...rest } = props as NumberInputProps;
+  return <NumberInputImpl value={value} onChange={onChange as (n: number | null) => void} nullable={false} emptyAs={emptyAs} {...rest} />;
 }

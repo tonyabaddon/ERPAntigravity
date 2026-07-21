@@ -67,8 +67,8 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
     try {
       const result = await tukarFakturService.fetchByNumber(tfNumber);
       setTf(result);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal load Tukar Faktur', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal load Tukar Faktur', 'warning');
     } finally {
       setLoading(false);
     }
@@ -87,8 +87,8 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
       showToast('Tanda Terima dibuka di tab baru.', 'success');
       // Refresh to show new printed_at timestamp
       await reload();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal cetak Tanda Terima', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal cetak Tanda Terima', 'warning');
     } finally {
       setPrinting(false);
     }
@@ -532,8 +532,8 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
       await tukarFakturService.update(tf.id, payload);
       showToast(`${tf.tf_number} di-update.`, 'success');
       onSaved();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal update', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal update', 'warning');
     } finally {
       setSaving(false);
     }
@@ -629,8 +629,8 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
       await tukarFakturService.delete(tf.id, reason.trim());
       showToast(`${tf.tf_number} dihapus.`, 'success');
       onDeleted();
-    } catch (e: any) {
-      const msg = String(e?.message ?? 'Gagal hapus');
+    } catch (e) {
+      const msg = String(e instanceof Error ? e.message : 'Gagal hapus');
       if (msg.includes('cannot_delete_paid_tf')) {
         showToast('TF sudah ada pembayaran — void Pembayaran dulu sebelum hapus.', 'warning');
       } else {

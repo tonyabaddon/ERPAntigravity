@@ -46,9 +46,9 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
         .order('id', { ascending: false })
         .limit(20)
     ).then(({ data }) => {
-      const found = (data ?? []).find((r: any) => {
-        const pid = (r as any).payload?.customer_id;
-        return pid === customer.id;
+      const found = (data ?? []).find((r) => {
+        const payload = r.payload as Record<string, unknown> | null;
+        return payload?.customer_id === customer.id;
       });
       if (found) setPendingRequestId(found.id);
     }).catch(() => {});
@@ -66,8 +66,8 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
       setPendingRequestId(id);
       showToast('Permintaan dikirim ke owner', 'success');
       onChanged();
-    } catch (e: any) {
-      showToast(e.message ?? 'Gagal mengirim permintaan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mengirim permintaan', 'warning');
     } finally {
       setSubmitting(false);
     }
@@ -83,8 +83,8 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
       setPendingRequestId(id);
       showToast('Permintaan ubah limit dikirim ke owner', 'success');
       onChanged();
-    } catch (e: any) {
-      showToast(e.message ?? 'Gagal mengirim permintaan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mengirim permintaan', 'warning');
     } finally {
       setSubmitting(false);
     }
@@ -98,8 +98,8 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
       setPendingRequestId(id);
       showToast('Permintaan nonaktifkan dikirim ke owner', 'success');
       onChanged();
-    } catch (e: any) {
-      showToast(e.message ?? 'Gagal mengirim permintaan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mengirim permintaan', 'warning');
     } finally {
       setSubmitting(false);
     }

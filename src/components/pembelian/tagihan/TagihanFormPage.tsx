@@ -189,8 +189,8 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         setWarehouses(whs);
         const def = whs.find(w => w.is_default) ?? whs[0];
         if (def) setDefaultWh(def.id);
-      } catch (e: any) {
-        showToast(e?.message ?? 'Gagal load gudang', 'warning');
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : 'Gagal load gudang', 'warning');
       }
     })();
     // Fetch modul gate (soft-fail: default true)
@@ -290,8 +290,8 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
         payProof = await purchaseInvoiceService.uploadAttachment(paymentProofFile, `payment-proofs/${pesanan.supplier_id}`);
       }
 
-      const payload: any = {
-        type: 'STOCK',
+      const payload = {
+        type: 'STOCK' as const,
         supplier_id: pesanan.supplier_id,
         pesanan_id: pesanan.id,
         purchase_date: purchaseDate,
@@ -323,15 +323,16 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
             discount_amount_rp: i.discount_amount_rp > 0 ? i.discount_amount_rp : undefined,
           })),
       };
-      const result = await purchaseInvoiceService.record(payload);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await purchaseInvoiceService.record(payload as any);
       if (result.kind === 'duplicate_warning') {
         showToast(`Faktur supplier sudah pernah dicatat di ${result.existing_pi}`, 'warning');
         return;
       }
       showToast(`${result.pi_number} dibuat. Stok bertambah.`, 'success');
       onSaved(result.pi_number);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal simpan Tagihan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal simpan Tagihan', 'warning');
     } finally {
       setSaving(false);
     }

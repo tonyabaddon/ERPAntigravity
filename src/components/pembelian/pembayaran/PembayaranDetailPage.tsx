@@ -30,7 +30,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
   async function reload() {
     setLoading(true);
     try { setPmb(await pembayaranService.fetchByNumber(pembayaranNumber)); }
-    catch (e: any) { showToast(e?.message ?? 'Gagal load Pembayaran', 'warning'); }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Gagal load Pembayaran', 'warning'); }
     finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, [pembayaranNumber]);
@@ -207,8 +207,8 @@ function VoidPembayaranModal({ pembayaran, onClose, onVoided, showToast }: VoidP
       showToast(`${pembayaran.pembayaran_number} di-void. Tagihan ter-cover ter-rollback.`, 'success');
       onVoided();
       onClose();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal void.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal void.', 'warning');
     } finally { setSaving(false); }
   }
 

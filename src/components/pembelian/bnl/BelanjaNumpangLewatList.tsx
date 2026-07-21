@@ -35,8 +35,8 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
     try {
       const data = await purchaseInvoiceService.fetchAll({ type: 'PASSTHROUGH' });
       setList(data);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal load BNL', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal load BNL', 'warning');
     } finally {
       setLoading(false);
     }
@@ -111,7 +111,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
             <Search className="w-3.5 h-3.5 text-gray-400" />
             <input className="text-xs outline-none w-44" placeholder="Cari PI / supplier / order..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
+          <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
             <option value="ALL">Semua status</option>
             <option value="BELUM_LUNAS">Belum Lunas</option>
             <option value="LUNAS">Lunas</option>

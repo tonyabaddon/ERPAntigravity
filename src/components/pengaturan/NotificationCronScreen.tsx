@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useTenant } from '../../contexts/TenantContext';
 import { navigate } from '../../lib/urlRoute';
+import { captureError } from '../../lib/captureError';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -79,6 +80,7 @@ export function NotificationCronScreen() {
 
       if (cancelled) return;
       if (error) {
+        captureError(error, { feature: 'notification_cron', action: 'fetch_piutang_config' });
         setPiutangError(error.message);
         setPiutangLoading(false);
         return;
@@ -108,6 +110,7 @@ export function NotificationCronScreen() {
 
       if (cancelled) return;
       if (error) {
+        captureError(error, { feature: 'notification_cron', action: 'fetch_cron_config' });
         setCronError(error.message);
         setCronLoading(false);
         return;
@@ -150,6 +153,7 @@ export function NotificationCronScreen() {
       );
 
     if (error) {
+      captureError(error, { feature: 'notification_cron', action: 'save_cron_config' });
       setCronSaveState('error');
       setTimeout(() => setCronSaveState('idle'), 3000);
       return;
@@ -175,6 +179,7 @@ export function NotificationCronScreen() {
         { onConflict: 'tenant_id' },
       );
     if (error) {
+      captureError(error, { feature: 'notification_cron', action: 'toggle_piutang_reminder' });
       setPiutangSaveState('error');
       setPiutangConfig((prev) => (prev ? { ...prev, enabled: !next } : prev));
       setTimeout(() => setPiutangSaveState('idle'), 3000);

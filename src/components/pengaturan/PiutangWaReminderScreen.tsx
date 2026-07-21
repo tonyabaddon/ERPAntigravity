@@ -14,6 +14,7 @@ import { TemplatePreview } from '../notification/TemplatePreview';
 import { supabase } from '../../lib/supabaseClient';
 import { useTenant } from '../../contexts/TenantContext';
 import { navigate } from '../../lib/urlRoute';
+import { captureError } from '../../lib/captureError';
 
 const VARS_H3 = [
   { key: 'customer_nama', label: 'Nama Customer' },
@@ -76,6 +77,7 @@ export function PiutangWaReminderScreen() {
       if (cancelled) return;
 
       if (error) {
+        captureError(error, { feature: 'piutang_wa_reminder', action: 'fetch_reminder_config' });
         setLoadError(error.message);
         setLoading(false);
         return;
@@ -123,6 +125,7 @@ export function PiutangWaReminderScreen() {
       );
 
     if (error) {
+      captureError(error, { feature: 'piutang_wa_reminder', action: 'save_reminder_config', field: String(field) });
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 3000);
       return;

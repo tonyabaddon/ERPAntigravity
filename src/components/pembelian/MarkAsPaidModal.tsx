@@ -34,16 +34,16 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
           description: `Pembayaran PO ${po.po_number} — ${po.supplier?.name ?? ''}`.trim(),
           subtotal: po.total,
         });
-      } catch (expenseErr: any) {
+      } catch (expenseErr) {
         captureError(expenseErr, { feature: 'pembelian', action: 'kasir_expense_insert' });
-        showToast('PO lunas. Gagal catat di kasir: ' + (expenseErr?.message ?? 'unknown'), 'warning');
+        showToast('PO lunas. Gagal catat di kasir: ' + (expenseErr instanceof Error ? expenseErr.message : 'unknown'), 'warning');
       }
       showToast(`${po.po_number} ditandai Lunas.`, 'success');
       onPaid();
       onClose();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'mark_paid' });
-      showToast(e?.message ?? 'Gagal menandai PO sebagai lunas.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menandai PO sebagai lunas.', 'warning');
     } finally {
       setSaving(false);
     }

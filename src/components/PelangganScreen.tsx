@@ -412,25 +412,27 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   visible with a tooltip so the tenant understands what they'll do
                   once WA AI is switched on, rather than silently removing them. */}
               <div className="grid grid-cols-3 border-b border-gray-200 shrink-0">
-                {[
-                  { label: 'Pesanan', value: salesEntries.length.toString(), tip: 'Total transaksi customer ini' },
-                  {
-                    label: 'Leads',
-                    value: profile.leads.length.toString(),
-                    tip: 'Chat WA AI yang belum jadi pesanan · aktif saat modul WA AI dihidupkan',
-                  },
-                  {
-                    label: 'Konversi',
-                    value: profile.leads.length === 0 ? '—' :
-                      Math.round(profile.leads.filter(l => l.status === 'ORDERED').length / profile.leads.length * 100) + '%',
-                    color: profile.leads.length === 0 ? 'text-gray-400' :
-                      profile.leads.filter(l => l.status === 'ORDERED').length === profile.leads.length
-                        ? 'text-[#2d8a4e]' : 'text-amber-600',
-                    tip: '% Leads yang berhasil jadi pesanan · aktif saat modul WA AI dihidupkan',
-                  },
-                ].map((stat, i) => (
-                  <div key={i} className={`py-3 text-center ${i < 2 ? 'border-r border-gray-200' : ''}`} title={(stat as any).tip}>
-                    <div className={`text-base font-extrabold ${(stat as any).color ?? 'text-[#012749]'}`}>{stat.value}</div>
+                {(
+                  [
+                    { label: 'Pesanan', value: salesEntries.length.toString(), tip: 'Total transaksi customer ini' },
+                    {
+                      label: 'Leads',
+                      value: profile.leads.length.toString(),
+                      tip: 'Chat WA AI yang belum jadi pesanan · aktif saat modul WA AI dihidupkan',
+                    },
+                    {
+                      label: 'Konversi',
+                      value: profile.leads.length === 0 ? '—' :
+                        Math.round(profile.leads.filter(l => l.status === 'ORDERED').length / profile.leads.length * 100) + '%',
+                      color: profile.leads.length === 0 ? 'text-gray-400' :
+                        profile.leads.filter(l => l.status === 'ORDERED').length === profile.leads.length
+                          ? 'text-[#2d8a4e]' : 'text-amber-600',
+                      tip: '% Leads yang berhasil jadi pesanan · aktif saat modul WA AI dihidupkan',
+                    },
+                  ] as Array<{ label: string; value: string; tip: string; color?: string }>
+                ).map((stat, i) => (
+                  <div key={i} className={`py-3 text-center ${i < 2 ? 'border-r border-gray-200' : ''}`} title={stat.tip}>
+                    <div className={`text-base font-extrabold ${stat.color ?? 'text-[#012749]'}`}>{stat.value}</div>
                     <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{stat.label}</div>
                   </div>
                 ))}

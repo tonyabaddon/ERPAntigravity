@@ -27,7 +27,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
   async function reload() {
     setLoading(true);
     try { setList(await pesananService.fetchAll()); }
-    catch (e: any) { showToast(e?.message ?? 'Gagal load Pesanan', 'warning'); }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Gagal load Pesanan', 'warning'); }
     finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, []);
@@ -55,7 +55,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input className="text-xs outline-none w-44" placeholder="Cari PSN / supplier..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
+        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
           <option value="ALL">Semua status</option>
           <option value="DRAFT">Draft</option>
           <option value="ORDERED">Ordered</option>

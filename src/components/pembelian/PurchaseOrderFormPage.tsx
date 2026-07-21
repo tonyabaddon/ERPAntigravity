@@ -150,9 +150,9 @@ export default function PurchaseOrderFormPage({
         'success'
       );
       onSaved(status);
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'save_po' });
-      showToast(e?.message ?? 'Gagal menyimpan PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menyimpan PO.', 'warning');
     } finally {
       setSaving(false);
     }

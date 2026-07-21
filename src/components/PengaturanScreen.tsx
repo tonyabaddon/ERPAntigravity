@@ -227,7 +227,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       const url = await companySettingsService.uploadLogo(tenant.tenant_id, file);
       setLogoUrl(url);
       showToast('Logo berhasil di-upload.', 'success');
-    } catch (err: any) {
+    } catch (err) {
       showToast(`Gagal upload logo: ${err.message ?? 'unknown'}`, 'warning');
     } finally {
       setLogoUploading(false);
@@ -242,7 +242,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       await companySettingsService.clearLogo(tenant.tenant_id);
       setLogoUrl(null);
       showToast('Logo dihapus.', 'success');
-    } catch (err: any) {
+    } catch (err) {
       showToast(`Gagal hapus logo: ${err.message ?? 'unknown'}`, 'warning');
     }
   }

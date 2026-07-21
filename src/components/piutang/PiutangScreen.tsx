@@ -90,9 +90,9 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
         includeLunas: filter === 'lunas',
       }));
       void loadReminderMap();
-    } catch (e: any) {
-      setFetchError(e?.message ?? 'Gagal memuat data piutang.');
-      showToast(e?.message ?? 'Gagal load piutang', 'warning');
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Gagal memuat data piutang.');
+      showToast(e instanceof Error ? e.message : 'Gagal load piutang', 'warning');
     } finally { setLoading(false); }
   }
   useEffect(() => { reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filter]);
@@ -113,8 +113,8 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       } else {
         showToast(result?.message ?? 'Gagal mengirim reminder', 'warning');
       }
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal mengirim reminder', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mengirim reminder', 'warning');
     } finally {
       setSendingWa(null);
     }
@@ -522,8 +522,8 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         );
       }
       onPaid();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal catat bayar', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal catat bayar', 'warning');
     } finally {
       setSaving(false);
       setPhase('idle');

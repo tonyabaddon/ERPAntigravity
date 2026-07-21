@@ -15,6 +15,7 @@ import { TemplatePreview } from '../notification/TemplatePreview';
 import { TemplateHistoryModal } from '../notification/TemplateHistoryModal';
 import { supabase } from '../../lib/supabaseClient';
 import { navigate } from '../../lib/urlRoute';
+import { captureError } from '../../lib/captureError';
 
 interface TemplateDef {
   id: string;
@@ -238,6 +239,7 @@ export function NotificationTemplatesScreen() {
         .select('template_id, content');
       if (cancelled) return;
       if (error) {
+        captureError(error, { feature: 'notification_templates', action: 'fetch_templates' });
         setLoadError(error.message);
         setLoading(false);
         return;
@@ -265,6 +267,7 @@ export function NotificationTemplatesScreen() {
         { onConflict: 'tenant_id,template_id' },
       );
     if (error) {
+      captureError(error, { feature: 'notification_templates', action: 'save_template', templateId: selectedId });
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 3000);
       return;

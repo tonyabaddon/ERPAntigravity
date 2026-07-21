@@ -4,6 +4,7 @@ import { formatRp } from '../../lib/format';
 import { navigate } from '../../lib/urlRoute';
 import { fetchSalesOrders, closeSalesOrder } from '../../lib/salesOrderService';
 import SalesInvoicePDF, { type InvoicePrintMode } from './SalesInvoicePDF';
+import { captureError } from '../../lib/captureError';
 
 // Adapt DbSalesOrder → the KasirTransaction shape SalesInvoicePDF expects.
 // Only fields used by variant='quotation' need to be populated; the rest are
@@ -55,6 +56,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
       const data = await fetchSalesOrders();
       setRows(data);
     } catch (err) {
+      captureError(err, { feature: 'daftar_penawaran', action: 'fetch_sales_orders' });
       showToast(`Gagal load: ${err instanceof Error ? err.message : String(err)}`, 'warning');
     } finally {
       setLoading(false);
@@ -113,6 +115,7 @@ export default function DaftarPenawaranScreen({ showToast }: Props) {
       setCloseModal(null);
       await reload();
     } catch (err) {
+      captureError(err, { feature: 'daftar_penawaran', action: 'close_sales_order', soId: closeModal.so.id });
       showToast(`Gagal tutup: ${err instanceof Error ? err.message : String(err)}`, 'warning');
     } finally {
       setClosing(false);

@@ -35,7 +35,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
         ongkirAdjust: ongkirAdjust !== 0 ? ongkirAdjust : undefined,
       });
       onMarked(updated);
-    } catch (err: any) {
+    } catch (err) {
       showToast(`Gagal tandai lunas: ${err.message ?? 'unknown'}`, 'warning');
     } finally {
       setSaving(false);

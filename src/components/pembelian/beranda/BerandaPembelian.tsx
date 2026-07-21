@@ -44,9 +44,9 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
       const d = await pembayaranService.fetchDashboardLite();
       setData(d);
       setLastUpdated(new Date());
-    } catch (e: any) {
+    } catch (e) {
       setFetchError(e?.message ?? 'Gagal memuat dashboard pembelian.');
-      showToast(e?.message ?? 'Gagal load dashboard', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal load dashboard', 'warning');
     } finally {
       setLoading(false);
     }

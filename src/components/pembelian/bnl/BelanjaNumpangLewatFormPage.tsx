@@ -153,8 +153,8 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         showToast(`${result.pi_number} dibuat.`, 'success');
         onSaved(result.pi_number);
       }
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal simpan PI', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal simpan PI', 'warning');
     } finally {
       setSaving(false);
     }

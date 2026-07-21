@@ -34,7 +34,7 @@ export default function OrderPicker({ value, onChange }: OrderPickerProps) {
         setResults([]);
         return;
       }
-      setResults((data ?? []) as any);
+      setResults((data ?? []) as Array<{ id: string; customer_name?: string }>);
     }, 250);
     return () => clearTimeout(t);
   }, [query]);

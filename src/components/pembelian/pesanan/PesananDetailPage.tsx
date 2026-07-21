@@ -40,7 +40,7 @@ export default function PesananDetailPage({
   async function reload() {
     setLoading(true);
     try { setPesanan(await pesananService.fetchByNumber(pesananNumber)); }
-    catch (e: any) { showToast(e?.message ?? 'Gagal load Pesanan', 'warning'); }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Gagal load Pesanan', 'warning'); }
     finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, [pesananNumber]);
@@ -52,8 +52,8 @@ export default function PesananDetailPage({
       await pesananService.markOrdered(pesanan.id);
       showToast(`${pesanan.pesanan_number} ditandai ORDERED.`, 'success');
       await reload();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal mark ordered', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mark ordered', 'warning');
     } finally {
       setMarking(false);
     }
@@ -259,8 +259,8 @@ function VoidPesananModal({ pesanan, onClose, onVoided, showToast }: VoidProps) 
       showToast(`${pesanan.pesanan_number} di-void.`, 'success');
       onVoided();
       onClose();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal void.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal void.', 'warning');
     } finally { setSaving(false); }
   }
 

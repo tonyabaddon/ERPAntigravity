@@ -46,8 +46,8 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
     setLoading(true);
     try {
       setList(await tukarFakturService.fetchAll());
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal load Tukar Faktur', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal load Tukar Faktur', 'warning');
     } finally {
       setLoading(false);
     }

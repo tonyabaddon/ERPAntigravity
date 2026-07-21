@@ -42,9 +42,9 @@ export default function InlineSupplierForm({
       } else {
         showToast('Supplier disimpan tapi tidak ditemukan. Refresh halaman.', 'warning');
       }
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'inline_supplier_save' });
-      showToast(e?.message ?? 'Gagal menyimpan supplier.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menyimpan supplier.', 'warning');
     } finally {
       setSaving(false);
     }

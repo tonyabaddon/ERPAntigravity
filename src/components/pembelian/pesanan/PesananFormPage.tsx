@@ -102,8 +102,8 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
         : `${result.pesanan_number} disimpan sebagai DRAFT.`;
       showToast(msg, 'success');
       onSaved(result.pesanan_number);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal simpan Pesanan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal simpan Pesanan', 'warning');
     } finally {
       setSaving(false);
     }

@@ -86,9 +86,9 @@ export default function PembelianDetailPage({
         setPo(row);
         document.title = `${row.po_number} — Pembelian`;
       }
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian_detail', action: 'load_detail' });
-      showToast(e?.message ?? 'Gagal memuat detail PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal memuat detail PO.', 'warning');
       setNotFound(true);
     } finally {
       setLoading(false);
@@ -142,7 +142,7 @@ export default function PembelianDetailPage({
         window.open(url, '_blank');
       }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian_detail', action: 'generate_pdf' });
       showToast('Gagal generate PDF. Coba lagi.', 'warning');
     } finally {
@@ -156,9 +156,9 @@ export default function PembelianDetailPage({
       await purchaseOrderService.markOrdered(po.id);
       showToast(`${po.po_number} ditandai Dipesan.`, 'success');
       fetchPo();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian_detail', action: 'mark_ordered' });
-      showToast(e?.message ?? 'Gagal mengubah status PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal mengubah status PO.', 'warning');
     }
   }
 
@@ -170,9 +170,9 @@ export default function PembelianDetailPage({
       showToast(`${po.po_number} dihapus.`, 'success');
       // Redirect to list URL so the operator isn't stranded on a deleted-PO URL.
       window.location.href = '/?screen=pembelian';
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian_detail', action: 'delete_po' });
-      showToast(e?.message ?? 'Gagal menghapus PO.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menghapus PO.', 'warning');
     }
   }
 
@@ -182,9 +182,9 @@ export default function PembelianDetailPage({
       await purchaseOrderService.updateDamageStatus(item.id, newStatus);
       showToast('Status kerusakan diperbarui.', 'success');
       fetchPo();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian_detail', action: 'update_damage_status' });
-      showToast(e?.message ?? 'Gagal memperbarui status.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal memperbarui status.', 'warning');
     } finally {
       setUpdatingItemId(null);
     }

@@ -98,7 +98,7 @@ export default function LockSubmissionModal({
     void supabaseService.fetchStocks()
       .then((rows) => {
         setStockOptions(
-          (rows ?? []).map((r: any) => ({
+          (rows ?? []).map((r) => ({
             sku: r.sku,
             name: r.name,
             stock_atas: Number(r.stock_atas ?? 0),

@@ -31,7 +31,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
   async function reload() {
     setLoading(true);
     try { setPi(await purchaseInvoiceService.fetchByNumber(piNumber)); }
-    catch (e: any) { showToast(e?.message ?? 'Gagal load PI', 'warning'); }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Gagal load PI', 'warning'); }
     finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, [piNumber]);

@@ -104,7 +104,7 @@ export default function TukarFakturFormPage({
         if (!cancelled) setOutstanding(rows as OutstandingTagihanRow[]);
       })
       .catch(e => {
-        if (!cancelled) showToast(e?.message ?? 'Gagal load outstanding Tagihan', 'warning');
+        if (!cancelled) showToast(e instanceof Error ? e.message : 'Gagal load outstanding Tagihan', 'warning');
       })
       .finally(() => {
         if (!cancelled) setOutstandingLoading(false);
@@ -181,8 +181,8 @@ export default function TukarFakturFormPage({
             ]);
           }
         }
-      } catch (e: any) {
-        showToast(e?.message ?? 'Gagal apply prefill', 'warning');
+      } catch (e) {
+        showToast(e instanceof Error ? e.message : 'Gagal apply prefill', 'warning');
       } finally {
         setPrefillApplied(true);
       }
@@ -286,8 +286,8 @@ export default function TukarFakturFormPage({
       const result = await tukarFakturService.record(payload);
       showToast(`${result.tf_number} dibuat (${selected.length} Faktur).`, 'success');
       onSaved(result.tf_number);
-    } catch (e: any) {
-      const msg = String(e?.message ?? 'Gagal simpan Tukar Faktur');
+    } catch (e) {
+      const msg = String(e instanceof Error ? e.message : 'Gagal simpan Tukar Faktur');
       if (msg.includes('same_supplier_violation')) {
         showToast('Ada Faktur dari supplier lain — tidak bisa di-bundle.', 'warning');
       } else if (msg.includes('tagihan_already_bundled')) {

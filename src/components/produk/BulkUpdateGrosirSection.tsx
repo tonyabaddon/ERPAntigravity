@@ -103,7 +103,7 @@ export default function BulkUpdateGrosirSection({ stockList, showToast, onApplie
       showToast(`✅ ${result.applied} produk diupdate, ${result.skipped.length} skipped`, 'success');
       setRows(null);
       onApplied();
-    } catch (err: any) {
+    } catch (err) {
       showToast(`Gagal: ${err.message ?? 'unknown'}`, 'warning');
     } finally {
       setApplying(false);

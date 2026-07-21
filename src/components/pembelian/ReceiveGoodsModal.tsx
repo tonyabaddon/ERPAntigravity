@@ -105,8 +105,8 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
       showToast(`${po.po_number} diterima. Stok diperbarui.`, 'success');
       onReceived();
       onClose();
-    } catch (e: any) {
-      showToast(e.message ?? 'Gagal mengkonfirmasi penerimaan.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal mengkonfirmasi penerimaan.', 'warning');
     } finally {
       setSaving(false);
     }

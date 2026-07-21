@@ -26,8 +26,8 @@ export default function MarkPaidModal({ pi, onClose, onPaid, showToast }: Props)
       showToast(`${pi.pi_number} ditandai Lunas.`, 'success');
       onPaid();
       onClose();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal menandai Lunas.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal menandai Lunas.', 'warning');
     } finally {
       setSaving(false);
     }

@@ -425,7 +425,7 @@ export default function Step3Payment(props: Props) {
           {/* Show gross subtotal so Diskon Item / Diskon Order subtractions are transparent. */}
           {(() => {
             const lineDiscount = (props.items ?? []).reduce(
-              (sum, i) => sum + ((i as any).discount_amount_rp ?? 0), 0,
+              (sum, i) => sum + (i.discount_amount_rp ?? 0), 0,
             );
             const grossSubtotal = props.subtotal + lineDiscount;
             const orderDiscount = computeDiscountAmount(

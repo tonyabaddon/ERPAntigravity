@@ -23,8 +23,8 @@ export default function VoidConfirmModal({ pi, onClose, onVoided, showToast }: P
       showToast(`${pi.pi_number} di-void. Kasir expense reversed.`, 'success');
       onVoided();
       onClose();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal void.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal void.', 'warning');
     } finally { setSaving(false); }
   }
 

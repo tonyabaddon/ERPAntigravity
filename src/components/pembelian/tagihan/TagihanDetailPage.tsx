@@ -79,8 +79,8 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
     try {
       const data = await purchaseInvoiceService.fetchByNumber(tghNumber);
       setTgh(data as unknown as TagihanRow);
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal load Tagihan', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal load Tagihan', 'warning');
     } finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, [tghNumber]);
@@ -377,8 +377,8 @@ function VoidTagihanModal({ tagihan, onClose, onVoided, showToast }: VoidProps) 
       showToast(`${tagihan.pi_number} di-void.`, 'success');
       onVoided();
       onClose();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Gagal void.', 'warning');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Gagal void.', 'warning');
     } finally { setSaving(false); }
   }
 

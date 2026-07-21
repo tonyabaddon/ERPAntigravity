@@ -29,7 +29,7 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
   async function reload() {
     setLoading(true);
     try { setList(await pembayaranService.fetchAll()); }
-    catch (e: any) { showToast(e?.message ?? 'Gagal load Pembayaran', 'warning'); }
+    catch (e) { showToast(e instanceof Error ? e.message : 'Gagal load Pembayaran', 'warning'); }
     finally { setLoading(false); }
   }
   useEffect(() => { reload(); }, []);
@@ -63,7 +63,7 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input className="text-xs outline-none w-44" placeholder="Cari PMB / supplier..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)}>
+        <select className="text-xs px-2 py-1.5 border border-gray-200 rounded-lg" value={statusFilter} onChange={e => setStatusFilter(e.target.value as Parameters<typeof setStatusFilter>[0])}>
           <option value="ALL">Semua status</option>
           <option value="LUNAS">Lunas</option>
           <option value="VOIDED">Voided</option>

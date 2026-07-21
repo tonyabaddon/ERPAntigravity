@@ -32,9 +32,9 @@ export default function SupplierModal({ supplier, onClose, onSaved, showToast }:
       showToast(supplier ? 'Supplier diperbarui.' : 'Supplier ditambahkan.', 'success');
       onSaved();
       onClose();
-    } catch (e: any) {
+    } catch (e) {
       captureError(e, { feature: 'pembelian', action: 'save_supplier' });
-      showToast(e?.message ?? 'Gagal menyimpan supplier.', 'warning');
+      showToast(e instanceof Error ? e.message : 'Gagal menyimpan supplier.', 'warning');
     } finally {
       setSaving(false);
     }
