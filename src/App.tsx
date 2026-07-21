@@ -29,6 +29,7 @@ import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
 import { AccessDenied } from './components/errors/AccessDenied';
 import { TenantBootstrapError } from './components/errors/TenantBootstrapError';
+import { ImpersonateFailureScreen } from './components/errors/ImpersonateFailureScreen';
 import { NotFound } from './components/errors/NotFound';
 import { TenantImpersonationBanner } from './components/TenantImpersonationBanner';
 import { decodeJwt } from './lib/jwt';
@@ -986,10 +987,15 @@ export default function App() {
       );
     }
     if (impersonateGate === 'failed') {
+      // Branch on platform-admin status: admins went to a wrong/forbidden tenant
+      // (show AccessDenied); regular users have a genuinely broken tenant (show
+      // TenantBootstrapError). Sentry tag is emitted inside ImpersonateFailureScreen.
       return (
-        <TenantBootstrapError
-          code={`IMPERSONATE_FAILED: ${impersonateError || 'unknown'}`}
+        <ImpersonateFailureScreen
+          isPlatformAdmin={jwtClaims?.is_platform_admin === true}
+          error={impersonateError}
           onRetry={() => window.location.reload()}
+          onLogout={handleLogout}
         />
       );
     }
