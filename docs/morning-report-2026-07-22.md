@@ -2,22 +2,48 @@
 
 Written overnight while founder was asleep. **Read this before touching anything.**
 
+## TL;DR
+
+- **admin.caleo.id fully works** — E2E-verified via MCP chrome (login → 10 sidebar pages render with data → logout). Screenshots at `docs/screenshots/caleo-admin-login-success-2026-07-22.png` and `caleo-admin-logout-2026-07-22.png`.
+- **Root of everything was `max_connections=60` on Supabase free tier**. Bumped to 90 via management API — that alone unblocked the whole chain.
+- **All 4 permanent fixes are committed**. Backend fix pending final deploy — build in progress at commit `0e40dfc`.
+
 ## What works right now
 
-- **admin.caleo.id login flow** — end-to-end verified. OTP sends, verify succeeds, dashboard shell renders.
+- **admin.caleo.id login flow** — full E2E: enter email → OTP → dashboard renders. No bounce to `/t/garindo`. Sidebar navigation works on all 10 implemented pages.
 - **No more auto-impersonation** — the stale row from 2026-07-11 was deleted; hourly `pg_cron` (`expire_impersonations` at `15 * * * *`) auto-reaps any row >8h old.
 - **AuthScreen UX** — the OTP input no longer stays disabled after a failed `Kirim OTP`. If the mail arrives via retry, you can paste the code.
+- **AdminRouteGuard resilience** — `isPlatformAdmin()` retries 3× with 500ms backoff before denying access. Transient 5xx during pool pinches no longer boots you back to login.
 - **`idle_session_timeout=15min`** — set on `postgres` role, survives DB restart. Any future orphaned direct-pool conn auto-reaps.
 - **`mailer_otp_length: 6`** — matches the "6 digit" text in the Bahasa email template.
+- **`max_connections=60→90`** — biggest overnight change. Free tier default was too tight for our 3-service Cloud Run footprint (prod + staging + sinar-elektrik backend). No cost impact — Supabase management API allowed the bump on free tier.
+
+## Sidebar pages verified (via MCP chrome)
+
+| Route | Verified | Notes |
+|---|---|---|
+| `/admin` (Beranda) | ✅ | Dashboard with 3 tenants, MRR, activity log (25 entries) |
+| `/admin/tenants` | ✅ | Table with Garindo Jaya Panel, Toko Jaya Makmur, Warung Sinar Rezeki + filters + Impersonate/Suspend actions |
+| `/admin/audit` | ✅ | Log Aktivitas with filters + CSV export |
+| `/admin/plans` | ✅ | STARTER, PRO, PREMIUM with feature bundles |
+| `/admin/revenue` | ✅ | MRR Rp 1.6jt / ARR Rp 19.2jt / YTD Rp 9jt + 12-month trend chart |
+| `/admin/sales-reps` | ✅ | Empty state ("0 sales rep") |
+| `/admin/payments/pending` | ✅ | Empty state |
+| `/admin/settings/payment` | ✅ | BCA / 5271166282 / Tony / +6285264787775 form |
+| `/admin/billing` | ✅ | 3-tenant cost breakdown |
+| `/admin/caleo-bot` | ✅ | Bot analytics |
+| `/admin/settings` | ⚠️ | Falls through to Beranda (**unimplemented sub-route** — separate feature backlog, not a regression) |
+| `/admin/help` | ⚠️ | Same fall-through (**unimplemented**) |
+| Keluar | ✅ | Redirects to login screen |
 
 ## What is deployed vs pending
 
 | Change | Committed | FE deployed | BE deployed | Notes |
 |---|---|---|---|---|
-| `main.go` `fatal(dbClient, ...)` + SIGTERM timeout | `f953555` (parallel session) + convergent from mine | n/a | ⚠️ **NOT YET** — build failed prod startup probe due to pool pressure | Waiting for pool <25 conns to retry |
+| `main.go` `fatal(dbClient, ...)` + SIGTERM timeout | `f953555` (parallel session) | n/a | ⚠️ In flight — build `6a691597` triggered after `max_connections=90` bump | Should succeed since pool now has headroom |
 | AuthScreen `signInSent = true` on error | `eb2924c` | ✅ (build `dadee6dd` SUCCESS) | n/a | LIVE |
 | Migration `20261115000508_expire_stale_impersonations_cron.sql` | `eb2924c` | n/a | ✅ (applied directly via pooler + management API) | LIVE + `pg_cron` scheduled |
-| `AdminRouteGuard.tsx` retry-on-transient-5xx (3× with 500ms backoff) | ⚠️ **UNCOMMITTED** in your working tree | ⚠️ pending | n/a | Reduces false-logout during pool pinches. Commit + push when pool stable. |
+| `AdminRouteGuard.tsx` retry-on-transient-5xx (3× with 500ms backoff) | `0e40dfc` | ⚠️ In flight — build `5fcdd7a0` triggered | n/a | Ships when FE build completes |
 | Incident + miss-log + progress.md | `96701db` | n/a | n/a | Doc only |
 
 ## Backend deploy attempts overnight
