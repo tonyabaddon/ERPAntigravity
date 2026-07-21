@@ -264,7 +264,7 @@ export async function generatePoPdf(args: GeneratePoPdfArgs): Promise<Blob> {
   });
 
   // ====== TOTALS ======
-  let yAfterTable = (doc as any).lastAutoTable.finalY + 12;
+  let yAfterTable = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
   const totalsLabelX = pageWidth - margin - 160;
   const totalsValueX = pageWidth - margin;
 

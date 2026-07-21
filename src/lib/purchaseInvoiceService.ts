@@ -30,12 +30,13 @@ export const purchaseInvoiceService = {
     if (filter.to) q = q.lte('purchase_date', filter.to);
     const { data, error } = await q;
     if (error) throw error;
-    return (data ?? []).map((row: any) => ({
+    type PiRow = Record<string, unknown> & { suppliers?: unknown; orders?: unknown | null; purchase_invoice_items?: unknown[] | null };
+    return (data ?? []).map((row: PiRow) => ({
       ...row,
       supplier: row.suppliers,
       order: row.orders ?? undefined,
       items: row.purchase_invoice_items ?? [],
-    })) as DbPurchaseInvoice[];
+    })) as unknown as DbPurchaseInvoice[];
   },
 
   async fetchByNumber(piNumber: string): Promise<DbPurchaseInvoice | null> {
@@ -46,12 +47,13 @@ export const purchaseInvoiceService = {
       .eq('pi_number', piNumber).maybeSingle();
     if (error) throw error;
     if (!data) return null;
+    const row = data as Record<string, unknown> & { suppliers?: unknown; orders?: unknown | null; purchase_invoice_items?: unknown[] | null };
     return {
-      ...(data as any),
-      supplier: (data as any).suppliers,
-      order: (data as any).orders ?? undefined,
-      items: (data as any).purchase_invoice_items ?? [],
-    } as DbPurchaseInvoice;
+      ...row,
+      supplier: row.suppliers,
+      order: row.orders ?? undefined,
+      items: row.purchase_invoice_items ?? [],
+    } as unknown as DbPurchaseInvoice;
   },
 
   async fetchByOrderId(orderId: string): Promise<DbPurchaseInvoice[]> {
@@ -63,19 +65,21 @@ export const purchaseInvoiceService = {
       .is('voided_at', null)
       .order('created_at', { ascending: true });
     if (error) throw error;
-    return (data ?? []).map((row: any) => ({
+    type PiRow2 = Record<string, unknown> & { suppliers?: unknown; purchase_invoice_items?: unknown[] | null };
+    return (data ?? []).map((row: PiRow2) => ({
       ...row, supplier: row.suppliers, items: row.purchase_invoice_items ?? [],
-    })) as DbPurchaseInvoice[];
+    })) as unknown as DbPurchaseInvoice[];
   },
 
   async record(payload: RecordPiPayload): Promise<RecordPiResult> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase.rpc('record_pi', { payload });
     if (error) throw error;
-    if (data && (data as any).warning === 'duplicate_supplier_invoice') {
-      return { kind: 'duplicate_warning', existing_pi: (data as any).existing_pi };
+    const rpcResult = data as { warning?: string; existing_pi?: string; pi_number?: string; pi_id?: string } | null;
+    if (rpcResult && rpcResult.warning === 'duplicate_supplier_invoice') {
+      return { kind: 'duplicate_warning', existing_pi: rpcResult.existing_pi ?? '' };
     }
-    return { kind: 'ok', pi_number: (data as any).pi_number, pi_id: (data as any).pi_id };
+    return { kind: 'ok', pi_number: rpcResult?.pi_number ?? '', pi_id: rpcResult?.pi_id ?? '' };
   },
 
   async markPaid(piId: string, proofUrl?: string): Promise<void> {
@@ -187,14 +191,14 @@ export async function fetchOpeningAPLines(): Promise<OpeningAPLine[]> {
     .eq('saldo_awal_snapshots.status', 'posted')
     .is('saldo_awal_snapshots.reversed_at', null);
   if (error) return [];
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    snapshot_id: row.snapshot_id,
-    supplier_id: row.supplier_id ?? null,
-    supplier_name: row.supplier_name,
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    snapshot_id: row.snapshot_id as string,
+    supplier_id: (row.supplier_id ?? null) as string | null,
+    supplier_name: row.supplier_name as string,
     amount: Number(row.amount),
-    original_due_date: row.original_due_date ?? null,
-    invoice_ref: row.invoice_ref ?? null,
-    notes: row.notes ?? null,
+    original_due_date: (row.original_due_date ?? null) as string | null,
+    invoice_ref: (row.invoice_ref ?? null) as string | null,
+    notes: (row.notes ?? null) as string | null,
   }));
 }

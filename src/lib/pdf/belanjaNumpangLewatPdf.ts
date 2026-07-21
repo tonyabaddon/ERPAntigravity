@@ -49,7 +49,7 @@ export function generateBelanjaNumpangLewatPdf(args: { pi: DbPurchaseInvoice }):
     columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
   });
 
-  const endY = (doc as any).lastAutoTable.finalY ?? 80;
+  const endY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY ?? 80;
   doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
   doc.text('TOTAL', 60, endY + 5);
   doc.text(fmtRp(pi.total), 95, endY + 5, { align: 'right' });

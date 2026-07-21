@@ -54,11 +54,12 @@ export const purchaseOrderService = {
       .select('*, suppliers(*), purchase_order_items(*)')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map((row: any) => ({
+    type PoRow = Record<string, unknown> & { suppliers?: unknown; purchase_order_items?: unknown[] | null };
+    return (data ?? []).map((row: PoRow) => ({
       ...row,
       supplier: row.suppliers,
       items: row.purchase_order_items ?? [],
-    })) as DbPurchaseOrder[];
+    })) as unknown as DbPurchaseOrder[];
   },
 
   async fetchByNumber(poNumber: string): Promise<DbPurchaseOrder | null> {
@@ -70,11 +71,12 @@ export const purchaseOrderService = {
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
+    const row = data as Record<string, unknown> & { suppliers?: unknown; purchase_order_items?: unknown[] | null };
     return {
-      ...(data as any),
-      supplier: (data as any).suppliers,
-      items: (data as any).purchase_order_items ?? [],
-    } as DbPurchaseOrder;
+      ...row,
+      supplier: row.suppliers,
+      items: row.purchase_order_items ?? [],
+    } as unknown as DbPurchaseOrder;
   },
 
   async generatePoNumber(): Promise<string> {

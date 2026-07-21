@@ -283,15 +283,15 @@ export async function fetchOpeningARLines(): Promise<OpeningARLine[]> {
     .eq('saldo_awal_snapshots.status', 'posted')
     .is('saldo_awal_snapshots.reversed_at', null);
   if (error) return [];
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    snapshot_id: row.snapshot_id,
-    customer_id: row.customer_id ?? null,
-    customer_name: row.customer_name,
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    snapshot_id: row.snapshot_id as string,
+    customer_id: (row.customer_id ?? null) as string | null,
+    customer_name: row.customer_name as string,
     amount: Number(row.amount),
-    original_due_date: row.original_due_date ?? null,
-    invoice_ref: row.invoice_ref ?? null,
-    notes: row.notes ?? null,
+    original_due_date: (row.original_due_date ?? null) as string | null,
+    invoice_ref: (row.invoice_ref ?? null) as string | null,
+    notes: (row.notes ?? null) as string | null,
   }));
 }
 

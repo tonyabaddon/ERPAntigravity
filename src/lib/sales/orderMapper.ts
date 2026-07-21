@@ -11,8 +11,7 @@ export function normalizePaymentType(s: unknown): PaymentType {
 // normalize so PDF generators see a clean array of {name, qty, subtotal} rows.
 function normalizeItems(raw: unknown): OrderItem[] | undefined {
   if (!Array.isArray(raw)) return undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = (raw as any[])
+  const items = (raw as Array<Record<string, unknown>>)
     .filter(it => it && typeof it === 'object')
     .map(it => ({
       name: String(it.name ?? it.product_name ?? ''),
@@ -33,30 +32,29 @@ export function formatTimeAgo(ms: number): string {
   return `${days} hari lalu`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function rowToOrder(row: any): Order {
+export function rowToOrder(row: Record<string, unknown>): Order {
   const subStage = (row.funnel_sub_stage ?? '1a') as Order['funnel_sub_stage'];
   const meta = (() => { try { return getSubStageMeta(subStage); } catch { return null; } })();
-  const createdAt = row.created_at ? new Date(row.created_at) : new Date();
-  const wipStartedAt = row.wip_started_at ? new Date(row.wip_started_at) : null;
+  const createdAt = row.created_at ? new Date(row.created_at as string) : new Date();
+  const wipStartedAt = row.wip_started_at ? new Date(row.wip_started_at as string) : null;
   const ageMs = Date.now() - createdAt.getTime();
   const isStuck = subStage === '2c' && ageMs > 7 * 24 * 3600 * 1000;
   return {
-    id: row.id,
-    customer: row.customer_name ?? '—',
+    id: row.id as string,
+    customer: (row.customer_name as string | null) ?? '—',
     total: Number(row.subtotal ?? 0),
-    channel: row.channel ?? 'WhatsApp',
-    order_type: row.order_type ?? 'KOMPONEN',
-    funnel_stage: row.funnel_stage ?? 1,
+    channel: (row.channel as string | null) ?? 'WhatsApp',
+    order_type: (row.order_type as Order['order_type'] | null) ?? 'KOMPONEN',
+    funnel_stage: (row.funnel_stage as Order['funnel_stage'] | null) ?? 1,
     funnel_sub_stage: subStage,
-    delivery_method: row.delivery_method ?? 'PICKUP',
-    version: row.version ?? 1,
+    delivery_method: (row.delivery_method as Order['delivery_method'] | null) ?? 'PICKUP',
+    version: (row.version as number | null) ?? 1,
     payment_type: normalizePaymentType(row.payment_type),
-    payment_proof_url: row.payment_proof_url ?? undefined,
-    pelunasan_proof_url: row.pelunasan_proof_url ?? undefined,
-    marketplace_proof_url: row.marketplace_proof_url ?? undefined,
-    proof_source: row.proof_source ?? undefined,
-    estimated_completion_days: row.estimated_completion_days ?? undefined,
+    payment_proof_url: (row.payment_proof_url as string | undefined) ?? undefined,
+    pelunasan_proof_url: (row.pelunasan_proof_url as string | undefined) ?? undefined,
+    marketplace_proof_url: (row.marketplace_proof_url as string | undefined) ?? undefined,
+    proof_source: (row.proof_source as Order['proof_source'] | undefined) ?? undefined,
+    estimated_completion_days: (row.estimated_completion_days as number | undefined) ?? undefined,
     hari_progress: wipStartedAt ? Math.floor((Date.now() - wipStartedAt.getTime()) / (24 * 3600 * 1000)) : undefined,
     status_label: meta?.name ?? 'Status',
     time_ago: formatTimeAgo(ageMs),
@@ -64,9 +62,9 @@ export function rowToOrder(row: any): Order {
     items: normalizeItems(row.items),
     ongkir_amount: row.ongkir_amount != null ? Number(row.ongkir_amount) : undefined,
     dp_amount: row.dp_amount != null ? Number(row.dp_amount) : undefined,
-    payment_method: row.payment_method ?? undefined,
-    customer_phone: row.customer_phone ?? undefined,
-    customer_address: row.customer_address ?? undefined,
-    delivery_address: row.delivery_address ?? undefined,
+    payment_method: (row.payment_method as string | undefined) ?? undefined,
+    customer_phone: (row.customer_phone as string | undefined) ?? undefined,
+    customer_address: (row.customer_address as string | undefined) ?? undefined,
+    delivery_address: (row.delivery_address as string | undefined) ?? undefined,
   };
 }

@@ -45,5 +45,5 @@ export function getBackendUrl(): string {
     if (mapped) return mapped;
   }
   // Dev / CI / unit-test fallback
-  return (import.meta as any).env?.VITE_BACKEND_URL ?? '';
+  return import.meta.env.VITE_BACKEND_URL ?? '';
 }

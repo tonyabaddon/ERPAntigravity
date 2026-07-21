@@ -24,8 +24,8 @@ import type {
   StockItem,
 } from '../types';
 
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Create a singleton client if keys are present
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
@@ -530,8 +530,8 @@ export const statsService = {
       supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').eq('date', todayDate),
     ]);
 
-    const waTotal = (ordersRes.data ?? []).reduce((sum, o) => sum + Number((o as any).total ?? 0), 0);
-    const kasirTotal = (kasirRes.data ?? []).reduce((sum, t) => sum + Number((t as any).subtotal ?? 0), 0);
+    const waTotal = ((ordersRes.data ?? []) as Array<{ total: number | string | null }>).reduce((sum, o) => sum + Number(o.total ?? 0), 0);
+    const kasirTotal = ((kasirRes.data ?? []) as Array<{ subtotal: number | string | null }>).reduce((sum, t) => sum + Number(t.subtotal ?? 0), 0);
     return {
       verifiedOrdersTotal: waTotal + kasirTotal,
       verifiedOrdersCount: (ordersRes.data?.length ?? 0) + (kasirRes.data?.length ?? 0),
@@ -560,9 +560,10 @@ export const statsService = {
       .eq('status', 'PAYMENT_VERIFIED')
       .gte('created_at', since)
       .order('created_at', { ascending: true });
-    return groupByDay(data ?? [], 7).map(({ label, rows }) => ({
+    const typedData = (data ?? []) as Array<{ total: number | string | null; created_at: string }>;
+    return groupByDay(typedData, 7).map(({ label, rows }) => ({
       Day: label,
-      Revenue: rows.reduce((s, r) => s + Number((r as any).total ?? 0), 0),
+      Revenue: rows.reduce((s, r) => s + Number(r.total ?? 0), 0),
       Orders: rows.length,
     }));
   },
@@ -575,10 +576,11 @@ export const statsService = {
       .select('ai_active, created_at')
       .gte('created_at', since)
       .order('created_at', { ascending: true });
-    return groupByDay(data ?? [], 7).map(({ label, rows }) => ({
+    const typedData = (data ?? []) as Array<{ ai_active: boolean | null; created_at: string }>;
+    return groupByDay(typedData, 7).map(({ label, rows }) => ({
       Day: label,
-      'Dijawab AI': rows.filter(r => (r as any).ai_active).length,
-      'Respon Manual': rows.filter(r => !(r as any).ai_active).length,
+      'Dijawab AI': rows.filter(r => r.ai_active).length,
+      'Respon Manual': rows.filter(r => !r.ai_active).length,
     }));
   },
 
@@ -592,10 +594,12 @@ export const statsService = {
       supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
       supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
     ]);
-    const buckets = bucketByChannel((kasirRes.data ?? []).map(tx => ({
-      subtotal: Number((tx as any).subtotal ?? 0),
-      channel: (tx as any).channel,
-      date: (tx as any).date as string,
+    const typedKasir = (kasirRes.data ?? []) as Array<{ subtotal: number | string | null; channel: string | null; date: string }>;
+    const typedOrders = (ordersRes.data ?? []) as Array<{ total: number | string | null; created_at: string }>;
+    const buckets = bucketByChannel(typedKasir.map(tx => ({
+      subtotal: Number(tx.subtotal ?? 0),
+      channel: tx.channel,
+      date: tx.date,
     })));
     // Pre-seed zero-day buckets so the chart x-axis is contiguous
     const today = new Date();
@@ -606,10 +610,10 @@ export const statsService = {
     }
     // Orders-table revenue is the synthetic "WA AI" lane (not a SalesChannel value)
     const waaiByDate: Record<string, number> = {};
-    for (const o of (ordersRes.data ?? [])) {
-      const key = wibDateString(new Date((o as any).created_at));
+    for (const o of typedOrders) {
+      const key = wibDateString(new Date(o.created_at));
       if (!(key in buckets)) continue;
-      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number((o as any).total ?? 0);
+      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number(o.total ?? 0);
     }
     return Object.keys(buckets).sort().map(key => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
@@ -633,11 +637,11 @@ export const reportsService = {
       supabase.from('conversations').select('ai_active').gte('created_at', since),
       supabase.from('kasir_transactions').select('subtotal').eq('type', 'income').gte('date', sinceDate),
     ]);
-    const orders = ordersRes.data ?? [];
-    const kasirTxs = kasirRes.data ?? [];
-    const convs = convsRes.data ?? [];
-    const waRevenue = orders.reduce((s, o) => s + Number((o as any).total ?? 0), 0);
-    const kasirRevenue = kasirTxs.reduce((s, t) => s + Number((t as any).subtotal ?? 0), 0);
+    const orders = (ordersRes.data ?? []) as Array<{ total: number | string | null }>;
+    const kasirTxs = (kasirRes.data ?? []) as Array<{ subtotal: number | string | null }>;
+    const convs = (convsRes.data ?? []) as Array<{ ai_active: boolean | null }>;
+    const waRevenue = orders.reduce((s, o) => s + Number(o.total ?? 0), 0);
+    const kasirRevenue = kasirTxs.reduce((s, t) => s + Number(t.subtotal ?? 0), 0);
     const revenue = waRevenue + kasirRevenue;
     const totalCount = orders.length + kasirTxs.length;
     return {
@@ -645,7 +649,7 @@ export const reportsService = {
       orderCount: totalCount,
       avgOrderValue: totalCount > 0 ? Math.round(revenue / totalCount) : 0,
       convCount: convs.length,
-      aiConvCount: convs.filter(c => (c as any).ai_active).length,
+      aiConvCount: convs.filter(c => c.ai_active).length,
     };
   },
 
@@ -657,9 +661,10 @@ export const reportsService = {
       .eq('status', 'PAYMENT_VERIFIED')
       .gte('created_at', since)
       .order('created_at', { ascending: true });
-    return groupByDay(data ?? [], days).map(({ label, rows }) => ({
+    const typedData = (data ?? []) as Array<{ total: number | string | null; created_at: string }>;
+    return groupByDay(typedData, days).map(({ label, rows }) => ({
       Day: label,
-      Revenue: rows.reduce((s, r) => s + Number((r as any).total ?? 0), 0),
+      Revenue: rows.reduce((s, r) => s + Number(r.total ?? 0), 0),
       Orders: rows.length,
     }));
   },
@@ -671,10 +676,11 @@ export const reportsService = {
       .select('ai_active, created_at')
       .gte('created_at', since)
       .order('created_at', { ascending: true });
-    return groupByDay(data ?? [], days).map(({ label, rows }) => ({
+    const typedData = (data ?? []) as Array<{ ai_active: boolean | null; created_at: string }>;
+    return groupByDay(typedData, days).map(({ label, rows }) => ({
       Day: label,
-      'Dijawab AI': rows.filter(r => (r as any).ai_active).length,
-      'Respon Manual': rows.filter(r => !(r as any).ai_active).length,
+      'Dijawab AI': rows.filter(r => r.ai_active).length,
+      'Respon Manual': rows.filter(r => !r.ai_active).length,
     }));
   },
 
@@ -685,8 +691,9 @@ export const reportsService = {
       supabase.from('orders').select('items').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
       supabase.from('kasir_transactions').select('items').eq('type', 'income').gte('date', sinceDate),
     ]);
+    type SaleItem = { name?: string | null; qty?: number | null; subtotal?: number | string | null };
     const tally: Record<string, { qty: number; revenue: number }> = {};
-    const tallyItems = (items: any[]) => {
+    const tallyItems = (items: SaleItem[]) => {
       for (const item of items) {
         if (!item.name) continue;
         if (!tally[item.name]) tally[item.name] = { qty: 0, revenue: 0 };
@@ -694,8 +701,10 @@ export const reportsService = {
         tally[item.name].revenue += Number(item.subtotal ?? 0);
       }
     };
-    for (const order of (ordersRes.data ?? [])) tallyItems((order as any).items ?? []);
-    for (const tx of (kasirRes.data ?? [])) tallyItems((tx as any).items ?? []);
+    const typedOrders = (ordersRes.data ?? []) as Array<{ items: SaleItem[] | null }>;
+    const typedKasir = (kasirRes.data ?? []) as Array<{ items: SaleItem[] | null }>;
+    for (const order of typedOrders) tallyItems(order.items ?? []);
+    for (const tx of typedKasir) tallyItems(tx.items ?? []);
     return Object.entries(tally)
       .map(([name, v]) => ({ name, ...v }))
       .sort((a, b) => b.qty - a.qty)
@@ -711,10 +720,12 @@ export const reportsService = {
       supabase.from('kasir_transactions').select('subtotal, channel, date').eq('type', 'income').gte('date', sinceDate),
       supabase.from('orders').select('total, created_at').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
     ]);
-    const buckets = bucketByChannel((kasirRes.data ?? []).map(tx => ({
-      subtotal: Number((tx as any).subtotal ?? 0),
-      channel: (tx as any).channel,
-      date: (tx as any).date as string,
+    const typedKasir2 = (kasirRes.data ?? []) as Array<{ subtotal: number | string | null; channel: string | null; date: string }>;
+    const typedOrders2 = (ordersRes.data ?? []) as Array<{ total: number | string | null; created_at: string }>;
+    const buckets = bucketByChannel(typedKasir2.map(tx => ({
+      subtotal: Number(tx.subtotal ?? 0),
+      channel: tx.channel,
+      date: tx.date,
     })));
     // Pre-seed zero-day buckets so the chart x-axis is contiguous
     const today = new Date();
@@ -725,10 +736,10 @@ export const reportsService = {
     }
     // Orders-table revenue is the synthetic "WA AI" lane (not a SalesChannel value)
     const waaiByDate: Record<string, number> = {};
-    for (const o of (ordersRes.data ?? [])) {
-      const key = wibDateString(new Date((o as any).created_at));
+    for (const o of typedOrders2) {
+      const key = wibDateString(new Date(o.created_at));
       if (!(key in buckets)) continue;
-      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number((o as any).total ?? 0);
+      waaiByDate[key] = (waaiByDate[key] ?? 0) + Number(o.total ?? 0);
     }
     return Object.keys(buckets).sort().map(key => ({
       Day: new Date(key + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
@@ -747,14 +758,16 @@ export const reportsService = {
       supabase.from('orders').select('total').eq('status', 'PAYMENT_VERIFIED').gte('created_at', since),
     ]);
     const totals = { walkin: 0, tokopedia: 0, grosir: 0, waai: 0 };
-    for (const tx of (kasirRes.data ?? [])) {
-      const ch = (tx as any).channel as string;
-      const amt = Number((tx as any).subtotal ?? 0);
+    const typedKasirCh = (kasirRes.data ?? []) as Array<{ channel: string | null; subtotal: number | string | null }>;
+    const typedOrdersCh = (ordersRes.data ?? []) as Array<{ total: number | string | null }>;
+    for (const tx of typedKasirCh) {
+      const ch = tx.channel ?? '';
+      const amt = Number(tx.subtotal ?? 0);
       if (ch === 'walkin') totals.walkin += amt;
       else if (ch === 'tokopedia') totals.tokopedia += amt;
       else if (ch === 'grosir') totals.grosir += amt;
     }
-    for (const o of (ordersRes.data ?? [])) totals.waai += Number((o as any).total ?? 0);
+    for (const o of typedOrdersCh) totals.waai += Number(o.total ?? 0);
     return [
       { name: 'Walk-in', value: totals.walkin },
       { name: 'Tokopedia', value: totals.tokopedia },
@@ -826,11 +839,15 @@ export const customersService = {
       .select('*, orders!orders_customer_id_fkey(id, total)')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(({ orders, ...customer }: any) => ({
-      ...customer,
-      order_count: orders?.length ?? 0,
-      total_spend: (orders ?? []).reduce((s: number, o: any) => s + Number(o.total ?? 0), 0),
-    }));
+    type CustomerRow = DbCustomer & { orders?: Array<{ id: string; total: number | string | null }> | null };
+    return (data ?? []).map((row) => {
+      const { orders, ...customer } = row as CustomerRow;
+      return {
+        ...customer,
+        order_count: orders?.length ?? 0,
+        total_spend: (orders ?? []).reduce((s, o) => s + Number(o.total ?? 0), 0),
+      };
+    });
   },
 
   async createCustomer(waNumber: string, name: string, company: string): Promise<void> {
@@ -889,15 +906,15 @@ export const customersService = {
     if (customerRes.error) throw customerRes.error;
     if (kasirRes.error)    throw kasirRes.error;
 
-    const profile = customerRes.data as any;
+    const profile = customerRes.data as DbCustomerProfile;
     profile.orders = (profile.orders ?? []).sort(
-      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     profile.leads = (profile.leads ?? []).sort(
-      (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-    profile.kasir_transactions = (kasirRes.data ?? []) as any[];
-    return profile as DbCustomerProfile;
+    profile.kasir_transactions = (kasirRes.data ?? []) as KasirTransaction[];
+    return profile;
   },
 };
 
@@ -1011,7 +1028,7 @@ export const companySettingsService = {
     // store_settings.logo_url — not company_settings.logo_url. RLS
     // t_update_own scopes the update to the caller's tenant.
     const { error: updErr } = await supabase.from('store_settings')
-      .update({ logo_url: url, updated_at: new Date().toISOString() } as any)
+      .update({ logo_url: url, updated_at: new Date().toISOString() } as Record<string, unknown>)
       .not('tenant_id', 'is', null);
     if (updErr) throw updErr;
     return url;
@@ -1020,7 +1037,7 @@ export const companySettingsService = {
   async updateOpnameRequireWitness(tenantId: string, required: boolean): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase.from('company_settings')
-      .update({ opname_require_witness: required, updated_at: new Date().toISOString() } as any)
+      .update({ opname_require_witness: required, updated_at: new Date().toISOString() } as Record<string, unknown>)
       .eq('tenant_id', tenantId);
     if (error) throw error;
   },
@@ -1043,7 +1060,7 @@ export const companySettingsService = {
       await supabase.storage.from('branding').remove([storagePath]);
     }
     await supabase.from('store_settings')
-      .update({ logo_url: null } as any)
+      .update({ logo_url: null } as Record<string, unknown>)
       .not('tenant_id', 'is', null);
   },
 
@@ -1061,7 +1078,7 @@ export const companySettingsService = {
   async setCostingMethod(tenantId: string, m: 'FIFO' | 'Average'): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase.from('company_settings')
-      .update({ costing_method: m, updated_at: new Date().toISOString() } as any)
+      .update({ costing_method: m, updated_at: new Date().toISOString() } as Record<string, unknown>)
       .eq('tenant_id', tenantId);
     if (error) throw error;
   },
@@ -1730,18 +1747,18 @@ export const approvalService = {
  * to match the rest of the front-end. Exported so any consumer that issues
  * a raw `.from('approval_requests')` query can reuse the same mapper.
  */
-export function toApprovalRequest(row: any): ApprovalRequest {
+export function toApprovalRequest(row: Record<string, unknown>): ApprovalRequest {
   return {
-    id: row.id,
-    requestType: row.request_type,
-    payload: row.payload ?? {},
-    requestedBy: row.requested_by,
-    requestedAt: row.requested_at,
-    expiresAt: row.expires_at,
-    status: row.status,
-    decidedBy: row.decided_by ?? null,
-    decidedAt: row.decided_at ?? null,
-    decisionChannel: row.decision_channel ?? null,
+    id: row.id as number,
+    requestType: row.request_type as ApprovalRequest['requestType'],
+    payload: (row.payload ?? {}) as Record<string, unknown>,
+    requestedBy: row.requested_by as string,
+    requestedAt: row.requested_at as string,
+    expiresAt: row.expires_at as string,
+    status: row.status as ApprovalRequest['status'],
+    decidedBy: (row.decided_by ?? null) as string | null,
+    decidedAt: (row.decided_at ?? null) as string | null,
+    decisionChannel: (row.decision_channel ?? null) as ApprovalRequest['decisionChannel'],
   };
 }
 
@@ -1913,7 +1930,7 @@ export async function submitOpnameForOwner(
     p_actor_user_id: actorUserId,
   });
   if (error) throw error;
-  const row = (data as any[])[0];
+  const row = (data as Array<{ status: SubmitOpnameResult['status']; auto: boolean; approval_id?: number | null }>)[0];
   return {
     status: row.status,
     auto: row.auto,
@@ -1979,20 +1996,20 @@ export async function commitOpname(approvalId: number): Promise<number> {
  * Maps a raw `stock_opname_sessions` row (snake_case) into the camelCase
  * `OpnameSession` shape consumed by Phase 2 UI components.
  */
-export function toOpnameSession(row: any): OpnameSession {
+export function toOpnameSession(row: Record<string, unknown>): OpnameSession {
   return {
-    id: row.id,
-    opnameType: row.opname_type,
-    scopePayload: row.scope_payload ?? {},
-    countedByUserId: row.counted_by_user_id,
-    witnessedByUserId: row.witnessed_by_user_id,
-    witnessAcknowledgedAt: row.witness_acknowledged_at ?? null,
-    status: row.status,
+    id: row.id as number,
+    opnameType: row.opname_type as OpnameSession['opnameType'],
+    scopePayload: (row.scope_payload ?? {}) as Record<string, unknown>,
+    countedByUserId: row.counted_by_user_id as string,
+    witnessedByUserId: row.witnessed_by_user_id as string,
+    witnessAcknowledgedAt: (row.witness_acknowledged_at ?? null) as string | null,
+    status: row.status as OpnameSession['status'],
     varianceTotalValue: Number(row.variance_total_value ?? 0),
-    approvalRequestId: row.approval_request_id ?? null,
-    startedAt: row.started_at,
-    submittedAt: row.submitted_at ?? null,
-    committedAt: row.committed_at ?? null,
+    approvalRequestId: (row.approval_request_id ?? null) as number | null,
+    startedAt: row.started_at as string,
+    submittedAt: (row.submitted_at ?? null) as string | null,
+    committedAt: (row.committed_at ?? null) as string | null,
   };
 }
 
@@ -2000,18 +2017,18 @@ export function toOpnameSession(row: any): OpnameSession {
  * Maps a raw `stock_opname_counts` row (snake_case) into the camelCase
  * `OpnameCount` shape.
  */
-export function toOpnameCount(row: any): OpnameCount {
+export function toOpnameCount(row: Record<string, unknown>): OpnameCount {
   return {
-    sessionId: row.session_id,
-    sku: row.sku,
-    warehouse: row.warehouse,
-    systemQtySnapshot: row.system_qty_snapshot ?? null,
-    countedQty: row.counted_qty ?? null,
-    variance: row.variance ?? null,
+    sessionId: row.session_id as number,
+    sku: row.sku as string,
+    warehouse: row.warehouse as OpnameCount['warehouse'],
+    systemQtySnapshot: (row.system_qty_snapshot ?? null) as number | null,
+    countedQty: (row.counted_qty ?? null) as number | null,
+    variance: (row.variance ?? null) as number | null,
     varianceValue: Number(row.variance_value ?? 0),
-    damagedQty: row.damaged_qty ?? 0,
-    damageNotes: row.damage_notes ?? null,
-    damageEvidenceUrls: row.damage_evidence_urls ?? null,
+    damagedQty: (row.damaged_qty ?? 0) as number,
+    damageNotes: (row.damage_notes ?? null) as string | null,
+    damageEvidenceUrls: (row.damage_evidence_urls ?? null) as string[] | null,
   };
 }
 
@@ -2105,9 +2122,9 @@ export function subscribeApprovalRequests(
   const channel = client
     .channel(`approval_requests_inbox:${Math.random().toString(36).slice(2)}`)
     .on(
-      'postgres_changes' as any,
+      'postgres_changes',
       { event: '*', schema: 'public', table: 'approval_requests' },
-      (payload: { new: unknown }) => onChange(toApprovalRequest(payload.new)),
+      (payload) => onChange(toApprovalRequest((payload as { new: Record<string, unknown> }).new)),
     )
     .subscribe();
   return () => {
@@ -2255,15 +2272,16 @@ export async function fetchRakitJobLinesForOrder(
     .eq('transaction_id', transactionId)
     .order('line_number');
   if (error) throw error;
-  return (data ?? []).map((l: any) => ({
-    id: l.id,
-    transactionId: l.transaction_id,
-    lineNumber: l.line_number,
-    serviceType: l.service_type,
-    description: l.description,
+  type RakitJobLineRow = Record<string, unknown>;
+  return (data ?? []).map((l: RakitJobLineRow) => ({
+    id: l.id as string,
+    transactionId: l.transaction_id as string,
+    lineNumber: l.line_number as number,
+    serviceType: l.service_type as RakitServiceType,
+    description: l.description as string,
     estimatedPrice: Number(l.estimated_price ?? 0),
     finalPrice: l.final_price == null ? null : Number(l.final_price),
-    trackingMode: l.tracking_mode,
+    trackingMode: l.tracking_mode as RakitJobLine['trackingMode'],
     laborCost: Number(l.labor_cost ?? 0),
     lumpSumHpp: Number(l.lump_sum_hpp ?? 0),
     hppOwnerOverride: l.hpp_owner_override == null ? null : Number(l.hpp_owner_override),
@@ -2288,23 +2306,24 @@ export async function fetchWipList(): Promise<Array<{
     .eq('status', 'WIP')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
+  type WipRow = Record<string, unknown> & { rakit_job_lines?: Array<Record<string, unknown>> | null };
+  return (data ?? []).map((row: WipRow) => ({
+    id: row.id as string,
     total_amount: Number(row.total_amount ?? 0),
     dp_amount: Number(row.dp_amount ?? 0),
-    customer_name: row.customer_name ?? null,
-    customer_phone: row.customer_phone ?? null,
-    service_summary: row.service_summary ?? null,
-    created_at: row.created_at,
-    rakit_lines: (row.rakit_job_lines ?? []).map((l: any) => ({
-      id: l.id,
-      transactionId: l.transaction_id,
-      lineNumber: l.line_number,
-      serviceType: l.service_type,
-      description: l.description,
+    customer_name: (row.customer_name ?? null) as string | null,
+    customer_phone: (row.customer_phone ?? null) as string | null,
+    service_summary: (row.service_summary ?? null) as string | null,
+    created_at: row.created_at as string,
+    rakit_lines: (row.rakit_job_lines ?? []).map((l: Record<string, unknown>) => ({
+      id: l.id as string,
+      transactionId: l.transaction_id as string,
+      lineNumber: l.line_number as number,
+      serviceType: l.service_type as RakitServiceType,
+      description: l.description as string,
       estimatedPrice: Number(l.estimated_price ?? 0),
       finalPrice: l.final_price == null ? null : Number(l.final_price),
-      trackingMode: l.tracking_mode,
+      trackingMode: l.tracking_mode as RakitJobLine['trackingMode'],
       laborCost: Number(l.labor_cost ?? 0),
       lumpSumHpp: Number(l.lump_sum_hpp ?? 0),
       hppOwnerOverride: l.hpp_owner_override == null ? null : Number(l.hpp_owner_override),

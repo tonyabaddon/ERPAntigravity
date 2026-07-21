@@ -89,16 +89,16 @@ export async function fetchUnreconciledBankLines(
   if (error) throw new Error(error.message);
 
   return (
-    data?.map((row: any) => ({
-      id: row.id,
-      bank_account_id: row.bank_account_id,
-      date: row.txn_date, // Map txn_date to date
-      description: row.description,
-      amount: row.amount,
-      direction: row.direction,
-      lane: row.lane,
+    data?.map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      bank_account_id: row.bank_account_id as string,
+      date: row.txn_date as string, // Map txn_date to date
+      description: (row.description ?? null) as string | null,
+      amount: row.amount as number,
+      direction: row.direction as UnreconciledBankLine['direction'],
+      lane: row.lane as UnreconciledBankLine['lane'],
     })) ?? []
-  ) as UnreconciledBankLine[];
+  );
 }
 
 /**
@@ -145,8 +145,18 @@ export async function fetchUnreconciledJournalLines(
 
   if (error) throw new Error(error.message);
 
+  type JelRow = {
+    id: string;
+    entry_id: string;
+    account_id: string;
+    side: string;
+    amount: number;
+    description: string | null;
+    journal_entries: { entry_number: string; entry_date: string };
+    chart_of_accounts: { account_code: string };
+  };
   return (
-    data?.map((row: any) => ({
+    (data as unknown as JelRow[] | null)?.map((row) => ({
       id: row.id,
       entry_id: row.entry_id,
       entry_number: row.journal_entries.entry_number,
@@ -154,10 +164,10 @@ export async function fetchUnreconciledJournalLines(
       description: row.description,
       account_code: row.chart_of_accounts.account_code,
       account_id: row.account_id,
-      side: row.side,
+      side: row.side as UnreconciledJournalLine['side'],
       amount: row.amount,
     })) ?? []
-  ) as UnreconciledJournalLine[];
+  );
 }
 
 /**

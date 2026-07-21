@@ -18,7 +18,8 @@ export const pembayaranService = {
     if (filter.status) q = q.eq('status', filter.status);
     const { data, error } = await q;
     if (error) throw error;
-    return (data ?? []).map((r: any) => ({ ...r, supplier: r.suppliers, items: r.pembayaran_items ?? [] }));
+    type PembayaranRow = Record<string, unknown> & { suppliers?: unknown; pembayaran_items?: unknown[] | null };
+    return (data ?? []).map((r: PembayaranRow) => ({ ...r, supplier: r.suppliers, items: r.pembayaran_items ?? [] })) as unknown as DbPembayaran[];
   },
   async fetchByNumber(num: string): Promise<DbPembayaran | null> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -27,7 +28,8 @@ export const pembayaranService = {
       .eq('pembayaran_number', num).maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    return { ...(data as any), supplier: (data as any).suppliers, items: (data as any).pembayaran_items ?? [] };
+    const row = data as Record<string, unknown> & { suppliers?: unknown; pembayaran_items?: unknown[] | null };
+    return { ...row, supplier: row.suppliers, items: row.pembayaran_items ?? [] } as unknown as DbPembayaran;
   },
   async record(payload: RecordPembayaranPayload): Promise<{ pembayaran_number: string; pembayaran_id: string }> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -39,7 +41,7 @@ export const pembayaranService = {
       p_idempotency_key: idem315,
     });
     if (error) throw error;
-    return data as any;
+    return data as { pembayaran_number: string; pembayaran_id: string };
   },
   async void(id: string, reason: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
@@ -54,10 +56,10 @@ export const pembayaranService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase.rpc('pembayaran_suggest_outstanding', { p_supplier_id: supplierId });
     if (error) throw error;
-    const raw = (data as any) ?? {};
+    const raw = (data ?? {}) as { tagihan?: SuggestOutstandingTagihanRow[]; tukar_faktur?: SuggestOutstandingTukarFakturRow[] };
     return {
-      tagihan: (raw.tagihan ?? []) as SuggestOutstandingTagihanRow[],
-      tukar_faktur: (raw.tukar_faktur ?? []) as SuggestOutstandingTukarFakturRow[],
+      tagihan: raw.tagihan ?? [],
+      tukar_faktur: raw.tukar_faktur ?? [],
     };
   },
   async fetchDashboardLite(): Promise<ApDashboardLite> {

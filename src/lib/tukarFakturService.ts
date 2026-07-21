@@ -33,12 +33,19 @@ export const tukarFakturService = {
       `)
       .order('tukar_date', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map((row: any) => ({
+    type TfRow = Record<string, unknown> & {
+      supplier?: unknown | unknown[];
+      tagihans?: unknown[] | null;
+      paid_amount: number;
+      total_amount: number;
+      voided_at: string | null;
+    };
+    return (data ?? []).map((row: TfRow) => ({
       ...row,
-      supplier: Array.isArray(row.supplier) ? row.supplier[0] : row.supplier,
+      supplier: Array.isArray(row.supplier) ? (row.supplier as unknown[])[0] : row.supplier,
       tagihans: row.tagihans ?? [],
       status: deriveStatus(row),
-    }));
+    })) as unknown as DbTukarFaktur[];
   },
 
   async fetchByNumber(tf_number: string): Promise<DbTukarFaktur | null> {
@@ -56,7 +63,7 @@ export const tukarFakturService = {
     if (error) throw error;
     if (!data) return null;
 
-    const row: any = data;
+    const row = data as Record<string, unknown> & { id: string; supplier?: unknown | unknown[]; paid_amount: number; total_amount: number; voided_at: string | null };
 
     // Fetch bundled Tagihans separately for clean shape
     const { data: tagihans, error: tagErr } = await supabase
@@ -68,10 +75,10 @@ export const tukarFakturService = {
 
     return {
       ...row,
-      supplier: Array.isArray(row.supplier) ? row.supplier[0] : row.supplier,
+      supplier: Array.isArray(row.supplier) ? (row.supplier as unknown[])[0] : row.supplier,
       tagihans: tagihans ?? [],
       status: deriveStatus(row),
-    } as DbTukarFaktur;
+    } as unknown as DbTukarFaktur;
   },
 
   async record(payload: RecordTukarFakturPayload): Promise<{ tf_number: string; tf_id: string }> {

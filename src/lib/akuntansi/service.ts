@@ -126,7 +126,7 @@ export async function closeFiscalYear(year: number): Promise<{
     p_tenant_id: null,
   });
   if (error) throw error;
-  return data as any;
+  return data as { ok: boolean; fiscal_year: number; net_income: number; total_pendapatan: number; total_beban: number; prive_closed: number };
 }
 
 /**
@@ -150,7 +150,7 @@ export async function accruePeriodTaxes(year: number, month: number): Promise<{
     p_tenant_id: null,
   });
   if (error) throw error;
-  return data as any;
+  return data as { ok?: boolean; omzet: number; tax: number; pph_rate_pct?: number; skipped?: boolean };
 }
 
 /**
