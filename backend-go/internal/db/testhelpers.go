@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
@@ -39,6 +40,51 @@ func NewTestClient(t testing.TB) *Client {
 		t.Fatalf("connect to test DB: %v", err)
 	}
 	return client
+}
+
+// NewTenantForTest provisions a fresh test tenant row in public.tenants and
+// returns its id as a uuid.UUID. Every test that inserts into tables with a
+// tenant_id NOT NULL FK must call this before seeding data and pass the
+// returned id to every INSERT.
+//
+// A t.Cleanup handler is registered that DELETEs the row when the test
+// finishes (pass or fail). Because the ERP tables carry ON DELETE CASCADE on
+// their tenant_id FK the cascade handles all child rows created during the
+// test, so callers do NOT need to clean up their own test data individually.
+//
+// slug format: "test-<hex(8 bytes of uuid)>" satisfies the tenants slug CHECK
+// (lowercase a-z0-9, dash separator, 3-30 chars, no reserved word prefix).
+//
+// NOTE: the production DB (db.ekhhojaezdfjfwuxyjkl.supabase.co) is reused as
+// the integration test target. Cleanup via t.Cleanup prevents orphan rows.
+func NewTenantForTest(t testing.TB, c *Client) uuid.UUID {
+	t.Helper()
+
+	id := uuid.New()
+	// Build a slug: "test-" + first 8 hex chars of the UUID. This is always
+	// 13 chars (5 + 8), safely within the 3-30 range. UUID hex chars are [0-9a-f]
+	// so the slug pattern ^[a-z0-9][a-z0-9-]{2,29}$ is always satisfied.
+	slug := fmt.Sprintf("test-%s", id.String()[:8])
+	name := fmt.Sprintf("Test Tenant %s", id.String()[:8])
+
+	if _, err := c.DB.Exec(
+		`INSERT INTO public.tenants (id, slug, name, status)
+		 VALUES ($1, $2, $3, 'ACTIVE')`,
+		id, slug, name,
+	); err != nil {
+		t.Fatalf("NewTenantForTest: INSERT tenants: %v", err)
+	}
+
+	t.Cleanup(func() {
+		// CASCADE handles all child rows inserted during the test.
+		if _, err := c.DB.Exec(
+			`DELETE FROM public.tenants WHERE id = $1`, id,
+		); err != nil {
+			t.Logf("NewTenantForTest cleanup: DELETE tenants %s: %v (non-fatal)", id, err)
+		}
+	})
+
+	return id
 }
 
 // findEnvFile walks up from the current working directory looking for the
