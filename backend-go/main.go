@@ -120,6 +120,22 @@ func (a recipientResolverAdapter) GetActiveRecipients(_ context.Context, _ strin
 	return out, nil
 }
 
+// fatal logs an error and terminates the process with a bounded cleanup step.
+// If dbClient is non-nil, its pools (query + listener + pq.Listener + WA store
+// via ListenDB) are closed BEFORE calling os.Exit(1) so their direct-pool conns
+// are released cleanly. Bare `os.Exit(1)` skips deferred `dbClient.Close()`,
+// which is exactly how the 2026-07-20 crashloop cascade leaked 44+ conns and
+// the 2026-07-22 recurrence leaked another ~30. Callers pass nil for pre-init
+// error paths (e.g. port bind failure).
+func fatal(dbClient *db.Client, msg string, err error) {
+	slog.Error(msg, slog.String("error", err.Error()))
+	if dbClient != nil {
+		dbClient.Close()
+	}
+	sentry.Flush(2 * time.Second)
+	os.Exit(1)
+}
+
 func main() {
 	// Init Sentry BEFORE logging so panics during startup are captured.
 	// No-op (dormant) when SENTRY_DSN env var is absent.
@@ -363,8 +379,8 @@ func main() {
 	// in the OS before we do anything else.
 	ln, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
-		slog.Error("[MAIN] Cannot bind port", slog.String("port", cfg.Port), slog.Any("error", err))
-		os.Exit(1)
+		// dbClient is nil — this fires before DB init.
+		fatal(nil, "[MAIN] Cannot bind port "+cfg.Port, err)
 	}
 	go func() {
 		slog.Info("[MAIN] HTTP server starting", slog.String("port", cfg.Port))
@@ -418,8 +434,7 @@ func main() {
 	// Initialize Gemini Document Client (separate from Calista's flash-lite)
 	docClient, err := gemini.NewDocumentClient(ctx, cfg.GeminiAPIKey)
 	if err != nil {
-		slog.Error("[MAIN] failed to init Gemini Document Client", slog.Any("error", err))
-		os.Exit(1)
+		fatal(dbClient, "[MAIN] failed to init Gemini Document Client", err)
 	}
 	defer docClient.Close()
 
@@ -449,8 +464,7 @@ func main() {
 		calistaStore := db.NewCalistaStore(dbClient.DB)
 		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
 		if cdErr != nil {
-			slog.Error("[MAIN] llm cooldown registry", slog.Any("error", cdErr))
-			os.Exit(1)
+			fatal(dbClient, "[MAIN] llm cooldown registry", cdErr)
 		}
 		pinMgr := llm.NewPinManager(calistaStore)
 		recorder := llm.NewRecorder(calistaStore)
@@ -464,8 +478,7 @@ func main() {
 		})
 		probeCancel()
 		if probeErr != nil && llm.IsAuth(probeErr) {
-			slog.Error("[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY", slog.Any("error", probeErr))
-			os.Exit(1)
+			fatal(dbClient, "[CALISTA] Gemini auth probe FAILED — check GEMINI_API_KEY", probeErr)
 		}
 		if probeErr != nil {
 			slog.Warn("[CALISTA] Gemini probe non-fatal error (proceeding)", slog.Any("error", probeErr))
@@ -480,8 +493,7 @@ func main() {
 		calistaStore := db.NewCalistaStore(dbClient.DB)
 		cooldownReg, cdErr := llm.NewCooldownRegistry(calistaStore)
 		if cdErr != nil {
-			slog.Error("[MAIN] llm cooldown registry", slog.Any("error", cdErr))
-			os.Exit(1)
+			fatal(dbClient, "[MAIN] llm cooldown registry", cdErr)
 		}
 		pinMgr := llm.NewPinManager(calistaStore)
 		recorder := llm.NewRecorder(calistaStore)
@@ -499,8 +511,7 @@ func main() {
 		})
 		probeCancel()
 		if probeErr != nil && llm.IsAuth(probeErr) {
-			slog.Error("[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY", slog.Any("error", probeErr))
-			os.Exit(1)
+			fatal(dbClient, "[CALISTA] OpenRouter auth probe FAILED — check OPENROUTER_API_KEY", probeErr)
 		}
 		if probeErr != nil {
 			slog.Warn("[CALISTA] OpenRouter probe non-fatal error (proceeding)", slog.Any("error", probeErr))
@@ -529,8 +540,7 @@ func main() {
 	// Direct pool remains reserved for pq.Listener (dbClient LISTEN/NOTIFY).
 	waClient, err = whatsapp.NewClient(ctx, cfg.SupabaseDBConn)
 	if err != nil {
-		slog.Error("[MAIN] WA client init failed", slog.String("error", err.Error()))
-		os.Exit(1)
+		fatal(dbClient, "[MAIN] WA client init failed", err)
 	}
 
 	// Multi-tenant session manager (F8). SERVES_TENANT_ID determines which
@@ -933,8 +943,7 @@ func main() {
 			}
 		},
 	}); err != nil {
-		slog.Error("[MAIN] StartListening failed", slog.Any("error", err))
-		os.Exit(1)
+		fatal(dbClient, "[MAIN] StartListening failed", err)
 	}
 
 	// E2E test endpoints — gated by E2E_TEST_MODE=true env var.
@@ -963,6 +972,17 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
+	// Cloud Run allows 10s between SIGTERM and SIGKILL (default). Budget:
+	//   - workerCancel + jobWorker.Stop      → sub-second (context cancel)
+	//   - debounceHandler.Shutdown           → up to 8s (already bounded)
+	//   - waClient.Disconnect                → up to 5s (bounded here)
+	//   - dbClient.Close                     → sub-second (pool close)
+	// waClient.Disconnect on whatsmeow can block on a slow WA server-side ACK.
+	// If it hangs past 10s Cloud Run SIGKILLs the process, deferred DB close
+	// never runs, and each listener/job-worker conn zombies on the Supabase
+	// direct pool. Bounded goroutine + explicit dbClient.Close guarantees the
+	// direct-pool slots are released before we exit — see 2026-07-20 and
+	// 2026-07-22 incidents.
 	slog.Info("[MAIN] Shutting down...")
 	workerCancel()
 	jobWorker.Stop()
@@ -972,7 +992,21 @@ func main() {
 		debounceHandler.Shutdown(drainCtx)
 		cancel()
 	}
-	waClient.Disconnect()
+	waDone := make(chan struct{})
+	go func() {
+		waClient.Disconnect()
+		close(waDone)
+	}()
+	select {
+	case <-waDone:
+		slog.Info("[MAIN] WA disconnect complete")
+	case <-time.After(5 * time.Second):
+		slog.Warn("[MAIN] WA disconnect timeout — proceeding with DB close")
+	}
+	if dbClient != nil {
+		dbClient.Close()
+		slog.Info("[MAIN] DB pools closed")
+	}
 }
 
 func getEnvBoolDefault(key string, def bool) bool {
