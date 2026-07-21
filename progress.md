@@ -1,5 +1,26 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-22 — OTP + admin.caleo.id recovery (incident)
+
+Two independent bugs surfaced during login recovery. Full timeline + root cause in
+`docs/incidents/2026-07-22-otp-and-impersonation-recovery.md`. Miss-log Entry #2 added
+for lens-anchoring failure.
+
+**Fixed permanently:**
+- `f953555` (parallel session): backend Go — `fatal(dbClient, ...)` helper + bounded SIGTERM `waClient.Disconnect` + explicit `dbClient.Close` before exit. Root cause of the 2026-07-20 + 2026-07-22 direct-pool exhaustion cascades.
+- `eb2924c` (this incident): migration 20261115000508 — `expire_stale_impersonations()` SECDEF + hourly `pg_cron` reaping rows >8h. Prevents recurrence of the "stale impersonation row survives 11 days" class. Applied to prod via pooler+management API during incident window; committed as an idempotent migration for schema-cache tracking.
+- `eb2924c` (this incident): AuthScreen — `signInSent = true` set regardless of send outcome. Prevents users from being locked out of pasting a delayed OTP after a transient send failure.
+
+**Prod actions during incident (all logged in incident file):**
+- `mailer_otp_length: 8→6` (management API)
+- `ALTER ROLE postgres SET idle_session_timeout='15min'`
+- `staging maxScale 2→1`, `sinar-elektrik maxScale 12→1`
+- 3× `pg_terminate_backend` sweeps (83 total zombies released)
+- 2× `POST /v1/projects/{ref}/restart`
+- `DELETE FROM public.platform_admin_active_impersonation WHERE admin_user_id='227c28f4-...'`
+
+---
+
 ## 2026-07-19 — Phase 3 landing shipped
 
 **Deliverable**: Public landing at `caleo.id/` (was placeholder "Segera Hadir") + legal pages + case study + email routing.
