@@ -1,3 +1,55 @@
+## 2026-07-21 — QA Week Phase 2 Wave 2 + Wave 3 SHIPPED (autonomous 9h session)
+
+**Plans:** `docs/superpowers/plans/2026-07-21-qa-week-phase-2-wave-2.md`, `...wave-3.md`
+**Base → head:** 82f0a03 → 5faad8e
+
+### Wave 2 SHIPPED
+- **2A (commit 017f56d):** WT create FROM=TO block + DIKIRIM helper + PelangganScreen Tambah button. 19 vitest tests pass.
+- **2B (commits b9f7eea + 6ee6ec9):** F5-11 routing audit (no race found, refactor deferred). F5-10 impersonate error class branch → AccessDenied vs TenantBootstrapError based on `_is_platform_admin` claim + Sentry tag `error_class`. 6 unit tests + 114 files / 1000 tests full suite pass.
+- **2E DEFERRED:** pool exhausted, Task 6 PREREQUISITE gate blocked mgmt-api verification of audit_log RLS.
+
+### Wave 3 SHIPPED
+- **2F (commit 3083803):** ~48 local Rp formatters across 71 files consolidated to canonical `formatIDR`. 3 duplicate defs removed. 50 vitest tests pass. Preserved: PDF, accounting parens, `fmtRpShort`, VoidConfirmModal sign.
+- **2K (commit b74f60d):** all 4 high-value RPCs already had `p_idempotency_key` wired; added console.info audit logging for traceability. 77 vitest files pass.
+- **2G (commit a2bff54):** bundle 3.2 MB → 2.26 MB (-944 kB, 29%). manualChunks (pdf-vendor 625 kB, icons 61 kB, supabase 210 kB); AdminRoutes lazy (205 kB deferred); 8 PDF sites dynamic-imported. Target <1.5 MB not achieved (residual = 20 tenant screens still static in App.tsx renderPage switch).
+- **2J DEFERRED:** ~2 days scope out of window.
+
+### Cloud Build + prod ship confirmation
+- All Wave 2 + Wave 3 FE commits built + deployed to `garindo-jaya-panel-msme-erp-frontend`
+- FE prod serving revision 00651-vac tag c5faad8e (includes all Wave 1-3 FE work)
+- app.caleo.id: 200 OK
+- Backend prod BE `garindo-jaya-panel-msme-erp` on 00467-bih (cf73c29b, Phase 1 completion, warm-protected via min-instances=1). WA bot functional.
+
+### P0 incident (backend WA crashloop) — resolved with follow-ups
+- Real error captured via slog fix (commit 19ea22d): `whatsapp: db ping: pq: remaining connection slots are reserved for roles with the SUPERUSER attribute`
+- Root cause: Supabase :5432 direct pool exhaustion (max_connections=60, 48+ zombie idle connections from Cloud Run cold-start retry storms)
+- Option 2 fix (commit 5b0f8a1): WA client migrated from :5432 direct pool to :6543 txn pooler. STAGING confirms fix works (revision 00102-jbc healthy)
+- Option 4 fix (commit 00ab986): cloudbuild.yaml Step 5 prod deploy step bypassed to unblock FE builds. Step restored from git history after founder drains pool
+- Prod BE stays on cf73c29b until founder drains pool + hand-verifies fresh cold-start succeeds with Option 2 image
+
+### Deferred to next session (need founder action)
+- 2I: schema baseline snapshot — needs SUPABASE_DB_PASSWORD in .env (not present)
+- 2E: financial SECDEF refactor — needs pool free for audit_log RLS verify + migration 505 apply
+- 2J: FE state coverage — ~2 days scope
+- Backend redeploy: manual `gcloud run deploy garindo-jaya-panel-msme-erp --image=<staging-00102-jbc-image>` after pool drain
+- Restore cloudbuild.yaml Step 5+6 (prod deploy + tag URL smoke + promote) from git history
+- Memory update: `guard_expiry_write_broken_predicate` → 0 remaining
+- Systematic slog.Any → slog.String migration in backend-go (10 remaining sites)
+
+### Progress ledger
+Wave 2 Task 1-3 (2A): complete (017f56d)
+Wave 2 Task 4 (F5-11 audit): complete (b9f7eea)
+Wave 2 Task 5 (F5-10 error class): complete (6ee6ec9)
+Wave 2 Task 6 (2E): DEFERRED (pool)
+Wave 3 Task 1 (2F): complete (3083803)
+Wave 3 Task 2 (2K): complete (b74f60d)
+Wave 3 Task 3 (2G): complete (a2bff54)
+Wave 3 Task 4 (completion): complete (5faad8e, docs)
+
+**Phase 2 Wave 2 + Wave 3 SHIPPED.** Detail: docs/qa-week/phase-2-report.md
+
+---
+
 ## 2026-07-20 — QA Week Phase 2 Wave 1 SHIPPED (2D + 2C + 2H; 2I deferred)
 
 **Plan:** docs/superpowers/plans/2026-07-20-qa-week-phase-2-wave-1.md
