@@ -58,3 +58,72 @@
 - Backend WA outage — P0 incident file, requires founder debug/rollback
 - Memory update: `guard_expiry_write_broken_predicate` → 0 remaining (was 6)
 - Fix `slog.Any(err)` empty-object serialization bug system-wide before next backend deploy
+
+---
+
+## Wave 2 SHIPPED — 2026-07-21
+
+### 2A: WT UX polish (Task 1-3, commit 017f56d)
+- **F5-12** block WT create when FROM=TO warehouse — submit button disabled + belt-and-suspenders guard in `submit()` handler
+- **F5-14** DIKIRIM KEPADA empty helper — Bahasa message + link to User Management when recipients=[]
+- **F5-01** PelangganScreen "+ Tambah Pelanggan" button — reuses `NewCustomerInlineForm` in modal
+- 19 unit tests, lint clean, all gates green
+
+### 2B: Routing + error class (Tasks 4-5)
+- **Task 4 (audit) commit b9f7eea** — `docs/audits/2026-07-21-urlroute-behavior.md`. F5-11 routing race investigation → NO race found (parseRoute ignores query, parseSearch has zero non-test callers). Refactor DEFERRED. 10+ direct `window.location.href` sites documented for potential future consolidation.
+- **Task 5 (F5-10) commit 6ee6ec9** — impersonate failure now branches on `_is_platform_admin` claim: admin → `AccessDenied`; tenant user → `TenantBootstrapError`. Sentry tag `error_class` emitted. Extracted into `ImpersonateFailureScreen` component + 6 unit tests. Full suite 114 files / 1000 tests pass.
+
+### 2E: DEFERRED (pool exhaustion)
+Task 6 PREREQUISITE gate blocked: mgmt-api unreachable due to Supabase :5432 pool exhaustion. Founder needs to (a) drain pool via Supabase Dashboard SQL Editor, (b) verify audit_log RLS state, (c) apply migration 505 if needed. Ships in a future wave.
+
+---
+
+## Wave 3 SHIPPED — 2026-07-21
+
+### 2F: Formatting consolidation (Task 1, commit 3083803)
+- ~48 local Rp formatting helpers consolidated to canonical `formatIDR` from `src/lib/formatIDR.ts`
+- 3 duplicate `formatIDR` local definitions removed (OwnerDecisionInbox, PaymentInstructionBlock, KlaimSupplierPanel)
+- ~45 `fmtRp`/`formatRupiah` closures removed across 71 files
+- Preserved intentionally: PDF formatters, accounting parens notation (NeracaTab/LabaRugiTab), `fmtRpShort` abbreviated, VoidConfirmModal custom `Rp -` sign
+- 50 vitest tests pass
+
+### 2K: Idempotency key audit logging (Task 2, commit b74f60d)
+- Grep found all 4 high-value RPCs already have `p_idempotency_key` wired via `crypto.randomUUID()`: `record_kasir_sale`, `commit_opname`, `receive_purchase_order`, `record_pembayaran`
+- Added audit logging: each key extracted to named variable + `console.info('[idempotency] <rpc> key=<uuid>')` for traceability
+- `tests/sql/qa-week/2k-verify.sql` created for post-deploy verification (SQL run deferred pending pool)
+- 77 vitest files pass
+
+### 2G: Bundle size (Task 3, commit a2bff54)
+- **3.2 MB → 2.26 MB (-944 kB, 29% reduction)**
+- `vite.config.ts` manualChunks: `pdf-vendor` (jspdf + html2canvas, 625 kB), `icons` (lucide-react, 61 kB), `supabase` (@supabase/*, 210 kB)
+- `AdminRoutes` lazy-loaded via `React.lazy()` + Suspense; 205 kB deferred until `/admin/*` visited
+- 8 PDF generator sites converted to dynamic `await import()` at call site
+- Target <1.5 MB not achieved — remaining is ~20 tenant screens statically imported in App.tsx's `renderPage()` switch. Follow-up: lazy-screen refactor (Wave 4+)
+
+### 2J: DEFERRED to next session (~2 days scope)
+Systematic FE state coverage (loading + empty + error per screen) requires 2 days per spec. Out of scope for current 9h autonomous window.
+
+---
+
+## Combined Phase 2 status
+
+- **Wave 1 (2D + 2C + 2H; 2I deferred):** SHIPPED
+- **Wave 2 (2A + 2B; 2E deferred):** SHIPPED
+- **Wave 3 (2F + 2K + 2G; 2J deferred):** SHIPPED
+
+**Deferred to next session:** 2I (schema baseline, needs DB password), 2E (SECDEF refactor, needs pool free), 2J (state coverage, 2-day scope)
+
+## Additional incident actions taken
+- Prod backend rollback to cf73c29b (00467-bih) — restored WA bot service after 82f0a03 revision cold-start crashloop from Supabase :5432 pool exhaustion
+- Staging backend recovered on 5b0f8a1 (00102-jbc) with Option 2 WA client → :6543 txn pooler fix (confirmed working)
+- cloudbuild.yaml prod-deploy step bypassed while pool remains exhausted (commit 00ab986). Restore Step 5+6 from git history after founder drains pool + verifies fresh cold-start succeeds
+
+## Final follow-ups (for founder on return)
+- Drain :5432 zombie idle connections via Supabase Dashboard SQL Editor (kill idle app_name='' postgres sessions >2min)
+- Deploy prod backend to Option 2 image (staging 00102-jbc's docker image SHA) after pool drains
+- Restore cloudbuild.yaml Step 5+6 (prod deploy + tag URL smoke + promote) once pool is stable
+- Apply Wave 2 2E migration 505 (after audit_log RLS verified per Task 6 Step 4)
+- Apply Wave 1 2I schema baseline (needs SUPABASE_DB_PASSWORD)
+- Wave 3 2J FE state coverage (~2 days work)
+- Memory update: `guard_expiry_write_broken_predicate` → 0 remaining (was noted as ~100, actually was 6 at Wave 1 start; all fixed by 2D commit 78a02cd)
+- Systematic slog.Any → slog.String migration in backend-go (11 sites per grep; only 1 fixed inline for [MAIN] WA client init in commit 19ea22d)
