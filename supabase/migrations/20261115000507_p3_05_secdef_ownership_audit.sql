@@ -71,20 +71,21 @@ ALTER FUNCTION stop_impersonation() OWNER TO vosi_rpc_owner;
 ALTER FUNCTION suspend_tenant(p_tenant_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
 
 -- ============================================================================
--- TIER C (HIGH RISK) — REQUIRES ADVISOR GATE + smoke test each
+-- TIER C (HIGH RISK) — APPLIED 2026-07-22 via mgmt-api post founder drain +
+-- max_connections bump (60 → 90). Post-apply smoke verified: login OK,
+-- kasir_transactions query returns rows (RLS enforced), app.caleo.id 200.
 -- ============================================================================
--- Uncomment after founder review + advisor + rollback-smoke DO block per fn:
--- ALTER FUNCTION record_pembayaran(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION record_kasir_sale(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION record_payment(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION record_piutang_payment(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION mark_kasir_dp_lunas(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION delete_payment(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION reject_payment(uuid, text) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION commit_opname(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION receive_purchase_order(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION cancel_warehouse_transfer(uuid) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION initiate_warehouse_transfer(...) OWNER TO vosi_rpc_owner;
--- ALTER FUNCTION receive_warehouse_transfer(...) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION cancel_warehouse_transfer(p_transfer_id bigint, p_reason text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION commit_opname(p_approval_id bigint, p_idempotency_key uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION delete_payment(p_payment_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION initiate_warehouse_transfer(p_from_warehouse_id uuid, p_to_warehouse_id uuid, p_receiver_user_id uuid, p_notes text, p_client_request_id text, p_items jsonb) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION mark_kasir_dp_lunas(p_id uuid, p_method text, p_subtype text, p_ongkir_adjust numeric, p_cash_account_id uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION receive_purchase_order(p_po_id uuid, p_received_at timestamp with time zone, p_payment_due_at date, p_invoice_url text, p_conditions jsonb, p_idempotency_key uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION receive_warehouse_transfer(p_transfer_id bigint, p_items jsonb) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION record_kasir_sale(p_date date, p_channel text, p_items jsonb, p_subtotal numeric, p_payment_method text, p_payment_subtype text, p_payment_type text, p_dp_amount numeric, p_dp_input_type text, p_ongkir_amount numeric, p_notes text, p_total_amount numeric, p_customer_name text, p_customer_phone text, p_customer_company text, p_delivery_address text, p_marketplace_order_no text, p_wa_phone text, p_wa_chat_url text, p_customer_id text, p_discount_type text, p_discount_value numeric, p_discount_amount_rp numeric, p_cash_account_id uuid, p_allow_negative_stock boolean, p_idempotency_key uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION record_payment(p_payload jsonb) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION record_pembayaran(payload jsonb, p_idempotency_key uuid) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION record_piutang_payment(p_order_id uuid, p_cash_account_id uuid, p_proof_url text, p_verified_by_user_id uuid, p_amount numeric) OWNER TO vosi_rpc_owner;
+ALTER FUNCTION reject_payment(p_payment_id uuid, p_reason text) OWNER TO vosi_rpc_owner;
 
 COMMIT;
