@@ -123,11 +123,15 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     setSignInLoading(true);
     const { error } = await supabase.auth.signInWithOtp({ email: signInEmail });
     setSignInLoading(false);
+    // Unlock the OTP input regardless of send result. A transient send error
+    // (rate limit, DB pool hiccup) may still deliver the mail via retry, and if
+    // the user has an earlier valid OTP they should be able to enter it. Verify
+    // will reject an invalid code with a proper "OTP tidak valid" toast.
+    setSignInSent(true);
     if (error) {
-      showToast(`❌ Gagal kirim OTP: ${error.message}`);
+      showToast(`❌ Gagal kirim OTP: ${error.message}. Coba lagi atau masukkan kode OTP yang sudah diterima.`);
       return;
     }
-    setSignInSent(true);
     showToast(`✉️ Kode OTP dikirim ke ${signInEmail}!`);
   };
 
@@ -207,11 +211,11 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     setSignUpLoading(true);
     const { error } = await supabase.auth.signInWithOtp({ email: signUpEmail });
     setSignUpLoading(false);
+    setSignUpSent(true);
     if (error) {
-      showToast(`❌ Gagal kirim OTP: ${error.message}`);
+      showToast(`❌ Gagal kirim OTP: ${error.message}. Coba lagi atau masukkan kode OTP yang sudah diterima.`);
       return;
     }
-    setSignUpSent(true);
     showToast(`✉️ Kode OTP dikirim ke ${signUpEmail}!`);
   };
 
