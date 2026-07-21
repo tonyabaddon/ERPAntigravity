@@ -17,7 +17,6 @@ import { purchaseOrderService } from '../../lib/pembelianService';
 import { adminUsersService } from '../../lib/supabaseClient';
 import { fetchStoreSettings } from '../../lib/pengaturan/queries';
 import type { StoreSettings } from '../../lib/pengaturan/types';
-import { generatePoPdf } from '../../lib/pdf/purchaseOrderPdf';
 import { StorageLink } from '../ui/StorageLink';
 import { StorageImage } from '../ui/StorageImage';
 import ReceiveGoodsModal from './ReceiveGoodsModal';
@@ -123,6 +122,7 @@ export default function PembelianDetailPage({
           if (author) createdByName = author.name;
         } catch { /* fallback */ }
       }
+      const { generatePoPdf } = await import('../../lib/pdf/purchaseOrderPdf');
       const blob = await generatePoPdf({
         po,
         supplier: po.supplier,

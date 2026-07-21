@@ -13,7 +13,6 @@ import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanService
 import { fetchStoreSettings } from '../../../lib/pengaturan/queries';
 import type { StoreSettings } from '../../../lib/pengaturan/types';
 import type { DbTenantSettings } from '../../../types';
-import { generateLabaRugiPDF } from '../../../lib/akuntansi/pdfExport';
 import type { LabaRugiData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
@@ -208,6 +207,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
         fileName: `laba-rugi-${period.fromDate}-${period.toDate}.pdf`,
       };
 
+      const { generateLabaRugiPDF } = await import('../../../lib/akuntansi/pdfExport');
       const blob = generateLabaRugiPDF(pdfData, options);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

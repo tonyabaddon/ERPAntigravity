@@ -4,12 +4,6 @@ import type { StoreSettings, BankAccount } from '../../lib/pengaturan/types';
 import { PaymentProofThumbnail } from './PaymentProofThumbnail';
 import { PdfPreviewModal } from './PdfPreviewModal';
 import { availablePdfsForOrder, type AvailablePdf } from '../../lib/sales/pdf/availablePdfs';
-import { generateSalesOrderPdf } from '../../lib/sales/pdf/salesOrderPdf';
-import { generateInvoiceDpPdf } from '../../lib/sales/pdf/invoiceDpPdf';
-import { generateInvoiceLunasPdf } from '../../lib/sales/pdf/invoiceLunasPdf';
-import { generateInvoicePelunasanPdf } from '../../lib/sales/pdf/invoicePelunasanPdf';
-import { generateSuratJalanPdf } from '../../lib/sales/pdf/suratJalanPdf';
-import { generateCatatanPembatalanPdf } from '../../lib/sales/pdf/catatanPembatalanPdf';
 import type { PdfPrintMode } from '../../lib/sales/pdf/common';
 import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
 import TambahLayananModal from '../penjualan/TambahLayananModal';
@@ -114,26 +108,38 @@ export function ActionPanel({
     try {
       let result;
       switch (kind) {
-        case 'SO':
+        case 'SO': {
+          const { generateSalesOrderPdf } = await import('../../lib/sales/pdf/salesOrderPdf');
           result = await generateSalesOrderPdf(order, settings, banks, printMode);
           break;
-        case 'INV-DP':
+        }
+        case 'INV-DP': {
+          const { generateInvoiceDpPdf } = await import('../../lib/sales/pdf/invoiceDpPdf');
           result = await generateInvoiceDpPdf(order, settings, banks, printMode);
           break;
-        case 'INV-LUNAS':
+        }
+        case 'INV-LUNAS': {
+          const { generateInvoiceLunasPdf } = await import('../../lib/sales/pdf/invoiceLunasPdf');
           result = await generateInvoiceLunasPdf(order, settings, banks, printMode);
           break;
-        case 'INV-PEL':
+        }
+        case 'INV-PEL': {
+          const { generateInvoicePelunasanPdf } = await import('../../lib/sales/pdf/invoicePelunasanPdf');
           result = await generateInvoicePelunasanPdf(order, settings, banks, printMode);
           break;
-        case 'SJ':
+        }
+        case 'SJ': {
+          const { generateSuratJalanPdf } = await import('../../lib/sales/pdf/suratJalanPdf');
           result = await generateSuratJalanPdf(order, settings, banks, printMode);
           break;
-        case 'CAN':
+        }
+        case 'CAN': {
+          const { generateCatatanPembatalanPdf } = await import('../../lib/sales/pdf/catatanPembatalanPdf');
           result = await generateCatatanPembatalanPdf(order, settings, banks, printMode);
           break;
+        }
       }
-      setPreview({ blob: result.blob, filename: result.filename });
+      setPreview({ blob: result!.blob, filename: result!.filename });
     } catch (err) {
       console.error(`Generate ${kind} PDF failed`, err);
       setGenError(`Gagal generate ${PDF_LABELS[kind].label}.`);

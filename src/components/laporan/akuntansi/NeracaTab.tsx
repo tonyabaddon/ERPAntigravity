@@ -11,7 +11,6 @@ import { tenantSettingsService } from '../../../lib/pengaturan/pengaturanService
 import { fetchStoreSettings } from '../../../lib/pengaturan/queries';
 import type { StoreSettings } from '../../../lib/pengaturan/types';
 import type { DbTenantSettings } from '../../../types';
-import { generateNeracaPDF } from '../../../lib/akuntansi/pdfExport';
 import type { NeracaData, PDFGenerationOptions } from '../../../lib/akuntansi/pdfExport';
 import { wibDateString } from '../../../lib/format';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
@@ -170,6 +169,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
         fileName: `neraca-${asOfDate}.pdf`,
       };
 
+      const { generateNeracaPDF } = await import('../../../lib/akuntansi/pdfExport');
       const blob = generateNeracaPDF(pdfData, options);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

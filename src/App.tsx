@@ -23,7 +23,7 @@ import { ActivePage, StockItem, NotificationConfig, PermissionSet, ALL_PERMISSIO
 import { useURLRoute, navigate, replaceRoute, ACTIVE_PAGES, parseRoute } from './lib/urlRoute';
 import { extractErrorMessage } from './lib/extractErrorMessage';
 import { TenantProvider } from './contexts/TenantContext';
-import { AdminRoutes } from './components/admin/AdminRoutes';
+const AdminRoutes = React.lazy(() => import('./components/admin/AdminRoutes').then(m => ({ default: m.AdminRoutes })));
 import { SelectTenantScreen } from './components/SelectTenantScreen';
 import { TenantNotFound } from './components/errors/TenantNotFound';
 import { TenantSuspended } from './components/errors/TenantSuspended';
@@ -960,7 +960,11 @@ export default function App() {
   // ── Multi-tenant platform-level routing ────────────────────────────────────
   // Platform admin area: /admin/*
   if (pathRoute.isPlatformAdminArea) {
-    return <AdminRoutes />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-vosi">Memuat admin…</div>}>
+        <AdminRoutes />
+      </React.Suspense>
+    );
   }
 
   // Tenant-selector screen: /select-tenant

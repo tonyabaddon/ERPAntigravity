@@ -17,6 +17,27 @@ export default defineConfig(() => {
       // them, but Sentry CLI can find and upload them (see cloudbuild.frontend.yaml).
       // Task 11 (2026-07-18).
       sourcemap: 'hidden' as const,
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            // Split PDF + canvas libs: already extracted by Vite's default
+            // heuristic but naming them keeps them stable across rebuilds.
+            if (
+              id.includes('node_modules/jspdf') ||
+              id.includes('node_modules/jspdf-autotable') ||
+              id.includes('node_modules/html2canvas')
+            ) return 'pdf-vendor';
+            // Icon libraries are heavy and almost never change — ship as a
+            // stable long-cached chunk.
+            if (
+              id.includes('node_modules/react-icons') ||
+              id.includes('node_modules/lucide-react')
+            ) return 'icons';
+            // Supabase client + realtime share considerable runtime code.
+            if (id.includes('node_modules/@supabase')) return 'supabase';
+          },
+        },
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

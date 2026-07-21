@@ -6,7 +6,6 @@
 import React, { useState } from 'react';
 import type { Step4Ekuitas, PreviewTotals, SaldoAwalStepData, SaldoAwalSnapshot } from '../../../lib/saldoAwal/types';
 import { postSaldoAwalSnapshot } from '../../../lib/saldoAwal/api';
-import { renderSaldoAwalPDF } from './SaldoAwalPDF';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
 
@@ -56,6 +55,7 @@ export default function Step4EkuitasPreview({
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+      const { renderSaldoAwalPDF } = await import('./SaldoAwalPDF');
       await renderSaldoAwalPDF(snap, storeName);
       showToast('PDF Ringkasan Saldo Awal berhasil diunduh.', 'success');
     } catch (err) {

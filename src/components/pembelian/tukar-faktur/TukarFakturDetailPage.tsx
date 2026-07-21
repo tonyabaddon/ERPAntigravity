@@ -20,7 +20,6 @@ import {
   XOctagon,
 } from 'lucide-react';
 import { tukarFakturService } from '../../../lib/tukarFakturService';
-import { printTandaTerima } from '../../../lib/tandaTerimaPdf';
 import type { DbTukarFaktur, TukarFakturStatus, UpdateTukarFakturPayload } from '../../../types';
 import { formatIDR } from '../../../lib/formatIDR';
 
@@ -83,6 +82,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
     if (!tf) return;
     setPrinting(true);
     try {
+      const { printTandaTerima } = await import('../../../lib/tandaTerimaPdf');
       await printTandaTerima(tf);
       showToast('Tanda Terima dibuka di tab baru.', 'success');
       // Refresh to show new printed_at timestamp

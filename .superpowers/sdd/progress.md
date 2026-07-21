@@ -808,4 +808,14 @@ Phase 1 Task 2+3: complete (commits 4a673e5 + fix fc2198f, review clean)
 Phase 1 Task 4: complete (commit b8416ad, review clean — small local FE change, no review dispatch)
 Phase 1 Task 4: complete (commit b8416ad, small FE local change)
 Phase 1 Task 5: complete (commit 33059a4, regression SQL)
+
+## 2026-07-21 — QA Week Phase 2 Wave 3 Task 3 (2G Bundle Size)
+
+### 2G: Bundle split — manualChunks + AdminRoutes lazy + PDF dynamic imports
+- Baseline main bundle: 3,207 kB (gzip: 830 kB)
+- Post-change main bundle: 2,263 kB (gzip: 564 kB) — **944 kB / 29.4% reduction**
+- Target <1,500 kB NOT MET — remaining ~2.3 MB is all tenant screen app code; further reduction requires lazy-loading each renderPage() screen branch (20+ screens).
+- Changes: vite.config.ts manualChunks (pdf-vendor / icons / supabase), App.tsx AdminRoutes→React.lazy+Suspense, 6 PDF sites converted to dynamic import (ActionPanel×6, NeracaTab, LabaRugiTab, PembelianDetailPage, TukarFakturDetailPage, Step4EkuitasPreview).
+- Lint clean; vitest --changed: no changed test files. Build PASS.
+- Commit SHA: (see task-3-report.md)
 Phase 1 Task 6: complete (commit 800072b + backfilled schema_migrations 471/472/473)
