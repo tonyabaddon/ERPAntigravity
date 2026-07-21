@@ -236,7 +236,7 @@ function InvoiceBody({
   const isQuotation = variant === 'quotation';
   const subtotal = t.subtotal;
   // Gross subtotal: sum of master_price_at_sale × qty (fallback to unit_price for pre-Task-14 rows)
-  const grossSubtotal = (t.items as any[]).reduce(
+  const grossSubtotal = t.items.reduce(
     (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
   );
   const ongkir = t.ongkir_amount ?? 0;
@@ -245,7 +245,7 @@ function InvoiceBody({
   const total = baseTotal + serviceSubtotal;
   const dp = t.dp_amount ?? 0;
   // I-1 fix: total discount = per-line + order-level (mirrors KasirInvoiceModal lines 155-175).
-  const lineDiscount = (t.items as any[]).reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
+  const lineDiscount = t.items.reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
   const orderDiscount = t.discount_amount_rp ?? 0;
   const totalDiscount = lineDiscount + orderDiscount;
   // Smart label: match KasirInvoiceModal pattern
@@ -358,7 +358,7 @@ function InvoiceBody({
           </tr>
         </thead>
         <tbody>
-          {(t.items as any[]).map((item, idx) => (
+          {t.items.map((item, idx) => (
             <tr key={idx} className="align-top">
               <td className="px-1 py-1 text-center border-b border-dotted border-slate-300">{idx + 1}</td>
               <td className="px-1 py-1 border-b border-dotted border-slate-300">

@@ -32,6 +32,7 @@ import type {
   KasirPaymentType,
   PermissionSet,
   RakitServiceType,
+  CreateTempoInvoiceItemPayload,
 } from '../../types';
 import {
   customersService,
@@ -740,8 +741,6 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         );
         throw new Error('tempo_mixed_cart');
       }
-      // TODO(T18+): plumb allow_negative_stock through CreateTempoInvoicePayload typing.
-      // For now cast at call site so the new payload key reaches the RPC body.
       // Task 15: pass order-level discount as 2nd arg; subtotal uses post-line value
       // (consistent with the standard recordSale path). Per-line discount fields are
       // already embedded in each cart item via the _key-stripped spread.
@@ -754,12 +753,12 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         channel,
         sales_channel: channel,
         delivery_type: deliveryAddress.trim() ? 'DELIVERY' : 'PICKUP',
-        items: injectPromo(cart.map(({ _key, ...rest }) => rest)),
+        items: injectPromo(cart.map(({ _key, ...rest }) => rest)) as unknown as CreateTempoInvoiceItemPayload[],
         subtotal: subtotalAfterLineDiscount,
         shipping_fee: ongkirOn ? ongkirAmount : 0,
         total: totalInvoice,
         allow_negative_stock: true,
-      } as any, {
+      }, {
         discount_type: orderDiscountType,
         discount_value: orderDiscountValue,
         discount_amount_rp: orderDiscountAmountRp,

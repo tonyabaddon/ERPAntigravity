@@ -52,14 +52,17 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
         return;
       }
 
-      const rowsRaw: FulfillmentRow[] = (data ?? []).map((r: any) => ({
-        audit_id: r.id,
-        sku: r.payload?.sku ?? '?',
-        qty_fulfilled: r.payload?.qty_fulfilled ?? 0,
-        pending_order_ids: r.payload?.pending_order_ids ?? [],
-        customer_summaries: [],
-        fulfilled_at: r.created_at,
-      }));
+      const rowsRaw: FulfillmentRow[] = (data ?? []).map((r) => {
+        const payload = r.payload as Record<string, unknown> | null;
+        return {
+          audit_id: r.id,
+          sku: (payload?.sku as string | undefined) ?? '?',
+          qty_fulfilled: (payload?.qty_fulfilled as number | undefined) ?? 0,
+          pending_order_ids: (payload?.pending_order_ids as string[] | undefined) ?? [],
+          customer_summaries: [],
+          fulfilled_at: r.created_at,
+        };
+      });
 
       // Hydrate customer info per row (best-effort batch). The audit payload
       // captures order IDs that were pending; we resolve those to their
@@ -70,8 +73,12 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
           .from('orders')
           .select('id, customer_id, customers(id, name, wa_number)')
           .in('id', allOrderIds);
+        // Supabase FK join returns arrays even for single-row joins; unwrap [0].
         const byOrderId = new Map<string, CustomerSummary | null>(
-          (orders ?? []).map((o: any) => [o.id, o.customers as CustomerSummary | null]),
+          (orders ?? []).map((o) => [
+            o.id,
+            (Array.isArray(o.customers) ? o.customers[0] : o.customers) as CustomerSummary | null,
+          ]),
         );
         for (const r of rowsRaw) {
           r.customer_summaries = r.pending_order_ids

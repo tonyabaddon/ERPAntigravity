@@ -498,6 +498,10 @@ export interface KasirItem {
     expires_at: string | null;
     applied_at: string;
   } | null;
+  // T25 pre-order fulfillments — set true when qty exceeds available stock at
+  // the target warehouse. Wizard populates during save; SalesInvoicePDF renders
+  // "*Pre-order" footnote when true. Optional for backward-compat.
+  is_pre_order?: boolean;
 }
 
 export interface KasirTransaction {
@@ -1300,6 +1304,8 @@ export interface CreateTempoInvoicePayload {
   discount_type?: DiscountType;
   discount_value?: number | null;
   discount_amount_rp?: number;
+  // Allow stock to go negative (pre-order pattern). Default false.
+  allow_negative_stock?: boolean;
 }
 
 export type CreateTempoInvoiceResult =

@@ -26,35 +26,38 @@ interface RakitLockApprovalRequestRowProps {
  * are not present in the snapshot but are not used by the modal's seed path —
  * fill with safe placeholders to satisfy the type.
  */
-function snapshotToRakitJobLine(transactionId: string, raw: any, idx: number): RakitJobLine {
-  const components = Array.isArray(raw.components)
-    ? raw.components.map((c: any) => ({
-        sku: String(c.sku ?? ''),
-        name: String(c.name ?? ''),
-        qty: Number(c.qty ?? 0),
-        warehouse: (c.warehouse ?? 'atas') as 'atas' | 'bawah',
-        fifoCostSnapshot: Number(c.fifo_cost ?? 0),
-        // Modal's seed reads `warehouse_id` + `fifo_cost` off the component via
-        // a structural cast — attach them as extra fields so the modal can pick
-        // them up without losing the warehouse UUID stored in the snapshot.
-        warehouse_id: c.warehouse_id,
-        fifo_cost: Number(c.fifo_cost ?? 0),
-      }))
-    : [];
+function snapshotToRakitJobLine(transactionId: string, raw: unknown, idx: number): RakitJobLine {
+  const r = raw as Record<string, unknown>;
+  const rawComps = Array.isArray(r.components) ? r.components : [];
+  const components = rawComps.map((c: unknown) => {
+    const comp = c as Record<string, unknown>;
+    return {
+      sku: String(comp.sku ?? ''),
+      name: String(comp.name ?? ''),
+      qty: Number(comp.qty ?? 0),
+      warehouse: ((comp.warehouse ?? 'atas') as string) === 'bawah' ? 'bawah' as const : 'atas' as const,
+      fifoCostSnapshot: Number(comp.fifo_cost ?? 0),
+      // Modal's seed reads `warehouse_id` + `fifo_cost` off the component via
+      // a structural cast — attach them as extra fields so the modal can pick
+      // them up without losing the warehouse UUID stored in the snapshot.
+      warehouse_id: comp.warehouse_id as string | undefined,
+      fifo_cost: Number(comp.fifo_cost ?? 0),
+    };
+  });
   return {
-    id: String(raw.id ?? `snapshot-${idx}`),
+    id: String(r.id ?? `snapshot-${idx}`),
     transactionId,
     lineNumber: idx + 1,
-    serviceType: 'rakit' as any, // not used by modal's seed; placeholder
-    description: String(raw.description ?? ''),
-    estimatedPrice: Number(raw.final_price ?? 0),
-    finalPrice: Number(raw.final_price ?? 0),
-    trackingMode: (raw.tracking_mode ?? 'detail') as 'detail' | 'lumpsum',
-    laborCost: Number(raw.labor_cost ?? 0),
-    lumpSumHpp: Number(raw.lump_sum_hpp ?? 0),
+    serviceType: 'jasa_rakit', // not used by modal's seed; placeholder
+    description: String(r.description ?? ''),
+    estimatedPrice: Number(r.final_price ?? 0),
+    finalPrice: Number(r.final_price ?? 0),
+    trackingMode: ((r.tracking_mode ?? 'detail') as string) === 'lumpsum' ? 'lumpsum' : 'detail',
+    laborCost: Number(r.labor_cost ?? 0),
+    lumpSumHpp: Number(r.lump_sum_hpp ?? 0),
     hppOwnerOverride: null,
     hppFinal: null,
-    components: components as any,
+    components,
   };
 }
 
@@ -74,17 +77,25 @@ export default function RakitLockApprovalRequestRow({
     void fetchRakitLockRequestByApprovalId(request.id).then(setSnapshot);
   }, [request.id]);
 
-  const lines: any[] = (snapshot?.linesSnapshot as any[]) ?? [];
-  const totalFinal = lines.reduce((s: number, l: any) => s + Number(l.final_price ?? 0), 0);
-  const totalHpp = lines.reduce((s: number, l: any) => {
-    if (l.tracking_mode === 'lumpsum') {
-      return s + Number(l.lump_sum_hpp ?? 0);
+  const lines: unknown[] = snapshot?.linesSnapshot ?? [];
+  const totalFinal: number = lines.reduce<number>((s, l) => {
+    const row = l as Record<string, unknown>;
+    return s + Number(row.final_price ?? 0);
+  }, 0);
+  const totalHpp: number = lines.reduce<number>((s, l) => {
+    const row = l as Record<string, unknown>;
+    if (row.tracking_mode === 'lumpsum') {
+      return s + Number(row.lump_sum_hpp ?? 0);
     }
-    const compsHpp = (l.components ?? []).reduce(
-      (cs: number, c: any) => cs + Number(c.fifo_cost ?? 0) * Number(c.qty ?? 0),
+    const comps: unknown[] = Array.isArray(row.components) ? row.components : [];
+    const compsHpp: number = comps.reduce<number>(
+      (cs, c) => {
+        const comp = c as Record<string, unknown>;
+        return cs + Number(comp.fifo_cost ?? 0) * Number(comp.qty ?? 0);
+      },
       0,
     );
-    return s + compsHpp + Number(l.labor_cost ?? 0);
+    return s + compsHpp + Number(row.labor_cost ?? 0);
   }, 0);
   const margin = totalFinal - totalHpp;
   const marginPct = totalFinal > 0 ? (margin / totalFinal) * 100 : 0;
@@ -130,7 +141,7 @@ export default function RakitLockApprovalRequestRow({
           ) : (
             <>
               <p className="text-sm text-slate-800">
-                {lines.length} line · {lines.map((l: any) => l.description).join(' · ')}
+                {lines.length} line · {lines.map((l) => (l as Record<string, unknown>).description as string).join(' · ')}
               </p>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-[12px]">Final: <strong>{formatIDR(totalFinal)}</strong></span>
@@ -148,22 +159,29 @@ export default function RakitLockApprovalRequestRow({
               </div>
               {expanded && (
                 <div className="mt-2 bg-white border border-slate-200 rounded-lg p-2 text-[12px] space-y-1">
-                  {lines.map((l: any, idx: number) => (
-                    <div key={idx} className="border-b last:border-b-0 border-slate-100 pb-1">
-                      <div className="font-bold">{l.description} — {formatIDR(Number(l.final_price ?? 0))}</div>
-                      {(l.components ?? []).length > 0 ? (
-                        <ul className="ml-3 text-slate-600">
-                          {(l.components ?? []).map((c: any, ci: number) => (
-                            <li key={ci}>
-                              {c.sku} {c.name} — qty {c.qty} {c.warehouse} @ FIFO {formatIDR(Number(c.fifo_cost ?? 0))}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="ml-3 text-slate-500 italic">Lumpsum HPP: {formatIDR(Number(l.lump_sum_hpp ?? 0))}</div>
-                      )}
-                    </div>
-                  ))}
+                  {lines.map((l, idx) => {
+                    const row = l as Record<string, unknown>;
+                    const comps = Array.isArray(row.components) ? row.components : [];
+                    return (
+                      <div key={idx} className="border-b last:border-b-0 border-slate-100 pb-1">
+                        <div className="font-bold">{row.description as string} — {formatIDR(Number(row.final_price ?? 0))}</div>
+                        {comps.length > 0 ? (
+                          <ul className="ml-3 text-slate-600">
+                            {comps.map((c: unknown, ci: number) => {
+                              const comp = c as Record<string, unknown>;
+                              return (
+                                <li key={ci}>
+                                  {comp.sku as string} {comp.name as string} — qty {comp.qty as number} {comp.warehouse as string} @ FIFO {formatIDR(Number(comp.fifo_cost ?? 0))}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <div className="ml-3 text-slate-500 italic">Lumpsum HPP: {formatIDR(Number(row.lump_sum_hpp ?? 0))}</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -185,7 +203,7 @@ export default function RakitLockApprovalRequestRow({
                     onEditAndApprove(
                       request.id,
                       snapshot.transactionId,
-                      (snapshot.linesSnapshot as any[]).map((l, idx) =>
+                      snapshot.linesSnapshot.map((l, idx) =>
                         snapshotToRakitJobLine(snapshot.transactionId, l, idx),
                       ),
                     )
