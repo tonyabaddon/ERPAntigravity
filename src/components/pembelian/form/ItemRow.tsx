@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { PoItemDraft } from '../../../lib/pembelianService';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface ItemRowProps {
   item: PoItemDraft;
@@ -8,9 +9,6 @@ interface ItemRowProps {
   onRemove: () => void;
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-}
 
 const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
   function updateQty(value: string) {
@@ -50,7 +48,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
         </div>
       </div>
       <span className="col-span-1 text-right text-sm font-bold text-gray-800">
-        {formatRupiah(item.subtotal)}
+        {formatIDR(item.subtotal)}
       </span>
       <div className="col-span-1 flex justify-end">
         <button

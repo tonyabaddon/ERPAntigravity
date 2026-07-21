@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { DbCustomer } from '../../types';
 import { customerCreditService, supabase } from '../../lib/supabaseClient';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   customer: DbCustomer;
@@ -9,9 +10,6 @@ interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
 
 const DEFAULT_TERM_OPTIONS = [7, 14, 30, 60, 90];
 
@@ -179,14 +177,14 @@ export default function TempoCreditSection({ customer, onChanged, showToast }: P
         </div>
         <div>
           <div className="text-[10px] text-slate-500 uppercase mb-0.5">Limit Kredit</div>
-          <div className="text-base font-semibold text-on-surface">{formatRupiah(customer.credit_limit)}</div>
+          <div className="text-base font-semibold text-on-surface">{formatIDR(customer.credit_limit)}</div>
         </div>
       </div>
 
       <div className="mb-3">
         <div className="flex justify-between text-[11px] text-slate-600 mb-1">
           <span className="font-semibold">Terpakai</span>
-          <span>{formatRupiah(0)} / {formatRupiah(customer.credit_limit)} ({usagePct}%)</span>
+          <span>{formatIDR(0)} / {formatIDR(customer.credit_limit)} ({usagePct}%)</span>
         </div>
         <div className="w-full bg-slate-200 rounded-full h-2">
           <div className="bg-secondary rounded-full h-2" style={{ width: `${usagePct}%` }}></div>

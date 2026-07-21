@@ -11,6 +11,7 @@ import SkuPickerWithInlineCreate from './SkuPickerWithInlineCreate';
 import PaymentMethodPicker from './PaymentMethodPicker';
 import { NumberInput } from '../../ui/NumberInput';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -28,7 +29,6 @@ interface ItemRow {
   sell_price: number;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 
 export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSaved, prefill, editing }: Props) {
   const [order, setOrder] = useState<{ id: string; customer_name?: string } | null>(
@@ -275,7 +275,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                 <td className="py-3 px-2"><NumberInput value={it.sell_price}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, sell_price: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
-                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(it.qty * it.unit_cost)}</td>
+                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
                   <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
                     <X className="w-4 h-4" />
@@ -347,15 +347,15 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-2xl p-4">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Beli</div>
-            <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(subtotal)}</div>
+            <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(subtotal)}</div>
           </div>
           <div className="bg-indigo-50 rounded-2xl p-4">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Estimasi Jual</div>
-            <div className="text-xl font-extrabold mt-1 text-indigo-700">{fmtRp(projectedRevenue)}</div>
+            <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(projectedRevenue)}</div>
           </div>
           <div className="bg-green-50 rounded-2xl p-4">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
-            <div className="text-xl font-extrabold mt-1 text-green-700">{fmtRp(profit)}</div>
+            <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
           </div>
         </div>
       </div>

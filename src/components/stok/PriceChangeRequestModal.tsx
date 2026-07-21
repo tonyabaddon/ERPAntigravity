@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { requestPriceChange } from '../../lib/supabaseClient';
 import type { StockItem } from '../../types';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   item: StockItem;
@@ -75,7 +76,7 @@ export default function PriceChangeRequestModal({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs text-slate-600">Nilai saat ini</label>
-            <p className="text-sm font-semibold">Rp {currentValue.toLocaleString('id-ID')}</p>
+            <p className="text-sm font-semibold">{formatIDR(currentValue)}</p>
           </div>
           <div>
             <label className="block text-xs text-slate-600">Nilai baru</label>

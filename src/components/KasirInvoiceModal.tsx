@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import type { StoreSettings } from '../lib/pengaturan/types';
 import { CHANNEL_VISUAL } from '../lib/salesChannels';
+import { formatIDR } from '../lib/formatIDR';
 
 interface KasirInvoiceModalProps {
   transaction: KasirTransaction;
@@ -138,10 +139,10 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{item.qty}</td>
                           <td className="px-3 py-2 text-right text-gray-500">
-                            Rp {item.unit_price.toLocaleString('id-ID')}
+                            {formatIDR(item.unit_price)}
                           </td>
                           <td className="px-3 py-2 text-right font-bold text-gray-800">
-                            Rp {item.subtotal.toLocaleString('id-ID')}
+                            {formatIDR(item.subtotal)}
                           </td>
                         </tr>
                       ))}
@@ -169,13 +170,13 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                         return (
                           <div className="flex justify-between py-1" style={{ fontSize: '11px', color: '#b45309' }}>
                             <span>{label}</span>
-                            <span className="font-mono">− Rp {totalDiscount.toLocaleString('id-ID')}</span>
+                            <span className="font-mono">− {formatIDR(totalDiscount)}</span>
                           </div>
                         );
                       })()}
                       <div className="flex justify-between py-2 font-black text-[#012749] text-sm border-t-2 border-[#012749]">
                         <span>TOTAL</span>
-                        <span>Rp {(transaction.total_amount ?? transaction.subtotal).toLocaleString('id-ID')}</span>
+                        <span>{formatIDR((transaction.total_amount ?? transaction.subtotal))}</span>
                       </div>
                       {transaction.payment_method && (
                         <div className="flex justify-between py-1 text-gray-500 text-[10px]">

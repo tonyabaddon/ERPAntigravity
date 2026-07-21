@@ -22,6 +22,7 @@ import type {
   SuggestOutstandingTukarFakturRow,
 } from '../../../types';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -50,7 +51,6 @@ interface SelectedRow {
   tagihan_count?: number;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -218,7 +218,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
         return;
       }
       if (r.amount > r.outstanding + 0.01) {
-        showToast(`Jumlah ${r.display_number} (${fmtRp(r.amount)}) lebih dari sisa (${fmtRp(r.outstanding)})`, 'warning');
+        showToast(`Jumlah ${r.display_number} (${formatIDR(r.amount)}) lebih dari sisa (${formatIDR(r.outstanding)})`, 'warning');
         return;
       }
     }
@@ -231,7 +231,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
       return;
     }
     if (discountNum > runningTotal) {
-      showToast(`Diskon (${fmtRp(discountNum)}) melebihi total bayar (${fmtRp(runningTotal)})`, 'warning');
+      showToast(`Diskon (${formatIDR(discountNum)}) melebihi total bayar (${formatIDR(runningTotal)})`, 'warning');
       return;
     }
 
@@ -376,7 +376,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                               </a>
                             </td>
                             <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
-                            <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
+                            <td className="py-2 text-right text-sm font-bold text-amber-700">{formatIDR(r.outstanding)}</td>
                             <td className="py-2">
                               <NumberInput disabled={!r.selected} value={r.amount}
                                 onChange={n => updateRow(idx, { amount: n })}
@@ -437,7 +437,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
                               </div>
                             </td>
                             <td className="py-2 text-xs text-gray-600">{fmtDate(r.payment_due_at)}</td>
-                            <td className="py-2 text-right text-sm font-bold text-amber-700">{fmtRp(r.outstanding)}</td>
+                            <td className="py-2 text-right text-sm font-bold text-amber-700">{formatIDR(r.outstanding)}</td>
                             <td className="py-2">
                               <NumberInput disabled={!r.selected} value={r.amount}
                                 onChange={n => updateRow(idx, { amount: n })}
@@ -454,7 +454,7 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
               <div className="flex justify-end pt-2 border-t border-gray-200">
                 <div className="text-right">
                   <div className="text-[11px] font-semibold text-gray-500">SUBTOTAL ({selectedCount} baris)</div>
-                  <div className="text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(runningTotal)}</div>
+                  <div className="text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(runningTotal)}</div>
                 </div>
               </div>
             </div>
@@ -536,15 +536,15 @@ export default function PembayaranFormPage({ showToast, onCancel, onSaved, prefi
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-gray-50 rounded-2xl p-4">
               <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal ({selectedCount} baris)</div>
-              <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(runningTotal)}</div>
+              <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(runningTotal)}</div>
             </div>
             <div className="bg-amber-50 rounded-2xl p-4">
               <div className="text-[11px] text-amber-700 uppercase font-semibold">Diskon</div>
-              <div className="text-xl font-extrabold mt-1 text-amber-700">{fmtRp(discount)}</div>
+              <div className="text-xl font-extrabold mt-1 text-amber-700">{formatIDR(discount)}</div>
             </div>
             <div className="bg-indigo-50 rounded-2xl p-4">
               <div className="text-[11px] text-indigo-700 uppercase font-semibold">Net Dibayar</div>
-              <div className="text-xl font-extrabold mt-1 text-indigo-700">{fmtRp(netTotal)}</div>
+              <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(netTotal)}</div>
             </div>
           </div>
         </div>

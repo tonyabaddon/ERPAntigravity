@@ -1,5 +1,6 @@
 import type { Order } from './types';
 import type { StoreSettings, BankAccount } from '../pengaturan/types';
+import { formatIDR } from '../formatIDR';
 
 /**
  * Build a wa.me URL with a pre-filled reminder message for the given
@@ -34,7 +35,7 @@ function normalizePhone(raw?: string): string | null {
 }
 
 function rupiah(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
+  return formatIDR(n);
 }
 
 function bankLine(banks: BankAccount[]): string {

@@ -4,6 +4,7 @@ import { DbPurchaseOrder } from '../../types';
 import { purchaseOrderService } from '../../lib/pembelianService';
 import { kasirService } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface MarkAsPaidModalProps {
   po: DbPurchaseOrder;
@@ -12,9 +13,6 @@ interface MarkAsPaidModalProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-}
 
 export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: MarkAsPaidModalProps) {
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -65,7 +63,7 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Total</span>
-              <span className="font-bold text-gray-800">{formatRupiah(po.total)}</span>
+              <span className="font-bold text-gray-800">{formatIDR(po.total)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Jatuh Tempo</span>

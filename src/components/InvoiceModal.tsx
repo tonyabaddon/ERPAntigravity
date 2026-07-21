@@ -4,6 +4,7 @@ import { DbOrder } from '../types';
 import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { fetchStoreSettings, fetchBankAccounts } from '../lib/pengaturan/queries';
 import type { StoreSettings, BankAccount } from '../lib/pengaturan/types';
+import { formatIDR } from '../lib/formatIDR';
 
 interface InvoiceModalProps {
   order: DbOrder;
@@ -136,8 +137,8 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                             <div className="font-mono text-[9px] text-gray-400">{item.sku}</div>
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{item.qty}</td>
-                          <td className="px-3 py-2 text-right text-gray-500">Rp {item.unit_price.toLocaleString('id-ID')}</td>
-                          <td className="px-3 py-2 text-right font-bold text-gray-800">Rp {item.subtotal.toLocaleString('id-ID')}</td>
+                          <td className="px-3 py-2 text-right text-gray-500">{formatIDR(item.unit_price)}</td>
+                          <td className="px-3 py-2 text-right font-bold text-gray-800">{formatIDR(item.subtotal)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -147,13 +148,13 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   <div className="flex justify-end mb-4">
                     <div className="min-w-[200px] text-xs font-sans">
                       <div className="flex justify-between py-1 text-gray-500 border-b border-gray-100">
-                        <span>Subtotal</span><span>Rp {order.subtotal.toLocaleString('id-ID')}</span>
+                        <span>Subtotal</span><span>{formatIDR(order.subtotal)}</span>
                       </div>
                       <div className="flex justify-between py-1 text-gray-500 border-b border-gray-100">
-                        <span>Ongkos Kirim</span><span>Rp {(order.shipping_fee ?? 0).toLocaleString('id-ID')}</span>
+                        <span>Ongkos Kirim</span><span>{formatIDR((order.shipping_fee ?? 0))}</span>
                       </div>
                       <div className="flex justify-between py-2 font-black text-[#012749] text-sm border-t-2 border-[#012749] mt-1">
-                        <span>TOTAL</span><span>Rp {order.total.toLocaleString('id-ID')}</span>
+                        <span>TOTAL</span><span>{formatIDR(order.total)}</span>
                       </div>
                     </div>
                   </div>

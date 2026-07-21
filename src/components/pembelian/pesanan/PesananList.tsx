@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { pesananService } from '../../../lib/pesananService';
 import type { DbPesanan, PesananStatus } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string|null) => s ? new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '—';
 
 interface Props {
@@ -87,7 +87,7 @@ export default function PesananList({ showToast, onCreate, onOpenDetail }: Props
                   </td>
                   <td className="px-5 py-4 text-sm font-semibold">{p.supplier?.name ?? '—'}</td>
                   <td className="px-5 py-4 text-center text-sm">{p.items?.length ?? 0}</td>
-                  <td className="px-5 py-4 text-right text-sm font-bold">{fmtRp(p.total)}</td>
+                  <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(p.total)}</td>
                   <td className="px-5 py-4 text-center">
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[p.status]}`}>{p.status}</span>
                   </td>

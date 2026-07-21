@@ -4,6 +4,7 @@ import type { SalesChannel } from '../../types';
 import { getChannelDef } from '../../lib/salesChannels';
 import { useSalesChannels } from '../../contexts/SalesChannelsContext';
 import ChannelIcon from '../icons/ChannelIcon';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface TallyBarProps {
   tally: Map<SalesChannel, { amount: number; count: number }>;
@@ -58,7 +59,7 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
                 </div>
               </div>
             </div>
-            <div className="col-span-3 text-right font-mono font-bold text-slate-800">Rp {v.amount.toLocaleString('id-ID')}</div>
+            <div className="col-span-3 text-right font-mono font-bold text-slate-800">{formatIDR(v.amount)}</div>
             <div className="col-span-2 text-right text-sm text-slate-600">{v.count}</div>
             <div className="col-span-1 text-right text-xs font-semibold text-slate-500">{pct}%</div>
           </div>
@@ -67,7 +68,7 @@ export default function TallyBar({ tally, totalAmount, totalCount }: TallyBarPro
       <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-slate-50 border-t-2 border-slate-300 items-center">
         <div className="col-span-1"></div>
         <div className="col-span-5 text-sm font-extrabold text-slate-800">TOTAL</div>
-        <div className="col-span-3 text-right font-mono font-extrabold text-slate-900">Rp {totalAmount.toLocaleString('id-ID')}</div>
+        <div className="col-span-3 text-right font-mono font-extrabold text-slate-900">{formatIDR(totalAmount)}</div>
         <div className="col-span-2 text-right text-sm font-bold text-slate-700">{totalCount}</div>
         <div className="col-span-1 text-right text-xs font-bold text-slate-500">100%</div>
       </div>

@@ -7,6 +7,7 @@ import TempoCreditSection from './pelanggan/TempoCreditSection';
 import { isFieldVisible } from '../lib/pengaturan/cascadeMap';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import NewCustomerInlineForm from './penjualan/wizard/NewCustomerInlineForm';
+import { formatIDR } from '../lib/formatIDR';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -58,9 +59,6 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
 
 export default function PelangganScreen({ openCustomerId, onNavigate, showToast }: PelangganScreenProps) {
   const [customers, setCustomers] = useState<DbCustomerWithStats[]>([]);
@@ -392,7 +390,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <div className="text-right">
                       <div className="text-lg font-extrabold text-emerald-300">
-                        {formatRupiah(totalSpend)}
+                        {formatIDR(totalSpend)}
                       </div>
                       <div className="text-[9px] opacity-55">total belanja</div>
                     </div>
@@ -467,7 +465,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                           {entry.items.length > 1 && ` +${entry.items.length - 1}`}
                           {' · '}{formatDate(entry.created_at)}
                         </div>
-                        <div className={`font-extrabold text-sm mt-1 ${totalColor}`}>{formatRupiah(entry.total)}</div>
+                        <div className={`font-extrabold text-sm mt-1 ${totalColor}`}>{formatIDR(entry.total)}</div>
                       </div>
                     );
                   })

@@ -12,6 +12,7 @@ import { StockItem, Warehouse } from '../../types';
 import PendingApprovalBadge from '../approval/PendingApprovalBadge';
 import { NumberInput } from '../ui/NumberInput';
 import { InTransitChip } from '../warehouseTransfer/InTransitChip';
+import { formatIDR } from '../../lib/formatIDR';
 
 // TODO(Task 2.11): consolidate CATEGORY_SPECS / generateName / renderSpecForm
 // with ProductForm + StockManagerScreen. Duplicated here during Phase 2 split
@@ -337,7 +338,7 @@ export default function StockTableView({
                       className="relative inline-flex items-center gap-1 hover:underline disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {item.harga_modal != null
-                        ? <span className="text-gray-600">Rp {item.harga_modal.toLocaleString('id-ID')}</span>
+                        ? <span className="text-gray-600">{formatIDR(item.harga_modal)}</span>
                         : <span className="text-amber-500 font-bold" title="Belum diisi — P&L tidak akurat">—</span>
                       }
                       {pendingIndex.priceMap.has(`${item.sku}|harga_modal`) && (
@@ -353,7 +354,7 @@ export default function StockTableView({
                       <span className="text-gray-400">Grosir:</span>
                       {item.price_grosir == null
                         ? <span className="text-amber-600 font-bold">⚠ Belum di-set</span>
-                        : <span className="text-emerald-700 font-bold">Rp {item.price_grosir.toLocaleString('id-ID')}</span>
+                        : <span className="text-emerald-700 font-bold">{formatIDR(item.price_grosir)}</span>
                       }
                     </div>
                   )}

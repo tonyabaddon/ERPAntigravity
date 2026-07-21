@@ -17,6 +17,7 @@ import type { DbPesanan, PiPaymentMethod, Warehouse, DiscountType } from '../../
 import PaymentMethodPicker from '../bnl/PaymentMethodPicker';
 import { DiscountInlineInput, DiscountRow, useDiscountBinding, computeDiscountAmount } from '../../ui/discount';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -40,7 +41,6 @@ interface ItemRow {
   discount_amount_rp: number;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -127,7 +127,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
       <td className="py-3">
         {modulOn && it.master_unit_cost > 0 && (
           <div className="text-[10px] text-slate-400 uppercase tracking-wide mb-0.5">
-            List {fmtRp(it.master_unit_cost)}
+            List {formatIDR(it.master_unit_cost)}
           </div>
         )}
         <NumberInput
@@ -153,7 +153,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
         </select>
       </td>
       <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
-        {fmtRp((it.qty * it.master_unit_cost) - (it.discount_amount_rp ?? 0))}
+        {formatIDR((it.qty * it.master_unit_cost) - (it.discount_amount_rp ?? 0))}
       </td>
     </tr>
   );
@@ -357,7 +357,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
               <div className="font-bold text-sm text-indigo-800">{pesanan.pesanan_number}</div>
               <div className="text-xs text-gray-700 mt-1">{pesanan.supplier?.name} • Net {pesanan.supplier?.payment_term_days ?? 0} hari</div>
               <div className="text-[11px] text-gray-500 mt-1">
-                {(pesanan.items ?? []).length} item • Total {fmtRp(pesanan.total)} • Estimasi datang {fmtDate(pesanan.expected_receive_at)}
+                {(pesanan.items ?? []).length} item • Total {formatIDR(pesanan.total)} • Estimasi datang {fmtDate(pesanan.expected_receive_at)}
               </div>
             </div>
             {!prefillPesanan && (
@@ -382,7 +382,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
                     <div className="font-semibold text-sm text-indigo-800">{p.pesanan_number}</div>
-                    <div className="text-[11px] text-gray-500">{p.supplier?.name} • {fmtRp(p.total)}</div>
+                    <div className="text-[11px] text-gray-500">{p.supplier?.name} • {formatIDR(p.total)}</div>
                   </button>
                 ))}
               </div>
@@ -431,7 +431,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
                 <td colSpan={modulOn ? 7 : 6} className="py-2 text-right text-xs font-semibold text-gray-500">
                   SUBTOTAL (setelah diskon item)
                 </td>
-                <td className="py-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(subtotalAfterLine)}</td>
+                <td className="py-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(subtotalAfterLine)}</td>
               </tr>
               {modulOn && (
                 <tr>
@@ -448,7 +448,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
               )}
               <tr>
                 <td colSpan={modulOn ? 7 : 6} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
-                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(totalFinal)}</td>
+                <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(totalFinal)}</td>
               </tr>
             </tfoot>
           </table>

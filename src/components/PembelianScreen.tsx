@@ -31,6 +31,7 @@ import TukarFakturFormPage from './pembelian/tukar-faktur/TukarFakturFormPage';
 import TukarFakturDetailPage from './pembelian/tukar-faktur/TukarFakturDetailPage';
 import { navigate } from '../lib/urlRoute';
 import type { DbPurchaseInvoice } from '../types';
+import { formatIDR } from '../lib/formatIDR';
 
 interface PembelianScreenProps {
   stockList: StockItem[];
@@ -99,9 +100,6 @@ type ViewMode =
   | { kind: 'tukar-faktur-create'; prefillTagihanId?: string }
   | { kind: 'tukar-faktur-detail'; tfNumber: string };
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-}
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   DRAFT:    { label: 'Draft',    className: 'bg-gray-100 text-gray-600' },
@@ -400,14 +398,14 @@ export default function PembelianScreen({
                   icon={<ShoppingCart className="w-6 h-6" />}
                   iconBg="bg-blue-50" iconColor="text-[#1e3d60]"
                   badge={pLabel} badgeClass="bg-blue-50 text-[#1e3d60]"
-                  label="Total PO" value={formatRupiah(total)}
+                  label="Total PO" value={formatIDR(total)}
                   sub={count > 0 ? `${count} purchase order dibuat di ${pLabel.toLowerCase()}` : 'Belum ada PO di periode ini'}
                 />
                 <KpiCard
                   icon={<Calendar className="w-6 h-6" />}
                   iconBg="bg-amber-50" iconColor="text-amber-600"
                   badge={`${dueCount} PO`} badgeClass="bg-amber-50 text-amber-700"
-                  label="Jatuh Tempo" value={formatRupiah(dueAmount)}
+                  label="Jatuh Tempo" value={formatIDR(dueAmount)}
                   sub={dueCount > 0 ? `Belum dibayar, jatuh tempo di ${pLabel.toLowerCase()}` : 'Tidak ada PO jatuh tempo di periode ini'}
                 />
                 <KpiCard
@@ -416,7 +414,7 @@ export default function PembelianScreen({
                   iconColor={overdueAmount > 0 ? 'text-rose-700' : 'text-gray-400'}
                   badge={overdueAmount > 0 ? 'Tindakan!' : 'Aman'}
                   badgeClass={overdueAmount > 0 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-[#2d8a4e]'}
-                  label="Terlambat Bayar" value={formatRupiah(overdueAmount)}
+                  label="Terlambat Bayar" value={formatIDR(overdueAmount)}
                   sub={overdueAmount > 0
                     ? `${overdueCount} PO melewati jatuh tempo — selalu hari ini, tidak ikut filter`
                     : 'Semua PO dilunasi tepat waktu'}
@@ -892,7 +890,7 @@ function OrdersTab({
                   )}
                 </div>
                 <span className={`col-span-1 text-sm font-bold text-right ${po.status === 'PAID' ? 'text-green-700' : 'text-gray-800'}`}>
-                  {formatRupiah(po.total)}
+                  {formatIDR(po.total)}
                 </span>
                 <div className="col-span-1 flex justify-center">
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[po.status]?.className}`}>

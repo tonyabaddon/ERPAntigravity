@@ -43,6 +43,7 @@ import { serviceTypesService, tenantSettingsService } from '../../lib/pengaturan
 import { computeDiscountAmount } from '../ui/discount';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { wibDateString } from '../../lib/format';
+import { formatIDR } from '../../lib/formatIDR';
 import { CHANNEL_REQUIRES_ORDER_NO, getChannelDef } from '../../lib/salesChannels';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { useActivePromos } from '../../hooks/useActivePromos';
@@ -780,10 +781,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         return;
       }
       if (result.kind === 'credit_limit_exceeded') {
-        const fmt = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
         showToast(
-          `⛔ Plafon kredit terlampaui. Kelebihan ${fmt(result.shortage)}. ` +
-          `Outstanding ${fmt(result.outstanding)} + invoice ini ${fmt(result.new_amount)} > limit ${fmt(result.limit)}.`,
+          `⛔ Plafon kredit terlampaui. Kelebihan ${formatIDR(result.shortage)}. ` +
+          `Outstanding ${formatIDR(result.outstanding)} + invoice ini ${formatIDR(result.new_amount)} > limit ${formatIDR(result.limit)}.`,
           'warning',
         );
         throw new Error('credit_limit_exceeded');
@@ -860,7 +860,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       const masterPrice = item.master_price_at_sale ?? item.unit_price;
       if (promo.promo_discount_value > masterPrice) {
         showToast(
-          `Promo Rp ${promo.promo_discount_value.toLocaleString('id-ID')}/unit tidak berlaku di ${item.sku} karena harga saat ini Rp ${masterPrice.toLocaleString('id-ID')}`,
+          `Promo ${formatIDR(promo.promo_discount_value)}/unit tidak berlaku di ${item.sku} karena harga saat ini ${formatIDR(masterPrice)}`,
           'info',
         );
       }
@@ -997,7 +997,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   </span>
                   <span className="text-slate-400">·</span>
                   <span className="font-bold text-[#012749]">
-                    Rp {Math.round(subtotalAfterLineDiscount).toLocaleString('id-ID')}
+                    {formatIDR(Math.round(subtotalAfterLineDiscount))}
                   </span>
                 </>
               )}
@@ -1179,9 +1179,9 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
             </div>
             <div className="space-y-3 px-5 py-4">
               <div className="rounded bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800">
-                Diskon Rp {Math.round(orderDiscountAmountRp).toLocaleString('id-ID')}
+                Diskon {formatIDR(Math.round(orderDiscountAmountRp))}
                 {gateThresholds?.amount != null && (
-                  <> · melewati ambang Rp {gateThresholds.amount.toLocaleString('id-ID')}</>
+                  <> · melewati ambang {formatIDR(gateThresholds.amount)}</>
                 )}
                 {gateThresholds?.percent != null && (
                   <> · atau &gt; {gateThresholds.percent}%</>
@@ -1236,7 +1236,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
             <div className="flex-1">
               <div className="font-semibold text-blue-900">Menunggu approval owner</div>
               <div className="mt-1 text-xs text-blue-800">
-                Diskon Rp {Math.round(orderDiscountAmountRp).toLocaleString('id-ID')} · Alasan: "{discountReason}"
+                Diskon {formatIDR(Math.round(orderDiscountAmountRp))} · Alasan: "{discountReason}"
               </div>
               <div className="mt-2 flex gap-2">
                 <button

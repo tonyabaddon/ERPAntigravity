@@ -10,13 +10,13 @@ import {
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { ApDashboardLite } from '../../../types';
 import KpiCard from '../../ui/KpiCard';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   onOpenPembayaran: (supplierId: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = (n: number) =>
   n >= 1_000_000_000 ? `Rp ${(n / 1_000_000_000).toFixed(2).replace('.', ',')}M`
     : n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1).replace('.', ',')}jt`
@@ -163,7 +163,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                       )}
                     </td>
                     <td className="px-5 py-4 text-right text-sm font-extrabold" style={{ color: overdueRow ? '#b91c1c' : '#012749' }}>
-                      {fmtRp(s.outstanding)}
+                      {formatIDR(s.outstanding)}
                     </td>
                     <td className="px-5 py-4 text-right">
                       <button onClick={() => onOpenPembayaran(s.supplier_id)}

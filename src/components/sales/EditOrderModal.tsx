@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import type { Order, OrderItem } from '../../lib/sales/types';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   order: Order;
@@ -177,7 +178,7 @@ export function EditOrderModal({ order, onClose, onSaved }: Props) {
                       />
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'ui-monospace,monospace' }}>
-                      Rp {it.subtotal.toLocaleString('id-ID')}
+                      {formatIDR(it.subtotal)}
                     </td>
                   </tr>
                 ))}

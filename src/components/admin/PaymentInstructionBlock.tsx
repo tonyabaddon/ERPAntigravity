@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
 import { platformSettingsApi } from '../../lib/platformSettingsApi';
 import type { PlatformSettings } from '../../lib/platformSettingsApi';
+import { formatIDR } from '../../lib/formatIDR';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,14 +43,10 @@ const FONT = 'Plus Jakarta Sans, system-ui, sans-serif';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatIDR(n: number): string {
-  return new Intl.NumberFormat('id-ID').format(n);
-}
-
 function buildMessage(t: TenantInfo, s: PlatformSettings, p: Plan): string {
   return `Selamat! Toko Anda "${t.name}" sudah aktif di Caleo.
 
-Untuk aktivasi paket ${t.plan_code} (Rp ${formatIDR(p.price_annual)}/tahun):
+Untuk aktivasi paket ${t.plan_code} (${formatIDR(p.price_annual)}/tahun):
 🏦 Transfer ke: ${s.bank_name ?? '-'} ${s.bank_account_no ?? '-'}
    a/n: ${s.bank_account_name ?? '-'}
 💬 Berita transfer: ${t.slug}

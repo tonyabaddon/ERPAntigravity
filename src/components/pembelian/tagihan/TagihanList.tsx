@@ -7,6 +7,7 @@ import { Plus, Search } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -15,7 +16,6 @@ interface Props {
   onOpenPembayaran?: (supplierId: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -155,17 +155,17 @@ export default function TagihanList({ showToast, onCreate, onOpenDetail, onOpenP
                         {t.pesanan?.pesanan_number ?? (t.pesanan_id ? `PSN-${t.pesanan_id.slice(0, 8).toUpperCase()}` : '—')}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-right text-sm font-bold">{fmtRp(t.total)}</td>
+                    <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(t.total)}</td>
                     <td className="px-5 py-4">
                       <div className="text-[11px] text-gray-600 mb-1">
-                        <span className="font-semibold text-green-700">{fmtRp(paid)}</span>
+                        <span className="font-semibold text-green-700">{formatIDR(paid)}</span>
                         <span className="text-gray-400"> / </span>
-                        <span className="text-gray-600">{fmtRp(t.total)}</span>
+                        <span className="text-gray-600">{formatIDR(t.total)}</span>
                       </div>
                       <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <div className={`h-full ${paid >= t.total ? 'bg-green-500' : paid > 0 ? 'bg-sky-500' : 'bg-amber-400'}`} style={{ width: `${pct}%` }} />
                       </div>
-                      {outstanding > 0 && <div className="text-[10px] text-gray-400 mt-0.5">Sisa {fmtRp(outstanding)}</div>}
+                      {outstanding > 0 && <div className="text-[10px] text-gray-400 mt-0.5">Sisa {formatIDR(outstanding)}</div>}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusBadge(eff)}`}>{statusLabel(eff)}</span>

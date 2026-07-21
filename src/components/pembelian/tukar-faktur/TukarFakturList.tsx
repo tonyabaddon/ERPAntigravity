@@ -5,8 +5,8 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { tukarFakturService } from '../../../lib/tukarFakturService';
 import type { DbTukarFaktur, TukarFakturStatus } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const daysFromToday = (s?: string | null): number | null => {
@@ -164,13 +164,13 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold">{tf.supplier?.name ?? '—'}</td>
                     <td className="px-5 py-4 text-center text-sm">{tf.tagihans?.length ?? 0}</td>
-                    <td className="px-5 py-4 text-right text-sm font-bold">{fmtRp(tf.total_amount)}</td>
+                    <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(tf.total_amount)}</td>
                     <td
                       className={`px-5 py-4 text-right text-sm ${
                         Number(tf.paid_amount) > 0 ? 'font-bold text-sky-700' : 'text-gray-400'
                       }`}
                     >
-                      {fmtRp(tf.paid_amount)}
+                      {formatIDR(tf.paid_amount)}
                     </td>
                     <td className="px-5 py-4 text-center">
                       <div className={`text-xs font-bold ${dueSoon ? 'text-amber-700' : 'text-gray-700'}`}>
@@ -223,7 +223,7 @@ export default function TukarFakturList({ showToast, onCreate, onOpenDetail }: P
                     Subtotal Outstanding ({outstandingList.length} TF)
                   </td>
                   <td className="px-5 py-3 text-right text-sm font-extrabold" style={{ color: '#012749' }}>
-                    {fmtRp(totalOutstanding)}
+                    {formatIDR(totalOutstanding)}
                   </td>
                   <td colSpan={4}></td>
                 </tr>

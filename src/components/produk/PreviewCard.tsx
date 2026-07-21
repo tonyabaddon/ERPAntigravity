@@ -1,6 +1,7 @@
 // src/components/produk/PreviewCard.tsx
 import React from 'react';
 import type { Warehouse } from '../../types';
+import { formatIDR } from '../../lib/formatIDR';
 
 export interface ProductPreviewState {
   name: string;          // computed from specs (auto-name)
@@ -59,7 +60,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
             </div>
             <h6 className="text-[13px] font-extrabold text-[#012749] truncate">{state.name || 'Nama produk…'}</h6>
             <p className="text-[10.5px] text-slate-500">
-              Rp {state.price.toLocaleString('id-ID')} / {state.unit}
+              {formatIDR(state.price)} / {state.unit}
               {marginPct !== null && ` · Margin ${marginPct.toFixed(1)}%`}
             </p>
           </div>

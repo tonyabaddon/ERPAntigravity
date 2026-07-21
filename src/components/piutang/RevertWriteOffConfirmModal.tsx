@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PiutangRow } from '../../types';
 import { revertTempoWriteOff } from '../../lib/piutang/writeOff';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface RevertWriteOffConfirmModalProps {
   row: PiutangRow;
@@ -10,9 +11,6 @@ interface RevertWriteOffConfirmModalProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-function fmtRp(n: number): string {
-  return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n));
-}
 
 function mapErrorToToast(msg: string): string {
   if (msg.startsWith('NOT_WRITTEN_OFF:')) return 'Invoice tidak dalam status tulis-off';
@@ -58,7 +56,7 @@ export default function RevertWriteOffConfirmModal({
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
-            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{fmtRp(row.order.total)}</span></div>
+            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{formatIDR(row.order.total)}</span></div>
             {row.order.write_off_reason && (
               <div><span className="text-gray-500">Alasan tulis-off:</span> <span className="italic">{row.order.write_off_reason}</span></div>
             )}

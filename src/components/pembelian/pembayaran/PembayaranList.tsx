@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { DbPembayaran, PembayaranStatus } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -11,7 +12,6 @@ interface Props {
   onOpenDetail: (pmbNumber: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -101,7 +101,7 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
                     <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">{p.payment_method}</span>
                     {p.account_label && <div className="text-[11px] text-gray-500 mt-1">{p.account_label}</div>}
                   </td>
-                  <td className="px-5 py-4 text-right text-sm font-bold">{fmtRp(p.amount_total)}</td>
+                  <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(p.amount_total)}</td>
                   <td className="px-5 py-4 text-center">
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${STATUS_BADGE[p.status]}`}>
                       {p.status === 'LUNAS' ? '● Lunas' : 'VOIDED'}

@@ -9,6 +9,7 @@ import { supplierService } from '../../../lib/pembelianService';
 import type { DbPesanan, DbSupplier, PesananItemDraft, RecordPesananPayload } from '../../../types';
 import SkuPickerWithInlineCreate from '../bnl/SkuPickerWithInlineCreate';
 import { NumberInput } from '../../ui/NumberInput';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -24,7 +25,6 @@ interface ItemRow {
   unit_cost: number;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 
 export default function PesananFormPage({ showToast, onCancel, onSaved, editing }: Props) {
   const [supplier, setSupplier] = useState<DbSupplier | null>(editing?.supplier ?? null);
@@ -215,7 +215,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
                 <td className="py-3 px-2"><NumberInput value={it.unit_cost}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: n } : p))}
                   className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" /></td>
-                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{fmtRp(it.qty * it.unit_cost)}</td>
+                <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: '#012749' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
                   <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
                     <X className="w-4 h-4" />
@@ -247,15 +247,15 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-2xl p-4">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Subtotal</div>
-            <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(subtotal)}</div>
+            <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(subtotal)}</div>
           </div>
           <div className="bg-amber-50 rounded-2xl p-4">
             <div className="text-[11px] text-amber-700 uppercase font-semibold">Pajak ({(taxRate * 100).toFixed(1)}%)</div>
-            <div className="text-xl font-extrabold mt-1 text-amber-700">{fmtRp(taxAmount)}</div>
+            <div className="text-xl font-extrabold mt-1 text-amber-700">{formatIDR(taxAmount)}</div>
           </div>
           <div className="bg-indigo-50 rounded-2xl p-4">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total</div>
-            <div className="text-xl font-extrabold mt-1 text-indigo-700">{fmtRp(total)}</div>
+            <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(total)}</div>
           </div>
         </div>
       </div>

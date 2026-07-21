@@ -12,6 +12,7 @@ import {
   WarehouseTransferStatus,
 } from '../../lib/warehouseTransferService';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { formatIDR } from '../../lib/formatIDR';
 
 // ─── Status badge ────────────────────────────────────────────────────────────
 
@@ -114,8 +115,6 @@ export default function WarehouseTransferDetailScreen({
   const showPartialWarning = isReceiver && totalLoss > 0;
   // Persisted loss value shown for closed PARTIAL transfers (from RPC).
   const persistedLossValue = header.status === 'PARTIAL' ? header.total_loss_value_rp ?? null : null;
-  const fmtRp = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
-
   // ── actions ────────────────────────────────────────────────────────────────
 
   function handleSemaSesuai() {
@@ -236,7 +235,7 @@ export default function WarehouseTransferDetailScreen({
             <span className="text-xs text-slate-400 uppercase tracking-wide">Nilai Kerugian</span>
             <div className="mt-0.5 font-semibold tabular-nums text-red-700">
               {persistedLossValue !== null && persistedLossValue > 0
-                ? `${fmtRp(persistedLossValue)} (${header.total_loss_qty ?? 0} pcs)`
+                ? `${formatIDR(persistedLossValue)} (${header.total_loss_qty ?? 0} pcs)`
                 : `— (${header.total_loss_qty ?? 0} pcs)`}
             </div>
             {persistedLossValue === null && (
@@ -261,7 +260,7 @@ export default function WarehouseTransferDetailScreen({
             {totalLossValueLive > 0 && (
               <>
                 {' '}
-                (≈ <strong className="tabular-nums">{fmtRp(totalLossValueLive)}</strong>)
+                (≈ <strong className="tabular-nums">{formatIDR(totalLossValueLive)}</strong>)
               </>
             )}
             . Setelah &ldquo;Konfirmasi&rdquo;, sistem otomatis:{' '}

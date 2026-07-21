@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ApprovalRequest } from '../../types';
 import { supabase } from '../../lib/supabaseClient';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   request: ApprovalRequest;
@@ -20,7 +21,7 @@ interface CustomerSummary {
 
 function fmtRp(n: number | undefined): string {
   if (n == null) return '—';
-  return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n));
+  return formatIDR(Math.round(n));
 }
 
 export default function CustomerCreditActivateApprovalRequestRow({

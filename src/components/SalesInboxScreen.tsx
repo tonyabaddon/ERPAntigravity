@@ -582,6 +582,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
 // ─── Right Panel ──────────────────────────────────────────────────────────────
 
 import type { DbOrder } from '../types';
+import { formatIDR } from '../lib/formatIDR';
 
 interface RightPanelProps {
   conv: ConversationWithMessages;
@@ -671,7 +672,7 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
               {order.gjp_order_id ?? order.id.slice(0, 8)}
             </div>
             <div className="text-sm font-extrabold text-[#2d8a4e]">
-              Rp {order.total.toLocaleString('id-ID')}
+              {formatIDR(order.total)}
             </div>
             <div className="text-[9px] text-gray-400 mt-0.5">
               {order.status.replace(/_/g, ' ')}

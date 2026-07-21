@@ -17,6 +17,7 @@ import type {
 } from '../../../types';
 import TfQuickAddTagihanModal from './TfQuickAddTagihanModal';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -51,7 +52,6 @@ interface OutstandingTagihanRow {
   paid_amount: number;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -477,7 +477,7 @@ export default function TukarFakturFormPage({
                             </div>
                           </div>
                           <div className="text-sm font-bold" style={{ color: '#012749' }}>
-                            {fmtRp(Number(t.total))}
+                            {formatIDR(Number(t.total))}
                           </div>
                         </div>
                       </button>
@@ -541,7 +541,7 @@ export default function TukarFakturFormPage({
                           {fmtDate(s.payment_due_at)}
                         </td>
                         <td className="px-4 py-3 text-right text-sm font-bold">
-                          {fmtRp(s.total)}
+                          {formatIDR(s.total)}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
@@ -580,7 +580,7 @@ export default function TukarFakturFormPage({
           </div>
           <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total Bundle</div>
-            <div className="text-xl font-extrabold mt-1 text-indigo-700">{fmtRp(totalBundle)}</div>
+            <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(totalBundle)}</div>
             <div className="text-[11px] text-indigo-700/80 mt-1">
               {selected.length} Faktur
               {selected.some(s => s.isQuickAdd)

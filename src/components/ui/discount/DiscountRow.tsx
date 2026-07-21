@@ -2,6 +2,7 @@ import React from 'react';
 import type { DiscountType } from '../../../types';
 import { DiscountInlineInput } from './DiscountInlineInput';
 import { computeDiscountAmount } from './computeDiscountAmount';
+import { formatIDR } from '../../../lib/formatIDR';
 
 export interface DiscountRowProps {
   label?: string;
@@ -10,10 +11,6 @@ export interface DiscountRowProps {
   base: number;
   onChange: (value: number | null, type: DiscountType) => void;
   disabled?: boolean;
-}
-
-function fmtRp(n: number): string {
-  return new Intl.NumberFormat('id-ID').format(n);
 }
 
 export const DiscountRow: React.FC<DiscountRowProps> = ({
@@ -34,7 +31,7 @@ export const DiscountRow: React.FC<DiscountRowProps> = ({
       </div>
       <div className="flex justify-between text-[11px] text-orange-700">
         <span></span>
-        <span className="font-mono">= − Rp {fmtRp(amount)}</span>
+        <span className="font-mono">= − {formatIDR(amount)}</span>
       </div>
     </div>
   );

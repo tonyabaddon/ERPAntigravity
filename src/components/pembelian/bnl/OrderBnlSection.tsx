@@ -6,6 +6,7 @@ import { Zap, Plus } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice } from '../../../types';
 import PiStatusBadge from './PiStatusBadge';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   orderId: string;
@@ -14,7 +15,6 @@ interface Props {
   newTabUrl?: boolean;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 
 export default function OrderBnlSection({ orderId, customerName, newTabUrl = true }: Props) {
   const [pis, setPis] = useState<DbPurchaseInvoice[]>([]);
@@ -80,7 +80,7 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
             <div className="font-bold text-[#012749]">{pi.pi_number}</div>
             <PiStatusBadge pi={pi} />
             <div className="text-gray-500 flex-1">{pi.supplier?.name ?? '—'} • {pi.items?.length ?? 0} item</div>
-            <div className="font-bold text-[#012749]">{fmtRp(pi.total)}</div>
+            <div className="font-bold text-[#012749]">{formatIDR(pi.total)}</div>
           </a>
         ))}
       </div>

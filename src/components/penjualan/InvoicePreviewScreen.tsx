@@ -20,6 +20,7 @@ import type { KasirTransaction } from '../../types';
 import { supabase } from '../../lib/supabaseClient';
 import SalesInvoicePDF, { type InvoiceVariant, type InvoicePrintMode } from './SalesInvoicePDF';
 import TambahLayananModal from './TambahLayananModal';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   orderId: string;
@@ -116,7 +117,7 @@ export default function InvoicePreviewScreen({
     const total = transaction.total_amount ?? transaction.subtotal;
     const summary =
       `Halo ${transaction.customer_name ?? ''}, berikut invoice ${transaction.invoice_number ?? ''} ` +
-      `dengan total Rp ${Math.round(total).toLocaleString('id-ID')}. Terima kasih atas pesanannya.`;
+      `dengan total ${formatIDR(Math.round(total))}. Terima kasih atas pesanannya.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(summary)}`, '_blank');
   };
 
@@ -265,18 +266,18 @@ export default function InvoicePreviewScreen({
                           </>
                         )}
                         <div className="text-slate-500">Subtotal</div>
-                        <div className="font-semibold text-right">Rp {Math.round(grossSubtotal).toLocaleString('id-ID')}</div>
+                        <div className="font-semibold text-right">{formatIDR(Math.round(grossSubtotal))}</div>
                         {(transaction.ongkir_amount ?? 0) > 0 && (
                           <>
                             <div className="text-slate-500">Ongkir</div>
-                            <div className="font-semibold text-right">Rp {Math.round(transaction.ongkir_amount ?? 0).toLocaleString('id-ID')}</div>
+                            <div className="font-semibold text-right">{formatIDR(Math.round(transaction.ongkir_amount ?? 0))}</div>
                           </>
                         )}
                         {totalDiscount > 0 && (
                           <>
                             <div className="text-slate-500">{discountLabel}</div>
                             <div className="font-semibold text-right text-rose-600">
-                              − Rp {Math.round(totalDiscount).toLocaleString('id-ID')}
+                              − {formatIDR(Math.round(totalDiscount))}
                             </div>
                           </>
                         )}
@@ -286,7 +287,7 @@ export default function InvoicePreviewScreen({
                   <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
                     <div className="text-sm font-bold text-slate-700">TOTAL</div>
                     <div className="text-xl font-extrabold text-[#012749]">
-                      Rp {Math.round(transaction.total_amount ?? transaction.subtotal).toLocaleString('id-ID')}
+                      {formatIDR(Math.round(transaction.total_amount ?? transaction.subtotal))}
                     </div>
                   </div>
                   <button

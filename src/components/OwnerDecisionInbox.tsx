@@ -15,6 +15,7 @@ import type { SupplierClaimRow } from '../lib/supplierClaims/types';
 import { supabase } from '../lib/supabaseClient';
 import { useWarehouses } from '../hooks/useWarehouses';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
+import { formatIDR } from '../lib/formatIDR';
 
 interface OwnerDecisionInboxProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -37,14 +38,6 @@ type AgingRow = {
   initiated_at: string;
   hours_pending: number;
 };
-
-function formatIDR(n: number): string {
-  try {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
-  } catch {
-    return `Rp ${n.toLocaleString('id-ID')}`;
-  }
-}
 
 function formatDate(iso: string): string {
   try {

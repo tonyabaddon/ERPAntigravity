@@ -11,6 +11,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import { navigate } from '../../../lib/urlRoute';
 import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
+import { formatIDR } from '../../../lib/formatIDR';
 
 type TagihanRow = DbPurchaseInvoice & {
   pesanan_id?: string | null;
@@ -26,7 +27,6 @@ interface Props {
   onOpenPembayaran?: (supplierId: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -241,15 +241,15 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
         <div className="grid grid-cols-3 gap-4 mb-3">
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Tagihan</div>
-            <div className="text-lg font-extrabold mt-1" style={{ color: '#012749' }}>{fmtRp(tgh.total)}</div>
+            <div className="text-lg font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(tgh.total)}</div>
           </div>
           <div className="bg-green-50 rounded-lg p-3">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Sudah Dibayar</div>
-            <div className="text-lg font-extrabold mt-1 text-green-700">{fmtRp(paid)}</div>
+            <div className="text-lg font-extrabold mt-1 text-green-700">{formatIDR(paid)}</div>
           </div>
           <div className="bg-amber-50 rounded-lg p-3">
             <div className="text-[11px] text-amber-700 uppercase font-semibold">Sisa Bayar</div>
-            <div className="text-lg font-extrabold mt-1 text-amber-700">{fmtRp(outstanding)}</div>
+            <div className="text-lg font-extrabold mt-1 text-amber-700">{formatIDR(outstanding)}</div>
           </div>
         </div>
         <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -299,19 +299,19 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                         <span className="text-sm">{it.product_name}</span>
                       </div>
                       {(it.master_unit_cost ?? 0) > it.unit_cost && (
-                        <div className="text-[10px] text-slate-400 mt-0.5">List {fmtRp(it.master_unit_cost ?? 0)}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">List {formatIDR(it.master_unit_cost ?? 0)}</div>
                       )}
                     </td>
                     <td className="py-3 text-center font-semibold">{it.qty}</td>
-                    <td className="py-3 text-right">{fmtRp(it.unit_cost)}</td>
+                    <td className="py-3 text-right">{formatIDR(it.unit_cost)}</td>
                     {hasItemDiscount && (
                       <td className="py-3 text-right text-orange-700 text-sm">
                         {(it.discount_amount_rp ?? 0) > 0
-                          ? `− ${fmtRp(it.discount_amount_rp ?? 0)}`
+                          ? `− ${formatIDR(it.discount_amount_rp ?? 0)}`
                           : '—'}
                       </td>
                     )}
-                    <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(it.subtotal)}</td>
+                    <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.subtotal)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -319,7 +319,7 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                 {showBreakdown && (
                   <tr>
                     <td colSpan={colCount - 1} className="py-2 text-right text-xs font-semibold text-gray-500">SUBTOTAL</td>
-                    <td className="py-2 text-right text-sm font-bold text-gray-700">{fmtRp(tgh.subtotal)}</td>
+                    <td className="py-2 text-right text-sm font-bold text-gray-700">{formatIDR(tgh.subtotal)}</td>
                   </tr>
                 )}
                 {hasOrderDiscount && (
@@ -328,13 +328,13 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
                       Diskon Tagihan{tgh.discount_type === 'PERCENT' ? ` (${tgh.discount_value}%)` : ''}
                     </td>
                     <td className="py-1 text-right text-sm font-semibold text-orange-700">
-                      − {fmtRp(tgh.discount_amount_rp ?? 0)}
+                      − {formatIDR(tgh.discount_amount_rp ?? 0)}
                     </td>
                   </tr>
                 )}
                 <tr>
                   <td colSpan={colCount - 1} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL TAGIHAN</td>
-                  <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(tgh.total)}</td>
+                  <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(tgh.total)}</td>
                 </tr>
               </tfoot>
             </table>

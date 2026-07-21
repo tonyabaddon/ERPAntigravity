@@ -2,6 +2,7 @@ import type { Order, PaymentType } from '../../lib/sales/types';
 import type { TypeTab } from '../../lib/sales/typeTabConfig';
 import { getQuickAction } from '../../lib/sales/quickActionMap';
 import { QuickActionPill } from './QuickActionPill';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props {
   order: Order;
@@ -99,7 +100,7 @@ export function OrderRow({ order, expanded, typeTab, onToggle, onQuickAction, re
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: 'var(--color-secondary)', fontWeight: 700, fontFamily: 'ui-monospace,monospace' }}>Rp {order.total.toLocaleString('id-ID')}</div>
+            <div style={{ fontSize: 13, color: 'var(--color-secondary)', fontWeight: 700, fontFamily: 'ui-monospace,monospace' }}>{formatIDR(order.total)}</div>
             <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{order.time_ago}</div>
           </div>
           {action && (

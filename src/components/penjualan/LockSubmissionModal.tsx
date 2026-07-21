@@ -4,6 +4,7 @@ import { requestRakitLock, approveAndAmendRakitLock, supabaseService } from '../
 import type { RakitJobLine, RakitTrackingMode, RakitComponent } from '../../types';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface LockSubmissionModalProps {
   transactionId: string;
@@ -50,9 +51,6 @@ type StockOption = {
   harga_modal: number | null;
 };
 
-function formatRp(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
 
 function newKey(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -324,7 +322,7 @@ export default function LockSubmissionModal({
                     <div key={c.key} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-[12px] bg-slate-50 rounded-lg px-2 py-1.5">
                       <div className="min-w-0">
                         <div className="font-bold truncate">{c.sku} — {c.name}</div>
-                        <div className="text-[10px] text-slate-500">FIFO {formatRp(c.fifo_cost)}</div>
+                        <div className="text-[10px] text-slate-500">FIFO {formatIDR(c.fifo_cost)}</div>
                       </div>
                       <input
                         type="number"
@@ -339,7 +337,7 @@ export default function LockSubmissionModal({
                         value={c.warehouse_id || null}
                         onChange={(id) => updateComponent(d.id, c.key, { warehouse_id: id })}
                       />
-                      <div className="font-bold text-amber-700">{formatRp(c.qty * c.fifo_cost)}</div>
+                      <div className="font-bold text-amber-700">{formatIDR(c.qty * c.fifo_cost)}</div>
                       <button
                         type="button"
                         onClick={() => removeComponent(d.id, c.key)}
@@ -369,7 +367,7 @@ export default function LockSubmissionModal({
                               className="w-full text-left px-3 py-2 text-[12px] hover:bg-slate-50 border-b last:border-b-0 border-slate-100"
                             >
                               <div className="font-bold">{opt.sku} — {opt.name}</div>
-                              <div className="text-[10px] text-slate-500">Atas: {opt.stock_atas} · Bawah: {opt.stock_bawah} · HPP {formatRp(opt.harga_modal ?? 0)}</div>
+                              <div className="text-[10px] text-slate-500">Atas: {opt.stock_atas} · Bawah: {opt.stock_bawah} · HPP {formatIDR(opt.harga_modal ?? 0)}</div>
                             </button>
                           ))
                         )}

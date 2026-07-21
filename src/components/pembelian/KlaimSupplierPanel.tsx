@@ -15,19 +15,10 @@ import { listSupplierClaims, resolveSupplierClaim } from '../../lib/supplierClai
 import type {
   SupplierClaimRow, ClaimStatus, ClaimOutcome,
 } from '../../lib/supplierClaims/types';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface KlaimSupplierPanelProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
-}
-
-function formatIDR(n: number): string {
-  try {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency', currency: 'IDR', maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `Rp ${n.toLocaleString('id-ID')}`;
-  }
 }
 
 function formatDate(iso: string | null): string {

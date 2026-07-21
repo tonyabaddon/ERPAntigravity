@@ -7,6 +7,7 @@ import SupplierPicker from './form/SupplierPicker';
 import InlineSupplierForm from './form/InlineSupplierForm';
 import StockPicker from './form/StockPicker';
 import ItemRow from './form/ItemRow';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface PurchaseOrderFormPageProps {
   po?: DbPurchaseOrder;                     // undefined = create, defined = edit
@@ -21,9 +22,6 @@ interface PurchaseOrderFormPageProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
-}
 
 function isPastDate(iso: string): boolean {
   if (!iso) return false;
@@ -301,7 +299,7 @@ export default function PurchaseOrderFormPage({
           <div className="w-80 space-y-2 text-sm">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal</span>
-              <span className="font-semibold text-gray-800">{formatRupiah(subtotal)}</span>
+              <span className="font-semibold text-gray-800">{formatIDR(subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-600 items-center">
               <span className="flex items-center gap-2">
@@ -320,11 +318,11 @@ export default function PurchaseOrderFormPage({
                   className="w-10 text-center text-xs border border-gray-200 rounded px-1 py-0.5 disabled:opacity-40"
                 />%
               </span>
-              <span className="font-semibold text-gray-800">{taxEnabled ? formatRupiah(taxAmount) : '—'}</span>
+              <span className="font-semibold text-gray-800">{taxEnabled ? formatIDR(taxAmount) : '—'}</span>
             </div>
             <div className="border-t-2 border-gray-200 pt-2 flex justify-between items-baseline">
               <span className="text-sm font-bold text-gray-900">Total</span>
-              <span className="text-xl font-extrabold text-indigo-600">{formatRupiah(total)}</span>
+              <span className="text-xl font-extrabold text-indigo-600">{formatIDR(total)}</span>
             </div>
           </div>
         </div>
@@ -335,7 +333,7 @@ export default function PurchaseOrderFormPage({
         <p className="text-xs text-gray-400">
           Total <span className="font-bold text-gray-700">{items.length} item</span>
           {' · '}
-          <span className="font-bold text-gray-700">{formatRupiah(total)}</span>
+          <span className="font-bold text-gray-700">{formatIDR(total)}</span>
         </p>
         <div className="flex gap-2">
           {/* PDF button only available after PO is ORDERED (in detail view) */}

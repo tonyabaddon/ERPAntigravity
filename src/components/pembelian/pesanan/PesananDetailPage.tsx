@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { pesananService } from '../../../lib/pesananService';
 import type { DbPesanan, PesananStatus } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   pesananNumber: string;
@@ -19,7 +20,6 @@ interface Props {
   onCreateTagihan: (p: DbPesanan) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -155,8 +155,8 @@ export default function PesananDetailPage({
             <FileText className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">Total</div>
           </div>
-          <div className="text-xl font-extrabold text-indigo-700">{fmtRp(pesanan.total)}</div>
-          <div className="text-[11px] text-gray-500 mt-1">Subtotal {fmtRp(pesanan.subtotal)} + Pajak {fmtRp(pesanan.tax_amount)}</div>
+          <div className="text-xl font-extrabold text-indigo-700">{formatIDR(pesanan.total)}</div>
+          <div className="text-[11px] text-gray-500 mt-1">Subtotal {formatIDR(pesanan.subtotal)} + Pajak {formatIDR(pesanan.tax_amount)}</div>
         </div>
       </div>
 
@@ -209,8 +209,8 @@ export default function PesananDetailPage({
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 text-right">{fmtRp(it.unit_cost)}</td>
-                  <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(it.subtotal)}</td>
+                  <td className="py-3 text-right">{formatIDR(it.unit_cost)}</td>
+                  <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.subtotal)}</td>
                 </tr>
               );
             })}
@@ -218,7 +218,7 @@ export default function PesananDetailPage({
           <tfoot>
             <tr>
               <td colSpan={4} className="py-3 text-right text-xs font-semibold text-gray-500">TOTAL</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(pesanan.total)}</td>
+              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(pesanan.total)}</td>
             </tr>
           </tfoot>
         </table>

@@ -8,6 +8,7 @@ import { type FilterState, resolveRange, inRange } from '../../../lib/dateRange'
 import KpiCard from '../../ui/KpiCard';
 import PiStatusBadge from './PiStatusBadge';
 import MarkPaidModal from './MarkPaidModal';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -15,7 +16,6 @@ interface Props {
   onOpenDetail: (piNumber: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = (n: number) =>
   n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1).replace('.', ',')}jt` :
     n >= 1_000 ? `Rp ${Math.round(n / 1_000)}rb` : `Rp ${n}`;
@@ -151,7 +151,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
                   <td className="px-5 py-4">
                     <div className="text-sm font-semibold text-indigo-700">{shortOrderRef(pi.order_id)}</div>
                   </td>
-                  <td className="px-5 py-4 text-right text-sm font-bold">{fmtRp(pi.total)}</td>
+                  <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(pi.total)}</td>
                   <td className="px-5 py-4 text-center"><PiStatusBadge pi={pi} /></td>
                   <td className="px-5 py-4 text-right">
                     <div className="inline-flex gap-1">

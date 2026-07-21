@@ -26,8 +26,8 @@ import type { PiutangRow, PiutangTier } from '../../types';
 import WriteOffRequestModal from './WriteOffRequestModal';
 import RevertWriteOffConfirmModal from './RevertWriteOffConfirmModal';
 import CashAccountPicker from '../akuntansi/CashAccountPicker';
+import { formatIDR } from '../../lib/formatIDR';
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtRpShort = (n: number) =>
   n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1).replace('.', ',')}jt` :
   n >= 1_000     ? `Rp ${Math.round(n / 1_000)}rb` : `Rp ${n}`;
@@ -279,10 +279,10 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                     </td>
                     {/* F-11: show sisa outstanding (post-partial). Fall back to total when nothing paid yet. */}
                     <td className="px-5 py-3 text-right font-bold" style={{ color: '#012749' }}>
-                      {fmtRp(outstandingOf(r))}
+                      {formatIDR(outstandingOf(r))}
                       {(r.order.piutang_paid_amount ?? 0) > 0 && (
                         <div className="text-[10px] font-medium text-gray-500 mt-0.5">
-                          dari {fmtRp(r.order.total)}
+                          dari {formatIDR(r.order.total)}
                         </div>
                       )}
                     </td>
@@ -481,7 +481,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
       return;
     }
     if (!amountValid) {
-      showToast(`Jumlah bayar harus antara Rp 1 dan ${fmtRp(outstandingSisa)}`, 'warning');
+      showToast(`Jumlah bayar harus antara Rp 1 dan ${formatIDR(outstandingSisa)}`, 'warning');
       return;
     }
     setSaving(true);
@@ -504,7 +504,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         showToast(`Invoice ${shortId} ditandai Lunas${proofUrl ? ' (bukti tersimpan)' : ''}.`, 'success');
       } else {
         showToast(
-          `Pembayaran parsial ${fmtRp(amount)} tercatat untuk invoice ${shortId}. Sisa ${fmtRp(sisaAfter)}.`,
+          `Pembayaran parsial ${formatIDR(amount)} tercatat untuk invoice ${shortId}. Sisa ${formatIDR(sisaAfter)}.`,
           'success'
         );
       }
@@ -530,11 +530,11 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
         <div className="px-5 py-4 space-y-3">
           <div className="bg-gray-50 rounded-lg px-3 py-3 text-[13px] space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{fmtRp(row.order.total)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{formatIDR(row.order.total)}</span></div>
             {(row.order.piutang_paid_amount ?? 0) > 0 && (
-              <div className="flex justify-between"><span className="text-gray-500">Sudah Dibayar</span><span className="font-semibold">{fmtRp(row.order.piutang_paid_amount ?? 0)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Sudah Dibayar</span><span className="font-semibold">{formatIDR(row.order.piutang_paid_amount ?? 0)}</span></div>
             )}
-            <div className="flex justify-between"><span className="text-gray-500">Sisa Outstanding</span><span className="font-bold text-[#012749]">{fmtRp(outstandingSisa)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Sisa Outstanding</span><span className="font-bold text-[#012749]">{formatIDR(outstandingSisa)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Jatuh Tempo</span><span className="font-semibold">{fmtDate(row.order.due_date)}</span></div>
           </div>
           {/* F-11: partial-payment amount input + sisa-setelah-bayar preview. */}
@@ -568,11 +568,11 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
               </button>
               {amountValid ? (
                 <span className="text-slate-600">
-                  Sisa setelah bayar: <b>{fmtRp(sisaAfter)}</b>
+                  Sisa setelah bayar: <b>{formatIDR(sisaAfter)}</b>
                   {isFullClose ? ' — invoice akan Lunas' : ' — invoice tetap tempo'}
                 </span>
               ) : (
-                <span className="text-rose-600">Isi antara Rp 1 dan {fmtRp(outstandingSisa)}</span>
+                <span className="text-rose-600">Isi antara Rp 1 dan {formatIDR(outstandingSisa)}</span>
               )}
             </div>
           </div>
@@ -617,7 +617,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
               ? 'Menyimpan...'
               : isFullClose
               ? 'Konfirmasi Lunas'
-              : `Catat Bayar ${fmtRp(amount)}`}
+              : `Catat Bayar ${formatIDR(amount)}`}
           </button>
         </div>
       </div>

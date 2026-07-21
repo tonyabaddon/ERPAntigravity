@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PiutangRow } from '../../types';
 import { requestTempoWriteOff } from '../../lib/piutang/writeOff';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface WriteOffRequestModalProps {
   row: PiutangRow;
@@ -12,9 +13,6 @@ interface WriteOffRequestModalProps {
 
 const MIN_REASON_LEN = 10;
 
-function fmtRp(n: number): string {
-  return 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(n));
-}
 
 function mapErrorToToast(msg: string): string {
   if (msg.startsWith('ORDER_NOT_TEMPO:')) return 'Invoice tidak bisa di-tulis-off (sudah lunas / sudah ditulis-off)';
@@ -66,7 +64,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
-            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{fmtRp(row.order.total)}</span></div>
+            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{formatIDR(row.order.total)}</span></div>
           </div>
 
           <div>

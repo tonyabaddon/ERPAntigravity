@@ -3,6 +3,7 @@ import { KasirItem } from '../../types';
 import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { formatRp } from '../../lib/format';
+import { formatIDR } from '../../lib/formatIDR';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { isPreOrder } from '../../lib/wizard/validation';
@@ -184,7 +185,7 @@ function CartRow({
               Promo:{' '}
               {promo.promo_discount_type === 'PERCENT'
                 ? `${promo.promo_discount_value}%`
-                : `Rp ${promo.promo_discount_value.toLocaleString('id-ID')}/unit`}{' '}
+                : `${formatIDR(promo.promo_discount_value)}/unit`}{' '}
               = -{formatRp(promoDiscount.discount)}
             </span>
           </div>

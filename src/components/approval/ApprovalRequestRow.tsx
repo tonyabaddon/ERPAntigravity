@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ApprovalRequest, ApprovalRequestType, ApprovalStatus } from '../../types';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface ApprovalRequestRowProps {
   request: ApprovalRequest;
@@ -93,9 +94,6 @@ function relativeId(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID');
 }
 
-function formatRupiah(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
 
 /**
  * Distil a single-line, Indonesian summary out of the request payload.
@@ -128,7 +126,7 @@ function summarisePayload(req: ApprovalRequest): string {
       if (qty !== undefined) parts.push(`${qty > 0 ? '+' : ''}${qty} pcs`);
       if (warehouse) parts.push(`gudang ${warehouse}`);
       if (reason) parts.push(reason);
-      if (value !== undefined) parts.push(formatRupiah(value));
+      if (value !== undefined) parts.push(formatIDR(value));
       return parts.join(' · ') || 'Permintaan adjustment';
     }
     case 'opname': {
@@ -136,7 +134,7 @@ function summarisePayload(req: ApprovalRequest): string {
       const variance = num('variance_total_value');
       const parts: string[] = [];
       if (sessionId !== undefined) parts.push(`Sesi #${sessionId}`);
-      if (variance !== undefined) parts.push(`varians ${formatRupiah(variance)}`);
+      if (variance !== undefined) parts.push(`varians ${formatIDR(variance)}`);
       return parts.join(' · ') || 'Commit hasil opname';
     }
     case 'price_change': {
@@ -149,9 +147,9 @@ function summarisePayload(req: ApprovalRequest): string {
       if (sku) parts.push(sku);
       parts.push(fieldLabel);
       if (oldVal !== undefined && newVal !== undefined) {
-        parts.push(`${formatRupiah(oldVal)} → ${formatRupiah(newVal)}`);
+        parts.push(`${formatIDR(oldVal)} → ${formatIDR(newVal)}`);
       } else if (newVal !== undefined) {
-        parts.push(`baru ${formatRupiah(newVal)}`);
+        parts.push(`baru ${formatIDR(newVal)}`);
       }
       return parts.join(' · ');
     }
@@ -162,7 +160,7 @@ function summarisePayload(req: ApprovalRequest): string {
       const parts: string[] = [];
       if (sku) parts.push(sku);
       if (def !== undefined && req2 !== undefined) {
-        parts.push(`${formatRupiah(def)} → ${formatRupiah(req2)}`);
+        parts.push(`${formatIDR(def)} → ${formatIDR(req2)}`);
       }
       return parts.join(' · ') || 'Override harga kasir';
     }
@@ -171,7 +169,7 @@ function summarisePayload(req: ApprovalRequest): string {
       const total = num('total');
       const parts: string[] = ['Void transaksi'];
       if (txn) parts.push(txn);
-      if (total !== undefined) parts.push(formatRupiah(total));
+      if (total !== undefined) parts.push(formatIDR(total));
       return parts.join(' · ');
     }
     case 'kasir_refund': {
@@ -179,7 +177,7 @@ function summarisePayload(req: ApprovalRequest): string {
       const total = num('refund_total') ?? num('total');
       const parts: string[] = ['Refund'];
       if (txn) parts.push(txn);
-      if (total !== undefined) parts.push(formatRupiah(total));
+      if (total !== undefined) parts.push(formatIDR(total));
       return parts.join(' · ');
     }
     case 'initial_stock': {
@@ -192,7 +190,7 @@ function summarisePayload(req: ApprovalRequest): string {
       if (skuName) parts.push(skuName); else if (sku) parts.push(sku);
       if (sku && skuName) parts.push(`(${sku})`);
       if (qty !== undefined) parts.push(`+${qty} ${unit}`);
-      if (cost !== undefined && cost > 0) parts.push(`HPP ${formatRupiah(cost)}/${unit}`);
+      if (cost !== undefined && cost > 0) parts.push(`HPP ${formatIDR(cost)}/${unit}`);
       return parts.join(' · ') || 'Stok awal produk baru';
     }
     case 'kasir_discount': {
@@ -204,17 +202,17 @@ function summarisePayload(req: ApprovalRequest): string {
       const trigger = str('trigger_reason');
       const parts: string[] = ['Diskon manual'];
       if (dtype === 'PERCENT' && dvalue !== undefined) parts.push(`${dvalue}%`);
-      if (discountAmt !== undefined) parts.push(formatRupiah(discountAmt));
-      if (subtotal !== undefined) parts.push(`dari ${formatRupiah(subtotal)}`);
+      if (discountAmt !== undefined) parts.push(formatIDR(discountAmt));
+      if (subtotal !== undefined) parts.push(`dari ${formatIDR(subtotal)}`);
       if (trigger) parts.push(`⚠ ${trigger}`);
       if (reason) parts.push(`alasan: "${reason}"`);
       return parts.join(' · ');
     }
     case 'customer_credit_activate':
-      return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatRupiah(Number(get('credit_limit') ?? 0))}`;
+      return `Aktifkan tempo untuk ${get('customer_id')} — Net ${get('term_days')} hari, limit ${formatIDR(Number(get('credit_limit') ?? 0))}`;
 
     case 'customer_credit_limit_change':
-      return `Ubah limit tempo ${get('customer_id')} → ${formatRupiah(Number(get('new_limit') ?? 0))} (alasan: ${get('reason')})`;
+      return `Ubah limit tempo ${get('customer_id')} → ${formatIDR(Number(get('new_limit') ?? 0))} (alasan: ${get('reason')})`;
 
     case 'customer_credit_deactivate':
       return `Nonaktifkan tempo ${get('customer_id')} (alasan: ${get('reason')})`;

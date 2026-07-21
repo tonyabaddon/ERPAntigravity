@@ -22,6 +22,7 @@ import {
 import { tukarFakturService } from '../../../lib/tukarFakturService';
 import { printTandaTerima } from '../../../lib/tandaTerimaPdf';
 import type { DbTukarFaktur, TukarFakturStatus, UpdateTukarFakturPayload } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   tfNumber: string;
@@ -31,7 +32,6 @@ interface Props {
   onBayar: (tfId: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -282,13 +282,13 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
           <div
             className={`text-xl font-extrabold ${isLunas ? 'text-green-700' : 'text-indigo-700'}`}
           >
-            {fmtRp(tf.total_amount)}
+            {formatIDR(tf.total_amount)}
           </div>
           <div className="text-[11px] text-gray-600 mt-1">
-            Dibayar <strong>{fmtRp(tf.paid_amount)}</strong>
+            Dibayar <strong>{formatIDR(tf.paid_amount)}</strong>
             {!isLunas && (
               <>
-                {' '}· Sisa <strong>{fmtRp(outstanding)}</strong>
+                {' '}· Sisa <strong>{formatIDR(outstanding)}</strong>
               </>
             )}
           </div>
@@ -376,14 +376,14 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
                       )}
                     </td>
                     <td className="py-3 text-right text-sm font-bold" style={{ color: '#012749' }}>
-                      {fmtRp(Number(t.total))}
+                      {formatIDR(Number(t.total))}
                     </td>
                     <td
                       className={`py-3 text-right text-sm ${
                         Number(t.paid_amount) > 0 ? 'text-sky-700 font-bold' : 'text-gray-400'
                       }`}
                     >
-                      {fmtRp(Number(t.paid_amount))}
+                      {formatIDR(Number(t.paid_amount))}
                     </td>
                   </tr>
                 );
@@ -395,10 +395,10 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
                   TOTAL
                 </td>
                 <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>
-                  {fmtRp(tf.total_amount)}
+                  {formatIDR(tf.total_amount)}
                 </td>
                 <td className="py-3 text-right text-sm font-bold text-sky-700">
-                  {fmtRp(tf.paid_amount)}
+                  {formatIDR(tf.paid_amount)}
                 </td>
               </tr>
             </tfoot>
@@ -440,7 +440,7 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
               <div>Tanda Terima dicetak {fmtDate(tf.tanda_terima_printed_at)}</div>
             )}
             {Number(tf.paid_amount) > 0 && (
-              <div>Total dibayar {fmtRp(tf.paid_amount)}</div>
+              <div>Total dibayar {formatIDR(tf.paid_amount)}</div>
             )}
             {tf.voided_at && (
               <div className="text-red-600">Dihapus {fmtDate(tf.voided_at)}</div>
@@ -500,10 +500,10 @@ function buildTandaTerimaPreview(tf: DbTukarFaktur): string {
   lines.push('DAFTAR FAKTUR:');
   (tf.tagihans ?? []).forEach((t, i) => {
     const label = t.supplier_invoice_number || t.pi_number;
-    lines.push(`${i + 1}. ${label.padEnd(18)} ${fmtRp(Number(t.total)).padStart(12)}`);
+    lines.push(`${i + 1}. ${label.padEnd(18)} ${formatIDR(Number(t.total)).padStart(12)}`);
   });
   lines.push('--------------------------------');
-  lines.push(`TOTAL${' '.repeat(15)}${fmtRp(Number(tf.total_amount)).padStart(12)}`);
+  lines.push(`TOTAL${' '.repeat(15)}${formatIDR(Number(tf.total_amount)).padStart(12)}`);
   return lines.join('\n');
 }
 

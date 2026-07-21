@@ -10,6 +10,7 @@ import { pembayaranService } from '../../../lib/pembayaranService';
 import type { DbPembayaran } from '../../../types';
 import { StorageLink } from '../../ui/StorageLink';
 import { StorageImage } from '../../ui/StorageImage';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   pembayaranNumber: string;
@@ -18,7 +19,6 @@ interface Props {
   onOpenTagihan?: (tagihanId: string) => void;
 }
 
-const fmtRp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -104,9 +104,9 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
             <CalendarClock className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">Net Dibayar</div>
           </div>
-          <div className="text-xl font-extrabold text-indigo-700">{fmtRp(netTotal)}</div>
+          <div className="text-xl font-extrabold text-indigo-700">{formatIDR(netTotal)}</div>
           {pmb.discount_amount > 0 && (
-            <div className="text-[11px] text-gray-500 mt-1">Subtotal {fmtRp(pmb.amount_total)} − Diskon {fmtRp(pmb.discount_amount)}</div>
+            <div className="text-[11px] text-gray-500 mt-1">Subtotal {formatIDR(pmb.amount_total)} − Diskon {formatIDR(pmb.discount_amount)}</div>
           )}
         </div>
       </div>
@@ -135,7 +135,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
                     <span className="text-gray-400">—</span>
                   )}
                 </td>
-                <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{fmtRp(it.amount)}</td>
+                <td className="py-3 text-right font-bold" style={{ color: '#012749' }}>{formatIDR(it.amount)}</td>
                 <td className="py-3 text-right">
                   {it.tagihan_id && onOpenTagihan && (
                     <button onClick={() => onOpenTagihan(it.tagihan_id!)}
@@ -150,7 +150,7 @@ export default function PembayaranDetailPage({ pembayaranNumber, showToast, onBa
           <tfoot>
             <tr>
               <td className="py-3 text-right text-xs font-semibold text-gray-500">SUBTOTAL</td>
-              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{fmtRp(pmb.amount_total)}</td>
+              <td className="py-3 text-right text-xl font-extrabold" style={{ color: '#012749' }}>{formatIDR(pmb.amount_total)}</td>
               <td></td>
             </tr>
           </tfoot>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { purchaseInvoiceService } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice } from '../../../types';
+import { formatIDR } from '../../../lib/formatIDR';
 
 interface Props {
   pi: DbPurchaseInvoice;
@@ -42,7 +43,7 @@ export default function MarkPaidModal({ pi, onClose, onPaid, showToast }: Props)
         <div className="px-5 py-4 space-y-3">
           <div className="bg-gray-50 rounded-lg px-3 py-3 text-xs space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Supplier</span><span className="font-semibold">{pi.supplier?.name}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{`Rp ${Math.round(pi.total).toLocaleString('id-ID')}`}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="font-bold">{formatIDR(Math.round(pi.total))}</span></div>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1">Upload Bukti Bayar (opsional)</label>

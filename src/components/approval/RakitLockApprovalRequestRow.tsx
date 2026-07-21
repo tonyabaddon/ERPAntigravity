@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ApprovalRequest, RakitJobLine, RakitLockRequest } from '../../types';
 import { fetchRakitLockRequestByApprovalId } from '../../lib/supabaseClient';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface RakitLockApprovalRequestRowProps {
   request: ApprovalRequest;
@@ -17,9 +18,6 @@ interface RakitLockApprovalRequestRowProps {
   onEditAndApprove?: (id: number, transactionId: string, lines: RakitJobLine[]) => void;
 }
 
-function formatRp(n: number): string {
-  return 'Rp ' + n.toLocaleString('id-ID');
-}
 
 /**
  * Convert a stored linesSnapshot entry (snake_case JSONB as written by
@@ -135,10 +133,10 @@ export default function RakitLockApprovalRequestRow({
                 {lines.length} line · {lines.map((l: any) => l.description).join(' · ')}
               </p>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-[12px]">Final: <strong>{formatRp(totalFinal)}</strong></span>
-                <span className="text-[12px]">HPP: <strong>{formatRp(totalHpp)}</strong></span>
+                <span className="text-[12px]">Final: <strong>{formatIDR(totalFinal)}</strong></span>
+                <span className="text-[12px]">HPP: <strong>{formatIDR(totalHpp)}</strong></span>
                 <span className={`text-[12px] font-bold ${marginWarn ? 'text-rose-600' : 'text-emerald-700'}`}>
-                  {marginWarn ? '⚠ ' : ''}Margin: {formatRp(margin)} ({marginPct.toFixed(1)}%)
+                  {marginWarn ? '⚠ ' : ''}Margin: {formatIDR(margin)} ({marginPct.toFixed(1)}%)
                 </span>
                 <button
                   type="button"
@@ -152,17 +150,17 @@ export default function RakitLockApprovalRequestRow({
                 <div className="mt-2 bg-white border border-slate-200 rounded-lg p-2 text-[12px] space-y-1">
                   {lines.map((l: any, idx: number) => (
                     <div key={idx} className="border-b last:border-b-0 border-slate-100 pb-1">
-                      <div className="font-bold">{l.description} — {formatRp(Number(l.final_price ?? 0))}</div>
+                      <div className="font-bold">{l.description} — {formatIDR(Number(l.final_price ?? 0))}</div>
                       {(l.components ?? []).length > 0 ? (
                         <ul className="ml-3 text-slate-600">
                           {(l.components ?? []).map((c: any, ci: number) => (
                             <li key={ci}>
-                              {c.sku} {c.name} — qty {c.qty} {c.warehouse} @ FIFO {formatRp(Number(c.fifo_cost ?? 0))}
+                              {c.sku} {c.name} — qty {c.qty} {c.warehouse} @ FIFO {formatIDR(Number(c.fifo_cost ?? 0))}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <div className="ml-3 text-slate-500 italic">Lumpsum HPP: {formatRp(Number(l.lump_sum_hpp ?? 0))}</div>
+                        <div className="ml-3 text-slate-500 italic">Lumpsum HPP: {formatIDR(Number(l.lump_sum_hpp ?? 0))}</div>
                       )}
                     </div>
                   ))}

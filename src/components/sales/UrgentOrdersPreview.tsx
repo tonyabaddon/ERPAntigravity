@@ -1,6 +1,7 @@
 import type { Order } from '../../lib/sales/types';
 import { SUB_STAGES } from '../../lib/sales/stageMapping';
 import { navigate } from '../../lib/urlRoute';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface Props { orders: Order[]; }
 
@@ -22,7 +23,7 @@ export function UrgentOrdersPreview({ orders }: Props) {
             <div style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: 14 }}>{o.customer}</div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{o.channel} · {SUB_STAGES.find(s => s.id === o.funnel_sub_stage)?.name ?? o.funnel_sub_stage}</div>
           </div>
-          <div style={{ fontSize: 13, color: 'var(--color-secondary)', fontWeight: 700, fontFamily: 'ui-monospace,monospace' }}>Rp {o.total.toLocaleString('id-ID')}</div>
+          <div style={{ fontSize: 13, color: 'var(--color-secondary)', fontWeight: 700, fontFamily: 'ui-monospace,monospace' }}>{formatIDR(o.total)}</div>
         </div>
       ))}
       {urgent.length === 0 && (

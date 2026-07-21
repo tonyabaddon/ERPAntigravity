@@ -24,6 +24,7 @@ import ReceiveGoodsModal from './ReceiveGoodsModal';
 import MarkAsPaidModal from './MarkAsPaidModal';
 import ReceiveReplacementModal from './ReceiveReplacementModal';
 import PurchaseOrderFormPage from './PurchaseOrderFormPage';
+import { formatIDR } from '../../lib/formatIDR';
 
 interface PembelianDetailPageProps {
   poNumber: string;
@@ -46,7 +47,6 @@ const DAMAGE_STATUS_OPTIONS = [
 const STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Draft', ORDERED: 'Dipesan', RECEIVED: 'Diterima', PAID: 'Lunas',
 };
-function formatRupiah(n: number): string { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }
 function formatDate(iso?: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -397,8 +397,8 @@ export default function PembelianDetailPage({
                   </div>
                 </div>
                 <span className="text-center text-gray-600">{item.qty_received}</span>
-                <span className="text-right text-gray-600">{formatRupiah(item.unit_cost)}</span>
-                <span className="text-right text-gray-600">{sellingPrice > 0 ? formatRupiah(sellingPrice) : '—'}</span>
+                <span className="text-right text-gray-600">{formatIDR(item.unit_cost)}</span>
+                <span className="text-right text-gray-600">{sellingPrice > 0 ? formatIDR(sellingPrice) : '—'}</span>
                 <span className={`text-right font-bold ${margin > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
                   {sellingPrice > 0 ? `+${margin.toFixed(1)}%` : '—'}
                 </span>
@@ -412,9 +412,9 @@ export default function PembelianDetailPage({
               <strong className="text-gray-700">Total</strong>
             </div>
             <div className="text-right text-gray-600 leading-relaxed min-w-[120px]">
-              {formatRupiah(po.subtotal)}<br />
-              {po.tax_rate > 0 && <>{formatRupiah(po.tax_amount)}<br /></>}
-              <strong className="text-gray-800">{formatRupiah(po.total)}</strong>
+              {formatIDR(po.subtotal)}<br />
+              {po.tax_rate > 0 && <>{formatIDR(po.tax_amount)}<br /></>}
+              <strong className="text-gray-800">{formatIDR(po.total)}</strong>
             </div>
           </div>
         </div>
