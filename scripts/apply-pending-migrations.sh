@@ -246,6 +246,19 @@ MIGRATIONS=(
   "20261115000224_drop_auth_fks_and_map_actor.sql"
   "20261115000226_final_rpc_bodies_after_prod_smoke.sql"
   "20261115000227_list_transfers_include_actor_names.sql"
+
+  # ─── Staging/prod isolation — 2026-07-22 ────────────────────────────────
+  # 508: tenants.environment column (production|staging)
+  # 509: provision_tenant accepts p_environment param
+  # 510: bootstrap_tenant_context accepts p_hostname + RAISEs ENV_MISMATCH
+  # 511: revert provision_tenant + _seed_tenant_accounting owner to postgres
+  #      (mig 507 flipped them to vosi_rpc_owner which lacks auth schema access)
+  # 512: deprovision_tenant fixes — owner drift + orphan cleanup + audit skip
+  "20261115000508_tenant_environment_column.sql"
+  "20261115000509_provision_tenant_env_param.sql"
+  "20261115000510_bootstrap_tenant_context_hostname.sql"
+  "20261115000511_revert_provision_tenant_ownership.sql"
+  "20261115000512_deprovision_tenant_fixes.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
