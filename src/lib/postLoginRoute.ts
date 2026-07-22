@@ -17,7 +17,15 @@ export interface PostLoginRouteInput {
   tenantSlug: string | null;
   /**
    * Current window.location.hostname. Distinguishes admin surface
-   * (admin.caleo.id) from tenant surface (app.caleo.id, localhost).
+   * (admin.caleo.id, staging.admin.caleo.id) from tenant surface
+   * (app.caleo.id, staging.app.caleo.id, localhost).
+   *
+   * The 4-hostname deployment model (founder clarified 2026-07-22):
+   *   app.caleo.id           = PROD tenant dashboard
+   *   admin.caleo.id         = PROD admin caleo
+   *   staging.app.caleo.id   = STAGING tenant dashboard
+   *   staging.admin.caleo.id = STAGING admin caleo
+   *
    * Absent → treated as tenant surface (backward compat with older tests).
    */
   hostname?: string;

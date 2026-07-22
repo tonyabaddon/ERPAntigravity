@@ -118,6 +118,22 @@ describe('computePostLoginRoute — platform admin on app.caleo.id (tenant hostn
     ).toEqual({ action: 'redirect', href: '/t/garindo/dashboard' });
   });
 
+  it('treats staging.app.caleo.id as tenant surface (staging tenant, parallel to app.caleo.id)', () => {
+    // Founder clarification 2026-07-22:
+    //   app.caleo.id           = PROD tenant dashboard
+    //   admin.caleo.id         = PROD admin caleo
+    //   staging.app.caleo.id   = STAGING tenant dashboard (parallel to prod tenant)
+    //   staging.admin.caleo.id = STAGING admin caleo   (parallel to prod admin)
+    expect(
+      computePostLoginRoute({
+        pathname: '/',
+        isPlatformAdmin: true,
+        tenantSlug: 'garindo',
+        hostname: 'staging.app.caleo.id',
+      }),
+    ).toEqual({ action: 'redirect', href: '/t/garindo/dashboard' });
+  });
+
   it('backward compat: no hostname defaults to tenant surface', () => {
     // Older callers (or tests) that omit hostname get the tenant-surface
     // behavior. This is safer than defaulting to admin because a missing
