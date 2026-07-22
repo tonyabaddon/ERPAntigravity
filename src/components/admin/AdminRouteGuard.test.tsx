@@ -103,14 +103,18 @@ describe('AdminRouteGuard', () => {
     expect(screen.queryByText('Tidak boleh terlihat')).not.toBeInTheDocument();
   });
 
-  it('redirects and toasts when isPlatformAdmin throws', async () => {
+  it('redirects and toasts when isPlatformAdmin throws (after 3 retries)', async () => {
+    // Guard retries isPlatformAdmin 3× with 500ms/1000ms backoff before giving up
+    // (defensive against transient DB/pool errors — see 2026-07-22 incident).
+    // Bump waitFor timeout to cover: 500ms + 1000ms backoff + 3× call latency ~ 2s.
     mockIsPlatformAdmin.mockRejectedValue(new Error('network error'));
     render(
       <AdminRouteGuard>
         <div>Tidak boleh terlihat</div>
       </AdminRouteGuard>
     );
-    await waitFor(() => expect(mockAssign).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(mockAssign).toHaveBeenCalledWith('/dashboard'), { timeout: 3000 });
+    expect(mockIsPlatformAdmin).toHaveBeenCalledTimes(3);
     expect(mockAdminToastError).toHaveBeenCalledWith('Halaman khusus admin');
   });
 
