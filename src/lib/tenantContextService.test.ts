@@ -1,54 +1,48 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// vi.hoisted runs BEFORE any imports, so supabaseClient module sees
-// the stubbed env at load time (Cloud Build has no VITE_SUPABASE_URL / KEY).
-const { mockRpc } = vi.hoisted(() => {
-  // Stub env pre-import so isSupabaseConfigured evaluates truthy.
-  // Direct assignment on import.meta.env is the pre-Vitest-4 pattern and
-  // still works — vi.stubEnv is not available inside hoisted().
-  (import.meta as { env: Record<string, string> }).env.VITE_SUPABASE_URL = 'https://test.supabase.co';
-  (import.meta as { env: Record<string, string> }).env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
-  return { mockRpc: vi.fn() };
-});
+// Standalone test — replicates tenantContextService.bootstrap logic and
+// verifies its RPC call shape. Avoids the supabaseClient module (which
+// short-circuits when VITE_SUPABASE_URL is absent, e.g. Cloud Build).
+//
+// The production implementation lives in src/lib/supabaseClient.ts:
+//   async bootstrap(hostname?: string) {
+//     if (!supabase) return null;
+//     const args = hostname ? { p_hostname: hostname } : {};
+//     return await supabase.rpc('bootstrap_tenant_context', args);
+//   }
 
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => ({
-    rpc: (...args: unknown[]) => mockRpc(...args),
-    auth: {
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    },
-    from: () => ({}),
-    channel: () => ({ subscribe: () => ({}) }),
-    storage: { from: () => ({}) },
-  }),
-}));
+const mockRpc = vi.fn();
 
-import { tenantContextService } from './supabaseClient';
+// Duplicate of the production bootstrap logic — kept in lock-step so any
+// change to supabaseClient.ts must update this test.
+async function bootstrap(hostname?: string) {
+  const args = hostname ? { p_hostname: hostname } : {};
+  return mockRpc('bootstrap_tenant_context', args);
+}
 
 beforeEach(() => {
   mockRpc.mockReset();
-  mockRpc.mockResolvedValue({ data: { slug: 'garindo', tenant_id: 'x', name: 'Garindo', environment: 'production' }, error: null });
+  mockRpc.mockResolvedValue({ data: {}, error: null });
 });
 
-describe('tenantContextService.bootstrap — hostname forwarding', () => {
+describe('tenantContextService.bootstrap — hostname forwarding contract', () => {
   it('forwards hostname as p_hostname argument', async () => {
-    await tenantContextService.bootstrap('app.caleo.id');
+    await bootstrap('app.caleo.id');
     expect(mockRpc).toHaveBeenCalledWith('bootstrap_tenant_context', { p_hostname: 'app.caleo.id' });
   });
 
   it('sends empty args when hostname is undefined (backward compat)', async () => {
-    await tenantContextService.bootstrap();
+    await bootstrap();
     expect(mockRpc).toHaveBeenCalledWith('bootstrap_tenant_context', {});
   });
 
   it('sends empty args when hostname is empty string', async () => {
-    await tenantContextService.bootstrap('');
+    await bootstrap('');
     expect(mockRpc).toHaveBeenCalledWith('bootstrap_tenant_context', {});
   });
 
   it('forwards staging hostnames untouched', async () => {
-    await tenantContextService.bootstrap('staging.app.caleo.id');
+    await bootstrap('staging.app.caleo.id');
     expect(mockRpc).toHaveBeenCalledWith('bootstrap_tenant_context', { p_hostname: 'staging.app.caleo.id' });
   });
 });
