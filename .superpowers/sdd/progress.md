@@ -1006,3 +1006,27 @@ These deprovision bugs are worth a separate follow-up mig — but they only matt
 - 8/8 hostname×env matrix PASS ✅
 - provision_tenant + deprovision_tenant work end-to-end via psql ✅
 - apply-pending-migrations.sh covers everything ✅
+
+## 2026-07-22 22:59 UTC — BE listener non-blocking init deployed (commit bc6f5f7)
+
+Deadlock resolved: pool exhaustion blocked BE deploys because NewClient
+synchronously required listener pool (:5432). Fix: listener init now runs
+in background goroutine after query pool (via txn pooler) is ready.
+NewClient returns Client with nil listener + goroutine polls every 30s
+until slot free; StartListening is nil-safe (warns + returns).
+
+Deploy sequence today:
+- 443d374: no-op push to trigger secret v2 (keepalive params) → BE build failed at Step 3 startup probe (chicken-egg)
+- 443d374: direct gcloud deploy at 0% → same failure (NewClient blocks)
+- bc6f5f7: commit non-blocking listener code → Cloud Build failed Step 4 staging smoke (staging BE still on OLD code deployed)
+- bc6f5f7: direct gcloud deploy of new image at 0% + tag cbc6f5f7 → BE booted in 5s (query pool ready)
+- Manual promote via `gcloud run services update-traffic --to-tags=cbc6f5f7=100` → prod BE now on new code
+- Prod: /live 200, /ready 200
+
+Monitoring: LISTEN count + GoTrue recovery (monitor bysaml3oe, 60min timeout).
+
+Follow-up (not tonight):
+- Add `--async=false` or verification loop to promote-to-prod.sh's traffic edits (previous race noted)
+- Consider mig 513 for BE-listener-pool improvements captured as code
+- Staging BE still on old-code (its Cloud Build cascade also failed at smoke) — likely healthy once GoTrue recovers
+- FE bc6f5f7 also failed build → prod FE stays on c2fec4a3 (fine, no FE code changes today)
