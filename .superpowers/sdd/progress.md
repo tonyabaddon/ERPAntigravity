@@ -871,3 +871,11 @@ Phase 1 Task 5: complete (commit 33059a4, regression SQL)
 - Lint clean; vitest --changed: no changed test files. Build PASS.
 - Commit SHA: (see task-3-report.md)
 Phase 1 Task 6: complete (commit 800072b + backfilled schema_migrations 471/472/473)
+
+---
+
+## 2026-07-22 — Staging/Prod isolation SDD execution (in progress)
+
+**Plan:** docs/superpowers/plans/2026-07-22-staging-prod-isolation-plan.md
+
+Task 1: complete (commit cbb82fa, mig 508 applied via /database/migrations endpoint workaround for pool exhaustion; 3 tenants backfilled to env=production; index + schema_migrations tracked on attempt 5)
