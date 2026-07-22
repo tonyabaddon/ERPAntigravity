@@ -39,26 +39,23 @@ real tenant data once onboarded.
 
 ## 4-Phase Rollout
 
-### Phase 1 — Deploy control (2h + 30min gap-fill)
+**Sequence rationale (founder clarification 2026-07-22):** "Before real tenant
+still 100% deploy auto to production, but after real tenant, cannot anymore."
 
-**What:** every push still auto-deploys to staging + auto-tests. But prod deploy stops at 0% traffic. Founder manually promotes.
+Phase order flipped from original design:
+- **Phase 1 first** (data isolation) — ships fully auto to prod (no real tenant
+  to protect, so safe). Gives time to test staging + prove isolation.
+- **Phase 2 second** (deploy gate) — this commit is the LAST auto-promoted
+  push. Future pushes require manual gate.
+- **Phase 3 third** (real tenant onboard) — happens right after Phase 2, so
+  the first push affecting real tenant is manual-gated.
+- **Phase 4 ongoing** — verify + operate.
 
-**Files touched:**
-- `cloudbuild.frontend.yaml` — remove Step 7 (auto-promote to 100%)
-- `cloudbuild.yaml` (backend) — remove Step 6 (auto-promote to 100%)
-- New: `scripts/promote-to-prod.sh <SHA>` — promote FE + BE together
-- New: `scripts/rollback-prod.sh <SHA>` — revert FE + BE together
-- New: `docs/runbooks/deploy-promote.md` — 1-page runbook (notification behavior, rollback path, pool-stuck troubleshooting, which services affected)
+Trade-off: between Phase 1 ship and Phase 2 ship, prod still auto-deploys.
+No real tenant yet = impact only on founder. Mitigation: no destructive
+changes to `main` during this window (use feature branches).
 
-**Behavior after ship:**
-- `git push origin main` → Cloud Build fires → staging deploy → smoke → **prod tag deployed at 0% traffic** → PIPELINE ENDS
-- GCP emails you build success/failure
-- You visit `staging.app.caleo.id`, verify feature works
-- OK → `./scripts/promote-to-prod.sh <SHA>` → prod live in 5s
-- Not OK → push fix → re-run cycle. Prod stays on old version.
-- Bad post-promote → `./scripts/rollback-prod.sh <PREVIOUS_SHA>` → traffic revert in 5s
-
-### Phase 2 — Data isolation (1 day + 2h gap-fill)
+### Phase 1 — Data isolation (1 day + 2h gap-fill)
 
 **What:** add `environment` column to `tenants`; create parallel staging tenants; hostname-aware picker.
 
@@ -114,7 +111,31 @@ real tenant data once onboarded.
 - No changes to RLS policies (existing tenant_id-based RLS still enforces isolation)
 - Ship migrations + FE **in same PR** to avoid mid-state confusion
 
-### Phase 3 — E2E verify (2h + 1h gap-fill)
+### Phase 2 — Deploy gate (2h + 30min gap-fill)
+
+**When to ship:** right before real tenant onboards (Phase 3).
+**Why not earlier:** no real tenant = no risk from auto-deploy.
+**Why not later:** first push affecting real tenant MUST be manual-gated.
+
+**What:** every push still auto-deploys to staging + auto-tests. But prod deploy stops at 0% traffic. Founder manually promotes.
+
+**Files touched:**
+- `cloudbuild.frontend.yaml` — remove Step 7 (auto-promote to 100%)
+- `cloudbuild.yaml` (backend) — remove Step 6 (auto-promote to 100%)
+- New: `scripts/promote-to-prod.sh <SHA>` — promote FE + BE together
+- New: `scripts/rollback-prod.sh <SHA>` — revert FE + BE together
+- New: `docs/runbooks/deploy-promote.md` — 1-page runbook (notification behavior, rollback path, pool-stuck troubleshooting, which services affected)
+
+**Behavior after ship:**
+- The commit shipping Phase 2 is itself auto-deployed (last auto-promote before gate takes effect).
+- `git push origin main` → Cloud Build fires → staging deploy → smoke → **prod tag deployed at 0% traffic** → PIPELINE ENDS
+- GCP emails you build success/failure
+- You visit `staging.app.caleo.id`, verify feature works
+- OK → `./scripts/promote-to-prod.sh <SHA>` → prod live in 5s
+- Not OK → push fix → re-run cycle. Prod stays on old version.
+- Bad post-promote → `./scripts/rollback-prod.sh <PREVIOUS_SHA>` → traffic revert in 5s
+
+### Phase 3 — Real tenant onboard + E2E verify (2h + 1h gap-fill)
 
 **Steps:**
 1. Push a docs-only commit → Cloud Build fires
@@ -136,7 +157,9 @@ real tenant data once onboarded.
    - Login at staging.app.caleo.id → get JWT
    - Query prod tenant table via PostgREST → expect 0 rows (RLS enforced)
 
-### Phase 4 — Real tenant onboard (founder call, ~30 min)
+### Phase 3 (continued) — Real tenant onboard steps
+
+Right after Phase 2 ship + verify:
 
 1. Founder visits `admin.caleo.id/admin/tenants` (or calls `provision_tenant`
    RPC directly with `p_environment='production'`)
@@ -144,6 +167,16 @@ real tenant data once onboarded.
 3. Verify: tenant appears at `app.caleo.id` (not `staging.app.caleo.id`)
 4. Verify: existing playwright login at staging still shows only staging tenants (no leak)
 5. Backup plan: `deprovision_tenant(new_tenant_id)` if issue emerges
+
+### Phase 4 — Ongoing operation
+
+Every future push, forever:
+1. `git push origin main`
+2. Wait ~10 min for staging deploy + smoke (GCP emails success/failure)
+3. Test manually at `staging.app.caleo.id` — verify feature works
+4. OK → `./scripts/promote-to-prod.sh <SHA>` → prod live in 5s
+5. Real tenant sees feature (safely tested first)
+6. Bad post-promote → `./scripts/rollback-prod.sh <PREVIOUS_SHA>` → revert in 5s
 
 ## Component boundaries
 
@@ -232,10 +265,10 @@ At end of Phase 3 (before real tenant onboard):
 
 ## Estimated total time
 
-- Phase 1: 2h + 30min gaps = 2.5h
-- Phase 2: 1 day + 2h gaps = 10h
-- Phase 3: 2h + 1h expanded testing = 3h
-- Phase 4: 30 min (founder-driven)
+- Phase 1 (data isolation): 1 day + 2h gap-fill = 10h
+- Phase 2 (deploy gate): 2h + 30min gap-fill = 2.5h
+- Phase 3 (real tenant onboard + E2E verify): 2h + 1h = 3h
+- Phase 4 (ongoing): 30 min per real deploy going forward
 - **Total: ~2 working days + Phase 4**
 
 ## Next step
