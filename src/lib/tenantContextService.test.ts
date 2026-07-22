@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockRpc } = vi.hoisted(() => ({ mockRpc: vi.fn() }));
-
-// Ensure supabaseClient module treats env as configured (Cloud Build has no VITE_SUPABASE_URL)
-vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
-vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
+// vi.hoisted runs BEFORE any imports, so supabaseClient module sees
+// the stubbed env at load time (Cloud Build has no VITE_SUPABASE_URL / KEY).
+const { mockRpc } = vi.hoisted(() => {
+  // Stub env pre-import so isSupabaseConfigured evaluates truthy.
+  // Direct assignment on import.meta.env is the pre-Vitest-4 pattern and
+  // still works — vi.stubEnv is not available inside hoisted().
+  (import.meta as { env: Record<string, string> }).env.VITE_SUPABASE_URL = 'https://test.supabase.co';
+  (import.meta as { env: Record<string, string> }).env.VITE_SUPABASE_ANON_KEY = 'test-anon-key';
+  return { mockRpc: vi.fn() };
+});
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
