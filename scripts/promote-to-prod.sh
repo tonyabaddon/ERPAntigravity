@@ -53,8 +53,35 @@ fi
 
 echo ""
 echo "Promoting $TAG to 100% traffic on both services ..."
-gcloud run services update-traffic "$FE_SERVICE" --region="$REGION" --to-tags="$TAG=100"
-gcloud run services update-traffic "$BE_SERVICE" --region="$REGION" --to-tags="$TAG=100"
+# gcloud update-traffic without --async can return before the traffic edit
+# fully applies; running BE immediately after FE lost the second edit on
+# 2026-07-22 (FE promoted, BE stayed on old tag). Explicit re-verify each
+# service after the call, retry once if not applied, then hard-fail.
+
+apply_and_verify() {
+  local svc="$1"
+  gcloud run services update-traffic "$svc" --region="$REGION" --to-tags="$TAG=100"
+  # Verify the tag is at 100
+  ACTUAL=$(gcloud run services describe "$svc" --region="$REGION" \
+    --format="value(status.traffic)" \
+    | tr ';' '\n' | grep "'tag': '$TAG'" | grep -c "'percent': 100" || true)
+  if [ "$ACTUAL" != "1" ]; then
+    echo "  first apply did not stick — retrying $svc..."
+    sleep 5
+    gcloud run services update-traffic "$svc" --region="$REGION" --to-tags="$TAG=100"
+    ACTUAL=$(gcloud run services describe "$svc" --region="$REGION" \
+      --format="value(status.traffic)" \
+      | tr ';' '\n' | grep "'tag': '$TAG'" | grep -c "'percent': 100" || true)
+    if [ "$ACTUAL" != "1" ]; then
+      echo "  FAILED to promote $svc to $TAG after 2 attempts"
+      return 1
+    fi
+  fi
+  echo "  $svc → $TAG @ 100% verified"
+}
+
+apply_and_verify "$FE_SERVICE" || exit 1
+apply_and_verify "$BE_SERVICE" || exit 1
 
 echo ""
 echo "=== Done ==="
