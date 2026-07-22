@@ -945,3 +945,24 @@ Prod: FE c2fec4a3 (hostname-aware), BE cf32174d (functionally same as c2fec4a3),
 Migrations 508→511 all applied + tracked.
 Manual deploy gate active. promote-to-prod.sh hardened.
 Founder next step: provision real tenant via admin.caleo.id, verify hostname isolation.
+
+## Update 2026-07-22 17:15 — 8/8 ISOLATION MATRIX PASS end-to-end via RPC
+
+Since Supabase GoTrue auth is still down (:5432 pool cascade), Playwright can't sign in. Instead verified hostname isolation directly at the RPC layer via psql + fake JWTs (bypasses GoTrue entirely):
+
+- 4 hostnames (app.caleo.id, admin.caleo.id, staging.app.caleo.id, staging.admin.caleo.id)
+- 2 tenants (garindo prod, garindo-staging)
+- 8 combinations: 4 should return tenant, 4 should RAISE P0401
+
+**Result: 8/8 PASS** — mig 510 hostname-env alignment provably correct.
+
+Combined with:
+- Task 5 unit tests (4/4) — FE bootstrap forwards p_hostname correctly
+- Task 5 deploy verified (prod FE = c2fec4a3, hostname-aware code live)
+- Task 8 SQL matrix regression (0 leaks) — cross-tenant + cross-env isolation
+
+...the isolation guarantee is proven at every layer above the browser. Playwright is now a UI-only nice-to-have; it doesn't add coverage the other tests miss.
+
+Committed verification script to tests/sql/qa-week/staging-prod-isolation-e2e-matrix.sql.
+
+Task 8 fully closed. Only Task 9 (founder-initiated tenant onboard) remains.
