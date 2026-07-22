@@ -1,7 +1,9 @@
 // src/components/admin/EmptyHomeState.tsx
 // Welcome hero shown when only 1 tenant exists (Garindo only).
 // Prompts the admin to onboard a second tenant.
-// Uses native <a href> — project has no react-router-dom (custom urlRoute.ts pattern).
+// SPA nav via handleAdminSPAClick avoids AdminRouteGuard remount + "Memeriksa akses…" flash.
+
+import { handleAdminSPAClick } from '../../lib/urlRoute';
 
 interface Props {
   existingSlug: string;
@@ -38,6 +40,7 @@ export function EmptyHomeState({ existingSlug }: Props) {
 
       <a
         href="/admin/tenants/new"
+        onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
         className="inline-block rounded-xl px-6 py-2.5 font-semibold text-[14px] transition-opacity hover:opacity-90"
         style={{ background: '#F9B233', color: '#0B2545' }}
       >
@@ -48,6 +51,7 @@ export function EmptyHomeState({ existingSlug }: Props) {
         Sudah punya?{' '}
         <a
           href="/admin/tenants"
+          onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
           className="underline font-medium"
           style={{ color: '#5A6472' }}
         >

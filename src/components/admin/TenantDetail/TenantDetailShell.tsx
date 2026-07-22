@@ -8,6 +8,7 @@ import { listTenantsAdmin } from '../../../lib/adminApi';
 import type { AdminTenantRow } from '../../../lib/adminTypes';
 import { adminToast } from '../../../lib/adminToast';
 import { isSuperAdmin } from '../../../lib/adminAuth';
+import { handleAdminSPAClick } from '../../../lib/urlRoute';
 import { OverviewTab } from './OverviewTab';
 import { UsersTab } from './UsersTab';
 import { AuditTab } from './AuditTab';
@@ -212,6 +213,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         </p>
         <a
           href="/admin/tenants"
+          onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
           className="inline-block rounded-xl px-5 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
           style={{ background: '#0B2545', color: '#ffffff' }}
         >
@@ -229,6 +231,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
       <nav className="text-[12px]" style={{ color: '#9DB2CE' }} aria-label="Breadcrumb">
         <a
           href="/admin/tenants"
+          onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
           className="hover:underline"
           style={{ color: '#9DB2CE' }}
         >

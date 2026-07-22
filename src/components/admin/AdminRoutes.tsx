@@ -4,6 +4,7 @@
 // Sub-route pattern matching is done via simple pathname regex since urlRoute.ts
 // has no nested-route or param-extraction primitives (workaround noted in report).
 import React, { useEffect, useState } from 'react';
+import { useAdminPath, handleAdminSPAClick } from '../../lib/urlRoute';
 import { AdminLayout } from './AdminLayout';
 import { AdminRouteGuard } from './AdminRouteGuard';
 import { AdminHome } from './AdminHome';
@@ -57,7 +58,7 @@ function SuperAdminGate({ children }: { children: React.ReactNode }) {
         <p className="text-[13px] text-slate-600 mt-2">
           Halaman ini hanya dapat diakses oleh super_admin. Sales_rep tidak berwenang di sub-modul ini.
         </p>
-        <a href="/admin" className="mt-4 inline-block text-[13px] text-slate-700 underline">← Kembali ke Beranda</a>
+        <a href="/admin" onClick={(e) => handleAdminSPAClick(e, '/admin')} className="mt-4 inline-block text-[13px] text-slate-700 underline">← Kembali ke Beranda</a>
       </div>
     );
   }
@@ -113,8 +114,10 @@ function resolveAdminContent(pathname: string): React.ReactNode {
 }
 
 export function AdminRoutes() {
-  const pathname =
-    typeof window !== 'undefined' ? window.location.pathname : '/admin';
+  // Reactive pathname so sidebar SPA-nav doesn't remount AdminRouteGuard
+  // on every click. Full page reloads (or first-load) update this via the
+  // popstate/ROUTE_CHANGE_EVENT subscription in useAdminPath().
+  const pathname = useAdminPath();
   const needsSuperAdmin = SUPER_ADMIN_ONLY_PATHS.has(pathname);
   const content = resolveAdminContent(pathname);
   const wrapped = needsSuperAdmin ? <SuperAdminGate>{content}</SuperAdminGate> : content;

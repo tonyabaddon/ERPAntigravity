@@ -4,6 +4,7 @@
 // No react-router-dom — uses native <a href> (project pattern).
 import { useState } from 'react';
 import { activateTenant } from '../../lib/adminApi';
+import { handleAdminSPAClick } from '../../lib/urlRoute';
 import { adminToast } from '../../lib/adminToast';
 import type { AdminTenantRow, UsageStatus } from '../../lib/adminTypes';
 import { AdminApiError } from '../../lib/adminTypes';
@@ -232,6 +233,7 @@ export function TenantsTable({
               <td className="px-3 py-2">
                 <a
                   href={`/admin/tenants/${t.slug}`}
+                  onClick={(e) => handleAdminSPAClick(e, `/admin/tenants/${t.slug}`)}
                   className="font-semibold hover:underline"
                   style={{ color: '#0B2545' }}
                 >

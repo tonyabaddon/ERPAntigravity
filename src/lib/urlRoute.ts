@@ -270,3 +270,50 @@ function getServerSnapshot(): RouteState {
 export function useURLRoute(): RouteState {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+// ─── admin area (pathname-based routing) ──────────────────────────────────
+// The main app uses query-string routes (?screen=xxx). Caleo Admin uses
+// pathname routes (/admin/xxx) and needs its own reactivity so sidebar
+// navigation stays SPA-only (no full page reload → no AdminRouteGuard
+// remount → no "Memeriksa akses..." flash on every click).
+
+let lastPathname: string | null = null;
+function getPathnameSnapshot(): string {
+  const current = typeof window !== 'undefined' ? window.location.pathname : '/';
+  if (current !== lastPathname) {
+    lastPathname = current;
+  }
+  return lastPathname;
+}
+function getServerPathnameSnapshot(): string {
+  return '/';
+}
+
+/**
+ * Push a pathname into history and notify subscribers. Use for SPA
+ * navigation in path-based areas (e.g. /admin/*). Fires the same
+ * ROUTE_CHANGE_EVENT that useURLRoute + useAdminPath subscribe to.
+ */
+export function pushPath(path: string): void {
+  window.history.pushState({}, '', path);
+  window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
+}
+
+/**
+ * Click handler for anchor tags with a pathname href (e.g. /admin/tenants).
+ * Plain left-click → SPA nav via pushPath. Ctrl/Cmd/Shift/Alt/middle-click
+ * → let browser handle (new tab, etc.).
+ */
+export function handleAdminSPAClick(e: React.MouseEvent, path: string): void {
+  if (!shouldInterceptClick(e)) return;
+  e.preventDefault();
+  pushPath(path);
+}
+
+/**
+ * React hook returning the current pathname. Re-renders on pushPath(),
+ * back/forward buttons, or any ROUTE_CHANGE_EVENT dispatch.
+ */
+export function useAdminPath(): string {
+  return useSyncExternalStore(subscribe, getPathnameSnapshot, getServerPathnameSnapshot);
+}

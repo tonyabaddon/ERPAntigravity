@@ -14,6 +14,7 @@ import { AttentionQueue } from './AttentionQueue';
 import { RecentActivityFeed } from './RecentActivityFeed';
 import { EmptyHomeState } from './EmptyHomeState';
 import { adminToast } from '../../lib/adminToast';
+import { handleAdminSPAClick } from '../../lib/urlRoute';
 
 export function AdminHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -127,6 +128,7 @@ export function AdminHome() {
         </div>
         <a
           href="/admin/tenants/new"
+          onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
           className="rounded-xl px-4 py-2 font-semibold text-[13px] transition-opacity hover:opacity-90"
           style={{ background: '#F9B233', color: '#0B2545' }}
         >

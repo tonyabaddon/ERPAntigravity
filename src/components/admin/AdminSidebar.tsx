@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { isSuperAdmin } from '../../lib/adminAuth';
 import { paymentVerificationApi } from '../../lib/paymentVerificationApi';
+import { handleAdminSPAClick } from '../../lib/urlRoute';
 
 interface NavItem {
   to: string;
@@ -203,6 +204,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
             <a
               key={item.to}
               href={item.to}
+              onClick={(e) => handleAdminSPAClick(e, item.to)}
               aria-current={active ? 'page' : undefined}
               className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-colors"
               style={{
