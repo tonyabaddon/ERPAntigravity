@@ -881,3 +881,33 @@ Phase 1 Task 6: complete (commit 800072b + backfilled schema_migrations 471/472/
 Task 1: complete (commit cbb82fa, mig 508 applied via /database/migrations endpoint workaround for pool exhaustion; 3 tenants backfilled to env=production; index + schema_migrations tracked on attempt 5)
 Task 3: complete (commit 1e22da2, mig 510 applied — p_hostname param + env-mismatch RAISE; owner preserved as postgres per Phase A exclusion; smoke 3/3 PASS)
 Task 4: complete (commit 12eed7b, 3 staging tenants seeded — garindo-staging + toko-jaya-makmur-staging + warung-sinar-rezeki-staging; playwright-toko-owner added to toko-jaya-makmur-staging; provision_tenant/_seed_tenant_accounting SECDEF permission gap bypassed via inline INSERTs as postgres/BYPASSRLS)
+Task 5: complete (commit a13ec2c + cleanup 3504003 — tenantContextService.bootstrap(hostname?) forwards p_hostname; 4 callers updated; 4/4 tests pass; local gates clean)
+Task 6: complete (commit 29653b8 — auto-promote Step 6 removed from both cloudbuilds; promote-to-prod.sh + runbook + memory HARD RULE added; CORRECTION to earlier claim: Cloud Build reads cloudbuild.yaml FROM the commit being built, so 29653b8 does NOT auto-promote itself — last auto-promoted push was 3504003. Any Phase-2+ push including 29653b8 needs manual ./scripts/promote-to-prod.sh)
+Task 2: complete (commit 1621b85, mig 509 applied — provision_tenant now accepts p_environment param DEFAULT 'production'; latent perm gap discovered later during Task 4 — vosi_rpc_owner can't read auth.users, non-blocking for existing paths since no new tenant has been provisioned through this since mig 507)
+Task 7: complete (manual gate verification — prod FE still c12eed7b, prod BE still c4fc37a2 despite Tasks 5-8 commits pushed. Cloud Build reads cloudbuild.yaml FROM each commit → no Step 6 in any 29653b8+ commit → no auto-promote. Sanity-tested promote-to-prod.sh 12eed7b — script correctly aborts on incomplete tag state (BE at c4fc37a2, FE at c12eed7b diverged). Full end-to-end promote pending eaddb3a build completion.)
+Task 8: complete (commits 24216a9 fix + eaddb3a — SQL matrix regression tests/sql/qa-week/staging-prod-isolation-regression.sql PASS: MATRIX_TOTAL_LEAKS=0 CROSS_ENV_LEAK=0. Playwright T21 hostname isolation spec added; runs against prod URLs after Task 7 promote completes.)
+
+Task 9: PENDING founder action (real tenant onboard via provision_tenant + verify hostname isolation on app.caleo.id vs staging.app.caleo.id). Prerequisite: eaddb3a promoted to prod. Blocker: recurring BE startup probe failure — db not yet connected — likely :5432 pool exhaustion at boot; needs separate investigation before real tenant can be served.
+
+=== STAGING/PROD ISOLATION — Tasks 1-8 DONE, Task 9 FOUNDER ACTION ===
+
+## Session pause 2026-07-22 15:55 — hand-off to founder
+
+### Shipped
+- Tasks 1-6 SDD complete (mig 508 env column; mig 509 provision_tenant p_environment param; mig 510 bootstrap_tenant_context p_hostname; 3 staging tenants seeded; FE hostname wired; cloudbuild auto-promote removed + promote-to-prod.sh + runbook + memory HARD RULE)
+- Task 8 SQL matrix regression PASS (0 leaks, 0 cross-env leak)
+- Blocker follow-up commit ce72e67: mig 511 file (revert provision_tenant + _seed_tenant_accounting ownership to postgres) + cloudbuild.yaml BE startup probe bumped to 5-min window
+
+### Pending founder action (Task 9 blockers)
+1. **APPLY mig 511** via ./scripts/apply-migration.sh or /database/migrations endpoint once Supabase :5432 pool recovers. Smoke DO block in /tmp/smoke_mig511.sql. Without this, admin.caleo.id "Provision tenant" flow fails 42501 on auth.users check.
+2. **PROMOTE hostname-aware FE**: wait for f32174d or later FE build to succeed, then `./scripts/promote-to-prod.sh <SHA>`. Prod FE currently on c12eed7b (Task 4) — mig 510 shipped but FE isn't passing hostname yet, so isolation is half-wired.
+3. **RUN Playwright T21** hostname isolation smoke against prod URLs after (2).
+4. **BE deploy restore**: probe threshold bump (ce72e67 cloudbuild.yaml) may fix, or requires manual :5432 pool investigation. Prod BE stuck on c4fc37a2 = Task 1. Real-tenant onboard doesn't need BE update but future BE fixes are blocked.
+
+### Real tenant onboard checklist
+- (1) above done → admin UI works
+- (2) above done → login on app.caleo.id lands on correct tenant, not staging
+- Then: admin.caleo.id → Provision tenant → owner_email + slug for real tenant
+- Verify: login as new owner on app.caleo.id → sees new tenant; login on staging.app.caleo.id → does NOT see new tenant
+
+Recurring P0: :5432 pool exhaustion is affecting every session for weeks. Root cause not diagnosed. Next investigation: pg_stat_activity when pool recovers, identify who's holding SUPERUSER slots.
