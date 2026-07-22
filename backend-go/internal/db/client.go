@@ -222,9 +222,34 @@ func addPgxExecMode(conn string) string {
 // on NOTIFY must fall back to polling until then.
 func (c *Client) StartListening(h NotifyHandlers) error {
 	if c.listener == nil {
-		slog.Warn("[DB] StartListening called with nil listener — NOTIFY degraded, will not receive events until listener pool recovers")
+		slog.Warn("[DB] listener not ready — will subscribe once retryListenerInit succeeds")
+		go c.waitAndSubscribe(h)
 		return nil
 	}
+	return c.subscribeAndDispatch(h)
+}
+
+// waitAndSubscribe polls until c.listener is non-nil (retryListenerInit
+// completes), then subscribes channels + starts dispatch. Runs in a
+// goroutine spawned by StartListening when the initial listener was nil.
+func (c *Client) waitAndSubscribe(h NotifyHandlers) {
+	for {
+		time.Sleep(15 * time.Second)
+		if c.listener != nil {
+			if err := c.subscribeAndDispatch(h); err != nil {
+				slog.Error("[DB] delayed subscribe failed", slog.Any("error", err))
+				return
+			}
+			slog.Info("[DB] LISTEN/NOTIFY subscribed after delayed listener init")
+			return
+		}
+	}
+}
+
+// subscribeAndDispatch is the original StartListening body: iterate channels,
+// Listen(), then start the dispatch goroutine. Extracted so waitAndSubscribe
+// can re-run it once the listener recovers.
+func (c *Client) subscribeAndDispatch(h NotifyHandlers) error {
 	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected", "approval_created", "order_created", "order_shipped"}
 	for _, ch := range channels {
 		if err := c.listener.Listen(ch); err != nil {
