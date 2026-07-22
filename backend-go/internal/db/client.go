@@ -107,32 +107,70 @@ func NewClient(queryConn, listenConn string) (*Client, error) {
 		return nil, fmt.Errorf("db: query pool ping failed: %w", err)
 	}
 
+	// Listener pool init is now NON-BLOCKING for readiness. If the direct
+	// pool (:5432) is exhausted at startup (recurring incident 2026-07-22 —
+	// zombie conns from prior revisions eat all non-superuser slots), the
+	// readiness probe would never pass and Cloud Run would abort the deploy.
+	// This blocked the very fix that would reduce future zombie count.
+	//
+	// New behaviour: query pool ping (above) blocks readiness. Listener pool
+	// + pq.Listener attempt once; on failure they retry in a background
+	// goroutine so BE can serve HTTP + accept traffic. LISTEN/NOTIFY work
+	// once slots free (usually within minutes as old revisions drain).
+	//
+	// A nil listener/ListenDB pair is safe: StartListening() checks for nil
+	// and returns early with a warning; jobs.Worker checks for nil ListenDB
+	// and disables the NOTIFY-driven job trigger (poll-only fallback).
 	listen, err := sql.Open("postgres", listenConn)
 	if err != nil {
 		query.Close()
 		return nil, err
 	}
-	// Listener pool: only holds the pq.Listener persistent conn + 1 spare.
-	// ConnMaxLifetime=0 means never rotate — pq.Listener needs a stable conn.
 	listen.SetMaxOpenConns(2)
 	listen.SetMaxIdleConns(1)
 	listen.SetConnMaxLifetime(0)
+
+	client := &Client{DB: query, ListenDB: listen}
+
 	if err := listen.Ping(); err != nil {
-		query.Close()
-		listen.Close()
-		return nil, fmt.Errorf("db: listener pool ping failed: %w", err)
+		slog.Warn("[DB] listener pool ping failed at startup — retrying in background", slog.Any("error", err))
+		go client.retryListenerInit(listenConn)
+	} else {
+		client.listener = pq.NewListener(listenConn, 10*time.Second, time.Minute,
+			func(ev pq.ListenerEventType, err error) {
+				if err != nil {
+					slog.Error("[DB] Listener event error", slog.Any("error", err))
+				}
+			})
+		slog.Info("[DB] Connected — queries via txn pooler, listener via direct")
 	}
 
-	slog.Info("[DB] Connected — queries via txn pooler, listener via direct")
+	return client, nil
+}
 
-	listener := pq.NewListener(listenConn, 10*time.Second, time.Minute,
-		func(ev pq.ListenerEventType, err error) {
-			if err != nil {
-				slog.Error("[DB] Listener event error", slog.Any("error", err))
+// retryListenerInit runs in a goroutine after NewClient returns. It keeps
+// trying to establish the listener pool + pq.Listener until success, then
+// assigns client.listener so subsequent StartListening() calls work.
+// Callers that already ran StartListening with a nil listener must re-call
+// once client.listener != nil (or accept that LISTEN/NOTIFY is degraded).
+func (c *Client) retryListenerInit(listenConn string) {
+	for attempt := 1; ; attempt++ {
+		time.Sleep(30 * time.Second)
+		if err := c.ListenDB.Ping(); err != nil {
+			if attempt%10 == 0 {
+				slog.Warn("[DB] listener pool still unreachable", slog.Int("attempt", attempt), slog.Any("error", err))
 			}
-		})
-
-	return &Client{DB: query, ListenDB: listen, listener: listener}, nil
+			continue
+		}
+		c.listener = pq.NewListener(listenConn, 10*time.Second, time.Minute,
+			func(ev pq.ListenerEventType, err error) {
+				if err != nil {
+					slog.Error("[DB] Listener event error", slog.Any("error", err))
+				}
+			})
+		slog.Info("[DB] Listener pool recovered", slog.Int("attempt", attempt))
+		return
+	}
 }
 
 // NewClientWithoutListener returns a *Client with only the query SQL connection
@@ -177,7 +215,16 @@ func addPgxExecMode(conn string) string {
 
 // StartListening subscribes to Postgres NOTIFY channels and dispatches to handlers.
 // Call once at startup; runs until the client is closed.
+//
+// If c.listener is nil (listener pool ping failed at NewClient time and is
+// still retrying in the background — see retryListenerInit), this is a no-op
+// warning. Notifications are degraded until the pool recovers; callers relying
+// on NOTIFY must fall back to polling until then.
 func (c *Client) StartListening(h NotifyHandlers) error {
+	if c.listener == nil {
+		slog.Warn("[DB] StartListening called with nil listener — NOTIFY degraded, will not receive events until listener pool recovers")
+		return nil
+	}
 	channels := []string{"admin_messages", "order_approved", "payment_verified", "payment_rejected", "dp_verified", "dp_proof_rejected", "approval_created", "order_created", "order_shipped"}
 	for _, ch := range channels {
 		if err := c.listener.Listen(ch); err != nil {
