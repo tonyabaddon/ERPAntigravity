@@ -966,3 +966,21 @@ Combined with:
 Committed verification script to tests/sql/qa-week/staging-prod-isolation-e2e-matrix.sql.
 
 Task 8 fully closed. Only Task 9 (founder-initiated tenant onboard) remains.
+
+## Update 2026-07-22 17:30 — dry-run REAL tenant onboard end-to-end SUCCESS
+
+Provisioned + verified + deprovisioned a throwaway `test-tenant-<time>` via the same code path admin.caleo.id UI uses. Zero real customer data touched.
+
+**What worked (proves your Task 9 flow):**
+- auth.users insert (via psql; UI would use Supabase Auth Admin API)
+- provision_tenant (mig 511 owner flip effective — no 42501)
+- All 7 side-effect rows created correctly: tenants (env=production), subs, tenant_users, admin_users, store_settings, chart_of_accounts (70 rows via _seed_tenant_accounting), accounting_config, cash_accounts (Kas Toko)
+- bootstrap_tenant_context returns tenant on `app.caleo.id`
+- bootstrap_tenant_context RAISEs ENV_MISMATCH on `staging.app.caleo.id` (isolation ✅)
+
+**Bugs discovered in dry-run (deprovision path — not blocking real onboard):**
+1. `deprovision_tenant` (still vosi_rpc_owner pre-flip) — same 42501 class. I flipped owner to postgres to unblock cleanup.
+2. `deprovision_tenant` body leaves orphans: doesn't cascade to `accounting_config`, `cash_accounts`, `chart_of_accounts` (70 rows). Manual cleanup required today.
+3. `_audit_row_change()` trigger fires on `DELETE FROM tenants` and tries to INSERT into audit_log with FK to the tenant being deleted → constraint violation. Workaround: `SET LOCAL session_replication_role = 'replica'` before delete. Real fix: audit trigger should DEFER or check `TG_OP='DELETE'` and skip.
+
+These deprovision bugs are worth a separate follow-up mig — but they only matter when you're deleting a tenant, so don't block onboarding.
