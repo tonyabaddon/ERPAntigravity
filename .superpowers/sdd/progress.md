@@ -911,3 +911,13 @@ Task 9: PENDING founder action (real tenant onboard via provision_tenant + verif
 - Verify: login as new owner on app.caleo.id → sees new tenant; login on staging.app.caleo.id → does NOT see new tenant
 
 Recurring P0: :5432 pool exhaustion is affecting every session for weeks. Root cause not diagnosed. Next investigation: pg_stat_activity when pool recovers, identify who's holding SUPERUSER slots.
+
+## Update 2026-07-22 16:15 — hostname-aware FE + BE deployed via manual gate
+
+- Prod FE: 100% on c2fec4a3 (hostname-aware bootstrap live)
+- Prod BE: 100% on cf32174d (same code as c2fec4a3 for BE; only cloudbuild.yaml probe threshold + docs changed between)
+- Prod health: app.caleo.id 200, prod BE /live 200
+- Task 7 fully verified: green build → tag at 0% → promote-to-prod.sh flipped to 100% → healthy
+- promote-to-prod.sh script itself has a subtle race — first invocation on f32174d only promoted FE; had to re-run BE manually via `gcloud run services update-traffic ... --to-tags=cf32174d=100`. Second invocation on c2fec4a3 promoted FE only; BE stayed on cf32174d. Script may need `--async=false` or explicit wait between the two update-traffic calls — follow-up.
+
+Remaining: mig 511 apply (smoke DO block still blocked on :5432 pool exhaustion; monitor b0oawd0e2 will notify on completion).
