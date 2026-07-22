@@ -1030,3 +1030,35 @@ Follow-up (not tonight):
 - Consider mig 513 for BE-listener-pool improvements captured as code
 - Staging BE still on old-code (its Cloud Build cascade also failed at smoke) — likely healthy once GoTrue recovers
 - FE bc6f5f7 also failed build → prod FE stays on c2fec4a3 (fine, no FE code changes today)
+
+## 2026-07-22 23:12 UTC — GoTrue RECOVERED. Task 9 UNBLOCKED.
+
+**Sequence that worked:**
+1. Committed bc6f5f7 = non-blocking listener init (so BE could deploy under pool exhaustion)
+2. Direct gcloud deployed bc6f5f7 image to prod BE at 0% + tag cbc6f5f7 → boot success
+3. Manual promote via `gcloud run services update-traffic --to-tags=cbc6f5f7=100`
+4. Old rev's warm instances still holding LISTEN conns → GoTrue still 500
+5. `gcloud run services update-traffic --clear-tags` → cleared ALL tag URLs → old warm instances shut down → LISTEN count dropped **37 → 1**
+6. Re-tagged current serving rev with cbc6f5f7 for future promote-script use
+7. GoTrue signInWithPassword returned **HTTP 200 with valid JWT** for playwright-toko-owner
+
+**Verification (all PASS):**
+- Prod health: app.caleo.id 200, prod BE /live+/ready 200, staging.app.caleo.id 200, admin.caleo.id 200
+- Pool: postgres=3, listen=1 (was 84/37), authenticator=8, supabase_admin=11
+- E2E onboard test (verify_onboard_e2e.sql): PROVISION + hostname isolation (prod hostname → returns, staging hostname → RAISE ENV_MISMATCH) + deprovision → 0 orphan rows
+- Playwright T21: 2/2 PASS against prod URLs (staging.app doesn't surface prod slugs, app doesn't surface staging slugs)
+
+**Coverage now:**
+- Hostname isolation: DB (0 leaks) + RPC (8/8 matrix) + UI (Playwright 2/2)
+- provision_tenant + deprovision_tenant work end-to-end via admin UI PostgREST path
+- GoTrue signInWithPassword works
+- Real tenant onboarding is completely unblocked
+
+**Follow-up (already fixed in 3a52cec, deploying):**
+- Subtle bug in bc6f5f7: StartListening ran with c.listener=nil → after retryListenerInit recovered, no channels got Listen()d → NOTIFY silently dropped. 3a52cec adds waitAndSubscribe that polls until listener non-nil then subscribes.
+
+**Key insight discovered:**
+Root cause of pool exhaustion was NOT zombie conns from dead containers. It was Cloud Run keeping WARM standby instances per tagged revision (tag URLs). minScale=1 applies per tag URL. Every prior deploy left a tag → tag kept 1 instance warm → 9 LISTEN conns per warm instance × 4-5 tag URLs = 36+ conns.
+`gcloud run services update-traffic --clear-tags` removes tag URLs → standby instances terminate → conns free.
+
+**Standing recommendation:** clean old tag URLs after successful promote. Consider adding to promote-to-prod.sh: keep last 3 tags, retire older ones.
