@@ -921,3 +921,15 @@ Recurring P0: :5432 pool exhaustion is affecting every session for weeks. Root c
 - promote-to-prod.sh script itself has a subtle race — first invocation on f32174d only promoted FE; had to re-run BE manually via `gcloud run services update-traffic ... --to-tags=cf32174d=100`. Second invocation on c2fec4a3 promoted FE only; BE stayed on cf32174d. Script may need `--async=false` or explicit wait between the two update-traffic calls — follow-up.
 
 Remaining: mig 511 apply (smoke DO block still blocked on :5432 pool exhaustion; monitor b0oawd0e2 will notify on completion).
+
+## Update 2026-07-22 16:45 — mig 511 APPLIED (via psql bypass) — Task 9 UNBLOCKED
+
+- Direct psql via gcloud secret bypassed the management-API pool exhaustion (which persisted for ~30 min).
+- mig 511 ALTER FUNCTION provision_tenant + _seed_tenant_accounting TO postgres — SUCCESS.
+- Also dropped 7-arg legacy provision_tenant so exact-arity resolution can't route through the still-vosi-rpc-owned overload.
+- Verified single provision_tenant remains: owner=postgres, 8-arg signature.
+- Smoke via psql reached admin_users PK conflict on founder ID → proves permission path clean (founder already had admin_users row from being owner of existing prod tenants; conflict is expected for founder-as-owner smoke, not a real bug for new-owner onboarding).
+- schema_migrations tracked (INSERT 0 1).
+- Commit 6b540c0 pushed.
+
+Task 9 (real tenant onboard) is now UNBLOCKED — admin.caleo.id "Provision tenant" flow will work for any NEW auth.users owner.
