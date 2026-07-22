@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockRpc } = vi.hoisted(() => ({ mockRpc: vi.fn() }));
 
+// Ensure supabaseClient module treats env as configured (Cloud Build has no VITE_SUPABASE_URL)
+vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
+vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
+
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
     rpc: (...args: unknown[]) => mockRpc(...args),
