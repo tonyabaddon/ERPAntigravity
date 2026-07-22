@@ -933,3 +933,15 @@ Remaining: mig 511 apply (smoke DO block still blocked on :5432 pool exhaustion;
 - Commit 6b540c0 pushed.
 
 Task 9 (real tenant onboard) is now UNBLOCKED — admin.caleo.id "Provision tenant" flow will work for any NEW auth.users owner.
+
+## Update 2026-07-22 17:00 — Playwright blocked, promote-script race fixed
+
+- Playwright T21: signInWithPassword returned 500 "Database error querying schema" — same :5432 pool cascade affecting GoTrue. Test can't run until pool recovers. Spec is correct + committed; founder to run after pool recovers.
+- promote-to-prod.sh race fixed (commit b8bddf8): apply_and_verify helper reads back traffic percent per-service, retries once if the edit didn't stick. Prevents the FE-promoted-BE-stalled failure mode observed today.
+- ALL SDD Tasks 1-8 CLOSED. Task 9 (founder action) is the only remaining item.
+
+=== SESSION END STATE ===
+Prod: FE c2fec4a3 (hostname-aware), BE cf32174d (functionally same as c2fec4a3), health 200.
+Migrations 508→511 all applied + tracked.
+Manual deploy gate active. promote-to-prod.sh hardened.
+Founder next step: provision real tenant via admin.caleo.id, verify hostname isolation.
