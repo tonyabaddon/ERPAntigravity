@@ -15,6 +15,12 @@ export interface PostLoginRouteInput {
   isPlatformAdmin: boolean;
   /** Tenant slug from `bootstrap_tenant_context` — null if none. */
   tenantSlug: string | null;
+  /**
+   * Current window.location.hostname. Distinguishes admin surface
+   * (admin.caleo.id) from tenant surface (app.caleo.id, localhost).
+   * Absent → treated as tenant surface (backward compat with older tests).
+   */
+  hostname?: string;
 }
 
 export type PostLoginRoute =
@@ -22,16 +28,24 @@ export type PostLoginRoute =
   | { action: 'redirect'; href: string };
 
 export function computePostLoginRoute(input: PostLoginRouteInput): PostLoginRoute {
-  const { pathname, isPlatformAdmin, tenantSlug } = input;
+  const { pathname, isPlatformAdmin, tenantSlug, hostname } = input;
   const isTenantPath = pathname.startsWith('/t/');
   const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/');
+  const isAdminHostname =
+    hostname === 'admin.caleo.id' || hostname === 'staging.admin.caleo.id';
 
   if (isPlatformAdmin) {
     // Platform admin honors any tenant or admin deep-link. App.tsx renders
     // the impersonation gate for /t/<slug>/* if a matching impersonation
     // claim isn't yet in the JWT.
     if (isTenantPath || isAdminPath) return { action: 'stay' };
-    return { action: 'redirect', href: '/admin' };
+    // Hostname-aware default: on admin.caleo.id → /admin; on app.caleo.id
+    // (or any non-admin hostname), platform admin defaults to their tenant
+    // dashboard if they have one, else /select-tenant. Prevents the
+    // "app.caleo.id lands on caleo admin" bug (2026-07-22 founder report).
+    if (isAdminHostname) return { action: 'redirect', href: '/admin' };
+    if (tenantSlug) return { action: 'redirect', href: `/t/${tenantSlug}/dashboard` };
+    return { action: 'redirect', href: '/select-tenant' };
   }
 
   // Regular tenant user. Preserve any /t/* deep-link — the App slug-guard

@@ -88,21 +88,22 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
 
     // Tenant slug via bootstrap_tenant_context (SECDEF). Direct SELECT on
     // tenant_users hits 42P17 recursion in the a_self_or_tenant_admin RLS
-    // policy for non-admin users.
+    // policy for non-admin users. Platform admins on app.caleo.id also need
+    // this so they can default to their tenant dashboard instead of /admin
+    // (2026-07-22 fix — see postLoginRoute.ts hostname branch).
     let tenantSlug: string | null = null;
-    if (!isPlatformAdmin) {
-      try {
-        const ctx = await tenantContextService.bootstrap();
-        tenantSlug = ctx?.slug ?? null;
-      } catch {
-        tenantSlug = null;
-      }
+    try {
+      const ctx = await tenantContextService.bootstrap();
+      tenantSlug = ctx?.slug ?? null;
+    } catch {
+      tenantSlug = null;
     }
 
     const decision = computePostLoginRoute({
       pathname: window.location.pathname,
       isPlatformAdmin,
       tenantSlug,
+      hostname: window.location.hostname,
     });
     if (decision.action === 'redirect') {
       window.location.href = decision.href;
