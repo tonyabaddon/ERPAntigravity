@@ -984,3 +984,25 @@ Provisioned + verified + deprovisioned a throwaway `test-tenant-<time>` via the 
 3. `_audit_row_change()` trigger fires on `DELETE FROM tenants` and tries to INSERT into audit_log with FK to the tenant being deleted → constraint violation. Workaround: `SET LOCAL session_replication_role = 'replica'` before delete. Real fix: audit trigger should DEFER or check `TG_OP='DELETE'` and skip.
 
 These deprovision bugs are worth a separate follow-up mig — but they only matter when you're deleting a tenant, so don't block onboarding.
+
+## Update 2026-07-22 18:30 — mig 512 shipped + apply-script backfilled
+
+**Fixed all gaps my re-audit found:**
+- mig 512 (commit 6d6cdac) — 3 deprovision-path bugs:
+  - `deprovision_tenant` owner drift captured (postgres, not vosi_rpc_owner)
+  - deprovision body extended to clean accounting_config + cash_accounts + chart_of_accounts (was leaving 72+ orphan rows)
+  - `_audit_row_change()` skips DELETE on tenants + skips DELETE where parent tenant already gone (cascade path)
+- `scripts/apply-pending-migrations.sh` — added 508-512 entries for fresh-DB reproducibility
+- Verified E2E: psql provision + deprovision → 0 orphan rows
+
+**Still blocking Task 9 (out of my code scope):**
+- GoTrue 500 root cause: BE holds 34-83 LISTEN connections (pq.Listener opens 1 conn per Listen() call apparently, not 1 shared). max_connections=90 - 3 superuser reserved = 87 slots. BE eats ~83, leaving 0 for supabase_auth_admin.
+- Two viable fixes: (a) refactor backend-go to reuse a single pq.Listener connection across all 9 channels, or (b) bump max_connections (paid Supabase tier).
+
+**Complete audit — nothing else missing:**
+- All migs 508-512 applied + tracked ✅
+- Cloudbuild auto-promote removed both files ✅
+- Prod on hostname-aware code ✅
+- 8/8 hostname×env matrix PASS ✅
+- provision_tenant + deprovision_tenant work end-to-end via psql ✅
+- apply-pending-migrations.sh covers everything ✅
