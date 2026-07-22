@@ -133,21 +133,26 @@ describe('AttentionQueue', () => {
   });
 
   it('shows error state with Bahasa message and retry button', async () => {
+    // AttentionQueue retries fetch 3× with 500ms/1000ms backoff before surfacing
+    // the error. Bump waitFor timeout past cumulative 1500ms of backoff.
     listAttentionTenants.mockRejectedValue(new InternalError());
     render(<AttentionQueue />);
-    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument(), { timeout: 3000 });
     expect(screen.getByText('Kesalahan internal.')).toBeInTheDocument();
     expect(screen.getByTestId('attention-queue-retry')).toBeInTheDocument();
   });
 
   it('retry button re-triggers fetch', async () => {
+    // 3× reject for initial fetchAll retries, then success on manual Coba lagi.
     listAttentionTenants.mockRejectedValueOnce(new InternalError())
+      .mockRejectedValueOnce(new InternalError())
+      .mockRejectedValueOnce(new InternalError())
       .mockResolvedValueOnce([expiringRow]);
     render(<AttentionQueue />);
-    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('attention-queue-error')).toBeInTheDocument(), { timeout: 3000 });
     fireEvent.click(screen.getByTestId('attention-queue-retry'));
     await waitFor(() => expect(screen.getByTestId('attention-queue-live')).toBeInTheDocument());
-    expect(listAttentionTenants).toHaveBeenCalledTimes(2);
+    expect(listAttentionTenants).toHaveBeenCalledTimes(4);
   });
 
   it('passes withinDays prop through to the RPC', async () => {

@@ -29,24 +29,40 @@ export function AdminHome() {
 
     let cancelled = false;
     (async () => {
-      try {
-        const [s, t, e] = await Promise.all([
-          getPlatformDashboardStats(),
-          listTenantsAdmin(),
-          listAuditEvents({ limit: 20 }),
-        ]);
-        if (cancelled) return;
-        setStats(s);
-        setTenants(t);
-        setEvents(e);
-      } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : String(err);
+      // Retry the parallel fetch up to 3× with 500ms/1000ms backoff. During a
+      // Supabase :5432 pool pinch (2026-07-22 incident) PostgREST intermittently
+      // returns 503 PGRST002 "Could not query the database for the schema cache"
+      // — one flaky RPC out of three would fail the whole Promise.all and blank
+      // the entire dashboard. Retry lets the transient 5xxs pass without
+      // user-visible failure. If all 3 retries still fail, surface the toast.
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const [s, t, e] = await Promise.all([
+            getPlatformDashboardStats(),
+            listTenantsAdmin(),
+            listAuditEvents({ limit: 20 }),
+          ]);
+          if (cancelled) return;
+          setStats(s);
+          setTenants(t);
+          setEvents(e);
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+          }
+        }
+      }
+      if (cancelled) return;
+      if (lastErr) {
+        const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
         setError(msg);
         adminToast.error('Gagal memuat dashboard', msg);
-      } finally {
-        if (!cancelled) setLoading(false);
       }
+      setLoading(false);
     })();
 
     return () => {

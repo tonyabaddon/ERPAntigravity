@@ -222,6 +222,9 @@ describe('AdminHome', () => {
   // ── Error state ──────────────────────────────────────────────────────────────
 
   it('shows error state with retry button when fetch fails', async () => {
+    // AdminHome retries fetchAll 3× with 500ms/1000ms backoff before surfacing
+    // the error — resilience against transient Supabase pool pinches. Bump
+    // waitFor timeout past 500+1000ms of backoff.
     dashboardMock.mockRejectedValue(new Error('network failure'));
     tenantsMock.mockResolvedValue([]);
     auditMock.mockResolvedValue([]);
@@ -230,13 +233,17 @@ describe('AdminHome', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('admin-home-error')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(screen.getByText(/Gagal memuat dashboard/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Coba lagi/ })).toBeInTheDocument();
   });
 
   it('retry button triggers re-fetch', async () => {
+    // Mock dashboard to fail for all 3 retries of the initial fetchAll, then
+    // succeed on the manual "Coba lagi" retry.
+    dashboardMock.mockRejectedValueOnce(new Error('first fail'));
+    dashboardMock.mockRejectedValueOnce(new Error('first fail'));
     dashboardMock.mockRejectedValueOnce(new Error('first fail'));
     tenantsMock.mockResolvedValue([]);
     auditMock.mockResolvedValue([]);
@@ -245,7 +252,7 @@ describe('AdminHome', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('admin-home-error')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     // Set up successful response for retry
     dashboardMock.mockResolvedValue({

@@ -68,18 +68,47 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
     setLoading(true);
     setError(null);
     (async () => {
-      try {
-        // Fetch subscription-attention rows + OVERDUE coverage rows in parallel.
-        const [attentionRows, coverageResult] = await Promise.all([
-          listAttentionTenants(withinDays),
-          supabase
-            ? supabase
-                .from('v_tenant_payment_coverage')
-                .select('tenant_id, tenant_slug, tenant_name, plan_code, coverage_status')
-                .eq('coverage_status', 'OVERDUE')
-            : Promise.resolve({ data: null, error: null }),
-        ]);
+      // Retry the parallel fetch up to 3× with 500ms/1000ms backoff — same
+      // resilience pattern as AdminHome + AdminRouteGuard. During Supabase
+      // pool pinches PostgREST intermittently 503s with PGRST002; retry
+      // absorbs the transient without user-visible failure.
+      let lastErr: unknown = null;
+      let attentionRows: AttentionTenantRow[] = [];
+      let coverageResult: { data: unknown[] | null; error: unknown } = { data: null, error: null };
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const results = await Promise.all([
+            listAttentionTenants(withinDays),
+            supabase
+              ? supabase
+                  .from('v_tenant_payment_coverage')
+                  .select('tenant_id, tenant_slug, tenant_name, plan_code, coverage_status')
+                  .eq('coverage_status', 'OVERDUE')
+              : Promise.resolve({ data: null, error: null }),
+          ]);
+          attentionRows = results[0];
+          coverageResult = results[1] as { data: unknown[] | null; error: unknown };
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+          }
+        }
+      }
+      if (cancelled) return;
+      if (lastErr) {
+        const msg = lastErr instanceof AdminApiError
+          ? lastErr.userMessage
+          : 'Gagal memuat antrian perhatian.';
+        setError(msg);
+        adminToast.error(msg);
+        setLoading(false);
+        return;
+      }
 
+      try {
         // Build merged set: start from subscription attention rows.
         // Track by tenant_id; higher-priority reason wins on collision.
         const rowMap = new Map<string, AttentionTenantRow>();
