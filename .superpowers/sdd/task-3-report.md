@@ -2,7 +2,7 @@
 
 **Status:** DONE
 **Date:** 2026-07-21
-**Commit SHA:** (see below — filled after commit)
+**Commit SHA:** a2bff54
 
 ---
 
@@ -172,4 +172,4 @@ time, no runtime impact).
 
 ## Commit SHA
 
-(filled after git commit)
+`a2bff54`

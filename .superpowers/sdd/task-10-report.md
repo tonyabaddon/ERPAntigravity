@@ -95,7 +95,14 @@ N/A — Playwright not used.
   5. `fetchLogoDataUrl` short-circuits when `settings.logo_url` is unset.
   6. Use vitest as the runner (jsdom + mocks free) — followed.
   7. Combine text diff + image diff — did both.
-- **No adversarial follow-up call needed** — results were unambiguous (0px diff).
+- **Post-commit advisor (1×)** — flagged a critical adversarial concern: byte-
+  identical file sizes across a two-major bump is the exact fingerprint of Vite
+  dep-cache pollution (vitest could have re-used the 4.2.1 module even after
+  disk-swap). Advisor demanded verification via jsPDF's embedded `/Producer`
+  metadata. Ran `pdfinfo docs/qa-week/pdf-regression/{pre,post}/*.pdf | grep
+  Producer` — all 13 pre PDFs report `jsPDF 2.5.2`, all 13 post report
+  `jsPDF 4.2.1`. Regression evidence CONFIRMED legitimate. Verdict doc updated
+  to include the Producer verification in adversarial-critique section.
 
 ## Concerns / open items
 - **Multi-page not covered** — all 13 fixtures render to 1 page. But since single-page

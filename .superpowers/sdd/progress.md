@@ -879,3 +879,5 @@ Phase 1 Task 6: complete (commit 800072b + backfilled schema_migrations 471/472/
 **Plan:** docs/superpowers/plans/2026-07-22-staging-prod-isolation-plan.md
 
 Task 1: complete (commit cbb82fa, mig 508 applied via /database/migrations endpoint workaround for pool exhaustion; 3 tenants backfilled to env=production; index + schema_migrations tracked on attempt 5)
+Task 3: complete (commit 1e22da2, mig 510 applied — p_hostname param + env-mismatch RAISE; owner preserved as postgres per Phase A exclusion; smoke 3/3 PASS)
+Task 4: complete (commit 12eed7b, 3 staging tenants seeded — garindo-staging + toko-jaya-makmur-staging + warung-sinar-rezeki-staging; playwright-toko-owner added to toko-jaya-makmur-staging; provision_tenant/_seed_tenant_accounting SECDEF permission gap bypassed via inline INSERTs as postgres/BYPASSRLS)

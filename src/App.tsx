@@ -256,7 +256,7 @@ export default function App() {
         // than a direct SELECT on tenant_users — the latter hits the P1
         // tenant_users RLS self-recursion bug (42P17) for non-admin users.
         try {
-          const ctx = await tenantContextService.bootstrap();
+          const ctx = await tenantContextService.bootstrap(window.location.hostname);
           if (ctx?.slug) setSessionTenantSlug(ctx.slug);
           if (ctx?.name) setSessionTenantName(ctx.name);
         } catch (err) {

@@ -30,7 +30,7 @@ export const TenantProvider: React.FC<Props> = ({ slug, impersonating = false, o
 
   useEffect(() => {
     let cancelled = false;
-    tenantContextService.bootstrap()
+    tenantContextService.bootstrap(typeof window !== 'undefined' ? window.location.hostname : undefined)
       .then(v => { if (!cancelled && v) setState({ ...v, impersonating } as TenantContextValue); })
       .catch(err => {
         const code = err?.message ?? err?.code ?? 'BOOTSTRAP_FAILED';

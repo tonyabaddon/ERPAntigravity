@@ -1,110 +1,190 @@
-# Task 9 Report — Staging Deploy + Test Matrix
+# Task 9 Report — P1-07 jspdf 4.x Upgrade
 
 ## Status: DONE
 
-## Staging URL: https://caleo-landing-staging.tonywei.workers.dev
+Date: 2026-07-20
 
 ---
 
-## Bugs Found + Fixed (before proceeding)
+## Step 1: PDF Generator File List (Impact Scope)
 
-### Bug 1: `compatibility_date = "2026-07-19"` rejected by Cloudflare API
-- **Root cause:** Cloudflare's API rejected a future-dated compatibility date
-- **Fix:** Changed to `2025-07-01` in `infra/caleo-landing-worker/wrangler.toml`
+Command: `grep -rln "jspdf\|jsPDF" src/ --include='*.ts' --include='*.tsx' | grep -v test`
 
-### Bug 2: workers.dev subdomain not registered
-- **Root cause:** New account, no `*.workers.dev` subdomain provisioned yet
-- **Fix:** Registered `tonywei` subdomain via Cloudflare API (`PUT /accounts/.../workers/subdomain`)
+Result: **13 files** (brief expected 12 — one additional file discovered):
 
-### Bug 3: Accessibility score 85/100 (target ≥ 90)
-- **Root cause:** 4 failing categories: `color-contrast` (many small-text elements), `frame-title` (Google Maps iframe), `select-name` (ROI dropdowns lacking `for=`), `landmark-one-main` (no `<main>` element)
-- **Fix:** Added `<main>` wrapper; iframe `title`; `for=` on labels; darkened all failing color tokens: `--gold-2` → `#92400E`, `--muted` → `#64748B`, `--wa` → `#1a7a3d`, `--success` (small text) → `#166534`, `--danger` (small text) → `#991B1B`; also fixed `rgba(255,255,255,0.7)` invisible text bug in pricing section
-- **Result:** Accessibility 85 → 100/100 after 3 deploy cycles
+1. `src/components/pengaturan/saldoAwal/SaldoAwalPDF.tsx`
+2. `src/lib/tandaTerimaPdf.ts`
+3. `src/lib/sales/pdf/invoiceDpPdf.ts`
+4. `src/lib/sales/pdf/catatanPembatalanPdf.ts`
+5. `src/lib/sales/pdf/suratJalanPdf.ts`
+6. `src/lib/sales/pdf/salesOrderPdf.ts`
+7. `src/lib/pdf/warehouseTransferPDF.ts`
+8. `src/lib/sales/pdf/invoicePelunasanPdf.ts`
+9. `src/lib/sales/pdf/common.ts` (shared helper)
+10. `src/lib/akuntansi/pdfExport.ts`
+11. `src/lib/sales/pdf/invoiceLunasPdf.ts`
+12. `src/lib/pdf/purchaseOrderPdf.ts`
+13. `src/lib/pdf/belanjaNumpangLewatPdf.ts`
 
-### Bug 4: FAB `.fab-wa` visible on mobile (CSS cascade order bug)
-- **Root cause:** Base `.fab-wa { display: inline-flex }` rule at line 1113 appeared AFTER the `@media (max-width: 720px) { .fab-wa { display: none } }` rule at line 1100, so the later base rule won the cascade
-- **Fix:** Removed `display:none` from the early media block; moved it to the `@media (max-width: 720px)` block that follows the base definition
-
-### Bug 5: CSP violation from `onload="this.media='all'"` inline event handler
-- **Root cause:** Attempted non-render-blocking Google Fonts load via media="print" trick; inline event handlers violate `script-src 'self'` CSP
-- **Fix:** Reverted to standard `<link rel="stylesheet">` — performance score remained 0.98–1.0 without the trick anyway
-
-### Bug 6: Logo `<img>` and QR `<img>` missing explicit `width`/`height`
-- **Fix:** Added `width="152" height="40"` to both logo instances; `width="190" height="190"` to QR image
+Note: Brief expected 12 files. Actual count is 13. The extra file is `src/lib/pdf/belanjaNumpangLewatPdf.ts` — BNL PDF generator, consistent with Phase 2 feature additions.
 
 ---
 
-## Test Matrix Results (28 steps)
+## Step 2: Backup
 
-| Step | Description | Result |
-|------|-------------|--------|
-| 1 | Wrangler auth (`npx wrangler whoami`) | **PASS** — authenticated as tonywei.office@gmail.com |
-| 2 | Deploy to staging (`wrangler deploy --env staging`) | **PASS** — URL live, Version ID: 39ef9b80 |
-| 3 | Sanity check — HTTP 200 + "Toko makin rapi" | **PASS** |
-| 4 | All 7 routes return 200 | **PASS** |
-| 5 | Security headers on all HTML routes | **PASS** — CSP, HSTS, X-Frame-Options, X-Content-Type, Referrer-Policy, Permissions-Policy all present on 4 HTML routes |
-| 6 | Content-type overrides (robots.txt, sitemap.xml) | **PASS** |
-| 7 | Playwright 12/12 against staging | **PASS** — 12/12 in 4.3s |
-| 8 | Googlebot fetch — og:*, twitter:*, ld+json | **PASS** — all 10 expected meta tags + JSON-LD present |
-| 9 | Google Rich Results Test (manual) | **AUTONOMOUS_DEFERRED** — requires Google web UI |
-| 10 | Sitemap XML valid + 4 `<loc>` entries | **PASS** |
-| 11 | Facebook Sharing Debugger | **AUTONOMOUS_DEFERRED** — requires Facebook developer portal UI; og-image.png serves `image/png` ✓ (pre-check passed) |
-| 12 | WhatsApp link preview | **AUTONOMOUS_DEFERRED** — requires sending WA message |
-| 13 | Twitter/X Card Validator | **AUTONOMOUS_DEFERRED** — requires Twitter portal UI |
-| 14 | Lighthouse desktop | **PASS** — Performance: 1.00, Accessibility: 1.00, Best-Practices: 0.92, SEO: 1.00 |
-| 15 | Lighthouse mobile | **PASS** — Performance: 0.98, Accessibility: 1.00, Best-Practices: 0.92, SEO: 1.00 |
-| 16 | Chrome desktop walkthrough — all 22 section/element checks | **PASS** — 16 sections, 8 audience cards, 10 module cards, 4 onboarding steps, 3 pricing tiers, 15 FAQ items, 10 testi cards confirmed |
-| 17 | DevTools console clean | **PASS** — zero errors/warnings |
-| 18 | Interactive JS — ROI calc + pricing toggle | **PASS** — ROI updates on dropdown change; 6mo prices (509K/807K/3.23jt), 12mo (419K/664K/2.66jt), callout "Komit 6 bulan · GRATIS setup · 💡 Pilih 12-bulan hemat 50%..." correct |
-| 19 | Firefox desktop smoke | **AUTONOMOUS_DEFERRED** — requires Firefox |
-| 20 | Safari desktop smoke | **AUTONOMOUS_DEFERRED** — requires Safari |
-| 21 | Mobile emulation iPhone SE 375×667 | **PASS** — nav hidden, modules 1-col, pricing 1-col, mobile CTA visible, FAB hidden (bug fixed), onboarding arrows hidden, marquee animating |
-| 22 | iPhone XR 414×896 + iPad 768×1024 | **PASS** — XR: FAB hidden, mobile CTA visible; iPad: FAB visible, mobile CTA hidden, modules 2-col |
-| 23 | Keyboard navigation | **PASS** — 41 focusable elements, term-btn tabIndex=0 + type=button, FAB aria-label="Chat WhatsApp", `<main>` landmark, select labels linked |
-| 24 | Reduced-motion CSS rules present | **PASS** — `.marquee-track { animation: none !important }`, `.reveal { opacity:1; transform:none }` verified in stylesheet |
-| 25 | Lighthouse a11y deep-dive | **PASS** — 100/100, all 23 weighted audits pass |
-| 26 | Rollback drill | **PASS** — broken deployed → confirmed empty page → `wrangler rollback` in < 5s → confirmed restored → working redeployed |
-| 27 | Sign-off checklist | **PASS** — 22 PASS + 6 AUTONOMOUS_DEFERRED, zero FAIL |
-| 28 | No commit needed | **PASS** — staging deploy is ops action, not committed |
+Backed up to:
+- `/tmp/package.json.pre-jspdf-bump`
+- `/tmp/package-lock.json.pre-jspdf-bump`
 
 ---
 
-## Lighthouse Scores
+## Step 3: npm audit fix --force — Versions Before/After
 
-| Category | Desktop | Mobile | Target Desktop | Target Mobile |
-|----------|---------|--------|---------------|--------------|
-| Performance | 1.00 | 0.98 | ≥ 0.95 ✓ | ≥ 0.85 ✓ |
-| Accessibility | 1.00 | 1.00 | ≥ 0.90 ✓ | ≥ 0.90 ✓ |
-| Best Practices | 0.92 | 0.92 | ≥ 0.90 ✓ | ≥ 0.90 ✓ |
-| SEO | 1.00 | 1.00 | ≥ 0.95 ✓ | ≥ 0.95 ✓ |
+### Before
 
----
-
-## Deferred Manual Items (founder morning-of verification)
-
-1. **Step 9** — Google Rich Results Test: https://search.google.com/test/rich-results → paste staging URL → expect SoftwareApplication + LocalBusiness schema, zero errors. Repeat for `/case-study` → Article schema.
-2. **Step 11** — Facebook Sharing Debugger: https://developers.facebook.com/tools/debug/ → paste staging URL → verify OG image (1200×630) + title "Caleo — Toko Rapi, Untung Jelas".
-3. **Step 12** — WhatsApp link preview: send staging URL to yourself on WA → verify card with logo/title/description.
-4. **Step 13** — Twitter/X Card Validator: https://cards-dev.twitter.com/validator → paste staging URL → verify "Summary with large image" card.
-5. **Step 19** — Firefox desktop smoke: hero renders, modules 5×2 grid, pricing toggle works, no console errors.
-6. **Step 20** — Safari desktop smoke: Inter font loads, CSS gradients render, backdrop-filter blur on nav, no console errors.
-
----
-
-## Concerns
-
-None blocking Task 10. All programmatically-verifiable items are green.
-
-Note on Best-Practices 0.92: Cloudflare Workers' edge environment causes minor best-practices findings (deprecated API usage in network layer). Not actionable from page code.
-
-Note on wrangler.toml `compatibility_date`: Changed from `2026-07-19` to `2025-07-01` because Cloudflare API rejects dates it considers future. `2025-07-01` enables all stable features needed.
-
----
-
-## Rollback Command (reference for Task 10 production rollback)
-
-```bash
-source .env && npx wrangler rollback --env production --name caleo-landing
+```
+react-example@0.0.0
+├─┬ jspdf-autotable@3.8.4
+│ └── jspdf@2.5.2 deduped
+└─┬ jspdf@2.5.2
+  └── dompurify@2.5.9
 ```
 
-This exact pattern was verified working in staging (Step 26).
+### Command output
+
+```
+npm warn using --force Recommended protections disabled.
+npm warn audit Updating jspdf to 4.2.1, which is a SemVer major change.
+npm warn audit Updating jspdf-autotable to 5.0.8, which is a SemVer major change.
+
+added 5 packages, removed 3 packages, changed 7 packages, and audited 406 packages in 5s
+
+57 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+```
+
+### After (verified via `npm ls`)
+
+```
+react-example@0.0.0
+├─┬ jspdf-autotable@5.0.8
+│ └── jspdf@4.2.1 deduped
+└─┬ jspdf@4.2.1
+  └── dompurify@3.4.12
+```
+
+**Summary of version changes:**
+| Package | Before | After |
+|---------|--------|-------|
+| jspdf | 2.5.2 | 4.2.1 |
+| jspdf-autotable | 3.8.4 | 5.0.8 |
+| dompurify | 2.5.9 | 3.4.12 |
+
+jspdf-autotable was also bumped (3.x → 5.x, a two-major jump) — this is expected since jspdf-autotable must match the jspdf peer dependency. dompurify was bumped as a transitive dep of jspdf.
+
+---
+
+## Step 4: npm install
+
+```
+up to date, audited 406 packages in 627ms
+57 packages are looking for funding
+found 0 vulnerabilities
+```
+
+Lock file is clean — no additional packages changed.
+
+---
+
+## Step 5: Lint Result
+
+**PASS — zero TypeScript errors**
+
+Command: `npm run lint` (→ `tsc --noEmit`)
+
+Output: clean (no output, exit 0)
+
+### jspdf 4.x TypeScript API changes discovered
+
+**None.** The TypeScript definitions in jspdf 4.x appear to be backward-compatible with the usage patterns in all 13 PDF generator files. No method renames, removed APIs, or signature changes were flagged by the compiler. `jspdf-autotable` 5.x also compiles cleanly.
+
+---
+
+## Step 6: Vitest Result
+
+**PASS — 971 tests pass, 0 failures, 2 skipped (pre-existing)**
+
+Command: `npx vitest run src`
+
+```
+Test Files  112 passed (112)
+     Tests  971 passed | 2 skipped (973)
+  Start at  14:48:36
+  Duration  13.05s (transform 5.28s, setup 5.59s, import 12.63s, tests 16.01s, environment 66.45s)
+```
+
+### New failures caused by jspdf upgrade
+
+**None.** Zero test failures. The 2 skipped tests are pre-existing (from prior sessions — not caused by this upgrade).
+
+### PDF-related test baseline
+
+The vitest suite does not directly test PDF rendering output (visual regression is out-of-scope for unit tests — handled by Task 10). All import-level and type-level checks for the 13 PDF generator files passed implicitly via the TypeScript compilation in Step 5.
+
+---
+
+## jspdf API Changes Discovered
+
+**No API breakage detected.** All 13 PDF generator files compiled cleanly (tsc --noEmit) and all 971 tests passed. This indicates jspdf 4.x maintained backward compatibility for the API surface used in this codebase.
+
+Key observations:
+- `jsPDF` constructor usage unchanged
+- `autoTable` integration (jspdf-autotable 5.x) compiles cleanly
+- Common helper patterns in `src/lib/sales/pdf/common.ts` (font loading, page setup, drawing helpers) are compatible
+- No deprecated method warnings surfaced at compile time
+
+---
+
+## Uncommitted Files (git status)
+
+Modified (relevant to this task):
+- `package.json` — jspdf/jspdf-autotable version entries updated
+- `package-lock.json` — full dependency tree updated
+
+Modified (pre-existing, unrelated to this task):
+- `.superpowers/sdd/progress.md`
+- `.superpowers/sdd/task-2-report.md`
+- `.superpowers/sdd/task-3-report.md`
+- `.superpowers/sdd/task-5-report.md`
+
+Untracked files (pre-existing, unrelated):
+- `.claude/scheduled_tasks.lock`
+- `Marketing/`, `docs/`, `pitch-deck-highlights*`, `test-results/`, `tests/e2e/`
+
+**No commit made.** Per task brief, Task 10 handles commit after visual PDF regression validation.
+
+---
+
+## Concerns / Open Items for Task 10
+
+1. **jspdf-autotable also jumped two major versions (3.x → 5.x):** The npm audit fix --force bumped it as part of the dependency resolution. Task 10 must visually validate autotable-rendered PDFs (purchase orders, invoices with line-item tables) to confirm the table rendering is still correct.
+
+2. **dompurify 3.x (transitive):** bumped from 2.5.9 → 3.4.12. This is an internal jspdf dependency for sanitizing HTML content. No direct usage in our codebase, but worth noting if any HTML-mode PDF rendering is used.
+
+3. **13 files not 12:** Task 10 should visually validate all 13 PDF generators, not just 12. The extra file is `belanjaNumpangLewatPdf.ts`.
+
+4. **No API breakage found BUT:** compile-time clean does not guarantee identical runtime behavior. jspdf 4.x may have changed font metrics, line-height defaults, table column width algorithms, or page margin calculations that are only visible in the rendered PDF. This is precisely why Task 10 visual regression exists.
+
+5. **Zero vulnerabilities:** The audit fix resolved all known security vulnerabilities. `found 0 vulnerabilities` confirmed post-fix.
+
+---
+
+## Files Changed by This Task
+
+- `package.json` — jspdf 2.5.2 → 4.2.1, jspdf-autotable 3.8.4 → 5.0.8 (and dompurify transitive)
+- `package-lock.json` — full lockfile regenerated for new dependency tree
+- `.superpowers/sdd/task-9-report.md` — this report
+
+No source files in `src/` were modified. TypeScript compiled cleanly without any code changes.

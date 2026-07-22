@@ -119,4 +119,4 @@ npx vitest run --changed → 9 passed (1 file)
 
 ## Commit SHA
 
-(appended after commit)
+`6b6740f` — feat(qa): add per-widget error states to LaporanScreen (Wave 3 2J)

@@ -2516,9 +2516,10 @@ export interface TenantContextData {
 }
 
 export const tenantContextService = {
-  async bootstrap(): Promise<TenantContextData | null> {
+  async bootstrap(hostname?: string): Promise<TenantContextData | null> {
     if (!supabase) return null;
-    const { data, error } = await supabase.rpc('bootstrap_tenant_context');
+    const args = hostname ? { p_hostname: hostname } : {};
+    const { data, error } = await supabase.rpc('bootstrap_tenant_context', args);
     if (error) throw error;
     return data as TenantContextData;
   },

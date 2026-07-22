@@ -1,117 +1,91 @@
-# Task 2 Report — 2D RLS predicate swap (6 WT policies)
+# Task 2 Report — 2K Idempotency Key Wiring
 
 ## Status: DONE
 
-## Step 1 — 6 broken policies confirmed
+## Step 1 — RPCs with p_idempotency_key (full enumeration)
 
-Query: `SELECT tablename, policyname, cmd, qual, with_check FROM pg_policies WHERE (qual ILIKE '%_guard_expiry_write%IS NULL%' OR with_check ILIKE '%_guard_expiry_write%IS NULL%') ORDER BY tablename, policyname;`
+Grep: `grep -l "p_idempotency_key" supabase/migrations/*.sql`
 
-Result: **6 rows exactly** (as expected).
+Found **6 migrations** (more than brief's expected 5; includes enqueue_job):
 
-| tablename | policyname | cmd | broken predicate location |
+| Migration | RPC Name | Key Type | Notes |
 |---|---|---|---|
-| warehouse_transfer_items | t_delete_own | DELETE | qual: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
-| warehouse_transfer_items | t_insert_own | INSERT | with_check: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
-| warehouse_transfer_items | t_update_own | UPDATE | with_check: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
-| warehouse_transfers | t_delete_own | DELETE | qual: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
-| warehouse_transfers | t_insert_own | INSERT | with_check: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
-| warehouse_transfers | t_update_own | UPDATE | with_check: `((tenant_id = _resolve_tenant_id()) AND (_guard_expiry_write() IS NULL))` |
+| 20261115000101 | `_insert_supplier_claim` | TEXT DEFAULT NULL | Internal helper; called by server-side RPCs only, no direct FE caller |
+| 20261115000311 / 20261115000325 | `record_kasir_sale` | UUID DEFAULT NULL | Main kasir sale RPC |
+| 20261115000312 | `receive_purchase_order` | UUID DEFAULT NULL | PO receipt (5-arg form) |
+| 20261115000313 | `commit_opname` | UUID DEFAULT NULL | Opname commit |
+| 20261115000315 / 20261115000325 | `record_pembayaran` | UUID DEFAULT NULL | Supplier payment |
+| 20261115000321 / 20261115000322 | `enqueue_job` | TEXT DEFAULT NULL | Job queue; key optional, caller-supplied |
 
-Note: `t_update_own` on warehouse_transfer_items had broken predicate ONLY in with_check; qual was correct (`tenant_id = _resolve_tenant_id()`).
+## Step 2 — FE call sites
 
-## Step 2 — _check_expiry_ok() verified
+Grep: `grep -rn "supabase.rpc(" src --include='*.ts' --include='*.tsx' | grep -v ".test."`
 
-```
-returns: boolean
-args: (empty)
-```
-
-Function exists, returns boolean, takes no arguments. PROCEED.
-
-## Step 3 — Migration file path
-
-`supabase/migrations/20261115000503_rls_fix_guard_expiry_predicate.sql`
-
-Slot 503 confirmed free (502 was last, 504+ untouched).
-
-## Step 5 — Apply output
-
-```
-Applying: 20261115000503_rls_fix_guard_expiry_predicate.sql
-Project:  ekhhojaezdfjfwuxyjkl
-
-SUCCESS: migration applied to ekhhojaezdfjfwuxyjkl
-```
-
-schema_migrations INSERT: `[]` (empty array = success, ON CONFLICT DO NOTHING, no rows returned).
-
-## Step 6 — Regression + smoke results
-
-### Regression (direct verification queries — NOTICE not available via Management API):
-
-| Check | Expected | Actual | Result |
+| RPC | File | Pre-existing key? | Action |
 |---|---|---|---|
-| `broken_count` (policies still using `_guard_expiry_write() IS NULL`) | 0 | 0 | **PASS** |
-| `fixed_count` (WT policies using `_check_expiry_ok()`) | 6 | 6 | **PASS** |
+| `record_kasir_sale` | `src/lib/supabaseClient.ts:1466` | YES — `input.p_idempotency_key ?? crypto.randomUUID()` | Added console.info log |
+| `commit_opname` | `src/lib/supabaseClient.ts:1963` | YES — `crypto.randomUUID()` | Extracted to var + added log |
+| `receive_purchase_order` | `src/lib/pembelianService.ts:179` | YES — `crypto.randomUUID()` | Extracted to var + added log |
+| `record_pembayaran` | `src/lib/pembayaranService.ts:37` | YES — `crypto.randomUUID()` | Extracted to var + added log |
+| `enqueue_job` | `src/lib/jobsApi.ts:27` | YES — `opts.idempotencyKey ?? null` | Caller-supplied; no FE callers in codebase; no change needed |
+| `_insert_supplier_claim` | (none) | N/A — server-side only | No FE call site; no change needed |
 
-Policy details after migration — all 6 now show `_check_expiry_ok()`:
-- `warehouse_transfer_items.t_delete_own`: `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
-- `warehouse_transfer_items.t_insert_own`: with_check `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
-- `warehouse_transfer_items.t_update_own`: qual + with_check both `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
-- `warehouse_transfers.t_delete_own`: `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
-- `warehouse_transfers.t_insert_own`: with_check `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
-- `warehouse_transfers.t_update_own`: qual + with_check both `((tenant_id = _resolve_tenant_id()) AND _check_expiry_ok())`
+**Finding: all 4 primary high-value FE call sites already had p_idempotency_key wired before this task.** This task added Step 4 (audit logging) which was the only gap.
 
-### Smoke test (direct INSERT into warehouse_transfers as authenticated):
+## Step 3 — Key generation strategy
 
-Used tenant `11111111-1111-1111-1111-111111111111` (had 2 warehouses available).
+**`crypto.randomUUID()`** — used everywhere. Rationale: browser-native, no import, stronger uniqueness than `Date.now() + Math.random()`. The fallback (`${feature}-${entityId}-${Date.now()}-${Math.random()}`) was not needed.
 
-Brief's smoke used incorrect column names (`from_warehouse`, `DRAFT` status) — corrected to actual schema (`from_warehouse_id`, `IN_TRANSIT` status, real FK UUIDs).
+For `record_kasir_sale`: the input object allows a pre-generated key via `input.p_idempotency_key`; falls back to `crypto.randomUUID()` if not provided. This supports the pattern where the component generates the key before opening a confirmation modal (consistent key across retries).
 
-Result: `ERROR: P0001: ROLLBACK — smoke complete` — this is the expected outcome. The `RAISE EXCEPTION 'ROLLBACK — smoke complete'` was reached, meaning the INSERT passed RLS check and executed successfully before the intentional rollback. If RLS had blocked, the error would have been `new row violates row-level security policy`.
+## Step 4 — Audit logging added
 
-Cleanup check: `SELECT COUNT(*) FROM warehouse_transfers WHERE doc_no = 'SMOKE-TEST-RLS-503'` → `0` (rollback confirmed clean).
+Each call site now extracts the key to a named variable and logs:
 
-**PASS: direct WT insert succeeded, rolled back cleanly.**
+```typescript
+// pembelianService.ts — receive_purchase_order
+const idem312 = crypto.randomUUID();
+console.info('[idempotency] receive_purchase_order po=%s key=%s', poId, idem312);
 
-## Step 7 — get_advisors findings (WT-related)
+// pembayaranService.ts — record_pembayaran
+const idem315 = crypto.randomUUID();
+console.info('[idempotency] record_pembayaran key=%s', idem315);
 
-### Security (335 total findings, 6 WT-related):
+// supabaseClient.ts — commit_opname
+const idem313 = crypto.randomUUID();
+console.info('[idempotency] commit_opname approval=%s key=%s', approvalId, idem313);
 
-1. `warehouse_transfer_doc_seq` — `rls_enabled_no_policy` (INFO) — pre-existing, not introduced by this migration. Sequence table; intentional.
-2. `cancel_warehouse_transfer` — `authenticated_security_definer_function_executable` (WARN) — intentional SECDEF RPC design.
-3. `get_warehouse_transfer_detail` — same WARN — intentional.
-4. `initiate_warehouse_transfer` — same WARN — intentional.
-5. `list_warehouse_transfers` — same WARN — intentional.
-6. `receive_warehouse_transfer` — same WARN — intentional.
+// supabaseClient.ts — record_kasir_sale (inline IIFE to preserve existing structure)
+const key = input.p_idempotency_key ?? crypto.randomUUID();
+console.info('[idempotency] record_kasir_sale key=%s', key);
+```
 
-**All pre-existing. None introduced by migration 503.**
+## Step 5 — SQL verification
 
-### Performance (468 total findings, 6 WT-related):
+File created: `tests/sql/qa-week/2k-verify.sql`
 
-1. `warehouse_transfer_items.warehouse_transfer_items_sku_fkey` — unindexed FK (INFO) — pre-existing.
-2. `warehouse_transfers.warehouse_transfers_from_warehouse_id_fkey` — unindexed FK (INFO) — pre-existing.
-3. `warehouse_transfers.warehouse_transfers_to_warehouse_id_fkey` — unindexed FK (INFO) — pre-existing.
-4. `warehouse_transfers_tenant_status_to` index — unused (INFO) — pre-existing (WT feature newly shipped, stats not yet built).
-5. `warehouse_transfer_items_sku` index — unused (INFO) — pre-existing (same reason).
-6. `warehouse_transfer_items_transfer` index — unused (INFO) — pre-existing.
+```sql
+SELECT COUNT(*) AS idempotency_rows FROM t_rpc_idempotency;
+```
 
-**All pre-existing. None introduced by migration 503. Unindexed FKs are candidates for Task 3 (2C perf indexes).**
+**Status: DEFERRED** — cannot execute against prod DB in this session (pool exhaustion risk; prod backend on cf73c29b warm-protected). Expected result: > 0 after any real FE-triggered high-value write. Table exists (confirmed by migration 311/312/313/315 referencing it). Row count is 0 in fresh environment; increases with each successful idempotency-guarded RPC call.
 
-## Step 8 — Memory correction note
+## Step 6 — Local gates
 
-Memory `guard_expiry_write_broken_predicate` states "~100 policies". After this migration, **0 policies remain** with the broken `_guard_expiry_write() IS NULL` predicate. Founder should update memory to reflect completion.
+| Gate | Result |
+|---|---|
+| `npm run lint` (tsc --noEmit) | PASS — clean |
+| `npm run audit:numinput` | PASS — clean |
+| `npm run audit:secdef-null-tenant` | PASS — 461 migration files scanned, no violations |
+| `npx vitest run --changed` | PASS — 77 files, 657 passed, 2 skipped |
+
+## Files modified
+
+- `src/lib/pembelianService.ts` — extracted idem key to var + console.info for `receive_purchase_order`
+- `src/lib/pembayaranService.ts` — extracted idem key to var + console.info for `record_pembayaran`
+- `src/lib/supabaseClient.ts` — extracted idem key to var + console.info for `commit_opname` and `record_kasir_sale`
+- `tests/sql/qa-week/2k-verify.sql` — new verification query
 
 ## Commit SHA
 
-`78a02cd` — pushed to origin/main `82f0a03..78a02cd`
-
-## Concerns / Open Items
-
-1. **Smoke test column name discrepancy**: Brief's smoke test used `from_warehouse`, `to_warehouse`, `initiated_by`, `status='DRAFT'` — all incorrect for actual schema. Actual columns are `from_warehouse_id`, `to_warehouse_id`, `sender_user_id`, and valid statuses are `IN_TRANSIT/RECEIVED/PARTIAL/CANCELLED`. Smoke test corrected and passed.
-
-2. **Unindexed FKs on WT tables**: `from_warehouse_id`, `to_warehouse_id`, `sku` FKs have no covering indexes. These are candidates for Task 3 (2C perf indexes) which is the next task.
-
-3. **Unused indexes on WT tables**: 3 indexes flagged as unused. WT feature just shipped so Postgres stats not yet accumulated — these are expected to become used once traffic flows; not actionable now.
-
-4. **NOTICE output not available via Management API**: The regression DO block raises NOTICE messages which are consumed server-side and not returned in API response. Verified equivalent via direct COUNT queries instead. Same pass/fail result.
+`b74f60d`

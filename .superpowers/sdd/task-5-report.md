@@ -1,75 +1,124 @@
-# Task 5 Report: Phase 3 Landing — Create `robots.txt` + `sitemap.xml`
+# Task 5 Report: 2B F5-10 — Error class branch for impersonate failure
 
 **Status:** COMPLETED
-**Date:** 2026-07-19
+**Date:** 2026-07-21
+**Commit:** `6ee6ec9`
 
 ---
 
 ## Summary
 
-Created SEO baseline files for caleo.id landing page: robots.txt allowing all crawlers with sitemap reference, and sitemap.xml with 4 high-level URLs.
+When impersonation preflight fails (`impersonateGate === 'failed'`), all users
+previously saw `TenantBootstrapError`. Now branches on `is_platform_admin` JWT claim:
+
+- **Platform admin** (`is_platform_admin === true`) → `AccessDenied` (they navigated
+  to a wrong or forbidden tenant slug)
+- **Regular tenant user** (`is_platform_admin !== true`) → `TenantBootstrapError`
+  (their own tenant is genuinely broken)
+
+Sentry tag `error_class` is emitted before render with value `'impersonate'` or
+`'tenant_bootstrap'`.
 
 ---
 
-## Commits
+## Claim source (grep result)
 
-| Commit | Message |
-|--------|---------|
-| `776a01b` | feat(landing): add robots.txt + sitemap.xml |
+```
+grep -rn "is_platform_admin" src/ --include="*.ts" --include="*.tsx"
 
----
-
-## Verification
-
-| Step | Result | Evidence |
-|------|--------|----------|
-| **robots.txt content** | ✓ PASS | Exactly 3 lines: `User-agent: *`, `Allow: /`, `Sitemap: https://caleo.id/sitemap.xml` |
-| **robots.txt exists** | ✓ PASS | File created at `public/robots.txt` |
-| **sitemap.xml content** | ✓ PASS | 4 URL entries with correct lastmod (2026-07-19) |
-| **sitemap.xml XML valid** | ✓ PASS | `xmllint --noout` exit 0; "XML valid" printed |
-| **sitemap.xml exists** | ✓ PASS | File created at `public/sitemap.xml` |
-
----
-
-## URLs in Sitemap
-
-1. https://caleo.id/ (priority 1.0, weekly)
-2. https://caleo.id/case-study (priority 0.8, monthly)
-3. https://caleo.id/privacy.html (priority 0.3, yearly)
-4. https://caleo.id/terms.html (priority 0.3, yearly)
-
----
-
-## Actions Taken
-
-- [x] Step 1: Write robots.txt (3 lines exactly)
-- [x] Step 2: Write sitemap.xml (4 URLs, valid XML, lastmod 2026-07-19)
-- [x] Step 3: Verify XML parsing (xmllint clean)
-- [x] Step 4: Commit to main (commit 776a01b)
-- [x] Step 5: Rollback path documented (git revert available)
-
----
-
-## Concerns
-
-None. Static content, no dependencies, no migrations, no downstream impact.
-
----
-
-## Rollback
-
-```bash
-git revert 776a01b
+src/App.tsx:540: if (jwtClaims?.is_platform_admin === true) return;
+src/App.tsx:571: const isAdmin = claims.is_platform_admin === true;
+src/contexts/TenantContext.tsx:14: is_platform_admin: boolean;
 ```
 
-Removes both files. No risk.
+Claim key is `is_platform_admin` (boolean) on the decoded JWT payload.
+App.tsx already used this claim on line 540 (slug guard) and line 571
+(impersonation preflight effect) — consistent spelling confirmed.
+
+---
+
+## Files modified
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Import `ImpersonateFailureScreen`; replace `TenantBootstrapError` hardcode in `impersonateGate === 'failed'` block with `<ImpersonateFailureScreen>` |
+| `src/components/errors/ImpersonateFailureScreen.tsx` | New — pure component wrapping the branch + Sentry tag; takes `isPlatformAdmin`, `error`, `onRetry`, `onLogout` props |
+| `src/components/errors/ImpersonateFailureScreen.test.tsx` | New — 6 unit tests covering both branches + Sentry tags |
+
+### App.tsx change (impersonateGate === 'failed' block)
+
+Before:
+```tsx
+if (impersonateGate === 'failed') {
+  return (
+    <TenantBootstrapError
+      code={`IMPERSONATE_FAILED: ${impersonateError || 'unknown'}`}
+      onRetry={() => window.location.reload()}
+    />
+  );
+}
+```
+
+After:
+```tsx
+if (impersonateGate === 'failed') {
+  return (
+    <ImpersonateFailureScreen
+      isPlatformAdmin={jwtClaims?.is_platform_admin === true}
+      error={impersonateError}
+      onRetry={() => window.location.reload()}
+      onLogout={handleLogout}
+    />
+  );
+}
+```
+
+---
+
+## Test additions
+
+File: `src/components/errors/ImpersonateFailureScreen.test.tsx` — 6 tests:
+
+1. `renders AccessDenied when isPlatformAdmin=true` ✓
+2. `emits Sentry error_class=impersonate tag when isPlatformAdmin=true` ✓
+3. `renders TenantBootstrapError when isPlatformAdmin=false` ✓
+4. `emits Sentry error_class=tenant_bootstrap tag when isPlatformAdmin=false` ✓
+5. `includes error message in code when isPlatformAdmin=false` ✓
+6. `falls back to "unknown" when error is empty and isPlatformAdmin=false` ✓
+
+---
+
+## Lint + vitest --changed result
+
+```
+npm run lint
+→ tsc --noEmit (clean, no output)
+
+npx vitest run --changed
+→ Test Files  1 passed (1)
+→ Tests  6 passed (6)
+
+npx vitest run (full suite)
+→ Test Files  114 passed (114)
+→ Tests  1000 passed | 2 skipped (1002)
+```
+
+---
+
+## Commit SHA
+
+`6ee6ec9` — `[qa-week-followup] 2B: impersonate error class branch + Sentry tag`
 
 ---
 
 ## Notes
 
-- Task 6 will handle production content-type headers via Cloudflare Worker.
-- Files are static; no dynamic generation required.
-- No observability, no cost implications.
-- Depends on: Tasks 1-4 (committed to main, no blockers).
-- Blocks: Task 6 (production content-type middleware).
+- Sentry is already imported in `App.tsx` (`import * as Sentry from '@sentry/react'`)
+  but the Sentry tag emission lives in `ImpersonateFailureScreen` to keep the
+  error-class logic co-located with the rendering logic.
+- `jwtClaims` state is populated during session restore (before the impersonation
+  effect runs), so it's available synchronously at render time when
+  `impersonateGate === 'failed'`.
+- `ImpersonateFailureScreen` calls `Sentry.setTag` during render (not in effect)
+  which is acceptable: it's a one-time fire on error path, not a hot loop.
+- AccessDenied.tsx and TenantBootstrapError.tsx were not modified.

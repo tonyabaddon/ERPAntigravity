@@ -15,7 +15,7 @@ export const SelectTenantScreen: React.FC = () => {
     // hits 42P17 RLS recursion for non-admin users. For MVP (every user is
     // single-tenant) this returns exactly the JWT-scoped tenant.
     // Multi-tenant expansion needs a dedicated RPC to list all memberships.
-    tenantContextService.bootstrap()
+    tenantContextService.bootstrap(window.location.hostname)
       .then((ctx) => {
         if (ctx?.slug && ctx?.tenant_id && ctx?.name) {
           setTenants([{ tenant_id: ctx.tenant_id, slug: ctx.slug, name: ctx.name }]);

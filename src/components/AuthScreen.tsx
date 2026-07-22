@@ -93,7 +93,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
     // (2026-07-22 fix — see postLoginRoute.ts hostname branch).
     let tenantSlug: string | null = null;
     try {
-      const ctx = await tenantContextService.bootstrap();
+      const ctx = await tenantContextService.bootstrap(window.location.hostname);
       tenantSlug = ctx?.slug ?? null;
     } catch {
       tenantSlug = null;
