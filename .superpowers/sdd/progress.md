@@ -1062,3 +1062,28 @@ Root cause of pool exhaustion was NOT zombie conns from dead containers. It was 
 `gcloud run services update-traffic --clear-tags` removes tag URLs → standby instances terminate → conns free.
 
 **Standing recommendation:** clean old tag URLs after successful promote. Consider adding to promote-to-prod.sh: keep last 3 tags, retire older ones.
+
+## 2026-07-22 23:35 UTC — FULLY RESOLVED
+
+Root cause **wasn't** pq per-channel opens or zombie NAT sessions — it was **Cloud Run standby instances from tagged revisions**. Every tag URL kept 1 instance warm (minScale semantics apply per tagged rev). Each held ONE pq.Listener conn. 4-5 tag URLs = 4-5 warm instances × 1 conn = ~5. Plus zombie loops.
+
+Also blocked mid-fix: my keepalive params (`keepalives_idle=30 keepalives_interval=10 keepalives_count=3`) worked with libpq (psql) but Go's lib/pq passes them as GUC startup parameters → server returns `FATAL: unrecognized configuration parameter "keepalives_idle"` (SQLSTATE 42704). Reverted secret to v1 (v3 = same content, added for clean history).
+
+**Final state:**
+- Prod BE serving rev 00549-cax (3a52cec code): non-blocking listener init + delayed subscribe both working
+- LISTEN count: 2 (BE multiplexed 9 channels on 1 conn + pgrst on 1)  
+- pool: postgres=5 (down from 84), plenty of headroom for GoTrue
+- BE log confirms: `[DB] LISTEN/NOTIFY active on admin_messages, order_approved, payment_verified, payment_rejected, dp_verified, dp_proof_rejected, approval_created, order_created, order_shipped`
+- All 4 hostnames + GoTrue: 200
+- Task 9 fully unblocked
+
+**Post-mortem findings for the runbook:**
+1. Clear tag URLs after promote — critical for conn hygiene. Add to `promote-to-prod.sh`.
+2. `keepalives=1 keepalives_idle=X` params in Postgres URLs are libpq-only. Go's lib/pq rejects them at handshake.
+3. `pq.NewListener` DOES share ONE connection across all channels. Distribution across many client_addrs in pg_stat_activity comes from Cloud Run NAT source-IP rotation, not per-channel opens.
+
+Real onboard is now safe:
+- Provision new auth user via Supabase Auth Admin API (GoTrue is up)
+- Call provision_tenant via admin.caleo.id UI
+- Sign in as new owner on app.caleo.id → sees new tenant
+- Real-time WA notifications work
