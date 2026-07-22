@@ -10,6 +10,7 @@ import { listPlansAdmin } from '../../lib/adminPlansApi';
 import { supabase } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
 import { AdminApiError } from '../../lib/adminTypes';
+import { handleAdminSPAClick } from '../../lib/urlRoute';
 import type { RevenueStats } from '../../lib/paymentsTypes';
 import type { AdminTenantRow, CoverageStatus } from '../../lib/adminTypes';
 import type { PlanRow } from '../../lib/adminPlansApi';
@@ -292,7 +293,9 @@ export function AdminRevenue() {
                           if (tenantRow) {
                             e.preventDefault();
                             setModalTenant(tenantRow);
+                            return;
                           }
+                          handleAdminSPAClick(e, `/admin/tenants/${gap.tenant_slug}?tab=pembayaran`);
                         }}
                       >
                         Catat pembayaran
