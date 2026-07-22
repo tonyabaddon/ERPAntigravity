@@ -35,3 +35,10 @@ GRANT EXECUTE ON FUNCTION public.provision_tenant(uuid, text, text, text, text, 
 
 REVOKE ALL ON FUNCTION public._seed_tenant_accounting(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public._seed_tenant_accounting(uuid) TO authenticated, vosi_rpc_owner;
+
+-- Drop the 7-arg legacy overload (pre-Task-2 provision_tenant). Postgres
+-- picks the exact-arity match first, so keeping the legacy 7-arg version
+-- (still owned by vosi_rpc_owner) would defeat this fix — 7-arg callers
+-- would still hit 42501. The 8-arg version has DEFAULT 'production' for
+-- p_environment, so existing 7-arg callers now resolve to the new one.
+DROP FUNCTION IF EXISTS public.provision_tenant(uuid, text, text, text, text, text, integer);
