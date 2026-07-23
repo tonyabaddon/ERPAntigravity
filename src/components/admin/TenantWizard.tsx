@@ -41,12 +41,16 @@ function mapEdgeErrorToBahasa(code: string | undefined, fallback: string): strin
 
 type Step = 'tenant' | 'owner' | 'review' | 'result';
 type PlanCode = 'STARTER' | 'PRO' | 'PREMIUM';
+type DurationMonths = 6 | 12;
+type DiscountMode = 'none' | 'percent' | 'rupiah';
 
 interface WizardForm {
   slug: string;
   name: string;
   planCode: PlanCode;
-  expiresInMonths: number;
+  expiresInMonths: DurationMonths;
+  discountMode: DiscountMode;
+  discountValue: number;
   ownerUserId: string;
   ownerName: string;
   ownerEmail: string;
@@ -66,6 +70,12 @@ interface ProvisionResult extends EdgeProvisionResult {
   name: string;
   /** Copied from form.planCode at submit time. */
   plan_code: string;
+  /** Copied from form.expiresInMonths at submit time (6 or 12). */
+  duration_months: DurationMonths;
+  /** Copied from form.discountMode at submit time. */
+  discount_mode: DiscountMode;
+  /** Copied from form.discountValue at submit time (raw value). */
+  discount_value: number;
 }
 
 const INITIAL_FORM: WizardForm = {
@@ -73,6 +83,8 @@ const INITIAL_FORM: WizardForm = {
   name: '',
   planCode: 'STARTER',
   expiresInMonths: 12,
+  discountMode: 'none',
+  discountValue: 0,
   ownerUserId: '',
   ownerName: '',
   ownerEmail: '',
@@ -81,7 +93,7 @@ const INITIAL_FORM: WizardForm = {
 const PLAN_OPTIONS: { code: PlanCode; label: string; blurb: string }[] = [
   { code: 'STARTER', label: 'Starter', blurb: 'Toko kecil / warung — modul dasar' },
   { code: 'PRO', label: 'Pro', blurb: 'Toko menengah — akuntansi + multi-gudang' },
-  { code: 'PREMIUM', label: 'Premium', blurb: 'Distributor / B2B — semua modul' },
+  { code: 'PREMIUM', label: 'Premium AI', blurb: 'Distributor / B2B — semua modul + AI' },
 ];
 
 // ─── Validation helpers ───────────────────────────────────────────────────────
@@ -199,6 +211,9 @@ export function TenantWizard() {
         ...(data as EdgeProvisionResult),
         name: form.name,
         plan_code: form.planCode,
+        duration_months: form.expiresInMonths,
+        discount_mode: form.discountMode,
+        discount_value: form.discountValue,
       };
       setResult(r);
       setStep('result');
@@ -369,14 +384,72 @@ function TenantStep({ form, update }: StepProps) {
           })}
         </div>
       </Field>
-      <Field label="Masa aktif (bulan)" hint="1–60. Default 12 bulan.">
-        <NumberInput
-          allowDecimal={false}
-          value={form.expiresInMonths}
-          onChange={n => update('expiresInMonths', n)}
-          className="w-full border rounded-lg px-3 py-2 text-[13px]"
-          style={{ borderColor: C.border }}
-        />
+      <Field label="Durasi komitmen" hint="6 bulan (HEMAT 39%) atau 12 bulan (HEMAT 50%). Match tier landing caleo.id.">
+        <div className="grid grid-cols-2 gap-2">
+          {([6, 12] as DurationMonths[]).map(m => {
+            const selected = form.expiresInMonths === m;
+            const savings = m === 12 ? 'HEMAT 50%' : 'HEMAT 39%';
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => update('expiresInMonths', m)}
+                className="p-3 rounded-lg border-2 transition-all text-left"
+                style={{
+                  borderColor: selected ? C.gold : C.border,
+                  background: selected ? C.cream : C.bg,
+                }}
+              >
+                <div className="font-bold text-[13px]" style={{ color: C.navy }}>
+                  {m} Bulan
+                </div>
+                <div className="text-[11px] mt-1" style={{ color: C.green }}>
+                  {savings}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+      <Field label="Diskon tambahan" hint="Diskon on top selain promo landing. Kosongkan kalau tidak kasih diskon.">
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { mode: 'none' as DiscountMode, label: 'Tanpa diskon' },
+              { mode: 'percent' as DiscountMode, label: 'Persen (%)' },
+              { mode: 'rupiah' as DiscountMode, label: 'Rupiah (Rp)' },
+            ]).map(o => {
+              const selected = form.discountMode === o.mode;
+              return (
+                <button
+                  key={o.mode}
+                  type="button"
+                  onClick={() => {
+                    update('discountMode', o.mode);
+                    if (o.mode === 'none') update('discountValue', 0);
+                  }}
+                  className="py-2 rounded-lg border-2 text-[12px] font-semibold transition-all"
+                  style={{
+                    borderColor: selected ? C.gold : C.border,
+                    background: selected ? C.cream : C.bg,
+                    color: C.navy,
+                  }}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+          {form.discountMode !== 'none' && (
+            <NumberInput
+              allowDecimal={form.discountMode === 'percent'}
+              value={form.discountValue}
+              onChange={n => update('discountValue', n)}
+              className="w-full border rounded-lg px-3 py-2 text-[13px]"
+              style={{ borderColor: C.border }}
+            />
+          )}
+        </div>
       </Field>
     </section>
   );
@@ -421,6 +494,12 @@ function OwnerStep({ form, update }: StepProps) {
 // ─── Step 3: Review ───────────────────────────────────────────────────────────
 
 function ReviewStep({ form }: { form: WizardForm }) {
+  const discountLabel =
+    form.discountMode === 'none'
+      ? '—'
+      : form.discountMode === 'percent'
+        ? `${form.discountValue}%`
+        : `Rp ${form.discountValue.toLocaleString('id-ID')}`;
   return (
     <section className="space-y-3">
       <p className="text-[13px]" style={{ color: C.muted }}>
@@ -431,10 +510,8 @@ function ReviewStep({ form }: { form: WizardForm }) {
       <ReviewRow label="Slug" value={form.slug} />
       <ReviewRow label="Nama tenant" value={form.name} />
       <ReviewRow label="Paket" value={form.planCode} />
-      <ReviewRow
-        label="Masa aktif"
-        value={`${form.expiresInMonths} bulan`}
-      />
+      <ReviewRow label="Durasi komitmen" value={`${form.expiresInMonths} bulan`} />
+      <ReviewRow label="Diskon tambahan" value={discountLabel} />
       <ReviewRow label="Nama owner" value={form.ownerName} />
       <ReviewRow label="Email owner" value={form.ownerEmail} />
     </section>
@@ -531,7 +608,14 @@ function ResultStep({ result }: { result: ProvisionResult }) {
       </div>
 
       <PaymentInstructionBlock
-        tenant={{ slug: result.slug, name: result.name, plan_code: result.plan_code }}
+        tenant={{
+          slug: result.slug,
+          name: result.name,
+          plan_code: result.plan_code,
+          duration_months: result.duration_months,
+          discount_mode: result.discount_mode,
+          discount_value: result.discount_value,
+        }}
       />
     </section>
   );
