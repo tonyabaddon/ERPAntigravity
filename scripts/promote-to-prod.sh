@@ -83,6 +83,22 @@ apply_and_verify() {
 apply_and_verify "$FE_SERVICE" || exit 1
 apply_and_verify "$BE_SERVICE" || exit 1
 
+# Post-promote: clear ALL tag URLs for both services.
+# 2026-07-22 incident: Cloud Run keeps a warm standby instance per tagged
+# revision (minScale=1 semantics). Each warm instance holds one pq.Listener
+# conn on the direct pool (:5432). Over multiple deploys, 5+ zombie
+# standbys eat all non-superuser slots and starve Supabase GoTrue auth →
+# signInWithPassword returns 500. Clearing tags terminates the standbys.
+# Retag the current serving rev so future promotes can reference it.
+echo ""
+echo "Clearing old tag URLs to free standby instances..."
+gcloud run services update-traffic "$FE_SERVICE" --region="$REGION" --clear-tags >/dev/null 2>&1 || echo "  FE clear-tags: skipped (may already be empty)"
+gcloud run services update-traffic "$BE_SERVICE" --region="$REGION" --clear-tags >/dev/null 2>&1 || echo "  BE clear-tags: skipped (may already be empty)"
+FE_REV=$(gcloud run services describe "$FE_SERVICE" --region="$REGION" --format='value(status.traffic[0].revisionName)' 2>/dev/null)
+BE_REV=$(gcloud run services describe "$BE_SERVICE" --region="$REGION" --format='value(status.traffic[0].revisionName)' 2>/dev/null)
+[ -n "$FE_REV" ] && gcloud run services update-traffic "$FE_SERVICE" --region="$REGION" --set-tags="$TAG=$FE_REV" >/dev/null 2>&1 && echo "  FE re-tagged $TAG → $FE_REV"
+[ -n "$BE_REV" ] && gcloud run services update-traffic "$BE_SERVICE" --region="$REGION" --set-tags="$TAG=$BE_REV" >/dev/null 2>&1 && echo "  BE re-tagged $TAG → $BE_REV"
+
 echo ""
 echo "=== Done ==="
 echo "Prod FE now serving: $TAG"
