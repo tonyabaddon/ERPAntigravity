@@ -1087,3 +1087,26 @@ Real onboard is now safe:
 - Call provision_tenant via admin.caleo.id UI
 - Sign in as new owner on app.caleo.id → sees new tenant
 - Real-time WA notifications work
+
+## 2026-07-23 UTC — 98b50ed shipped via manual gate, promote-to-prod.sh hardened
+
+- 98b50ed Cloud Build: FIRST fully green auto-deploy after all fixes.
+  Both FE + BE built successfully; deployed to prod at 0% + tag.
+- Promoted via `./scripts/promote-to-prod.sh 98b50ed` — apply_and_verify
+  from earlier fix worked cleanly on both FE and BE.
+- Prod now serving c98b50ed (both services).
+- Cleared old tag URLs post-promote → all standbys terminated →
+  LISTEN count: 2 (BE 1 + PostgREST 1). Pool: postgres=5.
+
+- **Commit b18283b (promote-to-prod.sh)**: auto clear-tags after promote,
+  re-tag current serving rev. Prevents standby accumulation permanently.
+  Rationale: today's root-cause finding — Cloud Run standbys per tagged
+  rev held all direct-pool slots, starved GoTrue.
+
+Manual gate + auto-tag-cleanup + non-blocking listener init together
+form the complete deploy hygiene for staging/prod-isolation-aware BE.
+
+**Ready for real tenant onboard.** Founder action steps:
+1. `admin.caleo.id` → Provision tenant (owner email, tenant slug, name)
+2. Owner signs in on `app.caleo.id` → sees tenant, works normally
+3. Verify: same owner signs in on `staging.app.caleo.id` → tenant picker empty (ENV_MISMATCH)
