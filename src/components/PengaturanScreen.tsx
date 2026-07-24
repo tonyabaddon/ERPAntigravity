@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon, Smartphone } from 'lucide-react';
 import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
+import { REGISTRY_MAP, type PermissionKey } from '../lib/permissions';
 import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { normalizePhone } from '../lib/phone';
 import { useTenant } from '../contexts/TenantContext';
@@ -47,9 +48,10 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     const perms = props.permissions;
     const isVisible = (key: keyof PermissionSet): boolean => {
       if (!perms) return true;
+      const entry = REGISTRY_MAP.get(key as PermissionKey);
+      if (!entry) return true;                        // unknown key = default visible (safe fallback)
       const value = perms[key];
-      if (typeof key === 'string' && key.startsWith('can_')) return value === true;
-      return value !== false;
+      return entry.isActionPerm ? value === true : value !== false;
     };
     const list: TabDef<PengaturanTab>[] = [
       { id: 'umum', label: 'Umum' },

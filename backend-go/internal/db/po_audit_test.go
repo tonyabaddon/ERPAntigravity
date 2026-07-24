@@ -74,7 +74,7 @@ func TestPurchaseOrders_AuditColumns_FKBehavior(t *testing.T) {
 	adminID := uuid.NewString()
 	_, err := client.DB.Exec(
 		`INSERT INTO admin_users (id, name, email, role, permissions, status)
-		 VALUES ($1, $2, $3, 'Admin', '{}'::jsonb, 'Aktif')`,
+		 VALUES ($1, $2, $3, 'Staff Admin Toko', '{}'::jsonb, 'Aktif')`,
 		adminID, "Test Admin", "test-"+adminID[:8]+"@example.com",
 	)
 	if err != nil {
@@ -134,7 +134,7 @@ func TestAdminUsers_BackfillPermissions(t *testing.T) {
 	adminID := uuid.NewString()
 	_, err := client.DB.Exec(
 		`INSERT INTO admin_users (id, name, email, role, permissions, status)
-		 VALUES ($1, $2, $3, 'Admin', '{"pembelian": true}'::jsonb, 'Aktif')`,
+		 VALUES ($1, $2, $3, 'Staff Admin Toko', '{"pembelian": true}'::jsonb, 'Aktif')`,
 		adminID, "Test Backfill", "backfill-"+adminID[:8]+"@example.com",
 	)
 	if err != nil {

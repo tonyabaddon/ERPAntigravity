@@ -6,6 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { ActivePage, PermissionSet, KasirChannel } from '../types';
+import { REGISTRY_MAP, type PermissionKey } from '../lib/permissions';
 import TabBar, { TabDef } from './ui/TabBar';
 import CatatPenjualanWizard from './penjualan/CatatPenjualanWizard';
 import OrderHistoryScreen from './OrderHistoryScreen';
@@ -35,9 +36,10 @@ export default function PenjualanScreen(props: PenjualanScreenProps) {
   const tabs = useMemo<TabDef<PenjualanTab>[]>(() => {
     const isVisible = (key: keyof PermissionSet): boolean => {
       if (!perms) return true;
+      const entry = REGISTRY_MAP.get(key as PermissionKey);
+      if (!entry) return true;                        // unknown key = default visible (safe fallback)
       const value = perms[key];
-      if (typeof key === 'string' && key.startsWith('can_')) return value === true;
-      return value !== false;
+      return entry.isActionPerm ? value === true : value !== false;
     };
     const list: TabDef<PenjualanTab>[] = [];
     if (isVisible('kasir')) list.push({ id: 'input', label: 'Input Baru' });

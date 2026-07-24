@@ -20,6 +20,8 @@ const GATED_FILES = [
   'components/pembelian/PembelianDetailPage.tsx',
   'components/stok/StockOpnameScreen.tsx',
   'components/ManajemenGudangScreen.tsx',
+  'components/PengaturanScreen.tsx',
+  'components/PenjualanScreen.tsx',
 ];
 
 const BAD_PATTERN = /\w+\?\.\s*can_\w+\s*!==\s*false/g;
@@ -31,6 +33,26 @@ describe('permissions gate consistency', () => {
     expect(
       matches,
       `${rel} uses default-visible can_* gate (silent bypass risk). Change to === true.`,
+    ).toBeNull();
+  });
+
+  /**
+   * Guard against components reimplementing isVisible with the string-prefix
+   * pattern (`key.startsWith('can_')`). This pattern silently bypasses the
+   * registry's isActionPerm gate — e.g. `canConfigureSalesChannels` has
+   * isActionPerm:true but doesn't start with 'can_', so it would default to
+   * the `value !== false` branch and become visible even when not granted.
+   *
+   * Correct pattern: use REGISTRY_MAP.get(key as PermissionKey)?.isActionPerm
+   * (mirrors Sidebar.tsx isPermVisible implementation).
+   */
+  it.each(GATED_FILES)('%s does not reimplement string-prefix isPermVisible', (rel) => {
+    const src = readFileSync(resolve(SRC_ROOT, rel), 'utf8');
+    const badPrefixPattern = /startsWith\(['"]can_['"]\)/g;
+    const matches = src.match(badPrefixPattern);
+    expect(
+      matches,
+      `${rel} uses string-prefix gate (canConfigureSalesChannels silent bypass risk). Use REGISTRY_MAP.get(key)?.isActionPerm instead.`,
     ).toBeNull();
   });
 });
