@@ -1,5 +1,37 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — Admin Gender-Aware Default Avatar
+
+**Spec:** `docs/superpowers/specs/2026-07-24-admin-avatar-gender-design.md` (commit `3b90505`)
+**Plan:** `docs/superpowers/plans/2026-07-24-admin-avatar-gender-plan.md` (commit `4da4d55`)
+**Migrations:** `20261115000517` (add gender column) + `20261115000518` (RPC extend)
+**Ship:** commit `a1414e8` → prod FE revision `00750-yoq` + BE revision `00575-deg` (both 100% traffic via `promote-to-prod.sh a1414e8` — founder pre-approved autonomous SDD execution during 5hr away window)
+
+**What:** Fixed broken image icon in Sidebar for OTP-login admins. Added `admin_users.gender text NOT NULL DEFAULT 'N' CHECK (M/F/N)` column + 3-pill radio "Jenis Kelamin" (Cowok/Cewek/Netral) di form Tambah Admin Baru + new `<AvatarBadge>` component (`src/components/ui/AvatarBadge.tsx`, 118 lines) dengan 3 flat SVG variants dalam Caleo palette (navy `#012749`, gold `#F9B233`, cream `#FAF7F0`, emerald `#2d8a4e`). Sidebar `<img src={avatarUrl}>` swapped untuk `<AvatarBadge>` dengan fallback chain: OAuth avatarUrl > gender SVG > initials-in-color.
+
+**Why:** Founder complaint — broken image placeholder shown untuk setiap OTP-authenticated admin (mayoritas admin karena Google OAuth minim). Registry-driven schema + inline SVG + zero cost/dep.
+
+**Verify (Stage 3 prod Toko Jaya Makmur, chrome-devtools):**
+- Sidebar avatar untuk playwright-toko-owner sekarang render Neutral SVG (emerald hair + top, cream face) — sebelumnya broken image icon
+- Form Tambah Admin Baru menampilkan "JENIS KELAMIN" section dengan 3 pill buttons (Cowok/Cewek/Netral) menggunakan design tokens Caleo
+- Cowok pill click → highlight navy `#012749` bg + white text (correct selected state)
+- Zero console errors, all Supabase API 200
+
+**Design decisions locked** (from spec Q&A):
+- Style: flat + friendly + minimalist (founder rejected: emoji not on-brand, isometric CC0 tidak works di 40px + scarce head-shot library, AI-generated overkill + paid)
+- Source: inline SVG di TSX (zero dep)
+- Default: 'N' (Netral) — owner explicit-picks untuk gendered avatar
+- Scope: Sidebar only (admin list keeps existing initials pattern)
+
+**SDD execution stats:** 6 tasks, 5 subagent implementers + 5 reviewers, 1 controller-run deploy (Task 6). All reviews clean first-pass. Bonus catch during Task 4: `adminUsersService.upsert()` sign-up path was missing gender in DbAdminUser payload — implementer fixed pre-emptively.
+
+**Follow-ups (out of scope):**
+- Extend AvatarBadge to admin list, KasirScreen shift, ApprovalInbox approver display
+- Non-binary variants if MSME feedback
+- Custom photo upload
+
+---
+
 ## 2026-07-24 — Admin Permission Registry (single source of truth + backfill)
 
 **Spec:** `docs/superpowers/specs/2026-07-24-admin-permission-registry-design.md` (commit `95d310d`)
