@@ -7,13 +7,15 @@ interface Props {
   onSaved: (customer: DbCustomer) => void;
   onCancel: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  showTierField?: boolean;
 }
 
-export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: Props) {
+export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, showTierField = false }: Props) {
   const [name, setName] = useState('');
   const [wa, setWa] = useState('');
   const [company, setCompany] = useState('');
   const [address, setAddress] = useState('');
+  const [tier, setTier] = useState<'eceran' | 'grosir'>('eceran');
   const [requestTempo, setRequestTempo] = useState(false);
   const [limit, setLimit] = useState('');
   const [term, setTerm] = useState('');
@@ -31,6 +33,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
         wa_number: wa.trim(),
         company: company.trim() || undefined,
         address: address.trim() || undefined,
+        ...(showTierField ? { default_pricing_tier: tier } : {}),
       });
       if (requestTempo) {
         const parsedLimit = parseFloat(limit.replace(/[.,]/g, '')) || 0;
@@ -62,7 +65,7 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
   };
 
   return (
-    <div className="mt-3 border-2 border-[#012749]/30 rounded-lg p-4 bg-[#012749]/5">
+    <div data-testid="new-customer-form" className="mt-3 border-2 border-[#012749]/30 rounded-lg p-4 bg-[#012749]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-extrabold text-[#012749]">Customer Baru</div>
@@ -89,6 +92,35 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast }: 
           <input value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
         </div>
       </div>
+
+      {showTierField && (
+        <div className="mt-3 pt-3 border-t border-[#012749]/20">
+          <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Tipe Harga default</label>
+          <div className="flex gap-1.5">
+            {(['eceran', 'grosir'] as const).map((t) => {
+              const active = tier === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setTier(t)}
+                  className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
+                    active
+                      ? t === 'grosir'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-[#012749] text-white'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  {t === 'eceran' ? 'Eceran' : 'Grosir'}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1 italic">Otomatis dipakai saat customer ini transaksi; kasir bebas switch per pesanan.</p>
+        </div>
+      )}
 
       <div className="mt-3 pt-3 border-t border-[#012749]/20">
         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">

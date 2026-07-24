@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import PelangganScreen from './PelangganScreen';
 import * as supabaseClientModule from '../lib/supabaseClient';
 import * as pengaturanServicesModule from '../lib/pengaturan/pengaturanServices';
@@ -270,5 +270,125 @@ describe('PelangganScreen — tier dropdown', () => {
       expect(screen.queryByText('Rina Wijaya')).not.toBeInTheDocument();
       expect(screen.getByText('Toko Grosir ABC')).toBeInTheDocument();
     });
+  });
+});
+
+// ── F5-XX: Tier pills on add form ──────────────────────────────────────────────
+
+describe('PelangganScreen — tier pills on Tambah Pelanggan (modul ON)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (supabaseClientModule.customersService.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...BASE_SETTINGS,
+      modul_multi_tier_price: true,
+    });
+  });
+
+  it('modul ON → renders Eceran + Grosir pills with Eceran preselected', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    // Scope within the form using testid to avoid collision with tier filter chips in the left panel
+    await screen.findByTestId('new-customer-form');
+    const formEl = screen.getByTestId('new-customer-form') as HTMLElement;
+    const eceranPill = within(formEl).getByRole('button', { name: /^Eceran$/i });
+    const grosirPill = within(formEl).getByRole('button', { name: /^Grosir$/i });
+    expect(eceranPill).toBeInTheDocument();
+    expect(grosirPill).toBeInTheDocument();
+    // Eceran preselected — aria-pressed="true" on active pill
+    expect(eceranPill).toHaveAttribute('aria-pressed', 'true');
+    expect(grosirPill).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('modul ON → passes default_pricing_tier=grosir to insertNewCustomer when Grosir pill selected', async () => {
+    const { insertNewCustomer } = await import('../lib/customers/customerWrappers');
+    const mockInsert = insertNewCustomer as ReturnType<typeof vi.fn>;
+    mockInsert.mockResolvedValue({
+      id: 'new-1', name: 'Toko Berkah', wa_number: '628111222333',
+      company: '', address: null, created_at: '2026-01-01T00:00:00Z',
+      default_pricing_tier: 'grosir',
+    });
+
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+
+    // Open Tambah modal
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    // Scope within the form using testid to avoid collision with tier filter chips in the left panel
+    await screen.findByTestId('new-customer-form');
+    const formEl = screen.getByTestId('new-customer-form') as HTMLElement;
+
+    // Fill required fields (Nama + WA) — get textbox inputs within form
+    const inputs = within(formEl).getAllByRole('textbox');
+    fireEvent.change(inputs[0], { target: { value: 'Toko Berkah' } });
+    fireEvent.change(inputs[1], { target: { value: '628111222333' } });
+
+    // Click the Grosir tier pill inside the form
+    const grosirPill = within(formEl).getByRole('button', { name: /^Grosir$/i });
+    fireEvent.click(grosirPill);
+
+    // Submit
+    fireEvent.click(within(formEl).getByRole('button', { name: /simpan/i }));
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'Toko Berkah',
+        wa_number: '628111222333',
+        default_pricing_tier: 'grosir',
+      }));
+    });
+  });
+});
+
+describe('PelangganScreen — tier pills on Tambah Pelanggan (modul OFF)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (supabaseClientModule.customersService.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...BASE_SETTINGS,
+      modul_multi_tier_price: false,
+    });
+  });
+
+  it('modul OFF → tier pills NOT rendered inside Tambah modal', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    // Modal open, but no Eceran/Grosir pills visible
+    expect(screen.getByText('Customer Baru')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Eceran$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Grosir$/i })).not.toBeInTheDocument();
+  });
+
+  it('modul OFF → insertNewCustomer called WITHOUT default_pricing_tier', async () => {
+    const { insertNewCustomer } = await import('../lib/customers/customerWrappers');
+    const mockInsert = insertNewCustomer as ReturnType<typeof vi.fn>;
+    mockInsert.mockResolvedValue({
+      id: 'new-1', name: 'Ibu Sri', wa_number: '628222333444',
+      company: '', address: null, created_at: '2026-01-01T00:00:00Z',
+    });
+
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    // Scope within the form using testid to avoid global query collisions
+    await screen.findByTestId('new-customer-form');
+    const formEl = screen.getByTestId('new-customer-form') as HTMLElement;
+
+    const inputs = within(formEl).getAllByRole('textbox');
+    fireEvent.change(inputs[0], { target: { value: 'Ibu Sri' } });
+    fireEvent.change(inputs[1], { target: { value: '628222333444' } });
+    fireEvent.click(within(formEl).getByRole('button', { name: /simpan/i }));
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalled();
+    });
+    const callArgs = mockInsert.mock.calls[0][0];
+    expect(callArgs).not.toHaveProperty('default_pricing_tier');
   });
 });

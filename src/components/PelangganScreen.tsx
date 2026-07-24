@@ -209,6 +209,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 }}
                 onCancel={() => setShowAddModal(false)}
                 showToast={showToast}
+                showTierField={showTierDropdown}
               />
             </div>
           </div>
