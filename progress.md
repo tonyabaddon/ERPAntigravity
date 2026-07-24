@@ -15,6 +15,19 @@
 
 **Plan gap surfaced:** Task 8 assumed `git push → auto-deploy`, but per memory `feedback_manual_prod_gate_after_real_tenant`, prod deploy requires `./scripts/promote-to-prod.sh <SHA>` manually. Founder-approved promote executed post-Cloud-Build-SUCCESS. Plan template needs update to include this step.
 
+**Post-ship whole-branch review — 3 critical gaps found + fixed (commit `20779b0`, migration 000516, promoted 2026-07-24 with founder approval):**
+
+- **C1 (write-path was still broken):** `provision_tenant` RPC hardcoded a 32-key Owner permission JSONB (incl. legacy `pipeline`, missing 11 registry keys). Would have re-broken the class-bug for every new tenant onboarded via admin dashboard. Fixed via migration 000516 — rewrites RPC to build permissions from same 43-key ARRAY as 000515. Verified in prod: `provision_tenant.prosrc LIKE '%pipeline%'` = **false**, `LIKE '%canConfigureSalesChannels%'` = **true**.
+- **C2 (duplicate gate function):** `PengaturanScreen.tsx:48-53` had its own `isVisible` using string-prefix `startsWith('can_')` check — same `canConfigureSalesChannels` silent bypass Sidebar had. Replaced with `REGISTRY_MAP.get(key)?.isActionPerm` lookup. Verified in prod chrome: Kanal Penjualan tab visible for Owner (correct post-backfill).
+- **C3 (duplicate anti-pattern + scan blind spot):** `PenjualanScreen.tsx:36-41` same duplicate `isVisible`. Fixed. `permissions-gate-scan.test.ts` GATED_FILES was missing both files (silent-blind guard). Added both + extended scan with `startsWith('can_')` regex check to catch this anti-pattern class permanently.
+- **I1 (minor):** `backend-go/internal/db/po_audit_test.go` fixture role `'Admin'` → `'Staff Admin Toko'` (valid `PermissionRole`).
+
+**Lessons codified for future SDD runs (spec/plan template updates pending):**
+1. Impact analysis MUST include anti-pattern signature grep (`isVisible|isPermVisible|startsWith('can_')`), not just import grep.
+2. Any backfill migration MUST audit RPCs/functions that WRITE the same data — else downstream state re-corrupts.
+3. Gate-scan test allowlist MUST be seeded from live grep at test-writing time, not human memory.
+4. Deploy step MUST reference `promote-to-prod.sh` per memory `feedback_manual_prod_gate_after_real_tenant`.
+
 **Follow-ups (out of scope this PR):**
 - Backend enforcement gap — `backend-go` doesn't read `admin_users.permissions` (only `tenant_users.role` enum). Malicious deep-link POST would bypass FE gate. Acceptable for MSME/RLS-enforced tenant isolation. Flag as tech-debt.
 - Category collapsibility if UI feedback indicates 43 checkboxes too long.
