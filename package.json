@@ -14,7 +14,8 @@
     "test:isolation": "vitest run --dir tests/isolation --no-coverage",
     "audit:views": "tsx scripts/audit-view-security-invoker.ts",
     "audit:numinput": "! grep -rnE '(^|[^a-zA-Z_])Number\\(e\\.target\\.value\\)' src --include='*.tsx' --include='*.ts' | grep -v -E '(NumberInput\\.tsx|\\.test\\.)' | grep .",
-    "audit:secdef-null-tenant": "tsx scripts/audit-secdef-null-tenant.ts"
+    "audit:secdef-null-tenant": "tsx scripts/audit-secdef-null-tenant.ts",
+    "audit:csp-backend-allowlist": "tsx scripts/audit-csp-backend-allowlist.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

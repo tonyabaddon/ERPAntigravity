@@ -42,6 +42,33 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #3 — 2026-07-24 — CSP allowlist drifted from backend URL — silently broke every getBackendUrl() call for 6 days
+
+**Context:** Founder reported "cari by foto tidak bisa upload file". Root cause was NOT the upload path — it was `serve.json` CSP `connect-src` that only allowlisted the Cloud Run `<service>-<hash>-<region>.a.run.app` hostname alias, while `src/lib/backendUrl.ts` fetched the backend via the `<service>-<project_number>.<region>.run.app` alias. Same service, different string. Browser blocked every backend fetch on `app.caleo.id` since CSP flipped Report-Only → enforce on commit `933867b` (2026-07-18). Blast radius: Cari by Foto (search + index), WhatsApp AI (QR, logout, pair-code), bank rekonsiliasi (`recon/upload`, `recon/close`). Only Cari by Foto surfaced because it's the most-used backend-touching feature. WA and recon paths were silently broken for 6 days.
+
+**What was missed:**
+1. When `backendUrl.ts` was refactored in commit `6dd9415` (staging/prod split, added `-422860632808.asia-southeast1.run.app` form), CSP was not updated to match. No test caught the drift.
+2. When CSP was flipped Report-Only → enforce in commit `933867b`, the pre-existing drift became a hard block. Only WA and recon paths were affected at the time; nobody exercised them so silent failure went unnoticed.
+3. The Task 11 gap-fix commit that flipped CSP added a "24h observation" gate BEFORE flip, but observation only caught the Sentry ingest miss — WA/recon paths were not exercised during the window.
+4. No CI check verified that hostnames used by the FE existed in the CSP `connect-src`. Every audit script covered SQL/migrations; none covered the frontend↔CSP contract.
+
+**Root cause of the miss:**
+- CSP is a client-side gate: the FE code and the CSP header are two separate declarative surfaces that must agree. Only the browser catches the mismatch, and only at runtime, and only when the specific fetch is actually attempted.
+- The staging-split refactor and the CSP-enforce flip were 3+ weeks apart and reviewed independently. Neither reviewer had the whole picture.
+- Silent-failure blast radius was too small (WA + recon) to trigger anyone before Cari by Foto shipped.
+
+**Prevention:**
+1. New audit `scripts/audit-csp-backend-allowlist.ts` — parses `serve.json` CSP + parses `HOSTNAME_TO_BACKEND` values in `src/lib/backendUrl.ts`, fails on any FE hostname absent from the CSP `connect-src`. Wildcard suffix (`*.example.com`) supported.
+2. Wired into `.claude/settings.json` Stop hook (`npm run audit:csp-backend-allowlist`) so regression can't ship silently.
+3. Class rule to remember: **any FE↔CSP or FE↔CORS contract has two declarative surfaces that must be checked in the same PR.** Refactor of one without touching the other is a red flag; add a CI audit rather than relying on manual review.
+4. Consider extending the audit to also parse `Access-Control-Allow-Origin` regex from backend `enableCors` if we ever tighten it beyond `*`.
+
+**Empirical confirmation before fix:** `gcloud logging read '"CSP-REPORT"' --project=gen-lang-client-0410251117 --freshness=7d` returned violation reports for the exact blocked-uri `https://garindo-jaya-panel-msme-erp-422860632808.asia-southeast1.run.app/api/v1/products/search-by-photo` from `document-uri` `https://app.caleo.id/t/garindo/dashboard?screen=kasir`, `disposition=enforce`, `violated-directive=connect-src`. Deductive chain + independent log evidence both point at the same root cause.
+
+**Files updated:** `serve.json` (CSP hostnames added), `scripts/audit-csp-backend-allowlist.ts` (new audit), `package.json` (npm script), `.claude/settings.json` (Stop hook), `progress.md` (root-cause entry), this miss-log.
+
+---
+
 ## Entry #2 — 2026-07-22 — Anchored on OTP/pool while impersonation loop was the actual bug
 
 **Context:** Founder reported "can't receive OTP login" → session went deep on Supabase :5432 pool exhaustion (real bug, 2026-07-20 recurrence). Diagnosed + partially fixed pool. Then founder asked "why isn't admin.caleo.id the dashboard for caleo admin?" — I answered "you're seeing the login gate; try login". After I got them logged in via MCP chrome, they saw the Garindo TENANT dashboard, not the Caleo admin dashboard. Actual bug was a stale impersonation row from 2026-07-11 (11 days old) that stamped `impersonating=true` into every JWT the founder was issued.

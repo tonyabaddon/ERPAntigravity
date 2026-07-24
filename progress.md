@@ -1,5 +1,45 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — Cari by Foto (dan semua getBackendUrl calls) diblokir CSP di prod
+
+**Bug:** User lapor "tidak bisa upload file untuk cari by foto (AI)".
+
+**Root cause:** `serve.json` line 28 CSP `connect-src` allowlist hanya menyebut hostname alias `garindo-jaya-panel-msme-erp[-staging]-xnrhcw7onq-as.a.run.app`, tapi `src/lib/backendUrl.ts:21-22` men-fetch backend via alias `garindo-jaya-panel-msme-erp[-staging]-422860632808.asia-southeast1.run.app` (dua nama untuk service Cloud Run yang sama). CSP string-match strict → browser blok fetch sebelum keluar tab. Frontend catch `TypeError: Failed to fetch` → toast `"Search gagal: Failed to fetch"` → user tafsir sebagai "tidak bisa upload".
+
+**Timeline (kenapa baru sekarang muncul):**
+- Commit `6dd9415` (staging split) rewrite `backendUrl.ts` pakai bentuk `-422860632808`.
+- Commit `933867b` (2026-07-18) flip CSP dari `Report-Only` ke enforce.
+- Sejak 2026-07-18, SEMUA panggilan `getBackendUrl()` diblokir dari `app.caleo.id`: WhatsApp AI (QR/logout/pair-code), rekonsiliasi bank (`recon/upload`, `recon/close`), dan Cari by Foto (search/index). Cari by Foto paling visible → yang dilaporkan.
+
+**Fix:** Tambah dua hostname `-422860632808.asia-southeast1.run.app` (prod + staging) ke CSP `connect-src` di `serve.json`. Pertahankan variant `-xnrhcw7onq-as.a.run.app` supaya browsing lewat frontend Cloud Run alias juga tetap jalan.
+
+**Empirical evidence (independent, from prod logs — before fix):**
+`gcloud logging read '"CSP-REPORT"' --project=gen-lang-client-0410251117 --freshness=7d` → latest violation `2026-07-24T13:46:17Z`:
+- `blocked-uri`: `https://garindo-jaya-panel-msme-erp-422860632808.asia-southeast1.run.app/api/v1/products/search-by-photo`
+- `document-uri`: `https://app.caleo.id/t/garindo/dashboard?screen=kasir`
+- `violated-directive`: `connect-src`
+- `disposition`: `enforce`
+Direct match with the diagnosed root cause. Founder was clicking Cari by Foto → browser blocked → CSP report fired → log captured.
+
+**Stage-1 caveat:** `npm run dev` uses Vite dev server, which does NOT serve `serve.json` headers. So Stage-1 UI test can't validate CSP behaviour for this class of fix. The `audit:csp-backend-allowlist` script validates the CONTRACT (FE hosts ⊆ CSP allowlist) statically; live CSP header validation only happens post-Stage-2 deploy against `app.caleo.id`. Stage-3 procedure below is the ONLY empirical validation.
+
+**Regression guard:** `scripts/audit-csp-backend-allowlist.ts` (npm run `audit:csp-backend-allowlist`) — parse CSP + parse `HOSTNAME_TO_BACKEND` values, gagal kalau ada backend host yang belum di-allowlist. Wired ke Stop hook di `.claude/settings.json` sejajar audit lainnya.
+
+**Ship (Stage 1 verified, Stage 2 pending):**
+- Stage 1: `npm run audit:csp-backend-allowlist` ✓, `audit:numinput` ✓, `audit:secdef-null-tenant` ✓, `vitest run --changed` ✓ (1061 pass / 2 skip). `npm run lint` gagal — tapi errors di `src/components/approval/ApprovalInboxScreen.tsx` (pre-existing dari parallel session's WIP, bukan dari CSP fix ini; confirmed via `git stash` + re-lint).
+- Stage 2: FE deploy via `git push` triggers `cloudbuild.frontend.yaml` → tag `c<SHORT_SHA>`, founder promote manual per rule `feedback_manual_prod_gate_after_real_tenant`.
+- Stage 3: setelah promote, exercise Cari by Foto + WhatsApp AI screen di `app.caleo.id` (Toko Jaya Makmur test tenant). Confirm zero CSP violation di console + fetch 200.
+
+**Files changed:**
+- `serve.json` — add two hostnames to CSP connect-src (1 line)
+- `scripts/audit-csp-backend-allowlist.ts` — new audit
+- `package.json` — add `audit:csp-backend-allowlist` npm script
+- `.claude/settings.json` — wire new audit into Stop hook
+
+**Miss-log:** `docs/superpowers/miss-log.md` entry #3 — CSP allowlist drift class-problem.
+
+---
+
 ## 2026-07-24 — Admin Gender-Aware Default Avatar
 
 **Spec:** `docs/superpowers/specs/2026-07-24-admin-avatar-gender-design.md` (commit `3b90505`)
