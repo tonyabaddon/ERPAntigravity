@@ -3,115 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export interface PermissionSet {
-  dashboard: boolean;
-  salesInbox: boolean;
-  laporan: boolean;
-  aiStock: boolean;
-  pelanggan: boolean;
-  orderHistory: boolean;
-  userManagement: boolean;
-  whatsappAi: boolean;
-  notifications: boolean;
-  settings: boolean;
-  pembelian: boolean;
-  kasir: boolean;
-  piutang?: boolean;
-  reconciliation?: boolean;
-  // Action permissions (Phase 2 anti-fraud foundation)
-  can_create_po?: boolean;
-  can_edit_po?: boolean;
-  // Phase 2 — stock adjustments, opname, price changes
-  can_request_adjustment?: boolean;
-  can_approve_adjustment?: boolean;
-  can_start_opname?: boolean;
-  can_witness_opname?: boolean;
-  can_commit_opname?: boolean;
-  can_request_price_change?: boolean;
-  can_approve_price_change?: boolean;
-  // Phase 3a — PO receipt witness
-  can_witness_po_receipt?: boolean;
-  // Phase 3b — kasir gates
-  can_open_kasir_shift?: boolean;
-  can_request_kasir_price_override?: boolean;
-  can_approve_kasir_price_override?: boolean;
-  can_request_kasir_void?: boolean;
-  can_approve_kasir_void?: boolean;
-  can_request_kasir_refund?: boolean;
-  can_approve_kasir_refund?: boolean;
-  can_override_price_floor?: boolean;
-  // Phase 3d — inter-warehouse transfers
-  can_initiate_transfer?: boolean;
-  can_receive_transfer?: boolean;
-  // Warehouse admin (2026-06-13 spec)
-  can_manage_warehouses?: boolean;
-  // Phase 4 — Pengawasan (immutable ledger reader)
-  can_view_pengawasan?: boolean;
-  // Sales channel admin (2026-06-13 spec)
-  canConfigureSalesChannels?: boolean;
-  // Phase 1A — Piutang/Tempo customer credit
-  can_request_credit_activate?: boolean;
-  can_approve_credit_activate?: boolean;
-  can_request_limit_change?: boolean;
-  can_approve_limit_change?: boolean;
-  can_request_deactivate?: boolean;
-  can_approve_deactivate?: boolean;
-}
+// Re-export permissions registry (single source of truth in src/lib/permissions.ts).
+// Existing consumers `import { PermissionSet, ALL_PERMISSIONS } from './types'` keep working.
+export { ALL_PERMISSIONS } from './lib/permissions';
+export type { PermissionSet, PermissionKey, PermissionRole } from './lib/permissions';
 
-export const ALL_PERMISSIONS: PermissionSet = {
-  dashboard: true,
-  salesInbox: true,
-  laporan: true,
-  aiStock: true,
-  pelanggan: true,
-  orderHistory: true,
-  userManagement: true,
-  whatsappAi: true,
-  notifications: true,
-  settings: true,
-  pembelian: true,
-  kasir: true,
-  piutang: true,
-  reconciliation: true,
-  can_create_po: true,
-  can_edit_po: true,
-  can_request_adjustment: true,
-  can_approve_adjustment: true,
-  can_start_opname: true,
-  can_witness_opname: true,
-  can_commit_opname: true,
-  can_request_price_change: true,
-  can_approve_price_change: true,
-  can_witness_po_receipt: true,
-  can_open_kasir_shift: true,
-  can_request_kasir_price_override: true,
-  can_approve_kasir_price_override: true,
-  can_request_kasir_void: true,
-  can_approve_kasir_void: true,
-  can_request_kasir_refund: true,
-  can_approve_kasir_refund: true,
-  can_override_price_floor: true,
-  can_initiate_transfer: true,
-  can_receive_transfer: true,
-  can_manage_warehouses: true,
-  can_view_pengawasan: true,
-  canConfigureSalesChannels: true,
-  can_request_credit_activate: true,
-  can_approve_credit_activate: true,
-  can_request_limit_change: true,
-  can_approve_limit_change: true,
-  can_request_deactivate: true,
-  can_approve_deactivate: true,
-};
+import type { PermissionSet, PermissionRole } from './lib/permissions';
 
 export type AdminStatus = 'Aktif' | 'Nonaktif';
 
+/**
+ * AdminUser.role narrowed from `string` to PermissionRole. Prevents typo bugs
+ * (e.g. 'staf admin toko' silently falling through defaultPermissions to
+ * Finance Manager). Read-boundary safeguard lives in dbToAdminUser mapper.
+ */
 export interface AdminUser {
   id: string;
   name: string;
   email: string;
   whatsapp: string;
-  role: string;
+  role: PermissionRole;
   permissions: PermissionSet;
   status: AdminStatus;
 }
@@ -121,7 +32,7 @@ export interface DbAdminUser {
   name: string;
   email: string | null;
   whatsapp: string | null;
-  role: string;
+  role: PermissionRole;
   permissions: PermissionSet;
   status: string;
   created_at: string;
