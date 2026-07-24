@@ -80,7 +80,9 @@ describe('WarehouseTransferCreateScreen', () => {
     // Add an item via SKU picker search
     const searchInput = screen.getByPlaceholderText(/Cari SKU/i);
     fireEvent.change(searchInput, { target: { value: 'Cat' } });
-    await waitFor(() => expect(mockSearchSKU).toHaveBeenCalledWith('Cat'));
+    // searchSKU is called with (term, fromWarehouseId) so the "Stok" column
+    // shows from-warehouse stock, matching the RPC pre-check.
+    await waitFor(() => expect(mockSearchSKU).toHaveBeenCalledWith('Cat', 'wa'));
     // 'Cat Biru' text is split across sibling spans inside the dropdown button
     await waitFor(() => screen.getByText(/Cat Biru/i));
     fireEvent.click(screen.getByText(/Cat Biru/i));
@@ -207,5 +209,34 @@ describe('WarehouseTransferCreateScreen', () => {
   it('F5-14: empty-state helper NOT shown when no toId selected', () => {
     renderScreen();
     expect(screen.queryByText(/belum ada penerima/i)).not.toBeInTheDocument();
+  });
+
+  // Regression: PostgrestError extraction (bug 2026-07-24 [object Object])
+  it('surfaces PostgrestError.message instead of [object Object]', async () => {
+    (warehouseTransferService.initiateTransfer as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce({
+        code: 'P0001',
+        message: 'TRANSFER_INSUFFICIENT_STOCK: sku=S1 tersedia=2 diminta=4',
+        details: null,
+        hint: null,
+      });
+
+    renderScreen();
+    fireEvent.change(screen.getByLabelText(/Dari Gudang/i), { target: { value: 'wa' } });
+    fireEvent.change(screen.getByLabelText(/Ke Gudang/i), { target: { value: 'wb' } });
+    await waitFor(() => expect(mockListReceivers).toHaveBeenCalledWith('wb'));
+    await waitFor(() => expect(screen.getByLabelText(/Dikirim Kepada/i)).not.toBeDisabled());
+    fireEvent.change(screen.getByLabelText(/Dikirim Kepada/i), { target: { value: 'u2' } });
+
+    fireEvent.change(screen.getByPlaceholderText(/Cari SKU/i), { target: { value: 'Cat' } });
+    await waitFor(() => screen.getByText(/Cat Biru/i));
+    fireEvent.click(screen.getByText(/Cat Biru/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /Kirim Transfer/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/Stok tidak cukup.*S1.*tersedia=2.*diminta=4/)).toBeInTheDocument()
+    );
+    expect(screen.queryByText(/\[object Object\]/)).not.toBeInTheDocument();
   });
 });

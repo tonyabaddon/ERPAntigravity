@@ -654,12 +654,13 @@ export default function App() {
             currentUserName={currentUser?.name}
             onDone={(id) => navigate('warehouse-transfer-detail', { id: String(id) })}
             onCancel={() => navigate('warehouse-transfer')}
-            searchSKU={async (term) => {
-              // Fuzzy search stocks by sku or name, join stock_levels for qty at from-warehouse.
-              // Term filter is client-side; server returns all stocks and we filter by warehouse_id
-              // via the join. RLS on stocks scopes to tenant automatically.
+            searchSKU={async (term, fromWarehouseId) => {
+              // Fuzzy search stocks by sku or name; qty is from-warehouse stock only.
+              // RLS on stocks scopes to tenant automatically. stock_levels are pulled
+              // then reduced client-side, filtered to fromWarehouseId so the picker
+              // "Stok" column matches the RPC's from-warehouse pre-check.
               const q = term.trim();
-              if (!q || q.length < 1) return [];
+              if (!q || q.length < 1 || !fromWarehouseId) return [];
               const { data, error } = await supabase
                 .from('stocks')
                 .select('sku, name, stock_levels(qty, warehouse_id)')
@@ -670,8 +671,13 @@ export default function App() {
                 .map((row) => ({
                   sku: row.sku,
                   name: row.name,
-                  qty: (row.stock_levels ?? []).reduce((sum, sl) => sum + (sl.qty ?? 0), 0),
-                }));
+                  qty: (row.stock_levels ?? [])
+                    .filter(sl => sl.warehouse_id === fromWarehouseId)
+                    .reduce((sum, sl) => sum + (sl.qty ?? 0), 0),
+                }))
+                // Hide SKUs with no stock at from-warehouse — RPC would reject with
+                // TRANSFER_INSUFFICIENT_STOCK anyway, so surfacing them misleads the user.
+                .filter(r => r.qty > 0);
             }}
             listReceivers={async (warehouseId) => {
               // Return admin_users in current tenant with can_receive_transfer=true.

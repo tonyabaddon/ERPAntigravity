@@ -1,5 +1,42 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — Warehouse Transfer: qty clamp anti-pattern + `[object Object]` submit error + wrong Stok column
+
+**Files:** `src/components/warehouseTransfer/WarehouseTransferSKUPicker.tsx`, `src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx`, `src/App.tsx`, plus regression tests in `src/components/warehouseTransfer/__tests__/`.
+**Founder-reported (chained):** "buat transfer baru dari gudang ke gudang lain, qty kirim tidak bisa diedit, ketika edit dari 1 ke 4 diubah menjadi maksimal jumlah stoknya" → "tidak bisa klik kirim transfer juga error" → "klik kirim + cetak PDF juga ga bisa".
+
+**What:** Three independent root causes across the same screen; fixed in one pass.
+
+1. **Qty edit clamps per keystroke** — `WarehouseTransferSKUPicker.tsx:26,61-63`. Classic controlled-`type=number` anti-pattern: `onChange` ran `Math.max(1, Math.min(qty, stockAvailable))` on every keystroke, and `parseInt(e.target.value || '1', 10)` snapped intermediate empty state back to `1`. Repro sequence: backspace `1` → controlled input re-renders `1` → next keystroke `4` appends → input reads `14` → clamped to `stockAvailable` (matches founder's "diubah menjadi maksimal jumlah stoknya"). Fix: added a per-SKU draft-string local state; input value tracks the draft while focused; commit + clamp on `onBlur` only.
+2. **Submit error rendered as `[object Object]`** — `WarehouseTransferCreateScreen.tsx:141`. Same class-error as this morning's PinPad regression (progress.md entry above + miss-log #4 rule 3). Supabase throws `PostgrestError` (plain object, not `Error` instance); `String(err) === "[object Object]"`. Fix: swap for shared `extractErrorMessage()` helper at `src/lib/extractErrorMessage.ts` (added by the PinPad fix; screen was never updated). Kirim + Kirim+PDF share the same `submit()` catch → one fix covers both.
+3. **Wrong "Stok" column in SKU picker** — `App.tsx:673`. `searchSKU` reducer summed `stock_levels.qty` across ALL warehouses, ignoring `fromWarehouseId`. UI displayed "Stok: N" (all-warehouse total) but RPC pre-check reads `stock_levels WHERE warehouse_id = p_from_warehouse_id`. User could pick a qty allowed by the (wrong) clamp cap but rejected by the RPC → surfaced as `TRANSFER_INSUFFICIENT_STOCK`, which the bug #2 error extractor was hiding as `[object Object]`. Fix: `searchSKU` prop signature now takes `fromWarehouseId`; reducer filters `stock_levels` by that id client-side.
+
+**Why (root, per bug):**
+1. React controlled-input clamp on every re-render + empty-string fallback = user typing can't survive one round-trip. Correct pattern for constrained number inputs is draft-string + blur-commit.
+2. Never rely on `err instanceof Error` for supabase-js errors. `extractErrorMessage()` exists precisely to fix this. Class-instance count in the codebase: **55 sites** (grep `'instanceof Error ? [a-z]+.message : String('`) — this is a class-fix candidate, not just a WT bug. See follow-up.
+3. `searchSKU` was written before the RPC pre-check was finalized; the reducer's "sum all warehouses" was never re-audited against the RPC's per-warehouse pre-check. Fix keeps them in agreement.
+
+**Code-review pass caught 4 further defects (all fixed in the same commit):**
+1. **Blur→submit race** — clicking Kirim while qty input still focused: mousedown fires blur, but React 18 automatic batching defers the resulting re-render until after the following click event. `submit()`'s `lines` closure was the pre-blur snapshot → transfer would ship with `qty=1` even though user typed `4`. Fix: wrap `commitQty(sku)` inside `flushSync` in the picker's `onBlur` so React re-renders BEFORE the click handler fires. Test-suite caveat noted inline in the new test file: RTL `fireEvent.blur` + `fireEvent.click` doesn't reproduce the real-browser event sequence, so this specific regression is protected by the production `flushSync` + manual browser verification only, not by an automated test.
+2. **`lines[i]` stale index in `commitQty`** — if user typed in row S2 (i=1), removed row S1 (i=0) before blurring, then `lines[i=1]` would be undefined or a different SKU → clamp against wrong ceiling or `undefined.stockAvailable` crash. Fix: look up target row by SKU via `lines.find`, drop the `i` parameter.
+3. **Orphaned draft on `removeLine`** — draft string keyed by SKU wasn't cleared on remove; re-adding the same SKU showed the stale typed value instead of the parent's `qty=1` default. Fix: `setDrafts(delete removedSku)` inside `removeLine`.
+4. **`stockAvailable=0` regression** — the searchSKU per-warehouse filter now returns `qty=0` for SKUs never stocked at the from-warehouse (previously masked by all-warehouse sum). Picker offered them anyway; user could add, submit, and hit `TRANSFER_INSUFFICIENT_STOCK`. Fix: `.filter(r => r.qty > 0)` after the map in App.tsx so those SKUs don't reach the picker.
+
+**Verify (Stage 1, all ✓ after all 7 fixes):**
+- `npm run lint` (tsc --noEmit): clean
+- `npm run audit:numinput`: clean (uses `parseInt`, not `Number(e.target.value)`)
+- `npm run audit:secdef-null-tenant`: clean
+- `npm run audit:csp-backend-allowlist`: clean
+- `npx vitest run --changed`: 2 files, **18 tests pass** — includes regression tests for `[object Object]` extraction, qty clamp-on-blur, sibling-row removal-before-blur (uses SKU lookup, not index), and orphaned-draft cleanup on remove+re-add.
+
+**Stage 2/3 pending founder discretion:** UI-only change; no schema/RPC/migration. Founder verifies visual behavior in browser (dev server running on `:3001`) before deploy. Prod smoke test on Toko Jaya Makmur after deploy per `production-testing-tenant` memory. **Explicit manual-verify item**: type a qty (e.g. 4) into the picker, then click "Kirim Transfer" without tabbing out → transfer must record qty=4, not the pre-blur `qty=1`. RTL can't cover this; browser is the only verifier.
+
+**Follow-ups (class-fix candidates, out of scope for this batch):**
+- `[object Object]` anti-pattern in **55 sites** across `src/` (admin, saldoAwal wizard, pengaturan, whatsappAi, rekonsiliasi, piutang, etc.). Per CLAUDE.md miss-log-feedback-protocol "3+ occurrences → permanent rule + audit script", this is the 3rd surfacing (PinPad, WarehouseTransfer, plus siblings). Recommended follow-up: `scripts/audit-no-string-err-fallback.ts` + Stop-hook wiring + codemod pass. Flagged to founder — separate task.
+- Same-class review: any other `stockAvailable` or "current stock" display in the app that sums across warehouses. Not audited in this pass.
+
+---
+
 ## 2026-07-24 — Private-bucket storage paths rendered as raw URLs (Tagihan + admin PendingPayment)
 
 **Files:** `src/components/pembelian/tagihan/TagihanDetailPage.tsx`, `src/components/admin/PendingPaymentRow.tsx`.

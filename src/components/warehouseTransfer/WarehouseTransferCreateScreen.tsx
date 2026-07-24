@@ -8,6 +8,7 @@ import { ArrowLeft, Info, Loader2 } from 'lucide-react';
 import { warehouseTransferService } from '../../lib/warehouseTransferService';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { buildHref } from '../../lib/urlRoute';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 import WarehouseTransferSKUPicker, { TransferLine } from './WarehouseTransferSKUPicker';
 
 export default function WarehouseTransferCreateScreen({
@@ -22,7 +23,7 @@ export default function WarehouseTransferCreateScreen({
   currentUserName?: string;
   onDone: (transferId: number) => void;
   onCancel: () => void;
-  searchSKU: (term: string) => Promise<Array<{ sku: string; name: string; qty: number }>>;
+  searchSKU: (term: string, fromWarehouseId: string) => Promise<Array<{ sku: string; name: string; qty: number }>>;
   listReceivers: (warehouseId: string) => Promise<Array<{ id: string; name: string }>>;
 }) {
   const { warehouses } = useWarehouses();
@@ -138,7 +139,7 @@ export default function WarehouseTransferCreateScreen({
 
       onDone(result.transfer_id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       setError(msg.includes('TRANSFER_INSUFFICIENT_STOCK')
         ? 'Stok tidak cukup: ' + msg.split('TRANSFER_INSUFFICIENT_STOCK:').pop()?.trim()
         : msg);
