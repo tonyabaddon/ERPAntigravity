@@ -1,5 +1,28 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — Admin Permission Registry (single source of truth + backfill)
+
+**Spec:** `docs/superpowers/specs/2026-07-24-admin-permission-registry-design.md` (commit `95d310d`)
+**Plan:** `docs/superpowers/plans/2026-07-24-admin-permission-registry-plan.md` (commit `4c93088`)
+**Migration:** `20261115000515_backfill_admin_permissions.sql`
+**Ship:** commit `d6bf4ed` → prod FE revision `00740-nej` + BE revision `00565-guz` (both 100% traffic via `promote-to-prod.sh d6bf4ed`, founder-approved 2026-07-24)
+
+**What:** Consolidated 3-way divergent permission definitions (`PermissionSet` interface, `defaultPermissions()`, `PERM_LABELS`) into `src/lib/permissions.ts` data-driven registry — 43 entries × 4 roles × 8 categories with `as const satisfies` type derivation (zero drift by construction). Migration 000515 backfilled all 7 admin_users rows to full 43-key JSONB (6 Owners → all-true; 1 Staff Admin Toko → existing 12 preserved + 31 filled per preset; legacy `pipeline` key stripped). Fixed 2 silent bypasses: (a) Sidebar `canConfigureSalesChannels` — new `isActionPerm` flag replaces string-prefix check; (b) Pembelian `PurchaseOrderFormPage:39-40` + `PembelianDetailPage:275` — `!== false` default-visible → `=== true` opt-in. Narrowed `AdminUser.role` from `string` to `PermissionRole` + read-boundary safeguard in `dbToAdminUser` (invalid role → `captureError` + safe fallback). Added static-analysis regression scan test `permissions-gate-scan.test.ts` to catch future default-visible `can_*` gates. Fixed `initialData.ts` seed admins to use `defaultPermissions(role)`.
+
+**Why:** NENG SEKAR (Staff Admin Toko at Testing Jaya Panel) had 12-key permission JSONB but UI reported "N/43 aktif" — sidebar hid Stok Opname/Manajemen Gudang/Persetujuan/Keputusan Owner/all Piutang approval menus. Every Phase 2/3/4 added `can_*` to `PermissionSet` without updating `defaultPermissions()` or `PERM_LABELS` — the class of drift bug that founder saw would recur every Phase. Discovered mid-audit: all 6 existing Owners also silently missing 6 Phase 1A piutang approval perms (`can_approve_credit_activate`, `can_approve_limit_change`, `can_approve_deactivate`, plus request-tier). `canConfigureSalesChannels` silent bypass (naming missed `can_` prefix check) was a second-class of the same drift bug.
+
+**Verify (Stage 3 Toko Jaya Makmur prod):** Login as playwright-toko-owner → User Management → expand admin row → all 43 checkboxes rendered in 8 category groups (MODUL UTAMA 10, PEMBELIAN 4, STOK OPNAME & ADJUSTMENT 7, GUDANG 3, KASIR 9, PENJUALAN 1, PIUTANG & KREDIT 7, KONTROL 2) with Info-icon tooltips (Bahasa Indonesia MSME tone). Owner sidebar shows Persetujuan + Keputusan Owner + Piutang (previously hidden). Zero console errors, all API 200. "Isi Preset" button visible with disabled state per registry-driven role dropdown.
+
+**Plan gap surfaced:** Task 8 assumed `git push → auto-deploy`, but per memory `feedback_manual_prod_gate_after_real_tenant`, prod deploy requires `./scripts/promote-to-prod.sh <SHA>` manually. Founder-approved promote executed post-Cloud-Build-SUCCESS. Plan template needs update to include this step.
+
+**Follow-ups (out of scope this PR):**
+- Backend enforcement gap — `backend-go` doesn't read `admin_users.permissions` (only `tenant_users.role` enum). Malicious deep-link POST would bypass FE gate. Acceptable for MSME/RLS-enforced tenant isolation. Flag as tech-debt.
+- Category collapsibility if UI feedback indicates 43 checkboxes too long.
+- `admin_delete_user` RPC — per `admin_upsert_user_rpc.sql:22-23` comment, DELETE still fails via broken RLS predicate. Separate follow-up.
+- Tingkat 2 (roles table + per-user override) — deferred until 500+ admins or >2 new roles per year per spec §16.
+
+---
+
 ## 2026-07-22 — OTP + admin.caleo.id recovery (incident)
 
 Two independent bugs surfaced during login recovery. Full timeline + root cause in
