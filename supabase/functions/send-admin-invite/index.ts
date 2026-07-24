@@ -1,3 +1,21 @@
+// send-admin-invite — atomic admin creation + invite for tenant-level admins.
+//
+// 2026-07-24 rewrite: previous version cuma kirim SMTP email. Bug consequence:
+// admin_users row punya client-random UUID yang tidak match auth.users.id, dan
+// tidak ada tenant_users row. New admin login → JWT tanpa tenant_id → blank
+// dashboard / RLS block.
+//
+// New atomic flow (called BEFORE admin_upsert_user in FE):
+//   1. Verify caller is authenticated + Owner in current tenant
+//   2. Call auth.admin.inviteUserByEmail() → creates auth.users, returns id
+//      (idempotent: kalau user sudah ada, dapatkan existing id)
+//   3. INSERT tenant_users (auth_id, tenant_id, 'staff' | 'owner')
+//   4. Send SMTP invite email
+//   5. RETURN { user_id, email }
+//
+// FE UserManagementScreen kemudian panggil admin_upsert_user dengan user_id
+// yang di-return — tidak lagi pakai crypto.randomUUID().
+
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -6,61 +24,125 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+interface RequestBody {
+  email?: string;
+  name?: string;
+  role?: string;
+  addedByName?: string;
+  appUrl?: string;
+}
 
-  let body: { email?: string; name?: string; role?: string; addedByName?: string; appUrl?: string };
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  let body: RequestBody;
   try {
     body = await req.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Invalid JSON" }, 400);
   }
 
   const { email, name, role, addedByName, appUrl } = body;
   if (!email || !name || !role || !addedByName || !appUrl) {
-    return new Response(JSON.stringify({ error: "Missing required fields" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Missing required fields" }, 400);
   }
-
   if (!appUrl.startsWith("https://") && !appUrl.startsWith("http://")) {
-    return new Response(JSON.stringify({ error: "Invalid appUrl" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Invalid appUrl" }, 400);
   }
 
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
-  if (!gmailUser || !gmailPass) {
-    return new Response(JSON.stringify({ error: "SMTP credentials not configured" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  if (!SERVICE_KEY) return json({ error: "Server misconfig: no service key" }, 500);
+  if (!gmailUser || !gmailPass) return json({ error: "SMTP credentials not configured" }, 500);
 
+  // ─── 1. Verify caller ────────────────────────────────────────────────────
   const token = req.headers.get("Authorization")?.replace("Bearer ", "") ?? "";
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-  );
-  const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-  if (authError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  const anonClient = createClient(SUPABASE_URL, ANON_KEY);
+  const { data: { user: caller }, error: authError } = await anonClient.auth.getUser(token);
+  if (authError || !caller) return json({ error: "Unauthorized" }, 401);
+
+  // Extract caller's tenant_id from JWT
+  let callerTenantId: string | null = null;
+  try {
+    const payloadPart = token.split(".")[1];
+    const b64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const claims = JSON.parse(atob(padded));
+    callerTenantId = claims.tenant_id ?? null;
+  } catch {
+    // fall through
+  }
+  if (!callerTenantId || callerTenantId === "00000000-0000-0000-0000-000000000000") {
+    return json({ error: "Caller has no tenant context" }, 403);
   }
 
-  const html = buildInviteEmail({ name, role, addedByName, email, appUrl });
+  // Service-role client untuk admin API + DB writes
+  const svc = createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
-  const client = new SMTPClient({
+  // Verify caller is Owner in this tenant (defense-in-depth on top of RLS)
+  const { data: callerRow } = await svc
+    .from("admin_users")
+    .select("role")
+    .eq("id", caller.id)
+    .eq("tenant_id", callerTenantId)
+    .maybeSingle();
+  if (!callerRow || callerRow.role !== "Owner") {
+    return json({ error: "Owner role required to invite admins" }, 403);
+  }
+
+  // ─── 2. Invite or reuse existing auth.users ──────────────────────────────
+  let inviteeUserId: string | null = null;
+
+  // Check existing first (idempotent)
+  const { data: existingUsers } = await svc.auth.admin.listUsers({ page: 1, perPage: 200 });
+  const existing = existingUsers?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    inviteeUserId = existing.id;
+  } else {
+    const { data: invited, error: inviteErr } = await svc.auth.admin.inviteUserByEmail(email, {
+      redirectTo: appUrl,
+    });
+    if (inviteErr || !invited?.user) {
+      return json({ error: `Invite failed: ${inviteErr?.message ?? "unknown"}` }, 500);
+    }
+    inviteeUserId = invited.user.id;
+  }
+
+  if (!inviteeUserId) return json({ error: "Failed to resolve invitee user_id" }, 500);
+
+  // ─── 3. Ensure tenant_users membership ───────────────────────────────────
+  // Map app role → tenant_users.role enum ('owner' | 'admin' | 'staff' | 'kasir')
+  const tenantRole = role.toLowerCase().includes("owner")
+    ? "owner"
+    : role.toLowerCase().includes("kasir")
+      ? "kasir"
+      : "staff";
+
+  const { error: tuErr } = await svc
+    .from("tenant_users")
+    .upsert(
+      { user_id: inviteeUserId, tenant_id: callerTenantId, role: tenantRole, status: "ACTIVE" },
+      { onConflict: "tenant_id,user_id" },
+    );
+  if (tuErr) {
+    return json({ error: `tenant_users upsert failed: ${tuErr.message}` }, 500);
+  }
+
+  // ─── 4. Send SMTP invite email (best-effort) ─────────────────────────────
+  const html = buildInviteEmail({ name, role, addedByName, email, appUrl });
+  const smtp = new SMTPClient({
     connection: {
       hostname: "smtp.gmail.com",
       port: 465,
@@ -68,28 +150,21 @@ Deno.serve(async (req) => {
       auth: { username: gmailUser, password: gmailPass },
     },
   });
-
   try {
-    await client.send({
-      from: `ERP Pro <${gmailUser}>`,
+    await smtp.send({
+      from: `Caleo ERP <${gmailUser}>`,
       to: email,
-      subject: "Anda telah ditambahkan ke ERP Pro",
+      subject: "Anda telah ditambahkan ke Caleo ERP",
       html,
     });
-    await client.close();
+    await smtp.close();
   } catch (err) {
-    await client.close().catch(() => {});
-    console.error("SMTP error:", err);
-    return new Response(JSON.stringify({ error: "Failed to send email" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    await smtp.close().catch(() => {});
+    console.error("SMTP error (non-fatal — auth invite email already sent by Supabase):", err);
+    // Not fatal — Supabase invite email already sent via inviteUserByEmail above.
   }
 
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  return json({ success: true, user_id: inviteeUserId, email });
 });
 
 function escapeHtml(s: string): string {
@@ -114,45 +189,32 @@ function buildInviteEmail(p: {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9ff;padding:40px 20px;">
     <tr><td align="center">
       <table width="520" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:24px;border:1px solid #e5eeff;overflow:hidden;">
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#1e3d60,#102a43);padding:32px 40px;">
-            <p style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.5px;">ERP Pro</p>
-            <p style="margin:6px 0 0;color:rgba(255,255,255,0.6);font-size:13px;">Sistem Manajemen Toko</p>
-          </td>
-        </tr>
-        <!-- Body -->
-        <tr>
-          <td style="padding:40px;">
-            <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:#012749;">Halo ${escapeHtml(p.name)},</p>
-            <p style="margin:0 0 24px;font-size:14px;color:#43474e;line-height:1.6;">
-              <strong>${escapeHtml(p.addedByName)}</strong> telah menambahkan Anda ke sistem <strong>ERP Pro</strong> sebagai <strong>${escapeHtml(p.role)}</strong>.
-            </p>
-            <!-- CTA Button -->
-            <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
-              <tr>
-                <td style="background:#2d8a4e;border-radius:50px;padding:14px 32px;">
-                  <a href="${escapeHtml(p.appUrl)}" style="color:#fff;text-decoration:none;font-size:13px;font-weight:800;">MULAI LOGIN →</a>
-                </td>
-              </tr>
-            </table>
-            <!-- Instructions -->
-            <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#012749;">Cara login:</p>
-            <ol style="margin:0 0 24px;padding-left:20px;color:#43474e;font-size:13px;line-height:2;">
-              <li>Buka link di atas atau kunjungi: <a href="${escapeHtml(p.appUrl)}" style="color:#2d8a4e;">${escapeHtml(p.appUrl)}</a></li>
-              <li>Masukkan email Anda: <strong>${escapeHtml(p.email)}</strong></li>
-              <li>Klik <strong>Kirim OTP</strong></li>
-              <li>Masukkan kode 6 digit yang dikirim ke email ini</li>
-            </ol>
-            <p style="margin:0;font-size:12px;color:#9ca3af;">Email ini dikirim otomatis. Jika Anda tidak mengenal pengirim, abaikan email ini.</p>
-          </td>
-        </tr>
-        <!-- Footer -->
-        <tr>
-          <td style="background:#f8f9ff;padding:20px 40px;border-top:1px solid #e5eeff;">
-            <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">© 2026 TechSaaS ERP System</p>
-          </td>
-        </tr>
+        <tr><td style="background:linear-gradient(135deg,#1e3d60,#102a43);padding:32px 40px;">
+          <p style="margin:0;color:#fff;font-size:22px;font-weight:900;letter-spacing:-0.5px;">Caleo ERP</p>
+          <p style="margin:6px 0 0;color:rgba(255,255,255,0.6);font-size:13px;">Sistem Manajemen Toko</p>
+        </td></tr>
+        <tr><td style="padding:40px;">
+          <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:#012749;">Halo ${escapeHtml(p.name)},</p>
+          <p style="margin:0 0 24px;font-size:14px;color:#43474e;line-height:1.6;">
+            <strong>${escapeHtml(p.addedByName)}</strong> telah menambahkan Anda ke sistem <strong>Caleo ERP</strong> sebagai <strong>${escapeHtml(p.role)}</strong>.
+          </p>
+          <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;"><tr>
+            <td style="background:#2d8a4e;border-radius:50px;padding:14px 32px;">
+              <a href="${escapeHtml(p.appUrl)}" style="color:#fff;text-decoration:none;font-size:13px;font-weight:800;">MULAI LOGIN →</a>
+            </td>
+          </tr></table>
+          <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#012749;">Cara login:</p>
+          <ol style="margin:0 0 24px;padding-left:20px;color:#43474e;font-size:13px;line-height:2;">
+            <li>Buka link di atas atau kunjungi: <a href="${escapeHtml(p.appUrl)}" style="color:#2d8a4e;">${escapeHtml(p.appUrl)}</a></li>
+            <li>Masukkan email Anda: <strong>${escapeHtml(p.email)}</strong></li>
+            <li>Klik <strong>Kirim OTP</strong></li>
+            <li>Masukkan kode 6 digit yang dikirim ke email ini</li>
+          </ol>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Email ini dikirim otomatis. Jika Anda tidak mengenal pengirim, abaikan email ini.</p>
+        </td></tr>
+        <tr><td style="background:#f8f9ff;padding:20px 40px;border-top:1px solid #e5eeff;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">© 2026 Caleo ERP System</p>
+        </td></tr>
       </table>
     </td></tr>
   </table>

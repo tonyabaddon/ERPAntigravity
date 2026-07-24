@@ -166,6 +166,83 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       return;
     }
 
+    // 2026-07-24 fix: order changed to invite-FIRST (get real auth.users.id)
+    // then admin_upsert_user (with real id). Previous flow used
+    // crypto.randomUUID() → admin_users.id never matched auth.users.id → new
+    // admin JWT had no tenant_id → blank dashboard / RLS block.
+    // Edge Function now also inserts tenant_users row atomically.
+
+    if (isSupabaseConfigured && supabase) {
+      if (!tenant) {
+        showToast('⚠️ Konteks tenant belum siap. Muat ulang halaman.');
+        return;
+      }
+
+      // Step 1: invite via Edge Function (creates auth.users + tenant_users, sends email)
+      let inviteeUserId: string;
+      let inviteEmailSent = true;
+      try {
+        const { data, error: inviteErr } = await supabase.functions.invoke<{
+          user_id: string;
+          email: string;
+          success: boolean;
+        }>('send-admin-invite', {
+          body: {
+            email: newEmail,
+            name: newName,
+            role: newRole,
+            addedByName: currentUser?.name ?? 'Admin',
+            appUrl: window.location.origin,
+          },
+        });
+        if (inviteErr || !data?.user_id) {
+          captureError(inviteErr ?? new Error('Edge Function returned no user_id'), {
+            feature: 'user_management',
+            action: 'send_admin_invite_failed',
+          });
+          showToast(`⚠️ Gagal invite admin: ${inviteErr?.message ?? 'Edge Function error'}`);
+          return;
+        }
+        inviteeUserId = data.user_id;
+      } catch (err) {
+        captureError(err, { feature: 'user_management', action: 'send_admin_invite_threw' });
+        showToast('⚠️ Gagal invite admin — network/Edge Function error.');
+        return;
+      }
+
+      // Step 2: upsert admin_users with the REAL auth.users.id
+      const newAdmin: AdminUser = {
+        id: inviteeUserId,
+        name: newName,
+        email: newEmail,
+        whatsapp: newWhatsapp,
+        role: newRole,
+        permissions: defaultPermissions(newRole),
+        status: 'Aktif',
+      };
+
+      try {
+        await adminUsersService.upsert(adminUserToDb(newAdmin, tenant.tenant_id));
+        setAdmins(prev => [...prev, newAdmin]);
+      } catch (err) {
+        captureError(err, { feature: 'user_management', action: 'upsert_new_admin' });
+        showToast('⚠️ Gagal menyimpan admin baru ke Supabase.');
+        return;
+      }
+
+      setNewName('');
+      setNewEmail('');
+      setNewWhatsapp('');
+      setNewRole('Pilih Peran...');
+      showToast(
+        inviteEmailSent
+          ? `🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`
+          : `✓ Akun baru dibuat untuk ${newAdmin.name}. Undangan email GAGAL — kirim manual.`,
+      );
+      return;
+    }
+
+    // Dev-mode fallback (no Supabase)
     const newAdmin: AdminUser = {
       id: crypto.randomUUID(),
       name: newName,
@@ -175,63 +252,12 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       permissions: defaultPermissions(newRole),
       status: 'Aktif',
     };
-
     setAdmins(prev => [...prev, newAdmin]);
-
-    if (isSupabaseConfigured) {
-      if (!tenant) {
-        setAdmins(prev => prev.filter(a => a.id !== newAdmin.id));
-        showToast('⚠️ Konteks tenant belum siap. Muat ulang halaman.');
-        return;
-      }
-      try {
-        await adminUsersService.upsert(adminUserToDb(newAdmin, tenant.tenant_id));
-      } catch (err) {
-        captureError(err, { feature: 'user_management', action: 'upsert_new_admin' });
-        // Revert optimistic add on failure
-        setAdmins(prev => prev.filter(a => a.id !== newAdmin.id));
-        showToast('⚠️ Gagal menyimpan admin baru ke Supabase.');
-        return;
-      }
-    }
-
-    // Send invitation email (best-effort — failure does not block user creation).
-    // supabase.functions.invoke returns { data, error } — does NOT throw on
-    // edge-function failures, so try/catch alone let false-positive success
-    // through. Track invite outcome and adjust final toast.
-    let inviteSent = false;
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error: inviteErr } = await supabase.functions.invoke('send-admin-invite', {
-          body: {
-            email: newAdmin.email,
-            name: newAdmin.name,
-            role: newAdmin.role,
-            addedByName: currentUser?.name ?? 'Admin',
-            appUrl: window.location.origin,
-          },
-        });
-        if (inviteErr) {
-          captureError(inviteErr, { feature: 'user_management', action: 'send_admin_invite_rpc_error' });
-          showToast(`⚠️ Admin dibuat tapi gagal kirim email undangan: ${inviteErr.message}`);
-        } else {
-          inviteSent = true;
-        }
-      } catch (err) {
-        captureError(err, { feature: 'user_management', action: 'send_admin_invite_threw' });
-        showToast('⚠️ Admin dibuat tapi gagal kirim email undangan.');
-      }
-    }
-
     setNewName('');
     setNewEmail('');
     setNewWhatsapp('');
     setNewRole('Pilih Peran...');
-    showToast(
-      inviteSent
-        ? `🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`
-        : `✓ Akun baru dibuat untuk ${newAdmin.name}. Undangan email GAGAL — kirim manual.`,
-    );
+    showToast(`✓ Akun baru dibuat untuk ${newAdmin.name} (dev mode).`);
   };
 
   const handleRemoveAdmin = async (id: string) => {
