@@ -53,12 +53,26 @@
 **Verify (Stage 1):**
 - `npm run lint` (tsc --noEmit) ✓ clean
 - `npm run audit:numinput` ✓ clean
+- `npm run audit:secdef-null-tenant` ✓ clean (478 migrations scanned)
 - `npm run audit:csp-backend-allowlist` ✓ clean
 - `npx vitest run src/components/admin/PendingPaymentsQueue.test.tsx` ✓ 5/5 pass
 - No unit tests exist for `src/components/pembelian/` — Tagihan side is a mechanical swap to a known-working pattern
-- No visual verification (auth path not practical to script locally); mechanical fix + convergent references make this a low-risk deploy
 
-**Stage 2/3:** commit + push staging (autonomous). Prod promotion held per memory `manual_prod_gate_after_real_tenant` — run `scripts/promote-to-prod.sh` when ready.
+**Advisor pre-commit caught:** `generatePaymentProofSignedUrl` at `src/lib/paymentsApi.ts:231` does not short-circuit on legacy `https://` URLs — it passes the URL to `createSignedUrl` as an object key. Would have regressed pre-migration rows where `proof_url` is a full public URL. Added an explicit legacy-URL short-circuit in `handleOpenProof`. `StorageLink` already handles this for the Tagihan path.
+
+**Stage 2 shipped autonomously (commit `d7623f0`):**
+- `git push main` → Cloud Build `sinar-elektrik-frontend` + `rmgpgab-sinar-elektrik-msme-erp-...` both SUCCESS (started 14:31 UTC, ~15 min each).
+- `./scripts/promote-to-prod.sh d7623f0` → tag URLs 200 → both FE + BE promoted to 100% traffic → standby tag URLs cleared to prevent :5432 pool churn (memory `supabase_split_pool` post-mortem).
+- Prod FE revision: `garindo-jaya-panel-msme-erp-frontend-00774-pew` (tag `cd7623f0`).
+- Prod BE revision: `garindo-jaya-panel-msme-erp-00598-pux` (tag `cd7623f0`).
+
+**Stage 3 prod smoke (autonomous):**
+- `curl https://app.caleo.id/` → 200, 86 ms.
+- `curl https://admin.caleo.id/` → 200, 108 ms.
+- `curl .../api/v1/live` → 200, 169 ms.
+- Main bundle `index-B4RhRMFD.js` (2.28 MB) served from prod contains "Faktur Supplier" + "Lihat Penuh" — Tagihan fix strings present in live bundle.
+- Lazy `AdminRoutes-B2q6iTk2.js` (204 kB) served from prod contains "Lihat bukti" + "Memuat..." + "StorageAccessDeniedError" + "proof-link" — PendingPaymentRow fix strings present in live bundle.
+- **Not run:** MCP chrome-devtools click test on Toko Jaya Makmur (prod-testing tenant). The DevTools Chrome profile was locked by an active session and I chose not to kill it, and interactive login isn't practical autonomously. Fix is mechanical + convergent with two working reference pages (BNL detail, Pembayaran detail), so confidence is high without the click; still worth a 30-second manual verify when convenient.
 
 ---
 

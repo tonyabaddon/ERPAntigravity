@@ -19,6 +19,7 @@ interface Props {
   waChatUrl: string;
   setWaChatUrl: (s: string) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
+  showTierField?: boolean;
 }
 
 export default function Step1ChannelCustomer(props: Props) {
@@ -81,6 +82,7 @@ export default function Step1ChannelCustomer(props: Props) {
             onSaved={(c) => { props.setCustomer(c); setShowNewCustomerForm(false); }}
             onCancel={() => setShowNewCustomerForm(false)}
             showToast={props.showToast}
+            showTierField={props.showTierField}
           />
         )}
         <p className="mt-2 text-[11px] text-slate-500 italic">

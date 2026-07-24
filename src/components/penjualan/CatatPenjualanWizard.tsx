@@ -1039,6 +1039,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 waChatUrl={waChatUrl}
                 setWaChatUrl={setWaChatUrl}
                 showToast={showToast}
+                showTierField={showTierPill}
               />
             )}
 
