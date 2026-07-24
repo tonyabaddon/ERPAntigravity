@@ -163,22 +163,10 @@ export async function generateInvoiceLunasPdf(
   doc.text(formatRupiah(grandTotal, true), totalsValueX, cursorY + 3, { align: 'right' });
   cursorY += 10;
 
-  // ----- 6. LUNAS banner -----
-  const bannerX = MARGIN_MM;
-  const bannerWidth = PAGE_WIDTH_MM - MARGIN_MM * 2;
-  const bannerHeight = 11;
-  doc.setFillColor(GREEN_BANNER_BG);
-  doc.roundedRect(bannerX, cursorY, bannerWidth, bannerHeight, 2.2, 2.2, 'F');
-
-  const paymentMethod = order.payment_method ?? 'Tunai';
-  const bannerText = `✓ LUNAS — diterima ${formatTanggal(issueDate)} · via ${paymentMethod}`;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(NAVY_HEX);
-  doc.text(bannerText, bannerX + bannerWidth / 2, cursorY + bannerHeight / 2 + 1.4, {
-    align: 'center',
-  });
-  cursorY += bannerHeight + 4;
+  // ----- 6. LUNAS banner REMOVED (founder request 2026-07-24) -----
+  // Payment method + receipt date sudah tercantum di totals block dan doc header;
+  // banner terpisah dianggap redundant. Kept the constants imported above for
+  // future re-enable if design changes.
 
   // ----- 7. Footer T&C -----
   renderFooter(doc, 'SYARAT & KETENTUAN', [

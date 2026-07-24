@@ -32,7 +32,15 @@ export interface SalesInvoicePDFProps {
    *                      practice — output was chopped and drivers rejected it.
    */
   printMode?: InvoicePrintMode;
-  onClose: () => void;
+  /**
+   * When true (2026-07-24 founder request), render invoice content inline
+   * without the fixed-inset backdrop modal wrapper. Used by
+   * InvoicePreviewScreen so the full invoice preview shows directly on the
+   * page instead of behind a "Buka Preview Invoice Lengkap" button.
+   * `onClose` becomes optional in inline mode.
+   */
+  inline?: boolean;
+  onClose?: () => void;
 }
 
 interface ServiceLineDisplay {
@@ -45,7 +53,7 @@ interface ServiceLineDisplay {
   bom: Array<{ sku: string; name: string; qty: number; fifo_cost_snapshot: number }>;
 }
 
-export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, printMode = 'normal', onClose }: SalesInvoicePDFProps) {
+export default function SalesInvoicePDF({ transaction, variant, adminName, autoPrint, printMode = 'normal', inline = false, onClose }: SalesInvoicePDFProps) {
   const [store, setStore] = useState<StoreSettings | null>(null);
   const [bank, setBank] = useState<BankAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,6 +192,28 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
         }
       `;
 
+  // Inline render (2026-07-24): drop the fixed-inset backdrop + header bar so
+  // InvoicePreviewScreen can embed the full invoice directly on-page instead
+  // of behind a "Buka Preview Invoice Lengkap" button. Cetak / close controls
+  // live outside in the parent screen.
+  if (inline) {
+    return (
+      <>
+        <style>{printCss}</style>
+        <div
+          id="sales-invoice-root"
+          className={`bg-white rounded-lg shadow-sm border border-slate-200 w-full overflow-auto print-mode-${printMode}`}
+        >
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">Memuat...</div>
+          ) : (
+            <InvoiceBody transaction={transaction} variant={variant} adminName={adminName} store={store} bank={bank} channelLabel={channelLabel} paymentLabel={paymentLabel} printMode={printMode} serviceLines={serviceLines} />
+          )}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <style>{printCss}</style>
@@ -268,16 +298,8 @@ function InvoiceBody({
 
   return (
     <div className={containerCls}>
-      {/* Stamp — only render for LUNAS/DP invoices. Quotation drops the stamp
-          because the "SALES ORDER" doc title already conveys the state; a
-          PENAWARAN watermark on top of it just duplicates the label. */}
-      {!isQuotation && (
-        <div className={`absolute right-8 top-32 rotate-[-8deg] border-[3px] px-3 py-1.5 font-extrabold text-[18px] tracking-widest font-sans opacity-85 ${
-          variant === 'lunas' ? 'border-emerald-700 text-emerald-700' : 'border-amber-700 text-amber-700'
-        }`}>
-          {variant === 'lunas' ? 'LUNAS' : 'DP'}
-        </div>
-      )}
+      {/* LUNAS/DP stamp REMOVED per founder request 2026-07-24. Status sudah
+          tercantum di header + totals block; watermark stamp dianggap redundant. */}
 
       {/* Header */}
       <div className="grid grid-cols-[auto_1fr] gap-4 pb-3 border-b-2 border-slate-900 mb-3">

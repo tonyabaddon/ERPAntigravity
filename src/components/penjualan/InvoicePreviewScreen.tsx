@@ -42,11 +42,9 @@ export default function InvoicePreviewScreen({
 }: Props) {
   const [transaction, setTransaction] = useState<KasirTransaction | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [showPdfModal, setShowPdfModal] = useState(false);
-  // When true, the SalesInvoicePDF modal opens with `autoPrint` so its own
-  // internal "wait until store/bank fetched, then print" gate fires the dialog
-  // instead of our racey 200ms setTimeout. Reset to false on next manual open.
-  const [autoPrintOnOpen, setAutoPrintOnOpen] = useState(false);
+  // showPdfModal state REMOVED 2026-07-24: preview embedded inline, no modal needed.
+  // autoPrintOnOpen state REMOVED 2026-07-24: inline preview always visible; cetak
+  // buttons call window.print() directly (invoice already in DOM, no wait needed).
   // Drives the SalesInvoicePDF printMode prop. The two Cetak buttons set this
   // before opening the modal so @page size + monospace stylesheet match the
   // operator's chosen printer family.
@@ -96,13 +94,11 @@ export default function InvoicePreviewScreen({
       showToast('Invoice belum termuat, coba sebentar lagi.', 'warning');
       return;
     }
-    // Open SalesInvoicePDF with autoPrint=true so its internal gate fires
-    // window.print() AFTER fetchStoreSettings + fetchBankAccounts resolve.
-    // A raw setTimeout here would race the modal's own data load on cold
-    // cache and print before the store header renders.
+    // Inline preview already renders full invoice (no modal). Swap printMode
+    // then call window.print() on next tick so React commits the CSS/layout
+    // change before the browser dialog opens.
     setPdfPrintMode(mode);
-    setAutoPrintOnOpen(true);
-    setShowPdfModal(true);
+    setTimeout(() => window.print(), 50);
   };
 
   const onBagikanWA = () => {
@@ -128,12 +124,10 @@ export default function InvoicePreviewScreen({
       showToast('Invoice belum termuat.', 'warning');
       return;
     }
-    // SalesInvoicePDF doesn't expose a programmatic download — the print
-    // dialog ("Save as PDF") is the existing UX. Surface the modal so the
-    // user can either Cetak Ulang or use the browser's Save as PDF.
+    // Inline preview already visible; open browser print dialog so user
+    // picks "Save as PDF" as the destination. No modal needed anymore.
     setPdfPrintMode('normal');
-    setAutoPrintOnOpen(false);
-    setShowPdfModal(true);
+    setTimeout(() => window.print(), 50);
     showToast('Pilih "Save as PDF" pada dialog cetak browser.', 'info');
   };
 
@@ -230,76 +224,18 @@ export default function InvoicePreviewScreen({
           <p className="text-center text-slate-400 py-12 text-sm">Memuat invoice…</p>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* LEFT col-span-8: invoice preview card */}
+            {/* LEFT col-span-8: full invoice preview inline (2026-07-24 —
+                summary card + "Buka Preview Invoice Lengkap" button dihapus
+                per founder request; sekarang langsung tampilkan invoice
+                lengkap yang sama dengan yang tercetak/download). */}
             <div className="lg:col-span-8">
-              <div className="bg-slate-100 rounded-lg p-6 min-h-[500px] flex items-center justify-center">
-                <div className="bg-white shadow-lg rounded p-8 max-w-2xl w-full">
-                  <div className="text-center mb-4">
-                    <div className="text-5xl opacity-30">📄</div>
-                  </div>
-                  <div className="border-b border-slate-200 pb-3 mb-3 text-center">
-                    <div className="text-base font-extrabold text-[#012749]">Invoice {transaction.invoice_number ?? '—'}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{transaction.payment_type ?? 'FULL'} · {new Date(transaction.date ?? Date.now()).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
-                  </div>
-                  {/* I-1 fix: gross subtotal + totalDiscount so customer sees transparent math */}
-                  {(() => {
-                    const items = transaction.items ?? [];
-                    const grossSubtotal = items.reduce(
-                      (sum, item) => sum + ((item.master_price_at_sale ?? item.unit_price) * item.qty), 0,
-                    );
-                    const lineDiscount = items.reduce((sum, i) => sum + (i.discount_amount_rp ?? 0), 0);
-                    const orderDiscount = transaction.discount_amount_rp ?? 0;
-                    const totalDiscount = lineDiscount + orderDiscount;
-                    const discountLabel = transaction.discount_type === 'PERCENT' && transaction.discount_value
-                      ? `Diskon (order ${transaction.discount_value}%)`
-                      : lineDiscount > 0 && orderDiscount > 0
-                      ? 'Diskon (baris + order)'
-                      : lineDiscount > 0
-                      ? 'Diskon baris'
-                      : 'Diskon Order';
-                    return (
-                      <div className="grid grid-cols-2 gap-2 text-[12px] mb-3">
-                        <div className="text-slate-500">Customer</div>
-                        <div className="font-semibold text-right">{transaction.customer_name ?? '—'}</div>
-                        {transaction.customer_phone && (
-                          <>
-                            <div className="text-slate-500">HP</div>
-                            <div className="font-semibold text-right">{transaction.customer_phone}</div>
-                          </>
-                        )}
-                        <div className="text-slate-500">Subtotal</div>
-                        <div className="font-semibold text-right">{formatIDR(Math.round(grossSubtotal))}</div>
-                        {(transaction.ongkir_amount ?? 0) > 0 && (
-                          <>
-                            <div className="text-slate-500">Ongkir</div>
-                            <div className="font-semibold text-right">{formatIDR(Math.round(transaction.ongkir_amount ?? 0))}</div>
-                          </>
-                        )}
-                        {totalDiscount > 0 && (
-                          <>
-                            <div className="text-slate-500">{discountLabel}</div>
-                            <div className="font-semibold text-right text-rose-600">
-                              − {formatIDR(Math.round(totalDiscount))}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })()}
-                  <div className="border-t border-slate-200 pt-3 flex items-center justify-between">
-                    <div className="text-sm font-bold text-slate-700">TOTAL</div>
-                    <div className="text-xl font-extrabold text-[#012749]">
-                      {formatIDR(Math.round(transaction.total_amount ?? transaction.subtotal))}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setPdfPrintMode('normal'); setAutoPrintOnOpen(false); setShowPdfModal(true); }}
-                    className="mt-4 w-full px-3 py-2 text-xs font-bold rounded-lg bg-white text-[#012749] border border-slate-300 hover:bg-slate-50"
-                  >
-                    👁️ Buka Preview Invoice Lengkap (Modal)
-                  </button>
-                </div>
-              </div>
+              <SalesInvoicePDF
+                transaction={transaction}
+                variant={variant}
+                adminName={adminName}
+                printMode={pdfPrintMode}
+                inline
+              />
             </div>
 
             {/* RIGHT col-span-4: actions + workflow stepper */}
@@ -361,16 +297,8 @@ export default function InvoicePreviewScreen({
         )}
       </div>
 
-      {showPdfModal && transaction && (
-        <SalesInvoicePDF
-          transaction={transaction}
-          variant={variant}
-          adminName={adminName}
-          autoPrint={autoPrintOnOpen}
-          printMode={pdfPrintMode}
-          onClose={() => { setShowPdfModal(false); setAutoPrintOnOpen(false); }}
-        />
-      )}
+      {/* Modal SalesInvoicePDF REMOVED 2026-07-24 — preview embedded inline
+          in the LEFT column. Cetak buttons call window.print() directly. */}
     </div>
   );
 }
