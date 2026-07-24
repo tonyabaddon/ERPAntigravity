@@ -151,12 +151,14 @@ export default function StockOpnameSessionView({
   const [requireWitness, setRequireWitness] = useState<boolean>(true);
 
   // Fetch opname_require_witness setting at mount.
+  // company_settings has no `id` column — PK is tenant_id, RLS returns
+  // exactly the one row for the JWT-scoped tenant. Previous `.eq('id', 1)`
+  // silently returned 0 rows → default TRUE stuck (bug 2026-07-24).
   useEffect(() => {
     if (!supabase) return;
     supabase
       .from('company_settings')
       .select('opname_require_witness')
-      .eq('id', 1)
       .maybeSingle()
       .then(({ data }) => {
         if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {

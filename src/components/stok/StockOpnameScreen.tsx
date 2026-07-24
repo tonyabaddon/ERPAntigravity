@@ -85,12 +85,15 @@ export default function StockOpnameScreen({
   const [auditLoading, setAuditLoading] = useState<boolean>(false);
 
   // Fetch opname_require_witness setting at mount. Default TRUE (MSME-safe).
+  // company_settings has no `id` column — its PK is tenant_id. RLS
+  // t_select_own returns exactly one row for the JWT-scoped tenant, so no
+  // WHERE filter is needed. Previous `.eq('id', 1)` silently returned 0
+  // rows → default TRUE stuck regardless of tenant setting (bug 2026-07-24).
   useEffect(() => {
     if (!supabase) return;
     supabase
       .from('company_settings')
       .select('opname_require_witness')
-      .eq('id', 1)
       .maybeSingle()
       .then(({ data }) => {
         if (data && typeof (data as { opname_require_witness?: boolean }).opname_require_witness === 'boolean') {
