@@ -25,6 +25,7 @@ export interface AdminUser {
   role: PermissionRole;
   permissions: PermissionSet;
   status: AdminStatus;
+  gender: 'M' | 'F' | 'N';
 }
 
 export interface DbAdminUser {
@@ -37,6 +38,7 @@ export interface DbAdminUser {
   status: string;
   created_at: string;
   tenant_id: string;
+  gender: 'M' | 'F' | 'N';
 }
 
 export type ChatStatusType = 'BUTUH_ADMIN' | 'WIRING_CUSTOM' | 'DIKELOLA_AI';
