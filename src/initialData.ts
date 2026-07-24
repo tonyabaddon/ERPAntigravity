@@ -15,6 +15,7 @@ export const INITIAL_ADMINS: AdminUser[] = [
     role: 'Staff Admin Toko',
     permissions: defaultPermissions('Staff Admin Toko'),
     status: 'Aktif',
+    gender: 'F',  // Rini = female name
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ export const INITIAL_ADMINS: AdminUser[] = [
     role: 'Supervisor Gudang',
     permissions: defaultPermissions('Supervisor Gudang'),
     status: 'Aktif',
+    gender: 'M',  // Agus = male name
   },
 ];
 

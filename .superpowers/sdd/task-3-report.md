@@ -1,38 +1,41 @@
-# Admin Permission Registry — Task 3: UserManagementScreen Refactor
+# Admin Gender Avatar — Task 3: UserManagementScreen gender field + upsert + dbToAdminUser + initialData
 
-**Status:** DONE (pending commit SHA)
+**Status:** DONE
 **Date:** 2026-07-24
 
 ---
 
 ## Summary
 
-Refactored `src/components/UserManagementScreen.tsx` to be fully registry-driven.
-Removed all hardcoded 12-key permission structures. Also fixed `src/initialData.ts`
-(extended scope) which had the same 12-key drift bug.
+Wired gender field through the entire create-admin flow in `UserManagementScreen.tsx`:
+- Added `newGender` state (default 'N')
+- Added 3-pill "Jenis Kelamin" radio (Cowok/Cewek/Netral) using existing Caleo design tokens
+- Extended `dbToAdminUser` with gender safeguard for legacy rows
+- Extended `adminUserToDb` to pass gender through to RPC call
+- Both Supabase and dev-mode `handleCreateAdminSubmit` paths include gender + reset on success
+- Updated `adminUsersService.upsert` in `supabaseClient.ts` to pass `p_gender` to RPC
+- Updated `initialData.ts` seed admins: Rini='F', Agus='M'
 
 ---
 
 ## Files Modified
 
-1. **`src/components/UserManagementScreen.tsx`** — 521 → ~540 lines net (grid expansion adds more lines than deletions save)
-   - Added imports: `Info` from lucide-react; `PERMISSION_REGISTRY`, `PERM_CATEGORIES`, `PERMISSION_ROLES`, `defaultPermissions`, `normalizePermissions`, `type PermissionRole` from `../lib/permissions`
-   - Removed import: `ALL_PERMISSIONS` from `../types` (no longer used here)
-   - `dbToAdminUser`: added role safeguard via `PERMISSION_ROLES.includes()` + `captureError` fallback to `'Staff Admin Toko'`
-   - Deleted: local `defaultPermissions(role: string)` function (12-key stale template)
-   - Deleted: `PERM_LABELS` const array (12-key stale UI list)
-   - `handleTogglePermission`: now calls `normalizePermissions(nextPartial, target.role)` to guarantee 43-key shape before RPC upsert
-   - `handleAddAdmin` (both Supabase and dev-mode paths): wraps `defaultPermissions` with `normalizePermissions`; `newRole` cast to `PermissionRole`
-   - Role dropdown: replaced hardcoded options with `PERMISSION_ROLES.map(...)` + added "Isi Preset" button affordance
-   - `activeCount` denominator: now derives from `PERMISSION_REGISTRY.map(p => p.key)` (was `Object.keys(ALL_PERMISSIONS)`)
-   - Expanded permission grid: replaced flat 12-item grid with `PERM_CATEGORIES.map(category => ...)` grouped sections, each with `<Info>` icon + native `title=` tooltip
+1. **`src/components/UserManagementScreen.tsx`**
+   - Line ~81: added `const [newGender, setNewGender] = useState<'M' | 'F' | 'N'>('N');`
+   - Lines ~50-60: `dbToAdminUser` — added gender safeguard + `gender: validGender` in returned object
+   - Lines ~64-75: `adminUserToDb` — added `gender: u.gender ?? 'N'` to returned object
+   - Lines ~206-214: Supabase path `newAdmin` — added `gender: newGender`
+   - Line ~228: Supabase path reset — added `setNewGender('N')`
+   - Lines ~240-248: dev-mode path `newAdmin` — added `gender: newGender`
+   - Lines ~251-252: dev-mode reset — added `setNewGender('N')`
+   - Lines ~359-381: added Jenis Kelamin pill-button group (AFTER WhatsApp, BEFORE Peran/Role)
 
-2. **`src/initialData.ts`** — ~97 lines (extended scope fix)
-   - Added import: `defaultPermissions` from `./lib/permissions`
-   - Replaced inline 12-key `permissions: { dashboard: true, ... kasir: false }` literals with `permissions: defaultPermissions('Staff Admin Toko')` and `permissions: defaultPermissions('Supervisor Gudang')`
+2. **`src/lib/supabaseClient.ts`**
+   - Line ~1217: `adminUsersService.upsert` RPC call — added `p_gender: user.gender ?? 'N'`
 
-3. **`src/components/UserManagementScreen.test.tsx`** — new file, 63 lines
-   - 5 tests covering: normalize preserves all 43 keys after toggle, defaultPermissions for all roles returns 43 keys, registry category counts match expected (10/4/7/3/9/1/7/2), valid role passes through, invalid role falls back
+3. **`src/initialData.ts`**
+   - Added `gender: 'F'` to Admin Rini seed
+   - Added `gender: 'M'` to Admin Agus seed
 
 ---
 
@@ -40,45 +43,37 @@ Removed all hardcoded 12-key permission structures. Also fixed `src/initialData.
 
 ```
 npx tsc --noEmit
-→ (no output) ← zero errors
+→ 1 error (AuthScreen.tsx:269 — Task 4 scope, expected)
 ```
 
-Before this task: 5 errors (3 in UserManagementScreen.tsx, 2 in initialData.ts).
-After: 0 errors.
+Before Task 3: UserManagementScreen.tsx had no TS errors (types already from Task 2).
+After Task 3: only AuthScreen.tsx error remains — correctly deferred to Task 4.
 
 ---
 
 ## Test output
 
 ```
-npx vitest run src/components/UserManagementScreen.test.tsx
-→ Test Files  1 passed (1)
-→ Tests  5 passed (5)
-
 npx vitest run --changed
-→ Test Files  1 passed (1)
-→ Tests  5 passed (5)
+→ Test Files  78 passed (78)
+→ Tests  666 passed | 2 skipped (668)
+→ Duration  10.69s
 ```
 
----
-
-## Lint
-
-```
-npm run lint → clean (tsc --noEmit, zero errors, zero warnings)
-```
+All green. No regressions.
 
 ---
 
 ## Self-review notes
 
-- `ALL_PERMISSIONS` import removed from UserManagementScreen since it was only used by the deleted `permKeys` derivation (Step 10 replaced it with PERMISSION_REGISTRY). The import from types.ts still exists for other consumers.
-- `newRole` state is `string` type but `defaultPermissions` requires `PermissionRole`. Safe to cast because the form validates `newRole !== 'Pilih Peran...'` before reaching the admin creation code; valid roles come from `PERMISSION_ROLES.map(r => ...)` in the dropdown.
-- The `<Info>` component from lucide-react does not accept children, so the brief's defensive `<title>` child was omitted. The parent `<span title={description}>` provides the browser tooltip reliably.
-- "Isi Preset" button is a UX affordance only (Phase 1 scope). Clicking it is a no-op beyond visual feedback; actual preset application happens via `handleAddAdmin` on form submit.
+- `adminUserToDb` needed gender added to satisfy `Omit<DbAdminUser, 'created_at'>` type — was missing before this task. All permission-toggle upserts now also pass gender correctly.
+- Gender safeguard in `dbToAdminUser` handles legacy rows from before migration 000517: any value other than 'M'/'F'/'N' (including undefined/null from pre-migration rows) falls back to 'N'.
+- Both code paths in `handleCreateAdminSubmit` (Supabase + dev-mode) updated — brief Step 4 requirement met.
+- `p_gender` added to RPC call in `supabaseClient.ts` — explicit-pass so gender persists even though RPC has DEFAULT (brief Step 5 requirement met).
+- Radio pill design uses only existing tokens: `bg-[#012749]`, `text-[#43474e]`, `border-[#e5eeff]`, `hover:border-[#abc9f3]`. No new tokens.
 
 ---
 
 ## Commit SHA
 
-TBD — filled in after commit below.
+(populated after Step 9 commit)

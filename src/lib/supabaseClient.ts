@@ -1214,6 +1214,7 @@ export const adminUsersService = {
       p_role: user.role,
       p_permissions: user.permissions,
       p_status: user.status,
+      p_gender: user.gender ?? 'N',
     });
     if (error) throw error;
   },

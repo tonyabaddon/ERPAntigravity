@@ -45,6 +45,10 @@ function dbToAdminUser(db: DbAdminUser): AdminUser {
       }),
       'Staff Admin Toko' as PermissionRole);
 
+  // Gender safeguard — legacy rows before migration 000517 might not have field.
+  const validGender: 'M' | 'F' | 'N' =
+    db.gender === 'M' || db.gender === 'F' || db.gender === 'N' ? db.gender : 'N';
+
   return {
     id: db.id,
     name: db.name,
@@ -53,6 +57,7 @@ function dbToAdminUser(db: DbAdminUser): AdminUser {
     role: validRole,
     permissions: db.permissions as PermissionSet,
     status: (db.status === 'Aktif' ? 'Aktif' : 'Nonaktif') as AdminUser['status'],
+    gender: validGender,
   };
 }
 
@@ -66,6 +71,7 @@ function adminUserToDb(u: AdminUser, tenantId: string): Omit<DbAdminUser, 'creat
     permissions: u.permissions,
     status: u.status,
     tenant_id: tenantId,
+    gender: u.gender ?? 'N',
   };
 }
 
@@ -79,6 +85,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
   const [newEmail, setNewEmail] = useState('');
   const [newWhatsapp, setNewWhatsapp] = useState('');
   const [newRole, setNewRole] = useState('Pilih Peran...');
+  const [newGender, setNewGender] = useState<'M' | 'F' | 'N'>('N');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -210,6 +217,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         role: validatedRole,
         permissions: normalizePermissions(defaultPermissions(validatedRole), validatedRole),
         status: 'Aktif',
+        gender: newGender,
       };
 
       try {
@@ -225,6 +233,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       setNewEmail('');
       setNewWhatsapp('');
       setNewRole('Pilih Peran...');
+      setNewGender('N');
       showToast(
         inviteEmailSent
           ? `🎉 Akun baru created! ${newAdmin.name} terdaftar. Email undangan terkirim.`
@@ -243,12 +252,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       role: validatedRoleDev,
       permissions: normalizePermissions(defaultPermissions(validatedRoleDev), validatedRoleDev),
       status: 'Aktif',
+      gender: newGender,
     };
     setAdmins(prev => [...prev, newAdmin]);
     setNewName('');
     setNewEmail('');
     setNewWhatsapp('');
     setNewRole('Pilih Peran...');
+    setNewGender('N');
     showToast(`✓ Akun baru dibuat untuk ${newAdmin.name} (dev mode).`);
   };
 
@@ -353,6 +364,32 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 placeholder="+62 812..."
                 className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
               />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Jenis Kelamin
+              </label>
+              <div className="flex gap-2">
+                {[
+                  { value: 'M' as const, label: 'Cowok' },
+                  { value: 'F' as const, label: 'Cewek' },
+                  { value: 'N' as const, label: 'Netral' },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setNewGender(value)}
+                    className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-colors border ${
+                      newGender === value
+                        ? 'bg-[#012749] text-white border-[#012749]'
+                        : 'bg-white text-[#43474e] border-[#e5eeff] hover:border-[#abc9f3]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-1.5">
