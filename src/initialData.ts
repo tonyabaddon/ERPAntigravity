@@ -4,6 +4,7 @@
  */
 
 import { AdminUser, StockItem, NotificationConfig } from './types';
+import { defaultPermissions } from './lib/permissions';
 
 export const INITIAL_ADMINS: AdminUser[] = [
   {
@@ -12,20 +13,7 @@ export const INITIAL_ADMINS: AdminUser[] = [
     email: 'rini@sinarelektrik.com',
     whatsapp: '+6281233445566',
     role: 'Staff Admin Toko',
-    permissions: {
-      dashboard: true,
-      salesInbox: true,
-      laporan: true,
-      aiStock: false,
-      pelanggan: true,
-      orderHistory: true,
-      userManagement: false,
-      whatsappAi: false,
-      notifications: false,
-      settings: false,
-      pembelian: false,
-      kasir: false,
-    },
+    permissions: defaultPermissions('Staff Admin Toko'),
     status: 'Aktif',
   },
   {
@@ -34,20 +22,7 @@ export const INITIAL_ADMINS: AdminUser[] = [
     email: 'agus@sinarelektrik.com',
     whatsapp: '+6289988776655',
     role: 'Supervisor Gudang',
-    permissions: {
-      dashboard: true,
-      salesInbox: false,
-      laporan: true,
-      aiStock: true,
-      pelanggan: false,
-      orderHistory: false,
-      userManagement: false,
-      whatsappAi: false,
-      notifications: false,
-      settings: false,
-      pembelian: false,
-      kasir: false,
-    },
+    permissions: defaultPermissions('Supervisor Gudang'),
     status: 'Aktif',
   },
 ];

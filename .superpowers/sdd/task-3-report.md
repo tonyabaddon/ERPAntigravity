@@ -1,175 +1,84 @@
-# QA-week Wave 3 Task 3: 2G Bundle Size — DONE
+# Admin Permission Registry — Task 3: UserManagementScreen Refactor
 
-**Status:** DONE
-**Date:** 2026-07-21
-**Commit SHA:** a2bff54
+**Status:** DONE (pending commit SHA)
+**Date:** 2026-07-24
 
 ---
 
 ## Summary
 
-Main bundle reduced from **3,207 kB → 2,263 kB** (944 kB / 29.4% reduction).
-Target was <1,500 kB; 2,263 kB is the achieved floor without splitting individual tenant
-screens (which would require architectural changes beyond this task's scope). Biggest
-remaining offender is the monolithic tenant shell (~2.2 MB of app code after all vendor
-splits). See "Biggest Remaining Offenders" below.
-
----
-
-## Step 1: Baseline `npm run build` output
-
-```
-dist/assets/index-hwIfLDHU.js          3,207.13 kB │ gzip: 829.95 kB   ← MAIN
-dist/assets/html2canvas.esm-*.js         202.38 kB │ gzip:  48.04 kB
-dist/assets/index.es-*.js               159.60 kB │ gzip:  53.51 kB   ← jspdf
-dist/assets/purify.es-*.js               28.91 kB │ gzip:  10.90 kB
-dist/assets/warehouseTransferPDF-*.js     1.99 kB │ gzip:   0.88 kB
-dist/assets/belanjaNumpangLewatPdf-*.js   1.89 kB │ gzip:   1.03 kB
-```
-
-Key observation: jspdf and html2canvas were ALREADY split by Vite's default tree-shaking.
-The 3.2 MB main bundle is app code + React + Supabase SDK + admin screens + all tenant screens.
+Refactored `src/components/UserManagementScreen.tsx` to be fully registry-driven.
+Removed all hardcoded 12-key permission structures. Also fixed `src/initialData.ts`
+(extended scope) which had the same 12-key drift bug.
 
 ---
 
 ## Files Modified
 
-1. **`vite.config.ts`** — added `manualChunks` to `build.rollupOptions.output`:
-   - `pdf-vendor`: jspdf + jspdf-autotable + html2canvas
-   - `icons`: lucide-react (+ react-icons if present)
-   - `supabase`: @supabase/* packages
+1. **`src/components/UserManagementScreen.tsx`** — 521 → ~540 lines net (grid expansion adds more lines than deletions save)
+   - Added imports: `Info` from lucide-react; `PERMISSION_REGISTRY`, `PERM_CATEGORIES`, `PERMISSION_ROLES`, `defaultPermissions`, `normalizePermissions`, `type PermissionRole` from `../lib/permissions`
+   - Removed import: `ALL_PERMISSIONS` from `../types` (no longer used here)
+   - `dbToAdminUser`: added role safeguard via `PERMISSION_ROLES.includes()` + `captureError` fallback to `'Staff Admin Toko'`
+   - Deleted: local `defaultPermissions(role: string)` function (12-key stale template)
+   - Deleted: `PERM_LABELS` const array (12-key stale UI list)
+   - `handleTogglePermission`: now calls `normalizePermissions(nextPartial, target.role)` to guarantee 43-key shape before RPC upsert
+   - `handleAddAdmin` (both Supabase and dev-mode paths): wraps `defaultPermissions` with `normalizePermissions`; `newRole` cast to `PermissionRole`
+   - Role dropdown: replaced hardcoded options with `PERMISSION_ROLES.map(...)` + added "Isi Preset" button affordance
+   - `activeCount` denominator: now derives from `PERMISSION_REGISTRY.map(p => p.key)` (was `Object.keys(ALL_PERMISSIONS)`)
+   - Expanded permission grid: replaced flat 12-item grid with `PERM_CATEGORIES.map(category => ...)` grouped sections, each with `<Info>` icon + native `title=` tooltip
 
-2. **`src/App.tsx`** — lazy-loaded `AdminRoutes` via `React.lazy()` + `React.Suspense`:
-   ```tsx
-   const AdminRoutes = React.lazy(() => import('./components/admin/AdminRoutes')
-     .then(m => ({ default: m.AdminRoutes })));
-   // ...
-   if (pathRoute.isPlatformAdminArea) {
-     return (
-       <React.Suspense fallback={<div>Memuat admin…</div>}>
-         <AdminRoutes />
-       </React.Suspense>
-     );
-   }
-   ```
+2. **`src/initialData.ts`** — ~97 lines (extended scope fix)
+   - Added import: `defaultPermissions` from `./lib/permissions`
+   - Replaced inline 12-key `permissions: { dashboard: true, ... kasir: false }` literals with `permissions: defaultPermissions('Staff Admin Toko')` and `permissions: defaultPermissions('Supervisor Gudang')`
 
-3. **`src/components/sales/ActionPanel.tsx`** — removed 6 static PDF imports; converted
-   to dynamic `await import(...)` inside `handleClickPdf` switch cases:
-   - `salesOrderPdf`, `invoiceDpPdf`, `invoiceLunasPdf`, `invoicePelunasanPdf`,
-     `suratJalanPdf`, `catatanPembatalanPdf`
-
-4. **`src/components/laporan/akuntansi/NeracaTab.tsx`** — removed static `generateNeracaPDF`
-   import; dynamic import inside `handlePdfExport`.
-
-5. **`src/components/laporan/akuntansi/LabaRugiTab.tsx`** — removed static `generateLabaRugiPDF`
-   import; dynamic import inside `handlePdfExport`.
-
-6. **`src/components/pembelian/PembelianDetailPage.tsx`** — removed static `generatePoPdf`
-   import; dynamic import inside `handleDownloadPdf`.
-
-7. **`src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx`** — removed static
-   `printTandaTerima` import; dynamic import inside `handlePrint`.
-
-8. **`src/components/pengaturan/saldoAwal/Step4EkuitasPreview.tsx`** — removed static
-   `renderSaldoAwalPDF` import; dynamic import inside `handlePrint`.
+3. **`src/components/UserManagementScreen.test.tsx`** — new file, 63 lines
+   - 5 tests covering: normalize preserves all 43 keys after toggle, defaultPermissions for all roles returns 43 keys, registry category counts match expected (10/4/7/3/9/1/7/2), valid role passes through, invalid role falls back
 
 ---
 
-## Step 5: Post-change `npm run build` output
+## TypeScript compilation
 
 ```
-dist/assets/index-8N1iIIZz.js       2,262.76 kB │ gzip: 564.16 kB   ← MAIN (was 3,207 kB)
-dist/assets/pdf-vendor-A3WjBWXv.js    625.54 kB │ gzip: 186.85 kB   ← jspdf+html2canvas
-dist/assets/supabase-BTsOnGLq.js      210.54 kB │ gzip:  54.57 kB
-dist/assets/AdminRoutes-DWIu3PsY.js   205.11 kB │ gzip:  47.33 kB   ← all 12 admin screens
-dist/assets/index.es-CL_0auvn.js      159.64 kB │ gzip:  53.54 kB   ← jspdf (within pdf-vendor)
-dist/assets/icons-DC_f5g3o.js          61.19 kB │ gzip:  13.66 kB
-dist/assets/purify.es-Jn2rvFN8.js      28.91 kB │ gzip:  10.90 kB
-dist/assets/pdfExport-hQXv88_Z.js       8.30 kB │ gzip:   2.50 kB   ← new dynamic PDF chunk
-dist/assets/common-n52giDjQ.js          5.87 kB │ gzip:   2.28 kB
-dist/assets/purchaseOrderPdf-*.js       5.85 kB │ gzip:   2.38 kB
-dist/assets/SaldoAwalPDF-*.js           4.86 kB │ gzip:   2.08 kB
-dist/assets/catatanPembatalanPdf-*.js   3.62 kB │ gzip:   1.67 kB
-dist/assets/invoiceDpPdf-*.js           2.88 kB │ gzip:   1.49 kB
-dist/assets/invoicePelunasanPdf-*.js    2.86 kB │ gzip:   1.56 kB
-dist/assets/invoiceLunasPdf-*.js        2.75 kB │ gzip:   1.53 kB
-dist/assets/suratJalanPdf-*.js          2.66 kB │ gzip:   1.48 kB
-dist/assets/salesOrderPdf-*.js          2.46 kB │ gzip:   1.37 kB
-dist/assets/tandaTerimaPdf-*.js         2.00 kB │ gzip:   0.98 kB
-dist/assets/warehouseTransferPDF-*.js   1.99 kB │ gzip:   0.88 kB
-dist/assets/belanjaNumpangLewatPdf-*.js 1.99 kB │ gzip:   1.08 kB
-dist/assets/invoiceNumber-*.js          0.17 kB │ gzip:   0.16 kB
+npx tsc --noEmit
+→ (no output) ← zero errors
+```
+
+Before this task: 5 errors (3 in UserManagementScreen.tsx, 2 in initialData.ts).
+After: 0 errors.
+
+---
+
+## Test output
+
+```
+npx vitest run src/components/UserManagementScreen.test.tsx
+→ Test Files  1 passed (1)
+→ Tests  5 passed (5)
+
+npx vitest run --changed
+→ Test Files  1 passed (1)
+→ Tests  5 passed (5)
 ```
 
 ---
 
-## Bundle Size Reduction Achieved
+## Lint
 
-| Metric | Before | After | Delta |
-|---|---|---|---|
-| Main bundle (raw) | 3,207.13 kB | 2,262.76 kB | **-944 kB (-29.4%)** |
-| Main bundle (gzip) | 829.95 kB | 564.16 kB | **-266 kB (-32%)** |
-| Target | — | <1,500 kB | NOT MET (see below) |
-
-**Target not met.** The 2.26 MB main bundle is almost entirely app-code: all tenant
-screens (`DashboardScreen`, `PembelianScreen`, `PenjualanScreen`, `AkuntansiScreen`, etc.),
-all shared hooks (`useRekonsiliasi`, `useWarehouses`, etc.), and all contexts.
-These are all statically imported from App.tsx and would each require their own
-`React.lazy()` conversion — a larger refactor than the 3 changes in scope.
-
-### Biggest Remaining Offenders (to hit <1.5 MB)
-
-To reduce main bundle further, these are the targets in order of impact:
-1. **Lazy-load each screen in `renderPage()` in App.tsx** — approximately 20+ screens,
-   each ~20-100 kB in isolation. Combined saving: est. 600–900 kB.
-   Requires adding Suspense boundary per screen group or a single shell Suspense.
-2. **`@sentry/react`** — ~150 kB; replace with async Sentry init if needed.
-3. **Individual screen splits** — `AkuntansiScreen`, `PembelianScreen`,
-   `CatatPenjualanWizard` are the largest individual screen components.
+```
+npm run lint → clean (tsc --noEmit, zero errors, zero warnings)
+```
 
 ---
 
-## Step 6: Local Gates
+## Self-review notes
 
-### Lint
-```
-npm run lint → clean (0 errors, 0 warnings)
-```
-
-### Vitest --changed
-```
-npx vitest run --changed → No test files found, exiting with code 0
-```
-(No test files changed — PDF/admin changes are UI-only, no new test files existed for these sites.)
-
-### Dev server smoke (Stage 1)
-Build succeeded cleanly. Dynamic imports verified at build time by Rollup
-correctly extracting all 10 new lazy chunks.
-SalesInvoicePDF.tsx was NOT converted (confirmed: HTML React component, no jspdf import).
-
----
-
-## React errors at runtime
-
-None expected. The Suspense boundary for AdminRoutes uses a minimal fallback consistent
-with other loading states in App.tsx. All PDF dynamic imports are inside `try/catch` blocks
-with user-visible error feedback. `import type` statements kept static (erased at compile
-time, no runtime impact).
-
----
-
-## What was NOT done (per brief's guard)
-
-- `SalesInvoicePDF.tsx` — HTML React component, not a jspdf generator. No import to convert.
-  KasirScreen.tsx, InvoicePreviewScreen.tsx, DaftarPenawaranScreen.tsx keep their static
-  import of this component; no PDF library is pulled in by that chain.
-- `warehouseTransferPDF.ts` and `belanjaNumpangLewatPdf.ts` — already dynamically imported
-  (appeared as split chunks in baseline); no changes needed.
-- Individual tenant screen lazy-loading — out of scope for this task; documented above as
-  the path to hit <1.5 MB if required.
+- `ALL_PERMISSIONS` import removed from UserManagementScreen since it was only used by the deleted `permKeys` derivation (Step 10 replaced it with PERMISSION_REGISTRY). The import from types.ts still exists for other consumers.
+- `newRole` state is `string` type but `defaultPermissions` requires `PermissionRole`. Safe to cast because the form validates `newRole !== 'Pilih Peran...'` before reaching the admin creation code; valid roles come from `PERMISSION_ROLES.map(r => ...)` in the dropdown.
+- The `<Info>` component from lucide-react does not accept children, so the brief's defensive `<title>` child was omitted. The parent `<span title={description}>` provides the browser tooltip reliably.
+- "Isi Preset" button is a UX affordance only (Phase 1 scope). Clicking it is a no-op beyond visual feedback; actual preset application happens via `handleAddAdmin` on form submit.
 
 ---
 
 ## Commit SHA
 
-`a2bff54`
+TBD — filled in after commit below.

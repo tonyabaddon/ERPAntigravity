@@ -11,8 +11,17 @@ import {
   Trash2,
   UserCheck,
   Crown,
+  Info,
 } from 'lucide-react';
-import { AdminUser, PermissionSet, DbAdminUser, ALL_PERMISSIONS } from '../types';
+import { AdminUser, PermissionSet, DbAdminUser } from '../types';
+import {
+  PERMISSION_REGISTRY,
+  PERM_CATEGORIES,
+  PERMISSION_ROLES,
+  defaultPermissions,
+  normalizePermissions,
+  type PermissionRole,
+} from '../lib/permissions';
 import { adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { INITIAL_ADMINS } from '../initialData';
 import { useTenant } from '../contexts/TenantContext';
@@ -24,12 +33,24 @@ interface UserManagementScreenProps {
 }
 
 function dbToAdminUser(db: DbAdminUser): AdminUser {
+  // Role safeguard: DB stores role as text; if it's not a valid PermissionRole,
+  // log via captureError and fall back to safe default to prevent silent
+  // fall-through in defaultPermissions().
+  const isValidRole = (PERMISSION_ROLES as readonly string[]).includes(db.role);
+  const validRole = isValidRole
+    ? (db.role as PermissionRole)
+    : (captureError(new Error(`Invalid admin role from DB: '${db.role}'`), {
+        feature: 'user_management',
+        action: 'db_role_validation',
+      }),
+      'Staff Admin Toko' as PermissionRole);
+
   return {
     id: db.id,
     name: db.name,
     email: db.email ?? '',
     whatsapp: db.whatsapp ?? '',
-    role: db.role,
+    role: validRole,
     permissions: db.permissions as PermissionSet,
     status: (db.status === 'Aktif' ? 'Aktif' : 'Nonaktif') as AdminUser['status'],
   };
@@ -48,28 +69,6 @@ function adminUserToDb(u: AdminUser, tenantId: string): Omit<DbAdminUser, 'creat
   };
 }
 
-function defaultPermissions(role: string): PermissionSet {
-  if (role === 'Owner') return { ...ALL_PERMISSIONS };
-  if (role === 'Supervisor Gudang') return {
-    dashboard: true, salesInbox: false, laporan: true, aiStock: true,
-    pelanggan: false, orderHistory: false,
-    userManagement: false, whatsappAi: false, notifications: false, settings: false,
-    pembelian: false, kasir: false,
-  };
-  if (role === 'Staff Admin Toko') return {
-    dashboard: true, salesInbox: true, laporan: true, aiStock: false,
-    pelanggan: true, orderHistory: true,
-    userManagement: false, whatsappAi: false, notifications: false, settings: false,
-    pembelian: false, kasir: false,
-  };
-  // Finance Manager
-  return {
-    dashboard: true, salesInbox: true, laporan: true, aiStock: false,
-    pelanggan: true, orderHistory: true,
-    userManagement: false, whatsappAi: false, notifications: false, settings: false,
-    pembelian: false, kasir: false,
-  };
-}
 
 export default function UserManagementScreen({ showToast, currentUser }: UserManagementScreenProps) {
   const tenant = useTenant();
@@ -82,21 +81,6 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
   const [newRole, setNewRole] = useState('Pilih Peran...');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const PERM_LABELS: { key: keyof PermissionSet; label: string }[] = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'salesInbox', label: 'Sales Inbox' },
-    { key: 'laporan', label: 'Laporan' },
-    { key: 'aiStock', label: 'AI Stock' },
-    { key: 'pelanggan', label: 'Pelanggan' },
-    { key: 'orderHistory', label: 'Riwayat Pesanan' },
-    { key: 'userManagement', label: 'User Management' },
-    { key: 'whatsappAi', label: 'WhatsApp AI' },
-    { key: 'notifications', label: 'Notifikasi' },
-    { key: 'settings', label: 'Pengaturan' },
-    { key: 'pembelian', label: 'Pembelian' },
-    { key: 'kasir', label: 'Kasir' },
-  ];
 
   function loadAdmins() {
     setFetchError(null);
@@ -124,12 +108,18 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
   const handleTogglePermission = async (adminId: string, permissionKey: keyof PermissionSet) => {
     const prev = admins;
-    const updated = admins.map(adm => {
-      if (adm.id === adminId) {
-        return { ...adm, permissions: { ...adm.permissions, [permissionKey]: !adm.permissions[permissionKey] } };
-      }
-      return adm;
-    });
+    const target = admins.find(a => a.id === adminId);
+    if (!target) return;
+
+    // Toggle value in a partial, then normalize to full 43-key shape so the
+    // RPC's REPLACE semantics (permissions = EXCLUDED.permissions) don't drop
+    // any keys that weren't in the input.
+    const nextPartial = { ...target.permissions, [permissionKey]: !target.permissions[permissionKey] };
+    const nextPerms = normalizePermissions(nextPartial, target.role);
+
+    const updated = admins.map(adm =>
+      adm.id === adminId ? { ...adm, permissions: nextPerms } : adm,
+    );
     setAdmins(updated);
     if (isSupabaseConfigured) {
       if (!tenant) {
@@ -211,13 +201,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
       }
 
       // Step 2: upsert admin_users with the REAL auth.users.id
+      const validatedRole = newRole as PermissionRole;
       const newAdmin: AdminUser = {
         id: inviteeUserId,
         name: newName,
         email: newEmail,
         whatsapp: newWhatsapp,
-        role: newRole,
-        permissions: defaultPermissions(newRole),
+        role: validatedRole,
+        permissions: normalizePermissions(defaultPermissions(validatedRole), validatedRole),
         status: 'Aktif',
       };
 
@@ -243,13 +234,14 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
     }
 
     // Dev-mode fallback (no Supabase)
+    const validatedRoleDev = newRole as PermissionRole;
     const newAdmin: AdminUser = {
       id: crypto.randomUUID(),
       name: newName,
       email: newEmail,
       whatsapp: newWhatsapp,
-      role: newRole,
-      permissions: defaultPermissions(newRole),
+      role: validatedRoleDev,
+      permissions: normalizePermissions(defaultPermissions(validatedRoleDev), validatedRoleDev),
       status: 'Aktif',
     };
     setAdmins(prev => [...prev, newAdmin]);
@@ -365,17 +357,32 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[#43474e] block px-3">Peran/Role Default</label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
-              >
-                <option value="Pilih Peran...">Pilih Peran...</option>
-                <option value="Owner">Owner</option>
-                <option value="Supervisor Gudang">Supervisor Gudang</option>
-                <option value="Staff Admin Toko">Staff Admin Toko</option>
-                <option value="Finance Manager">Finance Manager</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className="flex-1 bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
+                >
+                  <option value="Pilih Peran...">Pilih Peran...</option>
+                  {PERMISSION_ROLES.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newRole === 'Pilih Peran...') return;
+                    // Preview only — full apply happens on form submit via handleAddAdmin.
+                    // For now this button is a hint that preset will be applied.
+                    // Future: could pre-fill checkbox preview UI in the form.
+                  }}
+                  className="text-[10px] font-bold text-[#012749] underline shrink-0"
+                  disabled={newRole === 'Pilih Peran...'}
+                  title="Preset akan diterapkan otomatis saat 'BUAT AKUN'"
+                >
+                  Isi Preset
+                </button>
+              </div>
             </div>
 
             <button
@@ -420,12 +427,10 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 // Count + denominator MUST come from the same key set or the
                 // ratio is incoherent. Previously we counted ALL truthy keys
                 // (including legacy keys from old DB records that aren't in
-                // the current catalog) but divided by the older 13-key UI
-                // subset — Eva landed at "21/13 aktif" on the 2026-06-12
-                // e2e audit. Constrain both sides to ALL_PERMISSIONS so a
-                // legacy `whatsappAi:true` that was renamed away doesn't
-                // inflate the numerator.
-                const permKeys = Object.keys(ALL_PERMISSIONS) as (keyof PermissionSet)[];
+                // Count ONLY registry keys — legacy DB keys ignored (were bloating count).
+                // Both sides of the ratio use the same 43-key source so "N/43 aktif"
+                // is always coherent.
+                const permKeys = PERMISSION_REGISTRY.map(p => p.key);
                 const totalCount = permKeys.length;
                 const activeCount = permKeys.reduce(
                   (n, k) => n + (adm.permissions[k] ? 1 : 0),
@@ -469,36 +474,55 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                       </div>
                     </div>
 
-                    {/* Expanded permission grid */}
+                    {/* Expanded permission grid — grouped by category */}
                     {isExpanded && (
-                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-5 py-5">
+                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-5 py-5 space-y-5">
                         {isOwner && (
                           <p className="text-[10px] font-bold text-amber-600 mb-3 flex items-center gap-1.5">
                             <Crown className="w-3 h-3" /> Owner memiliki akses penuh — hak akses tidak dapat diubah.
                           </p>
                         )}
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {PERM_LABELS.map(({ key, label }) => (
-                            <label
-                              key={key}
-                              className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-xl px-4 py-2.5 gap-3 ${
-                                isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
-                              }`}
-                            >
-                              <span className="text-[11px] font-bold text-[#43474e] truncate">{label}</span>
-                              <div className="relative inline-flex items-center shrink-0">
-                                <input
-                                  type="checkbox"
-                                  checked={adm.permissions[key] ?? false}
-                                  onChange={() => !isOwner && handleTogglePermission(adm.id, key)}
-                                  disabled={isOwner}
-                                  className="sr-only peer"
-                                />
-                                <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2d8a4e]" />
+                        {PERM_CATEGORIES.map(category => {
+                          const entries = PERMISSION_REGISTRY.filter(p => p.category === category);
+                          if (entries.length === 0) return null;
+                          return (
+                            <div key={category}>
+                              <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                {category}
+                              </h4>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {entries.map(({ key, label, description }) => (
+                                  <label
+                                    key={key}
+                                    className={`flex items-center justify-between bg-white border border-[#e5eeff] rounded-xl px-4 py-2.5 gap-3 ${
+                                      isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <Info
+                                        className="w-3 h-3 text-slate-400 shrink-0"
+                                        aria-label={description}
+                                      />
+                                      <span className="text-[11px] font-bold text-[#43474e] truncate" title={description}>
+                                        {label}
+                                      </span>
+                                    </div>
+                                    <div className="relative inline-flex items-center shrink-0">
+                                      <input
+                                        type="checkbox"
+                                        checked={adm.permissions[key] ?? false}
+                                        onChange={() => !isOwner && handleTogglePermission(adm.id, key)}
+                                        disabled={isOwner}
+                                        className="sr-only peer"
+                                      />
+                                      <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2d8a4e]" />
+                                    </div>
+                                  </label>
+                                ))}
                               </div>
-                            </label>
-                          ))}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
