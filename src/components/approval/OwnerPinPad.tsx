@@ -68,7 +68,24 @@ export default function OwnerPinPad({
         }
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof Error ? e.message : String(e);
+        // Supabase PostgrestError is a plain object with .message, NOT an
+        // Error instance. Without this extraction, `String(e)` renders as
+        // "[object Object]" in the error toast + inline error text — hides
+        // the real cause (e.g. "permission denied for schema auth" during
+        // the 2026-07-24 vosi_rpc_owner regression on verify_owner_pin).
+        let msg: string;
+        if (e instanceof Error) {
+          msg = e.message;
+        } else if (
+          e !== null &&
+          typeof e === 'object' &&
+          'message' in e &&
+          typeof (e as { message: unknown }).message === 'string'
+        ) {
+          msg = (e as { message: string }).message;
+        } else {
+          msg = String(e);
+        }
         showToastRef.current?.(msg, 'error');
         setErrorMsg(msg);
         setShake(true);
