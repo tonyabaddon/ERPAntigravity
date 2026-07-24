@@ -43,7 +43,6 @@
 
 **Files:**
 - Modify: `src/lib/customers/customerWrappers.ts:9-31`
-- Test: `src/components/PelangganScreen.test.tsx` (extend existing suite)
 
 **Interfaces:**
 - Consumes: existing `supabase.from('customers').insert(row)` path — unchanged.
@@ -59,71 +58,9 @@
   ```
   When `default_pricing_tier` is present, it appears in the insert row. When absent, the field is omitted from the row and the DB default `'eceran'` fires (existing behaviour, zero regression for callers that don't pass it).
 
-- [ ] **Step 1: Write the failing test**
+Rationale for splitting from the pill-UI test cycle (Task 2): the wrapper signature widens without any behavioural test coverage in Task 1. The prop is exercised by Task 2's tests when the UI wires it. Task 1 is a pure enabler commit — proven by type-check.
 
-Add to `src/components/PelangganScreen.test.tsx` at the end of the file (before the last `});` at line 274), inside a new `describe` block:
-
-```tsx
-// ── F5-XX: Tier pills on add form ──────────────────────────────────────────────
-
-describe('PelangganScreen — tier pills on Tambah Pelanggan (modul ON)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    (supabaseClientModule.customersService.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ...BASE_SETTINGS,
-      modul_multi_tier_price: true,
-    });
-  });
-
-  it('passes default_pricing_tier=grosir to insertNewCustomer when Grosir pill selected', async () => {
-    const { insertNewCustomer } = await import('../lib/customers/customerWrappers');
-    const mockInsert = insertNewCustomer as ReturnType<typeof vi.fn>;
-    mockInsert.mockResolvedValue({
-      id: 'new-1', name: 'Toko Berkah', wa_number: '628111222333',
-      company: '', address: null, created_at: '2026-01-01T00:00:00Z',
-      default_pricing_tier: 'grosir',
-    });
-
-    render(<PelangganScreen {...BASE_PROPS} />);
-    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
-
-    // Open Tambah modal
-    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
-
-    // Fill required fields (Nama + WA)
-    const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'Toko Berkah' } });
-    fireEvent.change(inputs[1], { target: { value: '628111222333' } });
-
-    // Click the Grosir tier pill inside the modal
-    // Pills are role=button with accessible names Eceran / Grosir; the form
-    // wraps them under a "Tipe Harga default" label so we target within the
-    // modal region only.
-    const grosirPill = screen.getByRole('button', { name: /^Grosir$/i });
-    fireEvent.click(grosirPill);
-
-    // Submit
-    fireEvent.click(screen.getByRole('button', { name: /simpan/i }));
-
-    await waitFor(() => {
-      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-        name: 'Toko Berkah',
-        wa_number: '628111222333',
-        default_pricing_tier: 'grosir',
-      }));
-    });
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run src/components/PelangganScreen.test.tsx -t "passes default_pricing_tier=grosir"`
-
-Expected: FAIL — either (a) the Grosir pill button doesn't exist yet (`Unable to find role="button" name /^Grosir$/i`), or (b) `insertNewCustomer` is called without the `default_pricing_tier` field.
-
-- [ ] **Step 3: Add the `default_pricing_tier` arg + row field**
+- [ ] **Step 1: Add the `default_pricing_tier` arg + row field**
 
 Edit `src/lib/customers/customerWrappers.ts` — replace the `insertNewCustomer` function body (lines 9-31):
 
@@ -159,13 +96,19 @@ export async function insertNewCustomer(args: {
 }
 ```
 
-- [ ] **Step 4: Confirm the arg change alone doesn't yet pass**
+- [ ] **Step 2: Type-check compiles**
 
-Run: `npx vitest run src/components/PelangganScreen.test.tsx -t "passes default_pricing_tier=grosir"`
+Run: `npx tsc --noEmit`
 
-Expected: still FAIL — the pill UI doesn't exist yet on `NewCustomerInlineForm`, so the click on `/^Grosir$/i` still fails to find a button. Task 2 fixes that.
+Expected: no new type errors. The widened arg type is a superset of the previous type, so all existing callers still type-check. The DbCustomer return type is unchanged.
 
-- [ ] **Step 5: Commit the wrapper change**
+- [ ] **Step 3: Run existing tests to confirm no regression**
+
+Run: `npx vitest run src/components/PelangganScreen.test.tsx`
+
+Expected: all pre-existing tests still pass. No new tests added in this task; behaviour is unchanged for callers that don't pass the new arg.
+
+- [ ] **Step 4: Commit the wrapper change**
 
 ```bash
 git add src/lib/customers/customerWrappers.ts
@@ -174,7 +117,10 @@ feat(pelanggan): insertNewCustomer accepts default_pricing_tier
 
 Optional arg; when omitted, DB default 'eceran' fires (unchanged
 behaviour). Enables NewCustomerInlineForm to persist tier when
-modul_multi_tier_price is on. Spec: bcf3ca1.
+modul_multi_tier_price is on. Behavioural test coverage lands in
+Task 2 alongside the UI that wires this arg.
+
+Spec: bcf3ca1.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -187,7 +133,8 @@ EOF
 
 **Files:**
 - Modify: `src/components/penjualan/wizard/NewCustomerInlineForm.tsx` (whole file)
-- Test: `src/components/PelangganScreen.test.tsx` (test from Task 1 becomes green here)
+- Modify: `src/components/PelangganScreen.tsx` (pass `showTierField` to modal-embedded form)
+- Modify: `src/components/PelangganScreen.test.tsx` (author full pill test suite here)
 
 **Interfaces:**
 - Consumes: `insertNewCustomer` (extended in Task 1).
@@ -202,27 +149,76 @@ EOF
   ```
   The pill row is rendered ONLY when `showTierField === true`. Internal state `tier` defaults to `'eceran'` and is passed as `default_pricing_tier` to `insertNewCustomer` only when the field is visible. When hidden, the arg is omitted, DB default fires.
 
-- [ ] **Step 1: Write the failing render test (companion to Task 1's submit test)**
+- [ ] **Step 1: Write the failing test suite (all four)**
 
-Append after the test from Task 1's Step 1, inside the same `describe('PelangganScreen — tier pills on Tambah Pelanggan (modul ON)')` block:
+Add to `src/components/PelangganScreen.test.tsx` at the end of the file (before the last `});` closing brace at line 274), two new `describe` blocks:
 
 ```tsx
-it('modul ON → renders Eceran + Grosir pills with Eceran preselected', async () => {
-  render(<PelangganScreen {...BASE_PROPS} />);
-  await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+// ── F5-XX: Tier pills on add form ──────────────────────────────────────────────
 
-  const eceranPill = await screen.findByRole('button', { name: /^Eceran$/i });
-  const grosirPill = screen.getByRole('button', { name: /^Grosir$/i });
-  expect(eceranPill).toBeInTheDocument();
-  expect(grosirPill).toBeInTheDocument();
-  // Eceran preselected — aria-pressed="true" on active pill
-  expect(eceranPill).toHaveAttribute('aria-pressed', 'true');
-  expect(grosirPill).toHaveAttribute('aria-pressed', 'false');
+describe('PelangganScreen — tier pills on Tambah Pelanggan (modul ON)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (supabaseClientModule.customersService.fetchAll as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...BASE_SETTINGS,
+      modul_multi_tier_price: true,
+    });
+  });
+
+  it('modul ON → renders Eceran + Grosir pills with Eceran preselected', async () => {
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    const eceranPill = await screen.findByRole('button', { name: /^Eceran$/i });
+    const grosirPill = screen.getByRole('button', { name: /^Grosir$/i });
+    expect(eceranPill).toBeInTheDocument();
+    expect(grosirPill).toBeInTheDocument();
+    // Eceran preselected — aria-pressed="true" on active pill
+    expect(eceranPill).toHaveAttribute('aria-pressed', 'true');
+    expect(grosirPill).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('modul ON → passes default_pricing_tier=grosir to insertNewCustomer when Grosir pill selected', async () => {
+    const { insertNewCustomer } = await import('../lib/customers/customerWrappers');
+    const mockInsert = insertNewCustomer as ReturnType<typeof vi.fn>;
+    mockInsert.mockResolvedValue({
+      id: 'new-1', name: 'Toko Berkah', wa_number: '628111222333',
+      company: '', address: null, created_at: '2026-01-01T00:00:00Z',
+      default_pricing_tier: 'grosir',
+    });
+
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+
+    // Open Tambah modal
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    // Fill required fields (Nama + WA)
+    const inputs = screen.getAllByRole('textbox');
+    fireEvent.change(inputs[0], { target: { value: 'Toko Berkah' } });
+    fireEvent.change(inputs[1], { target: { value: '628111222333' } });
+
+    // Click the Grosir tier pill inside the modal
+    const grosirPill = screen.getByRole('button', { name: /^Grosir$/i });
+    fireEvent.click(grosirPill);
+
+    // Submit
+    fireEvent.click(screen.getByRole('button', { name: /simpan/i }));
+
+    await waitFor(() => {
+      expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
+        name: 'Toko Berkah',
+        wa_number: '628111222333',
+        default_pricing_tier: 'grosir',
+      }));
+    });
+  });
 });
 ```
 
-Also add a companion `describe` block for modul-OFF to guard the regression:
+And the companion modul-OFF regression block:
 
 ```tsx
 describe('PelangganScreen — tier pills on Tambah Pelanggan (modul OFF)', () => {
@@ -272,11 +268,11 @@ describe('PelangganScreen — tier pills on Tambah Pelanggan (modul OFF)', () =>
 });
 ```
 
-- [ ] **Step 2: Run tests to verify all three fail**
+- [ ] **Step 2: Run tests to verify all four fail (or fail meaningfully)**
 
 Run: `npx vitest run src/components/PelangganScreen.test.tsx -t "tier pills"`
 
-Expected: FAIL x3 (pills not rendered; Grosir button not found; render assertions fail).
+Expected: FAIL x3 (render pills, Grosir-submit tier arg, modul-OFF-pills-hidden if the query fails somehow — actually the modul-OFF-hidden test would PASS at this point since pills don't exist. That's the accidental-pass case; do not treat it as a green signal.) The modul-OFF-omits-arg test will PASS since no tier field is passed today. Two accidental passes are expected. The two modul-ON tests (render + Grosir-submit) are the ones that MUST fail here to prove the test is exercising unbuilt UI. If either modul-ON test unexpectedly passes at this stage, stop and investigate — the test is not exercising what it claims.
 
 - [ ] **Step 3: Add tier state + pill UI to `NewCustomerInlineForm`**
 
