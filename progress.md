@@ -1,5 +1,30 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — Private-bucket storage paths rendered as raw URLs (Tagihan + admin PendingPayment)
+
+**Files:** `src/components/pembelian/tagihan/TagihanDetailPage.tsx`, `src/components/admin/PendingPaymentRow.tsx`.
+**Founder-reported:** "di tab tagihan menu pembelian, tidak bisa klik tombol lampiran faktur yang sudah diupload." Autonomous sweep surfaced 1 additional occurrence.
+
+**What (Tagihan):** Swapped raw `<a href={url}><img src={url}>` at `TagihanDetailPage.tsx:262-269` for `<StorageImage bucket="purchase-documents" path={...}>` + `<StorageLink bucket="purchase-documents" storageRef={...}>` (same pattern as `BelanjaNumpangLewatDetailPage.tsx:125-136` + `PembayaranDetailPage.tsx:163-172`).
+
+**What (PendingPaymentRow):** Same class-bug in the platform-admin queue at `admin/PendingPaymentRow.tsx:118-128`. Test fixture in `RecordPaymentModal.test.tsx:69` proves proof_url is a storage path (`garindo-jaya/2026-07-abc.png`). Swapped raw `<a href>` for a `<button onClick>` that resolves via `generatePaymentProofSignedUrl` — same pattern already used by `admin/TenantDetail/PembayaranTab.tsx:276-287`. `data-testid="proof-link-<id>"` preserved for existing tests.
+
+**Why (root):** After the tenant-scoped bucket migration (memory `all_buckets_tenant_scoped`, 2026-07-16), `purchase-documents` + `payment-proofs` are private. Any client that stores a storage path and later renders it as `<img src>` / `<a href>` shows a broken thumbnail and navigates to a broken relative URL when clicked. Signed URLs (short TTL, RLS-gated) are required. `StorageImage`/`StorageLink` + `generatePaymentProofSignedUrl` accept both new storage paths *and* legacy full public URLs, so no data migration is needed.
+
+**Deliberately not touched:** `TukarFakturDetailPage.tsx:417-425` — same raw pattern for `photo_urls[]`, but grep shows zero FE upload path for TF photos (no `photo`/`storage`/`upload` refs in `TukarFakturFormPage.tsx` or `tukarFakturService.ts`); the render block is defensive dead code. Pre-fixing would hardcode a bucket assumption that a future TF upload feature may not match. Will address when TF photo upload actually ships.
+
+**Verify (Stage 1):**
+- `npm run lint` (tsc --noEmit) ✓ clean
+- `npm run audit:numinput` ✓ clean
+- `npm run audit:csp-backend-allowlist` ✓ clean
+- `npx vitest run src/components/admin/PendingPaymentsQueue.test.tsx` ✓ 5/5 pass
+- No unit tests exist for `src/components/pembelian/` — Tagihan side is a mechanical swap to a known-working pattern
+- No visual verification (auth path not practical to script locally); mechanical fix + convergent references make this a low-risk deploy
+
+**Stage 2/3:** commit + push staging (autonomous). Prod promotion held per memory `manual_prod_gate_after_real_tenant` — run `scripts/promote-to-prod.sh` when ready.
+
+---
+
 ## 2026-07-24 — PIN approval broken (P3-05 SECDEF ownership 3rd instance)
 
 **Migrations shipped:** `20261115000519` (revert 10 SECDEF functions to OWNER postgres), `20261115000520` (GRANT verify_owner_pin EXECUTE to vosi_rpc_owner).

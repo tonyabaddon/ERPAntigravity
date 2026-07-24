@@ -2,6 +2,8 @@
 // Renders one row in the PendingPaymentsQueue — Approve + Reject actions.
 import React, { useState } from 'react';
 import { paymentVerificationApi, PendingPayment } from '../../lib/paymentVerificationApi';
+import { generatePaymentProofSignedUrl } from '../../lib/paymentsApi';
+import { StorageAccessDeniedError } from '../../lib/adminTypes';
 import { adminToast } from '../../lib/adminToast';
 import { RejectPaymentModal } from './RejectPaymentModal';
 
@@ -29,6 +31,29 @@ function formatDate(dateStr: string): string {
 export function PendingPaymentRow({ payment, onRefresh }: Props) {
   const [verifying, setVerifying] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [openingProof, setOpeningProof] = useState(false);
+
+  async function handleOpenProof() {
+    if (!payment.proof_url || openingProof) return;
+    // Legacy full URLs (pre-tenant-scoped-bucket rows) — open directly, no sign
+    if (/^https?:\/\//.test(payment.proof_url)) {
+      window.open(payment.proof_url, '_blank', 'noreferrer');
+      return;
+    }
+    setOpeningProof(true);
+    try {
+      const signedUrl = await generatePaymentProofSignedUrl(payment.proof_url);
+      window.open(signedUrl, '_blank', 'noreferrer');
+    } catch (err) {
+      if (err instanceof StorageAccessDeniedError) {
+        adminToast.error(err.userMessage);
+      } else {
+        adminToast.error('Gagal membuka bukti pembayaran.');
+      }
+    } finally {
+      setOpeningProof(false);
+    }
+  }
 
   async function handleVerify() {
     if (verifying) return;
@@ -116,16 +141,16 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
           {/* Proof link */}
           <div>
             {payment.proof_url ? (
-              <a
-                href={payment.proof_url}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[12px] font-medium underline"
+              <button
+                type="button"
+                onClick={handleOpenProof}
+                disabled={openingProof}
+                className="text-[12px] font-medium underline disabled:opacity-60"
                 style={{ color: '#2563EB' }}
                 data-testid={`proof-link-${payment.id}`}
               >
-                Lihat bukti
-              </a>
+                {openingProof ? 'Memuat...' : 'Lihat bukti'}
+              </button>
             ) : (
               <span
                 className="text-[12px] italic"

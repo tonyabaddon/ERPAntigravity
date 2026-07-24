@@ -13,6 +13,8 @@ import type { DbPurchaseInvoice, TagihanStatus } from '../../../types';
 import { wibDateString } from '../../../lib/format';
 import { formatIDR } from '../../../lib/formatIDR';
 import { captureError } from '../../../lib/captureError';
+import { StorageImage } from '../../ui/StorageImage';
+import { StorageLink } from '../../ui/StorageLink';
 
 type TagihanRow = DbPurchaseInvoice & {
   pesanan_id?: string | null;
@@ -262,9 +264,22 @@ export default function TagihanDetailPage({ tghNumber, showToast, onBack, onOpen
       {tgh.supplier_invoice_photo_url && (
         <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Lampiran Faktur</div>
-          <a href={tgh.supplier_invoice_photo_url} target="_blank" rel="noreferrer" className="block">
-            <img src={tgh.supplier_invoice_photo_url} alt="Faktur" className="w-40 h-40 object-cover rounded-lg border border-gray-200" />
-          </a>
+          <div className="flex flex-col gap-1 w-40">
+            <StorageImage
+              bucket="purchase-documents"
+              path={tgh.supplier_invoice_photo_url}
+              alt="Faktur Supplier"
+              className="w-40 border border-gray-200"
+              aspectRatio="1/1"
+            />
+            <StorageLink
+              bucket="purchase-documents"
+              storageRef={tgh.supplier_invoice_photo_url}
+              className="text-xs text-indigo-600 hover:underline"
+            >
+              Lihat Penuh ↗
+            </StorageLink>
+          </div>
         </div>
       )}
 
