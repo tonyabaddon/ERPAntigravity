@@ -5,6 +5,7 @@
 **Reversibility:** Semi-reversible — schema tetap `admin_users.permissions JSONB`; hanya UI/registry + backfill data. Rollback = revert commits + revert backfill via idempotent re-run.
 **Migration slot claim:** `20261115000515` (block `000515-000534` reserved untuk track ini)
 **Advisor consulted:** Yes (pre-spec, 2026-07-24). All 8 gaps addressed in this doc.
+**Post-advisor self-audit:** 2026-07-24 — founder-triggered "confidence check" caught 3 additional issues, fixed inline: (a) §5 `PermissionKey` derived from registry via `as const satisfies` (was hardcoded union — drift risk), (b) §8b Pembelian pages `!== false` → `=== true` (silent bypass class, second occurrence like `canConfigureSalesChannels`), (c) §5 `AdminUser.role` narrowed to `PermissionRole` + read-boundary safeguard in `dbToAdminUser`.
 
 ---
 
@@ -171,28 +172,10 @@ const isPermVisible = (key) => {
 // SINGLE SOURCE OF TRUTH untuk admin permissions.
 // Tambah permission baru: 1 entry di sini → interface, defaults, UI, sidebar
 // gate auto-update. Zero drift antara sumber.
-
-export type PermissionKey =
-  | 'dashboard' | 'salesInbox' | 'laporan' | 'aiStock' | 'pelanggan'
-  | 'orderHistory' | 'userManagement' | 'whatsappAi' | 'notifications'
-  | 'settings' | 'pembelian' | 'kasir' | 'piutang' | 'reconciliation'
-  | 'can_create_po' | 'can_edit_po' | 'can_witness_po_receipt'
-  | 'can_start_opname' | 'can_witness_opname' | 'can_commit_opname'
-  | 'can_request_adjustment' | 'can_approve_adjustment'
-  | 'can_request_price_change' | 'can_approve_price_change'
-  | 'can_open_kasir_shift'
-  | 'can_request_kasir_price_override' | 'can_approve_kasir_price_override'
-  | 'can_request_kasir_void' | 'can_approve_kasir_void'
-  | 'can_request_kasir_refund' | 'can_approve_kasir_refund'
-  | 'can_override_price_floor'
-  | 'can_initiate_transfer' | 'can_receive_transfer'
-  | 'can_manage_warehouses' | 'can_view_pengawasan'
-  | 'canConfigureSalesChannels'
-  | 'can_request_credit_activate' | 'can_approve_credit_activate'
-  | 'can_request_limit_change' | 'can_approve_limit_change'
-  | 'can_request_deactivate' | 'can_approve_deactivate';
-
-export type PermissionSet = Record<PermissionKey, boolean>;
+//
+// PermissionKey TYPE-DERIVED dari registry (bukan hardcoded union).
+// Prinsip: tambah entry di PERMISSION_REGISTRY → type PermissionKey auto-update.
+// Dev tidak bisa lupa update union — TypeScript compilation membuktikan.
 
 export type PermissionRole =
   | 'Owner' | 'Supervisor Gudang' | 'Staff Admin Toko' | 'Finance Manager';
@@ -201,8 +184,13 @@ export type PermissionCategory =
   | 'Modul Utama' | 'Pembelian' | 'Stok Opname & Adjustment'
   | 'Gudang' | 'Kasir' | 'Penjualan' | 'Piutang & Kredit' | 'Kontrol';
 
-export interface PermissionEntry {
-  key: PermissionKey;
+/**
+ * Loose entry shape for registry authoring (satisfies clause).
+ * `key: string` at authoring time — narrowed to literal via `as const` on
+ * the registry array. Consumers use exported `PermissionEntry` (narrow).
+ */
+interface RawPermissionEntry {
+  key: string;
   label: string;
   category: PermissionCategory;
   description: string;             // Bahasa Indonesia, MSME tone
@@ -210,16 +198,18 @@ export interface PermissionEntry {
   defaultFor: Record<PermissionRole, boolean>;
 }
 
-export const PERMISSION_ROLES: PermissionRole[] = [
+export const PERMISSION_ROLES: readonly PermissionRole[] = [
   'Owner', 'Supervisor Gudang', 'Staff Admin Toko', 'Finance Manager',
-];
+] as const;
 
-export const PERM_CATEGORIES: PermissionCategory[] = [
+export const PERM_CATEGORIES: readonly PermissionCategory[] = [
   'Modul Utama', 'Pembelian', 'Stok Opname & Adjustment', 'Gudang',
   'Kasir', 'Penjualan', 'Piutang & Kredit', 'Kontrol',
-];
+] as const;
 
-export const PERMISSION_REGISTRY: readonly PermissionEntry[] = [
+// `as const satisfies` keeps literal key types while validating shape.
+// Add a new perm here → PermissionKey union auto-updates.
+export const PERMISSION_REGISTRY = [
   // ─── Modul Utama (10) ─────────────────────────────────────────
   { key: 'dashboard', label: 'Dashboard', category: 'Modul Utama',
     description: 'Lihat ringkasan bisnis (omzet, kasir, stok, notifikasi).',
@@ -407,9 +397,20 @@ export const PERMISSION_REGISTRY: readonly PermissionEntry[] = [
     description: 'Lihat modul Pengawasan (audit log semua aksi).',
     isActionPerm: true,
     defaultFor: { 'Owner': true, 'Supervisor Gudang': false, 'Staff Admin Toko': false, 'Finance Manager': true } },
-];
+] as const satisfies readonly RawPermissionEntry[];
 
-// ─── Derived exports ────────────────────────────────────────────
+// ─── Type derivation (single source: PERMISSION_REGISTRY above) ─
+// PermissionKey = union of all `key` literals from the registry above.
+// Add a new entry above → this union auto-widens. Zero manual sync.
+export type PermissionKey = (typeof PERMISSION_REGISTRY)[number]['key'];
+
+// Full-shape permissions object: every registry key → boolean.
+export type PermissionSet = Record<PermissionKey, boolean>;
+
+// Narrow entry type for consumers (registry indices literal types).
+export type PermissionEntry = (typeof PERMISSION_REGISTRY)[number];
+
+// ─── Derived exports (auto-consistent with registry) ────────────
 export const ALL_PERMISSIONS: PermissionSet = Object.freeze(
   Object.fromEntries(PERMISSION_REGISTRY.map(p => [p.key, true]))
 ) as PermissionSet;
@@ -454,7 +455,56 @@ export const REGISTRY_MAP: ReadonlyMap<PermissionKey, PermissionEntry> = new Map
 // src/types.ts (before line 6):
 export type { PermissionSet, PermissionKey } from './lib/permissions';
 export { ALL_PERMISSIONS } from './lib/permissions';
+import type { PermissionRole } from './lib/permissions';
+
 // remove old PermissionSet interface (lines 6-59) and ALL_PERMISSIONS const (lines 61-105)
+
+// Narrow AdminUser.role from `string` to `PermissionRole` (was line 114).
+// Prevent typo bugs like role: 'staf admin toko' → defaultPermissions
+// falling through to Finance Manager silently.
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string;
+  role: PermissionRole;              // was: string
+  permissions: PermissionSet;
+  status: AdminStatus;
+}
+
+// Same narrowing for DbAdminUser.role (was line 124: string) — since DB is
+// authoritative and stores role as text, this is enforced at read boundary
+// by dbToAdminUser mapper (verify role is valid PermissionRole; if not,
+// coerce to safe default 'Staff Admin Toko' + captureError).
+export interface DbAdminUser {
+  id: string;
+  name: string;
+  email: string | null;
+  whatsapp: string | null;
+  role: PermissionRole;              // was: string
+  permissions: PermissionSet;
+  status: string;
+  created_at: string;
+  tenant_id: string;
+}
+```
+
+**Read-boundary safeguard** (`UserManagementScreen.tsx:29-35` `dbToAdminUser`):
+```ts
+import { PERMISSION_ROLES } from '../lib/permissions';
+
+function dbToAdminUser(db: DbAdminUser): AdminUser {
+  const validRole = (PERMISSION_ROLES as readonly string[]).includes(db.role)
+    ? db.role as PermissionRole
+    : (captureError(new Error(`Invalid role: ${db.role}`), { feature: 'user_management' }),
+       'Staff Admin Toko');  // safe fallback
+  return {
+    id: db.id, name: db.name, email: db.email ?? '', whatsapp: db.whatsapp ?? '',
+    role: validRole,
+    permissions: db.permissions as PermissionSet,
+    status: db.status as AdminStatus,
+  };
+}
 ```
 
 ---
@@ -617,6 +667,46 @@ Hover ⓘ Info icon → native browser tooltip:
 - Semua `can_*` keys unchanged behavior (registry `isActionPerm: true`)
 - Semua non-action keys unchanged behavior (registry `isActionPerm: false`)
 - Unknown keys (legacy `pipeline`, dll) → default visible → tidak break existing UI
+
+### 8b. Pembelian page-level gate consistency (audit finding)
+
+**Issue**: PurchaseOrderFormPage & PembelianDetailPage gunakan `!== false` (default-visible)
+pattern untuk `can_*` keys, inconsistent dengan Sidebar's `=== true` (opt-in). Efeknya:
+sebelum backfill, admin dengan `can_create_po = undefined` **bisa deep-link ke form**
+dan submit karena `undefined !== false = true`. Silent bypass kedua (analog dengan
+`canConfigureSalesChannels`).
+
+**Fix**: normalize semua `can_*` checks ke opt-in `=== true` pattern.
+
+**File 1**: `src/components/pembelian/PurchaseOrderFormPage.tsx:39-40`
+```diff
+  const canEditForm = isEditing
+-   ? currentUserPermissions?.can_edit_po !== false
+-   : currentUserPermissions?.can_create_po !== false;
++   ? currentUserPermissions?.can_edit_po === true
++   : currentUserPermissions?.can_create_po === true;
+```
+
+**File 2**: `src/components/pembelian/PembelianDetailPage.tsx:275`
+```diff
+- const canEdit = currentUserPermissions?.can_edit_po !== false;
++ const canEdit = currentUserPermissions?.can_edit_po === true;
+```
+
+**Backfill safety**: after migration 000515, all admin_users rows have all `can_*` keys
+explicitly `true` or `false` (never undefined). Both `=== true` and `!== false`
+agree for defined values. The change only affects the (theoretical) case where a
+key is missing — now consistently "denied" instead of "allowed by default".
+
+**Owner impact**: after backfill, Owners get `can_create_po = true` + `can_edit_po = true`
+→ still allowed. **Zero regression for Owner.**
+
+**Staff Admin Toko impact**: after backfill, `can_create_po = false` (per default matrix
+§6) → button disabled. This **matches founder intent** ("Staff Admin Toko doesn't
+create PO"), fixing the prior silent bypass.
+
+**Future**: any new `can_*` gate added to a page should use `=== true` pattern.
+Codify via ESLint rule (deferred to follow-up if regressions recur).
 
 ---
 
@@ -949,6 +1039,45 @@ describe('permissions registry', () => {
       expect(p.isActionPerm).toBe(expected);
     }
   });
+
+  it('PermissionKey type derived from registry (compile-time guard)', () => {
+    // If this fails to compile, someone added a hardcoded key to PermissionKey
+    // union without registering it. Type-derivation prevents this drift.
+    const _: PermissionKey = PERMISSION_REGISTRY[0].key;
+    expect(_).toBe('dashboard');
+  });
+
+  it('gate consistency: can_* action keys use === true across codebase', () => {
+    // Ensures the Pembelian pages + Sidebar all use opt-in gate.
+    // Regression guard for silent bypass class of bug.
+    // (Implemented as source-scan test — see permissions-gate-scan.test.ts)
+  });
+});
+```
+
+**New file**: `src/lib/permissions-gate-scan.test.ts` — static-analysis regression test:
+
+```ts
+import * as fs from 'fs';
+import * as path from 'path';
+
+const SRC_ROOT = path.resolve(__dirname, '..');
+// Files known to gate on can_* — extend as new consumers added.
+const GATED_FILES = [
+  'components/Sidebar.tsx',
+  'components/pembelian/PurchaseOrderFormPage.tsx',
+  'components/pembelian/PembelianDetailPage.tsx',
+  'components/stok/StockOpnameScreen.tsx',
+  'components/ManajemenGudangScreen.tsx',
+];
+
+it('all can_* gates use opt-in === true or !!truthy pattern', () => {
+  const badPattern = /permissions\??\.can_\w+\s*!==\s*false/g;
+  for (const rel of GATED_FILES) {
+    const src = fs.readFileSync(path.join(SRC_ROOT, rel), 'utf8');
+    const matches = src.match(badPattern);
+    expect(matches, `${rel} uses default-visible can_* gate (silent bypass risk)`).toBeNull();
+  }
 });
 ```
 
@@ -986,15 +1115,31 @@ Total call sites: **9 files, 15+ references**. All compat via type re-export in 
 
 ### Indirect callers (components consuming `currentUser.permissions`)
 
+Full grep audit (2026-07-24):
+
 ```
-$ grep -rn "\.permissions\." src/components/
-src/components/Sidebar.tsx                        — gate menuItems
-src/components/stok/StockOpnameScreen.tsx:221     — disable button on can_start_opname
-src/components/pembelian/PurchaseOrderFormPage.tsx:40 — gate on can_create_po
-src/components/ManajemenGudangScreen.tsx          — (verify usage)
+$ grep -rn "\.permissions\.\|currentUserPermissions" src/
+src/components/Sidebar.tsx:126-133,95-108              — gate menuItems (refactor §8)
+src/components/ManajemenGudangScreen.tsx:31            — !! can_manage_warehouses (opt-in, safe)
+src/components/stok/StockOpnameScreen.tsx:221          — !permissions.can_start_opname (opt-in, safe)
+src/components/RekonsiliasiScreen.tsx:55               — role==='owner' || permissions.reconciliation (safe)
+src/components/pembelian/PurchaseOrderFormPage.tsx:39-40 — can_edit_po/can_create_po !== false ⚠️ FIX §8b
+src/components/pembelian/PembelianDetailPage.tsx:275   — can_edit_po !== false ⚠️ FIX §8b
+src/components/PembelianScreen.tsx                     — passes prop through, no gate
+src/App.tsx:783,1059,1177                              — passes prop through, no gate
 ```
 
-All read-only consumers; unchanged behavior once registry-driven `PermissionSet` matches existing keys.
+**Behavior change analysis:**
+| Consumer | Pattern | Pre-backfill | Post-backfill | Regression? |
+|---|---|---|---|---|
+| Sidebar `can_*` | opt-in `=== true` | undefined→hidden | true/false explicit | No |
+| ManajemenGudang | `!!` opt-in | undefined→hidden | true/false explicit | No |
+| StockOpname | `!` opt-in | undefined→hidden | true/false explicit | No |
+| Rekonsiliasi | role OR truthy | Owner OK, others depend on undefined→false | Same + FM gets `reconciliation=true` | Positive (FM gains menu) |
+| PurchaseOrderForm | `!== false` default-visible | undefined→**bypass** | false→correctly blocked | **Intentional fix** (silent bypass closed) |
+| PembelianDetail edit | `!== false` default-visible | undefined→**bypass** | false→correctly blocked | **Intentional fix** |
+
+After §8b normalization, all consumers use consistent opt-in gate for `can_*`. **Zero unintended regression.**
 
 ### Tests exercising `PermissionSet` / `defaultPermissions`
 
@@ -1013,7 +1158,20 @@ Zero existing test coverage. NEW tests added per §11.
 
 ### Verdict
 
-**9 files, 15+ references, 0 existing tests, 1 RPC, 1 table.** Migration + registry + UI + Sidebar refactor + normalization + tests all in-scope for 1 PR. No deliberate deferrals.
+**11 files, 17+ references, 0 existing tests, 1 RPC, 1 table.** In-scope for 1 PR:
+1. `src/lib/permissions.ts` — NEW registry (single source of truth, type-derived)
+2. `src/lib/permissions.test.ts` — NEW (registry integrity + normalize tests)
+3. `src/lib/permissions-gate-scan.test.ts` — NEW (static-analysis regression guard)
+4. `src/types.ts` — refactor (re-export from registry + narrow AdminUser.role to PermissionRole)
+5. `src/components/UserManagementScreen.tsx` — refactor (registry-driven UI + normalize invariant)
+6. `src/components/UserManagementScreen.test.tsx` — NEW (round-trip test)
+7. `src/components/Sidebar.tsx` — refactor (registry-driven isPermVisible, fix canConfigureSalesChannels)
+8. `src/components/pembelian/PurchaseOrderFormPage.tsx` — gate normalization (`!== false` → `=== true`)
+9. `src/components/pembelian/PembelianDetailPage.tsx` — gate normalization (`!== false` → `=== true`)
+10. `src/components/AuthScreen.tsx` — no code change (ALL_PERMISSIONS auto-updates via registry re-export)
+11. `supabase/migrations/20261115000515_backfill_admin_permissions.sql` — NEW backfill
+
+No deliberate deferrals. Follow-ups (§17) explicitly out-of-scope.
 
 ---
 
@@ -1122,10 +1280,14 @@ Parallel session risk (per `parallel_terminals_worktree` memory): check `ls supa
 
 Please tinjau item-item ini secara eksplisit sebelum saya lanjut ke writing-plans:
 
-- [ ] **§6 default matrix** — 43×4 preset (Owner/Supervisor Gudang/Staff Admin Toko/Finance Manager). Setiap ✅/⬜ akurat? Revise inline atau reply cell-by-cell.
+- [ ] **§5 registry** — `PermissionKey` derived from registry (via `as const satisfies` + indexed access). Zero drift by construction. OK?
 - [ ] **§5 tooltip descriptions** — 43 baris Bahasa Indonesia. Ada yang confusing / terlalu panjang / MSME tone off? Edit inline.
+- [ ] **§5 types.ts refactor** — `AdminUser.role` narrowed to `PermissionRole` (was `string`) + read-boundary safeguard (`dbToAdminUser` coerces invalid role to safe fallback + captureError). OK?
+- [ ] **§6 default matrix** — 43×4 preset (Owner/Supervisor Gudang/Staff Admin Toko/Finance Manager). Setiap ✅/⬜ akurat? Revise inline atau reply cell-by-cell.
 - [ ] **§8 Sidebar refactor** — `canConfigureSalesChannels` naming stays, gate switches to registry flag. OK atau prefer rename?
+- [ ] **§8b Pembelian gate consistency** — normalize `PurchaseOrderFormPage:39-40` + `PembelianDetailPage:275` dari `!== false` ke `=== true`. Fix silent bypass class. OK?
 - [ ] **§9 backfill SQL** — Owner force-all-true acceptable? Non-Owner merge pattern `defaults || existing` benar?
+- [ ] **§11 test plan** — `permissions-gate-scan.test.ts` static-analysis regression guard OK?
 - [ ] **§14 Stage 3 tenant** — use Toko Jaya Makmur (staging-safe), NOT Testing Jaya Panel (Jenny + NENG SEKAR real data). OK?
 - [ ] **§16 Tingkat 2 deferred** — sepakat defer sampai trigger 500+ admins?
 
