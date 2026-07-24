@@ -34,6 +34,7 @@ import { buildHref, handleSPAClick } from '../lib/urlRoute';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { isMenuVisible, type MenuKey } from '../lib/pengaturan/cascadeMap';
 import { listPendingApprovals, subscribeApprovalRequests } from '../lib/supabaseClient';
+import { REGISTRY_MAP, type PermissionKey } from '../lib/permissions';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import PiutangBadge from './piutang/PiutangBadge';
 import SalesInboxBadge from './sales/SalesInboxBadge';
@@ -125,11 +126,12 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   // while Phase 2 action keys (can_*) are opt-in and only visible when truthy.
   const isPermVisible = (key: keyof PermissionSet): boolean => {
     if (!perms) return true;
+    const entry = REGISTRY_MAP.get(key as PermissionKey);
+    // Unknown keys (legacy `pipeline` etc.) default visible — safe fallback,
+    // prevents breaking existing UI while allowing gradual key retirement.
+    if (!entry) return true;
     const value = perms[key];
-    if (typeof key === 'string' && key.startsWith('can_')) {
-      return value === true;
-    }
-    return value !== false;
+    return entry.isActionPerm ? value === true : value !== false;
   };
 
   const visibleItems = menuItems.filter(item => {
