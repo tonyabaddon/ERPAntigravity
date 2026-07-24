@@ -102,22 +102,62 @@ Deno.serve(async (req) => {
     return json({ error: "Owner role required to invite admins" }, 403);
   }
 
-  // ─── 2. Invite or reuse existing auth.users ──────────────────────────────
+  // ─── 2. Invite or reuse existing auth.users via direct fetch ─────────────
+  // NOTE: supabase-js v2 SDK's `auth.admin.inviteUserByEmail` calls
+  // /auth/v1/admin/invite which returns 404 on this Supabase deployment
+  // (verified 2026-07-24). The correct endpoint is /auth/v1/invite.
+  // Bypass SDK, use direct fetch.
   let inviteeUserId: string | null = null;
 
-  // Check existing first (idempotent)
-  const { data: existingUsers } = await svc.auth.admin.listUsers({ page: 1, perPage: 200 });
-  const existing = existingUsers?.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    inviteeUserId = existing.id;
+  const inviteResp = await fetch(`${SUPABASE_URL}/auth/v1/invite`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SERVICE_KEY}`,
+      "apikey": SERVICE_KEY,
+    },
+    body: JSON.stringify({ email, data: { full_name: name } }),
+  });
+
+  const inviteJson = await inviteResp.json().catch(() => ({} as { id?: string; msg?: string }));
+
+  if (inviteResp.ok && inviteJson.id) {
+    inviteeUserId = inviteJson.id;
   } else {
-    const { data: invited, error: inviteErr } = await svc.auth.admin.inviteUserByEmail(email, {
-      redirectTo: appUrl,
-    });
-    if (inviteErr || !invited?.user) {
-      return json({ error: `Invite failed: ${inviteErr?.message ?? "unknown"}` }, 500);
+    // Check if error is "already registered" — reuse existing auth.users
+    const msg = (inviteJson.msg ?? JSON.stringify(inviteJson)).toLowerCase();
+    const isAlreadyRegistered =
+      msg.includes("already registered") ||
+      msg.includes("already been registered") ||
+      msg.includes("user already exists") ||
+      (msg.includes("email") && msg.includes("has already"));
+    if (isAlreadyRegistered) {
+      // Fetch existing user by email via REST GET /auth/v1/admin/users?email=
+      const lookupResp = await fetch(
+        `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
+        {
+          headers: {
+            "Authorization": `Bearer ${SERVICE_KEY}`,
+            "apikey": SERVICE_KEY,
+          },
+        },
+      );
+      const lookupJson = await lookupResp.json().catch(() => ({} as { users?: Array<{ id: string; email: string }> }));
+      const found = lookupJson.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+      if (found?.id) {
+        inviteeUserId = found.id;
+      } else {
+        return json({
+          error: "Email registered tapi tidak ditemukan via lookup. Kontak admin.",
+          debug: { inviteStatus: inviteResp.status, inviteBody: inviteJson, lookupBody: lookupJson },
+        }, 500);
+      }
+    } else {
+      return json({
+        error: `Invite failed: ${inviteJson.msg ?? `HTTP ${inviteResp.status}`}`,
+        debug: { status: inviteResp.status, body: inviteJson },
+      }, 500);
     }
-    inviteeUserId = invited.user.id;
   }
 
   if (!inviteeUserId) return json({ error: "Failed to resolve invitee user_id" }, 500);
