@@ -11,13 +11,16 @@ export async function insertNewCustomer(args: {
   wa_number: string;
   company?: string;
   address?: string;
+  default_pricing_tier?: 'eceran' | 'grosir';
 }): Promise<DbCustomer> {
   if (!supabase) throw new Error('Supabase not configured');
   // customers.id is TEXT NOT NULL with no default; matches existing
   // customersService.createCustomer pattern (crypto.randomUUID).
   // customers.company is NOT NULL with default '' — passing null violates
   // the constraint, so coerce to ''.
-  const row = {
+  // default_pricing_tier is only included when caller supplies it; when
+  // omitted the DB default 'eceran' fires (CHECK IN 'eceran'|'grosir').
+  const row: Record<string, unknown> = {
     id: crypto.randomUUID(),
     name: args.name,
     wa_number: args.wa_number,
@@ -25,6 +28,9 @@ export async function insertNewCustomer(args: {
     address: args.address ?? null,
     allows_tempo: false,
   };
+  if (args.default_pricing_tier !== undefined) {
+    row.default_pricing_tier = args.default_pricing_tier;
+  }
   const { data, error } = await supabase.from('customers').insert(row).select().single();
   if (error) throw error;
   return data as DbCustomer;
