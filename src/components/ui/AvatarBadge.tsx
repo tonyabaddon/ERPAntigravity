@@ -101,14 +101,15 @@ export function AvatarBadge({
 }: Props) {
   if (avatarUrl && avatarUrl.trim().length > 0) {
     return (
-      <img
-        alt={`Avatar ${name}`}
-        src={avatarUrl}
-        width={size} height={size}
-        referrerPolicy="no-referrer"
-        className={className}
-        style={{ borderRadius: '20%', objectFit: 'cover' }}
-      />
+      <div className={className}>
+        <img
+          alt={`Avatar ${name}`}
+          src={avatarUrl}
+          width={size} height={size}
+          referrerPolicy="no-referrer"
+          style={{ width: size, height: size, objectFit: 'cover' }}
+        />
+      </div>
     );
   }
   if (gender === 'M') return <div className={className}><MaleAvatarSvg size={size} /></div>;

@@ -50,4 +50,11 @@ describe('AvatarBadge', () => {
     const { getByText } = render(<AvatarBadge name="" />);
     expect(getByText('?')).toBeTruthy();
   });
+
+  it('img branch also wraps in div (structural consistency with SVG branches)', () => {
+    const { container } = render(<AvatarBadge name="X" avatarUrl="https://a.com/b.jpg" className="test-wrapper" />);
+    const wrapper = container.querySelector('div.test-wrapper');
+    expect(wrapper).toBeTruthy();
+    expect(wrapper?.querySelector('img')).toBeTruthy();
+  });
 });
