@@ -348,15 +348,28 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       {showTierDropdown && (
                         <div>
                           <label className="text-[11px] font-bold text-white/60">Tier Harga Default</label>
-                          <select
-                            aria-label="Tier Harga Default"
-                            value={editTier}
-                            onChange={e => setEditTier(e.target.value as 'eceran' | 'grosir')}
-                            className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white outline-none focus:border-white/60 mt-0.5"
-                          >
-                            <option value="eceran" className="text-gray-800">Eceran (retail)</option>
-                            <option value="grosir" className="text-gray-800">Grosir (reseller)</option>
-                          </select>
+                          <div className="flex gap-1.5 mt-0.5">
+                            {(['eceran', 'grosir'] as const).map((t) => {
+                              const active = editTier === t;
+                              return (
+                                <button
+                                  key={t}
+                                  type="button"
+                                  aria-pressed={active}
+                                  onClick={() => setEditTier(t)}
+                                  className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+                                    active
+                                      ? t === 'grosir'
+                                        ? 'bg-purple-500 text-white'
+                                        : 'bg-white text-[#012749]'
+                                      : 'bg-white/10 text-white/70 hover:bg-white/20'
+                                  }`}
+                                >
+                                  {t === 'eceran' ? 'Eceran' : 'Grosir'}
+                                </button>
+                              );
+                            })}
+                          </div>
                           <p className="text-[10px] text-white/40 mt-1">Otomatis dipakai saat customer ini transaksi; kasir bebas switch.</p>
                         </div>
                       )}

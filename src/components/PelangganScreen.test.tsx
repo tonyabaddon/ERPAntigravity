@@ -212,33 +212,44 @@ describe('PelangganScreen — tier dropdown', () => {
     expect(eceranBadges).toHaveLength(0);
   });
 
-  it('modul ON → tier dropdown shows eceran default when editing', async () => {
+  it('modul ON → tier pills shown in edit mode with Eceran preselected; switching to Grosir persists via updateTier', async () => {
     (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...BASE_SETTINGS,
       modul_multi_tier_price: true,
     });
 
-    // Mock fetchProfile to return a profile for the customer
     (supabaseClientModule.customersService.fetchProfile as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...ECERAN_CUSTOMER,
       orders: [],
       leads: [],
       kasir_transactions: [],
     });
+    (supabaseClientModule.customersService.updateNameCompany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (supabaseClientModule.customersService.updateTier as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     render(<PelangganScreen {...BASE_PROPS} />);
 
-    // Wait for customers list and select the customer
     await screen.findByText('Budi Santoso');
     fireEvent.click(screen.getByText('Budi Santoso'));
 
-    // Wait for profile to load and edit button to appear
     const editBtn = await screen.findByRole('button', { name: /Edit/i });
     fireEvent.click(editBtn);
 
-    // Tier dropdown should be visible with aria-label
-    const tierSelect = await screen.findByRole('combobox', { name: /Tier Harga Default/i });
-    expect((tierSelect as HTMLSelectElement).value).toBe('eceran');
+    // Pills visible; Eceran preselected in edit mode. Filter to the edit-panel
+    // scope by finding the pill with aria-pressed inside the profile header.
+    const eceranPill = await screen.findByRole('button', { name: 'Eceran', pressed: true });
+    expect(eceranPill).toBeInTheDocument();
+
+    // Switch to Grosir
+    const grosirPill = screen.getByRole('button', { name: 'Grosir', pressed: false });
+    fireEvent.click(grosirPill);
+
+    // Save
+    fireEvent.click(screen.getByRole('button', { name: /Simpan/i }));
+
+    await waitFor(() => {
+      expect(supabaseClientModule.customersService.updateTier).toHaveBeenCalledWith('cust-1', 'grosir');
+    });
   });
 
   it('modul ON + filter=Grosir → only grosir customers visible', async () => {
