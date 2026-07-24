@@ -39,11 +39,12 @@ import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import PiutangBadge from './piutang/PiutangBadge';
 import SalesInboxBadge from './sales/SalesInboxBadge';
 import { captureError } from '../lib/captureError';
+import { AvatarBadge } from './ui/AvatarBadge';
 
 interface SidebarProps {
   activePage: ActivePage;
   onPageChange: (page: ActivePage) => void;
-  currentUser: { name: string; role: string; permissions: PermissionSet; avatarUrl: string } | null;
+  currentUser: { name: string; role: string; permissions: PermissionSet; avatarUrl: string; gender: 'M' | 'F' | 'N' } | null;
   onLogout: () => void;
 }
 
@@ -310,11 +311,12 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       {/* Footer Profile */}
       <div className="mt-auto px-3 pt-6 border-t border-white/10 space-y-3">
         <div className="flex items-center gap-3 p-2 bg-white/5 rounded-2xl overflow-hidden whitespace-nowrap">
-          <img 
-            alt="User Avatar" 
-            className="w-10 h-10 rounded-xl object-cover shrink-0 ring-2 ring-emerald-500/30" 
-            src={currentUser.avatarUrl}
-            referrerPolicy="no-referrer"
+          <AvatarBadge
+            name={currentUser.name}
+            gender={currentUser.gender}
+            avatarUrl={currentUser.avatarUrl}
+            size={40}
+            className="shrink-0 ring-2 ring-emerald-500/30 rounded-xl overflow-hidden"
           />
           <div className={`flex flex-col transition-opacity duration-300 overflow-hidden ${isExpanded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
