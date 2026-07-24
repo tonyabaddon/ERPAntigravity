@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-24 — PIN approval broken (P3-05 SECDEF ownership 3rd instance)
+
+**Migrations shipped:** `20261115000519` (revert 10 SECDEF functions to OWNER postgres), `20261115000520` (GRANT verify_owner_pin EXECUTE to vosi_rpc_owner).
+**Commits:** `4cf13f1` (migration 519 + FE error extraction fix), `4c1cfc7` (PinPad consolidation), `78de3ab` (migration 520 knock-on fix).
+**Founder-reported:** "tidak bisa masukin PIN approval untuk jumlah stock" + "cannot insert PIN for customer tempo during sales order".
+
+**What:** After migration 000514 (2026-07-24) reverted 22 SECDEF functions from OWNER vosi_rpc_owner back to OWNER postgres to fix "permission denied for schema auth", 10 MORE functions were missed by that batch. Founder hit the ONE fully broken flow (initial_stock approval PIN) → verify_owner_pin returned 42501. FE OwnerPinPad error extraction rendered it as `[object Object]` (secondary bug hiding the real cause). Migration 519 reverted the 10; migration 520 restored EXECUTE grant so vosi_rpc_owner-owned wrappers (approve_customer_credit_activate/deactivate/limit_change + decide_via_wa_button) can still invoke verify_owner_pin. FE consolidation: extracted shared `<PinPad>` component so ALL persetujuan PIN entries look identical (founder-flagged inconsistency — was: 12-button pad + inline password input + 6-slot boxes = 3 different UIs; now: 1 unified pad).
+
+**Why (root):** SECDEF ownership shuffles have TWO permission edges — OWNER (dictates which schemas the body can read) AND EXECUTE grants to callers. P3-05 batch mass-migrated without a completeness audit; the hand-written 22-function list was not derived from live pg_proc query. FE `String(e)` fallback silently swallowed the actual server error message for weeks.
+
+**Verify (Stage 3 chrome on Toko Jaya Makmur):**
+- Approval `initial_stock` #1678 — PIN 123456 → RPC 200, status flipped `pending`→`approved`, stock committed ✓
+- Approval `customer_credit_activate` #1682 (Ibu Sari) — PIN 123456 → RPC 200, `customers.allows_tempo=true`, credit_limit Rp 5jt, term_days=30 ✓
+- Both test rows cleaned up (Ibu Sari reverted, playwright-toko-owner PIN cleared) ✓
+
+**Class-fix codified in `docs/superpowers/miss-log.md` Entry #4:**
+1. SECDEF touching `auth.*` MUST be OWNER postgres — enforce via new audit
+2. Reverting SECDEF OWNER MUST enumerate callers + explicit GRANT EXECUTE
+3. Never render errors via `String(e)` — detect PostgrestError shape explicitly
+
+**Follow-ups (optional):**
+- Add `scripts/audit-secdef-auth-schema-ownership.ts` — fail if any SECDEF function references `auth.*` and OWNER != postgres
+- Update CLAUDE.md "Multi-tenant / RLS / SECDEF guardrails" with the two class-rules above (per CLAUDE.md "3+ occurrences → permanent rule" — this is #3)
+
+---
+
 ## 2026-07-24 — Cari by Foto (dan semua getBackendUrl calls) diblokir CSP di prod
 
 **Bug:** User lapor "tidak bisa upload file untuk cari by foto (AI)".
