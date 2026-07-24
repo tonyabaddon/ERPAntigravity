@@ -272,7 +272,7 @@ export default function PembelianDetailPage({
 
   // --- Render: detail body ---
   const damagedItems = (po.items ?? []).filter(i => i.qty_damaged > 0);
-  const canEdit = currentUserPermissions?.can_edit_po !== false;
+  const canEdit = currentUserPermissions?.can_edit_po === true;
 
   return (
     <div className="min-h-screen bg-gray-50" id="po-print-area">

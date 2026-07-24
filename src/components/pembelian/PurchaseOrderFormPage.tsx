@@ -36,8 +36,8 @@ export default function PurchaseOrderFormPage({
 }: PurchaseOrderFormPageProps) {
   const isEdit = !!po;
   const canAct = isEdit
-    ? currentUserPermissions?.can_edit_po !== false
-    : currentUserPermissions?.can_create_po !== false;
+    ? currentUserPermissions?.can_edit_po === true
+    : currentUserPermissions?.can_create_po === true;
 
   // Permission gate: redirect if denied
   useEffect(() => {
