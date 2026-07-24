@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Scale, KeyRound, X, Save } from 'lucide-react';
+import PinPad from '../../ui/PinPad';
 import type { CashAccountBalance } from '../../../lib/kasbank/types';
 import { fetchAdjustmentCounterparts } from '../../../lib/akuntansi/coaQueries';
 import type { CoaOption } from '../../../lib/akuntansi/coaQueries';
@@ -92,12 +93,10 @@ export default function BalanceAdjustmentModal({
   const [counterpartCoaId, setCounterpartCoaId] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [entryDate, setEntryDate] = useState<string>(today());
-  const [pin, setPin] = useState<string[]>(Array(PIN_LENGTH).fill(''));
+  const [pin, setPin] = useState<string>('');
+  const [pinError, setPinError] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // PIN cell refs for focus management
-  const pinRefs = useRef<Array<HTMLInputElement | null>>(Array(PIN_LENGTH).fill(null));
 
   // ------- load counterparts on open ----------------------------------------
   useEffect(() => {
@@ -110,7 +109,8 @@ export default function BalanceAdjustmentModal({
     setCounterpartCoaId('');
     setReason('');
     setEntryDate(today());
-    setPin(Array(PIN_LENGTH).fill(''));
+    setPin('');
+    setPinError(null);
     setSaving(false);
     setFetchError(null);
     setCounterparts([]);
@@ -205,49 +205,12 @@ export default function BalanceAdjustmentModal({
     setAmountDisplay(e.target.value);
   }
 
-  // ------- PIN cell handlers ------------------------------------------------
-  function handlePinInput(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value.replace(/\D/g, '');
-    if (!val) return;
-    const digit = val[val.length - 1]; // take the last digit if multiple pasted
-    const next = [...pin];
-    next[idx] = digit;
-    setPin(next);
-    // Advance focus to next cell
-    if (idx < PIN_LENGTH - 1) {
-      pinRefs.current[idx + 1]?.focus();
-    }
-  }
-
-  function handlePinKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      const next = [...pin];
-      if (next[idx]) {
-        next[idx] = '';
-      } else if (idx > 0) {
-        next[idx - 1] = '';
-        pinRefs.current[idx - 1]?.focus();
-      }
-      setPin(next);
-    } else if (e.key === 'ArrowLeft' && idx > 0) {
-      pinRefs.current[idx - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && idx < PIN_LENGTH - 1) {
-      pinRefs.current[idx + 1]?.focus();
-    }
-  }
-
-  function clearPin() {
-    setPin(Array(PIN_LENGTH).fill(''));
-    pinRefs.current[0]?.focus();
-  }
-
   // ------- Validation -------------------------------------------------------
   const canSubmit =
     amount > 0 &&
     reason.trim().length >= 10 &&
     counterpartCoaId !== '' &&
-    pin.every(c => c.length === 1) &&
+    pin.length === PIN_LENGTH &&
     !saving;
 
   // ------- Submit -----------------------------------------------------------
@@ -264,12 +227,13 @@ export default function BalanceAdjustmentModal({
       showToast('Pilih akun lawan terlebih dahulu', 'warning');
       return;
     }
-    if (!pin.every(c => c.length === 1)) {
+    if (pin.length !== PIN_LENGTH) {
       showToast('Masukkan 6 digit PIN Owner', 'warning');
       return;
     }
 
     setSaving(true);
+    setPinError(null);
     try {
       const result = await recordBalanceAdjustment({
         cashAccountId: cashAccount.cash_account_id,
@@ -277,7 +241,7 @@ export default function BalanceAdjustmentModal({
         amount,
         counterpartCoaId,
         reason: reason.trim(),
-        pin: pin.join(''),
+        pin,
         entryDate,
       });
       showToast(`✓ Penyesuaian dicatat — ${result.entry_number}`, 'success');
@@ -286,7 +250,8 @@ export default function BalanceAdjustmentModal({
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Gagal mencatat penyesuaian';
       if (msg.startsWith('INVALID_PIN')) {
-        clearPin();
+        setPin('');
+        setPinError('PIN salah — coba lagi');
         showToast('PIN salah', 'warning');
       } else if (msg.startsWith('PIN_LOCKED')) {
         showToast('Akun terkunci 10 menit', 'warning');
@@ -483,36 +448,22 @@ export default function BalanceAdjustmentModal({
             </div>
           )}
 
-          {/* 7. Owner PIN block */}
-          <div className="rounded-2xl p-4" style={{ background: '#012749' }}>
+          {/* 7. Owner PIN block — uses shared PinPad for cross-flow consistency */}
+          <div className="rounded-2xl p-4 bg-[#012749]">
             <div className="text-[11px] uppercase tracking-widest text-blue-200 font-extrabold mb-3 flex items-center gap-2">
               <KeyRound className="w-3.5 h-3.5" />
               Owner PIN
             </div>
-            <div className="flex gap-2 mb-2">
-              {Array.from({ length: PIN_LENGTH }).map((_, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => { pinRefs.current[idx] = el; }}
-                  type="password"
-                  maxLength={1}
-                  value={pin[idx] ?? ''}
-                  onChange={(e) => handlePinInput(idx, e)}
-                  onKeyDown={(e) => handlePinKeyDown(idx, e)}
-                  disabled={saving}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  className="w-10 h-12 text-center font-extrabold text-[20px] rounded-lg disabled:opacity-60"
-                  style={{
-                    background: 'rgba(255,255,255,0.15)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'white',
-                  }}
-                  aria-label={`PIN digit ${idx + 1}`}
-                />
-              ))}
+            <div className="bg-white rounded-xl">
+              <PinPad
+                compact
+                title=""
+                onPinChange={setPin}
+                externalError={pinError}
+                disabled={saving}
+              />
             </div>
-            <p className="text-[10px] text-blue-200">3 salah → akun terkunci 10 menit</p>
+            <p className="text-[10px] text-blue-200 mt-2">3 salah → akun terkunci 10 menit</p>
           </div>
 
         </div>

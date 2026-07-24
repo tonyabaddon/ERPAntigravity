@@ -21,6 +21,7 @@ import RakitLockApprovalRequestRow from './RakitLockApprovalRequestRow';
 import TempoWriteOffApprovalRequestRow from './TempoWriteOffApprovalRequestRow';
 import CustomerCreditActivateApprovalRequestRow from './CustomerCreditActivateApprovalRequestRow';
 import OwnerPinPad from './OwnerPinPad';
+import PinPad from '../ui/PinPad';
 import { approveRakitLock, rejectRakitLock, customerCreditService } from '../../lib/supabaseClient';
 import { approveTempoWriteOff, rejectTempoWriteOff } from '../../lib/piutang/writeOff';
 import { rejectCustomerCreditActivate } from '../../lib/customers/customerWrappers';
@@ -97,7 +98,6 @@ export default function ApprovalInboxScreen({
   // but never mutate the customer row. So we route this type to a small
   // dedicated PIN modal below that pipes straight to approveActivate(id, pin).
   const [creditActivatePinTarget, setCreditActivatePinTarget] = useState<{ id: number } | null>(null);
-  const [creditActivatePinInput, setCreditActivatePinInput] = useState('');
   const [creditActivateSubmitting, setCreditActivateSubmitting] = useState(false);
   // Owner-amend target — when set, opens LockSubmissionModal in owner-amend
   // mode so the Owner can edit snapshot values then approve in one tx.
@@ -229,7 +229,6 @@ export default function ApprovalInboxScreen({
     // verify_owner_pin standalone and leave the customer row un-mutated).
     if (req.requestType === 'customer_credit_activate') {
       setCreditActivatePinTarget({ id });
-      setCreditActivatePinInput('');
       return;
     }
 
@@ -271,32 +270,6 @@ export default function ApprovalInboxScreen({
     const { id, type } = pinTarget;
     setPinTarget(null);
     void runCommitAfterPin(id, type);
-  };
-
-  const submitCreditActivatePin = async () => {
-    if (!creditActivatePinTarget) return;
-    const { id } = creditActivatePinTarget;
-    const pin = creditActivatePinInput.trim();
-    if (pin.length < 4) {
-      showToast('PIN minimal 4 digit', 'warning');
-      return;
-    }
-    setCreditActivateSubmitting(true);
-    setBusyId(id);
-    try {
-      await customerCreditService.approveActivate(id, pin);
-      showToast('Aktivasi TEMPO disetujui', 'success');
-      setCreditActivatePinTarget(null);
-      setCreditActivatePinInput('');
-      await refresh();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Gagal menyetujui';
-      // pin_invalid is the most common surface — surface it cleanly.
-      showToast(msg.includes('pin_invalid') ? 'PIN salah, coba lagi.' : msg, 'warning');
-    } finally {
-      setCreditActivateSubmitting(false);
-      setBusyId(null);
-    }
   };
 
   const handleReject = async (id: number, reason?: string) => {
@@ -464,49 +437,35 @@ export default function ApprovalInboxScreen({
       {creditActivatePinTarget && (
         <div
           className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-          onClick={() => { if (!creditActivateSubmitting) { setCreditActivatePinTarget(null); setCreditActivatePinInput(''); } }}
+          onClick={() => { if (!creditActivateSubmitting) { setCreditActivatePinTarget(null); } }}
         >
           <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="rounded-3xl border border-[#e5eeff] bg-white shadow-lg p-6">
-              <div className="text-center mb-4">
-                <span className="inline-block rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-extrabold uppercase tracking-wider px-3 py-1">
-                  Owner PIN
-                </span>
-                <h3 className="mt-2 text-lg font-extrabold text-[#012749]">Konfirmasi Aktivasi TEMPO</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Ketik PIN Owner untuk menyetujui &amp; mengaktifkan kredit.
-                </p>
-              </div>
-              <input
-                type="password"
-                inputMode="numeric"
-                autoFocus
-                value={creditActivatePinInput}
-                onChange={(e) => setCreditActivatePinInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void submitCreditActivatePin(); }}
-                disabled={creditActivateSubmitting}
-                placeholder="PIN"
-                className="w-full text-center tracking-widest text-2xl font-extrabold border-2 border-slate-200 rounded-xl px-4 py-3 focus:border-emerald-500 focus:outline-none disabled:opacity-50"
-              />
-              <div className="flex items-center justify-between gap-2 mt-5">
-                <button
-                  type="button"
-                  onClick={() => { setCreditActivatePinTarget(null); setCreditActivatePinInput(''); }}
-                  disabled={creditActivateSubmitting}
-                  className="px-4 py-2 rounded-full border border-[#e5eeff] text-xs font-extrabold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void submitCreditActivatePin()}
-                  disabled={creditActivateSubmitting || creditActivatePinInput.trim().length < 4}
-                  className="px-4 py-2 rounded-full bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {creditActivateSubmitting ? 'Memproses…' : 'Setujui Aktivasi'}
-                </button>
-              </div>
-            </div>
+            <PinPad
+              title="Konfirmasi Aktivasi TEMPO"
+              subtitle="Ketik PIN Owner untuk menyetujui & mengaktifkan kredit."
+              onCancel={() => setCreditActivatePinTarget(null)}
+              onPinComplete={async (pin) => {
+                const { id } = creditActivatePinTarget;
+                setCreditActivateSubmitting(true);
+                setBusyId(id);
+                try {
+                  await customerCreditService.approveActivate(id, pin);
+                  showToast('Aktivasi TEMPO disetujui', 'success');
+                  setCreditActivatePinTarget(null);
+                  await refresh();
+                  return { ok: true };
+                } catch (e) {
+                  const msg = e instanceof Error ? e.message : 'Gagal menyetujui';
+                  const friendly = msg.includes('pin_invalid') ? 'PIN salah, coba lagi.' : msg;
+                  showToast(friendly, 'warning');
+                  return { ok: false, error: friendly };
+                } finally {
+                  setCreditActivateSubmitting(false);
+                  setBusyId(null);
+                }
+              }}
+              disabled={creditActivateSubmitting}
+            />
           </div>
         </div>
       )}
