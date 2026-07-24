@@ -60,6 +60,19 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  // Diagnostic: log which alg + kid the service key JWT declares. Auth started
+  // rejecting our calls with "unrecognized JWT kid <nil> for algorithm ES256"
+  // — means Supabase rotated keys and the env var now holds an ES256 key
+  // without kid. Log alg + presence of kid so we can detect this.
+  try {
+    const headerB64 = SERVICE_KEY.split(".")[0];
+    const b64 = headerB64.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const header = JSON.parse(atob(padded));
+    console.log("SERVICE_KEY header:", { alg: header.alg, kid: header.kid, hasKid: !!header.kid });
+  } catch (e) {
+    console.log("SERVICE_KEY header decode fail:", e);
+  }
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
   if (!SERVICE_KEY) return json({ error: "Server misconfig: no service key" }, 500);
@@ -102,37 +115,47 @@ Deno.serve(async (req) => {
     return json({ error: "Owner role required to invite admins" }, 403);
   }
 
-  // ─── 2. Invite or reuse existing auth.users via direct fetch ─────────────
-  // NOTE: supabase-js v2 SDK's `auth.admin.inviteUserByEmail` calls
-  // /auth/v1/admin/invite which returns 404 on this Supabase deployment
-  // (verified 2026-07-24). The correct endpoint is /auth/v1/invite.
-  // Bypass SDK, use direct fetch.
+  // ─── 2. Create or reuse existing auth.users via /auth/v1/admin/users ─────
+  // NOTE (2026-07-24): tested 4 endpoints against this deployment:
+  //   - POST /auth/v1/admin/invite → 404 not found (SDK's default is broken)
+  //   - POST /auth/v1/invite       → 403 bad_jwt when called from Edge Function
+  //     ("unrecognized JWT kid <nil> for algorithm ES256") — Supabase rotated
+  //     signing keys but env SUPABASE_SERVICE_ROLE_KEY didn't rotate along.
+  //   - POST /auth/v1/admin/users  → **200 OK** — creates auth.users directly,
+  //     no invite email dependency (we send our own via SMTP below).
+  // We use /auth/v1/admin/users. The SMTP email at Step 4 tells the new admin
+  // how to login via OTP — Supabase Auth OTP works fine even for pre-created
+  // rows with email_confirm=true.
   let inviteeUserId: string | null = null;
 
-  const inviteResp = await fetch(`${SUPABASE_URL}/auth/v1/invite`, {
+  const createResp = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${SERVICE_KEY}`,
       "apikey": SERVICE_KEY,
     },
-    body: JSON.stringify({ email, data: { full_name: name } }),
+    body: JSON.stringify({
+      email,
+      email_confirm: true,
+      user_metadata: { full_name: name },
+    }),
   });
 
-  const inviteJson = await inviteResp.json().catch(() => ({} as { id?: string; msg?: string }));
+  const createJson = await createResp.json().catch(() => ({} as { id?: string; msg?: string; code?: string }));
 
-  if (inviteResp.ok && inviteJson.id) {
-    inviteeUserId = inviteJson.id;
+  if (createResp.ok && createJson.id) {
+    inviteeUserId = createJson.id;
   } else {
     // Check if error is "already registered" — reuse existing auth.users
-    const msg = (inviteJson.msg ?? JSON.stringify(inviteJson)).toLowerCase();
+    const msg = (createJson.msg ?? JSON.stringify(createJson)).toLowerCase();
     const isAlreadyRegistered =
       msg.includes("already registered") ||
       msg.includes("already been registered") ||
       msg.includes("user already exists") ||
+      msg.includes("duplicate") ||
       (msg.includes("email") && msg.includes("has already"));
     if (isAlreadyRegistered) {
-      // Fetch existing user by email via REST GET /auth/v1/admin/users?email=
       const lookupResp = await fetch(
         `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
         {
@@ -148,14 +171,14 @@ Deno.serve(async (req) => {
         inviteeUserId = found.id;
       } else {
         return json({
-          error: "Email registered tapi tidak ditemukan via lookup. Kontak admin.",
-          debug: { inviteStatus: inviteResp.status, inviteBody: inviteJson, lookupBody: lookupJson },
+          error: "Email exists tapi tidak ditemukan via lookup. Kontak admin.",
+          debug: { createStatus: createResp.status, createBody: createJson, lookupBody: lookupJson },
         }, 500);
       }
     } else {
       return json({
-        error: `Invite failed: ${inviteJson.msg ?? `HTTP ${inviteResp.status}`}`,
-        debug: { status: inviteResp.status, body: inviteJson },
+        error: `Create user failed: ${createJson.msg ?? `HTTP ${createResp.status}`}`,
+        debug: { status: createResp.status, body: createJson },
       }, 500);
     }
   }
@@ -178,6 +201,29 @@ Deno.serve(async (req) => {
     );
   if (tuErr) {
     return json({ error: `tenant_users upsert failed: ${tuErr.message}` }, 500);
+  }
+
+  // ─── 3b. Self-heal admin_users.id if OLD FE created row with random UUID ─
+  // OLD FE flow: crypto.randomUUID() → admin_users.id (mismatch with auth.users.id).
+  // NEW FE flow: no admin_users row yet (FE calls admin_upsert_user AFTER us).
+  // Self-heal: if row exists with same email + different id, sync it.
+  const { data: existingAdmin } = await svc
+    .from("admin_users")
+    .select("id")
+    .eq("email", email)
+    .eq("tenant_id", callerTenantId)
+    .maybeSingle();
+  if (existingAdmin && existingAdmin.id !== inviteeUserId) {
+    // Bypass RLS on the UPDATE via service key — id column has no FK on
+    // admin_users so the UPDATE is safe.
+    const { error: healErr } = await svc
+      .from("admin_users")
+      .update({ id: inviteeUserId })
+      .eq("id", existingAdmin.id);
+    if (healErr) {
+      // Non-fatal — log but continue
+      console.warn("self-heal admin_users.id failed:", healErr);
+    }
   }
 
   // ─── 4. Send SMTP invite email (best-effort) ─────────────────────────────
