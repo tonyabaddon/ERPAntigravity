@@ -18,7 +18,7 @@ import OrderHistoryScreen from './OrderHistoryScreen';
 type PenjualanTab = 'input' | 'riwayat';
 
 interface PenjualanScreenProps {
-  currentUser: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null;
+  currentUser: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string; gender?: 'M' | 'F' | 'N' } | null;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   initialTab?: PenjualanTab;
   initialChannel?: KasirChannel;

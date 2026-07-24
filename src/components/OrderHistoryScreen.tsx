@@ -16,7 +16,7 @@ type ChannelFilterGroup = 'all' | 'offline' | 'marketplace' | 'direct';
 type ChannelFilter = ChannelFilterGroup | SalesChannel;
 
 interface OrderHistoryScreenProps {
-  currentUser: { name: string; role: string; avatarUrl: string; storeName: string } | null;
+  currentUser: { name: string; role: string; avatarUrl: string; storeName: string; gender?: 'M' | 'F' | 'N' } | null;
   onOpenCustomer: (customerId: string) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
 }

@@ -11,7 +11,7 @@ import { PermissionSet, ALL_PERMISSIONS } from '../types';
 import { computePostLoginRoute } from '../lib/postLoginRoute';
 
 interface AuthScreenProps {
-  onLoginSuccess: (userData: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => void;
+  onLoginSuccess: (userData: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string; gender: 'M' | 'F' | 'N' }) => void;
 }
 
 function deriveDisplayName(email: string, fullName?: string): string {
@@ -54,6 +54,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
       permissions: ALL_PERMISSIONS,
       avatarUrl: '',
       storeName: storeName ?? 'Dev Store',
+      gender: 'F',  // Dev-mode: Rini = female
     });
     // Dev mode: no platform paths, stay on legacy query-string shell.
   };
@@ -194,6 +195,9 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         permissions: adminRow!.permissions as PermissionSet,
         avatarUrl: user.user_metadata?.avatar_url ?? '',
         storeName: user.user_metadata?.store_name ?? '',
+        gender: (adminRow!.gender === 'M' || adminRow!.gender === 'F' || adminRow!.gender === 'N')
+          ? adminRow!.gender
+          : 'N',
       });
       await afterLogin();
     }, 800);
@@ -275,6 +279,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           permissions: ALL_PERMISSIONS,
           status: 'Aktif',
           tenant_id: '',
+          gender: 'N',  // New sign-up: default Netral
         });
       } catch (err) {
         captureError(err, { feature: 'auth', action: 'create_owner_admin_users' });
@@ -291,6 +296,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
         permissions: ALL_PERMISSIONS,
         avatarUrl: '',
         storeName: signUpStore,
+        gender: 'N',  // Sign-up: no admin_users row yet, default Netral
       });
       await afterLogin();
     }, 1200);

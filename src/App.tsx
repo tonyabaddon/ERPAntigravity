@@ -124,7 +124,7 @@ export default function App() {
     : undefined;
   // Optional SKU to pre-fill cart (set when navigating from Cari by Foto).
   const penjualanInitialPrefillSku: string | undefined = route.params.prefillSku || undefined;
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string; gender: 'M' | 'F' | 'N' } | null>(null);
   // Tenant slug for the logged-in user's tenant, fetched once on session
   // restore. Drives the legacy-path redirect below and the URL/session slug
   // guard. Null while loading or when Supabase not configured (dev).
@@ -228,11 +228,15 @@ export default function App() {
         // until an Owner provisions them.
         let role: string = 'Owner';
         let permissions: PermissionSet = ALL_PERMISSIONS;
+        let gender: 'M' | 'F' | 'N' = 'N';
         try {
           const adminRow = await adminUsersService.fetchById(user.id);
           if (adminRow) {
             role = adminRow.role;
             permissions = adminRow.permissions as PermissionSet;
+            if (adminRow.gender === 'M' || adminRow.gender === 'F' || adminRow.gender === 'N') {
+              gender = adminRow.gender;
+            }
           } else {
             console.warn(`No admin_users row for ${user.id}; defaulting to Owner (provision via User Management)`);
           }
@@ -246,6 +250,7 @@ export default function App() {
           permissions,
           avatarUrl: user.user_metadata?.avatar_url ?? '',
           storeName: user.user_metadata?.store_name ?? '',
+          gender,
         });
         // Cache JWT claims for the slug-guard effect (see below).
         if (session.access_token) {
@@ -440,7 +445,7 @@ export default function App() {
 
 
   // Handle successful login
-  const handleLoginSuccess = (user: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string }) => {
+  const handleLoginSuccess = (user: { id: string; name: string; role: string; permissions: PermissionSet; avatarUrl: string; storeName: string; gender: 'M' | 'F' | 'N' }) => {
     setCurrentUser(user);
     // Restore stashed deep-link if present; otherwise go to dashboard.
     try {
