@@ -24,7 +24,7 @@ BEGIN
     (p_tenant_id, 'Pembelian Stok',          100, true),
     (p_tenant_id, 'Pembelian Pass-Through',  110, true),
     (p_tenant_id, 'MDR EDC',                 120, true)
-  ON CONFLICT ON CONSTRAINT ux_kasir_expense_categories_tenant_label_ci DO NOTHING;
+  ON CONFLICT (tenant_id, lower(label)) WHERE deleted_at IS NULL DO NOTHING;
 
   GET DIAGNOSTICS v_inserted = ROW_COUNT;
   RETURN v_inserted;

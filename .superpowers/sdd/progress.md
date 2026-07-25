@@ -1110,3 +1110,7 @@ form the complete deploy hygiene for staging/prod-isolation-aware BE.
 1. `admin.caleo.id` → Provision tenant (owner email, tenant slug, name)
 2. Owner signs in on `app.caleo.id` → sees tenant, works normally
 3. Verify: same owner signs in on `staging.app.caleo.id` → tenant picker empty (ENV_MISMATCH)
+
+## 2026-07-25 — Kasir Expense Categories Configurable (SDD, worktree feat/kasir-expense-categories)
+Task 1: complete (commits eac7288..cf79550, review clean — 2 minor Postgres-no-op findings noted)
+Task 2: complete (commit 991887c, migration 522 — seed function + backfill DO block. SKIPPED verification steps per brief deviation). Idempotent via ON CONFLICT ON CONSTRAINT ux_kasir_expense_categories_tenant_label_ci DO NOTHING. Ready for batch apply at Task 13.

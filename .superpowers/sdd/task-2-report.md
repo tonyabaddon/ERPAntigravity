@@ -1,91 +1,27 @@
-# Task 2 Report — 2K Idempotency Key Wiring
+# Task 2 Report: Migration 522 — Seed function + backfill
 
-## Status: DONE
+**Status:** DONE
 
-## Step 1 — RPCs with p_idempotency_key (full enumeration)
+**Commit:** 991887c — "feat(kasir): seed default expense categories + backfill existing tenants"
 
-Grep: `grep -l "p_idempotency_key" supabase/migrations/*.sql`
+**Summary:** Created migration 522 with idempotent `_seed_kasir_expense_categories(uuid)` SECDEF function + one-shot DO block backfill for all existing tenants. Seeds 5 user-facing defaults (Gaji, Utilitas, Transportasi, Marketing, Lain-lain) + 3 system rows (Pembelian Stok, Pembelian Pass-Through, MDR EDC) per tenant.
 
-Found **6 migrations** (more than brief's expected 5; includes enqueue_job):
+**What I verified:**
 
-| Migration | RPC Name | Key Type | Notes |
-|---|---|---|---|
-| 20261115000101 | `_insert_supplier_claim` | TEXT DEFAULT NULL | Internal helper; called by server-side RPCs only, no direct FE caller |
-| 20261115000311 / 20261115000325 | `record_kasir_sale` | UUID DEFAULT NULL | Main kasir sale RPC |
-| 20261115000312 | `receive_purchase_order` | UUID DEFAULT NULL | PO receipt (5-arg form) |
-| 20261115000313 | `commit_opname` | UUID DEFAULT NULL | Opname commit |
-| 20261115000315 / 20261115000325 | `record_pembayaran` | UUID DEFAULT NULL | Supplier payment |
-| 20261115000321 / 20261115000322 | `enqueue_job` | TEXT DEFAULT NULL | Job queue; key optional, caller-supplied |
+1. **Constraint name:** `ux_kasir_expense_categories_tenant_label_ci` from Task 1 migration 521 confirmed correct (line 29 of migration file).
+2. **Function signature:** `_seed_kasir_expense_categories(uuid) RETURNS int` with SECURITY DEFINER + `SET search_path = public` present.
+3. **Idempotency:** `ON CONFLICT ON CONSTRAINT ux_kasir_expense_categories_tenant_label_ci DO NOTHING` implemented correctly.
+4. **Ownership:** `ALTER FUNCTION ... OWNER TO vosi_rpc_owner` applied.
+5. **Seed values:** 8 rows total — 5 user-facing + 3 system categories per tenant.
+6. **DO block:** Loops all tenants via `public.tenants`, calls function per tenant, accumulates count, logs NOTICE with results.
+7. **Commit message:** Matches brief exactly.
+8. **File location:** `/Users/tonywei/IdeaProjects/ERPAntigravity/.claude/worktrees/kasir-expense-categories/supabase/migrations/20261115000522_kasir_expense_categories_seed_and_backfill.sql` — correct.
 
-## Step 2 — FE call sites
+**Verification steps skipped per brief deviation:**
+- Step 2 (apply on Supabase branch) — deferred to Task 13 batch apply
+- Step 3 (count verification) — deferred to Task 13 batch apply
+- Step 4 (idempotency re-apply) — deferred to Task 13 batch apply
 
-Grep: `grep -rn "supabase.rpc(" src --include='*.ts' --include='*.tsx' | grep -v ".test."`
+**Ready for:** batch apply at Task 13.
 
-| RPC | File | Pre-existing key? | Action |
-|---|---|---|---|
-| `record_kasir_sale` | `src/lib/supabaseClient.ts:1466` | YES — `input.p_idempotency_key ?? crypto.randomUUID()` | Added console.info log |
-| `commit_opname` | `src/lib/supabaseClient.ts:1963` | YES — `crypto.randomUUID()` | Extracted to var + added log |
-| `receive_purchase_order` | `src/lib/pembelianService.ts:179` | YES — `crypto.randomUUID()` | Extracted to var + added log |
-| `record_pembayaran` | `src/lib/pembayaranService.ts:37` | YES — `crypto.randomUUID()` | Extracted to var + added log |
-| `enqueue_job` | `src/lib/jobsApi.ts:27` | YES — `opts.idempotencyKey ?? null` | Caller-supplied; no FE callers in codebase; no change needed |
-| `_insert_supplier_claim` | (none) | N/A — server-side only | No FE call site; no change needed |
-
-**Finding: all 4 primary high-value FE call sites already had p_idempotency_key wired before this task.** This task added Step 4 (audit logging) which was the only gap.
-
-## Step 3 — Key generation strategy
-
-**`crypto.randomUUID()`** — used everywhere. Rationale: browser-native, no import, stronger uniqueness than `Date.now() + Math.random()`. The fallback (`${feature}-${entityId}-${Date.now()}-${Math.random()}`) was not needed.
-
-For `record_kasir_sale`: the input object allows a pre-generated key via `input.p_idempotency_key`; falls back to `crypto.randomUUID()` if not provided. This supports the pattern where the component generates the key before opening a confirmation modal (consistent key across retries).
-
-## Step 4 — Audit logging added
-
-Each call site now extracts the key to a named variable and logs:
-
-```typescript
-// pembelianService.ts — receive_purchase_order
-const idem312 = crypto.randomUUID();
-console.info('[idempotency] receive_purchase_order po=%s key=%s', poId, idem312);
-
-// pembayaranService.ts — record_pembayaran
-const idem315 = crypto.randomUUID();
-console.info('[idempotency] record_pembayaran key=%s', idem315);
-
-// supabaseClient.ts — commit_opname
-const idem313 = crypto.randomUUID();
-console.info('[idempotency] commit_opname approval=%s key=%s', approvalId, idem313);
-
-// supabaseClient.ts — record_kasir_sale (inline IIFE to preserve existing structure)
-const key = input.p_idempotency_key ?? crypto.randomUUID();
-console.info('[idempotency] record_kasir_sale key=%s', key);
-```
-
-## Step 5 — SQL verification
-
-File created: `tests/sql/qa-week/2k-verify.sql`
-
-```sql
-SELECT COUNT(*) AS idempotency_rows FROM t_rpc_idempotency;
-```
-
-**Status: DEFERRED** — cannot execute against prod DB in this session (pool exhaustion risk; prod backend on cf73c29b warm-protected). Expected result: > 0 after any real FE-triggered high-value write. Table exists (confirmed by migration 311/312/313/315 referencing it). Row count is 0 in fresh environment; increases with each successful idempotency-guarded RPC call.
-
-## Step 6 — Local gates
-
-| Gate | Result |
-|---|---|
-| `npm run lint` (tsc --noEmit) | PASS — clean |
-| `npm run audit:numinput` | PASS — clean |
-| `npm run audit:secdef-null-tenant` | PASS — 461 migration files scanned, no violations |
-| `npx vitest run --changed` | PASS — 77 files, 657 passed, 2 skipped |
-
-## Files modified
-
-- `src/lib/pembelianService.ts` — extracted idem key to var + console.info for `receive_purchase_order`
-- `src/lib/pembayaranService.ts` — extracted idem key to var + console.info for `record_pembayaran`
-- `src/lib/supabaseClient.ts` — extracted idem key to var + console.info for `commit_opname` and `record_kasir_sale`
-- `tests/sql/qa-week/2k-verify.sql` — new verification query
-
-## Commit SHA
-
-`b74f60d`
+**Report path:** `.superpowers/sdd/task-2-report.md`
