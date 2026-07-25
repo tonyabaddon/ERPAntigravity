@@ -1,5 +1,37 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-25 — Customer pricing tier: add-form fix (Phase 1a) SHIPPED
+
+**What:** Add-customer form (`NewCustomerInlineForm`) now exposes a `Tipe Harga default` segmented-pill control (Eceran / Grosir), gated by `modul_multi_tier_price` via `isFieldVisible('tier_dropdown_customer', tenantSettings)`. Edit-customer profile header unified from a `<select>` dropdown to matching pills for add/edit parity (dark-header palette: `bg-white`/`bg-purple-500`/`bg-white/10` — no new tokens). `insertNewCustomer` accepts optional `default_pricing_tier`; when omitted, the DB default `'eceran'` still fires (zero regression for callers without the flag). Prop chain wired through `Step1ChannelCustomer` → `CatatPenjualanWizard` so the same pill shows on the sales-wizard inline "+ Customer Baru" path. Read-only audit `scripts/audit-misclassified-customer-tier.sql` surfaces likely-misclassified existing customers (tier='eceran' + company non-empty OR TEMPO active) for owner review.
+
+**Why (root):** The `customers.default_pricing_tier` column existed (migration `20260901000002`, `TEXT NOT NULL DEFAULT 'eceran' CHECK IN ('eceran','grosir')`) and the sales-quotation wizard already auto-reads it to pick harga eceran vs grosir per line. But the add form had no tier control, so every new customer silently became `'eceran'` — including wholesale customers the tenant meant to mark grosir. Kasir/quotation would then quote retail prices until someone remembered to open the edit modal. Bleeding fixed forward-only; existing data audited via the SQL helper (owner corrects manually).
+
+**Scope kept out:** Owner-configurable N tiers (Phase 1b — separate brainstorm, requires irreversible-architectural memo per CLAUDE.md scale-forward discipline). SKU-quantity-based tiers / volume discounts (Phase 2 — deferred). Backend Go WA-onboarded customer path (`backend-go/internal/db/customers.go:22`) untouched — DB default fills tier; WA-onboarded starting as retail is the correct semantic.
+
+**Files touched (7 commits, all on `main`):**
+1. `9aca789` — `src/lib/customers/customerWrappers.ts` (wrapper signature)
+2. `09a223f` — `src/components/penjualan/wizard/NewCustomerInlineForm.tsx` + `src/components/PelangganScreen.tsx` + `src/components/PelangganScreen.test.tsx` (pill UI + 4 new tests + Pelanggan modal wire)
+3. `90a2fc0` — `src/components/penjualan/wizard/Step1ChannelCustomer.tsx` + `src/components/penjualan/CatatPenjualanWizard.tsx` (wizard prop chain)
+4. `730860e` — `src/components/PelangganScreen.tsx` + `src/components/PelangganScreen.test.tsx` (edit-form pills parity)
+5. `5b2fc8d` — `scripts/audit-misclassified-customer-tier.sql` (read-only audit)
+6. `bcf3ca1` — spec at `docs/superpowers/specs/2026-07-24-customer-pricing-tier-add-form-fix-design.md`
+7. `103e3f5` / `f6f07d2` — implementation plan at `docs/superpowers/plans/2026-07-24-customer-pricing-tier-add-form-fix-plan.md`
+
+**Verified (Stage 1, all ✓):**
+- `npm run lint` (tsc --noEmit clean)
+- `npm run audit:numinput` / `audit:secdef-null-tenant` / `audit:csp-backend-allowlist` (all clean)
+- `npx vitest run src/components/PelangganScreen.test.tsx` — 11/11 pass (4 new tier-pill tests + 7 pre-existing F5-01 + tier-filter + updated edit-mode-pill test)
+
+**Stage 2 (deploy) ✓:** Cloud Build `611e02af…` (FE) + `4b5865d4…` (BE) both SUCCESS on commit `cd3703c`. Manual `scripts/promote-to-prod.sh cd3703c` executed — prod FE + BE now serving revisions `garindo-jaya-panel-msme-erp-frontend-00779-ras` + `garindo-jaya-panel-msme-erp-00603-div` tagged `ccd3703c`. `curl app.caleo.id/` = HTTP 200; `curl backend/api/v1/live` = HTTP 200. Note: promote script encountered a missing tag on new revisions (unexpected — build Step 5 tag apparently cleared by a prior operation); manually re-tagged both new revisions before running the script.
+
+**Stage 3 (browser smoke) SKIPPED:** Chrome DevTools MCP disconnected mid-session, so the visual walk on Toko Jaya Makmur (`modul_multi_tier_price` on / off paths, add-grosir-then-quote round-trip) was not executed. Risk assessment: LOW — no schema/RPC/migration change, pill palette uses existing tokens already rendering elsewhere on the same page, 11/11 vitest covers state → args → RPC-mock, and modul-off tests explicitly guard the no-regression case. Follow-up: founder walk when convenient; if any visual issue surfaces, rollback via `promote-to-prod.sh c7bc3479`.
+
+**Spec:** [`docs/superpowers/specs/2026-07-24-customer-pricing-tier-add-form-fix-design.md`](docs/superpowers/specs/2026-07-24-customer-pricing-tier-add-form-fix-design.md).
+
+**Plan:** [`docs/superpowers/plans/2026-07-24-customer-pricing-tier-add-form-fix-plan.md`](docs/superpowers/plans/2026-07-24-customer-pricing-tier-add-form-fix-plan.md).
+
+---
+
 ## 2026-07-25 — Class-fix: `[object Object]` anti-pattern retired across 53 sites + Stop-hook regression guard
 
 **Files:** `scripts/audit-no-string-err-fallback.ts` (new), `scripts/codemod-string-err-fallback.ts` (new one-shot), `package.json`, `.claude/settings.json` (Stop hook), 31 files in `src/` (codemod applied), `docs/superpowers/miss-log.md` (Entry #5).
