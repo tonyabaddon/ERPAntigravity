@@ -340,9 +340,18 @@ BEGIN
     PERFORM public.kasir_expense_categories_reorder(ARRAY[v_reordered_id, v_new_id]);
   END IF;
 
-  -- Rollback all mutations
+  -- Rollback all mutations via subtransaction: the EXCEPTION handler
+  -- catches SQLSTATE P0001 (our SMOKE_TEST_OK marker) and swallows it,
+  -- so the outer migration tx commits with the CREATE FUNCTIONs intact
+  -- while all smoke-test mutations (create/update/soft_delete/restore/reorder)
+  -- get rolled back by the implicit subtransaction the EXCEPTION clause creates.
+  --
+  -- KECT_* error codes from actual RPC failures use P0400/P0403/P0404/P0409
+  -- and would propagate normally, aborting the migration — which is correct
+  -- (we want to know if the smoke test caught a real bug).
   RAISE EXCEPTION 'SMOKE_TEST_OK — rollback intended' USING errcode = 'P0001';
+EXCEPTION
+  WHEN SQLSTATE 'P0001' THEN
+    -- Intentional rollback marker; swallow to let migration commit.
+    NULL;
 END $$;
--- Above intentionally raises. Wrap in a savepoint if you want to continue.
--- For CI apply, downstream migrations still succeed because this is a self-
--- contained DO block; the exception rolls back only its own tx.
