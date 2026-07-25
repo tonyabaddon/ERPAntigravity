@@ -237,6 +237,33 @@ Reference: `frontend-design` skill; feedback memories `font_sizing`,
    Otherwise it comes back.
 5. Update `progress.md` with root cause + fix summary.
 
+### Class-fix rule (anti-pattern with 3+ occurrences)
+
+When Impact analysis (step 3) reveals the same anti-pattern in **3+ sites**
+across the codebase — OR the miss-log records 3+ occurrences of the same
+class-error — the fix is NOT "patch this site." The fix is a **pair**:
+
+- **Retire the debt**: codemod / bulk edit that removes the anti-pattern
+  from every existing site in the same PR.
+- **Prevent re-drift**: `scripts/audit-<slug>.ts` + npm script + wiring
+  into `.claude/settings.json` Stop hook, so any new site gets blocked at
+  turn-end.
+
+Both MUST ship in the SAME PR that first flagged the third occurrence.
+Deferring the codemod because "it's many files" is precisely what makes
+the anti-pattern recur — every un-fixed site is a fresh opportunity for
+copy-paste to propagate the defect. A rule-in-docs without rule-in-CI is
+a good intention, not a rule.
+
+Historical class-fixes to reuse as templates:
+- `audit:no-string-err-fallback` (2026-07-25, Entry #5) — `err instanceof
+  Error ? .message : String(err)` retired across 53 sites via codemod +
+  audit script.
+- `audit:csp-backend-allowlist` (2026-07-24, Entry #3) — CSP `connect-src`
+  vs `backendUrl.ts` hostname contract.
+- `audit:numinput` — raw `Number(e.target.value)` in favor of `NumberInput`.
+- `audit:secdef-null-tenant` — SECDEF INSERTs missing `tenant_id`.
+
 ---
 
 ## Multi-tenant / RLS / SECDEF guardrails
