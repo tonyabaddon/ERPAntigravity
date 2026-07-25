@@ -15,6 +15,7 @@ import {
   ImpersonationGrant,
 } from '../../lib/impersonationGrantsService';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -39,7 +40,7 @@ function fmtDate(iso: string): string {
 }
 
 function humanErr(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = extractErrorMessage(err);
   if (msg.includes('IMPERSONATION_NOT_GRANTED'))
     return 'Akses belum diberikan tenant.';
   if (msg.includes('ADMIN_NOT_FOUND'))

@@ -8,6 +8,7 @@ import { useEffect, useId, useState } from 'react';
 import type { Warehouse } from '../types';
 import { warehousesService, supabase } from '../lib/supabaseClient';
 import { useTenant } from '../contexts/TenantContext';
+import { extractErrorMessage } from '../lib/extractErrorMessage';
 
 interface UseWarehousesResult {
   warehouses: Warehouse[];
@@ -43,7 +44,7 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
       setWarehouses(rows);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export function useWarehouses(opts: { activeOnly?: boolean } = {}): UseWarehouse
         setError(null);
       } catch (e) {
         if (!mounted) return;
-        setError(e instanceof Error ? e.message : String(e));
+        setError(extractErrorMessage(e));
       } finally {
         if (mounted) setLoading(false);
       }

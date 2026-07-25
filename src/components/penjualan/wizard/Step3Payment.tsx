@@ -13,6 +13,7 @@ import { formatRp } from '../../../lib/format';
 import { dispatchSave, validateStep3, type WizardState } from '../../../lib/wizard/validation';
 import CashAccountPicker from '../../akuntansi/CashAccountPicker';
 import { DiscountRow, computeDiscountAmount } from '../../ui/discount';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 type CartItem = KasirItem & { _key: number };
 type RakitLine = {
@@ -119,7 +120,7 @@ export default function Step3Payment(props: Props) {
       const path = dispatchSave(wizardState);
       await props.onSave(path);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       props.showToast(`Gagal simpan: ${msg}`, 'warning');
     } finally {
       setSubmitting(false);

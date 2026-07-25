@@ -17,6 +17,7 @@ import type {
 import { formatRpDelta } from '../../lib/format';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { DamageFlagModal } from './DamageFlagModal';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface StockOpnameSessionViewProps {
   sessionId: number;
@@ -122,7 +123,7 @@ export default function StockOpnameSessionView({
         }
       }
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setLoading(false);
     }
@@ -248,7 +249,7 @@ export default function StockOpnameSessionView({
       });
       await refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setBusy(null);
     }
@@ -262,7 +263,7 @@ export default function StockOpnameSessionView({
       showToast('Acknowledgement saksi tercatat', 'success');
       await refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setBusy(null);
     }
@@ -284,7 +285,7 @@ export default function StockOpnameSessionView({
       }
       onClose();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setBusy(null);
     }

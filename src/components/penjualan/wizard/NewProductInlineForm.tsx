@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SupabaseStockItem } from '../../../lib/supabaseClient';
 import { insertNewProduct } from '../../../lib/products/productWrappers';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 import {
   validateNewProductForm,
   parsePriceLike,
@@ -50,7 +51,7 @@ export default function NewProductInlineForm(props: Props) {
       props.showToast(`Produk baru tersimpan: ${product.name}`, 'success');
       props.onSaved(product);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       props.showToast(`Gagal simpan produk: ${msg}`, 'warning');
     } finally {
       setSubmitting(false);

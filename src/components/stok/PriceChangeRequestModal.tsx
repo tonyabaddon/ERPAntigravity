@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { requestPriceChange } from '../../lib/supabaseClient';
 import type { StockItem } from '../../types';
 import { formatIDR } from '../../lib/formatIDR';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   item: StockItem;
@@ -46,7 +47,7 @@ export default function PriceChangeRequestModal({
       onSubmitted();
       onClose();
     } catch (e) {
-      showToast?.(e instanceof Error ? e.message : String(e), 'warning');
+      showToast?.(extractErrorMessage(e), 'warning');
     } finally {
       setSubmitting(false);
     }

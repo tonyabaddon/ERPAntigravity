@@ -70,6 +70,7 @@ import {
   subscribeToApprovalRequest,
 } from '../../lib/discountApproval/api';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // Module-scoped sequence for stable cart row keys, mirroring the legacy
 // _itemSeq pattern in PenjualanBaruScreen. Per-row _key lets CartRows track
@@ -481,7 +482,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         setNotes(so.notes ?? '');
         showToast(`Pre-filled dari ${so.so_number}`, 'success');
       } catch (err) {
-        showToast(`Gagal pre-fill dari SO: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+        showToast(`Gagal pre-fill dari SO: ${extractErrorMessage(err)}`, 'warning');
       }
     })();
     return () => { cancelled = true; };
@@ -614,7 +615,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       setPendingApprovalId(requestId);
       showToast('Request approval owner terkirim. Menunggu…', 'success');
     } catch (err) {
-      showToast(`Gagal minta approval: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      showToast(`Gagal minta approval: ${extractErrorMessage(err)}`, 'warning');
     }
     return false;
   };
@@ -768,7 +769,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
           try {
             await markSalesOrderConverted(fromSalesOrderId, { orderId: result.order_id });
           } catch (err) {
-            showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+            showToast(`SI tersimpan tapi gagal mark SO converted: ${extractErrorMessage(err)}`, 'warning');
           }
         }
         const termDaysLabel = customer.term_days ? ` (Jatuh tempo ${customer.term_days} hari).` : '.';
@@ -836,7 +837,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
         try {
           await markSalesOrderConverted(fromSalesOrderId, { kasirTxId: txId });
         } catch (err) {
-          showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+          showToast(`SI tersimpan tapi gagal mark SO converted: ${extractErrorMessage(err)}`, 'warning');
         }
       }
       showToast('✅ Transaksi WIP tersimpan. Cek di Daftar Pesanan untuk lock + approval.', 'success');
@@ -914,7 +915,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       try {
         await markSalesOrderConverted(fromSalesOrderId, { kasirTxId: tx.id });
       } catch (err) {
-        showToast(`SI tersimpan tapi gagal mark SO converted: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+        showToast(`SI tersimpan tapi gagal mark SO converted: ${extractErrorMessage(err)}`, 'warning');
       }
     }
     // Item #4: link committed sale to its discount approval for audit
@@ -923,7 +924,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       try {
         await linkSaleToApproval({ saleId: tx.id, requestId: approvedApprovalId });
       } catch (err) {
-        showToast(`Sale tersimpan tapi audit-link gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+        showToast(`Sale tersimpan tapi audit-link gagal: ${extractErrorMessage(err)}`, 'warning');
       }
     }
     onSaved(tx.id);
@@ -1251,7 +1252,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                       setDiscountReason('');
                       showToast('Request dibatalkan. Kamu bisa lanjut tanpa diskon.', 'info');
                     } catch (err) {
-                      showToast(`Cancel gagal: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+                      showToast(`Cancel gagal: ${extractErrorMessage(err)}`, 'warning');
                     }
                   }}
                 >

@@ -16,6 +16,7 @@ import type {
   SupplierClaimRow, ClaimStatus, ClaimOutcome,
 } from '../../lib/supplierClaims/types';
 import { formatIDR } from '../../lib/formatIDR';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface KlaimSupplierPanelProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -77,7 +78,7 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
       const rows = await listSupplierClaims({ status: VISIBLE_STATUSES });
       setClaims(rows);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     }
   };
 
@@ -160,7 +161,7 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
       closeResolve();
       await refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setSubmitting(false);
     }

@@ -91,6 +91,7 @@ function CustomerPicker({
 
 // import React for JSX (needed for CustomerPicker)
 import React from 'react';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 export default function Step2Aktiva({ data, onChange, showToast }: Props) {
   const [autoValue, setAutoValue] = useState<number | null>(null);
@@ -115,7 +116,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
         }
       })
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = extractErrorMessage(err);
         showToast(`Gagal hitung persediaan auto: ${msg}`, 'warning');
         setAutoValue(0);
       })

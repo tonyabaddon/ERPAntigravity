@@ -19,6 +19,7 @@ import Step2Aktiva from './Step2Aktiva';
 import Step3Kewajiban from './Step3Kewajiban';
 import Step4EkuitasPreview from './Step4EkuitasPreview';
 import { wibDateString } from '../../../lib/format';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 interface Props {
   initialSnapshot: SaldoAwalSnapshot | null;
@@ -119,7 +120,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
       const id = await saveSaldoAwalDraft(stepData, cutoverDate);
       setSnapshotId(id);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal simpan draft: ${msg}`, 'warning');
       setSaving(false);
       return; // don't advance if save fails

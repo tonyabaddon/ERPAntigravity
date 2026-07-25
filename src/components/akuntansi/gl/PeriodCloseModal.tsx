@@ -11,6 +11,7 @@ import { accruePeriodTaxes, fetchAccountingConfig } from '../../../lib/akuntansi
 import { fetchTrialBalanceAsOf } from '../../../lib/akuntansi/glQueries';
 import type { AccountingPeriod, AccountingConfig } from '../../../lib/akuntansi/types';
 import { formatRp } from '../../../lib/format';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -201,7 +202,7 @@ export default function PeriodCloseModal({
       onClosed();
       onClose();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       if (msg.toLowerCase().includes('owner_only')) {
         showToast('Hanya Owner yang bisa menutup periode', 'warning');
       } else if (msg.toLowerCase().includes('period_not_open')) {

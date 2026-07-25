@@ -5,6 +5,7 @@ import type { RakitJobLine, RakitTrackingMode, RakitComponent } from '../../type
 import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { formatIDR } from '../../lib/formatIDR';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface LockSubmissionModalProps {
   transactionId: string;
@@ -108,7 +109,7 @@ export default function LockSubmissionModal({
         );
       })
       .catch((e) => {
-        showToast(`Gagal load stok: ${e instanceof Error ? e.message : String(e)}`, 'warning');
+        showToast(`Gagal load stok: ${extractErrorMessage(e)}`, 'warning');
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

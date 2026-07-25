@@ -13,6 +13,7 @@ import {
 } from '../../lib/warehouseTransferService';
 import { useWarehouses } from '../../hooks/useWarehouses';
 import { formatIDR } from '../../lib/formatIDR';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── Status badge ────────────────────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ export default function WarehouseTransferDetailScreen({
       }
       setReceivedQty(initial);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -133,7 +134,7 @@ export default function WarehouseTransferDetailScreen({
       );
       await fetchDetail();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
+      setActionError(extractErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +151,7 @@ export default function WarehouseTransferDetailScreen({
       await warehouseTransferService.cancelTransfer(id, reason);
       await fetchDetail();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
+      setActionError(extractErrorMessage(e));
     } finally {
       setSubmitting(false);
     }

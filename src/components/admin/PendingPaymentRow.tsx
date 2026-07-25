@@ -6,6 +6,7 @@ import { generatePaymentProofSignedUrl } from '../../lib/paymentsApi';
 import { StorageAccessDeniedError } from '../../lib/adminTypes';
 import { adminToast } from '../../lib/adminToast';
 import { RejectPaymentModal } from './RejectPaymentModal';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   payment: PendingPayment;
@@ -63,7 +64,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
       adminToast.success(`Pembayaran ${payment.tenant_name} berhasil diverifikasi.`);
       onRefresh();
     } catch (e) {
-      adminToast.error('Gagal verifikasi', e instanceof Error ? e.message : String(e));
+      adminToast.error('Gagal verifikasi', extractErrorMessage(e));
     } finally {
       setVerifying(false);
     }
@@ -76,7 +77,7 @@ export function PendingPaymentRow({ payment, onRefresh }: Props) {
       setShowRejectModal(false);
       onRefresh();
     } catch (e) {
-      adminToast.error('Gagal menolak pembayaran', e instanceof Error ? e.message : String(e));
+      adminToast.error('Gagal menolak pembayaran', extractErrorMessage(e));
     }
   }
 

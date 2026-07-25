@@ -15,6 +15,7 @@ import { RecentActivityFeed } from './RecentActivityFeed';
 import { EmptyHomeState } from './EmptyHomeState';
 import { adminToast } from '../../lib/adminToast';
 import { handleAdminSPAClick } from '../../lib/urlRoute';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 export function AdminHome() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -58,7 +59,7 @@ export function AdminHome() {
       }
       if (cancelled) return;
       if (lastErr) {
-        const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+        const msg = extractErrorMessage(lastErr);
         setError(msg);
         adminToast.error('Gagal memuat dashboard', msg);
       }

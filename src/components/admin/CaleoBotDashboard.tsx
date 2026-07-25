@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Bot, Users, TrendingUp, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── RPC response types ────────────────────────────────────────────────────────
 
@@ -426,7 +427,7 @@ export function CaleoBotDashboard() {
       const s = await fetchBotStats();
       setStats(s);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       setError(msg);
       captureError(msg, { feature: 'admin_caleo_bot', action: 'load_bot_analytics' });
     } finally {

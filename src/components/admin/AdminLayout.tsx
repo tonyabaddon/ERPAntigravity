@@ -5,6 +5,7 @@ import { supabase, tenantContextService } from '../../lib/supabaseClient';
 import { adminToast } from '../../lib/adminToast';
 import { decodeJwt } from '../../lib/jwt';
 import { AdminSidebar } from './AdminSidebar';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface ImpersonationState {
   active: boolean;
@@ -68,7 +69,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
       setImpersonation({ active: false, slug: null });
       window.location.href = '/admin';
     } catch (err) {
-      adminToast.error('Gagal keluar impersonation', err instanceof Error ? err.message : String(err));
+      adminToast.error('Gagal keluar impersonation', extractErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

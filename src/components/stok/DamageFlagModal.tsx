@@ -14,6 +14,7 @@ import { AlertTriangle, X, Camera } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { decodeJwt } from '../../lib/jwt';
 import { recordOpnameDamage } from '../../lib/supplierClaims/api';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface DamageFlagModalProps {
   open: boolean;
@@ -101,7 +102,7 @@ export function DamageFlagModal({
       onSaved(damagedQty);
       onClose();
     } catch (e) {
-      showToast?.(e instanceof Error ? e.message : String(e), 'warning');
+      showToast?.(extractErrorMessage(e), 'warning');
     } finally {
       setSubmitting(false);
     }

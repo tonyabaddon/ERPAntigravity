@@ -11,6 +11,7 @@ import { isSuperAdmin } from '../../lib/adminAuth';
 import { TenantsTable } from './TenantsTable';
 import type { SortBy, ImpersonationAccessStatus } from './TenantsTable';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -133,7 +134,7 @@ export function TenantsList() {
       setRows(data);
       setTotalCount(data[0]?.total_count ?? 0);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       setError(msg);
       adminToast.error('Gagal memuat daftar tenant', msg);
     } finally {
@@ -203,7 +204,7 @@ export function TenantsList() {
       // Full-page reload so JWT refresh picks up impersonation claims (Phase A pattern)
       window.location.href = `/t/${slug}/dashboard`;
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       // F-10: humanize the grant-related errors so admins know what to do.
       let userMsg = msg;
       if (msg.includes('IMPERSONATION_NOT_GRANTED')) {

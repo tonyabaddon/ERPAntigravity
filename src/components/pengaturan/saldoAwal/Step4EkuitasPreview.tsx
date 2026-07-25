@@ -9,6 +9,7 @@ import { postSaldoAwalSnapshot } from '../../../lib/saldoAwal/api';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
 import { captureError } from '../../../lib/captureError';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 interface Props {
   data: Step4Ekuitas;
@@ -61,7 +62,7 @@ export default function Step4EkuitasPreview({
       showToast('PDF Ringkasan Saldo Awal berhasil diunduh.', 'success');
     } catch (err) {
       captureError(err, { feature: 'saldo_awal', action: 'generate_pdf' });
-      showToast(`Gagal mencetak PDF: ${err instanceof Error ? err.message : String(err)}`, 'warning');
+      showToast(`Gagal mencetak PDF: ${extractErrorMessage(err)}`, 'warning');
     } finally {
       setPrinting(false);
     }
@@ -88,7 +89,7 @@ export default function Step4EkuitasPreview({
       showToast('Saldo Awal berhasil dipost ke Jurnal Umum!', 'success');
       onDone();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal post Saldo Awal: ${msg}`, 'warning');
     } finally {
       setSubmitting(false);

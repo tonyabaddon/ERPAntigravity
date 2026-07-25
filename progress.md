@@ -1,5 +1,31 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-25 — Class-fix: `[object Object]` anti-pattern retired across 53 sites + Stop-hook regression guard
+
+**Files:** `scripts/audit-no-string-err-fallback.ts` (new), `scripts/codemod-string-err-fallback.ts` (new one-shot), `package.json`, `.claude/settings.json` (Stop hook), 31 files in `src/` (codemod applied), `docs/superpowers/miss-log.md` (Entry #5).
+
+**What:** Retired the `err instanceof Error ? err.message : String(err)` anti-pattern class-wide. This was the 3rd occurrence in 48 hours (PinPad 2026-07-24, WT create screen 2026-07-24, latent in 53 more sites) — per CLAUDE.md miss-log-feedback-protocol "3+ occurrences → permanent rule + audit script".
+
+Deliverables:
+1. **`scripts/audit-no-string-err-fallback.ts`** — greps for the exact regex, excludes `extractErrorMessage.ts` + test files, fails with file:line and the suggested import path.
+2. **`.claude/settings.json` Stop-hook wiring** — new gate between `audit:csp-backend-allowlist` and `vitest --changed`. Same failure model as sibling audits: fresh violation blocks turn-end.
+3. **`scripts/codemod-string-err-fallback.ts`** — idempotent one-shot codemod that replaced the pattern in all 53 known sites with `extractErrorMessage()` and auto-inserted the correct relative import.
+4. **31 src files touched** by codemod (see git diff). Admin panel, saldoAwal wizard, pengaturan, stok modals, penjualan wizard, akuntansi close modals, promo, warehouse-transfer detail, useWarehouses hook.
+
+**Why (root):** Entry #4 in miss-log codified "never render errors via `String(e)`" as a class rule but only spot-fixed PinPad + shipped the `extractErrorMessage()` helper. It did NOT enforce the rule mechanically. Within 24h the same anti-pattern re-shipped as user-visible bug on WT — proving that a rule-in-docs without rule-in-CI is a good intention, not a rule. The audit + codemod pair (retire debt + prevent re-drift) is the Class-fix pattern to reuse.
+
+**Verify (Stage 1, all ✓):**
+- `npm run lint`: clean
+- `npm run audit:no-string-err-fallback`: **✓ clean — 0 sites** (was 53 pre-codemod)
+- `npm run audit:numinput` / `audit:secdef-null-tenant` / `audit:csp-backend-allowlist`: clean
+- `npx vitest run`: **1071 pass / 2 skipped / 121 test files** — no regressions across the whole codebase after the 53-site sweep.
+
+**Stage 2/3 pending founder discretion:** touches many surfaces (admin dashboards, wizards, modals) but each change is mechanical (`String(err)` → `extractErrorMessage(err)` with an added import). Risk primarily in visual regression of error banners — where they used to say `[object Object]` they'll now say the real Supabase error message. That's the intent. Founder gate: promote separately from the WT fix (`7bc3479`, already at 100% traffic prod as of 2026-07-25) so any breakage isolates.
+
+**Class-rule proposal for CLAUDE.md next rev:** "Anti-patterns with 3+ occurrences MUST retire the debt (codemod) AND prevent re-drift (audit-in-CI) in the SAME PR that flagged them." Deferring codemod because "it's many files" is exactly what makes the anti-pattern recur. Adding to CLAUDE.md § "Bug fix permanently" — flagged for founder to bless.
+
+---
+
 ## 2026-07-24 — Warehouse Transfer: qty clamp anti-pattern + `[object Object]` submit error + wrong Stok column
 
 **Files:** `src/components/warehouseTransfer/WarehouseTransferSKUPicker.tsx`, `src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx`, `src/App.tsx`, plus regression tests in `src/components/warehouseTransfer/__tests__/`.

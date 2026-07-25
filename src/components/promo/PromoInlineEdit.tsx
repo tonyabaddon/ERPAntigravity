@@ -7,6 +7,7 @@ import { upsertStockPromo } from '../../lib/promoProduk/api';
 import type { PromoDiscountType } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { wibDateString } from '../../lib/format';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   sku: string;
@@ -87,7 +88,7 @@ export default function PromoInlineEdit({
       onSaved({ promo_discount_type: discountType, promo_discount_value: numValue, promo_expires_at: expiresAt });
       onClose();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal: ${msg}`, 'warning');
     } finally {
       setSaving(false);
@@ -103,7 +104,7 @@ export default function PromoInlineEdit({
       onSaved({ promo_discount_type: null, promo_discount_value: null, promo_expires_at: null });
       onClose();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal: ${msg}`, 'warning');
     } finally {
       setSaving(false);

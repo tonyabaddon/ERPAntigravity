@@ -10,6 +10,7 @@ import type { Step1Cash, Step1CashAccount } from '../../../lib/saldoAwal/types';
 import { NumberInput } from '../../ui/NumberInput';
 import { formatIDR } from '../../../lib/formatIDR';
 import { wibDateString } from '../../../lib/format';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 interface Props {
   data: Step1Cash;
@@ -38,7 +39,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
         }
       })
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = extractErrorMessage(err);
         showToast(`Gagal memuat akun Kas & Bank: ${msg}`, 'warning');
       })
       .finally(() => setLoading(false));
