@@ -86,8 +86,13 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
     // Operasional
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'operasional', permKey: 'dashboard' },
     { id: 'sales-inbox', label: 'Sales Inbox', icon: Inbox, category: 'operasional', permKey: 'salesInbox' },
-    { id: 'salesLanding', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: 'kasir' },
-    { id: 'daftarPenawaran', label: 'Penawaran', icon: FileText, category: 'operasional', permKey: 'kasir' },
+    // Penjualan (Sales Order create) + Penawaran (Quote) are sales-operator
+    // menus, not retail-cashier. Previous gate on `kasir` alone hid them from
+    // sales staff who only had `salesInbox` (e.g. Staff Admin Toko role).
+    // OR-gate on both keys so either role sees them. Backward-compat: users
+    // with `kasir=true` still get access (bug fix 2026-07-25).
+    { id: 'salesLanding', label: 'Penjualan', icon: ShoppingCart, category: 'operasional', permKey: ['salesInbox', 'kasir'] },
+    { id: 'daftarPenawaran', label: 'Penawaran', icon: FileText, category: 'operasional', permKey: ['salesInbox', 'kasir'] },
     { id: 'kasir', label: 'Kasir', icon: Receipt, category: 'operasional', permKey: 'kasir' },
     { id: 'pelanggan', label: 'Pelanggan', icon: Users, category: 'operasional', permKey: 'pelanggan' },
     { id: 'piutang', label: 'Piutang', icon: Wallet, category: 'operasional', permKey: 'piutang' },
