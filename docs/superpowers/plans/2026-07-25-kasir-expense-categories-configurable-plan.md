@@ -1684,6 +1684,7 @@ import {
 import { kasirExpenseCategoryService, type KasirExpenseCategoryRow } from '../../lib/kasirExpenseCategoryService';
 import { useTenant } from '../../contexts/TenantContext';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   isEditable: boolean;
@@ -1691,7 +1692,9 @@ interface Props {
 }
 
 function friendlyError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
+  // Use extractErrorMessage — Supabase PostgrestError isn't an Error instance,
+  // so `err instanceof Error ? err.message : String(err)` yields `[object Object]`.
+  const msg = extractErrorMessage(err);
   if (msg.includes('KECT_LABEL_INVALID'))   return 'Nama kategori harus 3–40 karakter.';
   if (msg.includes('KECT_LABEL_DUPLICATE')) return 'Kategori dengan nama itu sudah ada.';
   if (msg.includes('KECT_IS_SYSTEM'))       return 'Kategori sistem tidak dapat diubah.';
