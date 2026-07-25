@@ -187,10 +187,19 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         setPhotos(curr => curr.map(p => p.order === order
           ? { ...p, url, path, uploaded_at: new Date().toISOString(), status: 'uploaded', localUrl: undefined }
           : p));
-        // Fire-and-forget CLIP embedding so Cari by Foto can find this product.
-        // A failure here is non-blocking — the photo is stored either way and
-        // can be re-indexed later via the backend index-photos endpoint.
-        void indexPhotos(targetSku, [path]).catch(() => {});
+        // CLIP embedding upsert so Cari by Foto can find this product.
+        // Non-blocking for photo save (photo already stored above), but we
+        // surface failure via toast — silent-catch here previously hid the
+        // FK-violation class bug where every backend INSERT was rejected on
+        // NULL tenant_id, leaving photos unindexed for weeks.
+        try {
+          await indexPhotos(targetSku, [path]);
+        } catch (e) {
+          showToast(
+            `Foto tersimpan, tapi belum bisa dicari via AI (${(e as Error).message}). Coba upload ulang, atau lanjut simpan produk.`,
+            'warning'
+          );
+        }
       } catch (e) {
         showToast('Gagal upload foto: ' + (e as Error).message, 'warning');
         setPhotos(curr => curr.map(p => p.order === order ? { ...p, status: 'failed' } : p));

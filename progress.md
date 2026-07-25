@@ -1,5 +1,32 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-25 — Cari by Foto: tenant-scope fix + FE-error surfacing + observability
+
+**Plan:** `docs/superpowers/plans/2026-07-25-cari-foto-tenant-scope-fix-plan.md`
+**Migration slot:** `20261115000540_cari_foto_tenant_scope_rpc.sql` (applied to prod 2026-07-25 15:xx WITA via psql direct — additive-only, both overloads coexist)
+**Branch:** `fix/cari-foto-tenant-scope` (worktree)
+
+**Bug chain fixed:**
+1. **[CRITICAL] `IndexPhotos` FK-violation silent-fail** — backend Go pooler pakai `postgres` role tanpa JWT → `_resolve_tenant_id()` returns sentinel UUID → FK to `tenants` gagal → INSERT rolls back silently. Fix: backend extract tenant_id dari JWT (Authorization header via `api.ExtractJWTClaims`), pass explicit ke INSERT `(tenant_id, sku, photo_path, embedding)`. Evidence: 4 SKUs Testing Jaya Panel punya photos tapi 0 embeddings (`434265b7`, `617ebed9`, `ca2a458d`, `e9fe7c88`).
+2. **[CRITICAL] Cross-tenant leak di `search_products_by_embedding`** — RPC + JOIN `stocks` gak filter tenant_id, backend bypass RLS. Any tenant's Cari-by-Foto call bisa dapat match dari indexed photos tenant lain. Fix: migration 540 add `p_tenant_id uuid` param filter di CTE + JOIN. Old 3-arg overload dipertahankan sementara (deploy safety), follow-up commit ~1 week burn-in nanti drop.
+3. **[HIGH] FE `void indexPhotos(...).catch(() => {})` swallow errors** — user tidak tahu kalau indexing fail. `ProductForm.tsx:193` ganti jadi `try/await` dengan toast warning "Foto tersimpan, tapi belum bisa dicari via AI".
+4. **[MEDIUM] `clip_inference_log` INSERT juga silent-fail** — same tenant_id NOT NULL issue. Fix: backend pass tenant_id explicit; kalau JWT absent, skip log entry (documented, prevents silent failure).
+
+**Deploy-safe strategy (advisor recommendation):** accept-both-for-one-release. Backend `SearchByPhoto` accepts absent-JWT → returns empty results (safe default, prevents cross-tenant leak). Backend `IndexPhotos` returns 401 on absent-JWT (only caller is ProductForm which always has JWT). No FE/BE deploy-window sequencing hazard.
+
+**Non-goals (out of scope):**
+- Data cleanup for wrong-photo-attached-to-wrong-SKU (data entry issue, e.g., MCB Schneider `617ebed9` had a Panel Besi photo attached — that's not a code bug)
+- Backfill embeddings for the 4 Testing Jaya Panel orphan photos + orphans on real customer tenants (post-fix one-shot, planned separately)
+- Strict-401 tightening on missing JWT (follow-up commit after 1 week burn-in confirms zero unauth callers)
+
+**Files changed:** `backend-go/products_search.go`, `backend-go/internal/api/context_middleware.go`, `src/lib/cariByFotoService.ts`, `src/components/produk/ProductForm.tsx`, `supabase/migrations/20261115000540_cari_foto_tenant_scope_rpc.sql` (new), `tests/isolation/cari-by-foto-tenant.test.ts` (new)
+
+**Verify (pre-deploy):** RPC dry-run via psql `BEGIN … ROLLBACK` — both overloads present, 4-arg call filters correctly (returns tenant A's SKUs when p_tenant_id=A), NULL tenant returns 0 rows. Backend Go builds + tests pass. FE lint + audits + vitest src 1058/1060 pass.
+
+**Verify (post-deploy — Stage 3, founder-driven):** Testing Jaya Panel login → Kasir → Cari by Foto → upload Panel Besi photo → expect AA201712OD (top ~0.99), AA201712ID (~0.90). Toko Jaya Makmur login → same photo → expect empty amber notice (no cross-tenant leak). ProductForm → upload new photo → no error toast (indexing works).
+
+---
+
 ## 2026-07-25 — Customer pricing tier: add-form fix (Phase 1a) SHIPPED
 
 **What:** Add-customer form (`NewCustomerInlineForm`) now exposes a `Tipe Harga default` segmented-pill control (Eceran / Grosir), gated by `modul_multi_tier_price` via `isFieldVisible('tier_dropdown_customer', tenantSettings)`. Edit-customer profile header unified from a `<select>` dropdown to matching pills for add/edit parity (dark-header palette: `bg-white`/`bg-purple-500`/`bg-white/10` — no new tokens). `insertNewCustomer` accepts optional `default_pricing_tier`; when omitted, the DB default `'eceran'` still fires (zero regression for callers without the flag). Prop chain wired through `Step1ChannelCustomer` → `CatatPenjualanWizard` so the same pill shows on the sales-wizard inline "+ Customer Baru" path. Read-only audit `scripts/audit-misclassified-customer-tier.sql` surfaces likely-misclassified existing customers (tier='eceran' + company non-empty OR TEMPO active) for owner review.

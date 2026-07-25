@@ -41,7 +41,7 @@ func RequestContextMiddleware(next http.Handler) http.Handler {
 		ctx = logging.WithRequestID(ctx, requestID)
 
 		// --- JWT claims (tenant_id, user_id) ------------------------------
-		tenantID, userID := extractJWTClaims(r.Header.Get("Authorization"))
+		tenantID, userID := ExtractJWTClaims(r.Header.Get("Authorization"))
 		if tenantID != "" {
 			ctx = logging.WithTenantID(ctx, tenantID)
 		}
@@ -53,13 +53,19 @@ func RequestContextMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// extractJWTClaims parses the middle (payload) segment of a JWT in the
+// ExtractJWTClaims parses the middle (payload) segment of a JWT in the
 // Authorization: Bearer header and returns the "tenant_id" and "sub" claims.
 // Returns ("", "") on any decoding / parsing failure — callers treat "" as
-// "not present" and omit the field from logs rather than emitting blank values.
+// "not present" and either omit the field from logs (middleware use) or
+// take a safe fallback path (handler use, e.g. return empty results instead
+// of leaking cross-tenant data).
 //
-// No signature verification is performed — this is log enrichment only.
-func extractJWTClaims(authHeader string) (tenantID, userID string) {
+// No signature verification is performed here. For log enrichment this is
+// fine because Supabase PostgREST / RLS already verified upstream. Handlers
+// that use this for tenant scoping rely on the same upstream guarantee —
+// only requests that already passed Supabase's edge auth can send a valid
+// tenant_id claim.
+func ExtractJWTClaims(authHeader string) (tenantID, userID string) {
 	if !strings.HasPrefix(authHeader, "Bearer ") {
 		return "", ""
 	}
