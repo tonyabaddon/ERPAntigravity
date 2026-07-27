@@ -116,6 +116,17 @@ export default function Step3Payment(props: Props) {
       return;
     }
     setSubmitting(true);
+    // 2026-07-27 SO→SI debug: defensive timeout. If props.onSave() promise
+    // never resolves (e.g. hung network, subscription that never fires,
+    // Sentry beforeSend blocking the promise chain), submitting stays true
+    // and button becomes unclickable. This 30s watchdog forces reset with
+    // a clear error message so the user isn't stuck.
+    const watchdog = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.error('[Simpan Invoice] onSave watchdog fired — 30s no resolve');
+      setSubmitting(false);
+      props.showToast('Simpan invoice hang >30 detik. Cek koneksi / refresh halaman.', 'warning');
+    }, 30_000);
     try {
       const path = dispatchSave(wizardState);
       await props.onSave(path);
@@ -123,6 +134,7 @@ export default function Step3Payment(props: Props) {
       const msg = extractErrorMessage(e);
       props.showToast(`Gagal simpan: ${msg}`, 'warning');
     } finally {
+      clearTimeout(watchdog);
       setSubmitting(false);
     }
   };
@@ -487,8 +499,13 @@ export default function Step3Payment(props: Props) {
             const saveDisabled =
               submitting || !validation.ok || overLimit ||
               cashAccountMissing || edcSubtypeMissing;
+            // 2026-07-27 SO→SI debug: previously `submitting` case showed no
+            // hint text — user saw disabled button with no explanation and
+            // reported "tidak bisa klik Simpan Invoice". Now every disable
+            // reason surfaces a hint so the operator can self-diagnose.
             const saveHint =
-              !validation.ok ? validation.errors?.[0]
+              submitting ? 'Sedang menyimpan… (kalau nge-freeze >15 detik, refresh halaman)'
+              : !validation.ok ? validation.errors?.[0]
               : overLimit ? 'Pesanan melewati sisa kredit customer.'
               : edcSubtypeMissing ? 'Pilih sub-tipe EDC (Debit / QRIS).'
               : cashAccountMissing ? 'Pilih akun tujuan pembayaran dulu.'
@@ -499,6 +516,7 @@ export default function Step3Payment(props: Props) {
                   type="button"
                   onClick={onSimpan}
                   disabled={saveDisabled}
+                  title={saveDisabled ? (saveHint ?? 'Tombol non-aktif') : 'Klik untuk simpan'}
                   className="w-full px-6 py-3 text-sm font-bold rounded-lg bg-[#2d8a4e] text-white hover:bg-[#236b3d] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Menyimpan…' : '✓ Simpan Sales Invoice'}
