@@ -1,11 +1,25 @@
 # Saldo Awal post error fix — design
 
-**Date:** 2026-07-25
+**Date:** 2026-07-25 (revised 2026-07-27)
 **Author:** Claude (Opus 4.7) with founder collaboration
 **Type:** Bug fix (dual: data hole + class error-masking recurrence)
 **Reversibility:** Semi-reversible (2 migrations reversible; FE refactor reversible via revert)
 **Cost impact:** Zero (no paid-service, no infra upgrade)
 **Incident?** No — pure hygiene (only test tenant affected)
+
+---
+
+## SCOPE CORRECTION — 2026-07-27 discovery
+
+**Parts 2, 2b, and 4 below already shipped 2026-07-25 in commits `4705a04` (helper), `853363f` (audit + hook), `42b4598` (53-site codemod), `38034ba` (CLAUDE.md class-fix rule) and miss-log Entry #5.** Founder still saw `[object Object]` on production because those commits sit in `main` but production deploys are manual per memory `feedback_manual_prod_gate_after_real_tenant`. Prod was on a pre-`42b4598` build.
+
+**Remaining work covered by the implementation plan:**
+- Part 1 — data backfill migration (slot 521)
+- Part 3 — NOT NULL constraint migration (slot 522)
+- Deploy — apply migrations to prod DB via `scripts/apply-migration.sh` + promote current `main` FE build to prod via `scripts/promote-to-prod.sh` + smoke test on Toko Jaya
+- Progress.md entry
+
+**Sections 3.3, 3.4, 3.6 below (Part 2 helper, Part 2b audit script, Part 4 miss-log / CLAUDE.md rule) are RETAINED FOR HISTORICAL DOCUMENTATION ONLY — they are already implemented; the plan does not re-do them.**
 
 ---
 
