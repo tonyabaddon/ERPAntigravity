@@ -69,6 +69,10 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- t_select_own_secdef: name is misleading — actually FOR ALL (defaults when
+-- no FOR clause), granting INSERT/UPDATE/DELETE to vosi_rpc_owner. Required
+-- for SECDEF INSERT ... RETURNING pattern (per memory secdef_returning_gap).
+-- Kept naming for consistency with sibling t_* tables that use the same pattern.
 -- vosi_rpc_owner SECDEF ownership — required for INSERT ... RETURNING inside RPCs
 -- (per memory secdef_returning_gap). USING true + WITH CHECK true because the SECDEF
 -- RPC itself enforces tenant scoping via WHERE tenant_id = _resolve_tenant_id().

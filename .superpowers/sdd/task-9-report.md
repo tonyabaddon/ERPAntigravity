@@ -1,12 +1,99 @@
-# Task 9 Report — P1-07 jspdf 4.x Upgrade
+# Task 9 Report: KasirExpenseCategoriesPanel
 
 ## Status: DONE
 
-Date: 2026-07-20
+Date: 2026-07-27
+
+Commit: `304d24b` — feat(pengaturan): KasirExpenseCategoriesPanel with drag, CRUD, optimistic UX
 
 ---
 
-## Step 1: PDF Generator File List (Impact Scope)
+## TDD Evidence
+
+### RED (Step 2)
+```
+FAIL  src/components/pengaturan/KasirExpenseCategoriesPanel.test.tsx
+Error: Failed to resolve import "./KasirExpenseCategoriesPanel"
+  — module missing, as expected
+```
+
+### GREEN (Step 4)
+```
+Test Files  1 passed (1)
+     Tests  7 passed (7)
+  Duration  1.30s
+```
+
+---
+
+## Test Results: 7/7 PASS
+
+1. renders rows from hook ✓
+2. shows loading state ✓
+3. shows error state with retry ✓
+4. click "Tambah kategori" opens inline input, Enter creates ✓
+5. duplicate error surfaces inline toast ✓
+6. delete triggers softDelete + undo toast ✓
+7. read-only mode disables interactive elements ✓
+
+---
+
+## Lint + Audit Gates
+
+- `npm run lint` (tsc --noEmit): **PASS** — one fix required: explicit `KasirExpenseCategoryRow[]` annotation on `rows` so `arrayMove` generic resolves correctly.
+- `npm run audit:no-string-err-fallback`: **PASS** — one fix required: comment in `friendlyError` contained `: String(err)` text which the regex scanner flagged. Reworded comment to avoid the pattern while preserving intent.
+- `npm run audit:numinput`: **PASS**
+- `npm run audit:secdef-null-tenant`: **PASS**
+
+---
+
+## Files Changed
+
+- `src/components/pengaturan/KasirExpenseCategoriesPanel.tsx` (created, 213 lines)
+- `src/components/pengaturan/KasirExpenseCategoriesPanel.test.tsx` (created, 120 lines)
+
+---
+
+## Self-Review Findings
+
+No issues found in the diff. The panel:
+- Wires all 5 service operations (create, update, softDelete, restore stub, reorder)
+- Uses `extractErrorMessage` + `friendlyError` to map KECT_* codes to Bahasa Indonesia
+- Uses `captureError` at every catch block for Sentry observability
+- Handles loading / error / empty / populated / read-only states
+- Drag reorder: optimistic local state + server sync + rollback on error
+
+---
+
+## Brief Deviations (Adapt-and-Document)
+
+### Deviation 1: `tenant_id` vs `tenantId` in TenantContext
+
+**Brief code used:** `const { tenantId } = useTenant()`
+**Real shape:** `TenantContextValue.tenant_id` (snake_case, per `src/contexts/TenantContext.tsx`)
+
+**Fix applied:** Panel uses `const tenant = useTenant(); const tenantId = tenant?.tenant_id;`
+**Test mock updated:** `useTenant: () => ({ tenant_id: 't1' })` (matching real shape)
+**Risk:** None — the `tenantId` value is only used for React Query `invalidateQueries` key. Mismatch would cause stale cache on owner actions, not a crash.
+
+### Deviation 2: `handleAddSubmit` passes explicit `undefined` as second arg
+
+**Brief code:** `await kasirExpenseCategoryService.create(trimmed)`
+**Panel code:** `await kasirExpenseCategoryService.create(trimmed, undefined)`
+
+This makes the test assertion `expect(mockSvc.create).toHaveBeenCalledWith('Sewa', undefined)` pass correctly. The service signature is `create(label: string, insertAfterId?: string)` so explicit `undefined` is equivalent.
+
+### Deviation 3: Comment in `friendlyError` reworded
+
+The brief's comment included the literal text `: String(err)` which the `audit:no-string-err-fallback` regex matched as a violation (pattern `/:\s*String\((err|e|error)\)/`). Reworded to describe the intent without the banned pattern text.
+
+### Deviation 4: `rows` explicit type annotation
+
+Added `: KasirExpenseCategoryRow[]` to the `rows` variable declaration so TypeScript resolves the `arrayMove` generic correctly (without it, `arrayMove` inferred `unknown[]` from the union with `never[]` fallback, causing TS2339 on `.id`).
+
+---
+
+## Prior Task 9 Report (jspdf upgrade) — archived below
 
 Command: `grep -rln "jspdf\|jsPDF" src/ --include='*.ts' --include='*.tsx' | grep -v test`
 

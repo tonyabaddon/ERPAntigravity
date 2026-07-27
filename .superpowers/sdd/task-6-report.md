@@ -1,90 +1,79 @@
-# Task 6 Report — Cloudflare Worker (`wrangler.toml` + `worker.js`) with Enforcing CSP
+# Task 6 Report — Type Widening + FE Service Layer
 
 **Status**: DONE
-**Date**: 2026-07-19
-**Files created**:
-- `infra/caleo-landing-worker/wrangler.toml`
-- `infra/caleo-landing-worker/worker.js`
-- `infra/caleo-landing-worker/README.md`
+**Date**: 2026-07-25
+**Commit**: 98854d7 feat(kasir): typed RPC service for expense category CRUD + widen type
 
 ---
 
-## Execution Summary
+## Files Changed
 
-### Step 1 — Wrangler CLI Verified
-
-wrangler 4.112.0 available via `npx wrangler --version`. No install needed.
-
-### Step 2 — `wrangler.toml` Written
-
-Matches spec verbatim with one correction (see Concerns below):
-- `name = "caleo-landing"`, `main = "worker.js"`, `compatibility_date = "2026-07-19"`
-- `[assets]` with `directory = "../../public"`, `binding = "ASSETS"`, `run_worker_first = true` (added — see concern)
-- `[observability] enabled = true`
-- `[env.staging]` — workers.dev auto-URL, no route
-- `[env.production]` — `caleo.id/*` route with `zone_name = "caleo.id"`
-
-### Step 3 — `worker.js` Written
-
-ES module format. CSP built as array-joined string. All 6 security headers applied via `Headers` clone. Content-type overrides for `.xml` and `.txt`. No inline scripts allowed (`script-src 'self'`). Adapts spec's REWRITES block (see Concerns).
-
-### Step 4 — `README.md` Written
-
-Runbook covers: staging deploy → production promotion → rollback (wrangler rollback + git revert) → local dev → Email Routing (halo@caleo.id → tonywei.office@gmail.com, dashboard-only setup).
-
-### Step 5 — Local Wrangler Dev Verification
-
-Run `npx wrangler dev --local --port 8787` (temp toml with `compatibility_date = "2026-07-18"` for local compat; production toml keeps `2026-07-19`).
-
-| Check | Result |
-|---|---|
-| `/ → 200 OK` | PASS |
-| `CSP header present with script-src 'self'` | PASS |
-| `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` | PASS |
-| `X-Frame-Options: DENY` | PASS |
-| `X-Content-Type-Options: nosniff` | PASS |
-| `Referrer-Policy: strict-origin-when-cross-origin` | PASS |
-| `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()` | PASS |
-| `/case-study → 200 OK` | PASS |
-| `robots.txt Content-Type: text/plain; charset=utf-8` | PASS |
-| `sitemap.xml Content-Type: application/xml; charset=utf-8` | PASS |
+- `src/types.ts` — widened `KasirExpenseCategory` union → `string`
+- `src/lib/kasirExpenseCategoryService.ts` — new: typed service wrapping 5 SECDEF RPCs
+- `src/lib/kasirExpenseCategoryService.test.ts` — new: 6 TDD assertions
 
 ---
 
-## Concerns / Deviations from Spec
+## TDD Evidence
 
-### 1. `run_worker_first = true` — Critical Addition (not in spec)
+### RED Phase (before implementation)
 
-The spec's `wrangler.toml` block does NOT include `run_worker_first = true`. In wrangler v4, the `[assets]` binding short-circuits asset serving and **bypasses the Worker's fetch handler entirely** for matched files. Without this flag, zero security headers are injected — the entire purpose of this task (enforcing CSP) would be defeated in production.
+```
+ FAIL  src/lib/kasirExpenseCategoryService.test.ts
+Error: Failed to resolve import "./kasirExpenseCategoryService" from
+"src/lib/kasirExpenseCategoryService.test.ts". Does the file exist?
 
-Added `run_worker_first = true` to `[assets]`. Verified locally: without it, responses have no CSP or HSTS headers; with it, all headers present.
-
-### 2. REWRITES block removed from worker.js
-
-The spec's worker.js includes:
-```js
-const REWRITES = { "/case-study": "/case-study.html" };
-// ... url.pathname = REWRITES[pathname]; ...
+Test Files  1 failed (1)
+     Tests  no tests
 ```
 
-Cloudflare Assets (in `run_worker_first` mode) handles extensionless URL routing natively. When the worker rewrites `/case-study` → `/case-study.html` and then calls `env.ASSETS.fetch()`, Assets responds with a 307 redirect to `/case-study` → creating an infinite redirect loop. Same issue with `/` → `/index.html` rewrite.
+Confirmed: module-not-found failure before implementation.
 
-Removed the REWRITES block and explicit default document rewrite. Assets serves `/case-study` as `case-study.html` automatically. Verified: `/case-study` returns 200.
+### GREEN Phase (after implementation)
 
-### 3. `compatibility_date = "2026-07-19"` — Wrangler local dev limitation
+```
+Test Files  1 passed (1)
+     Tests  6 passed (6)
+  Start at  14:56:36
+  Duration  617ms
+```
 
-`wrangler dev --local` rejects future dates. Local testing used `2026-07-19` (date became valid at midnight). The production `wrangler.toml` correctly keeps `2026-07-19` as specified.
+All 6 assertions pass.
 
 ---
 
-## Local Gates
+## Test Results (6/6)
 
-No app code modified — linting and Vitest gates not applicable to this infra-only change. Worker logic is pure JS without npm dependencies.
+1. `create calls kasir_expense_category_create with trimmed label` — PASS
+2. `create passes insertAfterId when given` — PASS
+3. `create throws with KECT code parsed from PG error` — PASS
+4. `update passes only provided fields` — PASS
+5. `softDelete + restore call correct RPCs` — PASS
+6. `reorder passes uuid array` — PASS
 
 ---
 
-## Next Steps
+## Lint + Type-check
 
-- Task 7: Playwright smoke tests against `wrangler dev --local` (this worker)
-- Task 9: `npx wrangler deploy --env staging` → test staging workers.dev URL
-- Task 10: `npx wrangler deploy --env production` → caleo.id goes live
+`npm run lint` (tsc --noEmit on full project): **CLEAN** (exit 0, no output).
+
+Note: The brief specified `npm run type-check` but that script does not exist in this project. `npm run lint` is the tsc --noEmit check and runs cleanly.
+
+---
+
+## Impact Analysis
+
+- `KasirExpenseCategory` type widening (union → `string`) affects:
+  - `src/types.ts` lines 449, 524 (field types — no functional change, string is a supertype of union)
+  - `src/components/KasirScreen.tsx` lines 7, 42, 597, 638 — existing usage still valid; `as KasirExpenseCategory` cast becomes a no-op cast to `string`
+- New service file has zero importers (Tasks 7+ will consume it)
+- No DB migration in this task
+
+---
+
+## Self-review Findings
+
+- `unwrap<T>` helper correctly propagates KECT_* error messages — test 3 verifies this
+- `patch.active ?? null` correctly handles `false` — `false ?? null` returns `false` (not null), so passing `{ active: false }` to update sends `p_active: false` as intended
+- Type widening is a safe broadening — all existing union literal values remain valid `string` values
+- No `any` types introduced; `unwrap<T>` is properly generic
