@@ -173,8 +173,13 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
     if (!files || files.length === 0) return;
     const slotsAvail = MAX_PHOTOS - photos.length;
     const taken = Array.from(files).slice(0, slotsAvail);
-    for (let i = 0; i < taken.length; i++) {
-      const file = taken[i];
+
+    // Parallel per-file upload — compressImage + uploadProductPhoto race across
+    // all picked files. indexPhotos calls are then Promise.allSettled'd so we
+    // wait for ALL to finish before surfacing a single summary toast.
+    // Prior version awaited indexPhotos inside a for-loop → serialised CLIP
+    // inference (~1-10s each) across N photos, blocking every subsequent file.
+    const results = await Promise.allSettled(taken.map(async (file, i) => {
       const order = photos.length + i;
       const localUrl = URL.createObjectURL(file);
       setPhotos(curr => [...curr, {
@@ -187,23 +192,39 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         setPhotos(curr => curr.map(p => p.order === order
           ? { ...p, url, path, uploaded_at: new Date().toISOString(), status: 'uploaded', localUrl: undefined }
           : p));
-        // CLIP embedding upsert so Cari by Foto can find this product.
-        // Non-blocking for photo save (photo already stored above), but we
-        // surface failure via toast — silent-catch here previously hid the
-        // FK-violation class bug where every backend INSERT was rejected on
-        // NULL tenant_id, leaving photos unindexed for weeks.
+        // CLIP embedding upsert. Not silent-caught anymore — errors bubble
+        // up so the summary toast at the end can report them. Silent-catch
+        // previously hid the FK-violation class bug where every backend
+        // INSERT was rejected on NULL tenant_id, leaving photos unindexed
+        // for weeks.
         try {
           await indexPhotos(targetSku, [path]);
+          return { order, kind: 'ok' as const };
         } catch (e) {
-          showToast(
-            `Foto tersimpan, tapi belum bisa dicari via AI (${(e as Error).message}). Coba upload ulang, atau lanjut simpan produk.`,
-            'warning'
-          );
+          return { order, kind: 'index_failed' as const, msg: (e as Error).message };
         }
       } catch (e) {
-        showToast('Gagal upload foto: ' + (e as Error).message, 'warning');
         setPhotos(curr => curr.map(p => p.order === order ? { ...p, status: 'failed' } : p));
+        return { order, kind: 'upload_failed' as const, msg: (e as Error).message };
       }
+    }));
+
+    // Summarise: one toast per class of failure, dedupes N identical errors
+    // (e.g. all 5 photos failed with 401 → one toast, not five).
+    const uploadFails = results
+      .filter(r => r.status === 'fulfilled' && r.value.kind === 'upload_failed')
+      .map(r => (r as PromiseFulfilledResult<{msg: string}>).value.msg);
+    const indexFails = results
+      .filter(r => r.status === 'fulfilled' && r.value.kind === 'index_failed')
+      .map(r => (r as PromiseFulfilledResult<{msg: string}>).value.msg);
+    if (uploadFails.length > 0) {
+      showToast(`${uploadFails.length} foto gagal upload: ${uploadFails[0]}`, 'warning');
+    }
+    if (indexFails.length > 0) {
+      showToast(
+        `${indexFails.length} foto tersimpan tapi belum bisa dicari via AI (${indexFails[0]}). Coba refresh + upload ulang.`,
+        'warning'
+      );
     }
   }
 

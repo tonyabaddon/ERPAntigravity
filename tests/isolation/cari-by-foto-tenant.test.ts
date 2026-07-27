@@ -51,6 +51,12 @@ describe('Cari by Foto — cross-tenant isolation (RPC layer)', () => {
     const pg = new PgClient({ connectionString: DB_URL });
     await pg.connect();
     try {
+      // Clean any prior-run CF-* rows first — otherwise `ON CONFLICT (sku)
+      // DO NOTHING` in seedEmbedding would silently keep an old tenant_id
+      // when a future edit intends to swap it, masking isolation regressions.
+      await pg.query(`DELETE FROM public.stock_photo_embeddings WHERE sku LIKE 'CF-%'`);
+      await pg.query(`DELETE FROM public.stocks WHERE sku LIKE 'CF-%'`);
+
       // Two tenants, identical embedding for each. Any leak would surface
       // as tenant A's search returning B's row (or vice versa).
       await seedEmbedding(pg, TENANT_A, 'CF-TA-1', IDENTICAL_VEC);

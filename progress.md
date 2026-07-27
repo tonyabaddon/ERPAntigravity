@@ -1,5 +1,57 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-27 — Cari by Foto: /code-review follow-through — 8 blocker/high fixes on top of 07-25 tenant-scope PR
+
+**Context:** After PR #63 (2026-07-25 tenant-scope fix), ran /code-review at extra-high effort (9 finder angles). Surfaced 15 findings; 3 blockers + 5 high. Bundled fixes into the same PR before merge.
+
+**Blockers fixed:**
+1. **JWT signature verification** — extended `api.ExtractJWTClaims` to verify HS256 against `SUPABASE_JWT_SECRET`. Backend fail-closed: returns `("", "")` when secret missing / sig invalid. New `IsJWTVerificationEnabled()` — handlers return 503 when secret absent (so operator gets clear signal, not silent-trust-forged-JWT). **Requires GCP Secret Manager entry `supabase-jwt-secret` created before deploy** (see "Deploy prerequisite" below). Also: case-insensitive `Bearer ` prefix (RFC 7235), UUID `uuid.Parse` guard on `tenant_id` claim.
+2. **`clip_inference_log.status` CHECK includes 'partial'** — migration `20261115000541` (applied live to prod). Previously `status='partial'` INSERT silently violated 23514; post-fix logInference `slog.Warn` would spam.
+3. **Parallel photo upload in ProductForm** — `handleFilesPicked` switched from serial `for-loop + await` to `Promise.allSettled(taken.map(...))`. 5 photos: ~5s parallel vs prior ~25-50s serial. Summary toast dedupes N identical error messages.
+
+**High fixed:**
+4. FE `authHeader()` now calls `refreshSession()` when `getSession()` returns null; throws `SESSION_EXPIRED` for FE-visible handling (was silently returning `{}` → empty search results).
+5. Case-insensitive Bearer prefix (part of #1).
+6. UUID guard on tenant_id claim (part of #1) — no more 500 leak on malformed JWT.
+7. Test cleanup: `DELETE FROM stocks/stock_photo_embeddings WHERE sku LIKE 'CF-%'` in `beforeAll` — previously `ON CONFLICT DO NOTHING` masked tenant swaps across runs.
+8. `tenantIDFromRequest` deleted — replaced with `logging.TenantIDFromContext(r.Context())` per existing pattern (rate_limit_middleware uses same helper). `logInference` signature simplified — reads tenant from ctx.
+9. IndexPhotos returns per-photo `errors: [{path, reason}]` array — no more `lastErr` overwrite hiding all-but-last error.
+10. SearchByPhoto short-circuits BEFORE `ParseMultipartForm` when tenantID empty — eliminates DoS-amplification via anonymous CLIP inference burn.
+
+**Deferred (out of scope, tracked as follow-ups):**
+- Metric/counter for silent-empty class (`clip_search_no_jwt_total`) — needs metric infra.
+- Backend Go integration test for handler-level JWT edge cases — bigger refactor.
+- Class-fix audit script for pooler+tenant_id-DEFAULT trap across other tables.
+- Follow-up migration to `DROP FUNCTION search_products_by_embedding(vector, real, integer)` after 1-week burn-in.
+
+**⚠️ Deploy prerequisite (founder action REQUIRED before merge):**
+Add Supabase JWT signing secret to GCP Secret Manager:
+```bash
+# 1. Get JWT secret from Supabase Dashboard → Settings → API → JWT Settings → JWT Secret
+# 2. Create GCP secret:
+echo -n "<paste-jwt-secret-here>" | gcloud secrets create supabase-jwt-secret \
+  --data-file=- --project=gen-lang-client-0410251117
+# 3. Grant Cloud Run service account access (usually already inherits via project role):
+gcloud secrets add-iam-policy-binding supabase-jwt-secret \
+  --member="serviceAccount:422860632808-compute@developer.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" --project=gen-lang-client-0410251117
+```
+If missing at deploy: backend still starts (won't crash), but all Cari-by-Foto endpoints return HTTP 503 with clear message. Non-Cari endpoints (WA, recon, etc.) continue working normally. Add secret, redeploy, endpoints become live.
+
+**Files changed (adds to 07-25 commit):**
+- `backend-go/go.mod`, `backend-go/go.sum` — add `github.com/golang-jwt/jwt/v5`
+- `backend-go/internal/api/context_middleware.go` — HS256 verification, case-insensitive Bearer, UUID guard, `IsJWTVerificationEnabled()` helper
+- `backend-go/products_search.go` — use `logging.TenantIDFromContext`, 503 on missing secret, DoS short-circuit, per-photo errors array
+- `cloudbuild.yaml` — mount `SUPABASE_JWT_SECRET` in both staging + prod deploy steps
+- `src/lib/cariByFotoService.ts` — session refresh on `getSession()` null, throw `SESSION_EXPIRED`
+- `src/components/produk/ProductForm.tsx` — `Promise.allSettled` + summary toast
+- `supabase/migrations/20261115000541_clip_inference_log_partial_status.sql` — CHECK includes 'partial' (applied live)
+- `tests/isolation/cari-by-foto-tenant.test.ts` — cleanup DELETE in beforeAll
+
+**Verify Stage 1:** Go build + tests pass; lint clean; all 3 audits clean; vitest src 1058/1060 pass; migration 541 dry-run on prod (rollback) success, then applied.
+
+---
+
 ## 2026-07-25 — Cari by Foto: tenant-scope fix + FE-error surfacing + observability
 
 **Plan:** `docs/superpowers/plans/2026-07-25-cari-foto-tenant-scope-fix-plan.md`

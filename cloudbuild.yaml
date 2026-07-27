@@ -44,7 +44,7 @@ steps:
       - '--cpu=2'
       - '--timeout=60s'
       - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER,SENTRY_DSN=$_SENTRY_DSN_BE,ENVIRONMENT=staging,COMMIT_SHA=$COMMIT_SHA'
-      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest,SUPABASE_DB_LISTENER_CONNECTION=supabase-db-connection-listener-prod:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CALEO_OPS_EMAIL=CALEO_OPS_EMAIL:latest'
+      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest,SUPABASE_DB_LISTENER_CONNECTION=supabase-db-connection-listener-prod:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CALEO_OPS_EMAIL=CALEO_OPS_EMAIL:latest,SUPABASE_JWT_SECRET=supabase-jwt-secret:latest'
       # failureThreshold=60 @ periodSeconds=5 = 300s (5 min) max startup window.
       # 2026-07-22: bumped from 12 → 60 to survive Supabase :5432 pool cool-down
       # after repeated BE deploy failures. NewClient's inner retry loop pings
@@ -99,7 +99,7 @@ steps:
       - '--cpu=2'
       - '--timeout=60s'
       - '--update-env-vars=SUPABASE_URL=$_SUPABASE_URL,SUPABASE_PROJECT_REF=$_SUPABASE_PROJECT_REF,GEMINI_API_KEY=$_GEMINI_API_KEY,DEBOUNCE_ENABLED=$_DEBOUNCE_ENABLED,DEBOUNCE_SOFT_WAIT_MS=$_DEBOUNCE_SOFT_WAIT_MS,DEBOUNCE_HARD_WAIT_MS=$_DEBOUNCE_HARD_WAIT_MS,API_VERSION=v1,OPENROUTER_API_KEY=$_OPENROUTER_API_KEY,LLM_BACKEND=$_LLM_BACKEND,ENABLE_OPENROUTER=$_ENABLE_OPENROUTER,SENTRY_DSN=$_SENTRY_DSN_BE,ENVIRONMENT=production,COMMIT_SHA=$COMMIT_SHA'
-      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest,SUPABASE_DB_LISTENER_CONNECTION=supabase-db-connection-listener-prod:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CALEO_OPS_EMAIL=CALEO_OPS_EMAIL:latest'
+      - '--update-secrets=SUPABASE_SERVICE_KEY=supabase-service-key-prod:latest,SUPABASE_DB_CONNECTION=supabase-db-connection-prod:latest,SUPABASE_DB_LISTENER_CONNECTION=supabase-db-connection-listener-prod:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CALEO_OPS_EMAIL=CALEO_OPS_EMAIL:latest,SUPABASE_JWT_SECRET=supabase-jwt-secret:latest'
       # Health probe split (slot 315 / Task 9):
       # /api/v1/live  — liveness (process alive, no deps) — periodic restart guard.
       # /api/v1/ready — readiness (DB ping) — stops traffic if Postgres unreachable.

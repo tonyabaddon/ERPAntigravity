@@ -14,14 +14,26 @@ export interface SearchResult {
 }
 
 // Backend expects the caller's tenant_id via the JWT Authorization header
-// (extracted server-side via api.ExtractJWTClaims). Missing header →
-// searchByPhoto returns empty results (safe default; prevents cross-tenant
-// leak). indexPhotos returns 401 (rejected outright — the only caller is
-// ProductForm which always has a logged-in session).
+// (extracted server-side via api.ExtractJWTClaims with HS256 verification).
+// Missing header → searchByPhoto returns empty results (safe default;
+// prevents cross-tenant leak). indexPhotos returns 401 (rejected outright —
+// the only caller is ProductForm which always has a logged-in session).
+//
+// If getSession() returns null we try refreshSession() once before giving up —
+// covers the common case where the access_token expired mid-session but the
+// refresh_token is still valid. If both fail, throw SESSION_EXPIRED so the
+// caller (ProductForm) can surface a re-login prompt instead of firing an
+// un-authed POST that returns silent-empty results.
 async function authHeader(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  if (session?.access_token) {
+    return { Authorization: `Bearer ${session.access_token}` };
+  }
+  const refresh = await supabase.auth.refreshSession();
+  if (refresh.data.session?.access_token) {
+    return { Authorization: `Bearer ${refresh.data.session.access_token}` };
+  }
+  throw new Error('SESSION_EXPIRED: silakan login ulang untuk pakai Cari by Foto');
 }
 
 export async function searchByPhoto(blob: Blob): Promise<{ results: SearchResult[] }> {
