@@ -1,5 +1,53 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-27 — Cari by Foto SHIPPED end-to-end (prod verified, forged-JWT rejected)
+
+**PR:** #63 (squash-merge SHA `835cde7`) — https://github.com/tonyabaddon/ERPAntigravity/pull/63
+**Prod revisions:** FE `garindo-jaya-panel-msme-erp-frontend-00803-cub` + BE `garindo-jaya-panel-msme-erp-00622-sep` (both 100% traffic via `./scripts/promote-to-prod.sh 835cde7`, founder pre-approved delegation)
+**Migrations live in prod:** `20261115000540` (RPC tenant_id filter, 07-25) + `20261115000541` (CHECK includes 'partial', 07-27) — both applied via `psql` direct.
+
+**Stage-3 prod smoke tests (curl-based, chrome MCP disconnected):**
+
+| Test | Endpoint | Result | Meaning |
+|---|---|---|---|
+| FE health | `app.caleo.id/` | HTTP 200 | serve container healthy |
+| BE health | `/api/v1/live` | HTTP 200 | Go container healthy, JWKS loaded |
+| Search no-JWT | `POST /api/v1/products/search-by-photo` | 200 + `{"latency_ms":0,"results":[]}` | DoS short-circuit worked — returned BEFORE `ParseMultipartForm` (no CLIP inference) |
+| **Search FORGED-JWT** (attacker crafts `tenant_id=<victim>`) | same endpoint + `Authorization: Bearer <bad-sig>` | 200 + empty (30B) | **JWKS ES256 verification REJECTED the forged token** — the critical security win |
+| IndexPhotos no-JWT | `POST /api/v1/products/index-photos` | HTTP 401 `unauthenticated: ...` | fail-closed as designed |
+| CSP-report violations post-deploy | `gcloud logging read '"CSP-REPORT" AND "422860632808"'` last 10 min | 0 rows | no regression |
+
+**The forged-JWT test is the smoking-gun proof of the security fix:**
+- Pre-fix (`ExtractJWTClaims` base64-decoded without signature check): attacker crafting `tenant_id="11111111-1111-1111-1111-111111111111"` (Testing Jaya Panel) → RPC returned that tenant's Panel Besi products.
+- Post-fix (JWKS ES256 verification): garbage signature → `jwt.Parse` returns error → `tenantID=""` → accept-both fallback returns empty. Cross-tenant leak sealed.
+
+**Full bug chain closed** (13 items):
+1. CSP `connect-src` mismatch (earlier PRs `ea2fef0`/`a68dbbf`)
+2. Cross-tenant leak in `search_products_by_embedding` RPC (no tenant filter)
+3. `IndexPhotos` FK-violation silent-fail (pooler `_resolve_tenant_id()` sentinel)
+4. FE `void indexPhotos(...).catch(() => {})` swallowed errors
+5. `clip_inference_log.status` CHECK missing `'partial'`
+6. **JWT signature not verified — forgery-enabled cross-tenant leak** (fixed via JWKS/ES256, not HS256)
+7. DoS-amplification via anonymous CLIP inference burn (short-circuit before ParseMultipartForm)
+8. Session-expiry silent-empty (refreshSession + throw SESSION_EXPIRED)
+9. Test `ON CONFLICT DO NOTHING` masked tenant swaps
+10. `tenantIDFromRequest` duplicate helper (use `logging.TenantIDFromContext`)
+11. `lastErr` overwrite hid N-1 photo errors (now per-photo errors array)
+12. Case-insensitive `Bearer` prefix (RFC 7235)
+13. UUID `uuid.Parse` guard on `tenant_id` claim
+
+Details of items 1–13 in the two entries below.
+
+**Follow-ups tracked (out of scope this ship):**
+- Metric counter `clip_search_no_jwt_total` (needs metric infra)
+- Backend Go httptest integration for JWT edge cases (bigger refactor)
+- Class-fix audit script for pooler+tenant_id-DEFAULT trap across other `t_*` tables
+- Follow-up migration `DROP FUNCTION search_products_by_embedding(vector, real, integer)` after ~1 week burn-in
+
+**Founder browser-test still pending** (optional, closure-only UX check): open `app.caleo.id`, login Testing Jaya Panel, Kasir → Cari by Foto → upload Panel Besi photo → expect AA201712OD (~0.99) + AA201712ID (~0.90) matches to appear. All backend + curl-level checks already PASS.
+
+---
+
 ## 2026-07-27 — Cari by Foto: /code-review follow-through — 8 blocker/high fixes on top of 07-25 tenant-scope PR
 
 **Context:** After PR #63 (2026-07-25 tenant-scope fix), ran /code-review at extra-high effort (9 finder angles). Surfaced 15 findings; 3 blockers + 5 high. Bundled fixes into the same PR before merge.
