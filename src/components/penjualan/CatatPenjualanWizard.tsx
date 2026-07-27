@@ -60,6 +60,7 @@ import Step1ChannelCustomer from './wizard/Step1ChannelCustomer';
 import Step2Items from './wizard/Step2Items';
 import Step3Payment from './wizard/Step3Payment';
 import { validateStep1, validateStep2 } from '../../lib/wizard/validation';
+import { shouldAutoFillWaPhone } from '../../lib/wizard/derivations';
 import { isFieldVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings } from '../../types';
 import {
@@ -113,6 +114,15 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const [marketplaceOrderNo, setMarketplaceOrderNo] = useState('');
   const [waPhone, setWaPhone] = useState('');
   const [waChatUrl, setWaChatUrl] = useState('');
+
+  // Auto-populate WA phone from customer.wa_number when whatsapp channel is
+  // active and the field is still empty. Prior symptom: user picks customer
+  // with saved WA number, dropdown blocks Lanjut because waPhone stayed ''.
+  // Predicate lives in lib/wizard/derivations.ts for isolated testing.
+  useEffect(() => {
+    const next = shouldAutoFillWaPhone({ channel, customer, currentWaPhone: waPhone });
+    if (next !== null) setWaPhone(next);
+  }, [channel, customer, waPhone]);
 
   // ── Step 2: cart + rakit ──────────────────────────────────────────────────
   const [cart, setCart] = useState<CartItem[]>([]);

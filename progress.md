@@ -1,5 +1,23 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-27 — Fix: wizard auto-populates WA phone from selected customer
+
+**Branch:** `fix/wizard-wa-phone-autopopulate` (worktree `.claude/worktrees/fix-wizard-wa-phone`)
+
+**Bug:** In Penawaran / CatatPenjualanWizard with channel=whatsapp, "Lanjut ke Pesanan" button stayed disabled after picking a customer with saved `wa_number`. `waPhone` state initialized empty (`useState('')`) and never bridged from `customer.wa_number` on the two normal customer-selection paths (existing-pick + inline-create). Only SO-conversion path worked.
+
+**Root cause + fix:** derived-value bridge added. Pure predicate `shouldAutoFillWaPhone` extracted to `src/lib/wizard/derivations.ts` (channel + customer + currentWaPhone → next value or null). `useEffect` in wizard calls it on `[channel, customer, waPhone]` change, invokes `setWaPhone(next)` only when non-null. `!current` guard preserves user-typed overrides.
+
+**Files:** `src/lib/wizard/derivations.ts` (new, 22 lines), `src/lib/wizard/__tests__/derivations.test.ts` (new, 6 tests, all pass), `src/components/penjualan/CatatPenjualanWizard.tsx` (+7 useEffect + 1 import).
+
+**Stage 1 verified:** lint clean, audit:numinput/secdef-null-tenant/no-string-err-fallback all ✓, vitest --changed 6/6 pass.
+
+**Follow-up (deferred):** UX restructure — move WhatsappStrip/TokpedStrip BELOW customer picker in Step 1 (needs FE UI/UX approval per CLAUDE.md).
+
+**Miss-log:** Entry #6 documents the wizard-state-vs-profile-field pattern as a class-of-bug with 4 prevention rules.
+
+---
+
 ## 2026-07-27 — Cari by Foto SHIPPED end-to-end (prod verified, forged-JWT rejected)
 
 **PR:** #63 (squash-merge SHA `835cde7`) — https://github.com/tonyabaddon/ERPAntigravity/pull/63
