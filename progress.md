@@ -24,19 +24,17 @@
 - Class-fix audit script for pooler+tenant_id-DEFAULT trap across other tables.
 - Follow-up migration to `DROP FUNCTION search_products_by_embedding(vector, real, integer)` after 1-week burn-in.
 
-**⚠️ Deploy prerequisite (founder action REQUIRED before merge):**
-Add Supabase JWT signing secret to GCP Secret Manager:
-```bash
-# 1. Get JWT secret from Supabase Dashboard → Settings → API → JWT Settings → JWT Secret
-# 2. Create GCP secret:
-echo -n "<paste-jwt-secret-here>" | gcloud secrets create supabase-jwt-secret \
-  --data-file=- --project=gen-lang-client-0410251117
-# 3. Grant Cloud Run service account access (usually already inherits via project role):
-gcloud secrets add-iam-policy-binding supabase-jwt-secret \
-  --member="serviceAccount:422860632808-compute@developer.gserviceaccount.com" \
-  --role="roles/secretmanager.secretAccessor" --project=gen-lang-client-0410251117
-```
-If missing at deploy: backend still starts (won't crash), but all Cari-by-Foto endpoints return HTTP 503 with clear message. Non-Cari endpoints (WA, recon, etc.) continue working normally. Add secret, redeploy, endpoints become live.
+**✅ No founder secret action required (switched to JWKS/ES256):**
+While setting up the fix, discovered Supabase project already migrated to asymmetric signing keys (ES256). User JWTs are signed with a project-private key; the matching public key is published at the auth JWKS endpoint (`${SUPABASE_URL}/auth/v1/.well-known/jwks.json`). Backend fetches JWKS at startup via `github.com/MicahParks/keyfunc/v3` (auto-refresh on cache miss) and verifies user JWTs against it.
+
+Strictly better than the shared-secret HS256 path originally planned:
+- No secret to leak / rotate
+- No GCP Secret Manager entry to manage
+- No cloudbuild secret mount to maintain
+- Public key rotates transparently via JWKS refresh
+- Aligns with Supabase's current direction (docs: https://supabase.com/docs/guides/auth/signing-keys)
+
+Backend only needs `SUPABASE_URL` env var (already present in cloudbuild.yaml since original setup). If JWKS load fails at startup, backend logs error + Cari-by-Foto endpoints return 503; other endpoints unaffected.
 
 **Files changed (adds to 07-25 commit):**
 - `backend-go/go.mod`, `backend-go/go.sum` — add `github.com/golang-jwt/jwt/v5`
