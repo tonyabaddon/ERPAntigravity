@@ -22,11 +22,12 @@ import SupportAccessPanel from './pengaturan/SupportAccessPanel';
 import PromoProdukPanel from './pengaturan/PromoProdukPanel';
 import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
 import LayananPanel from './pengaturan/LayananPanel';
+import KasirExpenseCategoriesPanel from './pengaturan/KasirExpenseCategoriesPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { captureError } from '../lib/captureError';
 
-type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan';
+type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan' | 'kasir-kategori';
 
 interface PengaturanScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -60,6 +61,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       { id: 'layanan', label: '🛠 Layanan' },
       { id: 'promo-produk', label: '🏷 Promo Produk' },
       { id: 'akuntansi', label: '🧾 Akuntansi' },
+      { id: 'kasir-kategori', label: '💵 Kategori Kasir' },
       { id: 'pajak', label: 'Pajak' },
     ];
     if (isVisible('notifications')) list.push({ id: 'notifikasi', label: 'Notifikasi' });
@@ -552,6 +554,12 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             </div>
             <SaldoAwalPanel showToast={showToast} storeName={company?.name ?? 'Perusahaan Anda'} />
           </div>
+        )}
+        {activeTab === 'kasir-kategori' && (
+          <KasirExpenseCategoriesPanel
+            isEditable={currentUserRole === 'Owner'}
+            showToast={showToast}
+          />
         )}
         {activeTab === 'pajak' && <PajakSettingsPanel showToast={showToast} />}
         {activeTab === 'notifikasi' && (
