@@ -260,15 +260,57 @@ MIGRATIONS=(
   "20261115000511_revert_provision_tenant_ownership.sql"
   "20261115000512_deprovision_tenant_fixes.sql"
 
-  # ─── Kasir Expense Categories — 2026-07-24 configurable categories ───
-  # 521: kasir_expense_categories table schema + indexes + RLS (tenant read-only)
-  # 522: seed system categories + backfill existing transactions
+  # ─── 2026-07-23..25 — landing pricing + admin gender + P3-05 revert wave ─
+  # 513: plans_pricing_sync — landing page pricing pulled from plans table
+  # 514: grant auth schema USAGE to vosi_rpc_owner (LATER REVERTED — see 519)
+  # 515: backfill_admin_permissions — seed platform admin perms
+  # 516: provision_tenant grants 43 permission keys to owner on provision
+  # 517: admin_users.gender column
+  # 518: admin_upsert_user RPC accepts p_gender param
+  # 519: revert P3-05 SECDEF ownership for 10 auth-schema RPCs back to
+  #      OWNER postgres (verify_owner_pin + 9 others) — miss-log Entry #4
+  # 520: grant verify_owner_pin EXECUTE to vosi_rpc_owner (bridge for 519's
+  #      revert — 4 wrapper SECDEFs owned by vosi_rpc_owner call it)
+  "20261115000513_plans_pricing_sync_landing.sql"
+  "20261115000514_grant_auth_schema_to_vosi_rpc_owner.sql"
+  "20261115000515_backfill_admin_permissions.sql"
+  "20261115000516_provision_tenant_owner_permissions_43_key.sql"
+  "20261115000517_admin_users_add_gender.sql"
+  "20261115000518_admin_upsert_user_add_gender_param.sql"
+  "20261115000519_revert_p3_05_secdef_auth_schema_ownership.sql"
+  "20261115000520_grant_verify_owner_pin_to_vosi_rpc_owner.sql"
+
+  # ─── SLOT 521-522 COLLISION — TWO PARALLEL SESSIONS ─────────────────────
+  # Both parallel Claude Code sessions claimed slots 521 + 522 without
+  # seeing each other's work; both migrations applied cleanly to prod DB
+  # (filenames differ so no filesystem collision, but this violates the
+  # `migration_slot_allocation` memory policy). All 6 files below are in
+  # prod. Order-of-apply against a fresh bootstrap is by array position;
+  # kasir + saldo-awal writes touch disjoint tables so no data conflict.
+
+  # ─── 2026-07-27 — Saldo Awal post fix (Toko Jaya cash_accounts COA hole)
+  # 521: backfill 2 cash_accounts.coa_account_id NULLs on Toko Jaya (BCA
+  #      Utama + GoPay Merchant); creates sub-COAs 1-1210 + 1-1310 mirroring
+  #      resolveCoaAccountId logic (AccountFormModal.tsx:72-127)
+  # 522: NOT NULL on cash_accounts.coa_account_id — prevents future orphans
+  "20261115000521_backfill_cash_accounts_coa_link.sql"
+  "20261115000522_cash_accounts_coa_link_not_null.sql"
+
+  # ─── 2026-07-24 — Kasir Expense Categories owner-configurable (#64) ────
+  # 521 (dup slot): kasir_expense_categories table + indexes + RLS
+  # 522 (dup slot): seed system categories + backfill existing transactions
   # 523: RPCs for list/create/update/delete + tenant isolation
   # 524: migrate kasir_transactions.expense_category ENUM → TEXT FK
   "20261115000521_kasir_expense_categories_table.sql"
   "20261115000522_kasir_expense_categories_seed_and_backfill.sql"
   "20261115000523_kasir_expense_categories_rpcs.sql"
   "20261115000524_kasir_transactions_expense_category_to_text.sql"
+
+  # ─── 2026-07-27 — Cari-by-Foto tenant scope + clip inference log index ─
+  # 540: cari_foto search-by-photo RPC tenant-scoped (was global before)
+  # 541: partial index on clip_inference_log.status = 'error' for dashboard
+  "20261115000540_cari_foto_tenant_scope_rpc.sql"
+  "20261115000541_clip_inference_log_partial_status.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do
