@@ -42,6 +42,37 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #8 — 2026-07-28 — SECDEF + auth.* + vosi_rpc_owner: 4th recurrence → class-fix audit shipped
+
+**Context:** Migration `20261115000523` (PR #64 kasir_expense_categories) shipped 5 CRUD RPCs + 1 seed helper as `SECURITY DEFINER` + `OWNER TO vosi_rpc_owner`. All 6 function bodies call `auth.uid()` to derive the caller identity. When applied to prod, EVERY call — from any Owner or Admin user, not just my psql smoke — returned HTTP 500 with:
+
+```
+{"code":"42501","message":"permission denied for schema auth"}
+```
+
+Would have crashed the entire kasir expense categories Panel + Kasir dropdown for real users on first click.
+
+**Root cause:** Same class as migrations `000514` (Entry #4, 22 functions reverted) + `000519` (10 functions reverted). In Supabase-managed Postgres, `vosi_rpc_owner` lacks USAGE on schema `auth` — the schema is owned by `supabase_auth_admin` (a protected role) and grants are blocked. Any SECDEF function that references `auth.*` inside its body will fail with SQLSTATE 42501 unless it's `OWNER TO postgres` (superuser bypass).
+
+**Root cause of the miss:** class-error was already known (Entry #4, 2 prior fix migrations). CLAUDE.md class-fix rule (per §Class-fix rule, 3+ occurrences → codemod + audit ship together) SHOULD have triggered after migration 000519 — but at that time, only 2 sets of ALTERs had shipped (000514 + 000519), and the pattern was treated as "one big cleanup, done." No audit script was created to prevent future drift. So when I wrote migration 000523 fresh, I copy-pasted the "SECDEF + OWNER TO vosi_rpc_owner" pattern from other well-behaved functions (that DON'T call auth.*), and nothing stopped me.
+
+Detection was pure luck — I ran a psql smoke test that surfaced the auth schema permission error. Real prod users would have hit it first (and Sentry would have caught it after the fact).
+
+**Fix (this PR):**
+1. **Retire the debt** — inline `ALTER FUNCTION ... OWNER TO postgres` for all 6 kasir_expense_* functions, applied to prod on 2026-07-28. Persisted as migration `000525`. Verified via post-fix smoke: 6/6 CRUD ops pass on Toko Jaya Makmur.
+2. **Prevent re-drift** — new `scripts/audit-secdef-auth-schema-owner.ts` scans `supabase/migrations/*.sql`, flags any file that contains all three: `SECURITY DEFINER`, `auth.<uid|users|jwt|role|email>`, `OWNER TO vosi_rpc_owner` (line comments stripped). 10 historical files that had the pattern-but-were-fixed-elsewhere are allowlisted with pointer to prod-DB verification (0 violations as of 2026-07-28). Wired into Stop hook (`.claude/settings.json`) so any new migration adding the pattern blocks the turn.
+3. **Prod DB verified clean** — `SELECT proname FROM pg_proc WHERE pg_get_userbyid(proowner)='vosi_rpc_owner' AND prosecdef AND (prosrc LIKE '%auth.%' OR prosrc LIKE '%auth.uid()%' OR prosrc LIKE '%FROM auth.%')` returns 0 rows.
+
+**Prevention rules already in effect:**
+- Any new SECDEF function that references `auth.*` MUST be `OWNER TO postgres` — enforced by audit + Stop hook from this PR onwards.
+- Alternative: rewrite body to use `current_setting('request.jwt.claims')` pattern (see `_resolve_tenant_id()` as reference implementation). Deferred; tactical `OWNER TO postgres` unblocks now.
+
+**Class-fix rule reflection (updated in CLAUDE.md if not already):** The trigger should be "3rd occurrence OR 2nd occurrence within a short window" — waiting for 3rd occurrence means 2 wasted incidents. Miss #3 (migration 000519) should have been the audit-scripting moment; it wasn't, and that gap let me repeat it.
+
+**Files updated:** `scripts/audit-secdef-auth-schema-owner.ts` (new), `package.json` (+audit script), `.claude/settings.json` (+Stop hook step), `docs/superpowers/miss-log.md` (this entry).
+
+---
+
 ## Entry #7 — 2026-07-28 — Parallel Claude sessions both claimed migration slots 521 + 522
 
 **Context:** Two Claude Code sessions ran in parallel against `main` in the same 24h window. Saldo-awal session picked slots `20261115000521` + `522` for `cash_accounts_coa_link` fixes. Kasir-expense-categories session (PR #64) independently picked the SAME slots 521 + 522 for `kasir_expense_categories_*`. Both applied to prod. Only discovered when saldo-awal session rebased over the pushed kasir PR and hit a merge conflict in `scripts/apply-pending-migrations.sh`.
