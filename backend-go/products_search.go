@@ -6,13 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/username/sinar-elektrik-backend/internal/api"
 	"github.com/username/sinar-elektrik-backend/internal/clip"
+	"github.com/username/sinar-elektrik-backend/internal/logging"
 )
 
 const clipModelPath = "/app/models/clip-vit-base-patch32.onnx"
@@ -61,11 +64,34 @@ func vecToPg(v []float32) string {
 	return sb.String()
 }
 
+// logInference writes a row to public.clip_inference_log. Reads tenant_id
+// from ctx (populated by api.RequestContextMiddleware from the verified JWT)
+// — passing an explicit param would just re-forward what ctx carries.
+//
+// Requires a non-empty tenant_id because the column is NOT NULL and the
+// pooler user has no JWT context for `_resolve_tenant_id()` DEFAULT to
+// resolve properly. When tenant is absent from ctx the row is skipped and
+// an INFO log is emitted instead — cheaper than a failing INSERT and keeps
+// the request path free of DB errors.
 func (h *SearchHandler) logInference(ctx context.Context, kind, status string, latencyMs int64, errMsg string) {
-	_, _ = h.DB.ExecContext(ctx,
-		`INSERT INTO public.clip_inference_log (kind, status, latency_ms, error_msg)
-		 VALUES ($1, $2, $3, NULLIF($4, ''))`,
-		kind, status, latencyMs, errMsg)
+	tenantID := logging.TenantIDFromContext(ctx)
+	if tenantID == "" {
+		slog.InfoContext(ctx, "[CLIP] logInference skipped — no tenant in context",
+			slog.String("kind", kind),
+			slog.String("status", status))
+		return
+	}
+	_, err := h.DB.ExecContext(ctx,
+		`INSERT INTO public.clip_inference_log (tenant_id, kind, status, latency_ms, error_msg)
+		 VALUES ($1::uuid, $2, $3, $4, NULLIF($5, ''))`,
+		tenantID, kind, status, latencyMs, errMsg)
+	if err != nil {
+		slog.WarnContext(ctx, "[CLIP] logInference INSERT failed",
+			slog.String("tenant_id", tenantID),
+			slog.String("kind", kind),
+			slog.String("status", status),
+			slog.String("error", err.Error()))
+	}
 }
 
 // publicURL returns the Supabase Storage public URL for a path in the
@@ -79,8 +105,20 @@ func (h *SearchHandler) publicURL(path string) string {
 }
 
 // SearchByPhoto accepts multipart/form-data with a `photo` field, runs CLIP
-// inference, then calls public.search_products_by_embedding to return the
-// top-5 matches at similarity >= 0.70.
+// inference, then calls public.search_products_by_embedding scoped to the
+// caller's tenant_id (extracted from a signature-verified JWT by
+// api.RequestContextMiddleware, then read from ctx).
+//
+// Missing JWT → returns empty results BEFORE doing any CPU work. Two reasons:
+//  1. accept-both-for-one-release: prevents cross-tenant leak if a stale FE
+//     bundle without JWT hits the endpoint.
+//  2. DoS shape: previously an unauth'd request would ParseMultipartForm
+//     (up to 6MB), LoadModel, and EncodeImage (~1-5s CLIP CPU) before
+//     returning empty — every anonymous request evicts warm CLIP instances.
+//     Short-circuit here keeps anonymous cost O(1).
+//
+// SUPABASE_JWT_SECRET missing at startup → 503 with clear message so the
+// operator gets a signal instead of silently accepting forged tokens.
 func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	if r.Method == http.MethodOptions {
@@ -88,6 +126,24 @@ func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start := time.Now()
+
+	if !api.IsJWTVerificationEnabled() {
+		http.Error(w, "server misconfigured: SUPABASE_JWT_SECRET not set", http.StatusServiceUnavailable)
+		return
+	}
+
+	tenantID := logging.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		slog.WarnContext(r.Context(), "[CLIP] SearchByPhoto called without valid JWT — returning empty results",
+			slog.String("remote_addr", r.RemoteAddr),
+			slog.String("user_agent", r.UserAgent()))
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"results":    []any{},
+			"latency_ms": time.Since(start).Milliseconds(),
+		})
+		return
+	}
 
 	if err := r.ParseMultipartForm(6 * 1024 * 1024); err != nil {
 		http.Error(w, "parse form: "+err.Error(), http.StatusBadRequest)
@@ -124,8 +180,8 @@ func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.DB.QueryContext(r.Context(),
 		`SELECT sku, name, category, price, stock, min_stock, photo_url, similarity, warehouse_stock
-		 FROM public.search_products_by_embedding($1::vector, 0.70, 5)`,
-		vecToPg(vec))
+		 FROM public.search_products_by_embedding($1::vector, 0.70, 5, $2::uuid)`,
+		vecToPg(vec), tenantID)
 	if err != nil {
 		h.logInference(r.Context(), "search", "error", time.Since(start).Milliseconds(), err.Error())
 		http.Error(w, "search rpc: "+err.Error(), http.StatusInternalServerError)
@@ -175,6 +231,11 @@ func (h *SearchHandler) SearchByPhoto(w http.ResponseWriter, r *http.Request) {
 // IndexPhotos fetches each photo path from the public Storage bucket, encodes
 // it with CLIP, and upserts the resulting embedding into
 // public.stock_photo_embeddings keyed by (sku, photo_path).
+//
+// Requires JWT — returns 401 on missing/invalid because the only caller is
+// ProductForm.tsx which always has a logged-in session, and silently indexing
+// under a null tenant would recreate the FK-violation silent-fail this fix
+// was written for.
 func (h *SearchHandler) IndexPhotos(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 	if r.Method == http.MethodOptions {
@@ -182,6 +243,20 @@ func (h *SearchHandler) IndexPhotos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	start := time.Now()
+
+	if !api.IsJWTVerificationEnabled() {
+		http.Error(w, "server misconfigured: SUPABASE_JWT_SECRET not set", http.StatusServiceUnavailable)
+		return
+	}
+
+	tenantID := logging.TenantIDFromContext(r.Context())
+	if tenantID == "" {
+		slog.WarnContext(r.Context(), "[CLIP] IndexPhotos called without valid JWT",
+			slog.String("remote_addr", r.RemoteAddr),
+			slog.String("user_agent", r.UserAgent()))
+		http.Error(w, "unauthenticated: index-photos requires a valid JWT in Authorization header", http.StatusUnauthorized)
+		return
+	}
 
 	var body struct {
 		SKU        string   `json:"sku"`
@@ -199,60 +274,77 @@ func (h *SearchHandler) IndexPhotos(w http.ResponseWriter, r *http.Request) {
 
 	httpClient := &http.Client{Timeout: 20 * time.Second}
 
+	// Per-photo error accumulator — previous version overwrote a single
+	// lastErr string on each failure, losing all but the last reason.
+	type photoErr struct {
+		Path   string `json:"path"`
+		Reason string `json:"reason"`
+	}
+	var errors []photoErr
+
 	indexed := 0
-	var lastErr string
 	for _, p := range body.PhotoPaths {
 		url := h.publicURL(p)
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url, nil)
 		if err != nil {
-			lastErr = "build request: " + err.Error()
+			errors = append(errors, photoErr{Path: p, Reason: "build request: " + err.Error()})
 			continue
 		}
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			lastErr = "download: " + err.Error()
+			errors = append(errors, photoErr{Path: p, Reason: "download: " + err.Error()})
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
-			lastErr = fmt.Sprintf("download %s: HTTP %d", p, resp.StatusCode)
+			errors = append(errors, photoErr{Path: p, Reason: fmt.Sprintf("download: HTTP %d", resp.StatusCode)})
 			continue
 		}
 		imgBytes, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if err != nil {
-			lastErr = "read body: " + err.Error()
+			errors = append(errors, photoErr{Path: p, Reason: "read body: " + err.Error()})
 			continue
 		}
 		vec, err := clip.EncodeImage(imgBytes)
 		if err != nil {
-			lastErr = "encode: " + err.Error()
+			errors = append(errors, photoErr{Path: p, Reason: "encode: " + err.Error()})
 			continue
 		}
 		_, err = h.DB.ExecContext(r.Context(),
-			`INSERT INTO public.stock_photo_embeddings (sku, photo_path, embedding)
-			 VALUES ($1, $2, $3::vector)
+			`INSERT INTO public.stock_photo_embeddings (tenant_id, sku, photo_path, embedding)
+			 VALUES ($1::uuid, $2, $3, $4::vector)
 			 ON CONFLICT (sku, photo_path)
 			 DO UPDATE SET embedding = EXCLUDED.embedding, indexed_at = now()`,
-			body.SKU, p, vecToPg(vec))
+			tenantID, body.SKU, p, vecToPg(vec))
 		if err != nil {
-			lastErr = "upsert: " + err.Error()
+			errors = append(errors, photoErr{Path: p, Reason: "upsert: " + err.Error()})
 			continue
 		}
 		indexed++
 	}
 
+	// Map to a status compatible with clip_inference_log_status_check
+	// (allows 'success','error','cold_start_timeout' after migration 541
+	// extended it to include 'partial'). Historically the check permitted
+	// only the first three, so partial-success runs silently violated the
+	// constraint; migration 541 fixes that.
 	status := "success"
-	if lastErr != "" && indexed == 0 {
-		status = "error"
-	} else if lastErr != "" {
-		status = "partial"
+	summaryErr := ""
+	if len(errors) > 0 {
+		summaryErr = fmt.Sprintf("%d/%d photos failed; last: %s",
+			len(errors), len(body.PhotoPaths), errors[len(errors)-1].Reason)
+		if indexed == 0 {
+			status = "error"
+		} else {
+			status = "partial"
+		}
 	}
-	h.logInference(r.Context(), "index", status, time.Since(start).Milliseconds(), lastErr)
+	h.logInference(r.Context(), "index", status, time.Since(start).Milliseconds(), summaryErr)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"sku":     body.SKU,
 		"indexed": indexed,
-		"error":   lastErr,
+		"errors":  errors, // per-photo; empty array on full success
 	})
 }

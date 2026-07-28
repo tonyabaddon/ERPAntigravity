@@ -5,6 +5,7 @@ import { decodeJwt } from '../../lib/jwt';
 import type { StockItem, StockAdjustmentReason } from '../../types';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { useWarehouses } from '../../hooks/useWarehouses';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   item: StockItem;
@@ -88,7 +89,7 @@ export default function StockAdjustmentModal({
       onSubmitted();
       onClose();
     } catch (e) {
-      showToast?.(e instanceof Error ? e.message : String(e), 'warning');
+      showToast?.(extractErrorMessage(e), 'warning');
     } finally {
       setSubmitting(false);
     }

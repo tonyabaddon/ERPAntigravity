@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import * as Sentry from '@sentry/react';
 import { captureError } from './lib/captureError';
 import {
@@ -40,39 +40,39 @@ import Sidebar from './components/Sidebar';
 import AuthScreen from './components/AuthScreen';
 import DashboardScreen from './components/DashboardScreen';
 import SalesInboxScreen from './components/SalesInboxScreen';
-import StockManagerScreen from './components/StockManagerScreen';
-import UserManagementScreen from './components/UserManagementScreen';
-import NotificationSettingsScreen from './components/NotificationSettingsScreen';
-import WhatsappAiScreen from './components/WhatsappAiScreen';
-import PengaturanScreen from './components/PengaturanScreen';
-import OrderHistoryScreen from './components/OrderHistoryScreen';
-import PelangganScreen from './components/PelangganScreen';
-import PiutangScreen from './components/piutang/PiutangScreen';
-import LaporanScreen from './components/LaporanScreen';
-import PembelianScreen from './components/PembelianScreen';
-import KasirScreen from './components/KasirScreen';
-import CatatPenjualanWizard from './components/penjualan/CatatPenjualanWizard';
-import InvoicePreviewScreen from './components/penjualan/InvoicePreviewScreen';
-import PenjualanScreen from './components/PenjualanScreen';
-import ApprovalInboxScreen from './components/approval/ApprovalInboxScreen';
-import OwnerDecisionInbox from './components/OwnerDecisionInbox';
-import StockOpnameScreen from './components/stok/StockOpnameScreen';
-import RekonsiliasiScreen from './components/RekonsiliasiScreen';
-import ManajemenGudangScreen from './components/ManajemenGudangScreen';
-import { SalesLandingScreen } from './components/sales/SalesLandingScreen';
-import { DaftarPesananScreen } from './components/sales/DaftarPesananScreen';
-import DaftarPenawaranScreen from './components/penjualan/DaftarPenawaranScreen';
-import AkuntansiScreen from './components/akuntansi/AkuntansiScreen';
-import KasBankScreen from './components/kasbank/KasBankScreen';
-import AccountDetailScreen from './components/kasbank/AccountDetailScreen';
-import WarehouseTransferListScreen from './components/warehouseTransfer/WarehouseTransferListScreen';
-import WarehouseTransferCreateScreen from './components/warehouseTransfer/WarehouseTransferCreateScreen';
-import WarehouseTransferDetailScreen from './components/warehouseTransfer/WarehouseTransferDetailScreen';
-import { PiutangWaReminderScreen } from './components/pengaturan/PiutangWaReminderScreen';
-import { NotificationTemplatesScreen } from './components/pengaturan/NotificationTemplatesScreen';
-import { NotificationCronScreen } from './components/pengaturan/NotificationCronScreen';
-import { CustomerFeedbackScreen } from './components/feedback/CustomerFeedbackScreen';
-import { NotificationPrefsScreen } from './components/pengaturan/NotificationPrefsScreen';
+const StockManagerScreen = React.lazy(() => import('./components/StockManagerScreen'));
+const UserManagementScreen = React.lazy(() => import('./components/UserManagementScreen'));
+const NotificationSettingsScreen = React.lazy(() => import('./components/NotificationSettingsScreen'));
+const WhatsappAiScreen = React.lazy(() => import('./components/WhatsappAiScreen'));
+const PengaturanScreen = React.lazy(() => import('./components/PengaturanScreen'));
+const OrderHistoryScreen = React.lazy(() => import('./components/OrderHistoryScreen'));
+const PelangganScreen = React.lazy(() => import('./components/PelangganScreen'));
+const PiutangScreen = React.lazy(() => import('./components/piutang/PiutangScreen'));
+const LaporanScreen = React.lazy(() => import('./components/LaporanScreen'));
+const PembelianScreen = React.lazy(() => import('./components/PembelianScreen'));
+const KasirScreen = React.lazy(() => import('./components/KasirScreen'));
+const CatatPenjualanWizard = React.lazy(() => import('./components/penjualan/CatatPenjualanWizard'));
+const InvoicePreviewScreen = React.lazy(() => import('./components/penjualan/InvoicePreviewScreen'));
+const PenjualanScreen = React.lazy(() => import('./components/PenjualanScreen'));
+const ApprovalInboxScreen = React.lazy(() => import('./components/approval/ApprovalInboxScreen'));
+const OwnerDecisionInbox = React.lazy(() => import('./components/OwnerDecisionInbox'));
+const StockOpnameScreen = React.lazy(() => import('./components/stok/StockOpnameScreen'));
+const RekonsiliasiScreen = React.lazy(() => import('./components/RekonsiliasiScreen'));
+const ManajemenGudangScreen = React.lazy(() => import('./components/ManajemenGudangScreen'));
+const SalesLandingScreen = React.lazy(() => import('./components/sales/SalesLandingScreen').then(m => ({ default: m.SalesLandingScreen })));
+const DaftarPesananScreen = React.lazy(() => import('./components/sales/DaftarPesananScreen').then(m => ({ default: m.DaftarPesananScreen })));
+const DaftarPenawaranScreen = React.lazy(() => import('./components/penjualan/DaftarPenawaranScreen'));
+const AkuntansiScreen = React.lazy(() => import('./components/akuntansi/AkuntansiScreen'));
+const KasBankScreen = React.lazy(() => import('./components/kasbank/KasBankScreen'));
+const AccountDetailScreen = React.lazy(() => import('./components/kasbank/AccountDetailScreen'));
+const WarehouseTransferListScreen = React.lazy(() => import('./components/warehouseTransfer/WarehouseTransferListScreen'));
+const WarehouseTransferCreateScreen = React.lazy(() => import('./components/warehouseTransfer/WarehouseTransferCreateScreen'));
+const WarehouseTransferDetailScreen = React.lazy(() => import('./components/warehouseTransfer/WarehouseTransferDetailScreen'));
+const PiutangWaReminderScreen = React.lazy(() => import('./components/pengaturan/PiutangWaReminderScreen').then(m => ({ default: m.PiutangWaReminderScreen })));
+const NotificationTemplatesScreen = React.lazy(() => import('./components/pengaturan/NotificationTemplatesScreen').then(m => ({ default: m.NotificationTemplatesScreen })));
+const NotificationCronScreen = React.lazy(() => import('./components/pengaturan/NotificationCronScreen').then(m => ({ default: m.NotificationCronScreen })));
+const CustomerFeedbackScreen = React.lazy(() => import('./components/feedback/CustomerFeedbackScreen').then(m => ({ default: m.CustomerFeedbackScreen })));
+const NotificationPrefsScreen = React.lazy(() => import('./components/pengaturan/NotificationPrefsScreen').then(m => ({ default: m.NotificationPrefsScreen })));
 
 import { INITIAL_CONFIG } from './initialData';
 
@@ -1144,7 +1144,13 @@ export default function App() {
                 </div>
               </header>
               <div className="flex-1 min-h-0">
-                {renderPage()}
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-full text-slate-400 text-sm font-semibold">
+                    Memuat…
+                  </div>
+                }>
+                  {renderPage()}
+                </Suspense>
               </div>
               <footer className="flex justify-between items-center py-4 px-2 shrink-0 select-none">
                 <p className="text-[10px] uppercase font-bold tracking-widest text-[#43474e]/60">
@@ -1180,24 +1186,30 @@ export default function App() {
             </div>
           </div>
         )}
-        <PembelianScreen
-          stockList={stockList}
-          showToast={triggerToast}
-          onStockRefresh={handleStockRefresh}
-          currentUserId={currentUser?.id}
-          currentUserPermissions={currentUser?.permissions}
-          initialDetailPoNumber={initialDetailPoNumber}
-          onDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
-          initialBnlPiNumber={initialBnlPiNumber}
-          onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
-          initialBnlPrefill={initialBnlPrefill}
-          initialPesananNumber={initialPesananNumber}
-          onPesananDetailConsumed={() => { /* no-op: URL is source of truth */ }}
-          initialTagihanNumber={initialTagihanNumber}
-          onTagihanDetailConsumed={() => { /* no-op: URL is source of truth */ }}
-          initialPembayaranNumber={initialPembayaranNumber}
-          onPembayaranDetailConsumed={() => { /* no-op: URL is source of truth */ }}
-        />
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full text-slate-400 text-sm font-semibold">
+            Memuat…
+          </div>
+        }>
+          <PembelianScreen
+            stockList={stockList}
+            showToast={triggerToast}
+            onStockRefresh={handleStockRefresh}
+            currentUserId={currentUser?.id}
+            currentUserPermissions={currentUser?.permissions}
+            initialDetailPoNumber={initialDetailPoNumber}
+            onDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
+            initialBnlPiNumber={initialBnlPiNumber}
+            onBnlDetailConsumed={() => { /* no-op: URL is source of truth; nothing to consume */ }}
+            initialBnlPrefill={initialBnlPrefill}
+            initialPesananNumber={initialPesananNumber}
+            onPesananDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+            initialTagihanNumber={initialTagihanNumber}
+            onTagihanDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+            initialPembayaranNumber={initialPembayaranNumber}
+            onPembayaranDetailConsumed={() => { /* no-op: URL is source of truth */ }}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -1283,7 +1295,13 @@ export default function App() {
 
         {/* Core Screen Route Portlet */}
         <div className="flex-1 min-h-0">
-          {renderPage()}
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full text-slate-400 text-sm font-semibold">
+              Memuat…
+            </div>
+          }>
+            {renderPage()}
+          </Suspense>
         </div>
 
         {/* Global Footer credits */}

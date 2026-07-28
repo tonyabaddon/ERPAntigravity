@@ -1,91 +1,68 @@
-// Scan src/ for the `err instanceof Error ? err.message : String(err)`
-// anti-pattern. Supabase's PostgrestError is not an Error instance, so this
-// ternary yields `[object Object]` in the fallback branch and hides the real
-// message from users.
+// Fail if any src file uses the `err instanceof Error ? err.message : String(err)`
+// pattern. Supabase's PostgrestError is a plain object (not an Error instance),
+// so `String(err)` returns "[object Object]" and hides the real message.
 //
-// Fix: use extractErrorMessage(err) from src/lib/extractErrorMessage.ts.
+// Class-error history (per docs/superpowers/miss-log.md #4 + progress.md 2026-07-24):
+//   - PinPad → owner PIN approval blocked, shown as "[object Object]"
+//   - WarehouseTransferCreateScreen → Kirim / Kirim+PDF blocked, same symptom
 //
-// Allowlist: 31 pre-existing files carry this pattern as inherited debt.
-// They pass the audit as-is so it can catch NEW violations without cascade-
-// failing on the codebase state. Remove entries from ALLOWLIST as they get
-// cleaned up.
+// Fix: import `extractErrorMessage` from `src/lib/extractErrorMessage.ts` and
+// use it in catch blocks. It handles both Error instances AND plain objects
+// with a `.message` field (PostgrestError, custom errors, etc.).
 //
 // Usage: npm run audit:no-string-err-fallback
-// Exit 0 = clean (no new violations), exit 1 = new violation found.
+// Exit 0 = clean, exit 1 = violations printed with file:line.
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { execSync } from 'node:child_process';
 
-const ROOT = 'src';
-const PATTERN = /:\s*String\((err|e|error)\)/;
-const EXTRACT_HELPER = 'src/lib/extractErrorMessage.ts';
+// Match: `<ident> instanceof Error ? <same-or-diff-ident>.message : String(<ident>)`
+// We keep the ident capture loose because some sites use `e`, `err`, `error`.
+// The audit is intentionally aggressive: if the diff to fix has legitimate
+// non-object-error handling, migrate to `extractErrorMessage()` which
+// already covers Error, PostgrestError, and string throws (returns
+// "Unknown error" as last resort).
+const PATTERN = String.raw`instanceof Error \? \w+\.message : String\(\w+\)`;
 
-// Pre-existing violations. Do NOT add to this list; fix the file instead.
-const ALLOWLIST = new Set<string>([
-  'src/components/admin/AdminLayout.tsx',
-  'src/components/admin/CaleoBotDashboard.tsx',
-  'src/components/admin/CostDashboard.tsx',
-  'src/components/admin/PendingPaymentRow.tsx',
-  'src/components/admin/PendingPaymentsQueue.tsx',
-  'src/components/admin/PlatformSettings.tsx',
-  'src/components/admin/SalesRepsList.tsx',
-  'src/components/admin/TenantDetail/PembayaranTab.tsx',
-  'src/components/admin/TenantDetail/TenantDangerZone.tsx',
-  'src/components/admin/TenantsList.tsx',
-  'src/components/akuntansi/gl/PeriodCloseModal.tsx',
-  'src/components/akuntansi/gl/YearEndCloseModal.tsx',
-  'src/components/pembelian/KlaimSupplierPanel.tsx',
-  'src/components/pengaturan/SupportAccessPanel.tsx',
-  'src/components/pengaturan/saldoAwal/SaldoAwalWizard.tsx',
-  'src/components/pengaturan/saldoAwal/Step1KasBank.tsx',
-  'src/components/pengaturan/saldoAwal/Step2Aktiva.tsx',
-  'src/components/pengaturan/saldoAwal/Step4EkuitasPreview.tsx',
-  'src/components/penjualan/CatatPenjualanWizard.tsx',
-  'src/components/penjualan/DaftarPenawaranScreen.tsx',
-  'src/components/penjualan/LockSubmissionModal.tsx',
-  'src/components/penjualan/wizard/NewProductInlineForm.tsx',
-  'src/components/penjualan/wizard/Step3Payment.tsx',
-  'src/components/promo/PromoInlineEdit.tsx',
-  'src/components/stok/DamageFlagModal.tsx',
-  'src/components/stok/PriceChangeRequestModal.tsx',
-  'src/components/stok/StockAdjustmentModal.tsx',
-  'src/components/stok/StockOpnameScreen.tsx',
-  'src/components/stok/StockOpnameSessionView.tsx',
-  'src/components/warehouseTransfer/WarehouseTransferDetailScreen.tsx',
-  'src/hooks/useWarehouses.ts',
-]);
+const EXCLUDES = [
+  'src/lib/extractErrorMessage.ts', // the helper itself references the shape
+  '.test.',                          // test fixtures may intentionally throw plain objects
+];
 
-function walk(dir: string, out: string[]): void {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    const st = statSync(full);
-    if (st.isDirectory()) walk(full, out);
-    else if (/\.(ts|tsx)$/.test(entry) && !/\.test\./.test(entry)) out.push(full);
+function scan(): Array<{ file: string; line: number; text: string }> {
+  let raw = '';
+  try {
+    raw = execSync(
+      `grep -rnE '${PATTERN}' src --include='*.ts' --include='*.tsx'`,
+      { encoding: 'utf8' },
+    );
+  } catch (e) {
+    // grep exits 1 when no matches → clean
+    if ((e as { status?: number }).status === 1) return [];
+    throw e;
   }
+  const hits: Array<{ file: string; line: number; text: string }> = [];
+  for (const raw_line of raw.split('\n')) {
+    if (!raw_line.trim()) continue;
+    if (EXCLUDES.some(ex => raw_line.includes(ex))) continue;
+    const m = /^([^:]+):(\d+):(.*)$/.exec(raw_line);
+    if (!m) continue;
+    hits.push({ file: m[1], line: Number(m[2]), text: m[3].trim() });
+  }
+  return hits;
 }
 
-const files: string[] = [];
-walk(ROOT, files);
-
-const violations: Array<{ file: string; line: number; text: string }> = [];
-for (const f of files) {
-  const rel = relative('.', f);
-  if (rel === EXTRACT_HELPER) continue;
-  if (ALLOWLIST.has(rel)) continue;
-  const lines = readFileSync(f, 'utf8').split(/\r?\n/);
-  lines.forEach((text, i) => {
-    if (PATTERN.test(text)) violations.push({ file: rel, line: i + 1, text: text.trim() });
-  });
-}
-
-if (violations.length === 0) {
+const hits = scan();
+if (hits.length === 0) {
+  console.log('✓ clean — no `err instanceof Error ? .message : String(err)` fallbacks; use extractErrorMessage()');
   process.exit(0);
 }
 
-console.error('audit:no-string-err-fallback — NEW violations found:');
-for (const v of violations) {
-  console.error(`  ${v.file}:${v.line}  ${v.text}`);
+console.error(`✗ ${hits.length} site(s) still use the [object Object] anti-pattern:`);
+console.error(`  Fix: import { extractErrorMessage } from '.../lib/extractErrorMessage';`);
+console.error(`       const msg = extractErrorMessage(err);`);
+console.error(`  Why: Supabase PostgrestError is a plain object; String(err) → "[object Object]", masking the real message.\n`);
+for (const h of hits) {
+  console.error(`  ${h.file}:${h.line}`);
+  console.error(`    ${h.text}`);
 }
-console.error('\nFix: use extractErrorMessage(err) from src/lib/extractErrorMessage.ts');
-console.error('Supabase PostgrestError is not an Error instance, so String(err) renders [object Object].');
 process.exit(1);

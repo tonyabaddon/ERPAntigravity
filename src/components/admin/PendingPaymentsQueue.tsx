@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { paymentVerificationApi, PendingPayment } from '../../lib/paymentVerificationApi';
 import { adminToast } from '../../lib/adminToast';
 import { PendingPaymentRow } from './PendingPaymentRow';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 export function PendingPaymentsQueue() {
   const [rows, setRows] = useState<PendingPayment[] | null>(null);
@@ -19,7 +20,7 @@ export function PendingPaymentsQueue() {
         if (!cancelled) setRows(data);
       } catch (e) {
         if (!cancelled) {
-          adminToast.error('Gagal memuat', e instanceof Error ? e.message : String(e));
+          adminToast.error('Gagal memuat', extractErrorMessage(e));
         }
       }
     }

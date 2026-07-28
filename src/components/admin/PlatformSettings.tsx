@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { platformSettingsApi } from '../../lib/platformSettingsApi';
 import type { PlatformSettings as PlatformSettingsRow } from '../../lib/platformSettingsApi';
 import { adminToast } from '../../lib/adminToast';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -52,7 +53,7 @@ export function PlatformSettings() {
         setAdminWaNumber(data.admin_wa_number ?? '');
       } catch (err) {
         if (cancelled) return;
-        const msg = err instanceof Error ? err.message : String(err);
+        const msg = extractErrorMessage(err);
         adminToast.error('Gagal memuat pengaturan pembayaran', msg);
       } finally {
         if (!cancelled) setLoading(false);
@@ -78,7 +79,7 @@ export function PlatformSettings() {
       setSettings(updated);
       adminToast.success('Pengaturan pembayaran tersimpan.');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       adminToast.error('Gagal menyimpan pengaturan', msg);
     } finally {
       setSaving(false);

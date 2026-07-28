@@ -11,6 +11,7 @@ import type { AccountingPeriod } from '../../../lib/akuntansi/types';
 import { supabase } from '../../../lib/supabaseClient';
 import { formatRp } from '../../../lib/format';
 import { captureError } from '../../../lib/captureError';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 interface YearEndCloseModalProps {
   open: boolean;
@@ -134,7 +135,7 @@ export default function YearEndCloseModal({
       );
       onClosed();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       showToast(`Gagal tutup tahun: ${msg}`, 'warning');
     } finally {
       setSubmitting(false);

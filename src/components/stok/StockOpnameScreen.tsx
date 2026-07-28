@@ -16,6 +16,7 @@ import type {
 import { formatRpDelta } from '../../lib/format';
 import StockOpnameSessionView from './StockOpnameSessionView';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface StockOpnameScreenProps {
   currentUser: {
@@ -126,7 +127,7 @@ export default function StockOpnameScreen({
       if (uErr) throw uErr;
       setUsers((u ?? []) as unknown as DbAdminUser[]);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setLoading(false);
     }
@@ -190,7 +191,7 @@ export default function StockOpnameScreen({
       setActiveSessionId(sid);
       void refresh();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : String(e), 'warning');
+      showToast(extractErrorMessage(e), 'warning');
     } finally {
       setSubmitting(false);
     }
@@ -510,7 +511,7 @@ export default function StockOpnameScreen({
                     setCancelTarget(null);
                     await refresh();
                   } catch (err) {
-                    const msg = err instanceof Error ? err.message : String(err);
+                    const msg = extractErrorMessage(err);
                     if (msg.includes('NOT_OWNER')) {
                       showToast('Hanya Owner yang bisa membatalkan sesi opname.', 'warning');
                     } else if (msg.includes('INVALID_STATE')) {

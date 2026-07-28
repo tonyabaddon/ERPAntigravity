@@ -12,6 +12,7 @@ import {
 import { adminToast } from '../../lib/adminToast';
 import { wibDateString } from '../../lib/format';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── Helpers ────────────���─────────────────────────────────────────────────────
 
@@ -211,7 +212,7 @@ export function CostDashboard() {
       data.sort((a, b) => b.est_total_usd - a.est_total_usd);
       setRows(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       setError(msg);
       captureError(msg, { feature: 'admin_cost_dashboard', action: 'load_costs' });
     } finally {
@@ -231,7 +232,7 @@ export function CostDashboard() {
       adminToast.success(`Backfill selesai — ${result.rows_upserted} tenant diperbarui`);
       await load(date);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       adminToast.error('Backfill gagal', msg);
       captureError(msg, { feature: 'admin_cost_dashboard', action: 'backfill_cost' });
     } finally {

@@ -42,6 +42,54 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #6 — 2026-07-27 — Wizard state var not auto-populated from customer profile → Lanjut button silently disabled
+
+**Context:** Founder reported: in Penawaran (CatatPenjualanWizard) with channel=whatsapp, "Lanjut ke Pesanan" button stayed disabled even after picking a customer that already has `wa_number` saved. Same bug fires for invoice mode (same wizard). Only worked when converting from an existing Sales Order (`fromSalesOrderId` path at line 431 explicitly seeded `waPhone`).
+
+**Root cause:** `waPhone` React state initialized as `useState('')` (line 113 of `CatatPenjualanWizard.tsx`) and **never populated** on the two normal customer-selection paths (`CustomerPanel.onSelectExisting` and `NewCustomerInlineForm.onSaved`). Both fire `setCustomer(c)` but neither propagates `c.wa_number` into `waPhone`. `validateStep1` correctly requires `wa_phone` for the whatsapp channel — the validation was right; the state layer was stale.
+
+**Why it hid:** Compounded by UX ordering — `WhatsappStrip` (phone input) renders ABOVE the customer picker in Step 1, so the empty phone field appears before the user has even considered the customer. And the SO-conversion path DID work, hiding the class of bug on the more common freshly-created-quote path.
+
+**Root cause of the miss (class of bug):** wizard state variables that mirror a source-of-truth profile field (customer.wa_number, and by extension future fields like customer.email or customer.default_shipping_address) were coded as independent input state without a bridge back to the profile. Single-write flow (customer selection) does not fan out to derived state.
+
+**Prevention rules going forward:**
+1. **Any wizard state variable that mirrors a profile field MUST have a `useEffect` (or derived helper) that auto-populates on the source-of-truth change**, guarded by `!current` so it never overwrites user-typed input. Pattern extracted to `src/lib/wizard/derivations.ts::shouldAutoFillWaPhone` as the reusable template.
+2. **When adding new channel-specific or entity-specific required fields to a wizard, add BOTH:** (a) the validation rule (already the discipline), and (b) an auto-populate hook + test that verifies the field seeds from the source profile.
+3. **Impact-analysis step for wizard fields:** grep for `setCustomer(` and `setProduct(` in each wizard; for every new required field, verify a bridge exists between selection callbacks and the field's state.
+4. **Reproduction template for "Lanjut disabled after valid data" bugs:** first check whether the validated field is a derived-from-profile field that failed to derive.
+
+**Files updated:** `src/lib/wizard/derivations.ts` (new — pure predicate), `src/lib/wizard/__tests__/derivations.test.ts` (6 tests), `src/components/penjualan/CatatPenjualanWizard.tsx` (useEffect + import), this miss-log entry, `progress.md`.
+
+**Follow-up (not in this PR):** consider UX restructure — move Channel-specific input strips (WhatsappStrip, TokpedStrip) BELOW the customer picker in Step 1 so the ordering matches the data-flow ("who first, then how"). Requires FE UI/UX approval per CLAUDE.md protocol; tracked separately.
+
+---
+
+## Entry #5 — 2026-07-25 — `[object Object]` class-fix: 3rd occurrence → audit script + 53-site codemod
+
+**Context:** Founder reported "buat transfer baru dari gudang ke gudang lain, qty kirim tidak bisa diedit, ketika edit dari 1 ke 4 diubah menjadi maksimal jumlah stoknya" + "tidak bisa klik kirim transfer juga error" + "klik kirim + cetak PDF juga ga bisa" on WarehouseTransferCreateScreen. The Kirim button error rendered as literal `[object Object]` in the red banner — the SAME symptom as the PinPad regression 24 hours earlier (Entry #4). Investigation surfaced 3 root causes; the `[object Object]` one was `WarehouseTransferCreateScreen.tsx:141` doing `e instanceof Error ? e.message : String(e)` where `e` is a Supabase `PostgrestError` (plain object, not `Error` instance) so `String(e) === "[object Object]"`. Same anti-pattern was present in 55 more sites across `src/`.
+
+**What was missed:**
+1. Entry #4 codified rule 3 ("Never render errors via `String(e)`") but only fixed the PinPad site + created the `extractErrorMessage()` helper. It did NOT run an audit for other sites of the same anti-pattern, so the WT screen (and 52 more) were left broken. Rule was documented but not enforced.
+2. Class-fix scope-creep hesitation: on 2026-07-24 the PinPad fix was one file; ripping the pattern out of 30+ files felt like separate work. Result: the same class of bug shipped again in another screen the same day.
+3. Per CLAUDE.md miss-log-feedback-protocol "3+ occurrences → permanent rule + audit script" — this was the 3rd occurrence (PinPad + WT + latent-53-others). The audit script was owed after Entry #4 but was deferred.
+
+**Root cause of the miss:**
+- "Rule-in-docs" without "rule-in-CI" is not a rule; it's a good intention. When a codebase-wide anti-pattern exists in 50+ places, only a mechanical audit + Stop-hook prevents recurrence. Human review + `grep -c` after every PR doesn't scale.
+- The `extractErrorMessage()` helper was added but not opinionated: no lint rule, no import discovery, no PR check. New code kept writing `err instanceof Error ? err.message : String(err)` because that's what siblings already did.
+
+**Prevention:**
+1. `scripts/audit-no-string-err-fallback.ts` — greps for the exact anti-pattern regex `instanceof Error \? \w+\.message : String\(\w+\)`, excludes `extractErrorMessage.ts` + test files, fails with the offending file:line + suggested import.
+2. Wired into `.claude/settings.json` Stop hook (`npm run audit:no-string-err-fallback`) so it blocks any Claude Code session end where a new violation slipped in. Same gate model as `audit:csp-backend-allowlist` (Entry #3).
+3. `scripts/codemod-string-err-fallback.ts` — one-shot codemod that replaced all 53 existing sites in 31 files with `extractErrorMessage()` + auto-import. Idempotent (safe to re-run).
+4. Codemod verified: `npm run audit:no-string-err-fallback` → 0 sites, `npm run lint` clean, full `npx vitest run` 1071 pass / 2 skip.
+5. Class rule (permanent): **anti-patterns with 3+ occurrences MUST have both a codemod fix (retire the debt) AND an audit-in-CI (prevent re-drift) in the SAME PR that flagged them.** Deferring the codemod because "it's a lot of files" is exactly what makes the pattern recur — 30 sites in 30 files = 30 fresh opportunities to copy-paste-broken.
+
+**Empirical confirmation:** Founder-reproduced Kirim button on WT create screen returned `[object Object]` in red banner (documented in the same-day debug session). Codemod eliminates all 53 known sites; Stop hook prevents new sites. Miss-log-feedback-protocol trigger: 3rd occurrence = permanent rule elevated to Class rule in CLAUDE.md § "Bug fix permanently" (follow-up commit if founder agrees, or on next CLAUDE.md rev).
+
+**Files updated:** `scripts/audit-no-string-err-fallback.ts` (new), `scripts/codemod-string-err-fallback.ts` (new, one-shot), `package.json` (npm scripts), `.claude/settings.json` (Stop hook), 31 files across `src/` (codemod applied), this miss-log.
+
+---
+
 ## Entry #4 — 2026-07-24 — P3-05 SECDEF ownership 3rd instance: `verify_owner_pin` + 9 others still owned vosi_rpc_owner blocked ALL PIN approvals
 
 **Context:** Founder reported "tidak bisa masukin PIN approval untuk jumlah stock". Reproduced on Toko Jaya Makmur: click Setujui on `initial_stock` → PIN pad opens → type 6 digits → RPC returned HTTP 403 with `{"code":"42501","message":"permission denied for schema auth"}`. OwnerPinPad error extraction bug rendered it as `[object Object]` in the UI (secondary bug — hid the actual cause). Second complaint from founder: "cannot insert PIN for customer tempo that I add during the sales order" — same class, different RPC path.

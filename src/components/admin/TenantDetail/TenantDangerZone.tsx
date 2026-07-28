@@ -10,6 +10,7 @@ import type { AdminTenantRow } from '../../../lib/adminTypes';
 import { DeleteTenantModal } from './DeleteTenantModal';
 import { supabase } from '../../../lib/supabaseClient';
 import { adminToast } from '../../../lib/adminToast';
+import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
       URL.revokeObjectURL(url);
       adminToast.success(`Export selesai: ${(blob.size / 1024).toFixed(1)} KB`);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       adminToast.error(`Export error: ${msg}`);
     } finally {
       setExporting(false);

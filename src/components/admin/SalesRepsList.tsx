@@ -7,6 +7,7 @@ import type { SalesRep } from '../../lib/salesRepsApi';
 import { adminToast } from '../../lib/adminToast';
 import { SalesRepCreateModal } from './SalesRepCreateModal';
 import { SalesRepDeactivateModal } from './SalesRepDeactivateModal';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 // ─── Skeleton rows ────────────────────────────────────────────────────────────
 
@@ -69,7 +70,7 @@ export function SalesRepsList() {
       const data = await salesRepsApi.list();
       setRows(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = extractErrorMessage(err);
       setError(msg);
       adminToast.error('Gagal memuat daftar sales rep', msg);
     } finally {
