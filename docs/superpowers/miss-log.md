@@ -42,6 +42,33 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #7 — 2026-07-28 — Parallel Claude sessions both claimed migration slots 521 + 522
+
+**Context:** Two Claude Code sessions ran in parallel against `main` in the same 24h window. Saldo-awal session picked slots `20261115000521` + `522` for `cash_accounts_coa_link` fixes. Kasir-expense-categories session (PR #64) independently picked the SAME slots 521 + 522 for `kasir_expense_categories_*`. Both applied to prod. Only discovered when saldo-awal session rebased over the pushed kasir PR and hit a merge conflict in `scripts/apply-pending-migrations.sh`.
+
+**How it didn't blow up:** filenames differed (`cash_accounts_coa_link_*` vs `kasir_expense_categories_*`), so filesystem uniqueness was preserved and both migration files coexist at slot 521/522. Migrations touched disjoint tables (cash_accounts vs kasir_expense_categories) so no data conflict. `apply-pending-migrations.sh` was manually reconciled with both sets registered in the same PR (commit `533d4aa`) with an explicit `SLOT 521-522 COLLISION` comment section.
+
+**What was missed:**
+1. Neither session ran `git fetch origin main` before picking a slot. Both trusted local `ls supabase/migrations/`, which reflected their local checkout at session-start (highest local: 520), not the state of `origin/main` at claim-time (kasir PR had already committed 521-524 locally, was about to push).
+2. Memory `project-migration-slot-allocation` had the fetch step ONLY in an "if you're starting fresh" subsection at the bottom, not as a mandatory pre-claim rule.
+3. Slot allocation was documented as a policy (claim in 20-slot blocks) but was NOT enforced by any audit or hook.
+
+**Root cause of the miss (class of bug):** collaborative filename slot allocation without a fetch-before-claim discipline is a race condition. Any two sessions coding at the same time will collide eventually. The 24h reproduction window in this project is short enough for this to happen weekly.
+
+**Prevention rules going forward (NOW codified in memory):**
+1. **HARD RULE at top of `project-migration-slot-allocation` memory:** always run `git fetch origin main && ls supabase/migrations/20261115*.sql | sort | tail -5` BEFORE naming a new migration file. Not "if you're starting fresh" — every time.
+2. **Claim `≥ (highest observed + 20)`**, never `highest + 1`. Adjacent slots may be reserved for the session that shipped the highest.
+3. **Update memory in the same PR** that ships the new migration — records the claim so the next session's fetch sees it.
+4. **Free boundary advanced from 500+ to 560+** in the memory to reflect current state (highest slot: 541, with buffer above cari-foto).
+
+**Empirical confirmation:** `git log --all --format="%h %s" -- supabase/migrations/20261115000521* 20261115000522*` shows two independent chains (saldo-awal commits `b1763b6` + `18887cb` vs kasir commits inside squash `f2d8778`) both landing at same slot numbers within the same day.
+
+**Files updated:** `~/.claude/projects/-Users-tonywei-IdeaProjects-ERPAntigravity/memory/project_migration_slot_allocation.md` (added MANDATORY pre-claim check at top, refreshed allocation table, added collision post-mortem), this miss-log entry.
+
+**Follow-up (not in this PR):** consider an audit script `audit-migration-slot-freshness` that runs in Stop hook: `git fetch origin main --quiet && diff <(ls supabase/migrations/) <(git ls-tree origin/main supabase/migrations/ | awk '{print $4}' | sed 's|.*/||')` — fails if a locally-added migration slot is already used on origin/main under a different filename. If pattern recurs (2nd collision), MUST ship this audit per CLAUDE.md class-fix rule.
+
+---
+
 ## Entry #6 — 2026-07-27 — Wizard state var not auto-populated from customer profile → Lanjut button silently disabled
 
 **Context:** Founder reported: in Penawaran (CatatPenjualanWizard) with channel=whatsapp, "Lanjut ke Pesanan" button stayed disabled even after picking a customer that already has `wa_number` saved. Same bug fires for invoice mode (same wizard). Only worked when converting from an existing Sales Order (`fromSalesOrderId` path at line 431 explicitly seeded `waPhone`).
