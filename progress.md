@@ -1,5 +1,20 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-28 — Saldo Awal Post unblocked (Toko Jaya) + cash_accounts.coa_account_id hardened
+
+- **Root cause:** Toko Jaya Makmur had 2 cash_accounts (BCA Utama BANK, GoPay Merchant E_WALLET) with NULL coa_account_id — seeded outside the FE form, so `resolveCoaAccountId` never ran. `post_saldo_awal_snapshot` correctly RAISEs on this, but the toast showed `[object Object]` (extractErrorMessage class fix from 42b4598 wasn't deployed to prod yet).
+- **Fix:**
+  - Migration 521 backfilled the 2 orphan rows — created COAs `1-1210 BCA Utama` + `1-1310 GoPay Merchant` under existing parent COAs 1-1200 / 1-1300.
+  - Migration 522 added `NOT NULL` constraint on `cash_accounts.coa_account_id` — prevents future orphans.
+- **Task 4 (FE promote): SKIPPED — prod FE revision 00803-cub (tag c835cde7, 100% traffic) already includes 42b4598 (extractErrorMessage class fix). Zero FE code delta between prod SHA and HEAD (only docs + SQL migrations). Nothing to promote.**
+- **Verification:** prod SQL scan post-521 shows 0 nulls; prod SQL scan post-522 shows `is_nullable=NO`. Server-side smoke via Supabase Management API + fake JWT + RAISE-rollback pattern: post_saldo_awal_snapshot('04871ed9...') returned new JE id 051a2f22-be56-4f2c-b877-15c43bc1ed07; snapshot flipped draft→posted then rolled back cleanly (verified: je_count=0, snap_status=draft, null_ca_count=0 post-rollback). Browser click deferred to founder — chrome-devtools MCP was disconnected during session; draft snapshot 04871ed9-b240-4557-9df1-5a306aa38ba5 preserved for founder's real click when convenient.
+- **Blast radius:** 1 tenant affected pre-fix. Zero real customer tenants had this issue (prod scan verified 2026-07-28). No incident.
+- **Follow-up:** none. Class fix (extractErrorMessage helper, audit, Stop hook, CLAUDE.md rule, miss-log Entry #5) already shipped 2026-07-25 in commits 4705a04 / 853363f / 42b4598 / 38034ba.
+- **Spec:** docs/superpowers/specs/2026-07-25-saldo-awal-post-error-fix-design.md
+- **Plan:** docs/superpowers/plans/2026-07-27-saldo-awal-post-error-fix.md
+
+---
+
 ## 2026-07-27 — Fix: wizard auto-populates WA phone from selected customer
 
 **Branch:** `fix/wizard-wa-phone-autopopulate` (worktree `.claude/worktrees/fix-wizard-wa-phone`)
