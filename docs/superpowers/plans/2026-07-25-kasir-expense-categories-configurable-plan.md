@@ -255,7 +255,7 @@ BEGIN
     (p_tenant_id, 'Pembelian Stok',          100, true),
     (p_tenant_id, 'Pembelian Pass-Through',  110, true),
     (p_tenant_id, 'MDR EDC',                 120, true)
-  ON CONFLICT ON CONSTRAINT ux_kasir_expense_categories_tenant_label_ci DO NOTHING;
+  ON CONFLICT (tenant_id, lower(label)) WHERE deleted_at IS NULL DO NOTHING;
 
   GET DIAGNOSTICS v_inserted = ROW_COUNT;
   RETURN v_inserted;
@@ -685,22 +685,31 @@ BEGIN
     PERFORM public.kasir_expense_categories_reorder(ARRAY[v_reordered_id, v_new_id]);
   END IF;
 
-  -- Rollback all mutations
+  -- Rollback all mutations via subtransaction: the EXCEPTION handler
+  -- catches SQLSTATE P0001 (our SMOKE_TEST_OK marker) and swallows it,
+  -- so the outer migration tx commits with the CREATE FUNCTIONs intact
+  -- while all smoke-test mutations (create/update/soft_delete/restore/reorder)
+  -- get rolled back by the implicit subtransaction the EXCEPTION clause creates.
+  --
+  -- KECT_* error codes from actual RPC failures use P0400/P0403/P0404/P0409
+  -- and would propagate normally, aborting the migration — which is correct
+  -- (we want to know if the smoke test caught a real bug).
   RAISE EXCEPTION 'SMOKE_TEST_OK — rollback intended' USING errcode = 'P0001';
+EXCEPTION
+  WHEN SQLSTATE 'P0001' THEN
+    -- Intentional rollback marker; swallow to let migration commit.
+    NULL;
 END $$;
--- Above intentionally raises. Wrap in a savepoint if you want to continue.
--- For CI apply, downstream migrations still succeed because this is a self-
--- contained DO block; the exception rolls back only its own tx.
 ```
 
-**Note:** the final `RAISE EXCEPTION` INSIDE a `DO` block rolls back only that block's changes; the CREATE FUNCTION statements above it stay committed. If Supabase's migration runner errors on any RAISE, remove the `RAISE EXCEPTION` and rely on the explicit `RAISE NOTICE 'smoke_test: complete'` before ending the block — the created smoke test row (`Smoke Test Cat`) is then left in place, and Task 3 Step 3 verification includes a cleanup query.
+**Note:** the smoke test's `EXCEPTION WHEN SQLSTATE 'P0001'` handler creates an implicit subtransaction so mutations roll back cleanly while the outer migration tx commits the CREATE FUNCTIONs.
 
 - [ ] **Step 2: Apply on Supabase branch**
 
 ```
 mcp__plugin_supabase_supabase__apply_migration { name: "20261115000523_...", query: <file contents> }
 ```
-Expected: success; if the final RAISE stops the migration runner, remove it (see Note above) and re-run.
+Expected: success; EXCEPTION handler swallows the P0001 marker so the migration runner sees no error.
 
 - [ ] **Step 3: Verify RPCs exist + smoke row cleaned up**
 
@@ -1675,6 +1684,7 @@ import {
 import { kasirExpenseCategoryService, type KasirExpenseCategoryRow } from '../../lib/kasirExpenseCategoryService';
 import { useTenant } from '../../contexts/TenantContext';
 import { captureError } from '../../lib/captureError';
+import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 interface Props {
   isEditable: boolean;
@@ -1682,7 +1692,9 @@ interface Props {
 }
 
 function friendlyError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
+  // Use extractErrorMessage — Supabase PostgrestError isn't an Error instance,
+  // so `err instanceof Error ? err.message : String(err)` yields `[object Object]`.
+  const msg = extractErrorMessage(err);
   if (msg.includes('KECT_LABEL_INVALID'))   return 'Nama kategori harus 3–40 karakter.';
   if (msg.includes('KECT_LABEL_DUPLICATE')) return 'Kategori dengan nama itu sudah ada.';
   if (msg.includes('KECT_IS_SYSTEM'))       return 'Kategori sistem tidak dapat diubah.';

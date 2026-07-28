@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Package, DollarSign,
   Printer, X, Search, Lock
 } from 'lucide-react';
 import {
-  KasirTransaction, KasirChannel, KasirPaymentMethod, KasirExpenseCategory,
+  KasirTransaction, KasirChannel, KasirPaymentMethod,
   KasirItem, DailySummary, PermissionSet, DbOrder, SalesChannel
 } from '../types';
 import {
@@ -20,6 +20,7 @@ import SalesInvoicePDF from './penjualan/SalesInvoicePDF';
 import CariByFotoModal from './kasir/CariByFotoModal';
 import HasilCariFotoModal from './kasir/HasilCariFotoModal';
 import type { SearchResult } from '../lib/cariByFotoService';
+import { useKasirExpenseCategories } from '../lib/hooks/useKasirExpenseCategories';
 
 interface KasirScreenProps {
   currentUser: { name: string; role: string; permissions: PermissionSet } | null;
@@ -39,9 +40,6 @@ const PAYMENT_LABEL: Record<KasirPaymentMethod, string> = {
   edc: 'EDC',
 };
 
-const EXPENSE_CATEGORIES: KasirExpenseCategory[] = [
-  'Gaji', 'Utilitas', 'Transportasi', 'Pembelian Stok', 'Marketing', 'Lain-lain',
-];
 
 function todayISO(): string {
   const d = new Date();
@@ -594,15 +592,30 @@ interface ExpenseModalProps {
 }
 
 function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModalProps) {
-  const [category, setCategory] = useState<KasirExpenseCategory>('Utilitas');
+  const { data: categories, isLoading, isError, refetch } = useKasirExpenseCategories();
+  const activeCategories = useMemo(
+    () => (categories ?? []).filter(c => c.active),
+    [categories]
+  );
+
+  const [category, setCategory] = useState<string>('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!category && activeCategories.length > 0) {
+      setCategory(activeCategories[0].label);
+    }
+  }, [activeCategories, category]);
+
+  const canSave = !saving && !isLoading && !isError && activeCategories.length > 0 && Boolean(category);
 
   async function handleSave() {
     const val = parseFloat(amount.replace(/\D/g, ''));
     if (!val || val <= 0) { showToast('Masukkan jumlah yang valid.', 'warning'); return; }
     if (!description.trim()) { showToast('Deskripsi wajib diisi.', 'warning'); return; }
+    if (!category) { showToast('Pilih kategori.', 'warning'); return; }
     setSaving(true);
     try {
       await kasirService.insertExpense({
@@ -621,10 +634,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-base font-extrabold text-[#012749]">Catat Pengeluaran</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
@@ -633,15 +643,34 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
         <div className="p-5 space-y-4">
           <div>
             <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-1">Kategori</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value as KasirExpenseCategory)}
-              className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
-            >
-              {EXPENSE_CATEGORIES.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            {isError ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 text-xs text-red-600">Gagal memuat kategori.</div>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="text-xs font-bold text-[#012749] underline"
+                >
+                  Coba lagi
+                </button>
+              </div>
+            ) : (
+              <select
+                aria-label="Kategori"
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                disabled={isLoading || activeCategories.length === 0}
+                className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] disabled:opacity-50"
+              >
+                {isLoading && <option>Memuat kategori...</option>}
+                {!isLoading && activeCategories.length === 0 && (
+                  <option>Tidak ada kategori aktif — atur di Pengaturan</option>
+                )}
+                {!isLoading && activeCategories.map(c => (
+                  <option key={c.id} value={c.label}>{c.label}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
@@ -670,7 +699,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
         <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50">
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={!canSave}
             className="w-full py-2.5 rounded-xl text-xs font-bold bg-[#012749] text-white hover:bg-[#1e3d60] transition-all disabled:opacity-50"
           >
             {saving ? 'Menyimpan...' : 'Simpan Pengeluaran'}

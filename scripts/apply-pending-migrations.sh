@@ -259,6 +259,16 @@ MIGRATIONS=(
   "20261115000510_bootstrap_tenant_context_hostname.sql"
   "20261115000511_revert_provision_tenant_ownership.sql"
   "20261115000512_deprovision_tenant_fixes.sql"
+
+  # ─── Kasir Expense Categories — 2026-07-24 configurable categories ───
+  # 521: kasir_expense_categories table schema + indexes + RLS (tenant read-only)
+  # 522: seed system categories + backfill existing transactions
+  # 523: RPCs for list/create/update/delete + tenant isolation
+  # 524: migrate kasir_transactions.expense_category ENUM → TEXT FK
+  "20261115000521_kasir_expense_categories_table.sql"
+  "20261115000522_kasir_expense_categories_seed_and_backfill.sql"
+  "20261115000523_kasir_expense_categories_rpcs.sql"
+  "20261115000524_kasir_transactions_expense_category_to_text.sql"
 )
 
 for m in "${MIGRATIONS[@]}"; do

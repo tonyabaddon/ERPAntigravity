@@ -383,8 +383,8 @@ export type KasirPaymentType = 'FULL' | 'DP' | 'TEMPO';
 export type KasirDpInputType = 'AMOUNT' | 'PERCENT' | null;
 export type KasirStatus = 'PAID' | 'AWAITING_LUNAS' | 'COMPLETED' | 'CANCELLED' | 'WIP' | 'PENDING_LOCK_APPROVAL';
 export type WarehouseLocation = 'atas' | 'bawah';
-export type KasirExpenseCategory =
-  | 'Gaji' | 'Utilitas' | 'Transportasi' | 'Pembelian Stok' | 'Marketing' | 'Lain-lain';
+// Tenant-configurable since slot 524. See kasir_expense_categories table.
+export type KasirExpenseCategory = string;
 
 export interface KasirItem {
   sku: string | null;

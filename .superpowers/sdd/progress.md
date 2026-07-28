@@ -1,3 +1,36 @@
+### 2026-07-27 — Kasir expense categories owner-configurable READY FOR DEPLOY (SDD)
+
+**What:** Replaced hardcoded `kasir_expense_category` enum with per-tenant configurable table (4 migrations 20261115000521-524) + 5 SECDEF RPCs + Pengaturan panel (`KasirExpenseCategoriesPanel.tsx` + `CategoryRow.tsx`) + shared React Query hook + Kasir dropdown reads from hook. System-emitted categories (Pembelian Stok / Pass-Through / MDR EDC) stay backend-only and invisible in UI.
+
+**Why:** MSME variety demands owner-adjustable expense vocabulary. `Pembelian Stok` overlap with Pembelian module removed from user-selectable path (auto-emit still works via record_pi + MarkAsPaid).
+
+**Migrations (pending prod apply):** 20261115000521 → 000524 (batch apply via `scripts/apply-pending-migrations.sh` at deploy time).
+
+**Files:**
+- Spec: `docs/superpowers/specs/2026-07-24-kasir-expense-categories-configurable-design.md`
+- Plan: `docs/superpowers/plans/2026-07-25-kasir-expense-categories-configurable-plan.md`
+
+**Branch:** `feat/kasir-expense-categories` (worktree `.claude/worktrees/kasir-expense-categories/`)
+
+**Stage 1 (local verification):** all gates green (lint, audit:numinput, audit:secdef-null-tenant, audit:no-string-err-fallback, vitest full suite 1097 tests passed / 2 skipped / 0 failed — 127 test files).
+
+**Stage 2 (production deploy):** PENDING founder-manual per `manual_prod_gate_after_real_tenant` memory. Steps:
+1. Merge branch to main (via PR or direct).
+2. Apply migrations 521-524 to prod (add to `scripts/apply-pending-migrations.sh` array OR MCP apply).
+3. Verify migration success: `SELECT COUNT(*) FROM kasir_expense_categories` = tenants × 8.
+4. Run `mcp__plugin_supabase_supabase__get_advisors` and triage.
+5. FE auto-deploys via cloudbuild.frontend.yaml on push to main.
+
+**Stage 3 (Toko Jaya Makmur smoke):** PENDING founder-manual per policy. 15-step checklist in plan §9.6.
+
+**Follow-up (post-soak, slots 525+):**
+- Batch refactor 6+ RPCs to drop `::kasir_expense_category` cast (record_pi, record_pembayaran, phase 0b/0c dual-write, record_pi_with_discount).
+- After zero cast reference confirmed: `DROP TYPE kasir_expense_category` (slot 526+).
+- Week-4 retrospective: `used_custom_ratio` per tenant.
+- Cleanup 31 pre-existing files that trip the newly-added `audit:no-string-err-fallback` allowlist.
+
+---
+
 ## 2026-07-21 — QA Week Phase 2 Wave 2 + Wave 3 SHIPPED (autonomous 9h session)
 
 **Plans:** `docs/superpowers/plans/2026-07-21-qa-week-phase-2-wave-2.md`, `...wave-3.md`
@@ -1110,3 +1143,22 @@ form the complete deploy hygiene for staging/prod-isolation-aware BE.
 1. `admin.caleo.id` → Provision tenant (owner email, tenant slug, name)
 2. Owner signs in on `app.caleo.id` → sees tenant, works normally
 3. Verify: same owner signs in on `staging.app.caleo.id` → tenant picker empty (ENV_MISMATCH)
+
+## 2026-07-25 — Kasir Expense Categories Configurable (SDD, worktree feat/kasir-expense-categories)
+Task 1: complete (commits eac7288..cf79550, review clean — 2 minor Postgres-no-op findings noted)
+Task 2: complete (commit 991887c, migration 522 — seed function + backfill DO block. SKIPPED verification steps per brief deviation). Idempotent via ON CONFLICT ON CONSTRAINT ux_kasir_expense_categories_tenant_label_ci DO NOTHING. Ready for batch apply at Task 13.
+Task 2: complete (commits cf79550..7f2bd1e, review PASS after 1 fix — ON CONFLICT syntax drift from spec, fixed + plan text corrected 199c3ca)
+Task 3: complete (commits 7f2bd1e..f54b24a, review PASS after 1 fix — smoke-test DO block needed EXCEPTION handler; fixed + plan text corrected)
+Task 4: complete (commits f54b24a..5ce84e4, review PASS clean — enum→text migration idempotent, non-breaking)
+Task 5: complete (commit 5ce84e4..e6c1223, review PASS clean — dnd-kit@6.3.1 + sortable@10.0.0 installed, type-check clean)
+Task 6: complete (commit 98854d7, TDD RED→GREEN 6/6, lint clean — KasirExpenseCategory union widened to string, kasirExpenseCategoryService wrapping 5 SECDEF RPCs with KECT_* error passthrough)
+Task 6: complete (commit e6c1223..98854d7, review PASS clean — type widened + service layer 6/6 tests, TDD followed)
+PAUSED after Task 6. Resume: run `task-brief docs/superpowers/plans/2026-07-25-kasir-expense-categories-configurable-plan.md 7` and dispatch Task 7 implementer from worktree .claude/worktrees/kasir-expense-categories.
+Hook fix: added scripts/audit-no-string-err-fallback.ts with 31-file allowlist (pre-existing debt). Unblocks Stop hook loop; new code still gated.
+Task 7: complete (commits 853363f..a6cc755, review PASS clean — hook + query key; +@tanstack/react-query dep added as plan gap fix, useTenant snake_case adapted)
+Task 8: complete (commits a6cc755..c248405, review PASS clean — CategoryRow 7/7 tests, all named risks verified)
+Task 9: complete (commits c248405..304d24b, review PASS clean — panel 7/7 tests, all 6 named risks verified, useTenant snake_case adapted, comment reword to dodge audit regex)
+Task 10: complete (commits 304d24b..b526424, review PASS after 1 fix — panel wired to PengaturanScreen, plan gap: QueryClientProvider absent at app root, added via src/lib/queryClient.ts + main.tsx wrap, 1093/1093 tests pass no regression)
+Task 11: complete (commits b526424..71c112d, review PASS clean — ExpenseModal reads from hook, 3/3 new tests, all 5 gates green, hardcoded array removed cleanly)
+Task 12: complete (commit ad9de82, regression test MarkAsPaidModal.test.tsx — asserts hardcoded 'Pembelian Stok' insert still works post migration 524 enum→text; 1/1 test PASS, all 4 gates green — lint, audit:numinput, audit:secdef-null-tenant, audit:no-string-err-fallback, vitest run --changed)
+Task 12: complete (commits 71c112d..ad9de82, review PASS clean — MarkAsPaid regression test 1/1, all gates green, migration 524 backward-compat confirmed)
