@@ -42,6 +42,28 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #6 — 2026-07-27 — Wizard state var not auto-populated from customer profile → Lanjut button silently disabled
+
+**Context:** Founder reported: in Penawaran (CatatPenjualanWizard) with channel=whatsapp, "Lanjut ke Pesanan" button stayed disabled even after picking a customer that already has `wa_number` saved. Same bug fires for invoice mode (same wizard). Only worked when converting from an existing Sales Order (`fromSalesOrderId` path at line 431 explicitly seeded `waPhone`).
+
+**Root cause:** `waPhone` React state initialized as `useState('')` (line 113 of `CatatPenjualanWizard.tsx`) and **never populated** on the two normal customer-selection paths (`CustomerPanel.onSelectExisting` and `NewCustomerInlineForm.onSaved`). Both fire `setCustomer(c)` but neither propagates `c.wa_number` into `waPhone`. `validateStep1` correctly requires `wa_phone` for the whatsapp channel — the validation was right; the state layer was stale.
+
+**Why it hid:** Compounded by UX ordering — `WhatsappStrip` (phone input) renders ABOVE the customer picker in Step 1, so the empty phone field appears before the user has even considered the customer. And the SO-conversion path DID work, hiding the class of bug on the more common freshly-created-quote path.
+
+**Root cause of the miss (class of bug):** wizard state variables that mirror a source-of-truth profile field (customer.wa_number, and by extension future fields like customer.email or customer.default_shipping_address) were coded as independent input state without a bridge back to the profile. Single-write flow (customer selection) does not fan out to derived state.
+
+**Prevention rules going forward:**
+1. **Any wizard state variable that mirrors a profile field MUST have a `useEffect` (or derived helper) that auto-populates on the source-of-truth change**, guarded by `!current` so it never overwrites user-typed input. Pattern extracted to `src/lib/wizard/derivations.ts::shouldAutoFillWaPhone` as the reusable template.
+2. **When adding new channel-specific or entity-specific required fields to a wizard, add BOTH:** (a) the validation rule (already the discipline), and (b) an auto-populate hook + test that verifies the field seeds from the source profile.
+3. **Impact-analysis step for wizard fields:** grep for `setCustomer(` and `setProduct(` in each wizard; for every new required field, verify a bridge exists between selection callbacks and the field's state.
+4. **Reproduction template for "Lanjut disabled after valid data" bugs:** first check whether the validated field is a derived-from-profile field that failed to derive.
+
+**Files updated:** `src/lib/wizard/derivations.ts` (new — pure predicate), `src/lib/wizard/__tests__/derivations.test.ts` (6 tests), `src/components/penjualan/CatatPenjualanWizard.tsx` (useEffect + import), this miss-log entry, `progress.md`.
+
+**Follow-up (not in this PR):** consider UX restructure — move Channel-specific input strips (WhatsappStrip, TokpedStrip) BELOW the customer picker in Step 1 so the ordering matches the data-flow ("who first, then how"). Requires FE UI/UX approval per CLAUDE.md protocol; tracked separately.
+
+---
+
 ## Entry #5 — 2026-07-25 — `[object Object]` class-fix: 3rd occurrence → audit script + 53-site codemod
 
 **Context:** Founder reported "buat transfer baru dari gudang ke gudang lain, qty kirim tidak bisa diedit, ketika edit dari 1 ke 4 diubah menjadi maksimal jumlah stoknya" + "tidak bisa klik kirim transfer juga error" + "klik kirim + cetak PDF juga ga bisa" on WarehouseTransferCreateScreen. The Kirim button error rendered as literal `[object Object]` in the red banner — the SAME symptom as the PinPad regression 24 hours earlier (Entry #4). Investigation surfaced 3 root causes; the `[object Object]` one was `WarehouseTransferCreateScreen.tsx:141` doing `e instanceof Error ? e.message : String(e)` where `e` is a Supabase `PostgrestError` (plain object, not `Error` instance) so `String(e) === "[object Object]"`. Same anti-pattern was present in 55 more sites across `src/`.
