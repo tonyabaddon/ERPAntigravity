@@ -29,7 +29,7 @@ MSME founder request: owner should configure the **number and labels** of pricin
 Extend the existing 2-tier schema with 2 more fixed slots — no new table. Specifically:
 
 - **`tenant_settings`** gains `tier_1_label` / `tier_2_label` (NOT NULL, defaults `'Eceran'`/`'Grosir'`) plus `tier_3_label` / `tier_4_label` (nullable — NULL means tier disabled for this tenant).
-- **`products`** gains `price_tier_3 NUMERIC` and `price_tier_4 NUMERIC` (nullable, fall back to base `price` at read time via COALESCE, mirroring existing `price_grosir` fallback).
+- **`stocks`** gains `price_tier_3 NUMERIC` and `price_tier_4 NUMERIC` (nullable, fall back to base `price` at read time via COALESCE, mirroring existing `price_grosir` fallback).
 - **`customers.default_pricing_tier` CHECK constraint** widens from `IN ('eceran','grosir')` to `IN ('eceran','grosir','tier_3','tier_4')` — additive only, existing values stay valid.
 - **`pricing_tier_label` snapshot lives INSIDE the items JSONB** on `public.sales_orders.items` and `public.kasir_transactions.items`. No new table column — line items were never a normalized table; they've always been JSONB. RPCs stamp `pricing_tier_label` as a sibling key next to the existing `pricing_tier_used`.
 - **New SECDEF RPC `update_tenant_tier_config(labels)`** — mirrors kasir-expense pattern: `SET search_path = public`, `auth.uid()` + `admin_users` owner-role check, `public._resolve_tenant_id()` for tenant scoping, structured error codes (`TCFG_FORBIDDEN`/`TCFG_LABEL_INVALID`/`TCFG_LABEL_DUPLICATE` with `errcode` `P0403`/`P0400`/`P0409`), case-insensitive uniqueness per tenant, length 3-30 chars.
@@ -42,7 +42,7 @@ Extend the existing 2-tier schema with 2 more fixed slots — no new table. Spec
 
 | Alternative | Rejected because |
 |---|---|
-| **JSONB on `products.tier_prices`** | Advisor identified reversibility asymmetry (JSONB→columns is per-row unpack coordination, columns→drop is one ALTER). Financial audit needs row-level triggers per-tier column, natural on columns, custom jsonb-diff on JSONB. Codebase-consistency concern (junior reads "why not normalized here?"). Read-path advantage of JSONB doesn't apply at fixed-4 cardinality. |
+| **JSONB on `stocks.tier_prices`** | Advisor identified reversibility asymmetry (JSONB→columns is per-row unpack coordination, columns→drop is one ALTER). Financial audit needs row-level triggers per-tier column, natural on columns, custom jsonb-diff on JSONB. Codebase-consistency concern (junior reads "why not normalized here?"). Read-path advantage of JSONB doesn't apply at fixed-4 cardinality. |
 | **Normalized `product_prices(product_id, tier_key, price)` table** | Read path adds a JOIN on every kasir/quotation/StockManager query — 200M+ queries/day at scale ceiling. `product_prices` grows to ~20M rows at ceiling; 10× storage vs column form. Bulk CSV import writes N rows per SKU vs one row per SKU. At bounded-4 cardinality, normalization is over-engineered — Kimball rule "fixed bounded cardinality → columns" fires. |
 | **N fixed columns beyond 4 (`price_tier_5`, `_6`, ...)** | Founder capped at 4; YAGNI. Adding 5th later is one migration. |
 | **Dedicated `tenant_pricing_tiers` table for metadata** | 4 rows per tenant is scaffolding-heavy — RLS + seed + audit setup for tiny fixed data. `tenant_settings` columns match problem shape (data always read alongside other settings, single-row lookup). Codebase-consistency argument (mirror `kasir_expense_categories`) doesn't override the shape mismatch — that table serves variable-cardinality per-tenant entities, not fixed slots. |
@@ -50,7 +50,7 @@ Extend the existing 2-tier schema with 2 more fixed slots — no new table. Spec
 | **Just rename existing 2 tiers (`tier_1_label` / `tier_2_label` only)** | Doesn't solve the multi-distributor use case founder raised (3-4 pricing bands for retail + grosir kecil + grosir besar + distributor). |
 | **Mutable historical invoice labels** (labels resolve to current `tenant_settings` at PDF render) | Simpler code, but breaks financial-audit norm — invoice PDF from Q3 could reprint in Q4 with a different label than what was originally issued. Some jurisdictions treat invoices as immutable legal artifacts. Founder explicitly chose snapshot semantics. |
 | **Snapshot label as a new column on a normalized `sales_lines` table** | **Corrected 2026-07-28**: line items are stored as JSONB arrays on `sales_orders.items` / `kasir_transactions.items` — there is no normalized `sales_lines` table (verified via grep). Snapshot lives inside the JSONB item objects instead, alongside `pricing_tier_used`. Same immutability semantics, no schema change beyond what the RPCs already write into JSONB. |
-| **Block tier disable when in-use** (RAISE `TIER_IN_USE` if customers/products/sales references it) | Protective but punishing UX — owner must bulk-reassign customers before renaming. Orphan-tolerant fallback (choose `'eceran'` at read time) is simpler and reversible (owner re-enables → data resurfaces). Founder chose orphan-tolerant. |
+| **Block tier disable when in-use** (RAISE `TIER_IN_USE` if customers/stocks/sales references it) | Protective but punishing UX — owner must bulk-reassign customers before renaming. Orphan-tolerant fallback (choose `'eceran'` at read time) is simpler and reversible (owner re-enables → data resurfaces). Founder chose orphan-tolerant. |
 
 **Chosen: fixed 4-column extension with snapshot invoice label inside items JSONB + orphan-tolerant disable + case-insensitive label uniqueness enforced at SECDEF RPC.**
 
@@ -59,13 +59,13 @@ Extend the existing 2-tier schema with 2 more fixed slots — no new table. Spec
 ## 4. Consequences
 
 ### Locked (irreversible or expensive to reverse)
-- **Column shape on `products` and `tenant_settings`.** If we ever regret the `tier_N_label` naming or want a normalized model, it's a migration + code sweep across all readers. Cheap now, more expensive as reader count grows.
+- **Column shape on `stocks` and `tenant_settings`.** If we ever regret the `tier_N_label` naming or want a normalized model, it's a migration + code sweep across all readers. Cheap now, more expensive as reader count grows.
 - **Semantic keys `'eceran'` / `'grosir'` stay literal forever.** New tiers use slot names `'tier_3'` / `'tier_4'` (not `'grosir_besar'` etc.). Rationale: no destructive migration to existing customer/sales data. Cost: future dev sees mixed key style and needs the memo to explain. Documented in the design spec.
 - **`pricing_tier_label` snapshot in items JSONB becomes canonical for historic display.** Once we start writing snapshot labels, going back to mutable semantics requires per-item JSONB label recompute. Since it's a JSONB field, adding a new key is non-destructive to older items (they just have `pricing_tier_used` without the label — renderer falls back).
 
 ### Reversible
 - **Tier count 4 → 5+.** Add another `tier_5_label` column + `price_tier_5` column, widen CHECK, extend RPC cases. One migration, single code sweep. Not expensive.
-- **Column drop for rollback.** `ALTER TABLE tenant_settings DROP COLUMN tier_3_label, tier_4_label; ALTER TABLE products DROP COLUMN price_tier_3, price_tier_4; ALTER TABLE customers ...revert CHECK; DROP FUNCTION update_tenant_tier_config; CREATE OR REPLACE FUNCTION record_kasir_sale / create_tempo_invoice ...restore body from slot 000325;` — clean rollback in 5 statements. `pricing_tier_label` inside JSONB items stays as harmless extra key on historic rows — no schema rollback needed there.
+- **Column drop for rollback.** `ALTER TABLE tenant_settings DROP COLUMN tier_3_label, tier_4_label; ALTER TABLE stocks DROP COLUMN price_tier_3, price_tier_4; ALTER TABLE customers ...revert CHECK; DROP FUNCTION update_tenant_tier_config; CREATE OR REPLACE FUNCTION record_kasir_sale / create_tempo_invoice ...restore body from slot 000325;` — clean rollback in 5 statements. `pricing_tier_label` inside JSONB items stays as harmless extra key on historic rows — no schema rollback needed there.
 
 ### Blast radius
 - 13 files touched (revised down from 14 after double-check confirmed `KasirScreen.tsx` has no tier code).
@@ -78,14 +78,14 @@ Extend the existing 2-tier schema with 2 more fixed slots — no new table. Spec
 ## 5. Scale-forward Check (6 questions per CLAUDE.md)
 
 1. **Ceiling at 10× scale (10K tenants, 100M rows on hot tables):**
-   - `products` row-width grows by 2 numeric columns (~16 bytes). At 10M product rows = +160MB fleet-wide. Negligible.
+   - `stocks` row-width grows by 2 numeric columns (~16 bytes). At 10M stock rows = +160MB fleet-wide. Negligible.
    - `tenant_settings` grows by 4 TEXT columns × avg 12 bytes = 480KB fleet-wide. Rounding error.
    - `sales_orders.items` / `kasir_transactions.items` JSONB per-item grows by ~15 bytes (`"pricing_tier_label": "Grosir"` uncompressed). At 100M sales-line JSONB items = +1.5GB pre-compression. Postgres TOAST auto-compresses repeated short strings; effective footprint ~500MB. Non-trivial but manageable at 10×.
    - **What breaks first at 100× scale (100K tenants, 1B rows):** JSONB items on `sales_orders` become the dominant storage cost. Partitioning by `(tenant_id, created_at)` remains viable; label compression via short codes (`"pt_label":"1"`) is a Phase 1c option if it ever matters. Not blocking at 10×.
 
-2. **Hot path:** kasir/quotation reads `products.*` — no JOIN added. Sales revenue analytics still hit each order's items JSONB (unchanged). PDF render adds `item.pricing_tier_label` read from the same JSONB item object (no additional row read).
+2. **Hot path:** kasir/quotation reads `stocks.*` — no JOIN added. Sales revenue analytics still hit each order's items JSONB (unchanged). PDF render adds `item.pricing_tier_label` read from the same JSONB item object (no additional row read).
 
-3. **Partition-ready:** `products` PK unchanged; `sales_orders` and `kasir_transactions` PK unchanged. Partitioning trigger at 10M rows on `(tenant_id, created_at)` remains viable.
+3. **Partition-ready:** `stocks` PK unchanged; `sales_orders` and `kasir_transactions` PK unchanged. Partitioning trigger at 10M rows on `(tenant_id, created_at)` remains viable.
 
 4. **Idempotency:** all 2 migrations use `ADD COLUMN IF NOT EXISTS`, `DROP CONSTRAINT IF EXISTS` + re-add, `CREATE OR REPLACE FUNCTION`. Safe to re-run per CLAUDE.md guardrail. Backfill of `pricing_tier_label` on historic JSONB items: **skipped** (fallback logic in renderer handles missing key as "resolve to current tenant label" for pre-Phase-1b items). New items always stamp label.
 

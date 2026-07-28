@@ -44,10 +44,10 @@ ALTER TABLE public.tenant_settings
 
 Existing tenants get the default `'Eceran'` / `'Grosir'` labels — zero UX change until owner opens the new panel.
 
-### 3.2 `products` — add 2 price columns
+### 3.2 `stocks` — add 2 price columns
 
 ```sql
-ALTER TABLE public.products
+ALTER TABLE public.stocks
   ADD COLUMN IF NOT EXISTS price_tier_3 NUMERIC,
   ADD COLUMN IF NOT EXISTS price_tier_4 NUMERIC;
 ```
@@ -191,7 +191,7 @@ Both are `CREATE OR REPLACE FUNCTION` re-definitions of the tier-aware pattern o
      END,
      s.price
    INTO v_expected_price, v_master_price
-   FROM products s
+   FROM stocks s
    WHERE s.sku = v_item->>'sku'
      AND s.tenant_id = v_tenant_id;
    ```
@@ -288,7 +288,7 @@ export function getActiveTiers(s: DbTenantSettings): Tier[] {
   return tiers;
 }
 
-// Read-time helper for products.price_tier_N lookup with base fallback
+// Read-time helper for stocks.price_tier_N lookup with base fallback
 export function getTierPrice(
   stock: { price: number; price_grosir?: number | null; price_tier_3?: number | null; price_tier_4?: number | null },
   tier: TierKey,
@@ -540,7 +540,7 @@ DROP FUNCTION IF EXISTS public.update_tenant_tier_config(TEXT,TEXT,TEXT,TEXT);
 ALTER TABLE public.customers DROP CONSTRAINT IF EXISTS customers_default_pricing_tier_check;
 ALTER TABLE public.customers ADD CONSTRAINT customers_default_pricing_tier_check
   CHECK (default_pricing_tier IN ('eceran','grosir'));
-ALTER TABLE public.products DROP COLUMN IF EXISTS price_tier_3, DROP COLUMN IF EXISTS price_tier_4;
+ALTER TABLE public.stocks DROP COLUMN IF EXISTS price_tier_3, DROP COLUMN IF EXISTS price_tier_4;
 ALTER TABLE public.tenant_settings DROP COLUMN IF EXISTS tier_1_label, DROP COLUMN IF EXISTS tier_2_label, DROP COLUMN IF EXISTS tier_3_label, DROP COLUMN IF EXISTS tier_4_label;
 
 -- pricing_tier_label inside items JSONB stays as a harmless extra key on historic rows —
