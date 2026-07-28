@@ -237,6 +237,9 @@ export interface DbWaRecipient {
   created_at: string;
 }
 
+// Phase 1b: tier system supports 2–4 tiers
+export type TierKey = 'eceran' | 'grosir' | 'tier_3' | 'tier_4';
+
 export interface DbCustomer {
   id: string;
   wa_number: string;
@@ -251,7 +254,7 @@ export interface DbCustomer {
   tempo_activated_at?: string | null;
   tempo_activated_by?: string | null;
   // Multi-tier pricing
-  default_pricing_tier?: 'eceran' | 'grosir';
+  default_pricing_tier?: TierKey;
   // Sprint 2: per-customer WA reminder opt-out
   wa_reminder_enabled?: boolean;
 }
@@ -1293,6 +1296,11 @@ export interface DbTenantSettings {
   modul_diskon_penjualan: boolean;
   modul_diskon_tagihan: boolean;
   modul_multi_tier_price: boolean;
+  // Phase 1b: tier labels — tier_1/2 always non-null (defaulted); tier_3/4 nullable = disabled
+  tier_1_label: string;
+  tier_2_label: string;
+  tier_3_label: string | null;
+  tier_4_label: string | null;
   pajak_mode: PajakMode;
   pajak_ppn_rate_umum: number;
   pajak_ppn_rate_mewah: number;
@@ -1341,7 +1349,7 @@ export interface DiscountTriple {
 
 export interface CartItemWithDiscount extends DiscountTriple {
   master_price_at_sale: number;
-  pricing_tier_used?: 'eceran' | 'grosir' | null;
+  pricing_tier_used?: TierKey | null;
 }
 
 // ─── Sales Order / Penawaran (PR #55) ───────────────────────────────────

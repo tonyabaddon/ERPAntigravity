@@ -9,6 +9,8 @@ const baseSettings: DbTenantSettings = {
   modul_jasa_layanan: true, modul_bom_recipe: false,
   modul_diskon_kasir: false, modul_diskon_penjualan: false, modul_diskon_tagihan: false,
   modul_multi_tier_price: false,
+  // Phase 1b: tier labels
+  tier_1_label: 'Eceran', tier_2_label: 'Grosir', tier_3_label: null, tier_4_label: null,
   pajak_mode: 'FINAL_UMKM', pajak_ppn_rate_umum: 11, pajak_ppn_rate_mewah: 12,
   pajak_final_rate: 0.5,
   pajak_umkm_jenis_badan: 'OP', pajak_umkm_terdaftar_at: '2022-01-01',

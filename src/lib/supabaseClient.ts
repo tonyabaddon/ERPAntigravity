@@ -6,7 +6,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { wibDateString } from './format';
 import { getBackendUrl } from './backendUrl';
-import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel, ConversationState } from '../types';
+import type { DbConversation, DbMessage, DbOrder, DbWaRecipient, DbCustomer, DbCustomerWithStats, DbCustomerProfile, DbLead, DbNotificationConfig, DbCompanySettings, DbAdminUser, KasirTransaction, DailySummary, RecordKasirSaleInput, NewExpense, KasirChannel, KasirPaymentMethod, KasirPaymentSubtype, BankAccount, BankStatementLine, PayableSlot, CashDepositBatch, BankLineKind, SalesChannel, ConversationState, TierKey } from '../types';
 import type {
   ApprovalRequest,
   StockAdjustmentReason,
@@ -69,6 +69,9 @@ export interface SupabaseStockItem {
   unit_alt_factor?: number | null;
   price: number;
   price_grosir?: number | null;
+  // Phase 1b: tier_3 and tier_4 prices (nullable = fallback to base `price`)
+  price_tier_3?: number | null;
+  price_tier_4?: number | null;
   stock: number;
   stock_atas?: number;
   stock_bawah?: number;
@@ -870,7 +873,7 @@ export const customersService = {
     if (error) throw error;
   },
 
-  async updateTier(id: string, tier: 'eceran' | 'grosir'): Promise<void> {
+  async updateTier(id: string, tier: TierKey): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
     const { error } = await supabase
       .from('customers')

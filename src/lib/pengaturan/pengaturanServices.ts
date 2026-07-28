@@ -69,6 +69,22 @@ export const tenantSettingsService = {
     });
     if (error) throw error;
   },
+
+  async updateTierConfig(labels: {
+    tier_1_label: string;
+    tier_2_label: string;
+    tier_3_label: string | null;
+    tier_4_label: string | null;
+  }): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('update_tenant_tier_config', {
+      p_tier_1_label: labels.tier_1_label,
+      p_tier_2_label: labels.tier_2_label,
+      p_tier_3_label: labels.tier_3_label,
+      p_tier_4_label: labels.tier_4_label,
+    });
+    if (error) throw error;
+  },
 };
 
 // ─── service_types ──────────────────────────────────────────────────────
