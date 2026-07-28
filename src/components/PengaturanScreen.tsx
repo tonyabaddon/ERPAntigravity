@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Users, Plus, Trash2, ToggleLeft, ToggleRight, Save, X, Upload, Image as ImageIcon, Smartphone } from 'lucide-react';
-import { DbWaRecipient, DbCompanySettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
+import { DbWaRecipient, DbCompanySettings, DbTenantSettings, NotificationConfig, StockItem, PermissionSet, ActivePage } from '../types';
 import { REGISTRY_MAP, type PermissionKey } from '../lib/permissions';
 import { waRecipientsService, companySettingsService, adminUsersService, isSupabaseConfigured, supabase } from '../lib/supabaseClient';
 import { normalizePhone } from '../lib/phone';
@@ -23,7 +23,9 @@ import PromoProdukPanel from './pengaturan/PromoProdukPanel';
 import SaldoAwalPanel from './pengaturan/SaldoAwalPanel';
 import LayananPanel from './pengaturan/LayananPanel';
 import KasirExpenseCategoriesPanel from './pengaturan/KasirExpenseCategoriesPanel';
+import TierConfigPanel from './pengaturan/TierConfigPanel';
 import { fetchStoreSettings } from '../lib/pengaturan/queries';
+import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { captureError } from '../lib/captureError';
 
@@ -83,6 +85,14 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
   const [company, setCompany]           = useState<DbCompanySettings | null>(null);
   const [companyLoading, setCompanyLoading] = useState(true);
 
+  // TenantSettings — for TierConfigPanel (modul_multi_tier_price gate + tier labels)
+  const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
+  const refreshTenantSettings = () => {
+    tenantSettingsService.fetch()
+      .then(setTenantSettings)
+      .catch(err => captureError(err, { feature: 'pengaturan', action: 'fetch_tenant_settings' }));
+  };
+
   // Logo state
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -107,6 +117,8 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
       setCompanyLoading(false);
       return;
     }
+    // Fetch tenant settings for TierConfigPanel
+    refreshTenantSettings();
     Promise.allSettled([
       waRecipientsService.fetchAll(),
       companySettingsService.fetch(),
@@ -528,6 +540,16 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               <p className="text-xs text-slate-500 mb-4">Jasa yang ditawarkan toko. Yang aktif muncul di Catat Penjualan Step 2.</p>
               <JenisJasaCrudPanel showToast={showToast} />
             </section>
+            {tenantSettings?.modul_multi_tier_price && (
+              <section>
+                <h3 className="text-base font-bold text-[#012749] mb-3">💵 Tingkat Harga</h3>
+                <TierConfigPanel
+                  tenantSettings={tenantSettings}
+                  onSaved={refreshTenantSettings}
+                  showToast={showToast}
+                />
+              </section>
+            )}
           </div>
         )}
         {activeTab === 'approval' && <ApprovalRulesPanel showToast={showToast} />}
