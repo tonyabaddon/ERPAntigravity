@@ -1,5 +1,53 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-28 — Kasir Expense Categories owner-configurable SHIPPED (100% prod traffic)
+
+**PRs merged:** #64 (feature) → #65 (wizard WA phone fix, orthogonal) → #66 (hotfix migration 525) → #67 (class-fix audit script)
+
+**What shipped in prod:**
+- Owner-configurable Kasir expense categories via new Pengaturan panel (`KasirExpenseCategoriesPanel.tsx`, `CategoryRow.tsx` with dnd-kit drag reorder + inline edit + on/off toggle + soft-delete)
+- 5 SECDEF RPCs + 1 idempotent seed helper (create/update/soft_delete/restore/reorder)
+- Enum `kasir_expense_category` → `TEXT` column migration (non-breaking, view drop-recreate handled)
+- Kasir ExpenseModal refactored to read via shared React Query hook; system categories (`Pembelian Stok`, `Pembelian Pass-Through`, `MDR EDC`) stay backend-emitted + invisible in UI
+- 7 tenants × 8 rows seeded (35 user-facing + 21 system) via idempotent backfill
+
+**Migrations applied (521-525):**
+| Slot | File | Notes |
+|---|---|---|
+| 521 | `kasir_expense_categories_table.sql` | table + 3 RLS policies + 2 indexes; slot collision with saldo-awal's `backfill_cash_accounts_coa_link` (different filenames, no data conflict, both applied via psql) |
+| 522 | `kasir_expense_categories_seed_and_backfill.sql` | idempotent seed function + backfill (7 tenants × 8 rows = 56) |
+| 523 | `kasir_expense_categories_rpcs.sql` | 5 SECDEF RPCs + inline smoke test |
+| 524 | `kasir_transactions_expense_category_to_text.sql` | enum→text; required DROP+recreate of `kasir_transactions_legacy` view (dependency) |
+| 525 | `kasir_expense_rpcs_owner_postgres.sql` | HOTFIX — reverted ownership vosi_rpc_owner→postgres because auth.uid() fails w/o auth schema USAGE (Entry #4 class-error, 4th recurrence) |
+
+**Prod state:**
+- FE + BE @ 100% traffic on `c843a126` (frontend revision `00811-fof`, backend revision `00631-nul`)
+- app.caleo.id: HTTP 200
+- BE `/api/v1/live`: HTTP 200
+- Post-promote monitoring: 0 FE errors, only ambient `[DB] Listener event error` from BE (pre-existing rhythm, unrelated)
+- Full RPC smoke on Toko Jaya Makmur: **6/6 PASS** (create/update/soft_delete/restore/reorder + KECT_LABEL_DUPLICATE negative — mutations rolled back via SQLSTATE P0001 EXCEPTION handler, zero side-effect)
+- Prod DB verified: 0 SECDEF+auth.*+vosi_rpc_owner violations
+
+**Files:**
+- Spec: `docs/superpowers/specs/2026-07-24-kasir-expense-categories-configurable-design.md`
+- Plan: `docs/superpowers/plans/2026-07-25-kasir-expense-categories-configurable-plan.md`
+
+**Class-fix (PR #67):** miss-log Entry #8 documents the SECDEF+auth+vosi_rpc_owner recurrence + prevention rules. New `scripts/audit-secdef-auth-schema-owner.ts` + npm script + Stop hook wiring blocks any future migration reintroducing the pattern. 10-file allowlist for historical fixed-elsewhere migrations.
+
+**Follow-ups (non-blocking):**
+- **Wizard Step 1 UX restructure** — reorder to `Channel → Customer → WA/marketplace inputs (last)`; deferred per FE UI/UX approval protocol.
+- **Rewrite SECDEF bodies** to use `current_setting('request.jwt.claims')` instead of `auth.uid()` — removes dependency on owner-postgres bypass entirely. Long-term P3-05 least-privilege goal.
+- **Apply-pending-migrations.sh cleanup** — 73-entry array includes old non-idempotent migrations that break on re-apply (hit during today's ship). Needs prune.
+- **Kasir dropdown discoverability link** (spec §8.6 "Kelola kategori →") — deferred per plan.
+- **Panel undo Batalkan action button** (spec §8.5) — needs toast context extension.
+
+**Ship discipline notes:**
+- Migration slot collision with parallel saldo-awal session (miss-log Entry #7) — both fixed inline, both patterns preserved.
+- Migration 524 blocked by view dependency — solved via drop-alter-recreate transaction (documented in `kasir_transactions_legacy` view definition).
+- Migration 523 smoke test `RAISE EXCEPTION` inside DO block failed initially — hotfixed with `EXCEPTION WHEN SQLSTATE 'P0001'` handler (subtransaction pattern).
+
+---
+
 ## 2026-07-28 — Saldo Awal Post unblocked (Toko Jaya) + cash_accounts.coa_account_id hardened
 
 - **Root cause:** Toko Jaya Makmur had 2 cash_accounts (BCA Utama BANK, GoPay Merchant E_WALLET) with NULL coa_account_id — seeded outside the FE form, so `resolveCoaAccountId` never ran. `post_saldo_awal_snapshot` correctly RAISEs on this, but the toast showed `[object Object]` (extractErrorMessage class fix from 42b4598 wasn't deployed to prod yet).
