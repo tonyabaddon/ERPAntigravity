@@ -1,5 +1,47 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-29 — Phase 1b: Owner-configurable pricing tiers (2-4) SHIPPED
+
+**What:** Owner can now configure 2-4 pricing tiers per tenant via new `Pengaturan → Tingkat Harga` panel. Tier_1 (base) + tier_2 always active with tenant-editable labels (defaults `Eceran` / `Grosir`); tier_3 + tier_4 optional (NULL label = disabled). Products carry 4 nullable price columns (`price`, `price_grosir`, `price_tier_3`, `price_tier_4`) with COALESCE fallback to base at read time. `customers.default_pricing_tier` CHECK widened to 4 keys. `record_kasir_sale` + `create_tempo_invoice` widened for INVALID_TIER 4-key validation, tier-price cascade, and `pricing_tier_label` snapshot stamped into each item's JSONB.
+
+**Why:** Phase 1a fixed the add-customer form so tier could be set at creation. Phase 1b makes the tier set itself configurable — MSME distributor tenants often need 3-4 pricing bands (retail, grosir kecil, grosir besar, distributor). Fixed columns match founder's committed cap of 4 tiers; JSONB alternative was rejected (harder to reverse; codebase precedent favors columns for financial-audit granularity). Advisor consulted twice during design.
+
+**Scope kept out:** dynamic-N tiers (capped at 4), SKU-quantity tiering (Phase 2), backend Go WA-onboard path (still defaults `'eceran'`), per-tier visual pill palette distinction (all non-base reuse purple; Phase 1c ask), historical items JSONB backfill (renderer falls back to current tenant label for pre-Phase-1b items).
+
+**Files touched (3 migrations + ~15 code files):**
+- Migrations: `20261115000542_tier_config_schema_and_rpc.sql`, `20261115000543_widen_sales_rpcs_for_tier_config.sql`, `20261115000544_bulk_update_tier_prices_rpc.sql` (last one added mid-task after founder ratification; bulk-CSV widening required a new RPC since the pre-existing `bulk_update_grosir_price` was single-column-hardcoded).
+- New FE: `src/lib/pricing/getActiveTiers.ts` + tests (12/12), `src/components/pengaturan/TierConfigPanel.tsx` + tests (5/5).
+- Type widening: `src/types.ts` (`TierKey` union + `DbTenantSettings.tier_N_label` + `SupabaseStockItem.price_tier_3/4`), `src/lib/pengaturan/pengaturanServices.ts` (updateTierConfig wrapper), `src/lib/supabaseClient.ts` (bulkUpdateTierPrices wrapper).
+- Generalized pill sites: `NewCustomerInlineForm`, `PelangganScreen` (edit pills + filter chips + list badge), `CatatPenjualanWizard` (auto-sync + cart re-price), `CartRows` (any-non-base warning), `Step2Items` (cart-header toggle), `Step1ChannelCustomer` (tenantSettings prop chain).
+- Generalized product entry: `ProductForm`, `StockTableView`, `BulkUpdateGrosirSection` renamed → `BulkUpdateTierPricesSection` (CSV widened, backward-compat for old templates).
+- Cascade + audit: `cascadeMap.ts` FieldKey `csv_bulk_grosir_button` → `csv_bulk_tier_prices_button`, cascade impact widened to count any non-eceran tier. `scripts/audit-misclassified-customer-tier.sql` outputs `default_pricing_tier`.
+- `StockManagerScreen.tsx` import updated to renamed component.
+
+**Verified (Stage 1, all ✓):** lint (`tsc --noEmit`), `audit:numinput`, `audit:secdef-null-tenant` (490 migrations clean), `audit:csp-backend-allowlist`, `audit:no-string-err-fallback`, `vitest run` — 130 files, 1123 passed / 2 skipped / 0 failed. Migrations smoke-tested via Management API + RAISE EXCEPTION rollback (happy path + TCFG_LABEL_INVALID reject + TCFG_LABEL_DUPLICATE reject).
+
+**Stage 2 (deploy) ✓:** Push commit `2acb7bd` to main; Cloud Build FE `44edc00b…` + BE `25f9af43…` both SUCCESS. Manual `scripts/promote-to-prod.sh 2acb7bd` (retry after initial promote apparently didn't stick). Prod FE + BE now serving revisions `garindo-jaya-panel-msme-erp-frontend-00820-xaq` and `garindo-jaya-panel-msme-erp-00639-lex` tagged `c2acb7bd`. `curl app.caleo.id/` = HTTP 200; BE `/api/v1/live` = HTTP 200.
+
+**Stage 3 (validation) partial:** Chrome-devtools MCP disconnected mid-session; browser walk deferred to founder at leisure. Instead, comprehensive DB + bundle validation performed:
+- Live pg_proc inspection confirms `record_kasir_sale` (26-param, latest overload) body contains widened INVALID_TIER (4 keys), price CASE cascade (tier_3/4 COALESCE), and `pricing_tier_label` CASE + jsonb_build_object stamp landing in `v_item_out` → `v_items_out` → INSERT.
+- Bundle SHA embed = `2acb7bde0e274...` (matches HEAD). Main bundle contains `tier_3_label`, `update_tenant_tier_config`, `getActiveTiers`, `bulk_update_tier_prices` markers. `PengaturanScreen-DkpmZUwt.js` lazy chunk contains `Tingkat Harga` (2×), `TCFG_LABEL` (2×), `tier_3`/`tier_4` keys.
+- End-to-end DO-block smoke of `record_kasir_sale` with fake auth hit environmental FK issues (kasir_counters tenant resolution outside real auth context) — not a prod issue; real FE calls will use real JWT.
+
+**Known follow-ups:**
+- FE never reads `pricing_tier_label`; snapshot is stamped server-side but no PDF renderer / list view displays per-line tier today. Defensive future data. Wire PDF-side lookup in Phase 1c when tier column is added to invoice PDF.
+- 25-param legacy `record_kasir_sale` overload not widened (still rejects tier_3/4). Verified prod FE uses 26-param widened overload; backend Go tests use even older 20/21-param signatures. No prod caller affected. Follow-up ticket to drop legacy overload after audit.
+- `modul_multi_tier_price` fetch in RPCs still uses `LIMIT 1` without tenant filter (pre-existing latent gap from slot 000325). Task 5 implementer correctly did NOT propagate to new label fetch. Follow-up ticket.
+- `TierConfigPanel` placement in `modul-jasa` Pengaturan tab is orthogonal to jasa module — consider moving to Umum tab or dedicated Harga tab. Minor UX finding.
+- `git mv` not used for `BulkUpdateGrosirSection` rename → file history lost. Minor process miss.
+- Migration 000544 added mid-plan (scope expansion) — founder ratified after review; RPC applied to Supabase.
+
+**Spec:** [`docs/superpowers/specs/2026-07-28-phase-1b-tier-config-design.md`](docs/superpowers/specs/2026-07-28-phase-1b-tier-config-design.md).
+**Memo:** [`docs/superpowers/specs/2026-07-28-phase-1b-tier-config-decision.md`](docs/superpowers/specs/2026-07-28-phase-1b-tier-config-decision.md).
+**Plan:** [`docs/superpowers/plans/2026-07-28-phase-1b-tier-config-plan.md`](docs/superpowers/plans/2026-07-28-phase-1b-tier-config-plan.md).
+
+**Rollback (if regression surfaces):** `bash scripts/promote-to-prod.sh c843a126` (previous good SHA before Phase 1b). Schema additions in migrations 000542/543/544 are additive-only; can stay in DB without breaking rolled-back FE.
+
+---
+
 ## 2026-07-28 — Kasir Expense Categories owner-configurable SHIPPED (100% prod traffic)
 
 **PRs merged:** #64 (feature) → #65 (wizard WA phone fix, orthogonal) → #66 (hotfix migration 525) → #67 (class-fix audit script)
