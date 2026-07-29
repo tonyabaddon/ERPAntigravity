@@ -86,10 +86,10 @@ describe('cascadeMap', () => {
     test('shows price_grosir_column when modul ON', () => {
       expect(isFieldVisible('price_grosir_column', onSettings)).toBe(true);
     });
-    test('shows csv_bulk_grosir_button when modul ON', () => {
-      expect(isFieldVisible('csv_bulk_grosir_button', onSettings)).toBe(true);
+    test('shows csv_bulk_tier_prices_button when modul ON', () => {
+      expect(isFieldVisible('csv_bulk_tier_prices_button', onSettings)).toBe(true);
     });
-    test('cascadeImpactSummary warns when customers tagged grosir', () => {
+    test('cascadeImpactSummary warns when customers tagged non-eceran tier', () => {
       const summary = cascadeImpactSummary('modul_multi_tier_price' as any, { tierEnabledCustomerCount: 12 });
       expect(summary.level).toBe('warn');
       expect(summary.message).toMatch(/12 customer/);

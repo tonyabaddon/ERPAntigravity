@@ -10,7 +10,7 @@ export type FieldKey =
   | 'ongkir_field' | 'warehouse_picker'
   | 'rakit_buttons' | 'walkin_channel'
   | 'tier_pill_kasir' | 'tier_dropdown_customer'
-  | 'price_grosir_column' | 'csv_bulk_grosir_button';
+  | 'price_grosir_column' | 'csv_bulk_tier_prices_button';
 
 export function isMenuVisible(key: MenuKey, settings: DbTenantSettings): boolean {
   switch (key) {
@@ -41,7 +41,7 @@ export function isFieldVisible(key: FieldKey, settings: DbTenantSettings): boole
     case 'tier_pill_kasir':
     case 'tier_dropdown_customer':
     case 'price_grosir_column':
-    case 'csv_bulk_grosir_button': return settings.modul_multi_tier_price;
+    case 'csv_bulk_tier_prices_button': return settings.modul_multi_tier_price;
     default: return true;
   }
 }
@@ -102,8 +102,8 @@ export function cascadeImpactSummary(key: ModulSwitchKey, stats: UsageStats): Im
       return { level: 'info', message: 'Tidak ada resep — defer ke V3' };
     case 'modul_multi_tier_price':
       if ((stats.tierEnabledCustomerCount ?? 0) > 0)
-        return { level: 'warn', message: `${stats.tierEnabledCustomerCount} customer ter-tag grosir akan kembali jadi harga eceran; data tetap tersimpan` };
-      return { level: 'info', message: 'Belum ada customer grosir — aman dimatikan' };
+        return { level: 'warn', message: `${stats.tierEnabledCustomerCount} customer ter-tag tier non-eceran akan kembali jadi harga eceran; data tetap tersimpan` };
+      return { level: 'info', message: 'Belum ada customer dengan tier non-eceran — aman dimatikan' };
     case 'modul_diskon_kasir':
     case 'modul_diskon_penjualan':
     case 'modul_diskon_tagihan':

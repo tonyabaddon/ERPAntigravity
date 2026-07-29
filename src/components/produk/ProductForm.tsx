@@ -1,12 +1,13 @@
 // src/components/produk/ProductForm.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto } from '../../types';
+import type { StockItem, ProductCategory, ProductBrand, ProductUnit, Warehouse, ProductPhoto, DbTenantSettings } from '../../types';
 import { registryService, companySettingsService, stockLotsService, approvalService } from '../../lib/supabaseClient';
 import { compressImage, uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '../../lib/productPhotoService';
 import { indexPhotos } from '../../lib/cariByFotoService';
 import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
 import { NumberInput } from '../ui/NumberInput';
+import { getActiveTiers } from '../../lib/pricing/getActiveTiers';
 
 interface Props {
   initial?: Partial<StockItem>;
@@ -17,6 +18,8 @@ interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   /** Show Harga Grosir input (driven by modul_multi_tier_price). */
   showGrosir?: boolean;
+  /** Full tenant settings — used to render tier_3/tier_4 price inputs when active. */
+  tenantSettings?: DbTenantSettings | null;
 }
 
 function generateSkuId(): string {
@@ -47,7 +50,7 @@ function validate(input: {
   return errs;
 }
 
-export default function ProductForm({ initial, warehouses, currentUserId, onCancel, onSubmit, showToast, showGrosir = false }: Props) {
+export default function ProductForm({ initial, warehouses, currentUserId, onCancel, onSubmit, showToast, showGrosir = false, tenantSettings }: Props) {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [brands, setBrands] = useState<ProductBrand[]>([]);
   const [units, setUnits] = useState<ProductUnit[]>([]);
@@ -92,6 +95,8 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
   const [price, setPrice] = useState<number>(initial?.price ?? 0);
   const [hargaModal, setHargaModal] = useState<number | null>(initial?.harga_modal ?? null);
   const [priceGrosir, setPriceGrosir] = useState<number | null>(initial?.price_grosir ?? null);
+  const [priceTier3, setPriceTier3] = useState<number | null>(initial?.price_tier_3 ?? null);
+  const [priceTier4, setPriceTier4] = useState<number | null>(initial?.price_tier_4 ?? null);
   const [stokAwal, setStokAwal] = useState<number>(0);
   const [gudangTujuanId, setGudangTujuanId] = useState<string | null>(
     warehouses.find(w => w.is_default)?.id ?? null
@@ -140,6 +145,8 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         price,
         harga_modal: hargaModal,
         price_grosir: priceGrosir,
+        price_tier_3: priceTier3,
+        price_tier_4: priceTier4,
         description: description || null,
         min_stock_per_product: minStockPerProduct,
         photo_urls: photos.filter(p => p.status === 'uploaded').map(({ url, path, order, uploaded_at }) => ({ url, path, order, uploaded_at })),
@@ -465,6 +472,29 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               )}
             </div>
           )}
+
+          {/* Tier 3 and Tier 4 price inputs — rendered only when tier is active in tenant config */}
+          {tenantSettings && getActiveTiers(tenantSettings).filter(t => t.slot >= 3).map(t => {
+            const value = t.slot === 3 ? priceTier3 : priceTier4;
+            const onChange = t.slot === 3 ? setPriceTier3 : setPriceTier4;
+            return (
+              <div key={t.key} className="mb-3 space-y-1">
+                <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
+                  Harga {t.label} (Rp)
+                </label>
+                <NumberInput
+                  nullable
+                  value={value ?? null}
+                  onChange={onChange}
+                  placeholder="Kosongkan untuk pakai harga base"
+                  className="w-full bg-white rounded-xl px-3 py-2.5 border border-slate-200 text-[13px] font-semibold"
+                />
+                {value != null && value > price && (
+                  <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga {t.label} di atas eceran — tidak biasa. Pastikan benar.</p>
+                )}
+              </div>
+            );
+          })}
 
           <div className="border-t border-slate-100 pt-3">
             <div className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>

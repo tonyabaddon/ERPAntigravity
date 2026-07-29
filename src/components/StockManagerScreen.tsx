@@ -15,7 +15,7 @@ import StockAdjustmentModal from './stok/StockAdjustmentModal';
 import PriceChangeRequestModal from './stok/PriceChangeRequestModal';
 import PendingApprovalBadge from './approval/PendingApprovalBadge';
 import BulkUploadSection from './produk/BulkUploadSection';
-import BulkUpdateGrosirSection from './produk/BulkUpdateGrosirSection';
+import BulkUpdateTierPricesSection from './produk/BulkUpdateTierPricesSection';
 import StockTableView from './produk/StockTableView';
 import CatalogGridView from './produk/CatalogGridView';
 import ProductForm from './produk/ProductForm';
@@ -364,8 +364,9 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
             onUploaded={refreshPending}
           />
           {showGrosir && (
-            <BulkUpdateGrosirSection
+            <BulkUpdateTierPricesSection
               stockList={stockList}
+              tenantSettings={tenantSettings}
               showToast={showToast}
               onApplied={() => { void onStocksRefresh?.(); }}
             />
@@ -440,6 +441,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               }}
               showToast={showToast}
               showGrosir={showGrosir}
+              tenantSettings={tenantSettings}
             />
           </div>
         </div>
@@ -466,6 +468,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               }}
               showToast={showToast}
               showGrosir={showGrosir}
+              tenantSettings={tenantSettings}
             />
           </div>
         </div>

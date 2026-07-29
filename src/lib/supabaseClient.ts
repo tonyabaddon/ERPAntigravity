@@ -2479,18 +2479,38 @@ export const reconciliationService = {
 
 // ─── productService (Multi-Tier Pricing) ────────────────────────────────────
 // Task 10: bulk CSV grosir price update RPC wrapper.
+// Task 7 (Phase 1b): widened to bulkUpdateTierPrices for N-tier CSV.
 
 export interface BulkGrosirRow {
   sku: string;
   price_grosir: number;
 }
 
+/** N-tier CSV row: each tier price is optional; NULL = skip that column. */
+export interface BulkTierPricesRow {
+  sku: string;
+  price_grosir?: number | null;
+  price_tier_3?: number | null;
+  price_tier_4?: number | null;
+}
+
 export const productService = {
+  /** Legacy single-tier (grosir only). Kept for backward compat. */
   async bulkUpdateGrosirPrice(
     rows: BulkGrosirRow[]
   ): Promise<{ applied: number; skipped: Array<{ sku: string; reason: string }> }> {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase!.rpc('bulk_update_grosir_price', { p_rows: { rows } });
+    if (error) throw error;
+    return data as { applied: number; skipped: Array<{ sku: string; reason: string }> };
+  },
+
+  /** N-tier CSV update (grosir + tier_3 + tier_4). Each tier column is optional. */
+  async bulkUpdateTierPrices(
+    rows: BulkTierPricesRow[]
+  ): Promise<{ applied: number; skipped: Array<{ sku: string; reason: string }> }> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase!.rpc('bulk_update_tier_prices', { p_rows: { rows } });
     if (error) throw error;
     return data as { applied: number; skipped: Array<{ sku: string; reason: string }> };
   },

@@ -8,11 +8,12 @@ import {
   Search, ChevronDown, ChevronUp, AlertTriangle, CheckCircle,
   Trash2, ClipboardCheck,
 } from 'lucide-react';
-import { StockItem, Warehouse } from '../../types';
+import { StockItem, Warehouse, DbTenantSettings } from '../../types';
 import PendingApprovalBadge from '../approval/PendingApprovalBadge';
 import { NumberInput } from '../ui/NumberInput';
 import { InTransitChip } from '../warehouseTransfer/InTransitChip';
 import { formatIDR } from '../../lib/formatIDR';
+import { getActiveTiers, type TierKey } from '../../lib/pricing/getActiveTiers';
 
 // TODO(Task 2.11): consolidate CATEGORY_SPECS / generateName / renderSpecForm
 // with ProductForm + StockManagerScreen. Duplicated here during Phase 2 split
@@ -147,6 +148,8 @@ interface Props {
   thinThreshold?: number;
   /** Show Harga Grosir column + inline edit field (driven by modul_multi_tier_price). */
   showGrosir?: boolean;
+  /** Full tenant settings — used to render tier_3/tier_4 columns when tiers are active. */
+  tenantSettings?: DbTenantSettings | null;
 }
 
 export default function StockTableView({
@@ -164,12 +167,16 @@ export default function StockTableView({
   thinOnly = false,
   thinThreshold = 5,
   showGrosir = false,
+  tenantSettings,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua Produk');
 
+  // extraTiers: tier_3 and tier_4 when active (slot >= 3)
+  const extraTiers = tenantSettings ? getActiveTiers(tenantSettings).filter(t => t.slot >= 3) : [];
+
   const [editingSkus, setEditingSkus] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { price: string; harga_modal: number | null; price_grosir: number | null; specs: Record<string, string> }>>({});
+  const [editValues, setEditValues] = useState<Record<string, { price: string; harga_modal: number | null; price_grosir: number | null; tier_prices: Partial<Record<TierKey, number | null>>; specs: Record<string, string> }>>({});
 
   const uniqueCategories = useMemo(
     () => ['Semua Produk', 'Panel', 'MCB', 'Kabel', 'Aksesori'],
@@ -187,12 +194,18 @@ export default function StockTableView({
 
   const startEdit = (item: StockItem) => {
     setEditingSkus(prev => new Set([...prev, item.sku]));
+    const tier_prices: Partial<Record<TierKey, number | null>> = {};
+    extraTiers.forEach(t => {
+      if (t.slot === 3) tier_prices['tier_3'] = item.price_tier_3 ?? null;
+      if (t.slot === 4) tier_prices['tier_4'] = item.price_tier_4 ?? null;
+    });
     setEditValues(prev => ({
       ...prev,
       [item.sku]: {
         price: String(item.price),
         harga_modal: item.harga_modal ?? null,
         price_grosir: item.price_grosir ?? null,
+        tier_prices,
         specs: Object.fromEntries(
           Object.entries(item.specs ?? {}).map(([k, v]) => [k, String(v)])
         ),
@@ -220,6 +233,8 @@ export default function StockTableView({
       price,
       harga_modal: vals.harga_modal ?? null,
       price_grosir: vals.price_grosir ?? null,
+      price_tier_3: vals.tier_prices['tier_3'] ?? null,
+      price_tier_4: vals.tier_prices['tier_4'] ?? null,
       specs: vals.specs,
       name,
     };
@@ -353,11 +368,20 @@ export default function StockTableView({
                     <div className="mt-1 text-[10px] font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
                       <span className="text-gray-400">Grosir:</span>
                       {item.price_grosir == null
-                        ? <span className="text-amber-600 font-bold">⚠ Belum di-set</span>
+                        ? <span className="text-amber-600 font-bold">Belum di-set</span>
                         : <span className="text-emerald-700 font-bold">{formatIDR(item.price_grosir)}</span>
                       }
                     </div>
                   )}
+                  {extraTiers.map(t => (
+                    <div key={t.key} className="mt-1 text-[10px] font-semibold text-right pr-1 flex items-center justify-end gap-1.5">
+                      <span className="text-gray-400">{t.label}:</span>
+                      {(t.slot === 3 ? item.price_tier_3 : item.price_tier_4) == null
+                        ? <span className="text-slate-400 font-bold">Sama dgn base</span>
+                        : <span className="text-emerald-700 font-bold">{formatIDR((t.slot === 3 ? item.price_tier_3 : item.price_tier_4) as number)}</span>
+                      }
+                    </div>
+                  ))}
                 </div>
 
                 <div className="w-full md:w-36 shrink-0">
@@ -494,6 +518,33 @@ export default function StockTableView({
                       </div>
                     )}
                   </div>
+
+                  {/* Extra tier inputs (tier_3, tier_4) — only when active in tenant config */}
+                  {extraTiers.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                      {extraTiers.map(t => (
+                        <div key={t.key} className="space-y-1">
+                          <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest pl-1">
+                            Harga {t.label} (Rp)
+                          </label>
+                          <NumberInput
+                            nullable
+                            value={vals.tier_prices[t.key as TierKey] ?? null}
+                            onChange={n => setEditValues(prev => ({
+                              ...prev,
+                              [item.sku]: {
+                                ...prev[item.sku],
+                                tier_prices: { ...prev[item.sku].tier_prices, [t.key]: n },
+                              },
+                            }))}
+                            placeholder="Kosongkan untuk pakai harga base"
+                            className="w-full bg-white rounded-xl px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {showGrosir && (
                     <div className="mb-4 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
                       💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).

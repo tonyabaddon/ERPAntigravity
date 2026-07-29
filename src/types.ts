@@ -80,6 +80,10 @@ export interface StockItem {
   unit_alt_factor?: number | null;
   price: number;
   price_grosir?: number | null;
+  /** Price for tier_3 customers. Null = fall back to base price. Added Phase 1b Task 7. */
+  price_tier_3?: number | null;
+  /** Price for tier_4 customers. Null = fall back to base price. Added Phase 1b Task 7. */
+  price_tier_4?: number | null;
   stock: number;
   stock_atas?: number;
   stock_bawah?: number;
