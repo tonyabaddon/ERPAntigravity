@@ -5,6 +5,10 @@
 -- have a company name filled in, OR they've been granted TEMPO — both
 -- typical wholesale-buyer signals).
 --
+-- Post-Phase-1b: tenant_settings.tier_N_label config sets 2-4 tier options.
+-- The default_pricing_tier column shows the current stored value. Owner
+-- reviews via Pelanggan edit modal, which now offers the full active tier set.
+--
 -- Usage (from MCP execute_sql or psql):
 --   Set p_tenant_id to the target tenant UUID, then run:
 --     :setvar tenant_id '<uuid-here>'
@@ -21,6 +25,7 @@ SELECT
   company,
   wa_number,
   allows_tempo,
+  default_pricing_tier,
   created_at
 FROM public.customers
 WHERE tenant_id = $1
