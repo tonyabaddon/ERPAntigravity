@@ -162,7 +162,7 @@ describe('Step2Items — tier pill (Task 7)', () => {
         onTierChange={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Harga grosir belum di-set/i)).toBeInTheDocument();
+    expect(screen.getByText(/Harga tier ini belum di-set/i)).toBeInTheDocument();
   });
 
   it('does not show grosir-missing warning when showTierPill=false', () => {

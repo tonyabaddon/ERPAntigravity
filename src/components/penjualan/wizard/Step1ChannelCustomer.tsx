@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { DbCustomer, DbCustomerWithStats, KasirChannel } from '../../../types';
+import type { DbCustomer, DbCustomerWithStats, DbTenantSettings, KasirChannel } from '../../../types';
 import { CHANNEL_REQUIRES_ORDER_NO } from '../../../lib/salesChannels';
 import ChannelSelector from '../ChannelSelector';
 import { TokpedStrip, WhatsappStrip } from '../ChannelStrip';
@@ -20,6 +20,7 @@ interface Props {
   setWaChatUrl: (s: string) => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   showTierField?: boolean;
+  tenantSettings?: DbTenantSettings;
 }
 
 export default function Step1ChannelCustomer(props: Props) {
@@ -83,6 +84,7 @@ export default function Step1ChannelCustomer(props: Props) {
             onCancel={() => setShowNewCustomerForm(false)}
             showToast={props.showToast}
             showTierField={props.showTierField}
+            tenantSettings={props.tenantSettings}
           />
         )}
         <p className="mt-2 text-[11px] text-slate-500 italic">

@@ -9,6 +9,8 @@ import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import NewCustomerInlineForm from './penjualan/wizard/NewCustomerInlineForm';
 import { formatIDR } from '../lib/formatIDR';
 import { captureError } from '../lib/captureError';
+import { getActiveTiers, resolveEffectiveTier } from '../lib/pricing/getActiveTiers';
+import type { TierKey } from '../lib/pricing/getActiveTiers';
 
 interface PelangganScreenProps {
   openCustomerId?: string | null;
@@ -71,10 +73,10 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editCompany, setEditCompany] = useState('');
-  const [editTier, setEditTier] = useState<'eceran' | 'grosir'>('eceran');
+  const [editTier, setEditTier] = useState<TierKey>('eceran');
   const [saving, setSaving] = useState(false);
   const [tenantSettings, setTenantSettings] = useState<DbTenantSettings | null>(null);
-  const [tierFilter, setTierFilter] = useState<'all' | 'eceran' | 'grosir'>('all');
+  const [tierFilter, setTierFilter] = useState<'all' | TierKey>('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
@@ -210,6 +212,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 onCancel={() => setShowAddModal(false)}
                 showToast={showToast}
                 showTierField={showTierDropdown}
+                tenantSettings={tenantSettings ?? undefined}
               />
             </div>
           </div>
@@ -231,23 +234,28 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            {showTierDropdown && (
-              <div className="flex gap-1">
-                {(['all', 'eceran', 'grosir'] as const).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => setTierFilter(t)}
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
-                      tierFilter === t
-                        ? t === 'grosir'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-[#012749] text-white'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                  >
-                    {t === 'all' ? 'Semua' : t === 'eceran' ? 'Eceran' : 'Grosir'}
-                  </button>
-                ))}
+            {showTierDropdown && tenantSettings && (
+              <div className="flex gap-1 flex-wrap">
+                {(['all', ...getActiveTiers(tenantSettings).map(t => t.key)] as const).map(t => {
+                  const label = t === 'all' ? 'Semua' : getActiveTiers(tenantSettings).find(x => x.key === t)!.label;
+                  const isBase = t === 'all' || t === 'eceran';
+                  return (
+                    <button
+                      key={t}
+                      aria-pressed={tierFilter === t}
+                      onClick={() => setTierFilter(t)}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                        tierFilter === t
+                          ? isBase
+                            ? 'bg-[#012749] text-white'
+                            : 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -294,15 +302,18 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       <div className={`text-xs font-bold ${isSelected ? 'text-[#012749]' : 'text-gray-500'}`}>
                         {c.order_count}
                       </div>
-                      {showTierDropdown && (
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                          (c.default_pricing_tier ?? 'eceran') === 'grosir'
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {(c.default_pricing_tier ?? 'eceran') === 'grosir' ? 'Grosir' : 'Eceran'}
-                        </span>
-                      )}
+                      {showTierDropdown && tenantSettings && (() => {
+                        const effTier = resolveEffectiveTier(c.default_pricing_tier ?? 'eceran', tenantSettings);
+                        const tierInfo = getActiveTiers(tenantSettings).find(t => t.key === effTier)!;
+                        const isBase = tierInfo.slot === 1;
+                        return (
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                            isBase ? 'bg-gray-100 text-gray-500' : 'bg-purple-100 text-purple-700'
+                          }`}>
+                            {tierInfo.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 );
@@ -345,27 +356,27 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                         placeholder="Nama perusahaan (opsional)"
                         className="w-full bg-white/10 border border-white/30 rounded px-2 py-1 text-xs text-white placeholder:text-white/40 outline-none focus:border-white/60"
                       />
-                      {showTierDropdown && (
+                      {showTierDropdown && tenantSettings && (
                         <div>
                           <label className="text-[11px] font-bold text-white/60">Tier Harga Default</label>
-                          <div className="flex gap-1.5 mt-0.5">
-                            {(['eceran', 'grosir'] as const).map((t) => {
-                              const active = editTier === t;
+                          <div className="flex gap-1.5 mt-0.5 flex-wrap">
+                            {getActiveTiers(tenantSettings).map((t) => {
+                              const active = editTier === t.key;
                               return (
                                 <button
-                                  key={t}
+                                  key={t.key}
                                   type="button"
                                   aria-pressed={active}
-                                  onClick={() => setEditTier(t)}
+                                  onClick={() => setEditTier(t.key)}
                                   className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
                                     active
-                                      ? t === 'grosir'
-                                        ? 'bg-purple-500 text-white'
-                                        : 'bg-white text-[#012749]'
+                                      ? t.slot === 1
+                                        ? 'bg-white text-[#012749]'
+                                        : 'bg-purple-500 text-white'
                                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                                   }`}
                                 >
-                                  {t === 'eceran' ? 'Eceran' : 'Grosir'}
+                                  {t.label}
                                 </button>
                               );
                             })}

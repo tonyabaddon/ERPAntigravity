@@ -63,6 +63,8 @@ import { validateStep1, validateStep2 } from '../../lib/wizard/validation';
 import { shouldAutoFillWaPhone } from '../../lib/wizard/derivations';
 import { isFieldVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings } from '../../types';
+import { getActiveTiers, resolveEffectiveTier, getTierPrice } from '../../lib/pricing/getActiveTiers';
+import type { TierKey } from '../../lib/pricing/getActiveTiers';
 import {
   checkDiscountGate,
   requestDiscountApproval,
@@ -146,34 +148,36 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       });
   }, []);
 
-  // ── Multi-tier pricing state (Task 7) ─────────────────────────────────────
-  const [activeTier, setActiveTier] = useState<'eceran' | 'grosir'>('eceran');
+  // ── Multi-tier pricing state (Task 7, widened Phase 1b Task 6) ───────────
+  const [activeTier, setActiveTier] = useState<TierKey>('eceran');
   const showTierPill = tenantSettings ? isFieldVisible('tier_pill_kasir', tenantSettings) : false;
 
-  // ── Auto-apply tier when customer changes (Task 7) ────────────────────────
+  // ── Auto-apply tier when customer changes (Task 7, orphan-tolerant Phase 1b) ─
   useEffect(() => {
-    if (!showTierPill) return;
+    if (!showTierPill || !tenantSettings) return;
     const customerTier = customer?.default_pricing_tier ?? 'eceran';
-    if (customerTier !== activeTier) setActiveTier(customerTier);
+    const effectiveTier = resolveEffectiveTier(customerTier, tenantSettings);
+    if (effectiveTier !== activeTier) setActiveTier(effectiveTier);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customer?.id, showTierPill]);
+  }, [customer?.id, showTierPill, tenantSettings]);
 
-  // ── Re-compute cart prices when tier switches (Task 7) ────────────────────
+  // ── Re-compute cart prices when tier switches (Task 7, N-tier Phase 1b) ───
   // Per-line: zero out any stale percent discount when master price changes
   // (the correct discount_amount_rp would require knowing the new pct×base;
   // zeroing is safer and forces the operator to re-enter if needed).
-  // When grosir is active but price_grosir is null for a line, fall back to
-  // eceran price AND tag that line as 'eceran' so the JSONB payload stays
-  // semantically correct (matches the COALESCE in the Task 6 RPC).
+  // When non-base tier has no explicit price, getTierPrice falls back to base;
+  // in that case tag the line as 'eceran' so the JSONB payload stays semantically
+  // correct (matches the COALESCE in the RPC).
   useEffect(() => {
     if (!showTierPill) return;
     setCart((prev) => prev.map((line) => {
       if (!line.sku) return line;
       const product = stocks.find((s) => s.sku === line.sku);
       if (!product) return line;
-      const useGrosir = activeTier === 'grosir' && product.price_grosir != null;
-      const newPrice = useGrosir ? product.price_grosir! : product.price;
-      const lineTier: 'eceran' | 'grosir' = useGrosir ? 'grosir' : 'eceran';
+      const newPrice = getTierPrice(product, activeTier);
+      // When activeTier has no explicit price, getTierPrice returns base price;
+      // tag line as 'eceran' so the JSONB payload is semantically correct.
+      const lineTier: TierKey = (newPrice === product.price && activeTier !== 'eceran') ? 'eceran' : activeTier;
       if (newPrice === line.unit_price && lineTier === (line.pricing_tier_used ?? 'eceran')) return line;
       return {
         ...line,
@@ -352,12 +356,13 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     const defaultWh = maxBalance && maxBalance.qty > 0
       ? maxBalance.w
       : (warehouses.find((w) => w.is_default) ?? warehouses[0]);
-    // Task 7: apply active tier price when adding item.
-    // When grosir is active but price_grosir is null, fall back to eceran
-    // price AND record tier as 'eceran' so RPC JSONB is semantically correct.
-    const useGrosirAdd = showTierPill && activeTier === 'grosir' && stock.price_grosir != null;
-    const tierPrice = useGrosirAdd ? stock.price_grosir! : stock.price;
-    const lineTierAdd: 'eceran' | 'grosir' = useGrosirAdd ? 'grosir' : 'eceran';
+    // Phase 1b Task 6: apply active tier price when adding item via getTierPrice.
+    // When non-base tier has no explicit price, getTierPrice falls back to base;
+    // in that case tag line as 'eceran' so RPC JSONB is semantically correct.
+    const rawTierPrice = showTierPill ? getTierPrice(stock, activeTier) : stock.price;
+    const tierPrice = rawTierPrice;
+    const lineTierAdd: TierKey = (showTierPill && rawTierPrice === stock.price && activeTier !== 'eceran')
+      ? 'eceran' : activeTier;
     setCart((prev) => [
       ...prev,
       {
@@ -1051,6 +1056,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 setWaChatUrl={setWaChatUrl}
                 showToast={showToast}
                 showTierField={showTierPill}
+                tenantSettings={tenantSettings ?? undefined}
               />
             )}
 
@@ -1072,6 +1078,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 activeTier={activeTier}
                 onTierChange={setActiveTier}
                 showTierPill={showTierPill}
+                tenantSettings={tenantSettings ?? undefined}
                 rakitLines={rakitLines}
                 rakitFormOpen={rakitFormOpen}
                 rakitFormType={rakitFormType}

@@ -1,21 +1,24 @@
 import { useState } from 'react';
-import type { DbCustomer } from '../../../types';
+import type { DbCustomer, DbTenantSettings } from '../../../types';
 import { insertNewCustomer, requestCustomerCreditActivate } from '../../../lib/customers/customerWrappers';
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
+import { getActiveTiers } from '../../../lib/pricing/getActiveTiers';
+import type { TierKey } from '../../../lib/pricing/getActiveTiers';
 
 interface Props {
   onSaved: (customer: DbCustomer) => void;
   onCancel: () => void;
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
   showTierField?: boolean;
+  tenantSettings?: DbTenantSettings;
 }
 
-export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, showTierField = false }: Props) {
+export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, showTierField = false, tenantSettings }: Props) {
   const [name, setName] = useState('');
   const [wa, setWa] = useState('');
   const [company, setCompany] = useState('');
   const [address, setAddress] = useState('');
-  const [tier, setTier] = useState<'eceran' | 'grosir'>('eceran');
+  const [tier, setTier] = useState<TierKey>('eceran');
   const [requestTempo, setRequestTempo] = useState(false);
   const [limit, setLimit] = useState('');
   const [term, setTerm] = useState('');
@@ -93,27 +96,27 @@ export default function NewCustomerInlineForm({ onSaved, onCancel, showToast, sh
         </div>
       </div>
 
-      {showTierField && (
+      {showTierField && tenantSettings && (
         <div className="mt-3 pt-3 border-t border-[#012749]/20">
           <label className="block text-[11px] font-bold text-slate-600 mb-1.5">Tipe Harga default</label>
-          <div className="flex gap-1.5">
-            {(['eceran', 'grosir'] as const).map((t) => {
-              const active = tier === t;
+          <div className="flex gap-1.5 flex-wrap">
+            {getActiveTiers(tenantSettings).map((t) => {
+              const active = tier === t.key;
               return (
                 <button
-                  key={t}
+                  key={t.key}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setTier(t)}
+                  onClick={() => setTier(t.key)}
                   className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
                     active
-                      ? t === 'grosir'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-[#012749] text-white'
+                      ? t.slot === 1
+                        ? 'bg-[#012749] text-white'
+                        : 'bg-purple-600 text-white'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
                 >
-                  {t === 'eceran' ? 'Eceran' : 'Grosir'}
+                  {t.label}
                 </button>
               );
             })}

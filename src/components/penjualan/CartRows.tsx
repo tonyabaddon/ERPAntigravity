@@ -2,6 +2,8 @@ import React from 'react';
 import { KasirItem } from '../../types';
 import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
+import { getTierPrice } from '../../lib/pricing/getActiveTiers';
+import type { TierKey } from '../../lib/pricing/getActiveTiers';
 import { formatRp } from '../../lib/format';
 import { formatIDR } from '../../lib/formatIDR';
 import { useWarehouses } from '../../hooks/useWarehouses';
@@ -52,8 +54,8 @@ export interface CartRowsProps {
    * Defaults to true (shown) so existing callers are unaffected.
    */
   modulDiskonOn?: boolean;
-  /** Task 7: active pricing tier — used for per-line grosir warning. */
-  activeTier?: 'eceran' | 'grosir';
+  /** Task 7 (widened Phase 1b): active pricing tier — used for per-line tier warning. */
+  activeTier?: TierKey;
   /** Task 7: when false, tier warnings are hidden. */
   showTierPill?: boolean;
   /** Item #4b: active promos by SKU. When present, displays a promo badge per matching line. */
@@ -71,7 +73,7 @@ interface CartRowProps {
   onRemove: (key: number) => void;
   onDiscountChange?: (key: number, discount_type: DiscountType, discount_value: number | null, discount_amount_rp: number) => void;
   modulDiskonOn: boolean;
-  activeTier?: 'eceran' | 'grosir';
+  activeTier?: TierKey;
   showTierPill?: boolean;
   /** Item #4b: promo active for this SKU, if any. */
   promo?: PromoRow;
@@ -172,10 +174,14 @@ function CartRow({
               ⏳ Pre-order · kurang {shortage}
             </span>
           )}
-          {/* Task 7: warn when grosir tier active but product has no price_grosir */}
-          {showTierPill && activeTier === 'grosir' && stock && stock.price_grosir == null && (
-            <span className="text-amber-600 text-[10px]">⚠ Harga grosir belum di-set — pakai eceran</span>
-          )}
+          {/* Phase 1b Task 6: warn when non-base tier active but product has no explicit tier price */}
+          {showTierPill && activeTier !== 'eceran' && stock && (() => {
+            const tierPrice = getTierPrice(stock, activeTier!);
+            const hasExplicit = tierPrice !== stock.price;
+            return !hasExplicit ? (
+              <span className="text-amber-600 text-[10px]">⚠ Harga tier ini belum di-set — pakai harga base</span>
+            ) : null;
+          })()}
         </div>
         {/* Item #4b: Promo Produk badge — shown when a promo applies to this SKU */}
         {showPromoBadge && promoDiscount && promo && (

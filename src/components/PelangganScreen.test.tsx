@@ -58,6 +58,11 @@ const BASE_SETTINGS = {
   modul_diskon_penjualan: false,
   modul_diskon_tagihan: false,
   modul_multi_tier_price: false,
+  // Phase 1b Task 6: tier labels added for TypeScript strict + N-tier test
+  tier_1_label: 'Eceran',
+  tier_2_label: 'Grosir',
+  tier_3_label: null,
+  tier_4_label: null,
   pajak_mode: 'NO_TAX' as const,
   pajak_ppn_rate_umum: 0,
   pajak_ppn_rate_mewah: 0,
@@ -240,8 +245,10 @@ describe('PelangganScreen — tier dropdown', () => {
     const eceranPill = await screen.findByRole('button', { name: 'Eceran', pressed: true });
     expect(eceranPill).toBeInTheDocument();
 
-    // Switch to Grosir
-    const grosirPill = screen.getByRole('button', { name: 'Grosir', pressed: false });
+    // Switch to Grosir. Both filter chip and edit-form pill have pressed=false,
+    // so getAllByRole and pick the last one (edit-form renders later).
+    const grosirPills = screen.getAllByRole('button', { name: 'Grosir', pressed: false });
+    const grosirPill = grosirPills[grosirPills.length - 1];
     fireEvent.click(grosirPill);
 
     // Save
@@ -351,6 +358,29 @@ describe('PelangganScreen — tier pills on Tambah Pelanggan (modul ON)', () => 
         default_pricing_tier: 'grosir',
       }));
     });
+  });
+
+  it('renders 3 pills when tier_3_label is set', async () => {
+    const BASE_SETTINGS_3TIER = {
+      ...BASE_SETTINGS,
+      modul_multi_tier_price: true,
+      tier_1_label: 'Eceran',
+      tier_2_label: 'Grosir',
+      tier_3_label: 'Distributor Kecil',
+      tier_4_label: null,
+    };
+    (pengaturanServicesModule.tenantSettingsService.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(BASE_SETTINGS_3TIER);
+
+    render(<PelangganScreen {...BASE_PROPS} />);
+    await waitFor(() => expect(supabaseClientModule.customersService.fetchAll).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /tambah pelanggan/i }));
+
+    const formEl = await screen.findByTestId('new-customer-form');
+    const scope = within(formEl);
+    expect(scope.getByRole('button', { name: 'Eceran' })).toBeInTheDocument();
+    expect(scope.getByRole('button', { name: 'Grosir' })).toBeInTheDocument();
+    expect(scope.getByRole('button', { name: 'Distributor Kecil' })).toBeInTheDocument();
+    expect(scope.queryByRole('button', { name: /tier 4/i })).not.toBeInTheDocument();
   });
 });
 

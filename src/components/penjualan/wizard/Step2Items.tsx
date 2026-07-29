@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import type { DiscountType, KasirItem, RakitServiceType, DbServiceType } from '../../../types';
+import type { DiscountType, KasirItem, RakitServiceType, DbServiceType, DbTenantSettings } from '../../../types';
 import type { SupabaseStockItem } from '../../../lib/supabaseClient';
+import { getActiveTiers } from '../../../lib/pricing/getActiveTiers';
+import type { TierKey } from '../../../lib/pricing/getActiveTiers';
 import { formatRp } from '../../../lib/format';
 import CartRows from '../CartRows';
 import RakitButtonsRow from '../RakitButtonsRow';
@@ -47,10 +49,12 @@ interface Props {
   serviceTypes?: DbServiceType[];
   /** Task 14: when false, Diskon column is hidden in CartRows. */
   modulDiskonOn?: boolean;
-  /** Task 7: multi-tier price pill. */
-  activeTier?: 'eceran' | 'grosir';
-  onTierChange?: (tier: 'eceran' | 'grosir') => void;
+  /** Task 7 (widened Phase 1b): multi-tier price pill. */
+  activeTier?: TierKey;
+  onTierChange?: (tier: TierKey) => void;
   showTierPill?: boolean;
+  /** Phase 1b: tenant settings for N-tier pill rendering. Optional — falls back to 2-tier when absent. */
+  tenantSettings?: DbTenantSettings;
   /** Item #4b: active promos by SKU — passed through to CartRows for badge display. */
   promos?: Map<string, PromoRow>;
 }
@@ -58,7 +62,7 @@ interface Props {
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
   const [showNewProductForm, setShowNewProductForm] = useState(false);
-  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos } = props;
+  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos, tenantSettings } = props;
 
   // Derive categories for the form's datalist
   const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
@@ -200,23 +204,26 @@ export default function Step2Items(props: Props) {
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Keranjang ({skuCount} item{jasaCount > 0 ? ` · ${jasaCount} jasa` : ''})
             </label>
-            {/* Task 7: tier pill toggle — only when modul ON */}
+            {/* Phase 1b Task 6: tier pill toggle — N tiers from tenantSettings; fallback 2 tiers */}
             {showTierPill && (
               <div className="flex gap-0.5 bg-slate-100 rounded-full p-0.5">
-                <button
-                  type="button"
-                  onClick={() => onTierChange?.('eceran')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTier === 'eceran' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Eceran
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onTierChange?.('grosir')}
-                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTier === 'grosir' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Grosir
-                </button>
+                {(tenantSettings
+                  ? getActiveTiers(tenantSettings)
+                  : ([
+                      { key: 'eceran' as TierKey, label: 'Eceran', slot: 1 as const },
+                      { key: 'grosir' as TierKey, label: 'Grosir', slot: 2 as const },
+                    ])
+                ).map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    aria-pressed={activeTier === t.key}
+                    onClick={() => onTierChange?.(t.key)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${activeTier === t.key ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
               </div>
             )}
           </div>
