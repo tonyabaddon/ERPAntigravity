@@ -1,5 +1,33 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-31 — Backlog audit sweep: 4 PRs shipped + 1 stale PR closed
+
+**PRs merged (in order):**
+- **#69** (`53520c8`) — docs: miss-log Entry #9 (subject-inference bias) + `docs/pm-metrics/schedule.md` with `used_custom_ratio` retrospective due 2026-08-25
+- **#70** (`e8e3601`) — `chore(audit)`: `scripts/audit-tenant-invariants.ts` + `npm run audit:tenant-invariants` — runtime check that every ACTIVE tenant has ≥1 active warehouse (drift-prevention for Jenny/Garindo class-error)
+- **#71** (`c43a5ff`) — `docs(incident)`: 2026-07-31 WA client init crash — single crash at 15:42, self-recovered, 3 remediation options documented for future decision
+- **#72** (`8d0151a`) — `hotfix(listener)`: rotate `SUPABASE_DB_LISTENER_CONNECTION` v4 with `options='-c idle_session_timeout=0'`. Stops `[DB] Listener event error` reconnect loop (recurring every ~10 min for weeks — Postgres killing idle listener sessions at 15-min timeout)
+
+**PR closed:** #36 (from 2026-06-19) — 4 Critical findings, all fixes had been RE-APPLIED via later migrations (`20260626000004_approve_and_amend_rakit_lock.sql`, `20260630000006_record_pi_restore_pr36_plus_preorder.sql` — filename literally says "restore_pr36"). Closed with cross-references.
+
+**Prod state after this sweep:**
+- FE + BE @ 100% traffic on `c8d0151a` (FE rev 00841-nen, BE rev 00660-cik)
+- app.caleo.id + BE `/api/v1/live`: 200
+- Listener errors: monitoring 20-min window post-promote — new revision 00660-cik: **zero errors since startup at 16:20:45**
+
+**Discoveries during audit:**
+- **Manual override chip (Milestone 5)**: NOT NEEDED — investigation showed Phase 2.2 (2026-07-31 morning) already wired `onToggleManual` + `onManualPriceOverride` end-to-end (Wizard → Step2Items → CartRows). Progress.md "DORMANT" note was stale (written before 2.2 shipped).
+- **WA init crash**: root cause = whatsmeow sqlstore version-check uses prepared statement, incompatible with txn pooler at `:6543`. 1 occurrence / 7 days, self-recovered. Fix deferred pending 2nd occurrence (per incident doc `docs/incidents/2026-07-31-wa-init-prep-stmt-crash.md`).
+- **Listener idle-timeout**: separate class from July 22 slot-exhaustion fix. TCP keepalive doesn't reset Postgres server-side `idle_session_timeout` counter (which counts time since last QUERY, not TCP packets). Fixed via session-scoped GUC override in DSN options.
+
+**Deferred (documented in miss-log / follow-up sections):**
+- Rewrite SECDEF bodies to use `current_setting('request.jwt.claims')` — removes owner-postgres dependency permanently (long-term class-fix for Entry #4 + #8)
+- Apply-pending-migrations.sh cleanup — 73-entry array with old non-idempotent migrations
+- UX restructure Wizard Step 1 — reorder Channel → Customer → WA/marketplace (needs FE UI/UX approval)
+- Kasir dropdown discoverability link + Panel undo Batalkan action button
+
+---
+
 ## 2026-07-31 — Hotfix: provision_tenant seeds default warehouse (5 real tenants unblocked)
 
 **PR merged:** #68 (`80640ac`)
