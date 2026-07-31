@@ -4,6 +4,7 @@ import type { DiscountType, RakitServiceType, DbServiceType } from '../../types'
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
 import { getTierPrice } from '../../lib/pricing/getActiveTiers';
 import type { TierKey } from '../../lib/pricing/getActiveTiers';
+import { getNextUpsellTier } from '../../lib/pricing/getApplicableQtyTier';
 import { formatRp } from '../../lib/format';
 import { formatIDR } from '../../lib/formatIDR';
 import { useWarehouses } from '../../hooks/useWarehouses';
@@ -60,6 +61,12 @@ export interface CartRowsProps {
   showTierPill?: boolean;
   /** Item #4b: active promos by SKU. When present, displays a promo badge per matching line. */
   promos?: Map<string, PromoRow>;
+  /**
+   * Task 7 (Phase 2): per-SKU qty tiers for chip + upsell hint.
+   * Key: SKU, Value: array of { min_qty, price }.
+   * Optional — when omitted, qty tier chip / hint dormant.
+   */
+  stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
 }
 
 // ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
@@ -77,12 +84,14 @@ interface CartRowProps {
   showTierPill?: boolean;
   /** Item #4b: promo active for this SKU, if any. */
   promo?: PromoRow;
+  /** Task 7 (Phase 2): per-SKU qty tiers for chip + upsell hint. */
+  stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
 }
 
 function CartRow({
   item, stock, warehouses, stockMap,
   onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
-  activeTier, showTierPill, promo,
+  activeTier, showTierPill, promo, stockQtyTiers,
 }: CartRowProps) {
   const masterPrice = item.master_price_at_sale ?? item.unit_price;
 
@@ -196,6 +205,35 @@ function CartRow({
             </span>
           </div>
         )}
+        {/* Task 7: Qty tier chip + upsell hint */}
+        <div className="flex items-center gap-2 flex-wrap mt-1">
+          {item.qty_tier_applied && item.qty_tier_min_qty != null && (
+            <span
+              className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700"
+              title={`Harga volume aktif — beli ${item.qty_tier_min_qty}+ jadi Rp ${item.unit_price.toLocaleString('id-ID')}`}
+            >
+              Vol {item.qty_tier_min_qty}+
+            </span>
+          )}
+          {item.manual_override && (
+            <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
+              Manual
+            </span>
+          )}
+        </div>
+        {/* Task 7: Upsell hint */}
+        {(() => {
+          const skuTiers = item.sku && stockQtyTiers ? stockQtyTiers[item.sku] : undefined;
+          const upsellTier = skuTiers ? getNextUpsellTier(skuTiers, item.qty, item.unit_price) : null;
+          return upsellTier ? (
+            <p className="text-[11px] text-slate-500 italic mt-1">
+              Tip: beli {upsellTier.min_qty}+ pcs jadi Rp {upsellTier.price.toLocaleString('id-ID')}/pcs
+              <span className="text-emerald-600 ml-1">
+                (hemat Rp {(item.unit_price - upsellTier.price).toLocaleString('id-ID')}/pcs untuk customer)
+              </span>
+            </p>
+          ) : null;
+        })()}
         {/* Harga input with List label above */}
         <div className="mt-1">
           {modulDiskonOn && masterPrice > 0 && (
@@ -255,7 +293,7 @@ function CartRow({
   );
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos, stockQtyTiers }: CartRowsProps) {
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -332,6 +370,7 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             activeTier={activeTier}
             showTierPill={showTierPill}
             promo={promo}
+            stockQtyTiers={stockQtyTiers}
           />
         );
       })}
