@@ -306,6 +306,7 @@ MIGRATIONS=(
   "20261115000523_kasir_expense_categories_rpcs.sql"
   "20261115000524_kasir_transactions_expense_category_to_text.sql"
   "20261115000525_kasir_expense_rpcs_owner_postgres.sql"
+  "20261115000547_provision_tenant_default_warehouse.sql"
 
   # ─── 2026-07-27 — Cari-by-Foto tenant scope + clip inference log index ─
   # 540: cari_foto search-by-photo RPC tenant-scoped (was global before)
