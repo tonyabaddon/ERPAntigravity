@@ -42,6 +42,33 @@
 
 <!-- New entries appended below. Newest at top for scan-friendliness. -->
 
+## Entry #9 — 2026-07-31 — Anchored on "founder can't OTP" for 40 min; real bug was downstream user's wizard block
+
+**Context:** Founder reported: "ada bugs ga bisa login utk terima otp". I invoked systematic-debugging + spent ~40 min investigating the OTP send/verify path for founder's user (impersonation state, rate limit, Supabase Auth admin API, verifying vs sending, testing a fresh OTP inline to founder's inbox). All checks came back clean — service healthy, user unbanned, no MFA, no impersonation. Then founder clarified: "bug nya justru complaint dari garindo jaya panel" — the OTP complaint was FROM Jenny (Garindo Owner), NOT founder personally. That entirely changed the investigation. Turned out to be a completely different bug — Jenny's Penawaran wizard "Lanjut ke Pembayaran" button was disabled because Garindo had 0 warehouses configured (root cause found via tenant-config query, unrelated to OTP at all).
+
+**What was missed:**
+- On any user-facing bug report, first question: WHO reported it (founder using own account? founder relaying downstream user? actual downstream user)? I assumed founder was reporting their own login flow. Vague phrasing "ga bisa login utk terima otp" — subject implicit.
+- 40 minutes into investigating founder's user record + Supabase Auth internals before asking "who saw this". A single question upfront would have flipped the investigation to Jenny's tenant + wizard.
+- Second missed opportunity: I did ask "URL mana yang kamu pakai?" but not "kamu sendiri atau ada user lain yang lapor?". The URL question narrows platform, not user identity.
+
+**Root cause of the miss:**
+- Pronoun inference bias — Bahasa Indonesia doesn't always mark subject explicitly; I defaulted to "kamu = founder" when the actual grammatical subject was "user Garindo".
+- Anchored on symptom framing ("OTP") from the first message and kept validating within that frame instead of stepping back to "what changed for whom".
+- Similar shape to Entry #2 — anchored on OTP+pool when real bug was impersonation loop. Same class of bias.
+
+**Prevention rules (add to auth/user-bug investigation checklist):**
+1. **First question on ANY user-facing bug report: "Kamu sendiri, atau ada user lain / customer yang lapor? Kalau user lain, siapa (email/tenant)?"** This is the single most information-dense question and takes 5 seconds to answer. Ask before opening any investigation window.
+2. **If the reporter is FOUNDER and the bug is on THEIR account** → check founder's own state (impersonation, rate limit, session).
+3. **If the reporter is FOUNDER relaying a DOWNSTREAM user's complaint** → pivot immediately to that user's tenant + their state. The founder's own account is IRRELEVANT to that class of investigation.
+4. **If the reporter is the DOWNSTREAM USER themselves** (via WA / support ticket) → same as #3 but source is direct.
+5. When founder's phrasing is grammatically ambiguous about subject (Bahasa Indonesia null-subject), ASK — do not infer.
+
+**Related past pattern:** Miss-log Entry #2 (2026-07-22) — anchored on OTP+pool while real bug was impersonation loop. Same anchoring bias, different specifics. Two occurrences in 9 days = pattern worth naming and preventing at the process level, not just this-bug level.
+
+**Files updated:** this miss-log entry, `docs/pm-metrics/schedule.md` (added `used_custom_ratio` week-4 retrospective reminder).
+
+---
+
 ## Entry #8 — 2026-07-28 — SECDEF + auth.* + vosi_rpc_owner: 4th recurrence → class-fix audit shipped
 
 **Context:** Migration `20261115000523` (PR #64 kasir_expense_categories) shipped 5 CRUD RPCs + 1 seed helper as `SECURITY DEFINER` + `OWNER TO vosi_rpc_owner`. All 6 function bodies call `auth.uid()` to derive the caller identity. When applied to prod, EVERY call — from any Owner or Admin user, not just my psql smoke — returned HTTP 500 with:
