@@ -1292,7 +1292,7 @@ export const stockService = {
     if (!supabase) throw new Error('Supabase not configured');
     const { data, error } = await supabase
       .from('stocks')
-      .select('*')
+      .select('*, qty_tiers:stock_qty_price_tiers(id, stock_sku, min_qty, price)')
       .order('name', { ascending: true });
     if (error) throw error;
     return (data ?? []) as SupabaseStockItem[];

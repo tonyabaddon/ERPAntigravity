@@ -8,6 +8,7 @@ import { specFieldsFor, generateName } from './categorySpecs';
 import PreviewCard, { type ProductPreviewState } from './PreviewCard';
 import { NumberInput } from '../ui/NumberInput';
 import { getActiveTiers } from '../../lib/pricing/getActiveTiers';
+import QtyTiersEditor from './QtyTiersEditor';
 
 interface Props {
   initial?: Partial<StockItem>;
@@ -495,6 +496,19 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               </div>
             );
           })}
+
+          {/* Phase 2: Qty tier pricing — only shown after product is saved (has a SKU) */}
+          {initial?.sku && (
+            <QtyTiersEditor
+              stockSku={initial.sku}
+              basePrice={price}
+              initialTiers={initial.qty_tiers ?? []}
+              onSaved={() => {
+                // Parent already refetches on save; no local state update needed
+              }}
+              showToast={showToast}
+            />
+          )}
 
           <div className="border-t border-slate-100 pt-3">
             <div className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest mb-2 pl-1">Stok Awal & Penempatan</div>

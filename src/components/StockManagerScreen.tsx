@@ -351,6 +351,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           onOpname={onNavigateToOpname}
           showToast={showToast}
           showGrosir={showGrosir}
+          onDataChanged={() => { void onStocksRefresh?.(); }}
         />
       )}
 
@@ -389,6 +390,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           showToast={showToast}
           thinOnly={true}
           showGrosir={showGrosir}
+          onDataChanged={() => { void onStocksRefresh?.(); }}
         />
       )}
 

@@ -14,6 +14,7 @@ import { NumberInput } from '../ui/NumberInput';
 import { InTransitChip } from '../warehouseTransfer/InTransitChip';
 import { formatIDR } from '../../lib/formatIDR';
 import { getActiveTiers, type TierKey } from '../../lib/pricing/getActiveTiers';
+import QtyTiersEditor from './QtyTiersEditor';
 
 // TODO(Task 2.11): consolidate CATEGORY_SPECS / generateName / renderSpecForm
 // with ProductForm + StockManagerScreen. Duplicated here during Phase 2 split
@@ -150,6 +151,8 @@ interface Props {
   showGrosir?: boolean;
   /** Full tenant settings — used to render tier_3/tier_4 columns when tiers are active. */
   tenantSettings?: DbTenantSettings | null;
+  /** Called after a qty-tier edit is saved so the parent can refetch stock data. */
+  onDataChanged?: () => void;
 }
 
 export default function StockTableView({
@@ -168,9 +171,12 @@ export default function StockTableView({
   thinThreshold = 5,
   showGrosir = false,
   tenantSettings,
+  onDataChanged,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua Produk');
+  // Phase 2: qty-tier modal state — null = closed; string = SKU being edited
+  const [editingVolSku, setEditingVolSku] = useState<string | null>(null);
 
   // extraTiers: tier_3 and tier_4 when active (slot >= 3)
   const extraTiers = tenantSettings ? getActiveTiers(tenantSettings).filter(t => t.slot >= 3) : [];
@@ -244,6 +250,7 @@ export default function StockTableView({
   };
 
   return (
+    <>
     <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
@@ -451,6 +458,19 @@ export default function StockTableView({
                     }
                   </button>
                   <button
+                    type="button"
+                    onClick={() => setEditingVolSku(item.sku)}
+                    className="px-3 py-1.5 rounded-full text-[10px] font-black border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 cursor-pointer transition-all"
+                    title="Edit harga volume (qty tier)"
+                  >
+                    Vol
+                    {(item.qty_tiers?.length ?? 0) > 0 && (
+                      <span className="ml-1 text-[9px] font-black text-purple-600">
+                        ({item.qty_tiers!.length})
+                      </span>
+                    )}
+                  </button>
+                  <button
                     onClick={() => onTransfer(item)}
                     className="px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
                   >
@@ -574,5 +594,38 @@ export default function StockTableView({
         })}
       </div>
     </section>
+
+    {/* Phase 2: Qty-tier modal — rendered outside <section> to escape overflow:hidden */}
+    {editingVolSku && stockList.find(i => i.sku === editingVolSku) != null && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        onClick={e => { if (e.target === e.currentTarget) setEditingVolSku(null); }}
+      >
+        <div className="bg-white rounded-xl max-w-md w-full mx-4 p-4 shadow-2xl">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-[#012749]">Harga Volume — {editingVolSku}</h3>
+            <button
+              type="button"
+              onClick={() => setEditingVolSku(null)}
+              className="text-slate-400 hover:text-slate-600 text-lg font-bold leading-none"
+              aria-label="Tutup"
+            >
+              ×
+            </button>
+          </div>
+          <QtyTiersEditor
+            stockSku={editingVolSku}
+            basePrice={stockList.find(i => i.sku === editingVolSku)?.price ?? 0}
+            initialTiers={stockList.find(i => i.sku === editingVolSku)?.qty_tiers ?? []}
+            onSaved={() => {
+              setEditingVolSku(null);
+              onDataChanged?.();
+            }}
+            showToast={showToast}
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -98,6 +98,8 @@ export interface StockItem {
   promo_discount_type?: 'PERCENT' | 'AMOUNT' | null;
   promo_discount_value?: number | null;
   promo_expires_at?: string | null;
+  // Phase 2: qty-based tiering (undefined when not fetched or SKU has no tiers)
+  qty_tiers?: StockQtyTier[];
 }
 
 export interface NotificationConfig {
