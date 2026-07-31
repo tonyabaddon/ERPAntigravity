@@ -57,6 +57,12 @@ interface Props {
   tenantSettings?: DbTenantSettings;
   /** Item #4b: active promos by SKU — passed through to CartRows for badge display. */
   promos?: Map<string, PromoRow>;
+  /**
+   * Phase 2: per-SKU qty tiers derived from stocks state in CatatPenjualanWizard.
+   * Passed through to CartRows for chip + upsell hint rendering.
+   * Optional — when omitted, qty tier chip / hint dormant (backward-compat).
+   */
+  stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
 }
 
 export default function Step2Items(props: Props) {
@@ -253,6 +259,7 @@ export default function Step2Items(props: Props) {
           activeTier={activeTier}
           showTierPill={showTierPill}
           promos={promos}
+          stockQtyTiers={props.stockQtyTiers}
         />
 
         {preOrderCount > 0 && (

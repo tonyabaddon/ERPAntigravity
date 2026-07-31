@@ -65,6 +65,7 @@ import { isFieldVisible } from '../../lib/pengaturan/cascadeMap';
 import type { DbTenantSettings } from '../../types';
 import { getActiveTiers, resolveEffectiveTier, getTierPrice } from '../../lib/pricing/getActiveTiers';
 import type { TierKey } from '../../lib/pricing/getActiveTiers';
+import { getApplicableQtyTier } from '../../lib/pricing/getApplicableQtyTier';
 import {
   checkDiscountGate,
   requestDiscountApproval,
@@ -161,40 +162,6 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer?.id, showTierPill, tenantSettings]);
 
-  // ── Re-compute cart prices when tier switches (Task 7, N-tier Phase 1b) ───
-  // Per-line: zero out any stale percent discount when master price changes
-  // (the correct discount_amount_rp would require knowing the new pct×base;
-  // zeroing is safer and forces the operator to re-enter if needed).
-  // When non-base tier has no explicit price, getTierPrice falls back to base;
-  // in that case tag the line as 'eceran' so the JSONB payload stays semantically
-  // correct (matches the COALESCE in the RPC).
-  useEffect(() => {
-    if (!showTierPill) return;
-    setCart((prev) => prev.map((line) => {
-      if (!line.sku) return line;
-      const product = stocks.find((s) => s.sku === line.sku);
-      if (!product) return line;
-      const newPrice = getTierPrice(product, activeTier);
-      // When activeTier has no explicit price, getTierPrice returns base price;
-      // tag line as 'eceran' so the JSONB payload is semantically correct.
-      const lineTier: TierKey = (newPrice === product.price && activeTier !== 'eceran') ? 'eceran' : activeTier;
-      if (newPrice === line.unit_price && lineTier === (line.pricing_tier_used ?? 'eceran')) return line;
-      return {
-        ...line,
-        unit_price: newPrice,
-        master_price_at_sale: newPrice,
-        pricing_tier_used: lineTier,
-        subtotal: newPrice * line.qty,
-        hpp_subtotal: line.hpp_per_unit * line.qty,
-        // Zero out stale line discount when price changes to avoid desync
-        discount_type: null,
-        discount_value: null,
-        discount_amount_rp: 0,
-      };
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTier, showTierPill]);
-
   // ── Order-level discount state (Task 14) ──────────────────────────────────
   const [orderDiscountValue, setOrderDiscountValue] = useState<number | null>(null);
   const [orderDiscountType, setOrderDiscountType] = useState<DiscountType>(null);
@@ -236,6 +203,75 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
   const { warehouses } = useWarehouses();
   // Item #4b: active promos by SKU for badge display + auto-apply at save time.
   const { promos } = useActivePromos();
+
+  // Phase 2: derive per-SKU qty tier map from stocks for CartRows + cart re-price.
+  // Only includes SKUs that have at least one tier configured.
+  const stockQtyTiers = useMemo(() => {
+    const map: Record<string, Array<{ min_qty: number; price: number }>> = {};
+    for (const s of stocks) {
+      if (s.qty_tiers && s.qty_tiers.length > 0) {
+        map[s.sku] = s.qty_tiers.map((t) => ({ min_qty: t.min_qty, price: t.price }));
+      }
+    }
+    return map;
+  }, [stocks]);
+
+  // ── Re-compute cart prices when tier switches (Task 7, N-tier Phase 1b) ───
+  // Phase 2 extended: also folds in qty tier — computes min(customer_tier_price,
+  // qty_tier_price) per line and stamps qty_tier_applied / qty_tier_min_qty.
+  //
+  // Per-line: zero out any stale percent discount when master price changes
+  // (the correct discount_amount_rp would require knowing the new pct×base;
+  // zeroing is safer and forces the operator to re-enter if needed).
+  // When non-base tier has no explicit price, getTierPrice falls back to base;
+  // in that case tag the line as 'eceran' so the JSONB payload stays semantically
+  // correct (matches the COALESCE in the RPC).
+  //
+  // manual_override guard: lines with manual_override=true are preserved until
+  // the user changes qty (handled in updateLineQty below).
+  useEffect(() => {
+    if (!showTierPill) return;
+    setCart((prev) => prev.map((line) => {
+      if (!line.sku) return line;
+      // Preserve manual overrides — not cleared until qty changes
+      if (line.manual_override) return line;
+      const product = stocks.find((s) => s.sku === line.sku);
+      if (!product) return line;
+      const customerTierPrice = getTierPrice(product, activeTier);
+      // When activeTier has no explicit price, getTierPrice returns base price;
+      // tag line as 'eceran' so the JSONB payload is semantically correct.
+      const lineTier: TierKey = (customerTierPrice === product.price && activeTier !== 'eceran') ? 'eceran' : activeTier;
+
+      // Phase 2: qty tier — takes effect when qty tier price beats customer tier price
+      const qtyTier = getApplicableQtyTier(stockQtyTiers[line.sku], line.qty);
+      const qtyTierPrice = qtyTier?.price;
+      const qtyWon = qtyTierPrice != null && qtyTierPrice < customerTierPrice;
+      const effective = qtyWon ? qtyTierPrice : customerTierPrice;
+
+      if (
+        effective === line.unit_price &&
+        lineTier === (line.pricing_tier_used ?? 'eceran') &&
+        qtyWon === !!line.qty_tier_applied
+      ) return line;
+
+      return {
+        ...line,
+        unit_price: effective,
+        master_price_at_sale: effective,
+        pricing_tier_used: lineTier,
+        qty_tier_applied: qtyWon,
+        qty_tier_min_qty: qtyWon ? qtyTier!.min_qty : null,
+        manual_override: false,
+        subtotal: effective * line.qty,
+        hpp_subtotal: line.hpp_per_unit * line.qty,
+        // Zero out stale line discount when price changes to avoid desync
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
+      };
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTier, stockQtyTiers, showTierPill]);
 
   // Load stocks + customers once on mount
   useEffect(() => {
@@ -387,12 +423,43 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     ]);
   }
 
-  function updateQty(key: number, qty: number) {
-    setCart((prev) => prev.map((i) =>
-      i._key === key
-        ? { ...i, qty, subtotal: i.unit_price * qty, hpp_subtotal: i.hpp_per_unit * qty }
-        : i,
-    ));
+  // Phase 2: updateLineQty discards manual_override on qty change and re-applies
+  // auto-pricing (min of customer tier vs qty tier) at the new quantity.
+  // Lines without qty tiers fall through to customer tier price unchanged.
+  function updateLineQty(key: number, newQty: number) {
+    setCart((prev) => prev.map((line) => {
+      if (line._key !== key) return line;
+      if (!showTierPill) {
+        // Tier pill off — just update qty/subtotals, no re-price needed
+        return { ...line, qty: newQty, subtotal: line.unit_price * newQty, hpp_subtotal: line.hpp_per_unit * newQty };
+      }
+      const stock = stocks.find((s) => s.sku === line.sku);
+      if (!stock) {
+        return { ...line, qty: newQty, subtotal: line.unit_price * newQty, hpp_subtotal: line.hpp_per_unit * newQty };
+      }
+      // Discard manual override + re-apply auto-price at new qty
+      const customerTierPrice = getTierPrice(stock, activeTier);
+      const lineTier: TierKey = (customerTierPrice === stock.price && activeTier !== 'eceran') ? 'eceran' : activeTier;
+      const qtyTier = getApplicableQtyTier(stockQtyTiers[line.sku ?? ''], newQty);
+      const qtyTierPrice = qtyTier?.price;
+      const qtyWon = qtyTierPrice != null && qtyTierPrice < customerTierPrice;
+      const effective = qtyWon ? qtyTierPrice : customerTierPrice;
+      return {
+        ...line,
+        qty: newQty,
+        unit_price: effective,
+        master_price_at_sale: effective,
+        pricing_tier_used: lineTier,
+        subtotal: effective * newQty,
+        hpp_subtotal: line.hpp_per_unit * newQty,
+        qty_tier_applied: qtyWon,
+        qty_tier_min_qty: qtyWon ? qtyTier!.min_qty : null,
+        manual_override: false,
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
+      };
+    }));
   }
 
   function updateWarehouse(key: number, warehouseId: string) {
@@ -1065,7 +1132,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 cart={cart}
                 stocks={stocks}
                 onAddItem={addItem}
-                onQtyChange={updateQty}
+                onQtyChange={updateLineQty}
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
                 onDiscountChange={updateLineDiscount}
@@ -1105,6 +1172,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 })()}
                 showToast={showToast}
                 serviceTypes={serviceTypes}
+                stockQtyTiers={stockQtyTiers}
               />
             )}
 
