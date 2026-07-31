@@ -18,7 +18,8 @@
     "audit:csp-backend-allowlist": "tsx scripts/audit-csp-backend-allowlist.ts",
     "audit:no-string-err-fallback": "tsx scripts/audit-no-string-err-fallback.ts",
     "audit:secdef-auth-schema-owner": "tsx scripts/audit-secdef-auth-schema-owner.ts",
-    "audit:tenant-invariants": "tsx scripts/audit-tenant-invariants.ts"
+    "audit:tenant-invariants": "tsx scripts/audit-tenant-invariants.ts",
+    "audit:miss-log-recurrences": "tsx scripts/audit-miss-log-recurrences.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
