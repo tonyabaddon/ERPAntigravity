@@ -1,4 +1,5 @@
 import React from 'react';
+import { Lock, LockOpen } from 'lucide-react';
 import { KasirItem } from '../../types';
 import type { DiscountType, RakitServiceType, DbServiceType } from '../../types';
 import type { SupabaseStockItem } from '../../lib/supabaseClient';
@@ -67,6 +68,16 @@ export interface CartRowsProps {
    * Optional — when omitted, qty tier chip / hint dormant.
    */
   stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
+  /**
+   * Phase 2.2: toggles manual_override on a specific cart line.
+   * When flipping OFF, wizard re-prices to tier+qty-tier; when ON, no side effect.
+   */
+  onToggleManual?: (key: number) => void;
+  /**
+   * Phase 2.2: called when kasir types a new unit_price while manual mode is ON.
+   * Wizard sets unit_price + master_price_at_sale, clears discount fields.
+   */
+  onManualPriceOverride?: (key: number, unit_price: number) => void;
 }
 
 // ── Per-row sub-component (isolates useDiscountBinding hook call) ─────────────
@@ -86,12 +97,16 @@ interface CartRowProps {
   promo?: PromoRow;
   /** Task 7 (Phase 2): per-SKU qty tiers for chip + upsell hint. */
   stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
+  /** Phase 2.2: toggle manual_override for this line. */
+  onToggleManual?: (key: number) => void;
+  /** Phase 2.2: set unit_price directly when manual mode is active. */
+  onManualPriceOverride?: (key: number, unit_price: number) => void;
 }
 
 function CartRow({
   item, stock, warehouses, stockMap,
   onQtyChange, onWarehouseChange, onRemove, onDiscountChange, modulDiskonOn,
-  activeTier, showTierPill, promo, stockQtyTiers,
+  activeTier, showTierPill, promo, stockQtyTiers, onToggleManual, onManualPriceOverride,
 }: CartRowProps) {
   const masterPrice = item.master_price_at_sale ?? item.unit_price;
 
@@ -122,6 +137,14 @@ function CartRow({
   const shortage = preOrder ? Math.max(0, item.qty - stockAtWh) : 0;
 
   const handlePriceChange = (v: number) => {
+    // Phase 2.2: when manual mode is active, route to override handler —
+    // no masterPrice ceiling, no binding.setTypedPrice (binding re-initializes
+    // on next render from updated master_price_at_sale).
+    if (item.manual_override) {
+      if (!Number.isFinite(v) || v < 0) return;
+      onManualPriceOverride?.(item._key, v);
+      return;
+    }
     binding.setTypedPrice(v);
     if (onDiscountChange) {
       // After setTypedPrice the binding state hasn't flushed yet (React batch),
@@ -242,11 +265,30 @@ function CartRow({
             </div>
           )}
           {modulDiskonOn ? (
-            <NumberInput
-              value={binding.state.typed_price}
-              onChange={handlePriceChange}
-              className="w-28 text-right text-[12px] font-mono border border-slate-200 rounded px-2 py-1 bg-white"
-            />
+            <div className="flex items-center gap-1">
+              <NumberInput
+                value={item.manual_override ? item.unit_price : binding.state.typed_price}
+                onChange={handlePriceChange}
+                className="w-28 text-right text-[12px] font-mono border border-slate-200 rounded px-2 py-1 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => onToggleManual?.(item._key)}
+                title={item.manual_override
+                  ? 'Mode manual — harga diedit langsung'
+                  : 'Klik untuk edit harga manual (bukan diskon)'}
+                className={`flex items-center justify-center w-6 h-6 rounded transition-colors ${
+                  item.manual_override
+                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
+                }`}
+              >
+                {item.manual_override
+                  ? <Lock size={12} />
+                  : <LockOpen size={12} />
+                }
+              </button>
+            </div>
           ) : (
             <div className="text-[11px] text-slate-400 mt-0.5">@ {formatRp(item.unit_price)}</div>
           )}
@@ -293,7 +335,7 @@ function CartRow({
   );
 }
 
-export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos, stockQtyTiers }: CartRowsProps) {
+export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange, onRemove, onDiscountChange, rakitLines, onRemoveRakit, stockByWarehouseSku, serviceTypes, modulDiskonOn = true, activeTier, showTierPill, promos, stockQtyTiers, onToggleManual, onManualPriceOverride }: CartRowsProps) {
   // Build reverse lookup: RakitServiceType → display name from DB serviceTypes when supplied.
   const rakitLabelMap: Partial<Record<RakitServiceType, string>> = {};
   if (serviceTypes && serviceTypes.length > 0) {
@@ -371,6 +413,8 @@ export default function CartRows({ items, stocks, onQtyChange, onWarehouseChange
             showTierPill={showTierPill}
             promo={promo}
             stockQtyTiers={stockQtyTiers}
+            onToggleManual={onToggleManual}
+            onManualPriceOverride={onManualPriceOverride}
           />
         );
       })}

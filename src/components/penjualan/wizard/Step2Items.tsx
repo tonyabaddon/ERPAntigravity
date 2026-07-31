@@ -63,12 +63,16 @@ interface Props {
    * Optional — when omitted, qty tier chip / hint dormant (backward-compat).
    */
   stockQtyTiers?: Record<string, Array<{ min_qty: number; price: number }>>;
+  /** Phase 2.2: toggle manual_override on a cart line. */
+  onToggleManual?: (key: number) => void;
+  /** Phase 2.2: set unit_price directly when manual mode is active. */
+  onManualPriceOverride?: (key: number, unit_price: number) => void;
 }
 
 export default function Step2Items(props: Props) {
   const [q, setQ] = useState('');
   const [showNewProductForm, setShowNewProductForm] = useState(false);
-  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos, tenantSettings } = props;
+  const { activeTier = 'eceran', onTierChange, showTierPill = false, promos, tenantSettings, onToggleManual, onManualPriceOverride } = props;
 
   // Derive categories for the form's datalist
   const existingCategories = Array.from(new Set(props.stocks.map((s) => s.category).filter(Boolean))) as string[];
@@ -260,6 +264,8 @@ export default function Step2Items(props: Props) {
           showTierPill={showTierPill}
           promos={promos}
           stockQtyTiers={props.stockQtyTiers}
+          onToggleManual={onToggleManual}
+          onManualPriceOverride={onManualPriceOverride}
         />
 
         {preOrderCount > 0 && (

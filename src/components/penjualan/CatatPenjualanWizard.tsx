@@ -479,6 +479,87 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
     ));
   }
 
+  // Phase 2.2: toggle manual_override on a specific cart line.
+  // When flipping OFF: inline re-price (same logic as updateLineQty) because
+  // the tier-effect dep list is [activeTier, stockQtyTiers, showTierPill] —
+  // it won't re-fire when only manual_override changes.
+  // When flipping ON: no side effect; next handlePriceChange routes to override.
+  function toggleManual(key: number) {
+    setCart((prev) => prev.map((line) => {
+      if (line._key !== key) return line;
+      const turningOff = !!line.manual_override;
+      if (!turningOff) {
+        // Flip ON — no re-price, let the kasir type the new price
+        return { ...line, manual_override: true };
+      }
+      // Flip OFF — re-price to tier+qty-tier price, mirroring updateLineQty
+      if (!showTierPill || !line.sku) {
+        return {
+          ...line,
+          manual_override: false,
+          qty_tier_applied: false,
+          qty_tier_min_qty: null,
+          discount_type: null,
+          discount_value: null,
+          discount_amount_rp: 0,
+        };
+      }
+      const stock = stocks.find((s) => s.sku === line.sku);
+      if (!stock) {
+        return {
+          ...line,
+          manual_override: false,
+          qty_tier_applied: false,
+          qty_tier_min_qty: null,
+          discount_type: null,
+          discount_value: null,
+          discount_amount_rp: 0,
+        };
+      }
+      const customerTierPrice = getTierPrice(stock, activeTier);
+      const lineTier: TierKey = (customerTierPrice === stock.price && activeTier !== 'eceran') ? 'eceran' : activeTier;
+      const qtyTier = getApplicableQtyTier(stockQtyTiers[line.sku], line.qty);
+      const qtyTierPrice = qtyTier?.price;
+      const qtyWon = qtyTierPrice != null && qtyTierPrice < customerTierPrice;
+      const effective = qtyWon ? qtyTierPrice : customerTierPrice;
+      return {
+        ...line,
+        unit_price: effective,
+        master_price_at_sale: effective,
+        pricing_tier_used: lineTier,
+        subtotal: effective * line.qty,
+        hpp_subtotal: line.hpp_per_unit * line.qty,
+        qty_tier_applied: qtyWon,
+        qty_tier_min_qty: qtyWon ? qtyTier!.min_qty : null,
+        manual_override: false,
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
+      };
+    }));
+  }
+
+  // Phase 2.2: called when kasir types a new price while manual mode is ON.
+  // Sets unit_price + master_price_at_sale, clears discount fields, stamps manual_override=true.
+  function handleManualPriceOverride(key: number, unit_price: number) {
+    setCart((prev) => prev.map((line) => {
+      if (line._key !== key) return line;
+      return {
+        ...line,
+        unit_price,
+        master_price_at_sale: unit_price,
+        manual_override: true,
+        qty_tier_applied: false,
+        qty_tier_min_qty: null,
+        subtotal: unit_price * line.qty,
+        hpp_subtotal: line.hpp_per_unit * line.qty,
+        discount_type: null,
+        discount_value: null,
+        discount_amount_rp: 0,
+      };
+    }));
+  }
+
   // Prefill SKU from "Cari by Foto" — runs once after stocks load.
   const prefillAppliedRef = useRef(false);
   useEffect(() => {
@@ -1136,6 +1217,8 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 onWarehouseChange={updateWarehouse}
                 onRemoveItem={removeItem}
                 onDiscountChange={updateLineDiscount}
+                onToggleManual={toggleManual}
+                onManualPriceOverride={handleManualPriceOverride}
                 onClearCart={() => { setCart([]); setRakitLines([]); }}
                 subtotal={skuSubtotal}
                 subtotalAfterLineDiscount={skuSubtotalAfterLineDiscount}
