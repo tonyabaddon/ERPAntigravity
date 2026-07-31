@@ -1,5 +1,30 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-31 — Phase 2.1 + 2.2: Post-ship polish + manual override toggle SHIPPED
+
+**What:** Follow-up to Phase 2 base ship. Closed out all 4 post-ship audit findings:
+
+- **2.1a — modul gate:** `QtyTiersEditor` in ProductForm + row-level "Edit Vol" button/modal in StockTableView now gated by existing `modul_multi_tier_price` (via existing `showGrosir` prop) — matches Phase 1a `Harga Grosir` sibling gate. Tenants without multi-tier modul no longer see qty tier UI they don't need.
+- **2.1b — dead code removed:** `stockService.deleteAllQtyTiers` wrapper deleted (dormant; empty-tier save via `set_stock_qty_tiers` achieves the same DELETE+INSERT-nothing effect).
+- **2.1c — PRICE_MISMATCH Bahasa toast:** Wizard sales-write catch (Step3Payment.tsx) now maps `PRICE_MISMATCH` prefix → `"Harga sistem berubah. Silakan refresh halaman + coba lagi."` instead of raw error surfacing to kasir.
+- **2.2 — manual override toggle wired:** Small `Lock`/`LockOpen` icon-button per cart line in `CartRows`. Default LockOpen = existing discount UX (typed price becomes discount). Click → Lock = override UX (typed price sets `unit_price` directly + stamps `manual_override=true` + clears discount → chip "Manual" fires). Toggle-OFF discards override + auto-price re-applies (customer tier + qty tier `min()` computation via inline re-price handler — advisor caught that effect deps wouldn't fire on `manual_override` flip alone).
+
+**Why:** Phase 2 base shipped with the "Manual" chip DORMANT — no user path set `manual_override=true`. Founder decision on UX: small per-line toggle preserves existing discount UX while adding explicit opt-in for override. Kasir can nego a discount OR set a specific override price without ambiguity.
+
+**Files touched (2 commits, 7 files):**
+- `4e3210e` (Phase 2.1): `src/components/produk/ProductForm.tsx` + `src/components/produk/StockTableView.tsx` (modul gates), `src/lib/supabaseClient.ts` (drop wrapper), `src/components/penjualan/wizard/Step3Payment.tsx` (Bahasa toast). 21 net lines.
+- `64d30dc` (Phase 2.2): `src/components/penjualan/CartRows.tsx` (Lock/LockOpen toggle + handlePriceChange branch + 2 new props), `src/components/penjualan/wizard/Step2Items.tsx` (prop thread), `src/components/penjualan/CatatPenjualanWizard.tsx` (toggleManual + handleManualPriceOverride handlers with inline re-price), `src/components/penjualan/CartRows.test.tsx` **NEW** (5 tests). 335 net lines.
+
+**Verified:** lint + all 5 audits clean; full vitest **132 files, 1148 pass / 2 skip / 0 fail** (up from 1143 with new CartRows tests). Cloud Build FE `89516fd7…` + BE `50bcf611…` both SUCCESS. Manual `scripts/promote-to-prod.sh 64d30dc` — prod FE + BE now serving `c64d30dc` (revisions `garindo-jaya-panel-msme-erp-frontend-00831-dub` + `garindo-jaya-panel-msme-erp-00650-fej`). `curl app.caleo.id/` HTTP 200; `curl backend/api/v1/live` HTTP 200. Prod bundle `index-eq5EQfjL.js` embeds `VITE_COMMIT_SHA=64d30dc72c5791b6e6c11e0b8a0b83d0902c7e5b` (matches HEAD).
+
+**Advisor catch during 2.2:** toggle-OFF wouldn't fire cart re-price effect because dep array doesn't include `manual_override`. Fix: inlined the tier+qty-tier re-price into the toggle handler (mirrors `updateLineQty` body). Ensures auto-price actually re-applies when kasir turns override off.
+
+**All Phase 2 audit findings now CLOSED.** Remaining follow-ups are Phase 3+ scope (discount% mode, bulk CSV, PDF per-line tier display, cumulative qty). Nothing blocking.
+
+**Rollback (if regression surfaces):** `bash scripts/promote-to-prod.sh cefb281f` (Phase 2 base) or `bash scripts/promote-to-prod.sh a03da57` (Phase 1b tip).
+
+---
+
 ## 2026-07-31 — Phase 2: SKU qty tier pricing SHIPPED
 
 **What:** Owner can configure per-SKU quantity thresholds (up to 5 tiers, `beli ≥ N pcs → Rp X/pcs`) via inline `QtyTiersEditor` in ProductForm + row-level modal in StockTableView. Kasir cart line auto-applies `min(customer_tier_price, qty_tier_price)` via server-authoritative RPC; chip `"Vol N+"` fires when qty tier wins; upsell hint suggests next tier when it would beat current unit_price. Manual override plumbing exists (RPC accepts `manual_override` per-item flag, CartRows renders "Manual" chip) but user-facing "set override" hook is DORMANT — CartRows currently routes price edits through `onDiscountChange`, not a dedicated `onUnitPriceChange`; wire in Phase 2.1.
