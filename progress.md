@@ -113,7 +113,7 @@ FIFO cost accounting internally needs warehouse identifier per (SKU, warehouse).
 **Stage 3 (validation):** DB + bundle validation via Management API. Browser walk Scenarios A-G on Toko Jaya Makmur DEFERRED — chrome-devtools MCP disconnected; DB validation covers server-side; visual scenarios (upsell hint render, chip visibility, validation toasts) can be walked whenever convenient. Rollback available via `bash scripts/promote-to-prod.sh a03da57` (Phase 1b tip).
 
 **Known follow-ups (Phase 2.1 / Phase 3):**
-- Manual override chip DORMANT — CartRows.tsx needs `onUnitPriceChange` prop + kasir line-edit UI hook. RPC accepts the flag when set; chip renders when flag true; only missing the "set to true" user path. ~1-2h fix.
+- ~~Manual override chip DORMANT~~ — **RESOLVED by Phase 2.2 (2026-07-31)** in commits `64d30dc`/`efb281f`. `onToggleManual` + `onManualPriceOverride` wired end-to-end (Wizard → Step2Items → CartRows). Verified 2026-07-31 during backlog audit.
 - 25-param legacy `record_kasir_sale` overload still not widened (from Phase 1b) — no prod caller affected, deferred.
 - `modul_multi_tier_price` LIMIT 1 fetch in RPCs (pre-existing gap) — not propagated by Phase 2.
 - FE never reads `pricing_tier_label` / `qty_tier_min_qty` for PDF invoice per-line tier display — Phase 1c gap.
