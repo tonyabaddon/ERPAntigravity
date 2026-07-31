@@ -1,5 +1,43 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-31 — Phase 2: SKU qty tier pricing SHIPPED
+
+**What:** Owner can configure per-SKU quantity thresholds (up to 5 tiers, `beli ≥ N pcs → Rp X/pcs`) via inline `QtyTiersEditor` in ProductForm + row-level modal in StockTableView. Kasir cart line auto-applies `min(customer_tier_price, qty_tier_price)` via server-authoritative RPC; chip `"Vol N+"` fires when qty tier wins; upsell hint suggests next tier when it would beat current unit_price. Manual override plumbing exists (RPC accepts `manual_override` per-item flag, CartRows renders "Manual" chip) but user-facing "set override" hook is DORMANT — CartRows currently routes price edits through `onDiscountChange`, not a dedicated `onUnitPriceChange`; wire in Phase 2.1.
+
+**Why:** MSME distributor persona (LTC Glodok / Garindo Jaya Panel) real price lists use qty ladder pricing. Phase 1a/1b price by WHO the customer is; Phase 2 adds HOW MUCH they buy dimension. Kasir speed preserved via silent auto-apply + non-blocking hint chip. Highest-discount-wins rule matches owner mental model.
+
+**Scope kept out:** cumulative qty across cart/customer/month; discount % or flat-Rp off base (Phase 3 for distributor bulk-CSV); bundle pricing; PDF invoice per-line tier display (blocked on Phase 1c FE read of pricing_tier_label / qty_tier_min_qty).
+
+**Files touched (2 migrations + 10 code files across 8 commits):**
+- Migration `20261115000545` — `stock_qty_price_tiers` table + RLS + `set_stock_qty_tiers` + `delete_all_stock_qty_tiers` SECDEF RPCs.
+- Migration `20261115000546` — widened `record_kasir_sale` + `create_tempo_invoice` (both from Phase 1b slot 000543) for qty tier fetch + server-authoritative `min()` + JSONB snapshot stamp. Advisor-caught bug fix: per-item re-SELECT of `v_expected_price` in output-build loop (function-scope would be stale in multi-item carts).
+- New `src/lib/pricing/getApplicableQtyTier.ts` + tests (14/14).
+- New `src/components/produk/QtyTiersEditor.tsx` + tests (6/6).
+- Type widening: `src/types.ts` (`StockQtyTier`, extend `StockItem.qty_tiers?`, extend `KasirItem` snapshot fields).
+- `src/lib/supabaseClient.ts` — `stockService.setQtyTiers/deleteAllQtyTiers` wrappers + extend `stockService.fetchAll` with PostgREST embed of `qty_tiers`.
+- Modified: `ProductForm.tsx` (embed editor), `StockTableView.tsx` (row-level modal), `StockManagerScreen.tsx` (onDataChanged prop), `CartRows.tsx` (chip + upsell hint), `Step2Items.tsx` (stockQtyTiers prop threading), `CatatPenjualanWizard.tsx` (stockQtyTiers memo + extended cart re-price effect + updateLineQty discards manual_override).
+
+**Verified (Stage 1, all ✓):** lint, all 5 audits (numinput, secdef-null-tenant on 492 migrations, csp-backend-allowlist, no-string-err-fallback, secdef-auth-schema-owner), full vitest **132 files, 1143 passed / 2 skipped / 0 failed**. Migration smoke via Management API + RAISE-rollback (happy path + QTP_INVALID_MIN_QTY reject). Widened RPC bodies verified via pg_proc regex — both `record_kasir_sale` and `create_tempo_invoice` contain `stock_qty_price_tiers` lookup + `qty_tier_applied` stamp + `manual_override` handling.
+
+**Stage 2 (deploy) ✓:** Cloud Build FE `81d8a302…` + BE `02dd400d…` both SUCCESS on commit `efb281f`. `bash scripts/promote-to-prod.sh efb281f`. Prod FE now serving `garindo-jaya-panel-msme-erp-frontend-00825-yen`, BE serving `garindo-jaya-panel-msme-erp-00644-jon`, both tagged `cefb281f`. `curl app.caleo.id/` HTTP 200; `curl backend/api/v1/live` HTTP 200.
+
+**Stage 3 (validation):** DB + bundle validation via Management API. Browser walk Scenarios A-G on Toko Jaya Makmur DEFERRED — chrome-devtools MCP disconnected; DB validation covers server-side; visual scenarios (upsell hint render, chip visibility, validation toasts) can be walked whenever convenient. Rollback available via `bash scripts/promote-to-prod.sh a03da57` (Phase 1b tip).
+
+**Known follow-ups (Phase 2.1 / Phase 3):**
+- Manual override chip DORMANT — CartRows.tsx needs `onUnitPriceChange` prop + kasir line-edit UI hook. RPC accepts the flag when set; chip renders when flag true; only missing the "set to true" user path. ~1-2h fix.
+- 25-param legacy `record_kasir_sale` overload still not widened (from Phase 1b) — no prod caller affected, deferred.
+- `modul_multi_tier_price` LIMIT 1 fetch in RPCs (pre-existing gap) — not propagated by Phase 2.
+- FE never reads `pricing_tier_label` / `qty_tier_min_qty` for PDF invoice per-line tier display — Phase 1c gap.
+- `create_tempo_invoice` GRANT lacks `service_role, vosi_rpc_owner` — inherited from Phase 1b, not regression.
+
+**Spec:** [`docs/superpowers/specs/2026-07-31-phase-2-sku-qty-tier-design.md`](docs/superpowers/specs/2026-07-31-phase-2-sku-qty-tier-design.md).
+**Memo:** [`docs/superpowers/specs/2026-07-31-phase-2-sku-qty-tier-decision.md`](docs/superpowers/specs/2026-07-31-phase-2-sku-qty-tier-decision.md).
+**Plan:** [`docs/superpowers/plans/2026-07-31-phase-2-sku-qty-tier-plan.md`](docs/superpowers/plans/2026-07-31-phase-2-sku-qty-tier-plan.md).
+
+**Rollback (if regression surfaces):** `bash scripts/promote-to-prod.sh a03da57` (Phase 1b tip). Schema additions in `000545`/`000546` are additive-only; can stay in DB post-rollback.
+
+---
+
 ## 2026-07-29 — Phase 1b: Owner-configurable pricing tiers (2-4) SHIPPED
 
 **What:** Owner can now configure 2-4 pricing tiers per tenant via new `Pengaturan → Tingkat Harga` panel. Tier_1 (base) + tier_2 always active with tenant-editable labels (defaults `Eceran` / `Grosir`); tier_3 + tier_4 optional (NULL label = disabled). Products carry 4 nullable price columns (`price`, `price_grosir`, `price_tier_3`, `price_tier_4`) with COALESCE fallback to base at read time. `customers.default_pricing_tier` CHECK widened to 4 keys. `record_kasir_sale` + `create_tempo_invoice` widened for INVALID_TIER 4-key validation, tier-price cascade, and `pricing_tier_label` snapshot stamped into each item's JSONB.
