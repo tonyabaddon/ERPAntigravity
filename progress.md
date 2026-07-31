@@ -1,5 +1,41 @@
 # ERP Antigravity — Implementation Progress
 
+## 2026-07-31 — Hotfix: provision_tenant seeds default warehouse (5 real tenants unblocked)
+
+**PR merged:** #68 (`80640ac`)
+
+**Bug:** Jenny @ Garindo Jaya Panel couldn't advance Step 2 of Penawaran wizard — "Lanjut ke Pembayaran" stayed disabled even with cart populated. Founder tested with own account (Toko Jaya Makmur) → works. Tenant-specific bug.
+
+**Root cause:** `validateStep2` at `src/lib/wizard/validation.ts:40` hard-requires `warehouse_id` per SKU line. Wizard `addItem` at `CatatPenjualanWizard.tsx:414` defaults `warehouse_id = defaultWh?.id ?? null`. Prod scan revealed **5 of 7 tenants had ZERO warehouses configured** (incl. 2 real customers: Garindo Jaya + Warung Sinar Rezeki, plus 3 staging). `provision_tenant` RPC never seeded a default warehouse since day 1. Onboarding gap since v1.
+
+**Impact:** Jenny had 0 sales_orders + 0 kasir_transactions EVER — wizard blocked her from all sales flows since onboarding. Same for Warung Sinar Rezeki (other real customer).
+
+**Fix (3-part):**
+
+- **Bagian A — Inline backfill (immediate unblock):** psql INSERT of "Gudang Utama" (code=MAIN, is_active=true, is_default=true) for each tenant with 0 warehouses. 5 rows inserted. Jenny unblocked ~15:15 UTC.
+- **Bagian B — Migration 547 (permanent onboarding fix):** new `_seed_default_warehouse(uuid)` idempotent helper + `provision_tenant` modified to call it after tenant creation. Both `OWNER TO postgres` per Entry #4 class-fix (auth.uid() needs auth schema USAGE which vosi_rpc_owner lacks). Applied to prod inline; persisted via PR #68.
+- **Bagian C — FE change NOT NEEDED:** `WarehousePicker.tsx:34-42` already collapses to static label for N=1 (no dropdown for single-warehouse tenants). Wizard `addItem` already sets `warehouse_id = defaultWh?.id`. MSME-first UX already correct. Discovery documented in PR body.
+
+**Prod validation:**
+- All 7 tenants now have ≥1 active warehouse (verified via SELECT)
+- `provision_tenant` calls `_seed_default_warehouse` (verified via `pg_get_functiondef`)
+- Both functions `OWNER TO postgres` (verified via `pg_proc.proowner`)
+- Stage 1 gates all clean (lint + 3 audits)
+- app.caleo.id + BE `/api/v1/live` both 200
+
+**Design rationale (why not remove warehouse requirement entirely — Option 3 feature flag):**
+FIFO cost accounting internally needs warehouse identifier per (SKU, warehouse). "Optional warehouse" == "implicit default warehouse" internally. Option 1 (hybrid: auto-create + auto-hide for N=1) achieves MSME-first UX without branching every stock/sale RPC on a feature flag. Zero blast radius on existing multi-warehouse tenants.
+
+**Files:**
+- `supabase/migrations/20261115000547_provision_tenant_default_warehouse.sql` — helper + RPC update
+- `scripts/apply-pending-migrations.sh` — array + 547
+
+**Follow-up (deferred, non-blocking):**
+- **Class-fix audit script** `scripts/audit-tenant-invariants.ts` — verify "every tenant has ≥1 active warehouse" at CI. Same pattern as `audit:secdef-null-tenant` / `audit:no-string-err-fallback`. Not shipped due to urgency; belongs in own follow-up PR.
+- **Session-level observation:** OTP-login complaint initially framed as founder's own issue turned out to be a Garindo Jaya user (Jenny) hitting the wizard bug post-login. Miss-log candidate: "when founder reports a 'can't login' complaint, first differentiate WHO reported (founder vs downstream user) before diving into auth investigation."
+
+---
+
 ## 2026-07-31 — Phase 2.1 + 2.2: Post-ship polish + manual override toggle SHIPPED
 
 **What:** Follow-up to Phase 2 base ship. Closed out all 4 post-ship audit findings:
