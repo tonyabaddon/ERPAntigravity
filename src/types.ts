@@ -244,6 +244,14 @@ export interface DbWaRecipient {
 // Phase 1b: tier system supports 2–4 tiers
 export type TierKey = 'eceran' | 'grosir' | 'tier_3' | 'tier_4';
 
+// Phase 2: quantity-based tiering (SKU qty tiers)
+export interface StockQtyTier {
+  id?: string;
+  stock_sku: string;
+  min_qty: number;
+  price: number;
+}
+
 export interface DbCustomer {
   id: string;
   wa_number: string;
@@ -422,6 +430,10 @@ export interface KasirItem {
   // the target warehouse. Wizard populates during save; SalesInvoicePDF renders
   // "*Pre-order" footnote when true. Optional for backward-compat.
   is_pre_order?: boolean;
+  // Phase 2: qty-tier snapshot fields — attached when a qty tier applies at save time
+  qty_tier_min_qty?: number | null;
+  qty_tier_applied?: boolean;
+  manual_override?: boolean;
 }
 
 export interface KasirTransaction {

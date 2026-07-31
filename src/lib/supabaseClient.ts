@@ -22,6 +22,7 @@ import type {
   ProductUnit,
   ProductPhoto,
   StockItem,
+  StockQtyTier,
 } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -87,6 +88,8 @@ export interface SupabaseStockItem {
   promo_discount_type?: 'PERCENT' | 'AMOUNT' | null;
   promo_discount_value?: number | null;
   promo_expires_at?: string | null;
+  // Phase 2: qty-based tiering (undefined when not fetched or SKU has no tiers)
+  qty_tiers?: StockQtyTier[];
 }
 
 // Resilient API services with local fallback
@@ -1349,6 +1352,26 @@ export const stockService = {
     });
     if (error) throw error;
     return data as StockItem;
+  },
+
+  async setQtyTiers(
+    stockSku: string,
+    tiers: Array<{ min_qty: number; price: number }>,
+  ): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('set_stock_qty_tiers', {
+      p_stock_sku: stockSku,
+      p_tiers: tiers,
+    });
+    if (error) throw error;
+  },
+
+  async deleteAllQtyTiers(stockSku: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await supabase.rpc('delete_all_stock_qty_tiers', {
+      p_stock_sku: stockSku,
+    });
+    if (error) throw error;
   },
 };
 
