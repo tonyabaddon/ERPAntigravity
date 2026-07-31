@@ -497,8 +497,9 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
             );
           })}
 
-          {/* Phase 2: Qty tier pricing — only shown after product is saved (has a SKU) */}
-          {initial?.sku && (
+          {/* Phase 2: Qty tier pricing — only shown after product is saved (has a SKU)
+              and only when modul_multi_tier_price is enabled (same gate as showGrosir). */}
+          {showGrosir && initial?.sku && (
             <QtyTiersEditor
               stockSku={initial.sku}
               basePrice={price}

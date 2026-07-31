@@ -457,6 +457,8 @@ export default function StockTableView({
                       : '✏ Edit'
                     }
                   </button>
+                  {/* Phase 2: Vol button — only when modul_multi_tier_price enabled (same gate as showGrosir) */}
+                  {showGrosir && (
                   <button
                     type="button"
                     onClick={() => setEditingVolSku(item.sku)}
@@ -470,6 +472,7 @@ export default function StockTableView({
                       </span>
                     )}
                   </button>
+                  )}
                   <button
                     onClick={() => onTransfer(item)}
                     className="px-3 py-1.5 rounded-full text-[10px] font-black border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 cursor-pointer transition-all"
@@ -595,8 +598,9 @@ export default function StockTableView({
       </div>
     </section>
 
-    {/* Phase 2: Qty-tier modal — rendered outside <section> to escape overflow:hidden */}
-    {editingVolSku && stockList.find(i => i.sku === editingVolSku) != null && (
+    {/* Phase 2: Qty-tier modal — rendered outside <section> to escape overflow:hidden.
+        Gate matches Vol button: only when modul_multi_tier_price enabled (showGrosir). */}
+    {showGrosir && editingVolSku && stockList.find(i => i.sku === editingVolSku) != null && (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
         onClick={e => { if (e.target === e.currentTarget) setEditingVolSku(null); }}

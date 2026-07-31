@@ -110,6 +110,15 @@ export default function Step3Payment(props: Props) {
   };
   const validation = validateStep3(wizardState);
 
+  /** Maps known RPC error codes to Bahasa user messages. Add new cases here. */
+  function friendlyRpcError(err: unknown): string {
+    const raw = extractErrorMessage(err);
+    if (raw.includes('PRICE_MISMATCH')) {
+      return 'Harga sistem berubah. Silakan refresh halaman + coba lagi.';
+    }
+    return raw;
+  }
+
   const onSimpan = async () => {
     if (!validation.ok) {
       props.showToast(validation.errors?.[0] ?? 'Tidak valid', 'warning');
@@ -131,8 +140,7 @@ export default function Step3Payment(props: Props) {
       const path = dispatchSave(wizardState);
       await props.onSave(path);
     } catch (e) {
-      const msg = extractErrorMessage(e);
-      props.showToast(`Gagal simpan: ${msg}`, 'warning');
+      props.showToast(`Gagal simpan: ${friendlyRpcError(e)}`, 'warning');
     } finally {
       clearTimeout(watchdog);
       setSubmitting(false);

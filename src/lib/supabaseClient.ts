@@ -1366,13 +1366,8 @@ export const stockService = {
     if (error) throw error;
   },
 
-  async deleteAllQtyTiers(stockSku: string): Promise<void> {
-    if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await supabase.rpc('delete_all_stock_qty_tiers', {
-      p_stock_sku: stockSku,
-    });
-    if (error) throw error;
-  },
+  // deleteAllQtyTiers wrapper intentionally removed — no callers (grep confirmed).
+  // The underlying RPC `delete_all_stock_qty_tiers` still exists in the DB.
 };
 
 export const registryService = {
