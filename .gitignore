@@ -29,3 +29,4 @@ docs/competitive-research/**/Results Benchmark/*.mp4
 backend-go/.env
 .env
 models/clip-vit-base-patch32.onnx
+public/design-system.html
