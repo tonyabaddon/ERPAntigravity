@@ -4,28 +4,28 @@
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   /* VOSI Admin font — scoped to admin panel; Garindo screens keep font-sans (Inter) */
-  --font-vosi: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-caleo: "Plus Jakarta Sans", system-ui, sans-serif;
 
   /* VOSI Design System v1.0 color tokens */
-  --color-vosi-navy:    #0B2545;
-  --color-vosi-gold:    #F9B233;
-  --color-vosi-cream:   #FAF7F0;
-  --color-vosi-slate:   #5A6472;
-  --color-vosi-muted:   #9DB2CE;
-  --color-vosi-surface: #ECEEF1;
-  --color-vosi-ink:     #14161B;
-  --color-vosi-success: #1F8A5B;
-  --color-vosi-danger:  #C0392B;
-  --color-vosi-info:    #2A6FDB;
-  --color-vosi-special: #7C5CBF;
+  --color-caleo-navy:    #0B2545;
+  --color-caleo-gold:    #F9B233;
+  --color-caleo-cream:   #FAF7F0;
+  --color-caleo-slate:   #5A6472;
+  --color-caleo-muted:   #9DB2CE;
+  --color-caleo-surface: #ECEEF1;
+  --color-caleo-ink:     #14161B;
+  --color-caleo-success: #1F8A5B;
+  --color-caleo-danger:  #C0392B;
+  --color-caleo-info:    #2A6FDB;
+  --color-caleo-special: #7C5CBF;
 
   /* VOSI border radius tokens */
-  --radius-vosi-card: 20px;
-  --radius-vosi-pill: 100px;
+  --radius-caleo-card: 20px;
+  --radius-caleo-pill: 100px;
 
   /* VOSI box shadow tokens */
-  --shadow-vosi-card: 0 16px 34px rgba(11,37,69,0.10);
-  --shadow-vosi-hero: 0 26px 60px rgba(20,20,30,0.16);
+  --shadow-caleo-card: 0 16px 34px rgba(11,37,69,0.10);
+  --shadow-caleo-hero: 0 26px 60px rgba(20,20,30,0.16);
   
   --color-primary: #1e3d60;
   --color-secondary: #2d8a4e;

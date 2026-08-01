@@ -135,7 +135,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
           <button
             type="button"
             onClick={onEdit}
-            className="mt-2 w-full text-[13px] font-bold py-2 rounded-full bg-vosi-gold text-vosi-navy hover:brightness-95 transition"
+            className="mt-2 w-full text-[13px] font-bold py-2 rounded-full bg-caleo-gold text-caleo-navy hover:brightness-95 transition"
             data-testid={`edit-btn-${plan.code}`}
           >
             Edit paket
@@ -253,60 +253,60 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
       style={{ borderColor: '#0B2545', borderWidth: '2px' }}
       data-testid={`edit-form-${plan.code}`}
     >
-      <h2 className="text-[15px] font-bold text-vosi-navy">
+      <h2 className="text-[15px] font-bold text-caleo-navy">
         Edit {plan.code}
       </h2>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
         Nama paket
         <input
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
+          className="border rounded-md p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           data-testid={`edit-name-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
         Deskripsi
         <textarea
           value={form.description}
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
+          className="border rounded-md p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           rows={2}
           data-testid={`edit-description-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
         Segmen target
         <input
           type="text"
           value={form.target_segment}
           onChange={(e) => setForm((f) => ({ ...f, target_segment: e.target.value }))}
-          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
+          className="border rounded-md p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           data-testid={`edit-target-${plan.code}`}
         />
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
         Harga tahunan (IDR)
         <input
           type="number"
           value={form.price_annual}
           onChange={(e) => setForm((f) => ({ ...f, price_annual: e.target.value }))}
-          className="border rounded-md p-2 text-[13px] font-normal text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none font-mono"
+          className="border rounded-md p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none font-mono"
           placeholder="Contoh: 9000000"
           min={0}
           data-testid={`edit-price-annual-${plan.code}`}
         />
-        <span className="text-[11px] font-normal text-vosi-muted">
+        <span className="text-[11px] font-normal text-caleo-muted">
           Nominal referensi tahunan; dipakai untuk perhitungan MRR/ARR + status coverage pembayaran.
         </span>
       </label>
 
-      <label className="flex items-center gap-2 text-[13px] font-semibold text-vosi-navy">
+      <label className="flex items-center gap-2 text-[13px] font-semibold text-caleo-navy">
         <input
           type="checkbox"
           checked={form.is_recommended}
@@ -316,18 +316,18 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         Rekomendasi (PALING POPULER)
       </label>
 
-      <label className="flex flex-col gap-1 text-[12px] font-semibold text-vosi-slate">
+      <label className="flex flex-col gap-1 text-[12px] font-semibold text-caleo-slate">
         Fitur (JSON)
         <textarea
           value={form.feature_bundle_json}
           onChange={(e) => handleFeatureChange(e.target.value)}
-          className="border rounded-md p-2 text-[12px] font-mono text-vosi-ink border-vosi-muted/40 focus:border-vosi-navy focus:outline-none"
+          className="border rounded-md p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           rows={6}
           spellCheck={false}
           data-testid={`edit-features-${plan.code}`}
         />
         {featureError && (
-          <span className="text-[11px] text-vosi-danger" data-testid={`edit-features-error-${plan.code}`}>
+          <span className="text-[11px] text-caleo-danger" data-testid={`edit-features-error-${plan.code}`}>
             {featureError}
           </span>
         )}
@@ -338,7 +338,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="text-[13px] font-semibold px-4 py-2 rounded-full border border-vosi-navy/30 text-vosi-navy hover:bg-vosi-cream disabled:opacity-50"
+          className="text-[13px] font-semibold px-4 py-2 rounded-full border border-caleo-navy/30 text-caleo-navy hover:bg-caleo-cream disabled:opacity-50"
           data-testid={`edit-cancel-${plan.code}`}
         >
           Batal
@@ -347,7 +347,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="button"
           onClick={handleSave}
           disabled={submitting || !!featureError}
-          className="text-[13px] font-extrabold px-5 py-2 rounded-full bg-vosi-gold text-vosi-navy disabled:opacity-50"
+          className="text-[13px] font-extrabold px-5 py-2 rounded-full bg-caleo-gold text-caleo-navy disabled:opacity-50"
           data-testid={`edit-save-${plan.code}`}
         >
           {submitting ? 'Menyimpan…' : 'Simpan'}

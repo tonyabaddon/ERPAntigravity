@@ -273,7 +273,7 @@ export function OverviewTab({ tenant, onDataChange }: Props) {
           <button
             type="button"
             onClick={() => setIsRenewOpen(true)}
-            className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-3 py-1 text-[11px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-3 py-1 text-[11px] hover:opacity-90 transition-opacity"
             data-testid="perpanjang-cta"
           >
             Perpanjang

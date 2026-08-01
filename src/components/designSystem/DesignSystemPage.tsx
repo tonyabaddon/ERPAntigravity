@@ -1,4 +1,4 @@
-// Founder-engineer preview of the Caleo/VOSI Design System.
+// Founder-engineer preview of the Caleo Design System.
 // Rendered to static HTML by scripts/build-design-system.tsx.
 //
 // NOT imported by the tenant app entry (App.tsx). Zero prod bundle footprint.
@@ -25,17 +25,17 @@ interface ColorTokenNote {
 }
 
 const COLOR_USAGE: ColorTokenNote[] = [
-  { match: /vosi-navy/,     usage: 'Primary text on light bg; app chrome (admin panel)' },
-  { match: /vosi-gold/,     usage: 'Callout / warning accent; admin brand mark' },
-  { match: /vosi-cream/,    usage: 'Admin panel soft background' },
-  { match: /vosi-slate/,    usage: 'Secondary text on light bg' },
-  { match: /vosi-muted/,    usage: 'Disabled / placeholder text; low-emphasis borders' },
-  { match: /vosi-surface/,  usage: 'Panel background (elevated surfaces on cream)' },
-  { match: /vosi-ink/,      usage: 'Body text primary (near-black)' },
-  { match: /vosi-success/,  usage: 'Positive state (SUCCESS toast, +delta badges)' },
-  { match: /vosi-danger/,   usage: 'Negative state (ERROR toast, danger buttons)' },
-  { match: /vosi-info/,     usage: 'Informational (INFO toast, link accent)' },
-  { match: /vosi-special/,  usage: 'Special / rare accent (used sparingly)' },
+  { match: /caleo-navy/,     usage: 'Primary text on light bg; app chrome (admin panel)' },
+  { match: /caleo-gold/,     usage: 'Callout / warning accent; admin brand mark' },
+  { match: /caleo-cream/,    usage: 'Admin panel soft background' },
+  { match: /caleo-slate/,    usage: 'Secondary text on light bg' },
+  { match: /caleo-muted/,    usage: 'Disabled / placeholder text; low-emphasis borders' },
+  { match: /caleo-surface/,  usage: 'Panel background (elevated surfaces on cream)' },
+  { match: /caleo-ink/,      usage: 'Body text primary (near-black)' },
+  { match: /caleo-success/,  usage: 'Positive state (SUCCESS toast, +delta badges)' },
+  { match: /caleo-danger/,   usage: 'Negative state (ERROR toast, danger buttons)' },
+  { match: /caleo-info/,     usage: 'Informational (INFO toast, link accent)' },
+  { match: /caleo-special/,  usage: 'Special / rare accent (used sparingly)' },
   { match: /color-primary/, usage: 'Tenant app primary — CTAs, active tab, brand chrome' },
   { match: /color-secondary/, usage: 'Tenant app secondary — success actions, positive KPIs' },
   { match: /color-on-surface/, usage: 'Text color on default surface' },
@@ -87,7 +87,7 @@ function PaletteSection({ tokens }: { tokens: Token[] }) {
   return (
     <section id="palette">
       <h2>1. Palette (core)</h2>
-      <p>Canonical brand + semantic colors. Reference by CSS var (<code>var(--color-vosi-navy)</code>) or Tailwind arbitrary (<code>text-[#0B2545]</code>). NEW colors need founder approval + entry in this catalog + <code>src/index.css</code>.</p>
+      <p>Canonical brand + semantic colors. Reference by CSS var (<code>var(--color-caleo-navy)</code>) or Tailwind arbitrary (<code>text-[#0B2545]</code>). NEW colors need founder approval + entry in this catalog + <code>src/index.css</code>.</p>
       <div className="ds-swatch-grid">
         {core.map(t => (
           <div key={t.name} className="ds-swatch">
@@ -102,9 +102,9 @@ function PaletteSection({ tokens }: { tokens: Token[] }) {
       </div>
       <div className="ds-note">
         ⚠ De-facto usage note: <code>#012749</code> (used 650× inline) does NOT map to any token above.
-        Closest is <code>--color-vosi-navy</code> (<code>#0B2545</code>) — slightly darker.
+        Closest is <code>--color-caleo-navy</code> (<code>#0B2545</code>) — slightly darker.
         Decision needed: add <code>--color-caleo-primary: #012749</code> to <code>src/index.css</code> AND
-        codemod 650 inline usages, OR retire <code>#012749</code> in favor of <code>vosi-navy</code>.
+        codemod 650 inline usages, OR retire <code>#012749</code> in favor of <code>caleo-navy</code>.
       </div>
     </section>
   );
@@ -141,7 +141,7 @@ function TypographySection({ tokens }: { tokens: Token[] }) {
   return (
     <section id="typography">
       <h2>3. Typography</h2>
-      <p>Three font families. Default is <code>Inter</code> (sans). Admin panel uses <code>Plus Jakarta Sans</code> (vosi). Code/numeric uses <code>JetBrains Mono</code>.</p>
+      <p>Three font families. Default is <code>Inter</code> (sans). Admin panel uses <code>Plus Jakarta Sans</code> (caleo). Code/numeric uses <code>JetBrains Mono</code>.</p>
       <table>
         <thead><tr><th>Token</th><th>Family</th><th>Usage</th></tr></thead>
         <tbody>
@@ -152,7 +152,7 @@ function TypographySection({ tokens }: { tokens: Token[] }) {
               <td>
                 {t.name.includes('sans') && 'Tenant app default — all screens'}
                 {t.name.includes('mono') && 'Numbers, IDs, code samples'}
-                {t.name.includes('vosi') && 'Admin panel chrome (admin.caleo.id) only'}
+                {t.name.includes('caleo') && 'Admin panel chrome (admin.caleo.id) only'}
               </td>
             </tr>
           ))}
@@ -161,27 +161,27 @@ function TypographySection({ tokens }: { tokens: Token[] }) {
       <h3>Size scale (de-facto, from grep)</h3>
       <div className="ds-component-box">
         <div className="ds-type-sample">
-          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-vosi-navy)' }}>Heading 1 — page title</div>
+          <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--color-caleo-navy)' }}>Heading 1 — page title</div>
           <div className="ds-type-meta">32px / weight 800 / navy — used on Kasir daily-summary main title</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-vosi-navy)' }}>Heading 2 — section</div>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-caleo-navy)' }}>Heading 2 — section</div>
           <div className="ds-type-meta">24px / weight 800 / navy</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-vosi-navy)' }}>Heading 3 — subsection</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-caleo-navy)' }}>Heading 3 — subsection</div>
           <div className="ds-type-meta">18px / weight 700 / navy</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-vosi-navy)' }}>Heading 4 — card title (base)</div>
+          <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-caleo-navy)' }}>Heading 4 — card title (base)</div>
           <div className="ds-type-meta">16px / weight 800 (extrabold) — dominant on cards + modals</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '14px', color: 'var(--color-vosi-ink)' }}>Body — default readable text. Contoh: "Kelola daftar kategori yang tampil di dropdown Kasir."</div>
+          <div style={{ fontSize: '14px', color: 'var(--color-caleo-ink)' }}>Body — default readable text. Contoh: "Kelola daftar kategori yang tampil di dropdown Kasir."</div>
           <div className="ds-type-meta">14px / weight 400 / ink</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-vosi-ink)' }}>Body small — form labels, list items</div>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-caleo-ink)' }}>Body small — form labels, list items</div>
           <div className="ds-type-meta">13px / weight 600</div>
         </div>
         <div className="ds-type-sample">
@@ -193,7 +193,7 @@ function TypographySection({ tokens }: { tokens: Token[] }) {
           <div className="ds-type-meta">11px / weight 800 / uppercase / letter-spacing 0.05em</div>
         </div>
         <div className="ds-type-sample">
-          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-vosi-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Micro — chip / badge label</div>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--color-caleo-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Micro — chip / badge label</div>
           <div className="ds-type-meta">10px / weight 800 / uppercase — used on pills + timestamp chips</div>
         </div>
       </div>
@@ -226,7 +226,7 @@ function RadiusShadowSection({ tokens }: { tokens: Token[] }) {
       <div className="ds-shadow-grid">
         {shadows.map(t => (
           <div key={t.name} className="ds-shadow-item" style={{ boxShadow: t.value }}>
-            <div style={{ fontWeight: 800, color: 'var(--color-vosi-navy)', fontSize: 15 }}>{t.name}</div>
+            <div style={{ fontWeight: 800, color: 'var(--color-caleo-navy)', fontSize: 15 }}>{t.name}</div>
             <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4, fontFamily: 'var(--font-mono)' }}>{t.value}</div>
           </div>
         ))}

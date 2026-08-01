@@ -165,7 +165,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
 
   return (
     <aside
-      className="w-52 shrink-0 flex flex-col font-vosi"
+      className="w-52 shrink-0 flex flex-col font-caleo"
       style={{ background: '#ffffff', borderRight: '1px solid #ECEEF1' }}
     >
       {/* Brand mark */}

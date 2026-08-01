@@ -228,7 +228,7 @@ export function TenantsList() {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 font-vosi">
+    <div className="space-y-4 font-caleo">
       {/* Page header */}
       <div className="flex justify-between items-center">
         <div>

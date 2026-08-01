@@ -226,7 +226,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
   // ─── Tenant found ──────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-4 font-vosi" data-testid="tenant-detail-shell">
+    <div className="space-y-4 font-caleo" data-testid="tenant-detail-shell">
       {/* Breadcrumb */}
       <nav className="text-[12px]" style={{ color: '#9DB2CE' }} aria-label="Breadcrumb">
         <a

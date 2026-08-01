@@ -129,7 +129,7 @@ export function AdminHome() {
   const showEmptyState = stats.tenants_total <= 1;
 
   return (
-    <div className="space-y-5 font-vosi">
+    <div className="space-y-5 font-caleo">
       {/* Page title */}
       <div className="flex justify-between items-start">
         <div>

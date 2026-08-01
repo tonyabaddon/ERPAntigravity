@@ -119,7 +119,7 @@ function CostTable({
 
   return (
     <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid #ECEEF1' }}>
-      <table className="w-full text-[13px] font-vosi" style={{ borderCollapse: 'collapse' }}>
+      <table className="w-full text-[13px] font-caleo" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #ECEEF1' }}>
             <th className="text-left px-4 py-3 font-semibold" style={{ color: '#64748B', width: '30%' }}>Tenant</th>
@@ -251,7 +251,7 @@ export function CostDashboard() {
   const outlierRows = rows.filter((r) => outlierIds.has(r.tenant_id));
 
   return (
-    <div className="flex flex-col gap-6 font-vosi" data-testid="cost-dashboard">
+    <div className="flex flex-col gap-6 font-caleo" data-testid="cost-dashboard">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

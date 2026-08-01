@@ -10,11 +10,11 @@ const CONFIG: Record<
   CoverageStatus,
   { bgClass: string; textClass: string; label: string }
 > = {
-  LUNAS:   { bgClass: 'bg-vosi-success/15', textClass: 'text-vosi-success', label: 'Lunas' },
-  DP_60:   { bgClass: 'bg-vosi-gold/15',    textClass: 'text-vosi-navy',    label: 'DP 60%' },
-  DP_30:   { bgClass: 'bg-vosi-gold/25',    textClass: 'text-vosi-navy',    label: 'DP 30%' },
-  OVERDUE: { bgClass: 'bg-vosi-danger/15',  textClass: 'text-vosi-danger',  label: 'Terlambat' },
-  UNPAID:  { bgClass: 'bg-vosi-slate/15',   textClass: 'text-vosi-slate',   label: 'Belum bayar' },
+  LUNAS:   { bgClass: 'bg-caleo-success/15', textClass: 'text-caleo-success', label: 'Lunas' },
+  DP_60:   { bgClass: 'bg-caleo-gold/15',    textClass: 'text-caleo-navy',    label: 'DP 60%' },
+  DP_30:   { bgClass: 'bg-caleo-gold/25',    textClass: 'text-caleo-navy',    label: 'DP 30%' },
+  OVERDUE: { bgClass: 'bg-caleo-danger/15',  textClass: 'text-caleo-danger',  label: 'Terlambat' },
+  UNPAID:  { bgClass: 'bg-caleo-slate/15',   textClass: 'text-caleo-slate',   label: 'Belum bayar' },
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

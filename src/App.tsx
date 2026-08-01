@@ -506,7 +506,7 @@ export default function App() {
     }
   }, []);
 
-  // Global listener for vosi:tenant-error events from supabaseErrorInterceptor.
+  // Global listener for caleo:tenant-error events from supabaseErrorInterceptor.
   useEffect(() => {
     const handler = (e: Event) => {
       const code = (e as CustomEvent).detail?.code as string | undefined;
@@ -517,8 +517,8 @@ export default function App() {
         handleTenantError(code);
       }
     };
-    window.addEventListener('vosi:tenant-error', handler);
-    return () => window.removeEventListener('vosi:tenant-error', handler);
+    window.addEventListener('caleo:tenant-error', handler);
+    return () => window.removeEventListener('caleo:tenant-error', handler);
   }, [triggerToast, handleTenantError]);
 
   // Multi-tenant: URL routing enforcement — two jobs:
@@ -973,7 +973,7 @@ export default function App() {
   // Platform admin area: /admin/*
   if (pathRoute.isPlatformAdminArea) {
     return (
-      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-vosi">Memuat admin…</div>}>
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-caleo">Memuat admin…</div>}>
         <AdminRoutes />
       </React.Suspense>
     );
@@ -997,7 +997,7 @@ export default function App() {
         ? `Masuk sebagai tenant ${pathRoute.tenantSlug}…`
         : 'Memeriksa akses tenant…';
       return (
-        <div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-vosi">
+        <div className="min-h-screen flex items-center justify-center text-[13px] text-slate-500 font-caleo">
           {label}
         </div>
       );

@@ -310,7 +310,7 @@ export function TenantsTable({
                     <button
                       aria-label={`Suspend ${t.name}`}
                       onClick={() => setSuspendTarget(t)}
-                      className="text-vosi-danger border border-vosi-danger/40 hover:bg-vosi-danger/10 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors"
+                      className="text-caleo-danger border border-caleo-danger/40 hover:bg-caleo-danger/10 rounded-full px-3 py-1 text-[12px] font-semibold transition-colors"
                     >
                       Suspend
                     </button>
@@ -319,7 +319,7 @@ export function TenantsTable({
                     <button
                       aria-label={`Aktifkan ${t.name}`}
                       onClick={() => handleActivate(t)}
-                      className="bg-vosi-success text-white rounded-full px-3 py-1 text-[12px] font-semibold hover:opacity-90 transition-opacity"
+                      className="bg-caleo-success text-white rounded-full px-3 py-1 text-[12px] font-semibold hover:opacity-90 transition-opacity"
                     >
                       Aktifkan
                     </button>

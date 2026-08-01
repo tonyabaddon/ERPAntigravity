@@ -76,7 +76,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-vosi" style={{ background: '#FAF7F0' }}>
+    <div className="min-h-screen flex flex-col font-caleo" style={{ background: '#FAF7F0' }}>
       {/* Top header — navy bg, white text */}
       <header
         className="flex justify-between items-center px-5 py-3 shrink-0"

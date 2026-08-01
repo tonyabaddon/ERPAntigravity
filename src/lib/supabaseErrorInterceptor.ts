@@ -26,7 +26,7 @@ export function dispatchTenantError(err: unknown): TenantErrorCode | null {
   else if (e.code && CODE_MAP[e.code]) code = CODE_MAP[e.code];
 
   if (code && typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('vosi:tenant-error', { detail: { code } }));
+    window.dispatchEvent(new CustomEvent('caleo:tenant-error', { detail: { code } }));
   }
   return code;
 }
