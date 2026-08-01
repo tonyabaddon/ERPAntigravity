@@ -299,12 +299,121 @@ function SharedComponentsSection() {
   );
 }
 
+// ── Section: Icons (MSME-friendly vocabulary) ───────────────────────────────
+
+interface IconEntry {
+  action: string;
+  icon: string;        // lucide-react component name
+  usage: string;
+  wrong?: string;      // common mistake to avoid
+}
+
+// Icon-to-action canonical mapping. Every action MUST use the same icon
+// throughout the app so MSME users learn once, recognize everywhere.
+const ICON_MAP: IconEntry[] = [
+  // ── CRUD ──────────────────────────────────────────────────────────────────
+  { action: 'Tambah / Buat baru',       icon: 'Plus',          usage: 'Tombol "+ Tambah kategori", "+ Customer Baru", "+ PO"', wrong: 'PlusCircle (too decorative)' },
+  { action: 'Simpan',                   icon: 'Save',          usage: 'Tombol "Simpan" pada form yang butuh save state (draft)' },
+  { action: 'Edit / Ubah',              icon: 'Pencil',        usage: 'Icon inline pada row untuk edit', wrong: 'Edit (Edit is more abstract, Pencil is universally recognized)' },
+  { action: 'Hapus / Delete',           icon: 'Trash2',        usage: 'Delete permanent atau soft-delete', wrong: 'Trash (v1 icon has thinner lines, Trash2 is bolder + clearer)' },
+  { action: 'Batal / Cancel',           icon: 'X',             usage: 'Close modal, cancel action, dismiss toast' },
+  { action: 'Konfirmasi / OK',          icon: 'Check',         usage: 'Small confirm indicator (checkbox, checked state)' },
+  { action: 'Berhasil',                 icon: 'CheckCircle',   usage: 'Success state (toast, badge)', wrong: 'CheckCircle2 (visually near-identical, causes drift)' },
+  { action: 'Error / Gagal',            icon: 'AlertCircle',   usage: 'Error toast, invalid field marker', wrong: 'XCircle (too aggressive), AlertTriangle (reserved for warnings)' },
+  { action: 'Peringatan',               icon: 'AlertTriangle', usage: 'Warning banner, danger action confirmation' },
+  { action: 'Info / Bantuan',           icon: 'Info',          usage: 'Tooltip trigger, informational banner' },
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  { action: 'Kembali',                  icon: 'ArrowLeft',     usage: 'Modal back button, wizard step back' },
+  { action: 'Lanjut',                   icon: 'ArrowRight',    usage: 'Wizard step forward, "Lihat selengkapnya" link' },
+  { action: 'Expand row / Detail',      icon: 'ChevronRight',  usage: 'Row expand, sub-menu indicator (collapsed state)' },
+  { action: 'Collapse row',             icon: 'ChevronDown',   usage: 'Row expand indicator (expanded state), select dropdown' },
+  { action: 'Cari / Search',            icon: 'Search',        usage: 'Search input prefix, search modal trigger' },
+
+  // ── MSME Business Actions ─────────────────────────────────────────────────
+  { action: 'Cetak / Print',            icon: 'Printer',       usage: 'Print PDF button (Sales Order, Invoice, Struk)' },
+  { action: 'Download / Unduh',         icon: 'Download',      usage: 'Download PDF file, CSV export' },
+  { action: 'Upload / Unggah',          icon: 'Upload',        usage: 'Bukti pembayaran, foto produk, avatar' },
+  { action: 'Kirim / Delivery',         icon: 'Truck',         usage: 'Surat Jalan, "Kirim Barang", Warehouse Transfer', wrong: 'Send (Send looks like paper airplane — not for physical delivery)' },
+  { action: 'Bayar / Pembayaran',       icon: 'CreditCard',    usage: 'Payment button, tab "Pembayaran"' },
+  { action: 'Stok / Produk',            icon: 'Package',       usage: 'Inventory nav, "Stok Habis" indicator', wrong: 'Box (Package has clearer commerce association)' },
+  { action: 'Pelanggan / Customer',     icon: 'Users',         usage: 'Customer list nav, "Total Pelanggan" KPI', wrong: 'User (singular; customer DB is always plural context)' },
+  { action: 'Toko / Store',             icon: 'Store',         usage: 'Store settings, tenant switcher' },
+  { action: 'Penjualan / Sales',        icon: 'ShoppingCart',  usage: 'POS nav, active sales flow' },
+  { action: 'Rekonsiliasi / Uang',      icon: 'Banknote',      usage: 'Rekonsiliasi Kas, cash transaction', wrong: 'DollarSign ($ is US-specific; Banknote is universal)' },
+  { action: 'Laporan',                  icon: 'FileText',      usage: 'Report list, PDF preview' },
+  { action: 'Waktu / Riwayat',          icon: 'Clock',         usage: 'Order history timestamp, activity log' },
+
+  // ── State Indicators ──────────────────────────────────────────────────────
+  { action: 'Loading',                  icon: 'Loader2',       usage: 'Spinner animation (Loader2 rotates smoothly, Loader has hard stops)', wrong: 'Loader (older icon, less smooth animation)' },
+  { action: 'Locked / Protected',       icon: 'Lock',          usage: 'Owner-only feature indicator, PIN-gated action' },
+  { action: 'Approved / Verified',      icon: 'ShieldCheck',   usage: 'Owner-approved badge, verified payment' },
+  { action: 'Toggle ON',                icon: 'ToggleRight',   usage: 'Feature/modul enabled state' },
+  { action: 'Toggle OFF',               icon: 'ToggleLeft',    usage: 'Feature/modul disabled state' },
+  { action: 'Trend UP / Naik',          icon: 'TrendingUp',    usage: 'KPI positive delta, sales up' },
+
+  // ── Communication ─────────────────────────────────────────────────────────
+  { action: 'WhatsApp',                 icon: 'MessageSquare', usage: 'Send WA to customer, WA session status' },
+  { action: 'Notifikasi',               icon: 'Bell',          usage: 'Notification bell, alert center' },
+];
+
+function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; size?: number; color?: string }) {
+  // Render icon as inline SVG placeholder — SSR-safe, doesn't require lucide runtime.
+  // For preview: show name in a rounded box.
+  return (
+    <div style={{
+      width: size + 20,
+      height: size + 20,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f3f4f6',
+      border: '1px solid #e5e7eb',
+      borderRadius: 4,
+      fontSize: 10,
+      fontFamily: 'var(--font-mono)',
+      color,
+      fontWeight: 700,
+    }}>
+      &lt;{name}/&gt;
+    </div>
+  );
+}
+
+function IconsSection() {
+  return (
+    <section id="icons">
+      <h2>6. Icons (MSME-friendly vocabulary)</h2>
+      <p>Dari <code>lucide-react</code>. Every action has ONE canonical icon — MSME users learn once, recognize everywhere. Mixing icons for the same action = anti-pattern (confuses non-tech users).</p>
+      <div className="ds-note">
+        <strong>MSME rules:</strong> (1) Every button MUST have icon + label — never icon-only. (2) Prefer literal-meaning icons (Truck for kirim, not Send). (3) When multiple lucide icons exist for same concept, pick the boldest/clearest variant (Trash2 not Trash, CheckCircle not CheckCircle2).
+      </div>
+      <table>
+        <thead><tr><th>Icon</th><th>Component</th><th>Action / Use case</th><th>Common mistake</th></tr></thead>
+        <tbody>
+          {ICON_MAP.map(entry => (
+            <tr key={entry.action}>
+              <td><IconRenderer name={entry.icon} /></td>
+              <td><code>{entry.icon}</code></td>
+              <td><strong>{entry.action}</strong><br /><span style={{ fontSize: 12, color: '#6b7280' }}>{entry.usage}</span></td>
+              <td>{entry.wrong ? <code style={{ color: '#7f1d1d' }}>{entry.wrong}</code> : <span style={{ color: '#6b7280' }}>—</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="ds-note">
+        <strong>Never add a new icon without checking this table first.</strong> If a concept isn't covered here, propose adding a row (same PR that adds the code using it).
+      </div>
+    </section>
+  );
+}
+
 // ── Section: Anti-patterns ──────────────────────────────────────────────────
 
 function AntiPatternsSection() {
   return (
     <section id="anti-patterns">
-      <h2>6. Anti-patterns</h2>
+      <h2>7. Anti-patterns</h2>
       <p>Common drift patterns to reject during code review. Each has a shorter, better form.</p>
       <table>
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
@@ -350,7 +459,7 @@ function AntiPatternsSection() {
 function ExtendSection() {
   return (
     <section id="extend">
-      <h2>7. How to Extend</h2>
+      <h2>8. How to Extend</h2>
       <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
         <li><strong>Propose in a design brief</strong> — describe the need + why existing token/component doesn't cover it. Show a mockup or reference (per CLAUDE.md FE UI/UX approval protocol).</li>
         <li><strong>Founder approves</strong> — "go", "approved", "lock it", or iteration comment. Assumptions of approval = violation per CLAUDE.md.</li>
@@ -388,6 +497,7 @@ export function DesignSystemPage({ tokens }: Props) {
         <a href="#typography">Typography</a>
         <a href="#radius-shadow">Radius & Shadow</a>
         <a href="#components">Components</a>
+        <a href="#icons">Icons</a>
         <a href="#anti-patterns">Anti-patterns</a>
         <a href="#extend">How to Extend</a>
       </nav>
@@ -397,6 +507,7 @@ export function DesignSystemPage({ tokens }: Props) {
       <TypographySection tokens={tokens} />
       <RadiusShadowSection tokens={tokens} />
       <SharedComponentsSection />
+      <IconsSection />
       <AntiPatternsSection />
       <ExtendSection />
     </div>
