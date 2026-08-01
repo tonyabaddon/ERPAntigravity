@@ -46,7 +46,7 @@ export function PendingPaymentsQueue() {
   const handleRefresh = () => setRefreshKey((k) => k + 1);
 
   return (
-    <div className="flex flex-col gap-5 font-vosi" data-testid="pending-payments-queue">
+    <div className="flex flex-col gap-5 font-caleo" data-testid="pending-payments-queue">
       {/* Page header */}
       <div>
         <h1 className="text-[14px] font-bold" style={{ color: '#0B2545' }}>

@@ -307,17 +307,17 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
       aria-modal="true"
       aria-labelledby="renew-modal-title"
       data-testid="modal-backdrop"
-      className="fixed inset-0 z-50 flex items-start justify-center bg-vosi-navy/40 backdrop-blur-sm overflow-y-auto py-8"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-caleo-navy/40 backdrop-blur-sm overflow-y-auto py-8"
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-vosi mx-4"
+        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <h2
           id="renew-modal-title"
-          className="text-vosi-navy font-bold text-lg mb-1"
+          className="text-caleo-navy font-bold text-lg mb-1"
         >
           Perpanjang Masa Aktif
         </h2>
@@ -338,7 +338,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
           <div className="mb-4">
             <label
               htmlFor="renew-expires-at"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Masa aktif baru
             </label>
@@ -350,11 +350,11 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
               value={newExpiresAt}
               onChange={(e) => setNewExpiresAt(e.target.value)}
               disabled={submitting}
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Masa aktif baru"
             />
             {newExpiresAt && !isDateValid && (
-              <p className="text-[11px] mt-1 text-vosi-danger">
+              <p className="text-[11px] mt-1 text-caleo-danger">
                 Tanggal harus lebih dari hari ini.
               </p>
             )}
@@ -364,7 +364,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
           <div className="mb-4">
             <label
               htmlFor="renew-plan-code"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Ganti paket <span className="font-normal text-[11px]">(opsional)</span>
             </label>
@@ -375,7 +375,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 setNewPlanCode(e.target.value as '' | 'STARTER' | 'PRO' | 'PREMIUM')
               }
               disabled={submitting}
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Ganti paket"
             >
               <option value="">— Tidak diganti —</option>
@@ -389,7 +389,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
           <div className="mb-4">
             <label
               htmlFor="renew-notes"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Catatan internal <span className="font-normal text-[11px]">(opsional)</span>
             </label>
@@ -401,7 +401,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
               maxLength={500}
               rows={3}
               placeholder="Contoh: renewal 1 tahun, bayar transfer BCA 5 Jul 2026"
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy placeholder:text-vosi-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Catatan internal"
             />
             <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
@@ -425,11 +425,11 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 checked={paymentEnabled}
                 onChange={(e) => setPaymentEnabled(e.target.checked)}
                 disabled={submitting}
-                className="w-4 h-4 accent-vosi-gold disabled:opacity-50"
+                className="w-4 h-4 accent-caleo-gold disabled:opacity-50"
                 aria-label="Sekaligus catat pembayaran"
                 data-testid="renew-pay-toggle"
               />
-              <span className="text-[13px] font-semibold text-vosi-navy">
+              <span className="text-[13px] font-semibold text-caleo-navy">
                 Sekaligus catat pembayaran
               </span>
             </label>
@@ -441,9 +441,9 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 <div className="mt-4">
                   <label
                     htmlFor="renew-pay-amount"
-                    className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                    className="block text-[12px] font-semibold text-caleo-navy mb-1"
                   >
-                    Nominal diterima <span className="font-normal text-vosi-navy/50">(IDR)</span>
+                    Nominal diterima <span className="font-normal text-caleo-navy/50">(IDR)</span>
                   </label>
                   <input
                     id="renew-pay-amount"
@@ -454,12 +454,12 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                     onChange={(e) => setPayAmount(e.target.value)}
                     disabled={submitting}
                     placeholder="Contoh: 3600000"
-                    className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                     aria-label="Nominal pembayaran"
                     data-testid="renew-pay-amount"
                   />
                   {payAmount && !payAmountValid && (
-                    <p className="text-[11px] mt-1 text-vosi-danger">Nominal harus lebih dari 0.</p>
+                    <p className="text-[11px] mt-1 text-caleo-danger">Nominal harus lebih dari 0.</p>
                   )}
                 </div>
 
@@ -467,7 +467,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 <div>
                   <label
                     htmlFor="renew-pay-method"
-                    className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                    className="block text-[12px] font-semibold text-caleo-navy mb-1"
                   >
                     Metode pembayaran
                   </label>
@@ -480,7 +480,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       setPayEwallet('');
                     }}
                     disabled={submitting}
-                    className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                     aria-label="Metode pembayaran (rantai)"
                     data-testid="renew-pay-method"
                   >
@@ -495,7 +495,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                   <div>
                     <label
                       htmlFor="renew-pay-bank"
-                      className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                      className="block text-[12px] font-semibold text-caleo-navy mb-1"
                     >
                       Bank
                     </label>
@@ -504,7 +504,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       value={payBankName}
                       onChange={(e) => setPayBankName(e.target.value as BankName)}
                       disabled={submitting}
-                      className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                      className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                       aria-label="Bank (rantai)"
                     >
                       <option value="">— Pilih bank —</option>
@@ -513,7 +513,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       ))}
                     </select>
                     {!payBankValid && (
-                      <p className="text-[11px] mt-1 text-vosi-danger">Pilih bank untuk metode ini.</p>
+                      <p className="text-[11px] mt-1 text-caleo-danger">Pilih bank untuk metode ini.</p>
                     )}
                   </div>
                 )}
@@ -523,7 +523,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                   <div>
                     <label
                       htmlFor="renew-pay-ewallet"
-                      className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                      className="block text-[12px] font-semibold text-caleo-navy mb-1"
                     >
                       Penyedia e-wallet
                     </label>
@@ -532,7 +532,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                       value={payEwallet}
                       onChange={(e) => setPayEwallet(e.target.value as EwalletProvider)}
                       disabled={submitting}
-                      className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                      className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                       aria-label="Penyedia e-wallet (rantai)"
                     >
                       <option value="">— Pilih e-wallet —</option>
@@ -547,12 +547,12 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 <div>
                   <label
                     htmlFor="renew-pay-proof"
-                    className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                    className="block text-[12px] font-semibold text-caleo-navy mb-1"
                   >
                     Bukti transfer
                     {requireUpload
-                      ? <span className="text-vosi-danger ml-1">*</span>
-                      : <span className="font-normal text-vosi-navy/50 ml-1">(opsional)</span>
+                      ? <span className="text-caleo-danger ml-1">*</span>
+                      : <span className="font-normal text-caleo-navy/50 ml-1">(opsional)</span>
                     }
                   </label>
                   <input
@@ -561,12 +561,12 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                     accept=".jpg,.jpeg,.png,.pdf"
                     onChange={handleFileChange}
                     disabled={submitting}
-                    className="w-full text-[13px] text-vosi-navy border border-vosi-navy/30 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-vosi-gold file:text-vosi-navy hover:file:opacity-90 disabled:opacity-50"
+                    className="w-full text-[13px] text-caleo-navy border border-caleo-navy/30 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-caleo-gold file:text-caleo-navy hover:file:opacity-90 disabled:opacity-50"
                     aria-label="Upload bukti pembayaran"
                     data-testid="renew-pay-proof"
                   />
                   {payFileError && (
-                    <p className="text-[11px] mt-1 text-vosi-danger">{payFileError}</p>
+                    <p className="text-[11px] mt-1 text-caleo-danger">{payFileError}</p>
                   )}
                   {payProofFile && !payFileError && (
                     <p className="text-[11px] mt-1" style={{ color: '#1F8A5B' }}>
@@ -579,9 +579,9 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                 <div>
                   <label
                     htmlFor="renew-pay-ref"
-                    className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                    className="block text-[12px] font-semibold text-caleo-navy mb-1"
                   >
-                    Referensi bank <span className="font-normal text-vosi-navy/50">(opsional)</span>
+                    Referensi bank <span className="font-normal text-caleo-navy/50">(opsional)</span>
                   </label>
                   <input
                     id="renew-pay-ref"
@@ -591,7 +591,7 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
                     disabled={submitting}
                     maxLength={100}
                     placeholder="Contoh: TRF-0001-XYZ"
-                    className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy placeholder:text-vosi-navy/30 focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                    className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                     aria-label="Referensi bank pembayaran"
                     data-testid="renew-pay-ref"
                   />
@@ -606,14 +606,14 @@ export function RenewSubscriptionModal({ open, tenant, onClose, onSuccess }: Pro
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="text-vosi-navy border border-vosi-navy/30 hover:bg-vosi-cream rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting || !formValid}
-              className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
               data-testid="renew-submit"
             >
               {submitting ? 'Menyimpan…' : 'Simpan Perpanjangan'}

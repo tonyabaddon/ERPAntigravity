@@ -5,7 +5,7 @@ describe('supabaseErrorInterceptor', () => {
   let listener: ReturnType<typeof vi.fn>;
   beforeEach(() => {
     listener = vi.fn();
-    window.addEventListener('vosi:tenant-error', listener as EventListener);
+    window.addEventListener('caleo:tenant-error', listener as EventListener);
   });
 
   it('recognizes TENANT_NOT_FOUND (P0404)', () => {

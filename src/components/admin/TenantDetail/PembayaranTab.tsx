@@ -149,16 +149,16 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
       aria-modal="true"
       aria-labelledby="delete-payment-title"
       data-testid="delete-payment-dialog"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-vosi-navy/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-caleo-navy/40 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full font-vosi mx-4"
+        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <h3
           id="delete-payment-title"
-          className="text-[15px] font-bold text-vosi-navy mb-3"
+          className="text-[15px] font-bold text-caleo-navy mb-3"
         >
           Konfirmasi Hapus Pembayaran
         </h3>
@@ -168,9 +168,9 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
         <div className="mb-5">
           <label
             htmlFor="delete-reason"
-            className="block text-[12px] font-semibold text-vosi-navy mb-1"
+            className="block text-[12px] font-semibold text-caleo-navy mb-1"
           >
-            Alasan penghapusan <span className="text-vosi-danger">*</span>
+            Alasan penghapusan <span className="text-caleo-danger">*</span>
           </label>
           <textarea
             id="delete-reason"
@@ -180,7 +180,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             maxLength={500}
             rows={3}
             placeholder="Contoh: duplikat, kesalahan input, dll."
-            className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy placeholder:text-vosi-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+            className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
             aria-label="Alasan penghapusan"
             autoFocus
           />
@@ -190,7 +190,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="text-vosi-navy border border-vosi-navy/30 hover:bg-vosi-cream rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-40 transition-colors"
+            className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-40 transition-colors"
           >
             Batal
           </button>
@@ -290,7 +290,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
 
   if (loading) {
     return (
-      <div className="space-y-4 font-vosi" data-testid="pembayaran-tab-loading">
+      <div className="space-y-4 font-caleo" data-testid="pembayaran-tab-loading">
         <TableSkeleton />
       </div>
     );
@@ -351,7 +351,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           <button
             type="button"
             onClick={() => setRecordOpen(true)}
-            className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-6 py-3 text-[14px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-6 py-3 text-[14px] hover:opacity-90 transition-opacity"
             data-testid="catat-pembayaran-cta"
           >
             + Catat pembayaran
@@ -395,7 +395,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
         onDeleted={() => { setDeleteTarget(null); refresh(); }}
       />
 
-      <div className="space-y-4 font-vosi" data-testid="pembayaran-tab">
+      <div className="space-y-4 font-caleo" data-testid="pembayaran-tab">
         {/* Coverage summary strip */}
         <div
           className="border rounded-xl px-5 py-4 flex flex-wrap gap-5 items-center"
@@ -443,7 +443,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           <button
             type="button"
             onClick={() => setRecordOpen(true)}
-            className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
+            className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
             data-testid="catat-pembayaran-btn"
           >
             + Catat pembayaran
@@ -520,7 +520,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                         type="button"
                         onClick={() => handleBuktiClick(p.proof_url!)}
                         title="Lihat bukti"
-                        className="text-vosi-gold hover:opacity-70 transition-opacity"
+                        className="text-caleo-gold hover:opacity-70 transition-opacity"
                         data-testid={`bukti-btn-${p.id}`}
                       >
                         📎
@@ -551,7 +551,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
                       <button
                         type="button"
                         onClick={() => setEditTarget(p)}
-                        className="text-[11px] font-semibold rounded-full px-2 py-0.5 border transition-colors hover:bg-vosi-cream"
+                        className="text-[11px] font-semibold rounded-full px-2 py-0.5 border transition-colors hover:bg-caleo-cream"
                         style={{ borderColor: C.navy, color: C.navy }}
                         data-testid={`edit-payment-btn-${p.id}`}
                       >

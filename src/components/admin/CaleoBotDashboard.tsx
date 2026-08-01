@@ -440,7 +440,7 @@ export function CaleoBotDashboard() {
   }, [load]);
 
   return (
-    <div className="flex flex-col gap-6 font-vosi" data-testid="caleo-bot-dashboard">
+    <div className="flex flex-col gap-6 font-caleo" data-testid="caleo-bot-dashboard">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>

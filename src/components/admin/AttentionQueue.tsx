@@ -28,16 +28,16 @@ const REASON_LABEL: Record<AttentionReason, string> = {
 };
 
 function daysColor(days: number): string {
-  if (days <= 0) return 'text-vosi-danger';
-  if (days <= 14) return 'text-vosi-gold';
-  return 'text-vosi-slate';
+  if (days <= 0) return 'text-caleo-danger';
+  if (days <= 14) return 'text-caleo-gold';
+  return 'text-caleo-slate';
 }
 
 function reasonChipClass(reason: AttentionReason): string {
   if (reason === 'SUSPENDED' || reason === 'EXPIRED_AND_SUSPENDED' || reason === 'OVERDUE') {
-    return 'bg-vosi-danger/10 text-vosi-danger';
+    return 'bg-caleo-danger/10 text-caleo-danger';
   }
-  return 'bg-vosi-gold/15 text-vosi-navy';
+  return 'bg-caleo-gold/15 text-caleo-navy';
 }
 
 /** Shape of a row in v_tenant_payment_coverage. */
@@ -201,7 +201,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
         <button
           type="button"
           onClick={refetch}
-          className="text-[12px] font-semibold px-3 py-1 rounded-full bg-white text-vosi-danger border border-vosi-danger hover:bg-vosi-danger hover:text-white transition"
+          className="text-[12px] font-semibold px-3 py-1 rounded-full bg-white text-caleo-danger border border-caleo-danger hover:bg-caleo-danger hover:text-white transition"
           data-testid="attention-queue-retry"
         >
           Coba lagi
@@ -260,7 +260,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
                 {REASON_LABEL[t.attention_reason]}
               </span>
             </div>
-            <div className="text-[12px] text-vosi-slate">
+            <div className="text-[12px] text-caleo-slate">
               {t.expires_at && (
                 <>
                   <span className={`font-mono font-bold ${daysColor(t.days_until_expiry)}`}>
@@ -268,7 +268,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
                       ? `${t.days_until_expiry} hari`
                       : `${Math.abs(t.days_until_expiry)} hari lalu`}
                   </span>
-                  <span className="text-vosi-muted"> · exp {t.expires_at}</span>
+                  <span className="text-caleo-muted"> · exp {t.expires_at}</span>
                 </>
               )}
             </div>
@@ -279,7 +279,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
                 ? `/admin/tenants/${t.slug}?tab=pembayaran`
                 : `/admin/tenants/${t.slug}?tab=ringkasan`
             }
-            className="text-[12px] px-3 py-1 rounded-lg border font-medium hover:bg-vosi-navy hover:text-white transition shrink-0"
+            className="text-[12px] px-3 py-1 rounded-lg border font-medium hover:bg-caleo-navy hover:text-white transition shrink-0"
             style={{ borderColor: '#0B2545', color: '#0B2545' }}
             data-testid={`attention-link-${t.slug}`}
           >

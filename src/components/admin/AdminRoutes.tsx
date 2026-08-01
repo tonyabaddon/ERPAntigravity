@@ -49,7 +49,7 @@ function SuperAdminGate({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
   if (state === 'checking') {
-    return <div className="p-6 text-[13px] text-slate-500 font-vosi">Memeriksa akses super_admin…</div>;
+    return <div className="p-6 text-[13px] text-slate-500 font-caleo">Memeriksa akses super_admin…</div>;
   }
   if (state === 'deny') {
     return (

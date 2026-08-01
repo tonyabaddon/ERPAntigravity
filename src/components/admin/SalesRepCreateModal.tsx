@@ -92,11 +92,11 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
       aria-modal="true"
       aria-labelledby="create-salesrep-modal-title"
       data-testid="create-salesrep-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-vosi-navy/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-caleo-navy/40 backdrop-blur-sm"
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-vosi mx-4"
+        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with gold focal accent */}

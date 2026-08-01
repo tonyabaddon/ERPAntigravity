@@ -89,7 +89,7 @@ export function PlatformSettings() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 max-w-xl font-vosi" style={{ color: '#0B2545' }}>
+    <div className="p-6 max-w-xl font-caleo" style={{ color: '#0B2545' }}>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0B2545' }}>

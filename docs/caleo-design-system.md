@@ -166,43 +166,43 @@ Lockup utama = **ikon semut dalam lingkaran** + **wordmark "VOSI"** + tagline op
 ```css
 :root {
   /* Inti */
-  --vosi-navy:    #0B2545;
-  --vosi-gold:    #F9B233;
+  --caleo-navy:    #0B2545;
+  --caleo-gold:    #F9B233;
 
   /* Netral */
-  --vosi-cream:   #FAF7F0;
-  --vosi-slate:   #5A6472;
-  --vosi-muted:   #9DB2CE;
-  --vosi-surface: #ECEEF1;
-  --vosi-ink:     #14161B;
+  --caleo-cream:   #FAF7F0;
+  --caleo-slate:   #5A6472;
+  --caleo-muted:   #9DB2CE;
+  --caleo-surface: #ECEEF1;
+  --caleo-ink:     #14161B;
 
   /* Fungsional */
-  --vosi-success: #1F8A5B;
-  --vosi-danger:  #C0392B;
-  --vosi-info:    #2A6FDB;
-  --vosi-special: #7C5CBF;
+  --caleo-success: #1F8A5B;
+  --caleo-danger:  #C0392B;
+  --caleo-info:    #2A6FDB;
+  --caleo-special: #7C5CBF;
 
   /* Tipografi */
-  --vosi-font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --vosi-font-mono: 'JetBrains Mono', monospace;
+  --caleo-font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --caleo-font-mono: 'JetBrains Mono', monospace;
 
   /* Radius */
-  --vosi-radius-sm:   12px;
-  --vosi-radius-card: 20px;
-  --vosi-radius-pill: 100px;
+  --caleo-radius-sm:   12px;
+  --caleo-radius-card: 20px;
+  --caleo-radius-pill: 100px;
 
   /* Spacing (4px base) */
-  --vosi-space-1: 4px;
-  --vosi-space-2: 8px;
-  --vosi-space-3: 12px;
-  --vosi-space-4: 16px;
-  --vosi-space-5: 20px;
-  --vosi-space-6: 24px;
-  --vosi-space-8: 32px;
+  --caleo-space-1: 4px;
+  --caleo-space-2: 8px;
+  --caleo-space-3: 12px;
+  --caleo-space-4: 16px;
+  --caleo-space-5: 20px;
+  --caleo-space-6: 24px;
+  --caleo-space-8: 32px;
 
   /* Shadow */
-  --vosi-shadow-card: 0 16px 34px rgba(11,37,69,0.10);
-  --vosi-shadow-hero: 0 26px 60px rgba(20,20,30,0.16);
+  --caleo-shadow-card: 0 16px 34px rgba(11,37,69,0.10);
+  --caleo-shadow-hero: 0 26px 60px rgba(20,20,30,0.16);
 }
 ```
 

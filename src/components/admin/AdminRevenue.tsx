@@ -163,7 +163,7 @@ export function AdminRevenue() {
 
   if (loading) {
     return (
-      <div className="px-6 py-6 max-w-5xl mx-auto font-vosi">
+      <div className="px-6 py-6 max-w-5xl mx-auto font-caleo">
         <div className="mb-6">
           <h1 className="text-xl font-bold" style={{ color: '#0B2545' }}>
             Pendapatan
@@ -179,7 +179,7 @@ export function AdminRevenue() {
   if (error) {
     return (
       <div
-        className="px-6 py-6 max-w-5xl mx-auto font-vosi"
+        className="px-6 py-6 max-w-5xl mx-auto font-caleo"
         data-testid="admin-revenue-error"
       >
         <div className="mb-6">
@@ -196,7 +196,7 @@ export function AdminRevenue() {
           </p>
           <button
             onClick={fetchAll}
-            className="px-4 py-2 rounded-full text-[13px] font-semibold bg-vosi-navy text-white hover:opacity-90 transition-opacity"
+            className="px-4 py-2 rounded-full text-[13px] font-semibold bg-caleo-navy text-white hover:opacity-90 transition-opacity"
           >
             Coba lagi
           </button>
@@ -209,7 +209,7 @@ export function AdminRevenue() {
 
   return (
     <div
-      className="px-6 py-6 max-w-5xl mx-auto font-vosi"
+      className="px-6 py-6 max-w-5xl mx-auto font-caleo"
       data-testid="admin-revenue-page"
     >
       {/* Page header */}

@@ -170,7 +170,7 @@ export function ModuleTogglePanel({ tenantId }: Props) {
         />
         <h2
           className="text-[14px] font-bold"
-          style={{ color: C.navy, fontFamily: 'var(--font-vosi, inherit)' }}
+          style={{ color: C.navy, fontFamily: 'var(--font-caleo, inherit)' }}
         >
           Pengaturan Modul
         </h2>

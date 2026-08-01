@@ -37,36 +37,36 @@ describe('CoverageStatusBadge', () => {
   it('LUNAS badge applies success color classes', () => {
     render(<CoverageStatusBadge status="LUNAS" />);
     const badge = screen.getByTestId('coverage-badge-LUNAS');
-    expect(badge.className).toContain('bg-vosi-success');
-    expect(badge.className).toContain('text-vosi-success');
+    expect(badge.className).toContain('bg-caleo-success');
+    expect(badge.className).toContain('text-caleo-success');
   });
 
   it('OVERDUE badge applies danger color classes', () => {
     render(<CoverageStatusBadge status="OVERDUE" />);
     const badge = screen.getByTestId('coverage-badge-OVERDUE');
-    expect(badge.className).toContain('bg-vosi-danger');
-    expect(badge.className).toContain('text-vosi-danger');
+    expect(badge.className).toContain('bg-caleo-danger');
+    expect(badge.className).toContain('text-caleo-danger');
   });
 
   it('DP_60 badge applies gold/navy color classes', () => {
     render(<CoverageStatusBadge status="DP_60" />);
     const badge = screen.getByTestId('coverage-badge-DP_60');
-    expect(badge.className).toContain('bg-vosi-gold');
-    expect(badge.className).toContain('text-vosi-navy');
+    expect(badge.className).toContain('bg-caleo-gold');
+    expect(badge.className).toContain('text-caleo-navy');
   });
 
   it('DP_30 badge applies gold/navy color classes', () => {
     render(<CoverageStatusBadge status="DP_30" />);
     const badge = screen.getByTestId('coverage-badge-DP_30');
-    expect(badge.className).toContain('bg-vosi-gold');
-    expect(badge.className).toContain('text-vosi-navy');
+    expect(badge.className).toContain('bg-caleo-gold');
+    expect(badge.className).toContain('text-caleo-navy');
   });
 
   it('UNPAID badge applies slate color classes', () => {
     render(<CoverageStatusBadge status="UNPAID" />);
     const badge = screen.getByTestId('coverage-badge-UNPAID');
-    expect(badge.className).toContain('bg-vosi-slate');
-    expect(badge.className).toContain('text-vosi-slate');
+    expect(badge.className).toContain('bg-caleo-slate');
+    expect(badge.className).toContain('text-caleo-slate');
   });
 
   it('all status badges have font-bold and rounded-full', () => {

@@ -294,17 +294,17 @@ export function RecordPaymentModal({
       aria-modal="true"
       aria-labelledby="record-payment-modal-title"
       data-testid="record-payment-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-start justify-center bg-vosi-navy/40 backdrop-blur-sm overflow-y-auto py-8"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-caleo-navy/40 backdrop-blur-sm overflow-y-auto py-8"
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full font-vosi mx-4"
+        className="bg-white rounded-2xl shadow-xl p-6 max-w-lg w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <h2
           id="record-payment-modal-title"
-          className="text-vosi-navy font-bold text-lg mb-1"
+          className="text-caleo-navy font-bold text-lg mb-1"
         >
           {title}
         </h2>
@@ -320,10 +320,10 @@ export function RecordPaymentModal({
           <div className="mb-4">
             <label
               htmlFor="rp-amount"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Nominal diterima
-              <span className="font-normal text-vosi-navy/50 ml-1">(IDR)</span>
+              <span className="font-normal text-caleo-navy/50 ml-1">(IDR)</span>
             </label>
             <input
               id="rp-amount"
@@ -338,11 +338,11 @@ export function RecordPaymentModal({
               placeholder={defaultAmount != null
                 ? `Contoh: ${defaultAmount}`
                 : 'Contoh: 3600000'}
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Nominal diterima"
             />
             {amount && !amountValid && (
-              <p className="text-[11px] mt-1 text-vosi-danger">Nominal harus lebih dari 0.</p>
+              <p className="text-[11px] mt-1 text-caleo-danger">Nominal harus lebih dari 0.</p>
             )}
           </div>
 
@@ -350,7 +350,7 @@ export function RecordPaymentModal({
           <div className="mb-4">
             <label
               htmlFor="rp-method"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Metode pembayaran
             </label>
@@ -363,7 +363,7 @@ export function RecordPaymentModal({
                 setEwallet('');
               }}
               disabled={submitting}
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Metode pembayaran"
             >
               {PAYMENT_METHODS.map((m) => (
@@ -377,7 +377,7 @@ export function RecordPaymentModal({
             <div className="mb-4">
               <label
                 htmlFor="rp-bank"
-                className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                className="block text-[12px] font-semibold text-caleo-navy mb-1"
               >
                 Bank
               </label>
@@ -386,7 +386,7 @@ export function RecordPaymentModal({
                 value={bankName}
                 onChange={(e) => setBankName(e.target.value as BankName)}
                 disabled={submitting}
-                className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Bank"
               >
                 <option value="">— Pilih bank —</option>
@@ -395,7 +395,7 @@ export function RecordPaymentModal({
                 ))}
               </select>
               {!bankValid && (
-                <p className="text-[11px] mt-1 text-vosi-danger">Pilih bank untuk metode ini.</p>
+                <p className="text-[11px] mt-1 text-caleo-danger">Pilih bank untuk metode ini.</p>
               )}
             </div>
           )}
@@ -405,7 +405,7 @@ export function RecordPaymentModal({
             <div className="mb-4">
               <label
                 htmlFor="rp-ewallet"
-                className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                className="block text-[12px] font-semibold text-caleo-navy mb-1"
               >
                 Penyedia e-wallet
               </label>
@@ -414,7 +414,7 @@ export function RecordPaymentModal({
                 value={ewalletProvider}
                 onChange={(e) => setEwallet(e.target.value as EwalletProvider)}
                 disabled={submitting}
-                className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy bg-white focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy bg-white focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Penyedia e-wallet"
               >
                 <option value="">— Pilih e-wallet —</option>
@@ -423,7 +423,7 @@ export function RecordPaymentModal({
                 ))}
               </select>
               {!ewalletValid && (
-                <p className="text-[11px] mt-1 text-vosi-danger">Pilih penyedia e-wallet untuk metode ini.</p>
+                <p className="text-[11px] mt-1 text-caleo-danger">Pilih penyedia e-wallet untuk metode ini.</p>
               )}
             </div>
           )}
@@ -432,7 +432,7 @@ export function RecordPaymentModal({
           <div className="mb-4">
             <label
               htmlFor="rp-date"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Tanggal terima
             </label>
@@ -443,7 +443,7 @@ export function RecordPaymentModal({
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
               disabled={submitting}
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Tanggal terima"
             />
           </div>
@@ -453,7 +453,7 @@ export function RecordPaymentModal({
             <div>
               <label
                 htmlFor="rp-period-from"
-                className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                className="block text-[12px] font-semibold text-caleo-navy mb-1"
               >
                 Periode mulai
               </label>
@@ -464,14 +464,14 @@ export function RecordPaymentModal({
                 value={periodFrom}
                 onChange={(e) => setPeriodFrom(e.target.value)}
                 disabled={submitting}
-                className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Periode mulai"
               />
             </div>
             <div>
               <label
                 htmlFor="rp-period-to"
-                className="block text-[12px] font-semibold text-vosi-navy mb-1"
+                className="block text-[12px] font-semibold text-caleo-navy mb-1"
               >
                 Periode selesai
               </label>
@@ -482,27 +482,27 @@ export function RecordPaymentModal({
                 value={periodTo}
                 onChange={(e) => setPeriodTo(e.target.value)}
                 disabled={submitting}
-                className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+                className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
                 aria-label="Periode selesai"
               />
             </div>
           </div>
           {!periodValid && (
-            <p className="text-[11px] -mt-3 mb-3 text-vosi-danger">Periode selesai harus setelah periode mulai.</p>
+            <p className="text-[11px] -mt-3 mb-3 text-caleo-danger">Periode selesai harus setelah periode mulai.</p>
           )}
 
           {/* Upload bukti transfer */}
           <div className="mb-4">
             <label
               htmlFor="rp-proof"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
               Bukti transfer
               {uploadRequired && (
-                <span className="text-vosi-danger ml-1">*</span>
+                <span className="text-caleo-danger ml-1">*</span>
               )}
               {!uploadRequired && (
-                <span className="font-normal text-vosi-navy/50 ml-1">(opsional)</span>
+                <span className="font-normal text-caleo-navy/50 ml-1">(opsional)</span>
               )}
             </label>
             {hasExistingProof && !proofFile && (
@@ -517,12 +517,12 @@ export function RecordPaymentModal({
               accept=".jpg,.jpeg,.png,.pdf"
               onChange={handleFileChange}
               disabled={submitting}
-              className="w-full text-[13px] text-vosi-navy border border-vosi-navy/30 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-vosi-gold file:text-vosi-navy hover:file:opacity-90 disabled:opacity-50"
+              className="w-full text-[13px] text-caleo-navy border border-caleo-navy/30 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-caleo-gold file:text-caleo-navy hover:file:opacity-90 disabled:opacity-50"
               aria-label="Upload bukti transfer"
               data-testid="rp-proof-input"
             />
             {fileError && (
-              <p className="text-[11px] mt-1 text-vosi-danger">{fileError}</p>
+              <p className="text-[11px] mt-1 text-caleo-danger">{fileError}</p>
             )}
             {proofFile && !fileError && (
               <p className="text-[11px] mt-1" style={{ color: '#1F8A5B' }}>
@@ -530,7 +530,7 @@ export function RecordPaymentModal({
               </p>
             )}
             {uploadRequired && !proofFile && !hasExistingProof && (
-              <p className="text-[11px] mt-1 text-vosi-danger">
+              <p className="text-[11px] mt-1 text-caleo-danger">
                 Bukti wajib diupload untuk metode ini.
               </p>
             )}
@@ -540,9 +540,9 @@ export function RecordPaymentModal({
           <div className="mb-4">
             <label
               htmlFor="rp-bank-ref"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
-              Referensi bank <span className="font-normal text-vosi-navy/50">(opsional)</span>
+              Referensi bank <span className="font-normal text-caleo-navy/50">(opsional)</span>
             </label>
             <input
               id="rp-bank-ref"
@@ -552,7 +552,7 @@ export function RecordPaymentModal({
               disabled={submitting}
               maxLength={100}
               placeholder="Contoh: TRF-0001-XYZ"
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy placeholder:text-vosi-navy/30 focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Referensi bank"
             />
           </div>
@@ -561,9 +561,9 @@ export function RecordPaymentModal({
           <div className="mb-6">
             <label
               htmlFor="rp-notes"
-              className="block text-[12px] font-semibold text-vosi-navy mb-1"
+              className="block text-[12px] font-semibold text-caleo-navy mb-1"
             >
-              Catatan <span className="font-normal text-vosi-navy/50">(opsional)</span>
+              Catatan <span className="font-normal text-caleo-navy/50">(opsional)</span>
             </label>
             <textarea
               id="rp-notes"
@@ -573,7 +573,7 @@ export function RecordPaymentModal({
               maxLength={500}
               rows={3}
               placeholder="Catatan internal tentang pembayaran ini"
-              className="w-full border border-vosi-navy/30 rounded-lg px-3 py-2 text-[13px] text-vosi-navy placeholder:text-vosi-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-vosi-gold disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
               aria-label="Catatan"
             />
             <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>
@@ -587,14 +587,14 @@ export function RecordPaymentModal({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="text-vosi-navy border border-vosi-navy/30 hover:bg-vosi-cream rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="text-caleo-navy border border-caleo-navy/30 hover:bg-caleo-cream rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={submitting || !formValid}
-              className="bg-vosi-gold text-vosi-navy font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="bg-caleo-gold text-caleo-navy font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
               data-testid="rp-submit"
             >
               {submitting
