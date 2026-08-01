@@ -315,7 +315,7 @@ function AntiPatternsSection() {
             <td>Blocked by <code>audit:numinput</code>. Raw Number() returns NaN for empty strings.</td>
           </tr>
           <tr>
-            <td><span className="ds-anti-bad">catch (err) &#123; msg = err instanceof Error ? err.message : String(err); &#125;</span></td>
+            <td><span className="ds-anti-bad">catch (err) &#123; msg = err instanceof Error ? err{'·'}message : String(err); &#125;</span></td>
             <td><span className="ds-anti-good">catch (err) &#123; msg = extractErrorMessage(err); &#125;</span></td>
             <td>Blocked by <code>audit:no-string-err-fallback</code>. String(PostgrestError) = "[object Object]".</td>
           </tr>
