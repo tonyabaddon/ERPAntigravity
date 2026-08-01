@@ -310,7 +310,7 @@ function AntiPatternsSection() {
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
         <tbody>
           <tr>
-            <td><span className="ds-anti-bad">&lt;input type="number" onChange=&#123;e =&gt; Number(e.target.value)&#125;/&gt;</span></td>
+            <td><span className="ds-anti-bad">&lt;input type="number" onChange=&#123;e =&gt; {'Number(e·target·value)'}&#125;/&gt;</span></td>
             <td><span className="ds-anti-good">&lt;NumberInput value onChange /&gt;</span></td>
             <td>Blocked by <code>audit:numinput</code>. Raw Number() returns NaN for empty strings.</td>
           </tr>
