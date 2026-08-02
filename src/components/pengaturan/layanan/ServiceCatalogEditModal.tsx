@@ -134,7 +134,7 @@ export default function ServiceCatalogEditModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Contoh: Wiring Panel MDB 3-fase 100A"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
             <div>
@@ -146,7 +146,7 @@ export default function ServiceCatalogEditModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Wiring"
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function ServiceCatalogEditModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
           </div>
 
@@ -172,7 +172,7 @@ export default function ServiceCatalogEditModal({
                 value={defaultLabor}
                 onChange={setDefaultLabor}
                 allowDecimal={false}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export default function ServiceCatalogEditModal({
               <select
                 value={revenueCoa}
                 onChange={(e) => setRevenueCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               >
                 {revenueCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>
@@ -248,7 +248,7 @@ export default function ServiceCatalogEditModal({
               <select
                 value={laborCoa}
                 onChange={(e) => setLaborCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               >
                 {laborCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>

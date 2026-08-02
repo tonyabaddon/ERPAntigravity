@@ -166,7 +166,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
             type="date"
             value={balanceDate}
             onChange={e => setBalanceDate(e.target.value)}
-            className="border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 w-full max-w-xs"
+            className="border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 w-full max-w-xs"
           />
           <p className="text-[11px] text-[#43474e] mt-2">
             Default: 31 Mei 2025 (sebelum kasir mulai Juni 2025).
@@ -219,7 +219,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                       <NumberInput
                         value={a.amount}
                         onChange={n => updateAmount(i, n)}
-                        className="border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 w-36 text-right font-bold"
+                        className="border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 w-36 text-right font-bold"
                       />
                     </td>
                   </tr>

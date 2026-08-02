@@ -252,7 +252,7 @@ export function TenantsList() {
           placeholder="Cari slug / nama tenant…"
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-[13px] focus:outline-none"
+          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Cari slug atau nama"
         />
@@ -261,7 +261,7 @@ export function TenantsList() {
         <select
           value={planCode}
           onChange={(e) => handleFilterChange(setPlanCode)(e.target.value as PlanCode | '')}
-          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter paket"
         >
@@ -275,7 +275,7 @@ export function TenantsList() {
         <select
           value={status}
           onChange={(e) => handleFilterChange(setStatus)(e.target.value as TenantStatus | '')}
-          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter status"
         >
@@ -289,7 +289,7 @@ export function TenantsList() {
         <select
           value={expiryWithinDays}
           onChange={(e) => handleFilterChange(setExpiryWithinDays)(e.target.value as '' | '30' | '90')}
-          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus-visible:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter kedaluwarsa"
         >

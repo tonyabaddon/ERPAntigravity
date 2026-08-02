@@ -76,7 +76,7 @@ export default function InlineSupplierForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="PT Schneider Elektrik"
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white placeholder-gray-400"
           />
           {prefillName && (
             <p className="text-[10px] text-emerald-600 mt-0.5">✓ Diisi dari pencarian</p>
@@ -88,7 +88,7 @@ export default function InlineSupplierForm({
             value={contactName}
             onChange={(e) => setContactName(e.target.value)}
             placeholder="Budi Santoso"
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white placeholder-gray-400"
           />
         </div>
         <div>
@@ -97,7 +97,7 @@ export default function InlineSupplierForm({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="0812-xxxx-xxxx"
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white placeholder-gray-400"
           />
         </div>
         <div>
@@ -107,7 +107,7 @@ export default function InlineSupplierForm({
             min="0"
             value={termDays}
             onChange={(e) => setTermDays(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
           />
           <p className="text-[10px] text-gray-500 mt-0.5">0 = Cash. 30 = Net 30 hari.</p>
         </div>

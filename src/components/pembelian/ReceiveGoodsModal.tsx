@@ -128,11 +128,11 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Tanggal Terima <span className="text-rose-500">*</span></label>
-              <input type="date" value={receivedAt} onChange={e => setReceivedAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+              <input type="date" value={receivedAt} onChange={e => setReceivedAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Jatuh Tempo Pembayaran <span className="text-rose-500">*</span></label>
-              <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+              <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2" />
               <p className="text-[10px] text-gray-400 mt-1">
                 Pre-filled {supplierTermDays > 0 ? `Net ${supplierTermDays}` : 'Cash'}. Sesuaikan dengan invoice supplier.
               </p>
@@ -179,7 +179,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                             updateCondition(item.id, 'qty_received', qr);
                             updateCondition(item.id, 'qty_damaged', qd);
                           }}
-                          className="w-14 text-center text-sm border border-emerald-300 rounded px-2 py-1 bg-emerald-50 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                          className="w-14 text-center text-sm border border-emerald-300 rounded px-2 py-1 bg-emerald-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                         />
                       </div>
                       <div className="col-span-2 flex justify-center">
@@ -192,7 +192,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                             updateCondition(item.id, 'qty_damaged', qd);
                             updateCondition(item.id, 'qty_received', qr);
                           }}
-                          className={`w-14 text-center text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 ${hasDamage ? 'border-rose-300 text-rose-700 font-bold bg-white focus:ring-rose-400' : 'border-gray-200 focus:ring-indigo-300'}`}
+                          className={`w-14 text-center text-sm border rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-1 ${hasDamage ? 'border-rose-300 text-rose-700 font-bold bg-white focus-visible:ring-caleo-gold' : 'border-gray-200 focus-visible:ring-caleo-gold'}`}
                         />
                       </div>
                       <div className="col-span-3 pl-2">
@@ -200,7 +200,7 @@ export default function ReceiveGoodsModal({ po, onClose, onReceived, showToast }
                           <input
                             value={cond.damage_notes}
                             onChange={e => updateCondition(item.id, 'damage_notes', e.target.value)}
-                            className="w-full text-xs border border-rose-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-rose-300 placeholder-rose-300"
+                            className="w-full text-xs border border-rose-200 rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold placeholder-rose-300"
                             placeholder="Jelaskan kerusakan..."
                           />
                         ) : (

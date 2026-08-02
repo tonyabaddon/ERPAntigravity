@@ -232,7 +232,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
               value={selectedDate}
               max={todayISO()}
               onChange={e => setSelectedDate(e.target.value)}
-              className="bg-white border border-[var(--color-caleo-mist)] rounded px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-[var(--color-caleo-mist)] rounded px-3 py-2 text-xs font-semibold text-[var(--color-caleo-primary)] outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
           )}
           {isOwner && (
@@ -660,7 +660,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
                 value={category}
                 onChange={e => setCategory(e.target.value)}
                 disabled={isLoading || activeCategories.length === 0}
-                className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e] disabled:opacity-50"
+                className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold disabled:opacity-50"
               >
                 {isLoading && <option>Memuat kategori...</option>}
                 {!isLoading && activeCategories.length === 0 && (
@@ -679,7 +679,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Contoh: Galon air x2, Bayar WiFi Indihome..."
-              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
           </div>
 
@@ -691,7 +691,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0"
-              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
           </div>
         </div>

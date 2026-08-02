@@ -77,7 +77,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
         <input value={query} onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 200)}
           placeholder="Cari SKU atau nama barang..."
-          className="w-full text-sm py-2 pl-9 pr-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500" />
+          className="w-full text-sm py-2 pl-9 pr-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500" />
         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
       {open && (

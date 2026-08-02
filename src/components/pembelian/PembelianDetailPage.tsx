@@ -452,7 +452,7 @@ export default function PembelianDetailPage({
                         value={item.damage_status}
                         disabled={updatingItemId === item.id}
                         onChange={e => handleDamageStatusChange(item, e.target.value)}
-                        className="text-[12px] border border-amber-200 rounded px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus:outline-none disabled:opacity-50"
+                        className="text-[12px] border border-amber-200 rounded px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus-visible:outline-none disabled:opacity-50"
                       >
                         {DAMAGE_STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>

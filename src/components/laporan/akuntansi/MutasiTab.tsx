@@ -337,7 +337,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Periode
           </label>
           <select
-            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             value={periodPreset}
             onChange={e => handlePeriodPreset(e.target.value as PeriodPreset)}
           >
@@ -353,7 +353,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Arah
           </label>
           <select
-            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             value={direction}
             onChange={e => setDirection(e.target.value as DirectionFilter)}
           >
@@ -369,7 +369,7 @@ export default function MutasiTab({ showToast }: MutasiTabProps): React.ReactEle
             Kategori
           </label>
           <select
-            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="w-full border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs bg-white text-[#43474e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             value={category}
             onChange={e => setCategory(e.target.value)}
           >

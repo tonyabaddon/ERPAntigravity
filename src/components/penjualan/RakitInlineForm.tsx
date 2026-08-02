@@ -53,7 +53,7 @@ export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel
         <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Deskripsi (singkat, tampil di invoice)</div>
         <input
           type="text"
-          className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
+          className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus:border-emerald-500"
           placeholder={placeholder}
           value={description}
           onChange={e => setDescription(e.target.value)}
@@ -65,7 +65,7 @@ export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel
           <input
             type="number"
             min={0}
-            className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus:border-emerald-500"
             placeholder="0"
             value={estimatedPrice || ''}
             onChange={e => setEstimatedPrice(Number(e.target.value || 0))}
@@ -76,7 +76,7 @@ export default function RakitInlineForm({ type, serviceTypeName, onAdd, onCancel
           <input
             type="number"
             min={0}
-            className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus:outline-none focus:border-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus:border-emerald-500"
             placeholder="0"
             value={hppEstimate || ''}
             onChange={e => setHppEstimate(Number(e.target.value || 0))}

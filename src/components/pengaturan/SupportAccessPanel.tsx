@@ -310,7 +310,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                   setGrantForm((f) => ({ ...f, admin_email: e.target.value }))
                 }
                 placeholder="support@caleo.id"
-                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               />
             </div>
 
@@ -347,7 +347,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                   setGrantForm((f) => ({ ...f, reason: e.target.value }))
                 }
                 placeholder="Mis: bantu setup akun bank, debug error laporan, dll."
-                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
               />
             </div>
 
@@ -412,7 +412,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 value={revokeReason}
                 onChange={(e) => setRevokeReason(e.target.value)}
                 placeholder="Mis: masalah sudah selesai."
-                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                className="w-full px-3 py-2 rounded border border-slate-300 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 resize-none"
               />
             </div>
 

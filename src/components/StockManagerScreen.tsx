@@ -247,7 +247,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
               value={katalogSearch}
               onChange={e => setKatalogSearch(e.target.value)}
               placeholder="Cari nama atau SKU…"
-              className="flex-1 px-4 py-2 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-300"
+              className="flex-1 px-4 py-2 bg-[var(--color-caleo-cloud)] rounded-full text-xs font-bold outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
             />
             <select
               value={katalogCategory}

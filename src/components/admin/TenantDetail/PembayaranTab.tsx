@@ -180,7 +180,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             maxLength={500}
             rows={3}
             placeholder="Contoh: duplikat, kesalahan input, dll."
-            className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+            className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-50"
             aria-label="Alasan penghapusan"
             autoFocus
           />

@@ -60,7 +60,7 @@ function ToggleSwitch({ checked, disabled, onChange, label }: ToggleSwitchProps)
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative inline-flex flex-shrink-0 h-5 w-9 rounded-full border-2 border-transparent transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1"
+      className="relative inline-flex flex-shrink-0 h-5 w-9 rounded-full border-2 border-transparent transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
       style={{
         background: checked ? C.gold : C.surface,
         cursor: disabled ? 'not-allowed' : 'pointer',

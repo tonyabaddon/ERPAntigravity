@@ -173,7 +173,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
             value={cutoverDate}
             max={wibDateString()}
             onChange={(e) => setCutoverDate(e.target.value)}
-            className="border border-slate-200 rounded px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+            className="border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white"
           />
           <span className="text-[11px] text-slate-500">
             Jurnal Umum Saldo Awal akan diposting per tanggal ini (cutover − 1 hari di backend)

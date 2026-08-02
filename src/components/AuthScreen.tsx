@@ -394,7 +394,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                       value={signInEmail}
                       onChange={(e) => setSignInEmail(e.target.value)}
                       placeholder="email@bisnisanda.com"
-                      className="bg-transparent border-none focus:ring-0 w-full text-sm font-semibold outline-none py-1 text-[#0b1c30]"
+                      className="bg-transparent border-none focus-visible:ring-0 w-full text-sm font-semibold outline-none py-1 text-[#0b1c30]"
                     />
                     <button
                       type="button"
@@ -418,7 +418,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                       onChange={(e) => setSignInOtp(e.target.value)}
                       placeholder={signInSent ? 'Masukkan kode OTP dari email' : 'Kirim OTP terlebih dahulu'}
                       disabled={!signInSent}
-                      className="bg-transparent border-none focus:ring-0 w-full text-sm font-semibold outline-none py-1 text-[#0b1c30]"
+                      className="bg-transparent border-none focus-visible:ring-0 w-full text-sm font-semibold outline-none py-1 text-[#0b1c30]"
                     />
                   </div>
                   {signInSent && (
@@ -473,7 +473,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                         value={signUpName}
                         onChange={(e) => setSignUpName(e.target.value)}
                         placeholder="Contoh: Budi Santoso"
-                        className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
+                        className="bg-transparent border-none focus-visible:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                       />
                     </div>
                   </div>
@@ -487,7 +487,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                         value={signUpStore}
                         onChange={(e) => setSignUpStore(e.target.value)}
                         placeholder="Nama toko / cabang Anda"
-                        className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
+                        className="bg-transparent border-none focus-visible:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                       />
                     </div>
                   </div>
@@ -503,7 +503,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                       value={signUpEmail}
                       onChange={(e) => setSignUpEmail(e.target.value)}
                       placeholder="admin@sinarelektrik.com"
-                      className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
+                      className="bg-transparent border-none focus-visible:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                     />
                     <button
                       type="button"
@@ -528,7 +528,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                       onChange={(e) => setSignUpOtp(e.target.value)}
                       placeholder={signUpSent ? 'Masukkan kode OTP dari email' : 'Klik Kirim OTP dulu'}
                       disabled={!signUpSent}
-                      className="bg-transparent border-none focus:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
+                      className="bg-transparent border-none focus-visible:ring-0 w-full text-xs font-semibold outline-none py-1 text-[#0b1c30]"
                     />
                   </div>
                 </div>
@@ -538,7 +538,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
                     type="checkbox"
                     checked={signUpAgree}
                     onChange={(e) => setSignUpAgree(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-gray-300 transition-all cursor-pointer"
+                    className="mt-0.5 w-4 h-4 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-gray-300 transition-all cursor-pointer"
                   />
                   <span className="text-xs text-[#43474e] leading-tight font-medium group-hover:text-black">
                     Saya menyetujui Syarat & Ketentuan serta Kebijakan Privasi TechSaaS ERP System.

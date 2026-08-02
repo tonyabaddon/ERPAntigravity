@@ -379,7 +379,7 @@ export default function ManualTransferModal({
                   value={fromId}
                   onChange={(e) => handleFromChange(e.target.value)}
                   disabled={saving}
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white disabled:opacity-60"
                 >
                   {sourceList.length === 0 && (
                     <option value="">— Tidak ada akun tersedia —</option>
@@ -411,7 +411,7 @@ export default function ManualTransferModal({
                   value={toId}
                   onChange={(e) => setToId(e.target.value)}
                   disabled={saving}
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 bg-white disabled:opacity-60"
                 >
                   {destList.length === 0 && (
                     <option value="">— Tidak ada akun tersedia —</option>
@@ -441,7 +441,7 @@ export default function ManualTransferModal({
                 onBlur={handleAmountBlur}
                 placeholder="Rp 0"
                 disabled={saving}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60"
               />
             </div>
             <div>
@@ -453,7 +453,7 @@ export default function ManualTransferModal({
                 value={entryDate}
                 onChange={(e) => setEntryDate(e.target.value)}
                 disabled={saving}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60"
               />
               {isFuture && (
                 <p className="text-[11px] text-amber-700 mt-1">
@@ -474,7 +474,7 @@ export default function ManualTransferModal({
               onChange={(e) => setNotes(e.target.value)}
               disabled={saving}
               placeholder="Mis. pindah dana untuk bayar supplier besok"
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:opacity-60"
             />
           </div>
 

@@ -150,7 +150,7 @@ export function DamageFlagModal({
               max={countedQty}
               value={damagedQty}
               onChange={(e) => setDamagedQty(Math.max(0, parseInt(e.target.value || '0', 10)))}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:border-blue-500 focus-visible:outline-none"
               aria-label="Qty rusak"
             />
             <div className="mt-1 flex items-center justify-between text-xs">
@@ -166,7 +166,7 @@ export function DamageFlagModal({
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-base focus:border-blue-500 focus-visible:outline-none"
               rows={2}
               placeholder="Kondisi kerusakan, misalnya: casing pecah"
             />

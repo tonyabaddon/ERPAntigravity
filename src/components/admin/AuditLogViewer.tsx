@@ -197,7 +197,7 @@ export function AuditLogViewer() {
           <select
             value={actionCode}
             onChange={(e) => handleFilterChange(setActionCode)(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '170px' }}
             aria-label="Filter aksi"
           >
@@ -217,7 +217,7 @@ export function AuditLogViewer() {
             placeholder="Cari email admin…"
             value={actorInput}
             onChange={(e) => handleActorChange(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Filter pelaku"
           />
@@ -234,7 +234,7 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setFromDate)(e.target.value);
               }}
-              className="border rounded px-2 py-1.5 text-[12px] focus:outline-none"
+              className="border rounded px-2 py-1.5 text-[12px] focus-visible:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Dari tanggal"
             />
@@ -246,7 +246,7 @@ export function AuditLogViewer() {
               onChange={(e) => {
                 handleFilterChange(setToDate)(e.target.value);
               }}
-              className="border rounded px-2 py-1.5 text-[12px] focus:outline-none"
+              className="border rounded px-2 py-1.5 text-[12px] focus-visible:outline-none"
               style={{ borderColor: C.surface, color: C.ink }}
               aria-label="Sampai tanggal"
             />
@@ -261,7 +261,7 @@ export function AuditLogViewer() {
             placeholder="Cari aksi / email…"
             value={searchInput}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="border rounded px-3 py-1.5 text-[12px] focus:outline-none"
+            className="border rounded px-3 py-1.5 text-[12px] focus-visible:outline-none"
             style={{ borderColor: C.surface, color: C.ink, minWidth: '180px' }}
             aria-label="Cari log"
           />

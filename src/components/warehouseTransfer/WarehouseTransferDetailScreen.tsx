@@ -307,7 +307,7 @@ export default function WarehouseTransferDetailScreen({
                           ...prev,
                           [item.sku]: Math.max(0, Math.min(n, sentQty)),
                         }))}
-                        className="w-20 rounded border border-slate-200 px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-20 rounded border border-slate-200 px-2 py-1 text-right text-sm tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                       />
                     ) : (
                       <span className="tabular-nums">{item.qty_received ?? '—'}</span>

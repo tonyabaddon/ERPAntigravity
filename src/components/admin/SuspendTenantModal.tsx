@@ -141,7 +141,7 @@ export function SuspendTenantModal({ open, tenant, onClose, onSuccess }: Props) 
               disabled={submitting}
               rows={4}
               placeholder="Contoh: pembayaran overdue 60 hari, tidak ada respons"
-              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-danger disabled:opacity-50"
+              className="w-full border border-caleo-navy/30 rounded px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-danger focus-visible:ring-offset-2 disabled:opacity-50"
               aria-label="Alasan suspend"
             />
             <p className="text-[11px] text-right mt-0.5" style={{ color: '#9DB2CE' }}>

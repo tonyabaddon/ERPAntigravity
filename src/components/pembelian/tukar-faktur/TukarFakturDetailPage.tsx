@@ -670,7 +670,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
               onChange={e => setReason(e.target.value)}
               rows={3}
               placeholder="Contoh: Salah supplier, mau dibuat ulang"
-              className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus:outline-none"
+              className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus-visible:outline-none"
             />
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>

@@ -20,10 +20,10 @@
     },
     "penjualan": {
       "paths": [
-        "/t/toko-jaya-makmur/pesanan",
-        "/t/toko-jaya-makmur/pesanan/baru"
+        "/t/toko-jaya-makmur/daftarPesanan",
+        "/t/toko-jaya-makmur/penjualanBaru"
       ],
-      "description": "Sales order create/edit"
+      "description": "Sales order list and create/edit wizard"
     },
     "laporan": {
       "paths": [
@@ -42,8 +42,8 @@
     },
     "admin": {
       "paths": [
-        "/admin/dashboard",
-        "/admin/users"
+        "/admin",
+        "/admin/tenants"
       ],
       "description": "Platform admin panel (admin.caleo.id host)"
     },

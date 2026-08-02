@@ -130,7 +130,7 @@ export default function Step4EkuitasPreview({
               value={data.modal_owner.amount}
               onChange={(n) => onChange({ ...data, modal_owner: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
             <div className="text-[11px] text-slate-400">{formatIDR(data.modal_owner.amount)}</div>
@@ -147,7 +147,7 @@ export default function Step4EkuitasPreview({
               value={data.prive.amount}
               onChange={(n) => onChange({ ...data, prive: { amount: n } })}
               allowDecimal={false}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
               placeholder="0"
             />
             <div className="text-[11px] text-slate-400">{formatIDR(data.prive.amount)}</div>

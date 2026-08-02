@@ -112,7 +112,7 @@ export default function SupplierPicker({
         onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Cari supplier..."
-        className="w-full text-sm border-2 border-indigo-300 rounded pl-9 pr-3 py-2.5 focus:outline-none bg-white"
+        className="w-full text-sm border-2 border-indigo-300 rounded pl-9 pr-3 py-2.5 focus-visible:outline-none bg-white"
       />
 
       {open && (

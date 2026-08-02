@@ -646,12 +646,121 @@ function InteractionPatternsSection() {
   );
 }
 
+// ── Section: Focus states ─────────────────────────────────────────────────
+
+function FocusStatesSection() {
+  return (
+    <section id="focus-states">
+      <h2>9. Focus States</h2>
+      <p>Every interactive element gets a <strong>gold ring on keyboard focus only</strong> — mouse click stays quiet. Uses <code>focus-visible:</code> not <code>focus:</code>.</p>
+
+      <div className="ds-component-box" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, padding: 20 }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Primary button</p>
+          <button
+            type="button"
+            style={{
+              padding: '8px 16px',
+              background: 'var(--color-caleo-navy)',
+              color: 'var(--color-caleo-gold)',
+              fontWeight: 700,
+              border: 'none',
+              borderRadius: 2,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+          >
+            Simpan (Tab me)
+          </button>
+          <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+            Class: <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>focus-visible:ring-caleo-gold focus-visible:ring-offset-2</code>
+          </p>
+        </div>
+
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Danger button (semantic-danger override)</p>
+          <button
+            type="button"
+            style={{
+              padding: '8px 16px',
+              background: 'var(--color-caleo-danger)',
+              color: 'white',
+              fontWeight: 700,
+              border: 'none',
+              borderRadius: 2,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-danger focus-visible:ring-offset-2"
+          >
+            Hapus (Tab me)
+          </button>
+          <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+            Class: <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>focus-visible:ring-caleo-danger</code> (auto-applied when class list contains <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>bg-caleo-danger</code>)
+          </p>
+        </div>
+
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Input field</p>
+          <input
+            type="text"
+            placeholder="Tab into me"
+            style={{
+              width: '100%',
+              padding: '6px 12px',
+              border: '1px solid #cbd5e1',
+              borderRadius: 2,
+              fontSize: 13,
+              fontFamily: 'var(--font-sans)',
+            }}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+          />
+          <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+            Same canonical class as buttons.
+          </p>
+        </div>
+
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Link (anchor)</p>
+          <a
+            href="#focus-demo"
+            onClick={(e) => e.preventDefault()}
+            style={{
+              color: 'var(--color-caleo-info)',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
+          >
+            Contoh link (Tab me)
+          </a>
+          <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
+            Custom <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>role="button"</code> divs and third-party components fall back to the global <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>:focus-visible</code> rule in <code style={{ background: '#f0f0f0', padding: '2px 4px', borderRadius: 2, fontSize: '10px' }}>src/index.css</code>.
+          </p>
+        </div>
+      </div>
+
+      <div className="ds-note">
+        <strong>Convention</strong>
+        <ul style={{ paddingLeft: 20, lineHeight: 1.6, marginTop: 8 }}>
+          <li>Every new interactive element MUST include the canonical focus-visible ring classes.</li>
+          <li>Semantic-danger buttons (with <code>bg-caleo-danger</code>) use <code>focus-visible:ring-caleo-danger</code>.</li>
+          <li>Never use <code>focus:</code> prefix on ring/outline — the audit blocks it.</li>
+          <li>Non-brand colors (blue, emerald, indigo, etc.) are banned — <code>caleo-gold</code> or <code>caleo-danger</code> only.</li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 // ── Section: Shared components catalog ──────────────────────────────────────
 
 function SharedComponentsSection() {
   return (
     <section id="components">
-      <h2>9. Shared Components (src/components/ui/)</h2>
+      <h2>10. Shared Components (src/components/ui/)</h2>
       <p>Reusable primitives. Prefer these over rolling one-off implementations. Adding a new primitive requires founder approval + entry in this catalog.</p>
       <table>
         <thead><tr><th>Component</th><th>Purpose</th><th>Key props</th><th>Where to use</th></tr></thead>
@@ -798,7 +907,7 @@ function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; si
 function IconsSection() {
   return (
     <section id="icons">
-      <h2>10. Icons (MSME-friendly vocabulary)</h2>
+      <h2>11. Icons (MSME-friendly vocabulary)</h2>
       <p>Dari <code>lucide-react</code>. Every action has ONE canonical icon — MSME users learn once, recognize everywhere. Mixing icons for the same action = anti-pattern (confuses non-tech users).</p>
       <div className="ds-note">
         <strong>MSME rules:</strong> (1) Every button MUST have icon + label — never icon-only. (2) Prefer literal-meaning icons (Truck for kirim, not Send). (3) When multiple lucide icons exist for same concept, pick the boldest/clearest variant (Trash2 not Trash, CheckCircle not CheckCircle2).
@@ -828,7 +937,7 @@ function IconsSection() {
 function AntiPatternsSection() {
   return (
     <section id="anti-patterns">
-      <h2>11. Anti-patterns</h2>
+      <h2>12. Anti-patterns</h2>
       <p>Common drift patterns to reject during code review. Each has a shorter, better form.</p>
       <table>
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
@@ -874,7 +983,7 @@ function AntiPatternsSection() {
 function ExtendSection() {
   return (
     <section id="extend">
-      <h2>12. How to Extend</h2>
+      <h2>13. How to Extend</h2>
       <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
         <li><strong>Propose in a design brief</strong> — describe the need + why existing token/component doesn't cover it. Show a mockup or reference (per CLAUDE.md FE UI/UX approval protocol).</li>
         <li><strong>Founder approves</strong> — "go", "approved", "lock it", or iteration comment. Assumptions of approval = violation per CLAUDE.md.</li>
@@ -915,6 +1024,7 @@ export function DesignSystemPage({ tokens }: Props) {
         <a href="#states">States</a>
         <a href="#forms">Forms</a>
         <a href="#interactions">Interactions</a>
+        <a href="#focus-states">Focus States</a>
         <a href="#components">Components</a>
         <a href="#icons">Icons</a>
         <a href="#anti-patterns">Anti-patterns</a>
@@ -929,6 +1039,7 @@ export function DesignSystemPage({ tokens }: Props) {
       <StateTemplatesSection />
       <FormPatternsSection />
       <InteractionPatternsSection />
+      <FocusStatesSection />
       <SharedComponentsSection />
       <IconsSection />
       <AntiPatternsSection />

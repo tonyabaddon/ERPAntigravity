@@ -220,7 +220,7 @@ export default function NeracaTab({ showToast }: NeracaTabProps): React.ReactEle
           type="date"
           value={asOfDate}
           onChange={e => setAsOfDate(e.target.value)}
-          className="text-[12px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-[#1e3d60] font-bold focus:outline-none focus:ring-2 focus:ring-violet-300"
+          className="text-[12px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-[#1e3d60] font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         />
         <span className="ml-auto text-[11px] text-gray-500 font-medium">{asOfLabel}</span>
       </div>

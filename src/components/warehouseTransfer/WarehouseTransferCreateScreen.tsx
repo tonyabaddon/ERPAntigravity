@@ -170,7 +170,7 @@ export default function WarehouseTransferCreateScreen({
             id="from-warehouse"
             value={fromId}
             onChange={e => handleFromChange(e.target.value)}
-            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
           >
             <option value="">— Pilih gudang —</option>
             {warehouses.map(w => (
@@ -186,7 +186,7 @@ export default function WarehouseTransferCreateScreen({
             id="to-warehouse"
             value={toId}
             onChange={e => handleToChange(e.target.value)}
-            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
           >
             <option value="">— Pilih gudang —</option>
             {warehouses.filter(w => w.id !== fromId).map(w => (
@@ -224,7 +224,7 @@ export default function WarehouseTransferCreateScreen({
             value={receiverId}
             onChange={e => setReceiverId(e.target.value)}
             disabled={!toId || receivers.length === 0}
-            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-50 disabled:text-slate-400"
+            className="w-full rounded border border-slate-200 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 disabled:bg-slate-50 disabled:text-slate-400"
           >
             <option value="">— Pilih penerima —</option>
             {receivers.map(r => (
@@ -256,7 +256,7 @@ export default function WarehouseTransferCreateScreen({
           onChange={e => setNotes(e.target.value)}
           rows={2}
           placeholder="Keterangan tambahan untuk driver atau penerima…"
-          className="w-full rounded border border-slate-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="w-full rounded border border-slate-200 px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
         />
       </div>
 

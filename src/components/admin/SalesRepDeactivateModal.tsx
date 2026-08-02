@@ -153,7 +153,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
               disabled={submitting}
               rows={4}
               placeholder="Contoh: karyawan mengundurkan diri per 10 Juli 2026"
-              className="w-full border rounded px-3 py-2 text-[13px] placeholder:opacity-40 resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-[13px] placeholder:opacity-40 resize-none focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Alasan nonaktifkan"
             />

@@ -471,7 +471,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         <select
           value={channelFilter}
           onChange={e => { setChannelFilter(e.target.value as ChannelFilter); setSpecificChannel(''); }}
-          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
         >
           <option value="all">Semua</option>
           <option value="offline">📋 Semua Offline</option>
@@ -483,7 +483,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         <select
           value={specificChannel}
           onChange={e => { setSpecificChannel(e.target.value as SalesChannel | ''); }}
-          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
         >
           <option value="">— pilih kanal spesifik —</option>
           {(['offline', 'marketplace', 'direct'] as const).map(group => {

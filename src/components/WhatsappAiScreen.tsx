@@ -634,7 +634,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         <span className="font-bold text-slate-500">Status Saluran:</span>
                         <button
                           onClick={() => handleToggleEnable(num.id)}
-                          className="cursor-pointer font-extrabold flex items-center gap-1.5 focus:outline-none"
+                          className="cursor-pointer font-extrabold flex items-center gap-1.5 focus-visible:outline-none"
                         >
                           {num.isEnabled ? (
                             <>
@@ -656,7 +656,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                         <button
                           onClick={() => handleToggleAiEnabled(num.id)}
                           disabled={!num.isEnabled}
-                          className={`font-black flex items-center gap-1.5 focus:outline-none ${!num.isEnabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                          className={`font-black flex items-center gap-1.5 focus-visible:outline-none ${!num.isEnabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         >
                           {num.isAiEnabled ? (
                             <>
@@ -689,7 +689,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Contoh: CS Toko 2"
-                    className="w-full bg-white rounded px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus:ring-1 focus:ring-[var(--color-caleo-primary)] outline-none"
+                    className="w-full bg-white rounded px-4 py-2.5 border border-slate-200/60 font-semibold text-xs focus-visible:ring-1 focus-visible:ring-caleo-gold outline-none"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -701,7 +701,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                       value={newPhone}
                       onChange={(e) => setNewPhone(e.target.value)}
                       placeholder="856123498"
-                      className="w-full bg-transparent border-none focus:ring-0 text-slate-850 font-bold text-xs py-2.5 outline-none"
+                      className="w-full bg-transparent border-none focus-visible:ring-0 text-slate-850 font-bold text-xs py-2.5 outline-none"
                     />
                   </div>
                 </div>
@@ -713,7 +713,7 @@ export default function WhatsappAiScreen({ stockList: _stockList, showToast, onN
                     type="checkbox"
                     checked={newAiEnabled}
                     onChange={(e) => setNewAiEnabled(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-slate-300 cursor-pointer"
+                    className="w-4 h-4 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-slate-300 cursor-pointer"
                   />
                   <span className="text-[10px] font-black text-slate-500 text-left">Otomatis Aktifkan Balas AI Gemini</span>
                 </label>

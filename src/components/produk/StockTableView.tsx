@@ -107,7 +107,7 @@ function renderSpecForm(
             <select
               value={specs[field.key] ?? field.options?.[0] ?? ''}
               onChange={e => onChange(field.key, e.target.value)}
-              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             >
               {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
@@ -117,7 +117,7 @@ function renderSpecForm(
               value={specs[field.key] ?? ''}
               onChange={e => onChange(field.key, e.target.value)}
               placeholder={field.label}
-              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
           )}
         </div>
@@ -279,7 +279,7 @@ export default function StockTableView({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Cari SKU atau nama barang..."
-              className="w-full pl-12 pr-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-bold text-slate-800 outline-none"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-bold text-slate-800 outline-none"
             />
             <Search className="w-4 h-4 text-[#43474e]/60 absolute left-4 top-1/2 -translate-y-1/2" />
           </div>
@@ -287,7 +287,7 @@ export default function StockTableView({
             <select
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
-              className="pl-6 pr-12 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/10 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
+              className="pl-6 pr-12 py-3 bg-[var(--color-caleo-cloud)] rounded-full border-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2 text-xs font-black text-[#1e3d60] appearance-none cursor-pointer outline-none w-full"
             >
               {uniqueCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
@@ -504,7 +504,7 @@ export default function StockTableView({
                         type="text"
                         value={vals.price}
                         onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price: e.target.value } }))}
-                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                       />
                     </div>
                     <div className="space-y-1">
@@ -516,7 +516,7 @@ export default function StockTableView({
                         value={vals.harga_modal ?? null}
                         onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], harga_modal: n } }))}
                         placeholder="Harga beli / modal"
-                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                       />
                     </div>
                     {showGrosir ? (
@@ -527,7 +527,7 @@ export default function StockTableView({
                           value={vals.price_grosir ?? null}
                           onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price_grosir: n } }))}
                           placeholder="Harga untuk pembeli grosir"
-                          className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                          className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                         />
                         {vals.price_grosir != null && vals.price_grosir > (parseInt(vals.price.replace(/\D/g, '')) || 0) && (
                           <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -561,7 +561,7 @@ export default function StockTableView({
                               },
                             }))}
                             placeholder="Kosongkan untuk pakai harga base"
-                            className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                            className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </div>
                       ))}

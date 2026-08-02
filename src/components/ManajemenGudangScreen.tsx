@@ -231,17 +231,17 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
               onChange={e => setNewCode(e.target.value.toUpperCase())}
               placeholder="Kode (cth: JKT)"
               maxLength={16}
-              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-mono font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-mono font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
             <input
               value={newName} onChange={e => setNewName(e.target.value)}
               placeholder="Nama Gudang"
-              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
             <input
               value={newAddress} onChange={e => setNewAddress(e.target.value)}
               placeholder="Alamat (opsional)"
-              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+              className="bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
             />
           </div>
           <div className="flex gap-2">
@@ -304,7 +304,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                 <input
                   value={editing.name}
                   onChange={e => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                 />
               </div>
               <div>
@@ -313,7 +313,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                   value={editing.address}
                   onChange={e => setEditing({ ...editing, address: e.target.value })}
                   placeholder="Kosongkan jika tidak ada"
-                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                 />
               </div>
               <div>
@@ -322,7 +322,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
                   type="number"
                   value={editing.sortOrder}
                   onChange={e => setEditing({ ...editing, sortOrder: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                  className="w-full bg-white border border-slate-200 rounded px-4 py-2.5 font-bold text-xs outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">Urutan kecil = tampil duluan di daftar.</p>
               </div>

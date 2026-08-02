@@ -142,7 +142,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       value={acc.opening_balance}
                       onChange={(n) => updateAccount(acc.cash_account_id, { opening_balance: n })}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                       placeholder="0"
                     />
                   </td>
@@ -151,7 +151,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       type="date"
                       value={acc.as_of}
                       onChange={(e) => updateAccount(acc.cash_account_id, { as_of: e.target.value })}
-                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-1.5 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus-visible:ring-offset-2"
                     />
                   </td>
                 </tr>
