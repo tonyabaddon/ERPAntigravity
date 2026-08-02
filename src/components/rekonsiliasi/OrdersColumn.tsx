@@ -70,7 +70,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
       <div className="px-5 py-4 border-b border-[#e5eeff]">
         <div className="flex items-center justify-between">
-          <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">📋 Order Penjualan</div>
+          <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📋 Order Penjualan</div>
           <span className="text-[10px] text-slate-500 font-bold">{paired}/{orders.length} · {pct}%</span>
         </div>
         <div className="h-1.5 mt-2 bg-slate-100 rounded-full overflow-hidden">
@@ -81,7 +81,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
             <button
               key={g}
               onClick={() => setFilter(g)}
-              className={`px-3 py-1 text-xs font-bold rounded-full ${filter === g ? 'bg-[#012749] text-white' : 'bg-white text-slate-600 border border-slate-300'}`}
+              className={`px-3 py-1 text-xs font-bold rounded-full ${filter === g ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-white text-slate-600 border border-slate-300'}`}
             >
               {groupLabel(g)}
             </button>
@@ -112,7 +112,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
               <div className="flex justify-between items-start">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-[#012749]">#{o.id.slice(0, 6)} · {o.customer_name}</span>
+                    <span className="text-xs font-bold text-[var(--color-caleo-primary)]">#{o.id.slice(0, 6)} · {o.customer_name}</span>
                     <span
                       className="text-[10px] font-extrabold px-2 py-0.5 rounded-full inline-flex items-center gap-1 text-white"
                       style={{ background: def.brandColor }}
@@ -123,7 +123,7 @@ export default function OrdersColumn({ orders, onFindPayment, onExtend, onWriteO
                   </div>
                   <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{fmtDate(o.created_at)}</div>
                 </div>
-                <div className="text-xs font-black text-[#012749]">{fmt(o.total)}</div>
+                <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(o.total)}</div>
               </div>
               <div className="flex gap-1.5 mt-2 items-center flex-wrap">
                 {o.slots.map(s => (

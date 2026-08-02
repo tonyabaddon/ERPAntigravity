@@ -12,7 +12,7 @@ interface Props {
 
 // Caleo brand palette (verbatim from design tokens)
 const C = {
-  navy: '#012749',
+  navy: 'var(--color-caleo-primary)',
   gold: '#F9B233',
   cream: '#FAF7F0',
   emerald: '#2d8a4e',
@@ -20,7 +20,7 @@ const C = {
 
 /** Deterministic initial-color from name hash. Reuses palette style from SalesInboxScreen. */
 function getInitialsColor(name: string): string {
-  const palette = ['#2d8a4e', '#012749', '#F9B233', '#7C3AED', '#EA580C'];
+  const palette = ['#2d8a4e', 'var(--color-caleo-primary)', '#F9B233', '#7C3AED', '#EA580C'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
   return palette[Math.abs(hash) % palette.length];

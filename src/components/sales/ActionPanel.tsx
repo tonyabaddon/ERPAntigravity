@@ -182,7 +182,7 @@ export function ActionPanel({
                   onClick={() => setPrintMode('normal')}
                   style={{
                     fontSize: 10, padding: '2px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                    background: printMode === 'normal' ? '#012749' : 'transparent',
+                    background: printMode === 'normal' ? 'var(--color-caleo-primary)' : 'transparent',
                     color: printMode === 'normal' ? 'white' : '#6b7280',
                     fontWeight: 700, letterSpacing: 0,
                   }}
@@ -192,7 +192,7 @@ export function ActionPanel({
                   onClick={() => setPrintMode('dot_matrix')}
                   style={{
                     fontSize: 10, padding: '2px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                    background: printMode === 'dot_matrix' ? '#012749' : 'transparent',
+                    background: printMode === 'dot_matrix' ? 'var(--color-caleo-primary)' : 'transparent',
                     color: printMode === 'dot_matrix' ? 'white' : '#6b7280',
                     fontWeight: 700, letterSpacing: 0,
                   }}

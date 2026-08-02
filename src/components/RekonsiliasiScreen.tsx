@@ -356,7 +356,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5 align-middle" />
             Rekonsiliasi Aktif
           </span>
-          <h2 className="text-xl font-black text-[#012749] mt-2">Rekonsiliasi Buku</h2>
+          <h2 className="text-xl font-black text-[var(--color-caleo-primary)] mt-2">Rekonsiliasi Buku</h2>
           <p className="text-xs text-slate-500 font-semibold mt-1">
             {loading ? 'Memuat data…' : `${orders.length} order · ${bankLines.length} mutasi · ${cashBatches.length} batch kas`}
           </p>
@@ -378,14 +378,14 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
           <select
             value={`${period.year}-${period.month}`}
             onChange={(e) => { const [y, m] = e.target.value.split('-').map(Number); setPeriod({ year: y, month: m }); }}
-            className="bg-white border border-[#e5eeff] rounded-sm px-3 py-2 text-xs font-bold text-[#012749]"
+            className="bg-white border border-[#e5eeff] rounded-sm px-3 py-2 text-xs font-bold text-[var(--color-caleo-primary)]"
           >
             {Array.from({ length: 6 }).map((_, i) => {
               const d = new Date(); d.setMonth(d.getMonth() - i);
               return <option key={i} value={`${d.getFullYear()}-${d.getMonth() + 1}`}>{d.toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</option>;
             })}
           </select>
-          <button onClick={handleCloseBook} className="bg-[#012749] text-white px-4 py-2 rounded-full text-xs font-extrabold">Tutup Buku</button>
+          <button onClick={handleCloseBook} className="bg-[var(--color-caleo-primary)] text-white px-4 py-2 rounded-full text-xs font-extrabold">Tutup Buku</button>
         </div>
       </div>
 
@@ -396,7 +396,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
           <select
             value={glCoaAccountId ?? ''}
             onChange={(e) => setGlCoaAccountId(e.target.value || null)}
-            className="text-xs border border-indigo-300 rounded-sm px-2 py-1 bg-white text-[#012749] font-bold"
+            className="text-xs border border-indigo-300 rounded-sm px-2 py-1 bg-white text-[var(--color-caleo-primary)] font-bold"
           >
             {glBankCoaAccounts.map(a => (
               <option key={a.id} value={a.id}>{a.account_code} · {a.account_name}</option>

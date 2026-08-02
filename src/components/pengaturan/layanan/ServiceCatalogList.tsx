@@ -60,7 +60,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-[14px] font-bold text-[#012749]">
+          <h3 className="text-[14px] font-bold text-[var(--color-caleo-primary)]">
             Katalog Layanan
           </h3>
           <p className="text-[12px] text-slate-500 mt-0.5">
@@ -70,7 +70,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
         </div>
         <button
           onClick={() => setEditing('new')}
-          className="px-4 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90"
+          className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90"
         >
           + Tambah Layanan
         </button>
@@ -100,10 +100,10 @@ export default function ServiceCatalogList({ showToast }: Props) {
               {catItems.map((item) => (
                 <div
                   key={item.id}
-                  className="border border-slate-200 rounded-sm px-4 py-3 flex items-center justify-between hover:border-[#012749]/30"
+                  className="border border-slate-200 rounded-sm px-4 py-3 flex items-center justify-between hover:border-[var(--color-caleo-primary)]/30"
                 >
                   <div>
-                    <div className="text-[14px] font-bold text-[#012749]">
+                    <div className="text-[14px] font-bold text-[var(--color-caleo-primary)]">
                       {item.name}
                     </div>
                     <div className="text-[12px] text-slate-500 mt-0.5">
@@ -117,7 +117,7 @@ export default function ServiceCatalogList({ showToast }: Props) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setEditing(item)}
-                      className="px-3 py-1.5 text-[12px] font-semibold text-[#012749] hover:bg-slate-50 rounded-sm"
+                      className="px-3 py-1.5 text-[12px] font-semibold text-[var(--color-caleo-primary)] hover:bg-slate-50 rounded-sm"
                     >
                       Edit
                     </button>

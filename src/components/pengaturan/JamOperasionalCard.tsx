@@ -114,11 +114,11 @@ export default function JamOperasionalCard({ showToast }: Props) {
   return (
     <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
       <div className="flex items-start gap-3 mb-4">
-        <div className="w-10 h-10 rounded-sm bg-[#012749] flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-sm bg-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
           <Clock className="w-5 h-5 text-emerald-400" />
         </div>
         <div>
-          <h3 className="text-base font-extrabold text-[#012749]">Jam Operasional</h3>
+          <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)]">Jam Operasional</h3>
           <p className="text-xs text-slate-500 mt-0.5">
             Muncul di kontak WhatsApp Business dan invoice PDF.
           </p>
@@ -135,7 +135,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                 key={row.day_of_week}
                 className="flex items-center gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50"
               >
-                <div className="w-20 text-sm font-bold text-[#012749] shrink-0">
+                <div className="w-20 text-sm font-bold text-[var(--color-caleo-primary)] shrink-0">
                   {DAY_LABELS[row.day_of_week]}
                 </div>
 
@@ -166,7 +166,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.open_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { open_time: e.target.value })}
-                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
@@ -174,7 +174,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.close_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { close_time: e.target.value })}
-                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                    className="border border-slate-200 rounded-sm px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                   />
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
               type="button"
               onClick={handleSaveAll}
               disabled={saving}
-              className="px-5 py-2 bg-[#012749] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
+              className="px-5 py-2 bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
             >
               {saving ? 'Menyimpan…' : 'Simpan Semua'}
             </button>

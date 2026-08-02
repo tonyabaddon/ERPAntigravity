@@ -123,7 +123,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <button
           onClick={() => setActiveTab('performa')}
           className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
-            activeTab === 'performa' ? 'bg-[#012749] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+            activeTab === 'performa' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" /> Performa
@@ -131,7 +131,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         <button
           onClick={() => setActiveTab('akuntansi')}
           className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
-            activeTab === 'akuntansi' ? 'bg-[#012749] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
+            activeTab === 'akuntansi' ? 'bg-[var(--color-caleo-primary)] text-white' : 'text-[#1e3d60] hover:bg-[#eff4ff]'
           }`}
         >
           <BarChart2 className="w-3.5 h-3.5" /> Akuntansi
@@ -144,7 +144,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         {/* Header + period selector */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded-sm border border-white/60 shadow-sm">
           <div>
-            <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
+            <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
             <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, gross profit, pesanan, dan pergerakan stok</p>
           </div>
           <div className="flex gap-2">
@@ -154,8 +154,8 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                 onClick={() => setPeriod(p)}
                 className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
                   period === p
-                    ? 'bg-[#012749] text-white shadow'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#012749]'
+                    ? 'bg-[var(--color-caleo-primary)] text-white shadow'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-caleo-primary)]'
                 }`}
               >
                 {p === '7d' ? '7 Hari' : p === '30d' ? '30 Hari' : '90 Hari'}
@@ -232,7 +232,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
 
       {/* Revenue by channel: stacked bar (left) + Profit per Channel list (right) */}
       <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
-        <h4 className="text-lg font-bold text-[#012749] mb-1">Revenue per Channel</h4>
+        <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-1">Revenue per Channel</h4>
         <p className="text-xs text-gray-400 mb-6">Breakdown harian dan profit margin per channel</p>
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Stacked bar — daily trend */}
@@ -286,7 +286,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
 
         {/* Top products */}
         <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
-          <h4 className="text-lg font-bold text-[#012749] mb-4">Produk Terlaris</h4>
+          <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Terlaris</h4>
           {topProducts.length === 0 ? (
             <p className="text-sm text-gray-400 italic">
               {isSupabaseConfigured ? 'Belum ada data produk untuk periode ini.' : '—'}
@@ -305,7 +305,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
                 {topProducts.map((p, i) => (
                   <tr key={i} className="border-b border-gray-50 hover:bg-[#f8f9ff] transition-colors">
                     <td className="py-3 text-gray-300 font-bold w-8">{i + 1}</td>
-                    <td className="py-3 text-[#012749] font-semibold">{p.name}</td>
+                    <td className="py-3 text-[var(--color-caleo-primary)] font-semibold">{p.name}</td>
                     <td className="py-3 text-right text-gray-600">{p.qty}</td>
                     <td className="py-3 text-right font-bold text-[#2d8a4e]">{formatRupiah(p.revenue)}</td>
                   </tr>
@@ -317,14 +317,14 @@ export default function LaporanScreen(props: LaporanScreenProps) {
 
         {/* Slow-moving stock */}
         <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
-          <h4 className="text-lg font-bold text-[#012749] mb-4">Produk Slow-Moving</h4>
+          <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Slow-Moving</h4>
           <p className="text-xs text-slate-500 mb-4">SKU dengan penjualan rendah dalam periode. Pertimbangkan bundling, diskon, atau retur ke supplier.</p>
           <SlowMoverTable days={days} />
         </div>
 
         {/* Top Customer */}
         <div className="bg-white rounded-sm p-6 md:p-8 border border-[#e5eeff] shadow-xl">
-          <h4 className="text-lg font-bold text-[#012749] mb-4">Top 10 Customer</h4>
+          <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Top 10 Customer</h4>
           <p className="text-xs text-slate-500 mb-4">Customer dengan total belanja tertinggi dalam periode.</p>
           <TopCustomerTable days={days} />
         </div>

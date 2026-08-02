@@ -161,11 +161,11 @@ export default function TutupBukuTab({ showToast }: TutupBukuTabProps): React.Re
         {/* Header */}
         <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
+            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
               <CalendarCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#012749]">Status Periode Akuntansi</h3>
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">Status Periode Akuntansi</h3>
               <p className="text-xs text-gray-600">Per period status overview · last 12 periods</p>
             </div>
           </div>

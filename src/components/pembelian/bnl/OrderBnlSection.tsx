@@ -78,10 +78,10 @@ export default function OrderBnlSection({ orderId, customerName, newTabUrl = tru
             rel="noreferrer"
             className="flex items-center gap-2 bg-white rounded-sm border border-gray-200 px-2 py-1.5 text-xs hover:bg-violet-50"
           >
-            <div className="font-bold text-[#012749]">{pi.pi_number}</div>
+            <div className="font-bold text-[var(--color-caleo-primary)]">{pi.pi_number}</div>
             <PiStatusBadge pi={pi} />
             <div className="text-gray-500 flex-1">{pi.supplier?.name ?? '—'} • {pi.items?.length ?? 0} item</div>
-            <div className="font-bold text-[#012749]">{formatIDR(pi.total)}</div>
+            <div className="font-bold text-[var(--color-caleo-primary)]">{formatIDR(pi.total)}</div>
           </a>
         ))}
       </div>

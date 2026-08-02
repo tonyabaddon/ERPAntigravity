@@ -34,7 +34,7 @@ export default function KpiCard({
         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}`}>{badge}</span>
       </div>
       <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block">{label}</span>
-      <h3 className="text-[#012749] font-extrabold text-2xl tracking-tight mt-1">{value}</h3>
+      <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight mt-1">{value}</h3>
       <p className="text-sm text-[#43474e] mt-2 leading-snug">{sub}</p>
     </div>
   );

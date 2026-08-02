@@ -26,7 +26,7 @@ export default function WizardSteps({ currentStep, counts, onJump }: Props) {
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.5rem] p-5 border border-[#e5eeff] shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">🧭 Langkah Rekonsiliasi</div>
+        <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">🧭 Langkah Rekonsiliasi</div>
         <div className="text-[10px] text-slate-500 font-bold">Step {currentStep} dari 6</div>
       </div>
       <div className="flex rounded-sm overflow-hidden border border-[#e5eeff]">
@@ -34,7 +34,7 @@ export default function WizardSteps({ currentStep, counts, onJump }: Props) {
           const cls = s.n < currentStep
             ? 'bg-emerald-50'
             : s.n === currentStep
-              ? 'bg-[#012749] text-white'
+              ? 'bg-[var(--color-caleo-primary)] text-white'
               : 'bg-white text-slate-400';
           let count = '';
           if (s.n === 1) count = `${counts.setup.done}/${counts.setup.total}`;

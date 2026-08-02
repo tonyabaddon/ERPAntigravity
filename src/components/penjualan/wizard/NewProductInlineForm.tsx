@@ -59,10 +59,10 @@ export default function NewProductInlineForm(props: Props) {
   };
 
   return (
-    <div className="mt-3 border-2 border-[#012749]/30 rounded-sm p-4 bg-[#012749]/5">
+    <div className="mt-3 border-2 border-[var(--color-caleo-primary)]/30 rounded-sm p-4 bg-[var(--color-caleo-primary)]/5">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-sm font-extrabold text-[#012749]">Produk Baru</div>
+          <div className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Produk Baru</div>
           <div className="text-[11px] text-slate-600">Akan tersimpan ke daftar Produk &amp; Stok dengan stok awal 0.</div>
         </div>
         <button type="button" onClick={props.onCancel} className="text-slate-400 hover:text-slate-700 text-sm">×</button>
@@ -127,7 +127,7 @@ export default function NewProductInlineForm(props: Props) {
         <button type="button" onClick={props.onCancel} disabled={submitting}
           className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50">Batal</button>
         <button type="button" onClick={onSubmit} disabled={!validation.ok || submitting}
-          className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50">
+          className="px-4 py-1.5 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50">
           {submitting ? 'Menyimpan…' : '✓ Simpan & Tambah ke Cart'}
         </button>
       </div>

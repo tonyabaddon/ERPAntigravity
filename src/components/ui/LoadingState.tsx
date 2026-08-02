@@ -37,7 +37,7 @@ export default function LoadingState({
     return (
       <div className={`absolute inset-0 flex items-center justify-center bg-white/70 z-10 ${className}`}>
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="w-6 h-6 text-[#012749] animate-spin" />
+          <Loader2 className="w-6 h-6 text-[var(--color-caleo-primary)] animate-spin" />
           <div className="text-xs text-slate-600 font-semibold">{label}</div>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default function LoadingState({
   }
   return (
     <div className={`flex flex-col items-center justify-center py-12 gap-2 ${className}`}>
-      <Loader2 className="w-8 h-8 text-[#012749] animate-spin" />
+      <Loader2 className="w-8 h-8 text-[var(--color-caleo-primary)] animate-spin" />
       <div className="text-xs text-slate-500">{label}</div>
     </div>
   );

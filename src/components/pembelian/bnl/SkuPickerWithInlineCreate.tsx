@@ -101,7 +101,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
           <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-sm mb-3" style={{ color: '#012749' }}>Buat SKU baru cepat</h3>
+            <h3 className="font-bold text-sm mb-3" style={{ color: 'var(--color-caleo-primary)' }}>Buat SKU baru cepat</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Nama barang</label>
@@ -121,7 +121,7 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
               <button type="button" onClick={() => setShowCreate(false)} className="text-sm px-3 py-2 rounded-sm border border-gray-200 text-gray-600">Batal</button>
               <button type="button" onClick={handleCreate} disabled={saving || !draftName.trim()}
                 className="text-sm px-3 py-2 rounded-sm text-white font-semibold disabled:opacity-50"
-                style={{ background: '#012749' }}>
+                style={{ background: 'var(--color-caleo-primary)' }}>
                 {saving ? 'Membuat...' : 'Buat & Pilih'}
               </button>
             </div>

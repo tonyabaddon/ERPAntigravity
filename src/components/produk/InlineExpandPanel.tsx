@@ -37,7 +37,7 @@ export default function InlineExpandPanel({
               <p className="text-[10px] font-extrabold text-violet-700 uppercase tracking-widest">
                 Foto Produk · {photos.length > 0 ? `${currentPhotoIndex + 1} dari ${photos.length}` : 'belum ada foto'}
               </p>
-              <h3 className="text-base font-extrabold text-[#012749] mt-0.5">{item.name}</h3>
+              <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mt-0.5">{item.name}</h3>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 <span className="font-mono">{item.sku}</span> · {item.category}
               </p>
@@ -90,13 +90,13 @@ export default function InlineExpandPanel({
             </div>
           </div>
           <div className="flex gap-2 mt-auto flex-wrap">
-            <button type="button" onClick={() => onEdit(item.sku)} className="px-4 py-2 bg-[#012749] hover:bg-[#01345f] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+            <button type="button" onClick={() => onEdit(item.sku)} className="px-4 py-2 bg-[var(--color-caleo-primary)] hover:bg-[#01345f] text-white rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">edit</span> Edit Produk
             </button>
-            <button type="button" onClick={() => onAddPhoto(item.sku)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+            <button type="button" onClick={() => onAddPhoto(item.sku)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[var(--color-caleo-primary)] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">add_a_photo</span> Tambah Foto
             </button>
-            <button type="button" onClick={() => onHistory(item.sku)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#012749] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
+            <button type="button" onClick={() => onHistory(item.sku)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[var(--color-caleo-primary)] rounded-full text-[11px] font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5">
               <span className="material-symbols-outlined text-base">history</span> Riwayat Stok
             </button>
           </div>

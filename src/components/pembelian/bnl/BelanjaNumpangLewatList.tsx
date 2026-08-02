@@ -80,10 +80,10 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold" style={{ color: '#012749' }}>Belanja Numpang Lewat</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Belanja Numpang Lewat</h2>
           <div className="text-xs text-gray-500">Pembelian pass-through wajib link Order — tidak nambah stok</div>
         </div>
-        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: '#012749' }}>
+        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: 'var(--color-caleo-primary)' }}>
           <Plus className="w-4 h-4" /> Buat PI Baru
         </button>
       </div>
@@ -101,7 +101,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
           {(['bulan_ini', '30_hari', '90_hari'] as const).map(p => (
             <button key={p} onClick={() => setFilter({ preset: p })}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold ${filter.preset === p ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
-              style={filter.preset === p ? { background: '#012749' } : {}}>
+              style={filter.preset === p ? { background: 'var(--color-caleo-primary)' } : {}}>
               {p === 'bulan_ini' ? 'Bulan Ini' : p === '30_hari' ? '30 Hari' : '90 Hari'}
             </button>
           ))}
@@ -141,7 +141,7 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
               {filtered.map(pi => (
                 <tr key={pi.id} className="hover:bg-slate-50 border-b border-gray-100">
                   <td className="px-5 py-4">
-                    <div className="font-bold text-sm" style={{ color: '#012749' }}>{pi.pi_number}</div>
+                    <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{pi.pi_number}</div>
                     <div className="text-xs text-gray-500">{fmtDate(pi.purchase_date)}</div>
                   </td>
                   <td className="px-5 py-4">

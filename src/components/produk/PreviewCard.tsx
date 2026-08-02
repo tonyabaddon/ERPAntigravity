@@ -58,7 +58,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
               </span>
               <span className="text-[9px] font-extrabold text-slate-600 truncate">{state.sku || 'auto'}</span>
             </div>
-            <h6 className="text-[13px] font-extrabold text-[#012749] truncate">{state.name || 'Nama produk…'}</h6>
+            <h6 className="text-[13px] font-extrabold text-[var(--color-caleo-primary)] truncate">{state.name || 'Nama produk…'}</h6>
             <p className="text-[10.5px] text-slate-500">
               {formatIDR(state.price)} / {state.unit}
               {marginPct !== null && ` · Margin ${marginPct.toFixed(1)}%`}
@@ -85,7 +85,7 @@ export default function PreviewCard({ state, warehouses }: Props) {
               <div key={w.id} className={`flex items-center justify-between rounded-sm px-3 py-2 border ${
                 isTarget ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'
               }`}>
-                <div className="text-[11px] font-extrabold text-[#012749]">{w.name}</div>
+                <div className="text-[11px] font-extrabold text-[var(--color-caleo-primary)]">{w.name}</div>
                 <div className={`text-base font-black ${isTarget ? 'text-emerald-700' : 'text-slate-400'}`}>
                   {qty} {state.unit}
                 </div>

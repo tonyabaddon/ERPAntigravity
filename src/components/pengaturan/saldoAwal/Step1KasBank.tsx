@@ -95,7 +95,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-[14px] font-bold text-[#012749] mb-1">Kas & Bank — Saldo Awal</h3>
+        <h3 className="text-[14px] font-bold text-[var(--color-caleo-primary)] mb-1">Kas & Bank — Saldo Awal</h3>
         <p className="text-[12px] text-slate-500">
           Masukkan saldo awal setiap akun per tanggal cutover. Angka ini akan masuk ke Jurnal Saldo Awal sebagai sisi Debit.
         </p>
@@ -142,7 +142,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       value={acc.opening_balance}
                       onChange={(n) => updateAccount(acc.cash_account_id, { opening_balance: n })}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                       placeholder="0"
                     />
                   </td>
@@ -151,7 +151,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       type="date"
                       value={acc.as_of}
                       onChange={(e) => updateAccount(acc.cash_account_id, { as_of: e.target.value })}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                   </td>
                 </tr>

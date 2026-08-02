@@ -232,7 +232,7 @@ export default function PembelianDetailPage({
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
               <SearchX className="w-8 h-8" />
             </div>
-            <h2 className="text-lg font-bold text-[#012749]">PO tidak ditemukan</h2>
+            <h2 className="text-lg font-bold text-[var(--color-caleo-primary)]">PO tidak ditemukan</h2>
             <p className="text-sm text-gray-500 mt-2">Nomor PO <span className="font-mono font-semibold">{poNumber}</span> sudah dihapus atau tidak pernah ada.</p>
             <button
               onClick={() => {
@@ -242,7 +242,7 @@ export default function PembelianDetailPage({
                 // branch in App.tsx falls through to the normal list view.
                 window.location.href = '/?screen=pembelian';
               }}
-              className="mt-6 inline-flex items-center gap-2 bg-[#012749] text-white text-sm font-semibold px-5 py-2.5 rounded-sm hover:bg-[#013865]"
+              className="mt-6 inline-flex items-center gap-2 bg-[var(--color-caleo-primary)] text-white text-sm font-semibold px-5 py-2.5 rounded-sm hover:bg-[#013865]"
             >
               <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Pembelian
             </button>

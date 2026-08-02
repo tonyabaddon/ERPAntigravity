@@ -76,7 +76,7 @@ export default function JournalColumn({
       <div className="px-5 py-4 border-b border-[#e5eeff]">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">
+            <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">
               GL · Journal Entries
             </div>
             <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{bankAccountLabel}</div>
@@ -172,7 +172,7 @@ export default function JournalColumn({
               </div>
               <div className="flex flex-col items-end gap-1 ml-2 flex-shrink-0">
                 {/* Amount */}
-                <div className="text-xs font-black text-[#012749]">{fmt(line.amount)}</div>
+                <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(line.amount)}</div>
                 {/* Side chip */}
                 <span
                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${

@@ -113,7 +113,7 @@ export default function MappingDrawer({
           <div className="flex items-start justify-between">
             <div>
               <div className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: source.headerColor }}>🔍 Cari pasangan</div>
-              <div className="text-base font-black text-[#012749] mt-1">{source.title}</div>
+              <div className="text-base font-black text-[var(--color-caleo-primary)] mt-1">{source.title}</div>
               <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{source.meta}</div>
             </div>
             <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl font-extrabold">×</button>
@@ -166,7 +166,7 @@ export default function MappingDrawer({
                     />
                     <div className="flex-1 flex items-start justify-between">
                       <div>
-                        <div className="text-xs font-bold text-[#012749]">{c.name}</div>
+                        <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
                         <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.meta}</div>
                         <div className={`text-[10px] font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>
                           Skor {c.score.toFixed(2)} · {c.scoreBreakdown}
@@ -176,7 +176,7 @@ export default function MappingDrawer({
                         </div>
                       </div>
                       <div className="text-right ml-3 flex-shrink-0">
-                        <div className="text-xs font-black text-[#012749]">{fmt(c.amount)}</div>
+                        <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(c.amount)}</div>
                       </div>
                     </div>
                   </div>
@@ -189,7 +189,7 @@ export default function MappingDrawer({
               <div key={c.id} className={`p-3 rounded-sm border mb-2 cursor-pointer ${c.best ? 'border-emerald-400 bg-emerald-50' : 'border-[#e5eeff]'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-xs font-bold text-[#012749]">{c.name}</div>
+                    <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
                     <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.meta}</div>
                     <div className={`text-[10px] font-bold mt-1 ${c.best ? 'text-emerald-700' : 'text-slate-500'}`}>Skor {c.score.toFixed(2)} · {c.scoreBreakdown}</div>
                     <div className="h-1 mt-1 bg-slate-200 rounded-full overflow-hidden">
@@ -197,8 +197,8 @@ export default function MappingDrawer({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-black text-[#012749]">{fmt(c.amount)}</div>
-                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded-sm text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[#e5eeff] text-[#012749]'}`}>
+                    <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(c.amount)}</div>
+                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded-sm text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[#e5eeff] text-[var(--color-caleo-primary)]'}`}>
                       {c.best ? '✓ Pilih' : 'Pilih'}
                     </button>
                   </div>
@@ -231,8 +231,8 @@ export default function MappingDrawer({
           </div>
         ) : (
           <div className="border-t border-[#e5eeff] p-4 space-y-2 bg-slate-50">
-            <button onClick={onSplit} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[#012749]">🔀 Split — pecah ke beberapa target</button>
-            <button onClick={onClassify} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[#012749]">📝 Klasifikasi lain — topup, biaya, refund</button>
+            <button onClick={onSplit} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[var(--color-caleo-primary)]">🔀 Split — pecah ke beberapa target</button>
+            <button onClick={onClassify} className="w-full text-left p-3 rounded-sm bg-white border border-[#e5eeff] text-xs font-bold text-[var(--color-caleo-primary)]">📝 Klasifikasi lain — topup, biaya, refund</button>
             <button onClick={onSkip} className="w-full text-left p-3 rounded-sm bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
           </div>
         )}

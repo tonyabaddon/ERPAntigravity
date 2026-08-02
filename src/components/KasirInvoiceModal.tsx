@@ -57,7 +57,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[#012749] text-white print:hidden">
+          <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
             <div className="flex items-center gap-2 font-bold text-sm">
               <FileText className="w-4 h-4" />
               Invoice {transaction.invoice_number}
@@ -81,9 +81,9 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
               ) : (
                 <>
                   {/* Header */}
-                  <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[#012749]">
+                  <div className="flex justify-between items-start pb-5 mb-5 border-b-2 border-[var(--color-caleo-primary)]">
                     <div>
-                      <div className="text-xl font-black text-[#012749] tracking-tight">
+                      <div className="text-xl font-black text-[var(--color-caleo-primary)] tracking-tight">
                         {store?.nama_toko ?? 'Toko Anda'}
                       </div>
                       <div className="text-[11px] text-gray-500 font-sans mt-1">
@@ -94,7 +94,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-black text-[#012749] tracking-widest uppercase">Sales Invoice</div>
+                      <div className="text-2xl font-black text-[var(--color-caleo-primary)] tracking-widest uppercase">Sales Invoice</div>
                       <div className="text-xs font-mono font-bold text-gray-700 mt-1">
                         {transaction.invoice_number}
                       </div>
@@ -122,7 +122,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                   {/* Line items */}
                   <table className="w-full text-xs font-sans border-collapse mb-4">
                     <thead>
-                      <tr className="bg-[#012749] text-white">
+                      <tr className="bg-[var(--color-caleo-primary)] text-white">
                         <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">No.</th>
                         <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wide font-bold">Produk / SKU</th>
                         <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wide font-bold">Qty</th>
@@ -175,7 +175,7 @@ export default function KasirInvoiceModal({ transaction, onClose }: KasirInvoice
                           </div>
                         );
                       })()}
-                      <div className="flex justify-between py-2 font-black text-[#012749] text-sm border-t-2 border-[#012749]">
+                      <div className="flex justify-between py-2 font-black text-[var(--color-caleo-primary)] text-sm border-t-2 border-[var(--color-caleo-primary)]">
                         <span>TOTAL</span>
                         <span>{formatIDR((transaction.total_amount ?? transaction.subtotal))}</span>
                       </div>

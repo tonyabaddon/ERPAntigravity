@@ -57,7 +57,7 @@ export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar 
             <div className="text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 inline-block px-1.5 py-0.5 rounded-full mb-1">
               {item.category}
             </div>
-            <h6 className="text-xs font-extrabold text-[#012749] line-clamp-2">{item.name}</h6>
+            <h6 className="text-xs font-extrabold text-[var(--color-caleo-primary)] line-clamp-2">{item.name}</h6>
             <p className="text-[10.5px] text-slate-500 mt-0.5">
               {formatIDR(item.price)} / {item.unit ?? 'pcs'}
             </p>

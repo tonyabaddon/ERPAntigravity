@@ -106,9 +106,9 @@ export default function CatalogListView({
                     )}
                   </td>
                   <td className="py-2 px-2 font-mono text-[12px] text-slate-600">{item.sku}</td>
-                  <td className="py-2 px-2 font-bold text-[#012749]">{item.name}</td>
+                  <td className="py-2 px-2 font-bold text-[var(--color-caleo-primary)]">{item.name}</td>
                   <td className="py-2 px-2 text-slate-600">{item.category}</td>
-                  <td className="py-2 px-2 text-right font-extrabold text-[#012749]">
+                  <td className="py-2 px-2 text-right font-extrabold text-[var(--color-caleo-primary)]">
                     Rp {new Intl.NumberFormat('id-ID').format(item.price)}
                   </td>
                   {/* Promo column */}
@@ -172,7 +172,7 @@ export default function CatalogListView({
                     <button
                       type="button"
                       onClick={() => onEdit(item.sku)}
-                      className="text-[#012749] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"
+                      className="text-[var(--color-caleo-primary)] hover:bg-slate-100 rounded-full p-1 opacity-60 group-hover:opacity-100"
                       aria-label={`Edit ${item.name}`}
                     >
                       <span className="material-symbols-outlined text-lg">edit</span>

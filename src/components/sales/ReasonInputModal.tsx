@@ -19,7 +19,7 @@ interface Props {
 const TONE_BG: Record<NonNullable<Props['tone']>, string> = {
   danger: '#dc2626',
   warning: '#d97706',
-  primary: '#012749',
+  primary: 'var(--color-caleo-primary)',
 };
 
 /**

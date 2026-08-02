@@ -181,7 +181,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-sm bg-[#012749] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 rounded-sm bg-[var(--color-caleo-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
         >
           <UserPlus className="w-4 h-4" />
           Tambah Pelanggan
@@ -247,7 +247,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
                         tierFilter === t
                           ? isBase
-                            ? 'bg-[#012749] text-white'
+                            ? 'bg-[var(--color-caleo-primary)] text-white'
                             : 'bg-purple-600 text-white'
                           : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                       }`}
@@ -278,28 +278,28 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                     onClick={() => setSelectedId(c.id)}
                     className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-indigo-50 border-l-[3px] border-l-[#012749]'
+                        ? 'bg-indigo-50 border-l-[3px] border-l-[var(--color-caleo-primary)]'
                         : 'hover:bg-gray-50 border-l-[3px] border-l-transparent'
                     }`}
                   >
                     <div className={`w-9 h-9 rounded-sm flex items-center justify-center text-sm font-bold shrink-0 ${
-                      isSelected ? 'bg-[#012749] text-white' : 'bg-gray-200 text-gray-600'
+                      isSelected ? 'bg-[var(--color-caleo-primary)] text-white' : 'bg-gray-200 text-gray-600'
                     }`}>
                       {initials(c.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className={`font-bold text-sm truncate ${isSelected ? 'text-[#012749]' : 'text-gray-800'}`}>
+                      <div className={`font-bold text-sm truncate ${isSelected ? 'text-[var(--color-caleo-primary)]' : 'text-gray-800'}`}>
                         {c.name}
                       </div>
                       {c.company && (
-                        <div className={`text-[10px] font-semibold truncate ${isSelected ? 'text-[#012749]/70' : 'text-gray-500'}`}>
+                        <div className={`text-[10px] font-semibold truncate ${isSelected ? 'text-[var(--color-caleo-primary)]/70' : 'text-gray-500'}`}>
                           {c.company}
                         </div>
                       )}
                       <div className="font-mono text-[10px] text-gray-400 truncate">{c.wa_number}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <div className={`text-xs font-bold ${isSelected ? 'text-[#012749]' : 'text-gray-500'}`}>
+                      <div className={`text-xs font-bold ${isSelected ? 'text-[var(--color-caleo-primary)]' : 'text-gray-500'}`}>
                         {c.order_count}
                       </div>
                       {showTierDropdown && tenantSettings && (() => {
@@ -336,7 +336,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
           ) : profile ? (
             <>
               {/* Profile header */}
-              <div className="bg-[#012749] text-white p-4 flex items-center gap-3 shrink-0">
+              <div className="bg-[var(--color-caleo-primary)] text-white p-4 flex items-center gap-3 shrink-0">
                 <div className="w-11 h-11 rounded-sm bg-[#2d8a4e] flex items-center justify-center text-lg font-extrabold shrink-0">
                   {initials(editing ? editName : profile.name)}
                 </div>
@@ -371,7 +371,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                                   className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
                                     active
                                       ? t.slot === 1
-                                        ? 'bg-white text-[#012749]'
+                                        ? 'bg-white text-[var(--color-caleo-primary)]'
                                         : 'bg-purple-500 text-white'
                                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                                   }`}
@@ -457,7 +457,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                   ] as Array<{ label: string; value: string; tip: string; color?: string }>
                 ).map((stat, i) => (
                   <div key={i} className={`py-3 text-center ${i < 2 ? 'border-r border-gray-200' : ''}`} title={stat.tip}>
-                    <div className={`text-base font-extrabold ${stat.color ?? 'text-[#012749]'}`}>{stat.value}</div>
+                    <div className={`text-base font-extrabold ${stat.color ?? 'text-[var(--color-caleo-primary)]'}`}>{stat.value}</div>
                     <div className="text-[9px] text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{stat.label}</div>
                   </div>
                 ))}

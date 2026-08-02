@@ -378,7 +378,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           {view === 'signIn' ? (
             <div className="flex flex-col gap-6 animate-fadeIn">
               <div className="space-y-2">
-                <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Selamat Datang Kembali 👋</h2>
+                <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight">Selamat Datang Kembali 👋</h2>
                 <p className="text-[#43474e] text-sm leading-relaxed">
                   Silakan masuk untuk mengelola sistem ERP dan WhatsApp Bot toko Anda.
                 </p>
@@ -456,7 +456,7 @@ export default function AuthScreen({ onLoginSuccess }: AuthScreenProps) {
           ) : (
             <div className="flex flex-col gap-6 animate-fadeIn">
               <div className="space-y-2">
-                <h2 className="text-[#012749] font-extrabold text-2xl tracking-tight">Mulai Efisiensikan Toko Anda ⚡</h2>
+                <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight">Mulai Efisiensikan Toko Anda ⚡</h2>
                 <p className="text-[#43474e] text-sm leading-relaxed">
                   Daftarkan diri Anda sebagai Owner Bisnis untuk mengaktifkan sistem otomasi AI.
                 </p>

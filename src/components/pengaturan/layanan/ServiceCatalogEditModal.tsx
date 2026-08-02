@@ -113,7 +113,7 @@ export default function ServiceCatalogEditModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl my-4">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-[15px] font-extrabold text-[#012749]">
+          <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">
             {initial ? 'Edit Layanan' : 'Tambah Layanan Baru'}
           </h2>
           <button
@@ -134,7 +134,7 @@ export default function ServiceCatalogEditModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Contoh: Wiring Panel MDB 3-fase 100A"
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               />
             </div>
             <div>
@@ -146,7 +146,7 @@ export default function ServiceCatalogEditModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Wiring"
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function ServiceCatalogEditModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
             />
           </div>
 
@@ -172,7 +172,7 @@ export default function ServiceCatalogEditModal({
                 value={defaultLabor}
                 onChange={setDefaultLabor}
                 allowDecimal={false}
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               />
             </div>
             <div>
@@ -232,7 +232,7 @@ export default function ServiceCatalogEditModal({
               <select
                 value={revenueCoa}
                 onChange={(e) => setRevenueCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               >
                 {revenueCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>
@@ -248,7 +248,7 @@ export default function ServiceCatalogEditModal({
               <select
                 value={laborCoa}
                 onChange={(e) => setLaborCoa(e.target.value)}
-                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               >
                 {laborCoaOptions.map((opt) => (
                   <option key={opt.account_code} value={opt.account_code}>
@@ -276,7 +276,7 @@ export default function ServiceCatalogEditModal({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
+            className="px-5 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
           >
             {saving ? 'Menyimpan…' : 'Simpan'}
           </button>

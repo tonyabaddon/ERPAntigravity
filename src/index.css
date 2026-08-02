@@ -33,6 +33,12 @@
   --color-on-surface: #0b1c30;
   --color-background-soft: #f8f9ff;
 
+  /* Caleo brand primary (2026-08-02: promoted from de-facto 650× inline usage
+     of #012749 to a proper token. Slightly darker than --color-caleo-navy;
+     kept both because 12749 is the actual button/chrome color while navy is
+     admin panel text color). */
+  --color-caleo-primary: #012749;
+
   --radius-default: 2px;
   --radius-lg: 2px;
   --radius-xl: 2px;

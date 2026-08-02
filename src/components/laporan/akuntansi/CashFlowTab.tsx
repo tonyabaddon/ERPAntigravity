@@ -152,7 +152,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             onClick={() => setViewMode('net')}
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'net'
-                ? 'bg-[#012749] text-white'
+                ? 'bg-[var(--color-caleo-primary)] text-white'
                 : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
             }`}
           >
@@ -162,7 +162,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             onClick={() => setViewMode('gross-in')}
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'gross-in'
-                ? 'bg-[#012749] text-white'
+                ? 'bg-[var(--color-caleo-primary)] text-white'
                 : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
             }`}
           >
@@ -172,7 +172,7 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
             onClick={() => setViewMode('gross-out')}
             className={`px-3.5 py-1.5 rounded-full font-bold transition-all ${
               viewMode === 'gross-out'
-                ? 'bg-[#012749] text-white'
+                ? 'bg-[var(--color-caleo-primary)] text-white'
                 : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
             }`}
           >

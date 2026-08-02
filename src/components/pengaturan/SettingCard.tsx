@@ -18,7 +18,7 @@ export default function SettingCard({ icon, title, description, currentStat, imp
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">{icon}</span>
-          <div className="font-bold text-sm text-[#012749]">{title}</div>
+          <div className="font-bold text-sm text-[var(--color-caleo-primary)]">{title}</div>
           {highlight && <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-bold">AKTIF</span>}
         </div>
         <div className="text-xs text-slate-600">{description}</div>

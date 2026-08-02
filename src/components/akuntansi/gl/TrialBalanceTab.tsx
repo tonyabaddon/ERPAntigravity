@@ -221,11 +221,11 @@ export default function TrialBalanceTab({
       {/* ── Header ── */}
       <div className="p-6 border-b border-gray-200 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749] shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)] shrink-0">
             <Scale className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-[#012749]">Trial Balance</h3>
+            <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">Trial Balance</h3>
             <p className="text-xs text-gray-600">
               Per {timestamp} · {periodSubtitle}
             </p>
@@ -366,7 +366,7 @@ export default function TrialBalanceTab({
               <tfoot style={{ background: '#eff4ff' }}>
                 <tr
                   className="font-extrabold border-t-2"
-                  style={{ color: '#012749', borderColor: '#1e40af' }}
+                  style={{ color: 'var(--color-caleo-primary)', borderColor: '#1e40af' }}
                 >
                   <td colSpan={2} className="py-3 px-3">TOTAL</td>
                   <td className="py-3 px-3 text-right">{formatNum(totalDebit)}</td>

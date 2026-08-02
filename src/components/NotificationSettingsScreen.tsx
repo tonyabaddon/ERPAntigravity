@@ -119,11 +119,11 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         <div className="flex flex-col gap-6">
           <div className="max-w-4xl">
             <div className="flex items-center gap-4 mb-5">
-              <div className="w-14 h-14 bg-blue-50 text-[#012749] rounded-sm flex items-center justify-center shadow-lg shadow-blue-105/5">
+              <div className="w-14 h-14 bg-blue-50 text-[var(--color-caleo-primary)] rounded-sm flex items-center justify-center shadow-lg shadow-blue-105/5">
                 <span className="material-symbols-outlined text-[32px]">monitor_heart</span>
               </div>
               <div>
-                <h2 className="text-[#012749] font-extrabold text-xl tracking-tight">
+                <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-xl tracking-tight">
                   Konfigurasi Notifikasi Detak Jantung Otomatis
                 </h2>
                 <p className="text-xs text-gray-400 mt-1 uppercase font-extrabold tracking-widest">
@@ -142,7 +142,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <div className="bg-[#eff4ff]/60 p-6 rounded-sm flex flex-col justify-between hover:bg-white hover:shadow-lg hover:border-slate-100 border border-transparent transition-all group select-none">
                 <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-4">Status Layanan</span>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-extrabold text-[#012749]">Aktifkan Laporan</span>
+                  <span className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Aktifkan Laporan</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox"
@@ -162,7 +162,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   <select 
                     value={interval}
                     onChange={(e) => setIntervalVal(e.target.value)}
-                    className="w-full bg-transparent border-none text-sm font-extrabold text-[#012749] p-0 focus:ring-0 appearance-none cursor-pointer outline-none"
+                    className="w-full bg-transparent border-none text-sm font-extrabold text-[var(--color-caleo-primary)] p-0 focus:ring-0 appearance-none cursor-pointer outline-none"
                   >
                     <option value="Setiap 1 Jam">Setiap 1 Jam</option>
                     <option value="Setiap 4 Jam">Setiap 4 Jam</option>
@@ -247,7 +247,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <span className="material-symbols-outlined text-3xl font-black">inventory_2</span>
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#012749]">🚨 Alert Batas Stok Rendah</h3>
+              <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)]">🚨 Alert Batas Stok Rendah</h3>
               <p className="text-[10px] text-gray-400 font-extrabold uppercase">Picu peringatan otomatis saat stok menipis</p>
             </div>
           </div>
@@ -265,7 +265,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   const raw = parseInt(e.target.value, 10);
                   setLowStockLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
                 }}
-                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[#012749] bg-transparent outline-none"
+                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Pcs</span>
             </div>
@@ -279,7 +279,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <span className="material-symbols-outlined text-3xl font-black">timer</span>
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#012749]">⏳ Alert Keterlambatan Respon Admin</h3>
+              <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)]">⏳ Alert Keterlambatan Respon Admin</h3>
               <p className="text-[10px] text-gray-400 font-extrabold uppercase font-sans">Optimalkan kepuasan pelanggan real-time</p>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   const raw = parseInt(e.target.value, 10);
                   setDelayLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
                 }}
-                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[#012749] bg-transparent outline-none"
+                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Menit</span>
             </div>
@@ -316,7 +316,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <Smartphone className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-[#012749]">Nomor WA Penerima Notifikasi</h3>
+              <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)]">Nomor WA Penerima Notifikasi</h3>
               <p className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider mt-0.5">
                 Daftar dikelola di Pengaturan — di sini hanya tampilan
               </p>
@@ -337,7 +337,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
               <div key={r.id} className={`flex items-center gap-3 px-4 py-2.5 rounded-sm border ${r.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-[#012749] truncate">{r.name}</span>
+                    <span className="font-extrabold text-sm text-[var(--color-caleo-primary)] truncate">{r.name}</span>
                     <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${r.role === 'owner' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
                       {r.role}
                     </span>
@@ -355,7 +355,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
         </div>
 
         <p className="mt-5 text-[11px] text-gray-500 italic">
-          Untuk menambah / mengubah / menonaktifkan: buka <b className="text-[#012749]">Pengaturan → Penerima Notifikasi WA</b>.
+          Untuk menambah / mengubah / menonaktifkan: buka <b className="text-[var(--color-caleo-primary)]">Pengaturan → Penerima Notifikasi WA</b>.
         </p>
       </section>
 

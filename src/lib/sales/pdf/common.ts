@@ -34,7 +34,7 @@ export type PdfPrintMode = 'normal' | 'dot_matrix';
 
 // ---------- Brand palette ----------
 
-const COLOR_NAVY = '#012749';
+const COLOR_NAVY = 'var(--color-caleo-primary)';
 const COLOR_GREEN = '#2d8a4e';
 const COLOR_GRAY_MUTED = '#555555';
 const COLOR_GRAY_FOOTER = '#888888';

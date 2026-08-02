@@ -310,7 +310,7 @@ export default function TukarFakturFormPage({
         <span className="text-gray-800 font-semibold">Buat Baru</span>
       </div>
 
-      <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>
+      <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
         Buat Tukar Faktur
       </h1>
       <p className="text-xs text-gray-500">
@@ -464,7 +464,7 @@ export default function TukarFakturFormPage({
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-semibold text-sm" style={{ color: '#012749' }}>
+                            <div className="font-semibold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>
                               {t.pi_number}
                               {t.supplier_invoice_number && (
                                 <span className="text-gray-500 font-normal ml-2">
@@ -476,7 +476,7 @@ export default function TukarFakturFormPage({
                               Tgl {fmtDate(t.purchase_date)} · JT {fmtDate(t.payment_due_at)}
                             </div>
                           </div>
-                          <div className="text-sm font-bold" style={{ color: '#012749' }}>
+                          <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
                             {formatIDR(Number(t.total))}
                           </div>
                         </div>
@@ -519,7 +519,7 @@ export default function TukarFakturFormPage({
                       <tr key={s.id} className="border-b border-gray-100 last:border-0">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <div className="font-semibold text-sm" style={{ color: '#012749' }}>
+                            <div className="font-semibold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>
                               {s.isQuickAdd ? s.supplier_invoice_number : s.pi_number}
                             </div>
                             {!s.isQuickAdd && s.supplier_invoice_number && (
@@ -602,7 +602,7 @@ export default function TukarFakturFormPage({
           onClick={handleSubmit}
           disabled={saving || !supplier || selected.length === 0}
           className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
-          style={{ background: '#012749' }}
+          style={{ background: 'var(--color-caleo-primary)' }}
         >
           {saving ? 'Menyimpan...' : 'Simpan Tukar Faktur'}
         </button>

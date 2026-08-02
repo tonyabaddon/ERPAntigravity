@@ -224,7 +224,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
           className={`bg-white rounded-sm shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} max-w-3xl`}
           onClick={e => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-4 py-2 bg-[#012749] text-white print:hidden">
+          <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-caleo-primary)] text-white print:hidden">
             <div className="flex items-center gap-2 font-bold text-[13px]">
               Invoice {transaction.invoice_number}
             </div>

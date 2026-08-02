@@ -9,7 +9,7 @@ export default function LayananPanel({ showToast }: Props) {
   return (
     <div className="space-y-6">
       <div className="border-b border-slate-200 pb-3">
-        <h2 className="text-[16px] font-extrabold text-[#012749]">
+        <h2 className="text-[16px] font-extrabold text-[var(--color-caleo-primary)]">
           🛠 Layanan
         </h2>
         <p className="text-[13px] text-slate-500 mt-1">

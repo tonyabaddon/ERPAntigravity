@@ -50,10 +50,10 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold" style={{ color: '#012749' }}>Pembayaran ke Supplier</h2>
+          <h2 className="text-base font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Pembayaran ke Supplier</h2>
           <div className="text-xs text-gray-500">Step 3: bayar Tagihan ke supplier. Bisa 1 Pembayaran untuk banyak Tagihan.</div>
         </div>
-        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: '#012749' }}>
+        <button onClick={onCreate} className="inline-flex items-center gap-2 text-sm font-bold text-white px-4 py-2 rounded-sm" style={{ background: 'var(--color-caleo-primary)' }}>
           <Plus className="w-4 h-4" /> Catat Pembayaran
         </button>
       </div>
@@ -90,7 +90,7 @@ export default function PembayaranList({ showToast, onCreate, onOpenDetail }: Pr
               {filtered.map(p => (
                 <tr key={p.id} className="hover:bg-slate-50 border-b border-gray-100">
                   <td className="px-5 py-4">
-                    <div className="font-bold text-sm" style={{ color: '#012749' }}>{p.pembayaran_number}</div>
+                    <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{p.pembayaran_number}</div>
                     {(p.items?.length ?? 0) > 1 && (
                       <div className="text-[11px] text-indigo-600 mt-0.5">⚡ {p.items?.length} Tagihan</div>
                     )}

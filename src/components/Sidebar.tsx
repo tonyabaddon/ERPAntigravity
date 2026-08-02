@@ -202,7 +202,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
   return (
     <aside 
       id="sidebar"
-      className={`fixed left-4 top-4 bottom-4 z-50 bg-[#012749] shadow-2xl rounded-sm flex flex-col py-8 overflow-hidden transition-all duration-300 ease-in-out group ${
+      className={`fixed left-4 top-4 bottom-4 z-50 bg-[var(--color-caleo-primary)] shadow-2xl rounded-sm flex flex-col py-8 overflow-hidden transition-all duration-300 ease-in-out group ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
       onMouseEnter={() => setIsExpanded(true)}

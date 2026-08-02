@@ -75,7 +75,7 @@ function getModeBanner(conv: ConversationWithMessages): {
 function getAvatarColor(conv: ConversationWithMessages): string {
   if (conv.state === 'ESCALATED_ADMIN' || conv.state === 'ESCALATED_WIRING') return 'bg-red-600';
   if (conv.state === 'COMPLETED' || conv.state === 'CANCELLED') return 'bg-gray-400';
-  if (conv.ai_active) return 'bg-[#012749]';
+  if (conv.ai_active) return 'bg-[var(--color-caleo-primary)]';
   return 'bg-[#2d8a4e]';
 }
 
@@ -190,7 +190,7 @@ export default function SalesInboxScreen({
       {/* LEFT PANEL */}
       <div className="w-56 shrink-0 flex flex-col border-r border-gray-200 bg-gray-50">
         {/* Header */}
-        <div className="bg-[#012749] text-white px-3 py-3 flex items-center gap-2 shrink-0">
+        <div className="bg-[var(--color-caleo-primary)] text-white px-3 py-3 flex items-center gap-2 shrink-0">
           <MessageSquare className="w-4 h-4" />
           <span className="font-bold text-sm">Inbox AI</span>
           <span className="ml-auto bg-white/20 text-xs font-bold px-2 py-0.5 rounded-full">
@@ -203,7 +203,7 @@ export default function SalesInboxScreen({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
             <input
-              className="w-full bg-white border border-gray-200 rounded-sm pl-7 pr-2 py-1.5 text-xs outline-none focus:border-[#012749]"
+              className="w-full bg-white border border-gray-200 rounded-sm pl-7 pr-2 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
               placeholder="Cari..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -263,7 +263,7 @@ export default function SalesInboxScreen({
                   key={conv.id}
                   onClick={() => setActiveChatId(conv.id)}
                   className={`px-3 py-2.5 cursor-pointer hover:bg-gray-50 flex items-start gap-2 border-l-[3px] ${
-                    isSelected ? 'bg-indigo-50 border-l-[#012749]' : 'border-l-transparent'
+                    isSelected ? 'bg-indigo-50 border-l-[var(--color-caleo-primary)]' : 'border-l-transparent'
                   }`}
                 >
                   <div
@@ -298,7 +298,7 @@ export default function SalesInboxScreen({
           {/* CENTER PANEL */}
           <div className="flex-1 min-w-0 flex flex-col">
             {/* Chat header */}
-            <div className="bg-[#012749] text-white px-4 py-2.5 flex items-center gap-2.5 shrink-0">
+            <div className="bg-[var(--color-caleo-primary)] text-white px-4 py-2.5 flex items-center gap-2.5 shrink-0">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${getAvatarColor(activeChat)}`}
               >
@@ -401,7 +401,7 @@ export default function SalesInboxScreen({
                 <PlusCircle className="w-4 h-4" />
               </button>
               <input
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-sm px-3 py-1.5 text-xs outline-none focus:border-[#012749]"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded-sm px-3 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
                 placeholder="Ketik pesan admin..."
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
@@ -410,7 +410,7 @@ export default function SalesInboxScreen({
               <button
                 onClick={handleSend}
                 disabled={!inputText.trim() || sending}
-                className="bg-[#012749] text-white rounded-sm p-1.5 disabled:opacity-40"
+                className="bg-[var(--color-caleo-primary)] text-white rounded-sm p-1.5 disabled:opacity-40"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -546,7 +546,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
     ? 'bg-white border border-gray-200 rounded-sm rounded-tl-none text-gray-800'
     : isAdmin
       ? 'bg-[#2d8a4e] text-white rounded-sm rounded-tr-none'
-      : 'bg-[#012749] text-white rounded-sm rounded-tr-none';
+      : 'bg-[var(--color-caleo-primary)] text-white rounded-sm rounded-tr-none';
 
   const senderLabel = isCustomer ? 'Pelanggan' : isAdmin ? '👤 Admin' : '🤖 AI';
 
@@ -668,7 +668,7 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
         <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mb-2">Pesanan Terkait</div>
         {order ? (
           <div>
-            <div className="font-mono text-[10px] font-bold text-[#012749]">
+            <div className="font-mono text-[10px] font-bold text-[var(--color-caleo-primary)]">
               {order.gjp_order_id ?? order.id.slice(0, 8)}
             </div>
             <div className="text-sm font-extrabold text-[#2d8a4e]">

@@ -49,18 +49,18 @@ export default function ChannelSelector({ value, onChange }: ChannelSelectorProp
               onClick={() => onChange(code)}
               className={`flex flex-col items-center gap-1 p-3 rounded-sm transition ${
                 isActive
-                  ? 'bg-[#012749]/5 border-2 border-[#012749] text-[#012749]'
+                  ? 'bg-[var(--color-caleo-primary)]/5 border-2 border-[var(--color-caleo-primary)] text-[var(--color-caleo-primary)]'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <ChannelIcon code={code} size={20} tint="none" className={isActive ? 'text-[#012749]' : 'text-slate-500'} />
+              <ChannelIcon code={code} size={20} tint="none" className={isActive ? 'text-[var(--color-caleo-primary)]' : 'text-slate-500'} />
               <span className={`text-[11px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{def.label}</span>
             </button>
           );
         })}
       </div>
       <p className="text-[11px] text-slate-500 mt-2">
-        Channel terpilih: <strong className="text-[#012749]">{selectedDef.label}</strong> · {selectedHint(value)}
+        Channel terpilih: <strong className="text-[var(--color-caleo-primary)]">{selectedDef.label}</strong> · {selectedHint(value)}
       </p>
     </div>
   );

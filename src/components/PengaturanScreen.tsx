@@ -305,7 +305,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={logoUploading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:bg-[#01365e] disabled:opacity-60"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:bg-[#01365e] disabled:opacity-60"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   {logoUploading ? 'Mengunggah...' : (logoUrl ? 'Ganti Logo' : 'Upload Logo')}
@@ -515,7 +515,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-3 px-2">
-        <div className="w-10 h-10 bg-[#012749] rounded-sm flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 bg-[var(--color-caleo-primary)] rounded-sm flex items-center justify-center shrink-0">
           <Settings className="w-5 h-5 text-emerald-400" />
         </div>
         <div>
@@ -531,18 +531,18 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         {activeTab === 'modul-jasa' && (
           <div className="space-y-6 animate-fadeIn">
             <section>
-              <h3 className="text-base font-bold text-[#012749] mb-3">📦 Modul ERP</h3>
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-3">📦 Modul ERP</h3>
               <p className="text-xs text-slate-500 mb-4">Modul yang aktif di toko. Mematikan modul = menu & fitur terkait disembunyikan.</p>
               <ModulSwitchesPanel showToast={showToast} />
             </section>
             <section>
-              <h3 className="text-base font-bold text-[#012749] mb-3">🛠️ Master Jenis Jasa</h3>
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-3">🛠️ Master Jenis Jasa</h3>
               <p className="text-xs text-slate-500 mb-4">Jasa yang ditawarkan toko. Yang aktif muncul di Catat Penjualan Step 2.</p>
               <JenisJasaCrudPanel showToast={showToast} />
             </section>
             {tenantSettings?.modul_multi_tier_price && (
               <section>
-                <h3 className="text-base font-bold text-[#012749] mb-3">💵 Tingkat Harga</h3>
+                <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-3">💵 Tingkat Harga</h3>
                 <TierConfigPanel
                   tenantSettings={tenantSettings}
                   onSaved={refreshTenantSettings}
@@ -557,7 +557,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         {activeTab === 'promo-produk' && (
           <div className="space-y-4 animate-fadeIn">
             <div>
-              <h3 className="text-base font-bold text-[#012749] mb-1">🏷 Promo Produk — auto-apply diskon per SKU</h3>
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-1">🏷 Promo Produk — auto-apply diskon per SKU</h3>
               <p className="text-xs text-slate-500 mb-4">
                 Set diskon otomatis per SKU. Kasir tidak perlu input manual — diskon langsung terapplied saat SKU ditambahkan ke nota.
               </p>
@@ -568,7 +568,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
         {activeTab === 'akuntansi' && (
           <div className="space-y-4 animate-fadeIn">
             <div>
-              <h3 className="text-base font-bold text-[#012749] mb-1">🧾 Akuntansi — Saldo Awal</h3>
+              <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-1">🧾 Akuntansi — Saldo Awal</h3>
               <p className="text-xs text-slate-500 mb-4">
                 Input saldo awal (neraca) per tanggal cutover untuk onboarding akuntansi mid-year.
                 Setelah dipost, laporan Neraca dan Aging Piutang/Hutang akan mencerminkan kondisi sebenarnya.

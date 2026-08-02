@@ -146,7 +146,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
             <ShieldCheck className="w-5 h-5 text-emerald-700" />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-bold text-[#012749]">Support Access</h3>
+            <h3 className="text-base font-bold text-[var(--color-caleo-primary)]">Support Access</h3>
             <p className="text-[13px] text-slate-600 mt-0.5">
               Berikan akses login ke tim Caleo kalau butuh bantuan support. Akses selalu
               time-boxed dan bisa dicabut kapan saja. Tanpa grant aktif, tidak ada tim
@@ -175,7 +175,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
           <button
             type="button"
             onClick={() => setShowGrantForm(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-[var(--color-caleo-primary)] text-white text-[13px] font-semibold hover:bg-[#0b1c30]"
           >
             <PlusCircle className="w-4 h-4" />
             Beri akses baru
@@ -291,7 +291,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 <ShieldCheck className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#012749]">Beri akses support</h3>
+                <h3 className="text-lg font-bold text-[var(--color-caleo-primary)]">Beri akses support</h3>
                 <p className="text-[13px] text-slate-600 mt-0.5">
                   Caleo admin akan bisa impersonate akun ini sampai batas waktu.
                 </p>
@@ -326,7 +326,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                     onClick={() => setGrantForm((f) => ({ ...f, hours: c.hours }))}
                     className={`px-2 py-2 rounded-sm text-[12px] font-semibold border transition ${
                       grantForm.hours === c.hours
-                        ? 'bg-[#012749] text-white border-[#012749]'
+                        ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                         : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                     }`}
                   >
@@ -372,7 +372,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 type="button"
                 onClick={handleGrant}
                 disabled={saving}
-                className="px-4 py-2 rounded-sm bg-[#012749] text-white text-[13px] font-semibold hover:bg-[#0b1c30] disabled:opacity-50"
+                className="px-4 py-2 rounded-sm bg-[var(--color-caleo-primary)] text-white text-[13px] font-semibold hover:bg-[#0b1c30] disabled:opacity-50"
               >
                 {saving ? 'Menyimpan…' : 'Beri akses'}
               </button>
@@ -395,7 +395,7 @@ export default function SupportAccessPanel({ showToast }: Props) {
                 <XCircle className="w-5 h-5 text-rose-700" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#012749]">Cabut akses?</h3>
+                <h3 className="text-lg font-bold text-[var(--color-caleo-primary)]">Cabut akses?</h3>
                 <p className="text-[13px] text-slate-600 mt-0.5">
                   Kalau <b>{pendingRevoke.admin_email}</b> lagi impersonate akun ini,
                   sesi mereka langsung dihentikan.

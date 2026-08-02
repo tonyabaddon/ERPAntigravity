@@ -10,7 +10,7 @@ interface Props {
 
 const PILL_BASE =
   'px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5';
-const PILL_ACTIVE = 'bg-[#012749] text-white';
+const PILL_ACTIVE = 'bg-[var(--color-caleo-primary)] text-white';
 const PILL_INACTIVE = 'text-slate-600 hover:bg-white';
 
 export default function ViewModeSwitcher({ value, onChange }: Props) {

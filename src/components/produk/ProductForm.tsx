@@ -275,7 +275,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
       <div className="col-span-12 lg:col-span-7 space-y-4">
         {/* Card: Identitas */}
         <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
-          <h5 className="text-sm font-extrabold text-[#012749] mb-3">📋 Identitas Produk</h5>
+          <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">📋 Identitas Produk</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CategoryDropdown
               value={category}
@@ -316,7 +316,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
 
         {/* Card: Spesifikasi (dynamic per category, fallback Aksesori) */}
         <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
-          <h5 className="text-sm font-extrabold text-[#012749] mb-3">
+          <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">
             ⚙ Spesifikasi <span className="text-amber-700">{category}</span>
           </h5>
           <SpecForm
@@ -340,7 +340,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
         <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h5 className="text-sm font-extrabold text-[#012749]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
+              <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">📷 Foto Produk <span className="text-[10px] font-medium text-slate-400 ml-1">(opsional)</span></h5>
               <p className="text-[10.5px] text-slate-500">Max 5 · drop dari folder atau drag slot untuk urutan</p>
             </div>
             <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
@@ -425,7 +425,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
 
         {/* Card: Harga & Stok */}
         <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
-          <h5 className="text-sm font-extrabold text-[#012749] mb-3">💰 Harga & Stok</h5>
+          <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)] mb-3">💰 Harga & Stok</h5>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold text-gray-600 uppercase tracking-widest">
@@ -553,7 +553,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
               <span className="material-symbols-outlined text-xl">tune</span>
             </div>
             <div className="flex-1">
-              <h5 className="text-sm font-extrabold text-[#012749]">Pengaturan Lanjutan</h5>
+              <h5 className="text-sm font-extrabold text-[var(--color-caleo-primary)]">Pengaturan Lanjutan</h5>
               <p className="text-[10.5px] text-slate-500">Multi-satuan, batas stok min, deskripsi — opsional</p>
             </div>
             <span className="material-symbols-outlined text-slate-400 transition group-open:rotate-180">expand_more</span>
@@ -569,7 +569,7 @@ export default function ProductForm({ initial, warehouses, currentUserId, onCanc
                          if (!on) { setUnitAlt(null); setUnitAltFactor(null); }
                        }}
                        className="accent-emerald-600 w-3.5 h-3.5" />
-                <span className="text-[11px] font-extrabold text-[#012749]">Aktifkan multi-satuan konversi</span>
+                <span className="text-[11px] font-extrabold text-[var(--color-caleo-primary)]">Aktifkan multi-satuan konversi</span>
               </label>
               {multiSatuanOn && (
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-5 gap-2 items-end">

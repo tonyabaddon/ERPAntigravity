@@ -56,7 +56,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-gray-200">
-          <h2 className="font-extrabold text-base text-[#012749]">Ajukan Tulis-off</h2>
+          <h2 className="font-extrabold text-base text-[var(--color-caleo-primary)]">Ajukan Tulis-off</h2>
           <p className="text-xs text-gray-500 mt-0.5">Perlu persetujuan Owner.</p>
         </div>
 
@@ -64,7 +64,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
-            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: '#012749' }}>{formatIDR(row.order.total)}</span></div>
+            <div><span className="text-gray-500">Total:</span> <span className="font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(row.order.total)}</span></div>
           </div>
 
           <div>
@@ -98,7 +98,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
             type="button"
             onClick={onSubmit}
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm font-semibold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? 'Mengajukan...' : 'Ajukan Tulis-off'}
           </button>

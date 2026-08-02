@@ -150,11 +150,11 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-sm p-2.5" style={{ background: '#012749' }}>
+          <div className="rounded-sm p-2.5" style={{ background: 'var(--color-caleo-primary)' }}>
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold" style={{ color: '#012749' }}>Piutang</h1>
+            <h1 className="text-xl font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>Piutang</h1>
             <div className="text-xs text-gray-500">Lacak invoice tempo customer + AR aging</div>
           </div>
         </div>
@@ -210,7 +210,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
             return (
               <button key={k} onClick={() => setFilter(k)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold ${active ? 'text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
-                style={active ? { background: '#012749' } : {}}>
+                style={active ? { background: 'var(--color-caleo-primary)' } : {}}>
                 {label} <span className="ml-1 text-[10px] opacity-80">({count})</span>
               </button>
             );
@@ -232,7 +232,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
             <p className="text-sm font-semibold text-red-600">{fetchError}</p>
             <button
               onClick={() => void reload()}
-              className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
+              className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
             >
               Coba Lagi
             </button>
@@ -291,7 +291,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                       )}
                     </td>
                     {/* F-11: show sisa outstanding (post-partial). Fall back to total when nothing paid yet. */}
-                    <td className="px-5 py-3 text-right font-bold" style={{ color: '#012749' }}>
+                    <td className="px-5 py-3 text-right font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
                       {formatIDR(outstandingOf(r))}
                       {(r.order.piutang_paid_amount ?? 0) > 0 && (
                         <div className="text-[10px] font-medium text-gray-500 mt-0.5">
@@ -419,7 +419,7 @@ function KpiCard(props: { icon: React.ReactNode; iconBg: string; iconColor: stri
         {props.icon}
       </div>
       <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{props.label}</div>
-      <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{props.value}</div>
+      <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{props.value}</div>
       <div className="text-[11px] text-gray-500 mt-0.5">{props.sub}</div>
     </div>
   );
@@ -547,7 +547,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
             {(row.order.piutang_paid_amount ?? 0) > 0 && (
               <div className="flex justify-between"><span className="text-gray-500">Sudah Dibayar</span><span className="font-semibold">{formatIDR(row.order.piutang_paid_amount ?? 0)}</span></div>
             )}
-            <div className="flex justify-between"><span className="text-gray-500">Sisa Outstanding</span><span className="font-bold text-[#012749]">{formatIDR(outstandingSisa)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Sisa Outstanding</span><span className="font-bold text-[var(--color-caleo-primary)]">{formatIDR(outstandingSisa)}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Jatuh Tempo</span><span className="font-semibold">{fmtDate(row.order.due_date)}</span></div>
           </div>
           {/* F-11: partial-payment amount input + sisa-setelah-bayar preview. */}

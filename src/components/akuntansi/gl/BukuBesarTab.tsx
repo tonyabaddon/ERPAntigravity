@@ -368,7 +368,7 @@ export default function BukuBesarTab({
               onClick={() => handlePreset(key)}
               className={`text-[11px] font-bold px-3.5 py-1.5 rounded-full transition-colors ${
                 activePreset === key
-                  ? 'bg-[#012749] text-white'
+                  ? 'bg-[var(--color-caleo-primary)] text-white'
                   : 'border border-[#c7d7f5] bg-white text-[#1e3d60] hover:bg-[#eff4ff]'
               }`}
             >
@@ -501,7 +501,7 @@ export default function BukuBesarTab({
                     >
                       <tr
                         className="font-extrabold"
-                        style={{ color: '#012749' }}
+                        style={{ color: 'var(--color-caleo-primary)' }}
                       >
                         <td colSpan={3} className="py-3 px-3 text-right text-[11px] uppercase tracking-wide">
                           TOTAL {periodeLabel.toUpperCase()}

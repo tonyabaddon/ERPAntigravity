@@ -62,7 +62,7 @@ function accountIconConfig(type: CashAccountType): IconTileConfig {
     case 'E_WALLET':
       return { bgClass: 'bg-amber-100', textClass: 'text-amber-800', Icon: Bike };
     default:
-      return { bgClass: 'bg-[#eff4ff]', textClass: 'text-[#012749]', Icon: Wallet };
+      return { bgClass: 'bg-[#eff4ff]', textClass: 'text-[var(--color-caleo-primary)]', Icon: Wallet };
   }
 }
 
@@ -294,7 +294,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+          <div className="w-11 h-11 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
@@ -310,7 +310,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         {isOwner && (
           <button
             onClick={openAddModal}
-            className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Tambah Akun
@@ -355,7 +355,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
             {isOwner && (
               <button
                 onClick={openAddModal}
-                className="text-[#012749] font-bold hover:underline"
+                className="text-[var(--color-caleo-primary)] font-bold hover:underline"
               >
                 + Tambah Akun
               </button>
@@ -413,7 +413,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
           {isOwner && (
             <button
               onClick={openAddModal}
-              className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[#012749] text-white hover:bg-[#01365e] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 bg-[var(--color-caleo-primary)] text-white hover:bg-[#01365e] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
               Tambah Akun Pertama

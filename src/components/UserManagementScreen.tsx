@@ -299,7 +299,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         <p className="text-sm font-semibold text-red-600">{fetchError}</p>
         <button
           onClick={loadAdmins}
-          className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
+          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
         >
           Coba Lagi
         </button>
@@ -323,10 +323,10 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         {/* LEFT COLUMN: Add New Admin Form */}
         <section className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-sm bg-blue-50 text-[#012749] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-sm bg-blue-50 text-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
               <UserPlus className="w-5 h-5" />
             </div>
-            <h3 className="text-[#012749] font-extrabold text-lg leading-tight">Tambah Admin Baru</h3>
+            <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Tambah Admin Baru</h3>
           </div>
 
           <form onSubmit={handleCreateAdminSubmit} className="space-y-5">
@@ -338,7 +338,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Contoh: Budi Santoso"
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -350,7 +350,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 placeholder="staff@email.com"
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -362,7 +362,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 value={newWhatsapp}
                 onChange={(e) => setNewWhatsapp(e.target.value)}
                 placeholder="+62 812..."
-                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30]"
+                className="w-full bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30]"
               />
             </div>
 
@@ -382,7 +382,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     onClick={() => setNewGender(value)}
                     className={`flex-1 py-2.5 px-3 rounded-sm text-xs font-bold transition-colors border ${
                       newGender === value
-                        ? 'bg-[#012749] text-white border-[#012749]'
+                        ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                         : 'bg-white text-[#43474e] border-[#e5eeff] hover:border-[#abc9f3]'
                     }`}
                   >
@@ -398,7 +398,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 <select
                   value={newRole}
                   onChange={(e) => setNewRole(e.target.value)}
-                  className="flex-1 bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[#012749]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
+                  className="flex-1 bg-[#eff4ff] border-none rounded-full px-6 py-3.5 focus:ring-2 focus:ring-[var(--color-caleo-primary)]/15 text-xs font-semibold text-[#0b1c30] cursor-pointer"
                 >
                   <option value="Pilih Peran...">Pilih Peran...</option>
                   {PERMISSION_ROLES.map(r => (
@@ -413,7 +413,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     // For now this button is a hint that preset will be applied.
                     // Future: could pre-fill checkbox preview UI in the form.
                   }}
-                  className="text-[10px] font-bold text-[#012749] underline shrink-0"
+                  className="text-[10px] font-bold text-[var(--color-caleo-primary)] underline shrink-0"
                   disabled={newRole === 'Pilih Peran...'}
                   title="Preset akan diterapkan otomatis saat 'BUAT AKUN'"
                 >
@@ -424,7 +424,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
             <button
               type="submit"
-              className="w-full bg-[#012749] text-white py-4 px-6 rounded-full text-xs font-extrabold shadow-lg hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2.5 transition-all group cursor-pointer mt-6"
+              className="w-full bg-[var(--color-caleo-primary)] text-white py-4 px-6 rounded-full text-xs font-extrabold shadow-lg hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2.5 transition-all group cursor-pointer mt-6"
             >
               <span className="material-symbols-outlined text-sm group-hover:rotate-12 transition-transform">auto_awesome</span>
               BUAT AKUN &amp; PILIH AKSES
@@ -439,7 +439,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
               <div className="w-12 h-12 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
                 <span className="material-symbols-outlined font-black">verified</span>
               </div>
-              <h3 className="text-[#012749] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
+              <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
             </div>
             <div className="bg-[#eff4ff] px-5 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
               <Search className="w-4 h-4 text-slate-400" />
@@ -481,12 +481,12 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                       className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
                       onClick={() => setExpandedId(isExpanded ? null : adm.id)}
                     >
-                      <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[#012749] font-black text-sm select-none shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[var(--color-caleo-primary)] font-black text-sm select-none shrink-0">
                         {adm.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-extrabold text-[#012749] text-sm leading-none truncate">{adm.name}</p>
+                          <p className="font-extrabold text-[var(--color-caleo-primary)] text-sm leading-none truncate">{adm.name}</p>
                           {isOwner && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                         </div>
                         <p className="text-[10px] font-semibold text-gray-400 mt-0.5 truncate">{adm.email}</p>

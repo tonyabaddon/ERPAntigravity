@@ -28,9 +28,9 @@ export default function ClipMonitorPanel() {
 
   return (
     <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
-      <h3 className="text-base font-extrabold text-[#012749] mb-3">Aktivitas CLIP Inference — Hari Ini</h3>
+      <h3 className="text-base font-extrabold text-[var(--color-caleo-primary)] mb-3">Aktivitas CLIP Inference — Hari Ini</h3>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-[11px] text-[#012749]">
+      <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-[11px] text-[var(--color-caleo-primary)]">
         ℹ️ CLIP berjalan di server kita. Angka di bawah adalah jumlah inference hari ini. Tidak ada quota eksternal — kapasitas dibatasi oleh CPU instance Cloud Run.
       </div>
 
@@ -56,11 +56,11 @@ export default function ClipMonitorPanel() {
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p50</p>
-          <p className="text-lg font-black text-[#012749] mt-1">{agg.latencyP50 != null ? `${agg.latencyP50} ms` : '—'}</p>
+          <p className="text-lg font-black text-[var(--color-caleo-primary)] mt-1">{agg.latencyP50 != null ? `${agg.latencyP50} ms` : '—'}</p>
         </div>
         <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500">Latency p95</p>
-          <p className="text-lg font-black text-[#012749] mt-1">{agg.latencyP95 != null ? `${agg.latencyP95} ms` : '—'}</p>
+          <p className="text-lg font-black text-[var(--color-caleo-primary)] mt-1">{agg.latencyP95 != null ? `${agg.latencyP95} ms` : '—'}</p>
         </div>
         <div className="bg-amber-50 border border-amber-200 rounded-sm p-3 text-center">
           <p className="text-[10px] font-extrabold uppercase tracking-widest text-amber-700">Cold start hit</p>

@@ -192,7 +192,7 @@ export default function BulkUpdateTierPricesSection({ stockList, tenantSettings,
 
   return (
     <div className="bg-white rounded-sm border border-gray-200 p-6">
-      <h3 className="text-base font-bold text-[#012749] mb-2">Update Harga Tier (CSV)</h3>
+      <h3 className="text-base font-bold text-[var(--color-caleo-primary)] mb-2">Update Harga Tier (CSV)</h3>
       <p className="text-xs text-slate-500 mb-4">
         Download template, isi kolom <code>price_[tier]_baru</code> untuk setiap tier yang ingin diupdate, lalu upload kembali. Preview sebelum apply.
       </p>
@@ -201,7 +201,7 @@ export default function BulkUpdateTierPricesSection({ stockList, tenantSettings,
           <Download className="w-3.5 h-3.5" /> Download Template
         </button>
         <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleFile} />
-        <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:bg-[#01365e]">
+        <button onClick={() => fileRef.current?.click()} className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:bg-[#01365e]">
           <Upload className="w-3.5 h-3.5" /> Upload CSV
         </button>
       </div>

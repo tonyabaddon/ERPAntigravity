@@ -123,7 +123,7 @@ export default function TambahLayananModal({
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl my-4">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <h2 className="text-[15px] font-extrabold text-[#012749]">
+          <h2 className="text-[15px] font-extrabold text-[var(--color-caleo-primary)]">
             + Tambah Layanan ke Pesanan
           </h2>
           <button
@@ -151,7 +151,7 @@ export default function TambahLayananModal({
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                  className="w-full border border-slate-200 rounded-sm px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                 >
                   <option value="">— pilih —</option>
                   {catalog.map((c) => (
@@ -173,7 +173,7 @@ export default function TambahLayananModal({
                       value={qty}
                       onChange={(n) => setQty(Math.max(1, n))}
                       allowDecimal={false}
-                      className="w-32 border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-32 border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                   </div>
 
@@ -185,7 +185,7 @@ export default function TambahLayananModal({
                       value={labor}
                       onChange={setLabor}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                     <div className="text-[11px] text-slate-400 mt-1">
                       Default catalog:{' '}
@@ -202,7 +202,7 @@ export default function TambahLayananModal({
                       value={finalPrice}
                       onChange={setFinalPrice}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
                     />
                   </div>
 
@@ -310,7 +310,7 @@ export default function TambahLayananModal({
           <button
             onClick={handleSubmit}
             disabled={saving || !selectedId}
-            className="px-5 py-2 text-[13px] font-bold bg-[#012749] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
+            className="px-5 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
           >
             {saving ? 'Menyimpan…' : 'Tambah ke Pesanan'}
           </button>

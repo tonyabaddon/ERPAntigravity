@@ -334,7 +334,7 @@ export default function ApprovalInboxScreen({
     <div className="p-6 space-y-4">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-extrabold text-lg text-[#012749]">Persetujuan Menunggu</h1>
+          <h1 className="font-extrabold text-lg text-[var(--color-caleo-primary)]">Persetujuan Menunggu</h1>
           <p className="text-xs text-slate-500">
             {requests.length} permintaan terbuka &middot; auto-expire 30 menit
           </p>
@@ -349,7 +349,7 @@ export default function ApprovalInboxScreen({
                 onClick={() => setFilter(p.key)}
                 className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider transition-colors ${
                   active
-                    ? 'bg-[#012749] text-white'
+                    ? 'bg-[var(--color-caleo-primary)] text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >

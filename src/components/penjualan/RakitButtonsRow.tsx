@@ -58,7 +58,7 @@ export default function RakitButtonsRow({ formOpen, formType, onOpen }: RakitBut
     <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${knownTypes.length}, 1fr)` }}>
       {knownTypes.map((st) => {
         const rakitType = CODE_TO_RAKIT[st.code];
-        const color = st.color_hex ?? '#012749';
+        const color = st.color_hex ?? 'var(--color-caleo-primary)';
         const isActive = disabled && formType === rakitType;
         return (
           <button

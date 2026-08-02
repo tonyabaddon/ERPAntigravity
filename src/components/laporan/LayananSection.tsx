@@ -124,7 +124,7 @@ export default function LayananSection({ days }: Props) {
     <section className="bg-white rounded-sm border border-slate-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-[15px] font-bold text-[#012749]">🛠 Layanan</h3>
+          <h3 className="text-[15px] font-bold text-[var(--color-caleo-primary)]">🛠 Layanan</h3>
           <p className="text-[12px] text-slate-500 mt-0.5">
             Revenue, HPP, dan margin per layanan (Wiring Panel, Custom Panel,
             dst) dalam periode.
@@ -176,7 +176,7 @@ export default function LayananSection({ days }: Props) {
                   key={r.service_catalog_id}
                   className="border-t border-slate-100"
                 >
-                  <td className="px-3 py-2 font-semibold text-[#012749]">
+                  <td className="px-3 py-2 font-semibold text-[var(--color-caleo-primary)]">
                     {r.service_name}
                   </td>
                   <td className="px-3 py-2 text-slate-600">
