@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import LoadingState from '../ui/LoadingState';
 import { fetchOrdersWithArchive, subscribeOrders } from '../../lib/sales/queries';
 import { useTenant } from '../../contexts/TenantContext';
 import type { Order, FunnelStage } from '../../lib/sales/types';
@@ -406,7 +407,9 @@ export function DaftarPesananScreen({ currentUserRole: _currentUserRole, current
         <TypeTabs active={typeTab} counts={totalCounts} onChange={setTypeTab} />
         <StageStrip active={stage} counts={stageCounts} onChange={setStage} />
         {loadingOrders && (
-          <div className="p-8 text-center text-sm text-gray-400">Memuat pesanan...</div>
+          <div className="p-8">
+            <LoadingState label="Memuat pesanan..." />
+          </div>
         )}
         <div>
           {!loadingOrders && subsForStage.map(sub => (

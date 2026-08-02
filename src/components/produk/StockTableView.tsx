@@ -8,6 +8,7 @@ import {
   Search, ChevronDown, ChevronUp, AlertTriangle, CheckCircle,
   Trash2, ClipboardCheck,
 } from 'lucide-react';
+import EmptyState from '../ui/EmptyState';
 import { StockItem, Warehouse, DbTenantSettings } from '../../types';
 import PendingApprovalBadge from '../approval/PendingApprovalBadge';
 import { NumberInput } from '../ui/NumberInput';
@@ -299,9 +300,7 @@ export default function StockTableView({
       {/* Stock rows */}
       <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 font-semibold text-sm">
-            Tidak ada produk yang cocok dengan filter pencarian.
-          </div>
+          <EmptyState message="Tidak ada produk yang cocok dengan filter pencarian." />
         ) : filtered.map((item, index) => {
           const isEditing = editingSkus.has(item.sku);
           const vals = editValues[item.sku];
