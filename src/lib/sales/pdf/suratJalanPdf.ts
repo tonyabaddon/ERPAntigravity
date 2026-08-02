@@ -32,7 +32,7 @@ const DELIVERY_LABEL: Record<DeliveryMethod, string> = {
 
 const NAVY_RGB: [number, number, number] = [1, 39, 73];
 const BLACK_RGB: [number, number, number] = [0, 0, 0];
-const NAVY_HEX = 'var(--color-caleo-primary)';
+const NAVY_HEX = '#012749';
 const BLACK_HEX = '#000000';
 const HAIRLINE_HEX = '#d0d7e2';
 const GRAY_MUTED_HEX = '#555555';
