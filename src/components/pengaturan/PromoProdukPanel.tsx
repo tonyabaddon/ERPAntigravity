@@ -262,7 +262,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         {/* Header */}
         <div className="bg-slate-100 px-5 py-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-800">
@@ -420,7 +420,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
+            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 rounded-sm hover:bg-slate-200"
           >
             Batal
           </button>
@@ -428,7 +428,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
             type="button"
             disabled={saving || !!validationError}
             onClick={handleSubmit}
-            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-sm hover:bg-blue-700 disabled:opacity-50"
           >
             {saving ? 'Menyimpan…' : isEditMode ? 'Simpan perubahan' : 'Tambah promo'}
           </button>
@@ -524,7 +524,7 @@ export default function PromoProdukPanel({ showToast }: Props) {
         <button
           type="button"
           onClick={() => { setEditRow(null); setShowModal(true); }}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 shrink-0"
+          className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-sm hover:bg-blue-700 shrink-0"
         >
           + Tambah Promo
         </button>
@@ -533,12 +533,12 @@ export default function PromoProdukPanel({ showToast }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari SKU atau nama…"
-          className="flex-1 min-w-40 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="flex-1 min-w-40 border border-slate-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as PromoFilter)}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-slate-300 rounded-sm px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="active">Aktif</option>
           <option value="expiring_7d">Kadaluwarsa 7 hari</option>
@@ -548,7 +548,7 @@ export default function PromoProdukPanel({ showToast }: Props) {
       </div>
 
       {/* Table */}
-      <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <div className="border border-slate-200 rounded-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-slate-100 text-left">
@@ -618,20 +618,20 @@ export default function PromoProdukPanel({ showToast }: Props) {
 
       {/* Bulk action toolbar */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-sm text-sm">
           <span className="font-semibold text-blue-800">{selected.size} dipilih</span>
           <button
             type="button"
             disabled={deleting}
             onClick={handleBulkDelete}
-            className="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold hover:bg-rose-700 disabled:opacity-50"
+            className="px-3 py-1.5 bg-rose-600 text-white rounded-sm text-xs font-semibold hover:bg-rose-700 disabled:opacity-50"
           >
             {deleting ? 'Menghapus…' : 'Hapus'}
           </button>
           <button
             type="button"
             onClick={() => setSelected(new Set())}
-            className="px-3 py-1.5 bg-white text-slate-600 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50"
+            className="px-3 py-1.5 bg-white text-slate-600 border border-slate-300 rounded-sm text-xs font-semibold hover:bg-slate-50"
           >
             Batal
           </button>
@@ -676,7 +676,7 @@ function RowMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
         ⋯
       </button>
       {open && (
-        <div className="absolute right-0 top-6 z-10 bg-white border border-slate-200 rounded-lg shadow-lg min-w-[110px] overflow-hidden">
+        <div className="absolute right-0 top-6 z-10 bg-white border border-slate-200 rounded-sm shadow-lg min-w-[110px] overflow-hidden">
           <button
             type="button"
             onClick={() => { onEdit(); setOpen(false); }}

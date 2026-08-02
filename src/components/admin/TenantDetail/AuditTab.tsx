@@ -74,7 +74,7 @@ export function AuditTab({ tenantId }: Props) {
   if (error !== null) {
     return (
       <div
-        className="border rounded-xl p-6 text-center"
+        className="border rounded-sm p-6 text-center"
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="audit-tab-error"
       >
@@ -97,7 +97,7 @@ export function AuditTab({ tenantId }: Props) {
               })
               .finally(() => setLoading(false));
           }}
-          className="rounded-xl px-4 py-1.5 text-[12px] font-semibold border transition-opacity hover:opacity-80"
+          className="rounded-sm px-4 py-1.5 text-[12px] font-semibold border transition-opacity hover:opacity-80"
           style={{ borderColor: C.danger, color: C.danger }}
         >
           Coba lagi

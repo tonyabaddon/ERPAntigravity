@@ -34,12 +34,12 @@ export default function CariByFotoDropzone({ onFileSelected, onError }: Props) {
       onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
-      className={`w-full rounded-2xl p-5 text-left transition-colors border-2 border-dashed ${
+      className={`w-full rounded-sm p-5 text-left transition-colors border-2 border-dashed ${
         isDragging ? 'bg-violet-100 border-violet-500' : 'bg-violet-50/50 border-violet-300 hover:bg-violet-100'
       }`}
     >
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 bg-violet-200 rounded-2xl flex items-center justify-center flex-shrink-0">
+        <div className="w-14 h-14 bg-violet-200 rounded-sm flex items-center justify-center flex-shrink-0">
           <span className="material-symbols-outlined text-3xl text-violet-800">cloud_upload</span>
         </div>
         <div className="flex-1">

@@ -19,23 +19,24 @@
   --color-caleo-info:    #2A6FDB;
   --color-caleo-special: #7C5CBF;
 
-  /* VOSI border radius tokens */
-  --radius-caleo-card: 20px;
+  /* Caleo border radius tokens (2026-08-02: reduced to 2px MSME/Excel aesthetic —
+     "hampir persegi tapi rounded sedikit doang" per founder feedback). */
+  --radius-caleo-card: 2px;
   --radius-caleo-pill: 100px;
 
-  /* VOSI box shadow tokens */
+  /* Caleo box shadow tokens */
   --shadow-caleo-card: 0 16px 34px rgba(11,37,69,0.10);
   --shadow-caleo-hero: 0 26px 60px rgba(20,20,30,0.16);
-  
+
   --color-primary: #1e3d60;
   --color-secondary: #2d8a4e;
   --color-on-surface: #0b1c30;
   --color-background-soft: #f8f9ff;
-  
-  --radius-default: 1rem;
-  --radius-lg: 2rem;
-  --radius-xl: 3rem;
-  --radius-signature: 2rem;
+
+  --radius-default: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-signature: 2px;
 
   /* Sales channel brand colors (D17) — used as background for icon containers + chart segments + pill border */
   --color-channel-walkin:    #64748B;

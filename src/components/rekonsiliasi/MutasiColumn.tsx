@@ -62,7 +62,7 @@ export default function MutasiColumn({ lines, accounts, onFindPair, onClassify, 
             l.lane === 'RED' ? '#fecaca' :
             '#e2e8f0';
           return (
-            <div key={l.id} className="p-3 rounded-2xl border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
+            <div key={l.id} className="p-3 rounded-sm border mb-2" style={{ background: cardBg, borderColor: cardBorder }}>
               <div className="flex justify-between items-start">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

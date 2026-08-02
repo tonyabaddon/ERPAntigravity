@@ -378,7 +378,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
           <select
             value={`${period.year}-${period.month}`}
             onChange={(e) => { const [y, m] = e.target.value.split('-').map(Number); setPeriod({ year: y, month: m }); }}
-            className="bg-white border border-[#e5eeff] rounded-xl px-3 py-2 text-xs font-bold text-[#012749]"
+            className="bg-white border border-[#e5eeff] rounded-sm px-3 py-2 text-xs font-bold text-[#012749]"
           >
             {Array.from({ length: 6 }).map((_, i) => {
               const d = new Date(); d.setMonth(d.getMonth() - i);
@@ -391,12 +391,12 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
 
       {/* GL mode: COA account selector (shown when multiple BANK COA accounts exist) */}
       {glMode && glBankCoaAccounts.length > 1 && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
+        <div className="bg-indigo-50 border border-indigo-200 rounded-sm px-5 py-3 flex items-center gap-3">
           <span className="text-xs font-bold text-indigo-700">Akun COA Bank:</span>
           <select
             value={glCoaAccountId ?? ''}
             onChange={(e) => setGlCoaAccountId(e.target.value || null)}
-            className="text-xs border border-indigo-300 rounded-lg px-2 py-1 bg-white text-[#012749] font-bold"
+            className="text-xs border border-indigo-300 rounded-sm px-2 py-1 bg-white text-[#012749] font-bold"
           >
             {glBankCoaAccounts.map(a => (
               <option key={a.id} value={a.id}>{a.account_code} · {a.account_name}</option>

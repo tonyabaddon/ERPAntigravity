@@ -51,7 +51,7 @@ export default function InlineSupplierForm({
   }
 
   return (
-    <div className="rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/40 p-4">
+    <div className="rounded-sm border-2 border-dashed border-indigo-300 bg-indigo-50/40 p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
@@ -76,7 +76,7 @@ export default function InlineSupplierForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="PT Schneider Elektrik"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
           />
           {prefillName && (
             <p className="text-[10px] text-emerald-600 mt-0.5">✓ Diisi dari pencarian</p>
@@ -88,7 +88,7 @@ export default function InlineSupplierForm({
             value={contactName}
             onChange={(e) => setContactName(e.target.value)}
             placeholder="Budi Santoso"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
           />
         </div>
         <div>
@@ -97,7 +97,7 @@ export default function InlineSupplierForm({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="0812-xxxx-xxxx"
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white placeholder-gray-400"
           />
         </div>
         <div>
@@ -107,7 +107,7 @@ export default function InlineSupplierForm({
             min="0"
             value={termDays}
             onChange={(e) => setTermDays(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
           />
           <p className="text-[10px] text-gray-500 mt-0.5">0 = Cash. 30 = Net 30 hari.</p>
         </div>
@@ -117,7 +117,7 @@ export default function InlineSupplierForm({
           type="button"
           onClick={onCancel}
           disabled={saving}
-          className="text-sm font-semibold text-gray-600 px-3 py-1.5 rounded-lg hover:bg-white disabled:opacity-50"
+          className="text-sm font-semibold text-gray-600 px-3 py-1.5 rounded-sm hover:bg-white disabled:opacity-50"
         >
           Batal
         </button>
@@ -125,7 +125,7 @@ export default function InlineSupplierForm({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="text-sm font-semibold text-white bg-indigo-600 px-4 py-1.5 rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
+          className="text-sm font-semibold text-white bg-indigo-600 px-4 py-1.5 rounded-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
         >
           {saving ? 'Menyimpan...' : 'Simpan & Pakai'}
         </button>

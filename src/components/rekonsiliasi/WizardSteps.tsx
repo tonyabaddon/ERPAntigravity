@@ -29,7 +29,7 @@ export default function WizardSteps({ currentStep, counts, onJump }: Props) {
         <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">🧭 Langkah Rekonsiliasi</div>
         <div className="text-[10px] text-slate-500 font-bold">Step {currentStep} dari 6</div>
       </div>
-      <div className="flex rounded-2xl overflow-hidden border border-[#e5eeff]">
+      <div className="flex rounded-sm overflow-hidden border border-[#e5eeff]">
         {STEPS.map(s => {
           const cls = s.n < currentStep
             ? 'bg-emerald-50'

@@ -88,7 +88,7 @@ function TableSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="h-10 rounded-lg"
+          className="h-10 rounded-sm"
           style={{ background: C.surface }}
         />
       ))}
@@ -153,7 +153,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
       onClick={(e) => { if (e.target === e.currentTarget && !submitting) onClose(); }}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full font-caleo mx-4"
+        className="bg-white rounded-sm shadow-xl p-6 max-w-sm w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <h3
@@ -180,7 +180,7 @@ function DeleteConfirmDialog({ open, paymentId, onClose, onDeleted }: DeleteDial
             maxLength={500}
             rows={3}
             placeholder="Contoh: duplikat, kesalahan input, dll."
-            className="w-full border border-caleo-navy/30 rounded-lg px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
+            className="w-full border border-caleo-navy/30 rounded-sm px-3 py-2 text-[13px] text-caleo-navy placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 focus:ring-caleo-gold disabled:opacity-50"
             aria-label="Alasan penghapusan"
             autoFocus
           />
@@ -301,7 +301,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
   if (error !== null) {
     return (
       <div
-        className="border rounded-xl p-6 text-center"
+        className="border rounded-sm p-6 text-center"
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="pembayaran-tab-error"
       >
@@ -335,7 +335,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
           onSuccess={(result) => { handleModalSuccess(result); setRecordOpen(false); }}
         />
         <div
-          className="border rounded-xl p-10 text-center"
+          className="border rounded-sm p-10 text-center"
           style={{ borderColor: C.surface }}
           data-testid="pembayaran-tab-empty"
         >
@@ -398,7 +398,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
       <div className="space-y-4 font-caleo" data-testid="pembayaran-tab">
         {/* Coverage summary strip */}
         <div
-          className="border rounded-xl px-5 py-4 flex flex-wrap gap-5 items-center"
+          className="border rounded-sm px-5 py-4 flex flex-wrap gap-5 items-center"
           style={{ background: '#ffffff', borderColor: C.surface }}
           data-testid="coverage-summary"
         >
@@ -452,7 +452,7 @@ export function PembayaranTab({ tenantId, tenantSlug, row }: Props) {
 
         {/* Table */}
         <div
-          className="border rounded-xl overflow-x-auto"
+          className="border rounded-sm overflow-x-auto"
           style={{ borderColor: C.surface }}
         >
           <table

@@ -196,15 +196,15 @@ export default function PembelianDetailPage({
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3">
           <div className="w-5 h-5 bg-gray-200 rounded animate-pulse" />
-          <div className="bg-gray-100 p-2 rounded-lg w-9 h-9 animate-pulse" />
+          <div className="bg-gray-100 p-2 rounded-sm w-9 h-9 animate-pulse" />
           <div className="space-y-1">
             <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
             <div className="h-3 w-56 bg-gray-100 rounded animate-pulse" />
           </div>
         </div>
         <div className="max-w-4xl mx-auto p-6 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 h-24 animate-pulse" />
-          <div className="bg-white rounded-2xl border border-gray-200 h-64 animate-pulse" />
+          <div className="bg-white rounded-sm border border-gray-200 p-6 h-24 animate-pulse" />
+          <div className="bg-white rounded-sm border border-gray-200 h-64 animate-pulse" />
         </div>
       </div>
     );
@@ -228,7 +228,7 @@ export default function PembelianDetailPage({
           </button>
         </div>
         <div className="max-w-2xl mx-auto px-6 py-16">
-          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
+          <div className="bg-white rounded-sm border border-gray-200 p-10 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 text-gray-400 mb-4">
               <SearchX className="w-8 h-8" />
             </div>
@@ -242,7 +242,7 @@ export default function PembelianDetailPage({
                 // branch in App.tsx falls through to the normal list view.
                 window.location.href = '/?screen=pembelian';
               }}
-              className="mt-6 inline-flex items-center gap-2 bg-[#012749] text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-[#013865]"
+              className="mt-6 inline-flex items-center gap-2 bg-[#012749] text-white text-sm font-semibold px-5 py-2.5 rounded-sm hover:bg-[#013865]"
             >
               <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Pembelian
             </button>
@@ -290,7 +290,7 @@ export default function PembelianDetailPage({
           >
             <X className="w-5 h-5" />
           </button>
-          <div className="bg-indigo-100 p-2 rounded-lg">
+          <div className="bg-indigo-100 p-2 rounded-sm">
             <ShoppingCart className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
@@ -304,7 +304,7 @@ export default function PembelianDetailPage({
             <>
               <button
                 type="button" onClick={() => handleDownloadPdf('normal')} disabled={downloadingPdf}
-                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold text-indigo-700 px-3 py-1.5 rounded-sm border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50"
                 title="A4 warna untuk printer laser/inkjet"
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -312,7 +312,7 @@ export default function PembelianDetailPage({
               </button>
               <button
                 type="button" onClick={() => handleDownloadPdf('dot_matrix')} disabled={downloadingPdf}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 px-3 py-1.5 rounded-sm border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
                 title="Mono hitam-putih untuk Epson LX-310 / LX-2190 dan printer dot matrix lain"
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -320,25 +320,25 @@ export default function PembelianDetailPage({
               </button>
             </>
           )}
-          <button onClick={() => window.print()} className="text-xs text-gray-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center gap-1">
+          <button onClick={() => window.print()} className="text-xs text-gray-600 px-3 py-1.5 rounded-sm border border-gray-200 hover:bg-gray-50 flex items-center gap-1">
             <Printer className="w-3.5 h-3.5" /> Print
           </button>
           {po.status === 'DRAFT' && canEdit && (
-            <button onClick={() => setEditMode(true)} className="text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50">Edit</button>
+            <button onClick={() => setEditMode(true)} className="text-xs font-semibold text-gray-700 px-3 py-1.5 rounded-sm border border-gray-200 hover:bg-gray-50">Edit</button>
           )}
           {po.status === 'DRAFT' && (
-            <button onClick={handleMarkOrdered} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg">Tandai Dipesan</button>
+            <button onClick={handleMarkOrdered} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-sm">Tandai Dipesan</button>
           )}
           {po.status === 'DRAFT' && (
-            <button onClick={handleDelete} className="flex items-center gap-1 text-xs font-semibold text-rose-600 px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50">
+            <button onClick={handleDelete} className="flex items-center gap-1 text-xs font-semibold text-rose-600 px-3 py-1.5 rounded-sm border border-rose-200 hover:bg-rose-50">
               <Trash2 className="w-3.5 h-3.5" /> Hapus
             </button>
           )}
           {po.status === 'ORDERED' && (
-            <button onClick={() => setReceiveOpen(true)} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg">Terima Barang</button>
+            <button onClick={() => setReceiveOpen(true)} className="text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-sm">Terima Barang</button>
           )}
           {po.status === 'RECEIVED' && (
-            <button onClick={() => setPayOpen(true)} className="flex items-center gap-1 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg">
+            <button onClick={() => setPayOpen(true)} className="flex items-center gap-1 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-sm">
               <CheckCircle2 className="w-3.5 h-3.5" /> Tandai Lunas
             </button>
           )}
@@ -358,7 +358,7 @@ export default function PembelianDetailPage({
       {/* Body */}
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* PO meta */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 grid grid-cols-3 gap-6 text-sm">
+        <div className="bg-white rounded-sm border border-gray-200 p-6 grid grid-cols-3 gap-6 text-sm">
           <div>
             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Tanggal Pesan</p>
             <p className="font-semibold text-gray-800 mt-1">{formatDate(po.ordered_at)}</p>
@@ -374,7 +374,7 @@ export default function PembelianDetailPage({
         </div>
 
         {/* Items */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <p className="text-xs font-bold uppercase tracking-wide text-gray-500">Item Pembelian</p>
           </div>
@@ -422,7 +422,7 @@ export default function PembelianDetailPage({
 
         {/* Damaged goods */}
         {damagedItems.length > 0 && (
-          <div className="bg-white rounded-2xl border border-rose-200 overflow-hidden print:hidden">
+          <div className="bg-white rounded-sm border border-rose-200 overflow-hidden print:hidden">
             <div className="flex items-center gap-2 px-6 py-4 border-b border-rose-100">
               <p className="text-xs font-bold uppercase tracking-wide text-rose-500">Barang Rusak</p>
               <span className="bg-rose-100 text-rose-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">
@@ -445,14 +445,14 @@ export default function PembelianDetailPage({
                 <span className="col-span-4 text-gray-500 text-[12px]">{item.damage_notes ?? '—'}</span>
                 <div className="col-span-4 flex justify-center items-center gap-2">
                   {item.damage_status === 'REPLACED' ? (
-                    <span className="text-[12px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">Replaced</span>
+                    <span className="text-[12px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-sm">Replaced</span>
                   ) : (
                     <>
                       <select
                         value={item.damage_status}
                         disabled={updatingItemId === item.id}
                         onChange={e => handleDamageStatusChange(item, e.target.value)}
-                        className="text-[12px] border border-amber-200 rounded-lg px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus:outline-none disabled:opacity-50"
+                        className="text-[12px] border border-amber-200 rounded-sm px-2 py-1 bg-amber-50 text-amber-700 font-semibold focus:outline-none disabled:opacity-50"
                       >
                         {DAMAGE_STATUS_OPTIONS.map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -461,7 +461,7 @@ export default function PembelianDetailPage({
                       {item.damage_status === 'RETURNED' && (
                         <button
                           onClick={() => setReplaceItem(item)}
-                          className="text-[12px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-lg whitespace-nowrap"
+                          className="text-[12px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-sm whitespace-nowrap"
                         >
                           Terima Pengganti
                         </button>
@@ -476,7 +476,7 @@ export default function PembelianDetailPage({
 
         {/* Attachments */}
         {(po.invoice_url || po.payment_proof_url) && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4 print:hidden">
+          <div className="bg-white rounded-sm border border-gray-200 p-6 space-y-4 print:hidden">
             {po.invoice_url && (
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Invoice Supplier</div>

@@ -44,7 +44,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="px-5 py-3 bg-amber-500 text-white flex justify-between items-center">
           <div className="font-extrabold text-[14px]">💰 Tandai Lunas — {transaction.invoice_number}</div>
           <button onClick={onClose}><X className="w-4 h-4" /></button>
@@ -52,7 +52,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
 
         <div className="p-5 space-y-4">
           {/* Summary */}
-          <div className="bg-slate-50 rounded-lg p-3 text-[12px]">
+          <div className="bg-slate-50 rounded-sm p-3 text-[12px]">
             <div className="flex justify-between"><span>Pelanggan</span><strong>{transaction.customer_name}</strong></div>
             <div className="flex justify-between"><span>Total Tagihan</span><span>{formatRp(baseTotal)}</span></div>
             <div className="flex justify-between"><span>DP Diterima</span><span>{formatRp(transaction.dp_amount ?? 0)}</span></div>
@@ -77,7 +77,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
               value={ongkirAdjust || ''}
               onChange={e => setOngkirAdjust(Number(e.target.value || 0))}
               placeholder="0"
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[13px]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-sm px-3 py-2 text-[13px]"
             />
             <p className="text-[11px] text-slate-400 mt-1">Tambahan biaya kirim saat pelunasan (boleh negatif untuk koreksi).</p>
           </div>
@@ -86,7 +86,7 @@ export default function MarkLunasModal({ transaction, onClose, onMarked, showToa
             type="button"
             onClick={handleConfirm}
             disabled={saving}
-            className="w-full py-3 rounded-lg bg-[#2d8a4e] text-white font-extrabold text-[14px] flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-3 rounded-sm bg-[#2d8a4e] text-white font-extrabold text-[14px] flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <Check className="w-4 h-4" />
             {saving ? 'Memproses...' : 'Konfirmasi & Cetak Invoice Lunas'}

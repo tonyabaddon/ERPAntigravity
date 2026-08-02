@@ -148,7 +148,7 @@ export function UsersTab({ tenantId }: Props) {
   if (error !== null) {
     return (
       <div
-        className="border rounded-xl p-6 text-center"
+        className="border rounded-sm p-6 text-center"
         style={{ background: '#fff5f5', borderColor: '#fecaca' }}
         data-testid="users-tab-error"
       >
@@ -167,7 +167,7 @@ export function UsersTab({ tenantId }: Props) {
   if (users.length === 0) {
     return (
       <div
-        className="border rounded-xl p-8 text-center text-[13px]"
+        className="border rounded-sm p-8 text-center text-[13px]"
         style={{ borderColor: C.surface, color: C.muted }}
         data-testid="users-tab-empty"
       >
@@ -197,7 +197,7 @@ export function UsersTab({ tenantId }: Props) {
 
       {/* Table */}
       <div
-        className="border rounded-xl overflow-hidden"
+        className="border rounded-sm overflow-hidden"
         style={{ borderColor: C.surface }}
       >
         <table

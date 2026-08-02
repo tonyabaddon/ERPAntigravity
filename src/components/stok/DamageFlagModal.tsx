@@ -116,7 +116,7 @@ export function DamageFlagModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-lg bg-white shadow-lg" style={{ fontSize: '14px' }}>
+      <div className="w-full max-w-md rounded-sm bg-white shadow-lg" style={{ fontSize: '14px' }}>
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />

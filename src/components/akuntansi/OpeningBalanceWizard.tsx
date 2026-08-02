@@ -93,7 +93,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
     <div className="p-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+        <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
           <BookOpenCheck className="w-5 h-5" />
         </div>
         <div>
@@ -115,7 +115,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           return (
             <React.Fragment key={n}>
               <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[12px] font-bold transition-all ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-sm text-[12px] font-bold transition-all ${
                   isActive
                     ? 'bg-[#012749] text-white'
                     : isDone
@@ -144,9 +144,9 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
 
       {/* ── Step 1: Date ── */}
       {step === 1 && (
-        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-6">
+        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[#eff4ff] flex items-center justify-center text-[#012749]">
+            <div className="w-10 h-10 rounded-sm bg-[#eff4ff] flex items-center justify-center text-[#012749]">
               <CalendarDays className="w-5 h-5" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
             type="date"
             value={balanceDate}
             onChange={e => setBalanceDate(e.target.value)}
-            className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-full max-w-xs"
+            className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-full max-w-xs"
           />
           <p className="text-[11px] text-[#43474e] mt-2">
             Default: 31 Mei 2025 (sebelum kasir mulai Juni 2025).
@@ -185,7 +185,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
 
       {/* ── Step 2: Account Inputs ── */}
       {step === 2 && (
-        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-6">
+        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6">
           <p className="text-[13px] text-[#43474e] mb-4">
             Input saldo per akun per tanggal <strong>{balanceDate}</strong>.
             Akun yang tidak relevan biarkan 0.
@@ -219,7 +219,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
                       <NumberInput
                         value={a.amount}
                         onChange={n => updateAmount(i, n)}
-                        className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-36 text-right font-bold"
+                        className="border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 w-36 text-right font-bold"
                       />
                     </td>
                   </tr>
@@ -261,21 +261,21 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
 
       {/* ── Step 3: Balance Check ── */}
       {step === 3 && (
-        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-6">
+        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6">
           <p className="font-extrabold text-[14px] mb-4" style={{ color: 'var(--color-primary, #1e3d60)' }}>
             Balance Check
           </p>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between border border-[#c7d7f5] bg-white rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between border border-[#c7d7f5] bg-white rounded-sm px-4 py-3">
               <span className="text-[13px] font-semibold text-[#43474e]">Total Debit</span>
               <strong className="text-emerald-700 text-[14px]">Rp {fmt(totalDebit)}</strong>
             </div>
-            <div className="flex items-center justify-between border border-[#c7d7f5] bg-white rounded-xl px-4 py-3">
+            <div className="flex items-center justify-between border border-[#c7d7f5] bg-white rounded-sm px-4 py-3">
               <span className="text-[13px] font-semibold text-[#43474e]">Total Credit</span>
               <strong className="text-rose-700 text-[14px]">Rp {fmt(totalCredit)}</strong>
             </div>
-            <div className={`flex items-center justify-between border rounded-xl px-4 py-3 ${
+            <div className={`flex items-center justify-between border rounded-sm px-4 py-3 ${
               isBalanced
                 ? 'border-emerald-200 bg-emerald-50'
                 : 'border-amber-200 bg-amber-50'
@@ -288,7 +288,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           </div>
 
           {!isBalanced && (
-            <div className="mt-4 border border-amber-200 bg-amber-50 rounded-xl p-4 flex gap-3">
+            <div className="mt-4 border border-amber-200 bg-amber-50 rounded-sm p-4 flex gap-3">
               <TriangleAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-[12px] text-amber-900">
                 <p className="font-bold mb-1">Auto-plug Laba Ditahan</p>
@@ -306,7 +306,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
           )}
 
           {isBalanced && (
-            <div className="mt-4 border border-emerald-200 bg-emerald-50 rounded-xl p-4 flex gap-3">
+            <div className="mt-4 border border-emerald-200 bg-emerald-50 rounded-sm p-4 flex gap-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
               <div className="text-[12px] text-emerald-900">
                 <p className="font-bold">Saldo Seimbang</p>
@@ -334,12 +334,12 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
 
       {/* ── Step 4: Confirm + Submit ── */}
       {step === 4 && (
-        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl p-6">
+        <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm p-6">
           <p className="font-extrabold text-[14px] mb-4" style={{ color: 'var(--color-primary, #1e3d60)' }}>
             Confirm &amp; Post Opening Balance
           </p>
 
-          <div className="border border-[#c7d7f5] bg-white rounded-xl p-4 text-[13px] space-y-1.5 mb-4">
+          <div className="border border-[#c7d7f5] bg-white rounded-sm p-4 text-[13px] space-y-1.5 mb-4">
             <div className="flex justify-between">
               <span className="text-[#43474e]">Tanggal saldo awal</span>
               <strong className="text-[#012749]">{balanceDate}</strong>
@@ -358,7 +358,7 @@ export default function OpeningBalanceWizard({ onDone, showToast }: Props) {
             )}
           </div>
 
-          <div className="border border-amber-200 bg-amber-50 rounded-xl p-3 text-[12px] text-amber-900 mb-5">
+          <div className="border border-amber-200 bg-amber-50 rounded-sm p-3 text-[12px] text-amber-900 mb-5">
             <TriangleAlert className="w-4 h-4 inline mr-1.5 text-amber-600" />
             Setelah submit, opening balance tidak bisa di-edit. Salah input gunakan Jurnal Penyesuaian di Phase 2.
           </div>

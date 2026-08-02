@@ -133,7 +133,7 @@ export default function CashAccountPicker({
         )}
         <select
           disabled
-          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+          className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
         >
           <option>Memuat akun...</option>
         </select>
@@ -153,7 +153,7 @@ export default function CashAccountPicker({
         )}
         <select
           disabled
-          className="w-full border border-rose-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+          className="w-full border border-rose-300 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
         >
           <option>Gagal memuat akun</option>
         </select>
@@ -176,7 +176,7 @@ export default function CashAccountPicker({
             {required && <span className="text-rose-600"> *</span>}
           </label>
         )}
-        <div className="w-full border border-amber-300 bg-amber-50 rounded-xl px-3 py-2.5 text-[12px] text-amber-900 leading-snug">
+        <div className="w-full border border-amber-300 bg-amber-50 rounded-sm px-3 py-2.5 text-[12px] text-amber-900 leading-snug">
           Belum ada akun <strong>{expectedTypeLabel}</strong> aktif untuk tenant ini.
           <br />
           Tambah dulu di <strong>Sidebar → Kas &amp; Bank → + Akun Baru</strong>, lalu balik ke halaman ini.
@@ -198,7 +198,7 @@ export default function CashAccountPicker({
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value || null)}
         disabled={disabled}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+        className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
       >
         <option value="">{defaultPlaceholder}</option>
         {filteredAccounts.map((a) => (

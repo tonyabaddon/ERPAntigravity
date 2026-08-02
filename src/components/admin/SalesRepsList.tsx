@@ -13,7 +13,7 @@ import { extractErrorMessage } from '../../lib/extractErrorMessage';
 
 function SkeletonRows() {
   return (
-    <div className="border rounded-xl overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
+    <div className="border rounded-sm overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
@@ -102,7 +102,7 @@ export function SalesRepsList() {
         </div>
         <button
           onClick={() => setCreateOpen(true)}
-          className="font-semibold rounded-xl px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
+          className="font-semibold rounded-sm px-4 py-2 text-[13px] hover:opacity-90 transition-opacity"
           style={{ background: '#0B2545', color: '#ffffff' }}
           data-testid="tambah-salesrep-btn"
         >
@@ -113,14 +113,14 @@ export function SalesRepsList() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded-xl px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded-sm px-4 py-3 text-[13px] flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="salesreps-error"
         >
           <span>Gagal memuat sales rep: {error}</span>
           <button
             onClick={() => fetchSalesReps()}
-            className="ml-4 px-3 py-1 rounded-lg border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded-sm border font-medium text-[12px] hover:opacity-80"
             style={{ borderColor: '#991b1b', color: '#991b1b' }}
           >
             Coba lagi
@@ -133,14 +133,14 @@ export function SalesRepsList() {
         <SkeletonRows />
       ) : rows.length === 0 ? (
         <div
-          className="border rounded-xl px-4 py-8 text-center text-[13px]"
+          className="border rounded-sm px-4 py-8 text-center text-[13px]"
           style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
           data-testid="salesreps-empty"
         >
           Belum ada sales rep. Klik "Tambah Sales Rep" untuk menambahkan.
         </div>
       ) : (
-        <div className="border rounded-xl overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
+        <div className="border rounded-sm overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
           <table className="w-full border-collapse text-[13px]" aria-label="Daftar sales rep">
             <thead>
               <tr style={{ background: '#F8F9FA', borderBottom: '1px solid #ECEEF1' }}>
@@ -201,7 +201,7 @@ export function SalesRepsList() {
                     {rep.status === 'active' && (
                       <button
                         onClick={() => setDeactivateTarget(rep)}
-                        className="border rounded-lg px-3 py-1 text-[12px] font-medium hover:bg-red-50 transition-colors"
+                        className="border rounded-sm px-3 py-1 text-[12px] font-medium hover:bg-red-50 transition-colors"
                         style={{ borderColor: '#FCA5A5', color: '#DC2626' }}
                         data-testid={`nonaktifkan-btn-${rep.user_id}`}
                       >

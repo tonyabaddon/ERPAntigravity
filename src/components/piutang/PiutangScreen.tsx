@@ -150,7 +150,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl p-2.5" style={{ background: '#012749' }}>
+          <div className="rounded-sm p-2.5" style={{ background: '#012749' }}>
             <Wallet className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -182,7 +182,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       </div>
 
       {/* AR Aging chart */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
           <ChartPie className="w-4 h-4 text-gray-500" />
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">AR Aging — overdue saja</div>
@@ -224,7 +224,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       </div>
 
       {/* Invoice table */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
         ) : fetchError ? (
@@ -232,7 +232,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
             <p className="text-sm font-semibold text-red-600">{fetchError}</p>
             <button
               onClick={() => void reload()}
-              className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:opacity-90"
+              className="px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:opacity-90"
             >
               Coba Lagi
             </button>
@@ -322,7 +322,7 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                                 onClick={() => void handleSendWa(r.order.id)}
                                 disabled={sendingWa === r.order.id}
                                 title="Kirim WA reminder manual"
-                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <MessageSquare className="w-3 h-3" />
                                 {sendingWa === r.order.id ? '...' : 'WA'}
                               </button>
@@ -330,25 +330,25 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
                               <button
                                 disabled
                                 title="WA reminder tersedia di paket Premium"
-                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
+                                className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-gray-50 text-gray-400 border border-gray-200 inline-flex items-center gap-1 cursor-not-allowed">
                                 <MessageSquare className="w-3 h-3" /> WA
                               </button>
                             )}
                             <button
                               onClick={() => setPayTarget(r)}
-                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
+                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                               ✓ Catat Bayar
                             </button>
                             <button
                               onClick={() => setWriteOffTarget(r)}
-                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
+                              className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100">
                               Tulis-off
                             </button>
                           </>
                         ) : r.order.status === 'INVOICE_WRITTEN_OFF' && isOwner ? (
                           <button
                             onClick={() => setRevertTarget(r)}
-                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
+                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100">
                             Batal Tulis-off
                           </button>
                         ) : null}
@@ -414,8 +414,8 @@ function ReminderBadge({ info }: { info: ReminderInfo }) {
 // ── KpiCard (local to PiutangScreen — matches existing pembelian KpiCard shape) ──
 function KpiCard(props: { icon: React.ReactNode; iconBg: string; iconColor: string; label: string; value: string; sub: string; alarming?: boolean }) {
   return (
-    <div className={`rounded-3xl border p-4 shadow-sm ${props.alarming ? 'bg-rose-50/50 border-rose-100' : 'bg-white border-gray-200'}`}>
-      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${props.iconBg} ${props.iconColor} mb-3`}>
+    <div className={`rounded-sm border p-4 shadow-sm ${props.alarming ? 'bg-rose-50/50 border-rose-100' : 'bg-white border-gray-200'}`}>
+      <div className={`inline-flex items-center justify-center w-8 h-8 rounded-sm ${props.iconBg} ${props.iconColor} mb-3`}>
         {props.icon}
       </div>
       <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{props.label}</div>
@@ -433,7 +433,7 @@ function AgingBar({ segments, onSelect }: { segments: ReturnType<typeof computeA
   }
   return (
     <div className="space-y-2">
-      <div className="flex h-6 rounded-lg overflow-hidden cursor-pointer" onClick={onSelect}>
+      <div className="flex h-6 rounded-sm overflow-hidden cursor-pointer" onClick={onSelect}>
         {segments.map(s => {
           const pct = total > 0 ? (s.amount / total) * 100 : 0;
           if (pct === 0) return null;
@@ -535,13 +535,13 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold text-gray-900">Catat Bayar — Invoice {row.order.id.slice(0, 8)}</h2>
           <button onClick={onClose}><X className="w-4 h-4 text-gray-400" /></button>
         </div>
         <div className="px-5 py-4 space-y-3">
-          <div className="bg-gray-50 rounded-lg px-3 py-3 text-[13px] space-y-1">
+          <div className="bg-gray-50 rounded-sm px-3 py-3 text-[13px] space-y-1">
             <div className="flex justify-between"><span className="text-gray-500">Customer</span><span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div className="flex justify-between"><span className="text-gray-500">Total Invoice</span><span className="font-semibold">{formatIDR(row.order.total)}</span></div>
             {(row.order.piutang_paid_amount ?? 0) > 0 && (
@@ -564,7 +564,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 step={1}
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 rounded-lg border text-[13px] font-mono focus:outline-none focus:ring-2 ${
+                className={`w-full pl-9 pr-3 py-2 rounded-sm border text-[13px] font-mono focus:outline-none focus:ring-2 ${
                   amountValid
                     ? 'border-slate-300 focus:ring-emerald-500'
                     : 'border-rose-300 focus:ring-rose-500 bg-rose-50/40'
@@ -599,7 +599,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1">Upload Bukti Bayar (opsional, max 5 MB)</label>
             {proofFile ? (
-              <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+              <div className="border border-gray-200 rounded-sm p-3 space-y-2">
                 {previewUrl ? (
                   <img src={previewUrl} alt={proofFile.name} className="max-h-32 w-full object-contain rounded" />
                 ) : (
@@ -611,7 +611,7 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg px-4 py-4 text-xs text-gray-400 hover:border-indigo-300 cursor-pointer">
+              <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-sm px-4 py-4 text-xs text-gray-400 hover:border-indigo-300 cursor-pointer">
                 <Upload className="w-6 h-6 mb-1 text-gray-300" />
                 Klik untuk upload bukti
                 <span className="text-[10px] mt-0.5">PDF / JPG / PNG</span>
@@ -621,9 +621,9 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
-          <button onClick={onClose} disabled={saving} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50">Batal</button>
+          <button onClick={onClose} disabled={saving} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50">Batal</button>
           <button onClick={handleConfirm} disabled={saving || !amountValid}
-            className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50">
+            className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-sm hover:bg-green-700 disabled:opacity-50">
             {phase === 'uploading'
               ? 'Mengupload bukti...'
               : phase === 'verifying'

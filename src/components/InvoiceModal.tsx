@@ -56,7 +56,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="invoice-print-root"
-          className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+          className="bg-white rounded-sm overflow-hidden shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
@@ -68,7 +68,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2d8a4e] text-white text-xs font-bold rounded-lg hover:bg-green-700"
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2d8a4e] text-white text-xs font-bold rounded-sm hover:bg-green-700"
               >
                 <Download className="w-3.5 h-3.5" /> Download PDF
               </button>
@@ -78,7 +78,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
 
           {/* Scrollable invoice body */}
           <div className="overflow-y-auto bg-gray-100 p-4 flex-1">
-            <div className="bg-white rounded-lg shadow-sm p-7 font-serif text-sm">
+            <div className="bg-white rounded-sm shadow-sm p-7 font-serif text-sm">
               {loading ? (
                 <p className="text-center text-gray-400 py-8">Memuat...</p>
               ) : (
@@ -161,7 +161,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   </div>
 
                   {/* Bank info */}
-                  <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 mb-3 font-sans">
+                  <div className="bg-blue-50 border border-blue-100 rounded-sm px-4 py-3 mb-3 font-sans">
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Informasi Pembayaran</div>
                       <span className="print:hidden text-[9px] bg-indigo-100 text-indigo-700 rounded px-1 py-0.5 font-bold">⚙ config</span>
@@ -181,7 +181,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
                   </div>
 
                   {/* No-refund notice */}
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2.5 mb-4 font-sans text-xs text-orange-800">
+                  <div className="bg-orange-50 border border-orange-200 rounded-sm px-4 py-2.5 mb-4 font-sans text-xs text-orange-800">
                     <strong>Catatan Penting:</strong> Barang yang telah dibeli tidak dapat dikembalikan atau direfund dalam kondisi apapun. Pastikan pesanan sudah sesuai sebelum melakukan pembayaran.
                   </div>
 
@@ -197,8 +197,8 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
 
           {/* Modal footer */}
           <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 print:hidden">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-200">Tutup</button>
-            <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-[#2d8a4e] text-white text-xs font-bold rounded-lg hover:bg-green-700">
+            <button onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-sm hover:bg-gray-200">Tutup</button>
+            <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-[#2d8a4e] text-white text-xs font-bold rounded-sm hover:bg-green-700">
               <Download className="w-3.5 h-3.5" /> Download PDF
             </button>
           </div>

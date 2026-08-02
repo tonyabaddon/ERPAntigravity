@@ -47,7 +47,7 @@ export default function ChannelSelector({ value, onChange }: ChannelSelectorProp
               key={code}
               type="button"
               onClick={() => onChange(code)}
-              className={`flex flex-col items-center gap-1 p-3 rounded-lg transition ${
+              className={`flex flex-col items-center gap-1 p-3 rounded-sm transition ${
                 isActive
                   ? 'bg-[#012749]/5 border-2 border-[#012749] text-[#012749]'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'

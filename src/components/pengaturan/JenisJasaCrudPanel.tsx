@@ -61,10 +61,10 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
   return (
     <div className="space-y-3">
       {items.map(s => (
-        <div key={s.id} className="border rounded-xl p-4 flex items-center justify-between gap-4"
+        <div key={s.id} className="border rounded-sm p-4 flex items-center justify-between gap-4"
              style={{ borderColor: s.color_hex ?? '#cbd5e1' }}>
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+            <div className="w-10 h-10 rounded-sm flex items-center justify-center text-white font-bold"
                  style={{ backgroundColor: s.color_hex ?? '#012749' }}>
               {s.name.split(' ').map(w => w[0]).slice(0, 2).join('')}
             </div>
@@ -96,7 +96,7 @@ export default function JenisJasaCrudPanel({ showToast }: Props) {
       ))}
       <button
         onClick={() => setShowAdd(true)}
-        className="w-full border-2 border-dashed border-slate-300 rounded-xl py-4 text-sm font-bold text-slate-500 hover:border-[#012749] hover:text-[#012749] hover:bg-slate-50">
+        className="w-full border-2 border-dashed border-slate-300 rounded-sm py-4 text-sm font-bold text-slate-500 hover:border-[#012749] hover:text-[#012749] hover:bg-slate-50">
         + Tambah Jenis Jasa Baru
       </button>
 
@@ -130,31 +130,31 @@ function JasaEditModal({ item, onClose, onSave, colorOptions }: ModalProps) {
   });
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 max-w-xl w-full" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm p-6 max-w-xl w-full" onClick={e => e.stopPropagation()}>
         <h3 className="font-bold text-base text-[#012749] mb-4">{item ? 'Edit' : 'Tambah'} Jenis Jasa</h3>
         <div className="space-y-3">
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nama Jasa</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" />
+                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm" />
           </div>
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Kode Internal</label>
             <input value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
-                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono bg-slate-50"
+                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm font-mono bg-slate-50"
                    placeholder="custom_panel" />
           </div>
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Penjelasan</label>
             <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
-                      rows={2} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg" />
+                      rows={2} className="w-full px-3 py-2 text-sm border border-slate-300 rounded-sm" />
           </div>
           <div>
             <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Model Harga</label>
             <div className="grid grid-cols-4 gap-2">
               {(['LUMP_SUM', 'PER_HOUR', 'PER_METER', 'PER_UNIT'] as const).map(m => (
                 <button key={m} onClick={() => setForm({ ...form, pricing_model: m })}
-                        className={`px-3 py-2 text-xs font-bold rounded-lg ${
+                        className={`px-3 py-2 text-xs font-bold rounded-sm ${
                           form.pricing_model === m
                             ? 'border-2 border-[#012749] bg-[#012749]/5 text-[#012749]'
                             : 'border border-slate-300 text-slate-500 hover:border-slate-400'
@@ -184,7 +184,7 @@ function JasaEditModal({ item, onClose, onSave, colorOptions }: ModalProps) {
         </div>
         <div className="mt-5 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700">Batal</button>
-          <button onClick={() => onSave(form)} className="px-4 py-2 text-xs font-bold text-white bg-[#012749] rounded-lg">Simpan</button>
+          <button onClick={() => onSave(form)} className="px-4 py-2 text-xs font-bold text-white bg-[#012749] rounded-sm">Simpan</button>
         </div>
       </div>
     </div>

@@ -88,7 +88,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full font-caleo mx-4"
+        className="bg-white rounded-sm shadow-xl p-6 max-w-md w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with gold focal accent */}
@@ -153,7 +153,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
               disabled={submitting}
               rows={4}
               placeholder="Contoh: karyawan mengundurkan diri per 10 Juli 2026"
-              className="w-full border rounded-lg px-3 py-2 text-[13px] placeholder:opacity-40 resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded-sm px-3 py-2 text-[13px] placeholder:opacity-40 resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Alasan nonaktifkan"
             />

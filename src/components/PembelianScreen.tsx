@@ -308,7 +308,7 @@ export default function PembelianScreen({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-3 flex-shrink-0">
-        <div className="bg-indigo-100 p-2 rounded-lg">
+        <div className="bg-indigo-100 p-2 rounded-sm">
           <ShoppingCart className="w-5 h-5 text-indigo-600" />
         </div>
         <div>
@@ -809,12 +809,12 @@ function OrdersTab({
           <div className="flex items-center gap-2 flex-1">
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              className="flex-1 max-w-sm text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="flex-1 max-w-sm text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
               placeholder="Cari no. PO atau supplier..."
             />
             <select
               value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="text-sm border border-gray-200 rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
             >
               <option value="">Semua Status</option>
               <option value="DRAFT">Draft</option>
@@ -825,13 +825,13 @@ function OrdersTab({
           </div>
           <button
             onClick={onCreate}
-            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
+            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-sm hover:bg-indigo-700"
           >
             <Plus className="w-4 h-4" /> Buat PO Baru
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
           <div className="grid grid-cols-8 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
             <span className="col-span-1">No. PO</span>
             <span className="col-span-1">Supplier</span>
@@ -985,18 +985,18 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
           <div className="relative">
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
               placeholder="Cari supplier..."
             />
           </div>
           <button
             onClick={() => setModalSupplier(null)}
-            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700"
+            className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-sm hover:bg-indigo-700"
           >
             Tambah Supplier
           </button>
@@ -1053,21 +1053,21 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
   const invalid = !!from && !!to && from > to;
   const canApply = !!from && !!to && !invalid;
   return (
-    <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-2xl p-5 w-[360px]">
+    <div className="absolute top-full mt-2 right-0 z-50 bg-white border border-gray-200 rounded-sm shadow-2xl p-5 w-[360px]">
       <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Rentang Tanggal Custom</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-semibold text-gray-500 block mb-1">Dari</label>
           <input
             type="date" value={from} onChange={e => setFrom(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
           />
         </div>
         <div>
           <label className="text-xs font-semibold text-gray-500 block mb-1">Sampai</label>
           <input
             type="date" value={to} onChange={e => setTo(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+            className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
           />
         </div>
       </div>
@@ -1075,11 +1075,11 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
         <p className="text-xs text-rose-600 mt-2">Tanggal 'Sampai' harus setelah 'Dari'.</p>
       )}
       <div className="flex justify-end gap-2 mt-4">
-        <button onClick={onCancel} className="text-sm font-semibold text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50">Batal</button>
+        <button onClick={onCancel} className="text-sm font-semibold text-gray-500 px-3 py-1.5 rounded-sm hover:bg-gray-50">Batal</button>
         <button
           onClick={() => canApply && onApply(from, to)}
           disabled={!canApply}
-          className="text-sm font-semibold text-white bg-[#012749] hover:bg-[#013865] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 rounded-lg"
+          className="text-sm font-semibold text-white bg-[#012749] hover:bg-[#013865] disabled:opacity-40 disabled:cursor-not-allowed px-4 py-1.5 rounded-sm"
         >
           Terapkan
         </button>

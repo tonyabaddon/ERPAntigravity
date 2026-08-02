@@ -1321,7 +1321,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 type="button"
                 onClick={onKembali}
                 disabled={currentStep === 1}
-                className="px-4 py-2 text-sm font-semibold rounded-lg text-slate-700 border border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-semibold rounded-sm text-slate-700 border border-slate-300 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 ← Kembali
               </button>
@@ -1330,7 +1330,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   type="button"
                   onClick={onLanjut}
                   disabled={currentStep === 1 ? !canAdvanceStep1 : !canAdvanceStep2}
-                  className="px-5 py-2 text-sm font-bold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2 text-sm font-bold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === 1 ? 'Lanjut ke Pesanan →' : 'Lanjut ke Pembayaran →'}
                 </button>
@@ -1343,7 +1343,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       {/* Item #4: discount approval modal — reason entry */}
       {reasonPromptOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white shadow-lg" style={{ fontSize: '14px' }}>
+          <div className="w-full max-w-md rounded-sm bg-white shadow-lg" style={{ fontSize: '14px' }}>
             <div className="border-b border-slate-200 px-5 py-3">
               <h2 className="font-semibold text-slate-800">⚠ Diskon butuh approval owner</h2>
             </div>
@@ -1400,7 +1400,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
 
       {/* Item #4: waiting-for-owner state banner */}
       {pendingApprovalId !== null && !reasonPromptOpen && (
-        <div className="fixed bottom-4 right-4 z-40 max-w-sm rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-lg" style={{ fontSize: '14px' }}>
+        <div className="fixed bottom-4 right-4 z-40 max-w-sm rounded-sm border border-blue-200 bg-blue-50 p-4 shadow-lg" style={{ fontSize: '14px' }}>
           <div className="flex items-start gap-3">
             <div className="text-2xl">⏳</div>
             <div className="flex-1">

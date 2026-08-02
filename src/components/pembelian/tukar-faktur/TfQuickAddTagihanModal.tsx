@@ -52,7 +52,7 @@ export default function TfQuickAddTagihanModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl border border-gray-200">
+      <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl border border-gray-200">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h3 className="text-base font-extrabold" style={{ color: '#012749' }}>
@@ -77,7 +77,7 @@ export default function TfQuickAddTagihanModal({
                 value={supplierInv}
                 onChange={e => setSupplierInv(e.target.value)}
                 placeholder="Misal: INV-3501"
-                className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500"
+                className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
               />
             </div>
             <div>
@@ -88,12 +88,12 @@ export default function TfQuickAddTagihanModal({
                 type="date"
                 value={purchaseDate}
                 onChange={e => setPurchaseDate(e.target.value)}
-                className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500"
+                className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-[11px] text-sky-900 flex gap-2">
+          <div className="p-3 rounded-sm bg-sky-50 border border-sky-200 text-[11px] text-sky-900 flex gap-2">
             <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             <span>
               <b>Quick-add tanpa Pesanan.</b> Tagihan ini dicatat{' '}
@@ -111,7 +111,7 @@ export default function TfQuickAddTagihanModal({
               onChange={e => setTotal(e.target.value)}
               inputMode="decimal"
               placeholder="0"
-              className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300 font-bold text-right focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 font-bold text-right focus:outline-none focus:border-indigo-500"
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function TfQuickAddTagihanModal({
               type="date"
               value={dueAt}
               onChange={e => setDueAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Auto-fill Net {defaultPaymentTermDays} hari dari supplier. JT TF (di form luar) akan
@@ -135,13 +135,13 @@ export default function TfQuickAddTagihanModal({
           <div className="flex gap-2">
             <button
               onClick={onCancel}
-              className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50"
+              className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
             >
               Batal
             </button>
             <button
               onClick={handleSave}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-white px-4 py-2 rounded-lg"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-white px-4 py-2 rounded-sm"
               style={{ background: '#012749' }}
             >
               <Check className="w-4 h-4" /> Simpan & Add ke TF

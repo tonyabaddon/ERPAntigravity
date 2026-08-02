@@ -26,9 +26,9 @@ export default function KpiCard({
     ? 'bg-rose-50/50 border-rose-100 shadow-rose-50/50'
     : 'bg-white border-[#e5eeff] shadow-primary/5';
   return (
-    <div className={`rounded-3xl p-6 border shadow-lg hover:translate-y-[-4px] transition-all duration-300 ${cardCls}`}>
+    <div className={`rounded-sm p-6 border shadow-lg hover:translate-y-[-4px] transition-all duration-300 ${cardCls}`}>
       <div className="flex justify-between items-start mb-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg} ${iconColor}`}>
+        <div className={`w-12 h-12 rounded-sm flex items-center justify-center ${iconBg} ${iconColor}`}>
           {icon}
         </div>
         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}`}>{badge}</span>

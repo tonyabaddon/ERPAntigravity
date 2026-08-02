@@ -43,7 +43,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm max-w-2xl w-full p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[10px] font-extrabold text-emerald-700 uppercase tracking-widest">Cari Produk via Foto</p>
@@ -54,7 +54,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           </button>
         </div>
         {coldStart && (
-          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 mb-4">
+          <div className="bg-amber-50 border border-amber-300 rounded-sm p-4 mb-4">
             <div className="flex items-start gap-3">
               <span className="material-symbols-outlined text-amber-800 animate-spin">progress_activity</span>
               <div>
@@ -65,14 +65,14 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           </div>
         )}
         {isSearching && !coldStart && (
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4 text-center text-[12px] text-[#012749] font-bold">Mencari…</div>
+          <div className="bg-blue-50 border border-blue-200 rounded-sm p-3 mb-4 text-center text-[12px] text-[#012749] font-bold">Mencari…</div>
         )}
         <div className="grid grid-cols-2 gap-3 mb-3">
           <button
             onClick={() => camRef.current?.click()}
             disabled={isSearching}
-            className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-2xl p-5 text-left disabled:opacity-50">
-            <div className="w-12 h-12 bg-emerald-200 rounded-2xl flex items-center justify-center mb-3">
+            className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-sm p-5 text-left disabled:opacity-50">
+            <div className="w-12 h-12 bg-emerald-200 rounded-sm flex items-center justify-center mb-3">
               <span className="material-symbols-outlined text-2xl text-emerald-800">photo_camera</span>
             </div>
             <p className="text-[10px] font-extrabold uppercase text-emerald-700">Opsi 1</p>
@@ -83,8 +83,8 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           <button
             onClick={() => fileRef.current?.click()}
             disabled={isSearching}
-            className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-2xl p-5 text-left disabled:opacity-50">
-            <div className="w-12 h-12 bg-blue-200 rounded-2xl flex items-center justify-center mb-3">
+            className="bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-sm p-5 text-left disabled:opacity-50">
+            <div className="w-12 h-12 bg-blue-200 rounded-sm flex items-center justify-center mb-3">
               <span className="material-symbols-outlined text-2xl text-blue-800">folder_open</span>
             </div>
             <p className="text-[10px] font-extrabold uppercase text-blue-700">Opsi 2</p>
@@ -97,7 +97,7 @@ export default function CariByFotoModal({ isOpen, onClose, onResults, showToast 
           onFileSelected={runSearch}
           onError={msg => showToast(msg, 'warning')}
         />
-        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900">
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-sm p-3 text-[11px] text-amber-900">
           💡 Foto produk dari angle depan / label paling jelas memberi hasil paling akurat.
         </div>
       </div>

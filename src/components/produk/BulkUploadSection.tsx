@@ -238,7 +238,7 @@ export default function BulkUploadSection({
     <section className="bg-white rounded-[2.5rem] p-8 border border-[#e5eeff] shadow-xl hover:shadow-2xl transition-all duration-300">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#1e3d60] flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded-sm bg-blue-50 text-[#1e3d60] flex items-center justify-center shrink-0">
             <Download className="w-7 h-7" />
           </div>
           <div>
@@ -256,7 +256,7 @@ export default function BulkUploadSection({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         <div
           onClick={handleDownloadTemplate}
-          className="bg-[#eff4ff] rounded-3xl p-8 border border-transparent hover:border-[#1e3d60]/20 hover:bg-blue-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
+          className="bg-[#eff4ff] rounded-sm p-8 border border-transparent hover:border-[#1e3d60]/20 hover:bg-blue-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
         >
           <div className="w-16 h-16 rounded-full bg-[#1e3d60] text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
             <Download className="w-6 h-6" />
@@ -267,7 +267,7 @@ export default function BulkUploadSection({
 
         <div
           onClick={handleExportStock}
-          className="bg-violet-50 rounded-3xl p-8 border border-transparent hover:border-violet-300 hover:bg-violet-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
+          className="bg-violet-50 rounded-sm p-8 border border-transparent hover:border-violet-300 hover:bg-violet-100/40 transition-all cursor-pointer group flex flex-col items-center justify-center text-center select-none"
         >
           <div className="w-16 h-16 rounded-full bg-violet-700 text-white flex items-center justify-center mb-4 shadow-lg group-hover:scale-105 transition-transform duration-300">
             <Download className="w-6 h-6" />
@@ -277,7 +277,7 @@ export default function BulkUploadSection({
         </div>
 
         <label
-          className="rounded-3xl p-8 flex flex-col items-center justify-center text-center group cursor-pointer transition-all hover:bg-emerald-500/5 select-none"
+          className="rounded-sm p-8 flex flex-col items-center justify-center text-center group cursor-pointer transition-all hover:bg-emerald-500/5 select-none"
           style={{ backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='32' ry='32' stroke='%232d8a4e4d' stroke-width='2' stroke-dasharray='10%2c 10' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")` }}
         >
           <input type="file" accept=".csv" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
@@ -290,7 +290,7 @@ export default function BulkUploadSection({
       </div>
 
       {uploadProgress !== null && (
-        <div className="mt-8 space-y-2 animate-fadeIn bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+        <div className="mt-8 space-y-2 animate-fadeIn bg-slate-50/50 p-4 rounded-sm border border-slate-100">
           <div className="flex justify-between items-center select-none">
             <span className="text-xs font-bold text-[#1e3d60] flex items-center gap-1.5">
               {uploadProgress < 100 ? (

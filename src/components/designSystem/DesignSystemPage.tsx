@@ -232,7 +232,7 @@ function RadiusShadowSection({ tokens }: { tokens: Token[] }) {
         ))}
       </div>
       <div className="ds-note">
-        Additional in-use radii (de-facto, not tokenized): <code>rounded-lg</code> (8px), <code>rounded-xl</code> (12px), <code>rounded-2xl</code> (16px), <code>rounded-3xl</code> (24px), <code>rounded-full</code>. Most cards use 24px (<code>rounded-3xl</code>). Decision: promote these to tokens or keep Tailwind classes as canonical? Recommend keep classes — 4 radius levels is manageable without token names.
+        Additional in-use radii (de-facto, not tokenized): <code>rounded-sm</code> (8px), <code>rounded-sm</code> (12px), <code>rounded-sm</code> (16px), <code>rounded-sm</code> (24px), <code>rounded-full</code>. Most cards use 24px (<code>rounded-sm</code>). Decision: promote these to tokens or keep Tailwind classes as canonical? Recommend keep classes — 4 radius levels is manageable without token names.
       </div>
     </section>
   );
@@ -439,8 +439,8 @@ function AntiPatternsSection() {
             <td>Consistency + gender-aware fallback logic centralized.</td>
           </tr>
           <tr>
-            <td><span className="ds-anti-bad">rounded-md, rounded-sm, rounded-2xl mixed within one card</span></td>
-            <td><span className="ds-anti-good">One radius per surface hierarchy — parent 24px (rounded-3xl), children 12px (rounded-xl), pills full</span></td>
+            <td><span className="ds-anti-bad">rounded-sm, rounded-sm, rounded-sm mixed within one card</span></td>
+            <td><span className="ds-anti-good">One radius per surface hierarchy — parent 24px (rounded-sm), children 12px (rounded-sm), pills full</span></td>
             <td>Consistency + reduced cognitive load.</td>
           </tr>
           <tr>

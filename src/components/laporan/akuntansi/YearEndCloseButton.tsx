@@ -169,7 +169,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
           onClick={() => { if (!submitting) setModalOpen(false); }}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+            className="bg-white rounded-sm shadow-2xl w-full max-w-md overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Modal header */}
@@ -201,7 +201,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
               )}
 
               {previewError && (
-                <div className="rounded-xl px-4 py-3 text-[13px] text-rose-700 bg-rose-50 border border-rose-200">
+                <div className="rounded-sm px-4 py-3 text-[13px] text-rose-700 bg-rose-50 border border-rose-200">
                   Gagal memuat preview: {previewError}
                 </div>
               )}
@@ -209,7 +209,7 @@ export default function YearEndCloseButton({ showToast }: YearEndCloseButtonProp
               {preview && !previewLoading && (
                 <>
                   {/* Preview block */}
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 overflow-hidden">
+                  <div className="rounded-sm border border-amber-200 bg-amber-50 overflow-hidden">
                     <div className="px-4 py-2 border-b border-amber-200">
                       <p className="text-[12px] font-bold uppercase tracking-wide text-amber-900">
                         Preview Tahun {fiscalYear}

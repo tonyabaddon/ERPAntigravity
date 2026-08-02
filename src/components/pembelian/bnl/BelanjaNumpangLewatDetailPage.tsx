@@ -70,25 +70,25 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
         <div className="flex gap-2">
           {pi.status === 'BELUM_LUNAS' && !pi.voided_at && (
             <>
-              <button onClick={() => setShowPay(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-green-600 px-3 py-2 rounded-lg hover:bg-green-700">
+              <button onClick={() => setShowPay(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-green-600 px-3 py-2 rounded-sm hover:bg-green-700">
                 <CheckCircle className="w-4 h-4" /> Tandai Lunas
               </button>
-              <button onClick={() => onEdit(pi)} className="text-sm font-semibold text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Edit</button>
+              <button onClick={() => onEdit(pi)} className="text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Edit</button>
             </>
           )}
           {pi.status === 'LUNAS' && !pi.voided_at && (
-            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50">
+            <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50">
               <XOctagon className="w-4 h-4" /> Void
             </button>
           )}
-          <button onClick={handlePrintPdf} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+          <button onClick={handlePrintPdf} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">
             <Printer className="w-4 h-4" /> Print
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <LinkIcon className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Order Terkait</div>
@@ -99,7 +99,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
             <button onClick={() => onOrderClick(pi.order_id!)} className="text-[11px] text-indigo-600 font-semibold hover:underline mt-2">Lihat Order →</button>
           )}
         </div>
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
@@ -108,7 +108,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
           <div className="text-xs text-gray-500 mt-1">Net {pi.supplier?.payment_term_days ?? 0} hari</div>
           {pi.supplier_invoice_number && <div className="text-[11px] text-gray-600 mt-1">Faktur: <strong>{pi.supplier_invoice_number}</strong></div>}
         </div>
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-amber-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-amber-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Jatuh Tempo</div>
@@ -119,7 +119,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
       </div>
 
       {(pi.supplier_invoice_photo_url || pi.payment_proof_url) && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Lampiran</div>
           <div className="flex gap-4 flex-wrap">
             {pi.supplier_invoice_photo_url && (
@@ -152,7 +152,7 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
         </div>
       )}
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Barang yang Dibeli</div>
         <table className="w-full">
           <thead className="border-b border-gray-200">
@@ -190,15 +190,15 @@ export default function BelanjaNumpangLewatDetailPage({ piNumber, showToast, onB
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-gray-50 rounded-3xl border border-gray-200 p-4">
+        <div className="bg-gray-50 rounded-sm border border-gray-200 p-4">
           <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Dibayar Ke Grosir</div>
           <div className="text-xl font-extrabold mt-1" style={{ color: '#012749' }}>{formatIDR(pi.total)}</div>
         </div>
-        <div className="bg-indigo-50 rounded-3xl border border-indigo-200 p-4">
+        <div className="bg-indigo-50 rounded-sm border border-indigo-200 p-4">
           <div className="text-[11px] text-indigo-600 uppercase font-semibold">Pendapatan dari Order</div>
           <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(totalRev)}</div>
         </div>
-        <div className="bg-green-50 rounded-3xl border border-green-200 p-4">
+        <div className="bg-green-50 rounded-sm border border-green-200 p-4">
           <div className="text-[11px] text-green-700 uppercase font-semibold">Profit ({margin.toFixed(1)}%)</div>
           <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
         </div>

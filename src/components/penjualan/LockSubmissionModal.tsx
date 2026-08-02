@@ -240,7 +240,7 @@ export default function LockSubmissionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center px-4 py-8 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-6 space-y-4">
+      <div className="bg-white rounded-sm shadow-2xl max-w-3xl w-full p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="font-extrabold text-lg text-[#012749]">
@@ -257,13 +257,13 @@ export default function LockSubmissionModal({
 
         <div className="space-y-4">
           {drafts.map(d => (
-            <div key={d.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50/40">
+            <div key={d.id} className="border border-slate-200 rounded-sm p-4 bg-slate-50/40">
               <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3 items-start mb-3">
                 <div>
                   <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Deskripsi</div>
                   <input
                     type="text"
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px]"
+                    className="w-full bg-white border border-slate-200 rounded-sm px-3 py-2 text-[13px]"
                     value={d.description}
                     onChange={e => updateDraft(d.id, { description: e.target.value })}
                   />
@@ -273,14 +273,14 @@ export default function LockSubmissionModal({
                   <input
                     type="number"
                     min={0}
-                    className="w-32 bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px]"
+                    className="w-32 bg-white border border-slate-200 rounded-sm px-3 py-2 text-[13px]"
                     value={d.finalPrice || ''}
                     onChange={e => updateDraft(d.id, { finalPrice: Number(e.target.value || 0) })}
                   />
                 </div>
                 <div>
                   <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1">Mode</div>
-                  <div className="inline-flex rounded-lg bg-white border border-slate-200 p-0.5">
+                  <div className="inline-flex rounded-sm bg-white border border-slate-200 p-0.5">
                     <button
                       type="button"
                       onClick={() => updateDraft(d.id, { trackingMode: 'detail' })}
@@ -300,7 +300,7 @@ export default function LockSubmissionModal({
               </div>
 
               {d.trackingMode === 'detail' ? (
-                <div className="bg-white border border-slate-200 rounded-lg p-3 space-y-2">
+                <div className="bg-white border border-slate-200 rounded-sm p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-extrabold text-slate-600 uppercase tracking-widest">Komponen</span>
                     <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export default function LockSubmissionModal({
                   )}
 
                   {d.components.map(c => (
-                    <div key={c.key} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-[12px] bg-slate-50 rounded-lg px-2 py-1.5">
+                    <div key={c.key} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center text-[12px] bg-slate-50 rounded-sm px-2 py-1.5">
                       <div className="min-w-0">
                         <div className="font-bold truncate">{c.sku} — {c.name}</div>
                         <div className="text-[10px] text-slate-500">FIFO {formatIDR(c.fifo_cost)}</div>
@@ -351,12 +351,12 @@ export default function LockSubmissionModal({
                     <input
                       type="text"
                       placeholder="Cari SKU / nama komponen..."
-                      className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[12px]"
+                      className="w-full bg-white border border-slate-200 rounded-sm px-3 py-2 text-[12px]"
                       value={skuQuery[d.id] ?? ''}
                       onChange={e => setSkuQuery(prev => ({ ...prev, [d.id]: e.target.value }))}
                     />
                     {(skuQuery[d.id]?.length ?? 0) > 0 && (
-                      <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-sm shadow-lg max-h-48 overflow-y-auto">
                         {filteredOptions(d.id).length === 0 ? (
                           <div className="px-3 py-2 text-[12px] text-slate-400 italic">Tidak ada SKU cocok.</div>
                         ) : (
@@ -377,12 +377,12 @@ export default function LockSubmissionModal({
                   </div>
                 </div>
               ) : (
-                <div className="bg-white border border-slate-200 rounded-lg p-3">
+                <div className="bg-white border border-slate-200 rounded-sm p-3">
                   <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">Lump Sum HPP</div>
                   <input
                     type="number"
                     min={0}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[13px]"
+                    className="w-full bg-white border border-slate-200 rounded-sm px-3 py-2 text-[13px]"
                     value={d.lumpSumHpp || ''}
                     onChange={e => updateDraft(d.id, { lumpSumHpp: Number(e.target.value || 0) })}
                   />
@@ -396,14 +396,14 @@ export default function LockSubmissionModal({
         </div>
 
         <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-[13px] font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-sm text-[13px] font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50">
             Batal
           </button>
           <button
             type="button"
             onClick={submit}
             disabled={!canSubmit || submitting}
-            className="px-4 py-2 rounded-lg text-[13px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-sm text-[13px] font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting
               ? 'Mengirim…'

@@ -102,7 +102,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
       </div>
 
       {showCrossCheck && (
-        <div className="border border-amber-200 bg-amber-50 rounded-lg px-4 py-3 text-[12px] text-amber-800 space-y-1">
+        <div className="border border-amber-200 bg-amber-50 rounded-sm px-4 py-3 text-[12px] text-amber-800 space-y-1">
           <div className="font-semibold">Perhatian: Saldo wizard berbeda dari data Kas & Bank saat ini</div>
           <div>Total wizard: <strong>{formatIDR(wizardTotal)}</strong> · Total saat ini: <strong>{formatIDR(dbTotal)}</strong></div>
           <button
@@ -115,7 +115,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
         </div>
       )}
 
-      <div className="border border-slate-200 rounded-xl overflow-hidden">
+      <div className="border border-slate-200 rounded-sm overflow-hidden">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-left">
@@ -142,7 +142,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       value={acc.opening_balance}
                       onChange={(n) => updateAccount(acc.cash_account_id, { opening_balance: n })}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                       placeholder="0"
                     />
                   </td>
@@ -151,7 +151,7 @@ export default function Step1KasBank({ data, onChange, showToast }: Props) {
                       type="date"
                       value={acc.as_of}
                       onChange={(e) => updateAccount(acc.cash_account_id, { as_of: e.target.value })}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
+                      className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#012749]/30"
                     />
                   </td>
                 </tr>

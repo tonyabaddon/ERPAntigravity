@@ -267,7 +267,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
     <>
       {!isSupabaseConfigured ? (
         <div className="space-y-6 animate-fadeIn">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-yellow-800 text-sm font-medium">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-6 text-yellow-800 text-sm font-medium">
             Supabase belum dikonfigurasi. Tambahkan VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY ke file .env untuk menggunakan fitur ini.
           </div>
         </div>
@@ -281,12 +281,12 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           {/* Logo Toko — used by invoice PDFs and on-screen invoices.
               Persisted on store_settings.logo_url (the table the invoice
               renderer reads). Uploaded to Storage bucket 'branding'. */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-sm border border-gray-200 p-6">
             <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest pl-1 block mb-2">
               Logo Toko (untuk invoice PDF)
             </label>
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center overflow-hidden">
+              <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-sm flex items-center justify-center overflow-hidden">
                 {logoUrl ? (
                   <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
@@ -305,7 +305,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={logoUploading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-lg hover:bg-[#01365e] disabled:opacity-60"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#012749] text-white text-xs font-bold rounded-sm hover:bg-[#01365e] disabled:opacity-60"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   {logoUploading ? 'Mengunggah...' : (logoUrl ? 'Ganti Logo' : 'Upload Logo')}
@@ -314,7 +314,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                   <button
                     type="button"
                     onClick={handleLogoClear}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-50"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-200 text-rose-600 text-xs font-bold rounded-sm hover:bg-rose-50"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Hapus Logo
@@ -329,7 +329,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           </div>
 
           {/* WA recipients card */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-gray-600" />
@@ -338,7 +338,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               {!showAddForm && (
                 <button
                   onClick={() => setShowAddForm(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-sm font-semibold rounded-sm hover:bg-emerald-700"
                 >
                   <Plus className="w-4 h-4" /> Tambah Penerima
                 </button>
@@ -373,7 +373,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                             onClick={() => handleTestSend(r.id)}
                             disabled={testSendingId === r.id}
                             title="Kirim pesan WA tes ke nomor ini"
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50"
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-sm hover:bg-emerald-100 disabled:opacity-50"
                           >
                             <Smartphone className="w-3.5 h-3.5" />
                             {testSendingId === r.id ? '...' : 'Kirim tes'}
@@ -402,13 +402,13 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                 )}
 
                 {showAddForm && (
-                  <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-3">
+                  <div className="border border-gray-200 rounded-sm p-4 bg-gray-50 space-y-3">
                     <p className="text-sm font-semibold text-gray-700">Tambah Penerima Baru</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Nama</label>
                         <input
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full border rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Nama admin"
                           value={addForm.name}
                           onChange={e => setAddForm(prev => ({ ...prev, name: e.target.value }))}
@@ -417,7 +417,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Role</label>
                         <select
-                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          className="w-full border rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                           value={addForm.role}
                           onChange={e => setAddForm(prev => ({ ...prev, role: e.target.value as 'admin' | 'owner' }))}
                         >
@@ -429,7 +429,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor WA</label>
                       <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="085x, +628x, atau 628x..."
                         value={addForm.wa_number}
                         onChange={e => setAddForm(prev => ({ ...prev, wa_number: e.target.value }))}
@@ -439,7 +439,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <button
                         onClick={handleAddRecipient}
                         disabled={addSaving}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-sm hover:bg-emerald-700 disabled:opacity-50"
                       >
                         <Save className="w-4 h-4" />
                         {addSaving ? 'Menyimpan...' : 'Simpan'}
@@ -447,7 +447,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <button
                         onClick={() => { setShowAddForm(false); setAddForm({ role: 'admin', name: '', wa_number: '' }); }}
                         disabled={addSaving}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200 disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-sm hover:bg-gray-200 disabled:opacity-50"
                       >
                         <X className="w-4 h-4" />
                         Batal
@@ -464,7 +464,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
           </div>
 
           {/* Modul Stok Opname — witness configurability (Task 14) */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-sm border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-lg font-bold text-gray-800">Modul Stok Opname</h2>
             </div>
@@ -515,7 +515,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex items-center gap-3 px-2">
-        <div className="w-10 h-10 bg-[#012749] rounded-xl flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 bg-[#012749] rounded-sm flex items-center justify-center shrink-0">
           <Settings className="w-5 h-5 text-emerald-400" />
         </div>
         <div>
@@ -597,7 +597,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-templates')}
-              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">📋 Semua Template Notifikasi</div>
@@ -609,7 +609,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('piutang-wa-reminder')}
-              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">💬 Template WA Reminder Piutang</div>
@@ -621,7 +621,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-cron')}
-              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">🕗 Notifikasi Terjadwal</div>
@@ -633,7 +633,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('notification-prefs')}
-              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">🌙 Preferensi Notifikasi</div>
@@ -645,7 +645,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             <button
               type="button"
               onClick={() => props.onNavigate('customer-feedback')}
-              className="w-full flex items-center justify-between bg-white rounded-xl border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
+              className="w-full flex items-center justify-between bg-white rounded-sm border border-gray-200 px-5 py-4 hover:border-indigo-300 hover:shadow-sm transition-all text-left"
             >
               <div>
                 <div className="text-sm font-bold text-gray-800">⭐ Feedback Customer</div>
@@ -721,14 +721,14 @@ function OwnerPinCard({ showToast }: { showToast: (msg: string, type?: 'success'
 
   if (hasPin === null) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500">
+      <div className="bg-white rounded-sm border border-gray-200 p-6 text-sm text-gray-500">
         Memuat status PIN…
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+    <div className="bg-white rounded-sm border border-gray-200 p-6 space-y-4">
       <div className="flex items-center gap-2">
         <h2 className="text-lg font-bold text-gray-800">PIN Persetujuan Owner</h2>
         <span className={`text-xs px-2 py-0.5 rounded-full border ${

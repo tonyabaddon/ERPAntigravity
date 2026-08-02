@@ -34,10 +34,10 @@ export default function CostingMethodPanel({ showToast }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-[#e5eeff] p-6 shadow-sm">
+    <div className="bg-white rounded-sm border border-[#e5eeff] p-6 shadow-sm">
       <h3 className="text-base font-extrabold text-[#012749] mb-3">Metode Costing Toko</h3>
       <div className="space-y-2 mb-4">
-        <label className="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+        <label className="flex items-start gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50 cursor-pointer">
           <input
             type="radio"
             name="costing"
@@ -59,7 +59,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
             </p>
           </div>
         </label>
-        <label className="flex items-start gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+        <label className="flex items-start gap-3 p-3 rounded-sm border border-slate-200 hover:bg-slate-50 cursor-pointer">
           <input
             type="radio"
             name="costing"
@@ -77,7 +77,7 @@ export default function CostingMethodPanel({ showToast }: Props) {
           </div>
         </label>
       </div>
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-[11px] text-amber-900">
+      <div className="bg-amber-50 border border-amber-200 rounded-sm p-3 mb-4 text-[11px] text-amber-900">
         Mengubah metode akan menghitung ulang HPP semua transaksi setelah tanggal perubahan. Laporan profit
         historis sebelum tanggal ini tidak berubah.
       </div>

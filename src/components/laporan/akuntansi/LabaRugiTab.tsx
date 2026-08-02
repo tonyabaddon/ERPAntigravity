@@ -241,7 +241,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-3xl border border-[#c7d7f5] bg-white overflow-hidden">
+    <div className="rounded-sm border border-[#c7d7f5] bg-white overflow-hidden">
       {/* ── Hero header ── */}
       <div
         className="p-6 text-white text-center"
@@ -485,7 +485,7 @@ export default function LabaRugiTab({ showToast }: LabaRugiTabProps): React.Reac
 
             {/* ── Info banner ── */}
             <div
-              className="mt-6 rounded-xl p-3 flex items-start gap-2 text-[11px] text-amber-900 border"
+              className="mt-6 rounded-sm p-3 flex items-start gap-2 text-[11px] text-amber-900 border"
               style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
             >
               <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />

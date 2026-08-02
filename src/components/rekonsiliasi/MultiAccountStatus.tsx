@@ -24,14 +24,14 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
           <div className="text-[11px] font-black uppercase tracking-widest text-[#012749]">🏦 Rekening Aktif</div>
           <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{accounts.length} rekening terdaftar</div>
         </div>
-        <button onClick={onAddAccount} className="bg-slate-50 border border-[#e5eeff] text-[#012749] px-3 py-1.5 rounded-lg text-[10px] font-extrabold">+ Tambah</button>
+        <button onClick={onAddAccount} className="bg-slate-50 border border-[#e5eeff] text-[#012749] px-3 py-1.5 rounded-sm text-[10px] font-extrabold">+ Tambah</button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {accounts.map(a => {
           const c = accountColor(a.bank_code);
           const uploaded = uploadedAccountIds.has(a.id);
           return (
-            <div key={a.id} className="rounded-2xl p-3 border" style={{ background: c.bg + '80', borderColor: c.border }}>
+            <div key={a.id} className="rounded-sm p-3 border" style={{ background: c.bg + '80', borderColor: c.border }}>
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: c.bg, color: c.text }}>
                   {a.bank_code}

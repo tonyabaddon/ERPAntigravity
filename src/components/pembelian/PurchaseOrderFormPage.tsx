@@ -166,12 +166,12 @@ export default function PurchaseOrderFormPage({
   return (
     <div className="space-y-5">
       {/* Sub-page header */}
-      <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-white border border-gray-200 rounded-sm px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleBack}
-            className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-indigo-600 -ml-2 px-2 py-1 rounded-lg hover:bg-gray-50"
+            className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-indigo-600 -ml-2 px-2 py-1 rounded-sm hover:bg-gray-50"
           >
             <ArrowLeft className="w-4 h-4" />
             Kembali
@@ -189,7 +189,7 @@ export default function PurchaseOrderFormPage({
       </div>
 
       {/* Section: Detail PO */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
+      <section className="bg-white rounded-sm border border-gray-200 p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-4 bg-indigo-500 rounded-full" />
           <h3 className="text-sm font-bold text-gray-900">Detail PO</h3>
@@ -223,7 +223,7 @@ export default function PurchaseOrderFormPage({
                 type="date"
                 value={expectedReceiveDate}
                 onChange={(e) => { setExpectedReceiveDate(e.target.value); markDirty(); }}
-                className={`w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 ${
+                className={`w-full text-sm border rounded-sm px-3 py-2.5 focus:outline-none focus:ring-2 ${
                   isPastDate(expectedReceiveDate)
                     ? 'border-amber-300 bg-amber-50/30 focus:ring-amber-300'
                     : expectedReceiveDate
@@ -244,14 +244,14 @@ export default function PurchaseOrderFormPage({
               value={notes}
               onChange={(e) => { setNotes(e.target.value); markDirty(); }}
               placeholder="(opsional)"
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder-gray-400"
+              className="w-full text-sm border border-gray-200 rounded-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder-gray-400"
             />
           </div>
         </div>
       </section>
 
       {/* Section: Items */}
-      <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <section className="bg-white rounded-sm border border-gray-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-indigo-500 rounded-full" />
@@ -291,7 +291,7 @@ export default function PurchaseOrderFormPage({
       </section>
 
       {/* Section: Totals */}
-      <section className="bg-white rounded-xl border border-gray-200 p-5">
+      <section className="bg-white rounded-sm border border-gray-200 p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-4 bg-indigo-500 rounded-full" />
           <h3 className="text-sm font-bold text-gray-900">Ringkasan Biaya</h3>
@@ -330,7 +330,7 @@ export default function PurchaseOrderFormPage({
       </section>
 
       {/* Sticky footer actions */}
-      <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-between sticky bottom-0 shadow-lg shadow-gray-200/40">
+      <div className="bg-white border border-gray-200 rounded-sm px-6 py-4 flex items-center justify-between sticky bottom-0 shadow-lg shadow-gray-200/40">
         <p className="text-xs text-gray-400">
           Total <span className="font-bold text-gray-700">{items.length} item</span>
           {' · '}
@@ -348,7 +348,7 @@ export default function PurchaseOrderFormPage({
             type="button"
             onClick={() => handleSave('DRAFT')}
             disabled={saving}
-            className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
+            className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-sm border border-gray-300 hover:bg-gray-100 disabled:opacity-50"
           >
             Simpan Draft
           </button>
@@ -356,7 +356,7 @@ export default function PurchaseOrderFormPage({
             type="button"
             onClick={() => handleSave('ORDERED')}
             disabled={saving}
-            className="text-sm font-semibold text-white bg-indigo-600 px-5 py-2 rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
+            className="text-sm font-semibold text-white bg-indigo-600 px-5 py-2 rounded-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
           >
             {saving ? 'Menyimpan...' : 'Simpan & Pesan'}
           </button>

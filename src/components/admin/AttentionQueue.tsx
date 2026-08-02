@@ -172,7 +172,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   if (loading) {
     return (
       <div
-        className="border rounded-xl overflow-hidden bg-white"
+        className="border rounded-sm overflow-hidden bg-white"
         style={{ borderColor: '#E2E8F0' }}
         data-testid="attention-queue-loading"
       >
@@ -193,7 +193,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   if (error) {
     return (
       <div
-        className="border rounded-xl px-4 py-3 text-[13px] flex justify-between items-center"
+        className="border rounded-sm px-4 py-3 text-[13px] flex justify-between items-center"
         style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
         data-testid="attention-queue-error"
       >
@@ -213,7 +213,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   if (rows.length === 0) {
     return (
       <div
-        className="border rounded-xl px-4 py-3 text-[13px]"
+        className="border rounded-sm px-4 py-3 text-[13px]"
         style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
         data-testid="attention-queue-empty"
       >
@@ -223,7 +223,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
   }
 
   return (
-    <div className="border rounded-xl overflow-hidden bg-white" style={{ borderColor: '#fcd34d' }} data-testid="attention-queue-live">
+    <div className="border rounded-sm overflow-hidden bg-white" style={{ borderColor: '#fcd34d' }} data-testid="attention-queue-live">
       <div
         className="px-4 py-2 text-[12px] font-bold uppercase tracking-widest"
         style={{
@@ -279,7 +279,7 @@ export function AttentionQueue({ withinDays = 45 }: Props) {
                 ? `/admin/tenants/${t.slug}?tab=pembayaran`
                 : `/admin/tenants/${t.slug}?tab=ringkasan`
             }
-            className="text-[12px] px-3 py-1 rounded-lg border font-medium hover:bg-caleo-navy hover:text-white transition shrink-0"
+            className="text-[12px] px-3 py-1 rounded-sm border font-medium hover:bg-caleo-navy hover:text-white transition shrink-0"
             style={{ borderColor: '#0B2545', color: '#0B2545' }}
             data-testid={`attention-link-${t.slug}`}
           >

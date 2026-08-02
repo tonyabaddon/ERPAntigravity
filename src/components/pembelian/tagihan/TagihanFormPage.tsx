@@ -121,7 +121,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
       <td className="py-3">
         <NumberInput allowDecimal={false} value={it.qty}
           onChange={handleQtyChange}
-          className={`w-full text-sm text-center py-1 px-2 rounded-lg border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
+          className={`w-full text-sm text-center py-1 px-2 rounded-sm border ${overReceive ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
         <div className="text-[10px] text-gray-400 text-center mt-0.5">Sisa: {remaining}</div>
       </td>
       <td className="py-3">
@@ -133,7 +133,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
         <NumberInput
           value={modulOn ? (it.master_unit_cost - Math.round((it.discount_amount_rp ?? 0) / Math.max(1, it.qty))) : it.unit_cost}
           onChange={handleUnitCostChange}
-          className="w-full text-sm text-right py-1 px-2 rounded-lg border border-gray-200" />
+          className="w-full text-sm text-right py-1 px-2 rounded-sm border border-gray-200" />
       </td>
       {modulOn && (
         <td className="py-3">
@@ -148,7 +148,7 @@ function TagihanItemRow({ it, idx, warehouses, modulOn, onChange }: TagihanItemR
       <td className="py-3">
         <select value={it.warehouse_id}
           onChange={e => onChange(idx, { warehouse_id: e.target.value })}
-          className="w-full text-xs py-1 px-2 rounded-lg border border-gray-200">
+          className="w-full text-xs py-1 px-2 rounded-sm border border-gray-200">
           {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
         </select>
       </td>
@@ -350,10 +350,10 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
       <p className="text-xs text-gray-500">Step 2 dari alur Pembelian Stok: catat barang datang &amp; faktur supplier. Stok otomatis bertambah.</p>
 
       {/* 1. Pesanan picker */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">1. Pilih Pesanan</div>
         {pesanan ? (
-          <div className="border-2 border-indigo-200 bg-indigo-50/40 rounded-lg p-4 flex items-start justify-between">
+          <div className="border-2 border-indigo-200 bg-indigo-50/40 rounded-sm p-4 flex items-start justify-between">
             <div>
               <div className="font-bold text-sm text-indigo-800">{pesanan.pesanan_number}</div>
               <div className="text-xs text-gray-700 mt-1">{pesanan.supplier?.name} • Net {pesanan.supplier?.payment_term_days ?? 0} hari</div>
@@ -369,9 +369,9 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
           <div className="relative">
             <input value={pesananQuery} onChange={e => setPesananQuery(e.target.value)}
               placeholder="Cari Pesanan (PSN-... atau nama supplier) — hanya yang status ORDERED"
-              className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-indigo-500" />
+              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500" />
             {pesananResults.length > 0 && (
-              <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-lg border border-gray-200 shadow-lg">
+              <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
                 {pesananResults.map(p => (
                   <button key={p.id} type="button"
                     onClick={async () => {
@@ -395,7 +395,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
 
       {/* 2. Barang yang Diterima */}
       {pesanan && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Barang yang Diterima</div>
             <div className="text-[11px] text-gray-500">Isi qty Diterima per item (boleh 0 kalau belum datang)</div>
@@ -458,23 +458,23 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
 
       {/* 3. Faktur & Pembayaran */}
       {pesanan && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Faktur &amp; Pembayaran</div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Tanggal Faktur</label>
               <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)}
-                className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
+                className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Nomor Faktur Supplier</label>
               <input value={supplierInvNum} onChange={e => setSupplierInvNum(e.target.value)}
                 placeholder="INV-0123 / nota"
-                className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
+                className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
             </div>
             <div className="col-span-2">
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Foto Faktur (Recommended)</label>
-              <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer text-xs text-gray-500 hover:border-indigo-300">
+              <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-sm cursor-pointer text-xs text-gray-500 hover:border-indigo-300">
                 <Upload className="w-4 h-4" />
                 {supplierInvoicePhoto ? supplierInvoicePhoto.name : 'Klik atau drag foto faktur (JPG/PNG/PDF, max 5MB)'}
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setSupplierInvoicePhoto(e.target.files?.[0] ?? null)} />
@@ -483,11 +483,11 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
             <div>
               <div className="text-xs font-semibold text-gray-600 mb-2">Status Bayar</div>
               <div className="grid grid-cols-2 gap-2">
-                <label className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer ${initialStatus === 'LUNAS' ? 'border-green-500 bg-green-50/50' : 'border-gray-200 bg-white'}`}>
+                <label className={`flex items-center gap-2 p-3 rounded-sm border-2 cursor-pointer ${initialStatus === 'LUNAS' ? 'border-green-500 bg-green-50/50' : 'border-gray-200 bg-white'}`}>
                   <input type="radio" checked={initialStatus === 'LUNAS'} onChange={() => setInitialStatus('LUNAS')} className="accent-green-600" />
                   <span className="text-xs font-bold">Bayar Sekarang</span>
                 </label>
-                <label className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer ${initialStatus === 'BELUM_LUNAS' ? 'border-amber-500 bg-amber-50/50' : 'border-gray-200 bg-white'}`}>
+                <label className={`flex items-center gap-2 p-3 rounded-sm border-2 cursor-pointer ${initialStatus === 'BELUM_LUNAS' ? 'border-amber-500 bg-amber-50/50' : 'border-gray-200 bg-white'}`}>
                   <input type="radio" checked={initialStatus === 'BELUM_LUNAS'} onChange={() => setInitialStatus('BELUM_LUNAS')} className="accent-amber-600" />
                   <span className="text-xs font-bold">Bayar Nanti</span>
                 </label>
@@ -498,17 +498,17 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
               <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
             </div>
             {initialStatus === 'BELUM_LUNAS' && (
-              <div className="col-span-2 p-3 rounded-lg border border-fuchsia-200 bg-fuchsia-50/40">
+              <div className="col-span-2 p-3 rounded-sm border border-fuchsia-200 bg-fuchsia-50/40">
                 <label className="text-xs font-semibold text-fuchsia-700 block mb-1.5">Jatuh Tempo Bayar *</label>
                 <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)}
-                  className="w-full text-sm py-2 px-3 rounded-lg border border-fuchsia-200" />
+                  className="w-full text-sm py-2 px-3 rounded-sm border border-fuchsia-200" />
                 <div className="text-[11px] text-fuchsia-700 mt-2">Auto-fill dari supplier Net {pesanan.supplier?.payment_term_days ?? 0} hari.</div>
               </div>
             )}
             {initialStatus === 'LUNAS' && (
               <div className="col-span-2">
                 <label className="text-xs font-semibold text-gray-600 block mb-1.5">Bukti Bayar (opsional)</label>
-                <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer text-xs text-gray-400 hover:border-indigo-300">
+                <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-sm cursor-pointer text-xs text-gray-400 hover:border-indigo-300">
                   <Upload className="w-4 h-4" />
                   {paymentProofFile ? paymentProofFile.name : 'Klik untuk upload'}
                   <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setPaymentProofFile(e.target.files?.[0] ?? null)} />
@@ -519,16 +519,16 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Catatan (opsional)</label>
               <input value={notes} onChange={e => setNotes(e.target.value)}
                 placeholder="Misal: ada barang rusak X qty, retur ke supplier"
-                className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
+                className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
             </div>
           </div>
         </div>
       )}
 
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Batal</button>
+        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
         <button onClick={handleSubmit} disabled={saving || !pesanan}
-          className="text-sm font-semibold text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
           style={{ background: '#012749' }}>
           {saving ? 'Menyimpan...' : 'Simpan Tagihan'}
         </button>

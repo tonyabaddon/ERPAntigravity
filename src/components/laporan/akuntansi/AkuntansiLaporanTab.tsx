@@ -33,7 +33,7 @@ export default function AkuntansiLaporanTab(props: AkuntansiLaporanTabProps): Re
       )}
 
       {/* Sub-tab navigation row with Year-End Close button */}
-      <div className="card p-4 flex items-center gap-2 overflow-x-auto bg-white rounded-3xl shadow-sm border border-[#c7d7f5]">
+      <div className="card p-4 flex items-center gap-2 overflow-x-auto bg-white rounded-sm shadow-sm border border-[#c7d7f5]">
         {subtabs.map(t => {
           const IconComponent = t.icon;
           return (

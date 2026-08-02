@@ -203,7 +203,7 @@ export default function OwnerDrawingModal({
         if (e.target === e.currentTarget && !saving) onClose();
       }}
     >
-      <div className="bg-white rounded-3xl max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
         <div
@@ -211,7 +211,7 @@ export default function OwnerDrawingModal({
           style={{ background: '#f3f4f6' }}
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-300 text-gray-700">
+            <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 bg-gray-300 text-gray-700">
               <ArrowDown className="w-5 h-5" />
             </div>
             <div>
@@ -223,7 +223,7 @@ export default function OwnerDrawingModal({
           </div>
           <button
             onClick={() => !saving && onClose()}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/60"
+            className="text-gray-500 hover:text-gray-700 p-1 rounded-sm hover:bg-white/60"
             disabled={saving}
             aria-label="Tutup"
           >
@@ -236,7 +236,7 @@ export default function OwnerDrawingModal({
 
           {/* Fetch error */}
           {fetchError && (
-            <div className="border border-rose-200 bg-rose-50 rounded-xl p-3 text-[12px] text-rose-700">
+            <div className="border border-rose-200 bg-rose-50 rounded-sm p-3 text-[12px] text-rose-700">
               ⚠ {fetchError}
             </div>
           )}
@@ -246,7 +246,7 @@ export default function OwnerDrawingModal({
             <label className="block font-bold mb-1" style={{ color: '#1e3d60' }}>
               Dari akun bisnis *
             </label>
-            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-xl px-3 py-2 text-[12px]">
+            <div className="border border-[#c7d7f5] bg-[#fafbff] rounded-sm px-3 py-2 text-[12px]">
               {accountLabel(sourceAccount)}
               <span className="ml-2 font-mono text-gray-500 text-[11px]">
                 Rp {new Intl.NumberFormat('id-ID').format(sourceAccount.current_balance)}
@@ -263,7 +263,7 @@ export default function OwnerDrawingModal({
               value={selectedPersonalId}
               onChange={(e) => setSelectedPersonalId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 bg-white disabled:opacity-60"
             >
               <option value="">— Tidak track destination —</option>
               {personalAccounts.map((a) => (
@@ -291,7 +291,7 @@ export default function OwnerDrawingModal({
               onBlur={handleAmountBlur}
               placeholder="Rp 0"
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
             />
           </div>
 
@@ -305,7 +305,7 @@ export default function OwnerDrawingModal({
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60"
             />
             {isFuture && (
               <p className="text-[11px] text-amber-700 mt-1">
@@ -325,7 +325,7 @@ export default function OwnerDrawingModal({
               disabled={saving}
               rows={2}
               placeholder="Mis. bayar SPP anak"
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60 resize-none"
+              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#012749]/30 disabled:opacity-60 resize-none"
             />
           </div>
 

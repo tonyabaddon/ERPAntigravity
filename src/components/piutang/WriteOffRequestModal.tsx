@@ -52,7 +52,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+        className="w-full max-w-md bg-white rounded-sm shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-gray-200">
@@ -77,7 +77,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Jelaskan kenapa invoice ini tidak bisa ditagih lagi (min 10 karakter)..."
-              className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full text-sm border border-gray-300 rounded-sm px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className={`text-[11px] mt-1 ${reasonOk ? 'text-gray-500' : 'text-red-600'}`}>
               {trimmed.length} / {MIN_REASON_LEN} karakter minimum
@@ -90,7 +90,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-semibold rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
             Batal
           </button>
@@ -98,7 +98,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
             type="button"
             onClick={onSubmit}
             disabled={!canSubmit}
-            className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded-sm bg-[#012749] text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? 'Mengajukan...' : 'Ajukan Tulis-off'}
           </button>

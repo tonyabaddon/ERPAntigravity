@@ -59,7 +59,7 @@ export default function PriceChangeRequestModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg max-w-md w-full p-4 space-y-4"
+        className="bg-white rounded-sm max-w-md w-full p-4 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

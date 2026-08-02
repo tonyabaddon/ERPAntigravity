@@ -93,11 +93,11 @@ export default function PesananDetailPage({
           {isDraft && (
             <>
               <button onClick={handleMarkOrdered} disabled={marking}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-blue-600 px-3 py-2 rounded-sm hover:bg-blue-700 disabled:opacity-50">
                 <Send className="w-4 h-4" /> {marking ? 'Memproses...' : 'Mark Ordered'}
               </button>
-              <button onClick={() => onEdit(pesanan)} className="text-sm font-semibold text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Edit</button>
-              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50">
+              <button onClick={() => onEdit(pesanan)} className="text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Edit</button>
+              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50">
                 <XOctagon className="w-4 h-4" /> Void
               </button>
             </>
@@ -105,23 +105,23 @@ export default function PesananDetailPage({
           {isOrdered && (
             <>
               <button onClick={() => onCreateTagihan(pesanan)}
-                className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded-lg"
+                className="inline-flex items-center gap-2 text-sm font-bold text-white px-3 py-2 rounded-sm"
                 style={{ background: '#012749' }}>
                 <Package className="w-4 h-4" /> Buat Tagihan
               </button>
-              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50">
+              <button onClick={() => setShowVoid(true)} className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 px-3 py-2 rounded-sm border border-red-200 hover:bg-red-50">
                 <XOctagon className="w-4 h-4" /> Void
               </button>
             </>
           )}
-          <button onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+          <button onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">
             <Printer className="w-4 h-4" /> Print
           </button>
         </div>
       </div>
 
       {isVoided && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 border border-red-200 rounded-sm p-4 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
           <div>
             <div className="text-sm font-bold text-red-800">Pesanan ini sudah di-void</div>
@@ -132,7 +132,7 @@ export default function PesananDetailPage({
       )}
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <Store className="w-3.5 h-3.5 text-violet-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Supplier</div>
@@ -140,7 +140,7 @@ export default function PesananDetailPage({
           <div className="font-bold text-gray-800">{pesanan.supplier?.name ?? '—'}</div>
           <div className="text-xs text-gray-500 mt-1">Net {pesanan.supplier?.payment_term_days ?? 0} hari</div>
         </div>
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Tanggal</div>
@@ -150,7 +150,7 @@ export default function PesananDetailPage({
           <div className="text-xs text-gray-600 mt-1">Estimasi Datang: <strong>{fmtDate(pesanan.expected_receive_at)}</strong></div>
           {pesanan.closed_at && <div className="text-xs text-gray-600 mt-1">Closed: <strong>{fmtDate(pesanan.closed_at)}</strong></div>}
         </div>
-        <div className="bg-indigo-50 rounded-3xl border border-indigo-200 p-4">
+        <div className="bg-indigo-50 rounded-sm border border-indigo-200 p-4">
           <div className="flex items-center gap-2 mb-2">
             <FileText className="w-3.5 h-3.5 text-indigo-600" />
             <div className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">Total</div>
@@ -161,13 +161,13 @@ export default function PesananDetailPage({
       </div>
 
       {pesanan.notes && (
-        <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-4">
+        <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-4">
           <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Catatan</div>
           <div className="text-sm text-gray-700">{pesanan.notes}</div>
         </div>
       )}
 
-      <div className="bg-white/78 backdrop-blur-xl rounded-3xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Barang yang Dipesan</div>
           {(isOrdered || isClosed) && totalQty > 0 && (
@@ -224,7 +224,7 @@ export default function PesananDetailPage({
         </table>
       </div>
 
-      <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4">
+      <div className="bg-gray-50 rounded-sm border border-gray-200 p-4">
         <div className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-2">Riwayat</div>
         <div className="space-y-1 text-xs text-gray-600">
           <div>• Dibuat {fmtDate(pesanan.created_at)}</div>
@@ -266,7 +266,7 @@ function VoidPesananModal({ pesanan, onClose, onVoided, showToast }: VoidProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-xl border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-sm border border-red-200 shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
           <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Void {pesanan.pesanan_number}
@@ -281,13 +281,13 @@ function VoidPesananModal({ pesanan, onClose, onVoided, showToast }: VoidProps) 
             <label className="text-xs font-semibold text-gray-700 block mb-1">Alasan void (min. 10 karakter) *</label>
             <textarea value={reason} onChange={e => setReason(e.target.value)}
               rows={3} placeholder="Contoh: Supplier kehabisan stok, customer batal"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-gray-300 focus:border-red-400 focus:outline-none" />
+              className="w-full text-sm px-3 py-2 rounded-sm border border-gray-300 focus:border-red-400 focus:outline-none" />
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
-          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">Batal</button>
-          <button onClick={handleConfirm} disabled={!valid || saving} className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50">
+          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
+          <button onClick={handleConfirm} disabled={!valid || saving} className="text-sm font-semibold text-white bg-red-600 px-4 py-2 rounded-sm hover:bg-red-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Void'}
           </button>
         </div>

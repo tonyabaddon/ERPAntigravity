@@ -44,8 +44,8 @@ export default function CatalogGridView({ stockList, onAdd, onEdit, hideToolbar 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map(item => (
           <button key={item.sku} onClick={() => onEdit(item.sku)}
-                  className="text-left bg-slate-50 rounded-2xl p-3 border border-slate-100 hover:border-emerald-200 hover:shadow-md transition">
-            <div className="aspect-square rounded-xl overflow-hidden bg-slate-200 mb-2">
+                  className="text-left bg-slate-50 rounded-sm p-3 border border-slate-100 hover:border-emerald-200 hover:shadow-md transition">
+            <div className="aspect-square rounded-sm overflow-hidden bg-slate-200 mb-2">
               {item.photo_urls?.[0]?.url ? (
                 <img src={item.photo_urls[0].url} alt={item.name} className="w-full h-full object-cover" />
               ) : (

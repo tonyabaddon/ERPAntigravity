@@ -77,11 +77,11 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
         <input value={query} onChange={e => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 200)}
           placeholder="Cari SKU atau nama barang..."
-          className="w-full text-sm py-2 pl-9 pr-3 rounded-xl border border-gray-300 focus:outline-none focus:border-indigo-500" />
+          className="w-full text-sm py-2 pl-9 pr-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500" />
         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
       </div>
       {open && (
-        <div className="absolute z-30 left-0 right-0 mt-1 max-h-72 overflow-auto bg-white rounded-xl border border-gray-200 shadow-lg">
+        <div className="absolute z-30 left-0 right-0 mt-1 max-h-72 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
           {results.map(s => (
             <button key={s.sku} type="button" onMouseDown={() => { onChange({ sku: s.sku, name: s.name, sell_price: s.price }); setOpen(false); }}
               className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
@@ -100,27 +100,27 @@ export default function SkuPickerWithInlineCreate({ value, unitCostHint, onChang
 
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
-          <div className="bg-white rounded-xl border border-gray-200 shadow-xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-sm mb-3" style={{ color: '#012749' }}>Buat SKU baru cepat</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Nama barang</label>
                 <input value={draftName} onChange={e => setDraftName(e.target.value)}
-                  className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
+                  className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
               </div>
               <div>
                 <label className="text-xs font-semibold text-gray-600 block mb-1">Harga jual (Rp)</label>
                 <NumberInput value={draftSellPrice} onChange={setDraftSellPrice}
-                  className="w-full text-sm py-2 px-3 rounded-lg border border-gray-300" />
+                  className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
               </div>
               <div className="text-[11px] text-gray-500">
                 Kategori = "Pass-through" • Stok = 0 • HPP = harga beli grosir yang diketik di form.
               </div>
             </div>
             <div className="flex gap-2 mt-4 justify-end">
-              <button type="button" onClick={() => setShowCreate(false)} className="text-sm px-3 py-2 rounded-lg border border-gray-200 text-gray-600">Batal</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="text-sm px-3 py-2 rounded-sm border border-gray-200 text-gray-600">Batal</button>
               <button type="button" onClick={handleCreate} disabled={saving || !draftName.trim()}
-                className="text-sm px-3 py-2 rounded-lg text-white font-semibold disabled:opacity-50"
+                className="text-sm px-3 py-2 rounded-sm text-white font-semibold disabled:opacity-50"
                 style={{ background: '#012749' }}>
                 {saving ? 'Membuat...' : 'Buat & Pilih'}
               </button>
