@@ -232,7 +232,154 @@ function RadiusShadowSection({ tokens }: { tokens: Token[] }) {
         ))}
       </div>
       <div className="ds-note">
-        Additional in-use radii (de-facto, not tokenized): <code>rounded-sm</code> (8px), <code>rounded-sm</code> (12px), <code>rounded-sm</code> (16px), <code>rounded-sm</code> (24px), <code>rounded-full</code>. Most cards use 24px (<code>rounded-sm</code>). Decision: promote these to tokens or keep Tailwind classes as canonical? Recommend keep classes — 4 radius levels is manageable without token names.
+        Post-2026-08-02: all radius reduced to 2px (<code>rounded-sm</code>) across app for MSME/Excel aesthetic. Only <code>rounded-full</code> preserved for semantic circular (avatars, pills, badges). Never use raw <code>rounded-lg</code>/<code>rounded-xl</code>/<code>rounded-2xl</code>/<code>rounded-3xl</code> — those visuals are retired.
+      </div>
+    </section>
+  );
+}
+
+// ── Section: Spacing scale + Layout grid ────────────────────────────────────
+
+interface SpacingEntry {
+  token: string;
+  tailwind: string;
+  value: string;
+  usage: string;
+}
+
+const SPACING_SCALE: SpacingEntry[] = [
+  { token: 'Micro',   tailwind: 'p-1 gap-1',   value: '4px',  usage: 'Icon-text gap, chip inner padding, hairline separators' },
+  { token: 'Small',   tailwind: 'p-2 gap-2',   value: '8px',  usage: 'Row cell padding, button vertical padding, dense list spacing' },
+  { token: 'Base',    tailwind: 'p-3 gap-3',   value: '12px', usage: 'Modal footer, card inner spacing between items, default gap' },
+  { token: 'Card',    tailwind: 'p-4 gap-4',   value: '16px', usage: 'Card outer padding, form field vertical rhythm, default panel padding' },
+  { token: 'Section', tailwind: 'p-6 gap-6',   value: '24px', usage: 'Screen section separation, panel outer padding on large surfaces' },
+  { token: 'Screen',  tailwind: 'p-8 gap-8',   value: '32px', usage: 'Screen edge padding on wide desktop layouts only' },
+];
+
+interface LayoutPattern {
+  name: string;
+  ascii: string;
+  whenToUse: string;
+  examples: string;
+}
+
+const LAYOUTS: LayoutPattern[] = [
+  {
+    name: 'List + Detail',
+    ascii: [
+      '┌────────────┬──────────────────────────┐',
+      '│ Row 1  →   │  Detail Card             │',
+      '│ Row 2      │                          │',
+      '│ Row 3      │  (field, actions, etc.)  │',
+      '│ [+ Add]    │                          │',
+      '└────────────┴──────────────────────────┘',
+    ].join('\n'),
+    whenToUse: 'Master-detail workflows: user picks item on left → detail renders on right without navigating away.',
+    examples: 'Pembelian → PO list + PO detail; Pelanggan → customer list + profile; Pengaturan → tab list + panel body.',
+  },
+  {
+    name: 'Card Grid + Filter',
+    ascii: [
+      '┌──────────────────────────────────────┐',
+      '│ [ Filter ][ Search ][ + Tambah ]     │',
+      '├──────────────────────────────────────┤',
+      '│  ┌────┐ ┌────┐ ┌────┐ ┌────┐         │',
+      '│  │KPI │ │KPI │ │KPI │ │KPI │         │',
+      '│  └────┘ └────┘ └────┘ └────┘         │',
+      '│  ┌────────────────────────┐          │',
+      '│  │  Chart / large panel   │          │',
+      '│  └────────────────────────┘          │',
+      '└──────────────────────────────────────┘',
+    ].join('\n'),
+    whenToUse: 'Overview + browse screens: user scans a set of tiles, filters/sorts, drills into one.',
+    examples: 'Dashboard (KPI cards + charts); Produk catalog (grid view); Laporan overview.',
+  },
+  {
+    name: 'Wizard 3-step',
+    ascii: [
+      '┌──────────────────────────────────────┐',
+      '│  [1 Channel] → [2 Items] → [3 Bayar] │',
+      '├──────────────────────────────────────┤',
+      '│                                      │',
+      '│   Step content (form, cart, etc.)    │',
+      '│                                      │',
+      '├──────────────────────────────────────┤',
+      '│ [ ← Kembali ]           [ Lanjut → ] │',
+      '└──────────────────────────────────────┘',
+    ].join('\n'),
+    whenToUse: 'Multi-step data entry where each step depends on the prior: sales flow, onboarding, opname commit.',
+    examples: 'Kasir/Penawaran wizard (channel → items → payment); Saldo Awal wizard (kas → aktiva → kewajiban → preview); Stock Opname session.',
+  },
+];
+
+function SpacingLayoutSection() {
+  return (
+    <section id="spacing-layout">
+      <h2>5. Spacing Scale &amp; Layout Grid</h2>
+      <p>Single source of truth for padding/gap sizes AND canonical screen layouts. Every new screen picks ONE layout — never invent a 4th without founder approval.</p>
+
+      <h3>Spacing scale (6 sizes, all multiples of 4)</h3>
+      <table>
+        <thead><tr><th>Token</th><th>Tailwind</th><th>Value</th><th>Use case</th></tr></thead>
+        <tbody>
+          {SPACING_SCALE.map(s => (
+            <tr key={s.token}>
+              <td><strong>{s.token}</strong></td>
+              <td><code>{s.tailwind}</code></td>
+              <td><code>{s.value}</code></td>
+              <td>{s.usage}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="ds-note">
+        <strong>Rule:</strong> Never use in-between values (10px, 14px, 20px, 28px). <code>p-5</code> (20px) is <em>off-scale</em> — currently 84 refs in codebase; treat as tech debt to migrate to <code>p-4</code> or <code>p-6</code>. Any new intentional in-between value → promote to scale + document here.
+      </div>
+
+      <h3>Canonical screen layouts (pick ONE per screen)</h3>
+      {LAYOUTS.map(l => (
+        <div key={l.name} className="ds-component-box" style={{ padding: 20, marginBottom: 12 }}>
+          <div style={{ fontWeight: 800, color: 'var(--color-caleo-navy)', fontSize: 15, marginBottom: 8 }}>{l.name}</div>
+          <pre style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            background: '#f8f9ff',
+            padding: 12,
+            border: '1px solid #e5eeff',
+            borderRadius: 2,
+            margin: '4px 0 10px',
+            lineHeight: 1.35,
+            color: '#012749',
+            overflow: 'auto',
+          }}>{l.ascii}</pre>
+          <div style={{ fontSize: 12, color: '#374151', marginBottom: 4 }}><strong>When to use:</strong> {l.whenToUse}</div>
+          <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>Examples: {l.examples}</div>
+        </div>
+      ))}
+
+      <h3>Layout DON'Ts</h3>
+      <table>
+        <thead><tr><th>❌ Don&#x27;t</th><th>✅ Do</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span className="ds-anti-bad">Invent a 4th layout because &quot;this screen is special&quot;</span></td>
+            <td><span className="ds-anti-good">Adapt one of the 3 canonical layouts + document divergence in PR</span></td>
+            <td>Each new layout = cognitive load for MSME. 3 is memorable, 10 is chaos.</td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Mix spacing scales in one screen (some p-4, some p-6, some p-8)</span></td>
+            <td><span className="ds-anti-good">One outer padding per screen. Nested cards can step down (screen p-6 → card p-4 → row p-2)</span></td>
+            <td>Consistent spacing = perceived quality. Mixed = amateur.</td>
+          </tr>
+          <tr>
+            <td><span className="ds-anti-bad">Raw values <code>p-[13px]</code> or <code>gap-[7px]</code></span></td>
+            <td><span className="ds-anti-good">Pick nearest scale token (p-3, gap-2) OR promote value + document here</span></td>
+            <td>Off-scale values leak into copy-paste, then everywhere. Guardrail via future audit script.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="ds-note">
+        <strong>Follow-up (not shipped):</strong> <code>scripts/audit-spacing-off-scale.ts</code> to grep for off-scale values (<code>p-5</code>, <code>p-7</code>, <code>p-9</code>, <code>p-10</code>, <code>p-11</code>, <code>p-13</code>, <code>p-14</code>) and fail if new usages appear. Currently 84 <code>p-5</code> refs exist as inherited debt.
       </div>
     </section>
   );
@@ -243,7 +390,7 @@ function RadiusShadowSection({ tokens }: { tokens: Token[] }) {
 function SharedComponentsSection() {
   return (
     <section id="components">
-      <h2>5. Shared Components (src/components/ui/)</h2>
+      <h2>6. Shared Components (src/components/ui/)</h2>
       <p>Reusable primitives. Prefer these over rolling one-off implementations. Adding a new primitive requires founder approval + entry in this catalog.</p>
       <table>
         <thead><tr><th>Component</th><th>Purpose</th><th>Key props</th><th>Where to use</th></tr></thead>
@@ -383,7 +530,7 @@ function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; si
 function IconsSection() {
   return (
     <section id="icons">
-      <h2>6. Icons (MSME-friendly vocabulary)</h2>
+      <h2>7. Icons (MSME-friendly vocabulary)</h2>
       <p>Dari <code>lucide-react</code>. Every action has ONE canonical icon — MSME users learn once, recognize everywhere. Mixing icons for the same action = anti-pattern (confuses non-tech users).</p>
       <div className="ds-note">
         <strong>MSME rules:</strong> (1) Every button MUST have icon + label — never icon-only. (2) Prefer literal-meaning icons (Truck for kirim, not Send). (3) When multiple lucide icons exist for same concept, pick the boldest/clearest variant (Trash2 not Trash, CheckCircle not CheckCircle2).
@@ -413,7 +560,7 @@ function IconsSection() {
 function AntiPatternsSection() {
   return (
     <section id="anti-patterns">
-      <h2>7. Anti-patterns</h2>
+      <h2>8. Anti-patterns</h2>
       <p>Common drift patterns to reject during code review. Each has a shorter, better form.</p>
       <table>
         <thead><tr><th>❌ Don't</th><th>✅ Do</th><th>Why</th></tr></thead>
@@ -459,7 +606,7 @@ function AntiPatternsSection() {
 function ExtendSection() {
   return (
     <section id="extend">
-      <h2>8. How to Extend</h2>
+      <h2>9. How to Extend</h2>
       <ol style={{ paddingLeft: 20, lineHeight: 1.7 }}>
         <li><strong>Propose in a design brief</strong> — describe the need + why existing token/component doesn't cover it. Show a mockup or reference (per CLAUDE.md FE UI/UX approval protocol).</li>
         <li><strong>Founder approves</strong> — "go", "approved", "lock it", or iteration comment. Assumptions of approval = violation per CLAUDE.md.</li>
@@ -496,6 +643,7 @@ export function DesignSystemPage({ tokens }: Props) {
         <a href="#channels">Channel Brands</a>
         <a href="#typography">Typography</a>
         <a href="#radius-shadow">Radius & Shadow</a>
+        <a href="#spacing-layout">Spacing & Layout</a>
         <a href="#components">Components</a>
         <a href="#icons">Icons</a>
         <a href="#anti-patterns">Anti-patterns</a>
@@ -506,6 +654,7 @@ export function DesignSystemPage({ tokens }: Props) {
       <ChannelPaletteSection tokens={tokens} />
       <TypographySection tokens={tokens} />
       <RadiusShadowSection tokens={tokens} />
+      <SpacingLayoutSection />
       <SharedComponentsSection />
       <IconsSection />
       <AntiPatternsSection />
