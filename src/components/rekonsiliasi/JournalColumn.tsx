@@ -73,7 +73,7 @@ export default function JournalColumn({
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-[#e5eeff]">
+      <div className="px-4 py-4 border-b border-[#e5eeff]">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">

@@ -254,7 +254,7 @@ export default function RekeningBankCard({ showToast }: Props) {
                   type="button"
                   onClick={handleSave}
                   disabled={busyId !== null}
-                  className="px-5 py-2 bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
+                  className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white rounded-full text-xs font-bold disabled:opacity-50 hover:bg-[#01365e]"
                 >
                   {busyId !== null ? 'Menyimpan…' : 'Simpan'}
                 </button>

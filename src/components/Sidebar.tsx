@@ -210,7 +210,7 @@ export default function Sidebar({ activePage, onPageChange, currentUser, onLogou
       style={{ boxShadow: '0 20px 50px rgba(1, 39, 73, 0.25)' }}
     >
       {/* Brand Header */}
-      <div className="px-5 mb-10 flex items-center gap-4 overflow-hidden whitespace-nowrap">
+      <div className="px-4 mb-10 flex items-center gap-4 overflow-hidden whitespace-nowrap">
         <div className="w-10 h-10 bg-[#2d8a4e] text-white rounded-sm flex items-center justify-center shrink-0 shadow-lg shadow-[#2d8a4e]/20 hover:rotate-12 transition-transform duration-300">
           <Zap className="w-5 h-5 fill-white text-[#2d8a4e]" />
         </div>

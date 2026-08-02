@@ -1330,7 +1330,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                   type="button"
                   onClick={onLanjut}
                   disabled={currentStep === 1 ? !canAdvanceStep1 : !canAdvanceStep2}
-                  className="px-5 py-2 text-sm font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === 1 ? 'Lanjut ke Pesanan →' : 'Lanjut ke Pembayaran →'}
                 </button>
@@ -1344,10 +1344,10 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
       {reasonPromptOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-sm bg-white shadow-lg" style={{ fontSize: '14px' }}>
-            <div className="border-b border-slate-200 px-5 py-3">
+            <div className="border-b border-slate-200 px-4 py-3">
               <h2 className="font-semibold text-slate-800">⚠ Diskon butuh approval owner</h2>
             </div>
-            <div className="space-y-3 px-5 py-4">
+            <div className="space-y-3 px-4 py-4">
               <div className="rounded bg-orange-50 border border-orange-200 px-3 py-2 text-xs text-orange-800">
                 Diskon {formatIDR(Math.round(orderDiscountAmountRp))}
                 {gateThresholds?.amount != null && (
@@ -1371,7 +1371,7 @@ export default function CatatPenjualanWizard(props: CatatPenjualanWizardProps) {
                 Setelah kirim, owner akan review di menu Persetujuan. Kamu bisa cancel selama menunggu.
               </p>
             </div>
-            <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
+            <div className="flex justify-end gap-2 border-t border-slate-200 px-4 py-3">
               <button
                 type="button"
                 className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"

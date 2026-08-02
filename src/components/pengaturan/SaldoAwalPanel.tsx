@@ -152,13 +152,13 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
             onClick={(e) => { if (e.target === e.currentTarget) setReverseOpen(false); }}
           >
             <div className="bg-white rounded-sm shadow-2xl w-full max-w-md">
-              <div className="px-5 py-4 border-b border-slate-200">
+              <div className="px-4 py-4 border-b border-slate-200">
                 <h3 className="text-[14px] font-bold text-rose-700">Reverse Saldo Awal?</h3>
                 <p className="text-[12px] text-slate-600 mt-1">
                   Ini akan membuat Jurnal Reversal dan mereset status ke draft. Setelah ini kamu bisa isi ulang via wizard.
                 </p>
               </div>
-              <div className="px-5 py-4 space-y-3">
+              <div className="px-4 py-4 space-y-3">
                 <label className="block">
                   <span className="text-[12px] font-semibold text-slate-700">Alasan reversal *</span>
                   <textarea
@@ -170,7 +170,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                   />
                 </label>
               </div>
-              <div className="px-5 py-4 border-t border-slate-200 flex gap-2 justify-end">
+              <div className="px-4 py-4 border-t border-slate-200 flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => { setReverseOpen(false); setReverseReason(''); }}
@@ -255,7 +255,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
         <button
           type="button"
           onClick={() => setWizardOpen(true)}
-          className="px-5 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
+          className="px-4 py-2.5 bg-[var(--color-caleo-primary)] text-white text-[13px] font-bold rounded-sm hover:opacity-90"
         >
           Buat Saldo Awal
         </button>

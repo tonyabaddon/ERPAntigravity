@@ -80,7 +80,7 @@ export function PendingPaymentsQueue() {
       {/* Empty state */}
       {rows !== null && rows.length === 0 && (
         <div
-          className="border rounded-sm px-5 py-4 text-[13px]"
+          className="border rounded-sm px-4 py-4 text-[13px]"
           style={{ background: '#F0FDF4', borderColor: '#86EFAC', color: '#166534' }}
           data-testid="pending-payments-empty"
         >

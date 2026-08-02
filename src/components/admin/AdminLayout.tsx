@@ -79,7 +79,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
     <div className="min-h-screen flex flex-col font-caleo" style={{ background: '#FAF7F0' }}>
       {/* Top header — navy bg, white text */}
       <header
-        className="flex justify-between items-center px-5 py-3 shrink-0"
+        className="flex justify-between items-center px-4 py-3 shrink-0"
         style={{ background: '#0B2545', color: '#ffffff' }}
       >
         <div className="flex items-center gap-2 text-[13px] font-semibold">
@@ -102,7 +102,7 @@ export function AdminLayout({ children, activePath }: AdminLayoutProps) {
       {/* Impersonation banner — shown only when active */}
       {impersonation.active && (
         <div
-          className="px-5 py-2 text-[12px] text-center flex items-center justify-center gap-2"
+          className="px-4 py-2 text-[12px] text-center flex items-center justify-center gap-2"
           style={{ background: '#F9B233', color: '#0B2545' }}
           data-testid="impersonation-banner"
         >

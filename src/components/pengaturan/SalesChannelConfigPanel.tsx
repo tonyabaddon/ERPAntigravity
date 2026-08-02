@@ -76,7 +76,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
               const isVisible = settings[code]?.isVisible ?? true;
               const isLocked = CHANNEL_LOCKED.has(code);
               return (
-                <div key={code} className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50">
+                <div key={code} className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50">
                   <div className="flex items-center gap-3">
                     <div
                       className="w-9 h-9 rounded-sm flex items-center justify-center"

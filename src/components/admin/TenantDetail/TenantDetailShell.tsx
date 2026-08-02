@@ -214,7 +214,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
         <a
           href="/admin/tenants"
           onClick={(e) => handleAdminSPAClick(e, '/admin/tenants')}
-          className="inline-block rounded-sm px-5 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
+          className="inline-block rounded-sm px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
           style={{ background: '#0B2545', color: '#ffffff' }}
         >
           ← Kembali ke daftar tenant
@@ -248,7 +248,7 @@ export function TenantDetailShell({ tenantSlug }: TenantDetailShellProps) {
 
       {/* Tenant header */}
       <div
-        className="border rounded-sm px-5 py-4 flex flex-wrap justify-between items-start gap-3"
+        className="border rounded-sm px-4 py-4 flex flex-wrap justify-between items-start gap-3"
         style={{ background: '#ffffff', borderColor: '#ECEEF1' }}
       >
         <div>

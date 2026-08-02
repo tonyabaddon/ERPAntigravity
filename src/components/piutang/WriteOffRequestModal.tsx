@@ -55,12 +55,12 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
         className="w-full max-w-md bg-white rounded-sm shadow-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-gray-200">
+        <div className="px-4 py-4 border-b border-gray-200">
           <h2 className="font-extrabold text-base text-[var(--color-caleo-primary)]">Ajukan Tulis-off</h2>
           <p className="text-xs text-gray-500 mt-0.5">Perlu persetujuan Owner.</p>
         </div>
 
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
@@ -85,7 +85,7 @@ export default function WriteOffRequestModal({ row, onClose, onSubmitted, showTo
           </div>
         </div>
 
-        <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

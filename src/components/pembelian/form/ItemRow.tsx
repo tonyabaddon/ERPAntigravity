@@ -22,7 +22,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
   }
 
   return (
-    <div className="grid grid-cols-12 px-5 py-3 border-b border-gray-100 items-center hover:bg-gray-50">
+    <div className="grid grid-cols-12 px-4 py-3 border-b border-gray-100 items-center hover:bg-gray-50">
       <span className="col-span-2 font-mono text-xs text-gray-500">{item.sku}</span>
       <span className="col-span-4 text-sm font-semibold text-gray-800">{item.product_name}</span>
       <div className="col-span-2 flex justify-center">

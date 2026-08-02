@@ -264,7 +264,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
     >
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-100 px-5 py-4 flex items-center justify-between">
+        <div className="bg-slate-100 px-4 py-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-800">
             {isEditMode ? `Edit Promo — ${initialRow!.sku}` : 'Tambah Promo Baru'}
           </h2>
@@ -416,7 +416,7 @@ function PromoModal({ initialRow, onClose, onSuccess, showToast }: ModalProps) {
         </div>
 
         {/* Footer actions */}
-        <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <div className="px-4 py-4 border-t border-slate-100 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

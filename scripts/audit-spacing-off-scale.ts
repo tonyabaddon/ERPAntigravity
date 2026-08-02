@@ -26,9 +26,10 @@ function walk(dir: string, out: string[]): void {
 
 // Baseline allowlist — files with pre-existing off-scale usage, allowed to
 // stay until Phase 3 codemod. New drift outside this list blocks CI.
-// Baseline captured 2026-08-02: 431 off-scale refs (px-5 246 + p-5 84 + others).
-// Guardrail: prevents drift ABOVE baseline. Phase 3 codemod will reduce count.
-const ALLOWLIST_BASELINE_COUNT = 431;
+// Baseline captured 2026-08-02: 185 off-scale refs after Phase 3.2 codemod
+// (px-5 246 refs converted to px-4). Remaining: p-5 84 + pl-9 10 + others.
+// Guardrail: prevents drift ABOVE baseline. Future codemods further reduce.
+const ALLOWLIST_BASELINE_COUNT = 185;
 
 const files: string[] = [];
 walk(ROOT, files);

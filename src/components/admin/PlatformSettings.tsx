@@ -223,7 +223,7 @@ export function PlatformSettings() {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 rounded-sm text-[13px] font-semibold transition-opacity"
+              className="px-4 py-2 rounded-sm text-[13px] font-semibold transition-opacity"
               style={{
                 background: saving ? '#9DB2CE' : '#0B2545',
                 color: '#FFFFFF',

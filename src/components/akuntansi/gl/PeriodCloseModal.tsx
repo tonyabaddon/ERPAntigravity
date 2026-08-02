@@ -395,7 +395,7 @@ export default function PeriodCloseModal({
               !snapshot ||
               !snapshot.isBalanced
             }
-            className="px-5 py-2 rounded-sm text-[13px] font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+            className="px-4 py-2 rounded-sm text-[13px] font-bold text-white transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             style={{ background: '#dc2626' }}
           >
             <Lock className="w-3.5 h-3.5" />

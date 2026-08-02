@@ -69,7 +69,7 @@ export function RevenueTopTenants({
     >
       {/* Header */}
       <div
-        className="px-5 py-4 border-b"
+        className="px-4 py-4 border-b"
         style={{ borderColor: '#ECEEF1' }}
       >
         <h3
@@ -82,7 +82,7 @@ export function RevenueTopTenants({
 
       {rows.length === 0 ? (
         <div
-          className="px-5 py-8 text-center text-[13px]"
+          className="px-4 py-8 text-center text-[13px]"
           style={{ color: '#9DB2CE' }}
           data-testid="top-tenants-empty"
         >
@@ -94,7 +94,7 @@ export function RevenueTopTenants({
             <tr style={{ background: '#FAF7F0' }}>
               <th
                 scope="col"
-                className="px-5 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace', width: 40 }}
               >
                 #
@@ -122,7 +122,7 @@ export function RevenueTopTenants({
               </th>
               <th
                 scope="col"
-                className="px-5 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
+                className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest"
                 style={{ color: '#9DB2CE', fontFamily: 'JetBrains Mono, monospace' }}
               >
                 Status
@@ -164,7 +164,7 @@ export function RevenueTopTenants({
                   }}
                 >
                   <td
-                    className="px-5 py-3 text-[12px] font-bold"
+                    className="px-4 py-3 text-[12px] font-bold"
                     style={{ fontFamily: 'JetBrains Mono, monospace', color: '#9DB2CE' }}
                   >
                     {idx + 1}
@@ -190,7 +190,7 @@ export function RevenueTopTenants({
                   >
                     {formatIDR(row.total)}
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-4 py-3">
                     <CoverageStatusBadge status={row.coverage_status ?? null} />
                   </td>
                 </tr>

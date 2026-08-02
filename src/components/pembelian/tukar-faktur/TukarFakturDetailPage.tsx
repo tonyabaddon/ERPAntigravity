@@ -451,10 +451,10 @@ export default function TukarFakturDetailPage({ tfNumber, showToast, onBack, onB
 
       {/* Tanda Terima preview */}
       <details className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
-        <summary className="cursor-pointer px-5 py-3 text-xs font-bold uppercase tracking-wide text-gray-500 hover:bg-gray-50">
+        <summary className="cursor-pointer px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-500 hover:bg-gray-50">
           Preview Tanda Terima (klik untuk expand)
         </summary>
-        <div className="px-5 pb-5 pt-2 bg-gray-50 border-t border-gray-200">
+        <div className="px-4 pb-5 pt-2 bg-gray-50 border-t border-gray-200">
           <pre className="font-mono text-[10px] leading-tight whitespace-pre overflow-auto text-gray-700">
 {buildTandaTerimaPreview(tf)}
           </pre>
@@ -545,7 +545,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
         className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>
             Edit Header {tf.tf_number}
           </h2>
@@ -553,7 +553,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
             <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">
               Tanggal Tukar Faktur
@@ -588,7 +588,7 @@ function EditHeaderModal({ tf, showToast, onClose, onSaved }: EditHeaderProps) {
             "Lepas dari Bundle" per row (Phase 2c).
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
             className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
@@ -647,7 +647,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
         className="bg-white rounded-sm border border-red-200 shadow-xl w-full max-w-md"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-red-100 bg-red-50">
           <h2 className="text-sm font-bold text-red-800 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Hapus {tf.tf_number}
           </h2>
@@ -655,7 +655,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
             <X className="w-4 h-4 text-gray-400" />
           </button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <p className="text-xs text-gray-600">
             Hapus akan: (1) unlink semua Tagihan biasa dari bundle (Tagihan tetap ada, JT kembali ke
             asli), (2) cascade-hapus Tagihan quick-add yang tidak punya konteks lain, (3) soft-delete
@@ -675,7 +675,7 @@ function DeleteTfModal({ tf, showToast, onClose, onDeleted }: DeleteProps) {
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button
             onClick={onClose}
             className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"

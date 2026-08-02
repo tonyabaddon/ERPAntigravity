@@ -60,7 +60,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
           onClick={e => e.stopPropagation()}
         >
           {/* Toolbar */}
-          <div className="flex items-center justify-between px-5 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-[var(--color-caleo-primary)] text-white print:hidden">
             <div className="flex items-center gap-2 font-bold text-sm">
               <FileText className="w-4 h-4" />
               Invoice {orderId}
@@ -196,7 +196,7 @@ export default function InvoiceModal({ order, onClose }: InvoiceModalProps) {
           </div>
 
           {/* Modal footer */}
-          <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-100 print:hidden">
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-100 print:hidden">
             <button onClick={onClose} className="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-sm hover:bg-gray-200">Tutup</button>
             <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-[#2d8a4e] text-white text-xs font-bold rounded-sm hover:bg-green-700">
               <Download className="w-3.5 h-3.5" /> Download PDF

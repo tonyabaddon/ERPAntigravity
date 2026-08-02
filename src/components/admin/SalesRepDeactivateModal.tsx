@@ -168,7 +168,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
             >
               Batal
@@ -176,7 +176,7 @@ export function SalesRepDeactivateModal({ open, salesRep, onClose, onSuccess }: 
             <button
               type="submit"
               disabled={submitting || !isReasonValid}
-              className="font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#DC2626', color: '#ffffff' }}
             >
               {submitting ? 'Menyimpan…' : 'Nonaktifkan'}

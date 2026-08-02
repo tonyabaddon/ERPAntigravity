@@ -242,7 +242,7 @@ export default function PembelianDetailPage({
                 // branch in App.tsx falls through to the normal list view.
                 window.location.href = '/?screen=pembelian';
               }}
-              className="mt-6 inline-flex items-center gap-2 bg-[var(--color-caleo-primary)] text-white text-sm font-semibold px-5 py-2.5 rounded-sm hover:bg-[#013865]"
+              className="mt-6 inline-flex items-center gap-2 bg-[var(--color-caleo-primary)] text-white text-sm font-semibold px-4 py-2.5 rounded-sm hover:bg-[#013865]"
             >
               <ArrowLeft className="w-4 h-4" /> Kembali ke Daftar Pembelian
             </button>
@@ -346,7 +346,7 @@ export default function PembelianDetailPage({
       </div>
 
       {/* Print-only header (visible only on print) */}
-      <div className="hidden print:block px-5 py-4 border-b border-gray-200">
+      <div className="hidden print:block px-4 py-4 border-b border-gray-200">
         {storeSettings?.nama_toko && (
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">{storeSettings.nama_toko}</p>
         )}

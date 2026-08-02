@@ -192,7 +192,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-lg mx-4">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
               <h2 className="text-sm font-bold text-gray-900">Tambah Pelanggan Baru</h2>
               <button
                 onClick={() => setShowAddModal(false)}
@@ -202,7 +202,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="px-5 py-4">
+            <div className="px-4 py-4">
               <NewCustomerInlineForm
                 onSaved={(customer) => {
                   showToast(`Pelanggan ${customer.name} tersimpan.`, 'success');
@@ -464,7 +464,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               </div>
 
               {/* Sales entries section */}
-              <div className="px-5 py-4">
+              <div className="px-4 py-4">
                 <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">
                   Riwayat Pesanan ({salesEntries.length})
                 </div>
@@ -501,7 +501,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               </div>
 
               {/* Leads section */}
-              <div className="px-5 py-4 border-t border-gray-100">
+              <div className="px-4 py-4 border-t border-gray-100">
                 <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">
                   Leads ({profile.leads.length})
                 </div>
@@ -526,7 +526,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               </div>
 
               {/* Tempo & Credit section */}
-              <div className="px-5 py-4 border-t border-gray-100">
+              <div className="px-4 py-4 border-t border-gray-100">
                 <TempoCreditSection
                   customer={profile}
                   onChanged={() => {
@@ -541,7 +541,7 @@ export default function PelangganScreen({ openCustomerId, onNavigate, showToast 
               </div>
 
               {/* WA Reminder opt-out section */}
-              <div className="px-5 py-4 border-t border-gray-100">
+              <div className="px-4 py-4 border-t border-gray-100">
                 <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-3">
                   WA Reminder Piutang
                 </div>

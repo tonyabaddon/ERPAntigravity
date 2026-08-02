@@ -310,7 +310,7 @@ export default function TambahLayananModal({
           <button
             onClick={handleSubmit}
             disabled={saving || !selectedId}
-            className="px-5 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
+            className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60"
           >
             {saving ? 'Menyimpan…' : 'Tambah ke Pesanan'}
           </button>

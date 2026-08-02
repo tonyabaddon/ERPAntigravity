@@ -252,7 +252,7 @@ export default function PurchaseOrderFormPage({
 
       {/* Section: Items */}
       <section className="bg-white rounded-sm border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-1 h-4 bg-indigo-500 rounded-full" />
             <h3 className="text-sm font-bold text-gray-900">Items Pembelian</h3>
@@ -265,7 +265,7 @@ export default function PurchaseOrderFormPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-12 px-5 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
+        <div className="grid grid-cols-12 px-4 py-2.5 bg-gray-50 border-b border-gray-200 text-[10px] font-bold uppercase tracking-wide text-gray-500">
           <span className="col-span-2">SKU</span>
           <span className="col-span-4">Nama Produk</span>
           <span className="col-span-2 text-center">Qty</span>
@@ -356,7 +356,7 @@ export default function PurchaseOrderFormPage({
             type="button"
             onClick={() => handleSave('ORDERED')}
             disabled={saving}
-            className="text-sm font-semibold text-white bg-indigo-600 px-5 py-2 rounded-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
+            className="text-sm font-semibold text-white bg-indigo-600 px-4 py-2 rounded-sm hover:bg-indigo-700 shadow-sm shadow-indigo-200 disabled:opacity-50"
           >
             {saving ? 'Menyimpan...' : 'Simpan & Pesan'}
           </button>

@@ -312,7 +312,7 @@ export default function SaldoAwalWizard({ initialSnapshot, storeName, onDone, on
                 type="button"
                 onClick={handleNext}
                 disabled={saving}
-                className="px-5 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-[13px] font-bold bg-[var(--color-caleo-primary)] text-white rounded-sm hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Menyimpan draft…' : 'Berikutnya →'}
               </button>

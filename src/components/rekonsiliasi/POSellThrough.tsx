@@ -77,7 +77,7 @@ export default function POSellThrough({ year, month }: { year: number; month: nu
 
   return (
     <div className="bg-white/78 backdrop-blur-xl rounded-[1.75rem] border border-[#e5eeff] shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#e5eeff]">
+      <div className="px-4 py-4 border-b border-[#e5eeff]">
         <div className="text-[11px] font-black uppercase tracking-widest text-[var(--color-caleo-primary)]">📦 Pembelian dari Supplier Bulan Ini</div>
         <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Klik ▶ untuk lihat per-barang & sales order yang membeli</div>
       </div>

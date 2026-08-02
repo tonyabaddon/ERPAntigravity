@@ -215,7 +215,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
           </p>
         </div>
         {isSupabaseConfigured ? (
-          <div className="bg-emerald-50/80 border border-emerald-200/60 px-5 py-3 rounded-sm flex items-center gap-3">
+          <div className="bg-emerald-50/80 border border-emerald-200/60 px-4 py-3 rounded-sm flex items-center gap-3">
             <span className="flex h-3 w-3 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
@@ -226,7 +226,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
             </div>
           </div>
         ) : (
-          <div className="bg-amber-50/80 border border-amber-200/60 px-5 py-3 rounded-sm flex items-center gap-3">
+          <div className="bg-amber-50/80 border border-amber-200/60 px-4 py-3 rounded-sm flex items-center gap-3">
             <span className="flex h-3 w-3 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
@@ -271,7 +271,7 @@ export default function StockManagerScreen({ stockList, onStockUpdate, onStocksR
             <button
               type="button"
               onClick={() => setShowAddProductModal(true)}
-              className="px-5 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-700"
+              className="px-4 py-2 bg-[#2d8a4e] text-white rounded-full text-xs font-extrabold uppercase tracking-wider hover:bg-emerald-700"
             >
               + Tambah Barang
             </button>

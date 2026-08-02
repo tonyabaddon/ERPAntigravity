@@ -52,11 +52,11 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold text-gray-900">Tandai Lunas — {po.po_number}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
         </div>
-        <div className="px-5 py-4 space-y-3">
+        <div className="px-4 py-4 space-y-3">
           <div className="bg-gray-50 rounded-sm px-3 py-3 text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-gray-500">Supplier</span>
@@ -82,7 +82,7 @@ export default function MarkAsPaidModal({ po, onClose, onPaid, showToast }: Mark
             </label>
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-gray-200">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
           <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
           <button onClick={handleConfirm} disabled={saving} className="text-sm font-semibold text-white bg-green-600 px-4 py-2 rounded-sm hover:bg-green-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Konfirmasi Lunas'}

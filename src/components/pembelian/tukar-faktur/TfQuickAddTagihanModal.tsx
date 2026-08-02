@@ -53,7 +53,7 @@ export default function TfQuickAddTagihanModal({
   return (
     <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-sm shadow-2xl w-full max-w-2xl border border-gray-200">
-        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h3 className="text-base font-extrabold" style={{ color: 'var(--color-caleo-primary)' }}>
               Tambah Tagihan Cepat
@@ -130,7 +130,7 @@ export default function TfQuickAddTagihanModal({
           </div>
         </div>
 
-        <div className="px-5 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50/80 rounded-b-3xl">
+        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between bg-gray-50/80 rounded-b-3xl">
           <div className="text-[11px] text-gray-500">Tagihan baru langsung ter-add ke bundle TF.</div>
           <div className="flex gap-2">
             <button

@@ -246,7 +246,7 @@ export default function KasirScreen({ currentUser, showToast, onOpenPenjualanBar
           <button
             type="button"
             onClick={() => setIsFotoOpen(true)}
-            className="px-5 py-2 bg-gradient-to-br from-[#2d8a4e] to-emerald-700 text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-lg"
+            className="px-4 py-2 bg-gradient-to-br from-[#2d8a4e] to-emerald-700 text-white rounded-full text-xs font-extrabold uppercase tracking-wider inline-flex items-center gap-1.5 shadow-lg"
           >
             <span className="material-symbols-outlined text-base">photo_camera</span> Cari by Foto [AI]
           </button>
@@ -696,7 +696,7 @@ function ExpenseModal({ selectedDate, onClose, onSaved, showToast }: ExpenseModa
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="px-4 py-4 border-t border-slate-100 bg-slate-50/50">
           <button
             onClick={handleSave}
             disabled={!canSave}

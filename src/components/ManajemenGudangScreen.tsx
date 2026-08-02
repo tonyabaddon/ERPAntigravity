@@ -246,11 +246,11 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
           </div>
           <div className="flex gap-2">
             <button onClick={handleCreate}
-              className="bg-[#2d8a4e] text-white px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md flex items-center gap-1.5">
+              className="bg-[#2d8a4e] text-white px-4 py-2.5 rounded-full text-xs font-extrabold shadow-md flex items-center gap-1.5">
               <Plus className="w-4 h-4" /> Simpan
             </button>
             <button onClick={() => setShowAdd(false)}
-              className="border border-slate-200 text-slate-600 px-5 py-2.5 rounded-full text-xs font-extrabold hover:bg-slate-50">
+              className="border border-slate-200 text-slate-600 px-4 py-2.5 rounded-full text-xs font-extrabold hover:bg-slate-50">
               Batal
             </button>
           </div>

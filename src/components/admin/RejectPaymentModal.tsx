@@ -40,7 +40,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
       >
         {/* Header */}
         <div
-          className="px-5 py-4 border-b"
+          className="px-4 py-4 border-b"
           style={{ borderColor: '#ECEEF1' }}
         >
           <h2 className="text-[14px] font-bold" style={{ color: '#0B2545' }}>
@@ -52,7 +52,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="reject-reason"

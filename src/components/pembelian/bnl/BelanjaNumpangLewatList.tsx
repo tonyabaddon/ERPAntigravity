@@ -129,31 +129,31 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
               <tr>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">PI / Tanggal</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Supplier (Grosir)</th>
-                <th className="text-left px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Order Terkait</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Beli</th>
-                <th className="text-center px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                <th className="text-right px-5 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Aksi</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">PI / Tanggal</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Supplier (Grosir)</th>
+                <th className="text-left px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Order Terkait</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Total Beli</th>
+                <th className="text-center px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                <th className="text-right px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(pi => (
                 <tr key={pi.id} className="hover:bg-slate-50 border-b border-gray-100">
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <div className="font-bold text-sm" style={{ color: 'var(--color-caleo-primary)' }}>{pi.pi_number}</div>
                     <div className="text-xs text-gray-500">{fmtDate(pi.purchase_date)}</div>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <div className="font-semibold text-sm">{pi.supplier?.name ?? '—'}</div>
                     {pi.supplier_invoice_number && <div className="text-[11px] text-gray-500 mt-0.5">Faktur: {pi.supplier_invoice_number}</div>}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-4">
                     <div className="text-sm font-semibold text-indigo-700">{shortOrderRef(pi.order_id)}</div>
                   </td>
-                  <td className="px-5 py-4 text-right text-sm font-bold">{formatIDR(pi.total)}</td>
-                  <td className="px-5 py-4 text-center"><PiStatusBadge pi={pi} /></td>
-                  <td className="px-5 py-4 text-right">
+                  <td className="px-4 py-4 text-right text-sm font-bold">{formatIDR(pi.total)}</td>
+                  <td className="px-4 py-4 text-center"><PiStatusBadge pi={pi} /></td>
+                  <td className="px-4 py-4 text-right">
                     <div className="inline-flex gap-1">
                       {pi.status === 'BELUM_LUNAS' && !pi.voided_at && (
                         <button onClick={() => setPayTarget(pi)}

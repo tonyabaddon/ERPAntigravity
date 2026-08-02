@@ -217,7 +217,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="border rounded-full px-5 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
+              className="border rounded-full px-4 py-2.5 text-[13px] font-medium disabled:opacity-40 transition-colors"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
             >
               Batal
@@ -225,7 +225,7 @@ export function SalesRepCreateModal({ open, onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={submitting || !isValid}
-              className="font-extrabold rounded-full px-5 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="font-extrabold rounded-full px-4 py-2.5 text-[13px] disabled:opacity-40 hover:opacity-90 transition-opacity"
               style={{ background: '#0B2545', color: '#ffffff' }}
             >
               {submitting ? 'Menyimpan…' : 'Simpan'}

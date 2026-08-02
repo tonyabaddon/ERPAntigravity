@@ -47,12 +47,12 @@ export default function RevertWriteOffConfirmModal({
         className="w-full max-w-sm bg-white rounded-sm shadow-xl overflow-hidden border-2 border-red-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-red-100 bg-red-50">
+        <div className="px-4 py-4 border-b border-red-100 bg-red-50">
           <h2 className="font-extrabold text-base text-red-800">Batalkan Tulis-off?</h2>
           <p className="text-xs text-red-700 mt-0.5">Invoice akan kembali ke status piutang aktif.</p>
         </div>
 
-        <div className="px-5 py-4 space-y-2">
+        <div className="px-4 py-4 space-y-2">
           <div className="text-xs space-y-1">
             <div><span className="text-gray-500">Customer:</span> <span className="font-semibold">{row.customer?.name ?? row.order.customer_name}</span></div>
             <div><span className="text-gray-500">Invoice:</span> <span className="font-mono">{row.order.id.slice(0, 8)}</span></div>
@@ -63,7 +63,7 @@ export default function RevertWriteOffConfirmModal({
           </div>
         </div>
 
-        <div className="px-5 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}

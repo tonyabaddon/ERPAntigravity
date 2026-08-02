@@ -441,7 +441,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
               </div>
               <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
             </div>
-            <div className="bg-[#eff4ff] px-5 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="bg-[#eff4ff] px-4 py-2.5 rounded-full border border-blue-50 flex items-center gap-2.5 w-full sm:w-auto">
               <Search className="w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -478,7 +478,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                   <div key={adm.id} className="border border-[#e5eeff] rounded-sm overflow-hidden">
                     {/* Collapsed row */}
                     <div
-                      className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
+                      className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-[#eff4ff]/40 transition-colors"
                       onClick={() => setExpandedId(isExpanded ? null : adm.id)}
                     >
                       <div className="w-10 h-10 rounded-full bg-[#abc9f3]/40 flex items-center justify-center text-[var(--color-caleo-primary)] font-black text-sm select-none shrink-0">
@@ -513,7 +513,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
                     {/* Expanded permission grid — grouped by category */}
                     {isExpanded && (
-                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-5 py-5 space-y-5">
+                      <div className="border-t border-[#eff4ff] bg-[#fafbff] px-4 py-5 space-y-5">
                         {isOwner && (
                           <p className="text-[10px] font-bold text-amber-600 mb-3 flex items-center gap-1.5">
                             <Crown className="w-3 h-3" /> Owner memiliki akses penuh — hak akses tidak dapat diubah.

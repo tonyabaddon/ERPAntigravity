@@ -391,7 +391,7 @@ export default function RekonsiliasiScreen({ currentUser, showToast }: Props) {
 
       {/* GL mode: COA account selector (shown when multiple BANK COA accounts exist) */}
       {glMode && glBankCoaAccounts.length > 1 && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-sm px-5 py-3 flex items-center gap-3">
+        <div className="bg-indigo-50 border border-indigo-200 rounded-sm px-4 py-3 flex items-center gap-3">
           <span className="text-xs font-bold text-indigo-700">Akun COA Bank:</span>
           <select
             value={glCoaAccountId ?? ''}

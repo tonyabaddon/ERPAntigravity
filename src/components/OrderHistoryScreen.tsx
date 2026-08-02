@@ -546,7 +546,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
               <div key={entry.id} className={`border-b border-gray-100 last:border-0 ${borderCl} ${isDimmed ? 'opacity-55' : ''}`}>
                 {/* Collapsed row */}
                 <div
-                  className={`flex items-center gap-3 px-5 py-3 transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
                     entry.source === 'order' ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
                   } ${isExpanded ? 'bg-gray-50' : ''}`}
                   onClick={() => { if (entry.source === 'order') setExpandedId(isExpanded ? null : entry.id); }}
@@ -588,7 +588,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                 </div>
 
                 {isExpanded && order && order.status === 'PENDING_ADMIN_CONFIRMATION' && (
-                  <div className="px-5 py-4 border-t border-purple-200 bg-purple-50">
+                  <div className="px-4 py-4 border-t border-purple-200 bg-purple-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       {/* Left: detail */}
                       <div>
@@ -705,7 +705,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && order.status === 'PAYMENT_UPLOADED' && (
-                  <div className="px-5 py-4 border-t border-blue-200 bg-blue-50">
+                  <div className="px-4 py-4 border-t border-blue-200 bg-blue-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       <div>
                         <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
@@ -786,7 +786,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && order.status === 'DP_UPLOADED' && (
-                  <div className="px-5 py-4 border-t border-indigo-200 bg-indigo-50">
+                  <div className="px-4 py-4 border-t border-indigo-200 bg-indigo-50">
                     <div className="grid grid-cols-[1fr_auto] gap-5 items-start">
                       <div>
                         <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
@@ -856,7 +856,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && order.status === 'DP_VERIFIED' && (
-                  <div className="px-5 py-4 border-t border-teal-200 bg-teal-50">
+                  <div className="px-4 py-4 border-t border-teal-200 bg-teal-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div>
                         <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div>
@@ -880,7 +880,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && order.status === 'WAITING_PAYMENT' && (
-                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                  <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
@@ -892,7 +892,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && (order.status === 'PAYMENT_VERIFIED' || order.status === 'COMPLETED') && (
-                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                  <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-4 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
@@ -920,7 +920,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                   </div>
                 )}
                 {isExpanded && order && (order.status === 'CANCELLED' || order.status === 'PAYMENT_REJECTED' || order.status === 'DP_PROOF_REJECTED') && (
-                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50">
+                  <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
                     <div className="grid grid-cols-3 gap-3 mb-3 text-xs">
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">Pelanggan</div><div className="font-semibold text-gray-700">{order.customer_name}</div></div>
                       <div><div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 mb-1">No. WA</div><div className="font-mono font-semibold text-gray-700">{order.customer_phone}</div></div>
