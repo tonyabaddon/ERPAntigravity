@@ -8,6 +8,7 @@ import type { PdfPrintMode } from '../../lib/sales/pdf/common';
 import { RiwayatPersetujuanPanel } from './RiwayatPersetujuanPanel';
 import TambahLayananModal from '../penjualan/TambahLayananModal';
 import { captureError } from '../../lib/captureError';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   order: Order;
@@ -160,9 +161,11 @@ export function ActionPanel({
             <PaymentProofThumbnail proofUrl={proofUrl} source={order.proof_source} onClick={onOpenProof} />
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ padding: 16, background: '#f9fafb', borderRadius: 12, color: '#6b7280', fontSize: 12, flex: 1 }}>
-                Belum ada bukti dari customer
-              </div>
+              <EmptyState
+                inline
+                message="Belum ada bukti dari customer"
+                className="flex-1 rounded-xl bg-[#f9fafb]"
+              />
               <button onClick={onUploadProof} style={{ background: 'var(--color-primary)', color: 'white', padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
                 📤 Upload Bukti Manual
               </button>

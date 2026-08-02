@@ -17,6 +17,8 @@ import type {
 } from '../../lib/supplierClaims/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface KlaimSupplierPanelProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -167,7 +169,7 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
     }
   };
 
-  if (loading) return <div className="p-4 text-sm text-slate-500">Memuat...</div>;
+  if (loading) return <LoadingState label="Memuat..." inline className="p-4" />;
 
   return (
     <div className="px-4 py-3" style={{ fontSize: '14px' }}>
@@ -227,10 +229,11 @@ export default function KlaimSupplierPanel({ showToast }: KlaimSupplierPanelProp
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
-          <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
-          Tidak ada klaim.
-        </div>
+        <EmptyState
+          message="Tidak ada klaim."
+          icon={CheckCircle2}
+          className="rounded border border-dashed border-slate-300 bg-white"
+        />
       ) : (
         <div className="space-y-2">
           {filtered.map((claim) => {

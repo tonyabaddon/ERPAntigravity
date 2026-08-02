@@ -22,6 +22,7 @@ import {
 import { NotificationConfig, DbWaRecipient } from '../types';
 import { notificationConfigService, waRecipientsService, isSupabaseConfigured } from '../lib/supabaseClient';
 import { captureError } from '../lib/captureError';
+import EmptyState from './ui/EmptyState';
 
 interface NotificationSettingsScreenProps {
   config: NotificationConfig;
@@ -329,9 +330,11 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
 
         <div className="space-y-2">
           {recipients.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4 bg-gray-50 rounded">
-              Belum ada nomor. Tambahkan di Pengaturan → Penerima Notifikasi WA.
-            </p>
+            <EmptyState
+              inline
+              message="Belum ada nomor. Tambahkan di Pengaturan → Penerima Notifikasi WA."
+              className="bg-gray-50 rounded"
+            />
           ) : (
             recipients.map(r => (
               <div key={r.id} className={`flex items-center gap-3 px-4 py-2.5 rounded border ${r.is_active ? 'bg-[#f8f9ff] border-[#abc9f3]/40' : 'bg-gray-50 border-gray-200 opacity-60'}`}>

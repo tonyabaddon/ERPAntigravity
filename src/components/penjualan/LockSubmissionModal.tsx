@@ -6,6 +6,7 @@ import { useWarehouses } from '../../hooks/useWarehouses';
 import WarehousePicker from '../warehouse/WarehousePicker';
 import { formatIDR } from '../../lib/formatIDR';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
+import EmptyState from '../ui/EmptyState';
 
 interface LockSubmissionModalProps {
   transactionId: string;
@@ -316,7 +317,7 @@ export default function LockSubmissionModal({
                   </div>
 
                   {d.components.length === 0 && (
-                    <div className="text-caleo-11 text-slate-400 italic">Belum ada komponen. Cari SKU di bawah.</div>
+                    <EmptyState inline message="Belum ada komponen. Cari SKU di bawah." />
                   )}
 
                   {d.components.map(c => (
@@ -358,7 +359,7 @@ export default function LockSubmissionModal({
                     {(skuQuery[d.id]?.length ?? 0) > 0 && (
                       <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-48 overflow-y-auto">
                         {filteredOptions(d.id).length === 0 ? (
-                          <div className="px-3 py-2 text-xs text-slate-400 italic">Tidak ada SKU cocok.</div>
+                          <EmptyState inline message="Tidak ada SKU cocok." className="px-3" />
                         ) : (
                           filteredOptions(d.id).map(opt => (
                             <button
