@@ -10,6 +10,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { captureError } from '../../lib/captureError';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 interface CustomerSummary {
   id: string;
@@ -111,9 +113,9 @@ export default function PreOrderFulfillmentsCard({ showToast }: Props) {
         <span className="text-caleo-10 uppercase tracking-wider text-slate-400 font-bold">Notify customer manual</span>
       </div>
       {loading ? (
-        <p className="text-xs text-slate-500">Memuat...</p>
+        <LoadingState inline label="Memuat" />
       ) : rows.length === 0 ? (
-        <p className="text-xs text-slate-500 italic">Belum ada pre-order yang ter-fulfill minggu ini.</p>
+        <EmptyState inline message="Belum ada pre-order yang ter-fulfill minggu ini." />
       ) : (
         <div className="divide-y divide-slate-100">
           {rows.map((r) => (

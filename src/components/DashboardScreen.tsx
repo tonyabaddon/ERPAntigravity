@@ -17,6 +17,9 @@ import PromoProdukCard from './dashboard/PromoProdukCard';
 import TodayStripCard from './dashboard/TodayStripCard';
 import DashboardMaintenanceSection from './dashboard/DashboardMaintenanceSection';
 import MaintenanceCard from './dashboard/MaintenanceCard';
+import EmptyState from './ui/EmptyState';
+import LoadingState from './ui/LoadingState';
+import ErrorState from './ui/ErrorState';
 
 interface DashboardScreenProps {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -123,18 +126,15 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
 
           <div className="space-y-4">
             {activityLoading ? (
-              <div className="flex items-center gap-4 p-4 text-sm text-gray-400">
-                <div className="w-4 h-4 border-2 border-gray-200 border-t-[#2d8a4e] rounded-full animate-spin" />
-                Memuat aktivitas...
+              <div className="p-4">
+                <LoadingState inline label="Memuat aktivitas" />
               </div>
             ) : activityError ? (
-              <div className="flex items-center gap-4 p-4 text-sm text-red-500 italic">
-                {activityError}
+              <div className="p-4">
+                <ErrorState message={activityError} />
               </div>
             ) : recentActivity.length === 0 ? (
-              <div className="flex items-center gap-4 p-4 text-sm text-gray-400 italic">
-                Belum ada aktivitas hari ini.
-              </div>
+              <EmptyState inline message="Belum ada aktivitas hari ini." className="p-4" />
             ) : recentActivity.map((item, i) => (
               <div key={i} className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded transition-colors border border-transparent hover:border-blue-100">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-[#2d8a4e]">
