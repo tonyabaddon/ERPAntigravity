@@ -11,6 +11,8 @@ import { extractErrorMessage } from '../../lib/extractErrorMessage';
 import { formatIDR } from '../../lib/formatIDR';
 import { NumberInput } from '../ui/NumberInput';
 import BOMEditor from '../pengaturan/layanan/BOMEditor';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 interface Props {
   orderId: string;
@@ -135,13 +137,12 @@ export default function TambahLayananModal({
         </div>
         <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           {loading ? (
-            <div className="text-center py-8 text-caleo-13 text-slate-500">
-              Memuat katalog layanan…
-            </div>
+            <LoadingState label="Memuat katalog layanan…" />
           ) : catalog.length === 0 ? (
-            <div className="text-center py-8 text-caleo-13 text-slate-500 border border-dashed border-slate-300 rounded">
-              Belum ada layanan aktif. Setup di Pengaturan → 🛠 Layanan dulu.
-            </div>
+            <EmptyState
+              message="Belum ada layanan aktif."
+              hint="Setup di Pengaturan → 🛠 Layanan dulu."
+            />
           ) : (
             <>
               <div>

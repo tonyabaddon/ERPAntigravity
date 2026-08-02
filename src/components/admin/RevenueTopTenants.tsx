@@ -2,11 +2,13 @@
 // Top-10 tenants by revenue YTD table.
 // Columns: Rank | Nama | Paket badge | Total | Coverage badge.
 // Rows are clickable → /admin/tenants/{slug}?tab=pembayaran
+import React from 'react';
 import type { RevenueStats } from '../../lib/paymentsTypes';
 import type { AdminTenantRow } from '../../lib/adminTypes';
 import type { CoverageStatus } from '../../lib/adminTypes';
 import { formatIDR } from '../../lib/formatIDR';
 import { CoverageStatusBadge } from './CoverageStatusBadge';
+import EmptyState from '../ui/EmptyState';
 
 interface TenantWithRevenue {
   tenant_id: string;
@@ -81,12 +83,8 @@ export function RevenueTopTenants({
       </div>
 
       {rows.length === 0 ? (
-        <div
-          className="px-4 py-8 text-center text-caleo-13"
-          style={{ color: '#9DB2CE' }}
-          data-testid="top-tenants-empty"
-        >
-          Belum ada data pembayaran.
+        <div data-testid="top-tenants-empty">
+          <EmptyState message="Belum ada data pembayaran." />
         </div>
       ) : (
         <table className="w-full text-caleo-13" aria-label="Top 10 tenant berdasarkan pendapatan">

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Search, Plus, ChevronRight, Package } from 'lucide-react';
+import EmptyState from '../../ui/EmptyState';
 import { DbSupplier, DbPurchaseOrder } from '../../../types';
 
 interface SupplierPickerProps {
@@ -120,20 +121,18 @@ export default function SupplierPicker({
           <div className="max-h-72 overflow-y-auto">
             {suppliers.length === 0 ? (
               // State A: Empty DB
-              <div className="px-4 py-8 text-center">
-                <div className="w-12 h-12 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                  <Package className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="text-sm font-semibold text-gray-700">Belum ada supplier</p>
-                <p className="text-xs text-gray-500 mt-1">Buat supplier pertama untuk mulai PO.</p>
-              </div>
+              <EmptyState
+                message="Belum ada supplier"
+                hint="Buat supplier pertama untuk mulai PO."
+                icon={Package}
+                inline
+              />
             ) : filtered.length === 0 ? (
               // State D: Typed, no match
-              <div className="px-4 py-5 text-center">
-                <p className="text-sm text-gray-500">
-                  Tidak ada supplier dengan nama <span className="font-semibold text-gray-700">"{search}"</span>.
-                </p>
-              </div>
+              <EmptyState
+                message={`Tidak ada supplier dengan nama "${search}".`}
+                inline
+              />
             ) : (
               <>
                 {/* State B/C: List with optional header */}

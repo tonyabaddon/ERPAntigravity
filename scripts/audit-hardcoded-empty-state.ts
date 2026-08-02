@@ -14,9 +14,11 @@ const ROOT = 'src';
 // Match text nodes in JSX (loose approximation — full parse would be over-eager).
 const EMPTY_RE = /(?:>|['"`])(Belum ada|Tidak ada)[^<'"]*(?:<|['"`])/g;
 // Allow "Belum ada / Tidak ada" text inside design-system component prop values
-// (message=, hint=, label=, empty=) — the whole point of migrating to
-// <EmptyState /> is to keep the string in a prop.
-const PROP_ALLOWLIST_RE = /\b(message|hint|label|empty|fallback)\s*=/;
+// (message=, hint=, label=, empty=, title=, aria-label=) — the whole point of
+// migrating to <EmptyState /> is to keep the string in a prop.
+// Also skip HTML tooltip/aria attributes (title=, aria-label=) which are never
+// empty-state JSX text nodes.
+const PROP_ALLOWLIST_RE = /\b(message|hint|label|empty|fallback|title|aria-label)\s*=/;
 
 function walk(dir: string, out: string[]): void {
   for (const entry of readdirSync(dir)) {
@@ -45,11 +47,10 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/admin/CostDashboard.tsx',
   'src/components/admin/PendingPaymentRow.tsx',
   'src/components/admin/PlansManagement.tsx',
-  'src/components/admin/RevenueTopTenants.tsx',
   'src/components/admin/TenantDetail/PembayaranTab.tsx',
   'src/components/admin/TenantsList.tsx',
   'src/components/admin/TenantsTable.tsx',
-  'src/components/akuntansi/CashAccountPicker.tsx',
+  'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
   'src/components/akuntansi/OpeningBalanceWizard.tsx',
   'src/components/akuntansi/gl/BukuBesarTab.tsx',
   'src/components/akuntansi/gl/COAManagementTab.tsx',
@@ -65,11 +66,9 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/laporan/akuntansi/MutasiTab.tsx',
   'src/components/laporan/akuntansi/NeracaTab.tsx',
   'src/components/pembelian/KlaimSupplierPanel.tsx',
-  'src/components/pembelian/beranda/BerandaPembelian.tsx',
-  'src/components/pembelian/form/SupplierPicker.tsx',
+  'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
   'src/components/pembelian/pembayaran/PembayaranFormPage.tsx',
   'src/components/pembelian/tagihan/TagihanFormPage.tsx',
-  'src/components/pembelian/tagihan/TagihanList.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
   'src/components/pengaturan/PromoProdukPanel.tsx',
@@ -80,13 +79,10 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/penjualan/CartRows.tsx',
   'src/components/penjualan/DaftarPenawaranScreen.tsx',
   'src/components/penjualan/LockSubmissionModal.tsx',
-  'src/components/penjualan/TambahLayananModal.tsx',
   'src/components/piutang/PiutangScreen.tsx',
-  'src/components/produk/BulkUploadSection.tsx',
-  'src/components/produk/CatalogListView.tsx',
+  'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
   'src/components/produk/ProductForm.tsx',
   'src/components/produk/StockTableView.tsx',
-  'src/components/rekonsiliasi/JournalColumn.tsx',
   'src/components/sales/ActionPanel.tsx',
   'src/components/sales/DaftarPesananScreen.tsx',
   'src/components/stok/PriceChangeRequestModal.tsx',

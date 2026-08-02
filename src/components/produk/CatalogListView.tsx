@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { StockItem, Warehouse, ProductPhoto } from '../../types';
+import EmptyState from '../ui/EmptyState';
 import type { PromoDiscountType } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
 import StokGudangInline from './StokGudangInline';
@@ -203,9 +204,7 @@ export default function CatalogListView({
         </tbody>
       </table>
       {items.length === 0 && (
-        <p className="text-center py-12 text-slate-400 font-semibold text-sm">
-          Tidak ada produk yang cocok dengan filter pencarian.
-        </p>
+        <EmptyState message="Tidak ada produk yang cocok dengan filter pencarian." />
       )}
     </div>
   );

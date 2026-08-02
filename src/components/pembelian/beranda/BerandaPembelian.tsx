@@ -7,6 +7,9 @@ import React, { useEffect, useState } from 'react';
 import {
   Wallet, CalendarClock, AlarmClock, AlertTriangle, ChevronRight, RefreshCw,
 } from 'lucide-react';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
+import ErrorState from '../../ui/ErrorState';
 import { pembayaranService } from '../../../lib/pembayaranService';
 import type { ApDashboardLite } from '../../../types';
 import KpiCard from '../../ui/KpiCard';
@@ -62,23 +65,13 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
   }, []);
 
   if (loading && !data) {
-    return <div className="p-8 text-center text-sm text-gray-500">Memuat dashboard...</div>;
+    return <LoadingState label="Memuat dashboard..." />;
   }
   if (fetchError && !data) {
-    return (
-      <div className="p-8 text-center space-y-3">
-        <p className="text-sm font-semibold text-red-600">{fetchError}</p>
-        <button
-          onClick={reload}
-          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
-        >
-          Coba Lagi
-        </button>
-      </div>
-    );
+    return <ErrorState message={fetchError} onRetry={reload} />;
   }
   if (!data) {
-    return <div className="p-8 text-center text-sm text-gray-500">Tidak ada data.</div>;
+    return <EmptyState message="Tidak ada data." />;
   }
 
   const { kpi, per_supplier } = data;
@@ -146,7 +139,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
           <div className="text-caleo-11 text-gray-500">{per_supplier.length} supplier</div>
         </div>
         {per_supplier.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">Tidak ada outstanding — semua sudah lunas! ✨</div>
+          <EmptyState message="Tidak ada outstanding — semua sudah lunas! ✨" />
         ) : (
           <table className="w-full">
             <thead className="border-b border-gray-200">
