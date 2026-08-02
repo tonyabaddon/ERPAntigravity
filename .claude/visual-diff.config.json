@@ -1,0 +1,63 @@
+{
+  "baselineUrl": "https://app.caleo.id",
+  "candidateUrlHint": "https://c<BRANCH_SHA>---garindo-jaya-panel-msme-erp-frontend-xnrhcw7onq-as.a.run.app",
+  "authTenant": {
+    "slug": "toko-jaya-makmur",
+    "loginPath": "/login",
+    "note": "Toko Jaya Makmur — the persistent prod-testing tenant (memory production-testing-tenant)"
+  },
+  "modules": {
+    "dashboard": {
+      "paths": ["/t/toko-jaya-makmur/dashboard"],
+      "description": "Owner landing screen"
+    },
+    "kasir": {
+      "paths": [
+        "/t/toko-jaya-makmur/kasir",
+        "/t/toko-jaya-makmur/kasir/checkout"
+      ],
+      "description": "Point-of-sale flow"
+    },
+    "penjualan": {
+      "paths": [
+        "/t/toko-jaya-makmur/pesanan",
+        "/t/toko-jaya-makmur/pesanan/baru"
+      ],
+      "description": "Sales order create/edit"
+    },
+    "laporan": {
+      "paths": [
+        "/t/toko-jaya-makmur/laporan/laba-rugi",
+        "/t/toko-jaya-makmur/laporan/neraca"
+      ],
+      "description": "Owner financial reports"
+    },
+    "pembelian": {
+      "paths": [
+        "/t/toko-jaya-makmur/pembelian/po",
+        "/t/toko-jaya-makmur/pembelian/tagihan",
+        "/t/toko-jaya-makmur/pembelian/pembayaran"
+      ],
+      "description": "Purchase order + AP flow"
+    },
+    "admin": {
+      "paths": [
+        "/admin/dashboard",
+        "/admin/users"
+      ],
+      "description": "Platform admin panel (admin.caleo.id host)"
+    },
+    "designSystemPreview": {
+      "paths": ["/design-system.html"],
+      "description": "Design system static preview (Track A codemod verification)"
+    }
+  },
+  "trackA_sample": [
+    "dashboard",
+    "kasir",
+    "penjualan",
+    "laporan",
+    "designSystemPreview"
+  ],
+  "trackA_note": "Track A cross-cutting codemods sample the top-traffic modules — no need to screenshot all 13 modules for a mechanical codemod. If sample looks identical, ship."
+}

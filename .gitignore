@@ -30,3 +30,7 @@ backend-go/.env
 .env
 models/clip-vit-base-patch32.onnx
 public/design-system.html
+
+# Visual approval gate — ephemeral screenshots + HTML reports (per docs/superpowers/specs/2026-08-02-visual-approval-gate-design.md)
+public/visual-diff/
+public/visual-diff-*.html
