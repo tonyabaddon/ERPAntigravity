@@ -7,6 +7,8 @@ import {
 import { extractErrorMessage } from '../../../lib/extractErrorMessage';
 import { formatIDR } from '../../../lib/formatIDR';
 import ServiceCatalogEditModal from './ServiceCatalogEditModal';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -77,19 +79,13 @@ export default function ServiceCatalogList({ showToast }: Props) {
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-caleo-13 text-slate-500">
-          Memuat…
-        </div>
+        <LoadingState label="Memuat…" />
       ) : activeItems.length === 0 ? (
-        <div className="border border-dashed border-slate-300 rounded px-6 py-8 text-center">
-          <div className="text-4xl mb-2">🛠</div>
-          <div className="text-sm font-bold text-slate-700 mb-1">
-            Belum ada layanan
-          </div>
-          <div className="text-xs text-slate-500">
-            Klik "+ Tambah Layanan" untuk setup layanan pertama.
-          </div>
-        </div>
+        <EmptyState
+          message="Belum ada layanan"
+          hint="Klik &quot;+ Tambah Layanan&quot; untuk setup layanan pertama."
+          action={{ label: '+ Tambah Layanan', onClick: () => setEditing('new') }}
+        />
       ) : (
         Array.from(grouped.entries()).map(([cat, catItems]) => (
           <div key={cat} className="space-y-2">

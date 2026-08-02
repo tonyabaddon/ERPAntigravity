@@ -6,6 +6,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 
 export interface CoaOption {
   coa_code: string;
@@ -140,11 +142,9 @@ export default function CoAPicker({
       {open && (
         <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-52 overflow-y-auto">
           {loading ? (
-            <div className="px-3 py-2 text-xs text-slate-400">Mencari…</div>
+            <div className="px-3 py-2"><LoadingState label="Mencari…" inline /></div>
           ) : results.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-slate-400">
-              {query ? 'Tidak ada hasil.' : 'Ketik untuk cari…'}
-            </div>
+            <EmptyState inline message={query ? 'Tidak ada hasil.' : 'Ketik untuk cari…'} className="px-3 py-2" />
           ) : (
             results.map((row) => (
               <div

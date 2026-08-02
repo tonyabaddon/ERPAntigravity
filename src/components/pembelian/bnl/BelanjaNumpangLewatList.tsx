@@ -2,6 +2,8 @@
 // Reads from purchase_invoices WHERE type='PASSTHROUGH'.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, FileText, ShoppingBag, Clock, AlertTriangle, AlarmClock } from 'lucide-react';
+import LoadingState from '../../ui/LoadingState';
+import EmptyState from '../../ui/EmptyState';
 import { purchaseInvoiceService, isTerlambat, isDueSoon, shortOrderRef } from '../../../lib/purchaseInvoiceService';
 import type { DbPurchaseInvoice } from '../../../types';
 import { type FilterState, resolveRange, inRange } from '../../../lib/dateRange';
@@ -122,9 +124,9 @@ export default function BelanjaNumpangLewatList({ showToast, onCreate, onOpenDet
 
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
+          <LoadingState label="Memuat…" />
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">Belum ada PI dalam periode ini.</div>
+          <EmptyState message="Belum ada PI dalam periode ini." />
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">

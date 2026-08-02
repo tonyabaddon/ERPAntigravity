@@ -4,6 +4,7 @@
 // No recharts dependency — VOSI palette.
 import type { RevenueStats } from '../../lib/paymentsTypes';
 import { formatIDR } from '../../lib/formatIDR';
+import EmptyState from '../ui/EmptyState';
 
 interface RevenueMonthlyTrendProps {
   /** Revenue stats grouped by month (group_by: 'month'). Always 12 rows. */
@@ -69,13 +70,9 @@ export function RevenueMonthlyTrend({ monthlyStats }: RevenueMonthlyTrendProps) 
       </h3>
 
       {allZero ? (
-        <p
-          className="text-caleo-13 py-4 text-center"
-          style={{ color: '#9DB2CE' }}
-          data-testid="trend-empty"
-        >
-          Belum ada data pembayaran.
-        </p>
+        <div data-testid="trend-empty">
+          <EmptyState inline message="Belum ada data pembayaran." className="py-4 justify-center" />
+        </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <svg
