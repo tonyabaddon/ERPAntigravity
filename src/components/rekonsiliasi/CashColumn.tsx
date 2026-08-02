@@ -1,6 +1,7 @@
 // src/components/rekonsiliasi/CashColumn.tsx
 import React from 'react';
 import type { CashDepositBatch } from '../../types';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   batches: CashDepositBatch[];
@@ -54,7 +55,7 @@ export default function CashColumn({ batches, onFindDeposit, onExplain }: Props)
             </div>
           );
         })}
-        {batches.length === 0 && <div className="text-center text-xs text-slate-400 font-semibold py-4">Belum ada batch kas.</div>}
+        {batches.length === 0 && <EmptyState message="Belum ada batch kas." inline />}
       </div>
     </div>
   );

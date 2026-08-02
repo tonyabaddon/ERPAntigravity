@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { getTopCustomers } from '../../lib/dashboardReports/api';
 import type { TopCustomerRow, PeriodDays } from '../../lib/dashboardReports/types';
 import { captureError } from '../../lib/captureError';
+import LoadingState from '../ui/LoadingState';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   days: PeriodDays;
@@ -26,10 +28,10 @@ export default function TopCustomerTable({ days, onOpenCustomer }: Props) {
   }, [days]);
 
   if (rows === null) {
-    return <p className="text-sm text-slate-400 italic">Memuat data customer...</p>;
+    return <LoadingState label="Memuat data customer..." inline />;
   }
   if (rows.length === 0) {
-    return <p className="text-sm text-slate-400 italic">Belum ada transaksi customer dalam periode ini.</p>;
+    return <EmptyState message="Belum ada transaksi customer dalam periode ini." inline />;
   }
 
   return (

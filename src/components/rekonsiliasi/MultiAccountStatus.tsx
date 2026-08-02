@@ -1,6 +1,7 @@
 // src/components/rekonsiliasi/MultiAccountStatus.tsx
 import React from 'react';
 import type { BankAccount } from '../../types';
+import EmptyState from '../ui/EmptyState';
 
 interface Props {
   accounts: BankAccount[];
@@ -46,7 +47,9 @@ export default function MultiAccountStatus({ accounts, uploadedAccountIds, onAdd
           );
         })}
         {accounts.length === 0 && (
-          <div className="col-span-full text-center text-xs text-slate-500 font-semibold py-4">Belum ada rekening. Klik <strong>+ Tambah</strong>.</div>
+          <div className="col-span-full">
+            <EmptyState message="Belum ada rekening. Klik + Tambah." inline />
+          </div>
         )}
       </div>
     </div>

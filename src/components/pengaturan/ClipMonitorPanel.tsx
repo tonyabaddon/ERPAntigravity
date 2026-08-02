@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchTodayInferenceRows, aggregateInferenceRows, type InferenceAggregate } from '../../lib/clipMonitorService';
+import LoadingState from '../ui/LoadingState';
 
 export default function ClipMonitorPanel() {
   const [agg, setAgg] = useState<InferenceAggregate | null>(null);
@@ -22,7 +23,11 @@ export default function ClipMonitorPanel() {
   }, []);
 
   if (loading) {
-    return <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm text-sm text-slate-500">Memuat data inference…</div>;
+    return (
+      <div className="bg-white rounded border border-[var(--color-caleo-mist)] p-6 shadow-sm">
+        <LoadingState label="Memuat data inference…" />
+      </div>
+    );
   }
   if (!agg) return null;
 

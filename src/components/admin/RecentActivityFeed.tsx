@@ -1,6 +1,7 @@
 // src/components/admin/RecentActivityFeed.tsx
-// Renders last N audit events. When empty, shows "Belum ada aktivitas" state.
+// Renders last N audit events. When empty, shows EmptyState.
 import type { AuditEventRow } from '../../lib/adminTypes';
+import EmptyState from '../ui/EmptyState';
 
 function relativeTime(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -34,12 +35,8 @@ export function RecentActivityFeed({ events }: Props) {
       </div>
 
       {events.length === 0 ? (
-        <div
-          className="px-4 py-4 text-caleo-13"
-          style={{ color: '#9DB2CE' }}
-          data-testid="activity-feed-empty"
-        >
-          Belum ada aktivitas
+        <div className="px-4 py-4" data-testid="activity-feed-empty">
+          <EmptyState message="Belum ada aktivitas" inline />
         </div>
       ) : (
         <div>
