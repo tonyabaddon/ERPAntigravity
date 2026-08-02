@@ -187,7 +187,7 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: Penawaran berlaku selama harga komponen tidak naik. Garansi pabrik 1 tahun. Ongkir dihitung saat di-convert jadi invoice."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus:border-[var(--color-caleo-primary)]"
             />
             <p className="text-[11px] text-slate-500 mt-1.5 italic">Note ini tampil di PDF Penawaran dan di Daftar Penawaran.</p>
           </div>
@@ -338,7 +338,7 @@ export default function Step3Payment(props: Props) {
                 value={props.dpAmount || ''}
                 onChange={(e) => props.onDpAmountChange(Number(e.target.value || 0))}
                 placeholder={props.dpInputType === 'PERCENT' ? 'Mis: 30' : 'Mis: 1.000.000'}
-                className="w-full px-3 py-2 text-sm border border-amber-300 rounded outline-none focus:ring-2 focus:ring-amber-200"
+                className="w-full px-3 py-2 text-sm border border-amber-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
               />
               <div className="text-[11px] text-amber-800 mt-2">
                 Bayar sekarang: <strong>{formatRp(props.effectiveDp)}</strong> · Sisa pelunasan: <strong>{formatRp(props.sisaPelunasan)}</strong>
@@ -403,7 +403,7 @@ export default function Step3Payment(props: Props) {
               onChange={(e) => props.onOngkirAmountChange(Number(e.target.value || 0))}
               disabled={!props.ongkirOn}
               placeholder="0"
-              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)] disabled:bg-slate-100 disabled:text-slate-400"
+              className="w-full text-right px-3 py-2 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus:border-[var(--color-caleo-primary)] disabled:bg-slate-100 disabled:text-slate-400"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function Step3Payment(props: Props) {
               value={props.deliveryAddress}
               onChange={(e) => props.onDeliveryAddressChange(e.target.value)}
               placeholder="Mis: Jl. Merdeka No. 12, Jakarta Utara"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus:border-[var(--color-caleo-primary)]"
             />
           </div>
 
@@ -427,7 +427,7 @@ export default function Step3Payment(props: Props) {
               value={props.notes}
               onChange={(e) => props.onNotesChange(e.target.value)}
               placeholder="Mis: kirim Selasa, jangan hari libur"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 focus:border-[var(--color-caleo-primary)]"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold focus:border-[var(--color-caleo-primary)]"
             />
           </div>
 

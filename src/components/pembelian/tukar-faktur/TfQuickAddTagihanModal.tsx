@@ -77,7 +77,7 @@ export default function TfQuickAddTagihanModal({
                 value={supplierInv}
                 onChange={e => setSupplierInv(e.target.value)}
                 placeholder="Misal: INV-3501"
-                className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+                className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
               />
             </div>
             <div>
@@ -88,7 +88,7 @@ export default function TfQuickAddTagihanModal({
                 type="date"
                 value={purchaseDate}
                 onChange={e => setPurchaseDate(e.target.value)}
-                className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+                className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function TfQuickAddTagihanModal({
               onChange={e => setTotal(e.target.value)}
               inputMode="decimal"
               placeholder="0"
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 font-bold text-right focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 font-bold text-right focus-visible:outline-none focus:border-indigo-500"
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function TfQuickAddTagihanModal({
               type="date"
               value={dueAt}
               onChange={e => setDueAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Auto-fill Net {defaultPaymentTermDays} hari dari supplier. JT TF (di form luar) akan

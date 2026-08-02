@@ -564,10 +564,10 @@ function CatatBayarModal({ row, onClose, onPaid, showToast, currentUserId }: {
                 step={1}
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 rounded border text-[13px] font-mono focus:outline-none focus:ring-2 ${
+                className={`w-full pl-9 pr-3 py-2 rounded border text-[13px] font-mono focus-visible:outline-none focus-visible:ring-2 ${
                   amountValid
-                    ? 'border-slate-300 focus:ring-emerald-500'
-                    : 'border-rose-300 focus:ring-rose-500 bg-rose-50/40'
+                    ? 'border-slate-300 focus-visible:ring-caleo-gold'
+                    : 'border-rose-300 focus-visible:ring-caleo-gold bg-rose-50/40'
                 }`}
               />
             </div>

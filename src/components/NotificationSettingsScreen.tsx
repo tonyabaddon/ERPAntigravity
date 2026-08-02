@@ -162,7 +162,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   <select 
                     value={interval}
                     onChange={(e) => setIntervalVal(e.target.value)}
-                    className="w-full bg-transparent border-none text-sm font-extrabold text-[var(--color-caleo-primary)] p-0 focus:ring-0 appearance-none cursor-pointer outline-none"
+                    className="w-full bg-transparent border-none text-sm font-extrabold text-[var(--color-caleo-primary)] p-0 focus-visible:ring-0 appearance-none cursor-pointer outline-none"
                   >
                     <option value="Setiap 1 Jam">Setiap 1 Jam</option>
                     <option value="Setiap 4 Jam">Setiap 4 Jam</option>
@@ -187,7 +187,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                     type="checkbox" 
                     checked={revenueChecked}
                     onChange={(e) => setRevenueChecked(e.target.checked)}
-                    className="w-5 h-5 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-slate-300 cursor-pointer"
+                    className="w-5 h-5 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-slate-300 cursor-pointer"
                   />
                   <span className="text-[#0b1c30] text-xs font-bold leading-none group-hover:text-black">
                     Total Omset &amp; Penjualan Terkini
@@ -200,7 +200,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                     type="checkbox" 
                     checked={queueChecked}
                     onChange={(e) => setQueueChecked(e.target.checked)}
-                    className="w-5 h-5 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-slate-300 cursor-pointer"
+                    className="w-5 h-5 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-slate-300 cursor-pointer"
                   />
                   <span className="text-[#0b1c30] text-xs font-bold leading-none group-hover:text-black">
                     Jumlah Antrean Chat <span className="font-extrabold text-[#2d8a4e] ml-1">⏳ Perlu Admin</span> yang Belum Diklaim
@@ -213,7 +213,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                     type="checkbox" 
                     checked={activityChecked}
                     onChange={(e) => setActivityChecked(e.target.checked)}
-                    className="w-5 h-5 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-slate-300 cursor-pointer"
+                    className="w-5 h-5 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-slate-300 cursor-pointer"
                   />
                   <span className="text-[#0b1c30] text-xs font-bold leading-none group-hover:text-black">
                     Ringkasan Log Aktivitas &amp; Klaim Admin Hari Ini
@@ -226,7 +226,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                     type="checkbox" 
                     checked={statusChecked}
                     onChange={(e) => setStatusChecked(e.target.checked)}
-                    className="w-5 h-5 rounded text-[#2d8a4e] focus:ring-[#2d8a4e]/20 border-slate-300 cursor-pointer"
+                    className="w-5 h-5 rounded text-[#2d8a4e] focus-visible:ring-caleo-gold border-slate-300 cursor-pointer"
                   />
                   <span className="text-[#0b1c30] text-xs font-bold leading-none group-hover:text-black">
                     Status Akun &amp; Sisa Masa Aktif Sistem
@@ -265,7 +265,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   const raw = parseInt(e.target.value, 10);
                   setLowStockLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
                 }}
-                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
+                className="w-8 border-none focus-visible:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Pcs</span>
             </div>
@@ -295,7 +295,7 @@ export default function NotificationSettingsScreen({ config, onConfigChange, sho
                   const raw = parseInt(e.target.value, 10);
                   setDelayLimit(Number.isFinite(raw) && raw > 0 ? raw : 1);
                 }}
-                className="w-8 border-none focus:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
+                className="w-8 border-none focus-visible:ring-0 p-0 text-center font-extrabold text-sm text-[var(--color-caleo-primary)] bg-transparent outline-none"
               />
               <span className="text-[10px] font-extrabold text-slate-400 uppercase select-none">Menit</span>
             </div>

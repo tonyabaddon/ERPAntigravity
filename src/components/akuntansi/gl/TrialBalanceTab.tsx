@@ -235,7 +235,7 @@ export default function TrialBalanceTab({
         <div className="flex items-center gap-2 shrink-0">
           {/* Period selector */}
           <select
-            className="border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white w-44 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
             value={selectedPeriod?.id ?? ''}
             onChange={e => handlePeriodChange(e.target.value)}
             disabled={loading || periods.length === 0}

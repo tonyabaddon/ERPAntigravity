@@ -263,7 +263,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           data-testid={`edit-name-${plan.code}`}
         />
       </label>
@@ -273,7 +273,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         <textarea
           value={form.description}
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           rows={2}
           data-testid={`edit-description-${plan.code}`}
         />
@@ -285,7 +285,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="text"
           value={form.target_segment}
           onChange={(e) => setForm((f) => ({ ...f, target_segment: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           data-testid={`edit-target-${plan.code}`}
         />
       </label>
@@ -296,7 +296,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="number"
           value={form.price_annual}
           onChange={(e) => setForm((f) => ({ ...f, price_annual: e.target.value }))}
-          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none font-mono"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none font-mono"
           placeholder="Contoh: 9000000"
           min={0}
           data-testid={`edit-price-annual-${plan.code}`}
@@ -321,7 +321,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         <textarea
           value={form.feature_bundle_json}
           onChange={(e) => handleFeatureChange(e.target.value)}
-          className="border rounded p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus-visible:outline-none"
           rows={6}
           spellCheck={false}
           data-testid={`edit-features-${plan.code}`}

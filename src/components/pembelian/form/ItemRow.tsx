@@ -31,7 +31,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
           min="1"
           value={item.qty}
           onChange={(e) => updateQty(e.target.value)}
-          className="w-16 text-center text-sm font-semibold border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          className="w-16 text-center text-sm font-semibold border border-gray-200 rounded px-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
         />
       </div>
       <div className="col-span-2 flex justify-end">
@@ -43,7 +43,7 @@ const ItemRow: React.FC<ItemRowProps> = ({ item, onChange, onRemove }) => {
             value={item.unit_cost || ''}
             onChange={(e) => updateUnitCost(e.target.value)}
             placeholder="0"
-            className="w-full text-right text-sm border border-gray-200 rounded pl-7 pr-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-full text-right text-sm border border-gray-200 rounded pl-7 pr-2 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
           />
         </div>
       </div>

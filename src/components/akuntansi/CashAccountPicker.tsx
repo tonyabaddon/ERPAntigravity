@@ -133,7 +133,7 @@ export default function CashAccountPicker({
         )}
         <select
           disabled
-          className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+          className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white disabled:opacity-60"
         >
           <option>Memuat akun...</option>
         </select>
@@ -153,7 +153,7 @@ export default function CashAccountPicker({
         )}
         <select
           disabled
-          className="w-full border border-rose-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+          className="w-full border border-rose-300 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white disabled:opacity-60"
         >
           <option>Gagal memuat akun</option>
         </select>
@@ -198,7 +198,7 @@ export default function CashAccountPicker({
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value || null)}
         disabled={disabled}
-        className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+        className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white disabled:opacity-60"
       >
         <option value="">{defaultPlaceholder}</option>
         {filteredAccounts.map((a) => (

@@ -196,7 +196,7 @@ export default function KasirExpenseCategoriesPanel({ isEditable, showToast }: P
               else if (e.key === 'Escape') setAddingLabel(null);
             }}
             placeholder="Nama kategori"
-            className="flex-1 bg-white rounded px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+            className="flex-1 bg-white rounded px-2 py-1 border border-slate-300 text-xs font-semibold text-slate-800 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
           />
           <button
             type="button"

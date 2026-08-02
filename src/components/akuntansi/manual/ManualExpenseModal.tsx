@@ -303,7 +303,7 @@ export default function ManualExpenseModal({
               value={selectedBebanId}
               onChange={(e) => setSelectedBebanId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold/50 bg-white disabled:opacity-60"
             >
               <option value="">— Pilih kategori beban —</option>
               {bebanCategories.map((cat) => (
@@ -323,7 +323,7 @@ export default function ManualExpenseModal({
               value={selectedSourceId}
               onChange={(e) => setSelectedSourceId(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold/50 bg-white disabled:opacity-60"
             >
               <option value="">— Pilih sumber dana —</option>
               {cashAccounts.map((acc) => (
@@ -349,7 +349,7 @@ export default function ManualExpenseModal({
               onBlur={handleAmountBlur}
               placeholder="Rp 0"
               disabled={saving}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold/50 disabled:opacity-60"
             />
           </div>
 
@@ -363,7 +363,7 @@ export default function ManualExpenseModal({
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               disabled={saving}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold/50 disabled:opacity-60"
             />
             {isFuture && (
               <p className="text-[11px] text-amber-700 mt-1">
@@ -383,7 +383,7 @@ export default function ManualExpenseModal({
               onChange={(e) => setDescription(e.target.value)}
               disabled={saving}
               placeholder="Mis. gaji Andi periode Juni 2026"
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/50 disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold/50 disabled:opacity-60"
             />
             {description.trim().length > 0 && description.trim().length < 3 && (
               <p className="text-[11px] text-rose-700 mt-1">

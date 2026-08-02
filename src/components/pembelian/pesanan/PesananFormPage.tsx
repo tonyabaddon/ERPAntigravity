@@ -140,7 +140,7 @@ export default function PesananFormPage({ showToast, onCancel, onSaved, editing 
               <div className="relative">
                 <input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)}
                   placeholder="Cari supplier..."
-                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500" />
+                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500" />
                 {supplierResults.length > 0 && (
                   <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded border border-gray-200 shadow-lg">
                     {supplierResults.map(s => (

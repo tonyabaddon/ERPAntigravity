@@ -151,7 +151,7 @@ export default function TambahLayananModal({
                 <select
                   value={selectedId}
                   onChange={(e) => setSelectedId(e.target.value)}
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-[13px] bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                 >
                   <option value="">— pilih —</option>
                   {catalog.map((c) => (
@@ -173,7 +173,7 @@ export default function TambahLayananModal({
                       value={qty}
                       onChange={(n) => setQty(Math.max(1, n))}
                       allowDecimal={false}
-                      className="w-32 border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-32 border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                     />
                   </div>
 
@@ -185,7 +185,7 @@ export default function TambahLayananModal({
                       value={labor}
                       onChange={setLabor}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                     />
                     <div className="text-[11px] text-slate-400 mt-1">
                       Default catalog:{' '}
@@ -202,7 +202,7 @@ export default function TambahLayananModal({
                       value={finalPrice}
                       onChange={setFinalPrice}
                       allowDecimal={false}
-                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                      className="w-full border border-slate-200 rounded px-3 py-2 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                     />
                   </div>
 

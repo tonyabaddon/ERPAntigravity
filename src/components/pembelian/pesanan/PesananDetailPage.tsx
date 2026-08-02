@@ -281,7 +281,7 @@ function VoidPesananModal({ pesanan, onClose, onVoided, showToast }: VoidProps) 
             <label className="text-xs font-semibold text-gray-700 block mb-1">Alasan void (min. 10 karakter) *</label>
             <textarea value={reason} onChange={e => setReason(e.target.value)}
               rows={3} placeholder="Contoh: Supplier kehabisan stok, customer batal"
-              className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus:outline-none" />
+              className="w-full text-sm px-3 py-2 rounded border border-gray-300 focus:border-red-400 focus-visible:outline-none" />
             <div className="text-[11px] text-gray-400 mt-1">{reason.length} / 10 minimum</div>
           </div>
         </div>

@@ -166,7 +166,7 @@ export default function SaldoAwalPanel({ showToast, storeName = 'Perusahaan Anda
                     onChange={(e) => setReverseReason(e.target.value)}
                     rows={3}
                     placeholder="Misal: Angka modal awal salah, perlu koreksi piutang"
-                    className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-rose-300"
+                    className="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                   />
                 </label>
               </div>

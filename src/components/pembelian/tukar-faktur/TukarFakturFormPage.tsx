@@ -347,7 +347,7 @@ export default function TukarFakturFormPage({
                   value={supplierQuery}
                   onChange={e => setSupplierQuery(e.target.value)}
                   placeholder="Cari supplier..."
-                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
                 />
                 {supplierResults.length > 0 && (
                   <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded border border-gray-200 shadow-lg">
@@ -382,7 +382,7 @@ export default function TukarFakturFormPage({
               type="date"
               value={tukarDate}
               onChange={e => setTukarDate(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Tanggal sales rep datang & serahkan faktur fisik.
@@ -397,7 +397,7 @@ export default function TukarFakturFormPage({
               type="date"
               value={paymentDueAt}
               onChange={e => setPaymentDueAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               {supplier
@@ -412,7 +412,7 @@ export default function TukarFakturFormPage({
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Misal: ritual Rabu PT Eterna"
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500"
             />
           </div>
         </div>

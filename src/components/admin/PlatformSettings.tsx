@@ -133,7 +133,7 @@ export function PlatformSettings() {
               value={bankName}
               onChange={(e) => setBankName(e.target.value)}
               placeholder="Contoh: BCA"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -158,7 +158,7 @@ export function PlatformSettings() {
               value={bankAccountNo}
               onChange={(e) => setBankAccountNo(e.target.value)}
               placeholder="1234567890"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -183,7 +183,7 @@ export function PlatformSettings() {
               value={bankAccountName}
               onChange={(e) => setBankAccountName(e.target.value)}
               placeholder="PT Caleo Digital"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -208,7 +208,7 @@ export function PlatformSettings() {
               value={adminWaNumber}
               onChange={(e) => setAdminWaNumber(e.target.value)}
               placeholder="+62812-3456-7890"
-              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus:ring-2"
+              className="w-full px-3 py-2 rounded border text-[13px] outline-none focus-visible:ring-2"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',

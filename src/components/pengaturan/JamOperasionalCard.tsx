@@ -166,7 +166,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.open_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { open_time: e.target.value })}
-                    className="border border-slate-200 rounded px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                    className="border border-slate-200 rounded px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                   />
                   <span className="text-xs text-slate-400">—</span>
                   <input
@@ -174,7 +174,7 @@ export default function JamOperasionalCard({ showToast }: Props) {
                     value={row.close_time}
                     disabled={!row.is_open || saving}
                     onChange={e => updateRow(row.day_of_week, { close_time: e.target.value })}
-                    className="border border-slate-200 rounded px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                    className="border border-slate-200 rounded px-2 py-1.5 text-sm font-mono disabled:bg-slate-100 disabled:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                   />
                 </div>
               </div>

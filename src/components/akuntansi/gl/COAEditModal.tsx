@@ -146,7 +146,7 @@ export default function COAEditModal({
               </label>
               <input
                 type="text"
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                 value={accountName}
                 onChange={e => setAccountName(e.target.value)}
                 placeholder="Nama akun"
@@ -162,7 +162,7 @@ export default function COAEditModal({
                 Deskripsi
               </label>
               <textarea
-                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)] resize-none"
+                className="w-full px-3 py-2 rounded border border-[var(--color-caleo-mist-dark)] bg-white text-[13px] text-[#43474e] placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold resize-none"
                 rows={3}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -178,7 +178,7 @@ export default function COAEditModal({
                   checked={isActive}
                   onChange={e => setIsActive(e.target.checked)}
                   disabled={isSystemAccount}
-                  className="w-4 h-4 rounded border-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)] focus:ring-[var(--color-caleo-mist-dark)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-4 h-4 rounded border-[var(--color-caleo-mist-dark)] text-[var(--color-caleo-primary)] focus-visible:ring-caleo-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <span className="text-xs font-bold text-gray-700">Aktif</span>
               </label>

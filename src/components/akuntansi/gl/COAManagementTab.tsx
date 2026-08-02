@@ -206,7 +206,7 @@ export default function COAManagementTab({
           <input
             type="text"
             placeholder="Cari kode atau nama..."
-            className="flex-1 min-w-[200px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-mist-dark)]"
+            className="flex-1 min-w-[200px] border border-[var(--color-caleo-mist-dark)] rounded px-3 py-1.5 text-xs text-[#43474e] bg-white placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />

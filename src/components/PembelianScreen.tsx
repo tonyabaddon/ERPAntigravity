@@ -809,12 +809,12 @@ function OrdersTab({
           <div className="flex items-center gap-2 flex-1">
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              className="flex-1 max-w-sm text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="flex-1 max-w-sm text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
               placeholder="Cari no. PO atau supplier..."
             />
             <select
               value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="text-sm border border-gray-200 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="text-sm border border-gray-200 rounded px-3 py-2 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
             >
               <option value="">Semua Status</option>
               <option value="DRAFT">Draft</option>
@@ -990,7 +990,7 @@ function SuppliersTab({ suppliers, showToast, onRefresh }: SuppliersTabProps) {
           <div className="relative">
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
               placeholder="Cari supplier..."
             />
           </div>
@@ -1060,14 +1060,14 @@ function CustomPopover({ initial, onCancel, onApply }: CustomPopoverProps) {
           <label className="text-xs font-semibold text-gray-500 block mb-1">Dari</label>
           <input
             type="date" value={from} onChange={e => setFrom(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
           />
         </div>
         <div>
           <label className="text-xs font-semibold text-gray-500 block mb-1">Sampai</label>
           <input
             type="date" value={to} onChange={e => setTo(e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+            className="w-full text-sm border border-gray-200 rounded px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
           />
         </div>
       </div>

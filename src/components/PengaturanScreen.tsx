@@ -408,7 +408,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Nama</label>
                         <input
-                          className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full border rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                           placeholder="Nama admin"
                           value={addForm.name}
                           onChange={e => setAddForm(prev => ({ ...prev, name: e.target.value }))}
@@ -417,7 +417,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Role</label>
                         <select
-                          className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          className="w-full border rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
                           value={addForm.role}
                           onChange={e => setAddForm(prev => ({ ...prev, role: e.target.value as 'admin' | 'owner' }))}
                         >
@@ -429,7 +429,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor WA</label>
                       <input
-                        className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                         placeholder="085x, +628x, atau 628x..."
                         value={addForm.wa_number}
                         onChange={e => setAddForm(prev => ({ ...prev, wa_number: e.target.value }))}

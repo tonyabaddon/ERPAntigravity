@@ -63,7 +63,7 @@ export default function CustomerPanel(props: CustomerPanelProps) {
           className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded outline-none ${
             isSelected
               ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-              : 'bg-white border-slate-300 focus:border-[var(--color-caleo-primary)] focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30'
+              : 'bg-white border-slate-300 focus:border-[var(--color-caleo-primary)] focus-visible:ring-2 focus-visible:ring-caleo-gold'
           }`}
         />
       </div>

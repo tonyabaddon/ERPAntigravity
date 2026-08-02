@@ -1122,7 +1122,7 @@ export default function App() {
                       type="text"
                       placeholder="Cari menu..."
                       onClick={() => triggerToast("Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                      className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                      className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus-visible:ring-1 focus-visible:ring-caleo-gold"
                     />
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
                   </div>
@@ -1269,7 +1269,7 @@ export default function App() {
                 type="text" 
                 placeholder="Cari menu..." 
                 onClick={() => triggerToast("🔍 Gunakan pintasan navigasi di sidebar untuk berpindah tab.", 'info')}
-                className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus:ring-1 focus:ring-[var(--color-caleo-primary)]"
+                className="bg-[var(--color-caleo-cloud)] border-none rounded-full px-4 py-2 w-56 text-xs font-semibold focus-visible:ring-1 focus-visible:ring-caleo-gold"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
             </div>

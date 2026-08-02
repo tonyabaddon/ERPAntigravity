@@ -62,7 +62,7 @@ function SupplierPicker({
         onFocus={() => { setOpen(true); if (results.length === 0) void search(query); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder="Nama supplier…"
-        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
       />
       {open && results.length > 0 && (
         <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded shadow-lg max-h-40 overflow-y-auto">
@@ -175,7 +175,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
               value={data.hutang_usaha.aggregate_amount}
               onChange={(n) => onChange({ ...data, hutang_usaha: { ...data.hutang_usaha, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.hutang_usaha.aggregate_amount)}</span>
@@ -217,7 +217,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.amount}
                             onChange={(n) => updateAPLine(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                             placeholder="0"
                           />
                         </td>
@@ -226,7 +226,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             type="date"
                             value={line.original_due_date ?? ''}
                             onChange={(e) => updateAPLine(idx, { original_due_date: e.target.value || null })}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -235,7 +235,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.invoice_ref ?? ''}
                             onChange={(e) => updateAPLine(idx, { invoice_ref: e.target.value || null })}
                             placeholder="INV-SUPP-001"
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -331,7 +331,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.amount}
                             onChange={(n) => updateLainLain(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                             placeholder="0"
                           />
                         </td>
@@ -341,7 +341,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.notes}
                             onChange={(e) => updateLainLain(idx, { notes: e.target.value })}
                             placeholder="Keterangan…"
-                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">

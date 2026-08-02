@@ -71,7 +71,7 @@ export default function WarehousePicker(props: Props) {
         value={props.value ?? ''}
         onChange={e => props.onChange(e.target.value)}
         disabled={props.disabled}
-        className="appearance-none bg-white border border-slate-200 rounded px-3 py-1.5 pr-8 text-[11px] font-extrabold text-slate-700 outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)] disabled:opacity-50"
+        className="appearance-none bg-white border border-slate-200 rounded px-3 py-1.5 pr-8 text-[11px] font-extrabold text-slate-700 outline-none focus-visible:ring-1 focus-visible:ring-caleo-gold disabled:opacity-50"
       >
         <option value="" disabled>Pilih gudang…</option>
         {eligible.map(w => {

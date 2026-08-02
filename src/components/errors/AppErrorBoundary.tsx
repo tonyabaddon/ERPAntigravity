@@ -65,7 +65,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
           </div>
           <button
             onClick={this.handleReload}
-            className="mt-6 w-full px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="mt-6 w-full px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
             data-testid="app-error-reload"
           >
             Muat ulang halaman

@@ -393,7 +393,7 @@ export default function BalanceAdjustmentModal({
                 onBlur={handleAmountBlur}
                 placeholder="Rp 0"
                 disabled={saving}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-60"
               />
             </div>
           </div>
@@ -407,7 +407,7 @@ export default function BalanceAdjustmentModal({
               value={counterpartCoaId}
               onChange={(e) => setCounterpartCoaId(e.target.value)}
               disabled={saving || counterparts.length === 0}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:opacity-60"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white disabled:opacity-60"
             >
               {counterparts.length === 0 && (
                 <option value="">Memuat...</option>
@@ -432,7 +432,7 @@ export default function BalanceAdjustmentModal({
               disabled={saving}
               rows={2}
               placeholder="Mis. cek m-banking saldo BCA Rp 12.550.000, koreksi +50rb (bunga deposito)"
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 disabled:opacity-60 resize-none"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold disabled:opacity-60 resize-none"
             />
             <p className={`text-[10px] mt-0.5 ${reasonOk ? 'text-gray-500' : 'text-red-500'}`}>
               {reason.length} / 10 min

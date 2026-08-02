@@ -369,7 +369,7 @@ export default function TagihanFormPage({ showToast, onCancel, onSaved, prefillP
           <div className="relative">
             <input value={pesananQuery} onChange={e => setPesananQuery(e.target.value)}
               placeholder="Cari Pesanan (PSN-... atau nama supplier) — hanya yang status ORDERED"
-              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500" />
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus-visible:outline-none focus:border-indigo-500" />
             {pesananResults.length > 0 && (
               <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded border border-gray-200 shadow-lg">
                 {pesananResults.map(p => (

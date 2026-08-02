@@ -281,7 +281,7 @@ export default function AccountFormModal({
               value={form.account_type}
               onChange={(e) => updateField('account_type', e.target.value as CashAccountType)}
               disabled={isEdit}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white disabled:bg-slate-100 disabled:cursor-not-allowed"
             >
               <option value="BANK">🏦 Bank</option>
               <option value="KAS">💵 Kas</option>
@@ -304,7 +304,7 @@ export default function AccountFormModal({
                   <select
                     value={form.bank_code ?? 'BCA'}
                     onChange={(e) => updateField('bank_code', e.target.value as BankCode)}
-                    className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+                    className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
                   >
                     {BANK_CODES.map((c) => (
                       <option key={c} value={c}>
@@ -322,7 +322,7 @@ export default function AccountFormModal({
                     value={form.account_number}
                     onChange={(e) => updateField('account_number', e.target.value)}
                     placeholder="1234567890"
-                    className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                    className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                   />
                 </div>
               </div>
@@ -336,7 +336,7 @@ export default function AccountFormModal({
                   value={form.account_holder}
                   onChange={(e) => updateField('account_holder', e.target.value)}
                   placeholder="Nama sesuai buku rekening"
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                 />
                 <p className="text-[11px] text-gray-500 mt-1">Untuk tampil di Invoice PDF customer (kalau Show in Invoice di-aktifkan)</p>
               </div>
@@ -351,7 +351,7 @@ export default function AccountFormModal({
               <select
                 value={form.provider}
                 onChange={(e) => updateField('provider', e.target.value)}
-                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+                className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
               >
                 {WALLET_PROVIDERS.map((p) => (
                   <option key={p} value={p}>
@@ -377,7 +377,7 @@ export default function AccountFormModal({
                   ? 'Kas Toko Cabang 2'
                   : 'Lalamove Balance'
               }
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
             />
             <p className="text-[11px] text-gray-500 mt-1">Untuk memudahkan identifikasi di UI internal</p>
           </div>
@@ -389,7 +389,7 @@ export default function AccountFormModal({
             <select
               value={form.purpose}
               onChange={(e) => updateField('purpose', e.target.value as CashAccountPurpose)}
-              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold bg-white"
             >
               {PURPOSES.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -412,7 +412,7 @@ export default function AccountFormModal({
                   value={form.opening_balance}
                   onChange={(n) => updateField('opening_balance', n)}
                   placeholder="0"
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm text-right focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                 />
                 <p className="text-[10px] text-gray-500 mt-1">Default 0 — adjust via Penyesuaian (Phase 2)</p>
               </div>
@@ -424,7 +424,7 @@ export default function AccountFormModal({
                   type="date"
                   value={form.opening_balance_date}
                   onChange={(e) => updateField('opening_balance_date', e.target.value)}
-                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+                  className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold"
                 />
               </div>
             </div>

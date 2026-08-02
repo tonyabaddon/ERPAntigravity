@@ -223,12 +223,12 @@ export default function PurchaseOrderFormPage({
                 type="date"
                 value={expectedReceiveDate}
                 onChange={(e) => { setExpectedReceiveDate(e.target.value); markDirty(); }}
-                className={`w-full text-sm border rounded px-3 py-2.5 focus:outline-none focus:ring-2 ${
+                className={`w-full text-sm border rounded px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 ${
                   isPastDate(expectedReceiveDate)
-                    ? 'border-amber-300 bg-amber-50/30 focus:ring-amber-300'
+                    ? 'border-amber-300 bg-amber-50/30 focus-visible:ring-caleo-gold'
                     : expectedReceiveDate
-                      ? 'border-emerald-300 bg-emerald-50/30 focus:ring-emerald-300'
-                      : 'border-gray-200 focus:ring-indigo-300'
+                      ? 'border-emerald-300 bg-emerald-50/30 focus-visible:ring-caleo-gold'
+                      : 'border-gray-200 focus-visible:ring-caleo-gold'
                 }`}
               />
             </div>
@@ -244,7 +244,7 @@ export default function PurchaseOrderFormPage({
               value={notes}
               onChange={(e) => { setNotes(e.target.value); markDirty(); }}
               placeholder="(opsional)"
-              className="w-full text-sm border border-gray-200 rounded px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 placeholder-gray-400"
+              className="w-full text-sm border border-gray-200 rounded px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-caleo-gold placeholder-gray-400"
             />
           </div>
         </div>
