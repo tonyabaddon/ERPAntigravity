@@ -32,11 +32,9 @@ function walk(dir: string, out: string[]): void {
 
 const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/KasirScreen.tsx',
-  'src/components/LaporanScreen.tsx',
-  'src/components/ManajemenGudangScreen.tsx',
+  'src/components/ManajemenGudangScreen.tsx', // false-positive: showToast('Tidak ada perubahan', ...) at line 128 — toast string, not JSX empty-state node (Rule 2 skip); all real empty states swept in batch 6
   'src/components/NotificationSettingsScreen.tsx',
   'src/components/OrderHistoryScreen.tsx',
-  'src/components/OwnerDecisionInbox.tsx',
   'src/components/PelangganScreen.tsx',
   'src/components/PembelianScreen.tsx',
   'src/components/PengaturanScreen.tsx',
@@ -44,16 +42,13 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/SalesInboxScreen.tsx',
   'src/components/WhatsappAiScreen.tsx',
   'src/components/admin/CaleoBotDashboard.tsx',
-  'src/components/admin/CostDashboard.tsx',
   'src/components/admin/PendingPaymentRow.tsx',
   'src/components/admin/PlansManagement.tsx',
   'src/components/admin/TenantDetail/PembayaranTab.tsx',
-  'src/components/admin/TenantsList.tsx',
-  'src/components/admin/TenantsTable.tsx',
+  'src/components/admin/TenantsList.tsx', // false-positive: 'Belum ada grant aktif...' at line 212 — JS string in toast branch, not JSX node (Rule 2 skip)
   'src/components/akuntansi/CashAccountPicker.tsx', // loading/error in <option> tags (can't embed components); empty-state is amber instructional div (visual change if replaced)
   'src/components/akuntansi/OpeningBalanceWizard.tsx',
   'src/components/akuntansi/gl/BukuBesarTab.tsx',
-  'src/components/akuntansi/gl/COAManagementTab.tsx',
   'src/components/akuntansi/gl/TrialBalanceTab.tsx',
   'src/components/akuntansi/manual/ManualTransferModal.tsx',
   'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
@@ -61,7 +56,6 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/kasbank/AccountDetailScreen.tsx',
   'src/components/kasbank/KasBankScreen.tsx',
   'src/components/kasir/HasilCariFotoModal.tsx',
-  'src/components/laporan/akuntansi/CashFlowTab.tsx',
   'src/components/laporan/akuntansi/LabaRugiTab.tsx',
   'src/components/laporan/akuntansi/MutasiTab.tsx',
   'src/components/laporan/akuntansi/NeracaTab.tsx',
@@ -72,7 +66,6 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
   'src/components/pembelian/tukar-faktur/TukarFakturFormPage.tsx',
   'src/components/pengaturan/PromoProdukPanel.tsx',
-  'src/components/pengaturan/RekeningBankCard.tsx',
   'src/components/pengaturan/SupportAccessPanel.tsx',
   'src/components/pengaturan/saldoAwal/Step2Aktiva.tsx',
   'src/components/pengaturan/saldoAwal/Step3Kewajiban.tsx',
@@ -89,7 +82,7 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX
   'src/components/stok/StockOpnameScreen.tsx',
   'src/components/stok/StockOpnameSessionView.tsx',
-  'src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx',
+  'src/components/warehouseTransfer/WarehouseTransferCreateScreen.tsx', // "Belum ada penerima" is a field-level inline caption under a form control with an embedded link — Rule 2 skip
 ]);
 
 const files: string[] = [];

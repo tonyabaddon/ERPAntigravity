@@ -16,6 +16,8 @@ import { supabase } from '../lib/supabaseClient';
 import { useWarehouses } from '../hooks/useWarehouses';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { formatIDR } from '../lib/formatIDR';
+import EmptyState from './ui/EmptyState';
+import LoadingState from './ui/LoadingState';
 
 interface OwnerDecisionInboxProps {
   showToast: (msg: string, tone?: 'success' | 'info' | 'warning') => void;
@@ -160,7 +162,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
   };
 
   if (loading) {
-    return <div className="p-6 text-sm text-slate-500">Memuat...</div>;
+    return <LoadingState label="Memuat…" className="p-6" />;
   }
 
   return (
@@ -197,10 +199,11 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
       </div>
 
       {claims.length === 0 ? (
-        <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
-          <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-500" />
-          Tidak ada barang rusak yang menunggu keputusan.
-        </div>
+        <EmptyState
+          message="Tidak ada barang rusak yang menunggu keputusan."
+          icon={CheckCircle2}
+          className="rounded border border-dashed border-slate-300 bg-white"
+        />
       ) : (
         <div className="space-y-3">
           {claims.map((claim) => {
@@ -312,7 +315,7 @@ export default function OwnerDecisionInbox({ showToast }: OwnerDecisionInboxProp
       <section className="mt-6">
         <h2 className="text-lg font-semibold text-slate-800">Transfer tertunda &gt; 24 jam</h2>
         {agingRows.length === 0 && (
-          <div className="mt-2 text-sm text-slate-500">Tidak ada transfer yang tertunda.</div>
+          <EmptyState message="Tidak ada transfer yang tertunda." inline className="mt-2" />
         )}
         {agingRows.map((a) => (
           <div key={a.id} className="mt-2 rounded border border-amber-200 bg-amber-50 p-3">

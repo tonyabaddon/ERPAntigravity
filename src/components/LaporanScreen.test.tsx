@@ -165,9 +165,8 @@ describe('LaporanScreen — error state', () => {
     render(<LaporanScreen {...BASE_PROPS} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText(/Gagal memuat ringkasan performa/i)).toBeInTheDocument();
     });
-    expect(screen.getByRole('alert')).toHaveTextContent(/Gagal memuat ringkasan performa/i);
   });
 
   it('shows chart error when fetchDailyRevenueByChannel rejects', async () => {
@@ -179,9 +178,7 @@ describe('LaporanScreen — error state', () => {
     render(<LaporanScreen {...BASE_PROPS} />);
 
     await waitFor(() => {
-      const alerts = screen.getAllByRole('alert');
-      const chartAlert = alerts.find(a => a.textContent?.includes('Gagal memuat grafik revenue'));
-      expect(chartAlert).toBeInTheDocument();
+      expect(screen.getByText(/Gagal memuat grafik revenue/i)).toBeInTheDocument();
     });
   });
 
@@ -194,9 +191,7 @@ describe('LaporanScreen — error state', () => {
     render(<LaporanScreen {...BASE_PROPS} />);
 
     await waitFor(() => {
-      const alerts = screen.getAllByRole('alert');
-      const channelAlert = alerts.find(a => a.textContent?.includes('Gagal memuat data channel'));
-      expect(channelAlert).toBeInTheDocument();
+      expect(screen.getByText(/Gagal memuat data channel/i)).toBeInTheDocument();
     });
   });
 

@@ -5,6 +5,8 @@ import { createBankAccount, updateBankAccount, deleteBankAccount } from '../../l
 import { NumberInput } from '../ui/NumberInput';
 import type { BankAccount } from '../../lib/pengaturan/types';
 import { captureError } from '../../lib/captureError';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -180,7 +182,7 @@ export default function RekeningBankCard({ showToast }: Props) {
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-500">Memuat…</div>
+        <LoadingState label="Memuat…" inline />
       ) : (
         <>
           {showForm && (
@@ -263,9 +265,11 @@ export default function RekeningBankCard({ showToast }: Props) {
           )}
 
           {accounts.length === 0 && !showForm && (
-            <div className="text-sm text-gray-500 italic">
-              Belum ada rekening. Klik <span className="font-semibold">Tambah Rekening</span> untuk mulai.
-            </div>
+            <EmptyState
+              message="Belum ada rekening."
+              hint="Klik Tambah Rekening untuk mulai."
+              inline
+            />
           )}
 
           {accounts.length > 0 && (

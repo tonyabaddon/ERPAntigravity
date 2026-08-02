@@ -8,6 +8,8 @@ import { Droplet } from 'lucide-react';
 import { fetchCashFlow } from '../../../lib/akuntansi/reportQueries';
 import type { CashFlowResult } from '../../../lib/akuntansi/reportQueries';
 import { captureError } from '../../../lib/captureError';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,9 +105,8 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (loading) {
     return (
-      <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white p-8 text-center">
-        <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2 animate-pulse" />
-        <p className="text-sm text-gray-600">Memuat Cash Flow Matrix...</p>
+      <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white">
+        <LoadingState label="Memuat Cash Flow Matrix…" />
       </div>
     );
   }
@@ -114,9 +115,8 @@ export default function CashFlowTab({ showToast }: CashFlowTabProps): React.Reac
 
   if (!data || (data.uangMasuk.length === 0 && data.uangKeluar.length === 0)) {
     return (
-      <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white p-8 text-center">
-        <Droplet className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-        <p className="text-sm text-gray-600">Belum ada cash flow di 6 bulan terakhir</p>
+      <div className="rounded border border-[var(--color-caleo-mist-dark)] bg-white">
+        <EmptyState message="Belum ada cash flow di 6 bulan terakhir." icon={Droplet} />
       </div>
     );
   }

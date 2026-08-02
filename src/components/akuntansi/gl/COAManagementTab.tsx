@@ -10,6 +10,8 @@ import type { CoaTreeRow } from '../../../lib/akuntansi/glQueries';
 import type { AccountType } from '../../../lib/akuntansi/types';
 import COAEditModal from './COAEditModal';
 import { captureError } from '../../../lib/captureError';
+import EmptyState from '../../ui/EmptyState';
+import LoadingState from '../../ui/LoadingState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -223,11 +225,9 @@ export default function COAManagementTab({
       {/* ── Account list ── */}
       <div className="px-6 pb-6 mt-6">
         {loading ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">Memuat...</div>
+          <LoadingState label="Memuat…" />
         ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-caleo-13 text-gray-500">
-            Tidak ada akun yang cocok
-          </div>
+          <EmptyState message="Tidak ada akun yang cocok." />
         ) : (
           <div className="space-y-1">
             {ACCOUNT_TYPE_ORDER.map(accountType => {

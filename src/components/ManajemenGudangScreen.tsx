@@ -8,6 +8,9 @@ import type { PermissionSet, Warehouse, WarehouseAuditLogRow } from '../types';
 import { warehousesService, adminUsersService } from '../lib/supabaseClient';
 import { useWarehouses } from '../hooks/useWarehouses';
 import { captureError } from '../lib/captureError';
+import EmptyState from './ui/EmptyState';
+import LoadingState from './ui/LoadingState';
+import ErrorState from './ui/ErrorState';
 
 interface Props {
   currentUser: {
@@ -157,18 +160,15 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
             <Plus className="w-3 h-3" /> Tambah Gudang
           </button>
         </div>
-        {loading ? <p className="text-xs text-slate-400">Memuat…</p> : warehouseError ? (
-          <div className="flex flex-col items-start gap-2">
-            <p className="text-xs font-semibold text-red-600">Gagal memuat daftar gudang: {warehouseError}</p>
-            <button
-              onClick={() => void refresh()}
-              className="text-xs font-bold text-[var(--color-caleo-primary)] underline hover:opacity-70"
-            >
-              Coba Lagi
-            </button>
-          </div>
+        {loading ? <LoadingState label="Memuat…" inline /> : warehouseError ? (
+          <ErrorState
+            message={`Gagal memuat daftar gudang: ${warehouseError}`}
+            onRetry={() => void refresh()}
+            retryLabel="Coba Lagi"
+            inline
+          />
         ) : warehouses.length === 0 ? (
-          <p className="text-xs text-slate-400">Belum ada gudang terdaftar. Tambahkan gudang baru di atas.</p>
+          <EmptyState message="Belum ada gudang terdaftar. Tambahkan gudang baru di atas." inline />
         ) : (
           <div className="space-y-2">
             {warehouses.map((w: Warehouse) => (
@@ -260,7 +260,7 @@ export default function ManajemenGudangScreen({ currentUser, showToast }: Props)
       {/* Riwayat Perubahan */}
       <section className="bg-white border border-[var(--color-caleo-mist)] rounded p-6 shadow-sm">
         <h2 className="font-extrabold text-sm text-[var(--color-caleo-primary)] mb-3">Riwayat Perubahan</h2>
-        {audit.length === 0 ? <p className="text-xs text-slate-400">Belum ada perubahan.</p> : (
+        {audit.length === 0 ? <EmptyState message="Belum ada perubahan." inline /> : (
           <ul className="space-y-2">
             {audit.map(row => {
               // Resolve the affected warehouse name from the cached list so

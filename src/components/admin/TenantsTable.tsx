@@ -10,6 +10,7 @@ import type { AdminTenantRow, UsageStatus } from '../../lib/adminTypes';
 import { AdminApiError } from '../../lib/adminTypes';
 import { SuspendTenantModal } from './SuspendTenantModal';
 import { CoverageStatusBadge } from './CoverageStatusBadge';
+import EmptyState from '../ui/EmptyState';
 
 // ─── Usage status badge ───────────────────────────────────────────────────────
 
@@ -186,11 +187,11 @@ export function TenantsTable({
   if (rows.length === 0) {
     return (
       <div
-        className="border rounded p-8 text-center text-caleo-13"
-        style={{ borderColor: '#ECEEF1', color: '#9DB2CE' }}
+        className="border rounded"
+        style={{ borderColor: '#ECEEF1' }}
         data-testid="tenants-empty"
       >
-        Tidak ada tenant ditemukan.
+        <EmptyState message="Tidak ada tenant ditemukan." />
       </div>
     );
   }
