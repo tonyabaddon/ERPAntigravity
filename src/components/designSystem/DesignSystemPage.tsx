@@ -9,6 +9,7 @@
 //   - Use inline styles referencing CSS vars from :root (set by build script)
 
 import React from 'react';
+import * as LucideIcons from 'lucide-react';
 
 interface Token {
   name: string;
@@ -505,24 +506,31 @@ const ICON_MAP: IconEntry[] = [
 ];
 
 function IconRenderer({ name, size = 24, color = '#012749' }: { name: string; size?: number; color?: string }) {
-  // Render icon as inline SVG placeholder — SSR-safe, doesn't require lucide runtime.
-  // For preview: show name in a rounded box.
+  // Render actual lucide-react icon via SSR. lucide-react components render
+  // to inline SVG which is fully SSR-safe (verified via renderToStaticMarkup).
+  // Fall back to a mono-text placeholder if the named export is missing so
+  // typos in the icon vocabulary catalog surface visibly in the preview.
+  const Icon = (LucideIcons as unknown as Record<string, React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>>)[name];
+  const boxStyle: React.CSSProperties = {
+    width: size + 16,
+    height: size + 16,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#f8f9ff',
+    border: '1px solid #e5eeff',
+    borderRadius: 2,
+  };
+  if (!Icon) {
+    return (
+      <div style={{ ...boxStyle, fontSize: 9, fontFamily: 'var(--font-mono)', color: '#7f1d1d', fontWeight: 700 }}>
+        ?{name}
+      </div>
+    );
+  }
   return (
-    <div style={{
-      width: size + 20,
-      height: size + 20,
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f3f4f6',
-      border: '1px solid #e5e7eb',
-      borderRadius: 4,
-      fontSize: 10,
-      fontFamily: 'var(--font-mono)',
-      color,
-      fontWeight: 700,
-    }}>
-      &lt;{name}/&gt;
+    <div style={boxStyle}>
+      <Icon size={size} color={color} strokeWidth={2} />
     </div>
   );
 }
