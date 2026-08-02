@@ -31,14 +31,11 @@ function walk(dir: string, out: string[]): void {
 }
 
 const BASELINE_ALLOWLIST = new Set<string>([
-  'src/components/KasirScreen.tsx',
+  'src/components/KasirScreen.tsx', // batch 10 false-positive: line ~669 "Tidak ada kategori aktif" inside <option> tag — Rule 2 skip; real empty states swept in batch 10
   'src/components/ManajemenGudangScreen.tsx', // false-positive: showToast('Tidak ada perubahan', ...) at line 128 — toast string, not JSX empty-state node (Rule 2 skip); all real empty states swept in batch 6
-  'src/components/OrderHistoryScreen.tsx',
+  'src/components/OrderHistoryScreen.tsx', // batch 10 false-positive: EMPTY_MESSAGES object literal strings at lines ~111-116 match regex but are JS values not JSX text nodes — Rule 2 skip; real empty states swept
   'src/components/PembelianScreen.tsx',
-  'src/components/PengaturanScreen.tsx',
   'src/components/RekonsiliasiScreen.tsx',
-  'src/components/SalesInboxScreen.tsx',
-  'src/components/WhatsappAiScreen.tsx',
   'src/components/admin/PendingPaymentRow.tsx',
   'src/components/admin/PlansManagement.tsx', // false-positive: adminToast.success('Tidak ada perubahan.') at line ~233 — JS string in toast call, not JSX empty-state node (Rule 2 skip); real empty states swept in batch 8
   'src/components/admin/TenantDetail/PembayaranTab.tsx', // batch 9 Rule 2 skip: wrapper div has data-testid="pembayaran-tab-empty" with live test coverage; empty CTA uses bespoke gold bg-caleo-gold design EmptyState can't match
@@ -48,15 +45,11 @@ const BASELINE_ALLOWLIST = new Set<string>([
   'src/components/akuntansi/manual/ManualTransferModal.tsx',
   'src/components/dashboard/PreOrderFulfillmentsCard.tsx',
   'src/components/feedback/CustomerFeedbackScreen.tsx',
-  'src/components/kasbank/AccountDetailScreen.tsx',
   'src/components/kasir/HasilCariFotoModal.tsx',
   'src/components/pembelian/form/SupplierPicker.tsx', // CTA button sub-description 'Tidak ada di list?...' — button copy, not empty-state; main empty states swept
   'src/components/pembelian/tagihan/TagihanFormPage.tsx', // batch 9 Rule 2 skip: only hit is "Belum ada Pesanan?" in field-level hint caption under input — not a JSX empty-state node
-  'src/components/pembelian/tukar-faktur/TukarFakturDetailPage.tsx',
-  'src/components/pengaturan/PromoProdukPanel.tsx',
-  'src/components/piutang/PiutangScreen.tsx',
   'src/components/produk/BulkUploadSection.tsx', // "Belum ada produk" is inside showToast() call — not a JSX empty-state node
-  'src/components/produk/ProductForm.tsx',
+  'src/components/produk/ProductForm.tsx', // batch 10 Rule 2 skip: only hit is <option value="">— Tidak ada —</option> in SubCategoryDropdown — option tag content, not JSX empty-state node
   'src/components/sales/DaftarPesananScreen.tsx', // batch 9: real hit (Memuat pesanan...) swept; remaining false-positives: 2× alert() JS strings at lines ~223/370 (Rule 2 skip), <h3> WhatsApp fallback modal heading at line ~604 (Rule 2: intentional custom callout)
   'src/components/stok/PriceChangeRequestModal.tsx',
   'src/components/stok/StockAdjustmentModal.tsx', // false-positive: 'Tidak ada user aktif' is a toast string, not JSX

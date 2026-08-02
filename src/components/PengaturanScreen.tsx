@@ -28,6 +28,8 @@ import { fetchStoreSettings } from '../lib/pengaturan/queries';
 import { tenantSettingsService } from '../lib/pengaturan/pengaturanServices';
 import { extractErrorMessage } from '../lib/extractErrorMessage';
 import { captureError } from '../lib/captureError';
+import LoadingState from './ui/LoadingState';
+import EmptyState from './ui/EmptyState';
 
 type PengaturanTab = 'umum' | 'modul-jasa' | 'approval' | 'pajak' | 'notifikasi' | 'whatsapp-ai' | 'kanal-penjualan' | 'support-access' | 'promo-produk' | 'akuntansi' | 'layanan' | 'kasir-kategori';
 
@@ -324,7 +326,7 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
               </div>
             </div>
             {companyLoading && (
-              <p className="text-caleo-10 text-slate-400 mt-2">Memuat status logo...</p>
+              <LoadingState label="Memuat status logo…" inline className="mt-2" />
             )}
           </div>
 
@@ -346,13 +348,14 @@ export default function PengaturanScreen(props: PengaturanScreenProps) {
             </div>
 
             {recipientsLoading ? (
-              <p className="text-sm text-gray-400">Memuat...</p>
+              <LoadingState label="Memuat penerima…" inline />
             ) : (
               <>
                 {recipients.length === 0 && !showAddForm ? (
-                  <p className="text-sm text-gray-500 py-4 text-center">
-                    Belum ada penerima notifikasi. Tambahkan nomor admin yang akan menerima notifikasi pembayaran.
-                  </p>
+                  <EmptyState
+                    message="Belum ada penerima notifikasi."
+                    hint="Tambahkan nomor admin yang akan menerima notifikasi pembayaran."
+                  />
                 ) : (
                   <div className="space-y-2 mb-3">
                     {recipients.map(r => (

@@ -19,6 +19,8 @@ import { computeLinePromoDiscount } from '../../lib/promoProduk/types';
 import { formatIDR } from '../../lib/formatIDR';
 import { extractErrorMessage } from '../../lib/extractErrorMessage';
 import { wibDateString } from '../../lib/format';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
 
 interface Props {
   showToast: (msg: string, type?: 'success' | 'info' | 'warning') => void;
@@ -572,16 +574,18 @@ export default function PromoProdukPanel({ showToast }: Props) {
           <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-400">
-                  Memuat…
+                <td colSpan={8} className="py-4">
+                  <LoadingState label="Memuat promo…" inline />
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">
-                  {rows.length === 0
-                    ? 'Belum ada SKU dengan promo. Klik + Tambah Promo untuk mulai.'
-                    : 'Tidak ada hasil untuk pencarian ini.'}
+                <td colSpan={8} className="py-4">
+                  <EmptyState
+                    message={rows.length === 0 ? 'Belum ada SKU dengan promo.' : 'Tidak ada hasil untuk pencarian ini.'}
+                    hint={rows.length === 0 ? 'Klik + Tambah Promo untuk mulai.' : undefined}
+                    inline
+                  />
                 </td>
               </tr>
             ) : (

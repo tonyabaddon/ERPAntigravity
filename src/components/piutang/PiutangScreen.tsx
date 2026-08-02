@@ -27,6 +27,9 @@ import WriteOffRequestModal from './WriteOffRequestModal';
 import RevertWriteOffConfirmModal from './RevertWriteOffConfirmModal';
 import CashAccountPicker from '../akuntansi/CashAccountPicker';
 import { formatIDR } from '../../lib/formatIDR';
+import EmptyState from '../ui/EmptyState';
+import LoadingState from '../ui/LoadingState';
+import ErrorState from '../ui/ErrorState';
 
 const fmtRpShort = (n: number) =>
   n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1).replace('.', ',')}jt` :
@@ -226,21 +229,11 @@ export default function PiutangScreen({ currentUserId, showToast, isOwner = fals
       {/* Invoice table */}
       <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-sm text-gray-500">Memuat...</div>
+          <LoadingState label="Memuat piutang…" />
         ) : fetchError ? (
-          <div className="p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-red-600">{fetchError}</p>
-            <button
-              onClick={() => void reload()}
-              className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
-            >
-              Coba Lagi
-            </button>
-          </div>
+          <ErrorState message={fetchError} onRetry={() => void reload()} />
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-500">
-            {rows.length === 0 ? 'Belum ada piutang tempo.' : 'Tidak ada invoice yang cocok dengan filter.'}
-          </div>
+          <EmptyState message={rows.length === 0 ? 'Belum ada piutang tempo.' : 'Tidak ada invoice yang cocok dengan filter.'} />
         ) : (
           <table className="w-full">
             <thead className="bg-gray-50/80 border-b border-gray-200">
@@ -429,7 +422,7 @@ function KpiCard(props: { icon: React.ReactNode; iconBg: string; iconColor: stri
 function AgingBar({ segments, onSelect }: { segments: ReturnType<typeof computeAging>; onSelect: () => void }) {
   const total = segments.reduce((a, s) => a + s.amount, 0);
   if (total === 0) {
-    return <div className="text-xs text-gray-500">Tidak ada invoice overdue.</div>;
+    return <EmptyState message="Tidak ada invoice overdue." inline />;
   }
   return (
     <div className="space-y-2">

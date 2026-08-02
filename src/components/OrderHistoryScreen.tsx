@@ -11,6 +11,9 @@ import InvoiceModal from './InvoiceModal';
 import { StorageLink } from './ui/StorageLink';
 import { StorageImage } from './ui/StorageImage';
 import { formatIDR } from '../lib/formatIDR';
+import SharedEmptyState from './ui/EmptyState';
+import LoadingState from './ui/LoadingState';
+import ErrorState from './ui/ErrorState';
 
 type ChannelFilterGroup = 'all' | 'offline' | 'marketplace' | 'direct';
 type ChannelFilter = ChannelFilterGroup | SalesChannel;
@@ -102,15 +105,6 @@ function formatDate(iso: string): string {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="bg-white rounded border border-gray-200 p-12 text-center">
-      <ClipboardList className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-      <p className="text-sm font-semibold text-gray-400">{message}</p>
-    </div>
-  );
 }
 
 const EMPTY_MESSAGES: Record<FilterTab, string> = {
@@ -512,19 +506,21 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
 
       {/* List */}
       {loading ? (
-        <div className="bg-white rounded border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat...</div>
+        <LoadingState label="Memuat riwayat pesanan…" />
       ) : fetchError ? (
-        <div className="bg-white rounded border border-red-100 p-8 text-center">
-          <p className="text-sm font-semibold text-red-600 mb-3">{fetchError}</p>
-          <button
-            onClick={() => { setFetchError(null); setLoading(true); salesEntriesService.fetchAll().then(({ orders: o, kasir: k }) => { setOrders(o); setKasir(k); }).catch((err) => { setFetchError('Gagal memuat riwayat pesanan.'); showToast('Gagal memuat riwayat pesanan.', 'warning'); console.error(err); }).finally(() => setLoading(false)); }}
-            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
-          >
-            Coba Lagi
-          </button>
-        </div>
+        <ErrorState
+          message={fetchError}
+          onRetry={() => {
+            setFetchError(null);
+            setLoading(true);
+            salesEntriesService.fetchAll()
+              .then(({ orders: o, kasir: k }) => { setOrders(o); setKasir(k); })
+              .catch((err) => { setFetchError('Gagal memuat riwayat pesanan.'); showToast('Gagal memuat riwayat pesanan.', 'warning'); console.error(err); })
+              .finally(() => setLoading(false));
+          }}
+        />
       ) : visible.length === 0 ? (
-        <EmptyState message={EMPTY_MESSAGES[tab]} />
+        <SharedEmptyState message={EMPTY_MESSAGES[tab]} icon={ClipboardList} />
       ) : (
         <div className="bg-white rounded border border-gray-200 overflow-hidden">
           {visible.map(entry => {
