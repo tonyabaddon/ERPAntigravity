@@ -155,11 +155,11 @@ export default function YearEndCloseModal({
         if (e.target === e.currentTarget && !submitting) onClose();
       }}
     >
-      <div className="bg-white rounded-sm max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded max-w-2xl w-full shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header rose-themed */}
         <div className="p-6 border-b border-gray-200 flex items-start justify-between" style={{ background: '#fef2f2' }}>
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-sm bg-rose-100 flex items-center justify-center text-rose-700 shrink-0">
+            <div className="w-10 h-10 rounded bg-rose-100 flex items-center justify-center text-rose-700 shrink-0">
               <Lock className="w-5 h-5" />
             </div>
             <div>
@@ -173,7 +173,7 @@ export default function YearEndCloseModal({
             type="button"
             onClick={() => !submitting && onClose()}
             disabled={submitting}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded-sm hover:bg-gray-100"
+            className="text-gray-500 hover:text-gray-700 p-1 rounded hover:bg-gray-100"
             aria-label="Tutup"
           >
             <X className="w-5 h-5" />
@@ -193,7 +193,7 @@ export default function YearEndCloseModal({
                 loadSnapshot(newYear);
               }}
               disabled={loading || submitting}
-              className="w-full border border-slate-200 rounded-sm px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+              className="w-full border border-slate-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>{y}</option>
@@ -205,7 +205,7 @@ export default function YearEndCloseModal({
           </div>
 
           {loading && (
-            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-6 text-center text-[13px] text-gray-500">
+            <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-6 text-center text-[13px] text-gray-500">
               Memuat snapshot...
             </div>
           )}
@@ -215,7 +215,7 @@ export default function YearEndCloseModal({
               {/* Prerequisite check */}
               {!snapshot.allMonthsClosed ? (
                 <div
-                  className="rounded-sm p-3 flex items-start gap-3 border"
+                  className="rounded p-3 flex items-start gap-3 border"
                   style={{ background: '#fef3c7', borderColor: '#fbbf24' }}
                 >
                   <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
@@ -229,7 +229,7 @@ export default function YearEndCloseModal({
                 </div>
               ) : (
                 <div
-                  className="rounded-sm p-3 flex items-start gap-3 border"
+                  className="rounded p-3 flex items-start gap-3 border"
                   style={{ background: '#d1fae5', borderColor: '#6ee7b7' }}
                 >
                   <CheckCircle className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
@@ -243,7 +243,7 @@ export default function YearEndCloseModal({
               )}
 
               {/* Snapshot */}
-              <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-4 space-y-2">
+              <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-4 space-y-2">
                 <div className="font-extrabold text-[#1e3d60] flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Snapshot {year}
@@ -268,7 +268,7 @@ export default function YearEndCloseModal({
               </div>
 
               {/* JE preview */}
-              <div className="rounded-sm p-3 border" style={{ background: '#fef3c7', borderColor: '#fbbf24' }}>
+              <div className="rounded p-3 border" style={{ background: '#fef3c7', borderColor: '#fbbf24' }}>
                 <div className="font-extrabold text-amber-900 mb-2 text-[12px]">
                   Journal entries yang akan posted (4 step):
                 </div>

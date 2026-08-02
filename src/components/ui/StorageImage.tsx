@@ -196,7 +196,7 @@ export function StorageImage({
     <div
       ref={wrapperRef}
       className={[
-        'relative overflow-hidden rounded-sm',
+        'relative overflow-hidden rounded',
         className,
       ].filter(Boolean).join(' ')}
       style={wrapperStyle}
@@ -208,13 +208,13 @@ export function StorageImage({
     >
       {/* Skeleton state — shown until image loads */}
       {(state === 'idle' || state === 'loading') && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-sm" />
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
       )}
 
       {/* Error state */}
       {state === 'error' && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 rounded-sm"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 rounded"
           title="Gagal memuat gambar"
         >
           <span className="text-gray-400 text-xl">⚠️</span>
@@ -227,7 +227,7 @@ export function StorageImage({
         <img
           src={signedUrl}
           alt={alt}
-          className="absolute inset-0 w-full h-full object-cover rounded-sm"
+          className="absolute inset-0 w-full h-full object-cover rounded"
           onError={handleError}
           loading="lazy"
         />

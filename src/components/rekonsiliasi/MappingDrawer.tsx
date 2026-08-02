@@ -134,7 +134,7 @@ export default function MappingDrawer({
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Cari nama atau ID…"
-            className="w-full text-xs px-3 py-2 rounded-sm border border-[var(--color-caleo-mist)]"
+            className="w-full text-xs px-3 py-2 rounded border border-[var(--color-caleo-mist)]"
           />
         </div>
 
@@ -148,7 +148,7 @@ export default function MappingDrawer({
                 <div
                   key={c.id}
                   onClick={() => toggleCandidate(c.id)}
-                  className={`p-3 rounded-sm border mb-2 cursor-pointer select-none ${
+                  className={`p-3 rounded border mb-2 cursor-pointer select-none ${
                     isChecked
                       ? 'border-emerald-400 bg-emerald-50'
                       : c.best
@@ -186,7 +186,7 @@ export default function MappingDrawer({
 
             // Single-select mode (default) — unchanged behavior
             return (
-              <div key={c.id} className={`p-3 rounded-sm border mb-2 cursor-pointer ${c.best ? 'border-emerald-400 bg-emerald-50' : 'border-[var(--color-caleo-mist)]'}`}>
+              <div key={c.id} className={`p-3 rounded border mb-2 cursor-pointer ${c.best ? 'border-emerald-400 bg-emerald-50' : 'border-[var(--color-caleo-mist)]'}`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="text-xs font-bold text-[var(--color-caleo-primary)]">{c.name}</div>
@@ -198,7 +198,7 @@ export default function MappingDrawer({
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-black text-[var(--color-caleo-primary)]">{fmt(c.amount)}</div>
-                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded-sm text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]'}`}>
+                    <button onClick={() => onPick(c.id)} className={`mt-2 px-3 py-1 rounded text-[10px] font-extrabold ${c.best ? 'bg-emerald-600 text-white' : 'bg-white border border-[var(--color-caleo-mist)] text-[var(--color-caleo-primary)]'}`}>
                       {c.best ? '✓ Pilih' : 'Pilih'}
                     </button>
                   </div>
@@ -215,7 +215,7 @@ export default function MappingDrawer({
             <button
               onClick={handleMultiSubmit}
               disabled={submitDisabled}
-              className={`w-full p-3 rounded-sm text-xs font-extrabold transition-colors ${
+              className={`w-full p-3 rounded text-xs font-extrabold transition-colors ${
                 submitDisabled
                   ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   : overTarget
@@ -227,13 +227,13 @@ export default function MappingDrawer({
                 ? '⚠️ Melebihi target — hapus pilihan'
                 : `✓ Match selected (${selected.size} line${selected.size !== 1 ? 's' : ''})`}
             </button>
-            <button onClick={onSkip} className="w-full text-left p-3 rounded-sm bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
+            <button onClick={onSkip} className="w-full text-left p-3 rounded bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
           </div>
         ) : (
           <div className="border-t border-[var(--color-caleo-mist)] p-4 space-y-2 bg-slate-50">
-            <button onClick={onSplit} className="w-full text-left p-3 rounded-sm bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">🔀 Split — pecah ke beberapa target</button>
-            <button onClick={onClassify} className="w-full text-left p-3 rounded-sm bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">📝 Klasifikasi lain — topup, biaya, refund</button>
-            <button onClick={onSkip} className="w-full text-left p-3 rounded-sm bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
+            <button onClick={onSplit} className="w-full text-left p-3 rounded bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">🔀 Split — pecah ke beberapa target</button>
+            <button onClick={onClassify} className="w-full text-left p-3 rounded bg-white border border-[var(--color-caleo-mist)] text-xs font-bold text-[var(--color-caleo-primary)]">📝 Klasifikasi lain — topup, biaya, refund</button>
+            <button onClick={onSkip} className="w-full text-left p-3 rounded bg-white border border-amber-200 text-xs font-extrabold text-amber-700">⏭️ Lewati dulu</button>
           </div>
         )}
       </div>

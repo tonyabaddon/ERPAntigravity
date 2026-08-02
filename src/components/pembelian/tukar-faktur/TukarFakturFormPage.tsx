@@ -318,7 +318,7 @@ export default function TukarFakturFormPage({
       </p>
 
       {/* 1. Header */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">1. Header</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -326,7 +326,7 @@ export default function TukarFakturFormPage({
               Supplier <span className="text-red-500">*</span>
             </label>
             {supplier ? (
-              <div className="border-2 border-gray-300 rounded-sm p-3 flex items-center justify-between">
+              <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
                   <div className="text-[11px] text-gray-500">
@@ -347,10 +347,10 @@ export default function TukarFakturFormPage({
                   value={supplierQuery}
                   onChange={e => setSupplierQuery(e.target.value)}
                   placeholder="Cari supplier..."
-                  className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
+                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
                 />
                 {supplierResults.length > 0 && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
+                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded border border-gray-200 shadow-lg">
                     {supplierResults.map(s => (
                       <button
                         key={s.id}
@@ -382,7 +382,7 @@ export default function TukarFakturFormPage({
               type="date"
               value={tukarDate}
               onChange={e => setTukarDate(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               Tanggal sales rep datang & serahkan faktur fisik.
@@ -397,7 +397,7 @@ export default function TukarFakturFormPage({
               type="date"
               value={paymentDueAt}
               onChange={e => setPaymentDueAt(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
             />
             <div className="text-[11px] text-gray-500 mt-1">
               {supplier
@@ -412,14 +412,14 @@ export default function TukarFakturFormPage({
               value={notes}
               onChange={e => setNotes(e.target.value)}
               placeholder="Misal: ritual Rabu PT Eterna"
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500"
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500"
             />
           </div>
         </div>
       </div>
 
       {/* 2. Daftar Faktur */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">
             2. Daftar Faktur Pembelian
@@ -430,13 +430,13 @@ export default function TukarFakturFormPage({
         </div>
 
         {!supplier ? (
-          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-sm">
+          <div className="p-6 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded">
             Pilih supplier dulu untuk mulai cari Faktur outstanding.
           </div>
         ) : (
           <>
             <div className="relative">
-              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-sm px-3 py-2">
+              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded px-3 py-2">
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
                   value={searchQuery}
@@ -449,7 +449,7 @@ export default function TukarFakturFormPage({
                 )}
               </div>
               {(searchQuery.length > 0 || searchMatches.length > 0) && (
-                <div className="absolute z-20 left-0 right-0 mt-1 bg-white rounded-sm border border-gray-200 shadow-lg max-h-80 overflow-auto">
+                <div className="absolute z-20 left-0 right-0 mt-1 bg-white rounded border border-gray-200 shadow-lg max-h-80 overflow-auto">
                   {searchMatches.length === 0 ? (
                     <div className="p-3 text-xs text-gray-500">
                       Tidak ada Faktur outstanding cocok.
@@ -495,7 +495,7 @@ export default function TukarFakturFormPage({
             </div>
 
             {selected.length > 0 && (
-              <div className="mt-4 border border-gray-200 rounded-sm overflow-hidden">
+              <div className="mt-4 border border-gray-200 rounded overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -564,10 +564,10 @@ export default function TukarFakturFormPage({
       </div>
 
       {/* 3. Ringkasan */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Ringkasan</div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-amber-50 rounded-sm p-4 border border-amber-100">
+          <div className="bg-amber-50 rounded p-4 border border-amber-100">
             <div className="text-[11px] text-amber-700 uppercase font-semibold flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5" /> JT Bayar Bundle
             </div>
@@ -578,7 +578,7 @@ export default function TukarFakturFormPage({
               Override JT asli semua Faktur dalam bundle.
             </div>
           </div>
-          <div className="bg-indigo-50 rounded-sm p-4 border border-indigo-100">
+          <div className="bg-indigo-50 rounded p-4 border border-indigo-100">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Total Bundle</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(totalBundle)}</div>
             <div className="text-[11px] text-indigo-700/80 mt-1">
@@ -594,14 +594,14 @@ export default function TukarFakturFormPage({
       <div className="flex justify-end gap-2">
         <button
           onClick={onCancel}
-          className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50"
+          className="text-sm font-semibold text-gray-600 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50"
         >
           Batal
         </button>
         <button
           onClick={handleSubmit}
           disabled={saving || !supplier || selected.length === 0}
-          className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
+          className="text-sm font-semibold text-white px-4 py-2 rounded disabled:opacity-50"
           style={{ background: 'var(--color-caleo-primary)' }}
         >
           {saving ? 'Menyimpan...' : 'Simpan Tukar Faktur'}

@@ -44,7 +44,7 @@ export default function RevertWriteOffConfirmModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm bg-white rounded-sm shadow-xl overflow-hidden border-2 border-red-200"
+        className="w-full max-w-sm bg-white rounded shadow-xl overflow-hidden border-2 border-red-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-4 border-b border-red-100 bg-red-50">
@@ -68,7 +68,7 @@ export default function RevertWriteOffConfirmModal({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-semibold rounded-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
             Tidak
           </button>
@@ -76,7 +76,7 @@ export default function RevertWriteOffConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-semibold rounded-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
           >
             {submitting ? 'Membatalkan...' : 'Ya, Batalkan'}
           </button>

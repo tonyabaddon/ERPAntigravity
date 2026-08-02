@@ -65,7 +65,7 @@ export default function JournalEntryPreview({
       </div>
 
       {/* Inner table with white background */}
-      <div className="bg-white rounded-sm overflow-hidden">
+      <div className="bg-white rounded overflow-hidden">
         <table className="w-full text-[12px]">
           {/* Header row */}
           <thead style={{ background: '#f9fafb' }}>

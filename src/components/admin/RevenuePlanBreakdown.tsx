@@ -33,7 +33,7 @@ export function RevenuePlanBreakdown({ planStats }: RevenuePlanBreakdownProps) {
 
   return (
     <section
-      className="bg-white border rounded-sm p-5"
+      className="bg-white border rounded p-5"
       style={{ borderColor: '#ECEEF1' }}
       aria-label="Rincian pendapatan per paket"
     >

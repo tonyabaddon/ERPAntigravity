@@ -70,7 +70,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
           {GROUP_HINT[group] && (
             <p className="text-[11px] text-slate-400 italic mb-2 pl-1">{GROUP_HINT[group]}</p>
           )}
-          <div className="bg-white rounded-sm border border-gray-200 divide-y divide-gray-100">
+          <div className="bg-white rounded border border-gray-200 divide-y divide-gray-100">
             {CHANNEL_GROUPS[group].map(code => {
               const def = getChannelDef(code);
               const isVisible = settings[code]?.isVisible ?? true;
@@ -79,7 +79,7 @@ export default function SalesChannelConfigPanel({ showToast }: SalesChannelConfi
                 <div key={code} className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-9 h-9 rounded-sm flex items-center justify-center"
+                      className="w-9 h-9 rounded flex items-center justify-center"
                       style={{ background: def.brandColor }}
                     >
                       <ChannelIcon code={code} size={18} />

@@ -30,11 +30,11 @@ export default function StockPicker({ stockList, onPick, placeholder }: StockPic
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full text-sm border border-gray-200 rounded-sm pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        className="w-full text-sm border border-gray-200 rounded pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300"
         placeholder={placeholder ?? 'Cari produk untuk tambah...'}
       />
       {suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded-sm shadow-lg mt-1 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded shadow-lg mt-1 overflow-hidden">
           {suggestions.map(s => (
             <button
               key={s.sku}

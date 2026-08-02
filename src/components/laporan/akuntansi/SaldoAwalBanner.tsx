@@ -58,7 +58,7 @@ export default function SaldoAwalBanner({ onNavigate }: SaldoAwalBannerProps): R
 
   return (
     <div
-      className="flex items-start gap-3 px-4 py-3 rounded-sm border text-[13px]"
+      className="flex items-start gap-3 px-4 py-3 rounded border text-[13px]"
       style={{
         background: '#fffbeb',
         borderColor: '#fde68a',

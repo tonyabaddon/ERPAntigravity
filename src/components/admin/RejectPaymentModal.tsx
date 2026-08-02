@@ -35,7 +35,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
       data-testid="reject-payment-modal"
     >
       <div
-        className="bg-white rounded-sm shadow-xl w-full max-w-md mx-4 overflow-hidden"
+        className="bg-white rounded shadow-xl w-full max-w-md mx-4 overflow-hidden"
         style={{ border: '1px solid #ECEEF1' }}
       >
         {/* Header */}
@@ -68,7 +68,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
               rows={3}
               required
               placeholder="Contoh: Bukti transfer tidak terbaca atau nominal tidak sesuai..."
-              className="rounded-sm px-3 py-2 text-[13px] resize-none outline-none"
+              className="rounded px-3 py-2 text-[13px] resize-none outline-none"
               style={{
                 border: '1px solid #CBD5E1',
                 color: '#0B2545',
@@ -84,7 +84,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-sm text-[13px] font-medium transition-colors"
+              className="px-4 py-2 rounded text-[13px] font-medium transition-colors"
               style={{ border: '1px solid #CBD5E1', color: '#0B2545', background: 'white' }}
               data-testid="reject-modal-cancel"
             >
@@ -93,7 +93,7 @@ export function RejectPaymentModal({ tenantName, onReject, onClose }: Props) {
             <button
               type="submit"
               disabled={submitting || !reason.trim()}
-              className="px-4 py-2 rounded-sm text-[13px] font-medium transition-colors"
+              className="px-4 py-2 rounded text-[13px] font-medium transition-colors"
               style={{
                 background: submitting || !reason.trim() ? '#FCA5A5' : '#DC2626',
                 color: 'white',

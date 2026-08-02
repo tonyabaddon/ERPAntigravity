@@ -174,7 +174,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       <p className="text-xs text-gray-500">Pembelian pass-through — barang langsung jual ke customer, tidak nambah stok.</p>
 
       {/* 1. Header */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">1. Header</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -184,7 +184,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Supplier (Toko Grosir) <span className="text-red-500">*</span></label>
             {supplier ? (
-              <div className="border-2 border-gray-300 rounded-sm p-3 flex items-center justify-between">
+              <div className="border-2 border-gray-300 rounded p-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-sm">{supplier.name}</div>
                   <div className="text-[11px] text-gray-500">Net {supplier.payment_term_days ?? 0} hari</div>
@@ -195,9 +195,9 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
               <div className="relative">
                 <input value={supplierQuery} onChange={e => setSupplierQuery(e.target.value)}
                   placeholder="Cari supplier..."
-                  className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300 focus:outline-none focus:border-indigo-500" />
+                  className="w-full text-sm py-2 px-3 rounded border border-gray-300 focus:outline-none focus:border-indigo-500" />
                 {supplierResults.length > 0 && (
-                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-sm border border-gray-200 shadow-lg">
+                  <div className="absolute z-30 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded border border-gray-200 shadow-lg">
                     {supplierResults.map(s => (
                       <button key={s.id} type="button" onClick={() => { setSupplier(s); setSupplierQuery(''); setSupplierResults([]); }}
                         className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-0">
@@ -213,17 +213,17 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Tanggal Beli</label>
             <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)}
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Nomor Faktur Supplier</label>
             <input value={supplierInvNum} onChange={e => setSupplierInvNum(e.target.value)}
               placeholder="INV-0123 / nota tulis tangan"
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
           </div>
           <div className="col-span-2">
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Foto Faktur Supplier <span className="text-[11px] font-normal text-amber-700 ml-2">(Recommended — bukti dispute)</span></label>
-            <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-sm cursor-pointer text-xs text-gray-500 hover:border-indigo-300">
+            <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded cursor-pointer text-xs text-gray-500 hover:border-indigo-300">
               <Upload className="w-4 h-4" />
               {supplierInvoicePhoto ? supplierInvoicePhoto.name : (supplierInvoicePhotoUrl ? 'Sudah ada foto (klik untuk ganti)' : 'Klik atau drag foto faktur (JPG/PNG/PDF, max 5MB)')}
               <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setSupplierInvoicePhoto(e.target.files?.[0] ?? null)} />
@@ -233,13 +233,13 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
             <label className="text-xs font-semibold text-gray-600 block mb-1.5">Catatan (opsional)</label>
             <input value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="Misal: nota grosir terlampir, atau pesan khusus"
-              className="w-full text-sm py-2 px-3 rounded-sm border border-gray-300" />
+              className="w-full text-sm py-2 px-3 rounded border border-gray-300" />
           </div>
         </div>
       </div>
 
       {/* 2. Items */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs font-bold uppercase tracking-wide text-gray-500">2. Barang yang Dibeli</div>
           <div className="text-[11px] text-violet-700 bg-violet-50 px-2 py-1 rounded-full font-semibold inline-flex items-center gap-1">
@@ -268,13 +268,13 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                 </td>
                 <td className="py-3 px-2"><NumberInput allowDecimal={false} value={it.qty}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, qty: n } : p))}
-                  className="w-full text-sm text-center py-1 px-2 rounded-sm border border-gray-200" /></td>
+                  className="w-full text-sm text-center py-1 px-2 rounded border border-gray-200" /></td>
                 <td className="py-3 px-2"><NumberInput value={it.unit_cost}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, unit_cost: n } : p))}
-                  className="w-full text-sm text-right py-1 px-2 rounded-sm border border-gray-200" /></td>
+                  className="w-full text-sm text-right py-1 px-2 rounded border border-gray-200" /></td>
                 <td className="py-3 px-2"><NumberInput value={it.sell_price}
                   onChange={n => setItems(prev => prev.map((p, i) => i === idx ? { ...p, sell_price: n } : p))}
-                  className="w-full text-sm text-right py-1 px-2 rounded-sm border border-gray-200" /></td>
+                  className="w-full text-sm text-right py-1 px-2 rounded border border-gray-200" /></td>
                 <td className="py-3 px-2 text-right text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(it.qty * it.unit_cost)}</td>
                 <td className="py-3 text-center">
                   <button type="button" onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))} className="text-gray-400 hover:text-red-500">
@@ -290,7 +290,7 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
                     <SkuPickerWithInlineCreate value={draftSku} unitCostHint={0} onChange={(v) => setDraftSku(v)} />
                   </div>
                   <button type="button" onClick={addItemFromSku} disabled={!draftSku}
-                    className="inline-flex items-center gap-1 text-sm font-semibold text-white px-3 py-2 rounded-sm disabled:opacity-50"
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-white px-3 py-2 rounded disabled:opacity-50"
                     style={{ background: 'var(--color-caleo-primary)' }}>
                     <Plus className="w-4 h-4" /> Tambah
                   </button>
@@ -302,17 +302,17 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       </div>
 
       {/* 3. Payment */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">3. Pembayaran ke Supplier</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="text-xs font-semibold text-gray-600 mb-2">Metode</div>
             <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
             {(paymentMethod === 'TEMPO' || initialStatus === 'BELUM_LUNAS') && (
-              <div className="mt-3 p-3 rounded-sm border border-fuchsia-200 bg-fuchsia-50/40">
+              <div className="mt-3 p-3 rounded border border-fuchsia-200 bg-fuchsia-50/40">
                 <label className="text-xs font-semibold text-fuchsia-700 block mb-1.5">Jatuh Tempo Bayar *</label>
                 <input type="date" value={paymentDueAt} onChange={e => setPaymentDueAt(e.target.value)}
-                  className="w-full text-sm py-2 px-3 rounded-sm border border-fuchsia-200" />
+                  className="w-full text-sm py-2 px-3 rounded border border-fuchsia-200" />
                 <div className="text-[11px] text-fuchsia-700 mt-2">Auto-fill dari supplier Net {supplier?.payment_term_days ?? 0} hari.</div>
               </div>
             )}
@@ -320,18 +320,18 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
           <div>
             <div className="text-xs font-semibold text-gray-600 mb-2">Status</div>
             <div className="grid grid-cols-2 gap-2">
-              <label className={`flex items-center gap-2 p-3 rounded-sm border-2 cursor-pointer ${initialStatus === 'LUNAS' ? 'border-green-500 bg-green-50/50' : 'border-gray-200 bg-white'}`}>
+              <label className={`flex items-center gap-2 p-3 rounded border-2 cursor-pointer ${initialStatus === 'LUNAS' ? 'border-green-500 bg-green-50/50' : 'border-gray-200 bg-white'}`}>
                 <input type="radio" checked={initialStatus === 'LUNAS'} onChange={() => setInitialStatus('LUNAS')} className="accent-green-600" />
                 <span className="text-xs font-bold">Sudah Lunas</span>
               </label>
-              <label className={`flex items-center gap-2 p-3 rounded-sm border-2 cursor-pointer ${initialStatus === 'BELUM_LUNAS' ? 'border-amber-500 bg-amber-50/50' : 'border-gray-200 bg-white'}`}>
+              <label className={`flex items-center gap-2 p-3 rounded border-2 cursor-pointer ${initialStatus === 'BELUM_LUNAS' ? 'border-amber-500 bg-amber-50/50' : 'border-gray-200 bg-white'}`}>
                 <input type="radio" checked={initialStatus === 'BELUM_LUNAS'} onChange={() => setInitialStatus('BELUM_LUNAS')} className="accent-amber-600" />
                 <span className="text-xs font-bold">Belum Lunas</span>
               </label>
             </div>
             <div className="mt-3">
               <label className="text-xs font-semibold text-gray-600 block mb-1.5">Bukti Bayar (opsional)</label>
-              <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded-sm cursor-pointer text-xs text-gray-400 hover:border-indigo-300">
+              <label className="flex items-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-200 rounded cursor-pointer text-xs text-gray-400 hover:border-indigo-300">
                 <Upload className="w-4 h-4" />
                 {paymentProofFile ? paymentProofFile.name : 'Klik untuk upload'}
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setPaymentProofFile(e.target.files?.[0] ?? null)} />
@@ -342,18 +342,18 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       </div>
 
       {/* 4. Summary */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm p-5">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm p-5">
         <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">4. Ringkasan</div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-sm p-4">
+          <div className="bg-gray-50 rounded p-4">
             <div className="text-[11px] text-gray-500 uppercase font-semibold">Total Beli</div>
             <div className="text-xl font-extrabold mt-1" style={{ color: 'var(--color-caleo-primary)' }}>{formatIDR(subtotal)}</div>
           </div>
-          <div className="bg-indigo-50 rounded-sm p-4">
+          <div className="bg-indigo-50 rounded p-4">
             <div className="text-[11px] text-indigo-600 uppercase font-semibold">Estimasi Jual</div>
             <div className="text-xl font-extrabold mt-1 text-indigo-700">{formatIDR(projectedRevenue)}</div>
           </div>
-          <div className="bg-green-50 rounded-sm p-4">
+          <div className="bg-green-50 rounded p-4">
             <div className="text-[11px] text-green-700 uppercase font-semibold">Estimasi Profit ({margin.toFixed(1)}%)</div>
             <div className="text-xl font-extrabold mt-1 text-green-700">{formatIDR(profit)}</div>
           </div>
@@ -361,9 +361,9 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
       </div>
 
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
+        <button onClick={onCancel} className="text-sm font-semibold text-gray-600 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50">Batal</button>
         <button onClick={() => handleSubmit(false)} disabled={saving}
-          className="text-sm font-semibold text-white px-4 py-2 rounded-sm disabled:opacity-50"
+          className="text-sm font-semibold text-white px-4 py-2 rounded disabled:opacity-50"
           style={{ background: 'var(--color-caleo-primary)' }}>
           {saving ? 'Menyimpan...' : (editing ? 'Update PI' : 'Simpan')}
         </button>
@@ -371,15 +371,15 @@ export default function BelanjaNumpangLewatFormPage({ showToast, onCancel, onSav
 
       {duplicateWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDuplicateWarning(null)}>
-          <div className="bg-white rounded-sm border border-amber-200 shadow-xl max-w-md p-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded border border-amber-200 shadow-xl max-w-md p-5" onClick={e => e.stopPropagation()}>
             <h3 className="font-bold text-sm text-amber-800 mb-2">⚠ Nomor Faktur Sudah Pernah</h3>
             <p className="text-xs text-gray-600">
               Faktur <strong>{supplierInvNum}</strong> dari supplier ini sudah pernah dicatat di <strong>{duplicateWarning.existingPi}</strong>. Apakah kamu yakin mau lanjut?
             </p>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setDuplicateWarning(null)} className="text-sm px-3 py-2 rounded-sm border border-gray-200">Batal</button>
+              <button onClick={() => setDuplicateWarning(null)} className="text-sm px-3 py-2 rounded border border-gray-200">Batal</button>
               <button onClick={() => { setDuplicateWarning(null); handleSubmit(true); }}
-                className="text-sm px-3 py-2 rounded-sm text-white font-semibold" style={{ background: 'var(--color-caleo-primary)' }}>Lanjut</button>
+                className="text-sm px-3 py-2 rounded text-white font-semibold" style={{ background: 'var(--color-caleo-primary)' }}>Lanjut</button>
             </div>
           </div>
         </div>

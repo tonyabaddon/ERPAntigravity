@@ -203,7 +203,7 @@ export default function SalesInboxScreen({
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
             <input
-              className="w-full bg-white border border-gray-200 rounded-sm pl-7 pr-2 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
+              className="w-full bg-white border border-gray-200 rounded pl-7 pr-2 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
               placeholder="Cari..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
@@ -369,7 +369,7 @@ export default function SalesInboxScreen({
                         toggleAiControl(activeChat.id, banner.makeActive, isEscalated ? 'COLLECTING' : undefined);
                       }
                     }}
-                    className="bg-white/20 hover:bg-white/30 rounded-sm px-2 py-1 text-[10px] font-bold"
+                    className="bg-white/20 hover:bg-white/30 rounded px-2 py-1 text-[10px] font-bold"
                   >
                     {banner.btnLabel}
                   </button>
@@ -401,7 +401,7 @@ export default function SalesInboxScreen({
                 <PlusCircle className="w-4 h-4" />
               </button>
               <input
-                className="flex-1 bg-gray-50 border border-gray-200 rounded-sm px-3 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
+                className="flex-1 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 text-xs outline-none focus:border-[var(--color-caleo-primary)]"
                 placeholder="Ketik pesan admin..."
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
@@ -410,7 +410,7 @@ export default function SalesInboxScreen({
               <button
                 onClick={handleSend}
                 disabled={!inputText.trim() || sending}
-                className="bg-[var(--color-caleo-primary)] text-white rounded-sm p-1.5 disabled:opacity-40"
+                className="bg-[var(--color-caleo-primary)] text-white rounded p-1.5 disabled:opacity-40"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>
@@ -467,7 +467,7 @@ function StateOverrideDropdown({
   return (
     <>
       <div className="fixed inset-0 z-10" onClick={onClose} />
-      <div className="absolute top-full right-0 mt-1 bg-white text-gray-800 rounded-sm shadow-2xl border border-gray-200 w-64 z-20">
+      <div className="absolute top-full right-0 mt-1 bg-white text-gray-800 rounded shadow-2xl border border-gray-200 w-64 z-20">
         <div className="px-3 py-2 border-b border-gray-100">
           <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400">Ubah Status Manual</div>
           <div className="text-[10px] text-gray-500 mt-0.5">AI di-pause 15 menit. Admin handle balas. Auto-resume saat lock expire.</div>
@@ -543,10 +543,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ msg }) => {
   const isAdmin = msg.sender === 'admin';
 
   const bubbleClass = isCustomer
-    ? 'bg-white border border-gray-200 rounded-sm rounded-tl-none text-gray-800'
+    ? 'bg-white border border-gray-200 rounded rounded-tl-none text-gray-800'
     : isAdmin
-      ? 'bg-[#2d8a4e] text-white rounded-sm rounded-tr-none'
-      : 'bg-[var(--color-caleo-primary)] text-white rounded-sm rounded-tr-none';
+      ? 'bg-[#2d8a4e] text-white rounded rounded-tr-none'
+      : 'bg-[var(--color-caleo-primary)] text-white rounded rounded-tr-none';
 
   const senderLabel = isCustomer ? 'Pelanggan' : isAdmin ? '👤 Admin' : '🤖 AI';
 
@@ -680,7 +680,7 @@ function RightPanel({ conv, order, onNavigate }: RightPanelProps) {
             {order.status === 'PENDING_ADMIN_CONFIRMATION' && (
               <button
                 onClick={() => onNavigate('order-history')}
-                className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-1.5 rounded-sm"
+                className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold py-1.5 rounded"
               >
                 🔔 Konfirmasi Pesanan
               </button>

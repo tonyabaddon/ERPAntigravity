@@ -107,7 +107,7 @@ function renderSpecForm(
             <select
               value={specs[field.key] ?? field.options?.[0] ?? ''}
               onChange={e => onChange(field.key, e.target.value)}
-              className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
             >
               {field.options?.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
@@ -117,7 +117,7 @@ function renderSpecForm(
               value={specs[field.key] ?? ''}
               onChange={e => onChange(field.key, e.target.value)}
               placeholder={field.label}
-              className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+              className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
             />
           )}
         </div>
@@ -254,7 +254,7 @@ export default function StockTableView({
     <section className="bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0">
+          <div className="w-14 h-14 rounded bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-3xl">edit_note</span>
           </div>
           <div>
@@ -311,7 +311,7 @@ export default function StockTableView({
 
           return (
             <div key={`${item.sku}-${index}`}>
-              <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5 rounded-sm transition-all duration-300 border ${isEditing ? 'bg-blue-50 border-blue-200 rounded-b-none' : 'bg-[var(--color-caleo-cloud)]/60 hover:bg-white hover:shadow-xl border-transparent hover:border-slate-100'} group`}>
+              <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 p-5 rounded transition-all duration-300 border ${isEditing ? 'bg-blue-50 border-blue-200 rounded-b-none' : 'bg-[var(--color-caleo-cloud)]/60 hover:bg-white hover:shadow-xl border-transparent hover:border-slate-100'} group`}>
                 <div className="w-28 shrink-0">
                   <div className="text-[10px] font-mono font-bold text-slate-500">{item.category}</div>
                   <div className="text-[9px] font-mono text-slate-400">#{item.sku.slice(0, 8)}</div>
@@ -337,7 +337,7 @@ export default function StockTableView({
                     onClick={() => onRequestPriceChange(item, 'price')}
                     disabled={isEditing || !currentUser}
                     title={currentUser ? 'Klik untuk ajukan perubahan harga jual' : 'Login diperlukan untuk ubah harga'}
-                    className="w-full pl-9 pr-3 py-2.5 bg-white rounded-sm border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 text-xs font-extrabold text-[var(--color-caleo-primary)] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed relative cursor-pointer transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white rounded border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 text-xs font-extrabold text-[var(--color-caleo-primary)] shadow-sm outline-none text-right disabled:opacity-50 disabled:cursor-not-allowed relative cursor-pointer transition-colors"
                   >
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#43474e]">Rp</span>
                     {new Intl.NumberFormat('id-ID').format(item.price)}
@@ -399,7 +399,7 @@ export default function StockTableView({
                         onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'ATAS')?.id ?? '')}
                         disabled={isEditing || !currentUser}
                         title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Atas' : 'Login diperlukan'}
-                        className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded-sm text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                        className="relative bg-blue-50 border border-blue-200 px-2 py-1 rounded text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
                       >
                         Atas: {item.stock_atas ?? item.stock}
                         {pendingIndex.adjMap.has(`${item.sku}|atas`) && (
@@ -417,7 +417,7 @@ export default function StockTableView({
                         onClick={() => onRequestAdjustment(item, warehouses.find(w => w.code === 'BAWAH')?.id ?? '')}
                         disabled={isEditing || !currentUser}
                         title={currentUser ? 'Klik untuk ajukan penyesuaian Gudang Bawah' : 'Login diperlukan'}
-                        className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded-sm text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
+                        className="relative bg-amber-50 border border-amber-200 px-2 py-1 rounded text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1"
                       >
                         Bawah: {item.stock_bawah ?? 0}
                         {pendingIndex.adjMap.has(`${item.sku}|bawah`) && (
@@ -504,7 +504,7 @@ export default function StockTableView({
                         type="text"
                         value={vals.price}
                         onChange={e => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price: e.target.value } }))}
-                        className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                       />
                     </div>
                     <div className="space-y-1">
@@ -516,7 +516,7 @@ export default function StockTableView({
                         value={vals.harga_modal ?? null}
                         onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], harga_modal: n } }))}
                         placeholder="Harga beli / modal"
-                        className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                        className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                       />
                     </div>
                     {showGrosir ? (
@@ -527,7 +527,7 @@ export default function StockTableView({
                           value={vals.price_grosir ?? null}
                           onChange={n => setEditValues(prev => ({ ...prev, [item.sku]: { ...prev[item.sku], price_grosir: n } }))}
                           placeholder="Harga untuk pembeli grosir"
-                          className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                          className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                         />
                         {vals.price_grosir != null && vals.price_grosir > (parseInt(vals.price.replace(/\D/g, '')) || 0) && (
                           <p className="text-xs text-amber-600 mt-1 pl-1">⚠ Harga grosir di atas eceran — tidak biasa. Pastikan benar.</p>
@@ -535,7 +535,7 @@ export default function StockTableView({
                       </div>
                     ) : (
                       <div className="md:col-span-1 flex items-end">
-                        <div className="w-full bg-violet-50 border border-violet-200 rounded-sm px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                        <div className="w-full bg-violet-50 border border-violet-200 rounded px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
                           💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
                         </div>
                       </div>
@@ -561,7 +561,7 @@ export default function StockTableView({
                               },
                             }))}
                             placeholder="Kosongkan untuk pakai harga base"
-                            className="w-full bg-white rounded-sm px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+                            className="w-full bg-white rounded px-3 py-2 border border-slate-200 text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
                           />
                         </div>
                       ))}
@@ -569,7 +569,7 @@ export default function StockTableView({
                   )}
 
                   {showGrosir && (
-                    <div className="mb-4 bg-violet-50 border border-violet-200 rounded-sm px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
+                    <div className="mb-4 bg-violet-50 border border-violet-200 rounded px-3 py-2 text-[10px] text-slate-500 italic leading-snug">
                       💡 Untuk ubah jumlah stok per gudang, klik tombol <span className="font-bold text-violet-700 not-italic">⚖ Penyesuaian</span> di kanan baris (perlu approval Owner).
                     </div>
                   )}
@@ -605,7 +605,7 @@ export default function StockTableView({
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
         onClick={e => { if (e.target === e.currentTarget) setEditingVolSku(null); }}
       >
-        <div className="bg-white rounded-sm max-w-md w-full mx-4 p-4 shadow-2xl">
+        <div className="bg-white rounded max-w-md w-full mx-4 p-4 shadow-2xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-[var(--color-caleo-primary)]">Harga Volume — {editingVolSku}</h3>
             <button

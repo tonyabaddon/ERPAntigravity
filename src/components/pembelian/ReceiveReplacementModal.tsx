@@ -31,16 +31,16 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-sm border border-gray-200 shadow-xl w-full max-w-sm">
+      <div className="bg-white rounded border border-gray-200 shadow-xl w-full max-w-sm">
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
           <h2 className="text-sm font-bold text-gray-900">Terima Barang Pengganti</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
         </div>
         <div className="px-4 py-4 space-y-3">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-sm px-3 py-2 text-xs text-emerald-700">
+          <div className="bg-emerald-50 border border-emerald-200 rounded px-3 py-2 text-xs text-emerald-700">
             Stok akan bertambah otomatis setelah pengganti dikonfirmasi.
           </div>
-          <div className="bg-gray-50 rounded-sm px-3 py-3 text-xs space-y-1">
+          <div className="bg-gray-50 rounded px-3 py-3 text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-gray-500">Produk</span>
               <span className="font-semibold text-gray-800">{item.product_name}</span>
@@ -56,8 +56,8 @@ export default function ReceiveReplacementModal({ item, onClose, onReplaced, sho
           </div>
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-gray-200">
-          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded-sm border border-gray-200 hover:bg-gray-50">Batal</button>
-          <button onClick={handleConfirm} disabled={saving} className="text-sm font-semibold text-white bg-emerald-600 px-4 py-2 rounded-sm hover:bg-emerald-700 disabled:opacity-50">
+          <button onClick={onClose} className="text-sm font-medium text-gray-600 px-4 py-2 rounded border border-gray-200 hover:bg-gray-50">Batal</button>
+          <button onClick={handleConfirm} disabled={saving} className="text-sm font-semibold text-white bg-emerald-600 px-4 py-2 rounded hover:bg-emerald-700 disabled:opacity-50">
             {saving ? 'Memproses...' : 'Konfirmasi Terima'}
           </button>
         </div>

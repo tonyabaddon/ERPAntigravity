@@ -123,9 +123,9 @@ export default function RakitLockApprovalRequestRow({
   };
 
   return (
-    <div className="rounded-sm border border-orange-200 bg-orange-50/30 p-4">
+    <div className="rounded border border-orange-200 bg-orange-50/30 p-4">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-sm bg-orange-100 text-orange-700 flex items-center justify-center text-base flex-shrink-0">🛠</div>
+        <div className="w-9 h-9 rounded bg-orange-100 text-orange-700 flex items-center justify-center text-base flex-shrink-0">🛠</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="inline-block rounded-full bg-orange-200 text-orange-800 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5">
@@ -158,7 +158,7 @@ export default function RakitLockApprovalRequestRow({
                 </button>
               </div>
               {expanded && (
-                <div className="mt-2 bg-white border border-slate-200 rounded-sm p-2 text-[12px] space-y-1">
+                <div className="mt-2 bg-white border border-slate-200 rounded p-2 text-[12px] space-y-1">
                   {lines.map((l, idx) => {
                     const row = l as Record<string, unknown>;
                     const comps = Array.isArray(row.components) ? row.components : [];

@@ -46,7 +46,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
 
   return (
     <div
-      className="relative flex flex-col bg-white border rounded-sm overflow-hidden"
+      className="relative flex flex-col bg-white border rounded overflow-hidden"
       style={{
         borderColor: plan.is_recommended ? '#F9B233' : '#E2E8F0',
         borderWidth: plan.is_recommended ? '2px' : '1px',
@@ -145,7 +145,7 @@ function PlanCardView({ plan, canEdit, onEdit }: PlanCardViewProps) {
             type="button"
             disabled
             title="Butuh peran super admin"
-            className="mt-2 w-full text-[13px] font-medium py-2 rounded-sm border cursor-not-allowed"
+            className="mt-2 w-full text-[13px] font-medium py-2 rounded border cursor-not-allowed"
             style={{
               border: '1px solid #E2E8F0',
               color: '#9DB2CE',
@@ -249,7 +249,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
 
   return (
     <div
-      className="relative flex flex-col bg-white border rounded-sm p-5 gap-3"
+      className="relative flex flex-col bg-white border rounded p-5 gap-3"
       style={{ borderColor: '#0B2545', borderWidth: '2px' }}
       data-testid={`edit-form-${plan.code}`}
     >
@@ -263,7 +263,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="text"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="border rounded-sm p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           data-testid={`edit-name-${plan.code}`}
         />
       </label>
@@ -273,7 +273,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         <textarea
           value={form.description}
           onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          className="border rounded-sm p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           rows={2}
           data-testid={`edit-description-${plan.code}`}
         />
@@ -285,7 +285,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="text"
           value={form.target_segment}
           onChange={(e) => setForm((f) => ({ ...f, target_segment: e.target.value }))}
-          className="border rounded-sm p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           data-testid={`edit-target-${plan.code}`}
         />
       </label>
@@ -296,7 +296,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
           type="number"
           value={form.price_annual}
           onChange={(e) => setForm((f) => ({ ...f, price_annual: e.target.value }))}
-          className="border rounded-sm p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none font-mono"
+          className="border rounded p-2 text-[13px] font-normal text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none font-mono"
           placeholder="Contoh: 9000000"
           min={0}
           data-testid={`edit-price-annual-${plan.code}`}
@@ -321,7 +321,7 @@ function PlanCardEdit({ plan, onCancel, onSaved }: PlanCardEditProps) {
         <textarea
           value={form.feature_bundle_json}
           onChange={(e) => handleFeatureChange(e.target.value)}
-          className="border rounded-sm p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
+          className="border rounded p-2 text-[12px] font-mono text-caleo-ink border-caleo-muted/40 focus:border-caleo-navy focus:outline-none"
           rows={6}
           spellCheck={false}
           data-testid={`edit-features-${plan.code}`}

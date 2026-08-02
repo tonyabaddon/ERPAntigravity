@@ -84,18 +84,18 @@ export function AdminHome() {
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="border rounded-sm p-4 animate-pulse"
+              className="border rounded p-4 animate-pulse"
               style={{ background: '#ECEEF1', borderColor: '#ECEEF1', height: '88px' }}
             />
           ))}
         </div>
         {/* Skeleton sections */}
         <div
-          className="border rounded-sm p-4 animate-pulse"
+          className="border rounded p-4 animate-pulse"
           style={{ background: '#ECEEF1', borderColor: '#ECEEF1', height: '56px' }}
         />
         <div
-          className="border rounded-sm p-4 animate-pulse"
+          className="border rounded p-4 animate-pulse"
           style={{ background: '#ECEEF1', borderColor: '#ECEEF1', height: '120px' }}
         />
       </div>
@@ -105,14 +105,14 @@ export function AdminHome() {
   if (error && !stats) {
     return (
       <div
-        className="border rounded-sm p-5 text-[13px] flex items-center justify-between"
+        className="border rounded p-5 text-[13px] flex items-center justify-between"
         style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
         data-testid="admin-home-error"
       >
         <span>Gagal memuat dashboard: {error}</span>
         <button
           onClick={() => fetchAll()}
-          className="ml-4 px-3 py-1 rounded-sm border font-medium text-[12px] hover:opacity-80 transition-opacity"
+          className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80 transition-opacity"
           style={{ borderColor: '#991b1b', color: '#991b1b' }}
         >
           Coba lagi
@@ -146,7 +146,7 @@ export function AdminHome() {
         <a
           href="/admin/tenants/new"
           onClick={(e) => handleAdminSPAClick(e, '/admin/tenants/new')}
-          className="rounded-sm px-4 py-2 font-semibold text-[13px] transition-opacity hover:opacity-90"
+          className="rounded px-4 py-2 font-semibold text-[13px] transition-opacity hover:opacity-90"
           style={{ background: '#F9B233', color: '#0B2545' }}
         >
           + Onboard tenant baru

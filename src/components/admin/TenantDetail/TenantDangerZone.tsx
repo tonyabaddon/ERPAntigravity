@@ -60,7 +60,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
 
   return (
     <section
-      className="border rounded-sm p-5 mt-4"
+      className="border rounded p-5 mt-4"
       style={{ borderColor: '#fca5a5', background: '#fff7f7' }}
       data-testid="tenant-danger-zone"
       aria-label="Zona Bahaya"
@@ -81,7 +81,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
 
       {/* Export action row (non-destructive but grouped here as "before you delete, take backup") */}
       <div
-        className="flex flex-wrap items-center justify-between gap-3 border rounded-sm px-4 py-3 mb-3"
+        className="flex flex-wrap items-center justify-between gap-3 border rounded px-4 py-3 mb-3"
         style={{ borderColor: '#fbbf24', background: '#ffffff' }}
       >
         <div>
@@ -112,7 +112,7 @@ export function TenantDangerZone({ tenant, onDeleted }: Props) {
 
       {/* Delete action row */}
       <div
-        className="flex flex-wrap items-center justify-between gap-3 border rounded-sm px-4 py-3"
+        className="flex flex-wrap items-center justify-between gap-3 border rounded px-4 py-3"
         style={{ borderColor: '#fca5a5', background: '#ffffff' }}
       >
         <div>

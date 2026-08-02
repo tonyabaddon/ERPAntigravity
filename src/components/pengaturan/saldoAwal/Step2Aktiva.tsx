@@ -65,10 +65,10 @@ function CustomerPicker({
         onFocus={() => { setOpen(true); if (results.length === 0) void search(query); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder="Nama pelanggan…"
-        className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
       />
       {open && results.length > 0 && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded-sm shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded shadow-lg max-h-40 overflow-y-auto">
           {results.map((r) => (
             <div
               key={r.id}
@@ -211,14 +211,14 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.piutang.aggregate_amount}
               onChange={(n) => onChange({ ...data, piutang: { ...data.piutang, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.piutang.aggregate_amount)}</span>
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="border border-slate-200 rounded-sm overflow-hidden">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-[12px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
@@ -253,7 +253,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.amount}
                             onChange={(n) => updateARLine(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                             placeholder="0"
                           />
                         </td>
@@ -262,7 +262,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             type="date"
                             value={line.original_due_date ?? ''}
                             onChange={(e) => updateARLine(idx, { original_due_date: e.target.value || null })}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -271,7 +271,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.invoice_ref ?? ''}
                             onChange={(e) => updateARLine(idx, { invoice_ref: e.target.value || null })}
                             placeholder="INV-001"
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -319,7 +319,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
           <p className="text-[12px] text-slate-500 mt-0.5">Nilai stok per cutover date (dihitung dari harga modal × qty)</p>
         </div>
 
-        <div className="border border-slate-200 rounded-sm p-4 space-y-3 bg-slate-50/50">
+        <div className="border border-slate-200 rounded p-4 space-y-3 bg-slate-50/50">
           {autoLoading ? (
             <p className="text-[12px] text-slate-400">Menghitung nilai persediaan otomatis…</p>
           ) : (
@@ -369,7 +369,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                   value={data.persediaan.final_amount}
                   onChange={(n) => onChange({ ...data, persediaan: { ...data.persediaan, final_amount: n } })}
                   allowDecimal={false}
-                  className="w-48 border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+                  className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
                   placeholder="0"
                 />
                 <span className="text-[12px] text-slate-400">{formatIDR(data.persediaan.final_amount)}</span>
@@ -384,7 +384,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                     persediaan: { ...data.persediaan, override_reason: e.target.value || null },
                   })}
                   placeholder="Misal: Nilai stok dari laporan fisik opname"
-                  className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
+                  className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30 bg-white"
                 />
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.aktiva_tetap.amount}
               onChange={(n) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.aktiva_tetap.amount)}</span>
@@ -417,7 +417,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
               value={data.aktiva_tetap.notes}
               onChange={(e) => onChange({ ...data, aktiva_tetap: { ...data.aktiva_tetap, notes: e.target.value } })}
               placeholder="Misal: Rak gudang, forklift, PC toko"
-              className="w-full border border-slate-200 rounded-sm px-3 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-full border border-slate-200 rounded px-3 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
             />
           </div>
         </div>
@@ -442,7 +442,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
         {lainLainOpen && (
           <div className="mt-3 space-y-2">
             <p className="text-[12px] text-slate-500">Piutang lain-lain, uang muka, biaya dibayar dimuka, dsb.</p>
-            <div className="border border-slate-200 rounded-sm overflow-hidden">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-[12px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
@@ -478,7 +478,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.amount}
                             onChange={(n) => updateLainLain(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                             placeholder="0"
                           />
                         </td>
@@ -488,7 +488,7 @@ export default function Step2Aktiva({ data, onChange, showToast }: Props) {
                             value={line.notes}
                             onChange={(e) => updateLainLain(idx, { notes: e.target.value })}
                             placeholder="Keterangan…"
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">

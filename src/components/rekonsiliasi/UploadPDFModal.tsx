@@ -34,7 +34,7 @@ export default function UploadPDFModal({ account, year, month, onDone, onCancel 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onCancel}>
-      <div className="bg-white rounded-sm p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-1">Upload Mutasi PDF</h3>
         <p className="text-[11px] text-slate-500 font-semibold mb-4">{account.account_label}</p>
         <input type="file" accept="application/pdf" onChange={e => setFile(e.target.files?.[0] ?? null)} className="block w-full text-xs mb-4" />

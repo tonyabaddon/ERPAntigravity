@@ -119,7 +119,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top tab strip */}
-      <div className="flex gap-2 bg-white p-2 rounded-sm border border-[var(--color-caleo-mist-dark)] w-fit">
+      <div className="flex gap-2 bg-white p-2 rounded border border-[var(--color-caleo-mist-dark)] w-fit">
         <button
           onClick={() => setActiveTab('performa')}
           className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center gap-1.5 transition-colors ${
@@ -142,7 +142,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       {activeTab === 'performa' && (
       <div className="space-y-6">
         {/* Header + period selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded-sm border border-white/60 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/60 backdrop-blur-xl p-8 rounded border border-white/60 shadow-sm">
           <div>
             <h2 className="text-[var(--color-caleo-primary)] font-extrabold text-2xl tracking-tight">Laporan Performa</h2>
             <p className="text-xs text-gray-500 mt-0.5">Analisis pendapatan, gross profit, pesanan, dan pergerakan stok</p>
@@ -165,14 +165,14 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         </div>
 
       {!isSupabaseConfigured && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-4 text-sm text-yellow-800">
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-4 text-sm text-yellow-800">
           ⚠️ Supabase belum dikonfigurasi. Tambahkan <code>VITE_SUPABASE_URL</code> dan <code>VITE_SUPABASE_ANON_KEY</code> ke file <code>.env</code>.
         </div>
       )}
 
       {/* KPI cards */}
       {perfSummary === false ? (
-        <div className="bg-red-50 border border-red-200 rounded-sm p-4 text-sm text-red-700" role="alert">
+        <div className="bg-red-50 border border-red-200 rounded p-4 text-sm text-red-700" role="alert">
           Gagal memuat ringkasan performa. Coba pilih periode lagi atau periksa koneksi.
         </div>
       ) : (
@@ -268,7 +268,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
             ) : (
               <div className="space-y-2">
                 {profitPerChannel.map((row) => (
-                  <div key={row.channel} className="border border-slate-100 rounded-sm p-2">
+                  <div key={row.channel} className="border border-slate-100 rounded p-2">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-700">{row.channel}</span>
                       <span className="font-bold text-emerald-700">{Math.round(row.margin_pct)}%</span>
@@ -285,7 +285,7 @@ export default function LaporanScreen(props: LaporanScreenProps) {
       </div>
 
         {/* Top products */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
+        <div className="bg-white rounded p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Terlaris</h4>
           {topProducts.length === 0 ? (
             <p className="text-sm text-gray-400 italic">
@@ -316,14 +316,14 @@ export default function LaporanScreen(props: LaporanScreenProps) {
         </div>
 
         {/* Slow-moving stock */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
+        <div className="bg-white rounded p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Produk Slow-Moving</h4>
           <p className="text-xs text-slate-500 mb-4">SKU dengan penjualan rendah dalam periode. Pertimbangkan bundling, diskon, atau retur ke supplier.</p>
           <SlowMoverTable days={days} />
         </div>
 
         {/* Top Customer */}
-        <div className="bg-white rounded-sm p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
+        <div className="bg-white rounded p-6 md:p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <h4 className="text-lg font-bold text-[var(--color-caleo-primary)] mb-4">Top 10 Customer</h4>
           <p className="text-xs text-slate-500 mb-4">Customer dengan total belanja tertinggi dalam periode.</p>
           <TopCustomerTable days={days} />

@@ -13,7 +13,7 @@ interface KPICardProps {
 export function KPICard({ title, value, subtitle, alert, placeholder }: KPICardProps) {
   return (
     <div
-      className={`border rounded-sm p-4 ${
+      className={`border rounded p-4 ${
         alert ? 'bg-amber-50 border-amber-300' : 'bg-white border-slate-200'
       }`}
     >

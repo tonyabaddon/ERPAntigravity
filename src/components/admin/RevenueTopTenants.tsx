@@ -63,7 +63,7 @@ export function RevenueTopTenants({
 
   return (
     <section
-      className="bg-white border rounded-sm overflow-hidden"
+      className="bg-white border rounded overflow-hidden"
       style={{ borderColor: '#ECEEF1' }}
       aria-label="Tenant dengan pendapatan tertinggi"
     >

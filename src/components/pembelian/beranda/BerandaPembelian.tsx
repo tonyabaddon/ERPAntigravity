@@ -70,7 +70,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
         <p className="text-sm font-semibold text-red-600">{fetchError}</p>
         <button
           onClick={reload}
-          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
+          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
         >
           Coba Lagi
         </button>
@@ -94,7 +94,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
           </div>
         </div>
         <button onClick={reload} disabled={loading}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded-sm border border-gray-200 hover:bg-gray-50 disabled:opacity-50">
+          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 px-3 py-2 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-50">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
         </button>
       </div>
@@ -137,7 +137,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
       </div>
 
       {/* Per-supplier table */}
-      <div className="bg-white/78 backdrop-blur-xl rounded-sm border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white/78 backdrop-blur-xl rounded border border-gray-200 shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200 bg-gray-50/80 flex items-center justify-between">
           <div>
             <div className="text-sm font-bold" style={{ color: 'var(--color-caleo-primary)' }}>Outstanding per Supplier</div>
@@ -183,7 +183,7 @@ export default function BerandaPembelian({ showToast, onOpenPembayaran }: Props)
                     </td>
                     <td className="px-4 py-4 text-right">
                       <button onClick={() => onOpenPembayaran(s.supplier_id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded-sm text-white hover:opacity-90"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-bold rounded text-white hover:opacity-90"
                         style={{ background: 'var(--color-caleo-primary)' }}>
                         Bayar <ChevronRight className="w-3 h-3" />
                       </button>

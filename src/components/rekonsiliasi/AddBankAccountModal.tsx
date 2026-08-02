@@ -18,18 +18,18 @@ export default function AddBankAccountModal({ onSave, onCancel }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(1,39,73,0.4)' }} onClick={onCancel}>
-      <div className="bg-white rounded-sm p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-base font-black text-[var(--color-caleo-primary)] mb-4">Tambah Rekening Bank</h3>
         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Bank</label>
-        <select value={form.bank_code} onChange={e => setForm({ ...form, bank_code: e.target.value as BankAccount['bank_code'] })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs">
+        <select value={form.bank_code} onChange={e => setForm({ ...form, bank_code: e.target.value as BankAccount['bank_code'] })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs">
           {(['BCA', 'MANDIRI', 'BRI', 'BNI', 'PERMATA', 'CIMB', 'OTHER'] as const).map(b => <option key={b}>{b}</option>)}
         </select>
         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Nomor Rekening</label>
-        <input value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs" />
+        <input value={form.account_number} onChange={e => setForm({ ...form, account_number: e.target.value })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs" />
         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Label</label>
-        <input value={form.account_label} onChange={e => setForm({ ...form, account_label: e.target.value })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs" placeholder="BCA Bisnis Operasional 8420" />
+        <input value={form.account_label} onChange={e => setForm({ ...form, account_label: e.target.value })} className="w-full mb-3 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs" placeholder="BCA Bisnis Operasional 8420" />
         <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">Tujuan</label>
-        <select value={form.purpose} onChange={e => setForm({ ...form, purpose: e.target.value as BankAccount['purpose'] })} className="w-full mb-4 px-3 py-2 border border-[var(--color-caleo-mist)] rounded-sm text-xs">
+        <select value={form.purpose} onChange={e => setForm({ ...form, purpose: e.target.value as BankAccount['purpose'] })} className="w-full mb-4 px-3 py-2 border border-[var(--color-caleo-mist)] rounded text-xs">
           {(['OPERATIONAL', 'OWNER_PERSONAL', 'SAVINGS', 'OTHER'] as const).map(p => <option key={p}>{p}</option>)}
         </select>
         <div className="flex gap-2 justify-end">

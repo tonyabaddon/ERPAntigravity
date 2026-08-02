@@ -15,7 +15,7 @@ export default function PaymentMethodPicker({ value, onChange }: { value: PiPaym
         const active = value === o.value;
         return (
           <button key={o.value} type="button" onClick={() => onChange(o.value)}
-            className={`flex flex-col items-center gap-1 p-3 rounded-sm border-2 ${
+            className={`flex flex-col items-center gap-1 p-3 rounded border-2 ${
               active ? `border-current ${o.activeBg} ${o.activeColor}` : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'
             }`}>
             {o.icon}

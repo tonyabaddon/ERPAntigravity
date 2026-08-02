@@ -50,7 +50,7 @@ export default function CustomerCreditActivateApprovalRequestRow({
   }, [customerId]);
 
   return (
-    <div className="bg-white rounded-sm border border-slate-200 shadow-sm p-4">
+    <div className="bg-white rounded border border-slate-200 shadow-sm p-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs">
@@ -80,7 +80,7 @@ export default function CustomerCreditActivateApprovalRequestRow({
               type="button"
               disabled={disabled}
               onClick={() => setRejectOpen(true)}
-              className="px-3 py-1.5 text-xs font-semibold rounded-sm bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-semibold rounded bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50"
             >
               Tolak
             </button>
@@ -88,7 +88,7 @@ export default function CustomerCreditActivateApprovalRequestRow({
               type="button"
               disabled={disabled}
               onClick={() => onApprove(request.id)}
-              className="px-3 py-1.5 text-xs font-semibold rounded-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
             >
               ✓ Setujui Aktivasi
             </button>
@@ -104,14 +104,14 @@ export default function CustomerCreditActivateApprovalRequestRow({
             autoFocus
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
-            className="w-full text-sm border border-slate-300 rounded-sm px-3 py-2"
+            className="w-full text-sm border border-slate-300 rounded px-3 py-2"
             placeholder="Mis: limit terlalu tinggi untuk customer baru…"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => { setRejectOpen(false); setRejectReason(''); }}
-              className="px-3 py-1.5 text-xs font-semibold rounded-sm text-slate-700 hover:bg-slate-100"
+              className="px-3 py-1.5 text-xs font-semibold rounded text-slate-700 hover:bg-slate-100"
             >
               Batal
             </button>
@@ -122,7 +122,7 @@ export default function CustomerCreditActivateApprovalRequestRow({
                 setRejectOpen(false);
                 setRejectReason('');
               }}
-              className="px-3 py-1.5 text-xs font-semibold rounded-sm bg-red-600 text-white hover:bg-red-700"
+              className="px-3 py-1.5 text-xs font-semibold rounded bg-red-600 text-white hover:bg-red-700"
             >
               Konfirmasi Tolak
             </button>

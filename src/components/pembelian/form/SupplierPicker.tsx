@@ -85,7 +85,7 @@ export default function SupplierPicker({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full text-sm border border-gray-200 rounded-sm pl-9 pr-3 py-2.5 bg-white relative flex items-center text-left hover:border-indigo-300"
+          className="w-full text-sm border border-gray-200 rounded pl-9 pr-3 py-2.5 bg-white relative flex items-center text-left hover:border-indigo-300"
         >
           <Search className="w-4 h-4 text-gray-400 absolute left-3" />
           <span className="text-base mr-2">🏪</span>
@@ -112,11 +112,11 @@ export default function SupplierPicker({
         onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Cari supplier..."
-        className="w-full text-sm border-2 border-indigo-300 rounded-sm pl-9 pr-3 py-2.5 focus:outline-none bg-white"
+        className="w-full text-sm border-2 border-indigo-300 rounded pl-9 pr-3 py-2.5 focus:outline-none bg-white"
       />
 
       {open && (
-        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded-sm shadow-xl mt-1 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded shadow-xl mt-1 overflow-hidden">
           <div className="max-h-72 overflow-y-auto">
             {suppliers.length === 0 ? (
               // State A: Empty DB

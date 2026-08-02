@@ -89,7 +89,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
       onClick={handleBackdropClick}
     >
       <div
-        className="bg-white rounded-sm shadow-xl p-6 max-w-md w-full font-caleo mx-4"
+        className="bg-white rounded shadow-xl p-6 max-w-md w-full font-caleo mx-4"
         onClick={(e) => e.stopPropagation()}
         data-testid="delete-tenant-modal"
       >
@@ -144,7 +144,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               disabled={submitting}
               rows={3}
               placeholder="Contoh: tenant test, tidak ada data produksi"
-              className="w-full border rounded-sm px-3 py-2 text-[13px] placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-[13px] placeholder:text-caleo-navy/30 resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{
                 borderColor: '#ECEEF1',
                 color: '#0B2545',
@@ -185,7 +185,7 @@ export function DeleteTenantModal({ open, tenant, onClose, onDeleted }: Props) {
               onChange={(e) => setSlugInput(e.target.value)}
               disabled={submitting}
               placeholder={tenant.slug}
-              className="w-full border rounded-sm px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
+              className="w-full border rounded px-3 py-2 text-[13px] focus:outline-none focus:ring-2 disabled:opacity-50"
               style={{
                 borderColor: slugInput.length > 0 && !isSlugMatch ? '#DC2626' : '#ECEEF1',
                 color: '#0B2545',

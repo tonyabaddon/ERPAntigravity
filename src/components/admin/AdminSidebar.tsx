@@ -206,7 +206,7 @@ export function AdminSidebar({ activePath }: AdminSidebarProps) {
               href={item.to}
               onClick={(e) => handleAdminSPAClick(e, item.to)}
               aria-current={active ? 'page' : undefined}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-sm text-[13px] font-medium transition-colors"
+              className="flex items-center gap-2.5 px-3 py-2 rounded text-[13px] font-medium transition-colors"
               style={{
                 background: active ? '#0B2545' : 'transparent',
                 color: active ? '#ffffff' : '#0B2545',

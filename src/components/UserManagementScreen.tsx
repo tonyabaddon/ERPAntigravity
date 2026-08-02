@@ -299,7 +299,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         <p className="text-sm font-semibold text-red-600">{fetchError}</p>
         <button
           onClick={loadAdmins}
-          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
+          className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
         >
           Coba Lagi
         </button>
@@ -309,7 +309,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
 
   return (
     <div className="space-y-8 animate-fadeIn pb-24">
-      <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded-sm flex items-center gap-3">
+      <div className="bg-emerald-50/50 border border-emerald-100 p-6 rounded flex items-center gap-3">
         <UserCheck className="w-6 h-6 text-[#2d8a4e] shrink-0" />
         <p className="text-xs text-[#0b743b] font-bold leading-relaxed">
           {isSupabaseConfigured
@@ -323,7 +323,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         {/* LEFT COLUMN: Add New Admin Form */}
         <section className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-sm bg-blue-50 text-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded bg-blue-50 text-[var(--color-caleo-primary)] flex items-center justify-center shrink-0">
               <UserPlus className="w-5 h-5" />
             </div>
             <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Tambah Admin Baru</h3>
@@ -380,7 +380,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                     key={value}
                     type="button"
                     onClick={() => setNewGender(value)}
-                    className={`flex-1 py-2.5 px-3 rounded-sm text-xs font-bold transition-colors border ${
+                    className={`flex-1 py-2.5 px-3 rounded text-xs font-bold transition-colors border ${
                       newGender === value
                         ? 'bg-[var(--color-caleo-primary)] text-white border-[var(--color-caleo-primary)]'
                         : 'bg-white text-[#43474e] border-[var(--color-caleo-mist)] hover:border-[#abc9f3]'
@@ -436,7 +436,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
         <section className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 border border-[var(--color-caleo-mist)] shadow-xl overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-sm bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
+              <div className="w-12 h-12 rounded bg-emerald-50 text-[#2d8a4e] flex items-center justify-center shrink-0 border border-emerald-100">
                 <span className="material-symbols-outlined font-black">verified</span>
               </div>
               <h3 className="text-[var(--color-caleo-primary)] font-extrabold text-lg leading-tight">Hak Akses Menu Aplikasi</h3>
@@ -475,7 +475,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                 );
                 const isExpanded = expandedId === adm.id;
                 return (
-                  <div key={adm.id} className="border border-[var(--color-caleo-mist)] rounded-sm overflow-hidden">
+                  <div key={adm.id} className="border border-[var(--color-caleo-mist)] rounded overflow-hidden">
                     {/* Collapsed row */}
                     <div
                       className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-[var(--color-caleo-cloud)]/40 transition-colors"
@@ -531,7 +531,7 @@ export default function UserManagementScreen({ showToast, currentUser }: UserMan
                                 {entries.map(({ key, label, description }) => (
                                   <label
                                     key={key}
-                                    className={`flex items-center justify-between bg-white border border-[var(--color-caleo-mist)] rounded-sm px-4 py-2.5 gap-3 ${
+                                    className={`flex items-center justify-between bg-white border border-[var(--color-caleo-mist)] rounded px-4 py-2.5 gap-3 ${
                                       isOwner ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#abc9f3]'
                                     }`}
                                   >

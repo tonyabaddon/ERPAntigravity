@@ -55,7 +55,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Top Welcome */}
-      <div className="bg-white/60 backdrop-blur-xl p-8 rounded-sm border border-white/60 shadow-sm">
+      <div className="bg-white/60 backdrop-blur-xl p-8 rounded border border-white/60 shadow-sm">
         <div>
           <span className="text-xs font-bold text-[#2d8a4e] uppercase bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full select-none">
             Sistem Integrasi Aktif
@@ -136,7 +136,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
                 Belum ada aktivitas hari ini.
               </div>
             ) : recentActivity.map((item, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded-sm transition-colors border border-transparent hover:border-blue-100">
+              <div key={i} className="flex items-center gap-4 p-4 hover:bg-[#f8f9ff] rounded transition-colors border border-transparent hover:border-blue-100">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-[#2d8a4e]">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
@@ -160,7 +160,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
           {orders.length > 0 && (
             <button
               onClick={() => onNavigate('order-history')}
-              className="flex items-center gap-2 bg-purple-100 text-purple-800 border border-purple-200 px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-purple-200 transition-colors"
+              className="flex items-center gap-2 bg-purple-100 text-purple-800 border border-purple-200 px-4 py-2.5 rounded text-sm font-bold hover:bg-purple-200 transition-colors"
             >
               {orders.length} pesanan perlu konfirmasi
               <span className="text-purple-400 text-xs">Riwayat Pesanan</span>
@@ -169,7 +169,7 @@ export default function DashboardScreen({ showToast, onNavigate, lowStockCount, 
           {paymentUploadedOrders.length > 0 && (
             <button
               onClick={() => onNavigate('order-history')}
-              className="flex items-center gap-2 bg-blue-100 text-blue-800 border border-blue-200 px-4 py-2.5 rounded-sm text-sm font-bold hover:bg-blue-200 transition-colors"
+              className="flex items-center gap-2 bg-blue-100 text-blue-800 border border-blue-200 px-4 py-2.5 rounded text-sm font-bold hover:bg-blue-200 transition-colors"
             >
               {paymentUploadedOrders.length} bukti bayar menunggu verifikasi
               <span className="text-blue-400 text-xs">Riwayat Pesanan</span>

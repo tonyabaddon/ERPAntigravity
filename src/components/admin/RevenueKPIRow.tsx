@@ -52,7 +52,7 @@ interface KPICardProps {
 function RevenueKPICard({ title, value, subtitle }: KPICardProps) {
   return (
     <div
-      className="bg-white border rounded-sm p-4"
+      className="bg-white border rounded p-4"
       style={{ borderColor: '#ECEEF1' }}
     >
       <div

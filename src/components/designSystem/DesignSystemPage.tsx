@@ -233,7 +233,7 @@ function RadiusShadowSection({ tokens }: { tokens: Token[] }) {
         ))}
       </div>
       <div className="ds-note">
-        Post-2026-08-02: all radius reduced to 2px (<code>rounded-sm</code>) across app for MSME/Excel aesthetic. Only <code>rounded-full</code> preserved for semantic circular (avatars, pills, badges). Never use raw <code>rounded-lg</code>/<code>rounded-xl</code>/<code>rounded-2xl</code>/<code>rounded-3xl</code> — those visuals are retired.
+        Post-2026-08-02: all radius reduced to 2px (<code>rounded</code>) across app for MSME/Excel aesthetic. Only <code>rounded-full</code> preserved for semantic circular (avatars, pills, badges). Never use raw <code>rounded-lg</code>/<code>rounded-xl</code>/<code>rounded-2xl</code>/<code>rounded-3xl</code> — those visuals are retired.
       </div>
     </section>
   );
@@ -496,8 +496,8 @@ function FormPatternsSection() {
           </tr>
           <tr>
             <td><strong>Input</strong></td>
-            <td><code>px-3 py-2 border border-slate-300 rounded-sm text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]</code></td>
-            <td>Focus ring = clear focus state (accessibility). rounded-sm = MSME/Excel aesthetic.</td>
+            <td><code>px-3 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-800 outline-none focus:ring-1 focus:ring-[#012749]</code></td>
+            <td>Focus ring = clear focus state (accessibility). rounded = MSME/Excel aesthetic.</td>
           </tr>
           <tr>
             <td><strong>Help text</strong> (below input, muted)</td>
@@ -854,8 +854,8 @@ function AntiPatternsSection() {
             <td>Consistency + gender-aware fallback logic centralized.</td>
           </tr>
           <tr>
-            <td><span className="ds-anti-bad">rounded-sm, rounded-sm, rounded-sm mixed within one card</span></td>
-            <td><span className="ds-anti-good">One radius per surface hierarchy — parent 24px (rounded-sm), children 12px (rounded-sm), pills full</span></td>
+            <td><span className="ds-anti-bad">rounded, rounded, rounded mixed within one card</span></td>
+            <td><span className="ds-anti-good">One radius per surface hierarchy — parent 24px (rounded), children 12px (rounded), pills full</span></td>
             <td>Consistency + reduced cognitive load.</td>
           </tr>
           <tr>

@@ -62,10 +62,10 @@ function SupplierPicker({
         onFocus={() => { setOpen(true); if (results.length === 0) void search(query); }}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder="Nama supplier…"
-        className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+        className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
       />
       {open && results.length > 0 && (
-        <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded-sm shadow-lg max-h-40 overflow-y-auto">
+        <div className="absolute z-20 top-full left-0 right-0 mt-0.5 bg-white border border-slate-200 rounded shadow-lg max-h-40 overflow-y-auto">
           {results.map((r) => (
             <div
               key={r.id}
@@ -175,14 +175,14 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
               value={data.hutang_usaha.aggregate_amount}
               onChange={(n) => onChange({ ...data, hutang_usaha: { ...data.hutang_usaha, aggregate_amount: n } })}
               allowDecimal={false}
-              className="w-48 border border-slate-200 rounded-sm px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
+              className="w-48 border border-slate-200 rounded px-3 py-1.5 text-right text-[13px] focus:outline-none focus:ring-2 focus:ring-[var(--color-caleo-primary)]/30"
               placeholder="0"
             />
             <span className="text-[12px] text-slate-400">{formatIDR(data.hutang_usaha.aggregate_amount)}</span>
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="border border-slate-200 rounded-sm overflow-hidden">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-[12px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
@@ -217,7 +217,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.amount}
                             onChange={(n) => updateAPLine(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                             placeholder="0"
                           />
                         </td>
@@ -226,7 +226,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             type="date"
                             value={line.original_due_date ?? ''}
                             onChange={(e) => updateAPLine(idx, { original_due_date: e.target.value || null })}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -235,7 +235,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.invoice_ref ?? ''}
                             onChange={(e) => updateAPLine(idx, { invoice_ref: e.target.value || null })}
                             placeholder="INV-SUPP-001"
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">
@@ -295,7 +295,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
         {lainLainOpen && (
           <div className="mt-3 space-y-2">
             <p className="text-[12px] text-slate-500">Hutang bank, uang muka pelanggan, hutang pajak, beban masih harus dibayar, dsb.</p>
-            <div className="border border-slate-200 rounded-sm overflow-hidden">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-[12px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-left">
@@ -331,7 +331,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.amount}
                             onChange={(n) => updateLainLain(idx, { amount: n })}
                             allowDecimal={false}
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-right text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                             placeholder="0"
                           />
                         </td>
@@ -341,7 +341,7 @@ export default function Step3Kewajiban({ data, onChange, showToast: _showToast }
                             value={line.notes}
                             onChange={(e) => updateLainLain(idx, { notes: e.target.value })}
                             placeholder="Keterangan…"
-                            className="w-full border border-slate-200 rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
+                            className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-1 focus:ring-[var(--color-caleo-primary)]/30"
                           />
                         </td>
                         <td className="px-3 py-2 text-center">

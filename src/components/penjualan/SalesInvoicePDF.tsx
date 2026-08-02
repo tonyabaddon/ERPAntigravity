@@ -202,7 +202,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
         <style>{printCss}</style>
         <div
           id="sales-invoice-root"
-          className={`bg-white rounded-sm shadow-sm border border-slate-200 w-full overflow-auto print-mode-${printMode}`}
+          className={`bg-white rounded shadow-sm border border-slate-200 w-full overflow-auto print-mode-${printMode}`}
         >
           {loading ? (
             <div className="p-12 text-center text-slate-400">Memuat...</div>
@@ -221,7 +221,7 @@ export default function SalesInvoicePDF({ transaction, variant, adminName, autoP
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
         <div
           id="sales-invoice-root"
-          className={`bg-white rounded-sm shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} max-w-3xl`}
+          className={`bg-white rounded shadow-2xl w-full max-h-[90vh] overflow-auto print-mode-${printMode} max-w-3xl`}
           onClick={e => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-caleo-primary)] text-white print:hidden">

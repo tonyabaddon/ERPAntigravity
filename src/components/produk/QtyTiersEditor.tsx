@@ -112,7 +112,7 @@ export default function QtyTiersEditor({
 
   return (
     <div
-      className="bg-white rounded-sm border border-slate-200 p-4 space-y-3"
+      className="bg-white rounded border border-slate-200 p-4 space-y-3"
       data-testid="qty-tiers-editor"
     >
       <div>
@@ -132,7 +132,7 @@ export default function QtyTiersEditor({
               value={row.minQty}
               onChange={e => updateRow(i, { minQty: e.target.value })}
               placeholder="5"
-              className="w-20 px-2 py-1.5 border border-slate-300 rounded-sm text-sm"
+              className="w-20 px-2 py-1.5 border border-slate-300 rounded text-sm"
             />
             <span className="text-xs text-slate-500">pcs Rp</span>
             <input
@@ -141,7 +141,7 @@ export default function QtyTiersEditor({
               value={row.price}
               onChange={e => updateRow(i, { price: e.target.value })}
               placeholder="8000"
-              className="w-32 px-2 py-1.5 border border-slate-300 rounded-sm text-sm"
+              className="w-32 px-2 py-1.5 border border-slate-300 rounded text-sm"
             />
             <button
               type="button"
@@ -179,7 +179,7 @@ export default function QtyTiersEditor({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="px-4 py-2 text-xs font-bold rounded-sm bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 text-xs font-bold rounded bg-[var(--color-caleo-primary)] text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? 'Menyimpan...' : 'Simpan'}
         </button>

@@ -116,7 +116,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
   if (isPersonal) {
     return (
       <div
-        className="border border-gray-200 bg-gray-50 rounded-sm p-5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+        className="border border-gray-200 bg-gray-50 rounded p-5 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
         onClick={onClick}
         role="button"
         tabIndex={0}
@@ -125,7 +125,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
         {/* Header row */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-sm flex items-center justify-center bg-gray-200 text-gray-500">
+            <div className="w-11 h-11 rounded flex items-center justify-center bg-gray-200 text-gray-500">
               <User className="w-5 h-5" />
             </div>
             <div>
@@ -160,7 +160,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
 
   return (
     <div
-      className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
+      className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-5 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -169,7 +169,7 @@ function AccountCard({ account, isPersonal = false, onClick }: AccountCardProps)
       {/* Header row */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-11 h-11 rounded-sm flex items-center justify-center ${bgClass} ${textClass}`}>
+          <div className={`w-11 h-11 rounded flex items-center justify-center ${bgClass} ${textClass}`}>
             <Icon className="w-5 h-5" />
           </div>
           <div>
@@ -294,7 +294,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-start gap-3">
-          <div className="w-11 h-11 rounded-sm bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)]">
+          <div className="w-11 h-11 rounded bg-[var(--color-caleo-cloud)] flex items-center justify-center text-[var(--color-caleo-primary)]">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
@@ -320,7 +320,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
       {/* Total liquid hero card */}
       <div
-        className="rounded-sm p-6 text-white mb-6"
+        className="rounded p-6 text-white mb-6"
         style={{ background: 'linear-gradient(135deg, #065f46, #047857)' }}
       >
         <div className="text-[11px] uppercase tracking-widest text-emerald-100 font-extrabold mb-1">
@@ -350,7 +350,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
         </div>
 
         {businessAccounts.length === 0 ? (
-          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-8 text-center text-[13px] text-gray-500">
+          <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-8 text-center text-[13px] text-gray-500">
             Belum ada akun bisnis.{' '}
             {isOwner && (
               <button
@@ -404,7 +404,7 @@ export default function KasBankScreen({ currentUser, showToast, onNavigate }: Ka
 
       {/* Full empty state — no accounts at all */}
       {accounts.length === 0 && (
-        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded-sm p-12 text-center text-[13px] text-gray-500 mt-2">
+        <div className="border border-[var(--color-caleo-mist-dark)] bg-[#fafbff] rounded p-12 text-center text-[13px] text-gray-500 mt-2">
           <Wallet className="w-8 h-8 mx-auto mb-3 text-gray-300" />
           <p className="font-bold text-gray-700 mb-1">Belum ada akun kas atau bank</p>
           <p className="text-gray-500 text-xs mb-4">

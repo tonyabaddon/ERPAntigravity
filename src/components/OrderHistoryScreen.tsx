@@ -106,7 +106,7 @@ function formatDate(iso: string): string {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="bg-white rounded-sm border border-gray-200 p-12 text-center">
+    <div className="bg-white rounded border border-gray-200 p-12 text-center">
       <ClipboardList className="w-10 h-10 text-gray-200 mx-auto mb-3" />
       <p className="text-sm font-semibold text-gray-400">{message}</p>
     </div>
@@ -124,7 +124,7 @@ const EMPTY_MESSAGES: Record<FilterTab, string> = {
 
 function ItemsTable({ items, headerClass }: { items: DbOrder['items']; headerClass: string }) {
   return (
-    <div className="border border-gray-200 rounded-sm overflow-hidden text-xs mb-3">
+    <div className="border border-gray-200 rounded overflow-hidden text-xs mb-3">
       <div className={`grid grid-cols-4 px-3 py-2 font-bold uppercase tracking-wide text-[10px] ${headerClass}`}>
         <span>Produk</span>
         <span className="text-center">Qty</span>
@@ -174,13 +174,13 @@ function RejectProofModal({ onConfirm, onCancel, loading }: RejectProofModalProp
       onClick={onCancel}
     >
       <div
-        className="bg-white rounded-sm shadow-xl p-6 w-full max-w-sm mx-4"
+        className="bg-white rounded shadow-xl p-6 w-full max-w-sm mx-4"
         onClick={e => e.stopPropagation()}
       >
         <h3 className="text-sm font-bold text-gray-800 mb-1">Tolak Bukti Transfer</h3>
         <p className="text-xs text-gray-400 mb-4">Customer akan dinotifikasi via WhatsApp untuk kirim ulang.</p>
         <textarea
-          className="w-full border border-gray-200 rounded-sm p-3 text-xs resize-none outline-none focus:border-red-300"
+          className="w-full border border-gray-200 rounded p-3 text-xs resize-none outline-none focus:border-red-300"
           rows={3}
           placeholder="Alasan penolakan (opsional)"
           value={reason}
@@ -189,14 +189,14 @@ function RejectProofModal({ onConfirm, onCancel, loading }: RejectProofModalProp
         <div className="flex gap-2 mt-4 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-xs text-gray-600 border border-gray-200 rounded-sm hover:bg-gray-50"
+            className="px-4 py-2 text-xs text-gray-600 border border-gray-200 rounded hover:bg-gray-50"
           >
             Batal
           </button>
           <button
             onClick={() => onConfirm(reason)}
             disabled={loading}
-            className="px-4 py-2 text-xs font-bold bg-red-500 text-white rounded-sm hover:bg-red-600 disabled:opacity-40"
+            className="px-4 py-2 text-xs font-bold bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-40"
           >
             {loading ? 'Memproses...' : 'Tolak & Notifikasi'}
           </button>
@@ -409,7 +409,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
           <ClipboardList className="w-6 h-6 text-gray-700" />
           <h1 className="text-2xl font-bold text-gray-800">Riwayat Pesanan</h1>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-sm p-6 text-yellow-800 text-sm font-medium">
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-6 text-yellow-800 text-sm font-medium">
           Supabase belum dikonfigurasi.
         </div>
       </div>
@@ -458,7 +458,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
 
       {/* Search + channel filter */}
       <div className="flex items-stretch gap-2 flex-wrap">
-        <div className="flex-1 min-w-[240px] flex items-center gap-2 bg-white border border-gray-200 rounded-sm px-4 py-2.5 text-sm text-gray-400">
+        <div className="flex-1 min-w-[240px] flex items-center gap-2 bg-white border border-gray-200 rounded px-4 py-2.5 text-sm text-gray-400">
           <Search className="w-4 h-4 shrink-0" />
           <input
             className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
@@ -471,7 +471,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         <select
           value={channelFilter}
           onChange={e => { setChannelFilter(e.target.value as ChannelFilter); setSpecificChannel(''); }}
-          className="bg-white border border-gray-200 rounded-sm px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
         >
           <option value="all">Semua</option>
           <option value="offline">📋 Semua Offline</option>
@@ -483,7 +483,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
         <select
           value={specificChannel}
           onChange={e => { setSpecificChannel(e.target.value as SalesChannel | ''); }}
-          className="bg-white border border-gray-200 rounded-sm px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
+          className="bg-white border border-gray-200 rounded px-3 py-2.5 text-xs font-bold text-gray-700 outline-none focus:ring-1 focus:ring-[#2d8a4e]"
         >
           <option value="">— pilih kanal spesifik —</option>
           {(['offline', 'marketplace', 'direct'] as const).map(group => {
@@ -512,13 +512,13 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
 
       {/* List */}
       {loading ? (
-        <div className="bg-white rounded-sm border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat...</div>
+        <div className="bg-white rounded border border-gray-200 p-8 text-center text-sm text-gray-400">Memuat...</div>
       ) : fetchError ? (
-        <div className="bg-white rounded-sm border border-red-100 p-8 text-center">
+        <div className="bg-white rounded border border-red-100 p-8 text-center">
           <p className="text-sm font-semibold text-red-600 mb-3">{fetchError}</p>
           <button
             onClick={() => { setFetchError(null); setLoading(true); salesEntriesService.fetchAll().then(({ orders: o, kasir: k }) => { setOrders(o); setKasir(k); }).catch((err) => { setFetchError('Gagal memuat riwayat pesanan.'); showToast('Gagal memuat riwayat pesanan.', 'warning'); console.error(err); }).finally(() => setLoading(false)); }}
-            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded-sm hover:opacity-90"
+            className="px-4 py-2 bg-[var(--color-caleo-primary)] text-white text-xs font-bold rounded hover:opacity-90"
           >
             Coba Lagi
           </button>
@@ -526,7 +526,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
       ) : visible.length === 0 ? (
         <EmptyState message={EMPTY_MESSAGES[tab]} />
       ) : (
-        <div className="bg-white rounded-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded border border-gray-200 overflow-hidden">
           {visible.map(entry => {
             // Look up the underlying DbOrder when this entry comes from `orders`;
             // kasir entries have no order row and stay collapse-only by design.
@@ -605,9 +605,9 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       <div className="flex flex-col gap-2 min-w-[140px]">
                         <div className="text-[9px] font-bold uppercase tracking-wide text-gray-400 text-center">Tetapkan Ongkir</div>
                         {order.delivery_type === 'PICKUP' ? (
-                          <div className="text-xs text-gray-500 bg-gray-100 rounded-sm px-3 py-2 text-center">Rp 0 (Pickup)</div>
+                          <div className="text-xs text-gray-500 bg-gray-100 rounded px-3 py-2 text-center">Rp 0 (Pickup)</div>
                         ) : (
-                          <div className="flex items-center gap-1.5 bg-gray-50 border border-purple-200 rounded-sm px-3 py-2">
+                          <div className="flex items-center gap-1.5 bg-gray-50 border border-purple-200 rounded px-3 py-2">
                             <span className="text-gray-400 text-xs">Rp</span>
                             <input
                               type="number"
@@ -658,7 +658,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 </button>
                               ))}
                             </div>
-                            <div className="flex items-center gap-1 bg-gray-50 border border-purple-200 rounded-sm px-2 py-1">
+                            <div className="flex items-center gap-1 bg-gray-50 border border-purple-200 rounded px-2 py-1">
                               {(dpInputTypes[order.id] ?? 'AMOUNT') === 'AMOUNT' && <span className="text-gray-400 text-xs">Rp</span>}
                               <input
                                 type="number"
@@ -689,14 +689,14 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                             (order.delivery_type !== 'PICKUP' && (!shippingFees[order.id] || shippingFees[order.id] === '')) ||
                             ((paymentTypes[order.id] ?? 'FULL') === 'DP' && !dpValues[order.id])
                           }
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-sm hover:bg-purple-700 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded hover:bg-purple-700 disabled:opacity-40"
                         >
                           {approvingId === order.id ? 'Memproses...' : '✓ Approve'}
                         </button>
                         <button
                           onClick={() => handleRejectOrder(order.id)}
                           disabled={rejectingId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-sm border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
@@ -719,7 +719,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <div>
                           {/* DP proof summary — shown for DP orders above full proof */}
                           {order.payment_type === 'DP' && (
-                            <div className="mb-4 p-3 bg-teal-50 rounded-sm border border-teal-200">
+                            <div className="mb-4 p-3 bg-teal-50 rounded border border-teal-200">
                               <div className="text-[9px] font-bold uppercase tracking-wide text-teal-600 mb-1">
                                 ✓ DP Terverifikasi — {formatIDR(Number(order.dp_amount ?? 0))}
                               </div>
@@ -742,7 +742,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 aspectRatio="4/5"
                               />
                             ) : (
-                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-sm flex flex-col items-center justify-center gap-1 flex-shrink-0">
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
                                 <span className="text-[9px] text-indigo-400 font-semibold">Foto Bukti</span>
                               </div>
@@ -770,14 +770,14 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <button
                           onClick={() => handleVerifyPayment(order.id)}
                           disabled={verifyingId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-sm hover:bg-green-700 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700 disabled:opacity-40"
                         >
                           {verifyingId === order.id ? 'Memproses...' : '✓ Verifikasi'}
                         </button>
                         <button
                           onClick={() => handleRejectPayment(order.id)}
                           disabled={rejectingPaymentId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-sm border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
@@ -820,7 +820,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                                 aspectRatio="4/5"
                               />
                             ) : (
-                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded-sm flex flex-col items-center justify-center gap-1 flex-shrink-0">
+                              <div className="w-16 h-20 bg-indigo-100 border-2 border-indigo-200 rounded flex flex-col items-center justify-center gap-1 flex-shrink-0">
                                 <span className="text-indigo-400 text-lg">🖼</span>
                                 <span className="text-[9px] text-indigo-400 font-semibold">Foto DP</span>
                               </div>
@@ -840,14 +840,14 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                         <button
                           onClick={() => handleVerifyDP(order.id)}
                           disabled={verifyingDPId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-sm hover:bg-teal-700 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded hover:bg-teal-700 disabled:opacity-40"
                         >
                           {verifyingDPId === order.id ? 'Memproses...' : '✓ Verifikasi DP'}
                         </button>
                         <button
                           onClick={() => setRejectDPModalOrderId(order.id)}
                           disabled={rejectingDPId === order.id}
-                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded-sm border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white text-red-600 text-xs font-bold rounded border-2 border-red-200 hover:bg-red-50 disabled:opacity-40"
                         >
                           ✕ Tolak
                         </button>
@@ -873,7 +873,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                     </div>
                     <ItemsTable items={order.items} headerClass="bg-teal-100 text-teal-700" />
                     <OrderBnlSection orderId={order.id} customerName={order.customer_name} />
-                    <div className="flex items-center gap-2 mt-2 bg-teal-100 rounded-sm px-3 py-2">
+                    <div className="flex items-center gap-2 mt-2 bg-teal-100 rounded px-3 py-2">
                       <span className="text-teal-600 text-sm">⏳</span>
                       <span className="text-xs text-teal-700 font-semibold">Menunggu bukti pelunasan dari customer</span>
                     </div>
@@ -912,7 +912,7 @@ export default function OrderHistoryScreen({ currentUser, onOpenCustomer, showTo
                       </span>
                       <button
                         onClick={() => setInvoiceOrder(order)}
-                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[var(--color-caleo-primary)] text-xs font-bold rounded-sm border border-[var(--color-caleo-mist-dark)] hover:bg-blue-50"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-white text-[var(--color-caleo-primary)] text-xs font-bold rounded border border-[var(--color-caleo-mist-dark)] hover:bg-blue-50"
                       >
                         📄 Lihat Invoice
                       </button>

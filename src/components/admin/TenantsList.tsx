@@ -22,7 +22,7 @@ const DEBOUNCE_MS = 300;
 
 function SkeletonRows() {
   return (
-    <div className="border rounded-sm overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
+    <div className="border rounded overflow-hidden" style={{ borderColor: '#ECEEF1' }}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div
           key={i}
@@ -252,7 +252,7 @@ export function TenantsList() {
           placeholder="Cari slug / nama tenant…"
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="flex-1 min-w-[200px] border rounded-sm px-3 py-1.5 text-[13px] focus:outline-none"
+          className="flex-1 min-w-[200px] border rounded px-3 py-1.5 text-[13px] focus:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Cari slug atau nama"
         />
@@ -261,7 +261,7 @@ export function TenantsList() {
         <select
           value={planCode}
           onChange={(e) => handleFilterChange(setPlanCode)(e.target.value as PlanCode | '')}
-          className="border rounded-sm px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter paket"
         >
@@ -275,7 +275,7 @@ export function TenantsList() {
         <select
           value={status}
           onChange={(e) => handleFilterChange(setStatus)(e.target.value as TenantStatus | '')}
-          className="border rounded-sm px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter status"
         >
@@ -289,7 +289,7 @@ export function TenantsList() {
         <select
           value={expiryWithinDays}
           onChange={(e) => handleFilterChange(setExpiryWithinDays)(e.target.value as '' | '30' | '90')}
-          className="border rounded-sm px-3 py-1.5 text-[13px] focus:outline-none"
+          className="border rounded px-3 py-1.5 text-[13px] focus:outline-none"
           style={{ borderColor: '#D3D8E0', color: '#14161B' }}
           aria-label="Filter kedaluwarsa"
         >
@@ -302,14 +302,14 @@ export function TenantsList() {
       {/* Error inline retry */}
       {error && !loading && (
         <div
-          className="border rounded-sm px-4 py-3 text-[13px] flex items-center justify-between"
+          className="border rounded px-4 py-3 text-[13px] flex items-center justify-between"
           style={{ background: '#fee2e2', borderColor: '#fca5a5', color: '#991b1b' }}
           data-testid="tenants-error"
         >
           <span>Gagal memuat tenant: {error}</span>
           <button
             onClick={() => fetchTenants()}
-            className="ml-4 px-3 py-1 rounded-sm border font-medium text-[12px] hover:opacity-80"
+            className="ml-4 px-3 py-1 rounded border font-medium text-[12px] hover:opacity-80"
             style={{ borderColor: '#991b1b', color: '#991b1b' }}
           >
             Coba lagi
@@ -347,7 +347,7 @@ export function TenantsList() {
             <button
               disabled={clampedPage <= 1}
               onClick={() => setPage(clampedPage - 1)}
-              className="border rounded-sm px-3 py-1 font-medium transition-opacity disabled:opacity-40"
+              className="border rounded px-3 py-1 font-medium transition-opacity disabled:opacity-40"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Halaman sebelumnya"
             >
@@ -356,7 +356,7 @@ export function TenantsList() {
             <button
               disabled={clampedPage >= totalPages}
               onClick={() => setPage(clampedPage + 1)}
-              className="border rounded-sm px-3 py-1 font-medium transition-opacity disabled:opacity-40"
+              className="border rounded px-3 py-1 font-medium transition-opacity disabled:opacity-40"
               style={{ borderColor: '#D3D8E0', color: '#0B2545' }}
               aria-label="Halaman selanjutnya"
             >

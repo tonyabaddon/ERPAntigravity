@@ -237,7 +237,7 @@ export default function StockOpnameScreen({
         {activeSession ? (
           <div
             onClick={() => setActiveSessionId(activeSession.id)}
-            className="bg-white border border-amber-200 rounded-sm p-4 cursor-pointer hover:border-amber-400 transition"
+            className="bg-white border border-amber-200 rounded p-4 cursor-pointer hover:border-amber-400 transition"
           >
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1">
@@ -287,7 +287,7 @@ export default function StockOpnameScreen({
             </div>
           </div>
         ) : (
-          <div className="bg-slate-50 border border-slate-200 rounded-sm p-4 text-sm text-slate-500">
+          <div className="bg-slate-50 border border-slate-200 rounded p-4 text-sm text-slate-500">
             Tidak ada sesi opname yang aktif.
           </div>
         )}
@@ -308,7 +308,7 @@ export default function StockOpnameScreen({
               <li
                 key={s.id}
                 onClick={() => setActiveSessionId(s.id)}
-                className="bg-white border border-slate-200 rounded-sm p-3 text-sm cursor-pointer hover:border-slate-400"
+                className="bg-white border border-slate-200 rounded p-3 text-sm cursor-pointer hover:border-slate-400"
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
@@ -349,7 +349,7 @@ export default function StockOpnameScreen({
           ) : auditEntries.length === 0 ? (
             <p className="text-sm text-slate-500">Belum ada catatan audit.</p>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
+            <div className="bg-white border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="text-xs text-slate-500 uppercase bg-slate-50/50">
                   <tr className="border-b border-slate-200">
@@ -402,7 +402,7 @@ export default function StockOpnameScreen({
           onClick={() => !submitting && setShowStartModal(false)}
         >
           <div
-            className="bg-white rounded-sm max-w-md w-full p-4 space-y-4"
+            className="bg-white rounded max-w-md w-full p-4 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -479,7 +479,7 @@ export default function StockOpnameScreen({
           onClick={() => !cancelling && setCancelTarget(null)}
         >
           <div
-            className="bg-white rounded-sm max-w-sm w-full p-5 space-y-4"
+            className="bg-white rounded max-w-sm w-full p-5 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div>
