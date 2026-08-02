@@ -34,12 +34,12 @@ export type PdfPrintMode = 'normal' | 'dot_matrix';
 
 // ---------- Brand palette ----------
 
-const COLOR_NAVY = 'var(--color-caleo-primary)';
+const COLOR_NAVY = '#012749';
 const COLOR_GREEN = '#2d8a4e';
 const COLOR_GRAY_MUTED = '#555555';
 const COLOR_GRAY_FOOTER = '#888888';
-const COLOR_CALLOUT_BG = 'var(--color-caleo-cloud)';
-const COLOR_BANK_BORDER = 'var(--color-caleo-mist-dark)';
+const COLOR_CALLOUT_BG = '#eff4ff';
+const COLOR_BANK_BORDER = '#c7d7f5';
 const COLOR_BANK_BG = '#fafbff';
 const COLOR_WHITE = '#ffffff';
 const COLOR_HAIRLINE = '#d0d7e2';
